@@ -36,3 +36,19 @@ jobs:
         run: pip install commitizen==4.13.10
       - name: Check commit messages
         run: cz check --rev-range origin/main..HEAD
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install Poetry
+        run: pip install poetry poetry-plugin-export
+      - name: Export dependencies
+        run: poetry export --without-hashes --format=requirements.txt --output=requirements.txt
+      - name: Run pip-audit
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
