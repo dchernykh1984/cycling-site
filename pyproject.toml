@@ -11,3 +11,36 @@ Django = "^5.2"
 wagtail = "^7.0"
 gunicorn = "^23.0"
 whitenoise = {extras = ["brotli"], version = "^6.9"}
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.15.12"
+pre-commit = "^4.6.0"
+mypy = "^1.20.2"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "C90", # McCabe cyclomatic complexity
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "S",   # flake8-bandit
+    "PTH", # flake8-use-pathlib
+    "RUF", # Ruff-specific rules
+    "DJ",  # flake8-django
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.mypy]
+ignore_missing_imports = true
