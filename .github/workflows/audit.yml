@@ -1,0 +1,25 @@
+name: Security Audit
+
+on:
+  schedule:
+    - cron: "0 9 * * 6" # every Saturday at 09:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install Poetry
+        run: pip install poetry poetry-plugin-export
+      - name: Export dependencies
+        run: poetry export --without-hashes --format=requirements.txt --output=requirements.txt
+      - name: Run pip-audit
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
