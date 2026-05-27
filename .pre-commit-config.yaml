@@ -35,3 +35,10 @@ repos:
         entry: '[^\x00-\x7f]'
         types_or: [python, yaml, markdown, toml, shell, json]
         exclude: ^poetry\.lock$
+
+      - id: poetry-export
+        name: export requirements.txt from poetry.lock
+        language: system
+        entry: bash -c 'poetry export --without-hashes -f requirements.txt -o requirements.txt && git add requirements.txt'
+        pass_filenames: false
+        always_run: true
