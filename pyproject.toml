@@ -16,6 +16,7 @@ whitenoise = {extras = ["brotli"], version = "^6.9"}
 ruff = "^0.15.12"
 pre-commit = "^4.6.0"
 mypy = "^1.20.2"
+commitizen = "^4.13.10"
 
 [tool.ruff]
 line-length = 88

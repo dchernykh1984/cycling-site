@@ -20,3 +20,9 @@ repos:
     rev: v1.20.2
     hooks:
       - id: mypy
+
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.13.10
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
