@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "cycling-site"
+version = "0.1.0"
+description = "Cycling Wagtail website"
+authors = ["Denis Chernykh <education03@mail.ru>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.14"
+Django = "^5.2"
+wagtail = "^7.0"
+gunicorn = "^23.0"
+whitenoise = {extras = ["brotli"], version = "^6.9"}
