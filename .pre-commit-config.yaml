@@ -26,3 +26,12 @@ repos:
     hooks:
       - id: commitizen
         stages: [commit-msg]
+
+  - repo: local
+    hooks:
+      - id: no-non-ascii
+        name: no non-ASCII characters
+        language: pygrep
+        entry: '[^\x00-\x7f]'
+        types_or: [python, yaml, markdown, toml, shell, json]
+        exclude: ^poetry\.lock$
