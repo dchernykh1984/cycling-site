@@ -15,7 +15,7 @@ whitenoise = {extras = ["brotli"], version = "^6.9"}
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.15.12"
 pre-commit = "^4.6.0"
-mypy = "^1.20.2"
+mypy = "^2.1.0"
 commitizen = "^4.13.10"
 pytest = "^9.0.3"
 pytest-xdist = "^3.8.0"
