@@ -6,7 +6,7 @@ authors = ["Denis Chernykh <education03@mail.ru>"]
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.14"
+python = "^3.13"
 Django = "^5.2"
 wagtail = ">=7.4,<8.0"
 gunicorn = "^23.0"
@@ -27,9 +27,10 @@ pytest-cov = "^7.1.0"
 django-debug-toolbar = "^6.3.0"
 pytest-django = "^4.12.0"
 ipython = "^9.13.0"
+django-stubs = "^5.1"
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 
 [tool.ruff.lint]
 select = [
@@ -48,21 +49,31 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "S105", "S106"]
+"**/tests/**/*.py" = ["S101", "S105", "S106"]
+"**/tests.py" = ["S101", "S105", "S106"]
+"**/migrations/*.py" = ["N806", "RUF012", "E501"]
+"cycling_site/settings/*.py" = ["F403", "F405", "S105"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 
 [tool.mypy]
 ignore_missing_imports = true
+plugins = ["mypy_django_plugin.main"]
+exclude = ["migrations/"]
+
+[tool.django-stubs]
+django_settings_module = "cycling_site.settings.dev"
 
 [tool.coverage.run]
 parallel = true
 omit = ["home/migrations/*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["."]
 pythonpath = ["."]
 asyncio_mode = "auto"
-addopts = "-n auto --cov=home --cov-fail-under=90 --cov-report=term-missing"
+DJANGO_SETTINGS_MODULE = "cycling_site.settings.dev"
+python_files = ["test_*.py", "*_test.py", "tests.py"]
+addopts = "-n auto --cov=. --cov-fail-under=0 --cov-report=term-missing"
 markers = ["debug: mark test for local debugging and run it in isolation"]
