@@ -4,3 +4,4 @@
 - [ ] Each commit is atomic and self-contained
 - [ ] New functionality is covered by automated tests
 - [ ] CI pipeline is green
+- [ ] Branch is rebased on main before merging
