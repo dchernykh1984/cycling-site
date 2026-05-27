@@ -87,6 +87,10 @@ htmlcov/
 *.log
 logs/
 
+# ===== Temporary files =====
+
+tmp/
+
 # ===== OS =====
 
 # macOS
