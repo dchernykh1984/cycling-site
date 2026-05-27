@@ -82,6 +82,10 @@ htmlcov/
 # Environment variables
 .env
 .env.*
+!.env.example
+
+# Local settings overrides
+cycling_site/settings/local.py
 
 # Logs
 *.log
@@ -99,3 +103,6 @@ tmp/
 # Windows
 Thumbs.db
 desktop.ini
+
+#local site database
+db.sqlite3
