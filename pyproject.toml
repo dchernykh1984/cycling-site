@@ -9,7 +9,7 @@ package-mode = false
 python = "^3.13"
 Django = ">=5.2,<7.0"
 wagtail = ">=7.4,<8.0"
-gunicorn = "^23.0"
+gunicorn = ">=23,<27"
 whitenoise = {extras = ["brotli"], version = "^6.9"}
 psycopg2-binary = "^2.9.10"
 dj-database-url = "^3.1.2"
