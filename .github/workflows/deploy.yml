@@ -1,15 +1,23 @@
 name: Deploy to CodeRed
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
     branches: [main]
+    types: [completed]
   workflow_dispatch: # allow manual runs from the GitHub UI
 
 jobs:
   deploy:
+    # Only deploy if the CI workflow on main finished successfully.
+    # workflow_dispatch runs have no triggering workflow, so allow those too.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
+      # Pin to the exact commit CI validated; for manual runs fall back to the dispatch SHA.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-python@v5
         with:
