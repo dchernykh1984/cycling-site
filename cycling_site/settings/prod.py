@@ -8,7 +8,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY") or os.environ["RANDOM_SECRET_KEY"]
 ALLOWED_HOSTS = [os.environ["VIRTUAL_HOST"]]
 
 # CodeRed Cloud provides PostgreSQL connection details via these env vars
-# (not via DATABASE_URL). See https://www.codered.cloud/docs/django/environment/
+# (not via DATABASE_URL). The database requires SSL and uses UTF8.
+# See https://www.codered.cloud/docs/django/environment/
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -16,8 +17,11 @@ DATABASES = {
         "USER": os.environ["DB_USER"],
         "PASSWORD": os.environ["DB_PASSWORD"],
         "HOST": os.environ["DB_HOST"],
-        "PORT": os.environ.get("DB_PORT", "5432"),
         "CONN_MAX_AGE": 600,
+        "OPTIONS": {
+            "client_encoding": "UTF8",
+            "sslmode": "require",
+        },
     }
 }
 
