@@ -67,7 +67,12 @@ django_settings_module = "cycling_site.settings.dev"
 
 [tool.coverage.run]
 parallel = true
-omit = ["home/migrations/*"]
+omit = [
+    "home/migrations/*",
+    "manage.py",
+    "cycling_site/wsgi.py",
+    "cycling_site/settings/prod.py",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["."]
@@ -75,5 +80,5 @@ pythonpath = ["."]
 asyncio_mode = "auto"
 DJANGO_SETTINGS_MODULE = "cycling_site.settings.dev"
 python_files = ["test_*.py", "*_test.py", "tests.py"]
-addopts = "-n auto --cov=. --cov-fail-under=0 --cov-report=term-missing"
+addopts = "-n auto --cov=. --cov-fail-under=90 --cov-report=term-missing"
 markers = ["debug: mark test for local debugging and run it in isolation"]
