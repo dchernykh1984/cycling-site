@@ -61,19 +61,32 @@ The dev server runs at:
 
 ## Environment variables
 
-See `.env.example` for the template.
+Local development needs no environment variables by default: `dev.py` ships an
+insecure `SECRET_KEY`, `ALLOWED_HOSTS = ["*"]`, and connects to a local
+PostgreSQL database.
 
-| Variable        | Required in prod | Dev default                             |
-| --------------- | ---------------- | --------------------------------------- |
-| `DATABASE_URL`  | no               | `postgres://localhost/cycling_site_dev` |
-| `SECRET_KEY`    | yes              | hardcoded insecure marker               |
-| `ALLOWED_HOSTS` | yes              | `["*"]`                                 |
+| Variable       | Used in | Default                                 |
+| -------------- | ------- | --------------------------------------- |
+| `DATABASE_URL` | dev     | `postgres://localhost/cycling_site_dev` |
+
+Production variables are provided automatically by CodeRed - see
+[Deployment](#deployment).
 
 ## Deployment
 
-Auto-deploys to [CodeRed Cloud](https://www.codered.cloud/) via GitHub Actions
-on push to `main`. CodeRed provides `DATABASE_URL` automatically; set
-`SECRET_KEY` and `ALLOWED_HOSTS` in the CodeRed dashboard.
+Auto-deploys to [CodeRed Cloud](https://www.codered.cloud/) via GitHub Actions:
+a push to `main` triggers the CI workflow, and a successful run triggers the
+deploy workflow.
+
+In production the project reads its configuration from the environment variables
+CodeRed provides automatically:
+
+- `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` - PostgreSQL connection
+- `RANDOM_SECRET_KEY` - Django secret key (or set your own `SECRET_KEY`)
+- `VIRTUAL_HOST` - the site domain, used for `ALLOWED_HOSTS` and the Wagtail
+  admin base URL
+
+No manual database or host configuration is required in the dashboard.
 
 Live site: <https://cycling.codered.cloud>.
 
