@@ -7,6 +7,12 @@ DEBUG = False
 SECRET_KEY = os.environ.get("SECRET_KEY") or os.environ["RANDOM_SECRET_KEY"]
 ALLOWED_HOSTS = [os.environ["VIRTUAL_HOST"]]
 
+# Only send session and CSRF cookies over HTTPS. CodeRed Cloud serves the site
+# over HTTPS, so this is safe. See Django's deployment checklist:
+# https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/#https
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
 # CodeRed Cloud provides PostgreSQL connection details via these env vars
 # (not via DATABASE_URL). The database requires SSL and uses UTF8.
 # See https://www.codered.cloud/docs/django/environment/
