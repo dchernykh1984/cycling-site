@@ -1,0 +1,24 @@
+name: Deploy to CodeRed
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # allow manual runs from the GitHub UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install CodeRed CLI
+        run: pip install cr
+
+      - name: Deploy
+        run: cr deploy cycling
+        env:
+          CR_TOKEN: ${{ secrets.CR_TOKEN }}
