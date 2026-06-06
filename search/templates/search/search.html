@@ -1,38 +1,48 @@
 {% extends "base.html" %}
-{% load static wagtailcore_tags %}
+{% load i18n wagtailcore_tags %}
 
-{% block body_class %}template-searchresults{% endblock %}
-
-{% block title %}Search{% endblock %}
+{% block title %}{% trans "Search" %}{% endblock %}
 
 {% block content %}
-<h1>Search</h1>
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <h1 class="mb-4">{% trans "Search" %}</h1>
 
-<form action="{% url 'search' %}" method="get">
-    <input type="text" name="query"{% if search_query %} value="{{ search_query }}"{% endif %}>
-    <input type="submit" value="Search" class="button">
-</form>
+        <form action="{% url 'search' %}" method="get" class="mb-4">
+            <div class="input-group">
+                <input type="text" name="query" class="form-control"
+                    placeholder="{% trans 'Search...' %}"
+                    {% if search_query %}value="{{ search_query }}"{% endif %}>
+                <button type="submit" class="btn btn-primary">{% trans "Search" %}</button>
+            </div>
+        </form>
 
-{% if search_results %}
-<ul>
-    {% for result in search_results %}
-    <li>
-        <h4><a href="{% pageurl result %}">{{ result }}</a></h4>
-        {% if result.search_description %}
-        {{ result.search_description }}
+        {% if search_results %}
+        <ul class="list-unstyled">
+            {% for result in search_results %}
+            <li class="mb-3 pb-3 border-bottom">
+                <h5><a href="{% pageurl result %}">{{ result }}</a></h5>
+                {% if result.search_description %}
+                <p class="text-muted mb-0">{{ result.search_description }}</p>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="d-flex gap-2 mt-3">
+            {% if search_results.has_previous %}
+            <a href="{% url 'search' %}?query={{ search_query|urlencode }}&page={{ search_results.previous_page_number }}"
+               class="btn btn-outline-secondary btn-sm">&#8592; {% trans "Previous" %}</a>
+            {% endif %}
+            {% if search_results.has_next %}
+            <a href="{% url 'search' %}?query={{ search_query|urlencode }}&page={{ search_results.next_page_number }}"
+               class="btn btn-outline-secondary btn-sm">{% trans "Next" %} &#8594;</a>
+            {% endif %}
+        </div>
+
+        {% elif search_query %}
+        <p class="text-muted">{% trans "No results found" %}</p>
         {% endif %}
-    </li>
-    {% endfor %}
-</ul>
-
-{% if search_results.has_previous %}
-<a href="{% url 'search' %}?query={{ search_query|urlencode }}&amp;page={{ search_results.previous_page_number }}">Previous</a>
-{% endif %}
-
-{% if search_results.has_next %}
-<a href="{% url 'search' %}?query={{ search_query|urlencode }}&amp;page={{ search_results.next_page_number }}">Next</a>
-{% endif %}
-{% elif search_query %}
-No results found
-{% endif %}
+    </div>
+</div>
 {% endblock %}

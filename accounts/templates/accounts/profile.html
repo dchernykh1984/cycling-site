@@ -1,22 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Profile — Cycling Site</title>
-</head>
-<body>
-    <div class="container" style="max-width:640px;margin:60px auto;padding:0 16px">
-        <h1>Profile</h1>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>Role:</strong> {{ user.get_role_display }}</p>
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Profile" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <h1 class="mb-4">{% trans "Profile" %}</h1>
+        <div class="card mb-4">
+            <div class="card-body">
+                <p class="mb-1"><strong>{% trans "Email" %}:</strong> {{ user.email }}</p>
+                <p class="mb-0"><strong>{% trans "Role" %}:</strong> {{ user.get_role_display }}</p>
+            </div>
+        </div>
+
         {% if not has_verified_email %}
-        <p style="color:#b00">Your email is not confirmed yet. Check your inbox and confirm it to become a participant.</p>
+        <div class="alert alert-warning" role="alert">
+            {% trans "Your email is not confirmed yet. Check your inbox and confirm it to become a participant." %}
+        </div>
         {% endif %}
-        <h2>My submissions</h2>
-        <p><em>Submissions will appear here once the calendar and article features are implemented.</em></p>
+
+        <div class="card mb-4">
+            <div class="card-header">{% trans "Appearance" %}</div>
+            <div class="card-body d-flex align-items-center gap-3">
+                <span>{% trans "Theme" %}:</span>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">
+                    <span class="theme-icon">&#9790;</span>
+                    <span class="theme-label"></span>
+                </button>
+            </div>
+        </div>
+
+        <h2 class="h5 mb-3">{% trans "My submissions" %}</h2>
+        <p class="text-muted">
+            <em>{% trans "Submissions will appear here once the calendar and article features are implemented." %}</em>
+        </p>
         <hr>
-        <a href="{% url 'account_logout' %}">Log out</a>
+        <a href="{% url 'account_logout' %}" class="btn btn-outline-secondary btn-sm">{% trans "Log out" %}</a>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

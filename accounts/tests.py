@@ -235,7 +235,7 @@ class ProfileViewTests(TestCase):
     def test_profile_shows_unverified_warning_without_confirmed_email(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("account_profile"))
-        self.assertContains(response, "not confirmed")
+        self.assertContains(response, "alert-warning")
 
     def test_profile_hides_unverified_warning_when_email_confirmed(self):
         from allauth.account.models import EmailAddress
@@ -243,7 +243,7 @@ class ProfileViewTests(TestCase):
         EmailAddress.objects.create(user=self.user, email=self.user.email, verified=True, primary=True)
         self.client.force_login(self.user)
         response = self.client.get(reverse("account_profile"))
-        self.assertNotContains(response, "not confirmed")
+        self.assertNotContains(response, "alert-warning")
 
 
 class RegistrationFlowTests(TestCase):
@@ -582,3 +582,55 @@ class MigrateRepairCommandTests(TestCase):
         with patch("accounts.management.commands.migrate.MigrationRecorder") as mock_cls:
             mock_cls.return_value.applied_migrations.side_effect = Exception("DB unavailable")
             _repair_accounts_initial_if_needed()
+
+
+class ThemeFieldTests(TestCase):
+    def test_default_theme_is_light(self):
+        user = make_user(username="theme_user")
+        self.assertEqual(user.theme, "light")
+
+    def test_theme_can_be_set_to_dark(self):
+        user = make_user(username="dark_user")
+        user.theme = "dark"
+        user.save(update_fields=["theme"])
+        user.refresh_from_db()
+        self.assertEqual(user.theme, "dark")
+
+
+class ThemeUpdateViewTests(TestCase):
+    def setUp(self):
+        self.user = make_user(username="theme_view_user")
+        self.client.login(username="theme_view_user@example.com", password="Pass1234!")
+
+    def test_update_theme_to_dark(self):
+        import json
+
+        response = self.client.post(
+            reverse("account_theme"),
+            data=json.dumps({"theme": "dark"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.theme, "dark")
+
+    def test_update_theme_rejects_invalid_value(self):
+        import json
+
+        response = self.client.post(
+            reverse("account_theme"),
+            data=json.dumps({"theme": "rainbow"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_theme_requires_auth(self):
+        import json
+
+        self.client.logout()
+        response = self.client.post(
+            reverse("account_theme"),
+            data=json.dumps({"theme": "dark"}),
+            content_type="application/json",
+        )
+        self.assertIn(response.status_code, [302, 403])

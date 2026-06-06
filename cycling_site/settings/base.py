@@ -181,6 +181,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "ru"
 
+LOCALE_PATHS = [PROJECT_DIR / "locale"]
+
 LANGUAGES = [
     ("ru", "Russian"),
     ("kk", "Kazakh"),

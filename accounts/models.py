@@ -19,6 +19,12 @@ class User(AbstractUser):
         db_index=True,
     )
 
+    theme = models.CharField(
+        max_length=10,
+        choices=[("light", "Light"), ("dark", "Dark")],
+        default="light",
+    )
+
     ROLE_HIERARCHY: ClassVar[list[str]] = [
         Role.GUEST,
         Role.PARTICIPANT,

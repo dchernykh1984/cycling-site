@@ -141,3 +141,30 @@ class LocaleFallbackMiddlewareTests(TestCase):
         request.path_info = "/missing-page/"
         response = mw(request)
         self.assertEqual(response.status_code, 404)
+
+
+class AboutPageTests(WagtailPageTestCase):
+    def setUp(self):
+        from home.models import AboutPage
+
+        root_page = Page.get_first_root_node()
+        Site.objects.create(hostname="testsite2", root_page=root_page, is_default_site=True)
+        home = HomePage(title="Home")
+        root_page.add_child(instance=home)
+        self.about = AboutPage(title="About")
+        home.add_child(instance=self.about)
+
+    def test_about_page_is_renderable(self):
+        self.assertPageIsRenderable(self.about)
+
+    def test_about_page_template_used(self):
+        response = self.client.get(self.about.url)
+        self.assertTemplateUsed(response, "home/about_page.html")
+
+    def test_about_page_slug_is_synchronized(self):
+        from home.models import AboutPage
+
+        synchronized_slugs = [
+            f.field_name for f in AboutPage.override_translatable_fields if isinstance(f, SynchronizedField)
+        ]
+        self.assertIn("slug", synchronized_slugs)
