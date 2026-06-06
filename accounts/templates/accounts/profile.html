@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Profile — Cycling Site</title>
+</head>
+<body>
+    <div class="container" style="max-width:640px;margin:60px auto;padding:0 16px">
+        <h1>Profile</h1>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Role:</strong> {{ user.get_role_display }}</p>
+        {% if not has_verified_email %}
+        <p style="color:#b00">Your email is not confirmed yet. Check your inbox and confirm it to become a participant.</p>
+        {% endif %}
+        <h2>My submissions</h2>
+        <p><em>Submissions will appear here once the calendar and article features are implemented.</em></p>
+        <hr>
+        <a href="{% url 'account_logout' %}">Log out</a>
+    </div>
+</body>
+</html>
