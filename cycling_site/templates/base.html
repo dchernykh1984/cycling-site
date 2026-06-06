@@ -1,7 +1,8 @@
-{% load static wagtailcore_tags wagtailuserbar %}
+{% load static i18n wagtailcore_tags wagtailuserbar %}
+{% get_current_language as CURRENT_LANGUAGE %}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ CURRENT_LANGUAGE }}">
     <head>
         <meta charset="utf-8" />
         <title>
@@ -34,6 +35,28 @@
 
     <body class="{% block body_class %}{% endblock %}">
         {% wagtailuserbar %}
+
+        <nav class="language-switcher">
+            {% if page %}
+                {# For Wagtail pages: only show locales that have a live translation #}
+                {% for translation in page.get_translations.live %}
+                    <a href="{{ translation.url }}">{{ translation.locale.language_code|upper }}</a>
+                {% endfor %}
+            {% else %}
+                {# Non-page context (search, auth forms): show all configured languages #}
+                {% get_available_languages as available_languages %}
+                {% for lang_code, lang_name in available_languages %}
+                    {% if lang_code != CURRENT_LANGUAGE %}
+                        <form action="{% url 'set_language' %}" method="post" style="display:inline">
+                            {% csrf_token %}
+                            <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                            <input name="language" type="hidden" value="{{ lang_code }}">
+                            <button type="submit">{{ lang_name }}</button>
+                        </form>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </nav>
 
         {% block content %}{% endblock %}
 
