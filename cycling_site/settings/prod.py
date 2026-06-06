@@ -40,7 +40,7 @@ EMAIL_HOST = "smtp.resend.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "resend"
-EMAIL_HOST_PASSWORD = os.environ["RESEND_API_KEY"]
+EMAIL_HOST_PASSWORD = os.environ.get("RESEND_API_KEY", "")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", f"noreply@{os.environ.get('VIRTUAL_HOST', 'localhost')}")
 
 try:
