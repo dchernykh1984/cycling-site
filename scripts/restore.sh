@@ -258,6 +258,8 @@ PGPASSWORD="$DB_PASSWORD" pg_restore \
     --clean \
     --if-exists \
     --no-password \
+    --no-acl \
+    --no-owner \
     "$DB_DUMP"
 
 echo "Database restored."
