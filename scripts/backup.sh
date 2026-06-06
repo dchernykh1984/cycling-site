@@ -182,6 +182,8 @@ PGPASSWORD="$DB_PASSWORD" pg_dump \
     --username="$DB_USER" \
     --format=custom \
     --no-password \
+    --no-acl \
+    --no-owner \
     "$DB_NAME" \
     --file="$DB_DUMP"
 
