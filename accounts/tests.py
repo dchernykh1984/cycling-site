@@ -530,6 +530,45 @@ class DjangoAdminRoleEnforcementTests(TestCase):
         self.assertTrue(target.is_staff)
 
 
+class InitialSuperuserMigrationTests(TestCase):
+    @staticmethod
+    def _get_fn():
+        import importlib
+
+        module = importlib.import_module("accounts.migrations.0002_initial_superuser")
+        return module.create_initial_superuser
+
+    def test_creates_superuser_when_env_vars_set(self):
+        fn = self._get_fn()
+        env = {
+            "INITIAL_SUPERUSER_USERNAME": "deploy_admin",
+            "INITIAL_SUPERUSER_PASSWORD": "StrongPass999!",
+        }
+        with patch.dict("os.environ", env, clear=False):
+            fn(apps=None, schema_editor=None)
+
+        user = User.objects.get(username="deploy_admin")
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_staff)
+
+    def test_skips_when_env_vars_missing(self):
+        fn = self._get_fn()
+        with patch.dict("os.environ", {}, clear=True):
+            fn(apps=None, schema_editor=None)
+        self.assertFalse(User.objects.filter(username="deploy_admin").exists())
+
+    def test_idempotent_when_user_already_exists(self):
+        fn = self._get_fn()
+        User.objects.create_superuser(username="existing_su", email="su@localhost", password="x")
+        env = {
+            "INITIAL_SUPERUSER_USERNAME": "existing_su",
+            "INITIAL_SUPERUSER_PASSWORD": "AnotherPass!",
+        }
+        with patch.dict("os.environ", env, clear=False):
+            fn(apps=None, schema_editor=None)
+        self.assertEqual(User.objects.filter(username="existing_su").count(), 1)
+
+
 class MigrateRepairCommandTests(TestCase):
     def test_repair_is_noop_when_accounts_migration_already_applied(self):
         from accounts.management.commands.migrate import _repair_accounts_initial_if_needed
