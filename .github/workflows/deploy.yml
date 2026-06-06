@@ -30,3 +30,21 @@ jobs:
         run: cr deploy cycling
         env:
           CR_TOKEN: ${{ secrets.CR_TOKEN }}
+
+      - name: Health check
+        env:
+          CR_TOKEN: ${{ secrets.CR_TOKEN }}
+        run: |
+          SITE_URL=$(cr list | awk 'NR>1 && $1=="cycling" {print $3}')
+          echo "Checking $SITE_URL"
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL")
+            echo "Attempt $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "Site is up"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Health check failed: site did not return 200 after 2 minutes"
+          exit 1
