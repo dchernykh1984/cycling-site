@@ -1,0 +1,81 @@
+# Russian translations for cycling-site
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ru\n"
+
+msgid "Cycling"
+msgstr "Велоспорт"
+
+msgid "Toggle navigation"
+msgstr "Меню"
+
+msgid "News"
+msgstr "Новости"
+
+msgid "Calendar"
+msgstr "Календарь"
+
+msgid "Knowledge Base"
+msgstr "База знаний"
+
+msgid "About"
+msgstr "О нас"
+
+msgid "Search"
+msgstr "Поиск"
+
+msgid "Switch theme"
+msgstr "Сменить тему"
+
+msgid "Profile"
+msgstr "Профиль"
+
+msgid "Admin"
+msgstr "Администратор"
+
+msgid "Log out"
+msgstr "Выйти"
+
+msgid "Log in"
+msgstr "Войти"
+
+msgid "Register"
+msgstr "Регистрация"
+
+msgid "Cycling events"
+msgstr "Соревнования по велоспорту"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Role"
+msgstr "Роль"
+
+msgid "Appearance"
+msgstr "Внешний вид"
+
+msgid "Theme"
+msgstr "Тема"
+
+msgid "My submissions"
+msgstr "Мои материалы"
+
+msgid "Submissions will appear here once the calendar and article features are implemented."
+msgstr "Материалы появятся здесь после реализации функций календаря и статей."
+
+msgid "Your email is not confirmed yet. Check your inbox and confirm it to become a participant."
+msgstr "Email ещё не подтверждён. Проверьте почту и подтвердите адрес, чтобы стать участником."
+
+msgid "Search..."
+msgstr "Поиск..."
+
+msgid "No results found"
+msgstr "Ничего не найдено"
+
+msgid "Previous"
+msgstr "Назад"
+
+msgid "Next"
+msgstr "Вперёд"

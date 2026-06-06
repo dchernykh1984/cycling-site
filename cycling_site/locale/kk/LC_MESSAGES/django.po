@@ -1,0 +1,81 @@
+# Kazakh translations for cycling-site
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: kk\n"
+
+msgid "Cycling"
+msgstr "Велоспорт"
+
+msgid "Toggle navigation"
+msgstr "Мәзір"
+
+msgid "News"
+msgstr "Жаналыктар"
+
+msgid "Calendar"
+msgstr "Кунтiзбе"
+
+msgid "Knowledge Base"
+msgstr "Бiлiм кiтапханасы"
+
+msgid "About"
+msgstr "Бiз туралы"
+
+msgid "Search"
+msgstr "Iздеу"
+
+msgid "Switch theme"
+msgstr "Такырыпты ауыстыру"
+
+msgid "Profile"
+msgstr "Профиль"
+
+msgid "Admin"
+msgstr "Акiмшi"
+
+msgid "Log out"
+msgstr "Шыгу"
+
+msgid "Log in"
+msgstr "Кiру"
+
+msgid "Register"
+msgstr "Тiркелу"
+
+msgid "Cycling events"
+msgstr "Велоспорт жарыстары"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Role"
+msgstr "Рол"
+
+msgid "Appearance"
+msgstr "Корiнiс"
+
+msgid "Theme"
+msgstr "Такырып"
+
+msgid "My submissions"
+msgstr "Менiн материалдарым"
+
+msgid "Submissions will appear here once the calendar and article features are implemented."
+msgstr "Материалдар кунтiзбе мен макала функциялары iске асырылганнан кейiн осында пайда болады."
+
+msgid "Your email is not confirmed yet. Check your inbox and confirm it to become a participant."
+msgstr "Email-дi растамадыныз. Катысушы болу ушiн хабарларды тексерiп, мекен-жайды растаныз."
+
+msgid "Search..."
+msgstr "Iздеу..."
+
+msgid "No results found"
+msgstr "Ештенiе табылмады"
+
+msgid "Previous"
+msgstr "Артка"
+
+msgid "Next"
+msgstr "Алга"

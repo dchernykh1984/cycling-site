@@ -5,4 +5,5 @@ from accounts import views
 
 urlpatterns = [
     path("profile/", login_required(views.ProfileView.as_view()), name="account_profile"),
+    path("theme/", views.ThemeUpdateView.as_view(), name="account_theme"),
 ]
