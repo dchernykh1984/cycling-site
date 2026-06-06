@@ -106,3 +106,7 @@ desktop.ini
 
 #local site database
 db.sqlite3
+
+# ===== Backups =====
+
+backup/

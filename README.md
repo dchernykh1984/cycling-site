@@ -90,6 +90,64 @@ No manual database or host configuration is required in the dashboard.
 
 Live site: <https://cycling.codered.cloud>.
 
+## Backup and restore
+
+Scripts live in `scripts/`. They require `pg_dump` / `pg_restore` (PostgreSQL
+client tools) to be installed, and must be run from the project root with
+[Poetry](https://python-poetry.org/) available on `PATH` (the scripts call
+`poetry run python manage.py` internally).
+
+### Local backup
+
+```bash
+./scripts/backup.sh
+```
+
+Prompts for a DB password (leave blank if using peer auth), then writes a
+timestamped directory to `backup/YYYY-MM-DD_HH-MM/` containing:
+
+- `db.dump` - PostgreSQL custom-format dump
+- `media.tar.gz` - contents of the `media/` directory
+- `manifest.json` - timestamp, git commit, applied migrations, SHA-256 hashes
+
+### Production backup
+
+```bash
+# Requires: DB_HOST, DB_NAME, DB_USER in .env; CR_TOKEN in env
+./scripts/backup.sh --production
+```
+
+Prompts for `DB_PASSWORD` interactively (not stored in `.env`). Downloads media
+via `cr download`. Connects to the production database over SSL (`PGSSLMODE=require`).
+
+The remote media path defaults to `/www/media`. If the actual path on the server
+differs, set `CR_MEDIA_REMOTE_PATH` in `.env` (verify via `cr sftp cycling`).
+
+### Local restore
+
+```bash
+./scripts/restore.sh backup/2024-06-01_14-30
+```
+
+Validates SHA-256 checksums, then restores the database and media, and runs
+`manage.py migrate`. Refuses to run if `DB_HOST` is not `localhost` / `127.0.0.1`.
+
+### Production restore
+
+```bash
+./scripts/restore.sh backup/2024-06-01_14-30 --production-restore
+```
+
+Prompts for `DB_PASSWORD` and requires you to type the DB host name to confirm
+before any destructive action is taken.
+
+> **Media note:** production media is **not** restored by this script - the
+> archive cannot be uploaded to the remote server locally. After a successful
+> DB restore, upload `media.tar.gz` from the backup directory to the server
+> manually (e.g. via `cr sftp cycling`).
+
+The `backup/` directory is git-ignored.
+
 ## License
 
 See [LICENSE](LICENSE).
