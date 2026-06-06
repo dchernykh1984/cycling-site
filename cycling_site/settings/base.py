@@ -35,6 +35,9 @@ INSTALLED_APPS = [
     "accounts",
     "home",
     "search",
+    "modeltranslation",  # before apps it will translate and before django.contrib.admin
+    "wagtail_localize",  # before wagtail.admin
+    "wagtail_localize.locales",  # replaces wagtail.locales
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
     "wagtail.embeds",
@@ -109,6 +112,7 @@ SOCIALACCOUNT_PROVIDERS = {
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -116,6 +120,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "cycling_site.middleware.LocaleFallbackMiddleware",
 ]
 
 ROOT_URLCONF = "cycling_site.urls"
@@ -174,7 +179,24 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
+
+LANGUAGES = [
+    ("ru", "Russian"),
+    ("kk", "Kazakh"),
+    ("en", "English"),
+]
+
+MODELTRANSLATION_LANGUAGES = ("ru", "kk", "en")
+MODELTRANSLATION_DEFAULT_LANGUAGE = "ru"
+MODELTRANSLATION_FALLBACK_LANGUAGES = {"default": ("ru", "en", "kk")}
+
+WAGTAIL_I18N_ENABLED = True
+WAGTAIL_CONTENT_LANGUAGES = [
+    ("ru", "Russian"),
+    ("kk", "Kazakh"),
+    ("en", "English"),
+]
 
 TIME_ZONE = "UTC"
 
