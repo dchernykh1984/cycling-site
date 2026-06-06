@@ -528,3 +528,18 @@ class DjangoAdminRoleEnforcementTests(TestCase):
         )
         target.refresh_from_db()
         self.assertTrue(target.is_staff)
+
+
+class MigrateRepairCommandTests(TestCase):
+    def test_repair_is_noop_when_accounts_migration_already_applied(self):
+        from accounts.management.commands.migrate import _repair_accounts_initial_if_needed
+
+        # Test DB has all migrations applied - function should return silently.
+        _repair_accounts_initial_if_needed()
+
+    def test_repair_handles_recorder_exception_gracefully(self):
+        from accounts.management.commands.migrate import _repair_accounts_initial_if_needed
+
+        with patch("accounts.management.commands.migrate.MigrationRecorder") as mock_cls:
+            mock_cls.return_value.applied_migrations.side_effect = Exception("DB unavailable")
+            _repair_accounts_initial_if_needed()
