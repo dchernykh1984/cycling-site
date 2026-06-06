@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block head_title %}{% endblock %} — Cycling Site</title>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="container" style="max-width:480px;margin:60px auto;padding:0 16px">
+        {% if messages %}
+        <ul style="list-style:none;padding:0;margin-bottom:16px">
+            {% for message in messages %}
+            <li style="padding:8px 12px;margin-bottom:8px;background:#f0f4ff;border-left:4px solid #4a6cf7">
+                {{ message }}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

@@ -29,7 +29,10 @@ environ.Env.read_env(BASE_DIR / ".env")
 
 # Application definition
 
+AUTH_USER_MODEL = "accounts.User"
+
 INSTALLED_APPS = [
+    "accounts",
     "home",
     "search",
     "wagtail.contrib.forms",
@@ -53,7 +56,55 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.github",
+    "allauth.socialaccount.providers.strava",
+    "allauth.socialaccount.providers.telegram",
 ]
+
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+# django-allauth settings
+ACCOUNT_ADAPTER = "accounts.adapters.AccountAdapter"
+SOCIALACCOUNT_ADAPTER = "accounts.adapters.SocialAccountAdapter"
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
+ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
+ACCOUNT_RATE_LIMITS = {
+    "confirm_email": "1/3m",
+    "login": "10/5m",
+    "signup": "5/h",
+    "reset_password": "5/h",
+    "reset_password_from_key": "5/h",
+}
+ACCOUNT_SESSION_REMEMBER = True
+LOGIN_REDIRECT_URL = "/"
+ACCOUNT_LOGOUT_REDIRECT_URL = "/"
+
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_QUERY_EMAIL = True
+# EMAIL_AUTHENTICATION enabled only for providers that guarantee verified emails.
+# Google and GitHub both verify email ownership before providing it in the OAuth response.
+# Strava and Telegram do not provide a verified email; keep False to avoid account takeover risk.
+# Telegram has no email concept at all: social login leaves the user as guest until they
+# add and confirm an email address manually.
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {"EMAIL_AUTHENTICATION": True},
+    "github": {"EMAIL_AUTHENTICATION": True},
+    "strava": {"EMAIL_AUTHENTICATION": False},
+    "telegram": {"EMAIL_AUTHENTICATION": False},
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -64,6 +115,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "cycling_site.urls"
