@@ -1,0 +1,26 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n %}
+
+{% block titletag %}{% trans "Reject submission" %}{% endblock %}
+
+{% block content %}
+<div class="nice-padding">
+    <h1>{% trans "Reject submission" %}: {{ submission.title }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="field">
+            <label class="field__label" for="reviewer_note">
+                {% trans "Reviewer note (shown to author, optional)" %}
+            </label>
+            <div class="field__input">
+                <textarea name="reviewer_note" id="reviewer_note"
+                    class="form-control" rows="4"></textarea>
+            </div>
+        </div>
+        <div class="footer">
+            <button type="submit" class="button warning">{% trans "Reject" %}</button>
+            <a href="{{ cancel_url }}" class="button button-secondary">{% trans "Cancel" %}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
