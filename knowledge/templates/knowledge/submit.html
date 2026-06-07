@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Submit article" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <h1 class="mb-4">{% trans "Submit article" %}</h1>
+        <p class="text-muted mb-4">
+            {% trans "Your submission will be reviewed by the editorial team before publishing." %}
+        </p>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label">
+                    {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+                </label>
+                {% if field.errors %}
+                <div class="text-danger small mb-1">
+                    {% for error in field.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+                {% if field.widget_type == 'select' %}
+                <select name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+                    class="form-select{% if field.errors %} is-invalid{% endif %}">
+                    {% for val, label in field.field.choices %}
+                    <option value="{{ val }}"{% if field.value == val %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% elif field.widget_type == 'textarea' %}
+                <textarea name="{{ field.html_name }}" id="{{ field.id_for_label }}" rows="10"
+                    class="form-control{% if field.errors %} is-invalid{% endif %}">{{ field.value|default:'' }}</textarea>
+                {% else %}
+                <input type="{{ field.field.widget.input_type }}"
+                    name="{{ field.html_name }}"
+                    id="{{ field.id_for_label }}"
+                    value="{{ field.value|default:'' }}"
+                    class="form-control{% if field.errors %} is-invalid{% endif %}">
+                {% endif %}
+                {% if field.help_text %}
+                <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
+                <a href="{% url 'account_profile' %}" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

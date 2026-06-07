@@ -1,4 +1,4 @@
-{% load static i18n wagtailcore_tags wagtailuserbar home_tags %}
+{% load static i18n wagtailcore_tags wagtailuserbar home_tags knowledge_tags %}
 {% get_current_language as CURRENT_LANGUAGE %}
 <!DOCTYPE html>
 <html lang="{{ CURRENT_LANGUAGE }}"{% if request.user.is_authenticated %} data-bs-theme="{{ request.user.theme }}"{% endif %}>
@@ -47,8 +47,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#">{% trans "Calendar" %}</a>
                     </li>
+                    {% get_knowledge_index_url as knowledge_url %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">{% trans "Knowledge Base" %}</a>
+                        <a class="nav-link" href="{% if knowledge_url %}{{ knowledge_url }}{% else %}#{% endif %}">{% trans "Knowledge Base" %}</a>
                     </li>
                     {% get_about_url as about_url %}
                     {% if about_url %}

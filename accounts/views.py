@@ -14,6 +14,9 @@ class ProfileView(TemplateView):
         context = super().get_context_data(**kwargs)
         context["user"] = self.request.user
         context["has_verified_email"] = EmailAddress.objects.filter(user=self.request.user, verified=True).exists()
+        from knowledge.models import DraftSubmission
+
+        context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
         return context
 
 

@@ -15,6 +15,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("i18n/", include("django.conf.urls.i18n")),
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("allauth.urls")),
+    path("knowledge/", include("knowledge.urls")),
 ]
 
 
