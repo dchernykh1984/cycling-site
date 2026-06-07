@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "locations",
     "news",
     "calendar_app",
+    "protocols",
     "modeltranslation",  # before apps it will translate and before django.contrib.admin
     "wagtail_localize",  # before wagtail.admin
     "wagtail_localize.locales",  # replaces wagtail.locales
@@ -262,6 +263,8 @@ WAGTAILSEARCH_BACKENDS = {
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 WAGTAILADMIN_BASE_URL = "http://example.com"
+
+MAX_PROTOCOL_SIZE_MB = env.int("MAX_PROTOCOL_SIZE_MB", default=5)
 
 # Allowed file extensions for documents in the document library.
 # This can be omitted to allow all files, but note that this may present a security risk

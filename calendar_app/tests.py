@@ -201,16 +201,50 @@ class CompetitionListViewTests(TestCase):
 
 class CompetitionDetailViewTests(TestCase):
     def setUp(self):
-        self.comp = _make_competition(status=Competition.Status.APPROVED)
+        self.owner = _make_user("owner@example.com", User.Role.PARTICIPANT)
+        self.comp = _make_competition(status=Competition.Status.APPROVED, submitted_by=self.owner)
         self.pending = _make_competition("Pending", status=Competition.Status.PENDING_APPROVAL)
+        self.url = reverse("competition_detail", args=[self.comp.pk])
+
+    def _token(self):
+        return str(self.comp.upload_token)
 
     def test_detail_returns_200_for_approved(self):
-        response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
     def test_detail_returns_404_for_pending(self):
         response = self.client.get(reverse("competition_detail", args=[self.pending.pk]))
         self.assertEqual(response.status_code, 404)
+
+    def test_token_hidden_from_anonymous(self):
+        response = self.client.get(self.url)
+        self.assertNotIn(self._token(), response.content.decode())
+
+    def test_token_hidden_from_participant_non_owner(self):
+        other = _make_user("other@example.com", User.Role.PARTICIPANT)
+        self.client.force_login(other)
+        response = self.client.get(self.url)
+        self.assertNotIn(self._token(), response.content.decode())
+
+    def test_token_visible_to_submitted_by(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(self.url)
+        self.assertIn(self._token(), response.content.decode())
+
+    def test_token_visible_to_organizer(self):
+        organizer = _make_user("org@example.com", User.Role.ORGANIZER)
+        self.client.force_login(organizer)
+        response = self.client.get(self.url)
+        self.assertIn(self._token(), response.content.decode())
+
+    def test_token_visible_to_superuser(self):
+        superuser = User.objects.create_superuser(
+            username="super@example.com", email="super@example.com", password="pw"
+        )
+        self.client.force_login(superuser)
+        response = self.client.get(self.url)
+        self.assertIn(self._token(), response.content.decode())
 
 
 class SubmitCompetitionViewTests(TestCase):

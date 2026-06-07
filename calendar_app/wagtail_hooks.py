@@ -65,6 +65,10 @@ class CompetitionViewSet(SnippetViewSet):
         FieldPanel("url_route"),
         FieldPanel("url_regulations"),
         FieldPanel("url_results"),
+        MultiFieldPanel(
+            [FieldPanel("upload_token", read_only=True)],
+            heading="Protocol upload",
+        ),
     ]
 
 
