@@ -156,6 +156,18 @@ class LocationArticlePage(KnowledgeArticlePage):
         SynchronizedField("slug", overridable=False),
     ]
 
+    def get_context(self, request):
+        context = super().get_context(request)
+        try:
+            loc = self.location
+            context["linked_location"] = loc
+            if loc.lat is not None and loc.lng is not None:
+                context["linked_location_lat"] = f"{float(loc.lat):.6f}"
+                context["linked_location_lng"] = f"{float(loc.lng):.6f}"
+        except Exception:
+            context["linked_location"] = None
+        return context
+
     class Meta:
         verbose_name = "Location article"
 
