@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "home",
     "search",
     "knowledge",
+    "locations",
     "modeltranslation",  # before apps it will translate and before django.contrib.admin
     "wagtail_localize",  # before wagtail.admin
     "wagtail_localize.locales",  # replaces wagtail.locales
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
     "wagtail",
     "modelcluster",
     "taggit",
+    "treebeard",
     "django_filters",
     "django.contrib.admin",
     "django.contrib.auth",
