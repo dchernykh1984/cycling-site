@@ -97,6 +97,46 @@ class Competition(index.Indexed, models.Model):
     url_results = models.URLField(blank=True)
     upload_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
+    # --- Registration feature ---
+    registration_enabled = models.BooleanField(default=False)
+
+    class RegistrationMode(models.TextChoices):
+        SELF_ONLY = "self_only", "Self only (linked to user account)"
+        FREE = "free", "Free (can register any person)"
+
+    registration_mode = models.CharField(
+        max_length=20,
+        choices=RegistrationMode.choices,
+        default=RegistrationMode.SELF_ONLY,
+        blank=True,
+    )
+
+    class BirthDateMode(models.TextChoices):
+        YEAR = "year", "Year of birth"
+        DATE = "date", "Full birth date"
+
+    birth_date_mode = models.CharField(
+        max_length=10,
+        choices=BirthDateMode.choices,
+        default=BirthDateMode.YEAR,
+        blank=True,
+    )
+
+    require_approval = models.BooleanField(default=False)
+    require_payment = models.BooleanField(default=False)
+    allow_multiple_registrations = models.BooleanField(default=False)
+    registration_deadline = models.DateField(null=True, blank=True)
+    max_participants = models.PositiveIntegerField(null=True, blank=True)
+
+    show_unapproved_in_list = models.BooleanField(default=False)
+    show_unpaid_in_list = models.BooleanField(default=False)
+    show_approval_status_col = models.BooleanField(default=False)
+    show_payment_status_col = models.BooleanField(default=False)
+    show_additional_info_field = models.BooleanField(default=True)
+
+    # Permanent lock: True once registration is first activated; never reset to False.
+    registration_mode_locked = models.BooleanField(default=False)
+
     search_fields: ClassVar[list] = [
         index.SearchField("title_ru"),
         index.SearchField("title_kk"),
@@ -137,3 +177,31 @@ class Competition(index.Indexed, models.Model):
         self.approved_at = timezone.now()
         self.rejection_reason = reason
         self.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
+
+    def is_registration_open(self) -> bool:
+        if not self.registration_enabled:
+            return False
+        if self.status != self.Status.APPROVED:
+            return False
+        if self.registration_deadline and self.registration_deadline < datetime.date.today():
+            return False
+        return not self.is_limit_reached()
+
+    def qualified_count(self, category=None) -> int:
+        qs = self.registrations.filter(is_rejected=False)
+        if category is not None:
+            qs = qs.filter(category=category)
+        if self.require_approval:
+            qs = qs.filter(is_approved=True)
+        if self.require_payment:
+            qs = qs.filter(is_paid=True)
+        return qs.count()
+
+    def is_limit_reached(self, category=None) -> bool:
+        if category is not None:
+            if category.max_participants is None:
+                return False
+            return self.qualified_count(category=category) >= category.max_participants
+        if self.max_participants is None:
+            return False
+        return self.qualified_count() >= self.max_participants

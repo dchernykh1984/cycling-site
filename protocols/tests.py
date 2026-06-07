@@ -357,7 +357,7 @@ class ProtocolDetailTest(TestCase):
         version = ProtocolVersion(protocol=protocol, file_hash="ver1hash")
         version.html_file.save("v_p.html", ContentFile(HTML), save=True)
         response = self.client.get(f"/protocols/{protocol.pk}/")
-        self.assertContains(response, "ver1has")  # first 8 chars shown
+        self.assertContains(response, "Update history")
 
 
 class ProtocolModelTest(TestCase):

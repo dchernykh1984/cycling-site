@@ -19,11 +19,18 @@ class User(AbstractUser):
         db_index=True,
     )
 
+    class Gender(models.TextChoices):
+        MALE = "M", "Male"
+        FEMALE = "F", "Female"
+
     theme = models.CharField(
         max_length=10,
         choices=[("light", "Light"), ("dark", "Dark")],
         default="light",
     )
+
+    gender = models.CharField(max_length=1, choices=Gender.choices, blank=True, default="")
+    birth_date = models.DateField(null=True, blank=True)
 
     ROLE_HIERARCHY: ClassVar[list[str]] = [
         Role.GUEST,

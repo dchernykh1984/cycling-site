@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Register" %} — {{ competition.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-md-9 col-lg-7">
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'competition_detail' competition.pk %}">{{ competition.title }}</a></li>
+    <li class="breadcrumb-item active">{% trans "Register" %}</li>
+  </ol>
+</nav>
+
+<h1 class="mb-4">{% trans "Registration" %}: {{ competition.title }}</h1>
+
+{% if registration_closed %}
+<div class="alert alert-warning">{% trans "Registration is closed." %}</div>
+{% else %}
+
+{% if profile_incomplete %}
+<div class="alert alert-info">
+  {% trans "Please complete your profile to register:" %}
+  {% if not request.user.gender %}{% trans "gender" %}{% endif %}
+  {% if not request.user.birth_date %}{% trans "date of birth" %}{% endif %}.
+  <a href="{% url 'account_profile_edit' %}" class="alert-link">{% trans "Edit profile" %}</a>
+</div>
+{% endif %}
+
+<form method="post" id="registration-form">
+{% csrf_token %}
+
+<div class="mb-3">
+  <label class="form-label">{% trans "Last name" %} *</label>
+  {% if "last_name" in form.fields %}
+    <input type="text" name="last_name" value="{{ form.last_name.value|default:'' }}"
+           class="form-control{% if form.last_name.errors %} is-invalid{% endif %}"
+           {% if "last_name" in form.fields and form.fields.last_name.widget.attrs.readonly %}readonly{% endif %} required>
+    {% for e in form.last_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+  {% endif %}
+</div>
+
+<div class="mb-3">
+  <label class="form-label">{% trans "First name" %} *</label>
+  {% if "first_name" in form.fields %}
+    <input type="text" name="first_name" value="{{ form.first_name.value|default:'' }}"
+           class="form-control{% if form.first_name.errors %} is-invalid{% endif %}"
+           {% if form.fields.first_name.widget.attrs.readonly %}readonly{% endif %} required>
+    {% for e in form.first_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+  {% endif %}
+</div>
+
+<div class="mb-3">
+  <label class="form-label">{% trans "Gender" %} *</label>
+  <div id="gender-field">
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="gender" id="gender_m" value="M"
+             {% if form.gender.value == "M" %}checked{% endif %}
+             {% if form.fields.gender.widget.attrs.readonly %}disabled{% endif %} required>
+      <label class="form-check-label" for="gender_m">{% trans "Male" %}</label>
+    </div>
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="gender" id="gender_f" value="F"
+             {% if form.gender.value == "F" %}checked{% endif %}
+             {% if form.fields.gender.widget.attrs.readonly %}disabled{% endif %} required>
+      <label class="form-check-label" for="gender_f">{% trans "Female" %}</label>
+    </div>
+    {% if form.fields.gender.widget.attrs.readonly %}
+      <input type="hidden" name="gender" value="{{ form.gender.value }}">
+    {% endif %}
+  </div>
+  {% for e in form.gender.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+</div>
+
+{% if "birth_year" in form.fields %}
+<div class="mb-3">
+  <label class="form-label">{% trans "Year of birth" %} *</label>
+  <input type="number" name="birth_year" value="{{ form.birth_year.value|default:'' }}"
+         class="form-control{% if form.birth_year.errors %} is-invalid{% endif %}"
+         {% if form.fields.birth_year.widget.attrs.readonly %}readonly{% endif %}
+         min="1900" max="2025" required>
+  {% for e in form.birth_year.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+</div>
+{% endif %}
+
+{% if "birth_date" in form.fields %}
+<div class="mb-3">
+  <label class="form-label">{% trans "Date of birth" %} *</label>
+  <input type="date" name="birth_date" value="{{ form.birth_date.value|default:'' }}"
+         class="form-control{% if form.birth_date.errors %} is-invalid{% endif %}"
+         {% if form.fields.birth_date.widget.attrs.readonly %}readonly{% endif %} required>
+  {% for e in form.birth_date.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+</div>
+{% endif %}
+
+<div class="mb-3">
+  <label class="form-label">{% trans "Category" %} *</label>
+  <select name="category" id="category-select"
+          class="form-select{% if form.category.errors %} is-invalid{% endif %}" required>
+    <option value="">— {% trans "select" %} —</option>
+    {% for c in form.category.queryset %}
+    <option value="{{ c.pk }}" {% if form.category.value|stringformat:"s" == c.pk|stringformat:"s" %}selected{% endif %}>
+      {{ c.name }}
+    </option>
+    {% endfor %}
+  </select>
+  {% for e in form.category.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+</div>
+
+<div class="mb-3">
+  <label class="form-label">{% trans "City" %}</label>
+  <input type="text" name="city" value="{{ form.city.value|default:'' }}"
+         class="form-control" id="city-input" autocomplete="off">
+</div>
+
+<div class="mb-3">
+  <label class="form-label">{% trans "Team" %}</label>
+  <input type="text" name="team_name" value="{{ form.team_name.value|default:'' }}"
+         class="form-control" id="team-input" autocomplete="off">
+</div>
+
+{% if "additional_info" in form.fields %}
+<div class="mb-3">
+  <label class="form-label">{% trans "Additional info" %}</label>
+  <input type="text" name="additional_info" value="{{ form.additional_info.value|default:'' }}"
+         class="form-control" maxlength="100">
+</div>
+{% endif %}
+
+{% if form.non_field_errors %}
+<div class="alert alert-danger">{{ form.non_field_errors }}</div>
+{% endif %}
+
+<button type="submit" class="btn btn-success"
+        {% if not is_free and profile_incomplete %}disabled{% endif %}>
+  {% trans "Register" %}
+</button>
+<a href="{% url 'competition_detail' competition.pk %}" class="btn btn-outline-secondary ms-2">{% trans "Cancel" %}</a>
+</form>
+
+{% if is_free %}
+<script>
+const allCategories = {{ all_categories_json|safe }};
+
+function updateCategories() {
+  const gender = document.querySelector('input[name="gender"]:checked')?.value || '';
+  const birthYearInput = document.querySelector('input[name="birth_year"]');
+  const birthDateInput = document.querySelector('input[name="birth_date"]');
+  let birthDate = null;
+  if (birthYearInput && birthYearInput.value) {
+    birthDate = new Date(parseInt(birthYearInput.value), 0, 1);
+  } else if (birthDateInput && birthDateInput.value) {
+    birthDate = new Date(birthDateInput.value);
+  }
+
+  const select = document.getElementById('category-select');
+  const current = select.value;
+  select.innerHTML = '<option value="">— выбрать —</option>';
+
+  allCategories.forEach(c => {
+    if (!c.is_open) return;
+    if (gender === 'M' && !c.male) return;
+    if (gender === 'F' && !c.female) return;
+    if (birthDate) {
+      if (c.birth_from && birthDate < new Date(c.birth_from)) return;
+      if (c.birth_to && birthDate > new Date(c.birth_to)) return;
+    }
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    if (String(c.id) === String(current)) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+document.querySelectorAll('input[name="gender"]').forEach(el => el.addEventListener('change', updateCategories));
+const byInput = document.querySelector('input[name="birth_year"]') || document.querySelector('input[name="birth_date"]');
+if (byInput) byInput.addEventListener('input', updateCategories);
+</script>
+{% endif %}
+
+<script>
+// City autocomplete
+const cityInput = document.getElementById('city-input');
+if (cityInput) {
+  cityInput.addEventListener('input', function() {
+    const q = this.value;
+    if (!q) return;
+    fetch(`{% url 'registrations:city_autocomplete' %}?q=${encodeURIComponent(q)}`)
+      .then(r => r.json()).then(data => {
+        let list = document.getElementById('city-datalist');
+        if (!list) { list = document.createElement('datalist'); list.id = 'city-datalist'; document.body.appendChild(list); cityInput.setAttribute('list','city-datalist'); }
+        list.innerHTML = data.results.map(c => `<option value="${c.name}">`).join('');
+      });
+  });
+}
+const teamInput = document.getElementById('team-input');
+if (teamInput) {
+  teamInput.addEventListener('input', function() {
+    const q = this.value;
+    if (!q) return;
+    fetch(`{% url 'registrations:team_autocomplete' %}?q=${encodeURIComponent(q)}`)
+      .then(r => r.json()).then(data => {
+        let list = document.getElementById('team-datalist');
+        if (!list) { list = document.createElement('datalist'); list.id = 'team-datalist'; document.body.appendChild(list); teamInput.setAttribute('list','team-datalist'); }
+        list.innerHTML = data.results.map(t => `<option value="${t.name}">`).join('');
+      });
+  });
+}
+</script>
+
+{% endif %}
+</div>
+</div>
+{% endblock %}

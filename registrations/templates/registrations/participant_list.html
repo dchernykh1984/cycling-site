@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Participants" %} — {{ competition.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+<div class="col-12">
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'competition_detail' competition.pk %}">{{ competition.title }}</a></li>
+    <li class="breadcrumb-item active">{% trans "Participants" %}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">{% trans "Participants" %}: {{ competition.title }}</h1>
+  {% if is_manager %}
+  <div class="d-flex gap-2">
+    {% if competition.registration_mode == "free" %}
+    <a href="{% url 'registrations:manual_add' competition.pk %}" class="btn btn-sm btn-outline-primary">
+      + {% trans "Manual add" %}
+    </a>
+    {% endif %}
+    <a href="{% url 'registrations:export_csv' competition.pk %}" class="btn btn-sm btn-outline-secondary">
+      {% trans "Export CSV" %}
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% if is_manager %}
+<div class="row mb-3 g-2">
+  <div class="col-auto">
+    <span class="badge bg-secondary">{% trans "Total qualified" %}: {{ qualified_count }}{% if max_participants %}/{{ max_participants }}{% endif %}</span>
+  </div>
+  {% for stat in category_stats %}
+  <div class="col-auto">
+    <span class="badge {% if stat.limit_reached %}bg-danger{% else %}bg-light text-dark border{% endif %}">
+      {{ stat.category.name }}: {{ stat.count }}{% if stat.category.max_participants %}/{{ stat.category.max_participants }}{% endif %}
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if registrations %}
+<div class="table-responsive">
+<table class="table table-sm table-hover">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>{% trans "Name" %}</th>
+      {% if is_manager %}<th>{% trans "Gender" %}</th><th>{% trans "Birth" %}</th>{% endif %}
+      <th>{% trans "Category" %}</th>
+      <th>{% trans "Team" %}</th>
+      <th>{% trans "City" %}</th>
+      {% if is_manager or competition.show_additional_info_field %}<th>{% trans "Info" %}</th>{% endif %}
+      {% if is_manager and competition.require_approval or competition.show_approval_status_col %}<th>{% trans "Approved" %}</th>{% endif %}
+      {% if is_manager and competition.require_payment or competition.show_payment_status_col %}<th>{% trans "Paid" %}</th>{% endif %}
+      {% if is_manager %}<th>{% trans "Rejected" %}</th><th>{% trans "Registered" %}</th><th></th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for reg in registrations %}
+    <tr {% if is_manager and reg.is_rejected %}class="table-danger"{% endif %}>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ reg.last_name }} {{ reg.first_name }}</td>
+      {% if is_manager %}
+      <td>{{ reg.gender }}</td>
+      <td>{{ reg.birth_date|date:"Y" }}</td>
+      {% endif %}
+      <td>{{ reg.category.name|default:"—" }}</td>
+      <td>{{ reg.team.name|default:"" }}</td>
+      <td>{{ reg.city }}</td>
+      {% if is_manager or competition.show_additional_info_field %}<td>{{ reg.additional_info }}</td>{% endif %}
+      {% if is_manager and competition.require_approval or competition.show_approval_status_col %}
+      <td>{% if reg.is_approved %}<span class="badge bg-success">{% trans "Yes" %}</span>{% else %}<span class="badge bg-warning text-dark">{% trans "No" %}</span>{% endif %}</td>
+      {% endif %}
+      {% if is_manager and competition.require_payment or competition.show_payment_status_col %}
+      <td>{% if reg.is_paid %}<span class="badge bg-success">{% trans "Yes" %}</span>{% else %}<span class="badge bg-secondary">{% trans "No" %}</span>{% endif %}</td>
+      {% endif %}
+      {% if is_manager %}
+      <td>{% if reg.is_rejected %}<span class="badge bg-danger">{% trans "Yes" %}</span>{% if reg.rejection_note %}<div class="small text-muted">{{ reg.rejection_note }}</div>{% endif %}{% endif %}</td>
+      <td class="small text-muted">{{ reg.registered_at|date:"d.m.Y" }}</td>
+      <td>
+        <div class="d-flex gap-1 flex-wrap">
+          {% if competition.require_approval %}
+          {% if not reg.is_approved %}
+          <form method="post" action="{% url 'registrations:approve' competition.pk reg.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-xs btn-outline-success btn-sm py-0">{% trans "Approve" %}</button>
+          </form>
+          {% endif %}
+          {% if not reg.is_rejected %}
+          <button type="button" class="btn btn-xs btn-outline-danger btn-sm py-0"
+                  data-bs-toggle="collapse" data-bs-target="#reject-{{ reg.pk }}">{% trans "Reject" %}</button>
+          {% endif %}
+          {% endif %}
+          {% if competition.require_payment and not reg.is_paid %}
+          <form method="post" action="{% url 'registrations:mark_paid' competition.pk reg.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-xs btn-outline-primary btn-sm py-0">{% trans "Mark paid" %}</button>
+          </form>
+          {% endif %}
+          <a href="{% url 'registrations:edit_registration' competition.pk reg.pk %}" class="btn btn-xs btn-outline-secondary btn-sm py-0">{% trans "Edit" %}</a>
+          <form method="post" action="{% url 'registrations:delete_registration' competition.pk reg.pk %}"
+                onsubmit="return confirm('{% trans "Delete?" %}')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-xs btn-outline-danger btn-sm py-0">{% trans "Delete" %}</button>
+          </form>
+        </div>
+        <div class="collapse mt-1" id="reject-{{ reg.pk }}">
+          <form method="post" action="{% url 'registrations:reject' competition.pk reg.pk %}" class="d-flex gap-1">
+            {% csrf_token %}
+            <input type="text" name="rejection_note" class="form-control form-control-sm"
+                   placeholder="{% trans 'Reason (optional)' %}">
+            <button type="submit" class="btn btn-danger btn-sm">{% trans "Confirm reject" %}</button>
+          </form>
+        </div>
+      </td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted">{% trans "No participants yet." %}</p>
+{% endif %}
+
+</div>
+</div>
+{% endblock %}

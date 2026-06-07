@@ -30,14 +30,42 @@
     <div class="alert alert-info mb-3" id="live-banner" role="alert">{% trans "Live — updating..." %}</div>
     {% endif %}
 
-    <div style="overflow-x: auto; width: 100%;">
+    <div class="d-flex justify-content-end mb-1">
+      <button type="button" id="fullscreen-btn" class="btn btn-sm btn-outline-secondary px-2"
+              title="{% trans 'Fullscreen' %}">&#x26F6;</button>
+    </div>
+    <div id="protocol-wrap" style="overflow-x: auto; width: 100%;">
       <iframe id="protocol-frame"
         src="{% url 'protocol_html' protocol.pk %}?v={{ protocol.file_hash }}"
-        sandbox=""
-        style="width: 100%; min-height: 600px; border: none; display: block;"
+        sandbox="allow-scripts"
+        style="width: 100%; min-height: 200px; border: none; display: block;"
         title="{% trans 'Protocol' %}">
       </iframe>
     </div>
+    <script>
+    (function () {
+      var frame = document.getElementById('protocol-frame');
+      var wrap = document.getElementById('protocol-wrap');
+      window.addEventListener('message', function (e) {
+        if (!frame || e.source !== frame.contentWindow) return;
+        if (!e.data || e.data.type !== 'protocol-resize') return;
+        var h = e.data.h, w = e.data.w;
+        if (typeof h !== 'number' || typeof w !== 'number') return;
+        h = Math.min(Math.max(h, 0), 30000);
+        w = Math.min(Math.max(w, 0), 10000);
+        frame.style.height = h + 'px';
+        var containerW = wrap ? wrap.clientWidth : 0;
+        frame.style.width = Math.max(containerW, w) + 'px';
+      });
+      var fsBtn = document.getElementById('fullscreen-btn');
+      if (fsBtn) {
+        fsBtn.addEventListener('click', function () {
+          if (frame.requestFullscreen) { frame.requestFullscreen(); }
+          else if (frame.webkitRequestFullscreen) { frame.webkitRequestFullscreen(); }
+        });
+      }
+    }());
+    </script>
 
     {% if protocol.is_live %}
     <script>
@@ -73,10 +101,10 @@
 
     {% if versions %}
     <div class="mt-4">
-      <h6 class="text-muted">{% trans "Version history" %}</h6>
+      <h6 class="text-muted">{% trans "Update history" %}</h6>
       <ul class="list-unstyled small text-muted">
         {% for v in versions %}
-        <li>{{ v.saved_at|date:"d.m.Y H:i:s" }} &mdash; <code>{{ v.file_hash|slice:":8" }}</code></li>
+        <li>{{ v.saved_at|date:"d.m.Y H:i:s" }}</li>
         {% endfor %}
       </ul>
     </div>

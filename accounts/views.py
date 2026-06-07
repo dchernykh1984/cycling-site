@@ -1,10 +1,25 @@
 import json
+from typing import ClassVar
 
 from allauth.account.models import EmailAddress
+from django import forms
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
+from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import TemplateView
+
+from accounts.models import User
+
+
+class ProfileEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields: ClassVar[list[str]] = ["first_name", "last_name", "gender", "birth_date"]
+        widgets: ClassVar[dict] = {
+            "birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "gender": forms.RadioSelect(choices=[("M", "M"), ("F", "F")]),
+        }
 
 
 class ProfileView(TemplateView):
@@ -17,7 +32,30 @@ class ProfileView(TemplateView):
         from knowledge.models import DraftSubmission
 
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
+        if self.request.user.is_authenticated:
+            context["registrations"] = self.request.user.competition_registrations.select_related(
+                "competition", "category"
+            ).order_by("-registered_at")
         return context
+
+
+class ProfileEditView(LoginRequiredMixin, View):
+    template_name = "accounts/profile_edit.html"
+
+    def get(self, request):
+        from django.shortcuts import render
+
+        form = ProfileEditForm(instance=request.user)
+        return render(request, self.template_name, {"form": form})
+
+    def post(self, request):
+        from django.shortcuts import render
+
+        form = ProfileEditForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect("account_profile")
+        return render(request, self.template_name, {"form": form})
 
 
 class ThemeUpdateView(LoginRequiredMixin, View):

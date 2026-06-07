@@ -10,7 +10,19 @@
         <div class="card mb-4">
             <div class="card-body">
                 <p class="mb-1"><strong>{% trans "Email" %}:</strong> {{ user.email }}</p>
-                <p class="mb-0"><strong>{% trans "Role" %}:</strong> {{ user.get_role_display }}</p>
+                <p class="mb-1"><strong>{% trans "Role" %}:</strong> {{ user.get_role_display }}</p>
+                {% if user.first_name or user.last_name %}
+                <p class="mb-1"><strong>{% trans "Name" %}:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+                {% endif %}
+                {% if user.gender %}
+                <p class="mb-1"><strong>{% trans "Gender" %}:</strong> {{ user.get_gender_display }}</p>
+                {% endif %}
+                {% if user.birth_date %}
+                <p class="mb-0"><strong>{% trans "Date of birth" %}:</strong> {{ user.birth_date|date:"d.m.Y" }}</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'account_profile_edit' %}" class="btn btn-sm btn-outline-primary">{% trans "Edit profile" %}</a>
             </div>
         </div>
 
@@ -78,6 +90,45 @@
         {% else %}
         <p class="text-muted small">{% trans "No submissions yet." %}</p>
         {% endif %}
+        <h2 class="h5 mb-3 mt-2">{% trans "My registrations" %}</h2>
+        {% if registrations %}
+        <div class="table-responsive mb-3">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>{% trans "Competition" %}</th>
+                        <th>{% trans "Category" %}</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Status" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in registrations %}
+                    <tr>
+                        <td>{{ reg.competition.title }}</td>
+                        <td>{{ reg.category.name|default:"—" }}</td>
+                        <td>{{ reg.registered_at|date:"d.m.Y" }}</td>
+                        <td>
+                            {% if reg.is_rejected %}
+                            <span class="badge bg-danger">{% trans "Rejected" %}</span>
+                            {% if reg.rejection_note %}
+                            <div class="text-muted small mt-1">{{ reg.rejection_note }}</div>
+                            {% endif %}
+                            {% elif reg.is_approved %}
+                            <span class="badge bg-success">{% trans "Approved" %}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{% trans "Pending" %}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted small">{% trans "No registrations yet." %}</p>
+        {% endif %}
+
         <hr>
         <a href="{% url 'account_logout' %}" class="btn btn-outline-secondary btn-sm">{% trans "Log out" %}</a>
     </div>

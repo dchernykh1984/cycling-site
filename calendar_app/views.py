@@ -7,12 +7,12 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.generic import FormView, TemplateView, View
+from django.views.generic import TemplateView, View
 
 from accounts.models import User
 from locations.models import Location
 
-from .forms import CompetitionFilterForm, RejectCompetitionForm, SubmitCompetitionForm
+from .forms import CompetitionFilterForm, RegistrationSettingsForm, RejectCompetitionForm, SubmitCompetitionForm
 from .models import Competition, CyclingDiscipline, EventType
 
 
@@ -143,6 +143,18 @@ class CompetitionDetailView(View):
             or request.user == competition.submitted_by
             or request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
         )
+        from registrations.views import can_manage
+
+        is_manager = can_manage(request.user, competition)
+        already_registered = False
+        if request.user.is_authenticated and competition.registration_mode == "self_only":
+            from registrations.models import CompetitionRegistration
+
+            already_registered = CompetitionRegistration.objects.filter(
+                competition=competition, user=request.user
+            ).exists()
+        from django.conf import settings
+
         return render(
             request,
             "calendar_app/detail.html",
@@ -150,43 +162,369 @@ class CompetitionDetailView(View):
                 "competition": competition,
                 "protocols": protocols,
                 "show_upload_token": show_upload_token,
+                "is_manager": is_manager,
+                "already_registered": already_registered,
+                "site_base_url": getattr(settings, "SITE_BASE_URL", ""),
             },
         )
 
 
-class SubmitCompetitionView(ParticipantRequiredMixin, FormView):
-    template_name = "calendar_app/submit.html"
-    form_class = SubmitCompetitionForm
-
-    def form_valid(self, form):
-        cd = form.cleaned_data
-        is_organizer = self.request.user.is_superuser or self.request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(
-            User.Role.ORGANIZER
+def _validate_deadline(form, reg_form, date_start, date_end):
+    """Add error to reg_form if registration_deadline exceeds the competition end date."""
+    deadline = reg_form.cleaned_data.get("registration_deadline")
+    if not deadline:
+        return True
+    max_date = date_end if date_end else date_start
+    if deadline > max_date:
+        label = "date end" if date_end else "date start"
+        reg_form.add_error(
+            "registration_deadline",
+            f"Registration deadline cannot be later than the competition {label}.",
         )
+        return False
+    return True
 
-        comp = Competition(
-            title_ru=cd["title"],
-            description_ru=cd.get("description", ""),
-            event_type=cd.get("event_type"),
-            discipline=cd.get("discipline"),
-            location=cd.get("location"),
-            date_start=cd["date_start"],
-            date_end=cd.get("date_end"),
-            url_announcement=cd.get("url_announcement", ""),
-            url_registration=cd.get("url_registration", ""),
-            url_route=cd.get("url_route", ""),
-            url_regulations=cd.get("url_regulations", ""),
-            url_results=cd.get("url_results", ""),
-            submitted_by=self.request.user,
-        )
-        if is_organizer:
-            comp.status = Competition.Status.APPROVED
-            comp.approved_by = self.request.user
-            comp.approved_at = timezone.now()
+
+def _apply_registration_settings(comp, reg_form, is_organizer_plus):
+    if not is_organizer_plus:
+        comp.registration_enabled = False
+        return
+    cd = reg_form.cleaned_data
+    reg_enabled = cd.get("registration_enabled", False)
+    comp.registration_enabled = reg_enabled
+    if not comp.registration_mode_locked:
+        comp.registration_mode = cd.get("registration_mode") or Competition.RegistrationMode.SELF_ONLY
+    comp.birth_date_mode = cd.get("birth_date_mode") or Competition.BirthDateMode.YEAR
+    comp.require_approval = cd.get("require_approval", False)
+    comp.require_payment = cd.get("require_payment", False)
+    effective_mode = comp.registration_mode if comp.registration_mode_locked else cd.get("registration_mode")
+    comp.allow_multiple_registrations = (
+        False if effective_mode == "self_only" else cd.get("allow_multiple_registrations", False)
+    )
+    comp.registration_deadline = cd.get("registration_deadline")
+    comp.max_participants = cd.get("max_participants")
+    comp.show_unapproved_in_list = cd.get("show_unapproved_in_list", False) if comp.require_approval else False
+    comp.show_unpaid_in_list = cd.get("show_unpaid_in_list", False) if comp.require_payment else False
+    comp.show_approval_status_col = cd.get("show_approval_status_col", False) if comp.require_approval else False
+    comp.show_payment_status_col = cd.get("show_payment_status_col", False) if comp.require_payment else False
+    comp.show_additional_info_field = cd.get("show_additional_info_field", True)
+    if reg_enabled and not comp.registration_mode_locked:
+        comp.registration_mode_locked = True
+
+
+def _save_categories(comp, reg_form):  # noqa: C901
+    import datetime as dt
+
+    from registrations.models import RegistrationCategory
+
+    cats = reg_form.get_categories()
+    for cat_data in cats:
+        cat_id = cat_data.get("id")
+        is_del = cat_data.get("is_deleted", False)
+        birth_date_mode = comp.birth_date_mode
+        birth_from = None
+        birth_to = None
+        if cat_data.get("birth_from"):
+            try:
+                if birth_date_mode == "year":
+                    birth_from = dt.date(int(cat_data["birth_from"]), 1, 1)
+                else:
+                    birth_from = dt.date.fromisoformat(cat_data["birth_from"])
+            except (ValueError, TypeError):
+                pass
+        if cat_data.get("birth_to"):
+            try:
+                if birth_date_mode == "year":
+                    birth_to = dt.date(int(cat_data["birth_to"]), 12, 31)
+                else:
+                    birth_to = dt.date.fromisoformat(cat_data["birth_to"])
+            except (ValueError, TypeError):
+                pass
+
+        if cat_id and str(cat_id).isdigit():
+            try:
+                cat = RegistrationCategory.objects.get(pk=cat_id, competition=comp)
+                if is_del:
+                    cat.is_deleted = True
+                    cat.save(update_fields=["is_deleted"])
+                    continue
+                cat.name = cat_data.get("name", cat.name)
+                cat.male = cat_data.get("male", True)
+                cat.female = cat_data.get("female", True)
+                cat.birth_from = birth_from
+                cat.birth_to = birth_to
+                cat.laps = cat_data.get("laps") or None
+                cat.bib_from = cat_data.get("bib_from") or None
+                cat.bib_to = cat_data.get("bib_to") or None
+                cat.max_participants = cat_data.get("max_participants") or None
+                cat.save()
+            except RegistrationCategory.DoesNotExist:
+                pass
         else:
-            comp.status = Competition.Status.PENDING_APPROVAL
-        comp.save()
-        return redirect("calendar_list")
+            if is_del:
+                continue
+            name = cat_data.get("name", "").strip()
+            if not name:
+                continue
+            RegistrationCategory.objects.create(
+                competition=comp,
+                name=name,
+                male=cat_data.get("male", True),
+                female=cat_data.get("female", True),
+                birth_from=birth_from,
+                birth_to=birth_to,
+                laps=cat_data.get("laps") or None,
+                bib_from=cat_data.get("bib_from") or None,
+                bib_to=cat_data.get("bib_to") or None,
+                max_participants=cat_data.get("max_participants") or None,
+            )
+
+
+class SubmitCompetitionView(ParticipantRequiredMixin, View):
+    template_name = "calendar_app/submit.html"
+
+    def _is_organizer_plus(self, user):
+        return user.is_superuser or user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
+
+    def get(self, request):
+        form = SubmitCompetitionForm()
+        reg_form = RegistrationSettingsForm()
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "reg_form": reg_form,
+                "is_organizer_plus": self._is_organizer_plus(request.user),
+            },
+        )
+
+    def post(self, request):
+        form = SubmitCompetitionForm(request.POST)
+        reg_form = RegistrationSettingsForm(request.POST)
+        is_organizer = self._is_organizer_plus(request.user)
+        if form.is_valid() and (not is_organizer or reg_form.is_valid()):
+            cd = form.cleaned_data
+            if is_organizer and not _validate_deadline(form, reg_form, cd["date_start"], cd.get("date_end")):
+                return render(
+                    request,
+                    self.template_name,
+                    {"form": form, "reg_form": reg_form, "is_organizer_plus": is_organizer},
+                )
+            comp = Competition(
+                title_ru=cd["title"],
+                description_ru=cd.get("description", ""),
+                event_type=cd.get("event_type"),
+                discipline=cd.get("discipline"),
+                location=cd.get("location"),
+                date_start=cd["date_start"],
+                date_end=cd.get("date_end"),
+                url_announcement=cd.get("url_announcement", ""),
+                url_registration=cd.get("url_registration", ""),
+                url_route=cd.get("url_route", ""),
+                url_regulations=cd.get("url_regulations", ""),
+                url_results=cd.get("url_results", ""),
+                submitted_by=request.user,
+            )
+            if is_organizer:
+                comp.status = Competition.Status.APPROVED
+                comp.approved_by = request.user
+                comp.approved_at = timezone.now()
+            else:
+                comp.status = Competition.Status.PENDING_APPROVAL
+            if is_organizer:
+                _apply_registration_settings(comp, reg_form, True)
+            else:
+                comp.registration_enabled = False
+            comp.save()
+            if is_organizer and reg_form.is_valid():
+                _save_categories(comp, reg_form)
+            return redirect("calendar_list")
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "reg_form": reg_form,
+                "is_organizer_plus": is_organizer,
+            },
+        )
+
+
+class EditCompetitionView(View):
+    template_name = "calendar_app/edit.html"
+
+    def _get_competition_or_403(self, request, pk):
+        comp = get_object_or_404(Competition, pk=pk)
+        from registrations.views import can_manage
+
+        if not can_manage(request.user, comp):
+            raise PermissionDenied
+        return comp
+
+    def get(self, request, pk):
+        comp = self._get_competition_or_403(request, pk)
+        form = SubmitCompetitionForm(
+            initial={
+                "title": comp.title,
+                "description": comp.description,
+                "event_type": comp.event_type_id,
+                "discipline": comp.discipline_id,
+                "location": comp.location_id,
+                "date_start": comp.date_start,
+                "date_end": comp.date_end,
+                "url_announcement": comp.url_announcement,
+                "url_registration": comp.url_registration,
+                "url_route": comp.url_route,
+                "url_regulations": comp.url_regulations,
+                "url_results": comp.url_results,
+            }
+        )
+        reg_form = RegistrationSettingsForm(
+            initial={
+                "registration_enabled": comp.registration_enabled,
+                "registration_mode": comp.registration_mode,
+                "birth_date_mode": comp.birth_date_mode,
+                "require_approval": comp.require_approval,
+                "require_payment": comp.require_payment,
+                "allow_multiple_registrations": comp.allow_multiple_registrations,
+                "registration_deadline": comp.registration_deadline,
+                "max_participants": comp.max_participants,
+                "show_unapproved_in_list": comp.show_unapproved_in_list,
+                "show_unpaid_in_list": comp.show_unpaid_in_list,
+                "show_approval_status_col": comp.show_approval_status_col,
+                "show_payment_status_col": comp.show_payment_status_col,
+                "show_additional_info_field": comp.show_additional_info_field,
+            }
+        )
+        import json
+
+        from registrations.models import RegistrationCategory
+
+        categories = list(
+            RegistrationCategory.objects.filter(competition=comp, is_deleted=False).values(
+                "id",
+                "name",
+                "male",
+                "female",
+                "birth_from",
+                "birth_to",
+                "laps",
+                "bib_from",
+                "bib_to",
+                "max_participants",
+            )
+        )
+        for c in categories:
+            if c["birth_from"]:
+                c["birth_from"] = (
+                    c["birth_from"].isoformat() if comp.birth_date_mode == "date" else str(c["birth_from"].year)
+                )
+            if c["birth_to"]:
+                c["birth_to"] = c["birth_to"].isoformat() if comp.birth_date_mode == "date" else str(c["birth_to"].year)
+        return render(
+            request,
+            self.template_name,
+            {
+                "competition": comp,
+                "form": form,
+                "reg_form": reg_form,
+                "categories_json": json.dumps(categories),
+                "mode_locked": comp.registration_mode_locked,
+            },
+        )
+
+    def post(self, request, pk):
+        comp = self._get_competition_or_403(request, pk)
+        form = SubmitCompetitionForm(request.POST)
+        reg_form = RegistrationSettingsForm(request.POST)
+        if form.is_valid() and reg_form.is_valid():
+            cd = form.cleaned_data
+            if not _validate_deadline(form, reg_form, cd["date_start"], cd.get("date_end")):
+                import json as _json
+
+                from registrations.models import RegistrationCategory
+
+                _cats = list(
+                    RegistrationCategory.objects.filter(competition=comp, is_deleted=False).values(
+                        "id",
+                        "name",
+                        "male",
+                        "female",
+                        "birth_from",
+                        "birth_to",
+                        "laps",
+                        "bib_from",
+                        "bib_to",
+                        "max_participants",
+                    )
+                )
+                _birth_mode = reg_form.cleaned_data.get("birth_date_mode") or comp.birth_date_mode
+                for _c in _cats:
+                    if _c["birth_from"]:
+                        _c["birth_from"] = (
+                            _c["birth_from"].isoformat() if _birth_mode == "date" else str(_c["birth_from"].year)
+                        )
+                    if _c["birth_to"]:
+                        _c["birth_to"] = (
+                            _c["birth_to"].isoformat() if _birth_mode == "date" else str(_c["birth_to"].year)
+                        )
+                return render(
+                    request,
+                    self.template_name,
+                    {
+                        "competition": comp,
+                        "form": form,
+                        "reg_form": reg_form,
+                        "categories_json": _json.dumps(_cats),
+                        "mode_locked": comp.registration_mode_locked,
+                    },
+                )
+            comp.title_ru = cd["title"]
+            comp.description_ru = cd.get("description", "")
+            comp.event_type = cd.get("event_type")
+            comp.discipline = cd.get("discipline")
+            comp.location = cd.get("location")
+            comp.date_start = cd["date_start"]
+            comp.date_end = cd.get("date_end")
+            comp.url_announcement = cd.get("url_announcement", "")
+            comp.url_registration = cd.get("url_registration", "")
+            comp.url_route = cd.get("url_route", "")
+            comp.url_regulations = cd.get("url_regulations", "")
+            comp.url_results = cd.get("url_results", "")
+            _apply_registration_settings(comp, reg_form, True)
+            comp.save()
+            _save_categories(comp, reg_form)
+            return redirect("competition_detail", pk=comp.pk)
+        import json
+
+        from registrations.models import RegistrationCategory
+
+        categories = list(
+            RegistrationCategory.objects.filter(competition=comp, is_deleted=False).values(
+                "id",
+                "name",
+                "male",
+                "female",
+                "birth_from",
+                "birth_to",
+                "laps",
+                "bib_from",
+                "bib_to",
+                "max_participants",
+            )
+        )
+        return render(
+            request,
+            self.template_name,
+            {
+                "competition": comp,
+                "form": form,
+                "reg_form": reg_form,
+                "categories_json": json.dumps(categories, default=str),
+                "mode_locked": comp.registration_mode_locked,
+            },
+        )
 
 
 class ModerationView(OrganizerRequiredMixin, TemplateView):

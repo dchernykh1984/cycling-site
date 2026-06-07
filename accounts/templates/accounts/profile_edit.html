@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Edit profile" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <h1 class="mb-4">{% trans "Edit profile" %}</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">{% trans "First name" %}</label>
+                {{ form.first_name.errors }}
+                <input type="text" name="first_name" value="{{ form.first_name.value|default:'' }}"
+                       class="form-control{% if form.first_name.errors %} is-invalid{% endif %}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{% trans "Last name" %}</label>
+                {{ form.last_name.errors }}
+                <input type="text" name="last_name" value="{{ form.last_name.value|default:'' }}"
+                       class="form-control{% if form.last_name.errors %} is-invalid{% endif %}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{% trans "Gender" %}</label>
+                {{ form.gender.errors }}
+                <div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="gender" id="gender_m" value="M"
+                               {% if form.gender.value == "M" %}checked{% endif %}>
+                        <label class="form-check-label" for="gender_m">{% trans "Male" %}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="gender" id="gender_f" value="F"
+                               {% if form.gender.value == "F" %}checked{% endif %}>
+                        <label class="form-check-label" for="gender_f">{% trans "Female" %}</label>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{% trans "Date of birth" %}</label>
+                {{ form.birth_date.errors }}
+                <input type="date" name="birth_date" value="{{ form.birth_date.value|default:'' }}"
+                       class="form-control{% if form.birth_date.errors %} is-invalid{% endif %}">
+            </div>
+            <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+            <a href="{% url 'account_profile' %}" class="btn btn-outline-secondary ms-2">{% trans "Cancel" %}</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

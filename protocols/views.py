@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -16,6 +17,48 @@ from calendar_app.models import Competition
 from .models import Protocol, ProtocolVersion
 
 _MAX_VERSIONS = 10
+
+# Strip elements that could redirect or load external code.
+# CSP (default-src 'none') already blocks most attack vectors; these regexes
+# are defense-in-depth for <script src=...>, <base>, and meta-refresh.
+_EXT_SCRIPT_RE = re.compile(
+    rb"<script\b[^>]*\bsrc\s*=[^>]*>.*?</script\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_BASE_TAG_RE = re.compile(rb"<base\b[^>]*/?>", re.IGNORECASE)
+_META_REFRESH_RE = re.compile(
+    rb'<meta\b(?=[^>]*\bhttp-equiv\s*=\s*["\']?refresh)[^>]*/?>',
+    re.IGNORECASE,
+)
+
+
+def _sanitize_protocol_html(content: bytes) -> bytes:
+    content = _EXT_SCRIPT_RE.sub(b"", content)
+    content = _BASE_TAG_RE.sub(b"", content)
+    content = _META_REFRESH_RE.sub(b"", content)
+    return content
+
+
+_RESIZE_SCRIPT = (
+    b"<script>(function(){"
+    b"function s(){"
+    b'window.parent.postMessage({type:"protocol-resize",'
+    b"h:document.documentElement.scrollHeight,"
+    b'w:document.documentElement.scrollWidth},"*");}'
+    b'if(document.readyState==="loading"){'
+    b'document.addEventListener("DOMContentLoaded",s);}else{s();}'
+    b"new MutationObserver(s).observe(document.documentElement,"
+    b'{attributes:true,childList:true,subtree:true,attributeFilter:["style"]});'
+    b"})();</script>"
+)
+
+
+def _inject_resize_script(content: bytes) -> bytes:
+    lower = content.lower()
+    idx = lower.rfind(b"</body>")
+    if idx != -1:
+        return content[:idx] + _RESIZE_SCRIPT + content[idx:]
+    return content + _RESIZE_SCRIPT
 
 
 @csrf_exempt
@@ -116,9 +159,22 @@ def protocol_html(request, pk):
         content = protocol.html_file.read()
     except OSError:
         raise Http404 from None
+    content = _sanitize_protocol_html(content)
+    content = _inject_resize_script(content)
     response = HttpResponse(content, content_type="text/html; charset=utf-8")
     response["X-Content-Type-Options"] = "nosniff"
-    response["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:"
+    response["Content-Security-Policy"] = (
+        "default-src 'none'; "
+        "script-src 'unsafe-inline'; "
+        "style-src 'unsafe-inline'; "
+        "img-src data:; "
+        "connect-src 'none'; "
+        "object-src 'none'; "
+        "frame-src 'none'; "
+        "base-uri 'none'; "
+        "form-action 'none'; "
+        "sandbox allow-scripts"
+    )
     response["Cache-Control"] = "no-store"
     return response
 
