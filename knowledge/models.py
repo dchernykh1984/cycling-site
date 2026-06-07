@@ -213,19 +213,25 @@ class DraftSubmission(models.Model):
         return f"{self.get_submission_type_display()} - {self.title}"
 
     def approve(self, reviewer) -> None:
+        if self.status != DraftSubmission.Status.PENDING:
+            raise ValueError(f"Cannot approve: submission is already '{self.get_status_display()}'.")
+
+        if self.submission_type == DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE:
+            self._create_knowledge_article(reviewer)
+        elif self.submission_type == DraftSubmission.SubmissionType.NEWS:
+            self._create_news_page(reviewer)
+        else:
+            raise ValueError(f"Unknown submission type: '{self.submission_type}'.")
+
+        self.status = DraftSubmission.Status.APPROVED
+        self.reviewed_by = reviewer
+        self.save(update_fields=["status", "reviewed_by"])
+
+    def _create_knowledge_article(self, reviewer) -> None:
         import json
 
         from django.utils.text import slugify
         from wagtail.models import Locale
-
-        if self.status != DraftSubmission.Status.PENDING:
-            raise ValueError(f"Cannot approve: submission is already '{self.get_status_display()}'.")
-
-        if self.submission_type != DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE:
-            raise ValueError(
-                f"Cannot approve a '{self.get_submission_type_display()}' submission as a knowledge article. "
-                "News submissions will be supported in a later phase."
-            )
 
         try:
             locale = Locale.objects.get(language_code=self.locale)
@@ -258,9 +264,43 @@ class DraftSubmission(models.Model):
         index.add_child(instance=article)
         article.save_revision(user=reviewer).publish()
 
-        self.status = DraftSubmission.Status.APPROVED
-        self.reviewed_by = reviewer
-        self.save(update_fields=["status", "reviewed_by"])
+    def _create_news_page(self, reviewer) -> None:
+        import json
+
+        from django.utils.text import slugify
+        from wagtail.models import Locale
+
+        from news.models import NewsIndexPage, NewsPage
+
+        try:
+            locale = Locale.objects.get(language_code=self.locale)
+        except Locale.DoesNotExist:
+            raise ValueError(f"Locale '{self.locale}' is not configured in this Wagtail instance.") from None
+
+        news_index = NewsIndexPage.objects.live().filter(locale=locale).first()
+        if news_index is None:
+            raise ValueError(
+                f"No live NewsIndexPage found for locale '{self.locale}'. Create one in the Wagtail admin first."
+            )
+
+        base_slug = slugify(self.title) or "news"
+        slug = base_slug
+        counter = 1
+        while NewsPage.objects.filter(slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        body_json = json.dumps([{"type": "text", "value": f"<p>{escape(self.body)}</p>"}])
+        news_page = NewsPage(
+            title=self.title,
+            slug=slug,
+            body=body_json,
+            published_by=self.author,
+            published_at=timezone.now(),
+            locale=locale,
+        )
+        news_index.add_child(instance=news_page)
+        news_page.save_revision(user=reviewer).publish()
 
     def reject(self, reviewer, note: str = "") -> None:
         if self.status != DraftSubmission.Status.PENDING:

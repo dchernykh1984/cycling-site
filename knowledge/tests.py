@@ -318,7 +318,12 @@ class DraftSubmissionApproveRejectTests(TestCase):
         self.submission.refresh_from_db()
         self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
 
-    def test_news_submission_cannot_be_approved_as_knowledge_article(self):
+    def test_news_submission_creates_news_page(self):
+        from news.models import NewsIndexPage, NewsPage
+
+        news_index = NewsIndexPage(title="News", slug="news-approve")
+        _get_site_root().add_child(instance=news_index)
+
         sub = DraftSubmission.objects.create(
             author=self.participant,
             submission_type=DraftSubmission.SubmissionType.NEWS,
@@ -326,8 +331,8 @@ class DraftSubmissionApproveRejectTests(TestCase):
             title="Breaking News",
             body="News body",
         )
-        with self.assertRaises(ValueError):
-            sub.approve(reviewer=self.staff)
+        sub.approve(reviewer=self.staff)
+        self.assertEqual(NewsPage.objects.filter(title="Breaking News").count(), 1)
         self.assertEqual(KnowledgeArticlePage.objects.filter(title="Breaking News").count(), 0)
         sub.refresh_from_db()
-        self.assertEqual(sub.status, DraftSubmission.Status.PENDING)
+        self.assertEqual(sub.status, DraftSubmission.Status.APPROVED)
