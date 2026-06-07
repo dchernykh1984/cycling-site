@@ -37,11 +37,13 @@ INSTALLED_APPS = [
     "search",
     "knowledge",
     "locations",
+    "news",
     "modeltranslation",  # before apps it will translate and before django.contrib.admin
     "wagtail_localize",  # before wagtail.admin
     "wagtail_localize.locales",  # replaces wagtail.locales
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
+    "wagtail.contrib.settings",
     "wagtail.embeds",
     "wagtail.sites",
     "wagtail.users",
