@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Protocol" %} — {{ protocol.competition.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-11">
+
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="{% url 'competition_detail' protocol.competition.pk %}">{{ protocol.competition.title }}</a>
+        </li>
+        <li class="breadcrumb-item active">
+          {% if protocol.protocol_type == "absolute" %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}
+        </li>
+      </ol>
+    </nav>
+
+    <h2 class="mb-1">{{ protocol.competition.title }}</h2>
+    <h5 class="text-muted mb-3">
+      {% if protocol.protocol_type == "absolute" %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}
+      {% if protocol.stage_label %}&mdash; {{ protocol.stage_label }}{% endif %}
+    </h5>
+
+    {% if not protocol.is_live %}
+    <div class="alert alert-success mb-3" role="alert">{% trans "Final results" %}</div>
+    {% else %}
+    <div class="alert alert-info mb-3" id="live-banner" role="alert">{% trans "Live — updating..." %}</div>
+    {% endif %}
+
+    <div style="overflow-x: auto; width: 100%;">
+      <iframe id="protocol-frame"
+        src="{% url 'protocol_html' protocol.pk %}?v={{ protocol.file_hash }}"
+        sandbox=""
+        style="width: 100%; min-height: 600px; border: none; display: block;"
+        title="{% trans 'Protocol' %}">
+      </iframe>
+    </div>
+
+    {% if protocol.is_live %}
+    <script>
+    (function () {
+      var lastHash = "{{ protocol.file_hash|escapejs }}";
+      var pollUrl = "{% url 'protocol_last_updated' protocol.pk %}";
+      var htmlBase = "{% url 'protocol_html' protocol.pk %}";
+
+      function poll() {
+        fetch(pollUrl)
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data.is_live) {
+              var banner = document.getElementById('live-banner');
+              if (banner) {
+                banner.className = "alert alert-success mb-3";
+                banner.textContent = "{% trans 'Final results' %}";
+              }
+              return;
+            }
+            if (data.file_hash !== lastHash) {
+              lastHash = data.file_hash;
+              document.getElementById('protocol-frame').src = htmlBase + '?v=' + data.file_hash;
+            }
+            setTimeout(poll, 60000);
+          })
+          .catch(function () { setTimeout(poll, 60000); });
+      }
+      setTimeout(poll, 60000);
+    }());
+    </script>
+    {% endif %}
+
+    {% if versions %}
+    <div class="mt-4">
+      <h6 class="text-muted">{% trans "Version history" %}</h6>
+      <ul class="list-unstyled small text-muted">
+        {% for v in versions %}
+        <li>{{ v.saved_at|date:"d.m.Y H:i:s" }} &mdash; <code>{{ v.file_hash|slice:":8" }}</code></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

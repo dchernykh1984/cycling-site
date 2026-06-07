@@ -64,6 +64,35 @@
     </div>
     {% endif %}
 
+    {% if protocols %}
+    <div class="mt-4 pt-3 border-top">
+      <h5 class="mb-3">{% trans "Protocols" %}</h5>
+      <div class="d-flex flex-wrap gap-2">
+        {% for protocol in protocols %}
+        <a href="{% url 'protocol_detail' protocol.pk %}" class="btn btn-outline-primary btn-sm">
+          {% if protocol.protocol_type == "absolute" %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}
+          {% if protocol.stage_label %}&mdash; {{ protocol.stage_label }}{% endif %}
+          {% if protocol.is_live %}<span class="badge bg-danger ms-1">{% trans "Live" %}</span>{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if show_upload_token %}
+    <div class="mt-4 pt-3 border-top">
+      <h6 class="text-muted mb-2">{% trans "Protocol upload token" %}</h6>
+      <div class="d-flex align-items-center gap-2">
+        <code class="user-select-all text-break">{{ competition.upload_token }}</code>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                onclick="navigator.clipboard.writeText('{{ competition.upload_token }}')">
+          {% trans "Copy" %}
+        </button>
+      </div>
+      <div class="text-muted small mt-1">{% trans "Use this token in FinishProtocolGenerator to upload live results." %}</div>
+    </div>
+    {% endif %}
+
   </div>
 </div>
 {% endblock %}

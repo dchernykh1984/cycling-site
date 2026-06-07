@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from typing import ClassVar
 
 from django.conf import settings
@@ -94,6 +95,7 @@ class Competition(index.Indexed, models.Model):
     url_registration = models.URLField(blank=True)
     url_regulations = models.URLField(blank=True)
     url_results = models.URLField(blank=True)
+    upload_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     search_fields: ClassVar[list] = [
         index.SearchField("title_ru"),

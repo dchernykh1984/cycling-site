@@ -137,7 +137,21 @@ class CompetitionListView(TemplateView):
 class CompetitionDetailView(View):
     def get(self, request, pk):
         competition = get_object_or_404(Competition, pk=pk, status=Competition.Status.APPROVED)
-        return render(request, "calendar_app/detail.html", {"competition": competition})
+        protocols = competition.protocols.all()
+        show_upload_token = request.user.is_authenticated and (
+            request.user.is_superuser
+            or request.user == competition.submitted_by
+            or request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
+        )
+        return render(
+            request,
+            "calendar_app/detail.html",
+            {
+                "competition": competition,
+                "protocols": protocols,
+                "show_upload_token": show_upload_token,
+            },
+        )
 
 
 class SubmitCompetitionView(ParticipantRequiredMixin, FormView):
