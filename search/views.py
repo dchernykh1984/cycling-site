@@ -1,32 +1,28 @@
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.template.response import TemplateResponse
 from wagtail.models import Locale, Page
+from wagtail.search.backends import get_search_backend
 
-# To enable logging of search queries for use with the "Promoted search results" module
-# <https://docs.wagtail.org/en/stable/reference/contrib/searchpromotions.html>
-# uncomment the following line and the lines indicated in the search function
-# (after adding wagtail.contrib.search_promotions to INSTALLED_APPS):
-
-# from wagtail.contrib.search_promotions.models import Query
+from calendar_app.models import Competition
+from locations.models import Location
 
 
 def search(request):
     search_query = request.GET.get("query", None)
     page = request.GET.get("page", 1)
 
-    # Search
     if search_query:
         search_results = Page.objects.live().filter(locale=Locale.get_active()).search(search_query)
-
-        # To log this query for use with the "Promoted search results" module:
-
-        # query = Query.get(search_query)
-        # query.add_hit()
-
+        backend = get_search_backend()
+        competition_results = list(
+            backend.search(search_query, Competition.objects.filter(status=Competition.Status.APPROVED))
+        )
+        location_results = list(backend.search(search_query, Location.objects.all()))
     else:
         search_results = Page.objects.none()
+        competition_results = []
+        location_results = []
 
-    # Pagination
     paginator = Paginator(search_results, 10)
     try:
         search_results = paginator.page(page)
@@ -41,5 +37,7 @@ def search(request):
         {
             "search_query": search_query,
             "search_results": search_results,
+            "competition_results": competition_results,
+            "location_results": location_results,
         },
     )
