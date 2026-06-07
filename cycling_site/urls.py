@@ -17,6 +17,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("accounts/", include("allauth.urls")),
     path("knowledge/", include("knowledge.urls")),
     path("news/", include("news.urls")),
+    path("calendar/", include("calendar_app.urls")),
 ]
 
 

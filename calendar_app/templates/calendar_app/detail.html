@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ competition.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10 col-lg-8">
+
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'calendar_list' %}">{% trans "Competitions" %}</a></li>
+        <li class="breadcrumb-item active">{{ competition.title }}</li>
+      </ol>
+    </nav>
+
+    <h1 class="mb-2">{{ competition.title }}</h1>
+
+    <div class="d-flex flex-wrap gap-3 mb-4 text-muted small">
+      <span>
+        <strong>{% trans "Dates" %}:</strong>
+        {{ competition.date_start|date:"d.m.Y" }}
+        {% if competition.date_end and competition.date_end != competition.date_start %}
+        — {{ competition.date_end|date:"d.m.Y" }}
+        {% endif %}
+      </span>
+      {% if competition.event_type %}
+      <span><strong>{% trans "Type" %}:</strong> {{ competition.event_type.name }}</span>
+      {% endif %}
+      {% if competition.discipline %}
+      <span><strong>{% trans "Discipline" %}:</strong> {{ competition.discipline.name }}</span>
+      {% endif %}
+      {% if competition.location %}
+      <span><strong>{% trans "Location" %}:</strong> {{ competition.location.name }}</span>
+      {% endif %}
+    </div>
+
+    {% if competition.description %}
+    <div class="mb-4">{{ competition.description|linebreaks }}</div>
+    {% endif %}
+
+    {% if competition.url_announcement or competition.url_registration or competition.url_route or competition.url_regulations or competition.url_results %}
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      {% if competition.url_announcement %}
+      <a href="{{ competition.url_announcement }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Announcement" %}</a>
+      {% endif %}
+      {% if competition.url_registration %}
+      <a href="{{ competition.url_registration }}" target="_blank" rel="noopener"
+         class="btn btn-primary">{% trans "Register" %}</a>
+      {% endif %}
+      {% if competition.url_route %}
+      <a href="{{ competition.url_route }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Route" %}</a>
+      {% endif %}
+      {% if competition.url_regulations %}
+      <a href="{{ competition.url_regulations }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Regulations" %}</a>
+      {% endif %}
+      {% if competition.url_results %}
+      <a href="{{ competition.url_results }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Results" %}</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

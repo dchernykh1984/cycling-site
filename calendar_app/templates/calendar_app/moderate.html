@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Moderation" %}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12 d-flex justify-content-between align-items-center">
+    <h1 class="mb-0">{% trans "Competition moderation" %}</h1>
+    <span class="badge bg-warning text-dark fs-6">
+      {{ competitions|length }} {% trans "pending" %}
+    </span>
+  </div>
+</div>
+
+{% if competitions %}
+{% for comp in competitions %}
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h5 class="card-title mb-1">{{ comp.title }}</h5>
+        <div class="text-muted small d-flex flex-wrap gap-2">
+          <span>{{ comp.date_start|date:"d.m.Y" }}{% if comp.date_end and comp.date_end != comp.date_start %} — {{ comp.date_end|date:"d.m.Y" }}{% endif %}</span>
+          {% if comp.event_type %}<span>{{ comp.event_type.name }}</span>{% endif %}
+          {% if comp.discipline %}<span>{{ comp.discipline.name }}</span>{% endif %}
+          {% if comp.location %}<span>{{ comp.location.name }}</span>{% endif %}
+          <span>{% trans "Submitted by" %}: {{ comp.submitted_by.email|default:"—" }}</span>
+        </div>
+        {% if comp.description %}
+        <p class="mt-2 mb-0 small">{{ comp.description|truncatechars:200 }}</p>
+        {% endif %}
+        <div class="mt-2 d-flex flex-wrap gap-1">
+          {% if comp.url_announcement %}
+          <a href="{{ comp.url_announcement }}" target="_blank" rel="noopener"
+             class="btn btn-sm btn-outline-secondary">{% trans "Announcement" %}</a>
+          {% endif %}
+          {% if comp.url_registration %}
+          <a href="{{ comp.url_registration }}" target="_blank" rel="noopener"
+             class="btn btn-sm btn-outline-secondary">{% trans "Registration" %}</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="d-flex gap-2 flex-shrink-0">
+        <form method="post" action="{% url 'competition_approve' comp.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-sm">{% trans "Approve" %}</button>
+        </form>
+        <button type="button" class="btn btn-outline-danger btn-sm"
+                data-bs-toggle="collapse"
+                data-bs-target="#reject-{{ comp.pk }}"
+                aria-expanded="false">
+          {% trans "Reject" %}
+        </button>
+      </div>
+    </div>
+    <div class="collapse mt-3" id="reject-{{ comp.pk }}">
+      <form method="post" action="{% url 'competition_reject' comp.pk %}">
+        {% csrf_token %}
+        <div class="mb-2">
+          <label class="form-label small">{% trans "Rejection reason (optional)" %}</label>
+          {{ reject_form.rejection_reason }}
+        </div>
+        <button type="submit" class="btn btn-danger btn-sm">{% trans "Confirm rejection" %}</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="alert alert-success">{% trans "No competitions pending approval." %}</div>
+{% endif %}
+{% endblock %}

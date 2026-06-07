@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Calendar" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+  #calendar { min-height: 500px; }
+  .fc-event { cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="mb-0">{% trans "Calendar" %}</h1>
+    <div class="d-flex gap-2 align-items-center">
+      <button class="btn btn-outline-secondary btn-sm d-lg-none" type="button"
+              data-bs-toggle="collapse" data-bs-target="#filter-panel"
+              aria-expanded="false" aria-controls="filter-panel">
+        {% trans "Filters" %}
+      </button>
+      <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "List view" %}</a>
+      {% if request.user.is_authenticated %}
+      <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm">{% trans "Submit competition" %}</a>
+      {% if request.user.is_superuser or request.user.role == 'organizer' or request.user.role == 'admin' or request.user.role == 'owner' %}
+      <a href="{% url 'calendar_moderate' %}" class="btn btn-outline-warning btn-sm">{% trans "Moderation" %}</a>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <div id="filter-panel" class="collapse d-lg-block">
+      <div class="row g-2 align-items-end">
+        <div class="col-sm-6 col-lg-3">
+          <label class="form-label form-label-sm mb-1">{% trans "Event type" %}</label>
+          <select id="filter-event-type" class="form-select form-select-sm">
+            <option value="">{% trans "All" %}</option>
+            {% for et in event_types %}
+            <option value="{{ et.pk }}">{{ et.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <label class="form-label form-label-sm mb-1">{% trans "Discipline" %}</label>
+          <select id="filter-discipline" class="form-select form-select-sm">
+            <option value="">{% trans "All" %}</option>
+            {% for d in disciplines %}
+            <option value="{{ d.pk }}">{{ d.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-4 col-lg-2">
+          <label class="form-label form-label-sm mb-1">{% trans "Country" %}</label>
+          <select id="filter-country" class="form-select form-select-sm">
+            <option value="">{% trans "All" %}</option>
+          </select>
+        </div>
+        <div class="col-sm-4 col-lg-2">
+          <label class="form-label form-label-sm mb-1">{% trans "Region" %}</label>
+          <select id="filter-oblast" class="form-select form-select-sm" disabled>
+            <option value="">{% trans "All" %}</option>
+          </select>
+        </div>
+        <div class="col-sm-4 col-lg-2">
+          <label class="form-label form-label-sm mb-1">{% trans "City" %}</label>
+          <select id="filter-city" class="form-select form-select-sm" disabled>
+            <option value="">{% trans "All" %}</option>
+          </select>
+        </div>
+        <input type="hidden" id="filter-location" value="">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="calendar"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js"></script>
+{{ locations_data|json_script:"locations-data" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var eventsUrl = '{% url "calendar_events_api" %}';
+  var isMobile = window.innerWidth < 768;
+
+  // --- Cascading location dropdown ---
+  var allLocations = JSON.parse(document.getElementById('locations-data').textContent);
+  var countrySelect = document.getElementById('filter-country');
+  var oblastSelect = document.getElementById('filter-oblast');
+  var citySelect = document.getElementById('filter-city');
+  var locationInput = document.getElementById('filter-location');
+
+  function buildOptions(select, nodes, emptyLabel) {
+    select.innerHTML = '<option value="">' + emptyLabel + '</option>';
+    nodes.forEach(function (loc) {
+      var opt = document.createElement('option');
+      opt.value = loc.pk;
+      opt.textContent = loc.name_ru;
+      select.appendChild(opt);
+    });
+  }
+
+  function clearSelect(select) {
+    select.innerHTML = '<option value=""></option>';
+    select.disabled = true;
+  }
+
+  function updateLocationValue() {
+    var city = citySelect.value;
+    var oblast = oblastSelect.value;
+    var country = countrySelect.value;
+    locationInput.value = city || oblast || country;
+    calendar.refetchEvents();
+  }
+
+  // Populate countries (depth=1)
+  var countries = allLocations.filter(function (l) { return l.depth === 1; });
+  buildOptions(countrySelect, countries, '{% trans "All" %}');
+
+  countrySelect.addEventListener('change', function () {
+    clearSelect(citySelect);
+    clearSelect(oblastSelect);
+    oblastSelect.disabled = false;
+    var countryPath = '';
+    countries.forEach(function (c) { if (String(c.pk) === countrySelect.value) countryPath = c.path; });
+    var oblasts = allLocations.filter(function (l) {
+      return l.depth === 2 && l.path.startsWith(countryPath);
+    });
+    buildOptions(oblastSelect, oblasts, '{% trans "All" %}');
+    updateLocationValue();
+  });
+
+  oblastSelect.addEventListener('change', function () {
+    clearSelect(citySelect);
+    citySelect.disabled = false;
+    var oblastPath = '';
+    allLocations.forEach(function (l) { if (String(l.pk) === oblastSelect.value) oblastPath = l.path; });
+    var cities = allLocations.filter(function (l) {
+      return l.depth === 3 && l.path.startsWith(oblastPath);
+    });
+    buildOptions(citySelect, cities, '{% trans "All" %}');
+    updateLocationValue();
+  });
+
+  citySelect.addEventListener('change', updateLocationValue);
+
+  // --- FullCalendar ---
+  function getFilters() {
+    return {
+      event_type: document.getElementById('filter-event-type').value,
+      discipline: document.getElementById('filter-discipline').value,
+      location: locationInput.value,
+    };
+  }
+
+  var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+    initialView: isMobile ? 'listWeek' : 'dayGridMonth',
+    locale: '{{ CURRENT_LANGUAGE }}',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,listWeek',
+    },
+    height: 'auto',
+    events: function (fetchInfo, successCallback, failureCallback) {
+      var filters = getFilters();
+      var params = new URLSearchParams({start: fetchInfo.startStr, end: fetchInfo.endStr});
+      Object.keys(filters).forEach(function (k) {
+        if (filters[k]) params.set(k, filters[k]);
+      });
+      fetch(eventsUrl + '?' + params.toString())
+        .then(function (r) { return r.json(); })
+        .then(successCallback)
+        .catch(failureCallback);
+    },
+    windowResize: function () {
+      calendar.changeView(window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth');
+    },
+    eventClick: function (info) {
+      if (info.event.url) {
+        info.jsEvent.preventDefault();
+        window.location.href = info.event.url;
+      }
+    },
+  });
+
+  calendar.render();
+
+  ['filter-event-type', 'filter-discipline'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', function () {
+      calendar.refetchEvents();
+    });
+  });
+});
+</script>
+{% endblock %}

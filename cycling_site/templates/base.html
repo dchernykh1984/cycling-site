@@ -46,7 +46,7 @@
                         <a class="nav-link" href="{% if news_url %}{{ news_url }}{% else %}#{% endif %}">{% trans "News" %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">{% trans "Calendar" %}</a>
+                        <a class="nav-link" href="{% url 'calendar' %}">{% trans "Calendar" %}</a>
                     </li>
                     {% get_locations_map_url as locations_map_url %}
                     {% if locations_map_url %}

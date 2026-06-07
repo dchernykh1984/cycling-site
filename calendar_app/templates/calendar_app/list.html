@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Competition list" %}{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="mb-0">{% trans "Competitions" %}</h1>
+    <div class="d-flex gap-2">
+      <a href="{% url 'calendar' %}" class="btn btn-outline-secondary btn-sm">{% trans "Calendar view" %}</a>
+      {% if request.user.is_authenticated %}
+      <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm">{% trans "Submit competition" %}</a>
+      {% if request.user.is_superuser or request.user.role == 'organizer' or request.user.role == 'admin' or request.user.role == 'owner' %}
+      <a href="{% url 'calendar_moderate' %}" class="btn btn-outline-warning btn-sm">{% trans "Moderation" %}</a>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-sm-6 col-md-3">
+        <label class="form-label form-label-sm mb-1">{% trans "Date from" %}</label>
+        <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}"
+               class="form-control form-control-sm">
+      </div>
+      <div class="col-sm-6 col-md-3">
+        <label class="form-label form-label-sm mb-1">{% trans "Date to" %}</label>
+        <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}"
+               class="form-control form-control-sm">
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">{% trans "Event type" %}</label>
+        {{ filter_form.event_type }}
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">{% trans "Discipline" %}</label>
+        {{ filter_form.discipline }}
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">{% trans "Location" %}</label>
+        {{ filter_form.location }}
+      </div>
+      <div class="col-sm-12 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">{% trans "Apply" %}</button>
+        <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Reset" %}</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if competitions %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>{% trans "Title" %}</th>
+        <th>{% trans "Dates" %}</th>
+        <th>{% trans "Type" %}</th>
+        <th>{% trans "Discipline" %}</th>
+        <th>{% trans "Location" %}</th>
+        <th>{% trans "Links" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for comp in competitions %}
+      <tr>
+        <td>
+          <a href="{% url 'competition_detail' comp.pk %}" class="text-decoration-none fw-semibold">
+            {{ comp.title }}
+          </a>
+        </td>
+        <td class="text-nowrap">
+          {{ comp.date_start|date:"d.m.Y" }}
+          {% if comp.date_end and comp.date_end != comp.date_start %}
+          — {{ comp.date_end|date:"d.m.Y" }}
+          {% endif %}
+        </td>
+        <td>{{ comp.event_type.name|default:"—" }}</td>
+        <td>{{ comp.discipline.name|default:"—" }}</td>
+        <td>{{ comp.location.name|default:"—" }}</td>
+        <td class="text-nowrap">
+          {% if comp.url_announcement %}
+          <a href="{{ comp.url_announcement }}" target="_blank" rel="noopener"
+             class="btn btn-sm btn-outline-secondary me-1">{% trans "Info" %}</a>
+          {% endif %}
+          {% if comp.url_registration %}
+          <a href="{{ comp.url_registration }}" target="_blank" rel="noopener"
+             class="btn btn-sm btn-primary">{% trans "Register" %}</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if competitions.has_other_pages %}
+<nav aria-label="{% trans 'Pagination' %}">
+  <ul class="pagination justify-content-center">
+    {% if competitions.has_previous %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ competitions.previous_page_number }}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+        &laquo; {% trans "Previous" %}
+      </a>
+    </li>
+    {% endif %}
+    <li class="page-item disabled">
+      <span class="page-link">{{ competitions.number }} / {{ competitions.paginator.num_pages }}</span>
+    </li>
+    {% if competitions.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ competitions.next_page_number }}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+        {% trans "Next" %} &raquo;
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<p class="text-muted">{% trans "No competitions found for the selected period." %}</p>
+{% endif %}
+{% endblock %}
