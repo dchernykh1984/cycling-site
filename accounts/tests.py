@@ -1,3 +1,4 @@
+import datetime
 import re
 from unittest.mock import MagicMock, patch
 
@@ -582,6 +583,64 @@ class MigrateRepairCommandTests(TestCase):
         with patch("accounts.management.commands.migrate.MigrationRecorder") as mock_cls:
             mock_cls.return_value.applied_migrations.side_effect = Exception("DB unavailable")
             _repair_accounts_initial_if_needed()
+
+
+class ProfileEditViewTests(TestCase):
+    def setUp(self):
+        self.user = make_user(username="editme", role=User.Role.PARTICIPANT)
+
+    def test_get_shows_form(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("account_profile_edit"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_redirects_anonymous(self):
+        response = self.client.get(reverse("account_profile_edit"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("login", response["Location"])
+
+    def test_post_updates_profile(self):
+        self.client.force_login(self.user)
+        self.client.post(
+            reverse("account_profile_edit"),
+            {
+                "first_name": "Alice",
+                "last_name": "Smith",
+                "gender": "F",
+                "birth_date": "1995-03-10",
+            },
+        )
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, "Alice")
+        self.assertEqual(self.user.gender, "F")
+        self.assertEqual(self.user.birth_date, datetime.date(1995, 3, 10))
+
+    def test_post_redirects_to_profile(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("account_profile_edit"),
+            {
+                "first_name": "Bob",
+                "last_name": "Jones",
+            },
+        )
+        self.assertRedirects(response, reverse("account_profile"))
+
+
+class UserGenderBirthDateTests(TestCase):
+    def test_gender_and_birth_date_defaults_to_empty(self):
+        user = make_user(username="newuser")
+        self.assertEqual(user.gender, "")
+        self.assertIsNone(user.birth_date)
+
+    def test_gender_and_birth_date_can_be_saved(self):
+        user = make_user(username="savegender")
+        user.gender = "M"
+        user.birth_date = datetime.date(1990, 6, 15)
+        user.save(update_fields=["gender", "birth_date"])
+        user.refresh_from_db()
+        self.assertEqual(user.gender, "M")
+        self.assertEqual(user.birth_date, datetime.date(1990, 6, 15))
 
 
 class ThemeFieldTests(TestCase):

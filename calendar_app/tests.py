@@ -370,3 +370,242 @@ class RejectCompetitionViewTests(TestCase):
         self.client.post(reverse("competition_reject", args=[self.comp.pk]), {})
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.status, Competition.Status.REJECTED)
+
+
+class CompetitionIsRegistrationOpenTests(TestCase):
+    def _make_open_comp(self):
+        return Competition.objects.create(
+            title_ru="Open Race",
+            date_start=datetime.date(2026, 7, 1),
+            status=Competition.Status.APPROVED,
+            registration_enabled=True,
+        )
+
+    def test_open_when_enabled_and_approved(self):
+        comp = self._make_open_comp()
+        self.assertTrue(comp.is_registration_open())
+
+    def test_closed_when_disabled(self):
+        comp = self._make_open_comp()
+        comp.registration_enabled = False
+        self.assertFalse(comp.is_registration_open())
+
+    def test_closed_when_not_approved(self):
+        comp = self._make_open_comp()
+        comp.status = Competition.Status.PENDING_APPROVAL
+        self.assertFalse(comp.is_registration_open())
+
+    def test_closed_when_deadline_passed(self):
+        comp = self._make_open_comp()
+        comp.registration_deadline = datetime.date(2020, 1, 1)
+        self.assertFalse(comp.is_registration_open())
+
+    def test_closed_when_overall_limit_reached(self):
+        comp = self._make_open_comp()
+        comp.max_participants = 1
+        comp.save()
+        from registrations.models import CompetitionRegistration
+
+        CompetitionRegistration.objects.create(
+            competition=comp,
+            first_name="A",
+            last_name="B",
+            birth_date=datetime.date(1990, 1, 1),
+            gender="M",
+        )
+        self.assertFalse(comp.is_registration_open())
+
+
+class CompetitionQualifiedCountTests(TestCase):
+    def setUp(self):
+        self.comp = Competition.objects.create(
+            title_ru="Count Race",
+            date_start=datetime.date(2026, 7, 1),
+            status=Competition.Status.APPROVED,
+            registration_enabled=True,
+        )
+
+    def _make_reg(self, **kwargs):
+        from registrations.models import CompetitionRegistration
+
+        return CompetitionRegistration.objects.create(
+            competition=self.comp,
+            first_name="A",
+            last_name="B",
+            birth_date=datetime.date(1990, 1, 1),
+            gender="M",
+            **kwargs,
+        )
+
+    def test_counts_non_rejected_by_default(self):
+        self._make_reg()
+        self._make_reg()
+        self._make_reg(is_rejected=True)
+        self.assertEqual(self.comp.qualified_count(), 2)
+
+    def test_require_approval_filters_unapproved(self):
+        self.comp.require_approval = True
+        self.comp.save()
+        self._make_reg(is_approved=True)
+        self._make_reg(is_approved=False)
+        self.assertEqual(self.comp.qualified_count(), 1)
+
+    def test_require_payment_filters_unpaid(self):
+        self.comp.require_payment = True
+        self.comp.save()
+        self._make_reg(is_paid=True)
+        self._make_reg(is_paid=False)
+        self.assertEqual(self.comp.qualified_count(), 1)
+
+    def test_both_require_flags(self):
+        self.comp.require_approval = True
+        self.comp.require_payment = True
+        self.comp.save()
+        self._make_reg(is_approved=True, is_paid=True)
+        self._make_reg(is_approved=True, is_paid=False)
+        self._make_reg(is_approved=False, is_paid=True)
+        self.assertEqual(self.comp.qualified_count(), 1)
+
+
+class CompetitionIsLimitReachedTests(TestCase):
+    def setUp(self):
+        self.comp = Competition.objects.create(
+            title_ru="Limit Race",
+            date_start=datetime.date(2026, 7, 1),
+            status=Competition.Status.APPROVED,
+        )
+
+    def test_not_reached_with_no_limit(self):
+        self.assertFalse(self.comp.is_limit_reached())
+
+    def test_not_reached_below_limit(self):
+        self.comp.max_participants = 5
+        self.comp.save()
+        self.assertFalse(self.comp.is_limit_reached())
+
+    def test_reached_at_limit(self):
+        self.comp.max_participants = 1
+        self.comp.save()
+        from registrations.models import CompetitionRegistration
+
+        CompetitionRegistration.objects.create(
+            competition=self.comp,
+            first_name="A",
+            last_name="B",
+            birth_date=datetime.date(1990, 1, 1),
+            gender="M",
+        )
+        self.assertTrue(self.comp.is_limit_reached())
+
+    def test_per_category_limit(self):
+        from registrations.models import CompetitionRegistration, RegistrationCategory
+
+        cat = RegistrationCategory.objects.create(competition=self.comp, name="Elite", max_participants=1)
+        CompetitionRegistration.objects.create(
+            competition=self.comp,
+            first_name="A",
+            last_name="B",
+            birth_date=datetime.date(1990, 1, 1),
+            gender="M",
+            category=cat,
+        )
+        self.assertTrue(self.comp.is_limit_reached(category=cat))
+
+
+class SubmitCompetitionRegistrationTests(TestCase):
+    def setUp(self):
+        self.participant = _make_user("p_reg@example.com", User.Role.PARTICIPANT)
+        self.organizer = _make_user("o_reg@example.com", User.Role.ORGANIZER)
+        self.url = reverse("calendar_submit")
+
+    def _reg_payload(self):
+        return {
+            "title": "Reg Race",
+            "date_start": "2026-09-01",
+            "registration_enabled": "on",
+            "registration_mode": "free",
+            "birth_date_mode": "year",
+            "categories_json": "[]",
+        }
+
+    def test_participant_cannot_enable_registration(self):
+        self.client.login(username="p_reg@example.com", password="password123")
+        self.client.post(self.url, self._reg_payload())
+        comp = Competition.objects.get(title_ru="Reg Race")
+        self.assertFalse(comp.registration_enabled)
+
+    def test_organizer_can_enable_registration(self):
+        self.client.login(username="o_reg@example.com", password="password123")
+        self.client.post(self.url, self._reg_payload())
+        comp = Competition.objects.get(title_ru="Reg Race")
+        self.assertTrue(comp.registration_enabled)
+
+    def test_organizer_submit_locks_mode_on_first_enable(self):
+        self.client.login(username="o_reg@example.com", password="password123")
+        payload = self._reg_payload()
+        payload["title"] = "Lock Race"
+        self.client.post(self.url, payload)
+        comp = Competition.objects.get(title_ru="Lock Race")
+        self.assertTrue(comp.registration_mode_locked)
+
+
+class EditCompetitionViewTests(TestCase):
+    def setUp(self):
+        self.organizer = _make_user("edit_org@example.com", User.Role.ORGANIZER)
+        self.other_org = _make_user("other_org@example.com", User.Role.ORGANIZER)
+        self.participant = _make_user("edit_part@example.com", User.Role.PARTICIPANT)
+        self.comp = _make_competition(
+            "Editable Race",
+            status=Competition.Status.APPROVED,
+            submitted_by=self.organizer,
+        )
+        self.url = reverse("competition_edit", args=[self.comp.pk])
+
+    def test_organizer_own_competition_can_access(self):
+        self.client.login(username="edit_org@example.com", password="password123")
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_participant_gets_403(self):
+        self.client.login(username="edit_part@example.com", password="password123")
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_organizer_of_other_competition_gets_403(self):
+        self.client.login(username="other_org@example.com", password="password123")
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_edit_updates_title(self):
+        self.client.login(username="edit_org@example.com", password="password123")
+        self.client.post(
+            self.url,
+            {
+                "title": "Updated Title",
+                "date_start": "2026-09-01",
+                "registration_mode": "self_only",
+                "birth_date_mode": "year",
+                "categories_json": "[]",
+            },
+        )
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.title_ru, "Updated Title")
+
+    def test_mode_not_changed_when_locked(self):
+        self.comp.registration_mode = "self_only"
+        self.comp.registration_mode_locked = True
+        self.comp.save()
+        self.client.login(username="edit_org@example.com", password="password123")
+        self.client.post(
+            self.url,
+            {
+                "title": "Editable Race",
+                "date_start": "2026-09-01",
+                "registration_enabled": "on",
+                "registration_mode": "free",
+                "birth_date_mode": "year",
+                "categories_json": "[]",
+            },
+        )
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.registration_mode, "self_only")

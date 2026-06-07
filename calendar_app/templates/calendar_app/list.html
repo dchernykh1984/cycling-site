@@ -21,7 +21,7 @@
 
 <div class="card mb-4">
   <div class="card-body">
-    <form method="get" class="row g-2 align-items-end">
+    <form method="get" id="filter-form" class="row g-2 align-items-end">
       <div class="col-sm-6 col-md-3">
         <label class="form-label form-label-sm mb-1">{% trans "Date from" %}</label>
         <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}"
@@ -45,10 +45,18 @@
         {{ filter_form.location }}
       </div>
       <div class="col-sm-12 col-md-2 d-flex gap-2">
-        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">{% trans "Apply" %}</button>
-        <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Reset" %}</a>
+        <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary btn-sm flex-grow-1">{% trans "Reset" %}</a>
       </div>
     </form>
+    <script>
+    (function () {
+      var form = document.getElementById('filter-form');
+      if (!form) return;
+      form.querySelectorAll('select, input[type="date"]').forEach(function (el) {
+        el.addEventListener('change', function () { form.submit(); });
+      });
+    })();
+    </script>
   </div>
 </div>
 

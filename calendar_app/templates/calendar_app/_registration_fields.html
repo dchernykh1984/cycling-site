@@ -1,0 +1,269 @@
+{% load i18n calendar_tags %}
+<div class="mb-3">
+  <label class="form-label fw-semibold">{% trans "Registration mode" %}</label>
+  {% if mode_locked %}
+  <p class="form-control-plaintext">
+    {% if reg_form.registration_mode.value == "self_only" %}{% trans "Self only (linked to user account)" %}{% else %}{% trans "Free (can register any person)" %}{% endif %}
+  </p>
+  <input type="hidden" name="registration_mode" value="{{ reg_form.registration_mode.value }}">
+  {% else %}
+  <div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="registration_mode" id="mode_self" value="self_only"
+             {% if reg_form.registration_mode.value != "free" %}checked{% endif %}>
+      <label class="form-check-label" for="mode_self">{% trans "Self only" %}</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="registration_mode" id="mode_free" value="free"
+             {% if reg_form.registration_mode.value == "free" %}checked{% endif %}>
+      <label class="form-check-label" for="mode_free">{% trans "Free" %}</label>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="mb-3">
+  <label class="form-label fw-semibold">{% trans "Birth date mode" %}</label>
+  <div>
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="birth_date_mode" id="bdm_year" value="year"
+             {% if reg_form.birth_date_mode.value != "date" %}checked{% endif %}>
+      <label class="form-check-label" for="bdm_year">{% trans "Year of birth" %}</label>
+    </div>
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="birth_date_mode" id="bdm_date" value="date"
+             {% if reg_form.birth_date_mode.value == "date" %}checked{% endif %}>
+      <label class="form-check-label" for="bdm_date">{% trans "Full date" %}</label>
+    </div>
+  </div>
+</div>
+
+<div class="row g-2 mb-3">
+  <div class="col-auto">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="require_approval" id="req_approval"
+             {% if reg_form.require_approval.value %}checked{% endif %}>
+      <label class="form-check-label" for="req_approval">{% trans "Require approval" %}</label>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="require_payment" id="req_payment"
+             {% if reg_form.require_payment.value %}checked{% endif %}>
+      <label class="form-check-label" for="req_payment">{% trans "Require payment" %}</label>
+    </div>
+  </div>
+  <div class="col-auto" id="allow_multi_wrap">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="allow_multiple_registrations" id="allow_multi"
+             {% if reg_form.allow_multiple_registrations.value %}checked{% endif %}>
+      <label class="form-check-label" for="allow_multi">{% trans "Allow multiple registrations" %}</label>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var wrap = document.getElementById('allow_multi_wrap');
+  var cb = document.getElementById('allow_multi');
+  function update() {
+    var mode = document.querySelector('input[name="registration_mode"]:checked');
+    if (!mode) {
+      mode = document.querySelector('input[name="registration_mode"][type="hidden"]');
+    }
+    var isSelfOnly = !mode || mode.value === 'self_only';
+    wrap.style.display = isSelfOnly ? 'none' : '';
+    if (isSelfOnly) cb.checked = false;
+  }
+  document.querySelectorAll('input[name="registration_mode"]').forEach(function (el) {
+    el.addEventListener('change', update);
+  });
+  update();
+})();
+</script>
+
+<div class="row g-2 mb-3">
+  <div class="col-md-4">
+    <label class="form-label">{% trans "Registration deadline" %}</label>
+    <input type="date" name="registration_deadline" class="form-control"
+           value="{{ reg_form.registration_deadline.value|default:'' }}">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{% trans "Max participants" %}</label>
+    <input type="number" name="max_participants" class="form-control" min="1"
+           value="{{ reg_form.max_participants.value|default:'' }}">
+  </div>
+</div>
+
+<div class="mb-2">
+  <div class="form-check">
+    <input class="form-check-input" type="checkbox" name="show_additional_info_field" id="show_addinfo"
+           {% if reg_form.show_additional_info_field.value != False %}checked{% endif %}>
+    <label class="form-check-label small" for="show_addinfo">{% trans "Show additional info field" %}</label>
+  </div>
+</div>
+
+<div class="mb-3" id="display-settings-section">
+  <p class="fw-semibold mb-1">{% trans "Display settings" %}</p>
+  <div class="row g-1">
+    {% for name, label in display_fields %}
+    <div class="col-auto">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="{{ name }}" id="{{ name }}"
+               {% if reg_form|getitem:name %}checked{% endif %}>
+        <label class="form-check-label small" for="{{ name }}">{{ label }}</label>
+      </div>
+    </div>
+    {% endfor %}
+    <div class="col-auto" id="show_unappr_wrap">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="show_unapproved_in_list" id="show_unappr"
+               {% if reg_form.show_unapproved_in_list.value %}checked{% endif %}>
+        <label class="form-check-label small" for="show_unappr">{% trans "Show unapproved in list" %}</label>
+      </div>
+    </div>
+    <div class="col-auto" id="show_unpaid_wrap">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="show_unpaid_in_list" id="show_unpaid"
+               {% if reg_form.show_unpaid_in_list.value %}checked{% endif %}>
+        <label class="form-check-label small" for="show_unpaid">{% trans "Show unpaid in list" %}</label>
+      </div>
+    </div>
+    <div class="col-auto" id="show_appr_col_wrap">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="show_approval_status_col" id="show_appr_col"
+               {% if reg_form.show_approval_status_col.value %}checked{% endif %}>
+        <label class="form-check-label small" for="show_appr_col">{% trans "Show approval column" %}</label>
+      </div>
+    </div>
+    <div class="col-auto" id="show_paid_col_wrap">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="show_payment_status_col" id="show_paid_col"
+               {% if reg_form.show_payment_status_col.value %}checked{% endif %}>
+        <label class="form-check-label small" for="show_paid_col">{% trans "Show payment column" %}</label>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var reqApproval = document.getElementById('req_approval');
+  var reqPayment = document.getElementById('req_payment');
+  var section = document.getElementById('display-settings-section');
+  var unapprWrap = document.getElementById('show_unappr_wrap');
+  var unpaidWrap = document.getElementById('show_unpaid_wrap');
+  var apprColWrap = document.getElementById('show_appr_col_wrap');
+  var paidColWrap = document.getElementById('show_paid_col_wrap');
+
+  function uncheckIn(wrap, id) {
+    if (!wrap) return;
+    var el = document.getElementById(id);
+    if (el) el.checked = false;
+  }
+  function update() {
+    var hasApproval = reqApproval && reqApproval.checked;
+    var hasPayment = reqPayment && reqPayment.checked;
+    if (section) section.style.display = (hasApproval || hasPayment) ? '' : 'none';
+    if (unapprWrap) unapprWrap.style.display = hasApproval ? '' : 'none';
+    if (!hasApproval) uncheckIn(unapprWrap, 'show_unappr');
+    if (apprColWrap) apprColWrap.style.display = hasApproval ? '' : 'none';
+    if (!hasApproval) uncheckIn(apprColWrap, 'show_appr_col');
+    if (unpaidWrap) unpaidWrap.style.display = hasPayment ? '' : 'none';
+    if (!hasPayment) uncheckIn(unpaidWrap, 'show_unpaid');
+    if (paidColWrap) paidColWrap.style.display = hasPayment ? '' : 'none';
+    if (!hasPayment) uncheckIn(paidColWrap, 'show_paid_col');
+  }
+  if (reqApproval) reqApproval.addEventListener('change', update);
+  if (reqPayment) reqPayment.addEventListener('change', update);
+  update();
+})();
+</script>
+
+<hr>
+<h6>{% trans "Categories" %}</h6>
+<div id="categories-container"></div>
+<button type="button" class="btn btn-sm btn-outline-primary mb-3" id="add-category-btn">+ {% trans "Add category" %}</button>
+<input type="hidden" name="categories_json" id="categories_json_input" value="{{ categories_json|default:'[]' }}">
+
+<script>
+(function() {
+  const container = document.getElementById('categories-container');
+  const jsonInput = document.getElementById('categories_json_input');
+  const birthDateModeInputs = document.querySelectorAll('input[name="birth_date_mode"]');
+  let categories = [];
+  try { categories = JSON.parse(jsonInput.value || '[]'); } catch(e) {}
+
+  function getBirthDateMode() {
+    const checked = document.querySelector('input[name="birth_date_mode"]:checked');
+    return checked ? checked.value : 'year';
+  }
+
+  function renderCategories() {
+    const mode = getBirthDateMode();
+    container.innerHTML = '';
+    categories.forEach(function(cat, idx) {
+      if (cat.is_deleted) return;
+      const row = document.createElement('div');
+      row.className = 'card mb-2 p-2';
+      row.innerHTML = `
+        <div class="row g-2 align-items-center mb-1">
+          <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="{% trans 'Name' %}"
+            value="${cat.name||''}" onchange="updateCat(${idx},'name',this.value)"></div>
+          <div class="col-auto"><div class="form-check form-check-inline mb-0">
+            <input class="form-check-input" type="checkbox" ${cat.male!==false?'checked':''} onchange="updateCat(${idx},'male',this.checked)">
+            <label class="form-check-label small">M</label></div>
+            <div class="form-check form-check-inline mb-0">
+            <input class="form-check-input" type="checkbox" ${cat.female!==false?'checked':''} onchange="updateCat(${idx},'female',this.checked)">
+            <label class="form-check-label small">F</label></div></div>
+          <div class="col-md-2"><input type="${mode==='year'?'number':'date'}" class="form-control form-control-sm"
+            placeholder="${mode==='year'?'{% trans "From year" %}':'{% trans "From date" %}'}"
+            value="${cat.birth_from||''}" onchange="updateCat(${idx},'birth_from',this.value)"></div>
+          <div class="col-md-2"><input type="${mode==='year'?'number':'date'}" class="form-control form-control-sm"
+            placeholder="${mode==='year'?'{% trans "To year" %}':'{% trans "To date" %}'}"
+            value="${cat.birth_to||''}" onchange="updateCat(${idx},'birth_to',this.value)"></div>
+          <div class="col-auto"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCategory(${idx})">×</button></div>
+        </div>
+        <div class="row g-2 align-items-center">
+          <div class="col-md-2"><input type="number" class="form-control form-control-sm" placeholder="{% trans 'Laps' %}"
+            value="${cat.laps||''}" onchange="updateCat(${idx},'laps',this.value?parseInt(this.value):null)"></div>
+          <div class="col-md-2"><input type="number" class="form-control form-control-sm" placeholder="{% trans 'Bib from' %}"
+            value="${cat.bib_from||''}" onchange="updateCat(${idx},'bib_from',this.value?parseInt(this.value):null)"></div>
+          <div class="col-md-2"><input type="number" class="form-control form-control-sm" placeholder="{% trans 'Bib to' %}"
+            value="${cat.bib_to||''}" onchange="updateCat(${idx},'bib_to',this.value?parseInt(this.value):null)"></div>
+          <div class="col-md-2"><input type="number" class="form-control form-control-sm" placeholder="{% trans 'Max participants' %}"
+            value="${cat.max_participants||''}" onchange="updateCat(${idx},'max_participants',this.value?parseInt(this.value):null)"></div>
+        </div>`;
+      container.appendChild(row);
+    });
+    syncJson();
+  }
+
+  window.updateCat = function(idx, field, val) {
+    categories[idx][field] = val;
+    syncJson();
+  };
+
+  window.removeCategory = function(idx) {
+    if (categories[idx].id) {
+      categories[idx].is_deleted = true;
+    } else {
+      categories.splice(idx, 1);
+    }
+    renderCategories();
+  };
+
+  function syncJson() {
+    jsonInput.value = JSON.stringify(categories);
+  }
+
+  document.getElementById('add-category-btn').addEventListener('click', function() {
+    categories.push({name:'', male:true, female:true, birth_from:null, birth_to:null, laps:null, bib_from:null, bib_to:null, max_participants:null});
+    renderCategories();
+  });
+
+  birthDateModeInputs.forEach(function(el) {
+    el.addEventListener('change', renderCategories);
+  });
+
+  renderCategories();
+})();
+</script>
