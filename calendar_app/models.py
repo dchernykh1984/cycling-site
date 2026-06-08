@@ -95,6 +95,10 @@ class Competition(index.Indexed, models.Model):
     url_registration = models.URLField(blank=True)
     url_regulations = models.URLField(blank=True)
     url_results = models.URLField(blank=True)
+    file_announcement = models.FileField(upload_to="competitions/announcements/", blank=True)
+    file_regulations = models.FileField(upload_to="competitions/regulations/", blank=True)
+    file_route = models.FileField(upload_to="competitions/routes/", blank=True)
+    file_results = models.FileField(upload_to="competitions/results/", blank=True)
     upload_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     # --- Registration feature ---

@@ -39,10 +39,14 @@ class SubmitCompetitionForm(forms.Form):
         widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}, format="%Y-%m-%d"),
     )
     url_announcement = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))
+    file_announcement = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
     url_registration = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))
     url_route = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))
+    file_route = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
     url_regulations = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))
+    file_regulations = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
     url_results = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))
+    file_results = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
 
     def clean(self):
         cleaned_data = super().clean()

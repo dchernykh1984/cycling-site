@@ -300,7 +300,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
         )
 
     def post(self, request):
-        form = SubmitCompetitionForm(request.POST)
+        form = SubmitCompetitionForm(request.POST, request.FILES)
         reg_form = RegistrationSettingsForm(request.POST)
         is_organizer = self._is_organizer_plus(request.user)
         if form.is_valid() and (not is_organizer or reg_form.is_valid()):
@@ -326,6 +326,10 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 url_results=cd.get("url_results", ""),
                 submitted_by=request.user,
             )
+            for fname in ("file_announcement", "file_route", "file_regulations", "file_results"):
+                f = cd.get(fname)
+                if f:
+                    setattr(comp, fname, f)
             if is_organizer:
                 comp.status = Competition.Status.APPROVED
                 comp.approved_by = request.user
@@ -436,7 +440,7 @@ class EditCompetitionView(View):
 
     def post(self, request, pk):
         comp = self._get_competition_or_403(request, pk)
-        form = SubmitCompetitionForm(request.POST)
+        form = SubmitCompetitionForm(request.POST, request.FILES)
         reg_form = RegistrationSettingsForm(request.POST)
         if form.is_valid() and reg_form.is_valid():
             cd = form.cleaned_data
@@ -492,6 +496,10 @@ class EditCompetitionView(View):
             comp.url_route = cd.get("url_route", "")
             comp.url_regulations = cd.get("url_regulations", "")
             comp.url_results = cd.get("url_results", "")
+            for fname in ("file_announcement", "file_route", "file_regulations", "file_results"):
+                f = cd.get(fname)
+                if f:
+                    setattr(comp, fname, f)
             _apply_registration_settings(comp, reg_form, True)
             comp.save()
             _save_categories(comp, reg_form)
