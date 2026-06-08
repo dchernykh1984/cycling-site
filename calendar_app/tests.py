@@ -258,7 +258,7 @@ class SubmitCompetitionViewTests(TestCase):
 
     def _payload(self, **kwargs):
         data = {
-            "title": "My Race",
+            "title_ru": "My Race",
             "date_start": "2026-09-01",
         }
         data.update(kwargs)
@@ -273,7 +273,7 @@ class SubmitCompetitionViewTests(TestCase):
 
     def test_organizer_submit_creates_approved(self):
         self.client.login(username="organizer@example.com", password="password123")
-        self.client.post(self._submit_url(), self._payload(title="Organizer Race"))
+        self.client.post(self._submit_url(), self._payload(title_ru="Organizer Race"))
         comp = Competition.objects.get(title_ru="Organizer Race")
         self.assertEqual(comp.status, Competition.Status.APPROVED)
         self.assertEqual(comp.approved_by, self.organizer)
@@ -520,7 +520,7 @@ class SubmitCompetitionRegistrationTests(TestCase):
 
     def _reg_payload(self):
         return {
-            "title": "Reg Race",
+            "title_ru": "Reg Race",
             "date_start": "2026-09-01",
             "registration_enabled": "on",
             "registration_mode": "free",
@@ -543,7 +543,7 @@ class SubmitCompetitionRegistrationTests(TestCase):
     def test_organizer_submit_locks_mode_on_first_enable(self):
         self.client.login(username="o_reg@example.com", password="password123")
         payload = self._reg_payload()
-        payload["title"] = "Lock Race"
+        payload["title_ru"] = "Lock Race"
         self.client.post(self.url, payload)
         comp = Competition.objects.get(title_ru="Lock Race")
         self.assertTrue(comp.registration_mode_locked)
@@ -581,7 +581,7 @@ class EditCompetitionViewTests(TestCase):
         self.client.post(
             self.url,
             {
-                "title": "Updated Title",
+                "title_ru": "Updated Title",
                 "date_start": "2026-09-01",
                 "registration_mode": "self_only",
                 "birth_date_mode": "year",
@@ -599,7 +599,7 @@ class EditCompetitionViewTests(TestCase):
         self.client.post(
             self.url,
             {
-                "title": "Editable Race",
+                "title_ru": "Editable Race",
                 "date_start": "2026-09-01",
                 "registration_enabled": "on",
                 "registration_mode": "free",
