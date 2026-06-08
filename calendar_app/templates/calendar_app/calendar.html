@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initialView: isMobile ? 'listWeek' : 'dayGridMonth',
     locale: '{{ CURRENT_LANGUAGE }}',
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
+    titleFormat: { year: 'numeric', month: 'long' },
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
