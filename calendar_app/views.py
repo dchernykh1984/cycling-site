@@ -1,5 +1,6 @@
 import datetime
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
@@ -606,6 +607,9 @@ class AddCompetitionCommentView(ParticipantRequiredMixin, View):
             comment.competition = competition
             comment.author = request.user
             comment.save()
+        else:
+            error = next(iter(form.errors.values()))[0]
+            messages.error(request, error)
         return redirect("competition_detail", pk=competition_pk)
 
 

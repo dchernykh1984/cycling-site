@@ -219,7 +219,7 @@ class CompetitionComment(models.Model):
         on_delete=models.CASCADE,
         related_name="competition_comments",
     )
-    body = models.TextField()
+    body = models.TextField(max_length=2000)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
