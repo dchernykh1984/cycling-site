@@ -209,3 +209,22 @@ class Competition(index.Indexed, models.Model):
         if self.max_participants is None:
             return False
         return self.qualified_count() >= self.max_participants
+
+
+class CompetitionComment(models.Model):
+    objects: ClassVar[models.Manager["CompetitionComment"]]
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="competition_comments",
+    )
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering: ClassVar[list] = ["created_at"]
+        verbose_name = "Competition comment"
+
+    def __str__(self) -> str:
+        return f"Comment by {self.author} on {self.competition}"
