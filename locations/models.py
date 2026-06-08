@@ -8,6 +8,8 @@ from wagtail.models import Page
 from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
+from cycling_site.page_mixins import AsciiSlugMixin
+
 
 class Location(MP_Node, index.Indexed):
     name = models.CharField(max_length=255)
@@ -45,7 +47,7 @@ class Location(MP_Node, index.Indexed):
         verbose_name_plural = "Locations"
 
 
-class LocationsMapPage(Page):
+class LocationsMapPage(AsciiSlugMixin, Page):
     intro = RichTextField(blank=True)
 
     content_panels: ClassVar[list] = [*Page.content_panels, FieldPanel("intro")]

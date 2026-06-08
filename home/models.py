@@ -7,14 +7,16 @@ from wagtail.fields import StreamField
 from wagtail.models import Page
 from wagtail_localize.fields import SynchronizedField
 
+from cycling_site.page_mixins import AsciiSlugMixin
 
-class HomePage(Page):
+
+class HomePage(AsciiSlugMixin, Page):
     override_translatable_fields: ClassVar[list] = [
         SynchronizedField("slug", overridable=False),
     ]
 
 
-class AboutPage(Page):
+class AboutPage(AsciiSlugMixin, Page):
     body = StreamField(
         [("text", RichTextBlock())],
         blank=True,
