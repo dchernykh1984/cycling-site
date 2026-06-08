@@ -7,8 +7,11 @@ _LANG_DISPLAY = {"kk": "KZ", "ru": "RU", "en": "EN"}
 
 
 @register.filter
-def lang_display_code(language_code: str) -> str:
-    return _LANG_DISPLAY.get(language_code, language_code.upper())
+def lang_display_code(language_code: str | None) -> str:
+    if not language_code:
+        return ""
+    base = str(language_code).split("-")[0].lower()
+    return _LANG_DISPLAY.get(base, language_code.upper())
 
 
 @register.simple_tag
