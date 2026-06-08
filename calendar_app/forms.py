@@ -60,23 +60,30 @@ class SubmitCompetitionForm(forms.Form):
     file_results = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
 
     _MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
+    _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = frozenset({"pdf", "doc", "docx", "xls", "xlsx", "gpx", "kml"})
 
-    def _validate_file_size(self, f):
-        if f and f.size > self._MAX_FILE_BYTES:
+    def _validate_file(self, f):
+        if not f:
+            return f
+        if f.size > self._MAX_FILE_BYTES:
             raise forms.ValidationError("File size must not exceed 10 MB.")
+        ext = f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
+        if ext not in self._ALLOWED_EXTENSIONS:
+            allowed = ", ".join(sorted(self._ALLOWED_EXTENSIONS))
+            raise forms.ValidationError(f"Unsupported file type. Allowed: {allowed}.")
         return f
 
     def clean_file_announcement(self):
-        return self._validate_file_size(self.cleaned_data.get("file_announcement"))
+        return self._validate_file(self.cleaned_data.get("file_announcement"))
 
     def clean_file_route(self):
-        return self._validate_file_size(self.cleaned_data.get("file_route"))
+        return self._validate_file(self.cleaned_data.get("file_route"))
 
     def clean_file_regulations(self):
-        return self._validate_file_size(self.cleaned_data.get("file_regulations"))
+        return self._validate_file(self.cleaned_data.get("file_regulations"))
 
     def clean_file_results(self):
-        return self._validate_file_size(self.cleaned_data.get("file_results"))
+        return self._validate_file(self.cleaned_data.get("file_results"))
 
     def clean(self):
         cleaned_data = super().clean()
