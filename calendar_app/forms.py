@@ -1,10 +1,11 @@
 import json
+from typing import ClassVar
 
 from django import forms
 
 from locations.models import Location
 
-from .models import Competition, CyclingDiscipline, EventType
+from .models import Competition, CompetitionComment, CyclingDiscipline, EventType
 
 
 class SubmitCompetitionForm(forms.Form):
@@ -104,6 +105,17 @@ class RegistrationSettingsForm(forms.Form):
             return json.loads(raw)
         except (json.JSONDecodeError, ValueError):
             return []
+
+
+class AddCompetitionCommentForm(forms.ModelForm):
+    body = forms.CharField(
+        max_length=2000,
+        widget=forms.Textarea(attrs={"rows": 4, "placeholder": "Write a comment...", "class": "form-control w-100"}),
+    )
+
+    class Meta:
+        model = CompetitionComment
+        fields: ClassVar[list] = ["body"]
 
 
 class RejectCompetitionForm(forms.Form):

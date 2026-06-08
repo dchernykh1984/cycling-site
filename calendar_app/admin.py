@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.contrib import admin
 
-from .models import Competition
+from .models import Competition, CompetitionComment
 
 
 @admin.register(Competition)
@@ -11,3 +11,11 @@ class CompetitionAdmin(admin.ModelAdmin):
     list_filter = ("status",)
     readonly_fields = ("upload_token",)
     search_fields = ("title_ru", "title_kk", "title_en")
+
+
+@admin.register(CompetitionComment)
+class CompetitionCommentAdmin(admin.ModelAdmin):
+    list_display = ("competition", "author", "created_at")
+    list_filter = ("competition",)
+    readonly_fields = ("created_at",)
+    search_fields = ("body", "author__email")

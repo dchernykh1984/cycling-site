@@ -121,6 +121,50 @@
     </div>
     {% endif %}
 
+    <hr class="mt-4">
+    <section id="comments">
+      <h5 class="mb-4">{% trans "Comments" %} ({{ comments|length }})</h5>
+
+      {% for comment in comments %}
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <strong>{{ comment.author.get_full_name|default:comment.author.email }}</strong>
+              <small class="text-muted ms-2">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+            </div>
+            {% if user_can_delete_comment %}
+            <form method="post" action="{% url 'competition_delete_comment' comment.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Delete" %}</button>
+            </form>
+            {% endif %}
+          </div>
+          <p class="mb-0">{{ comment.body }}</p>
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-muted">{% trans "No comments yet. Be the first!" %}</p>
+      {% endfor %}
+
+      {% if can_comment %}
+      <div class="card mt-4">
+        <div class="card-body">
+          <h6 class="card-title">{% trans "Add a comment" %}</h6>
+          <form method="post" action="{% url 'competition_add_comment' competition.pk %}">
+            {% csrf_token %}
+            <div class="mb-3">{{ comment_form.body }}</div>
+            <button type="submit" class="btn btn-primary btn-sm">{% trans "Submit comment" %}</button>
+          </form>
+        </div>
+      </div>
+      {% elif not request.user.is_authenticated %}
+      <p class="text-muted mt-3">
+        <a href="{% url 'account_login' %}">{% trans "Log in" %}</a> {% trans "to leave a comment." %}
+      </p>
+      {% endif %}
+    </section>
+
     {% if competition.registration_enabled %}
     <div class="mt-4 pt-3 border-top">
       <h5>{% trans "Registration" %}</h5>

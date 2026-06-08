@@ -12,8 +12,14 @@ from django.views.generic import TemplateView, View
 from accounts.models import User
 from locations.models import Location
 
-from .forms import CompetitionFilterForm, RegistrationSettingsForm, RejectCompetitionForm, SubmitCompetitionForm
-from .models import Competition, CyclingDiscipline, EventType
+from .forms import (
+    AddCompetitionCommentForm,
+    CompetitionFilterForm,
+    RegistrationSettingsForm,
+    RejectCompetitionForm,
+    SubmitCompetitionForm,
+)
+from .models import Competition, CompetitionComment, CyclingDiscipline, EventType
 
 
 class ParticipantRequiredMixin(LoginRequiredMixin):
@@ -155,6 +161,11 @@ class CompetitionDetailView(View):
             ).exists()
         from django.conf import settings
 
+        comments = competition.comments.select_related("author")
+        can_comment = request.user.is_authenticated and (
+            request.user.is_superuser
+            or request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
+        )
         return render(
             request,
             "calendar_app/detail.html",
@@ -165,6 +176,10 @@ class CompetitionDetailView(View):
                 "is_manager": is_manager,
                 "already_registered": already_registered,
                 "site_base_url": getattr(settings, "SITE_BASE_URL", ""),
+                "comments": comments,
+                "can_comment": can_comment,
+                "comment_form": AddCompetitionCommentForm() if can_comment else None,
+                "user_can_delete_comment": is_manager,
             },
         )
 
@@ -580,3 +595,27 @@ class RejectCompetitionView(OrganizerRequiredMixin, View):
         except ValueError:
             pass
         return redirect("calendar_moderate")
+
+
+class AddCompetitionCommentView(ParticipantRequiredMixin, View):
+    def post(self, request, competition_pk):
+        competition = get_object_or_404(Competition, pk=competition_pk, status=Competition.Status.APPROVED)
+        form = AddCompetitionCommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.competition = competition
+            comment.author = request.user
+            comment.save()
+        return redirect("competition_detail", pk=competition_pk)
+
+
+class DeleteCompetitionCommentView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        comment = get_object_or_404(CompetitionComment.objects.select_related("competition__submitted_by"), pk=pk)
+        from registrations.views import can_manage
+
+        if not can_manage(request.user, comment.competition):
+            raise PermissionDenied
+        competition_pk = comment.competition_id
+        comment.delete()
+        return redirect("competition_detail", pk=competition_pk)

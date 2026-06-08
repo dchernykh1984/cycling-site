@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
-from calendar_app.models import Competition, CyclingDiscipline, EventType
+from calendar_app.models import Competition, CompetitionComment, CyclingDiscipline, EventType
 
 
 def _make_user(email, role, is_staff=False):
@@ -609,3 +609,96 @@ class EditCompetitionViewTests(TestCase):
         )
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.registration_mode, "self_only")
+
+
+class CompetitionCommentTests(TestCase):
+    def setUp(self):
+        self.participant = _make_user("commenter@example.com", User.Role.PARTICIPANT)
+        self.organizer = _make_user("comp_owner@example.com", User.Role.ORGANIZER)
+        self.other_participant = _make_user("other@example.com", User.Role.PARTICIPANT)
+        self.admin = _make_user("admin@example.com", User.Role.ADMIN)
+        self.comp = _make_competition(
+            "Comment Race",
+            status=Competition.Status.APPROVED,
+            submitted_by=self.organizer,
+        )
+        self.add_url = reverse("competition_add_comment", args=[self.comp.pk])
+
+    def _add_comment(self, user, body="Great race!"):
+        self.client.login(username=user.email, password="password123")
+        return self.client.post(self.add_url, {"body": body})
+
+    def _make_comment(self, author=None, body="A comment"):
+        return CompetitionComment.objects.create(
+            competition=self.comp,
+            author=author or self.participant,
+            body=body,
+        )
+
+    def test_participant_can_post_comment(self):
+        self._add_comment(self.participant)
+        self.assertEqual(CompetitionComment.objects.count(), 1)
+
+    def test_comment_has_correct_author_and_competition(self):
+        self._add_comment(self.participant)
+        comment = CompetitionComment.objects.get()
+        self.assertEqual(comment.author, self.participant)
+        self.assertEqual(comment.competition, self.comp)
+
+    def test_unauthenticated_user_redirected(self):
+        response = self.client.post(self.add_url, {"body": "Hi"})
+        self.assertIn(response.status_code, (302, 403))
+        self.assertEqual(CompetitionComment.objects.count(), 0)
+
+    def test_guest_role_gets_403(self):
+        _make_user("guest@example.com", User.Role.GUEST)
+        self.client.login(username="guest@example.com", password="password123")
+        response = self.client.post(self.add_url, {"body": "Hi"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_add_to_non_approved_competition_returns_404(self):
+        pending = _make_competition("Pending", status=Competition.Status.PENDING_APPROVAL)
+        url = reverse("competition_add_comment", args=[pending.pk])
+        self.client.login(username=self.participant.email, password="password123")
+        response = self.client.post(url, {"body": "Hi"})
+        self.assertEqual(response.status_code, 404)
+
+    def test_manager_can_delete_comment(self):
+        comment = self._make_comment()
+        delete_url = reverse("competition_delete_comment", args=[comment.pk])
+        self.client.login(username=self.organizer.email, password="password123")
+        self.client.post(delete_url)
+        self.assertEqual(CompetitionComment.objects.count(), 0)
+
+    def test_admin_can_delete_comment(self):
+        comment = self._make_comment()
+        delete_url = reverse("competition_delete_comment", args=[comment.pk])
+        self.client.login(username=self.admin.email, password="password123")
+        self.client.post(delete_url)
+        self.assertEqual(CompetitionComment.objects.count(), 0)
+
+    def test_non_manager_cannot_delete_comment(self):
+        comment = self._make_comment(author=self.other_participant)
+        delete_url = reverse("competition_delete_comment", args=[comment.pk])
+        self.client.login(username=self.participant.email, password="password123")
+        response = self.client.post(delete_url)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(CompetitionComment.objects.count(), 1)
+
+    def test_unauthenticated_cannot_delete(self):
+        comment = self._make_comment()
+        delete_url = reverse("competition_delete_comment", args=[comment.pk])
+        response = self.client.post(delete_url)
+        self.assertIn(response.status_code, (302, 403))
+        self.assertEqual(CompetitionComment.objects.count(), 1)
+
+    def test_delete_nonexistent_comment_returns_404(self):
+        delete_url = reverse("competition_delete_comment", args=[99999])
+        self.client.login(username=self.organizer.email, password="password123")
+        response = self.client.post(delete_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_comments_shown_on_detail_page(self):
+        self._make_comment(body="Visible comment")
+        response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
+        self.assertContains(response, "Visible comment")
