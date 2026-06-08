@@ -54,7 +54,8 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**/*.py" = ["S101", "S105", "S106"]
+"**/tests/**/*.py" = ["S101", "S105", "S106", "S603", "S607"]
+"tests/e2e/**/*.py" = ["S101", "S105", "S106", "S603", "S607"]
 "**/tests.py" = ["S101", "S105", "S106"]
 "**/migrations/*.py" = ["N806", "RUF012", "E501"]
 "cycling_site/settings/*.py" = ["F403", "F405", "S105"]
@@ -77,6 +78,7 @@ omit = [
     "manage.py",
     "cycling_site/wsgi.py",
     "cycling_site/settings/prod.py",
+    "tests/e2e/*",
 ]
 
 [tool.pytest.ini_options]
@@ -85,5 +87,8 @@ pythonpath = ["."]
 asyncio_mode = "auto"
 DJANGO_SETTINGS_MODULE = "cycling_site.settings.test"
 python_files = ["test_*.py", "*_test.py", "tests.py"]
-addopts = "-n auto --cov=. --cov-fail-under=90 --cov-report=term-missing"
-markers = ["debug: mark test for local debugging and run it in isolation"]
+addopts = "-n auto --cov=. --cov-fail-under=90 --cov-report=term-missing --ignore=tests/e2e"
+markers = [
+    "debug: mark test for local debugging and run it in isolation",
+    "e2e: end-to-end Playwright tests (run separately via tests/e2e/)",
+]

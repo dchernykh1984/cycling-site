@@ -1,0 +1,105 @@
+name: E2E Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Desktop browsers - three rendering engines
+          - browser: chromium
+            device: ""
+          - browser: firefox
+            device: ""
+          - browser: webkit
+            device: ""
+          # Mobile - Chromium (Android) and WebKit (iOS)
+          - browser: chromium
+            device: "Pixel 7"
+          - browser: webkit
+            device: "iPhone 15"
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: cycling_site_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost/cycling_site_test
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Configure Poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-e2e-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install --no-root
+
+      - name: Install Playwright browser
+        run: poetry run playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run E2E tests (desktop)
+        if: matrix.device == ''
+        run: >
+          poetry run pytest tests/e2e/
+          --browser ${{ matrix.browser }}
+          --tracing=retain-on-failure
+          --no-cov
+          -v
+          --tb=short
+
+      - name: Run E2E tests (mobile device)
+        if: matrix.device != ''
+        run: >
+          poetry run pytest tests/e2e/
+          --browser ${{ matrix.browser }}
+          --device "${{ matrix.device }}"
+          --tracing=retain-on-failure
+          --no-cov
+          -v
+          --tb=short
+
+      - name: Upload Playwright trace on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ matrix.browser }}-${{ matrix.device || 'desktop' }}
+          path: test-results/
+          retention-days: 7
