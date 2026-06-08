@@ -7,22 +7,69 @@
 <div class="row justify-content-center">
   <div class="col-md-9 col-lg-8">
     <h1 class="mb-4">{% trans "Submit competition" %}</h1>
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {% for field in form %}
-      <div class="mb-3">
-        <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
-          {{ field.label }}{% if field.field.required %} *{% endif %}
-        </label>
-        {{ field }}
-        {% if field.errors %}
-        <div class="text-danger small mt-1">{% for error in field.errors %}{{ error }}{% endfor %}</div>
+        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
+            {{ field.label }}{% if field.field.required %} *{% endif %}
+          </label>
+          {{ field }}
+          {% if field.errors %}
+          <div class="text-danger small mt-1">{% for error in field.errors %}{{ error }}{% endfor %}</div>
+          {% endif %}
+        </div>
         {% endif %}
-      </div>
       {% endfor %}
       {% if form.non_field_errors %}
       <div class="alert alert-danger">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
       {% endif %}
+
+      <hr class="my-4">
+      <h5 class="mb-3">{% trans "Documents" %}</h5>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">{% trans "Announcement" %}</label>
+        {{ form.url_announcement }}
+        {% if form.url_announcement.errors %}<div class="text-danger small mt-1">{% for e in form.url_announcement.errors %}{{ e }}{% endfor %}</div>{% endif %}
+        <div class="form-text">{% trans "or upload file" %}</div>
+        {{ form.file_announcement }}
+        {% if form.file_announcement.errors %}<div class="text-danger small mt-1">{% for e in form.file_announcement.errors %}{{ e }}{% endfor %}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="{{ form.url_registration.id_for_label }}">{{ form.url_registration.label }}</label>
+        {{ form.url_registration }}
+        {% if form.url_registration.errors %}<div class="text-danger small mt-1">{% for e in form.url_registration.errors %}{{ e }}{% endfor %}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">{% trans "Route" %}</label>
+        {{ form.url_route }}
+        {% if form.url_route.errors %}<div class="text-danger small mt-1">{% for e in form.url_route.errors %}{{ e }}{% endfor %}</div>{% endif %}
+        <div class="form-text">{% trans "or upload file" %}</div>
+        {{ form.file_route }}
+        {% if form.file_route.errors %}<div class="text-danger small mt-1">{% for e in form.file_route.errors %}{{ e }}{% endfor %}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">{% trans "Regulations" %}</label>
+        {{ form.url_regulations }}
+        {% if form.url_regulations.errors %}<div class="text-danger small mt-1">{% for e in form.url_regulations.errors %}{{ e }}{% endfor %}</div>{% endif %}
+        <div class="form-text">{% trans "or upload file" %}</div>
+        {{ form.file_regulations }}
+        {% if form.file_regulations.errors %}<div class="text-danger small mt-1">{% for e in form.file_regulations.errors %}{{ e }}{% endfor %}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">{% trans "Results" %}</label>
+        {{ form.url_results }}
+        {% if form.url_results.errors %}<div class="text-danger small mt-1">{% for e in form.url_results.errors %}{{ e }}{% endfor %}</div>{% endif %}
+        <div class="form-text">{% trans "or upload file" %}</div>
+        {{ form.file_results }}
+        {% if form.file_results.errors %}<div class="text-danger small mt-1">{% for e in form.file_results.errors %}{{ e }}{% endfor %}</div>{% endif %}
+      </div>
 
       {% if is_organizer_plus %}
       <div class="card mb-4">

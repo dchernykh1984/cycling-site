@@ -39,10 +39,13 @@
     <div class="mb-4">{{ competition.description|linebreaks }}</div>
     {% endif %}
 
-    {% if competition.url_announcement or competition.url_registration or competition.url_route or competition.url_regulations or competition.url_results %}
+    {% if competition.url_announcement or competition.file_announcement or competition.url_registration or competition.url_route or competition.file_route or competition.url_regulations or competition.file_regulations or competition.url_results or competition.file_results %}
     <div class="d-flex flex-wrap gap-2 mb-4">
       {% if competition.url_announcement %}
       <a href="{{ competition.url_announcement }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Announcement" %}</a>
+      {% elif competition.file_announcement %}
+      <a href="{{ competition.file_announcement.url }}" target="_blank" rel="noopener"
          class="btn btn-outline-secondary">{% trans "Announcement" %}</a>
       {% endif %}
       {% if competition.url_registration %}
@@ -52,13 +55,22 @@
       {% if competition.url_route %}
       <a href="{{ competition.url_route }}" target="_blank" rel="noopener"
          class="btn btn-outline-secondary">{% trans "Route" %}</a>
+      {% elif competition.file_route %}
+      <a href="{{ competition.file_route.url }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Route" %}</a>
       {% endif %}
       {% if competition.url_regulations %}
       <a href="{{ competition.url_regulations }}" target="_blank" rel="noopener"
          class="btn btn-outline-secondary">{% trans "Regulations" %}</a>
+      {% elif competition.file_regulations %}
+      <a href="{{ competition.file_regulations.url }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Regulations" %}</a>
       {% endif %}
       {% if competition.url_results %}
       <a href="{{ competition.url_results }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Results" %}</a>
+      {% elif competition.file_results %}
+      <a href="{{ competition.file_results.url }}" target="_blank" rel="noopener"
          class="btn btn-outline-secondary">{% trans "Results" %}</a>
       {% endif %}
     </div>
