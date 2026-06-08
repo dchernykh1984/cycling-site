@@ -254,6 +254,9 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
 WAGTAIL_SITE_NAME = "cycling_site"
 WAGTAIL_ALLOW_UNICODE_SLUGS = False
 
+# Persist the language cookie across browser sessions (one year).
+LANGUAGE_COOKIE_AGE = 365 * 24 * 60 * 60
+
 # Search
 # https://docs.wagtail.org/en/stable/topics/search/backends.html
 WAGTAILSEARCH_BACKENDS = {
