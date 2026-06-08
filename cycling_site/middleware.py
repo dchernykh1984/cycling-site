@@ -4,6 +4,7 @@ from django.http import HttpResponseRedirect
 
 _LOCALE_PREFIX_RE = re.compile(r"^/(?P<lang>[a-z]{2})/(?P<path>.*)$")
 _FALLBACK_ORDER = ("ru", "en", "kk")
+_HAS_LANG_PREFIX_RE = re.compile(r"^/(kk|en)/")
 
 
 class LocaleFallbackMiddleware:
@@ -19,7 +20,32 @@ class LocaleFallbackMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Apply authenticated user's language preference for non-prefixed paths.
+        # Prefixed paths (e.g. /kk/..., /en/...) are already handled by LocaleMiddleware
+        # via URL inspection and must not be overridden.
+        _lang_overridden = False
+        if (
+            hasattr(request, "user")
+            and request.user.is_authenticated
+            and request.user.preferred_language
+            and not _HAS_LANG_PREFIX_RE.match(request.path_info)
+        ):
+            from django.utils import translation
+            from django.utils.translation import check_for_language
+
+            pref = request.user.preferred_language
+            if check_for_language(pref):
+                translation.activate(pref)
+                request.LANGUAGE_CODE = pref
+                _lang_overridden = True
+
         response = self.get_response(request)
+
+        if _lang_overridden:
+            from django.utils import translation
+
+            translation.deactivate()
+
         if response.status_code != 404:
             return response
 

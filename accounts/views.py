@@ -70,3 +70,19 @@ class ThemeUpdateView(LoginRequiredMixin, View):
         request.user.theme = theme
         request.user.save(update_fields=["theme"])
         return JsonResponse({"theme": theme})
+
+
+def set_language(request):
+    """Wrap Django's set_language to also persist preference for authenticated users."""
+    from django.utils.translation import check_for_language
+    from django.views.i18n import set_language as _django_set_language
+
+    response = _django_set_language(request)
+
+    if request.method == "POST" and request.user.is_authenticated:
+        lang = request.POST.get("language", "")
+        if lang and check_for_language(lang):
+            request.user.preferred_language = lang
+            request.user.save(update_fields=["preferred_language"])
+
+    return response
