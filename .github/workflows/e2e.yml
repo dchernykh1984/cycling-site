@@ -32,26 +32,22 @@ jobs:
           - browser: webkit
             device: "iPhone 15"
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: cycling_site_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost/cycling_site_test
 
     steps:
       - uses: actions/checkout@v6
+
+      - name: Set up PostgreSQL
+        run: |
+          for attempt in 1 2 3; do
+            sudo systemctl start postgresql && break
+            echo "Attempt $attempt failed, retrying in 5s..."
+            sleep 5
+          done
+          sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
+          sudo -u postgres createdb cycling_site_test
+          timeout 30 bash -c 'until pg_isready -h localhost -U postgres; do sleep 1; done'
 
       - uses: actions/setup-python@v6
         with:
