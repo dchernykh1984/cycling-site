@@ -312,8 +312,12 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                     {"form": form, "reg_form": reg_form, "is_organizer_plus": is_organizer},
                 )
             comp = Competition(
-                title_ru=cd["title"],
-                description_ru=cd.get("description", ""),
+                title_ru=cd["title_ru"],
+                title_kk=cd.get("title_kk", ""),
+                title_en=cd.get("title_en", ""),
+                description_ru=cd.get("description_ru", ""),
+                description_kk=cd.get("description_kk", ""),
+                description_en=cd.get("description_en", ""),
                 event_type=cd.get("event_type"),
                 discipline=cd.get("discipline"),
                 location=cd.get("location"),
@@ -370,8 +374,12 @@ class EditCompetitionView(View):
         comp = self._get_competition_or_403(request, pk)
         form = SubmitCompetitionForm(
             initial={
-                "title": comp.title,
-                "description": comp.description,
+                "title_ru": comp.title_ru or "",
+                "title_kk": comp.title_kk or "",
+                "title_en": comp.title_en or "",
+                "description_ru": comp.description_ru or "",
+                "description_kk": comp.description_kk or "",
+                "description_en": comp.description_en or "",
                 "event_type": comp.event_type_id,
                 "discipline": comp.discipline_id,
                 "location": comp.location_id,
@@ -484,8 +492,12 @@ class EditCompetitionView(View):
                         "mode_locked": comp.registration_mode_locked,
                     },
                 )
-            comp.title_ru = cd["title"]
-            comp.description_ru = cd.get("description", "")
+            comp.title_ru = cd["title_ru"]
+            comp.title_kk = cd.get("title_kk", "")
+            comp.title_en = cd.get("title_en", "")
+            comp.description_ru = cd.get("description_ru", "")
+            comp.description_kk = cd.get("description_kk", "")
+            comp.description_en = cd.get("description_en", "")
             comp.event_type = cd.get("event_type")
             comp.discipline = cd.get("discipline")
             comp.location = cd.get("location")

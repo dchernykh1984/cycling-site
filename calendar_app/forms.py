@@ -8,8 +8,18 @@ from .models import Competition, CyclingDiscipline, EventType
 
 
 class SubmitCompetitionForm(forms.Form):
-    title = forms.CharField(max_length=255, widget=forms.TextInput(attrs={"class": "form-control"}))
-    description = forms.CharField(
+    title_ru = forms.CharField(max_length=255, widget=forms.TextInput(attrs={"class": "form-control"}))
+    title_kk = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
+    title_en = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
+    description_ru = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 4, "class": "form-control"}),
+    )
+    description_kk = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 4, "class": "form-control"}),
+    )
+    description_en = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={"rows": 4, "class": "form-control"}),
     )

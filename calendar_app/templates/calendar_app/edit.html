@@ -17,8 +17,61 @@
     <h1 class="mb-4">{% trans "Edit competition" %}</h1>
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
+
+      <div class="mb-4">
+        <ul class="nav nav-tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-ru" type="button" role="tab">RU</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-kk" type="button" role="tab">KZ</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-en" type="button" role="tab">EN</button>
+          </li>
+        </ul>
+        <div class="tab-content border border-top-0 rounded-bottom p-3">
+          <div class="tab-pane fade show active" id="tab-ru" role="tabpanel">
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="{{ form.title_ru.id_for_label }}">{% trans "Title" %} *</label>
+              {{ form.title_ru }}
+              {% if form.title_ru.errors %}<div class="text-danger small mt-1">{% for e in form.title_ru.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+            <div class="mb-0">
+              <label class="form-label fw-semibold" for="{{ form.description_ru.id_for_label }}">{% trans "Description" %}</label>
+              {{ form.description_ru }}
+              {% if form.description_ru.errors %}<div class="text-danger small mt-1">{% for e in form.description_ru.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+          </div>
+          <div class="tab-pane fade" id="tab-kk" role="tabpanel">
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="{{ form.title_kk.id_for_label }}">{% trans "Title" %}</label>
+              {{ form.title_kk }}
+              {% if form.title_kk.errors %}<div class="text-danger small mt-1">{% for e in form.title_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+            <div class="mb-0">
+              <label class="form-label fw-semibold" for="{{ form.description_kk.id_for_label }}">{% trans "Description" %}</label>
+              {{ form.description_kk }}
+              {% if form.description_kk.errors %}<div class="text-danger small mt-1">{% for e in form.description_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+          </div>
+          <div class="tab-pane fade" id="tab-en" role="tabpanel">
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="{{ form.title_en.id_for_label }}">{% trans "Title" %}</label>
+              {{ form.title_en }}
+              {% if form.title_en.errors %}<div class="text-danger small mt-1">{% for e in form.title_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+            <div class="mb-0">
+              <label class="form-label fw-semibold" for="{{ form.description_en.id_for_label }}">{% trans "Description" %}</label>
+              {{ form.description_en }}
+              {% if form.description_en.errors %}<div class="text-danger small mt-1">{% for e in form.description_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {% for field in form %}
-        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" %}
+        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" %}
         <div class="mb-3">
           <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
             {{ field.label }}{% if field.field.required %} *{% endif %}
@@ -112,6 +165,12 @@
   </div>
 </div>
 <script>
+['tab-ru','tab-kk','tab-en'].forEach(function(id) {
+  var pane = document.getElementById(id);
+  if (pane && pane.querySelector('.text-danger')) {
+    new bootstrap.Tab(document.querySelector('[data-bs-target="#' + id + '"]')).show();
+  }
+});
 const regEnabled = document.getElementById('reg_enabled');
 const regCollapse = document.getElementById('reg-collapse');
 const urlRegField = document.getElementById('id_url_registration');
