@@ -84,5 +84,9 @@ def set_language(request):
         if lang is not None and (lang == "" or check_for_language(lang)):
             request.user.preferred_language = lang
             request.user.save(update_fields=["preferred_language"])
+            if lang == "":
+                from django.conf import settings as django_settings
+
+                response.delete_cookie(django_settings.LANGUAGE_COOKIE_NAME)
 
     return response
