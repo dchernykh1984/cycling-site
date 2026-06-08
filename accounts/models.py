@@ -1,5 +1,6 @@
 from typing import ClassVar
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -28,7 +29,12 @@ class User(AbstractUser):
         choices=[("light", "Light"), ("dark", "Dark")],
         default="light",
     )
-    preferred_language = models.CharField(max_length=10, blank=True, default="")
+    preferred_language = models.CharField(
+        max_length=10,
+        blank=True,
+        default="",
+        choices=[("", "Auto"), *settings.LANGUAGES],
+    )
 
     gender = models.CharField(max_length=1, choices=Gender.choices, blank=True, default="")
     birth_date = models.DateField(null=True, blank=True)

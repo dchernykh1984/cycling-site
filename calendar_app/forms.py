@@ -61,23 +61,22 @@ class SubmitCompetitionForm(forms.Form):
 
     _MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
 
-    def _validate_file_size(self, field_name: str):
-        f = self.cleaned_data.get(field_name)
+    def _validate_file_size(self, f):
         if f and f.size > self._MAX_FILE_BYTES:
             raise forms.ValidationError("File size must not exceed 10 MB.")
         return f
 
     def clean_file_announcement(self):
-        return self._validate_file_size("file_announcement")
+        return self._validate_file_size(self.cleaned_data.get("file_announcement"))
 
     def clean_file_route(self):
-        return self._validate_file_size("file_route")
+        return self._validate_file_size(self.cleaned_data.get("file_route"))
 
     def clean_file_regulations(self):
-        return self._validate_file_size("file_regulations")
+        return self._validate_file_size(self.cleaned_data.get("file_regulations"))
 
     def clean_file_results(self):
-        return self._validate_file_size("file_results")
+        return self._validate_file_size(self.cleaned_data.get("file_results"))
 
     def clean(self):
         cleaned_data = super().clean()

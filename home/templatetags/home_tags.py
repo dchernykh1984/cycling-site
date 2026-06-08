@@ -19,13 +19,11 @@ def lang_display_code(language_code: str | None) -> str:
 def get_about_url():
     from home.models import AboutPage
 
-    lang = Locale.get_active().language_code
-    cache_key = f"about_url_{lang}"
+    locale = Locale.get_active()
+    cache_key = f"about_url_{locale.language_code}"
     url = cache.get(cache_key)
     if url is None:
-        page = AboutPage.objects.live().filter(locale=Locale.get_active()).first()
-        if page is None:
-            page = AboutPage.objects.live().first()
+        page = AboutPage.objects.live().filter(locale=locale).first()
         url = page.url if page else ""
         cache.set(cache_key, url, timeout=300)
     return url or None

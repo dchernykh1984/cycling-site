@@ -1,10 +1,17 @@
 import re
 
+from django.conf import settings
 from django.http import HttpResponseRedirect
 
-_LOCALE_PREFIX_RE = re.compile(r"^/(?P<lang>kk|en)/(?P<path>.*)$")
-_FALLBACK_ORDER = ("ru", "en", "kk")
-_HAS_LANG_PREFIX_RE = re.compile(r"^/(kk|en)/")
+# Derived at startup from LANGUAGE_CODE (the default/unprefixed language) and LANGUAGES.
+# Using settings avoids hardcoding language codes that must be kept in sync manually.
+_default_lang = settings.LANGUAGE_CODE.split("-")[0]
+_prefixed_langs = [code.split("-")[0] for code, _ in settings.LANGUAGES if code.split("-")[0] != _default_lang]
+_prefixed_pattern = "|".join(re.escape(c) for c in _prefixed_langs)
+
+_LOCALE_PREFIX_RE = re.compile(rf"^/(?P<lang>{_prefixed_pattern})/(?P<path>.*)$")
+_HAS_LANG_PREFIX_RE = re.compile(rf"^/({_prefixed_pattern})/")
+_FALLBACK_ORDER = (_default_lang, *_prefixed_langs)
 
 
 class LocaleFallbackMiddleware:
@@ -60,7 +67,7 @@ class LocaleFallbackMiddleware:
         for lang in _FALLBACK_ORDER:
             if lang == current_lang:
                 continue
-            fallback_url = f"/{path}" if lang == "ru" else f"/{lang}/{path}"
+            fallback_url = f"/{path}" if lang == _default_lang else f"/{lang}/{path}"
             return HttpResponseRedirect(fallback_url)
 
         return response
