@@ -2,7 +2,7 @@ import re
 
 from django.http import HttpResponseRedirect
 
-_LOCALE_PREFIX_RE = re.compile(r"^/(?P<lang>[a-z]{2})/(?P<path>.*)$")
+_LOCALE_PREFIX_RE = re.compile(r"^/(?P<lang>kk|en)/(?P<path>.*)$")
 _FALLBACK_ORDER = ("ru", "en", "kk")
 _HAS_LANG_PREFIX_RE = re.compile(r"^/(kk|en)/")
 
@@ -14,6 +14,10 @@ class LocaleFallbackMiddleware:
     while Kazakh and English use /kk/ and /en/ prefixes. When a translated
     page does not exist for the requested locale, redirect to ru -> en -> kk
     in that order, skipping the locale that just returned 404.
+
+    Russian unprefixed 404s (/path/ not found) are not handled here -- there is
+    no safe fallback because redirecting to /en/path/ would cause a redirect
+    loop if that page is also missing (/en/path/ 404 -> redirect to /path/ -> loop).
     """
 
     def __init__(self, get_response):
@@ -23,7 +27,10 @@ class LocaleFallbackMiddleware:
         # Apply authenticated user's language preference for non-prefixed paths.
         # Prefixed paths (e.g. /kk/..., /en/...) are already handled by LocaleMiddleware
         # via URL inspection and must not be overridden.
-        _lang_overridden = False
+        # Do NOT call translation.deactivate() after get_response - LocaleMiddleware
+        # (which wraps this one) calls it in process_response and also uses the active
+        # language to set the Content-Language header, so deactivating early would
+        # produce a wrong header for kk/en preference users.
         if (
             hasattr(request, "user")
             and request.user.is_authenticated
@@ -37,14 +44,8 @@ class LocaleFallbackMiddleware:
             if check_for_language(pref):
                 translation.activate(pref)
                 request.LANGUAGE_CODE = pref
-                _lang_overridden = True
 
         response = self.get_response(request)
-
-        if _lang_overridden:
-            from django.utils import translation
-
-            translation.deactivate()
 
         if response.status_code != 404:
             return response

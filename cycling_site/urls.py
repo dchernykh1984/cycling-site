@@ -14,7 +14,6 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("admin/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     path("i18n/set_language/", accounts_set_language, name="set_language"),
-    path("i18n/", include("django.conf.urls.i18n")),
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("allauth.urls")),
     path("knowledge/", include("knowledge.urls")),
