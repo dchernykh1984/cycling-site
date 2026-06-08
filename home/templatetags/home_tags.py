@@ -3,6 +3,13 @@ from wagtail.models import Locale
 
 register = template.Library()
 
+_LANG_DISPLAY = {"kk": "KZ", "ru": "RU", "en": "EN"}
+
+
+@register.filter
+def lang_display_code(language_code: str) -> str:
+    return _LANG_DISPLAY.get(language_code, language_code.upper())
+
 
 @register.simple_tag
 def get_about_url():

@@ -120,7 +120,7 @@
                     {% if page %}
                         {% for translation in page.get_translations.live %}
                         <a href="{{ translation.url }}" class="btn btn-sm btn-outline-secondary me-1">
-                            {{ translation.locale.language_code|upper }}
+                            {{ translation.locale.language_code|lang_display_code }}
                         </a>
                         {% endfor %}
                     {% else %}
@@ -132,7 +132,7 @@
                             <input name="next" type="hidden" value="{{ request.get_full_path }}">
                             <input name="language" type="hidden" value="{{ lang_code }}">
                             <button type="submit" class="btn btn-sm btn-outline-secondary me-1">
-                                {{ lang_code|upper }}
+                                {{ lang_code|lang_display_code }}
                             </button>
                         </form>
                         {% endif %}

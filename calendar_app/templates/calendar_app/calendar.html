@@ -162,10 +162,11 @@ document.addEventListener('DOMContentLoaded', function () {
   var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
     initialView: isMobile ? 'listWeek' : 'dayGridMonth',
     locale: '{{ CURRENT_LANGUAGE }}',
+    firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
-      right: 'dayGridMonth,listWeek',
+      right: 'dayGridMonth',
     },
     height: 'auto',
     events: function (fetchInfo, successCallback, failureCallback) {
