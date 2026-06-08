@@ -111,10 +111,34 @@ SOCIALACCOUNT_QUERY_EMAIL = True
 # Telegram has no email concept at all: social login leaves the user as guest until they
 # add and confirm an email address manually.
 SOCIALACCOUNT_PROVIDERS = {
-    "google": {"EMAIL_AUTHENTICATION": True},
-    "github": {"EMAIL_AUTHENTICATION": True},
-    "strava": {"EMAIL_AUTHENTICATION": False},
-    "telegram": {"EMAIL_AUTHENTICATION": False},
+    "google": {
+        "EMAIL_AUTHENTICATION": True,
+        "APP": {
+            "client_id": env("GOOGLE_CLIENT_ID", default=""),
+            "secret": env("GOOGLE_CLIENT_SECRET", default=""),
+        },
+    },
+    "github": {
+        "EMAIL_AUTHENTICATION": True,
+        "APP": {
+            "client_id": env("GITHUB_CLIENT_ID", default=""),
+            "secret": env("GITHUB_CLIENT_SECRET", default=""),
+        },
+    },
+    "strava": {
+        "EMAIL_AUTHENTICATION": False,
+        "APP": {
+            "client_id": env("STRAVA_CLIENT_ID", default=""),
+            "secret": env("STRAVA_CLIENT_SECRET", default=""),
+        },
+    },
+    "telegram": {
+        "EMAIL_AUTHENTICATION": False,
+        "APP": {
+            "client_id": env("TELEGRAM_BOT_TOKEN", default=""),
+            "secret": env("TELEGRAM_BOT_TOKEN", default=""),
+        },
+    },
 }
 
 MIDDLEWARE = [
