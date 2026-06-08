@@ -87,6 +87,11 @@ def set_language(request):
             if lang == "":
                 from django.conf import settings as django_settings
 
-                response.delete_cookie(django_settings.LANGUAGE_COOKIE_NAME)
+                response.delete_cookie(
+                    django_settings.LANGUAGE_COOKIE_NAME,
+                    path=django_settings.LANGUAGE_COOKIE_PATH,
+                    domain=django_settings.LANGUAGE_COOKIE_DOMAIN,
+                    samesite=django_settings.LANGUAGE_COOKIE_SAMESITE,
+                )
 
     return response
