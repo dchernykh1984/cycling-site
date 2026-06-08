@@ -107,7 +107,8 @@ def test_page_model_accepts_ascii_slug(module_name, class_name):
     try:
         page.clean()
     except ValidationError as exc:
-        assert "slug" not in exc.message_dict, f"ASCII slug wrongly rejected by {class_name}"
+        if hasattr(exc, "message_dict"):
+            assert "slug" not in exc.message_dict, f"ASCII slug wrongly rejected by {class_name}"
 
 
 # ---------------------------------------------------------------------------

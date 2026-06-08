@@ -2,7 +2,7 @@ import re
 
 from django.core.exceptions import ValidationError
 
-_ASCII_SLUG_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+_ASCII_SLUG_RE = re.compile(r"^[a-zA-Z0-9_-]+\Z")
 
 
 class AsciiSlugMixin:
