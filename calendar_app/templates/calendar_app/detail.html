@@ -162,6 +162,8 @@
       <p class="text-muted mt-3">
         <a href="{% url 'account_login' %}">{% trans "Log in" %}</a> {% trans "to leave a comment." %}
       </p>
+      {% elif request.user.is_authenticated %}
+      <p class="text-muted mt-3">{% trans "Commenting is available to verified participants." %}</p>
       {% endif %}
     </section>
 

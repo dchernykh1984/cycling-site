@@ -8,6 +8,20 @@ _LANG_DISPLAY = {"kk": "KZ", "ru": "RU", "en": "EN"}
 
 
 @register.filter
+def dict_get(d, key):
+    return d.get(key) if isinstance(d, dict) else None
+
+
+@register.simple_tag
+def get_page_translation_urls(page):
+    """Return {lang_code: url} for all live translations of a Wagtail page."""
+    result = {}
+    for translation in page.get_translations().live():
+        result[translation.locale.language_code] = translation.url
+    return result
+
+
+@register.filter
 def lang_display_code(language_code: str | None) -> str:
     if not language_code:
         return ""

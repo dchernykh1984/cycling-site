@@ -60,7 +60,9 @@ class SubmitCompetitionForm(forms.Form):
     file_results = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
 
     _MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
-    _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = frozenset({"pdf", "doc", "docx", "xls", "xlsx", "gpx", "kml"})
+    _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = frozenset(
+        {"pdf", "doc", "docx", "xls", "xlsx", "gpx", "kml", "jpg", "jpeg", "png", "gif", "webp"}
+    )
 
     def _validate_file(self, f):
         if not f:

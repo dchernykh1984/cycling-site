@@ -13,6 +13,18 @@ _LOCALE_PREFIX_RE = re.compile(rf"^/(?P<lang>{_prefixed_pattern})/(?P<path>.*)$"
 _HAS_LANG_PREFIX_RE = re.compile(rf"^/({_prefixed_pattern})/")
 _FALLBACK_ORDER = (_default_lang, *_prefixed_langs)
 
+# URL prefixes that are registered in the regular urlpatterns (NOT inside i18n_patterns).
+# Language can be activated safely for these paths: URL resolution does not involve
+# LocalePrefixPattern and does not depend on the active language code.
+#
+# Paths NOT in this list go through i18n_patterns (Wagtail pages, /search/, /kk/...).
+# For those paths the URL itself encodes the language; activating a non-default language
+# before URL resolution would make LocalePrefixPattern demand /kk/... prefix and return 404.
+_NON_I18N_PATH_RE = re.compile(
+    r"^/(django-admin|admin|documents|i18n|accounts|knowledge|news|calendar|"
+    r"api|protocols|competitions)/"
+)
+
 
 class LocaleFallbackMiddleware:
     """Redirect locale-prefixed 404s to the first available fallback locale.
@@ -31,24 +43,34 @@ class LocaleFallbackMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Apply authenticated user's language preference for non-prefixed paths.
-        # Prefixed paths (e.g. /kk/..., /en/...) are already handled by LocaleMiddleware
-        # via URL inspection and must not be overridden.
-        # Do NOT call translation.deactivate() after get_response - LocaleMiddleware
-        # (which wraps this one) calls it in process_response and also uses the active
-        # language to set the Content-Language header, so deactivating early would
-        # produce a wrong header for kk/en preference users.
-        if (
-            hasattr(request, "user")
-            and request.user.is_authenticated
-            and request.user.preferred_language
-            and not _HAS_LANG_PREFIX_RE.match(request.path_info)
-        ):
+        # Re-apply language preference for non-prefixed, non-i18n URL paths.
+        #
+        # LocaleMiddleware with prefix_default_language=False forces LANGUAGE_CODE for
+        # any URL that lacks a language prefix, completely ignoring the cookie.  We
+        # override that here for paths that are in regular urlpatterns (calendar, news,
+        # knowledge, etc.) so both anonymous and authenticated users see their chosen
+        # language there.
+        #
+        # We must NOT activate a non-default language for paths handled by i18n_patterns
+        # (Wagtail pages, /search/).  Those paths rely on URL-prefix detection: if
+        # get_language() returns 'kk' when the URL is '/', LocalePrefixPattern demands
+        # the '/kk/' prefix and raises a 404.
+        #
+        # Do NOT call translation.deactivate() after get_response -- LocaleMiddleware
+        # reads get_language() in process_response to set Content-Language.
+        path_info = request.path_info
+        if not _HAS_LANG_PREFIX_RE.match(path_info) and _NON_I18N_PATH_RE.match(path_info):
             from django.utils import translation
             from django.utils.translation import check_for_language
 
-            pref = request.user.preferred_language
-            if check_for_language(pref):
+            pref: str | None = None
+            if hasattr(request, "user") and request.user.is_authenticated:
+                pref = request.user.preferred_language or None
+            if not pref:
+                # Anonymous user: read the cookie set by Django's set_language view.
+                pref = request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME)
+
+            if pref and check_for_language(pref):
                 translation.activate(pref)
                 request.LANGUAGE_CODE = pref
 
