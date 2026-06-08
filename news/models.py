@@ -16,6 +16,8 @@ from wagtail.models import Page
 from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
+from cycling_site.page_mixins import AsciiSlugMixin
+
 
 class NewsPageTag(TaggedItemBase):
     content_object = ParentalKey(
@@ -25,7 +27,7 @@ class NewsPageTag(TaggedItemBase):
     )
 
 
-class NewsIndexPage(Page):
+class NewsIndexPage(AsciiSlugMixin, Page):
     intro = RichTextField(blank=True)
 
     content_panels: ClassVar[list] = [*Page.content_panels, FieldPanel("intro")]
@@ -50,7 +52,7 @@ class NewsIndexPage(Page):
         verbose_name = "News index page"
 
 
-class NewsPage(Page):
+class NewsPage(AsciiSlugMixin, Page):
     intro = models.CharField(max_length=500, blank=True)
     body = StreamField(
         [

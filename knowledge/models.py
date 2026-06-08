@@ -16,6 +16,8 @@ from wagtail.models import Page
 from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
+from cycling_site.page_mixins import AsciiSlugMixin
+
 
 class CodeBlock(StructBlock):
     language = CharBlock(required=False, help_text="e.g. python, javascript, bash")
@@ -54,7 +56,7 @@ class KnowledgeArticlePageTag(TaggedItemBase):
     )
 
 
-class KnowledgeIndexPage(Page):
+class KnowledgeIndexPage(AsciiSlugMixin, Page):
     intro = RichTextField(blank=True)
 
     content_panels: ClassVar[list] = [*Page.content_panels, FieldPanel("intro")]
@@ -81,7 +83,7 @@ class KnowledgeIndexPage(Page):
         verbose_name = "Knowledge index page"
 
 
-class KnowledgeArticlePage(Page):
+class KnowledgeArticlePage(AsciiSlugMixin, Page):
     body = StreamField(
         [
             ("text", RichTextBlock()),
