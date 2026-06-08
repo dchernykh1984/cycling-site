@@ -352,6 +352,7 @@ class ProtocolDetailTest(TestCase):
         response = self.client.get(f"/protocols/{protocol.pk}/")
         self.assertEqual(response.status_code, 404)
 
+    @override_settings(LANGUAGE_CODE="en")
     def test_version_history_shown(self):
         protocol = self._create_protocol()
         version = ProtocolVersion(protocol=protocol, file_hash="ver1hash")
