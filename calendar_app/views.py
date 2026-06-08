@@ -143,7 +143,9 @@ class CompetitionListView(TemplateView):
 
 class CompetitionDetailView(View):
     def get(self, request, pk):
-        competition = get_object_or_404(Competition, pk=pk, status=Competition.Status.APPROVED)
+        competition = get_object_or_404(
+            Competition.objects.select_related("submitted_by"), pk=pk, status=Competition.Status.APPROVED
+        )
         protocols = competition.protocols.all()
         show_upload_token = request.user.is_authenticated and (
             request.user.is_superuser

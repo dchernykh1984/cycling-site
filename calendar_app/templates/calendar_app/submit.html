@@ -146,11 +146,14 @@
     </form>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}{{ block.super }}
 <script>
-['tab-ru','tab-kk','tab-en'].forEach(function(id) {
+['tab-ru','tab-kk','tab-en'].some(function(id) {
   var pane = document.getElementById(id);
   if (pane && pane.querySelector('.text-danger')) {
     new bootstrap.Tab(document.querySelector('[data-bs-target="#' + id + '"]')).show();
+    return true;
   }
 });
 const regEnabled = document.getElementById('reg_enabled');
