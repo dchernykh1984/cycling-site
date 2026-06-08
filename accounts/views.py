@@ -80,8 +80,8 @@ def set_language(request):
     response = _django_set_language(request)
 
     if request.method == "POST" and request.user.is_authenticated:
-        lang = request.POST.get("language", "")
-        if lang and check_for_language(lang):
+        lang = request.POST.get("language")
+        if lang is not None and (lang == "" or check_for_language(lang)):
             request.user.preferred_language = lang
             request.user.save(update_fields=["preferred_language"])
 
