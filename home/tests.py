@@ -168,3 +168,31 @@ class AboutPageTests(WagtailPageTestCase):
             f.field_name for f in AboutPage.override_translatable_fields if isinstance(f, SynchronizedField)
         ]
         self.assertIn("slug", synchronized_slugs)
+
+
+class LangDisplayCodeFilterTest(TestCase):
+    def setUp(self):
+        from home.templatetags.home_tags import lang_display_code
+
+        self.f = lang_display_code
+
+    def test_kk_maps_to_kz(self):
+        self.assertEqual(self.f("kk"), "KZ")
+
+    def test_ru_maps_to_ru(self):
+        self.assertEqual(self.f("ru"), "RU")
+
+    def test_en_maps_to_en(self):
+        self.assertEqual(self.f("en"), "EN")
+
+    def test_regional_subtag_stripped(self):
+        self.assertEqual(self.f("en-us"), "EN")
+
+    def test_none_returns_empty(self):
+        self.assertEqual(self.f(None), "")
+
+    def test_empty_string_returns_empty(self):
+        self.assertEqual(self.f(""), "")
+
+    def test_unknown_code_uppercased(self):
+        self.assertEqual(self.f("fr"), "FR")
