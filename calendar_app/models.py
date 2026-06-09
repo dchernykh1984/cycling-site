@@ -152,6 +152,8 @@ class Competition(index.Indexed, models.Model):
         index.SearchField("description_kk"),
         index.SearchField("description_en"),
         index.FilterField("status"),
+        index.FilterField("is_deleted"),
+        index.FilterField("is_hidden"),
     ]
 
     class Meta:

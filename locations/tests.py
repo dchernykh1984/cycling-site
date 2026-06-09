@@ -68,7 +68,9 @@ class LocationsMapPageRenderTests(TestCase):
 
     def test_map_page_locations_data_is_list(self):
         response = self.client.get(self.map_page.url)
-        self.assertNotContains(response, "&quot;")
+        # json_script filter HTML-escapes " as &quot; by design; double-escaping would
+        # produce &amp;quot; -- check for that instead.
+        self.assertNotContains(response, "&amp;quot;")
         data = response.context["locations_data"]
         self.assertIsInstance(data, list)
         self.assertEqual(data[0]["lat"], 43.238949)

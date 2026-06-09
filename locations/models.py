@@ -33,6 +33,8 @@ class Location(MP_Node, index.Indexed):
         index.SearchField("name_ru"),
         index.SearchField("name_kk"),
         index.SearchField("name_en"),
+        index.FilterField("is_deleted"),
+        index.FilterField("is_hidden"),
     ]
 
     panels: ClassVar[list] = [

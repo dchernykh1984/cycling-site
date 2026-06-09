@@ -31,7 +31,7 @@ class NewsPageHierarchyTests(WagtailPageTests):
 class NewsIndexPageRenderTests(TestCase):
     def setUp(self):
         root = _get_site_root()
-        self.index = NewsIndexPage(title="News", slug="news")
+        self.index = NewsIndexPage(title="News", slug="news-index")
         root.add_child(instance=self.index)
         self.index.save_revision().publish()
 
@@ -309,10 +309,13 @@ class SubmitNewsViewTests(TestCase):
 
 class NewsTagsTest(TestCase):
     def test_get_news_index_url_returns_none_when_no_index(self):
+        from django.urls import reverse
+
         from news.templatetags.news_tags import get_news_index_url
 
+        # When no Wagtail NewsIndexPage exists, the tag falls back to the Django news list URL.
         result = get_news_index_url()
-        self.assertIsNone(result)
+        self.assertEqual(result, reverse("news_index"))
 
     def test_get_news_index_url_returns_url_when_index_exists(self):
         from news.templatetags.news_tags import get_news_index_url
