@@ -87,7 +87,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var eventsUrl = '{% url "calendar_events_api" %}';
-  var isMobile = window.innerWidth < 768;
 
   // --- Cascading location dropdown ---
   var allLocations = JSON.parse(document.getElementById('locations-data').textContent);
@@ -160,14 +159,14 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-    initialView: isMobile ? 'listWeek' : 'dayGridMonth',
+    initialView: 'dayGridMonth',
     locale: '{{ CURRENT_LANGUAGE }}',
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
     titleFormat: { year: 'numeric', month: 'long' },
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
-      right: 'dayGridMonth',
+      right: '',
     },
     height: 'auto',
     events: function (fetchInfo, successCallback, failureCallback) {
@@ -180,9 +179,6 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (r) { return r.json(); })
         .then(successCallback)
         .catch(failureCallback);
-    },
-    windowResize: function () {
-      calendar.changeView(window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth');
     },
     eventClick: function (info) {
       if (info.event.url) {
