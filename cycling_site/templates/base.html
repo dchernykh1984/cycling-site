@@ -41,9 +41,8 @@
             </button>
             <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    {% get_news_index_url as news_url %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% if news_url %}{{ news_url }}{% else %}#{% endif %}">{% trans "News" %}</a>
+                        <a class="nav-link" href="{% url 'news_index' %}">{% trans "News" %}</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'calendar' %}">{% trans "Calendar" %}</a>
@@ -152,6 +151,9 @@
         <div class="container">
             <div class="text-muted small">
                 &copy; {% now "Y" %} {% trans "Cycling events" %}
+            </div>
+            <div class="text-muted small mt-1">
+                {% blocktrans with url="https://github.com/dchernykh1984/cycling-site/issues" %}Found a bug or have a suggestion? <a href="{{ url }}" target="_blank" rel="noopener">Open an issue on GitHub</a>.{% endblocktrans %}
             </div>
         </div>
     </footer>

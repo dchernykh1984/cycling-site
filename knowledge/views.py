@@ -1,12 +1,19 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.translation import get_language
-from django.views.generic import CreateView
+from django.views.generic import CreateView, View
 
 from accounts.models import User
 from knowledge.forms import DraftSubmissionForm
-from knowledge.models import DraftSubmission
+from knowledge.models import DraftSubmission, KnowledgeArticlePage
+
+_ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
+
+
+def _can_manage_knowledge(user) -> bool:
+    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
 
 
 class ParticipantRequiredMixin(LoginRequiredMixin):
@@ -34,3 +41,24 @@ class SubmitArticleView(ParticipantRequiredMixin, CreateView):
         form.instance.author = self.request.user
         form.instance.submission_type = DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE
         return super().form_valid(form)
+
+
+class KnowledgeArticleDeleteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        if not _can_manage_knowledge(request.user):
+            raise PermissionDenied
+        article = get_object_or_404(KnowledgeArticlePage, pk=pk, is_deleted=False)
+        article.is_deleted = True
+        article.save(update_fields=["is_deleted"])
+        parent = article.get_parent()
+        return redirect(parent.url if parent else "/")
+
+
+class KnowledgeArticleHideView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        if not _can_manage_knowledge(request.user):
+            raise PermissionDenied
+        article = get_object_or_404(KnowledgeArticlePage, pk=pk, is_deleted=False)
+        article.is_hidden = not article.is_hidden
+        article.save(update_fields=["is_hidden"])
+        return redirect(article.url)

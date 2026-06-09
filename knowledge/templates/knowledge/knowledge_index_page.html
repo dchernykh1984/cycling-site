@@ -5,10 +5,21 @@
 
 {% block content %}
 <div class="row mb-4">
-    <div class="col">
-        <h1>{{ page.title }}</h1>
-        {% if page.intro %}
-        <div class="lead">{{ page.intro|richtext }}</div>
+    <div class="col-12 d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="mb-0">{{ page.title }}</h1>
+            {% if page.intro %}
+            <div class="lead mt-2">{{ page.intro|richtext }}</div>
+            {% endif %}
+        </div>
+        {% if can_manage %}
+        <a href="{{ add_article_url }}" class="btn btn-primary btn-sm mt-1">
+            {% trans "Add article" %}
+        </a>
+        {% elif can_add %}
+        <a href="{% url 'knowledge_submit' %}" class="btn btn-outline-primary btn-sm mt-1">
+            {% trans "Submit article" %}
+        </a>
         {% endif %}
     </div>
 </div>

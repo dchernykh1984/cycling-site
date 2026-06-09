@@ -4,7 +4,7 @@ import json
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import TemplateView
@@ -33,7 +33,7 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
     template_name = "registrations/register.html"
 
     def _get_competition(self, pk):
-        return get_object_or_404(Competition, pk=pk)
+        return get_object_or_404(Competition, pk=pk, is_deleted=False)
 
     def _check_participant(self, request):
         if not request.user.is_superuser and request.user.get_role_rank() < User.ROLE_HIERARCHY.index(
@@ -52,6 +52,8 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
     def get(self, request, pk):
         self._check_participant(request)
         competition = self._get_competition(pk)
+        if competition.is_hidden and not can_manage(request.user, competition):
+            raise Http404
         if not competition.is_registration_open():
             return render(
                 request,
@@ -125,6 +127,8 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
     def post(self, request, pk):
         self._check_participant(request)
         competition = self._get_competition(pk)
+        if competition.is_hidden and not can_manage(request.user, competition):
+            raise Http404
         if not competition.is_registration_open():
             raise PermissionDenied
 
@@ -209,7 +213,7 @@ class ParticipantListView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        competition = get_object_or_404(Competition, pk=self.kwargs["pk"])
+        competition = get_object_or_404(Competition, pk=self.kwargs["pk"], is_deleted=False)
         user = self.request.user
         is_manager = can_manage(user, competition)
 
@@ -255,7 +259,7 @@ class ParticipantListView(TemplateView):
 
 class ApproveRegistrationView(View):
     def post(self, request, pk, reg_pk):
-        competition = get_object_or_404(Competition, pk=pk)
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(request.user, competition):
             raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
@@ -267,7 +271,7 @@ class ApproveRegistrationView(View):
 
 class RejectRegistrationView(View):
     def post(self, request, pk, reg_pk):
-        competition = get_object_or_404(Competition, pk=pk)
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(request.user, competition):
             raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
@@ -280,7 +284,7 @@ class RejectRegistrationView(View):
 
 class MarkPaidView(View):
     def post(self, request, pk, reg_pk):
-        competition = get_object_or_404(Competition, pk=pk)
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(request.user, competition):
             raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
@@ -293,7 +297,7 @@ class EditRegistrationView(View):
     template_name = "registrations/edit_registration.html"
 
     def _get_objects(self, pk, reg_pk, user):
-        competition = get_object_or_404(Competition, pk=pk)
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(user, competition):
             raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
@@ -325,7 +329,7 @@ class EditRegistrationView(View):
 
 class DeleteRegistrationView(View):
     def post(self, request, pk, reg_pk):
-        competition = get_object_or_404(Competition, pk=pk)
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(request.user, competition):
             raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
@@ -337,7 +341,7 @@ class ManualAddRegistrationView(View):
     template_name = "registrations/manual_add.html"
 
     def _get_competition(self, pk, user):
-        competition = get_object_or_404(Competition, pk=pk)
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(user, competition):
             raise PermissionDenied
         if competition.registration_mode != "free":
@@ -401,8 +405,8 @@ class ParticipantsAPIView(View):
             competition = Competition.objects.get(upload_token=token)
         except (Competition.DoesNotExist, Exception):
             return JsonResponse({"error": "invalid token"}, status=401)
-        if competition.status != Competition.Status.APPROVED:
-            return JsonResponse({"error": "competition not approved"}, status=401)
+        if competition.status != Competition.Status.APPROVED or competition.is_deleted:
+            return JsonResponse({"error": "competition not found"}, status=401)
 
         qs = competition.registrations.filter(is_rejected=False).select_related("category", "team")
         if competition.require_approval:
@@ -459,7 +463,7 @@ class ParticipantsAPIView(View):
 
 class ExportParticipantsCSVView(View):
     def get(self, request, pk):
-        competition = get_object_or_404(Competition, pk=pk)
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(request.user, competition):
             raise PermissionDenied
         response = HttpResponse(content_type="text/csv")

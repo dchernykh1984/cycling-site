@@ -71,12 +71,32 @@ class KnowledgeIndexPage(AsciiSlugMixin, Page):
     ]
 
     def get_context(self, request):
-        context = super().get_context(request)
         from django.core.paginator import Paginator
 
-        articles = KnowledgeArticlePage.objects.live().child_of(self).order_by("-first_published_at")
+        from accounts.models import User
+
+        context = super().get_context(request)
+        admin_rank = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
+        can_manage = request.user.is_authenticated and (
+            request.user.is_superuser or request.user.get_role_rank() >= admin_rank
+        )
+        articles = KnowledgeArticlePage.objects.live().child_of(self).filter(is_deleted=False)
+        if not can_manage:
+            articles = articles.filter(is_hidden=False)
+        articles = articles.order_by("-first_published_at")
         paginator = Paginator(articles, 12)
         context["articles"] = paginator.get_page(request.GET.get("page", 1))
+
+        can_add = False
+        add_article_url = None
+        if request.user.is_authenticated:
+            participant_rank = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
+            can_add = request.user.get_role_rank() >= participant_rank
+        if can_manage:
+            add_article_url = f"/admin/pages/add/knowledge/knowledgearticlepage/{self.pk}/"
+        context["can_add"] = can_add
+        context["can_manage"] = can_manage
+        context["add_article_url"] = add_article_url
         return context
 
     class Meta:
@@ -104,6 +124,8 @@ class KnowledgeArticlePage(AsciiSlugMixin, Page):
         related_name="+",
     )
     published_at = models.DateTimeField(null=True, blank=True)
+    is_deleted = models.BooleanField(default=False, db_index=True)
+    is_hidden = models.BooleanField(default=False, db_index=True)
 
     content_panels: ClassVar[list] = [
         *Page.content_panels,
@@ -126,6 +148,31 @@ class KnowledgeArticlePage(AsciiSlugMixin, Page):
     override_translatable_fields: ClassVar[list] = [
         SynchronizedField("slug", overridable=False),
     ]
+
+    def serve(self, request, *args, **kwargs):
+        from django.http import Http404
+
+        from accounts.models import User as _User
+
+        can_manage = request.user.is_authenticated and (
+            request.user.is_superuser or request.user.get_role_rank() >= _User.ROLE_HIERARCHY.index(_User.Role.ADMIN)
+        )
+        if self.is_deleted or (self.is_hidden and not can_manage):
+            raise Http404
+        response = super().serve(request, *args, **kwargs)
+        if hasattr(response, "context_data"):
+            response.context_data["can_edit"] = can_manage
+        return response
+
+    def get_context(self, request, *args, **kwargs):
+        from accounts.models import User as _User
+
+        context = super().get_context(request, *args, **kwargs)
+        can_manage = request.user.is_authenticated and (
+            request.user.is_superuser or request.user.get_role_rank() >= _User.ROLE_HIERARCHY.index(_User.Role.ADMIN)
+        )
+        context["can_edit"] = can_manage
+        return context
 
     class Meta:
         verbose_name = "Knowledge article"

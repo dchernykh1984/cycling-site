@@ -37,7 +37,7 @@ class SubmitCompetitionForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-select"}),
     )
     location: forms.ModelChoiceField[Location] = forms.ModelChoiceField(
-        queryset=Location.objects.all(),
+        queryset=Location.objects.filter(is_deleted=False, is_hidden=False),
         required=False,
         empty_label="--",
         widget=forms.Select(attrs={"class": "form-select"}),
@@ -167,7 +167,7 @@ class CompetitionFilterForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
     )
     location = forms.ModelChoiceField(
-        queryset=Location.objects.all(),
+        queryset=Location.objects.filter(is_deleted=False, is_hidden=False),
         required=False,
         empty_label="-",
         widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
