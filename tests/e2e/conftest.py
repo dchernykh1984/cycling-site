@@ -41,13 +41,9 @@ def open_filter_panel(page) -> None:
 
 
 def switch_locale(page, locale):
-    """Activate the given locale for subsequent requests.
-
-    Must be called after an initial page.goto() on the same origin.
-    Sets django_language cookie via JS (reliable across all Playwright browsers)
-    then reloads so the next Django request sees the cookie via LocaleMiddleware.
-    """
-    page.evaluate(f"document.cookie = 'django_language={locale}; path=/'")
+    # context.add_cookies is more reliable than JS document.cookie across CI browsers.
+    host = page.url.split("://")[1].split(":")[0]
+    page.context.add_cookies([{"name": "django_language", "value": locale, "domain": host, "path": "/"}])
     page.reload()
 
 
@@ -72,14 +68,7 @@ def wagtail_locales(db):
 
 @pytest.fixture(autouse=True)
 def wagtail_home_page(db, wagtail_locales):
-    """Ensure the Wagtail HomePage exists at the site root.
-
-    With transaction=True tests the DB is flushed between tests, so migration-
-    created Wagtail pages are gone. This fixture recreates the minimal tree
-    (root Page -> HomePage) and a default Site for every test so that URL /
-    returns 200 instead of a Wagtail 404.
-    """
-    from wagtail.models import Page, Site
+    from wagtail.models import Locale, Page, Site
 
     from home.models import HomePage
 
@@ -92,6 +81,26 @@ def wagtail_home_page(db, wagtail_locales):
         hostname="localhost",
         defaults={"root_page": home, "is_default_site": True, "port": 80},
     )
+
+    # Create translated copies so Wagtail serves /kk/ and /en/ with their locale active.
+    # Without these, Wagtail falls back to the RU page and overrides the locale to RU,
+    # making site_content.navbar_title always return navbar_title_ru.
+    for lang_code in ("kk", "en"):
+        locale = Locale.objects.get(language_code=lang_code)
+        translated = home.copy_for_translation(locale, copy_parents=True)
+        Page.objects.filter(pk=translated.pk).update(live=True)
+
+
+@pytest.fixture(autouse=True)
+def _set_default_locale(request):
+    # Set django_language=ru before every page-based test so CI browsers (Accept-Language: en-US)
+    # don't redirect / to /en/ and break locale-sensitive assertions.
+    if "page" not in request.fixturenames or "live_server" not in request.fixturenames:
+        return
+    live_server = request.getfixturevalue("live_server")
+    page = request.getfixturevalue("page")
+    host = live_server.url.split("//")[1].split(":")[0]
+    page.context.add_cookies([{"name": "django_language", "value": "ru", "domain": host, "path": "/"}])
 
 
 # ---------------------------------------------------------------------------
