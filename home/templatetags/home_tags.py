@@ -14,9 +14,9 @@ def dict_get(d, key):
 
 @register.simple_tag
 def get_page_translation_urls(page):
-    """Return {lang_code: url} for all live translations of a Wagtail page."""
-    result = {}
-    for translation in page.get_translations().live():
+    """Return {lang_code: url} for all live translations of a Wagtail page, including the page itself."""
+    result = {page.locale.language_code: page.url}
+    for translation in page.get_translations().live().select_related("locale"):
         result[translation.locale.language_code] = translation.url
     return result
 
