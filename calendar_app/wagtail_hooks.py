@@ -4,7 +4,7 @@ from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
 
-from .models import Competition, CyclingDiscipline, EventType
+from .models import Competition, Discipline, DisciplineCategory, EventType
 
 
 class EventTypeViewSet(SnippetViewSet):
@@ -12,24 +12,42 @@ class EventTypeViewSet(SnippetViewSet):
     icon = "tag"
     menu_label = "Event types"
     menu_order = 300
-    list_display: ClassVar[list] = ["name"]
+    list_display: ClassVar[list] = ["name", "order"]
     panels: ClassVar[list] = [
         FieldPanel("name_ru"),
         FieldPanel("name_kk"),
         FieldPanel("name_en"),
+        FieldPanel("order"),
     ]
 
 
-class CyclingDisciplineViewSet(SnippetViewSet):
-    model = CyclingDiscipline
-    icon = "tag"
-    menu_label = "Disciplines"
-    menu_order = 310
-    list_display: ClassVar[list] = ["name"]
+class DisciplineCategoryViewSet(SnippetViewSet):
+    model = DisciplineCategory
+    icon = "list-ul"
+    menu_label = "Directions"
+    menu_order = 305
+    list_display: ClassVar[list] = ["name", "order"]
     panels: ClassVar[list] = [
         FieldPanel("name_ru"),
         FieldPanel("name_kk"),
         FieldPanel("name_en"),
+        FieldPanel("order"),
+    ]
+
+
+class DisciplineViewSet(SnippetViewSet):
+    model = Discipline
+    icon = "tag"
+    menu_label = "Disciplines"
+    menu_order = 310
+    list_display: ClassVar[list] = ["name", "category", "order"]
+    list_filter: ClassVar[list] = ["category"]
+    panels: ClassVar[list] = [
+        FieldPanel("category"),
+        FieldPanel("name_ru"),
+        FieldPanel("name_kk"),
+        FieldPanel("name_en"),
+        FieldPanel("order"),
     ]
 
 
@@ -39,7 +57,7 @@ class CompetitionViewSet(SnippetViewSet):
     menu_label = "Competitions"
     menu_order = 320
     list_display: ClassVar[list] = ["title", "date_start", "event_type", "discipline", "status", "submitted_by"]
-    list_filter: ClassVar[list] = ["status", "event_type", "discipline"]
+    list_filter: ClassVar[list] = ["status", "event_type", "discipline__category", "discipline"]
     search_fields: ClassVar[list] = ["title_ru", "title_kk", "title_en"]
     panels: ClassVar[list] = [
         MultiFieldPanel(
@@ -73,5 +91,6 @@ class CompetitionViewSet(SnippetViewSet):
 
 
 register_snippet(EventTypeViewSet)
-register_snippet(CyclingDisciplineViewSet)
+register_snippet(DisciplineCategoryViewSet)
+register_snippet(DisciplineViewSet)
 register_snippet(CompetitionViewSet)

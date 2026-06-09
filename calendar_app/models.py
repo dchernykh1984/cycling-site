@@ -11,9 +11,10 @@ from wagtail.search import index
 class EventType(models.Model):
     objects: ClassVar[models.Manager["EventType"]]
     name = models.CharField(max_length=100)
+    order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering: ClassVar[list] = ["name"]
+        ordering: ClassVar[list] = ["order"]
         verbose_name = "Event type"
         verbose_name_plural = "Event types"
 
@@ -21,14 +22,36 @@ class EventType(models.Model):
         return self.name or f"EventType #{self.pk}"
 
 
-class CyclingDiscipline(models.Model):
-    objects: ClassVar[models.Manager["CyclingDiscipline"]]
+class DisciplineCategory(models.Model):  # type: ignore[django-manager-missing]
+    objects: ClassVar[models.Manager["DisciplineCategory"]]
     name = models.CharField(max_length=100)
+    order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering: ClassVar[list] = ["name"]
-        verbose_name = "Cycling discipline"
-        verbose_name_plural = "Cycling disciplines"
+        ordering: ClassVar[list] = ["order"]
+        verbose_name = "Discipline category"
+        verbose_name_plural = "Discipline categories"
+
+    def __str__(self) -> str:
+        return self.name or f"DisciplineCategory #{self.pk}"
+
+
+class Discipline(models.Model):
+    objects: ClassVar[models.Manager["Discipline"]]
+    name = models.CharField(max_length=100)
+    category = models.ForeignKey(
+        "DisciplineCategory",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="disciplines",
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering: ClassVar[list] = ["category__order", "order"]
+        verbose_name = "Discipline"
+        verbose_name_plural = "Disciplines"
 
     def __str__(self) -> str:
         return self.name or f"Discipline #{self.pk}"
@@ -53,7 +76,7 @@ class Competition(index.Indexed, models.Model):
         related_name="+",
     )
     discipline = models.ForeignKey(
-        "CyclingDiscipline",
+        "Discipline",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

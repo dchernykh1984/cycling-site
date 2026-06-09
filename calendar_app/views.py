@@ -20,7 +20,7 @@ from .forms import (
     RejectCompetitionForm,
     SubmitCompetitionForm,
 )
-from .models import Competition, CompetitionComment, CyclingDiscipline, EventType
+from .models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
@@ -57,7 +57,10 @@ class CalendarView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["event_types"] = EventType.objects.all()
-        context["disciplines"] = CyclingDiscipline.objects.all()
+        context["discipline_categories"] = DisciplineCategory.objects.all()
+        context["disciplines_json"] = list(
+            Discipline.objects.select_related("category").values("pk", "name", "category_id")
+        )
         context["locations_data"] = list(
             Location.objects.filter(is_deleted=False, is_hidden=False)
             .order_by("path")
@@ -91,11 +94,14 @@ class CalendarEventsAPIView(View):
             qs = qs.filter(date_start__lt=end)
         event_type_id = request.GET.get("event_type")
         discipline_id = request.GET.get("discipline")
+        direction_id = request.GET.get("direction")
         location_id = request.GET.get("location")
         if event_type_id:
             qs = qs.filter(event_type_id=event_type_id)
         if discipline_id:
             qs = qs.filter(discipline_id=discipline_id)
+        elif direction_id:
+            qs = qs.filter(discipline__category_id=direction_id)
         if location_id:
             try:
                 loc = Location.objects.get(pk=location_id)
@@ -143,6 +149,8 @@ class CompetitionListView(TemplateView):
                 qs = qs.filter(event_type=form.cleaned_data["event_type"])
             if form.cleaned_data.get("discipline"):
                 qs = qs.filter(discipline=form.cleaned_data["discipline"])
+            elif form.cleaned_data.get("discipline_category"):
+                qs = qs.filter(discipline__category=form.cleaned_data["discipline_category"])
             if form.cleaned_data.get("location"):
                 qs = qs.filter(location=form.cleaned_data["location"])
             if form.cleaned_data.get("date_from"):
@@ -157,6 +165,10 @@ class CompetitionListView(TemplateView):
         context["date_from"] = date_from
         context["date_to"] = date_to
         context["is_manager"] = is_manager
+        context["discipline_categories"] = DisciplineCategory.objects.all()
+        context["disciplines_json"] = list(
+            Discipline.objects.select_related("category").values("pk", "name", "category_id")
+        )
         return context
 
 
@@ -327,6 +339,12 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
     def _is_organizer_plus(self, user):
         return user.is_superuser or user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
 
+    def _discipline_context(self):
+        return {
+            "discipline_categories": DisciplineCategory.objects.all(),
+            "disciplines_json": list(Discipline.objects.select_related("category").values("pk", "name", "category_id")),
+        }
+
     def get(self, request):
         form = SubmitCompetitionForm()
         reg_form = RegistrationSettingsForm()
@@ -337,6 +355,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 "form": form,
                 "reg_form": reg_form,
                 "is_organizer_plus": self._is_organizer_plus(request.user),
+                **self._discipline_context(),
             },
         )
 
@@ -396,6 +415,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 "form": form,
                 "reg_form": reg_form,
                 "is_organizer_plus": is_organizer,
+                **self._discipline_context(),
             },
         )
 
@@ -422,6 +442,7 @@ class EditCompetitionView(View):
                 "description_kk": comp.description_kk or "",
                 "description_en": comp.description_en or "",
                 "event_type": comp.event_type_id,
+                "discipline_category": comp.discipline.category_id if comp.discipline_id else None,
                 "discipline": comp.discipline_id,
                 "location": comp.location_id,
                 "date_start": comp.date_start,
@@ -475,6 +496,10 @@ class EditCompetitionView(View):
                 )
             if c["birth_to"]:
                 c["birth_to"] = c["birth_to"].isoformat() if comp.birth_date_mode == "date" else str(c["birth_to"].year)
+        disc_ctx = {
+            "discipline_categories": DisciplineCategory.objects.all(),
+            "disciplines_json": list(Discipline.objects.select_related("category").values("pk", "name", "category_id")),
+        }
         return render(
             request,
             self.template_name,
@@ -484,6 +509,7 @@ class EditCompetitionView(View):
                 "reg_form": reg_form,
                 "categories_json": json.dumps(categories),
                 "mode_locked": comp.registration_mode_locked,
+                **disc_ctx,
             },
         )
 
@@ -575,6 +601,10 @@ class EditCompetitionView(View):
                 "max_participants",
             )
         )
+        disc_ctx = {
+            "discipline_categories": DisciplineCategory.objects.all(),
+            "disciplines_json": list(Discipline.objects.select_related("category").values("pk", "name", "category_id")),
+        }
         return render(
             request,
             self.template_name,
@@ -584,6 +614,7 @@ class EditCompetitionView(View):
                 "reg_form": reg_form,
                 "categories_json": json.dumps(categories, default=str),
                 "mode_locked": comp.registration_mode_locked,
+                **disc_ctx,
             },
         )
 

@@ -5,7 +5,7 @@ import pytest
 from django.test import Client
 
 from accounts.models import User
-from calendar_app.models import Competition
+from calendar_app.models import Competition, Discipline, DisciplineCategory
 from registrations.models import CompetitionRegistration
 
 # pytest-playwright creates an asyncio event loop for its fixtures; Django 4.1+
@@ -133,4 +133,34 @@ def rejected_registration(db, competition_with_approval):
         gender="M",
         is_rejected=True,
         rejection_note="Test rejection",
+    )
+
+
+# ---------------------------------------------------------------------------
+# discipline fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def road_category(db):
+    return DisciplineCategory.objects.create(name_ru="Road", name_en="Road Cycling", order=1)
+
+
+@pytest.fixture
+def mtb_category(db):
+    return DisciplineCategory.objects.create(name_ru="MTB", name_en="Mountain Bike", order=2)
+
+
+@pytest.fixture
+def road_discipline(db, road_category):
+    return Discipline.objects.create(name_ru="Road Race", name_en="Road Race", category=road_category, order=1)
+
+
+@pytest.fixture
+def mtb_discipline(db, mtb_category):
+    return Discipline.objects.create(
+        name_ru="Cross-Country Olympic (XCO)",
+        name_en="Cross-Country Olympic (XCO)",
+        category=mtb_category,
+        order=1,
     )

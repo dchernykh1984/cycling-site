@@ -1,6 +1,6 @@
 from modeltranslation.translator import TranslationOptions, register
 
-from .models import Competition, CyclingDiscipline, EventType
+from .models import Competition, Discipline, DisciplineCategory, EventType
 
 
 @register(EventType)
@@ -8,8 +8,13 @@ class EventTypeTranslationOptions(TranslationOptions):
     fields = ("name",)
 
 
-@register(CyclingDiscipline)
-class CyclingDisciplineTranslationOptions(TranslationOptions):
+@register(DisciplineCategory)
+class DisciplineCategoryTranslationOptions(TranslationOptions):
+    fields = ("name",)
+
+
+@register(Discipline)
+class DisciplineTranslationOptions(TranslationOptions):
     fields = ("name",)
 
 
