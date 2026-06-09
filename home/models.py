@@ -2,6 +2,8 @@ from typing import ClassVar
 
 from django.core.cache import cache
 from django.db import models
+from django.utils.translation import get_language
+from django.utils.translation import override as translation_override
 from wagtail.admin.panels import FieldPanel
 from wagtail.blocks import RichTextBlock
 from wagtail.fields import StreamField
@@ -40,6 +42,22 @@ class SiteContent(models.Model):  # type: ignore[django-manager-missing]
         return obj
 
 
+class LocalizedSiteContent:
+    """Snapshot of SiteContent with fields pre-evaluated under a specific language.
+
+    Wagtail's Page.serve() wraps template rendering in translation.override(page.locale),
+    which overrides Django's request locale. Passing this snapshot instead of the raw
+    SiteContent model ensures templates always see the URL-requested language, not the
+    Wagtail page's own locale.
+    """
+
+    def __init__(self, sc: SiteContent, lang: str) -> None:
+        with translation_override(lang):
+            self.navbar_title: str = sc.navbar_title
+            self.page_title: str = sc.page_title
+            self.body: str = sc.body
+
+
 class HomePage(AsciiSlugMixin, Page):
     override_translatable_fields: ClassVar[list] = [
         SynchronizedField("slug", overridable=False),
@@ -47,7 +65,10 @@ class HomePage(AsciiSlugMixin, Page):
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        context["site_content"] = SiteContent.load()
+        # Use Django's request language (set by LocaleMiddleware from URL/cookie) rather
+        # than get_language(), which Wagtail overrides to the page's own locale inside serve().
+        lang = getattr(request, "LANGUAGE_CODE", None) or get_language()
+        context["site_content"] = LocalizedSiteContent(SiteContent.load(), lang)
         return context
 
 

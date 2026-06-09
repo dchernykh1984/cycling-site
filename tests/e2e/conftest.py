@@ -68,7 +68,7 @@ def wagtail_locales(db):
 
 @pytest.fixture(autouse=True)
 def wagtail_home_page(db, wagtail_locales):
-    from wagtail.models import Locale, Page, Site
+    from wagtail.models import Page, Site
 
     from home.models import HomePage
 
@@ -81,14 +81,9 @@ def wagtail_home_page(db, wagtail_locales):
         hostname="localhost",
         defaults={"root_page": home, "is_default_site": True, "port": 80},
     )
-
-    # Create translated copies so Wagtail serves /kk/ and /en/ with their locale active.
-    # Without these, Wagtail falls back to the RU page and overrides the locale to RU,
-    # making site_content.navbar_title always return navbar_title_ru.
-    for lang_code in ("kk", "en"):
-        locale = Locale.objects.get(language_code=lang_code)
-        translated = home.copy_for_translation(locale, copy_parents=True)
-        Page.objects.filter(pk=translated.pk).update(live=True)
+    # No per-locale page copies needed: HomePage.get_context() and the get_site_content
+    # template tag now use request.LANGUAGE_CODE (set by Django's LocaleMiddleware) to
+    # resolve SiteContent locale fields, bypassing Wagtail's translation.override(page.locale).
 
 
 @pytest.fixture(autouse=True)
