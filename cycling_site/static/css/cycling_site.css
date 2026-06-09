@@ -15,6 +15,7 @@ body > main {
 /* Navbar */
 .navbar-brand {
     letter-spacing: 0.04em;
+    text-transform: none;
 }
 
 /* Offset scrollIntoView and anchor jumps by the sticky navbar height so elements
