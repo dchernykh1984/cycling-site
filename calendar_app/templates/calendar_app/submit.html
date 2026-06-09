@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{{ locations_data|json_script:"locations-data" }}
 
 {% block title %}{% trans "Submit competition" %}{% endblock %}
 
@@ -63,7 +64,7 @@
       </div>
 
       {% for field in form %}
-        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "discipline_category" and field.html_name != "discipline" %}
+        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "discipline_category" and field.html_name != "discipline" and field.html_name != "location" %}
         <div class="mb-3">
           <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
             {{ field.label }}{% if field.field.required %} *{% endif %}
@@ -75,6 +76,10 @@
         </div>
         {% endif %}
       {% endfor %}
+
+      {% with initial_location_id=form.location.value %}
+        {% include "calendar_app/_location_cascade.html" %}
+      {% endwith %}
 
       <div class="row g-3 mb-3">
         <div class="col-sm-6">

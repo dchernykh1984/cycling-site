@@ -238,6 +238,25 @@ class Competition(index.Indexed, models.Model):
             return False
         return self.qualified_count() >= self.max_participants
 
+    @property
+    def location_label(self) -> str:
+        """Returns a meaningful display name: skips hidden depth-4 fallback venues."""
+        loc = self.location
+        if not loc:
+            return ""
+        if not loc.is_hidden:
+            return loc.name
+        # Hidden depth-4 fallback venue -> show parent city (depth=3)
+        if loc.depth == 4:
+            from locations.models import Location  # local import to avoid circular
+
+            step = len(loc.path) // 4
+            try:
+                return Location.objects.get(path=loc.path[: step * 3], depth=3).name
+            except Location.DoesNotExist:
+                pass
+        return loc.name
+
 
 class CompetitionComment(models.Model):
     objects: ClassVar[models.Manager["CompetitionComment"]]

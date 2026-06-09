@@ -214,3 +214,73 @@ def mtb_discipline(db, mtb_category):
         category=mtb_category,
         order=1,
     )
+
+
+# ---------------------------------------------------------------------------
+# location fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def location_tree(db):
+    """Minimal 4-level tree: KZ > Region > Almaty > [hidden+real] + RU subtree."""
+    from locations.models import Location
+
+    kz = Location.add_root(name="KZ", name_ru="KZ", name_kk="KZ", name_en="KZ", sort_order=1)
+    region = kz.add_child(name="KZ Region", name_ru="KZ Region", name_kk="KZ Region", name_en="KZ Region", sort_order=1)
+    city = region.add_child(name="Almaty", name_ru="Almaty", name_kk="Almaty", name_en="Almaty", sort_order=1)
+    hidden = city.add_child(
+        name="Other Venue",
+        name_ru="Other Venue",
+        name_kk="Other Venue",
+        name_en="Other Venue",
+        sort_order=9999,
+        is_hidden=True,
+    )
+    real = city.add_child(name="Velodrome", name_ru="Velodrome", name_kk="Velodrome", name_en="Velodrome", sort_order=1)
+    ru = Location.add_root(name="RU", name_ru="RU", name_kk="RU", name_en="RU", sort_order=2)
+    ru_region = ru.add_child(
+        name="RU Region", name_ru="RU Region", name_kk="RU Region", name_en="RU Region", sort_order=1
+    )
+    ru_city = ru_region.add_child(name="Moscow", name_ru="Moscow", name_kk="Moscow", name_en="Moscow", sort_order=1)
+    ru_hidden = ru_city.add_child(
+        name="Other Venue",
+        name_ru="Other Venue",
+        name_kk="Other Venue",
+        name_en="Other Venue",
+        sort_order=9999,
+        is_hidden=True,
+    )
+    return {
+        "kz": Location.objects.get(pk=kz.pk),
+        "region": Location.objects.get(pk=region.pk),
+        "city": Location.objects.get(pk=city.pk),
+        "hidden": Location.objects.get(pk=hidden.pk),
+        "real": Location.objects.get(pk=real.pk),
+        "ru": Location.objects.get(pk=ru.pk),
+        "ru_hidden": Location.objects.get(pk=ru_hidden.pk),
+    }
+
+
+@pytest.fixture
+def kz_competition(db, location_tree, organizer):
+    """Approved competition in KZ / Almaty (hidden fallback venue)."""
+    return Competition.objects.create(
+        title_ru="KZ Race",
+        date_start=datetime.date(2026, 7, 1),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        location=location_tree["hidden"],
+    )
+
+
+@pytest.fixture
+def ru_competition(db, location_tree, organizer):
+    """Approved competition in RU / Moscow (hidden fallback venue)."""
+    return Competition.objects.create(
+        title_ru="RU Race",
+        date_start=datetime.date(2026, 7, 1),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        location=location_tree["ru_hidden"],
+    )

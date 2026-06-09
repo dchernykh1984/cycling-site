@@ -45,10 +45,10 @@ class SubmitCompetitionForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-select", "id": "id_discipline"}),
     )
     location: forms.ModelChoiceField[Location] = forms.ModelChoiceField(
-        queryset=Location.objects.filter(is_deleted=False, is_hidden=False),
+        queryset=Location.objects.filter(is_deleted=False),
         required=False,
         empty_label="--",
-        widget=forms.Select(attrs={"class": "form-select"}),
+        widget=forms.HiddenInput(),
     )
     date_start = forms.DateField(
         widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}, format="%Y-%m-%d"),
@@ -181,10 +181,10 @@ class CompetitionFilterForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-select form-select-sm", "id": "filter-discipline"}),
     )
     location = forms.ModelChoiceField(
-        queryset=Location.objects.filter(is_deleted=False, is_hidden=False),
+        queryset=Location.objects.filter(is_deleted=False),
         required=False,
         empty_label="-",
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=forms.HiddenInput(),
     )
     date_from = forms.DateField(
         required=False,

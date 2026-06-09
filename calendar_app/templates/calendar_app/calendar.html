@@ -99,6 +99,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // --- Cascading location dropdown ---
   var allLocations = JSON.parse(document.getElementById('locations-data').textContent);
+  var lang = (document.documentElement.lang || 'ru').split('-')[0];
+  var nameField = (['ru','kk','en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
+  function locName(l) { return l[nameField] || l.name_ru || ''; }
+
   var countrySelect = document.getElementById('filter-country');
   var oblastSelect = document.getElementById('filter-oblast');
   var citySelect = document.getElementById('filter-city');
@@ -106,10 +110,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function buildOptions(select, nodes, emptyLabel) {
     select.innerHTML = '<option value="">' + emptyLabel + '</option>';
-    nodes.forEach(function (loc) {
+    nodes.filter(function (l) { return !l.is_hidden; }).forEach(function (loc) {
       var opt = document.createElement('option');
       opt.value = loc.pk;
-      opt.textContent = loc.name_ru;
+      opt.textContent = locName(loc);
       select.appendChild(opt);
     });
   }
@@ -138,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var countryPath = '';
     countries.forEach(function (c) { if (String(c.pk) === countrySelect.value) countryPath = c.path; });
     var oblasts = allLocations.filter(function (l) {
-      return l.depth === 2 && l.path.startsWith(countryPath);
+      return l.depth === 2 && !l.is_hidden && l.path.indexOf(countryPath) === 0;
     });
     buildOptions(oblastSelect, oblasts, '{% trans "All" %}');
     updateLocationValue();
@@ -150,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var oblastPath = '';
     allLocations.forEach(function (l) { if (String(l.pk) === oblastSelect.value) oblastPath = l.path; });
     var cities = allLocations.filter(function (l) {
-      return l.depth === 3 && l.path.startsWith(oblastPath);
+      return l.depth === 3 && !l.is_hidden && l.path.indexOf(oblastPath) === 0;
     });
     buildOptions(citySelect, cities, '{% trans "All" %}');
     updateLocationValue();

@@ -1,0 +1,170 @@
+{% load i18n %}
+{# 4-level location cascade widget for submit / edit forms.
+   Requires:
+     locations_data   — context variable (JSON-serialisable list from _get_locations_data())
+     initial_location_id — pk of the current venue (may be empty string or None)
+   Renders:
+     Country → Region → City → Venue (4th level hidden if no real venues)
+     Hidden <input name="location" id="id_location"> is the actual form field.
+#}
+<div class="mb-3">
+  <label class="form-label fw-semibold">{% trans "Location" %}</label>
+  <div class="row g-2">
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label form-label-sm mb-1">{% trans "Country" %}</label>
+      <select id="loc-country" class="form-select">
+        <option value="">--</option>
+      </select>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label form-label-sm mb-1">{% trans "Region" %}</label>
+      <select id="loc-region" class="form-select" disabled>
+        <option value="">--</option>
+      </select>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label form-label-sm mb-1">{% trans "City" %}</label>
+      <select id="loc-city" class="form-select" disabled>
+        <option value="">--</option>
+      </select>
+    </div>
+    <div class="col-sm-6 col-md-3" id="loc-venue-wrap" style="display:none">
+      <label class="form-label form-label-sm mb-1">{% trans "Venue" %}</label>
+      <select id="loc-venue" class="form-select">
+        <option value="">--</option>
+      </select>
+    </div>
+  </div>
+  {{ form.location }}{% comment %}renders as <input type="hidden" name="location" id="id_location">{% endcomment %}
+</div>
+
+<script>
+(function () {
+  var allLocs = JSON.parse(document.getElementById('locations-data').textContent);
+  var lang = (document.documentElement.lang || 'ru').split('-')[0];
+  var nameField = (['ru','kk','en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
+  function locName(l) { return l[nameField] || l.name_ru || ''; }
+
+  var cntEl  = document.getElementById('loc-country');
+  var regEl  = document.getElementById('loc-region');
+  var cityEl = document.getElementById('loc-city');
+  var venEl  = document.getElementById('loc-venue');
+  var venWrap = document.getElementById('loc-venue-wrap');
+  var locInp = document.getElementById('id_location');
+
+  function buildOpts(sel, nodes, placeholder) {
+    sel.innerHTML = '<option value="">' + placeholder + '</option>';
+    nodes.filter(function (n) { return !n.is_hidden; }).forEach(function (l) {
+      var o = document.createElement('option');
+      o.value = l.pk; o.textContent = locName(l);
+      sel.appendChild(o);
+    });
+  }
+
+  function disable(sel) { sel.innerHTML = '<option value=""></option>'; sel.disabled = true; }
+
+  function hiddenVenueOf(cityPath) {
+    return allLocs.find(function (l) {
+      return l.depth === 4 && l.is_hidden && l.path.indexOf(cityPath) === 0;
+    });
+  }
+
+  function autoVenue(cityPath) {
+    var hv = hiddenVenueOf(cityPath);
+    if (hv) locInp.value = hv.pk;
+  }
+
+  function pathOf(pk) {
+    var n = allLocs.find(function (l) { return String(l.pk) === String(pk); });
+    return n ? n.path : '';
+  }
+
+  // Populate countries (depth=1)
+  buildOpts(cntEl, allLocs.filter(function (l) { return l.depth === 1; }), '--');
+
+  cntEl.addEventListener('change', function () {
+    disable(cityEl); disable(regEl);
+    venEl.innerHTML = '<option value=""></option>'; venWrap.style.display = 'none';
+    locInp.value = '';
+    var cp = pathOf(cntEl.value);
+    if (!cp) return;
+    buildOpts(regEl, allLocs.filter(function (l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
+    regEl.disabled = false;
+    // default: other-region → other-city → hidden venue
+    var or = allLocs.find(function (l) { return l.depth === 2 && l.path.indexOf(cp) === 0 && l.name_ru === 'Другой регион'; });
+    if (or) {
+      var oc = allLocs.find(function (l) { return l.depth === 3 && l.path.indexOf(or.path) === 0 && l.name_ru === 'Другой город'; });
+      if (oc) autoVenue(oc.path);
+    }
+  });
+
+  regEl.addEventListener('change', function () {
+    disable(cityEl);
+    venEl.innerHTML = '<option value=""></option>'; venWrap.style.display = 'none';
+    var rp = pathOf(regEl.value);
+    if (!rp) return;
+    buildOpts(cityEl, allLocs.filter(function (l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
+    cityEl.disabled = false;
+    var oc = allLocs.find(function (l) { return l.depth === 3 && l.path.indexOf(rp) === 0 && l.name_ru === 'Другой город'; });
+    if (oc) autoVenue(oc.path);
+  });
+
+  cityEl.addEventListener('change', function () {
+    venEl.innerHTML = '<option value=""></option>'; venWrap.style.display = 'none';
+    locInp.value = '';
+    var cp = pathOf(cityEl.value);
+    if (!cp) return;
+    autoVenue(cp);
+    var venues = allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cp) === 0; });
+    if (venues.length) {
+      buildOpts(venEl, venues, '--');
+      venWrap.style.display = '';
+    }
+  });
+
+  venEl.addEventListener('change', function () {
+    if (venEl.value) {
+      locInp.value = venEl.value;
+    } else {
+      autoVenue(pathOf(cityEl.value));
+    }
+  });
+
+  // Pre-populate from initial value
+  var initId = '{{ initial_location_id|default:"" }}';
+  if (initId) {
+    var initLoc = allLocs.find(function (l) { return String(l.pk) === String(initId); });
+    if (initLoc && initLoc.depth === 4) {
+      var stepLen = initLoc.path.length / initLoc.depth;
+      var cp = initLoc.path.slice(0, stepLen);
+      var rp = initLoc.path.slice(0, stepLen * 2);
+      var cityPath = initLoc.path.slice(0, stepLen * 3);
+
+      // Populate and select country
+      buildOpts(cntEl, allLocs.filter(function (l) { return l.depth === 1; }), '--');
+      var cntLoc = allLocs.find(function (l) { return l.path === cp && l.depth === 1; });
+      if (cntLoc) cntEl.value = cntLoc.pk;
+
+      // Populate and select region
+      buildOpts(regEl, allLocs.filter(function (l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
+      regEl.disabled = false;
+      var regLoc = allLocs.find(function (l) { return l.path === rp && l.depth === 2; });
+      if (regLoc) regEl.value = regLoc.pk;
+
+      // Populate and select city
+      buildOpts(cityEl, allLocs.filter(function (l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
+      cityEl.disabled = false;
+      var cityLoc = allLocs.find(function (l) { return l.path === cityPath && l.depth === 3; });
+      if (cityLoc) cityEl.value = cityLoc.pk;
+
+      // Populate venues
+      var venues = allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cityPath) === 0; });
+      if (venues.length) {
+        buildOpts(venEl, venues, '--');
+        venWrap.style.display = '';
+        if (!initLoc.is_hidden) venEl.value = initLoc.pk;
+      }
+    }
+  }
+}());
+</script>

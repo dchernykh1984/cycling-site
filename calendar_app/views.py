@@ -27,6 +27,19 @@ _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 _SUPPORTED_LANGS = frozenset(("ru", "kk", "en"))
 
 
+def _get_locations_data() -> list:
+    """All non-deleted Location nodes with names in all 3 languages.
+
+    Includes hidden depth-4 fallback venue nodes so that JS can use them
+    for auto-assignment when no real venue is selected.
+    """
+    return list(
+        Location.objects.filter(is_deleted=False)
+        .order_by("path")
+        .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden")
+    )
+
+
 def _can_manage_any_competition(user) -> bool:
     return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
 
@@ -89,11 +102,7 @@ class CalendarView(TemplateView):
         context["event_types"] = EventType.objects.all()
         context["discipline_categories"] = DisciplineCategory.objects.all()
         context["disciplines_json"] = _disciplines_for_locale()
-        context["locations_data"] = list(
-            Location.objects.filter(is_deleted=False, is_hidden=False)
-            .order_by("path")
-            .values("pk", "depth", "path", "name_ru")
-        )
+        context["locations_data"] = _get_locations_data()
         return context
 
 
@@ -175,7 +184,9 @@ class CompetitionListView(TemplateView):
             elif form.cleaned_data.get("discipline_category"):
                 qs = qs.filter(discipline__category=form.cleaned_data["discipline_category"])
             if form.cleaned_data.get("location"):
-                qs = qs.filter(location=form.cleaned_data["location"])
+                loc = form.cleaned_data["location"]
+                descendant_pks = loc.get_descendants(include_self=True).values_list("pk", flat=True)
+                qs = qs.filter(location_id__in=descendant_pks)
             if form.cleaned_data.get("date_from"):
                 date_from = form.cleaned_data["date_from"]
             if form.cleaned_data.get("date_to"):
@@ -190,6 +201,7 @@ class CompetitionListView(TemplateView):
         context["is_manager"] = is_manager
         context["discipline_categories"] = DisciplineCategory.objects.all()
         context["disciplines_json"] = _disciplines_for_locale()
+        context["locations_data"] = _get_locations_data()
         return context
 
 
@@ -364,6 +376,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
         return {
             "discipline_categories": DisciplineCategory.objects.all(),
             "disciplines_json": _disciplines_for_locale(),
+            "locations_data": _get_locations_data(),
         }
 
     def get(self, request):
@@ -525,6 +538,8 @@ class EditCompetitionView(View):
         disc_ctx = {
             "discipline_categories": DisciplineCategory.objects.all(),
             "disciplines_json": _disciplines_for_locale(),
+            "locations_data": _get_locations_data(),
+            "initial_location_id": comp.location_id or "",
         }
         return render(
             request,
@@ -630,6 +645,8 @@ class EditCompetitionView(View):
         disc_ctx = {
             "discipline_categories": DisciplineCategory.objects.all(),
             "disciplines_json": _disciplines_for_locale(),
+            "locations_data": _get_locations_data(),
+            "initial_location_id": comp.location_id or "",
         }
         return render(
             request,
