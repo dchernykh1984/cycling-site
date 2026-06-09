@@ -66,7 +66,7 @@ def wagtail_locales(db):
 
 
 @pytest.fixture(autouse=True)
-def wagtail_home_page(db):
+def wagtail_home_page(db, wagtail_locales):
     """Ensure the Wagtail HomePage exists at the site root.
 
     With transaction=True tests the DB is flushed between tests, so migration-
