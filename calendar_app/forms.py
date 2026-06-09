@@ -2,6 +2,7 @@ import json
 from typing import ClassVar
 
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from locations.models import Location
 
@@ -68,11 +69,11 @@ class SubmitCompetitionForm(forms.Form):
         if not f:
             return f
         if f.size > self._MAX_FILE_BYTES:
-            raise forms.ValidationError("File size must not exceed 10 MB.")
+            raise forms.ValidationError(_("File size must not exceed 10 MB."))
         ext = f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
         if ext not in self._ALLOWED_EXTENSIONS:
             allowed = ", ".join(sorted(self._ALLOWED_EXTENSIONS))
-            raise forms.ValidationError(f"Unsupported file type. Allowed: {allowed}.")
+            raise forms.ValidationError(_("Unsupported file type. Allowed: %(allowed)s.") % {"allowed": allowed})
         return f
 
     def clean_file_announcement(self):

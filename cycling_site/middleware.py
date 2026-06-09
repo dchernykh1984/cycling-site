@@ -64,7 +64,7 @@ class LocaleFallbackMiddleware:
             from django.utils.translation import check_for_language
 
             pref: str | None = None
-            if hasattr(request, "user") and request.user.is_authenticated:
+            if request.user.is_authenticated:
                 pref = request.user.preferred_language or None
             if not pref:
                 # Anonymous user: read the cookie set by Django's set_language view.
@@ -86,6 +86,9 @@ class LocaleFallbackMiddleware:
         current_lang = match.group("lang")
         path = match.group("path")
 
+        # Intentionally one-step: redirect to the first available fallback only.
+        # Multi-hop fallback is not implemented to avoid redirect loops when the
+        # intermediate fallback page is also missing.
         for lang in _FALLBACK_ORDER:
             if lang == current_lang:
                 continue
