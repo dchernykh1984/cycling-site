@@ -17,6 +17,12 @@ body > main {
     letter-spacing: 0.04em;
 }
 
+/* Offset scrollIntoView and anchor jumps by the sticky navbar height so elements
+   never land hidden underneath it. Applied to the scroll container (viewport). */
+html {
+    scroll-padding-top: 70px;
+}
+
 /* Theme toggle button */
 #theme-toggle {
     min-width: 2.2rem;

@@ -140,7 +140,10 @@ def test_display_checkboxes_unchecked_when_parent_disabled(page: Page, live_serv
     page.locator("#req_approval").check()
     page.locator("#show_unappr").check()
     page.locator("#show_appr_col").check()
-    # Now disable require_approval
+    # Now disable require_approval.
+    # Scroll to center first: default scrollIntoView puts the element at the top of the
+    # viewport, where the sticky navbar intercepts the click on narrow mobile screens.
+    page.locator("#req_approval").evaluate("el => el.scrollIntoView({block: 'center', behavior: 'instant'})")
     page.locator("#req_approval").uncheck()
     expect(page.locator("#show_unappr")).not_to_be_checked()
     expect(page.locator("#show_appr_col")).not_to_be_checked()
