@@ -45,11 +45,20 @@
           </select>
         </div>
         <div class="col-sm-6 col-lg-3">
+          <label class="form-label form-label-sm mb-1">{% trans "Direction" %}</label>
+          <select id="filter-direction" class="form-select form-select-sm">
+            <option value="">{% trans "All" %}</option>
+            {% for cat in discipline_categories %}
+            <option value="{{ cat.pk }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-6 col-lg-3">
           <label class="form-label form-label-sm mb-1">{% trans "Discipline" %}</label>
           <select id="filter-discipline" class="form-select form-select-sm">
             <option value="">{% trans "All" %}</option>
-            {% for d in disciplines %}
-            <option value="{{ d.pk }}">{{ d.name }}</option>
+            {% for d in disciplines_json %}
+            <option value="{{ d.pk }}" data-cat="{{ d.category_id }}">{{ d.name }}</option>
             {% endfor %}
           </select>
         </div>
@@ -149,11 +158,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
   citySelect.addEventListener('change', updateLocationValue);
 
+  // --- Direction / Discipline cascade ---
+  var directionSelect = document.getElementById('filter-direction');
+  var disciplineSelect = document.getElementById('filter-discipline');
+  var allDisciplineOpts = Array.from(disciplineSelect.options).slice(1); // skip empty option
+
+  function syncDisciplineOpts() {
+    var catId = directionSelect.value;
+    disciplineSelect.innerHTML = '<option value=""></option>';
+    allDisciplineOpts.forEach(function (opt) {
+      if (!catId || String(opt.dataset.cat) === catId) {
+        disciplineSelect.appendChild(opt.cloneNode(true));
+      }
+    });
+  }
+
+  directionSelect.addEventListener('change', function () {
+    disciplineSelect.value = '';
+    syncDisciplineOpts();
+    calendar.refetchEvents();
+  });
+
   // --- FullCalendar ---
   function getFilters() {
     return {
       event_type: document.getElementById('filter-event-type').value,
-      discipline: document.getElementById('filter-discipline').value,
+      direction: directionSelect.value,
+      discipline: disciplineSelect.value,
       location: locationInput.value,
     };
   }

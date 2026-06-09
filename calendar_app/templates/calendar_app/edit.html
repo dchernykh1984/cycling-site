@@ -71,7 +71,7 @@
       </div>
 
       {% for field in form %}
-        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" %}
+        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "discipline_category" and field.html_name != "discipline" %}
         <div class="mb-3">
           <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
             {{ field.label }}{% if field.field.required %} *{% endif %}
@@ -83,6 +83,46 @@
         </div>
         {% endif %}
       {% endfor %}
+
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6">
+          <label class="form-label fw-semibold">{% trans "Direction" %}</label>
+          <select id="id_discipline_category" name="discipline_category" class="form-select">
+            <option value="">--</option>
+            {% for cat in discipline_categories %}
+            <option value="{{ cat.pk }}"{% if form.discipline_category.value == cat.pk|stringformat:"s" %} selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label fw-semibold" for="{{ form.discipline.id_for_label }}">{% trans "Discipline" %}</label>
+          <select id="id_discipline" name="discipline" class="form-select">
+            <option value="">--</option>
+            {% for d in disciplines_json %}
+            <option value="{{ d.pk }}" data-cat="{{ d.category_id }}"{% if form.discipline.value == d.pk|stringformat:"s" %} selected{% endif %}>{{ d.name }}</option>
+            {% endfor %}
+          </select>
+          {% if form.discipline.errors %}<div class="text-danger small mt-1">{% for e in form.discipline.errors %}{{ e }}{% endfor %}</div>{% endif %}
+        </div>
+      </div>
+      <script>
+      (function () {
+        var dirSel = document.getElementById('id_discipline_category');
+        var discSel = document.getElementById('id_discipline');
+        var allOpts = Array.from(discSel.options).slice(1);
+        function sync(reset) {
+          var catId = dirSel.value;
+          discSel.innerHTML = '<option value="">--</option>';
+          allOpts.forEach(function (opt) {
+            if (!catId || String(opt.dataset.cat) === catId) discSel.appendChild(opt.cloneNode(true));
+          });
+          if (reset) discSel.value = '';
+        }
+        sync(false);
+        dirSel.addEventListener('change', function () { sync(true); });
+      })();
+      </script>
+
       {% if form.non_field_errors %}
       <div class="alert alert-danger">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
       {% endif %}

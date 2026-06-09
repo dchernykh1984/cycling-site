@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
-from calendar_app.models import Competition, CompetitionComment, CyclingDiscipline, EventType
+from calendar_app.models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
 
 
 def _make_user(email, role, is_staff=False):
@@ -77,14 +77,16 @@ class CalendarViewTests(TestCase):
     def test_calendar_has_context(self):
         response = self.client.get(reverse("calendar"))
         self.assertIn("event_types", response.context)
-        self.assertIn("disciplines", response.context)
+        self.assertIn("discipline_categories", response.context)
+        self.assertIn("disciplines_json", response.context)
         self.assertIn("locations_data", response.context)
 
 
 class CalendarEventsAPIViewTests(TestCase):
     def setUp(self):
         self.event_type = EventType.objects.create(name_ru="Race")
-        self.discipline = CyclingDiscipline.objects.create(name_ru="Road")
+        self.category = DisciplineCategory.objects.create(name_ru="Road Cycling")
+        self.discipline = Discipline.objects.create(name_ru="Road", category=self.category)
         self.comp1 = _make_competition(
             "Race A",
             status=Competition.Status.APPROVED,
@@ -323,6 +325,104 @@ class ModerationViewTests(TestCase):
     def test_anonymous_redirected(self):
         response = self.client.get(reverse("calendar_moderate"))
         self.assertEqual(response.status_code, 302)
+
+
+class DisciplineCategoryModelTests(TestCase):
+    def test_str(self):
+        cat = DisciplineCategory.objects.create(name_ru="Road Cycling")
+        self.assertEqual(str(cat), "Road Cycling")
+
+    def test_ordering_by_order_field(self):
+        cat_z = DisciplineCategory.objects.create(name_ru="Z Category", order=200)
+        cat_a = DisciplineCategory.objects.create(name_ru="A Category", order=100)
+        pks = list(DisciplineCategory.objects.filter(pk__in=[cat_a.pk, cat_z.pk]).values_list("pk", flat=True))
+        self.assertEqual(pks, [cat_a.pk, cat_z.pk])
+
+
+class CalendarDirectionFilterTests(TestCase):
+    def setUp(self):
+        self.road_cat = DisciplineCategory.objects.create(name_ru="Road", order=1)
+        self.mtb_cat = DisciplineCategory.objects.create(name_ru="MTB", order=2)
+        self.road_disc = Discipline.objects.create(name_ru="Road Race", category=self.road_cat, order=1)
+        self.mtb_disc = Discipline.objects.create(name_ru="XCO", category=self.mtb_cat, order=1)
+        self.road_comp = _make_competition(
+            "Road Race Event",
+            status=Competition.Status.APPROVED,
+            date_start=datetime.date(2026, 9, 1),
+            discipline=self.road_disc,
+        )
+        self.mtb_comp = _make_competition(
+            "MTB Race Event",
+            status=Competition.Status.APPROVED,
+            date_start=datetime.date(2026, 9, 1),
+            discipline=self.mtb_disc,
+        )
+
+    def test_direction_filter_on_api(self):
+        response = self.client.get(
+            reverse("calendar_events_api"),
+            {"direction": self.road_cat.pk},
+        )
+        data = json.loads(response.content)
+        titles = [e["title"] for e in data]
+        self.assertIn("Road Race Event", titles)
+        self.assertNotIn("MTB Race Event", titles)
+
+    def test_discipline_filter_takes_priority_over_direction(self):
+        """When both discipline and direction params are present, discipline wins."""
+        response = self.client.get(
+            reverse("calendar_events_api"),
+            {"direction": self.road_cat.pk, "discipline": self.mtb_disc.pk},
+        )
+        data = json.loads(response.content)
+        titles = [e["title"] for e in data]
+        self.assertNotIn("Road Race Event", titles)
+        self.assertIn("MTB Race Event", titles)
+
+    def test_direction_filter_on_list_view(self):
+        response = self.client.get(
+            reverse("calendar_list"),
+            {
+                "discipline_category": self.road_cat.pk,
+                "date_from": "2026-09-01",
+                "date_to": "2026-09-30",
+            },
+        )
+        titles = [c.title for c in response.context["competitions"]]
+        self.assertIn("Road Race Event", titles)
+        self.assertNotIn("MTB Race Event", titles)
+
+
+class SubmitViewDisciplineContextTests(TestCase):
+    def setUp(self):
+        self.participant = _make_user("participant@example.com", User.Role.PARTICIPANT)
+        self.category = DisciplineCategory.objects.create(name_ru="Road", order=1)
+        Discipline.objects.create(name_ru="Road Race", category=self.category, order=1)
+
+    def test_submit_view_has_discipline_context(self):
+        self.client.force_login(self.participant)
+        response = self.client.get(reverse("calendar_submit"))
+        self.assertIn("discipline_categories", response.context)
+        self.assertIn("disciplines_json", response.context)
+        cat_pks = [c.pk for c in response.context["discipline_categories"]]
+        self.assertIn(self.category.pk, cat_pks)
+        disc_cat_ids = [d["category_id"] for d in response.context["disciplines_json"]]
+        self.assertIn(self.category.pk, disc_cat_ids)
+
+
+class ListViewDisciplineContextTests(TestCase):
+    def setUp(self):
+        self.category = DisciplineCategory.objects.create(name_ru="Road", order=1)
+        self.discipline = Discipline.objects.create(name_ru="Road Race", category=self.category, order=1)
+
+    def test_list_view_has_discipline_context(self):
+        response = self.client.get(reverse("calendar_list"))
+        self.assertIn("discipline_categories", response.context)
+        self.assertIn("disciplines_json", response.context)
+        cat_pks = [c.pk for c in response.context["discipline_categories"]]
+        self.assertIn(self.category.pk, cat_pks)
+        disc_pks = [d["pk"] for d in response.context["disciplines_json"]]
+        self.assertIn(self.discipline.pk, disc_pks)
 
 
 class ApproveCompetitionViewTests(TestCase):

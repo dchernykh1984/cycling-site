@@ -57,7 +57,7 @@ select = [
 "**/tests/**/*.py" = ["S101", "S105", "S106", "S603", "S607"]
 "tests/e2e/**/*.py" = ["S101", "S105", "S106", "S603", "S607"]
 "**/tests.py" = ["S101", "S105", "S106"]
-"**/migrations/*.py" = ["N806", "RUF012", "E501"]
+"**/migrations/*.py" = ["N806", "RUF001", "RUF012", "E501"]
 "cycling_site/settings/*.py" = ["F403", "F405", "S105"]
 
 [tool.ruff.lint.mccabe]

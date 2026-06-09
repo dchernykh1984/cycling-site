@@ -37,8 +37,22 @@
         {{ filter_form.event_type }}
       </div>
       <div class="col-sm-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">{% trans "Direction" %}</label>
+        <select id="filter-direction" name="discipline_category" class="form-select form-select-sm">
+          <option value="">-</option>
+          {% for cat in discipline_categories %}
+          <option value="{{ cat.pk }}"{% if request.GET.discipline_category == cat.pk|stringformat:"s" %} selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-6 col-md-2">
         <label class="form-label form-label-sm mb-1">{% trans "Discipline" %}</label>
-        {{ filter_form.discipline }}
+        <select id="filter-discipline" name="discipline" class="form-select form-select-sm">
+          <option value="">-</option>
+          {% for d in disciplines_json %}
+          <option value="{{ d.pk }}" data-cat="{{ d.category_id }}"{% if request.GET.discipline == d.pk|stringformat:"s" %} selected{% endif %}>{{ d.name }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="col-sm-6 col-md-2">
         <label class="form-label form-label-sm mb-1">{% trans "Location" %}</label>
@@ -52,7 +66,30 @@
     (function () {
       var form = document.getElementById('filter-form');
       if (!form) return;
-      form.querySelectorAll('select, input[type="date"]').forEach(function (el) {
+      var dirSelect = document.getElementById('filter-direction');
+      var discSelect = document.getElementById('filter-discipline');
+      var allDiscOpts = Array.from(discSelect.options).slice(1);
+
+      function syncDisciplineOpts(resetValue) {
+        var catId = dirSelect.value;
+        discSelect.innerHTML = '<option value="">-</option>';
+        allDiscOpts.forEach(function (opt) {
+          if (!catId || String(opt.dataset.cat) === catId) {
+            discSelect.appendChild(opt.cloneNode(true));
+          }
+        });
+        if (resetValue) discSelect.value = '';
+      }
+
+      // On page load: filter disciplines to match pre-selected direction (if any)
+      syncDisciplineOpts(false);
+
+      dirSelect.addEventListener('change', function () {
+        syncDisciplineOpts(true);
+        form.submit();
+      });
+      discSelect.addEventListener('change', function () { form.submit(); });
+      form.querySelectorAll('select:not(#filter-direction):not(#filter-discipline), input[type="date"]').forEach(function (el) {
         el.addEventListener('change', function () { form.submit(); });
       });
     })();

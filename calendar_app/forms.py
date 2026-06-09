@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from locations.models import Location
 
-from .models import Competition, CompetitionComment, CyclingDiscipline, EventType
+from .models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
 
 
 class SubmitCompetitionForm(forms.Form):
@@ -31,11 +31,18 @@ class SubmitCompetitionForm(forms.Form):
         empty_label="--",
         widget=forms.Select(attrs={"class": "form-select"}),
     )
-    discipline: forms.ModelChoiceField[CyclingDiscipline] = forms.ModelChoiceField(
-        queryset=CyclingDiscipline.objects.all(),
+    discipline_category: forms.ModelChoiceField[DisciplineCategory] = forms.ModelChoiceField(
+        queryset=DisciplineCategory.objects.all(),
         required=False,
         empty_label="--",
-        widget=forms.Select(attrs={"class": "form-select"}),
+        label=_("Direction"),
+        widget=forms.Select(attrs={"class": "form-select", "id": "id_discipline_category"}),
+    )
+    discipline: forms.ModelChoiceField[Discipline] = forms.ModelChoiceField(
+        queryset=Discipline.objects.select_related("category"),
+        required=False,
+        empty_label="--",
+        widget=forms.Select(attrs={"class": "form-select", "id": "id_discipline"}),
     )
     location: forms.ModelChoiceField[Location] = forms.ModelChoiceField(
         queryset=Location.objects.filter(is_deleted=False, is_hidden=False),
@@ -161,11 +168,17 @@ class CompetitionFilterForm(forms.Form):
         empty_label="-",
         widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
     )
-    discipline = forms.ModelChoiceField(
-        queryset=CyclingDiscipline.objects.all(),
+    discipline_category = forms.ModelChoiceField(
+        queryset=DisciplineCategory.objects.all(),
         required=False,
         empty_label="-",
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm", "id": "filter-direction"}),
+    )
+    discipline = forms.ModelChoiceField(
+        queryset=Discipline.objects.select_related("category"),
+        required=False,
+        empty_label="-",
+        widget=forms.Select(attrs={"class": "form-select form-select-sm", "id": "filter-discipline"}),
     )
     location = forms.ModelChoiceField(
         queryset=Location.objects.filter(is_deleted=False, is_hidden=False),
