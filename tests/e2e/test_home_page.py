@@ -148,8 +148,7 @@ def test_edit_form_saves_navbar_title_and_reflects_in_navbar(page: Page, live_se
     page.goto(f"{live_server.url}/home/edit/")
 
     page.fill("#id_navbar_title_ru", "My Cycling")
-    page.click("button[type=submit]")
-    page.wait_for_url(f"{live_server.url}/")
+    page.locator("#home-edit-form button[type=submit]").click()
 
     expect(page.locator(".navbar-brand")).to_contain_text("My Cycling")
 
@@ -168,8 +167,7 @@ def test_edit_form_saves_all_locale_navbar_titles_and_reflect(page: Page, live_s
     page.click("#tab-en")
     page.fill("#id_navbar_title_en", "TitleEN")
 
-    page.click("button[type=submit]")
-    page.wait_for_url(f"{live_server.url}/")
+    page.locator("#home-edit-form button[type=submit]").click()
 
     expect(page.locator(".navbar-brand")).to_contain_text("TitleRU")
 
