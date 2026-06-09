@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "News" %}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="mb-0">{% trans "News" %}</h1>
+    {% if can_add %}
+    <a href="{% url 'news_article_create' %}" class="btn btn-primary btn-sm">{% trans "Add news" %}</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+  {% for item in news_items %}
+  <div class="col">
+    <div class="card h-100 shadow-sm">
+      {% if item.hero_image %}
+      <a href="{{ item.get_absolute_url }}">
+        <img src="{{ item.hero_image.url }}" class="card-img-top"
+             style="height:180px; object-fit:cover;" alt="{{ item.title }}">
+      </a>
+      {% endif %}
+      <div class="card-body">
+        <h5 class="card-title">
+          <a href="{{ item.get_absolute_url }}" class="text-decoration-none stretched-link">{{ item.title }}</a>
+          {% if can_add and item.is_hidden %}<span class="badge bg-warning text-dark ms-1">{% trans "Hidden" %}</span>{% endif %}
+        </h5>
+        {% if item.intro %}
+        <p class="card-text text-muted small">{{ item.intro|truncatechars:120 }}</p>
+        {% endif %}
+      </div>
+      <div class="card-footer text-muted small d-flex justify-content-between">
+        <span>{{ item.published_at|date:"d.m.Y" }}</span>
+        {% if item.published_by %}
+        <span>{{ item.published_by.get_full_name|default:item.published_by.email }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <p class="text-muted">{% trans "No news yet." %}</p>
+  </div>
+  {% endfor %}
+</div>
+
+{% if news_items.has_other_pages %}
+<nav aria-label="{% trans 'Pagination' %}">
+  <ul class="pagination justify-content-center">
+    {% if news_items.has_previous %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ news_items.previous_page_number }}">&laquo; {% trans "Previous" %}</a>
+    </li>
+    {% endif %}
+    <li class="page-item disabled">
+      <span class="page-link">{% trans "Page" %} {{ news_items.number }} {% trans "of" %} {{ news_items.paginator.num_pages }}</span>
+    </li>
+    {% if news_items.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ news_items.next_page_number }}">{% trans "Next" %} &raquo;</a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

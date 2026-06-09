@@ -53,6 +53,29 @@
             {% endif %}
             {% endfor %}
         </div>
+
+        {% if page.is_hidden and can_edit %}
+        <div class="alert alert-warning py-2 mt-3">{% trans "This article is hidden from public view." %}</div>
+        {% endif %}
+
+        {% if can_edit %}
+        <div class="mt-4 pt-3 border-top d-flex flex-wrap gap-2">
+            <a href="/admin/pages/{{ page.pk }}/edit/" class="btn btn-outline-secondary btn-sm">
+                {% trans "Edit article" %}
+            </a>
+            <form method="post" action="{% url 'knowledge_article_hide' page.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-warning btn-sm">
+                    {% if page.is_hidden %}{% trans "Unhide" %}{% else %}{% trans "Hide" %}{% endif %}
+                </button>
+            </form>
+            <form method="post" action="{% url 'knowledge_article_delete' page.pk %}" class="d-inline"
+                  onsubmit="return confirm('{% trans "Are you sure you want to delete this article?" %}')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">{% trans "Delete" %}</button>
+            </form>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

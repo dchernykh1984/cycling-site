@@ -41,9 +41,11 @@ class LocationForm(forms.ModelForm):
 
 class LocationViewSet(SnippetViewSet):
     model = Location
-    form_class = LocationForm
     list_display: ClassVar[list] = ["__str__", "depth", "lat", "lng", "knowledge_article"]
     search_fields: ClassVar[list] = ["name_ru", "name_kk", "name_en"]
+
+    def get_form_class(self, for_update=False):
+        return LocationForm
 
 
 register_snippet(LocationViewSet)

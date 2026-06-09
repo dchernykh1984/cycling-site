@@ -22,6 +22,12 @@ from .forms import (
 )
 from .models import Competition, CompetitionComment, CyclingDiscipline, EventType
 
+_ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
+
+
+def _can_manage_any_competition(user) -> bool:
+    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
+
 
 class ParticipantRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
@@ -52,7 +58,11 @@ class CalendarView(TemplateView):
         context = super().get_context_data(**kwargs)
         context["event_types"] = EventType.objects.all()
         context["disciplines"] = CyclingDiscipline.objects.all()
-        context["locations_data"] = list(Location.objects.order_by("path").values("pk", "depth", "path", "name_ru"))
+        context["locations_data"] = list(
+            Location.objects.filter(is_deleted=False, is_hidden=False)
+            .order_by("path")
+            .values("pk", "depth", "path", "name_ru")
+        )
         return context
 
 
@@ -60,7 +70,12 @@ class CalendarEventsAPIView(View):
     def get(self, request):
         from django.db.models import Q
 
-        qs = Competition.objects.filter(status=Competition.Status.APPROVED).select_related("event_type", "discipline")
+        is_manager = _can_manage_any_competition(request.user)
+        qs = Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False).select_related(
+            "event_type", "discipline"
+        )
+        if not is_manager:
+            qs = qs.filter(is_hidden=False)
         start = (request.GET.get("start") or "")[:10]
         end = (request.GET.get("end") or "")[:10]
         if start and end:
@@ -116,9 +131,12 @@ class CompetitionListView(TemplateView):
         date_from = today
         date_to = today + datetime.timedelta(days=30)
 
-        qs = Competition.objects.filter(status=Competition.Status.APPROVED).select_related(
+        is_manager = _can_manage_any_competition(self.request.user)
+        qs = Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False).select_related(
             "event_type", "discipline", "location"
         )
+        if not is_manager:
+            qs = qs.filter(is_hidden=False)
 
         if form.is_valid():
             if form.cleaned_data.get("event_type"):
@@ -138,23 +156,28 @@ class CompetitionListView(TemplateView):
         context["filter_form"] = form
         context["date_from"] = date_from
         context["date_to"] = date_to
+        context["is_manager"] = is_manager
         return context
 
 
 class CompetitionDetailView(View):
     def get(self, request, pk):
+        from registrations.views import can_manage
+
         competition = get_object_or_404(
             Competition.objects.select_related("submitted_by"), pk=pk, status=Competition.Status.APPROVED
         )
+        is_manager = can_manage(request.user, competition)
+        if competition.is_deleted or (competition.is_hidden and not is_manager):
+            from django.http import Http404
+
+            raise Http404
         protocols = competition.protocols.all()
         show_upload_token = request.user.is_authenticated and (
             request.user.is_superuser
             or request.user == competition.submitted_by
             or request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
         )
-        from registrations.views import can_manage
-
-        is_manager = can_manage(request.user, competition)
         already_registered = False
         if request.user.is_authenticated and competition.registration_mode == "self_only":
             from registrations.models import CompetitionRegistration
@@ -381,7 +404,7 @@ class EditCompetitionView(View):
     template_name = "calendar_app/edit.html"
 
     def _get_competition_or_403(self, request, pk):
-        comp = get_object_or_404(Competition, pk=pk)
+        comp = get_object_or_404(Competition, pk=pk, is_deleted=False)
         from registrations.views import can_manage
 
         if not can_manage(request.user, comp):
@@ -571,7 +594,7 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["competitions"] = (
-            Competition.objects.filter(status=Competition.Status.PENDING_APPROVAL)
+            Competition.objects.filter(status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
             .select_related("submitted_by", "event_type", "discipline", "location")
             .order_by("date_start")
         )
@@ -581,14 +604,14 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
 
 class ApproveCompetitionView(OrganizerRequiredMixin, View):
     def post(self, request, pk):
-        comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL)
+        comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
         comp.approve(reviewer=request.user)
         return redirect("calendar_moderate")
 
 
 class RejectCompetitionView(OrganizerRequiredMixin, View):
     def post(self, request, pk):
-        comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL)
+        comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
         form = RejectCompetitionForm(request.POST)
         reason = ""
         if form.is_valid():
@@ -602,7 +625,15 @@ class RejectCompetitionView(OrganizerRequiredMixin, View):
 
 class AddCompetitionCommentView(ParticipantRequiredMixin, View):
     def post(self, request, competition_pk):
-        competition = get_object_or_404(Competition, pk=competition_pk, status=Competition.Status.APPROVED)
+        from django.http import Http404
+
+        from registrations.views import can_manage as _can_manage
+
+        competition = get_object_or_404(
+            Competition, pk=competition_pk, status=Competition.Status.APPROVED, is_deleted=False
+        )
+        if competition.is_hidden and not _can_manage(request.user, competition):
+            raise Http404
         form = AddCompetitionCommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
@@ -626,3 +657,27 @@ class DeleteCompetitionCommentView(LoginRequiredMixin, View):
         competition_pk = comment.competition_id
         comment.delete()
         return redirect("competition_detail", pk=competition_pk)
+
+
+class CompetitionDeleteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        from registrations.views import can_manage
+
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+        if not can_manage(request.user, competition):
+            raise PermissionDenied
+        competition.is_deleted = True
+        competition.save(update_fields=["is_deleted"])
+        return redirect("calendar_list")
+
+
+class CompetitionHideView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        from registrations.views import can_manage
+
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+        if not can_manage(request.user, competition):
+            raise PermissionDenied
+        competition.is_hidden = not competition.is_hidden
+        competition.save(update_fields=["is_hidden"])
+        return redirect("competition_detail", pk=pk)

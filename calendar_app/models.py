@@ -141,6 +141,9 @@ class Competition(index.Indexed, models.Model):
     # Permanent lock: True once registration is first activated; never reset to False.
     registration_mode_locked = models.BooleanField(default=False)
 
+    is_hidden = models.BooleanField(default=False, db_index=True)
+    is_deleted = models.BooleanField(default=False, db_index=True)
+
     search_fields: ClassVar[list] = [
         index.SearchField("title_ru"),
         index.SearchField("title_kk"),

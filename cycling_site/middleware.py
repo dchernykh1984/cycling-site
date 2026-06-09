@@ -21,7 +21,7 @@ _FALLBACK_ORDER = (_default_lang, *_prefixed_langs)
 # For those paths the URL itself encodes the language; activating a non-default language
 # before URL resolution would make LocalePrefixPattern demand /kk/... prefix and return 404.
 _NON_I18N_PATH_RE = re.compile(
-    r"^/(django-admin|admin|documents|i18n|accounts|knowledge|news|calendar|"
+    r"^/(django-admin|admin|documents|i18n|accounts|news|calendar|"
     r"api|protocols|competitions)/"
 )
 

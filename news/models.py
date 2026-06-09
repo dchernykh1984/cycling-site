@@ -2,7 +2,9 @@ from typing import ClassVar
 
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from taggit.models import TaggedItemBase
@@ -152,6 +154,55 @@ class Comment(models.Model):
 
     def __str__(self) -> str:
         return f"Comment by {self.author} on {self.page}"
+
+
+class NewsArticle(models.Model):  # type: ignore[django-manager-missing]
+    """Frontend-managed news article with per-locale title/intro/body fields.
+
+    Modeltranslation adds title_ru/kk/en, intro_ru/kk/en, body_ru/kk/en.
+    The virtual `title`, `intro`, `body` attributes resolve to the active locale.
+    """
+
+    title = models.CharField(max_length=255)
+    intro = models.CharField(max_length=500, blank=True)
+    body = models.TextField(blank=True)
+    hero_image = models.ImageField(upload_to="news/hero/", null=True, blank=True)
+    published_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="news_articles",
+    )
+    published_at = models.DateTimeField(default=timezone.now)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    is_hidden = models.BooleanField(default=False, db_index=True)
+    is_deleted = models.BooleanField(default=False, db_index=True)
+
+    class Meta:
+        ordering: ClassVar[list] = ["-published_at"]
+        verbose_name = "News article"
+        verbose_name_plural = "News articles"
+
+    def __str__(self) -> str:
+        return self.title or ""
+
+    def save(self, *args, **kwargs) -> None:
+        if not self.slug:
+            # Prefer Russian title for the slug (stable across locale switches).
+            base = slugify(getattr(self, "title_ru", None) or self.title or "article")
+            if not base:
+                base = "article"
+            candidate = base
+            n = 1
+            while NewsArticle.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+                candidate = f"{base}-{n}"
+                n += 1
+            self.slug = candidate
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self) -> str:
+        return reverse("news_article_detail", kwargs={"pk": self.pk})
 
 
 @register_setting

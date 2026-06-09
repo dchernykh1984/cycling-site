@@ -15,9 +15,14 @@ def search(request):
         search_results = Page.objects.live().filter(locale=Locale.get_active()).search(search_query)
         backend = get_search_backend()
         competition_results = list(
-            backend.search(search_query, Competition.objects.filter(status=Competition.Status.APPROVED))
+            backend.search(
+                search_query,
+                Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False),
+            )
         )
-        location_results = list(backend.search(search_query, Location.objects.all()))
+        location_results = list(
+            backend.search(search_query, Location.objects.filter(is_deleted=False, is_hidden=False))
+        )
     else:
         search_results = Page.objects.none()
         competition_results = []

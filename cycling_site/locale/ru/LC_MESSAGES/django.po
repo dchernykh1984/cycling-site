@@ -2,19 +2,14 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-08 10:08+0000\n"
+"POT-Creation-Date: 2026-06-09 07:40+0000\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: accounts/templates/account/base.html:7
-#: accounts/templates/account/base.html:15 cycling_site/templates/base.html:36
-msgid "Cycling"
-msgstr "Велоспорт"
-
 #: accounts/templates/accounts/profile.html:4
 #: accounts/templates/accounts/profile.html:9
-#: cycling_site/templates/base.html:105
+#: cycling_site/templates/base.html:113
 msgid "Profile"
 msgstr "Профиль"
 
@@ -28,6 +23,7 @@ msgstr "Роль"
 
 #: accounts/templates/accounts/profile.html:15
 #: calendar_app/templates/calendar_app/_registration_fields.html:209
+#: locations/templates/locations/locations_map_page.html:40
 #: registrations/templates/registrations/participant_list.html:54
 msgid "Name"
 msgstr "Имя"
@@ -53,8 +49,12 @@ msgid "Edit profile"
 msgstr "Редактировать профиль"
 
 #: accounts/templates/accounts/profile.html:31
-msgid "Your email is not confirmed yet. Check your inbox and confirm it to become a participant."
-msgstr "Email ещё не подтверждён. Проверьте почту и подтвердите адрес, чтобы стать участником."
+msgid ""
+"Your email is not confirmed yet. Check your inbox and confirm it to become a "
+"participant."
+msgstr ""
+"Email ещё не подтверждён. Проверьте почту и подтвердите адрес, чтобы стать "
+"участником."
 
 #: accounts/templates/accounts/profile.html:36
 msgid "Appearance"
@@ -69,6 +69,7 @@ msgid "My submissions"
 msgstr "Мои материалы"
 
 #: accounts/templates/accounts/profile.html:50
+#: knowledge/templates/knowledge/knowledge_index_page.html:21
 #: knowledge/templates/knowledge/submit.html:4
 #: knowledge/templates/knowledge/submit.html:9
 msgid "Submit article"
@@ -102,6 +103,7 @@ msgstr "Дата"
 
 #: accounts/templates/accounts/profile.html:63
 #: accounts/templates/accounts/profile.html:102
+#: locations/templates/locations/locations_map_page.html:41
 msgid "Status"
 msgstr "Статус"
 
@@ -143,7 +145,7 @@ msgid "No registrations yet."
 msgstr "Регистраций пока нет."
 
 #: accounts/templates/accounts/profile.html:133
-#: cycling_site/templates/base.html:116
+#: cycling_site/templates/base.html:124
 msgid "Log out"
 msgstr "Выйти"
 
@@ -179,7 +181,8 @@ msgstr "Сохранить"
 #: knowledge/templates/knowledge/admin/approve_confirm.html:21
 #: knowledge/templates/knowledge/admin/reject_form.html:22
 #: knowledge/templates/knowledge/submit.html:51
-#: news/templates/news/submit.html:26
+#: news/templates/news/article_form.html:139
+#: news/templates/news/article_form.html:141 news/templates/news/submit.html:26
 #: registrations/templates/registrations/edit_registration.html:29
 #: registrations/templates/registrations/manual_add.html:30
 #: registrations/templates/registrations/register.html:140
@@ -302,7 +305,7 @@ msgstr "Номер до"
 
 #: calendar_app/templates/calendar_app/calendar.html:4
 #: calendar_app/templates/calendar_app/calendar.html:16
-#: cycling_site/templates/base.html:49
+#: cycling_site/templates/base.html:48
 msgid "Calendar"
 msgstr "Календарь"
 
@@ -391,9 +394,9 @@ msgid "Announcement"
 msgstr "Объявление"
 
 #: calendar_app/templates/calendar_app/detail.html:53
-#: calendar_app/templates/calendar_app/detail.html:131
+#: calendar_app/templates/calendar_app/detail.html:192
 #: calendar_app/templates/calendar_app/list.html:100
-#: cycling_site/templates/base.html:123
+#: cycling_site/templates/base.html:131
 #: registrations/templates/registrations/register.html:4
 #: registrations/templates/registrations/register.html:13
 #: registrations/templates/registrations/register.html:138
@@ -453,32 +456,98 @@ msgstr "Копировать"
 msgid "Access token for the offline timing system:"
 msgstr "Токен доступа для офлайн-системы хронометража:"
 
-#: calendar_app/templates/calendar_app/detail.html:119
+#: calendar_app/templates/calendar_app/detail.html:117
+msgid "This competition is hidden from public view."
+msgstr "Это соревнование скрыто от публичного просмотра."
+
+#: calendar_app/templates/calendar_app/detail.html:123
 #: calendar_app/templates/calendar_app/edit.html:4
 #: calendar_app/templates/calendar_app/edit.html:17
 msgid "Edit competition"
 msgstr "Редактировать соревнование"
 
-#: calendar_app/templates/calendar_app/detail.html:126
+#: calendar_app/templates/calendar_app/detail.html:128
+#: knowledge/templates/knowledge/knowledge_article_page.html:69
+#: locations/templates/locations/locations_map_page.html:56
+#: news/templates/news/article_detail.html:51
+msgid "Unhide"
+msgstr "Показать"
+
+#: calendar_app/templates/calendar_app/detail.html:128
+#: knowledge/templates/knowledge/knowledge_article_page.html:69
+#: locations/templates/locations/locations_map_page.html:56
+#: news/templates/news/article_detail.html:51
+msgid "Hide"
+msgstr "Скрыть"
+
+#: calendar_app/templates/calendar_app/detail.html:132
+msgid "Are you sure you want to delete this competition?"
+msgstr "Вы уверены, что хотите удалить это соревнование?"
+
+#: calendar_app/templates/calendar_app/detail.html:134
+#: calendar_app/templates/calendar_app/detail.html:154
+#: knowledge/templates/knowledge/knowledge_article_page.html:75
+#: locations/templates/locations/locations_map_page.html:62
+#: news/templates/news/article_detail.html:57
+#: news/templates/news/news_page.html:82
+#: registrations/templates/registrations/participant_list.html:111
+msgid "Delete"
+msgstr "Удалить"
+
+#: calendar_app/templates/calendar_app/detail.html:141
+#: news/templates/news/news_page.html:65
+msgid "Comments"
+msgstr "Комментарии"
+
+#: calendar_app/templates/calendar_app/detail.html:162
+#: news/templates/news/news_page.html:91
+msgid "No comments yet. Be the first!"
+msgstr "Комментариев пока нет. Будьте первым!"
+
+#: calendar_app/templates/calendar_app/detail.html:168
+#: news/templates/news/news_page.html:97
+msgid "Add a comment"
+msgstr "Добавить комментарий"
+
+#: calendar_app/templates/calendar_app/detail.html:172
+#: news/templates/news/news_page.html:104
+msgid "Submit comment"
+msgstr "Отправить комментарий"
+
+#: calendar_app/templates/calendar_app/detail.html:178
+#: cycling_site/templates/base.html:130 news/templates/news/news_page.html:111
+msgid "Log in"
+msgstr "Войти"
+
+#: calendar_app/templates/calendar_app/detail.html:178
+#: news/templates/news/news_page.html:112
+msgid "to leave a comment."
+msgstr "чтобы оставить комментарий."
+
+#: calendar_app/templates/calendar_app/detail.html:181
+msgid "Commenting is available to verified participants."
+msgstr ""
+
+#: calendar_app/templates/calendar_app/detail.html:187
 #: calendar_app/templates/calendar_app/moderate.html:40
 #: registrations/templates/registrations/register.html:17
 msgid "Registration"
 msgstr "Регистрация"
 
-#: calendar_app/templates/calendar_app/detail.html:127
+#: calendar_app/templates/calendar_app/detail.html:188
 #: registrations/templates/registrations/participant_list.html:62
 msgid "Registered"
 msgstr "Зарегистрировано"
 
-#: calendar_app/templates/calendar_app/detail.html:134
+#: calendar_app/templates/calendar_app/detail.html:195
 msgid "You are registered"
 msgstr "Вы зарегистрированы"
 
-#: calendar_app/templates/calendar_app/detail.html:137
+#: calendar_app/templates/calendar_app/detail.html:198
 msgid "Registration closed"
 msgstr "Регистрация закрыта"
 
-#: calendar_app/templates/calendar_app/detail.html:140
+#: calendar_app/templates/calendar_app/detail.html:201
 msgid "Participant list"
 msgstr "Список участников"
 
@@ -561,20 +630,21 @@ msgid "Info"
 msgstr "Информация"
 
 #: calendar_app/templates/calendar_app/list.html:110
-#: knowledge/templates/knowledge/knowledge_index_page.html:43
+#: knowledge/templates/knowledge/knowledge_index_page.html:54
 #: news/templates/news/news_index_page.html:49
+#: news/templates/news/news_list.html:50
 msgid "Pagination"
 msgstr "Страницы"
 
 #: calendar_app/templates/calendar_app/list.html:115
 #: news/templates/news/news_index_page.html:54
-#: search/templates/search/search.html:65
+#: news/templates/news/news_list.html:54 search/templates/search/search.html:65
 msgid "Previous"
 msgstr "Назад"
 
 #: calendar_app/templates/calendar_app/list.html:125
 #: news/templates/news/news_index_page.html:66
-#: search/templates/search/search.html:69
+#: news/templates/news/news_list.html:62 search/templates/search/search.html:69
 msgid "Next"
 msgstr "Вперёд"
 
@@ -622,46 +692,57 @@ msgstr "Нет соревнований на рассмотрении."
 msgid "Submit"
 msgstr "Отправить"
 
+#: cycling_site/templates/base.html:36
+msgid "Cycling"
+msgstr "Велоспорт"
+
 #: cycling_site/templates/base.html:39
 msgid "Toggle navigation"
 msgstr "Меню"
 
-#: cycling_site/templates/base.html:46
+#: cycling_site/templates/base.html:45
+#: news/templates/news/article_detail.html:12
+#: news/templates/news/news_list.html:4 news/templates/news/news_list.html:9
 msgid "News"
 msgstr "Новости"
 
-#: cycling_site/templates/base.html:54
+#: cycling_site/templates/base.html:53
 msgid "Map"
 msgstr "Карта"
 
-#: cycling_site/templates/base.html:59
+#: cycling_site/templates/base.html:58
 msgid "Knowledge Base"
 msgstr "База знаний"
 
-#: cycling_site/templates/base.html:64
+#: cycling_site/templates/base.html:63
 msgid "About"
 msgstr "О нас"
 
-#: cycling_site/templates/base.html:68 search/templates/search/search.html:4
+#: cycling_site/templates/base.html:67 search/templates/search/search.html:4
 #: search/templates/search/search.html:9 search/templates/search/search.html:16
 msgid "Search"
 msgstr "Поиск"
 
-#: cycling_site/templates/base.html:73
+#: cycling_site/templates/base.html:72
 msgid "Switch theme"
 msgstr "Сменить тему"
 
-#: cycling_site/templates/base.html:109
+#: cycling_site/templates/base.html:117
 msgid "Admin"
 msgstr "Администратор"
 
-#: cycling_site/templates/base.html:122 news/templates/news/news_page.html:111
-msgid "Log in"
-msgstr "Войти"
-
-#: cycling_site/templates/base.html:137
+#: cycling_site/templates/base.html:153
 msgid "Cycling events"
 msgstr "Соревнования по велоспорту"
+
+#: cycling_site/templates/base.html:156
+#, python-format
+msgid ""
+"Found a bug or have a suggestion? <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noopener\">Open an issue on GitHub</a>."
+msgstr ""
+"Нашли баг или есть предложение? <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noopener\">Создайте задачу на GitHub</a>."
 
 #: home/templates/home/welcome_page.html:6
 msgid "Visit the Wagtail website"
@@ -676,8 +757,13 @@ msgid "Welcome to your new Wagtail site!"
 msgstr "Добро пожаловать на ваш новый сайт Wagtail!"
 
 #: home/templates/home/welcome_page.html:28
-msgid "Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/Slack\">join our community on Slack</a>, or get started with one of the links below."
-msgstr "Присоединяйтесь к нашему <a href=\"https://github.com/wagtail/wagtail/wiki/Slack\">сообществу в Slack</a> или начните с одной из ссылок ниже."
+msgid ""
+"Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/"
+"Slack\">join our community on Slack</a>, or get started with one of the "
+"links below."
+msgstr ""
+"Присоединяйтесь к нашему <a href=\"https://github.com/wagtail/wagtail/wiki/"
+"Slack\">сообществу в Slack</a> или начните с одной из ссылок ниже."
 
 #: home/templates/home/welcome_page.html:35
 msgid "Wagtail Documentation"
@@ -721,7 +807,8 @@ msgstr ""
 
 #: knowledge/templates/knowledge/admin/approve_confirm.html:15
 msgid "A new knowledge article page will be created in the Wagtail page tree."
-msgstr "Новая страница статьи базы знаний будет создана в дереве страниц Wagtail."
+msgstr ""
+"Новая страница статьи базы знаний будет создана в дереве страниц Wagtail."
 
 #: knowledge/templates/knowledge/admin/approve_confirm.html:20
 msgid "Approve and publish"
@@ -736,7 +823,28 @@ msgstr "Отклонить материал"
 msgid "Reviewer note (shown to author, optional)"
 msgstr "Заметка рецензента (показывается автору, необязательно)"
 
-#: knowledge/templates/knowledge/knowledge_index_page.html:63
+#: knowledge/templates/knowledge/knowledge_article_page.html:58
+#: news/templates/news/article_detail.html:40
+msgid "This article is hidden from public view."
+msgstr "Эта статья скрыта от публичного просмотра."
+
+#: knowledge/templates/knowledge/knowledge_article_page.html:64
+#: news/templates/news/article_detail.html:46
+#: news/templates/news/article_form.html:4
+#: news/templates/news/article_form.html:20
+msgid "Edit article"
+msgstr "Редактировать статью"
+
+#: knowledge/templates/knowledge/knowledge_article_page.html:73
+#: news/templates/news/article_detail.html:55
+msgid "Are you sure you want to delete this article?"
+msgstr "Вы уверены, что хотите удалить эту статью?"
+
+#: knowledge/templates/knowledge/knowledge_index_page.html:17
+msgid "Add article"
+msgstr "Добавить статью"
+
+#: knowledge/templates/knowledge/knowledge_index_page.html:74
 msgid "No articles yet."
 msgstr "Статей пока нет."
 
@@ -757,49 +865,78 @@ msgid "External Links"
 msgstr "Внешние ссылки"
 
 #: knowledge/templates/knowledge/submit.html:11
-msgid "Your submission will be reviewed by the editorial team before publishing."
+msgid ""
+"Your submission will be reviewed by the editorial team before publishing."
 msgstr "Ваша заявка будет проверена редакцией перед публикацией."
 
-#: locations/templates/locations/locations_map_page.html:43
+#: locations/templates/locations/locations_map_page.html:21
+msgid "Add location"
+msgstr "Добавить локацию"
+
+#: locations/templates/locations/locations_map_page.html:36
+msgid "Manage locations"
+msgstr "Управление локациями"
+
+#: locations/templates/locations/locations_map_page.html:50
+msgid "Hidden"
+msgstr "Скрыто"
+
+#: locations/templates/locations/locations_map_page.html:60
+msgid "Are you sure you want to delete this location?"
+msgstr "Вы уверены, что хотите удалить эту локацию?"
+
+#: locations/templates/locations/locations_map_page.html:94
 msgid "Read article"
 msgstr "Читать статью"
 
+#: news/templates/news/article_form.html:4
+#: news/templates/news/article_form.html:20
+#: news/templates/news/news_list.html:11
+msgid "Add news"
+msgstr "Добавить новость"
+
+#: news/templates/news/article_form.html:69
+msgid "Body (RU)"
+msgstr ""
+
+#: news/templates/news/article_form.html:86
+msgid "Body (KK)"
+msgstr ""
+
+#: news/templates/news/article_form.html:103
+msgid "Body (EN)"
+msgstr ""
+
+#: news/templates/news/article_form.html:115
+msgid "Published at"
+msgstr ""
+
+#: news/templates/news/article_form.html:122
+msgid "Cover image"
+msgstr ""
+
+#: news/templates/news/article_form.html:136
+msgid "Save changes"
+msgstr ""
+
+#: news/templates/news/article_form.html:136
+msgid "Publish"
+msgstr ""
+
 #: news/templates/news/news_index_page.html:43
+#: news/templates/news/news_list.html:44
 msgid "No news yet."
 msgstr "Новостей пока нет."
 
 #: news/templates/news/news_index_page.html:60
+#: news/templates/news/news_list.html:58
 msgid "Page"
 msgstr "Страница"
 
 #: news/templates/news/news_index_page.html:60
+#: news/templates/news/news_list.html:58
 msgid "of"
 msgstr "из"
-
-#: news/templates/news/news_page.html:65
-msgid "Comments"
-msgstr "Комментарии"
-
-#: news/templates/news/news_page.html:82
-#: registrations/templates/registrations/participant_list.html:111
-msgid "Delete"
-msgstr "Удалить"
-
-#: news/templates/news/news_page.html:91
-msgid "No comments yet. Be the first!"
-msgstr "Комментариев пока нет. Будьте первым!"
-
-#: news/templates/news/news_page.html:97
-msgid "Add a comment"
-msgstr "Добавить комментарий"
-
-#: news/templates/news/news_page.html:104
-msgid "Submit comment"
-msgstr "Отправить комментарий"
-
-#: news/templates/news/news_page.html:112
-msgid "to leave a comment."
-msgstr "чтобы оставить комментарий."
 
 #: news/templates/news/submit.html:4 news/templates/news/submit.html:9
 msgid "Submit news"
@@ -951,5 +1088,10 @@ msgstr "Страницы"
 msgid "No results found"
 msgstr "Ничего не найдено"
 
-#~ msgid "Submissions will appear here once the calendar and article features are implemented."
-#~ msgstr "Материалы появятся здесь после реализации функций календаря и статей."
+#: news/forms.py
+msgid "Short description"
+msgstr "Краткое описание"
+
+#: news/forms.py
+msgid "Body"
+msgstr "Текст"

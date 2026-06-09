@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% if action == "edit" %}{% trans "Edit article" %}{% else %}{% trans "Add news" %}{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>
+  .ql-container { min-height: 250px; font-size: 1rem; }
+  .nav-tabs .nav-link { color: var(--bs-secondary); }
+  .nav-tabs .nav-link.active { font-weight: 600; }
+  .locale-badge { font-size: 0.7rem; vertical-align: middle; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9 col-xl-8">
+    <h1 class="mb-4">
+      {% if action == "edit" %}{% trans "Edit article" %}{% else %}{% trans "Add news" %}{% endif %}
+    </h1>
+
+    <form method="post" enctype="multipart/form-data" id="article-form">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      {# ---- Locale tabs ---- #}
+      <ul class="nav nav-tabs mb-3" id="localeTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="tab-ru" data-bs-toggle="tab"
+                  data-bs-target="#pane-ru" type="button" role="tab">
+            RU <span class="badge bg-secondary locale-badge">RU</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-kk" data-bs-toggle="tab"
+                  data-bs-target="#pane-kk" type="button" role="tab">
+            KZ
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-en" data-bs-toggle="tab"
+                  data-bs-target="#pane-en" type="button" role="tab">
+            EN
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content border border-top-0 rounded-bottom p-3 mb-4" id="localeTabContent">
+
+        {# RU tab #}
+        <div class="tab-pane fade show active" id="pane-ru" role="tabpanel">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.title_ru.id_for_label }}">
+              {{ form.title_ru.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.title_ru }}
+            {% if form.title_ru.errors %}<div class="text-danger small mt-1">{{ form.title_ru.errors }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.intro_ru.id_for_label }}">{{ form.intro_ru.label }}</label>
+            {{ form.intro_ru }}
+            {% if form.intro_ru.errors %}<div class="text-danger small mt-1">{{ form.intro_ru.errors }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{% trans "Body (RU)" %}</label>
+            <div id="quill-ru" class="bg-white"></div>
+            {{ form.body_ru }}
+          </div>
+        </div>
+
+        {# KK tab #}
+        <div class="tab-pane fade" id="pane-kk" role="tabpanel">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.title_kk.id_for_label }}">{{ form.title_kk.label }}</label>
+            {{ form.title_kk }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.intro_kk.id_for_label }}">{{ form.intro_kk.label }}</label>
+            {{ form.intro_kk }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{% trans "Body (KK)" %}</label>
+            <div id="quill-kk" class="bg-white"></div>
+            {{ form.body_kk }}
+          </div>
+        </div>
+
+        {# EN tab #}
+        <div class="tab-pane fade" id="pane-en" role="tabpanel">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.title_en.id_for_label }}">{{ form.title_en.label }}</label>
+            {{ form.title_en }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.intro_en.id_for_label }}">{{ form.intro_en.label }}</label>
+            {{ form.intro_en }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{% trans "Body (EN)" %}</label>
+            <div id="quill-en" class="bg-white"></div>
+            {{ form.body_en }}
+          </div>
+        </div>
+
+      </div>{# /tab-content #}
+
+      {# ---- Common fields ---- #}
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="{{ form.published_at.id_for_label }}">
+            {% trans "Published at" %}
+          </label>
+          {{ form.published_at }}
+          {% if form.published_at.errors %}<div class="text-danger small mt-1">{{ form.published_at.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="{{ form.hero_image.id_for_label }}">
+            {% trans "Cover image" %}
+          </label>
+          {% if article.hero_image %}
+          <div class="mb-2">
+            <img src="{{ article.hero_image.url }}" class="img-thumbnail" style="max-height:80px">
+          </div>
+          {% endif %}
+          {{ form.hero_image }}
+          {% if form.hero_image.errors %}<div class="text-danger small mt-1">{{ form.hero_image.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          {% if action == "edit" %}{% trans "Save changes" %}{% else %}{% trans "Publish" %}{% endif %}
+        </button>
+        {% if article %}
+        <a href="{{ article.get_absolute_url }}" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
+        {% else %}
+        <a href="{% url 'news_index' %}" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
+        {% endif %}
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{# Safe containers for initial HTML values — avoids JS string escaping issues #}
+<script type="text/html" id="init-body-ru">{% if form.body_ru.value %}{{ form.body_ru.value }}{% endif %}</script>
+<script type="text/html" id="init-body-kk">{% if form.body_kk.value %}{{ form.body_kk.value }}{% endif %}</script>
+<script type="text/html" id="init-body-en">{% if form.body_en.value %}{{ form.body_en.value }}{% endif %}</script>
+<script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
+<script>
+(function () {
+  var TOOLBAR = [
+    [{ 'header': [2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['blockquote', 'link', 'image'],
+    ['clean']
+  ];
+
+  function makeEditor(editorId, inputId, initialHtml) {
+    var quill = new Quill('#' + editorId, {
+      theme: 'snow',
+      modules: { toolbar: TOOLBAR }
+    });
+    if (initialHtml) {
+      quill.clipboard.dangerouslyPasteHTML(initialHtml);
+    }
+    return quill;
+  }
+
+  // Initial HTML values stored in hidden script tags to avoid JS injection.
+  function getInitial(id) {
+    var el = document.getElementById(id);
+    return el ? el.textContent : '';
+  }
+
+  var editors = {
+    ru: makeEditor('quill-ru', 'id_body_ru', getInitial('init-body-ru')),
+    kk: makeEditor('quill-kk', 'id_body_kk', getInitial('init-body-kk')),
+    en: makeEditor('quill-en', 'id_body_en', getInitial('init-body-en')),
+  };
+
+  document.getElementById('article-form').addEventListener('submit', function () {
+    document.getElementById('id_body_ru').value = editors.ru.root.innerHTML;
+    document.getElementById('id_body_kk').value = editors.kk.root.innerHTML;
+    document.getElementById('id_body_en').value = editors.en.root.innerHTML;
+  });
+}());
+</script>
+{% endblock %}
