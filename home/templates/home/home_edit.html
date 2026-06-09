@@ -118,9 +118,9 @@
 {% endblock %}
 
 {% block extra_js %}
-<script type="text/html" id="init-body-ru">{% if form.body_ru.value %}{{ form.body_ru.value }}{% endif %}</script>
-<script type="text/html" id="init-body-kk">{% if form.body_kk.value %}{{ form.body_kk.value }}{% endif %}</script>
-<script type="text/html" id="init-body-en">{% if form.body_en.value %}{{ form.body_en.value }}{% endif %}</script>
+<textarea id="init-body-ru" style="display:none">{{ form.body_ru.value }}</textarea>
+<textarea id="init-body-kk" style="display:none">{{ form.body_kk.value }}</textarea>
+<textarea id="init-body-en" style="display:none">{{ form.body_en.value }}</textarea>
 <script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
 <script>
 (function () {
@@ -134,7 +134,7 @@
 
   function getInitial(id) {
     var el = document.getElementById(id);
-    return el ? el.textContent : '';
+    return el ? el.value : '';
   }
 
   function makeEditor(editorId, initialHtml) {
