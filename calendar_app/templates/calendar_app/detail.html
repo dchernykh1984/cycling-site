@@ -30,8 +30,8 @@
       {% if competition.discipline %}
       <span><strong>{% trans "Discipline" %}:</strong> {{ competition.discipline.name }}</span>
       {% endif %}
-      {% if competition.location %}
-      <span><strong>{% trans "Location" %}:</strong> {{ competition.location.name }}</span>
+      {% if competition.location_label %}
+      <span><strong>{% trans "Location" %}:</strong> {{ competition.location_label }}</span>
       {% endif %}
     </div>
 
