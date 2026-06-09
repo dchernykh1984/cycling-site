@@ -78,6 +78,18 @@ def superuser(db):
         username="e2e_admin",
         email="e2e_admin@test.local",
         password="testpass123!",
+        role=User.Role.OWNER,
+    )
+
+
+@pytest.fixture
+def owner(db):
+    """Non-superuser with OWNER role - can edit home page / site content."""
+    return User.objects.create_user(
+        username="e2e_owner",
+        email="e2e_owner@test.local",
+        password="testpass123!",
+        role=User.Role.OWNER,
     )
 
 

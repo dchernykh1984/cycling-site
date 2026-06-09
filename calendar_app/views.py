@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import get_language
 from django.views.generic import TemplateView, View
 
 from accounts.models import User
@@ -23,10 +24,39 @@ from .forms import (
 from .models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
+_SUPPORTED_LANGS = frozenset(("ru", "kk", "en"))
 
 
 def _can_manage_any_competition(user) -> bool:
     return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
+
+
+def _disciplines_for_locale() -> list:
+    """Return disciplines with the name field for the current active language."""
+    lang = (get_language() or "ru").split("-")[0]
+    name_field = f"name_{lang}" if lang in _SUPPORTED_LANGS else "name_ru"
+    rows = list(Discipline.objects.values("pk", "category_id", name_field))
+    return [{"pk": r["pk"], "name": r[name_field], "category_id": r["category_id"]} for r in rows]
+
+
+def _apply_id_filters(qs, event_type_id, discipline_id, direction_id):
+    """Apply integer-keyed filters; ignore any non-integer value silently."""
+    if event_type_id:
+        try:
+            qs = qs.filter(event_type_id=int(event_type_id))
+        except (ValueError, TypeError):
+            return qs.none()
+    if discipline_id:
+        try:
+            qs = qs.filter(discipline_id=int(discipline_id))
+        except (ValueError, TypeError):
+            return qs.none()
+    elif direction_id:
+        try:
+            qs = qs.filter(discipline__category_id=int(direction_id))
+        except (ValueError, TypeError):
+            return qs.none()
+    return qs
 
 
 class ParticipantRequiredMixin(LoginRequiredMixin):
@@ -58,9 +88,7 @@ class CalendarView(TemplateView):
         context = super().get_context_data(**kwargs)
         context["event_types"] = EventType.objects.all()
         context["discipline_categories"] = DisciplineCategory.objects.all()
-        context["disciplines_json"] = list(
-            Discipline.objects.select_related("category").values("pk", "name", "category_id")
-        )
+        context["disciplines_json"] = _disciplines_for_locale()
         context["locations_data"] = list(
             Location.objects.filter(is_deleted=False, is_hidden=False)
             .order_by("path")
@@ -96,12 +124,7 @@ class CalendarEventsAPIView(View):
         discipline_id = request.GET.get("discipline")
         direction_id = request.GET.get("direction")
         location_id = request.GET.get("location")
-        if event_type_id:
-            qs = qs.filter(event_type_id=event_type_id)
-        if discipline_id:
-            qs = qs.filter(discipline_id=discipline_id)
-        elif direction_id:
-            qs = qs.filter(discipline__category_id=direction_id)
+        qs = _apply_id_filters(qs, event_type_id, discipline_id, direction_id)
         if location_id:
             try:
                 loc = Location.objects.get(pk=location_id)
@@ -166,9 +189,7 @@ class CompetitionListView(TemplateView):
         context["date_to"] = date_to
         context["is_manager"] = is_manager
         context["discipline_categories"] = DisciplineCategory.objects.all()
-        context["disciplines_json"] = list(
-            Discipline.objects.select_related("category").values("pk", "name", "category_id")
-        )
+        context["disciplines_json"] = _disciplines_for_locale()
         return context
 
 
@@ -342,7 +363,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
     def _discipline_context(self):
         return {
             "discipline_categories": DisciplineCategory.objects.all(),
-            "disciplines_json": list(Discipline.objects.select_related("category").values("pk", "name", "category_id")),
+            "disciplines_json": _disciplines_for_locale(),
         }
 
     def get(self, request):
@@ -369,7 +390,12 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 return render(
                     request,
                     self.template_name,
-                    {"form": form, "reg_form": reg_form, "is_organizer_plus": is_organizer},
+                    {
+                        "form": form,
+                        "reg_form": reg_form,
+                        "is_organizer_plus": is_organizer,
+                        **self._discipline_context(),
+                    },
                 )
             comp = Competition(
                 title_ru=cd["title_ru"],
@@ -498,7 +524,7 @@ class EditCompetitionView(View):
                 c["birth_to"] = c["birth_to"].isoformat() if comp.birth_date_mode == "date" else str(c["birth_to"].year)
         disc_ctx = {
             "discipline_categories": DisciplineCategory.objects.all(),
-            "disciplines_json": list(Discipline.objects.select_related("category").values("pk", "name", "category_id")),
+            "disciplines_json": _disciplines_for_locale(),
         }
         return render(
             request,
@@ -603,7 +629,7 @@ class EditCompetitionView(View):
         )
         disc_ctx = {
             "discipline_categories": DisciplineCategory.objects.all(),
-            "disciplines_json": list(Discipline.objects.select_related("category").values("pk", "name", "category_id")),
+            "disciplines_json": _disciplines_for_locale(),
         }
         return render(
             request,

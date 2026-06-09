@@ -2,14 +2,14 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-09 11:28+0000\n"
+"POT-Creation-Date: 2026-06-09 11:54+0000\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: accounts/templates/accounts/profile.html:4
 #: accounts/templates/accounts/profile.html:9
-#: cycling_site/templates/base.html:113
+#: cycling_site/templates/base.html:114
 msgid "Profile"
 msgstr "Профиль"
 
@@ -146,7 +146,7 @@ msgid "No registrations yet."
 msgstr "Регистраций пока нет."
 
 #: accounts/templates/accounts/profile.html:133
-#: cycling_site/templates/base.html:124
+#: cycling_site/templates/base.html:125
 msgid "Log out"
 msgstr "Выйти"
 
@@ -179,6 +179,7 @@ msgstr "Сохранить"
 #: accounts/templates/accounts/profile_edit.html:47
 #: calendar_app/templates/calendar_app/edit.html:202
 #: calendar_app/templates/calendar_app/submit.html:183
+#: home/templates/home/home_edit.html:110
 #: knowledge/templates/knowledge/admin/approve_confirm.html:21
 #: knowledge/templates/knowledge/admin/reject_form.html:22
 #: knowledge/templates/knowledge/submit.html:51
@@ -323,7 +324,7 @@ msgstr "Номер до"
 
 #: calendar_app/templates/calendar_app/calendar.html:4
 #: calendar_app/templates/calendar_app/calendar.html:16
-#: cycling_site/templates/base.html:48
+#: cycling_site/templates/base.html:49
 msgid "Calendar"
 msgstr "Календарь"
 
@@ -417,7 +418,7 @@ msgstr "Объявление"
 #: calendar_app/templates/calendar_app/detail.html:53
 #: calendar_app/templates/calendar_app/detail.html:192
 #: calendar_app/templates/calendar_app/list.html:138
-#: cycling_site/templates/base.html:131
+#: cycling_site/templates/base.html:132
 #: registrations/templates/registrations/register.html:4
 #: registrations/templates/registrations/register.html:13
 #: registrations/templates/registrations/register.html:138
@@ -536,7 +537,7 @@ msgid "Submit comment"
 msgstr "Отправить комментарий"
 
 #: calendar_app/templates/calendar_app/detail.html:178
-#: cycling_site/templates/base.html:130 news/templates/news/news_page.html:111
+#: cycling_site/templates/base.html:131 news/templates/news/news_page.html:111
 msgid "Log in"
 msgstr "Войти"
 
@@ -719,50 +720,50 @@ msgstr "Нет соревнований на рассмотрении."
 msgid "Submit"
 msgstr "Отправить"
 
-#: cycling_site/templates/base.html:36
+#: cycling_site/templates/base.html:37
 msgid "Cycling"
 msgstr "Велоспорт"
 
-#: cycling_site/templates/base.html:39
+#: cycling_site/templates/base.html:40
 msgid "Toggle navigation"
 msgstr "Меню"
 
-#: cycling_site/templates/base.html:45
+#: cycling_site/templates/base.html:46
 #: news/templates/news/article_detail.html:12
 #: news/templates/news/news_list.html:4 news/templates/news/news_list.html:9
 msgid "News"
 msgstr "Новости"
 
-#: cycling_site/templates/base.html:53
+#: cycling_site/templates/base.html:54
 msgid "Map"
 msgstr "Карта"
 
-#: cycling_site/templates/base.html:58
+#: cycling_site/templates/base.html:59
 msgid "Knowledge Base"
 msgstr "База знаний"
 
-#: cycling_site/templates/base.html:63
+#: cycling_site/templates/base.html:64
 msgid "About"
 msgstr "О нас"
 
-#: cycling_site/templates/base.html:67 search/templates/search/search.html:4
+#: cycling_site/templates/base.html:68 search/templates/search/search.html:4
 #: search/templates/search/search.html:9 search/templates/search/search.html:16
 msgid "Search"
 msgstr "Поиск"
 
-#: cycling_site/templates/base.html:72
+#: cycling_site/templates/base.html:73
 msgid "Switch theme"
 msgstr "Сменить тему"
 
-#: cycling_site/templates/base.html:117
+#: cycling_site/templates/base.html:118
 msgid "Admin"
 msgstr "Администратор"
 
-#: cycling_site/templates/base.html:153
+#: cycling_site/templates/base.html:154
 msgid "Cycling events"
 msgstr "Соревнования по велоспорту"
 
-#: cycling_site/templates/base.html:156
+#: cycling_site/templates/base.html:157
 #, python-format
 msgid ""
 "Found a bug or have a suggestion? <a href=\"%(url)s\" target=\"_blank\" "
@@ -770,6 +771,68 @@ msgid ""
 msgstr ""
 "Нашли баг или есть предложение? <a href=\"%(url)s\" target=\"_blank\" "
 "rel=\"noopener\">Создайте задачу на GitHub</a>."
+
+#: home/forms.py:33
+msgid "Navbar title (RU)"
+msgstr "Название в шапке (RU)"
+
+#: home/forms.py:34
+msgid "Navbar title (KK)"
+msgstr "Название в шапке (KK)"
+
+#: home/forms.py:35
+msgid "Navbar title (EN)"
+msgstr "Название в шапке (EN)"
+
+#: home/forms.py:36
+msgid "Tab title (RU)"
+msgstr "Название вкладки (RU)"
+
+#: home/forms.py:37
+msgid "Tab title (KK)"
+msgstr "Название вкладки (KK)"
+
+#: home/forms.py:38
+msgid "Tab title (EN)"
+msgstr "Название вкладки (EN)"
+
+#: home/templates/home/home_edit.html:4 home/templates/home/home_edit.html:18
+msgid "Edit home page"
+msgstr "Редактировать главную страницу"
+
+#: home/templates/home/home_edit.html:45 home/templates/home/home_edit.html:68
+#: home/templates/home/home_edit.html:89
+msgid "Navbar title"
+msgstr "Название в шапке"
+
+#: home/templates/home/home_edit.html:52 home/templates/home/home_edit.html:74
+#: home/templates/home/home_edit.html:95
+msgid "Tab title"
+msgstr "Название вкладки"
+
+#: home/templates/home/home_edit.html:58
+#: news/templates/news/article_form.html:69
+msgid "Body (RU)"
+msgstr "Содержимое (RU)"
+
+#: home/templates/home/home_edit.html:79
+#: news/templates/news/article_form.html:86
+msgid "Body (KK)"
+msgstr "Содержимое (KK)"
+
+#: home/templates/home/home_edit.html:100
+#: news/templates/news/article_form.html:103
+msgid "Body (EN)"
+msgstr "Содержимое (EN)"
+
+#: home/templates/home/home_edit.html:109
+#: news/templates/news/article_form.html:136
+msgid "Save changes"
+msgstr "Сохранить изменения"
+
+#: home/templates/home/home_page.html:9
+msgid "Edit page"
+msgstr "Редактировать страницу"
 
 #: home/templates/home/welcome_page.html:6
 msgid "Visit the Wagtail website"
@@ -926,28 +989,12 @@ msgstr "Текст"
 msgid "Add news"
 msgstr "Добавить новость"
 
-#: news/templates/news/article_form.html:69
-msgid "Body (RU)"
-msgstr ""
-
-#: news/templates/news/article_form.html:86
-msgid "Body (KK)"
-msgstr ""
-
-#: news/templates/news/article_form.html:103
-msgid "Body (EN)"
-msgstr ""
-
 #: news/templates/news/article_form.html:115
 msgid "Published at"
 msgstr ""
 
 #: news/templates/news/article_form.html:122
 msgid "Cover image"
-msgstr ""
-
-#: news/templates/news/article_form.html:136
-msgid "Save changes"
 msgstr ""
 
 #: news/templates/news/article_form.html:136

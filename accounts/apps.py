@@ -38,13 +38,13 @@ def _setup_group_permissions(sender, **kwargs):
         user_ct = ContentType.objects.get_for_model(user_model)
         user_perms = {p.codename: p for p in Permission.objects.filter(content_type=user_ct)}
 
-        admins, _ = Group.objects.get_or_create(name="admins")
+        admins, _ = Group.objects.get_or_create(name="Admins")
         admins.permissions.add(
             access_admin,
             *[user_perms[c] for c in ("view_user", "change_user", "add_user") if c in user_perms],
         )
 
-        owners, _ = Group.objects.get_or_create(name="owners")
+        owners, _ = Group.objects.get_or_create(name="Owners")
         owners.permissions.add(
             access_admin,
             *[user_perms[c] for c in ("view_user", "change_user", "add_user", "delete_user") if c in user_perms],

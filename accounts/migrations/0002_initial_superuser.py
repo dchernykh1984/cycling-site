@@ -16,7 +16,7 @@ def create_initial_superuser(apps, schema_editor):
         return  # already exists -- idempotent
 
     email = os.environ.get("INITIAL_SUPERUSER_EMAIL", f"{username}@localhost")
-    User.objects.create_superuser(username=username, email=email, password=password)
+    User.objects.create_superuser(username=username, email=email, password=password, role=User.Role.OWNER)
 
 
 class Migration(migrations.Migration):

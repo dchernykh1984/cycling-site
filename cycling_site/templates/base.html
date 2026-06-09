@@ -33,7 +33,8 @@
 
     <nav class="navbar navbar-expand-lg sticky-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/">{% trans "Cycling" %}</a>
+            {% get_site_content as sc %}
+            <a class="navbar-brand fw-bold" href="/">{% if sc.navbar_title %}{{ sc.navbar_title }}{% else %}{% trans "Cycling" %}{% endif %}</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false"
                 aria-label="{% trans 'Toggle navigation' %}">

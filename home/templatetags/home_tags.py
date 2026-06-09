@@ -41,3 +41,10 @@ def get_about_url():
         url = page.url if page else ""
         cache.set(cache_key, url, timeout=300)
     return url or None
+
+
+@register.simple_tag
+def get_site_content():
+    from home.models import SiteContent
+
+    return SiteContent.load()
