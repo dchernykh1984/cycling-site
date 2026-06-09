@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 
 import pytest
 from django.test import Client
@@ -19,7 +20,8 @@ os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 
 
 def inject_session(page, live_server, user):
-    # django_language=ru prevents CI Chromium (Accept-Language: en-US) from activating /en/ redirect.
+    # django_language=ru cookie is read by LocaleFallbackMiddleware for non-i18n paths
+    # (e.g. /calendar/) so CI browsers with Accept-Language: en-US see Russian content.
     client = Client()
     client.force_login(user)
     session_value = client.cookies["sessionid"].value
@@ -41,10 +43,17 @@ def open_filter_panel(page) -> None:
 
 
 def switch_locale(page, locale):
-    # context.add_cookies is more reliable than JS document.cookie across CI browsers.
-    host = page.url.split("://")[1].split(":")[0]
-    page.context.add_cookies([{"name": "django_language", "value": locale, "domain": host, "path": "/"}])
-    page.reload()
+    # Navigate directly to the locale-prefixed URL.  Setting django_language cookie alone
+    # does not work for paths inside i18n_patterns with prefix_default_language=False:
+    # LocaleMiddleware ignores the cookie and forces LANGUAGE_CODE to the default locale
+    # for any URL that lacks a language prefix.
+    from urllib.parse import urlparse
+
+    parsed = urlparse(page.url)
+    # Strip any existing non-default (/kk/ or /en/) prefix so we can add the new one.
+    path = re.sub(r"^/(kk|en)/", "/", parsed.path) or "/"
+    new_path = path if locale == "ru" else f"/{locale}{path}"
+    page.goto(f"{parsed.scheme}://{parsed.netloc}{new_path}")
 
 
 # ---------------------------------------------------------------------------
@@ -84,18 +93,6 @@ def wagtail_home_page(db, wagtail_locales):
     # No per-locale page copies needed: HomePage.get_context() and the get_site_content
     # template tag now use request.LANGUAGE_CODE (set by Django's LocaleMiddleware) to
     # resolve SiteContent locale fields, bypassing Wagtail's translation.override(page.locale).
-
-
-@pytest.fixture(autouse=True)
-def _set_default_locale(request):
-    # Set django_language=ru before every page-based test so CI browsers (Accept-Language: en-US)
-    # don't redirect / to /en/ and break locale-sensitive assertions.
-    if "page" not in request.fixturenames or "live_server" not in request.fixturenames:
-        return
-    live_server = request.getfixturevalue("live_server")
-    page = request.getfixturevalue("page")
-    host = live_server.url.split("//")[1].split(":")[0]
-    page.context.add_cookies([{"name": "django_language", "value": "ru", "domain": host, "path": "/"}])
 
 
 # ---------------------------------------------------------------------------
