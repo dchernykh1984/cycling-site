@@ -3,11 +3,13 @@ import importlib
 from django.conf import settings
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
+from django.urls import reverse
 from wagtail.models import Locale, Page, Site
 from wagtail.test.utils import WagtailPageTestCase
 from wagtail_localize.fields import SynchronizedField
 
-from home.models import HomePage
+from accounts.models import User
+from home.models import HomePage, SiteContent
 
 
 class HomeSetUpTests(WagtailPageTestCase):
@@ -168,6 +170,138 @@ class AboutPageTests(WagtailPageTestCase):
             f.field_name for f in AboutPage.override_translatable_fields if isinstance(f, SynchronizedField)
         ]
         self.assertIn("slug", synchronized_slugs)
+
+
+class SiteContentModelTests(TestCase):
+    def test_str(self):
+        SiteContent.objects.filter(pk=1).delete()
+        obj = SiteContent.objects.create(pk=1, navbar_title_ru="Test")
+        self.assertEqual(str(obj), "Site content")
+
+    def test_load_creates_singleton_if_missing(self):
+        from django.core.cache import cache
+
+        from home.models import _SITE_CONTENT_CACHE_KEY
+
+        SiteContent.objects.all().delete()
+        cache.delete(_SITE_CONTENT_CACHE_KEY)
+        obj = SiteContent.load()
+        self.assertEqual(obj.pk, 1)
+        self.assertEqual(SiteContent.objects.count(), 1)
+
+    def test_load_returns_existing(self):
+        sc = SiteContent.objects.get_or_create(pk=1)[0]
+        sc.navbar_title_ru = "TestNavbar"
+        sc.save()
+        loaded = SiteContent.load()
+        self.assertEqual(loaded.navbar_title_ru, "TestNavbar")
+
+    def test_save_always_forces_pk1(self):
+        SiteContent.objects.all().delete()
+        obj = SiteContent(pk=99, navbar_title_ru="X")
+        obj.save()
+        self.assertTrue(SiteContent.objects.filter(pk=1).exists())
+        self.assertFalse(SiteContent.objects.filter(pk=99).exists())
+
+
+class HomeEditViewTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="owner@test.local",
+            email="owner@test.local",
+            password="pw",
+            role=User.Role.OWNER,
+        )
+        self.regular = User.objects.create_user(
+            username="user@test.local",
+            email="user@test.local",
+            password="pw",
+            role=User.Role.ORGANIZER,
+        )
+        # is_superuser=True but no OWNER role - should still be denied
+        self.superuser_no_role = User.objects.create_superuser(
+            username="admin@test.local", email="admin@test.local", password="pw"
+        )
+        SiteContent.objects.get_or_create(pk=1)
+
+    def test_anonymous_redirected(self):
+        response = self.client.get(reverse("home_edit"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("login", response["Location"])
+
+    def test_non_owner_gets_403(self):
+        self.client.force_login(self.regular)
+        response = self.client.get(reverse("home_edit"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_superuser_without_owner_role_gets_403(self):
+        self.client.force_login(self.superuser_no_role)
+        response = self.client.get(reverse("home_edit"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_owner_can_access(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("home_edit"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "home/home_edit.html")
+
+    def test_post_saves_navbar_title(self):
+        self.client.force_login(self.owner)
+        self.client.post(
+            reverse("home_edit"),
+            {
+                "navbar_title_ru": "TestNavbar",
+                "navbar_title_kk": "TestNavbarKK",
+                "navbar_title_en": "Cycling",
+                "page_title_ru": "TestTitle",
+                "page_title_kk": "TestTitleKK",
+                "page_title_en": "Home",
+                "body_ru": "<p>Hello</p>",
+                "body_kk": "",
+                "body_en": "",
+            },
+        )
+        sc = SiteContent.objects.get(pk=1)
+        self.assertEqual(sc.navbar_title_ru, "TestNavbar")
+        self.assertEqual(sc.navbar_title_en, "Cycling")
+        self.assertEqual(sc.body_ru, "<p>Hello</p>")
+
+    def test_post_redirects_to_home_on_success(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            reverse("home_edit"),
+            {
+                "navbar_title_ru": "X",
+                "navbar_title_kk": "",
+                "navbar_title_en": "",
+                "page_title_ru": "",
+                "page_title_kk": "",
+                "page_title_en": "",
+                "body_ru": "",
+                "body_kk": "",
+                "body_en": "",
+            },
+        )
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+
+
+class HomePageContextTests(WagtailPageTestCase):
+    def setUp(self):
+        root_page = Page.get_first_root_node()
+        Site.objects.create(hostname="testsite3", root_page=root_page, is_default_site=True)
+        self.homepage = HomePage(title="Home")
+        root_page.add_child(instance=self.homepage)
+        self.sc = SiteContent.objects.get_or_create(pk=1, defaults={"navbar_title_ru": "TestNavbar"})[0]
+
+    def test_home_page_context_has_site_content(self):
+        response = self.client.get(self.homepage.url)
+        self.assertIn("site_content", response.context)
+
+    def test_home_page_shows_body_when_set(self):
+        self.sc.body_ru = "<p>Site content</p>"
+        self.sc.save()
+        response = self.client.get(self.homepage.url)
+        self.assertContains(response, "Site content")
 
 
 class LangDisplayCodeFilterTest(TestCase):

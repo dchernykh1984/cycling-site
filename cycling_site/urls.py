@@ -34,6 +34,7 @@ if settings.DEBUG:  # pragma: no cover - dev-only static serving; tests force DE
 
 urlpatterns += i18n_patterns(
     path("search/", search_views.search, name="search"),
+    path("", include("home.urls")),
     path("", include(wagtail_urls)),  # must be last inside i18n_patterns
     prefix_default_language=False,
 )

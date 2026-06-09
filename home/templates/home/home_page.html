@@ -1,21 +1,15 @@
 {% extends "base.html" %}
-{% load static %}
+{% load i18n %}
 
-{% block body_class %}template-homepage{% endblock %}
-
-{% block extra_css %}
-
-{% comment %}
-Delete the line below if you're just getting started and want to remove the welcome screen!
-{% endcomment %}
-<link rel="stylesheet" href="{% static 'css/welcome_page.css' %}">
-{% endblock extra_css %}
+{% block title %}{% if site_content.page_title %}{{ site_content.page_title }}{% else %}{{ page.title }}{% endif %}{% endblock %}
 
 {% block content %}
-
-{% comment %}
-Delete the line below if you're just getting started and want to remove the welcome screen!
-{% endcomment %}
-{% include 'home/welcome_page.html' %}
-
-{% endblock content %}
+{% if request.user.role == 'owner' %}
+<div class="d-flex justify-content-end mb-4">
+  <a href="{% url 'home_edit' %}" class="btn btn-sm btn-outline-secondary">{% trans "Edit page" %}</a>
+</div>
+{% endif %}
+{% if site_content.body %}
+<div class="home-body">{{ site_content.body|safe }}</div>
+{% endif %}
+{% endblock %}

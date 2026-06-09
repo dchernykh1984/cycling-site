@@ -113,11 +113,11 @@ class UserModelTests(TestCase):
 class GroupSyncTests(TestCase):
     def test_participant_role_creates_and_assigns_group(self):
         user = make_user(role=User.Role.PARTICIPANT)
-        self.assertTrue(user.groups.filter(name="participants").exists())
+        self.assertTrue(user.groups.filter(name="Participants").exists())
 
     def test_organizer_role_creates_and_assigns_group(self):
         user = make_user(role=User.Role.ORGANIZER)
-        self.assertTrue(user.groups.filter(name="organizers").exists())
+        self.assertTrue(user.groups.filter(name="Organizers").exists())
 
     def test_guest_role_has_no_managed_group(self):
         user = make_user(role=User.Role.GUEST)
@@ -126,13 +126,13 @@ class GroupSyncTests(TestCase):
 
     def test_role_change_swaps_group(self):
         user = make_user(role=User.Role.PARTICIPANT)
-        self.assertTrue(user.groups.filter(name="participants").exists())
+        self.assertTrue(user.groups.filter(name="Participants").exists())
 
         user.role = User.Role.ORGANIZER
         user.save()
 
-        self.assertFalse(user.groups.filter(name="participants").exists())
-        self.assertTrue(user.groups.filter(name="organizers").exists())
+        self.assertFalse(user.groups.filter(name="Participants").exists())
+        self.assertTrue(user.groups.filter(name="Organizers").exists())
 
     def test_role_change_to_guest_removes_group(self):
         user = make_user(role=User.Role.PARTICIPANT)
@@ -145,11 +145,11 @@ class GroupSyncTests(TestCase):
         user = make_user(role=User.Role.PARTICIPANT)
         _sync_user_group(user)
         _sync_user_group(user)
-        self.assertEqual(user.groups.filter(name="participants").count(), 1)
+        self.assertEqual(user.groups.filter(name="Participants").count(), 1)
 
     def test_sync_removes_stale_group_when_group_deleted(self):
         user = make_user(role=User.Role.PARTICIPANT)
-        Group.objects.filter(name="participants").delete()
+        Group.objects.filter(name="Participants").delete()
         user.role = User.Role.GUEST
         user.save()
         managed = set(ROLE_GROUP_MAP.values())
@@ -157,11 +157,11 @@ class GroupSyncTests(TestCase):
 
     def test_sync_cleans_stale_groups_when_target_already_present(self):
         user = make_user(role=User.Role.PARTICIPANT)
-        admins_group, _ = Group.objects.get_or_create(name="admins")
+        admins_group, _ = Group.objects.get_or_create(name="Admins")
         user.groups.add(admins_group)
         _sync_user_group(user)
-        self.assertTrue(user.groups.filter(name="participants").exists())
-        self.assertFalse(user.groups.filter(name="admins").exists())
+        self.assertTrue(user.groups.filter(name="Participants").exists())
+        self.assertFalse(user.groups.filter(name="Admins").exists())
 
 
 class EmailConfirmedSignalTests(TestCase):

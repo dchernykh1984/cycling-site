@@ -6,10 +6,10 @@ from django.dispatch import receiver
 from accounts.models import User
 
 ROLE_GROUP_MAP: dict[str, str] = {
-    User.Role.PARTICIPANT: "participants",
-    User.Role.ORGANIZER: "organizers",
-    User.Role.ADMIN: "admins",
-    User.Role.OWNER: "owners",
+    User.Role.PARTICIPANT: "Participants",
+    User.Role.ORGANIZER: "Organizers",
+    User.Role.ADMIN: "Admins",
+    User.Role.OWNER: "Owners",
 }
 
 
