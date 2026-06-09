@@ -43,8 +43,12 @@ def get_about_url():
     return url or None
 
 
-@register.simple_tag
-def get_site_content():
-    from home.models import SiteContent
+@register.simple_tag(takes_context=True)
+def get_site_content(context):
+    from django.utils.translation import get_language
 
-    return SiteContent.load()
+    from home.models import LocalizedSiteContent, SiteContent
+
+    request = context.get("request")
+    lang = getattr(request, "LANGUAGE_CODE", None) or get_language()
+    return LocalizedSiteContent(SiteContent.load(), lang)
