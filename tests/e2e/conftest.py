@@ -27,6 +27,14 @@ def inject_session(page, live_server, user):
     page.context.add_cookies([{"name": "sessionid", "value": session_value, "domain": host, "path": "/"}])
 
 
+def open_filter_panel(page) -> None:
+    """Expand the filter panel if it is collapsed (mobile layout hides it by default)."""
+    panel = page.locator("#filter-panel")
+    if not panel.is_visible():
+        page.click("button[data-bs-target='#filter-panel']")
+        panel.wait_for(state="visible")
+
+
 def switch_locale(page, locale):
     """Activate the given locale for subsequent requests.
 
@@ -55,6 +63,30 @@ def wagtail_locales(db):
 
     for lang_code in ("ru", "en", "kk"):
         Locale.objects.get_or_create(language_code=lang_code)
+
+
+@pytest.fixture(autouse=True)
+def wagtail_home_page(db):
+    """Ensure the Wagtail HomePage exists at the site root.
+
+    With transaction=True tests the DB is flushed between tests, so migration-
+    created Wagtail pages are gone. This fixture recreates the minimal tree
+    (root Page -> HomePage) and a default Site for every test so that URL /
+    returns 200 instead of a Wagtail 404.
+    """
+    from wagtail.models import Page, Site
+
+    from home.models import HomePage
+
+    if Page.objects.filter(depth=1).exists():
+        return
+
+    root = Page.add_root(title="Root", slug="root")
+    home = root.add_child(instance=HomePage(title="Home", slug="home", live=True))
+    Site.objects.get_or_create(
+        hostname="localhost",
+        defaults={"root_page": home, "is_default_site": True, "port": 80},
+    )
 
 
 # ---------------------------------------------------------------------------

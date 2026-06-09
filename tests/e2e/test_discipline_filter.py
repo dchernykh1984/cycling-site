@@ -6,6 +6,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
+from tests.e2e.conftest import open_filter_panel
 
 
 @pytest.mark.django_db(transaction=True)
@@ -14,6 +15,7 @@ def test_direction_dropdown_filters_disciplines_on_calendar(
 ):
     """Selecting a direction shows only matching disciplines in the discipline dropdown."""
     page.goto(f"{live_server.url}/calendar/")
+    open_filter_panel(page)
     expect(page.locator("#filter-discipline")).to_be_visible()
 
     page.select_option("#filter-direction", str(road_category.pk))
@@ -30,6 +32,7 @@ def test_direction_dropdown_switch_shows_other_category_disciplines(
 ):
     """Switching direction updates the discipline dropdown to the new category."""
     page.goto(f"{live_server.url}/calendar/")
+    open_filter_panel(page)
 
     page.select_option("#filter-direction", str(road_category.pk))
     expect(page.locator(f"#filter-discipline option[value='{mtb_discipline.pk}']")).to_have_count(0)
@@ -45,6 +48,7 @@ def test_direction_dropdown_reset_shows_all_disciplines(
 ):
     """Resetting direction to empty shows all disciplines again."""
     page.goto(f"{live_server.url}/calendar/")
+    open_filter_panel(page)
 
     page.select_option("#filter-direction", str(road_category.pk))
     expect(page.locator("#filter-discipline option")).to_have_count(2)
