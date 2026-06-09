@@ -4,7 +4,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from home.models import SiteContent
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import inject_session, switch_locale
 
 
 @pytest.fixture
@@ -16,6 +16,26 @@ def site_content(db):
             "navbar_title_en": "Cycling",
             "page_title_ru": "TestTitle",
             "body_ru": "<p>Site content</p>",
+        },
+    )
+    return obj
+
+
+@pytest.fixture
+def site_content_multilingual(db):
+    """SiteContent with distinct navbar title and body for each of the three locales."""
+    from django.core.cache import cache
+
+    cache.delete("site_content_obj")
+    obj, _ = SiteContent.objects.get_or_create(
+        pk=1,
+        defaults={
+            "navbar_title_ru": "NavRU",
+            "navbar_title_kk": "NavKK",
+            "navbar_title_en": "NavEN",
+            "body_ru": "<p>BodyRU</p>",
+            "body_kk": "<p>BodyKK</p>",
+            "body_en": "<p>BodyEN</p>",
         },
     )
     return obj
@@ -132,3 +152,105 @@ def test_edit_form_saves_navbar_title_and_reflects_in_navbar(page: Page, live_se
     page.wait_for_url(f"{live_server.url}/")
 
     expect(page.locator(".navbar-brand")).to_contain_text("My Cycling")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_edit_form_saves_all_locale_navbar_titles_and_reflect(page: Page, live_server, owner, site_content):
+    """Owner fills navbar titles for all three locale tabs; each locale reflects correctly."""
+    inject_session(page, live_server, owner)
+    page.goto(f"{live_server.url}/home/edit/")
+
+    page.fill("#id_navbar_title_ru", "TitleRU")
+
+    page.click("#tab-kk")
+    page.fill("#id_navbar_title_kk", "TitleKK")
+
+    page.click("#tab-en")
+    page.fill("#id_navbar_title_en", "TitleEN")
+
+    page.click("button[type=submit]")
+    page.wait_for_url(f"{live_server.url}/")
+
+    expect(page.locator(".navbar-brand")).to_contain_text("TitleRU")
+
+    switch_locale(page, "kk")
+    expect(page.locator(".navbar-brand")).to_contain_text("TitleKK")
+
+    switch_locale(page, "en")
+    expect(page.locator(".navbar-brand")).to_contain_text("TitleEN")
+
+
+# ---------------------------------------------------------------------------
+# Per-locale content display
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db(transaction=True)
+def test_home_navbar_shows_correct_title_per_locale(page: Page, live_server, site_content_multilingual):
+    """Navbar title is locale-specific: RU, KK, EN each show their own value."""
+    page.goto(f"{live_server.url}/")
+    expect(page.locator(".navbar-brand")).to_contain_text("NavRU")
+
+    switch_locale(page, "kk")
+    expect(page.locator(".navbar-brand")).to_contain_text("NavKK")
+
+    switch_locale(page, "en")
+    expect(page.locator(".navbar-brand")).to_contain_text("NavEN")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_home_body_shows_correct_content_per_locale(page: Page, live_server, site_content_multilingual):
+    """Home page body renders locale-specific content for anonymous visitors."""
+    page.goto(f"{live_server.url}/")
+    expect(page.locator("body")).to_contain_text("BodyRU")
+
+    switch_locale(page, "kk")
+    expect(page.locator("body")).to_contain_text("BodyKK")
+
+    switch_locale(page, "en")
+    expect(page.locator("body")).to_contain_text("BodyEN")
+
+
+# ---------------------------------------------------------------------------
+# Edit button visibility by role across all locales
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db(transaction=True)
+def test_owner_sees_edit_button_in_kk_and_en_locales(page: Page, live_server, owner, site_content_multilingual):
+    """Owner sees the edit button in KK and EN locales, not only the default locale."""
+    inject_session(page, live_server, owner)
+    page.goto(f"{live_server.url}/")
+
+    switch_locale(page, "kk")
+    expect(page.locator("a[href*='home/edit']")).to_be_visible()
+
+    switch_locale(page, "en")
+    expect(page.locator("a[href*='home/edit']")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_no_edit_button_for_organizer_in_kk_and_en_locales(
+    page: Page, live_server, organizer, site_content_multilingual
+):
+    """Organizer sees no edit button in KK and EN locales."""
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/")
+
+    switch_locale(page, "kk")
+    expect(page.locator("a[href*='home/edit']")).to_have_count(0)
+
+    switch_locale(page, "en")
+    expect(page.locator("a[href*='home/edit']")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_no_edit_button_for_anonymous_in_kk_and_en_locales(page: Page, live_server, site_content_multilingual):
+    """Anonymous user sees no edit button in KK and EN locales."""
+    page.goto(f"{live_server.url}/")
+
+    switch_locale(page, "kk")
+    expect(page.locator("a[href*='home/edit']")).to_have_count(0)
+
+    switch_locale(page, "en")
+    expect(page.locator("a[href*='home/edit']")).to_have_count(0)
