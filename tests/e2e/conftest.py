@@ -19,12 +19,17 @@ os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 
 
 def inject_session(page, live_server, user):
-    """Inject a Django session cookie without navigating (avoids language-cookie side effects)."""
+    # django_language=ru prevents CI Chromium (Accept-Language: en-US) from activating /en/ redirect.
     client = Client()
     client.force_login(user)
     session_value = client.cookies["sessionid"].value
     host = live_server.url.split("//")[1].split(":")[0]
-    page.context.add_cookies([{"name": "sessionid", "value": session_value, "domain": host, "path": "/"}])
+    page.context.add_cookies(
+        [
+            {"name": "sessionid", "value": session_value, "domain": host, "path": "/"},
+            {"name": "django_language", "value": "ru", "domain": host, "path": "/"},
+        ]
+    )
 
 
 def open_filter_panel(page) -> None:
