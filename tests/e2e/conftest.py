@@ -57,7 +57,10 @@ def open_navbar_if_collapsed(page) -> None:
     nav = page.locator("#mainNav")
     if not nav.is_visible():
         page.locator(".navbar-toggler").click()
-        nav.wait_for(state="visible")
+        # Bootstrap adds .show only after the collapse animation finishes;
+        # waiting for visible would resolve mid-animation while overflow:hidden
+        # still clips the buttons inside.
+        page.locator(".navbar-collapse.show").wait_for(state="visible")
 
 
 def switch_locale(page, locale):
