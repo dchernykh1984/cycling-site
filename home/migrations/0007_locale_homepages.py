@@ -1,3 +1,5 @@
+import unittest.mock
+
 from django.db import migrations
 
 
@@ -31,7 +33,10 @@ def create_locale_homepages(apps, schema_editor):
             translation_key=ru_home.translation_key,
             live=True,
         )
-        root.add_child(instance=new_home)
+        # Wagtail validates slug uniqueness globally per parent (not per locale),
+        # so bypass full_clean() when adding locale copies with the same slug.
+        with unittest.mock.patch.object(Page, "_check_slug_is_unique"):
+            root.add_child(instance=new_home)
 
 
 def remove_locale_homepages(apps, schema_editor):
