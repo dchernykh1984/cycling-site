@@ -263,7 +263,7 @@ class Competition(index.Indexed, models.Model):
         loc = self.location
         if not loc:
             return ""
-        return ", ".join(n.name for n in loc.get_ancestors(include_self=True))
+        return ", ".join(n.name for n in [*loc.get_ancestors(), loc])
 
 
 class CompetitionComment(models.Model):
