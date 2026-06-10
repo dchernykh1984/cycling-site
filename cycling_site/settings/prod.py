@@ -44,6 +44,17 @@ EMAIL_HOST_USER = "resend"
 EMAIL_HOST_PASSWORD = os.environ.get("RESEND_API_KEY", "")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", f"noreply@{os.environ.get('VIRTUAL_HOST', 'localhost')}")
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "ERROR"},
+    },
+}
+
 try:
     from .local import *
 except ImportError:
