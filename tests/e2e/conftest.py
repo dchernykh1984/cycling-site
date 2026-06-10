@@ -1,6 +1,5 @@
 import datetime
 import os
-import re
 
 import pytest
 from django.test import Client
@@ -20,8 +19,8 @@ os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 
 
 def inject_session(page, live_server, user):
-    # django_language=ru cookie is read by LocaleFallbackMiddleware for non-i18n paths
-    # (e.g. /calendar/) so CI browsers with Accept-Language: en-US see Russian content.
+    # django_language=ru cookie is read by LocaleMiddleware so CI browsers with
+    # Accept-Language: en-US see Russian content by default.
     client = Client()
     client.force_login(user)
     session_value = client.cookies["sessionid"].value
@@ -43,17 +42,14 @@ def open_filter_panel(page) -> None:
 
 
 def switch_locale(page, locale):
-    # Navigate directly to the locale-prefixed URL.  Setting django_language cookie alone
-    # does not work for paths inside i18n_patterns with prefix_default_language=False:
-    # LocaleMiddleware ignores the cookie and forces LANGUAGE_CODE to the default locale
-    # for any URL that lacks a language prefix.
-    from urllib.parse import urlparse
+    """Switch locale by clicking the language-switcher form button in the navbar.
 
-    parsed = urlparse(page.url)
-    # Strip any existing non-default (/kk/ or /en/) prefix so we can add the new one.
-    path = re.sub(r"^/(kk|en)/", "/", parsed.path) or "/"
-    new_path = path if locale == "ru" else f"/{locale}{path}"
-    page.goto(f"{parsed.scheme}://{parsed.netloc}{new_path}")
+    All pages use a unified cookie-based locale via set_language form POSTs.
+    Clicking the button sets the django_language cookie and redirects back to
+    the current page with the new locale active.
+    """
+    page.locator(f"form:has(input[name='language'][value='{locale}']) button[type='submit']").first.click()
+    page.wait_for_load_state("networkidle")
 
 
 # ---------------------------------------------------------------------------

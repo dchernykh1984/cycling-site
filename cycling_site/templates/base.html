@@ -74,35 +74,18 @@
                         <span class="theme-icon">&#9790;</span>
                     </button>
                     {% get_available_languages as available_languages %}
-                    {% if page %}
-                        {% get_page_translation_urls page as translation_urls %}
-                        {% for lang_code, lang_name in available_languages %}
-                        {% if lang_code == CURRENT_LANGUAGE %}
-                        <span class="btn btn-sm btn-secondary pe-none">{{ lang_code|lang_display_code }}</span>
-                        {% else %}
-                        {% with url=translation_urls|dict_get:lang_code %}
-                        {% if url %}
-                        <a href="{{ url }}" class="btn btn-sm btn-outline-secondary">{{ lang_code|lang_display_code }}</a>
-                        {% else %}
-                        <span class="btn btn-sm btn-outline-secondary disabled opacity-50 pe-none">{{ lang_code|lang_display_code }}</span>
-                        {% endif %}
-                        {% endwith %}
-                        {% endif %}
-                        {% endfor %}
+                    {% for lang_code, lang_name in available_languages %}
+                    {% if lang_code == CURRENT_LANGUAGE %}
+                    <span class="btn btn-sm btn-secondary pe-none">{{ lang_code|lang_display_code }}</span>
                     {% else %}
-                        {% for lang_code, lang_name in available_languages %}
-                        {% if lang_code == CURRENT_LANGUAGE %}
-                        <span class="btn btn-sm btn-secondary pe-none">{{ lang_code|lang_display_code }}</span>
-                        {% else %}
-                        <form action="{% url 'set_language' %}" method="post" style="display:inline">
-                            {% csrf_token %}
-                            <input name="next" type="hidden" value="{{ request.get_full_path }}">
-                            <input name="language" type="hidden" value="{{ lang_code }}">
-                            <button type="submit" class="btn btn-sm btn-outline-secondary">{{ lang_code|lang_display_code }}</button>
-                        </form>
-                        {% endif %}
-                        {% endfor %}
+                    <form action="{% url 'set_language' %}" method="post" style="display:inline">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                        <input name="language" type="hidden" value="{{ lang_code }}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">{{ lang_code|lang_display_code }}</button>
+                    </form>
                     {% endif %}
+                    {% endfor %}
                     {% if request.user.is_authenticated %}
                     <div class="dropdown">
                         <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"

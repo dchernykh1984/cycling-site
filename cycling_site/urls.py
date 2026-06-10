@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.urls import URLPattern, URLResolver, include, path
 from wagtail import urls as wagtail_urls
@@ -22,6 +21,9 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("calendar/", include("calendar_app.urls")),
     path("", include("protocols.urls")),
     path("", include("registrations.urls")),
+    path("search/", search_views.search, name="search"),
+    path("", include("home.urls")),
+    path("", include(wagtail_urls)),  # must be last
 ]
 
 
@@ -31,10 +33,3 @@ if settings.DEBUG:  # pragma: no cover - dev-only static serving; tests force DE
 
     urlpatterns += staticfiles_urlpatterns()
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-urlpatterns += i18n_patterns(
-    path("search/", search_views.search, name="search"),
-    path("", include("home.urls")),
-    path("", include(wagtail_urls)),  # must be last inside i18n_patterns
-    prefix_default_language=False,
-)
