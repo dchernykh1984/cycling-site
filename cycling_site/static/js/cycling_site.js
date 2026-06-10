@@ -31,4 +31,16 @@
     };
 
     document.addEventListener('DOMContentLoaded', updateThemeIcon);
+
+    // Mark current section's nav-link as active based on the URL path
+    document.addEventListener('DOMContentLoaded', function () {
+        var currentPath = window.location.pathname;
+        document.querySelectorAll('.navbar-nav .nav-link').forEach(function (link) {
+            var href = link.getAttribute('href');
+            if (href && href !== '/' && href !== '#' && currentPath.startsWith(href)) {
+                link.classList.add('active');
+                link.setAttribute('aria-current', 'page');
+            }
+        });
+    });
 }());
