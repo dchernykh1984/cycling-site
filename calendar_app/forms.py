@@ -28,6 +28,7 @@ class SubmitCompetitionForm(forms.Form):
     event_type: forms.ModelChoiceField[EventType] = forms.ModelChoiceField(
         queryset=EventType.objects.all(),
         required=False,
+        label=_("Event type"),
         empty_label="--",
         widget=forms.Select(attrs={"class": "form-select"}),
     )
@@ -51,10 +52,12 @@ class SubmitCompetitionForm(forms.Form):
         widget=forms.HiddenInput(),
     )
     date_start = forms.DateField(
+        label=_("Date start"),
         widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}, format="%Y-%m-%d"),
     )
     date_end = forms.DateField(
         required=False,
+        label=_("Date end"),
         widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}, format="%Y-%m-%d"),
     )
     url_announcement = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))

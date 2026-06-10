@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-10 11:00+0000\n"
+"POT-Creation-Date: 2026-06-10 12:41+0000\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -191,7 +191,13 @@ msgstr "Сохранить"
 msgid "Cancel"
 msgstr "Отмена"
 
-#: calendar_app/forms.py:38
+#: calendar_app/forms.py:31
+#: calendar_app/templates/calendar_app/calendar.html:39
+#: calendar_app/templates/calendar_app/list.html:37
+msgid "Event type"
+msgstr "Тип события"
+
+#: calendar_app/forms.py:39
 #: calendar_app/templates/calendar_app/calendar.html:48
 #: calendar_app/templates/calendar_app/edit.html:92
 #: calendar_app/templates/calendar_app/list.html:41
@@ -199,11 +205,19 @@ msgstr "Отмена"
 msgid "Direction"
 msgstr "Направление"
 
-#: calendar_app/forms.py:79
+#: calendar_app/forms.py:55
+msgid "Date start"
+msgstr "Дата начала"
+
+#: calendar_app/forms.py:60
+msgid "Date end"
+msgstr "Дата окончания"
+
+#: calendar_app/forms.py:82
 msgid "File size must not exceed 10 MB."
 msgstr ""
 
-#: calendar_app/forms.py:83
+#: calendar_app/forms.py:86
 #, python-format
 msgid "Unsupported file type. Allowed: %(allowed)s."
 msgstr ""
@@ -396,11 +410,6 @@ msgstr "Добавить соревнование"
 #: calendar_app/templates/calendar_app/moderate.html:4
 msgid "Moderation"
 msgstr "Модерация"
-
-#: calendar_app/templates/calendar_app/calendar.html:39
-#: calendar_app/templates/calendar_app/list.html:37
-msgid "Event type"
-msgstr "Тип события"
 
 #: calendar_app/templates/calendar_app/calendar.html:41
 #: calendar_app/templates/calendar_app/calendar.html:50
