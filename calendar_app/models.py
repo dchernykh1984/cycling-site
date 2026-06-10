@@ -240,7 +240,7 @@ class Competition(index.Indexed, models.Model):
 
     @property
     def location_label(self) -> str:
-        """Returns a meaningful display name: skips hidden depth-4 fallback venues."""
+        """Returns a brief display name: skips hidden depth-4 fallback venues."""
         loc = self.location
         if not loc:
             return ""
@@ -256,6 +256,14 @@ class Competition(index.Indexed, models.Model):
             except Location.DoesNotExist:
                 pass
         return loc.name
+
+    @property
+    def location_full_label(self) -> str:
+        """Returns full country-region-city-venue path, comma-separated."""
+        loc = self.location
+        if not loc:
+            return ""
+        return ", ".join(n.name for n in loc.get_ancestors(include_self=True))
 
 
 class CompetitionComment(models.Model):
