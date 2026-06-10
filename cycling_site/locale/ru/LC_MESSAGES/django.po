@@ -389,6 +389,9 @@ msgstr "Регион"
 msgid "City"
 msgstr "Город"
 
+msgid "Venue"
+msgstr "Локация"
+
 #: calendar_app/templates/calendar_app/detail.html:12
 #: calendar_app/templates/calendar_app/edit.html:11
 #: calendar_app/templates/calendar_app/list.html:9
