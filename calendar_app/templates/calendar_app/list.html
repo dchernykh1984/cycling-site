@@ -9,7 +9,7 @@
   <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h1 class="mb-0">{% trans "Competitions" %}</h1>
     <div class="d-flex gap-2">
-      <a href="{% url 'calendar' %}" class="btn btn-outline-secondary btn-sm">{% trans "Calendar view" %}</a>
+      <a href="{% url 'calendar' %}" id="calendar-view-btn" class="btn btn-outline-secondary btn-sm">{% trans "Calendar view" %}</a>
       {% if request.user.is_authenticated %}
       <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm">{% trans "Submit competition" %}</a>
       {% if request.user.is_superuser or request.user.role == 'organizer' or request.user.role == 'admin' or request.user.role == 'owner' %}
@@ -73,6 +73,12 @@
           <option value="">-</option>
         </select>
       </div>
+      <div class="col-sm-4 col-md-2">
+        <label class="form-label form-label-sm mb-1">{% trans "Venue" %}</label>
+        <select id="flt-venue" class="form-select form-select-sm" disabled>
+          <option value="">-</option>
+        </select>
+      </div>
       {{ filter_form.location }}
       <div class="col-sm-12 col-md-2 d-flex gap-2">
         <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary btn-sm flex-grow-1">{% trans "Reset" %}</a>
@@ -102,16 +108,46 @@
       dirSelect.addEventListener('change', function () { syncDisciplineOpts(true); form.submit(); });
       discSelect.addEventListener('change', function () { form.submit(); });
 
+      // Auto-submit event type (has no submit button, unlike other selects)
+      var etSel = document.getElementById('id_event_type');
+      if (etSel) etSel.addEventListener('change', function () { form.submit(); });
+
+      // Keep "Calendar view" link in sync with current filter state + dates
+      var calViewUrl = '{% url "calendar" %}';
+      function updateCalendarLink() {
+        var params = new URLSearchParams();
+        if (etSel && etSel.value) params.set('event_type', etSel.value);
+        if (dirSelect.value) params.set('discipline_category', dirSelect.value);
+        if (discSelect.value) params.set('discipline', discSelect.value);
+        var locEl = document.getElementById('id_location');
+        if (locEl && locEl.value) params.set('location', locEl.value);
+        var dfEl = form.querySelector('input[name="date_from"]');
+        var dtEl = form.querySelector('input[name="date_to"]');
+        if (dfEl && dfEl.value) {
+          params.set('date_from', dfEl.value);
+          sessionStorage.setItem('cal_date_from', dfEl.value);
+        }
+        if (dtEl && dtEl.value) {
+          params.set('date_to', dtEl.value);
+          sessionStorage.setItem('cal_date_to', dtEl.value);
+        }
+        var qs = params.toString();
+        var btn = document.getElementById('calendar-view-btn');
+        if (btn) btn.href = calViewUrl + (qs ? '?' + qs : '');
+      }
+      updateCalendarLink();
+
       // --- Location cascade ---
       var allLocs = JSON.parse(document.getElementById('locations-data').textContent);
       var lang = (document.documentElement.lang || 'ru').split('-')[0];
       var nameField = (['ru','kk','en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
       function locName(l) { return l[nameField] || l.name_ru || ''; }
 
-      var cntSel  = document.getElementById('flt-country');
-      var regSel  = document.getElementById('flt-region');
-      var citySel = document.getElementById('flt-city');
-      var locInp  = document.getElementById('id_location');
+      var cntSel   = document.getElementById('flt-country');
+      var regSel   = document.getElementById('flt-region');
+      var citySel  = document.getElementById('flt-city');
+      var venueSel = document.getElementById('flt-venue');
+      var locInp   = document.getElementById('id_location');
 
       function buildOpts(sel, nodes, placeholder) {
         sel.innerHTML = '<option value="">' + placeholder + '</option>';
@@ -125,7 +161,7 @@
       buildOpts(cntSel, allLocs.filter(function (l) { return l.depth === 1; }), '-');
 
       cntSel.addEventListener('change', function () {
-        disableSel(citySel); disableSel(regSel);
+        disableSel(venueSel); disableSel(citySel); disableSel(regSel);
         locInp.value = cntSel.value;
         var cp = '';
         allLocs.forEach(function (l) { if (String(l.pk) === cntSel.value) cp = l.path; });
@@ -136,7 +172,7 @@
       });
 
       regSel.addEventListener('change', function () {
-        disableSel(citySel);
+        disableSel(venueSel); disableSel(citySel);
         locInp.value = regSel.value;
         var rp = '';
         allLocs.forEach(function (l) { if (String(l.pk) === regSel.value) rp = l.path; });
@@ -147,7 +183,13 @@
       });
 
       citySel.addEventListener('change', function () {
+        disableSel(venueSel);
         locInp.value = citySel.value;
+        form.submit();
+      });
+
+      venueSel.addEventListener('change', function () {
+        locInp.value = venueSel.value || citySel.value;
         form.submit();
       });
 
@@ -174,7 +216,23 @@
                 if (initLoc.depth >= 3) {
                   var cityPath = initLoc.path.slice(0, stepLen * 3);
                   var cityLoc = allLocs.find(function (l) { return l.path === cityPath && l.depth === 3; });
-                  if (cityLoc) citySel.value = cityLoc.pk;
+                  if (cityLoc) {
+                    citySel.value = cityLoc.pk;
+                    var realVenues = allLocs.filter(function (l) {
+                      return l.depth === 4 && !l.is_hidden && l.path.indexOf(cityPath) === 0;
+                    });
+                    buildOpts(venueSel, realVenues, '-');
+                    var hvLoc = allLocs.find(function (l) {
+                      return l.depth === 4 && l.is_hidden && l.path.indexOf(cityPath) === 0;
+                    });
+                    if (hvLoc) {
+                      var hvOpt = document.createElement('option');
+                      hvOpt.value = hvLoc.pk; hvOpt.textContent = locName(hvLoc);
+                      venueSel.appendChild(hvOpt);
+                    }
+                    venueSel.disabled = false;
+                    if (initLoc.depth === 4) venueSel.value = String(initLocId);
+                  }
                 }
               }
             }
