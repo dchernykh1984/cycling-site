@@ -15,7 +15,7 @@ class LocaleFallbackMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.user.is_authenticated:
+        if hasattr(request, "user") and request.user.is_authenticated:
             pref = request.user.preferred_language
             if pref:
                 from django.utils import translation
