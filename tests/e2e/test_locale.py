@@ -9,7 +9,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from home.models import SiteContent
-from tests.e2e.conftest import inject_session, switch_locale
+from tests.e2e.conftest import inject_session, open_navbar_if_collapsed, switch_locale
 
 
 @pytest.fixture
@@ -38,6 +38,7 @@ def site_content_multilingual(db):
 def test_language_buttons_present_on_homepage(page: Page, live_server, site_content_multilingual):
     """Three locale elements are visible in the navbar: active span + two clickable forms."""
     page.goto(f"{live_server.url}/")
+    open_navbar_if_collapsed(page)
     # One active (non-clickable) span for the current language
     expect(page.locator("span.btn.btn-secondary.pe-none")).to_be_visible()
     # Two form submit buttons for the other two languages
@@ -48,6 +49,7 @@ def test_language_buttons_present_on_homepage(page: Page, live_server, site_cont
 def test_active_locale_is_shown_as_span_not_button(page: Page, live_server, site_content_multilingual):
     """Default locale (RU) is rendered as a non-clickable span, not inside a form."""
     page.goto(f"{live_server.url}/")
+    open_navbar_if_collapsed(page)
     # RU is the default language; it should be a span chip
     active_span = page.locator("span.btn.pe-none")
     expect(active_span).to_contain_text("RU")
@@ -59,6 +61,7 @@ def test_active_locale_is_shown_as_span_not_button(page: Page, live_server, site
 def test_language_buttons_present_on_calendar_page(page: Page, live_server, site_content_multilingual):
     """Locale switcher is present on non-Wagtail pages (calendar) too."""
     page.goto(f"{live_server.url}/calendar/")
+    open_navbar_if_collapsed(page)
     expect(page.locator("span.btn.btn-secondary.pe-none")).to_be_visible()
     expect(page.locator("form:has(input[name='language']) button[type='submit']")).to_have_count(2)
 
