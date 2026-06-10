@@ -80,6 +80,12 @@
             <option value="">{% trans "All" %}</option>
           </select>
         </div>
+        <div class="col-sm-4 col-lg-2">
+          <label class="form-label form-label-sm mb-1">{% trans "Venue" %}</label>
+          <select id="filter-venue" class="form-select form-select-sm" disabled>
+            <option value="">{% trans "All" %}</option>
+          </select>
+        </div>
         <input type="hidden" id="filter-location" value="">
       </div>
     </div>
@@ -106,6 +112,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var countrySelect = document.getElementById('filter-country');
   var oblastSelect = document.getElementById('filter-oblast');
   var citySelect = document.getElementById('filter-city');
+  var venueSelect = document.getElementById('filter-venue');
   var locationInput = document.getElementById('filter-location');
 
   function buildOptions(select, nodes, emptyLabel) {
@@ -123,11 +130,23 @@ document.addEventListener('DOMContentLoaded', function () {
     select.disabled = true;
   }
 
+  function pathOf(pk) {
+    var n = allLocations.find(function (l) { return String(l.pk) === String(pk); });
+    return n ? n.path : '';
+  }
+
+  function hiddenVenueOf(cityPath) {
+    return allLocations.find(function (l) {
+      return l.depth === 4 && l.is_hidden && l.path.indexOf(cityPath) === 0;
+    });
+  }
+
   function updateLocationValue() {
+    var venue = venueSelect.value;
     var city = citySelect.value;
     var oblast = oblastSelect.value;
     var country = countrySelect.value;
-    locationInput.value = city || oblast || country;
+    locationInput.value = venue || city || oblast || country;
     calendar.refetchEvents();
   }
 
@@ -136,6 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
   buildOptions(countrySelect, countries, '{% trans "All" %}');
 
   countrySelect.addEventListener('change', function () {
+    clearSelect(venueSelect);
     clearSelect(citySelect);
     clearSelect(oblastSelect);
     var countryPath = '';
@@ -151,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   oblastSelect.addEventListener('change', function () {
+    clearSelect(venueSelect);
     clearSelect(citySelect);
     var oblastPath = '';
     allLocations.forEach(function (l) { if (String(l.pk) === oblastSelect.value) oblastPath = l.path; });
@@ -164,7 +185,26 @@ document.addEventListener('DOMContentLoaded', function () {
     updateLocationValue();
   });
 
-  citySelect.addEventListener('change', updateLocationValue);
+  citySelect.addEventListener('change', function () {
+    clearSelect(venueSelect);
+    var cp = pathOf(citySelect.value);
+    if (cp) {
+      var realVenues = allLocations.filter(function (l) {
+        return l.depth === 4 && !l.is_hidden && l.path.indexOf(cp) === 0;
+      });
+      buildOptions(venueSelect, realVenues, '{% trans "All" %}');
+      var hv = hiddenVenueOf(cp);
+      if (hv) {
+        var hvOpt = document.createElement('option');
+        hvOpt.value = hv.pk; hvOpt.textContent = locName(hv);
+        venueSelect.appendChild(hvOpt);
+      }
+      venueSelect.disabled = false;
+    }
+    updateLocationValue();
+  });
+
+  venueSelect.addEventListener('change', updateLocationValue);
 
   // --- Direction / Discipline cascade ---
   var directionSelect = document.getElementById('filter-direction');
