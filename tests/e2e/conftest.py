@@ -18,6 +18,17 @@ os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def default_language_cookie(page, live_server):
+    """Force Russian locale for every e2e test via the django_language cookie.
+
+    Without this, the browser's Accept-Language header (e.g. en-US sent by
+    WebKit) activates English via LocaleMiddleware instead of the default RU.
+    """
+    host = live_server.url.split("//")[1].split(":")[0]
+    page.context.add_cookies([{"name": "django_language", "value": "ru", "domain": host, "path": "/"}])
+
+
 def inject_session(page, live_server, user):
     # django_language=ru cookie is read by LocaleMiddleware so CI browsers with
     # Accept-Language: en-US see Russian content by default.
@@ -41,13 +52,23 @@ def open_filter_panel(page) -> None:
         panel.wait_for(state="visible")
 
 
+def open_navbar_if_collapsed(page) -> None:
+    """Open the hamburger menu on mobile if the navbar is collapsed."""
+    nav = page.locator("#mainNav")
+    if not nav.is_visible():
+        page.locator(".navbar-toggler").click()
+        nav.wait_for(state="visible")
+
+
 def switch_locale(page, locale):
     """Switch locale by clicking the language-switcher form button in the navbar.
 
     All pages use a unified cookie-based locale via set_language form POSTs.
     Clicking the button sets the django_language cookie and redirects back to
     the current page with the new locale active.
+    On mobile the navbar is collapsed; it is opened automatically before clicking.
     """
+    open_navbar_if_collapsed(page)
     page.locator(f"form:has(input[name='language'][value='{locale}']) button[type='submit']").first.click()
     page.wait_for_load_state("networkidle")
 
