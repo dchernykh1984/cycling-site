@@ -32,6 +32,7 @@ DATABASES = {
 }
 
 WAGTAILADMIN_BASE_URL = f"https://{os.environ['VIRTUAL_HOST']}"
+SITE_BASE_URL = f"https://{os.environ['VIRTUAL_HOST']}"
 
 STORAGES["staticfiles"]["BACKEND"] = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
 
