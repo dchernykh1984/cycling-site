@@ -7,9 +7,7 @@
 <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <style>
   .ql-container { min-height: 250px; font-size: 1rem; }
-  .nav-tabs .nav-link { color: var(--bs-secondary); }
   .nav-tabs .nav-link.active { font-weight: 600; }
-  .locale-badge { font-size: 0.7rem; vertical-align: middle; }
 </style>
 {% endblock %}
 
@@ -31,9 +29,7 @@
       <ul class="nav nav-tabs mb-3" id="localeTabs" role="tablist">
         <li class="nav-item" role="presentation">
           <button class="nav-link active" id="tab-ru" data-bs-toggle="tab"
-                  data-bs-target="#pane-ru" type="button" role="tab">
-            RU <span class="badge bg-secondary locale-badge">RU</span>
-          </button>
+                  data-bs-target="#pane-ru" type="button" role="tab">RU</button>
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="tab-kk" data-bs-toggle="tab"
@@ -148,10 +144,11 @@
 {% endblock %}
 
 {% block extra_js %}
-{# Safe containers for initial HTML values — avoids JS string escaping issues #}
-<script type="text/html" id="init-body-ru">{% if form.body_ru.value %}{{ form.body_ru.value }}{% endif %}</script>
-<script type="text/html" id="init-body-kk">{% if form.body_kk.value %}{{ form.body_kk.value }}{% endif %}</script>
-<script type="text/html" id="init-body-en">{% if form.body_en.value %}{{ form.body_en.value }}{% endif %}</script>
+{# json_script encodes HTML as safe JSON — JSON.parse gives back the raw HTML string
+   without any Django auto-escaping or browser rawtext-entity ambiguity. #}
+{{ form.body_ru.value|default:""|json_script:"init-body-ru" }}
+{{ form.body_kk.value|default:""|json_script:"init-body-kk" }}
+{{ form.body_en.value|default:""|json_script:"init-body-en" }}
 <script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
 <script>
 (function () {
@@ -163,7 +160,12 @@
     ['clean']
   ];
 
-  function makeEditor(editorId, inputId, initialHtml) {
+  function getInitial(id) {
+    var el = document.getElementById(id);
+    return el ? JSON.parse(el.textContent) : '';
+  }
+
+  function makeEditor(editorId, initialHtml) {
     var quill = new Quill('#' + editorId, {
       theme: 'snow',
       modules: { toolbar: TOOLBAR }
@@ -174,17 +176,18 @@
     return quill;
   }
 
-  // Initial HTML values stored in hidden script tags to avoid JS injection.
-  function getInitial(id) {
-    var el = document.getElementById(id);
-    return el ? el.textContent : '';
-  }
-
   var editors = {
-    ru: makeEditor('quill-ru', 'id_body_ru', getInitial('init-body-ru')),
-    kk: makeEditor('quill-kk', 'id_body_kk', getInitial('init-body-kk')),
-    en: makeEditor('quill-en', 'id_body_en', getInitial('init-body-en')),
+    ru: makeEditor('quill-ru', getInitial('init-body-ru')),
+    kk: makeEditor('quill-kk', getInitial('init-body-kk')),
+    en: makeEditor('quill-en', getInitial('init-body-en')),
   };
+
+  // Quill initialised inside a hidden Bootstrap tab-pane needs a focus call
+  // when the pane becomes visible — otherwise cursor positioning breaks.
+  ['kk', 'en'].forEach(function (lang) {
+    var btn = document.querySelector('[data-bs-target="#pane-' + lang + '"]');
+    if (btn) btn.addEventListener('shown.bs.tab', function () { editors[lang].focus(); });
+  });
 
   document.getElementById('article-form').addEventListener('submit', function () {
     document.getElementById('id_body_ru').value = editors.ru.root.innerHTML;
