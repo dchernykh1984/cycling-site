@@ -100,6 +100,14 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js"></script>
 {{ locations_data|json_script:"locations-data" }}
 <script>
+// Server-side month names for the active locale — avoids inconsistent kk
+// support in browser Intl implementations that produce "M06" instead of "Маусым".
+var FC_MONTHS = [
+  "{% trans 'January' %}", "{% trans 'February' %}", "{% trans 'March' %}",
+  "{% trans 'April' %}",   "{% trans 'May' %}",      "{% trans 'June' %}",
+  "{% trans 'July' %}",    "{% trans 'August' %}",   "{% trans 'September' %}",
+  "{% trans 'October' %}", "{% trans 'November' %}", "{% trans 'December' %}"
+];
 document.addEventListener('DOMContentLoaded', function () {
   var eventsUrl = '{% url "calendar_events_api" %}';
 
@@ -325,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initialView: 'dayGridMonth',
     locale: '{{ CURRENT_LANGUAGE }}',
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
-    titleFormat: { year: 'numeric', month: 'long' },
+    titleFormat: function(date) { return FC_MONTHS[date.start.month] + ' ' + date.start.year; },
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
