@@ -44,8 +44,10 @@ jobs:
             sleep 5
           done
           sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
-          sudo -u postgres createdb cycling_site_test
+          sudo -u postgres psql -c "ALTER SYSTEM SET max_connections = 200;"
+          sudo systemctl restart postgresql
           timeout 30 bash -c 'until pg_isready -h localhost -U postgres; do sleep 1; done'
+          sudo -u postgres createdb cycling_site_test
 
       - uses: actions/setup-python@v6
         with:
