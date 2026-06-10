@@ -138,25 +138,29 @@ document.addEventListener('DOMContentLoaded', function () {
   countrySelect.addEventListener('change', function () {
     clearSelect(citySelect);
     clearSelect(oblastSelect);
-    oblastSelect.disabled = false;
     var countryPath = '';
     countries.forEach(function (c) { if (String(c.pk) === countrySelect.value) countryPath = c.path; });
-    var oblasts = allLocations.filter(function (l) {
-      return l.depth === 2 && !l.is_hidden && l.path.indexOf(countryPath) === 0;
-    });
-    buildOptions(oblastSelect, oblasts, '{% trans "All" %}');
+    if (countryPath) {
+      var oblasts = allLocations.filter(function (l) {
+        return l.depth === 2 && !l.is_hidden && l.path.indexOf(countryPath) === 0;
+      });
+      buildOptions(oblastSelect, oblasts, '{% trans "All" %}');
+      oblastSelect.disabled = false;
+    }
     updateLocationValue();
   });
 
   oblastSelect.addEventListener('change', function () {
     clearSelect(citySelect);
-    citySelect.disabled = false;
     var oblastPath = '';
     allLocations.forEach(function (l) { if (String(l.pk) === oblastSelect.value) oblastPath = l.path; });
-    var cities = allLocations.filter(function (l) {
-      return l.depth === 3 && !l.is_hidden && l.path.indexOf(oblastPath) === 0;
-    });
-    buildOptions(citySelect, cities, '{% trans "All" %}');
+    if (oblastPath) {
+      var cities = allLocations.filter(function (l) {
+        return l.depth === 3 && !l.is_hidden && l.path.indexOf(oblastPath) === 0;
+      });
+      buildOptions(citySelect, cities, '{% trans "All" %}');
+      citySelect.disabled = false;
+    }
     updateLocationValue();
   });
 

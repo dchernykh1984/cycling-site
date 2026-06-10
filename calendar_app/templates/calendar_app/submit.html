@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load i18n %}
-{{ locations_data|json_script:"locations-data" }}
 
 {% block title %}{% trans "Submit competition" %}{% endblock %}
 
 {% block content %}
+{{ locations_data|json_script:"locations-data" }}
 <div class="row justify-content-center">
   <div class="col-md-9 col-lg-8">
     <h1 class="mb-4">{% trans "Submit competition" %}</h1>

@@ -1,12 +1,4 @@
 {% load i18n %}
-{# 4-level location cascade widget for submit / edit forms.
-   Requires:
-     locations_data   — context variable (JSON-serialisable list from _get_locations_data())
-     initial_location_id — pk of the current venue (may be empty string or None)
-   Renders:
-     Country → Region → City → Venue (4th level hidden if no real venues)
-     Hidden <input name="location" id="id_location"> is the actual form field.
-#}
 <div class="mb-3">
   <label class="form-label fw-semibold">{% trans "Location" %}</label>
   <div class="row g-2">
