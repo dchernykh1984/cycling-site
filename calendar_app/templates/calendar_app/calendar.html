@@ -20,7 +20,7 @@
               aria-expanded="false" aria-controls="filter-panel">
         {% trans "Filters" %}
       </button>
-      <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "List view" %}</a>
+      <a href="{% url 'calendar_list' %}" id="list-view-btn" class="btn btn-outline-secondary btn-sm">{% trans "List view" %}</a>
       {% if request.user.is_authenticated %}
       <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm">{% trans "Submit competition" %}</a>
       {% if request.user.is_superuser or request.user.role == 'organizer' or request.user.role == 'admin' or request.user.role == 'owner' %}
@@ -148,6 +148,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var country = countrySelect.value;
     locationInput.value = venue || city || oblast || country;
     calendar.refetchEvents();
+    updateListViewLink();
   }
 
   // Populate countries (depth=1)
@@ -225,7 +226,90 @@ document.addEventListener('DOMContentLoaded', function () {
     disciplineSelect.value = '';
     syncDisciplineOpts();
     calendar.refetchEvents();
+    updateListViewLink();
   });
+
+  // --- View-switch link & filter state ---
+  var listViewUrl = '{% url "calendar_list" %}';
+
+  function updateListViewLink() {
+    var params = new URLSearchParams();
+    var et = document.getElementById('filter-event-type').value;
+    if (et) params.set('event_type', et);
+    if (directionSelect.value) params.set('discipline_category', directionSelect.value);
+    if (disciplineSelect.value) params.set('discipline', disciplineSelect.value);
+    if (locationInput.value) params.set('location', locationInput.value);
+    var df = sessionStorage.getItem('cal_date_from');
+    var dt = sessionStorage.getItem('cal_date_to');
+    if (df) params.set('date_from', df);
+    if (dt) params.set('date_to', dt);
+    var qs = params.toString();
+    var btn = document.getElementById('list-view-btn');
+    if (btn) btn.href = listViewUrl + (qs ? '?' + qs : '');
+  }
+
+  // Restore filter state from URL params (supports switching from list view)
+  (function () {
+    var p = new URLSearchParams(window.location.search);
+    var et = p.get('event_type');
+    if (et) document.getElementById('filter-event-type').value = et;
+    var dir = p.get('discipline_category');
+    if (dir) { directionSelect.value = dir; syncDisciplineOpts(); }
+    var disc = p.get('discipline');
+    if (disc) disciplineSelect.value = disc;
+    var df = p.get('date_from');
+    var dt = p.get('date_to');
+    if (df) sessionStorage.setItem('cal_date_from', df);
+    if (dt) sessionStorage.setItem('cal_date_to', dt);
+    var locId = p.get('location');
+    if (locId) {
+      locationInput.value = locId;
+      var initLoc = allLocations.find(function (l) { return String(l.pk) === locId; });
+      if (initLoc) {
+        var stepLen = initLoc.path.length / initLoc.depth;
+        var cp = initLoc.path.slice(0, stepLen);
+        var cntLoc = allLocations.find(function (l) { return l.path === cp && l.depth === 1; });
+        if (cntLoc) {
+          countrySelect.value = cntLoc.pk;
+          buildOptions(oblastSelect, allLocations.filter(function (l) {
+            return l.depth === 2 && !l.is_hidden && l.path.indexOf(cp) === 0;
+          }), '{% trans "All" %}');
+          oblastSelect.disabled = false;
+          if (initLoc.depth >= 2) {
+            var rp = initLoc.path.slice(0, stepLen * 2);
+            var regLoc = allLocations.find(function (l) { return l.path === rp && l.depth === 2; });
+            if (regLoc) {
+              oblastSelect.value = regLoc.pk;
+              buildOptions(citySelect, allLocations.filter(function (l) {
+                return l.depth === 3 && !l.is_hidden && l.path.indexOf(rp) === 0;
+              }), '{% trans "All" %}');
+              citySelect.disabled = false;
+              if (initLoc.depth >= 3) {
+                var cityPath = initLoc.path.slice(0, stepLen * 3);
+                var cityLoc = allLocations.find(function (l) { return l.path === cityPath && l.depth === 3; });
+                if (cityLoc) {
+                  citySelect.value = cityLoc.pk;
+                  var realVenues = allLocations.filter(function (l) {
+                    return l.depth === 4 && !l.is_hidden && l.path.indexOf(cityPath) === 0;
+                  });
+                  buildOptions(venueSelect, realVenues, '{% trans "All" %}');
+                  var hv = hiddenVenueOf(cityPath);
+                  if (hv) {
+                    var hvOpt = document.createElement('option');
+                    hvOpt.value = hv.pk; hvOpt.textContent = locName(hv);
+                    venueSelect.appendChild(hvOpt);
+                  }
+                  venueSelect.disabled = false;
+                  if (initLoc.depth === 4) venueSelect.value = locId;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    updateListViewLink();
+  }());
 
   // --- FullCalendar ---
   function getFilters() {
@@ -272,6 +356,7 @@ document.addEventListener('DOMContentLoaded', function () {
   ['filter-event-type', 'filter-discipline'].forEach(function (id) {
     document.getElementById(id).addEventListener('change', function () {
       calendar.refetchEvents();
+      updateListViewLink();
     });
   });
 });
