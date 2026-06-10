@@ -102,6 +102,34 @@
   </div>
 </div>
 
+<div class="mb-3">
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="relay_enabled" id="relay_enabled"
+             {% if reg_form.relay_enabled.value %}checked{% endif %}>
+      <label class="form-check-label" for="relay_enabled">{% trans "Allow relay / team registration" %}</label>
+    </div>
+    <div id="relay_max_wrap" style="display:none;">
+      <div class="d-flex align-items-center gap-2">
+        <label class="form-label mb-0 small">{% trans "Max members" %}</label>
+        <input type="number" name="relay_max_members" class="form-control form-control-sm"
+               min="2" style="width:80px;"
+               value="{{ reg_form.relay_max_members.value|default:10 }}">
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var cb = document.getElementById('relay_enabled');
+  var wrap = document.getElementById('relay_max_wrap');
+  if (!cb || !wrap) return;
+  function update() { wrap.style.display = cb.checked ? '' : 'none'; }
+  cb.addEventListener('change', update);
+  update();
+})();
+</script>
+
 <div class="mb-3" id="display-settings-section">
   <p class="fw-semibold mb-1">{% trans "Display settings" %}</p>
   <div class="row g-1">

@@ -515,3 +515,205 @@ class ExportCSVViewTests(TestCase):
         url = reverse("registrations:export_csv", args=[self.comp.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
+
+
+# ---------------------------------------------------------------------------
+# Relay registration tests
+# ---------------------------------------------------------------------------
+
+
+def make_relay_competition(**kwargs):
+    defaults = {
+        "registration_enabled": True,
+        "registration_mode": "free",
+        "birth_date_mode": "year",
+        "status": Competition.Status.APPROVED,
+        "relay_enabled": True,
+        "relay_max_members": 3,
+    }
+    defaults.update(kwargs)
+    return make_competition(**defaults)
+
+
+class RelayModelTests(TestCase):
+    def setUp(self):
+        self.comp = make_competition()
+
+    def test_is_relay_true_when_participant_names_set(self):
+        reg = make_registration(self.comp, participant_names="Ivanov Ivan<BR>Petrov Vasya")
+        self.assertTrue(reg.is_relay)
+
+    def test_is_relay_false_when_participant_names_empty(self):
+        reg = make_registration(self.comp)
+        self.assertFalse(reg.is_relay)
+
+    def test_str_individual_uses_last_first(self):
+        reg = make_registration(self.comp, first_name="Ivan", last_name="Petrov")
+        self.assertIn("Petrov", str(reg))
+        self.assertIn("Ivan", str(reg))
+
+    def test_str_relay_uses_participant_names(self):
+        reg = make_registration(self.comp, first_name="", last_name="", participant_names="Ivanov Ivan<BR>Petrov Vasya")
+        result = str(reg)
+        self.assertIn("Ivanov Ivan", result)
+        self.assertIn("Petrov Vasya", result)
+        self.assertNotIn("<BR>", result)
+
+    def test_relay_registration_skips_duplicate_check(self):
+        # Two relay entries with empty first/last name should both save without error.
+        make_registration(self.comp, first_name="", last_name="", participant_names="Team A<BR>Rider B")
+        try:
+            make_registration(self.comp, first_name="", last_name="", participant_names="Team C<BR>Rider D")
+        except Exception as e:
+            self.fail(f"Second relay registration raised {e}")
+
+
+class RelayRegistrationViewTests(TestCase):
+    def setUp(self):
+        self.user = make_user("relayuser", gender="M", birth_date=datetime.date(1990, 1, 1))
+        self.comp = make_relay_competition()
+        self.cat = make_category(self.comp)
+        self.url = reverse("registrations:register", args=[self.comp.pk])
+        self.client.force_login(self.user)
+
+    def test_get_shows_relay_context(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["relay_enabled"])
+        self.assertEqual(response.context["relay_max_members"], 3)
+
+    def test_post_relay_creates_registration_with_participant_names(self):
+        response = self.client.post(
+            self.url,
+            {
+                "participant_name": ["Ivanov Ivan", "Petrov Vasya", "Sidorov Petr"],
+                "gender": "M",
+                "birth_year": 1990,
+                "category": self.cat.pk,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        reg = CompetitionRegistration.objects.get(competition=self.comp)
+        self.assertEqual(reg.participant_names, "Ivanov Ivan<BR>Petrov Vasya<BR>Sidorov Petr")
+        self.assertEqual(reg.first_name, "")
+        self.assertEqual(reg.last_name, "")
+
+    def test_post_relay_rejects_empty_names(self):
+        response = self.client.post(
+            self.url,
+            {
+                "participant_name": ["", "  "],
+                "gender": "M",
+                "birth_year": 1990,
+                "category": self.cat.pk,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(CompetitionRegistration.objects.filter(competition=self.comp).exists())
+
+    def test_post_relay_rejects_over_max_members(self):
+        response = self.client.post(
+            self.url,
+            {
+                "participant_name": ["A", "B", "C", "D"],  # max is 3
+                "gender": "M",
+                "birth_year": 1990,
+                "category": self.cat.pk,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(CompetitionRegistration.objects.filter(competition=self.comp).exists())
+
+    def test_post_single_relay_member_accepted(self):
+        response = self.client.post(
+            self.url,
+            {
+                "participant_name": ["Solo Rider"],
+                "gender": "M",
+                "birth_year": 1990,
+                "category": self.cat.pk,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        reg = CompetitionRegistration.objects.get(competition=self.comp)
+        self.assertEqual(reg.participant_names, "Solo Rider")
+
+
+class RelayManualAddTests(TestCase):
+    def setUp(self):
+        self.organizer = make_user("relayorg", role=User.Role.ORGANIZER)
+        self.comp = make_relay_competition(submitted_by=self.organizer)
+        self.cat = make_category(self.comp)
+        self.url = reverse("registrations:manual_add", args=[self.comp.pk])
+        self.client.force_login(self.organizer)
+
+    def test_get_shows_relay_context(self):
+        response = self.client.get(self.url)
+        self.assertTrue(response.context["relay_enabled"])
+
+    def test_manual_add_relay_creates_registration(self):
+        response = self.client.post(
+            self.url,
+            {
+                "participant_name": ["Kozlov Artem", "Dyakov Nikolay"],
+                "gender": "M",
+                "birth_year": 1992,
+                "category": self.cat.pk,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        reg = CompetitionRegistration.objects.get(competition=self.comp)
+        self.assertEqual(reg.participant_names, "Kozlov Artem<BR>Dyakov Nikolay")
+
+
+class RelayAPITests(TestCase):
+    def setUp(self):
+        self.comp = make_relay_competition()
+        self.token = str(self.comp.upload_token)
+        self.url = reverse("registrations:participants_api")
+
+    def test_relay_participant_names_in_api(self):
+        CompetitionRegistration.objects.create(
+            competition=self.comp,
+            first_name="",
+            last_name="",
+            participant_names="Ivanov Ivan<BR>Petrov Vasya",
+            birth_date=datetime.date(1990, 1, 1),
+            gender="M",
+        )
+        response = self.client.get(self.url, {"token": self.token})
+        data = json.loads(response.content)
+        self.assertEqual(data["participants"][0]["participant_names"], "Ivanov Ivan<BR>Petrov Vasya")
+
+    def test_individual_participant_names_is_full_name(self):
+        CompetitionRegistration.objects.create(
+            competition=self.comp,
+            first_name="Ivan",
+            last_name="Petrov",
+            birth_date=datetime.date(1990, 1, 1),
+            gender="M",
+        )
+        response = self.client.get(self.url, {"token": self.token})
+        data = json.loads(response.content)
+        self.assertEqual(data["participants"][0]["participant_names"], "Petrov Ivan")
+
+
+class RelayCSVExportTests(TestCase):
+    def setUp(self):
+        self.organizer = make_user("relaycsv", role=User.Role.ORGANIZER)
+        self.comp = make_relay_competition(submitted_by=self.organizer)
+        self.url = reverse("registrations:export_csv", args=[self.comp.pk])
+
+    def test_relay_csv_shows_semicolon_separated_names(self):
+        CompetitionRegistration.objects.create(
+            competition=self.comp,
+            first_name="",
+            last_name="",
+            participant_names="Ivanov Ivan<BR>Petrov Vasya",
+            birth_date=datetime.date(1990, 1, 1),
+            gender="M",
+        )
+        self.client.force_login(self.organizer)
+        response = self.client.get(self.url)
+        content = response.content.decode()
+        self.assertIn("Ivanov Ivan; Petrov Vasya", content)

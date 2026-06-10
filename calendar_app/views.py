@@ -294,6 +294,8 @@ def _apply_registration_settings(comp, reg_form, is_organizer_plus):
     comp.show_approval_status_col = cd.get("show_approval_status_col", False) if comp.require_approval else False
     comp.show_payment_status_col = cd.get("show_payment_status_col", False) if comp.require_payment else False
     comp.show_additional_info_field = cd.get("show_additional_info_field", True)
+    comp.relay_enabled = cd.get("relay_enabled", False)
+    comp.relay_max_members = cd.get("relay_max_members") or 10
     if reg_enabled and not comp.registration_mode_locked:
         comp.registration_mode_locked = True
 
@@ -508,6 +510,8 @@ class EditCompetitionView(View):
                 "show_approval_status_col": comp.show_approval_status_col,
                 "show_payment_status_col": comp.show_payment_status_col,
                 "show_additional_info_field": comp.show_additional_info_field,
+                "relay_enabled": comp.relay_enabled,
+                "relay_max_members": comp.relay_max_members,
             }
         )
         import json

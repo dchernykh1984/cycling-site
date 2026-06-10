@@ -32,6 +32,63 @@
 <form method="post" id="registration-form">
 {% csrf_token %}
 
+{% if relay_enabled %}
+<div class="mb-3">
+  <label class="form-label fw-semibold">{% trans "Team members" %} *</label>
+  <div class="row g-1 mb-1 small text-muted d-none d-md-flex">
+    <div class="col-md-5 ps-3">{% trans "Full name" %}</div>
+    <div class="col-md-2">{% trans "Year" %}</div>
+    <div class="col-md-4">{% trans "City" %}</div>
+  </div>
+  <div id="relay-names-container">
+    {% for m in relay_members_post %}
+    <div class="relay-member mb-2">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <input type="text" name="participant_name" value="{{ m.name }}"
+                 class="form-control" placeholder="{% trans 'Full name' %}" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" name="participant_birth_year" value="{{ m.birth_year }}"
+                 class="form-control" placeholder="{% trans 'Year' %}" min="1900" max="2030">
+        </div>
+        <div class="col-md-4">
+          <input type="text" name="participant_city" value="{{ m.city }}"
+                 class="form-control" placeholder="{% trans 'City' %}">
+        </div>
+        <div class="col-auto">
+          <button type="button" class="btn btn-outline-danger remove-relay-member">−</button>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="relay-member mb-2">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <input type="text" name="participant_name"
+                 class="form-control" placeholder="{% trans 'Full name' %}" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" name="participant_birth_year"
+                 class="form-control" placeholder="{% trans 'Year' %}" min="1900" max="2030">
+        </div>
+        <div class="col-md-4">
+          <input type="text" name="participant_city"
+                 class="form-control" placeholder="{% trans 'City' %}">
+        </div>
+        <div class="col-auto">
+          <button type="button" class="btn btn-outline-danger remove-relay-member" style="display:none;">−</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <button type="button" id="add-relay-member-btn" class="btn btn-sm btn-outline-primary mt-1">
+    + {% trans "Add member" %}
+  </button>
+  <div class="form-text">{% trans "Maximum" %}: {{ relay_max_members }}</div>
+</div>
+{% else %}
 <div class="mb-3">
   <label class="form-label">{% trans "Last name" %} *</label>
   {% if "last_name" in form.fields %}
@@ -51,6 +108,7 @@
     {% for e in form.first_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
   {% endif %}
 </div>
+{% endif %}
 
 <div class="mb-3">
   <label class="form-label">{% trans "Gender" %} *</label>
@@ -74,7 +132,7 @@
   {% for e in form.gender.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
 </div>
 
-{% if "birth_year" in form.fields %}
+{% if "birth_year" in form.fields and not relay_enabled %}
 <div class="mb-3">
   <label class="form-label">{% trans "Year of birth" %} *</label>
   <input type="number" name="birth_year" value="{{ form.birth_year.value|default:'' }}"
@@ -109,11 +167,13 @@
   {% for e in form.category.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
 </div>
 
+{% if not relay_enabled %}
 <div class="mb-3">
   <label class="form-label">{% trans "City" %}</label>
   <input type="text" name="city" value="{{ form.city.value|default:'' }}"
          class="form-control" id="city-input" autocomplete="off">
 </div>
+{% endif %}
 
 <div class="mb-3">
   <label class="form-label">{% trans "Team" %}</label>
@@ -140,19 +200,72 @@
 <a href="{% url 'competition_detail' competition.pk %}" class="btn btn-outline-secondary ms-2">{% trans "Cancel" %}</a>
 </form>
 
+{% if relay_enabled %}
+<script>
+(function () {
+  var container = document.getElementById('relay-names-container');
+  var addBtn = document.getElementById('add-relay-member-btn');
+  var maxMembers = {{ relay_max_members }};
+  var phName = "{% trans 'Full name' %}";
+  var phYear = "{% trans 'Year' %}";
+  var phCity = "{% trans 'City' %}";
+
+  function updateRemoveButtons() {
+    var rows = container.querySelectorAll('.relay-member');
+    rows.forEach(function (row) {
+      row.querySelector('.remove-relay-member').style.display = rows.length > 1 ? '' : 'none';
+    });
+    addBtn.disabled = rows.length >= maxMembers;
+  }
+
+  addBtn.addEventListener('click', function () {
+    var rows = container.querySelectorAll('.relay-member');
+    if (rows.length >= maxMembers) return;
+    var div = document.createElement('div');
+    div.className = 'relay-member mb-2';
+    div.innerHTML =
+      '<div class="row g-2 align-items-center">' +
+        '<div class="col-md-5"><input type="text" name="participant_name" class="form-control" placeholder="' + phName + '" required></div>' +
+        '<div class="col-md-2"><input type="number" name="participant_birth_year" class="form-control" placeholder="' + phYear + '" min="1900" max="2030"></div>' +
+        '<div class="col-md-4"><input type="text" name="participant_city" class="form-control" placeholder="' + phCity + '"></div>' +
+        '<div class="col-auto"><button type="button" class="btn btn-outline-danger remove-relay-member">−</button></div>' +
+      '</div>';
+    container.appendChild(div);
+    div.querySelector('.remove-relay-member').addEventListener('click', removeHandler);
+    updateRemoveButtons();
+    div.querySelector('input[name="participant_name"]').focus();
+  });
+
+  function removeHandler() {
+    this.closest('.relay-member').remove();
+    updateRemoveButtons();
+  }
+
+  container.querySelectorAll('.remove-relay-member').forEach(function (btn) {
+    btn.addEventListener('click', removeHandler);
+  });
+
+  updateRemoveButtons();
+})();
+</script>
+{% endif %}
+
 {% if is_free %}
 <script>
 const allCategories = {{ all_categories_json|safe }};
+const relayEnabled = {{ relay_enabled|yesno:"true,false" }};
 
 function updateCategories() {
   const gender = document.querySelector('input[name="gender"]:checked')?.value || '';
-  const birthYearInput = document.querySelector('input[name="birth_year"]');
-  const birthDateInput = document.querySelector('input[name="birth_date"]');
   let birthDate = null;
-  if (birthYearInput && birthYearInput.value) {
-    birthDate = new Date(parseInt(birthYearInput.value), 0, 1);
-  } else if (birthDateInput && birthDateInput.value) {
-    birthDate = new Date(birthDateInput.value);
+  if (!relayEnabled) {
+    const birthYearInput = document.querySelector('input[name="birth_year"]');
+    const birthDateInput = document.querySelector('input[name="birth_date"]');
+    if (birthYearInput && birthYearInput.value) {
+      birthDate = new Date(parseInt(birthYearInput.value), 0, 1);
+    } else if (birthDateInput && birthDateInput.value) {
+      birthDate = new Date(birthDateInput.value);
+    }
   }
 
   const select = document.getElementById('category-select');
@@ -163,7 +276,7 @@ function updateCategories() {
     if (!c.is_open) return;
     if (gender === 'M' && !c.male) return;
     if (gender === 'F' && !c.female) return;
-    if (birthDate) {
+    if (!relayEnabled && birthDate) {
       if (c.birth_from && birthDate < new Date(c.birth_from)) return;
       if (c.birth_to && birthDate > new Date(c.birth_to)) return;
     }
@@ -176,8 +289,11 @@ function updateCategories() {
 }
 
 document.querySelectorAll('input[name="gender"]').forEach(el => el.addEventListener('change', updateCategories));
-const byInput = document.querySelector('input[name="birth_year"]') || document.querySelector('input[name="birth_date"]');
-if (byInput) byInput.addEventListener('input', updateCategories);
+if (!relayEnabled) {
+  const byInput = document.querySelector('input[name="birth_year"]') || document.querySelector('input[name="birth_date"]');
+  if (byInput) byInput.addEventListener('input', updateCategories);
+}
+updateCategories();
 </script>
 {% endif %}
 

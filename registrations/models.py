@@ -55,10 +55,15 @@ class RegistrationCategory(models.Model):
     def __str__(self) -> str:
         return f"{self.competition} - {self.name}"
 
-    def matches(self, gender: str, birth_date: datetime.date) -> bool:
+    def matches_gender(self, gender: str) -> bool:
         if gender == "M" and not self.male:
             return False
         if gender == "F" and not self.female:
+            return False
+        return True
+
+    def matches(self, gender: str, birth_date: datetime.date) -> bool:
+        if not self.matches_gender(gender):
             return False
         if self.birth_from and birth_date < self.birth_from:
             return False
@@ -92,8 +97,11 @@ class CompetitionRegistration(models.Model):
         on_delete=models.SET_NULL,
         related_name="+",
     )
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
+    participant_names = models.TextField(blank=True, default="")
+    participant_birth_years = models.TextField(blank=True, default="")
+    participant_cities = models.TextField(blank=True, default="")
     birth_date = models.DateField()
     gender = models.CharField(max_length=1, choices=[("M", "Male"), ("F", "Female")])
     category = models.ForeignKey(
@@ -122,10 +130,18 @@ class CompetitionRegistration(models.Model):
         ordering: ClassVar[list[str]] = ["registered_at"]
 
     def __str__(self) -> str:
+        if self.participant_names:
+            return f"{self.participant_names.replace('<BR>', ', ')} - {self.competition}"
         return f"{self.last_name} {self.first_name} - {self.competition}"
+
+    @property
+    def is_relay(self) -> bool:
+        return bool(self.participant_names)
 
     def clean(self) -> None:
         if self.pk:
+            return
+        if self.participant_names:
             return
         if not (self.competition_id and self.first_name and self.last_name and self.birth_date):
             return
