@@ -90,6 +90,36 @@ No manual database or host configuration is required in the dashboard.
 
 Live site: <https://cycling.codered.cloud>.
 
+## User roles
+
+The site has four roles: Guest, Participant, Organizer, Owner. Roles are stored
+on `accounts.User.role` and control access permissions throughout the app.
+
+New users who register get the **Participant** role automatically.
+
+### Granting Owner access
+
+Owner is the highest role: it gives full Wagtail admin access and Django
+superuser rights. After a user registers, promote them in two admin panels:
+
+**1. Wagtail admin** - <https://cycling.codered.cloud/admin/users/>
+
+- Find the user, click Edit
+- Check **Administrator**
+- Add the **owner** group, remove all other groups
+- Save
+
+**2. Django admin** - <https://cycling.codered.cloud/django-admin/accounts/user/>
+
+- Find the user, click their username
+- Set **Role** to `owner`
+- In the **Groups** section: add the **owner** group, remove all other groups
+- Save
+
+Both steps are required. Skipping the Django admin step leaves the user without
+the correct role, and skipping the Wagtail step leaves them without Wagtail
+admin access.
+
 ## Backup and restore
 
 Scripts live in `scripts/`. They require `pg_dump` / `pg_restore` (PostgreSQL
