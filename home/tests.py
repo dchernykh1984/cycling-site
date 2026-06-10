@@ -112,40 +112,46 @@ class LocaleFallbackMiddlewareTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
 
-    def _make_middleware(self, status):
+    def _make_middleware(self):
         from cycling_site.middleware import LocaleFallbackMiddleware
 
-        return LocaleFallbackMiddleware(lambda r: HttpResponse(status=status))
+        return LocaleFallbackMiddleware(lambda r: HttpResponse(status=200))
 
-    def test_redirects_kk_404_to_ru(self):
-        mw = self._make_middleware(404)
-        request = self.factory.get("/kk/some-page/")
-        request.path_info = "/kk/some-page/"
-        response = mw(request)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response["Location"], "/some-page/")
+    def test_anonymous_user_passes_through(self):
+        from django.contrib.auth.models import AnonymousUser
 
-    def test_redirects_en_404_to_ru(self):
-        mw = self._make_middleware(404)
-        request = self.factory.get("/en/events/")
-        request.path_info = "/en/events/"
-        response = mw(request)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response["Location"], "/events/")
-
-    def test_does_not_redirect_on_200(self):
-        mw = self._make_middleware(200)
-        request = self.factory.get("/kk/some-page/")
-        request.path_info = "/kk/some-page/"
+        mw = self._make_middleware()
+        request = self.factory.get("/")
+        request.user = AnonymousUser()
         response = mw(request)
         self.assertEqual(response.status_code, 200)
 
-    def test_does_not_redirect_ru_404(self):
-        mw = self._make_middleware(404)
-        request = self.factory.get("/missing-page/")
-        request.path_info = "/missing-page/"
+    def test_authenticated_user_preferred_language_activated(self):
+        user = User.objects.create_user(
+            username="mw_test", email="mw@test.com", password="pass", preferred_language="kk"
+        )
+        mw = self._make_middleware()
+        request = self.factory.get("/")
+        request.user = user
+        mw(request)
+        self.assertEqual(request.LANGUAGE_CODE, "kk")
+
+    def test_authenticated_user_no_preferred_language_passes_through(self):
+        user = User.objects.create_user(
+            username="mw_test2", email="mw2@test.com", password="pass", preferred_language=""
+        )
+        mw = self._make_middleware()
+        request = self.factory.get("/")
+        request.user = user
         response = mw(request)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(hasattr(request, "LANGUAGE_CODE"))
+
+    def test_request_without_user_passes_through(self):
+        mw = self._make_middleware()
+        request = self.factory.get("/")
+        response = mw(request)
+        self.assertEqual(response.status_code, 200)
 
 
 class AboutPageTests(WagtailPageTestCase):
