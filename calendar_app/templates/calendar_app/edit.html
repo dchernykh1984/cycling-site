@@ -93,7 +93,7 @@
           <select id="id_discipline_category" name="discipline_category" class="form-select">
             <option value="">--</option>
             {% for cat in discipline_categories %}
-            <option value="{{ cat.pk }}"{% if form.discipline_category.value == cat.pk|stringformat:"s" %} selected{% endif %}>{{ cat.name }}</option>
+            <option value="{{ cat.pk }}"{% if form.discipline_category.value|stringformat:"s" == cat.pk|stringformat:"s" %} selected{% endif %}>{{ cat.name }}</option>
             {% endfor %}
           </select>
         </div>
@@ -102,7 +102,7 @@
           <select id="id_discipline" name="discipline" class="form-select">
             <option value="">--</option>
             {% for d in disciplines_json %}
-            <option value="{{ d.pk }}" data-cat="{{ d.category_id }}"{% if form.discipline.value == d.pk|stringformat:"s" %} selected{% endif %}>{{ d.name }}</option>
+            <option value="{{ d.pk }}" data-cat="{{ d.category_id }}"{% if form.discipline.value|stringformat:"s" == d.pk|stringformat:"s" %} selected{% endif %}>{{ d.name }}</option>
             {% endfor %}
           </select>
           {% if form.discipline.errors %}<div class="text-danger small mt-1">{% for e in form.discipline.errors %}{{ e }}{% endfor %}</div>{% endif %}
