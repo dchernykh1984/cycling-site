@@ -1,12 +1,30 @@
 from django.conf import settings
 from django.contrib import admin
+from django.http import HttpResponse
 from django.urls import URLPattern, URLResolver, include, path
 from wagtail import urls as wagtail_urls
 from wagtail.admin import urls as wagtailadmin_urls
+from wagtail.contrib.sitemaps.views import sitemap as wagtail_sitemap
 from wagtail.documents import urls as wagtaildocs_urls
 
 from accounts.views import set_language as accounts_set_language
+from cycling_site.sitemaps import WagtailPagesSitemap
 from search import views as search_views
+
+
+def robots_txt(request):
+    base_url = getattr(settings, "SITE_BASE_URL", "")
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        f"Sitemap: {base_url}/sitemap.xml",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
+
+
+sitemaps = {
+    "wagtail": WagtailPagesSitemap,
+}
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path("django-admin/", admin.site.urls),
@@ -22,6 +40,8 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("", include("protocols.urls")),
     path("", include("registrations.urls")),
     path("search/", search_views.search, name="search"),
+    path("robots.txt", robots_txt, name="robots_txt"),
+    path("sitemap.xml", wagtail_sitemap, {"sitemaps": sitemaps}, name="sitemap"),
     path("", include("home.urls")),
     path("", include(wagtail_urls)),  # must be last
 ]

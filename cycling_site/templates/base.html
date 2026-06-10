@@ -16,7 +16,21 @@
     </title>
     {% if page.search_description %}
     <meta name="description" content="{{ page.search_description }}" />
+    {% else %}
+    <meta name="description" content="{% trans 'Cycling events, news and knowledge base' %}" />
     {% endif %}
+    <meta property="og:type" content="website" />
+    {% if page.seo_title %}
+    <meta property="og:title" content="{{ page.seo_title }}" />
+    {% elif page.title %}
+    <meta property="og:title" content="{{ page.title }}" />
+    {% endif %}
+    {% if page.search_description %}
+    <meta property="og:description" content="{{ page.search_description }}" />
+    {% else %}
+    <meta property="og:description" content="{% trans 'Cycling events, news and knowledge base' %}" />
+    {% endif %}
+    <meta property="og:url" content="{{ request.build_absolute_uri }}" />
     {% if request.in_preview_panel %}
     <base target="_blank">
     {% endif %}

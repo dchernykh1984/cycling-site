@@ -68,6 +68,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "django.contrib.sites",
+    "django.contrib.sitemaps",
+    "wagtail.contrib.sitemaps",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
