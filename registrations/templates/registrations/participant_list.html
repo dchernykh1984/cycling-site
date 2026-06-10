@@ -52,7 +52,8 @@
     <tr>
       <th>#</th>
       <th>{% trans "Name" %}</th>
-      {% if is_manager %}<th>{% trans "Gender" %}</th><th>{% trans "Birth" %}</th>{% endif %}
+      {% if is_manager %}<th>{% trans "Gender" %}</th>{% endif %}
+      <th>{% trans "Birth" %}</th>
       <th>{% trans "Category" %}</th>
       <th>{% trans "Team" %}</th>
       <th>{% trans "City" %}</th>
@@ -67,10 +68,8 @@
     <tr {% if is_manager and reg.is_rejected %}class="table-danger"{% endif %}>
       <td>{{ forloop.counter }}</td>
       <td>{% if reg.is_relay %}{{ reg.participant_names|safe }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %}</td>
-      {% if is_manager %}
-      <td>{{ reg.gender }}</td>
-      <td>{% if reg.is_relay and reg.participant_birth_years %}{{ reg.participant_birth_years|safe }}{% else %}{{ reg.birth_date|date:"Y" }}{% endif %}</td>
-      {% endif %}
+      {% if is_manager %}<td>{{ reg.gender }}</td>{% endif %}
+      <td>{% if reg.is_relay and reg.participant_birth_years %}{{ reg.participant_birth_years|safe }}{% elif is_manager and competition.birth_date_mode == "date" %}{{ reg.birth_date|date:"d.m.Y" }}{% else %}{{ reg.birth_date|date:"Y" }}{% endif %}</td>
       <td>{{ reg.category.name|default:"—" }}</td>
       <td>{{ reg.team.name|default:"" }}</td>
       <td>{% if reg.is_relay and reg.participant_cities %}{{ reg.participant_cities|safe }}{% else %}{{ reg.city }}{% endif %}</td>
