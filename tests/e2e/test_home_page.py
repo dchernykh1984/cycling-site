@@ -9,7 +9,7 @@ from tests.e2e.conftest import inject_session, switch_locale
 
 @pytest.fixture
 def site_content(db):
-    obj, _ = SiteContent.objects.get_or_create(
+    obj, _ = SiteContent.objects.update_or_create(
         pk=1,
         defaults={
             "navbar_title_ru": "TestNavbar",
@@ -24,10 +24,7 @@ def site_content(db):
 @pytest.fixture
 def site_content_multilingual(db):
     """SiteContent with distinct navbar title and body for each of the three locales."""
-    from django.core.cache import cache
-
-    cache.delete("site_content_obj")
-    obj, _ = SiteContent.objects.get_or_create(
+    obj, _ = SiteContent.objects.update_or_create(
         pk=1,
         defaults={
             "navbar_title_ru": "NavRU",
