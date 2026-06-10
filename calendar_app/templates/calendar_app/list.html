@@ -163,16 +163,16 @@
           if (cntLoc) {
             buildOpts(cntSel, allLocs.filter(function (l) { return l.depth === 1; }), '-');
             cntSel.value = cntLoc.pk;
+            buildOpts(regSel, allLocs.filter(function (l) { return l.depth === 2 && !l.is_hidden && l.path.indexOf(cp) === 0; }), '-');
+            regSel.disabled = false;
             if (initLoc.depth >= 2) {
-              buildOpts(regSel, allLocs.filter(function (l) { return l.depth === 2 && !l.is_hidden && l.path.indexOf(cp) === 0; }), '-');
-              regSel.disabled = false;
               var regLoc = allLocs.find(function (l) { return l.path === rp && l.depth === 2; });
               if (regLoc) {
                 regSel.value = regLoc.pk;
+                buildOpts(citySel, allLocs.filter(function (l) { return l.depth === 3 && !l.is_hidden && l.path.indexOf(rp) === 0; }), '-');
+                citySel.disabled = false;
                 if (initLoc.depth >= 3) {
                   var cityPath = initLoc.path.slice(0, stepLen * 3);
-                  buildOpts(citySel, allLocs.filter(function (l) { return l.depth === 3 && !l.is_hidden && l.path.indexOf(rp) === 0; }), '-');
-                  citySel.disabled = false;
                   var cityLoc = allLocs.find(function (l) { return l.path === cityPath && l.depth === 3; });
                   if (cityLoc) citySel.value = cityLoc.pk;
                 }
