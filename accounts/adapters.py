@@ -5,10 +5,17 @@ from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 class AccountAdapter(DefaultAccountAdapter):
     def save_user(self, request, user, form, commit=True):
         user = super().save_user(request, user, form, commit=False)
-        user.role = user.Role.GUEST
+        user.role = user.Role.PARTICIPANT
         if commit:
             user.save()
         return user
+
+    def confirm_email(self, request, email_address):
+        super().confirm_email(request, email_address)
+        user = email_address.user
+        if user.role == user.Role.GUEST:
+            user.role = user.Role.PARTICIPANT
+            user.save(update_fields=["role"])
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
