@@ -307,14 +307,12 @@ msgid "Show additional info field"
 msgstr "Қосымша ақпарат өрісін көрсету"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:110
-#, fuzzy
-#| msgid "Allow multiple registrations"
 msgid "Allow relay / team registration"
-msgstr "Бірнеше тіркелуге рұқсат"
+msgstr "Эстафета / командық тіркелуге рұқсат"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:114
 msgid "Max members"
-msgstr ""
+msgstr "Макс. мүшелер"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:134
 msgid "Display settings"
