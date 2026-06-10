@@ -178,7 +178,7 @@ else
     fi
     echo ""
     read -rp "Proceed with restore? This will overwrite local DB data [y/N]: " CONFIRM
-    if [[ "${CONFIRM,,}" != "y" ]]; then
+    if [[ "$(echo "$CONFIRM" | tr '[:upper:]' '[:lower:]')" != "y" ]]; then
         echo "Aborted." >&2
         exit 1
     fi
