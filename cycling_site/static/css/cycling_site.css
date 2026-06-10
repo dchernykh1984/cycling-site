@@ -18,6 +18,63 @@ body > main {
     text-transform: none;
 }
 
+/* Dark theme: make navbar-brand and nav-links readable (Lux sets dark colors that don't adapt) */
+[data-bs-theme="dark"] .navbar-brand {
+    color: #fff;
+}
+[data-bs-theme="dark"] .navbar-brand:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+[data-bs-theme="dark"] .navbar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+}
+[data-bs-theme="dark"] .navbar .nav-link:hover {
+    color: #fff;
+}
+
+/* Active nav link — bold + primary color in light, white in dark */
+.navbar .nav-link.active {
+    font-weight: 700;
+}
+[data-bs-theme="light"] .navbar .nav-link.active {
+    color: var(--bs-primary) !important;
+}
+[data-bs-theme="dark"] .navbar .nav-link.active {
+    color: #fff !important;
+}
+
+/* Dark theme: form-select and form-control (Lux hardcodes light backgrounds) */
+[data-bs-theme="dark"] .form-select,
+[data-bs-theme="dark"] .form-control {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme="dark"] .form-select:disabled,
+[data-bs-theme="dark"] .form-control:disabled {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
+}
+
+/* Dark theme: input-group-text (labels inside input groups) */
+[data-bs-theme="dark"] .input-group-text {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+/* Dark theme: cards (Lux hardcodes white background) */
+[data-bs-theme="dark"] .card {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme="dark"] .card-header,
+[data-bs-theme="dark"] .card-footer {
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+}
+
 /* Offset scrollIntoView and anchor jumps by the sticky navbar height so elements
    never land hidden underneath it. Applied to the scroll container (viewport). */
 html {
