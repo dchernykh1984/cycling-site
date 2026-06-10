@@ -598,6 +598,10 @@ class EditCompetitionView(View):
                         "reg_form": reg_form,
                         "categories_json": _json.dumps(_cats),
                         "mode_locked": comp.registration_mode_locked,
+                        "discipline_categories": DisciplineCategory.objects.all(),
+                        "disciplines_json": _disciplines_for_locale(),
+                        "locations_data": _get_locations_data(),
+                        "initial_location_id": form["location"].value() or "",
                     },
                 )
             comp.title_ru = cd["title_ru"]

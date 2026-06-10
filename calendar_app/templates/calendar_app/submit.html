@@ -109,11 +109,12 @@
         var allOpts = Array.from(discSel.options).slice(1);
         function sync(reset) {
           var catId = dirSel.value;
+          var saved = discSel.value;
           discSel.innerHTML = '<option value="">--</option>';
           allOpts.forEach(function (opt) {
             if (!catId || String(opt.dataset.cat) === catId) discSel.appendChild(opt.cloneNode(true));
           });
-          if (reset) discSel.value = '';
+          discSel.value = reset ? '' : saved;
         }
         sync(false);
         dirSel.addEventListener('change', function () { sync(true); });

@@ -106,12 +106,17 @@
     locInp.value = '';
     var cp = pathOf(cityEl.value);
     if (!cp) return;
-    autoVenue(cp);
-    var venues = allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cp) === 0; });
-    if (venues.length) {
-      buildOpts(venEl, venues, '--');
-      venWrap.style.display = '';
+    var realVenues = allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cp) === 0; });
+    buildOpts(venEl, realVenues, '--');
+    var hv = hiddenVenueOf(cp);
+    if (hv) {
+      var hvOpt = document.createElement('option');
+      hvOpt.value = hv.pk; hvOpt.textContent = locName(hv);
+      venEl.appendChild(hvOpt);
+      venEl.value = hv.pk;
+      locInp.value = hv.pk;
     }
+    venWrap.style.display = '';
   });
 
   venEl.addEventListener('change', function () {
@@ -149,13 +154,18 @@
       var cityLoc = allLocs.find(function (l) { return l.path === cityPath && l.depth === 3; });
       if (cityLoc) cityEl.value = cityLoc.pk;
 
-      // Populate venues
-      var venues = allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cityPath) === 0; });
-      if (venues.length) {
-        buildOpts(venEl, venues, '--');
-        venWrap.style.display = '';
-        if (!initLoc.is_hidden) venEl.value = initLoc.pk;
+      // Populate venues - always show, including hidden fallback
+      var realVenues = allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cityPath) === 0; });
+      buildOpts(venEl, realVenues, '--');
+      var hv = hiddenVenueOf(cityPath);
+      if (hv) {
+        var hvOpt = document.createElement('option');
+        hvOpt.value = hv.pk; hvOpt.textContent = locName(hv);
+        venEl.appendChild(hvOpt);
       }
+      venWrap.style.display = '';
+      venEl.value = initLoc.is_hidden ? (hv ? hv.pk : '') : initLoc.pk;
+      locInp.value = venEl.value;
     }
   }
 }());
