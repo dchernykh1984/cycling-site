@@ -12,6 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("accounts", "0009_owner_is_superuser"),
+        ("wagtailusers", "0015_userprofile_keyboard_shortcuts"),
     ]
 
     operations = [
@@ -20,10 +21,19 @@ class Migration(migrations.Migration):
                 ALTER TABLE wagtailusers_userprofile
                 DROP CONSTRAINT IF EXISTS wagtailusers_userprofile_user_id_59c92331_fk_auth_user_id;
 
-                ALTER TABLE wagtailusers_userprofile
-                ADD CONSTRAINT wagtailusers_userprofile_user_id_fk_accounts_user_id
-                FOREIGN KEY (user_id) REFERENCES accounts_user(id)
-                DEFERRABLE INITIALLY DEFERRED;
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.table_constraints
+                        WHERE constraint_name = 'wagtailusers_userprofile_user_id_fk_accounts_user_id'
+                          AND table_name = 'wagtailusers_userprofile'
+                    ) THEN
+                        ALTER TABLE wagtailusers_userprofile
+                        ADD CONSTRAINT wagtailusers_userprofile_user_id_fk_accounts_user_id
+                        FOREIGN KEY (user_id) REFERENCES accounts_user(id)
+                        DEFERRABLE INITIALLY DEFERRED;
+                    END IF;
+                END $$;
             """,
             reverse_sql="""
                 ALTER TABLE wagtailusers_userprofile
