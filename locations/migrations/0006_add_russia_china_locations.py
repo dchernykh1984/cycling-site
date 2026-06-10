@@ -1,0 +1,587 @@
+"""
+Add Russia: Moscow Oblast + 7 adjacent oblasts, Leningrad Oblast + 4 adjacent
+regions, with all raion/district centers for each.
+
+Add China: 4 regions near Kazakhstan (Gansu, Qinghai, Ningxia, Inner Mongolia)
+and 3 major provinces (Guangdong, Sichuan, Chongqing).
+"""
+
+from django.db import migrations
+
+_OTHER = {
+    "city": {"ru": "Другой город", "kk": "Басқа қала", "en": "Other city"},
+    "venue": {"ru": "Другая локация", "kk": "Басқа орын", "en": "Other location"},
+}
+
+# ---------------------------------------------------------------------------
+# New Russia regions
+# ---------------------------------------------------------------------------
+
+RUSSIA_NEW_REGIONS = [
+    # ---- Moscow cluster ------------------------------------------------
+    {
+        "ru": "Московская область",
+        "kk": "Мәскеу облысы",
+        "en": "Moscow Oblast",
+        "so": 11,
+        "cities": [
+            {"ru": "Красногорск", "kk": "Красногорск", "en": "Krasnogorsk", "so": 1},
+            {"ru": "Балашиха", "kk": "Балашиха", "en": "Balashikha", "so": 2},
+            {"ru": "Химки", "kk": "Химки", "en": "Khimki", "so": 3},
+            {"ru": "Мытищи", "kk": "Мытищи", "en": "Mytishchi", "so": 4},
+            {"ru": "Люберцы", "kk": "Люберцы", "en": "Lyubertsy", "so": 5},
+            {"ru": "Одинцово", "kk": "Одинцово", "en": "Odintsovo", "so": 6},
+            {"ru": "Подольск", "kk": "Подольск", "en": "Podolsk", "so": 7},
+            {"ru": "Коломна", "kk": "Коломна", "en": "Kolomna", "so": 8},
+            {"ru": "Серпухов", "kk": "Серпухов", "en": "Serpukhov", "so": 9},
+            {"ru": "Королёв", "kk": "Королёв", "en": "Korolyov", "so": 10},
+            {"ru": "Электросталь", "kk": "Электросталь", "en": "Elektrostal", "so": 11},
+            {"ru": "Богородск", "kk": "Богородск", "en": "Bogorodsk", "so": 12},
+            {"ru": "Дмитров", "kk": "Дмитров", "en": "Dmitrov", "so": 13},
+            {"ru": "Щёлково", "kk": "Щёлково", "en": "Shcholkovo", "so": 14},
+            {"ru": "Жуковский", "kk": "Жуковский", "en": "Zhukovsky", "so": 15},
+            {"ru": "Пушкино", "kk": "Пушкино", "en": "Pushkino", "so": 16},
+            {"ru": "Раменское", "kk": "Раменское", "en": "Ramenskoye", "so": 17},
+            {"ru": "Домодедово", "kk": "Домодедово", "en": "Domodedovo", "so": 18},
+            {"ru": "Клин", "kk": "Клин", "en": "Klin", "so": 19},
+            {"ru": "Дубна", "kk": "Дубна", "en": "Dubna", "so": 20},
+            {"ru": "Сергиев Посад", "kk": "Сергиев Посад", "en": "Sergiyev Posad", "so": 21},
+            {"ru": "Наро-Фоминск", "kk": "Наро-Фоминск", "en": "Naro-Fominsk", "so": 22},
+            {"ru": "Орехово-Зуево", "kk": "Орехово-Зуево", "en": "Orekhovo-Zuyevo", "so": 23},
+            {"ru": "Воскресенск", "kk": "Воскресенск", "en": "Voskresenck", "so": 24},
+            {"ru": "Чехов", "kk": "Чехов", "en": "Chekhov", "so": 25},
+            {"ru": "Ступино", "kk": "Ступино", "en": "Stupino", "so": 26},
+            {"ru": "Шатура", "kk": "Шатура", "en": "Shatura", "so": 27},
+            {"ru": "Истра", "kk": "Истра", "en": "Istra", "so": 28},
+            {"ru": "Видное", "kk": "Видное", "en": "Vidnoye", "so": 29},
+            {"ru": "Лобня", "kk": "Лобня", "en": "Lobnya", "so": 30},
+            {"ru": "Можайск", "kk": "Можайск", "en": "Mozhaysk", "so": 31},
+            {"ru": "Руза", "kk": "Руза", "en": "Ruza", "so": 32},
+            {"ru": "Павловский Посад", "kk": "Павловский Посад", "en": "Pavlovsky Posad", "so": 33},
+            {"ru": "Звенигород", "kk": "Звенигород", "en": "Zvenigorod", "so": 34},
+            {"ru": "Долгопрудный", "kk": "Долгопрудный", "en": "Dolgoprudny", "so": 35},
+            {"ru": "Реутов", "kk": "Реутов", "en": "Reutov", "so": 36},
+            {"ru": "Волоколамск", "kk": "Волоколамск", "en": "Volokolamsk", "so": 37},
+            {"ru": "Шаховская", "kk": "Шаховская", "en": "Shakhovskaya", "so": 38},
+            {"ru": "Талдом", "kk": "Талдом", "en": "Taldom", "so": 39},
+            {"ru": "Зарайск", "kk": "Зарайск", "en": "Zaraysk", "so": 40},
+            {"ru": "Луховицы", "kk": "Луховицы", "en": "Lukhovitsy", "so": 41},
+            {"ru": "Кашира", "kk": "Кашира", "en": "Kashira", "so": 42},
+            {"ru": "Егорьевск", "kk": "Егорьевск", "en": "Yegoryevsk", "so": 43},
+            {"ru": "Бронницы", "kk": "Бронницы", "en": "Bronnitsy", "so": 44},
+            {"ru": "Серебряные Пруды", "kk": "Серебряные Пруды", "en": "Serebryanye Prudy", "so": 45},
+            {"ru": "Пущино", "kk": "Пущино", "en": "Pushchino", "so": 46},
+            {"ru": "Протвино", "kk": "Протвино", "en": "Protvino", "so": 47},
+            {"ru": "Лотошино", "kk": "Лотошино", "en": "Lotoshino", "so": 48},
+        ],
+    },
+    {
+        "ru": "Тверская область",
+        "kk": "Тверь облысы",
+        "en": "Tver Oblast",
+        "so": 12,
+        "cities": [
+            {"ru": "Тверь", "kk": "Тверь", "en": "Tver", "so": 1},
+            {"ru": "Ржев", "kk": "Ржев", "en": "Rzhev", "so": 2},
+            {"ru": "Вышний Волочёк", "kk": "Вышний Волочёк", "en": "Vyshniy Volochyok", "so": 3},
+            {"ru": "Торжок", "kk": "Торжок", "en": "Torzhok", "so": 4},
+            {"ru": "Кимры", "kk": "Кимры", "en": "Kimry", "so": 5},
+            {"ru": "Конаково", "kk": "Конаково", "en": "Konakovo", "so": 6},
+            {"ru": "Бологое", "kk": "Бологое", "en": "Bologoye", "so": 7},
+            {"ru": "Удомля", "kk": "Удомля", "en": "Udomlya", "so": 8},
+            {"ru": "Нелидово", "kk": "Нелидово", "en": "Nelidovo", "so": 9},
+            {"ru": "Торопец", "kk": "Торопец", "en": "Toropets", "so": 10},
+            {"ru": "Осташков", "kk": "Осташков", "en": "Ostashkov", "so": 11},
+            {"ru": "Бежецк", "kk": "Бежецк", "en": "Bezhetsk", "so": 12},
+            {"ru": "Калязин", "kk": "Калязин", "en": "Kalyazin", "so": 13},
+            {"ru": "Кашин", "kk": "Кашин", "en": "Kashin", "so": 14},
+            {"ru": "Зубцов", "kk": "Зубцов", "en": "Zubtsov", "so": 15},
+            {"ru": "Андреаполь", "kk": "Андреаполь", "en": "Andreapol", "so": 16},
+            {"ru": "Западная Двина", "kk": "Западная Двина", "en": "Zapadnaya Dvina", "so": 17},
+            {"ru": "Лихославль", "kk": "Лихославль", "en": "Likhoslavl", "so": 18},
+            {"ru": "Старица", "kk": "Старица", "en": "Staritsa", "so": 19},
+            {"ru": "Максатиха", "kk": "Максатиха", "en": "Maksatikha", "so": 20},
+            {"ru": "Красный Холм", "kk": "Красный Холм", "en": "Krasny Kholm", "so": 21},
+            {"ru": "Кувшиново", "kk": "Кувшиново", "en": "Kuvshinovo", "so": 22},
+            {"ru": "Спирово", "kk": "Спирово", "en": "Spirovo", "so": 23},
+            {"ru": "Белый", "kk": "Белый", "en": "Bely", "so": 24},
+            {"ru": "Весьегонск", "kk": "Весьегонск", "en": "Vesyegonsk", "so": 25},
+            {"ru": "Молоково", "kk": "Молоково", "en": "Molokovo", "so": 26},
+            {"ru": "Сандово", "kk": "Сандово", "en": "Sandovo", "so": 27},
+            {"ru": "Пено", "kk": "Пено", "en": "Peno", "so": 28},
+            {"ru": "Сонково", "kk": "Сонково", "en": "Sonkovo", "so": 29},
+            {"ru": "Оленино", "kk": "Оленино", "en": "Olenino", "so": 30},
+            {"ru": "Рамешки", "kk": "Рамешки", "en": "Rameshki", "so": 31},
+            {"ru": "Селижарово", "kk": "Селижарово", "en": "Selizharovo", "so": 32},
+            {"ru": "Фирово", "kk": "Фирово", "en": "Firovo", "so": 33},
+            {"ru": "Лесной", "kk": "Лесной", "en": "Lesnoy", "so": 34},
+            {"ru": "Кесова Гора", "kk": "Кесова Гора", "en": "Kesova Gora", "so": 35},
+        ],
+    },
+    {
+        "ru": "Ярославская область",
+        "kk": "Ярославль облысы",
+        "en": "Yaroslavl Oblast",
+        "so": 13,
+        "cities": [
+            {"ru": "Ярославль", "kk": "Ярославль", "en": "Yaroslavl", "so": 1},
+            {"ru": "Рыбинск", "kk": "Рыбинск", "en": "Rybinsk", "so": 2},
+            {"ru": "Ростов", "kk": "Ростов", "en": "Rostov", "so": 3},
+            {"ru": "Переславль-Залесский", "kk": "Переславль-Залесский", "en": "Pereslavl-Zalessky", "so": 4},
+            {"ru": "Углич", "kk": "Углич", "en": "Uglich", "so": 5},
+            {"ru": "Тутаев", "kk": "Тутаев", "en": "Tutayev", "so": 6},
+            {"ru": "Данилов", "kk": "Данилов", "en": "Danilov", "so": 7},
+            {"ru": "Гаврилов-Ям", "kk": "Гаврилов-Ям", "en": "Gavrilov-Yam", "so": 8},
+            {"ru": "Мышкин", "kk": "Мышкин", "en": "Myshkin", "so": 9},
+            {"ru": "Любим", "kk": "Любим", "en": "Lyubim", "so": 10},
+            {"ru": "Пошехонье", "kk": "Пошехонье", "en": "Poshekhonye", "so": 11},
+            {"ru": "Брейтово", "kk": "Брейтово", "en": "Breytovo", "so": 12},
+            {"ru": "Некрасовское", "kk": "Некрасовское", "en": "Nekrasovskoye", "so": 13},
+            {"ru": "Борисоглебский", "kk": "Борисоглебский", "en": "Borisoglebsky", "so": 14},
+        ],
+    },
+    {
+        "ru": "Владимирская область",
+        "kk": "Владимир облысы",
+        "en": "Vladimir Oblast",
+        "so": 14,
+        "cities": [
+            {"ru": "Владимир", "kk": "Владимир", "en": "Vladimir", "so": 1},
+            {"ru": "Муром", "kk": "Муром", "en": "Murom", "so": 2},
+            {"ru": "Ковров", "kk": "Ковров", "en": "Kovrov", "so": 3},
+            {"ru": "Александров", "kk": "Александров", "en": "Alexandrov", "so": 4},
+            {"ru": "Гусь-Хрустальный", "kk": "Гусь-Хрустальный", "en": "Gus-Khrustalny", "so": 5},
+            {"ru": "Вязники", "kk": "Вязники", "en": "Vyazniki", "so": 6},
+            {"ru": "Кольчугино", "kk": "Кольчугино", "en": "Kolchugino", "so": 7},
+            {"ru": "Суздаль", "kk": "Суздаль", "en": "Suzdal", "so": 8},
+            {"ru": "Гороховец", "kk": "Гороховец", "en": "Gorokhovets", "so": 9},
+            {"ru": "Собинка", "kk": "Собинка", "en": "Sobinka", "so": 10},
+            {"ru": "Меленки", "kk": "Меленки", "en": "Melenki", "so": 11},
+            {"ru": "Юрьев-Польский", "kk": "Юрьев-Польский", "en": "Yuryev-Polsky", "so": 12},
+            {"ru": "Покров", "kk": "Покров", "en": "Pokrov", "so": 13},
+            {"ru": "Петушки", "kk": "Петушки", "en": "Petushki", "so": 14},
+            {"ru": "Камешково", "kk": "Камешково", "en": "Kameshkovo", "so": 15},
+            {"ru": "Судогда", "kk": "Судогда", "en": "Sudogda", "so": 16},
+            {"ru": "Радужный", "kk": "Радужный", "en": "Raduzhny", "so": 17},
+            {"ru": "Киржач", "kk": "Киржач", "en": "Kirzhach", "so": 18},
+        ],
+    },
+    {
+        "ru": "Рязанская область",
+        "kk": "Рязань облысы",
+        "en": "Ryazan Oblast",
+        "so": 15,
+        "cities": [
+            {"ru": "Рязань", "kk": "Рязань", "en": "Ryazan", "so": 1},
+            {"ru": "Касимов", "kk": "Касимов", "en": "Kasimov", "so": 2},
+            {"ru": "Скопин", "kk": "Скопин", "en": "Skopin", "so": 3},
+            {"ru": "Сасово", "kk": "Сасово", "en": "Sasovo", "so": 4},
+            {"ru": "Новомичуринск", "kk": "Новомичуринск", "en": "Novomichurinsk", "so": 5},
+            {"ru": "Ряжск", "kk": "Ряжск", "en": "Ryazhsk", "so": 6},
+            {"ru": "Кораблино", "kk": "Кораблино", "en": "Korablino", "so": 7},
+            {"ru": "Шацк", "kk": "Шацк", "en": "Shatsk", "so": 8},
+            {"ru": "Михайлов", "kk": "Михайлов", "en": "Mikhaylov", "so": 9},
+            {"ru": "Шилово", "kk": "Шилово", "en": "Shilovo", "so": 10},
+            {"ru": "Пронск", "kk": "Пронск", "en": "Pronsk", "so": 11},
+            {"ru": "Сапожок", "kk": "Сапожок", "en": "Sapozhok", "so": 12},
+            {"ru": "Спас-Клепики", "kk": "Спас-Клепики", "en": "Spas-Klepiki", "so": 13},
+            {"ru": "Путятино", "kk": "Путятино", "en": "Putyatino", "so": 14},
+            {"ru": "Ермишь", "kk": "Ермишь", "en": "Ermish", "so": 15},
+            {"ru": "Чучково", "kk": "Чучково", "en": "Chuchkovo", "so": 16},
+            {"ru": "Ухолово", "kk": "Ухолово", "en": "Ukholovo", "so": 17},
+            {"ru": "Захарово", "kk": "Захарово", "en": "Zakharovo", "so": 18},
+        ],
+    },
+    {
+        "ru": "Тульская область",
+        "kk": "Тула облысы",
+        "en": "Tula Oblast",
+        "so": 16,
+        "cities": [
+            {"ru": "Тула", "kk": "Тула", "en": "Tula", "so": 1},
+            {"ru": "Новомосковск", "kk": "Новомосковск", "en": "Novomoskovsk", "so": 2},
+            {"ru": "Алексин", "kk": "Алексин", "en": "Aleksin", "so": 3},
+            {"ru": "Щёкино", "kk": "Щёкино", "en": "Shchyokino", "so": 4},
+            {"ru": "Узловая", "kk": "Узловая", "en": "Uzlovaya", "so": 5},
+            {"ru": "Ефремов", "kk": "Ефремов", "en": "Yefremov", "so": 6},
+            {"ru": "Киреевск", "kk": "Киреевск", "en": "Kireyevsk", "so": 7},
+            {"ru": "Донской", "kk": "Донской", "en": "Donskoy", "so": 8},
+            {"ru": "Богородицк", "kk": "Богородицк", "en": "Bogoroditsk", "so": 9},
+            {"ru": "Кимовск", "kk": "Кимовск", "en": "Kimovsk", "so": 10},
+            {"ru": "Суворов", "kk": "Суворов", "en": "Suvorov", "so": 11},
+            {"ru": "Плавск", "kk": "Плавск", "en": "Plavsk", "so": 12},
+            {"ru": "Венёв", "kk": "Венёв", "en": "Venyov", "so": 13},
+            {"ru": "Ясногорск", "kk": "Ясногорск", "en": "Yasnogorsk", "so": 14},
+            {"ru": "Белёв", "kk": "Белёв", "en": "Belyov", "so": 15},
+            {"ru": "Чёрнь", "kk": "Чёрнь", "en": "Chern", "so": 16},
+            {"ru": "Одоев", "kk": "Одоев", "en": "Odoev", "so": 17},
+            {"ru": "Заокский", "kk": "Заокский", "en": "Zaoksky", "so": 18},
+        ],
+    },
+    {
+        "ru": "Калужская область",
+        "kk": "Калуга облысы",
+        "en": "Kaluga Oblast",
+        "so": 17,
+        "cities": [
+            {"ru": "Калуга", "kk": "Калуга", "en": "Kaluga", "so": 1},
+            {"ru": "Обнинск", "kk": "Обнинск", "en": "Obninsk", "so": 2},
+            {"ru": "Малоярославец", "kk": "Малоярославец", "en": "Maloyaroslavets", "so": 3},
+            {"ru": "Козельск", "kk": "Козельск", "en": "Kozelsk", "so": 4},
+            {"ru": "Людиново", "kk": "Людиново", "en": "Lyudinovo", "so": 5},
+            {"ru": "Боровск", "kk": "Боровск", "en": "Borovsk", "so": 6},
+            {"ru": "Жуков", "kk": "Жуков", "en": "Zhukov", "so": 7},
+            {"ru": "Кондрово", "kk": "Кондрово", "en": "Kondrovo", "so": 8},
+            {"ru": "Сухиничи", "kk": "Сухиничи", "en": "Sukhinichi", "so": 9},
+            {"ru": "Таруса", "kk": "Таруса", "en": "Tarusa", "so": 10},
+            {"ru": "Жиздра", "kk": "Жиздра", "en": "Zhizdra", "so": 11},
+            {"ru": "Медынь", "kk": "Медынь", "en": "Medyn", "so": 12},
+            {"ru": "Мосальск", "kk": "Мосальск", "en": "Mosalsk", "so": 13},
+            {"ru": "Юхнов", "kk": "Юхнов", "en": "Yukhnov", "so": 14},
+            {"ru": "Мещовск", "kk": "Мещовск", "en": "Meshchovsk", "so": 15},
+            {"ru": "Балабаново", "kk": "Балабаново", "en": "Balabanovo", "so": 16},
+            {"ru": "Сосенский", "kk": "Сосенский", "en": "Sosensky", "so": 17},
+            {"ru": "Спас-Деменск", "kk": "Спас-Деменск", "en": "Spas-Demensk", "so": 18},
+        ],
+    },
+    {
+        "ru": "Смоленская область",
+        "kk": "Смоленск облысы",
+        "en": "Smolensk Oblast",
+        "so": 18,
+        "cities": [
+            {"ru": "Смоленск", "kk": "Смоленск", "en": "Smolensk", "so": 1},
+            {"ru": "Вязьма", "kk": "Вязьма", "en": "Vyazma", "so": 2},
+            {"ru": "Рославль", "kk": "Рославль", "en": "Roslavl", "so": 3},
+            {"ru": "Сафоново", "kk": "Сафоново", "en": "Safonovo", "so": 4},
+            {"ru": "Гагарин", "kk": "Гагарин", "en": "Gagarin", "so": 5},
+            {"ru": "Ярцево", "kk": "Ярцево", "en": "Yartsevo", "so": 6},
+            {"ru": "Дорогобуж", "kk": "Дорогобуж", "en": "Dorogobuzh", "so": 7},
+            {"ru": "Десногорск", "kk": "Десногорск", "en": "Desnogorsk", "so": 8},
+            {"ru": "Ельня", "kk": "Ельня", "en": "Yelnya", "so": 9},
+            {"ru": "Починок", "kk": "Починок", "en": "Pochinok", "so": 10},
+            {"ru": "Духовщина", "kk": "Духовщина", "en": "Dukhovshchina", "so": 11},
+            {"ru": "Кардымово", "kk": "Кардымово", "en": "Kardymovo", "so": 12},
+            {"ru": "Монастырщина", "kk": "Монастырщина", "en": "Monastyrshchina", "so": 13},
+            {"ru": "Хиславичи", "kk": "Хиславичи", "en": "Khislavichi", "so": 14},
+            {"ru": "Сычёвка", "kk": "Сычёвка", "en": "Sychyovka", "so": 15},
+            {"ru": "Угра", "kk": "Угра", "en": "Ugra", "so": 16},
+            {"ru": "Ершичи", "kk": "Ершичи", "en": "Yershichi", "so": 17},
+            {"ru": "Шумячи", "kk": "Шумячи", "en": "Shumyachi", "so": 18},
+            {"ru": "Холм-Жирковский", "kk": "Холм-Жирковский", "en": "Kholm-Zhirkovsky", "so": 19},
+        ],
+    },
+    # ---- Leningrad cluster ---------------------------------------------
+    {
+        "ru": "Ленинградская область",
+        "kk": "Ленинград облысы",
+        "en": "Leningrad Oblast",
+        "so": 19,
+        "cities": [
+            {"ru": "Гатчина", "kk": "Гатчина", "en": "Gatchina", "so": 1},
+            {"ru": "Выборг", "kk": "Выборг", "en": "Vyborg", "so": 2},
+            {"ru": "Всеволожск", "kk": "Всеволожск", "en": "Vsevolozhsk", "so": 3},
+            {"ru": "Кингисепп", "kk": "Кингисепп", "en": "Kingisepp", "so": 4},
+            {"ru": "Тихвин", "kk": "Тихвин", "en": "Tikhvin", "so": 5},
+            {"ru": "Кириши", "kk": "Кириши", "en": "Kirishi", "so": 6},
+            {"ru": "Волхов", "kk": "Волхов", "en": "Volkhov", "so": 7},
+            {"ru": "Тосно", "kk": "Тосно", "en": "Tosno", "so": 8},
+            {"ru": "Луга", "kk": "Луга", "en": "Luga", "so": 9},
+            {"ru": "Приозерск", "kk": "Приозерск", "en": "Priozersk", "so": 10},
+            {"ru": "Бокситогорск", "kk": "Бокситогорск", "en": "Boksitogorsk", "so": 11},
+            {"ru": "Волосово", "kk": "Волосово", "en": "Volosovo", "so": 12},
+            {"ru": "Лодейное Поле", "kk": "Лодейное Поле", "en": "Lodeynoye Pole", "so": 13},
+            {"ru": "Сланцы", "kk": "Сланцы", "en": "Slantsy", "so": 14},
+            {"ru": "Подпорожье", "kk": "Подпорожье", "en": "Podporozhye", "so": 15},
+            {"ru": "Ломоносов", "kk": "Ломоносов", "en": "Lomonosov", "so": 16},
+            {"ru": "Сосновый Бор", "kk": "Сосновый Бор", "en": "Sosnovyy Bor", "so": 17},
+        ],
+    },
+    {
+        "ru": "Новгородская область",
+        "kk": "Новгород облысы",
+        "en": "Novgorod Oblast",
+        "so": 20,
+        "cities": [
+            {"ru": "Великий Новгород", "kk": "Великий Новгород", "en": "Veliky Novgorod", "so": 1},
+            {"ru": "Боровичи", "kk": "Боровичи", "en": "Borovichi", "so": 2},
+            {"ru": "Старая Русса", "kk": "Старая Русса", "en": "Staraya Russa", "so": 3},
+            {"ru": "Валдай", "kk": "Валдай", "en": "Valdai", "so": 4},
+            {"ru": "Чудово", "kk": "Чудово", "en": "Chudovo", "so": 5},
+            {"ru": "Малая Вишера", "kk": "Малая Вишера", "en": "Malaya Vishera", "so": 6},
+            {"ru": "Окуловка", "kk": "Окуловка", "en": "Okulovka", "so": 7},
+            {"ru": "Сольцы", "kk": "Сольцы", "en": "Soltsy", "so": 8},
+            {"ru": "Пестово", "kk": "Пестово", "en": "Pestovo", "so": 9},
+            {"ru": "Хвойная", "kk": "Хвойная", "en": "Khvoynaya", "so": 10},
+            {"ru": "Холм", "kk": "Холм", "en": "Kholm", "so": 11},
+            {"ru": "Демянск", "kk": "Демянск", "en": "Demyansk", "so": 12},
+            {"ru": "Батецкий", "kk": "Батецкий", "en": "Batetsky", "so": 13},
+            {"ru": "Крестцы", "kk": "Крестцы", "en": "Krestsy", "so": 14},
+            {"ru": "Мошенское", "kk": "Мошенское", "en": "Moshenskoye", "so": 15},
+            {"ru": "Любытино", "kk": "Любытино", "en": "Lyubitino", "so": 16},
+            {"ru": "Марёво", "kk": "Марёво", "en": "Maryovo", "so": 17},
+            {"ru": "Поддорье", "kk": "Поддорье", "en": "Poddorye", "so": 18},
+            {"ru": "Шимск", "kk": "Шимск", "en": "Shimsk", "so": 19},
+            {"ru": "Парфино", "kk": "Парфино", "en": "Parfino", "so": 20},
+        ],
+    },
+    {
+        "ru": "Псковская область",
+        "kk": "Псков облысы",
+        "en": "Pskov Oblast",
+        "so": 21,
+        "cities": [
+            {"ru": "Псков", "kk": "Псков", "en": "Pskov", "so": 1},
+            {"ru": "Великие Луки", "kk": "Великие Луки", "en": "Velikiye Luki", "so": 2},
+            {"ru": "Остров", "kk": "Остров", "en": "Ostrov", "so": 3},
+            {"ru": "Порхов", "kk": "Порхов", "en": "Porkhov", "so": 4},
+            {"ru": "Печоры", "kk": "Печоры", "en": "Pechory", "so": 5},
+            {"ru": "Опочка", "kk": "Опочка", "en": "Opochka", "so": 6},
+            {"ru": "Пустошка", "kk": "Пустошка", "en": "Pustoshka", "so": 7},
+            {"ru": "Пушкинские Горы", "kk": "Пушкинские Горы", "en": "Pushkinskiye Gory", "so": 8},
+            {"ru": "Дедовичи", "kk": "Дедовичи", "en": "Dedovichi", "so": 9},
+            {"ru": "Новоржев", "kk": "Новоржев", "en": "Novorzhev", "so": 10},
+            {"ru": "Новосокольники", "kk": "Новосокольники", "en": "Novosokolniki", "so": 11},
+            {"ru": "Бежаницы", "kk": "Бежаницы", "en": "Bezhanitsy", "so": 12},
+            {"ru": "Красногородск", "kk": "Красногородск", "en": "Krasnogorodsk", "so": 13},
+            {"ru": "Невель", "kk": "Невель", "en": "Nevel", "so": 14},
+            {"ru": "Себеж", "kk": "Себеж", "en": "Sebezh", "so": 15},
+            {"ru": "Локня", "kk": "Локня", "en": "Loknya", "so": 16},
+        ],
+    },
+    {
+        "ru": "Вологодская область",
+        "kk": "Вологда облысы",
+        "en": "Vologda Oblast",
+        "so": 22,
+        "cities": [
+            {"ru": "Вологда", "kk": "Вологда", "en": "Vologda", "so": 1},
+            {"ru": "Череповец", "kk": "Череповец", "en": "Cherepovets", "so": 2},
+            {"ru": "Великий Устюг", "kk": "Великий Устюг", "en": "Veliky Ustyug", "so": 3},
+            {"ru": "Сокол", "kk": "Сокол", "en": "Sokol", "so": 4},
+            {"ru": "Кириллов", "kk": "Кириллов", "en": "Kirillov", "so": 5},
+            {"ru": "Бабаево", "kk": "Бабаево", "en": "Babayevo", "so": 6},
+            {"ru": "Вытегра", "kk": "Вытегра", "en": "Vytegra", "so": 7},
+            {"ru": "Белозерск", "kk": "Белозерск", "en": "Belozersk", "so": 8},
+            {"ru": "Тотьма", "kk": "Тотьма", "en": "Totma", "so": 9},
+            {"ru": "Устюжна", "kk": "Устюжна", "en": "Ustyuzhna", "so": 10},
+            {"ru": "Грязовец", "kk": "Грязовец", "en": "Gryazovets", "so": 11},
+            {"ru": "Харовск", "kk": "Харовск", "en": "Kharovsk", "so": 12},
+            {"ru": "Никольск", "kk": "Никольск", "en": "Nikolsk", "so": 13},
+            {"ru": "Тарногский Городок", "kk": "Тарногский Городок", "en": "Tarnogskoye", "so": 14},
+            {"ru": "Вожега", "kk": "Вожега", "en": "Vozhega", "so": 15},
+            {"ru": "Сямжа", "kk": "Сямжа", "en": "Syamzha", "so": 16},
+            {"ru": "Кадников", "kk": "Кадников", "en": "Kadnikov", "so": 17},
+            {"ru": "Чагода", "kk": "Чагода", "en": "Chagoda", "so": 18},
+        ],
+    },
+    {
+        "ru": "Республика Карелия",
+        "kk": "Карелия Республикасы",
+        "en": "Republic of Karelia",
+        "so": 23,
+        "cities": [
+            {"ru": "Петрозаводск", "kk": "Петрозаводск", "en": "Petrozavodsk", "so": 1},
+            {"ru": "Сортавала", "kk": "Сортавала", "en": "Sortavala", "so": 2},
+            {"ru": "Кондопога", "kk": "Кондопога", "en": "Kondopoga", "so": 3},
+            {"ru": "Беломорск", "kk": "Беломорск", "en": "Belomorsk", "so": 4},
+            {"ru": "Кемь", "kk": "Кемь", "en": "Kem", "so": 5},
+            {"ru": "Медвежьегорск", "kk": "Медвежьегорск", "en": "Medvezhyegorsk", "so": 6},
+            {"ru": "Питкяранта", "kk": "Питкяранта", "en": "Pitkyaranta", "so": 7},
+            {"ru": "Сегежа", "kk": "Сегежа", "en": "Segezha", "so": 8},
+            {"ru": "Олонец", "kk": "Олонец", "en": "Olonets", "so": 9},
+            {"ru": "Костомукша", "kk": "Костомукша", "en": "Kostomuksha", "so": 10},
+            {"ru": "Лахденпохья", "kk": "Лахденпохья", "en": "Lahdenpohja", "so": 11},
+            {"ru": "Пудож", "kk": "Пудож", "en": "Pudozh", "so": 12},
+            {"ru": "Суоярви", "kk": "Суоярви", "en": "Suoyarvi", "so": 13},
+            {"ru": "Пряжа", "kk": "Пряжа", "en": "Pryazha", "so": 14},
+        ],
+    },
+]
+
+# ---------------------------------------------------------------------------
+# New China regions
+# ---------------------------------------------------------------------------
+
+CHINA_NEW_REGIONS = [
+    # ---- Near Kazakhstan -----------------------------------------------
+    {
+        "ru": "Ганьсу",
+        "kk": "Ганьсу",
+        "en": "Gansu",
+        "so": 5,
+        "cities": [
+            {"ru": "Ланьчжоу", "kk": "Ланьчжоу", "en": "Lanzhou", "so": 1},
+            {"ru": "Тяньшуй", "kk": "Тяньшуй", "en": "Tianshui", "so": 2},
+            {"ru": "Цзяюгуань", "kk": "Цзяюгуань", "en": "Jiayuguan", "so": 3},
+            {"ru": "Цзинчан", "kk": "Цзинчан", "en": "Jinchang", "so": 4},
+            {"ru": "Байинь", "kk": "Байинь", "en": "Baiyin", "so": 5},
+            {"ru": "Чжанъе", "kk": "Чжанъе", "en": "Zhangye", "so": 6},
+            {"ru": "Увэй", "kk": "Увэй", "en": "Wuwei", "so": 7},
+            {"ru": "Динси", "kk": "Динси", "en": "Dingxi", "so": 8},
+            {"ru": "Пинлян", "kk": "Пинлян", "en": "Pingliang", "so": 9},
+            {"ru": "Циннян", "kk": "Циннян", "en": "Qingyang", "so": 10},
+        ],
+    },
+    {
+        "ru": "Цинхай",
+        "kk": "Цинхай",
+        "en": "Qinghai",
+        "so": 6,
+        "cities": [
+            {"ru": "Синин", "kk": "Синин", "en": "Xining", "so": 1},
+            {"ru": "Хайдун", "kk": "Хайдун", "en": "Haidong", "so": 2},
+            {"ru": "Голмуд", "kk": "Голмуд", "en": "Golmud", "so": 3},
+            {"ru": "Дэлинха", "kk": "Дэлинха", "en": "Delingha", "so": 4},
+            {"ru": "Мангъя", "kk": "Мангъя", "en": "Mang'ya", "so": 5},
+        ],
+    },
+    {
+        "ru": "Нинся",
+        "kk": "Нинся",
+        "en": "Ningxia",
+        "so": 7,
+        "cities": [
+            {"ru": "Иньчуань", "kk": "Иньчуань", "en": "Yinchuan", "so": 1},
+            {"ru": "Шичжуйшань", "kk": "Шичжуйшань", "en": "Shizuishan", "so": 2},
+            {"ru": "Гуюань", "kk": "Гуюань", "en": "Guyuan", "so": 3},
+            {"ru": "Чжунвэй", "kk": "Чжунвэй", "en": "Zhongwei", "so": 4},
+            {"ru": "Удун", "kk": "Удун", "en": "Wuzhong", "so": 5},
+        ],
+    },
+    {
+        "ru": "Внутренняя Монголия",
+        "kk": "Ішкі Моңғолия",
+        "en": "Inner Mongolia",
+        "so": 8,
+        "cities": [
+            {"ru": "Хух-Хото", "kk": "Хух-Хото", "en": "Hohhot", "so": 1},
+            {"ru": "Баотоу", "kk": "Баотоу", "en": "Baotou", "so": 2},
+            {"ru": "Ордос", "kk": "Ордос", "en": "Ordos", "so": 3},
+            {"ru": "Чифэн", "kk": "Чифэн", "en": "Chifeng", "so": 4},
+            {"ru": "Тунляо", "kk": "Тунляо", "en": "Tongliao", "so": 5},
+            {"ru": "Хулунбуйр", "kk": "Хулунбуйр", "en": "Hulunbuir", "so": 6},
+            {"ru": "Уланчаб", "kk": "Уланчаб", "en": "Ulanqab", "so": 7},
+            {"ru": "Баяннаур", "kk": "Баяннаур", "en": "Bayannur", "so": 8},
+        ],
+    },
+    # ---- Major regions -------------------------------------------------
+    {
+        "ru": "Гуандун",
+        "kk": "Гуандун",
+        "en": "Guangdong",
+        "so": 9,
+        "cities": [
+            {"ru": "Гуанчжоу", "kk": "Гуанчжоу", "en": "Guangzhou", "so": 1},
+            {"ru": "Шэньчжэнь", "kk": "Шэньчжэнь", "en": "Shenzhen", "so": 2},
+            {"ru": "Дунгуань", "kk": "Дунгуань", "en": "Dongguan", "so": 3},
+            {"ru": "Фошань", "kk": "Фошань", "en": "Foshan", "so": 4},
+            {"ru": "Шаньтоу", "kk": "Шаньтоу", "en": "Shantou", "so": 5},
+            {"ru": "Хуэйчжоу", "kk": "Хуэйчжоу", "en": "Huizhou", "so": 6},
+            {"ru": "Чжухай", "kk": "Чжухай", "en": "Zhuhai", "so": 7},
+            {"ru": "Цзянмэнь", "kk": "Цзянмэнь", "en": "Jiangmen", "so": 8},
+            {"ru": "Чжаньцзян", "kk": "Чжаньцзян", "en": "Zhanjiang", "so": 9},
+            {"ru": "Чжаоцин", "kk": "Чжаоцин", "en": "Zhaoqing", "so": 10},
+        ],
+    },
+    {
+        "ru": "Сычуань",
+        "kk": "Сычуань",
+        "en": "Sichuan",
+        "so": 10,
+        "cities": [
+            {"ru": "Чэнду", "kk": "Чэнду", "en": "Chengdu", "so": 1},
+            {"ru": "Мяньян", "kk": "Мяньян", "en": "Mianyang", "so": 2},
+            {"ru": "Дэян", "kk": "Дэян", "en": "Deyang", "so": 3},
+            {"ru": "Лэшань", "kk": "Лэшань", "en": "Leshan", "so": 4},
+            {"ru": "Нанчун", "kk": "Нанчун", "en": "Nanchong", "so": 5},
+            {"ru": "Ибинь", "kk": "Ибинь", "en": "Yibin", "so": 6},
+            {"ru": "Цзыгун", "kk": "Цзыгун", "en": "Zigong", "so": 7},
+            {"ru": "Лучжоу", "kk": "Лучжоу", "en": "Luzhou", "so": 8},
+            {"ru": "Нэйцзян", "kk": "Нэйцзян", "en": "Neijiang", "so": 9},
+            {"ru": "Гуанъань", "kk": "Гуанъань", "en": "Guang'an", "so": 10},
+        ],
+    },
+    {
+        "ru": "Чунцин",
+        "kk": "Чунцин",
+        "en": "Chongqing",
+        "so": 11,
+        "cities": [
+            {"ru": "Чунцин", "kk": "Чунцин", "en": "Chongqing", "so": 1},
+            {"ru": "Юнчуань", "kk": "Юнчуань", "en": "Yongchuan", "so": 2},
+            {"ru": "Хэчуань", "kk": "Хэчуань", "en": "Hechuan", "so": 3},
+            {"ru": "Биншань", "kk": "Биншань", "en": "Bishan", "so": 4},
+            {"ru": "Цяньцзян", "kk": "Цяньцзян", "en": "Qianjiang", "so": 5},
+        ],
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# Migration function
+# ---------------------------------------------------------------------------
+
+
+def add_locations(apps, schema_editor):
+    from locations.models import Location
+
+    o_city = _OTHER["city"]
+    o_venue = _OTHER["venue"]
+
+    def add_venue(parent):
+        parent.add_child(
+            name=o_venue["ru"],
+            name_ru=o_venue["ru"],
+            name_kk=o_venue["kk"],
+            name_en=o_venue["en"],
+            sort_order=9999,
+            is_hidden=True,
+        )
+
+    def add_other_city(parent):
+        city_node = parent.add_child(
+            name=o_city["ru"],
+            name_ru=o_city["ru"],
+            name_kk=o_city["kk"],
+            name_en=o_city["en"],
+            sort_order=9999,
+        )
+        add_venue(city_node)
+
+    def add_region(country, region_data):
+        region = country.add_child(
+            name=region_data["ru"],
+            name_ru=region_data["ru"],
+            name_kk=region_data["kk"],
+            name_en=region_data["en"],
+            sort_order=region_data["so"],
+        )
+        for city_data in region_data["cities"]:
+            city = region.add_child(
+                name=city_data["ru"],
+                name_ru=city_data["ru"],
+                name_kk=city_data["kk"],
+                name_en=city_data["en"],
+                sort_order=city_data["so"],
+            )
+            add_venue(city)
+        add_other_city(region)
+
+    russia = Location.objects.get(name_ru="Россия", depth=1)
+    for region_data in RUSSIA_NEW_REGIONS:
+        add_region(russia, region_data)
+
+    china = Location.objects.get(name_ru="Китай", depth=1)
+    for region_data in CHINA_NEW_REGIONS:
+        add_region(china, region_data)
+
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ("locations", "0005_fix_location_data"),
+    ]
+
+    operations = [
+        migrations.RunPython(add_locations, migrations.RunPython.noop),
+    ]
