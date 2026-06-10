@@ -126,7 +126,7 @@ differs, set `CR_MEDIA_REMOTE_PATH` in `.env` (verify via `cr sftp cycling`).
 ### Local restore
 
 ```bash
-./scripts/restore.sh backup/2026-06-10_17-53
+./scripts/restore.sh backup/2026-06-10_23-17
 ```
 
 Validates SHA-256 checksums, then restores the database and media, and runs
