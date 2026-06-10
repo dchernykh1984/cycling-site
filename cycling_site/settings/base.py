@@ -74,7 +74,6 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.github",
     "allauth.socialaccount.providers.strava",
-    "allauth.socialaccount.providers.telegram",
 ]
 
 SITE_ID = 1
@@ -130,13 +129,6 @@ SOCIALACCOUNT_PROVIDERS = {
         "APP": {
             "client_id": env("STRAVA_CLIENT_ID", default=""),
             "secret": env("STRAVA_CLIENT_SECRET", default=""),
-        },
-    },
-    "telegram": {
-        "EMAIL_AUTHENTICATION": False,
-        "APP": {
-            "client_id": env("TELEGRAM_BOT_TOKEN", default=""),
-            "secret": env("TELEGRAM_BOT_TOKEN", default=""),
         },
     },
 }
