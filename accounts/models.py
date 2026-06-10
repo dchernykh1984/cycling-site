@@ -74,6 +74,7 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     def save(self, *args, **kwargs) -> None:
         if self.role == self.Role.OWNER:
             self.is_staff = True
+            self.is_superuser = True
         super().save(*args, **kwargs)
 
     def can_manage_user(self, target_user: "User") -> bool:
