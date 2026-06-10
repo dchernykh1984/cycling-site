@@ -95,6 +95,9 @@ class LocaleMigrationLegacyTests(TestCase):
         if ru:
             ru.language_code = "en-us"
             ru.save()
+        # Page.locale uses on_delete=PROTECT; delete locale-specific pages first.
+        for locale in Locale.objects.filter(language_code__in=["kk", "en"]):
+            Page.objects.filter(locale=locale).delete()
         Locale.objects.filter(language_code__in=["kk", "en"]).delete()
 
         migration_mod.create_locales(django_apps, None)
