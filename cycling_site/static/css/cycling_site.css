@@ -44,17 +44,76 @@ body > main {
     color: #fff !important;
 }
 
-/* Dark theme: form-select and form-control (Lux hardcodes light backgrounds) */
+/* Dark theme: form inputs — explicit colors so they contrast with page bg */
 [data-bs-theme="dark"] .form-select,
 [data-bs-theme="dark"] .form-control {
-    background-color: var(--bs-body-bg);
-    color: var(--bs-body-color);
-    border-color: var(--bs-border-color);
+    background-color: #2c3034 !important;
+    color: #dee2e6 !important;
+    border-color: #495057 !important;
 }
 [data-bs-theme="dark"] .form-select:disabled,
 [data-bs-theme="dark"] .form-control:disabled {
-    background-color: var(--bs-secondary-bg);
-    color: var(--bs-secondary-color);
+    background-color: #212529 !important;
+    color: #6c757d !important;
+}
+
+/* Dark theme: outline buttons — direct color overrides beat Lux's hardcoded values */
+[data-bs-theme="dark"] .btn-outline-primary {
+    color: #6ea8fe !important;
+    border-color: #6ea8fe !important;
+    background-color: transparent !important;
+}
+[data-bs-theme="dark"] .btn-outline-primary:hover,
+[data-bs-theme="dark"] .btn-outline-primary:focus,
+[data-bs-theme="dark"] .btn-outline-primary:active {
+    color: #000 !important;
+    background-color: #6ea8fe !important;
+    border-color: #6ea8fe !important;
+}
+[data-bs-theme="dark"] .btn-outline-secondary {
+    color: #adb5bd !important;
+    border-color: #adb5bd !important;
+    background-color: transparent !important;
+}
+[data-bs-theme="dark"] .btn-outline-secondary:hover,
+[data-bs-theme="dark"] .btn-outline-secondary:active {
+    color: #000 !important;
+    background-color: #adb5bd !important;
+    border-color: #adb5bd !important;
+}
+[data-bs-theme="dark"] .btn-outline-danger {
+    color: #ea868f !important;
+    border-color: #ea868f !important;
+    background-color: transparent !important;
+}
+[data-bs-theme="dark"] .btn-outline-danger:hover,
+[data-bs-theme="dark"] .btn-outline-danger:active {
+    color: #000 !important;
+    background-color: #ea868f !important;
+    border-color: #ea868f !important;
+}
+
+/* Dark theme: radio and checkbox inputs */
+[data-bs-theme="dark"] .form-check-input {
+    background-color: #2c3034 !important;
+    border-color: #495057 !important;
+}
+[data-bs-theme="dark"] .form-check-input:checked {
+    background-color: #6ea8fe !important;
+    border-color: #6ea8fe !important;
+}
+
+/* Dark theme: dropdown menus in navbar */
+[data-bs-theme="dark"] .navbar .dropdown-menu {
+    background-color: #2c3034;
+    border-color: #495057;
+}
+[data-bs-theme="dark"] .navbar .dropdown-menu .dropdown-item {
+    color: #dee2e6;
+}
+[data-bs-theme="dark"] .navbar .dropdown-menu .dropdown-item:hover {
+    background-color: #343a40;
+    color: #fff;
 }
 
 /* Dark theme: input-group-text (labels inside input groups) */
