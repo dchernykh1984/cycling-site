@@ -66,14 +66,14 @@
     {% for reg in registrations %}
     <tr {% if is_manager and reg.is_rejected %}class="table-danger"{% endif %}>
       <td>{{ forloop.counter }}</td>
-      <td>{{ reg.last_name }} {{ reg.first_name }}</td>
+      <td>{% if reg.is_relay %}{{ reg.participant_names|safe }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %}</td>
       {% if is_manager %}
       <td>{{ reg.gender }}</td>
-      <td>{{ reg.birth_date|date:"Y" }}</td>
+      <td>{% if reg.is_relay and reg.participant_birth_years %}{{ reg.participant_birth_years|safe }}{% else %}{{ reg.birth_date|date:"Y" }}{% endif %}</td>
       {% endif %}
       <td>{{ reg.category.name|default:"—" }}</td>
       <td>{{ reg.team.name|default:"" }}</td>
-      <td>{{ reg.city }}</td>
+      <td>{% if reg.is_relay and reg.participant_cities %}{{ reg.participant_cities|safe }}{% else %}{{ reg.city }}{% endif %}</td>
       {% if is_manager or competition.show_additional_info_field %}<td>{{ reg.additional_info }}</td>{% endif %}
       {% if is_manager and competition.require_approval or competition.show_approval_status_col %}
       <td>{% if reg.is_approved %}<span class="badge bg-success">{% trans "Yes" %}</span>{% else %}<span class="badge bg-warning text-dark">{% trans "No" %}</span>{% endif %}</td>

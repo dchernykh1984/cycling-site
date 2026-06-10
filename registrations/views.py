@@ -106,6 +106,8 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
                 "form": form,
                 "profile_incomplete": profile_incomplete,
                 "is_free": is_free,
+                "relay_enabled": competition.relay_enabled,
+                "relay_max_members": competition.relay_max_members,
                 "available_categories_json": json.dumps([{"id": c.pk, "name": c.name} for c in available_categories]),
                 "all_categories_json": json.dumps(
                     [
@@ -124,7 +126,7 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
             },
         )
 
-    def post(self, request, pk):
+    def post(self, request, pk):  # noqa: C901
         self._check_participant(request)
         competition = self._get_competition(pk)
         if competition.is_hidden and not can_manage(request.user, competition):
@@ -145,9 +147,24 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
             competition=competition, is_deleted=False
         )
 
-        if form.is_valid():
+        relay_enabled = competition.relay_enabled
+        relay_names = []
+        relay_birth_years = []
+        relay_cities = []
+        if relay_enabled:
+            relay_names = [n.strip() for n in request.POST.getlist("participant_name") if n.strip()]
+            relay_birth_years = [y.strip() for y in request.POST.getlist("participant_birth_year")]
+            relay_cities = [c.strip() for c in request.POST.getlist("participant_city")]
+            # Pad / trim auxiliary lists to match names length
+            relay_birth_years = (relay_birth_years + [""] * len(relay_names))[: len(relay_names)]
+            relay_cities = (relay_cities + [""] * len(relay_names))[: len(relay_names)]
+            if not relay_names:
+                form.add_error(None, "At least one participant name is required.")
+            elif len(relay_names) > competition.relay_max_members:
+                form.add_error(None, f"Maximum {competition.relay_max_members} members allowed.")
+
+        if form.is_valid() and not form.errors:
             cleaned = form.cleaned_data
-            birth_date = cleaned.get("birth_date") or datetime.date(cleaned["birth_year"], 1, 1)
 
             if not is_free:
                 first_name = user.first_name
@@ -155,14 +172,33 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
                 gender = user.gender
                 birth_date = user.birth_date
             else:
-                first_name = cleaned["first_name"]
-                last_name = cleaned["last_name"]
+                first_name = "" if relay_enabled else cleaned["first_name"]
+                last_name = "" if relay_enabled else cleaned["last_name"]
                 gender = cleaned["gender"]
+                if relay_enabled and relay_birth_years:
+                    try:
+                        birth_date = datetime.date(int(relay_birth_years[0]), 1, 1)
+                    except (ValueError, TypeError):
+                        birth_date = datetime.date(1900, 1, 1)
+                else:
+                    birth_date = cleaned.get("birth_date") or (
+                        datetime.date(cleaned["birth_year"], 1, 1)
+                        if cleaned.get("birth_year")
+                        else datetime.date(1900, 1, 1)
+                    )
 
-            if check_duplicate(competition, user, first_name, last_name, birth_date):
+            if not relay_enabled and check_duplicate(competition, user, first_name, last_name, birth_date):
                 form.add_error(None, "You are already registered for this competition.")
                 return render(
-                    request, self.template_name, {"competition": competition, "form": form, "is_free": is_free}
+                    request,
+                    self.template_name,
+                    {
+                        "competition": competition,
+                        "form": form,
+                        "is_free": is_free,
+                        "relay_enabled": relay_enabled,
+                        "relay_max_members": competition.relay_max_members,
+                    },
                 )
 
             team = None
@@ -171,10 +207,23 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
                 team = Team.get_or_restore(team_name)
 
             category = cleaned.get("category")
-            if category and (not category.matches(gender, birth_date) or not category.is_open()):
+            # For relay only check gender; birth years span multiple age groups
+            cat_ok = not category or (
+                category.is_open()
+                and (category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date))
+            )
+            if not cat_ok:
                 form.add_error("category", "This category is not available.")
                 return render(
-                    request, self.template_name, {"competition": competition, "form": form, "is_free": is_free}
+                    request,
+                    self.template_name,
+                    {
+                        "competition": competition,
+                        "form": form,
+                        "is_free": is_free,
+                        "relay_enabled": relay_enabled,
+                        "relay_max_members": competition.relay_max_members,
+                    },
                 )
 
             CompetitionRegistration.objects.create(
@@ -183,10 +232,13 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
                 registered_by=user,
                 first_name=first_name,
                 last_name=last_name,
+                participant_names="<BR>".join(relay_names) if relay_enabled else "",
+                participant_birth_years="<BR>".join(relay_birth_years) if relay_enabled else "",
+                participant_cities="<BR>".join(relay_cities) if relay_enabled else "",
                 birth_date=birth_date,
                 gender=gender,
                 category=category,
-                city=cleaned.get("city", ""),
+                city="" if relay_enabled else cleaned.get("city", ""),
                 team=team,
                 additional_info=cleaned.get("additional_info", ""),
             )
@@ -197,6 +249,10 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
 
             return redirect("registrations:participant_list", pk=competition.pk)
 
+        relay_members_post = [
+            {"name": n, "birth_year": y, "city": c}
+            for n, y, c in zip(relay_names, relay_birth_years, relay_cities, strict=False)
+        ]
         return render(
             request,
             self.template_name,
@@ -204,6 +260,9 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
                 "competition": competition,
                 "form": form,
                 "is_free": is_free,
+                "relay_enabled": relay_enabled,
+                "relay_max_members": competition.relay_max_members,
+                "relay_members_post": relay_members_post,
             },
         )
 
@@ -354,29 +413,83 @@ class ManualAddRegistrationView(View):
         form.fields["category"].queryset = RegistrationCategory.objects.filter(
             competition=competition, is_deleted=False
         )
-        return render(request, self.template_name, {"competition": competition, "form": form})
+        return render(
+            request,
+            self.template_name,
+            {
+                "competition": competition,
+                "form": form,
+                "relay_enabled": competition.relay_enabled,
+                "relay_max_members": competition.relay_max_members,
+            },
+        )
 
     def post(self, request, pk):
         competition = self._get_competition(pk, request.user)
+        relay_enabled = competition.relay_enabled
+        relay_names = []
+        relay_birth_years = []
+        relay_cities = []
+        if relay_enabled:
+            relay_names = [n.strip() for n in request.POST.getlist("participant_name") if n.strip()]
+            relay_birth_years = [y.strip() for y in request.POST.getlist("participant_birth_year")]
+            relay_cities = [c.strip() for c in request.POST.getlist("participant_city")]
+            relay_birth_years = (relay_birth_years + [""] * len(relay_names))[: len(relay_names)]
+            relay_cities = (relay_cities + [""] * len(relay_names))[: len(relay_names)]
+
         form = RegistrationForm(request.POST, competition=competition)
         form.fields["category"].queryset = RegistrationCategory.objects.filter(
             competition=competition, is_deleted=False
         )
-        if form.is_valid():
+
+        relay_members_post = [
+            {"name": n, "birth_year": y, "city": c}
+            for n, y, c in zip(relay_names, relay_birth_years, relay_cities, strict=False)
+        ]
+        ctx = {
+            "competition": competition,
+            "form": form,
+            "relay_enabled": relay_enabled,
+            "relay_max_members": competition.relay_max_members,
+            "relay_members_post": relay_members_post,
+        }
+
+        if relay_enabled:
+            if not relay_names:
+                form.add_error(None, "At least one participant name is required.")
+            elif len(relay_names) > competition.relay_max_members:
+                form.add_error(None, f"Maximum {competition.relay_max_members} members allowed.")
+
+        if form.is_valid() and not form.errors:
             cleaned = form.cleaned_data
-            birth_date = cleaned.get("birth_date") or datetime.date(cleaned["birth_year"], 1, 1)
-            first_name = cleaned["first_name"]
-            last_name = cleaned["last_name"]
+            first_name = "" if relay_enabled else cleaned["first_name"]
+            last_name = "" if relay_enabled else cleaned["last_name"]
             gender = cleaned["gender"]
             category = cleaned.get("category")
 
-            if category and (not category.matches(gender, birth_date) or not category.is_open()):
-                form.add_error("category", "This category is not available.")
-                return render(request, self.template_name, {"competition": competition, "form": form})
+            if relay_enabled and relay_birth_years:
+                try:
+                    birth_date = datetime.date(int(relay_birth_years[0]), 1, 1)
+                except (ValueError, TypeError):
+                    birth_date = datetime.date(1900, 1, 1)
+            else:
+                birth_date = cleaned.get("birth_date") or (
+                    datetime.date(cleaned["birth_year"], 1, 1)
+                    if cleaned.get("birth_year")
+                    else datetime.date(1900, 1, 1)
+                )
 
-            if check_duplicate(competition, None, first_name, last_name, birth_date):
+            cat_ok = not category or (
+                category.is_open()
+                and (category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date))
+            )
+            if not cat_ok:
+                form.add_error("category", "This category is not available.")
+                return render(request, self.template_name, ctx)
+
+            if not relay_enabled and check_duplicate(competition, None, first_name, last_name, birth_date):
                 form.add_error(None, "A participant with this name and birth year is already registered.")
-                return render(request, self.template_name, {"competition": competition, "form": form})
+                return render(request, self.template_name, ctx)
 
             team_name = cleaned.get("team_name", "").strip()
             team = Team.get_or_restore(team_name) if team_name else None
@@ -385,15 +498,19 @@ class ManualAddRegistrationView(View):
                 registered_by=request.user,
                 first_name=first_name,
                 last_name=last_name,
+                participant_names="<BR>".join(relay_names) if relay_enabled else "",
+                participant_birth_years="<BR>".join(relay_birth_years) if relay_enabled else "",
+                participant_cities="<BR>".join(relay_cities) if relay_enabled else "",
                 birth_date=birth_date,
                 gender=gender,
                 category=category,
-                city=cleaned.get("city", ""),
+                city="" if relay_enabled else cleaned.get("city", ""),
                 team=team,
                 additional_info=cleaned.get("additional_info", ""),
             )
             return redirect("registrations:participant_list", pk=pk)
-        return render(request, self.template_name, {"competition": competition, "form": form})
+
+        return render(request, self.template_name, ctx)
 
 
 class ParticipantsAPIView(View):
@@ -444,6 +561,13 @@ class ParticipantsAPIView(View):
                     "id": r.pk,
                     "first_name": r.first_name,
                     "last_name": r.last_name,
+                    "participant_names": r.participant_names
+                    if r.participant_names
+                    else f"{r.last_name} {r.first_name}".strip(),
+                    "participant_birth_years": r.participant_birth_years
+                    if r.participant_birth_years
+                    else str(r.birth_date.year),
+                    "participant_cities": r.participant_cities if r.participant_cities else r.city,
                     "birth_date": r.birth_date.isoformat(),
                     "birth_year": r.birth_date.year,
                     "gender": r.gender,
@@ -472,13 +596,15 @@ class ExportParticipantsCSVView(View):
         writer.writerow(
             [
                 "#",
+                "Participant(s)",
                 "Last name",
                 "First name",
                 "Gender",
                 "Birth date",
+                "Birth year(s)",
+                "City/Cities",
                 "Category",
                 "Team",
-                "City",
                 "Additional info",
                 "Approved",
                 "Paid",
@@ -490,13 +616,19 @@ class ExportParticipantsCSVView(View):
             writer.writerow(
                 [
                     i,
+                    reg.participant_names.replace("<BR>", "; ")
+                    if reg.participant_names
+                    else f"{reg.last_name} {reg.first_name}".strip(),
                     reg.last_name,
                     reg.first_name,
                     reg.gender,
                     reg.birth_date.isoformat(),
+                    reg.participant_birth_years.replace("<BR>", "; ")
+                    if reg.participant_birth_years
+                    else str(reg.birth_date.year),
+                    reg.participant_cities.replace("<BR>", "; ") if reg.participant_cities else reg.city,
                     reg.category.name if reg.category else "",
                     reg.team.name if reg.team else "",
-                    reg.city,
                     reg.additional_info,
                     reg.is_approved,
                     reg.is_paid,

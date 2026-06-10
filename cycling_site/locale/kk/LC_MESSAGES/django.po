@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-09 11:54+0000\n"
+"POT-Creation-Date: 2026-06-10 11:00+0000\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -22,7 +22,7 @@ msgid "Role"
 msgstr "Рол"
 
 #: accounts/templates/accounts/profile.html:15
-#: calendar_app/templates/calendar_app/_registration_fields.html:209
+#: calendar_app/templates/calendar_app/_registration_fields.html:237
 #: locations/templates/locations/locations_map_page.html:40
 #: registrations/templates/registrations/participant_list.html:54
 msgid "Name"
@@ -31,13 +31,13 @@ msgstr "Аты"
 #: accounts/templates/accounts/profile.html:18
 #: accounts/templates/accounts/profile_edit.html:25
 #: registrations/templates/registrations/participant_list.html:55
-#: registrations/templates/registrations/register.html:56
+#: registrations/templates/registrations/register.html:114
 msgid "Gender"
 msgstr "Жынысы"
 
 #: accounts/templates/accounts/profile.html:21
 #: accounts/templates/accounts/profile_edit.html:41
-#: registrations/templates/registrations/register.html:90
+#: registrations/templates/registrations/register.html:148
 msgid "Date of birth"
 msgstr "Туған күні"
 
@@ -76,20 +76,20 @@ msgid "Submit article"
 msgstr "Мақала жіберу"
 
 #: accounts/templates/accounts/profile.html:59
-#: calendar_app/templates/calendar_app/edit.html:36
-#: calendar_app/templates/calendar_app/edit.html:48
-#: calendar_app/templates/calendar_app/edit.html:60
-#: calendar_app/templates/calendar_app/list.html:105
-#: calendar_app/templates/calendar_app/submit.html:28
-#: calendar_app/templates/calendar_app/submit.html:40
-#: calendar_app/templates/calendar_app/submit.html:52 news/forms.py:29
+#: calendar_app/templates/calendar_app/edit.html:37
+#: calendar_app/templates/calendar_app/edit.html:49
+#: calendar_app/templates/calendar_app/edit.html:61
+#: calendar_app/templates/calendar_app/list.html:257
+#: calendar_app/templates/calendar_app/submit.html:29
+#: calendar_app/templates/calendar_app/submit.html:41
+#: calendar_app/templates/calendar_app/submit.html:53 news/forms.py:29
 #: news/forms.py:34 news/forms.py:40
 msgid "Title"
 msgstr "Атауы"
 
 #: accounts/templates/accounts/profile.html:60
 #: calendar_app/templates/calendar_app/detail.html:28
-#: calendar_app/templates/calendar_app/list.html:107
+#: calendar_app/templates/calendar_app/list.html:259
 msgid "Type"
 msgstr "Түрі"
 
@@ -122,7 +122,7 @@ msgstr "Жарыс"
 
 #: accounts/templates/accounts/profile.html:100
 #: registrations/templates/registrations/participant_list.html:56
-#: registrations/templates/registrations/register.html:99
+#: registrations/templates/registrations/register.html:157
 msgid "Category"
 msgstr "Санат"
 
@@ -151,51 +151,51 @@ msgid "Log out"
 msgstr "Шыгу"
 
 #: accounts/templates/accounts/profile_edit.html:13
-#: registrations/templates/registrations/register.html:46
+#: registrations/templates/registrations/register.html:103
 msgid "First name"
 msgstr "Аты"
 
 #: accounts/templates/accounts/profile_edit.html:19
-#: registrations/templates/registrations/register.html:36
+#: registrations/templates/registrations/register.html:93
 msgid "Last name"
 msgstr "Тегі"
 
 #: accounts/templates/accounts/profile_edit.html:31
-#: registrations/templates/registrations/register.html:62
+#: registrations/templates/registrations/register.html:120
 msgid "Male"
 msgstr "Еркек"
 
 #: accounts/templates/accounts/profile_edit.html:36
-#: registrations/templates/registrations/register.html:68
+#: registrations/templates/registrations/register.html:126
 msgid "Female"
 msgstr "Әйел"
 
 #: accounts/templates/accounts/profile_edit.html:46
-#: calendar_app/templates/calendar_app/edit.html:201
+#: calendar_app/templates/calendar_app/edit.html:205
 #: registrations/templates/registrations/edit_registration.html:28
 msgid "Save"
 msgstr "Сақтау"
 
 #: accounts/templates/accounts/profile_edit.html:47
-#: calendar_app/templates/calendar_app/edit.html:202
-#: calendar_app/templates/calendar_app/submit.html:183
-#: home/templates/home/home_edit.html:110
+#: calendar_app/templates/calendar_app/edit.html:206
+#: calendar_app/templates/calendar_app/submit.html:189
+#: home/templates/home/home_edit.html:112
 #: knowledge/templates/knowledge/admin/approve_confirm.html:21
 #: knowledge/templates/knowledge/admin/reject_form.html:22
 #: knowledge/templates/knowledge/submit.html:51
 #: news/templates/news/article_form.html:139
 #: news/templates/news/article_form.html:141 news/templates/news/submit.html:26
 #: registrations/templates/registrations/edit_registration.html:29
-#: registrations/templates/registrations/manual_add.html:30
-#: registrations/templates/registrations/register.html:140
+#: registrations/templates/registrations/manual_add.html:89
+#: registrations/templates/registrations/register.html:200
 msgid "Cancel"
 msgstr "Болдырмау"
 
 #: calendar_app/forms.py:38
 #: calendar_app/templates/calendar_app/calendar.html:48
-#: calendar_app/templates/calendar_app/edit.html:89
-#: calendar_app/templates/calendar_app/list.html:40
-#: calendar_app/templates/calendar_app/submit.html:81
+#: calendar_app/templates/calendar_app/edit.html:92
+#: calendar_app/templates/calendar_app/list.html:41
+#: calendar_app/templates/calendar_app/submit.html:86
 msgid "Direction"
 msgstr "Бағыт"
 
@@ -207,6 +207,46 @@ msgstr ""
 #, python-format
 msgid "Unsupported file type. Allowed: %(allowed)s."
 msgstr ""
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:3
+#: calendar_app/templates/calendar_app/detail.html:34
+#: calendar_app/templates/calendar_app/list.html:261
+msgid "Location"
+msgstr "Орын"
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:6
+#: calendar_app/templates/calendar_app/calendar.html:66
+#: calendar_app/templates/calendar_app/list.html:59
+msgid "Country"
+msgstr "Ел"
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:12
+#: calendar_app/templates/calendar_app/calendar.html:72
+#: calendar_app/templates/calendar_app/list.html:65
+msgid "Region"
+msgstr "Өлке"
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:18
+#: calendar_app/templates/calendar_app/calendar.html:78
+#: calendar_app/templates/calendar_app/list.html:71
+#: registrations/templates/registrations/manual_add.html:28
+#: registrations/templates/registrations/manual_add.html:44
+#: registrations/templates/registrations/manual_add.html:64
+#: registrations/templates/registrations/manual_add.html:100
+#: registrations/templates/registrations/participant_list.html:58
+#: registrations/templates/registrations/register.html:41
+#: registrations/templates/registrations/register.html:57
+#: registrations/templates/registrations/register.html:77
+#: registrations/templates/registrations/register.html:172
+#: registrations/templates/registrations/register.html:211
+msgid "City"
+msgstr "Қала"
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:24
+#: calendar_app/templates/calendar_app/calendar.html:84
+#: calendar_app/templates/calendar_app/list.html:77
+msgid "Venue"
+msgstr "Орын"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:3
 msgid "Registration mode"
@@ -233,7 +273,7 @@ msgid "Birth date mode"
 msgstr "Туған күн форматы"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:31
-#: registrations/templates/registrations/register.html:79
+#: registrations/templates/registrations/register.html:137
 msgid "Year of birth"
 msgstr "Туған жылы"
 
@@ -258,7 +298,7 @@ msgid "Registration deadline"
 msgstr "Тіркелу мерзімі"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:91
-#: calendar_app/templates/calendar_app/_registration_fields.html:232
+#: calendar_app/templates/calendar_app/_registration_fields.html:260
 msgid "Max participants"
 msgstr "Қатысушылар саны"
 
@@ -266,59 +306,69 @@ msgstr "Қатысушылар саны"
 msgid "Show additional info field"
 msgstr "Қосымша ақпарат өрісін көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:106
+#: calendar_app/templates/calendar_app/_registration_fields.html:110
+#, fuzzy
+#| msgid "Allow multiple registrations"
+msgid "Allow relay / team registration"
+msgstr "Бірнеше тіркелуге рұқсат"
+
+#: calendar_app/templates/calendar_app/_registration_fields.html:114
+msgid "Max members"
+msgstr ""
+
+#: calendar_app/templates/calendar_app/_registration_fields.html:134
 msgid "Display settings"
 msgstr "Көрсету баптаулары"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:121
+#: calendar_app/templates/calendar_app/_registration_fields.html:149
 msgid "Show unapproved in list"
 msgstr "Расталмағандарды тізімде көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:128
+#: calendar_app/templates/calendar_app/_registration_fields.html:156
 msgid "Show unpaid in list"
 msgstr "Төлем жасамағандарды тізімде көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:135
+#: calendar_app/templates/calendar_app/_registration_fields.html:163
 msgid "Show approval column"
 msgstr "Растау бағанын көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:142
+#: calendar_app/templates/calendar_app/_registration_fields.html:170
 msgid "Show payment column"
 msgstr "Төлем бағанын көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:182
+#: calendar_app/templates/calendar_app/_registration_fields.html:210
 msgid "Categories"
 msgstr "Санаттар"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:184
+#: calendar_app/templates/calendar_app/_registration_fields.html:212
 msgid "Add category"
 msgstr "Санат қосу"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:218
+#: calendar_app/templates/calendar_app/_registration_fields.html:246
 msgid "From year"
 msgstr "Жылдан бастап"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:218
+#: calendar_app/templates/calendar_app/_registration_fields.html:246
 msgid "From date"
 msgstr "Күнінен бастап"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:221
+#: calendar_app/templates/calendar_app/_registration_fields.html:249
 msgid "To year"
 msgstr "Жылға дейін"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:221
+#: calendar_app/templates/calendar_app/_registration_fields.html:249
 msgid "To date"
 msgstr "Күніне дейін"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:226
+#: calendar_app/templates/calendar_app/_registration_fields.html:254
 msgid "Laps"
 msgstr "Айналым"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:228
+#: calendar_app/templates/calendar_app/_registration_fields.html:256
 msgid "Bib from"
 msgstr "Нөмір бастап"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:230
+#: calendar_app/templates/calendar_app/_registration_fields.html:258
 msgid "Bib to"
 msgstr "Нөмір дейін"
 
@@ -337,20 +387,20 @@ msgid "List view"
 msgstr "Тізім"
 
 #: calendar_app/templates/calendar_app/calendar.html:25
-#: calendar_app/templates/calendar_app/list.html:13
+#: calendar_app/templates/calendar_app/list.html:14
 #: calendar_app/templates/calendar_app/submit.html:4
-#: calendar_app/templates/calendar_app/submit.html:9
+#: calendar_app/templates/calendar_app/submit.html:10
 msgid "Submit competition"
 msgstr "Жарыс қосу"
 
 #: calendar_app/templates/calendar_app/calendar.html:27
-#: calendar_app/templates/calendar_app/list.html:15
+#: calendar_app/templates/calendar_app/list.html:16
 #: calendar_app/templates/calendar_app/moderate.html:4
 msgid "Moderation"
 msgstr "Модерация"
 
 #: calendar_app/templates/calendar_app/calendar.html:39
-#: calendar_app/templates/calendar_app/list.html:36
+#: calendar_app/templates/calendar_app/list.html:37
 msgid "Event type"
 msgstr "Іс-шара түрі"
 
@@ -360,92 +410,74 @@ msgstr "Іс-шара түрі"
 #: calendar_app/templates/calendar_app/calendar.html:68
 #: calendar_app/templates/calendar_app/calendar.html:74
 #: calendar_app/templates/calendar_app/calendar.html:80
-#: calendar_app/templates/calendar_app/calendar.html:132
-#: calendar_app/templates/calendar_app/calendar.html:143
-#: calendar_app/templates/calendar_app/calendar.html:155
+#: calendar_app/templates/calendar_app/calendar.html:86
+#: calendar_app/templates/calendar_app/calendar.html:156
+#: calendar_app/templates/calendar_app/calendar.html:168
+#: calendar_app/templates/calendar_app/calendar.html:183
+#: calendar_app/templates/calendar_app/calendar.html:196
+#: calendar_app/templates/calendar_app/calendar.html:276
+#: calendar_app/templates/calendar_app/calendar.html:285
+#: calendar_app/templates/calendar_app/calendar.html:295
 msgid "All"
 msgstr "Барлығы"
 
 #: calendar_app/templates/calendar_app/calendar.html:57
 #: calendar_app/templates/calendar_app/detail.html:31
-#: calendar_app/templates/calendar_app/edit.html:98
-#: calendar_app/templates/calendar_app/list.html:49
-#: calendar_app/templates/calendar_app/list.html:108
-#: calendar_app/templates/calendar_app/submit.html:90
+#: calendar_app/templates/calendar_app/edit.html:101
+#: calendar_app/templates/calendar_app/list.html:50
+#: calendar_app/templates/calendar_app/list.html:260
+#: calendar_app/templates/calendar_app/submit.html:95
 msgid "Discipline"
 msgstr "Пән"
 
-#: calendar_app/templates/calendar_app/calendar.html:66
-msgid "Country"
-msgstr "Ел"
-
-#: calendar_app/templates/calendar_app/calendar.html:72
-msgid "Region"
-msgstr "Өлке"
-
-#: calendar_app/templates/calendar_app/calendar.html:78
-#: registrations/templates/registrations/participant_list.html:58
-#: registrations/templates/registrations/register.html:113
-msgid "City"
-msgstr "Қала"
-
-msgid "Venue"
-msgstr "Орын"
-
 #: calendar_app/templates/calendar_app/detail.html:12
-#: calendar_app/templates/calendar_app/edit.html:11
-#: calendar_app/templates/calendar_app/list.html:9
+#: calendar_app/templates/calendar_app/edit.html:12
+#: calendar_app/templates/calendar_app/list.html:10
 #: search/templates/search/search.html:21
 msgid "Competitions"
 msgstr "Жарыстар"
 
 #: calendar_app/templates/calendar_app/detail.html:21
-#: calendar_app/templates/calendar_app/list.html:106
+#: calendar_app/templates/calendar_app/list.html:258
 msgid "Dates"
 msgstr "Күндер"
 
-#: calendar_app/templates/calendar_app/detail.html:34
-#: calendar_app/templates/calendar_app/list.html:58
-#: calendar_app/templates/calendar_app/list.html:109
-msgid "Location"
-msgstr "Орын"
-
 #: calendar_app/templates/calendar_app/detail.html:46
 #: calendar_app/templates/calendar_app/detail.html:49
-#: calendar_app/templates/calendar_app/edit.html:134
+#: calendar_app/templates/calendar_app/edit.html:138
 #: calendar_app/templates/calendar_app/moderate.html:36
-#: calendar_app/templates/calendar_app/submit.html:125
+#: calendar_app/templates/calendar_app/submit.html:131
 msgid "Announcement"
 msgstr "Хабарлама"
 
 #: calendar_app/templates/calendar_app/detail.html:53
 #: calendar_app/templates/calendar_app/detail.html:192
-#: calendar_app/templates/calendar_app/list.html:138
+#: calendar_app/templates/calendar_app/list.html:290
 #: cycling_site/templates/base.html:132
 #: registrations/templates/registrations/register.html:4
 #: registrations/templates/registrations/register.html:13
-#: registrations/templates/registrations/register.html:138
+#: registrations/templates/registrations/register.html:198
 msgid "Register"
 msgstr "Тiркелу"
 
 #: calendar_app/templates/calendar_app/detail.html:57
 #: calendar_app/templates/calendar_app/detail.html:60
-#: calendar_app/templates/calendar_app/edit.html:152
-#: calendar_app/templates/calendar_app/submit.html:140
+#: calendar_app/templates/calendar_app/edit.html:156
+#: calendar_app/templates/calendar_app/submit.html:146
 msgid "Route"
 msgstr "Маршрут"
 
 #: calendar_app/templates/calendar_app/detail.html:64
 #: calendar_app/templates/calendar_app/detail.html:67
-#: calendar_app/templates/calendar_app/edit.html:164
-#: calendar_app/templates/calendar_app/submit.html:149
+#: calendar_app/templates/calendar_app/edit.html:168
+#: calendar_app/templates/calendar_app/submit.html:155
 msgid "Regulations"
 msgstr "Ереже"
 
 #: calendar_app/templates/calendar_app/detail.html:71
 #: calendar_app/templates/calendar_app/detail.html:74
-#: calendar_app/templates/calendar_app/edit.html:176
-#: calendar_app/templates/calendar_app/submit.html:158
+#: calendar_app/templates/calendar_app/edit.html:180
+#: calendar_app/templates/calendar_app/submit.html:164
 msgid "Results"
 msgstr "Нәтижелер"
 
@@ -487,7 +519,7 @@ msgstr "Бұл жарыс жалпы көрінімнен жасырылған."
 
 #: calendar_app/templates/calendar_app/detail.html:123
 #: calendar_app/templates/calendar_app/edit.html:4
-#: calendar_app/templates/calendar_app/edit.html:17
+#: calendar_app/templates/calendar_app/edit.html:18
 msgid "Edit competition"
 msgstr "Жарысты өңдеу"
 
@@ -576,52 +608,52 @@ msgstr "Тіркелу жабық"
 msgid "Participant list"
 msgstr "Қатысушылар тізімі"
 
-#: calendar_app/templates/calendar_app/edit.html:13
+#: calendar_app/templates/calendar_app/edit.html:14
 #: registrations/templates/registrations/participant_list.html:107
 msgid "Edit"
 msgstr "Өңдеу"
 
-#: calendar_app/templates/calendar_app/edit.html:41
-#: calendar_app/templates/calendar_app/edit.html:53
-#: calendar_app/templates/calendar_app/edit.html:65
-#: calendar_app/templates/calendar_app/submit.html:33
-#: calendar_app/templates/calendar_app/submit.html:45
-#: calendar_app/templates/calendar_app/submit.html:57
+#: calendar_app/templates/calendar_app/edit.html:42
+#: calendar_app/templates/calendar_app/edit.html:54
+#: calendar_app/templates/calendar_app/edit.html:66
+#: calendar_app/templates/calendar_app/submit.html:34
+#: calendar_app/templates/calendar_app/submit.html:46
+#: calendar_app/templates/calendar_app/submit.html:58
 msgid "Description"
 msgstr "Сипаттама"
 
-#: calendar_app/templates/calendar_app/edit.html:131
-#: calendar_app/templates/calendar_app/submit.html:122
+#: calendar_app/templates/calendar_app/edit.html:135
+#: calendar_app/templates/calendar_app/submit.html:128
 msgid "Documents"
 msgstr "Құжаттар"
 
-#: calendar_app/templates/calendar_app/edit.html:137
-#: calendar_app/templates/calendar_app/edit.html:155
-#: calendar_app/templates/calendar_app/edit.html:167
-#: calendar_app/templates/calendar_app/edit.html:179
-#: calendar_app/templates/calendar_app/submit.html:128
-#: calendar_app/templates/calendar_app/submit.html:143
-#: calendar_app/templates/calendar_app/submit.html:152
-#: calendar_app/templates/calendar_app/submit.html:161
+#: calendar_app/templates/calendar_app/edit.html:141
+#: calendar_app/templates/calendar_app/edit.html:159
+#: calendar_app/templates/calendar_app/edit.html:171
+#: calendar_app/templates/calendar_app/edit.html:183
+#: calendar_app/templates/calendar_app/submit.html:134
+#: calendar_app/templates/calendar_app/submit.html:149
+#: calendar_app/templates/calendar_app/submit.html:158
+#: calendar_app/templates/calendar_app/submit.html:167
 msgid "or upload file"
 msgstr "немесе файл жүктеу"
 
-#: calendar_app/templates/calendar_app/edit.html:139
-#: calendar_app/templates/calendar_app/edit.html:157
-#: calendar_app/templates/calendar_app/edit.html:169
-#: calendar_app/templates/calendar_app/edit.html:181
+#: calendar_app/templates/calendar_app/edit.html:143
+#: calendar_app/templates/calendar_app/edit.html:161
+#: calendar_app/templates/calendar_app/edit.html:173
+#: calendar_app/templates/calendar_app/edit.html:185
 msgid "Current file"
 msgstr "Ағымдағы файл"
 
-#: calendar_app/templates/calendar_app/edit.html:139
-#: calendar_app/templates/calendar_app/edit.html:157
-#: calendar_app/templates/calendar_app/edit.html:169
-#: calendar_app/templates/calendar_app/edit.html:181
+#: calendar_app/templates/calendar_app/edit.html:143
+#: calendar_app/templates/calendar_app/edit.html:161
+#: calendar_app/templates/calendar_app/edit.html:173
+#: calendar_app/templates/calendar_app/edit.html:185
 msgid "Download"
 msgstr "Жүктеп алу"
 
-#: calendar_app/templates/calendar_app/edit.html:192
-#: calendar_app/templates/calendar_app/submit.html:172
+#: calendar_app/templates/calendar_app/edit.html:196
+#: calendar_app/templates/calendar_app/submit.html:178
 msgid "Enable registration for this competition"
 msgstr "Осы жарыс үшін тіркелуді қосу"
 
@@ -629,57 +661,57 @@ msgstr "Осы жарыс үшін тіркелуді қосу"
 msgid "Competition list"
 msgstr "Жарыстар тізімі"
 
-#: calendar_app/templates/calendar_app/list.html:11
+#: calendar_app/templates/calendar_app/list.html:12
 msgid "Calendar view"
 msgstr "Күнтізбе көрінісі"
 
-#: calendar_app/templates/calendar_app/list.html:26
+#: calendar_app/templates/calendar_app/list.html:27
 msgid "Date from"
 msgstr "Күнінен бастап"
 
-#: calendar_app/templates/calendar_app/list.html:31
+#: calendar_app/templates/calendar_app/list.html:32
 msgid "Date to"
 msgstr "Күніне дейін"
 
-#: calendar_app/templates/calendar_app/list.html:62
+#: calendar_app/templates/calendar_app/list.html:84
 msgid "Reset"
 msgstr "Тазалау"
 
-#: calendar_app/templates/calendar_app/list.html:110
+#: calendar_app/templates/calendar_app/list.html:262
 msgid "Links"
 msgstr "Сілтемелер"
 
-#: calendar_app/templates/calendar_app/list.html:120
+#: calendar_app/templates/calendar_app/list.html:272
 #: locations/templates/locations/locations_map_page.html:50
 #: news/templates/news/news_list.html:29
 msgid "Hidden"
 msgstr "Жасырылған"
 
-#: calendar_app/templates/calendar_app/list.html:134
+#: calendar_app/templates/calendar_app/list.html:286
 #: registrations/templates/registrations/participant_list.html:59
 msgid "Info"
 msgstr "Ақпарат"
 
-#: calendar_app/templates/calendar_app/list.html:148
+#: calendar_app/templates/calendar_app/list.html:300
 #: knowledge/templates/knowledge/knowledge_index_page.html:54
 #: news/templates/news/news_index_page.html:49
 #: news/templates/news/news_list.html:51
 msgid "Pagination"
 msgstr "Беттер"
 
-#: calendar_app/templates/calendar_app/list.html:153
+#: calendar_app/templates/calendar_app/list.html:305
 #: news/templates/news/news_index_page.html:54
 #: news/templates/news/news_list.html:55 search/templates/search/search.html:65
 msgid "Previous"
 msgstr "Артка"
 
-#: calendar_app/templates/calendar_app/list.html:163
+#: calendar_app/templates/calendar_app/list.html:315
 #: news/templates/news/news_index_page.html:66
 #: news/templates/news/news_list.html:63 search/templates/search/search.html:69
 msgid "Next"
 msgstr "Алга"
 
-#: calendar_app/templates/calendar_app/list.html:172
+#: calendar_app/templates/calendar_app/list.html:324
 msgid "No competitions found for the selected period."
 msgstr "Таңдалған кезең үшін жарыстар табылмады."
 
@@ -718,7 +750,7 @@ msgstr "Қабылдамауды растау"
 msgid "No competitions pending approval."
 msgstr "Бекітуді күтетін жарыстар жоқ."
 
-#: calendar_app/templates/calendar_app/submit.html:182
+#: calendar_app/templates/calendar_app/submit.html:188
 #: knowledge/templates/knowledge/submit.html:50
 msgid "Submit"
 msgstr "Жіберу"
@@ -775,60 +807,60 @@ msgstr ""
 "Қате таптыңыз ба немесе ұсыныс бар ма? <a href=\"%(url)s\" target=\"_blank\" "
 "rel=\"noopener\">GitHub-та тапсырма жасаңыз</a>."
 
-#: home/forms.py:33
+#: home/forms.py:35
 msgid "Navbar title (RU)"
 msgstr "Тақырыптағы атау (RU)"
 
-#: home/forms.py:34
+#: home/forms.py:36
 msgid "Navbar title (KK)"
 msgstr "Тақырыптағы атау (KK)"
 
-#: home/forms.py:35
+#: home/forms.py:37
 msgid "Navbar title (EN)"
 msgstr "Тақырыптағы атау (EN)"
 
-#: home/forms.py:36
+#: home/forms.py:38
 msgid "Tab title (RU)"
 msgstr "Қойынды атауы (RU)"
 
-#: home/forms.py:37
+#: home/forms.py:39
 msgid "Tab title (KK)"
 msgstr "Қойынды атауы (KK)"
 
-#: home/forms.py:38
+#: home/forms.py:40
 msgid "Tab title (EN)"
 msgstr "Қойынды атауы (EN)"
 
-#: home/templates/home/home_edit.html:4 home/templates/home/home_edit.html:18
+#: home/templates/home/home_edit.html:4 home/templates/home/home_edit.html:17
 msgid "Edit home page"
 msgstr "Басты бетті өңдеу"
 
-#: home/templates/home/home_edit.html:45 home/templates/home/home_edit.html:68
-#: home/templates/home/home_edit.html:89
+#: home/templates/home/home_edit.html:47 home/templates/home/home_edit.html:70
+#: home/templates/home/home_edit.html:91
 msgid "Navbar title"
 msgstr "Тақырыптағы атау"
 
-#: home/templates/home/home_edit.html:52 home/templates/home/home_edit.html:74
-#: home/templates/home/home_edit.html:95
+#: home/templates/home/home_edit.html:54 home/templates/home/home_edit.html:76
+#: home/templates/home/home_edit.html:97
 msgid "Tab title"
 msgstr "Қойынды атауы"
 
-#: home/templates/home/home_edit.html:58
+#: home/templates/home/home_edit.html:60
 #: news/templates/news/article_form.html:69
 msgid "Body (RU)"
 msgstr "Мазмұны (RU)"
 
-#: home/templates/home/home_edit.html:79
+#: home/templates/home/home_edit.html:81
 #: news/templates/news/article_form.html:86
 msgid "Body (KK)"
 msgstr "Мазмұны (KK)"
 
-#: home/templates/home/home_edit.html:100
+#: home/templates/home/home_edit.html:102
 #: news/templates/news/article_form.html:103
 msgid "Body (EN)"
 msgstr "Мазмұны (EN)"
 
-#: home/templates/home/home_edit.html:109
+#: home/templates/home/home_edit.html:111
 #: news/templates/news/article_form.html:136
 msgid "Save changes"
 msgstr "Өзгерістерді сақтау"
@@ -1072,7 +1104,44 @@ msgstr "Қатысушыны қолмен қосу"
 msgid "Manual add"
 msgstr "Қолмен қосу"
 
-#: registrations/templates/registrations/manual_add.html:29
+#: registrations/templates/registrations/manual_add.html:24
+#: registrations/templates/registrations/register.html:37
+msgid "Team members"
+msgstr "Команда мүшелері"
+
+#: registrations/templates/registrations/manual_add.html:26
+#: registrations/templates/registrations/manual_add.html:36
+#: registrations/templates/registrations/manual_add.html:56
+#: registrations/templates/registrations/manual_add.html:98
+#: registrations/templates/registrations/register.html:39
+#: registrations/templates/registrations/register.html:49
+#: registrations/templates/registrations/register.html:69
+#: registrations/templates/registrations/register.html:209
+msgid "Full name"
+msgstr "Аты-жөні"
+
+#: registrations/templates/registrations/manual_add.html:27
+#: registrations/templates/registrations/manual_add.html:40
+#: registrations/templates/registrations/manual_add.html:60
+#: registrations/templates/registrations/manual_add.html:99
+#: registrations/templates/registrations/register.html:40
+#: registrations/templates/registrations/register.html:53
+#: registrations/templates/registrations/register.html:73
+#: registrations/templates/registrations/register.html:210
+msgid "Year"
+msgstr "Жыл"
+
+#: registrations/templates/registrations/manual_add.html:74
+#: registrations/templates/registrations/register.html:87
+msgid "Add member"
+msgstr "Мүше қосу"
+
+#: registrations/templates/registrations/manual_add.html:76
+#: registrations/templates/registrations/register.html:89
+msgid "Maximum"
+msgstr "Максимум"
+
+#: registrations/templates/registrations/manual_add.html:88
 msgid "Add"
 msgstr "Қосу"
 
@@ -1089,7 +1158,7 @@ msgid "Birth"
 msgstr "Туған жылы"
 
 #: registrations/templates/registrations/participant_list.html:57
-#: registrations/templates/registrations/register.html:119
+#: registrations/templates/registrations/register.html:179
 msgid "Team"
 msgstr "Команда"
 
@@ -1144,11 +1213,11 @@ msgstr "жынысы"
 msgid "date of birth"
 msgstr "туған күні"
 
-#: registrations/templates/registrations/register.html:102
+#: registrations/templates/registrations/register.html:160
 msgid "select"
 msgstr "таңдау"
 
-#: registrations/templates/registrations/register.html:126
+#: registrations/templates/registrations/register.html:186
 msgid "Additional info"
 msgstr "Қосымша ақпарат"
 

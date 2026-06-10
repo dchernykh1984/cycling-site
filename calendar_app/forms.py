@@ -131,6 +131,12 @@ class RegistrationSettingsForm(forms.Form):
     show_approval_status_col = forms.BooleanField(required=False)
     show_payment_status_col = forms.BooleanField(required=False)
     show_additional_info_field = forms.BooleanField(required=False)
+    relay_enabled = forms.BooleanField(required=False)
+    relay_max_members = forms.IntegerField(
+        required=False,
+        min_value=2,
+        widget=forms.NumberInput(attrs={"class": "form-control", "style": "width:80px;"}),
+    )
     categories_json = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def get_categories(self) -> list[dict]:

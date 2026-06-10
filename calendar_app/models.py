@@ -161,6 +161,9 @@ class Competition(index.Indexed, models.Model):
     show_payment_status_col = models.BooleanField(default=False)
     show_additional_info_field = models.BooleanField(default=True)
 
+    relay_enabled = models.BooleanField(default=False)
+    relay_max_members = models.PositiveIntegerField(default=10)
+
     # Permanent lock: True once registration is first activated; never reset to False.
     registration_mode_locked = models.BooleanField(default=False)
 

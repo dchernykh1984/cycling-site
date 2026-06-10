@@ -35,6 +35,13 @@ class RegistrationForm(forms.Form):
             if not competition.show_additional_info_field:
                 del self.fields["additional_info"]
 
+            if competition.relay_enabled:
+                self.fields["first_name"].required = False
+                self.fields["last_name"].required = False
+                for fname in ("birth_year", "birth_date"):
+                    if fname in self.fields:
+                        self.fields[fname].required = False
+
         for field_name in self._readonly_fields:
             if field_name in self.fields:
                 self.fields[field_name].widget.attrs["readonly"] = True
@@ -61,6 +68,9 @@ class EditRegistrationForm(forms.ModelForm):
         fields: ClassVar[list[str]] = [
             "first_name",
             "last_name",
+            "participant_names",
+            "participant_birth_years",
+            "participant_cities",
             "birth_date",
             "gender",
             "category",
@@ -72,6 +82,9 @@ class EditRegistrationForm(forms.ModelForm):
         widgets: ClassVar[dict] = {
             "birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "gender": forms.RadioSelect(choices=[("M", "M"), ("F", "F")]),
+            "participant_names": forms.Textarea(attrs={"rows": 4, "placeholder": "Name1<BR>Name2<BR>Name3"}),
+            "participant_birth_years": forms.TextInput(attrs={"placeholder": "1990<BR>1995<BR>2000"}),
+            "participant_cities": forms.TextInput(attrs={"placeholder": "City1<BR>City2<BR>City3"}),
         }
 
     def __init__(self, *args, competition=None, service_fields_only=False, **kwargs):

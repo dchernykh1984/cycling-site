@@ -18,8 +18,67 @@
 
 <form method="post">
 {% csrf_token %}
-{% for field in form %}
+
+{% if relay_enabled %}
 <div class="mb-3">
+  <label class="form-label fw-semibold">{% trans "Team members" %} *</label>
+  <div class="row g-1 mb-1 small text-muted d-none d-md-flex">
+    <div class="col-md-5 ps-3">{% trans "Full name" %}</div>
+    <div class="col-md-2">{% trans "Year" %}</div>
+    <div class="col-md-4">{% trans "City" %}</div>
+  </div>
+  <div id="relay-names-container">
+    {% for m in relay_members_post %}
+    <div class="relay-member mb-2">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <input type="text" name="participant_name" value="{{ m.name }}"
+                 class="form-control" placeholder="{% trans 'Full name' %}" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" name="participant_birth_year" value="{{ m.birth_year }}"
+                 class="form-control" placeholder="{% trans 'Year' %}" min="1900" max="2030">
+        </div>
+        <div class="col-md-4">
+          <input type="text" name="participant_city" value="{{ m.city }}"
+                 class="form-control" placeholder="{% trans 'City' %}">
+        </div>
+        <div class="col-auto">
+          <button type="button" class="btn btn-outline-danger remove-relay-member">−</button>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="relay-member mb-2">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <input type="text" name="participant_name"
+                 class="form-control" placeholder="{% trans 'Full name' %}" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" name="participant_birth_year"
+                 class="form-control" placeholder="{% trans 'Year' %}" min="1900" max="2030">
+        </div>
+        <div class="col-md-4">
+          <input type="text" name="participant_city"
+                 class="form-control" placeholder="{% trans 'City' %}">
+        </div>
+        <div class="col-auto">
+          <button type="button" class="btn btn-outline-danger remove-relay-member" style="display:none;">−</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <button type="button" id="add-relay-member-btn" class="btn btn-sm btn-outline-primary mt-1">
+    + {% trans "Add member" %}
+  </button>
+  <div class="form-text">{% trans "Maximum" %}: {{ relay_max_members }}</div>
+</div>
+{% endif %}
+
+{% for field in form %}
+<div class="mb-3{% if relay_enabled and field.name in 'first_name,last_name,birth_year,birth_date,city' %} d-none{% endif %}">
   <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
   {{ field }}
   {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
@@ -29,6 +88,56 @@
 <button type="submit" class="btn btn-primary">{% trans "Add" %}</button>
 <a href="{% url 'registrations:participant_list' competition.pk %}" class="btn btn-outline-secondary ms-2">{% trans "Cancel" %}</a>
 </form>
+
+{% if relay_enabled %}
+<script>
+(function () {
+  var container = document.getElementById('relay-names-container');
+  var addBtn = document.getElementById('add-relay-member-btn');
+  var maxMembers = {{ relay_max_members }};
+  var phName = "{% trans 'Full name' %}";
+  var phYear = "{% trans 'Year' %}";
+  var phCity = "{% trans 'City' %}";
+
+  function updateRemoveButtons() {
+    var rows = container.querySelectorAll('.relay-member');
+    rows.forEach(function (row) {
+      row.querySelector('.remove-relay-member').style.display = rows.length > 1 ? '' : 'none';
+    });
+    addBtn.disabled = rows.length >= maxMembers;
+  }
+
+  addBtn.addEventListener('click', function () {
+    var rows = container.querySelectorAll('.relay-member');
+    if (rows.length >= maxMembers) return;
+    var div = document.createElement('div');
+    div.className = 'relay-member mb-2';
+    div.innerHTML =
+      '<div class="row g-2 align-items-center">' +
+        '<div class="col-md-5"><input type="text" name="participant_name" class="form-control" placeholder="' + phName + '" required></div>' +
+        '<div class="col-md-2"><input type="number" name="participant_birth_year" class="form-control" placeholder="' + phYear + '" min="1900" max="2030"></div>' +
+        '<div class="col-md-4"><input type="text" name="participant_city" class="form-control" placeholder="' + phCity + '"></div>' +
+        '<div class="col-auto"><button type="button" class="btn btn-outline-danger remove-relay-member">−</button></div>' +
+      '</div>';
+    container.appendChild(div);
+    div.querySelector('.remove-relay-member').addEventListener('click', removeHandler);
+    updateRemoveButtons();
+    div.querySelector('input[name="participant_name"]').focus();
+  });
+
+  function removeHandler() {
+    this.closest('.relay-member').remove();
+    updateRemoveButtons();
+  }
+
+  container.querySelectorAll('.remove-relay-member').forEach(function (btn) {
+    btn.addEventListener('click', removeHandler);
+  });
+
+  updateRemoveButtons();
+})();
+</script>
+{% endif %}
 
 </div>
 </div>
