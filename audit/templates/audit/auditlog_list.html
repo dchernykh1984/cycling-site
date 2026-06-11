@@ -1,0 +1,54 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n %}
+
+{% block titletag %}Audit Log{% endblock %}
+
+{% block content %}
+<div class="nice-padding">
+    <h1>Audit Log</h1>
+
+    {% if entries %}
+    <table class="listing full-width">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Object type</th>
+                <th>Object ID</th>
+                <th>Object repr</th>
+                <th>Changes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td>{{ entry.timestamp|date:"Y-m-d H:i:s" }}</td>
+                <td>{{ entry.user|default:"(anonymous)" }}</td>
+                <td>{{ entry.get_action_display }}</td>
+                <td>{{ entry.object_type }}</td>
+                <td>{{ entry.object_id }}</td>
+                <td>{{ entry.object_repr }}</td>
+                <td>{{ entry.changes }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if is_paginated %}
+    <p>
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">&laquo; Previous</a>
+        {% endif %}
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Next &raquo;</a>
+        {% endif %}
+    </p>
+    {% endif %}
+
+    {% else %}
+    <p>No audit log entries yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
