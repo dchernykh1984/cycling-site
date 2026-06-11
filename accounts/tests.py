@@ -398,7 +398,10 @@ class RoleEnforcedMixinTests(TestCase):
         form.add_error.assert_called_once()
 
     def test_allows_role_editor_can_assign(self):
+        # Only a superuser (which OWNER becomes on save) can assign the OWNER role.
+        # Simulate an actual saved OWNER by setting is_superuser=True explicitly.
         view = self._make_view(User.Role.OWNER)
+        view.request.user.is_superuser = True
         form = MagicMock()
         form.cleaned_data = {"role": User.Role.OWNER}
         result = view.form_valid(form)

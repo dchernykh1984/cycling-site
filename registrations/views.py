@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.html import escape
 from django.views import View
 from django.views.generic import TemplateView
 
@@ -152,9 +153,9 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
         relay_birth_years = []
         relay_cities = []
         if relay_enabled:
-            relay_names = [n.strip() for n in request.POST.getlist("participant_name") if n.strip()]
-            relay_birth_years = [y.strip() for y in request.POST.getlist("participant_birth_year")]
-            relay_cities = [c.strip() for c in request.POST.getlist("participant_city")]
+            relay_names = [escape(n.strip()) for n in request.POST.getlist("participant_name") if n.strip()]
+            relay_birth_years = [escape(y.strip()) for y in request.POST.getlist("participant_birth_year")]
+            relay_cities = [escape(c.strip()) for c in request.POST.getlist("participant_city")]
             # Pad / trim auxiliary lists to match names length
             relay_birth_years = (relay_birth_years + [""] * len(relay_names))[: len(relay_names)]
             relay_cities = (relay_cities + [""] * len(relay_names))[: len(relay_names)]
@@ -276,27 +277,13 @@ class ParticipantListView(TemplateView):
         user = self.request.user
         is_manager = can_manage(user, competition)
 
+        if competition.is_hidden and not is_manager:
+            raise Http404
+
         if is_manager:
             registrations = competition.registrations.select_related("category", "team", "user")
         else:
-            qs = competition.registrations.filter(is_rejected=False)
-            comp = competition
-            if comp.require_approval and comp.require_payment:
-                if comp.show_unapproved_in_list and comp.show_unpaid_in_list:
-                    pass
-                elif comp.show_unapproved_in_list and not comp.show_unpaid_in_list:
-                    qs = qs.filter(is_paid=True)
-                elif not comp.show_unapproved_in_list and comp.show_unpaid_in_list:
-                    qs = qs.filter(is_approved=True)
-                else:
-                    qs = qs.filter(is_approved=True, is_paid=True)
-            elif comp.require_approval:
-                if not comp.show_unapproved_in_list:
-                    qs = qs.filter(is_approved=True)
-            elif comp.require_payment:
-                if not comp.show_unpaid_in_list:
-                    qs = qs.filter(is_paid=True)
-            registrations = qs.select_related("category", "team")
+            registrations = self._public_registrations(competition)
 
         cats = list(competition.registration_categories.filter(is_deleted=False))
         context["competition"] = competition
@@ -315,8 +302,16 @@ class ParticipantListView(TemplateView):
         context["max_participants"] = competition.max_participants
         return context
 
+    def _public_registrations(self, competition):
+        qs = competition.registrations.filter(is_rejected=False)
+        if competition.require_approval and not competition.show_unapproved_in_list:
+            qs = qs.filter(is_approved=True)
+        if competition.require_payment and not competition.show_unpaid_in_list:
+            qs = qs.filter(is_paid=True)
+        return qs.select_related("category", "team")
 
-class ApproveRegistrationView(View):
+
+class ApproveRegistrationView(LoginRequiredMixin, View):
     def post(self, request, pk, reg_pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(request.user, competition):
@@ -328,7 +323,7 @@ class ApproveRegistrationView(View):
         return redirect("registrations:participant_list", pk=pk)
 
 
-class RejectRegistrationView(View):
+class RejectRegistrationView(LoginRequiredMixin, View):
     def post(self, request, pk, reg_pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(request.user, competition):
@@ -341,7 +336,7 @@ class RejectRegistrationView(View):
         return redirect("registrations:participant_list", pk=pk)
 
 
-class MarkPaidView(View):
+class MarkPaidView(LoginRequiredMixin, View):
     def post(self, request, pk, reg_pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(request.user, competition):
@@ -352,7 +347,7 @@ class MarkPaidView(View):
         return redirect("registrations:participant_list", pk=pk)
 
 
-class EditRegistrationView(View):
+class EditRegistrationView(LoginRequiredMixin, View):
     template_name = "registrations/edit_registration.html"
 
     def _get_objects(self, pk, reg_pk, user):
@@ -386,7 +381,7 @@ class EditRegistrationView(View):
         return render(request, self.template_name, {"competition": competition, "registration": reg, "form": form})
 
 
-class DeleteRegistrationView(View):
+class DeleteRegistrationView(LoginRequiredMixin, View):
     def post(self, request, pk, reg_pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(request.user, competition):
@@ -396,7 +391,7 @@ class DeleteRegistrationView(View):
         return redirect("registrations:participant_list", pk=pk)
 
 
-class ManualAddRegistrationView(View):
+class ManualAddRegistrationView(LoginRequiredMixin, View):
     template_name = "registrations/manual_add.html"
 
     def _get_competition(self, pk, user):
@@ -431,9 +426,9 @@ class ManualAddRegistrationView(View):
         relay_birth_years = []
         relay_cities = []
         if relay_enabled:
-            relay_names = [n.strip() for n in request.POST.getlist("participant_name") if n.strip()]
-            relay_birth_years = [y.strip() for y in request.POST.getlist("participant_birth_year")]
-            relay_cities = [c.strip() for c in request.POST.getlist("participant_city")]
+            relay_names = [escape(n.strip()) for n in request.POST.getlist("participant_name") if n.strip()]
+            relay_birth_years = [escape(y.strip()) for y in request.POST.getlist("participant_birth_year")]
+            relay_cities = [escape(c.strip()) for c in request.POST.getlist("participant_city")]
             relay_birth_years = (relay_birth_years + [""] * len(relay_names))[: len(relay_names)]
             relay_cities = (relay_cities + [""] * len(relay_names))[: len(relay_names)]
 
@@ -585,7 +580,7 @@ class ParticipantsAPIView(View):
         return JsonResponse(data)
 
 
-class ExportParticipantsCSVView(View):
+class ExportParticipantsCSVView(LoginRequiredMixin, View):
     def get(self, request, pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(request.user, competition):

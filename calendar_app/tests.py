@@ -234,11 +234,20 @@ class CompetitionDetailViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertIn(self._token(), response.content.decode())
 
-    def test_token_visible_to_organizer(self):
+    def test_token_hidden_from_unrelated_organizer(self):
+        # An organizer who did NOT submit this competition must not see its upload token.
         organizer = _make_user("org@example.com", User.Role.ORGANIZER)
         self.client.force_login(organizer)
         response = self.client.get(self.url)
-        self.assertIn(self._token(), response.content.decode())
+        self.assertNotIn(self._token(), response.content.decode())
+
+    def test_token_visible_to_organizer_who_submitted(self):
+        # An organizer who submitted the competition sees its upload token.
+        submitter = _make_user("submitter_org@example.com", User.Role.ORGANIZER)
+        comp = _make_competition("Org Submitted", status=Competition.Status.APPROVED, submitted_by=submitter)
+        self.client.force_login(submitter)
+        response = self.client.get(reverse("competition_detail", args=[comp.pk]))
+        self.assertIn(str(comp.upload_token), response.content.decode())
 
     def test_token_visible_to_superuser(self):
         superuser = User.objects.create_superuser(
