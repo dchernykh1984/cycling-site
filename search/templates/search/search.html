@@ -18,11 +18,11 @@
         </form>
 
         {% if competition_results %}
-        <h5 class="mb-3">{% trans "Competitions" %}</h5>
+        <h2 class="h5 mb-3">{% trans "Competitions" %}</h2>
         <ul class="list-unstyled mb-4">
             {% for comp in competition_results %}
             <li class="mb-3 pb-3 border-bottom">
-                <h5><a href="{% url 'competition_detail' comp.pk %}">{{ comp.title }}</a></h5>
+                <h3 class="h5"><a href="{% url 'competition_detail' comp.pk %}">{{ comp.title }}</a></h3>
                 {% if comp.date_start %}
                 <p class="text-muted mb-0 small">
                     {{ comp.date_start|date:"d.m.Y" }}
@@ -36,22 +36,22 @@
         {% endif %}
 
         {% if location_results %}
-        <h5 class="mb-3">{% trans "Locations" %}</h5>
+        <h2 class="h5 mb-3">{% trans "Locations" %}</h2>
         <ul class="list-unstyled mb-4">
             {% for loc in location_results %}
             <li class="mb-3 pb-3 border-bottom">
-                <h5>{{ loc.name }}</h5>
+                <h3 class="h5">{{ loc.name }}</h3>
             </li>
             {% endfor %}
         </ul>
         {% endif %}
 
         {% if search_results %}
-        {% if competition_results or location_results %}<h5 class="mb-3">{% trans "Pages" %}</h5>{% endif %}
+        {% if competition_results or location_results %}<h2 class="h5 mb-3">{% trans "Pages" %}</h2>{% endif %}
         <ul class="list-unstyled">
             {% for result in search_results %}
             <li class="mb-3 pb-3 border-bottom">
-                <h5><a href="{% pageurl result %}">{{ result }}</a></h5>
+                <h3 class="h5"><a href="{% pageurl result %}">{{ result }}</a></h3>
                 {% if result.search_description %}
                 <p class="text-muted mb-0">{{ result.search_description }}</p>
                 {% endif %}

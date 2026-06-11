@@ -78,7 +78,7 @@
 
     {% if protocols %}
     <div class="mt-4 pt-3 border-top">
-      <h5 class="mb-3">{% trans "Protocols" %}</h5>
+      <h2 class="mb-3 h5">{% trans "Protocols" %}</h2>
       <div class="d-flex flex-wrap gap-2">
         {% for protocol in protocols %}
         <a href="{% url 'protocol_detail' protocol.pk %}" class="btn btn-outline-primary btn-sm">
@@ -93,7 +93,7 @@
 
     {% if show_upload_token %}
     <div class="mt-4 pt-3 border-top">
-      <h6 class="text-muted mb-2">{% trans "Timing system token" %}</h6>
+      <h3 class="h6 text-muted mb-2">{% trans "Timing system token" %}</h3>
       <div class="d-flex align-items-center gap-2">
         <code class="user-select-all text-break">{{ competition.upload_token }}</code>
         <button type="button" class="btn btn-outline-secondary btn-sm"
@@ -138,7 +138,7 @@
 
     <hr class="mt-4">
     <section id="comments">
-      <h5 class="mb-4">{% trans "Comments" %} ({{ comments|length }})</h5>
+      <h2 class="mb-4 h5">{% trans "Comments" %} ({{ comments|length }})</h2>
 
       {% for comment in comments %}
       <div class="card mb-3">
@@ -165,7 +165,7 @@
       {% if can_comment %}
       <div class="card mt-4">
         <div class="card-body">
-          <h6 class="card-title">{% trans "Add a comment" %}</h6>
+          <h3 class="card-title h6">{% trans "Add a comment" %}</h3>
           <form method="post" action="{% url 'competition_add_comment' competition.pk %}">
             {% csrf_token %}
             <div class="mb-3">{{ comment_form.body }}</div>
@@ -184,7 +184,7 @@
 
     {% if competition.registration_enabled %}
     <div class="mt-4 pt-3 border-top">
-      <h5>{% trans "Registration" %}</h5>
+      <h2 class="h5">{% trans "Registration" %}</h2>
       <p class="text-muted small">{% trans "Registered" %}: {{ competition.qualified_count }}</p>
       {% if competition.is_registration_open %}
         {% if not already_registered or competition.allow_multiple_registrations %}
