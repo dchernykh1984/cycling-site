@@ -101,6 +101,7 @@ ACCOUNT_RATE_LIMITS = {
     "reset_password": "5/h",
     "reset_password_from_key": "5/h",
 }
+ACCOUNT_PREVENT_ENUMERATION = False
 ACCOUNT_SESSION_REMEMBER = True
 LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
