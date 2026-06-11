@@ -30,7 +30,7 @@
     {% else %}
     <meta property="og:description" content="{% trans 'Cycling events, news and knowledge base' %}" />
     {% endif %}
-    <meta property="og:url" content="{{ request.build_absolute_uri }}" />
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}" />
     {% if request.in_preview_panel %}
     <base target="_blank">
     {% endif %}

@@ -13,11 +13,12 @@ from search import views as search_views
 
 
 def robots_txt(request):
-    base_url = getattr(settings, "SITE_BASE_URL", "")
+    base_url = getattr(settings, "SITE_BASE_URL", "").rstrip("/")
+    sitemap_url = f"{base_url}/sitemap.xml" if base_url else request.build_absolute_uri("/sitemap.xml")
     lines = [
         "User-agent: *",
         "Allow: /",
-        f"Sitemap: {base_url}/sitemap.xml",
+        f"Sitemap: {sitemap_url}",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
