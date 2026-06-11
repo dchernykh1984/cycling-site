@@ -1,6 +1,5 @@
 import datetime
 import re
-from unittest import skip
 from unittest.mock import MagicMock, patch
 
 from allauth.account.models import EmailAddress
@@ -188,7 +187,6 @@ class EmailConfirmedSignalTests(TestCase):
 
 
 class AccountAdapterTests(TestCase):
-    @skip("email verification disabled - unskip when ACCOUNT_EMAIL_VERIFICATION='mandatory'")
     def test_save_user_sets_guest_role(self):
         adapter = AccountAdapter()
         request = RequestFactory().get("/")
@@ -201,7 +199,6 @@ class AccountAdapterTests(TestCase):
 
         self.assertEqual(result.role, User.Role.GUEST)
 
-    @skip("email verification disabled - unskip when ACCOUNT_EMAIL_VERIFICATION='mandatory'")
     def test_save_user_with_commit_saves_to_db(self):
         adapter = AccountAdapter()
         request = RequestFactory().get("/")
@@ -236,7 +233,6 @@ class ProfileViewTests(TestCase):
         response = self.client.get(reverse("account_profile"))
         self.assertContains(response, self.user.email)
 
-    @skip("email verification disabled - unskip when ACCOUNT_EMAIL_VERIFICATION='mandatory'")
     def test_profile_shows_unverified_warning_without_confirmed_email(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("account_profile"))
@@ -252,7 +248,6 @@ class ProfileViewTests(TestCase):
 
 
 class RegistrationFlowTests(TestCase):
-    @skip("email verification disabled - unskip when ACCOUNT_EMAIL_VERIFICATION='mandatory'")
     def test_signup_creates_guest_user(self):
         response = self.client.post(
             reverse("account_signup"),
@@ -266,10 +261,6 @@ class RegistrationFlowTests(TestCase):
         user = User.objects.get(email="newuser@example.com")
         self.assertEqual(user.role, User.Role.GUEST)
 
-    @skip(
-        "email verification disabled - unskip and restore GUEST->PARTICIPANT flow "
-        "when ACCOUNT_EMAIL_VERIFICATION='mandatory'"
-    )
     def test_email_confirmation_flow(self):
         from django.core import mail
 
