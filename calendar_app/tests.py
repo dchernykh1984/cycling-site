@@ -249,6 +249,12 @@ class CompetitionDetailViewTests(TestCase):
         response = self.client.get(reverse("competition_detail", args=[comp.pk]))
         self.assertIn(str(comp.upload_token), response.content.decode())
 
+    def test_token_visible_to_admin_who_did_not_submit(self):
+        admin = _make_user("admin@example.com", User.Role.ADMIN)
+        self.client.force_login(admin)
+        response = self.client.get(self.url)
+        self.assertIn(self._token(), response.content.decode())
+
     def test_token_visible_to_superuser(self):
         superuser = User.objects.create_superuser(
             username="super@example.com", email="super@example.com", password="pw"
