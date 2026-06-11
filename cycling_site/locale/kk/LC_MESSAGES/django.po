@@ -1333,7 +1333,7 @@ msgid "Or use a third-party"
 msgstr "Немесе үшінші тарапты пайдалану"
 
 # Django password validators (django.contrib.auth)
-msgid "Your password can't be too similar to your other personal information."
+msgid "Your password can’t be too similar to your other personal information."
 msgstr "Құпия сөзіңіз жеке ақпаратыңызға тым ұқсас болмауы керек."
 
 #, python-format
@@ -1342,8 +1342,19 @@ msgid_plural "Your password must contain at least %(min_length)d characters."
 msgstr[0] "Құпия сөзіңіз кемінде %(min_length)d таңбадан тұруы керек."
 msgstr[1] "Құпия сөзіңіз кемінде %(min_length)d таңбадан тұруы керек."
 
-msgid "Your password can't be too common."
-msgstr "Құпия сөзіңіз тым қарапайым болмауы керек."
+msgid "Your password can’t be a commonly used password."
+msgstr "Құпия сөзіңіз кең тараған болмауы керек."
 
-msgid "Your password can't be entirely numeric."
+msgid "Your password can’t be entirely numeric."
 msgstr "Құпия сөзіңіз тек сандардан тұрмауы керек."
+
+# allauth email verification page
+msgid "Verify Your Email Address"
+msgstr "Электрондық пошта мекенжайыңызды растаңыз"
+
+msgid "We have sent an email to you for verification. Follow the link provided to finalize the signup process. If you do not see the verification email in your main inbox, check your spam folder. Please contact us if you do not receive the verification email within a few minutes."
+msgstr "Растау үшін сізге электрондық хат жібердік. Тіркелу процесін аяқтау үшін берілген сілтемеге өтіңіз. Растау хатын негізгі кіріс жәшігіңізден көрмесеңіз, спам қалтасын тексеріңіз. Бірнеше минут ішінде растау хатын алмасаңыз, бізге хабарласыңыз."
+
+#, python-format
+msgid "Confirmation email sent to %(email)s."
+msgstr "%(email)s мекенжайына растау хаты жіберілді."
