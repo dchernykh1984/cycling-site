@@ -5,7 +5,7 @@ from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 class AccountAdapter(DefaultAccountAdapter):
     def save_user(self, request, user, form, commit=True):
         user = super().save_user(request, user, form, commit=False)
-        user.role = user.Role.PARTICIPANT
+        user.role = user.Role.GUEST
         if commit:
             user.save()
         return user
