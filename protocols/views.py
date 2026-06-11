@@ -113,8 +113,12 @@ def upload_protocol(request):  # noqa: C901
     content = uploaded.read()
 
     # Verify that the file content begins with an HTML marker as a basic integrity check.
-    content_start = content.lstrip()[:15].lower()
-    if not (content_start.startswith(b"<") or content_start.startswith(b"\xef\xbb\xbf<")):
+    # Strip leading whitespace then the UTF-8 BOM (if present) then any further whitespace.
+    _c = content.lstrip()
+    if _c.startswith(b"\xef\xbb\xbf"):
+        _c = _c[3:]
+    content_start = _c.lstrip()[:15].lower()
+    if not content_start.startswith(b"<"):
         return JsonResponse({"error": "File does not appear to be valid HTML"}, status=400)
 
     file_hash = hashlib.sha256(content).hexdigest()
