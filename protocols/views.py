@@ -101,13 +101,27 @@ def upload_protocol(request):  # noqa: C901
     if media_type != "text/html":
         return JsonResponse({"error": "File must be text/html"}, status=400)
 
+    # Validate file extension server-side (client-provided Content-Type can be spoofed).
+    raw_name = uploaded.name or ""
+    if not raw_name.lower().endswith((".html", ".htm")):
+        return JsonResponse({"error": "File must have .html or .htm extension"}, status=400)
+
     max_mb = getattr(settings, "MAX_PROTOCOL_SIZE_MB", 5)
     if uploaded.size > max_mb * 1024 * 1024:
         return JsonResponse({"error": f"File too large (max {max_mb} MB)"}, status=400)
 
     content = uploaded.read()
+
+    # Verify that the file content begins with an HTML marker as a basic integrity check.
+    content_start = content.lstrip()[:15].lower()
+    if not (content_start.startswith(b"<") or content_start.startswith(b"\xef\xbb\xbf<")):
+        return JsonResponse({"error": "File does not appear to be valid HTML"}, status=400)
+
     file_hash = hashlib.sha256(content).hexdigest()
     filename = get_valid_filename(uploaded.name) or "protocol.html"
+    # Ensure stored filename always ends with .html regardless of the upload name.
+    if not filename.lower().endswith(".html"):
+        filename = filename + ".html"
 
     protocol, _ = Protocol.objects.get_or_create(
         competition=competition,

@@ -78,7 +78,6 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         super().save(*args, **kwargs)
 
     def can_manage_user(self, target_user: "User") -> bool:
-        # an editor may only touch users whose current rank does not exceed their own
         if self.is_superuser:
             return True
         editor_rank = self.get_role_rank()

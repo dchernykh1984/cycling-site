@@ -218,11 +218,11 @@ class CompetitionDetailView(View):
 
             raise Http404
         protocols = competition.protocols.all()
-        show_upload_token = request.user.is_authenticated and (
-            request.user.is_superuser
-            or request.user == competition.submitted_by
-            or request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
-        )
+        # upload_token is a secret credential: only show it to the submitter or to users
+        # who can manage this specific competition (superuser, admin+, or the organizer
+        # who submitted it). Removed the broad rank >= ORGANIZER check that exposed
+        # tokens of other organizers' competitions.
+        show_upload_token = request.user.is_authenticated and (is_manager or request.user == competition.submitted_by)
         already_registered = False
         if request.user.is_authenticated and competition.registration_mode == "self_only":
             from registrations.models import CompetitionRegistration
