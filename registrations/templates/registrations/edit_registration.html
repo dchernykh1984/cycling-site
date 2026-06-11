@@ -14,7 +14,7 @@
   </ol>
 </nav>
 
-<h1 class="mb-4">{% trans "Edit registration" %}: {% if registration.is_relay %}{{ registration.participant_names|safe }}{% else %}{{ registration.last_name }} {{ registration.first_name }}{% endif %}</h1>
+<h1 class="mb-4">{% trans "Edit registration" %}: {% if registration.is_relay %}{{ registration.participant_names|striptags|safe }}{% else %}{{ registration.last_name }} {{ registration.first_name }}{% endif %}</h1>
 
 <form method="post">
 {% csrf_token %}

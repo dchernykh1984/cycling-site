@@ -149,16 +149,23 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
         )
 
         relay_enabled = competition.relay_enabled
-        relay_names = []
-        relay_birth_years = []
-        relay_cities = []
+        relay_names_raw: list[str] = []
+        relay_birth_years_raw: list[str] = []
+        relay_cities_raw: list[str] = []
+        relay_names: list[str] = []
+        relay_birth_years: list[str] = []
+        relay_cities: list[str] = []
         if relay_enabled:
-            relay_names = [escape(n.strip()) for n in request.POST.getlist("participant_name") if n.strip()]
-            relay_birth_years = [escape(y.strip()) for y in request.POST.getlist("participant_birth_year")]
-            relay_cities = [escape(c.strip()) for c in request.POST.getlist("participant_city")]
+            relay_names_raw = [n.strip() for n in request.POST.getlist("participant_name") if n.strip()]
+            relay_birth_years_raw = [y.strip() for y in request.POST.getlist("participant_birth_year")]
+            relay_cities_raw = [c.strip() for c in request.POST.getlist("participant_city")]
             # Pad / trim auxiliary lists to match names length
-            relay_birth_years = (relay_birth_years + [""] * len(relay_names))[: len(relay_names)]
-            relay_cities = (relay_cities + [""] * len(relay_names))[: len(relay_names)]
+            relay_birth_years_raw = (relay_birth_years_raw + [""] * len(relay_names_raw))[: len(relay_names_raw)]
+            relay_cities_raw = (relay_cities_raw + [""] * len(relay_names_raw))[: len(relay_names_raw)]
+            # HTML-escape for DB storage (participant_names rendered with |safe in templates)
+            relay_names = [escape(n) for n in relay_names_raw]
+            relay_birth_years = [escape(y) for y in relay_birth_years_raw]
+            relay_cities = [escape(c) for c in relay_cities_raw]
             if not relay_names:
                 form.add_error(None, "At least one participant name is required.")
             elif len(relay_names) > competition.relay_max_members:
@@ -252,7 +259,7 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
 
         relay_members_post = [
             {"name": n, "birth_year": y, "city": c}
-            for n, y, c in zip(relay_names, relay_birth_years, relay_cities, strict=False)
+            for n, y, c in zip(relay_names_raw, relay_birth_years_raw, relay_cities_raw, strict=False)
         ]
         return render(
             request,
@@ -422,15 +429,21 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
     def post(self, request, pk):
         competition = self._get_competition(pk, request.user)
         relay_enabled = competition.relay_enabled
-        relay_names = []
-        relay_birth_years = []
-        relay_cities = []
+        relay_names_raw: list[str] = []
+        relay_birth_years_raw: list[str] = []
+        relay_cities_raw: list[str] = []
+        relay_names: list[str] = []
+        relay_birth_years: list[str] = []
+        relay_cities: list[str] = []
         if relay_enabled:
-            relay_names = [escape(n.strip()) for n in request.POST.getlist("participant_name") if n.strip()]
-            relay_birth_years = [escape(y.strip()) for y in request.POST.getlist("participant_birth_year")]
-            relay_cities = [escape(c.strip()) for c in request.POST.getlist("participant_city")]
-            relay_birth_years = (relay_birth_years + [""] * len(relay_names))[: len(relay_names)]
-            relay_cities = (relay_cities + [""] * len(relay_names))[: len(relay_names)]
+            relay_names_raw = [n.strip() for n in request.POST.getlist("participant_name") if n.strip()]
+            relay_birth_years_raw = [y.strip() for y in request.POST.getlist("participant_birth_year")]
+            relay_cities_raw = [c.strip() for c in request.POST.getlist("participant_city")]
+            relay_birth_years_raw = (relay_birth_years_raw + [""] * len(relay_names_raw))[: len(relay_names_raw)]
+            relay_cities_raw = (relay_cities_raw + [""] * len(relay_names_raw))[: len(relay_names_raw)]
+            relay_names = [escape(n) for n in relay_names_raw]
+            relay_birth_years = [escape(y) for y in relay_birth_years_raw]
+            relay_cities = [escape(c) for c in relay_cities_raw]
 
         form = RegistrationForm(request.POST, competition=competition)
         form.fields["category"].queryset = RegistrationCategory.objects.filter(
@@ -439,7 +452,7 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
 
         relay_members_post = [
             {"name": n, "birth_year": y, "city": c}
-            for n, y, c in zip(relay_names, relay_birth_years, relay_cities, strict=False)
+            for n, y, c in zip(relay_names_raw, relay_birth_years_raw, relay_cities_raw, strict=False)
         ]
         ctx = {
             "competition": competition,
