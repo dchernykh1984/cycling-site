@@ -18,12 +18,15 @@ def _make_save_handler(object_type):
     def handler(sender, instance, created, **kwargs):
         from .models import AuditLog
 
+        update_fields = kwargs.get("update_fields")
+        changes = ", ".join(sorted(update_fields)) if update_fields else ""
         AuditLog.objects.create(
             user=get_current_user(),
             action=AuditLog.ACTION_CREATED if created else AuditLog.ACTION_UPDATED,
             object_type=object_type,
             object_id=str(instance.pk),
             object_repr=str(instance)[:255],
+            changes=changes,
         )
 
     handler.__name__ = f"audit_save_{object_type}"

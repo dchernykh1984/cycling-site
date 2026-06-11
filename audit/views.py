@@ -10,6 +10,7 @@ class AuditLogListView(UserPassesTestMixin, ListView):
     context_object_name = "entries"
     paginate_by = 50
     ordering = "-timestamp"
+    raise_exception = True
 
     def test_func(self):
         return self.request.user.is_authenticated and self.request.user.is_superuser
