@@ -1,0 +1,39 @@
+/* Fix Draftail rich-text editor content area in dark mode.
+   Two dark-mode contexts exist:
+   - Wagtail admin: uses .w-theme-dark / .w-theme-system classes
+   - Frontend editing forms: uses Bootstrap data-bs-theme="dark" */
+
+.w-theme-dark .Draftail-Editor,
+.w-theme-dark .Draftail-Editor .DraftEditor-root,
+.w-theme-dark .Draftail-Editor .public-DraftEditor-content {
+    color: var(--w-color-text-context);
+    background-color: var(--w-color-surface-field);
+    caret-color: var(--w-color-text-context);
+}
+
+@media (prefers-color-scheme: dark) {
+    .w-theme-system .Draftail-Editor,
+    .w-theme-system .Draftail-Editor .DraftEditor-root,
+    .w-theme-system .Draftail-Editor .public-DraftEditor-content {
+        color: var(--w-color-text-context);
+        background-color: var(--w-color-surface-field);
+        caret-color: var(--w-color-text-context);
+    }
+}
+
+[data-bs-theme="dark"] .Draftail-Editor,
+[data-bs-theme="dark"] .Draftail-Editor .DraftEditor-root,
+[data-bs-theme="dark"] .Draftail-Editor .public-DraftEditor-content {
+    color: var(--bs-body-color);
+    background-color: var(--bs-tertiary-bg);
+    caret-color: var(--bs-body-color);
+}
+
+[data-bs-theme="dark"] .Draftail-Toolbar {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+}
+
+[data-bs-theme="dark"] .Draftail-Editor {
+    border-color: var(--bs-border-color);
+}
