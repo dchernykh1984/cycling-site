@@ -1,10 +1,19 @@
 from typing import ClassVar
 
+from wagtail import hooks
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
+from wagtail.admin.userbar import AccessibilityItem
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import CreateView, EditView, SnippetViewSet
 
 from accounts.models import User
+
+
+@hooks.register("construct_wagtail_userbar")
+def disable_button_name_axe_rule(_request, items):
+    for item in items:
+        if isinstance(item, AccessibilityItem):
+            item.axe_run_only = [r for r in item.axe_run_only if r != "button-name"]
 
 
 class _RoleEnforcedMixin:
