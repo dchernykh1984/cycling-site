@@ -62,7 +62,7 @@
         <hr class="my-5">
 
         <section id="comments">
-            <h3 class="mb-4">{% trans "Comments" %} ({{ comments|length }})</h3>
+            <h2 class="mb-4">{% trans "Comments" %} ({{ comments|length }})</h2>
 
             {% for comment in comments %}
             <div class="card mb-3{% if not comment.is_approved %} border-warning{% endif %}">
@@ -94,7 +94,7 @@
             {% if can_comment %}
             <div class="card mt-4">
                 <div class="card-body">
-                    <h5 class="card-title">{% trans "Add a comment" %}</h5>
+                    <h3 class="card-title">{% trans "Add a comment" %}</h3>
                     <form method="post" action="{% url 'news_add_comment' page.pk %}">
                         {% csrf_token %}
                         <div class="mb-3">
