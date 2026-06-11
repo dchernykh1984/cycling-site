@@ -30,7 +30,8 @@ class ProfileView(TemplateView):
         context["user"] = self.request.user
         user = self.request.user
         context["has_verified_email"] = (
-            user.role != user.Role.GUEST or EmailAddress.objects.filter(user=user, verified=True).exists()
+            user.role not in (user.Role.GUEST, user.Role.PARTICIPANT)
+            or EmailAddress.objects.filter(user=user, verified=True).exists()
         )
         from knowledge.models import DraftSubmission
 
