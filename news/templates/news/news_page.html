@@ -94,7 +94,7 @@
             {% if can_comment %}
             <div class="card mt-4">
                 <div class="card-body">
-                    <h3 class="card-title">{% trans "Add a comment" %}</h3>
+                    <h3 class="card-title h5">{% trans "Add a comment" %}</h3>
                     <form method="post" action="{% url 'news_add_comment' page.pk %}">
                         {% csrf_token %}
                         <div class="mb-3">

@@ -22,7 +22,7 @@
     <h2 class="h5 text-muted mb-3">
       {% if protocol.protocol_type == "absolute" %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}
       {% if protocol.stage_label %}&mdash; {{ protocol.stage_label }}{% endif %}
-    </h5>
+    </h2>
 
     {% if not protocol.is_live %}
     <div class="alert alert-success mb-3" role="alert">{% trans "Final results" %}</div>
