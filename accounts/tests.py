@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from allauth.account.models import EmailAddress
 from allauth.account.signals import email_confirmed
 from django.contrib.auth.models import Group
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
 from accounts.adapters import AccountAdapter, SocialAccountAdapter
@@ -363,6 +363,43 @@ class ProfileRegistrationListTests(TestCase):
     def test_profile_shows_no_registrations_when_none(self):
         regs = self._registrations_in_response()
         self.assertEqual(len(regs), 0)
+
+    def _response(self):
+        self.client.force_login(self.user)
+        return self.client.get(self.url)
+
+    def test_no_approval_required_shows_approved_badge(self):
+        comp = self._make_comp(require_approval=False)
+        self._make_reg(comp, is_approved=True)
+        self.assertContains(self._response(), "bg-success")
+        self.assertNotContains(self._response(), "bg-warning")
+
+    def test_approval_required_pending_shows_pending_badge(self):
+        comp = self._make_comp(require_approval=True)
+        self._make_reg(comp, is_approved=False)
+        self.assertContains(self._response(), "bg-warning")
+
+    def test_approval_required_approved_shows_success_badge(self):
+        comp = self._make_comp(require_approval=True)
+        self._make_reg(comp, is_approved=True)
+        self.assertContains(self._response(), "bg-success")
+
+    @override_settings(LANGUAGE_CODE="en")
+    def test_payment_required_unpaid_shows_not_paid_badge(self):
+        comp = self._make_comp(require_approval=False, require_payment=True)
+        self._make_reg(comp, is_approved=True, is_paid=False)
+        self.assertContains(self._response(), "Not paid")
+
+    @override_settings(LANGUAGE_CODE="en")
+    def test_payment_required_paid_shows_paid_badge(self):
+        comp = self._make_comp(require_approval=False, require_payment=True)
+        self._make_reg(comp, is_approved=True, is_paid=True)
+        self.assertContains(self._response(), "Paid")
+
+    def test_no_payment_required_no_payment_badge(self):
+        comp = self._make_comp(require_payment=False)
+        self._make_reg(comp, is_approved=True, is_paid=True)
+        self.assertNotContains(self._response(), "Not paid")
 
 
 class RegistrationFlowTests(TestCase):

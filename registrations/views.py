@@ -249,6 +249,8 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
                 city="" if relay_enabled else cleaned.get("city", ""),
                 team=team,
                 additional_info=cleaned.get("additional_info", ""),
+                is_approved=not competition.require_approval,
+                is_paid=not competition.require_payment,
             )
 
             Competition.objects.filter(pk=competition.pk, registration_mode_locked=False).update(
@@ -515,6 +517,8 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
                 city="" if relay_enabled else cleaned.get("city", ""),
                 team=team,
                 additional_info=cleaned.get("additional_info", ""),
+                is_approved=not competition.require_approval,
+                is_paid=not competition.require_payment,
             )
             return redirect("registrations:participant_list", pk=pk)
 
