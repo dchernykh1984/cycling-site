@@ -1057,3 +1057,850 @@ class EventTypeListTest(TestCase, ApiTestMixin):
     def test_anonymous_can_list_event_types(self):
         resp = self.get("/api/v1/event-types/")
         self.assertEqual(resp.status_code, 200)
+
+
+# ===========================================================================
+# Competition - full locale CRUD + web view verification
+# ===========================================================================
+
+
+class CompetitionLocaleCRUDTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.admin = _user("cl_admin", role=User.Role.ADMIN)
+        self.reader = _user("cl_reader", role=User.Role.PARTICIPANT)
+
+    def _create(self, **overrides):
+        payload = {
+            "title": {"ru": "Title RU", "kk": "Title KK", "en": "Title EN"},
+            "description": {"ru": "Desc RU", "kk": "Desc KK", "en": "Desc EN"},
+            "date_start": "2026-07-01",
+        }
+        payload.update(overrides)
+        resp = self.post("/api/v1/competitions/", payload, user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        return resp.json()["id"]
+
+    def test_detail_returns_all_locale_title_fields(self):
+        pk = self._create()
+        data = self.get(f"/api/v1/competitions/{pk}", user=self.reader).json()
+        self.assertEqual(data["title"]["ru"], "Title RU")
+        self.assertEqual(data["title"]["kk"], "Title KK")
+        self.assertEqual(data["title"]["en"], "Title EN")
+
+    def test_detail_returns_all_locale_description_fields(self):
+        pk = self._create()
+        data = self.get(f"/api/v1/competitions/{pk}", user=self.reader).json()
+        self.assertEqual(data["description"]["ru"], "Desc RU")
+        self.assertEqual(data["description"]["kk"], "Desc KK")
+        self.assertEqual(data["description"]["en"], "Desc EN")
+
+    def test_list_returns_all_locale_fields(self):
+        pk = self._create()
+        entries = self.get("/api/v1/competitions/", user=self.reader).json()
+        entry = next(e for e in entries if e["id"] == pk)
+        self.assertEqual(entry["title"]["ru"], "Title RU")
+        self.assertEqual(entry["title"]["kk"], "Title KK")
+        self.assertEqual(entry["title"]["en"], "Title EN")
+        self.assertEqual(entry["description"]["ru"], "Desc RU")
+
+    def test_patch_updates_all_locale_title_fields(self):
+        pk = self._create()
+        self.patch(
+            f"/api/v1/competitions/{pk}",
+            {"title": {"ru": "New RU", "kk": "New KK", "en": "New EN"}},
+            user=self.admin,
+        )
+        data = self.get(f"/api/v1/competitions/{pk}", user=self.admin).json()
+        self.assertEqual(data["title"]["ru"], "New RU")
+        self.assertEqual(data["title"]["kk"], "New KK")
+        self.assertEqual(data["title"]["en"], "New EN")
+
+    def test_delete_removes_competition_from_api(self):
+        pk = self._create()
+        self.delete(f"/api/v1/competitions/{pk}", user=self.admin)
+        self.assertEqual(self.get(f"/api/v1/competitions/{pk}", user=self.admin).status_code, 404)
+
+    def test_competition_visible_in_web_view_after_api_create(self):
+        pk = self._create()
+        resp = self.client.get(f"/calendar/{pk}/")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_web_form_creates_competition_with_all_locale_fields_visible_via_api(self):
+        organizer = _user("wf_org", role=User.Role.ORGANIZER)
+        self.client.force_login(organizer)
+        self.client.post(
+            "/calendar/submit/",
+            {
+                "title_ru": "Form RU",
+                "title_kk": "Form KK",
+                "title_en": "Form EN",
+                "date_start": "2026-07-01",
+            },
+        )
+        resp = self.get("/api/v1/competitions/", user=organizer)
+        entry = next((c for c in resp.json() if c["title"]["ru"] == "Form RU"), None)
+        self.assertIsNotNone(entry, "Competition created via web form not visible in API")
+        self.assertEqual(entry["title"]["kk"], "Form KK")
+        self.assertEqual(entry["title"]["en"], "Form EN")
+
+
+# ===========================================================================
+# Competition - access control: every role x every endpoint
+# ===========================================================================
+
+
+class CompetitionAccessTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.guest = _user("ca_guest", role=User.Role.GUEST)
+        self.participant = _user("ca_par", role=User.Role.PARTICIPANT)
+        self.organizer = _user("ca_org", role=User.Role.ORGANIZER)
+        self.owner = _user("ca_owner", role=User.Role.ORGANIZER)
+        self.admin = _user("ca_admin", role=User.Role.ADMIN)
+        self.approved = _competition()
+        self.hidden = _competition(is_hidden=True)
+        self.owned = _competition(submitted_by=self.owner)
+
+    def _payload(self):
+        return {
+            "title": {"ru": "T", "kk": "", "en": ""},
+            "description": {"ru": "", "kk": "", "en": ""},
+            "date_start": "2026-07-01",
+        }
+
+    # --- GET list ---
+
+    def test_list_anonymous_sees_approved_visible(self):
+        resp = self.get("/api/v1/competitions/")
+        self.assertEqual(resp.status_code, 200)
+        ids = [c["id"] for c in resp.json()]
+        self.assertIn(self.approved.pk, ids)
+        self.assertNotIn(self.hidden.pk, ids)
+
+    def test_list_participant_does_not_see_hidden(self):
+        ids = [c["id"] for c in self.get("/api/v1/competitions/", user=self.participant).json()]
+        self.assertNotIn(self.hidden.pk, ids)
+
+    def test_list_admin_sees_hidden(self):
+        ids = [c["id"] for c in self.get("/api/v1/competitions/", user=self.admin).json()]
+        self.assertIn(self.hidden.pk, ids)
+
+    def test_list_owner_sees_own_hidden(self):
+        hidden_owned = _competition(submitted_by=self.owner, is_hidden=True)
+        ids = [c["id"] for c in self.get("/api/v1/competitions/", user=self.owner).json()]
+        self.assertIn(hidden_owned.pk, ids)
+
+    def test_list_participant_cannot_see_others_pending(self):
+        pending = _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get("/api/v1/competitions/?status=pending_approval", user=self.participant)
+        ids = [c["id"] for c in resp.json()]
+        self.assertNotIn(pending.pk, ids)
+
+    def test_list_owner_sees_own_pending(self):
+        pending = _competition(submitted_by=self.owner, status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get("/api/v1/competitions/?status=pending_approval", user=self.owner)
+        ids = [c["id"] for c in resp.json()]
+        self.assertIn(pending.pk, ids)
+
+    def test_list_admin_sees_all_pending(self):
+        pending = _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get("/api/v1/competitions/?status=pending_approval", user=self.admin)
+        ids = [c["id"] for c in resp.json()]
+        self.assertIn(pending.pk, ids)
+
+    # --- GET detail ---
+
+    def test_detail_anonymous_gets_approved_visible(self):
+        self.assertEqual(self.get(f"/api/v1/competitions/{self.approved.pk}").status_code, 200)
+
+    def test_detail_anonymous_404_for_hidden(self):
+        self.assertEqual(self.get(f"/api/v1/competitions/{self.hidden.pk}").status_code, 404)
+
+    def test_detail_guest_404_for_hidden(self):
+        self.assertEqual(self.get(f"/api/v1/competitions/{self.hidden.pk}", user=self.guest).status_code, 404)
+
+    def test_detail_participant_404_for_hidden(self):
+        self.assertEqual(self.get(f"/api/v1/competitions/{self.hidden.pk}", user=self.participant).status_code, 404)
+
+    def test_detail_admin_200_for_hidden(self):
+        self.assertEqual(self.get(f"/api/v1/competitions/{self.hidden.pk}", user=self.admin).status_code, 200)
+
+    def test_detail_owner_200_for_own_hidden(self):
+        hidden_owned = _competition(submitted_by=self.owner, is_hidden=True)
+        self.assertEqual(self.get(f"/api/v1/competitions/{hidden_owned.pk}", user=self.owner).status_code, 200)
+
+    def test_detail_non_owner_404_for_pending(self):
+        pending = _competition(status=Competition.Status.PENDING_APPROVAL)
+        self.assertEqual(self.get(f"/api/v1/competitions/{pending.pk}", user=self.participant).status_code, 404)
+
+    def test_detail_owner_200_for_own_pending(self):
+        pending = _competition(submitted_by=self.owner, status=Competition.Status.PENDING_APPROVAL)
+        self.assertEqual(self.get(f"/api/v1/competitions/{pending.pk}", user=self.owner).status_code, 200)
+
+    def test_detail_admin_200_for_pending(self):
+        pending = _competition(status=Competition.Status.PENDING_APPROVAL)
+        self.assertEqual(self.get(f"/api/v1/competitions/{pending.pk}", user=self.admin).status_code, 200)
+
+    def test_detail_token_hidden_from_non_owner(self):
+        data = self.get(f"/api/v1/competitions/{self.approved.pk}", user=self.participant).json()
+        self.assertIsNone(data["competition_token"])
+
+    def test_detail_token_visible_to_owner(self):
+        data = self.get(f"/api/v1/competitions/{self.owned.pk}", user=self.owner).json()
+        self.assertIsNotNone(data["competition_token"])
+
+    def test_detail_token_visible_to_admin(self):
+        data = self.get(f"/api/v1/competitions/{self.approved.pk}", user=self.admin).json()
+        self.assertIsNotNone(data["competition_token"])
+
+    # --- POST create ---
+
+    def test_create_anonymous_returns_401(self):
+        self.assertEqual(self.post("/api/v1/competitions/", self._payload()).status_code, 401)
+
+    def test_create_guest_returns_403(self):
+        self.assertEqual(self.post("/api/v1/competitions/", self._payload(), user=self.guest).status_code, 403)
+
+    def test_create_participant_returns_403(self):
+        self.assertEqual(self.post("/api/v1/competitions/", self._payload(), user=self.participant).status_code, 403)
+
+    def test_create_organizer_returns_201_pending(self):
+        resp = self.post("/api/v1/competitions/", self._payload(), user=self.organizer)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], Competition.Status.PENDING_APPROVAL)
+
+    def test_create_admin_returns_201_approved(self):
+        resp = self.post("/api/v1/competitions/", self._payload(), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], Competition.Status.APPROVED)
+
+    # --- PATCH update ---
+
+    def test_update_anonymous_returns_401(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/competitions/{self.approved.pk}", {"url_route": "http://x.com"}).status_code, 401
+        )
+
+    def test_update_guest_returns_403(self):
+        self.assertEqual(
+            self.patch(
+                f"/api/v1/competitions/{self.approved.pk}", {"url_route": "http://x.com"}, user=self.guest
+            ).status_code,
+            403,
+        )
+
+    def test_update_participant_returns_403(self):
+        self.assertEqual(
+            self.patch(
+                f"/api/v1/competitions/{self.approved.pk}", {"url_route": "http://x.com"}, user=self.participant
+            ).status_code,
+            403,
+        )
+
+    def test_update_non_owner_organizer_returns_403(self):
+        self.assertEqual(
+            self.patch(
+                f"/api/v1/competitions/{self.approved.pk}", {"url_route": "http://x.com"}, user=self.organizer
+            ).status_code,
+            403,
+        )
+
+    def test_update_owner_returns_200(self):
+        self.assertEqual(
+            self.patch(
+                f"/api/v1/competitions/{self.owned.pk}", {"url_route": "http://x.com"}, user=self.owner
+            ).status_code,
+            200,
+        )
+
+    def test_update_admin_returns_200(self):
+        self.assertEqual(
+            self.patch(
+                f"/api/v1/competitions/{self.approved.pk}", {"url_route": "http://x.com"}, user=self.admin
+            ).status_code,
+            200,
+        )
+
+    def test_update_is_hidden_by_owner_returns_403(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/competitions/{self.owned.pk}", {"is_hidden": True}, user=self.owner).status_code, 403
+        )
+
+    def test_update_is_hidden_by_admin_returns_200(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/competitions/{self.approved.pk}", {"is_hidden": True}, user=self.admin).status_code,
+            200,
+        )
+
+    def test_update_participant_owner_returns_200(self):
+        """PATCH checks ownership only - a participant who owns a competition in the DB can update it."""
+        owned_by_par = _competition(submitted_by=self.participant)
+        self.assertEqual(
+            self.patch(
+                f"/api/v1/competitions/{owned_by_par.pk}", {"url_route": "http://x.com"}, user=self.participant
+            ).status_code,
+            200,
+        )
+
+    # --- DELETE ---
+
+    def test_delete_anonymous_returns_401(self):
+        self.assertEqual(self.delete(f"/api/v1/competitions/{self.approved.pk}").status_code, 401)
+
+    def test_delete_guest_returns_403(self):
+        self.assertEqual(self.delete(f"/api/v1/competitions/{self.approved.pk}", user=self.guest).status_code, 403)
+
+    def test_delete_participant_returns_403(self):
+        self.assertEqual(
+            self.delete(f"/api/v1/competitions/{self.approved.pk}", user=self.participant).status_code, 403
+        )
+
+    def test_delete_non_owner_organizer_returns_403(self):
+        self.assertEqual(self.delete(f"/api/v1/competitions/{self.approved.pk}", user=self.organizer).status_code, 403)
+
+    def test_delete_owner_returns_204(self):
+        comp = _competition(submitted_by=self.owner)
+        self.assertEqual(self.delete(f"/api/v1/competitions/{comp.pk}", user=self.owner).status_code, 204)
+
+    def test_delete_admin_returns_204(self):
+        comp = _competition()
+        self.assertEqual(self.delete(f"/api/v1/competitions/{comp.pk}", user=self.admin).status_code, 204)
+
+
+# ===========================================================================
+# News article - locale via web form -> API + web view
+# ===========================================================================
+
+
+class NewsLocaleTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.admin = _user("nl_admin", role=User.Role.ADMIN)
+
+    def test_article_created_via_web_form_has_all_locale_fields_in_api(self):
+        from datetime import datetime as dt
+
+        self.client.force_login(self.admin)
+        self.client.post(
+            "/news/articles/create/",
+            {
+                "title_ru": "Article RU",
+                "title_kk": "Article KK",
+                "title_en": "Article EN",
+                "intro_ru": "Intro RU",
+                "intro_kk": "Intro KK",
+                "intro_en": "Intro EN",
+                "body_ru": "",
+                "body_kk": "",
+                "body_en": "",
+                "published_at": dt.now().strftime("%Y-%m-%dT%H:%M"),
+            },
+        )
+        article = NewsArticle.objects.filter(title_ru="Article RU").first()
+        self.assertIsNotNone(article, "Article not created by web form")
+        resp = self.get(f"/api/v1/news/{article.pk}", user=self.admin)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["title"]["ru"], "Article RU")
+        self.assertEqual(data["title"]["kk"], "Article KK")
+        self.assertEqual(data["title"]["en"], "Article EN")
+        self.assertEqual(data["intro"]["ru"], "Intro RU")
+        self.assertEqual(data["intro"]["kk"], "Intro KK")
+        self.assertEqual(data["intro"]["en"], "Intro EN")
+
+    def test_article_created_via_web_form_appears_in_api_list(self):
+        from datetime import datetime as dt
+
+        self.client.force_login(self.admin)
+        self.client.post(
+            "/news/articles/create/",
+            {
+                "title_ru": "List Article RU",
+                "title_kk": "List Article KK",
+                "title_en": "List Article EN",
+                "intro_ru": "",
+                "intro_kk": "",
+                "intro_en": "",
+                "body_ru": "",
+                "body_kk": "",
+                "body_en": "",
+                "published_at": dt.now().strftime("%Y-%m-%dT%H:%M"),
+            },
+        )
+        article = NewsArticle.objects.filter(title_ru="List Article RU").first()
+        self.assertIsNotNone(article)
+        ids = [d["id"] for d in self.get("/api/v1/news/").json()]
+        self.assertIn(article.pk, ids)
+
+    def test_api_created_article_visible_in_web_view(self):
+        article = _article()
+        resp = self.client.get(f"/news/articles/{article.pk}/")
+        self.assertEqual(resp.status_code, 200)
+
+
+# ===========================================================================
+# News - access control: every role x every endpoint
+# ===========================================================================
+
+
+class NewsAccessTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.guest = _user("na_guest", role=User.Role.GUEST)
+        self.participant = _user("na_par", role=User.Role.PARTICIPANT)
+        self.other = _user("na_other", role=User.Role.PARTICIPANT)
+        self.admin = _user("na_admin", role=User.Role.ADMIN)
+        self.article = _article()
+        self.hidden_article = _article(is_hidden=True)
+        self.draft = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.NEWS)
+
+    def _payload(self):
+        return {"title": "T", "body": "B", "locale": "ru", "category": ""}
+
+    # --- GET list (NewsArticle) ---
+
+    def test_list_anonymous_sees_public_articles(self):
+        resp = self.get("/api/v1/news/")
+        self.assertEqual(resp.status_code, 200)
+        ids = [d["id"] for d in resp.json()]
+        self.assertIn(self.article.pk, ids)
+
+    def test_list_anonymous_excludes_hidden(self):
+        ids = [d["id"] for d in self.get("/api/v1/news/").json()]
+        self.assertNotIn(self.hidden_article.pk, ids)
+
+    def test_list_guest_excludes_hidden(self):
+        ids = [d["id"] for d in self.get("/api/v1/news/", user=self.guest).json()]
+        self.assertNotIn(self.hidden_article.pk, ids)
+
+    def test_list_participant_excludes_hidden(self):
+        ids = [d["id"] for d in self.get("/api/v1/news/", user=self.participant).json()]
+        self.assertNotIn(self.hidden_article.pk, ids)
+
+    def test_list_admin_includes_hidden(self):
+        ids = [d["id"] for d in self.get("/api/v1/news/", user=self.admin).json()]
+        self.assertIn(self.hidden_article.pk, ids)
+
+    # --- GET detail (NewsArticle) ---
+
+    def test_detail_anonymous_200_for_visible(self):
+        self.assertEqual(self.get(f"/api/v1/news/{self.article.pk}").status_code, 200)
+
+    def test_detail_anonymous_404_for_hidden(self):
+        self.assertEqual(self.get(f"/api/v1/news/{self.hidden_article.pk}").status_code, 404)
+
+    def test_detail_guest_404_for_hidden(self):
+        self.assertEqual(self.get(f"/api/v1/news/{self.hidden_article.pk}", user=self.guest).status_code, 404)
+
+    def test_detail_participant_404_for_hidden(self):
+        self.assertEqual(self.get(f"/api/v1/news/{self.hidden_article.pk}", user=self.participant).status_code, 404)
+
+    def test_detail_admin_200_for_hidden(self):
+        self.assertEqual(self.get(f"/api/v1/news/{self.hidden_article.pk}", user=self.admin).status_code, 200)
+
+    # --- POST create news draft ---
+
+    def test_create_anonymous_returns_401(self):
+        self.assertEqual(self.post("/api/v1/news/", self._payload()).status_code, 401)
+
+    def test_create_guest_returns_403(self):
+        self.assertEqual(self.post("/api/v1/news/", self._payload(), user=self.guest).status_code, 403)
+
+    def test_create_participant_returns_201_pending(self):
+        resp = self.post("/api/v1/news/", self._payload(), user=self.participant)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], DraftSubmission.Status.PENDING)
+
+    def test_create_admin_returns_201_approved(self):
+        resp = self.post("/api/v1/news/", self._payload(), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], DraftSubmission.Status.APPROVED)
+
+    # --- PATCH update news draft ---
+
+    def test_update_anonymous_returns_401(self):
+        self.assertEqual(self.patch(f"/api/v1/news/{self.draft.pk}", {"title": "X"}).status_code, 401)
+
+    def test_update_guest_not_owner_returns_403(self):
+        self.assertEqual(self.patch(f"/api/v1/news/{self.draft.pk}", {"title": "X"}, user=self.guest).status_code, 403)
+
+    def test_update_author_returns_200(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/news/{self.draft.pk}", {"title": "X"}, user=self.participant).status_code, 200
+        )
+
+    def test_update_other_participant_returns_403(self):
+        self.assertEqual(self.patch(f"/api/v1/news/{self.draft.pk}", {"title": "X"}, user=self.other).status_code, 403)
+
+    def test_update_admin_not_owner_returns_200(self):
+        self.assertEqual(self.patch(f"/api/v1/news/{self.draft.pk}", {"title": "X"}, user=self.admin).status_code, 200)
+
+    def test_update_approved_draft_returns_409(self):
+        draft = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.NEWS)
+        draft.status = DraftSubmission.Status.APPROVED
+        draft.save(update_fields=["status"])
+        self.assertEqual(self.patch(f"/api/v1/news/{draft.pk}", {"title": "X"}, user=self.admin).status_code, 409)
+
+    # --- DELETE news draft ---
+
+    def test_delete_anonymous_returns_401(self):
+        self.assertEqual(self.delete(f"/api/v1/news/{self.draft.pk}").status_code, 401)
+
+    def test_delete_author_returns_204(self):
+        d = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.NEWS)
+        self.assertEqual(self.delete(f"/api/v1/news/{d.pk}", user=self.participant).status_code, 204)
+
+    def test_delete_other_participant_returns_403(self):
+        self.assertEqual(self.delete(f"/api/v1/news/{self.draft.pk}", user=self.other).status_code, 403)
+
+    def test_delete_admin_not_owner_returns_204(self):
+        d = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.NEWS)
+        self.assertEqual(self.delete(f"/api/v1/news/{d.pk}", user=self.admin).status_code, 204)
+
+    def test_delete_approved_draft_returns_409(self):
+        draft = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.NEWS)
+        draft.status = DraftSubmission.Status.APPROVED
+        draft.save(update_fields=["status"])
+        self.assertEqual(self.delete(f"/api/v1/news/{draft.pk}", user=self.admin).status_code, 409)
+
+
+# ===========================================================================
+# Knowledge - locale CRUD + web form -> API
+# ===========================================================================
+
+
+class KnowledgeLocaleCRUDTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.admin = _user("kl_admin", role=User.Role.ADMIN)
+        self.author = _user("kl_author", role=User.Role.PARTICIPANT)
+
+    def _create(self, user=None, **overrides):
+        payload = {"title": "Knowledge Title", "body": "Body text", "locale": "ru", "category": ""}
+        payload.update(overrides)
+        resp = self.post("/api/v1/knowledge/", payload, user=user or self.admin)
+        self.assertEqual(resp.status_code, 201)
+        return resp.json()
+
+    def test_create_returns_all_fields(self):
+        data = self._create()
+        self.assertEqual(data["title"], "Knowledge Title")
+        self.assertEqual(data["body"], "Body text")
+        self.assertEqual(data["locale"], "ru")
+
+    def test_all_locales_accepted(self):
+        for locale in ("ru", "kk", "en"):
+            data = self._create(locale=locale, title=f"Title {locale}")
+            self.assertEqual(data["locale"], locale)
+
+    def test_approved_draft_visible_to_anonymous(self):
+        data = self._create()
+        resp = self.get(f"/api/v1/knowledge/{data['id']}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["title"], "Knowledge Title")
+
+    def test_pending_draft_visible_to_author(self):
+        data = self._create(user=self.author)
+        resp = self.get(f"/api/v1/knowledge/{data['id']}", user=self.author)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_approved_drafts_appear_in_list(self):
+        data = self._create()
+        ids = [d["id"] for d in self.get("/api/v1/knowledge/").json()]
+        self.assertIn(data["id"], ids)
+
+    def test_patch_updates_title(self):
+        data = self._create(user=self.author)
+        pk = data["id"]
+        self.patch(f"/api/v1/knowledge/{pk}", {"title": "Updated"}, user=self.author)
+        resp = self.get(f"/api/v1/knowledge/{pk}", user=self.author)
+        self.assertEqual(resp.json()["title"], "Updated")
+
+    def test_patch_updates_locale(self):
+        data = self._create(user=self.author)
+        pk = data["id"]
+        self.patch(f"/api/v1/knowledge/{pk}", {"locale": "kk"}, user=self.author)
+        self.assertEqual(self.get(f"/api/v1/knowledge/{pk}", user=self.author).json()["locale"], "kk")
+
+    def test_delete_removes_draft(self):
+        data = self._create(user=self.author)
+        pk = data["id"]
+        self.delete(f"/api/v1/knowledge/{pk}", user=self.author)
+        self.assertEqual(self.get(f"/api/v1/knowledge/{pk}", user=self.author).status_code, 404)
+
+    def test_web_form_creates_draft_visible_via_api(self):
+        participant = _user("kl_wf_par", role=User.Role.PARTICIPANT)
+        self.client.force_login(participant)
+        self.client.post(
+            "/knowledge/submit/",
+            {"title": "Web Draft", "body": "Web body", "locale": "ru", "category": ""},
+        )
+        draft = DraftSubmission.objects.filter(title="Web Draft", author=participant).first()
+        self.assertIsNotNone(draft, "Draft not created via web form")
+        resp = self.get(f"/api/v1/knowledge/{draft.pk}", user=participant)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["title"], "Web Draft")
+
+
+# ===========================================================================
+# Knowledge - access control: every role x every endpoint
+# ===========================================================================
+
+
+class KnowledgeAccessTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.guest = _user("ka_guest", role=User.Role.GUEST)
+        self.author = _user("ka_author", role=User.Role.PARTICIPANT)
+        self.other = _user("ka_other", role=User.Role.PARTICIPANT)
+        self.admin = _user("ka_admin", role=User.Role.ADMIN)
+        self.approved_draft = _draft(
+            self.author,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            status=DraftSubmission.Status.APPROVED,
+        )
+        self.pending_draft = _draft(
+            self.author,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+        )
+
+    def _payload(self):
+        return {"title": "T", "body": "B", "locale": "ru", "category": ""}
+
+    # --- GET list ---
+
+    def test_list_anonymous_sees_approved(self):
+        resp = self.get("/api/v1/knowledge/")
+        self.assertEqual(resp.status_code, 200)
+        ids = [d["id"] for d in resp.json()]
+        self.assertIn(self.approved_draft.pk, ids)
+
+    def test_list_anonymous_no_pending(self):
+        ids = [d["id"] for d in self.get("/api/v1/knowledge/").json()]
+        self.assertNotIn(self.pending_draft.pk, ids)
+
+    def test_list_pending_anonymous_returns_401(self):
+        self.assertEqual(self.get("/api/v1/knowledge/?status=pending").status_code, 401)
+
+    def test_list_pending_non_admin_sees_only_own(self):
+        resp = self.get("/api/v1/knowledge/?status=pending", user=self.author)
+        ids = [d["id"] for d in resp.json()]
+        self.assertIn(self.pending_draft.pk, ids)
+
+    def test_list_pending_non_admin_does_not_see_others(self):
+        resp = self.get("/api/v1/knowledge/?status=pending", user=self.other)
+        ids = [d["id"] for d in resp.json()]
+        self.assertNotIn(self.pending_draft.pk, ids)
+
+    def test_list_pending_admin_sees_all(self):
+        resp = self.get("/api/v1/knowledge/?status=pending", user=self.admin)
+        ids = [d["id"] for d in resp.json()]
+        self.assertIn(self.pending_draft.pk, ids)
+
+    # --- GET detail ---
+
+    def test_detail_anonymous_200_for_approved(self):
+        self.assertEqual(self.get(f"/api/v1/knowledge/{self.approved_draft.pk}").status_code, 200)
+
+    def test_detail_anonymous_404_for_pending(self):
+        self.assertEqual(self.get(f"/api/v1/knowledge/{self.pending_draft.pk}").status_code, 404)
+
+    def test_detail_author_200_for_own_pending(self):
+        self.assertEqual(self.get(f"/api/v1/knowledge/{self.pending_draft.pk}", user=self.author).status_code, 200)
+
+    def test_detail_other_participant_403_for_pending(self):
+        self.assertEqual(self.get(f"/api/v1/knowledge/{self.pending_draft.pk}", user=self.other).status_code, 403)
+
+    def test_detail_admin_200_for_pending(self):
+        self.assertEqual(self.get(f"/api/v1/knowledge/{self.pending_draft.pk}", user=self.admin).status_code, 200)
+
+    # --- POST create ---
+
+    def test_create_anonymous_returns_401(self):
+        self.assertEqual(self.post("/api/v1/knowledge/", self._payload()).status_code, 401)
+
+    def test_create_guest_returns_403(self):
+        self.assertEqual(self.post("/api/v1/knowledge/", self._payload(), user=self.guest).status_code, 403)
+
+    def test_create_participant_returns_201_pending(self):
+        resp = self.post("/api/v1/knowledge/", self._payload(), user=self.author)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], DraftSubmission.Status.PENDING)
+
+    def test_create_admin_returns_201_approved(self):
+        resp = self.post("/api/v1/knowledge/", self._payload(), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], DraftSubmission.Status.APPROVED)
+
+    # --- PATCH update ---
+
+    def test_update_anonymous_returns_401(self):
+        self.assertEqual(self.patch(f"/api/v1/knowledge/{self.pending_draft.pk}", {"title": "X"}).status_code, 401)
+
+    def test_update_guest_not_owner_returns_403(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/knowledge/{self.pending_draft.pk}", {"title": "X"}, user=self.guest).status_code, 403
+        )
+
+    def test_update_author_returns_200(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/knowledge/{self.pending_draft.pk}", {"title": "X"}, user=self.author).status_code, 200
+        )
+
+    def test_update_other_participant_returns_403(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/knowledge/{self.pending_draft.pk}", {"title": "X"}, user=self.other).status_code, 403
+        )
+
+    def test_update_admin_not_owner_returns_200(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/knowledge/{self.pending_draft.pk}", {"title": "X"}, user=self.admin).status_code, 200
+        )
+
+    def test_update_approved_draft_returns_409(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/knowledge/{self.approved_draft.pk}", {"title": "X"}, user=self.author).status_code, 409
+        )
+
+    def test_update_approved_draft_by_admin_returns_409(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/knowledge/{self.approved_draft.pk}", {"title": "X"}, user=self.admin).status_code, 409
+        )
+
+    # --- DELETE ---
+
+    def test_delete_anonymous_returns_401(self):
+        self.assertEqual(self.delete(f"/api/v1/knowledge/{self.pending_draft.pk}").status_code, 401)
+
+    def test_delete_author_returns_204(self):
+        d = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        self.assertEqual(self.delete(f"/api/v1/knowledge/{d.pk}", user=self.author).status_code, 204)
+
+    def test_delete_other_participant_returns_403(self):
+        self.assertEqual(self.delete(f"/api/v1/knowledge/{self.pending_draft.pk}", user=self.other).status_code, 403)
+
+    def test_delete_admin_not_owner_returns_204(self):
+        d = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        self.assertEqual(self.delete(f"/api/v1/knowledge/{d.pk}", user=self.admin).status_code, 204)
+
+    def test_delete_approved_draft_returns_409(self):
+        self.assertEqual(self.delete(f"/api/v1/knowledge/{self.approved_draft.pk}", user=self.admin).status_code, 409)
+
+
+# ===========================================================================
+# Location - access control: every role x every endpoint
+# ===========================================================================
+
+
+class LocationAccessTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.guest = _user("la_guest", role=User.Role.GUEST)
+        self.participant = _user("la_par", role=User.Role.PARTICIPANT)
+        self.organizer = _user("la_org", role=User.Role.ORGANIZER)
+        self.admin = _user("la_admin", role=User.Role.ADMIN)
+        self.loc = _location()
+
+    def _create_payload(self):
+        return {"name": {"ru": "Loc RU", "kk": "Loc KK", "en": "Loc EN"}}
+
+    # --- GET list (all can read) ---
+
+    def test_list_anonymous_returns_200(self):
+        self.assertEqual(self.get("/api/v1/locations/").status_code, 200)
+
+    def test_list_guest_returns_200(self):
+        self.assertEqual(self.get("/api/v1/locations/", user=self.guest).status_code, 200)
+
+    def test_list_participant_returns_200(self):
+        self.assertEqual(self.get("/api/v1/locations/", user=self.participant).status_code, 200)
+
+    # --- GET detail (all can read) ---
+
+    def test_detail_anonymous_returns_200(self):
+        self.assertEqual(self.get(f"/api/v1/locations/{self.loc.pk}").status_code, 200)
+
+    def test_detail_participant_returns_200(self):
+        self.assertEqual(self.get(f"/api/v1/locations/{self.loc.pk}", user=self.participant).status_code, 200)
+
+    # --- POST create (ADMIN only) ---
+
+    def test_create_anonymous_returns_401(self):
+        self.assertEqual(self.post("/api/v1/locations/", self._create_payload()).status_code, 401)
+
+    def test_create_guest_returns_403(self):
+        self.assertEqual(self.post("/api/v1/locations/", self._create_payload(), user=self.guest).status_code, 403)
+
+    def test_create_participant_returns_403(self):
+        self.assertEqual(
+            self.post("/api/v1/locations/", self._create_payload(), user=self.participant).status_code, 403
+        )
+
+    def test_create_organizer_returns_403(self):
+        self.assertEqual(self.post("/api/v1/locations/", self._create_payload(), user=self.organizer).status_code, 403)
+
+    def test_create_admin_returns_201(self):
+        resp = self.post("/api/v1/locations/", self._create_payload(), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        data = resp.json()
+        self.assertEqual(data["name"]["ru"], "Loc RU")
+        self.assertEqual(data["name"]["kk"], "Loc KK")
+        self.assertEqual(data["name"]["en"], "Loc EN")
+
+    # --- PATCH update (ADMIN only) ---
+
+    def test_update_anonymous_returns_401(self):
+        self.assertEqual(
+            self.patch(f"/api/v1/locations/{self.loc.pk}", {"name": {"ru": "X", "kk": "", "en": ""}}).status_code, 401
+        )
+
+    def test_update_guest_returns_403(self):
+        self.assertEqual(
+            self.patch(
+                f"/api/v1/locations/{self.loc.pk}", {"name": {"ru": "X", "kk": "", "en": ""}}, user=self.guest
+            ).status_code,
+            403,
+        )
+
+    def test_update_participant_returns_403(self):
+        self.assertEqual(
+            self.patch(
+                f"/api/v1/locations/{self.loc.pk}", {"name": {"ru": "X", "kk": "", "en": ""}}, user=self.participant
+            ).status_code,
+            403,
+        )
+
+    def test_update_organizer_returns_403(self):
+        self.assertEqual(
+            self.patch(
+                f"/api/v1/locations/{self.loc.pk}", {"name": {"ru": "X", "kk": "", "en": ""}}, user=self.organizer
+            ).status_code,
+            403,
+        )
+
+    def test_update_admin_returns_200(self):
+        resp = self.patch(
+            f"/api/v1/locations/{self.loc.pk}",
+            {"name": {"ru": "New RU", "kk": "New KK", "en": "New EN"}},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["name"]["ru"], "New RU")
+        self.assertEqual(data["name"]["kk"], "New KK")
+        self.assertEqual(data["name"]["en"], "New EN")
+
+    # --- DELETE (ADMIN only) ---
+
+    def test_delete_anonymous_returns_401(self):
+        self.assertEqual(self.delete(f"/api/v1/locations/{self.loc.pk}").status_code, 401)
+
+    def test_delete_guest_returns_403(self):
+        loc = _location()
+        self.assertEqual(self.delete(f"/api/v1/locations/{loc.pk}", user=self.guest).status_code, 403)
+
+    def test_delete_participant_returns_403(self):
+        loc = _location()
+        self.assertEqual(self.delete(f"/api/v1/locations/{loc.pk}", user=self.participant).status_code, 403)
+
+    def test_delete_organizer_returns_403(self):
+        loc = _location()
+        self.assertEqual(self.delete(f"/api/v1/locations/{loc.pk}", user=self.organizer).status_code, 403)
+
+    def test_delete_admin_returns_204(self):
+        loc = _location()
+        self.assertEqual(self.delete(f"/api/v1/locations/{loc.pk}", user=self.admin).status_code, 204)
