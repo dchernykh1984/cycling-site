@@ -504,20 +504,16 @@ msgid "February"
 msgstr "Ақпан"
 
 #: calendar_app/templates/calendar_app/calendar.html:106
-#, fuzzy
-#| msgid "Search"
 msgid "March"
-msgstr "Iздеу"
+msgstr "Наурыз"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
 msgid "April"
 msgstr "Сәуір"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
-#, fuzzy
-#| msgid "Map"
 msgid "May"
-msgstr "Карта"
+msgstr "Мамыр"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
 msgid "June"
@@ -544,10 +540,8 @@ msgid "November"
 msgstr "Қараша"
 
 #: calendar_app/templates/calendar_app/calendar.html:109
-#, fuzzy
-#| msgid "Team members"
 msgid "December"
-msgstr "Команда мүшелері"
+msgstr "Желтоқсан"
 
 #: calendar_app/templates/calendar_app/detail.html:12
 #: calendar_app/templates/calendar_app/edit.html:12

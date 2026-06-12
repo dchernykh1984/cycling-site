@@ -497,57 +497,51 @@ msgstr "Дисциплина"
 
 #: calendar_app/templates/calendar_app/calendar.html:106
 msgid "January"
-msgstr ""
+msgstr "Январь"
 
 #: calendar_app/templates/calendar_app/calendar.html:106
 msgid "February"
-msgstr ""
+msgstr "Февраль"
 
 #: calendar_app/templates/calendar_app/calendar.html:106
-#, fuzzy
-#| msgid "Search"
 msgid "March"
-msgstr "Поиск"
+msgstr "Март"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
 msgid "April"
-msgstr ""
+msgstr "Апрель"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
-#, fuzzy
-#| msgid "Map"
 msgid "May"
-msgstr "Карта"
+msgstr "Май"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
 msgid "June"
-msgstr ""
+msgstr "Июнь"
 
 #: calendar_app/templates/calendar_app/calendar.html:108
 msgid "July"
-msgstr ""
+msgstr "Июль"
 
 #: calendar_app/templates/calendar_app/calendar.html:108
 msgid "August"
-msgstr ""
+msgstr "Август"
 
 #: calendar_app/templates/calendar_app/calendar.html:108
 msgid "September"
-msgstr ""
+msgstr "Сентябрь"
 
 #: calendar_app/templates/calendar_app/calendar.html:109
 msgid "October"
-msgstr ""
+msgstr "Октябрь"
 
 #: calendar_app/templates/calendar_app/calendar.html:109
 msgid "November"
-msgstr ""
+msgstr "Ноябрь"
 
 #: calendar_app/templates/calendar_app/calendar.html:109
-#, fuzzy
-#| msgid "Team members"
 msgid "December"
-msgstr "Участники команды"
+msgstr "Декабрь"
 
 #: calendar_app/templates/calendar_app/detail.html:12
 #: calendar_app/templates/calendar_app/edit.html:12
