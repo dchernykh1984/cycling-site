@@ -224,7 +224,7 @@ class CompetitionDetailView(View):
         # tokens of other organizers' competitions.
         show_upload_token = request.user.is_authenticated and (is_manager or request.user == competition.submitted_by)
         already_registered = False
-        if request.user.is_authenticated and competition.registration_mode == "self_only":
+        if request.user.is_authenticated:
             from registrations.models import CompetitionRegistration
 
             already_registered = CompetitionRegistration.objects.filter(

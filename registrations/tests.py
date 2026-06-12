@@ -225,9 +225,8 @@ class RegisterForCompetitionViewTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(
-            CompetitionRegistration.objects.filter(competition=self.comp, first_name="Denis", last_name="Test").exists()
-        )
+        reg = CompetitionRegistration.objects.get(competition=self.comp, first_name="Denis", last_name="Test")
+        self.assertEqual(reg.user, self.user)
 
     def test_self_only_requires_profile_complete(self):
         user_incomplete = make_user("incomplete")
@@ -597,6 +596,7 @@ class RelayRegistrationViewTests(TestCase):
         self.assertEqual(reg.participant_names, "Ivanov Ivan<BR>Petrov Vasya<BR>Sidorov Petr")
         self.assertEqual(reg.first_name, "")
         self.assertEqual(reg.last_name, "")
+        self.assertEqual(reg.user, self.user)
 
     def test_post_relay_rejects_empty_names(self):
         response = self.client.post(
