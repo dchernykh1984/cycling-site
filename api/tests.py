@@ -171,11 +171,26 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 1)
 
-    def test_filter_by_status(self):
+    def test_non_admin_cannot_see_others_pending_via_status_filter(self):
+        _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get("/api/v1/competitions/?status=pending_approval", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 0)
+
+    def test_non_admin_sees_own_pending_via_status_filter(self):
+        _competition(status=Competition.Status.PENDING_APPROVAL, submitted_by=self.reader)
         _competition(status=Competition.Status.PENDING_APPROVAL)
         resp = self.get("/api/v1/competitions/?status=pending_approval", user=self.reader)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 1)
+
+    def test_admin_sees_all_pending_via_status_filter(self):
+        admin = _user("list_admin", role=User.Role.ADMIN)
+        _competition(status=Competition.Status.PENDING_APPROVAL)
+        _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get("/api/v1/competitions/?status=pending_approval", user=admin)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 2)
 
     def test_filter_by_city_ids(self):
         city = _location()
@@ -256,6 +271,24 @@ class CompetitionDetailTest(TestCase, ApiTestMixin):
         comp = _competition()
         resp = self.get(f"/api/v1/competitions/{comp.pk}", user=stranger)
         self.assertIsNone(resp.json()["competition_token"])
+
+    def test_pending_competition_hidden_from_stranger(self):
+        owner = _user("pending_owner", role=User.Role.ORGANIZER)
+        comp = _competition(submitted_by=owner, status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=self.reader)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_owner_can_get_own_pending(self):
+        owner = _user("own_pending", role=User.Role.ORGANIZER)
+        comp = _competition(submitted_by=owner, status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=owner)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_admin_can_get_pending(self):
+        admin = _user("det_admin", role=User.Role.ADMIN)
+        comp = _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=admin)
+        self.assertEqual(resp.status_code, 200)
 
     def test_anonymous_returns_401(self):
         comp = _competition()

@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.db.models import Q
 from ninja import Query, Router, Schema
 from ninja.errors import HttpError
 
@@ -89,8 +90,6 @@ def _descendant_location_ids(location_ids: list[int]) -> set[int]:
     """Return PKs of all locations at or below the given location IDs (treebeard path prefix match)."""
     if not location_ids:
         return set()
-    from django.db.models import Q
-
     roots = Location.objects.filter(pk__in=location_ids).values_list("path", flat=True)
     if not roots:
         return set()
@@ -146,7 +145,10 @@ def list_competitions(
     region_ids: list[int] = Query(default=[]),  # noqa: B008
     city_ids: list[int] = Query(default=[]),  # noqa: B008
 ):
+    user = request.auth
     qs = Competition.objects.filter(is_deleted=False)
+    if not is_admin(user):
+        qs = qs.filter(Q(status=Competition.Status.APPROVED) | Q(submitted_by=user))
     qs = qs.filter(status=status) if status else qs.filter(status=Competition.Status.APPROVED)
     if discipline_ids:
         qs = qs.filter(discipline_id__in=discipline_ids)
@@ -161,7 +163,10 @@ def list_competitions(
 @router.get("/{competition_id}", response=CompetitionDetailOut, auth=auth, summary="Get competition detail")
 def get_competition(request, competition_id: int):
     competition = _get_or_404(competition_id)
-    return _to_detail(competition, request.auth)
+    user = request.auth
+    if competition.status != Competition.Status.APPROVED and not (_is_owner(user, competition) or is_admin(user)):
+        raise HttpError(404, "Competition not found")
+    return _to_detail(competition, user)
 
 
 @router.post("/", response={201: CompetitionDetailOut}, auth=auth, summary="Create competition")
