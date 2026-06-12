@@ -10,6 +10,7 @@ from ninja import Router, Schema
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
+from api.schemas import LocalizedStr, localize_field
 from knowledge.models import DraftSubmission
 from news.models import NewsArticle
 
@@ -54,13 +55,25 @@ class DraftOut(Schema):
 
 class NewsArticleOut(Schema):
     id: int
-    title: str
-    intro: str
-    body: str
+    title: LocalizedStr
+    intro: LocalizedStr
+    body: LocalizedStr
     slug: str
     published_at: datetime
     is_hidden: bool
     published_by_id: int | None
+
+    @staticmethod
+    def resolve_title(obj: NewsArticle) -> LocalizedStr:
+        return localize_field(obj, "title")
+
+    @staticmethod
+    def resolve_intro(obj: NewsArticle) -> LocalizedStr:
+        return localize_field(obj, "intro")
+
+    @staticmethod
+    def resolve_body(obj: NewsArticle) -> LocalizedStr:
+        return localize_field(obj, "body")
 
 
 # -- Helpers ------------------------------------------------------------------
