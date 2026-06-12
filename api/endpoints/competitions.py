@@ -91,13 +91,13 @@ def _descendant_location_ids(location_ids: list[int]) -> set[int]:
         return set()
     from django.db.models import Q
 
-    roots = Location.objects.filter(pk__in=location_ids, is_deleted=False).values_list("path", flat=True)
+    roots = Location.objects.filter(pk__in=location_ids).values_list("path", flat=True)
     if not roots:
         return set()
     q = Q()
     for path in roots:
         q |= Q(path__startswith=path)
-    return set(Location.objects.filter(q, is_deleted=False).values_list("pk", flat=True))
+    return set(Location.objects.filter(q).values_list("pk", flat=True))
 
 
 def _is_owner(user, competition: Competition) -> bool:

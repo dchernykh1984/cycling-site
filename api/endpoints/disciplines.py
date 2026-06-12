@@ -10,6 +10,10 @@ router = Router(tags=["disciplines"])
 event_types_router = Router(tags=["event-types"])
 
 
+def _localize_name(obj) -> LocalizedStr:  # type: ignore[no-untyped-def]
+    return LocalizedStr(ru=obj.name_ru or "", kk=obj.name_kk or "", en=obj.name_en or "")  # type: ignore[attr-defined]
+
+
 # -- Schemas -------------------------------------------------------------------
 
 
@@ -19,7 +23,7 @@ class DisciplineOut(Schema):
 
     @staticmethod
     def resolve_name(obj: Discipline) -> LocalizedStr:
-        return LocalizedStr(ru=obj.name_ru or "", kk=obj.name_kk or "", en=obj.name_en or "")  # type: ignore[attr-defined]
+        return _localize_name(obj)
 
 
 class DisciplineCategoryOut(Schema):
@@ -29,7 +33,7 @@ class DisciplineCategoryOut(Schema):
 
     @staticmethod
     def resolve_name(obj: DisciplineCategory) -> LocalizedStr:
-        return LocalizedStr(ru=obj.name_ru or "", kk=obj.name_kk or "", en=obj.name_en or "")  # type: ignore[attr-defined]
+        return _localize_name(obj)
 
     @staticmethod
     def resolve_disciplines(obj: DisciplineCategory) -> list[Discipline]:
@@ -42,7 +46,7 @@ class EventTypeOut(Schema):
 
     @staticmethod
     def resolve_name(obj: EventType) -> LocalizedStr:
-        return LocalizedStr(ru=obj.name_ru or "", kk=obj.name_kk or "", en=obj.name_en or "")  # type: ignore[attr-defined]
+        return _localize_name(obj)
 
 
 # -- Endpoints -----------------------------------------------------------------
