@@ -4,12 +4,13 @@ from django.db.models import Q
 from ninja import Query, Router, Schema
 from ninja.errors import HttpError
 
-from api.auth import ApiTokenAuth, is_admin
+from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
 from locations.models import Location
 
 auth = ApiTokenAuth()
+optional_auth = OptionalApiTokenAuth()
 router = Router(tags=["competitions"])
 
 
@@ -100,7 +101,8 @@ def _descendant_location_ids(location_ids: list[int]) -> set[int]:
 
 
 def _is_owner(user, competition: Competition) -> bool:
-    return competition.submitted_by_id == user.pk
+    uid = getattr(user, "pk", None)
+    return uid is not None and competition.submitted_by_id == uid
 
 
 def _get_or_404(pk: int) -> Competition:
@@ -141,7 +143,7 @@ def _to_detail(competition: Competition, user=None) -> Competition:
 # -- Endpoints -------------------------------------------------------------
 
 
-@router.get("/", response=list[CompetitionOut], auth=auth, summary="List competitions")
+@router.get("/", response=list[CompetitionOut], auth=optional_auth, summary="List competitions")
 def list_competitions(
     request,
     status: Competition.Status = Competition.Status.APPROVED,
@@ -152,7 +154,10 @@ def list_competitions(
     user = request.auth
     qs = Competition.objects.filter(is_deleted=False)
     if not is_admin(user):
-        qs = qs.filter(Q(status=Competition.Status.APPROVED, is_hidden=False) | Q(submitted_by=user))
+        base_q = Q(status=Competition.Status.APPROVED, is_hidden=False)
+        if getattr(user, "is_authenticated", False):
+            base_q |= Q(submitted_by=user)
+        qs = qs.filter(base_q)
     qs = qs.filter(status=status)
     if discipline_ids:
         qs = qs.filter(discipline_id__in=discipline_ids)
@@ -163,7 +168,7 @@ def list_competitions(
     return list(qs)
 
 
-@router.get("/{competition_id}", response=CompetitionDetailOut, auth=auth, summary="Get competition detail")
+@router.get("/{competition_id}", response=CompetitionDetailOut, auth=optional_auth, summary="Get competition detail")
 def get_competition(request, competition_id: int):
     competition = _get_or_404(competition_id)
     user = request.auth

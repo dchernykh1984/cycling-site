@@ -120,6 +120,13 @@ class IsAdminTest(TestCase):
         user = User.objects.create_superuser("sup", "s@s.com", "Pass1!")
         self.assertTrue(is_admin(user))
 
+    def test_anonymous_user_returns_false(self):
+        from django.contrib.auth.models import AnonymousUser
+
+        from api.auth import is_admin
+
+        self.assertFalse(is_admin(AnonymousUser()))
+
 
 class ApiTokenAuthTest(TestCase, ApiTestMixin):
     def test_valid_token_authenticates(self):
@@ -136,13 +143,13 @@ class ApiTokenAuthTest(TestCase, ApiTestMixin):
         )
         self.assertEqual(resp.status_code, 401)
 
-    def test_no_token_returns_401(self):
+    def test_no_token_returns_200_on_public_list(self):
         resp = self.client.get("/api/v1/competitions/")
-        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(resp.status_code, 200)
 
-    def test_no_token_on_locations_returns_401(self):
+    def test_no_token_on_locations_returns_200(self):
         resp = self.client.get("/api/v1/locations/")
-        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(resp.status_code, 200)
 
     def test_participant_token_grants_read_access(self):
         participant = _user("par_read", role=User.Role.PARTICIPANT)
@@ -276,9 +283,13 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         self.assertEqual(data["title"]["kk"], "Race KK")
         self.assertEqual(data["title"]["en"], "Race")
 
-    def test_anonymous_returns_401(self):
+    def test_anonymous_sees_only_approved_visible(self):
+        _competition(status=Competition.Status.APPROVED, is_hidden=False)
+        _competition(status=Competition.Status.APPROVED, is_hidden=True)
+        _competition(status=Competition.Status.PENDING_APPROVAL)
         resp = self.get("/api/v1/competitions/")
-        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 1)
 
 
 class CompetitionDetailTest(TestCase, ApiTestMixin):
@@ -338,10 +349,16 @@ class CompetitionDetailTest(TestCase, ApiTestMixin):
         resp = self.get(f"/api/v1/competitions/{comp.pk}", user=admin)
         self.assertEqual(resp.status_code, 200)
 
-    def test_anonymous_returns_401(self):
+    def test_anonymous_can_get_approved_competition(self):
         comp = _competition()
         resp = self.get(f"/api/v1/competitions/{comp.pk}")
-        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(resp.json()["competition_token"])
+
+    def test_anonymous_hidden_competition_returns_404(self):
+        comp = _competition(is_hidden=True)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}")
+        self.assertEqual(resp.status_code, 404)
 
     def test_404_for_missing(self):
         resp = self.get("/api/v1/competitions/99999", user=self.reader)
@@ -557,6 +574,34 @@ class NewsDraftTest(TestCase, ApiTestMixin):
         resp = self.delete(f"/api/v1/news/{draft.pk}", user=self.admin)
         self.assertEqual(resp.status_code, 409)
 
+    def test_anonymous_can_list_approved_news(self):
+        approved = _draft(self.author)
+        approved.status = DraftSubmission.Status.APPROVED
+        approved.save(update_fields=["status"])
+        resp = self.get("/api/v1/news/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(approved.pk, [d["id"] for d in resp.json()])
+
+    def test_anonymous_cannot_list_pending_news(self):
+        resp = self.client.get("/api/v1/news/?status=pending")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_anonymous_can_get_approved_news(self):
+        approved = _draft(self.author)
+        approved.status = DraftSubmission.Status.APPROVED
+        approved.save(update_fields=["status"])
+        resp = self.get(f"/api/v1/news/{approved.pk}")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_anonymous_cannot_get_pending_news(self):
+        draft = _draft(self.author)
+        resp = self.get(f"/api/v1/news/{draft.pk}")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_invalid_token_still_returns_401_on_public_endpoints(self):
+        resp = self.client.get("/api/v1/competitions/", HTTP_AUTHORIZATION="Bearer bad-token")
+        self.assertEqual(resp.status_code, 401)
+
 
 # ---------------------------------------------------------------------------
 # Locations
@@ -609,9 +654,9 @@ class LocationListTest(TestCase, ApiTestMixin):
         city_ids = [c["id"] for c in region_data["children"]]
         self.assertIn(city.pk, city_ids)
 
-    def test_anonymous_returns_401(self):
+    def test_anonymous_can_list_locations(self):
         resp = self.get("/api/v1/locations/")
-        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(resp.status_code, 200)
 
 
 class LocationDetailTest(TestCase, ApiTestMixin):
@@ -628,10 +673,10 @@ class LocationDetailTest(TestCase, ApiTestMixin):
         resp = self.get("/api/v1/locations/99999", user=self.reader)
         self.assertEqual(resp.status_code, 404)
 
-    def test_anonymous_returns_401(self):
+    def test_anonymous_can_get_location(self):
         loc = _location()
         resp = self.get(f"/api/v1/locations/{loc.pk}")
-        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(resp.status_code, 200)
 
 
 class LocationCreateTest(TestCase, ApiTestMixin):
@@ -928,9 +973,9 @@ class DisciplineListTest(TestCase, ApiTestMixin):
         resp = self.get("/api/v1/disciplines/99999", user=self.reader)
         self.assertEqual(resp.status_code, 404)
 
-    def test_anonymous_returns_401(self):
+    def test_anonymous_can_list_disciplines(self):
         resp = self.get("/api/v1/disciplines/")
-        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(resp.status_code, 200)
 
 
 class EventTypeListTest(TestCase, ApiTestMixin):
@@ -948,6 +993,6 @@ class EventTypeListTest(TestCase, ApiTestMixin):
         self.assertEqual(entry["name"]["ru"], "Stage_ru")
         self.assertEqual(entry["name"]["en"], "Stage race")
 
-    def test_anonymous_returns_401(self):
+    def test_anonymous_can_list_event_types(self):
         resp = self.get("/api/v1/event-types/")
-        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(resp.status_code, 200)

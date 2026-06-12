@@ -8,10 +8,11 @@ from datetime import datetime
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
-from api.auth import ApiTokenAuth, is_admin
+from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from knowledge.models import DraftSubmission
 
 auth = ApiTokenAuth()
+optional_auth = OptionalApiTokenAuth()
 
 news_router = Router(tags=["news"])
 knowledge_router = Router(tags=["knowledge"])
@@ -134,21 +135,26 @@ def _delete_draft(request, pk: int, submission_type: str) -> None:
 # -- News endpoints -----------------------------------------------------------
 
 
-@news_router.get("/", response=list[DraftOut], auth=auth, summary="List news drafts")
+@news_router.get("/", response=list[DraftOut], auth=optional_auth, summary="List news drafts")
 def list_news_drafts(request, status: DraftSubmission.Status = DraftSubmission.Status.APPROVED):
     user = request.auth
+    if not getattr(user, "is_authenticated", False) and status != DraftSubmission.Status.APPROVED:
+        raise HttpError(401, "Unauthorized")
     qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.NEWS)
-    if not is_admin(user) and status != DraftSubmission.Status.APPROVED:
+    if not is_admin(user) and getattr(user, "is_authenticated", False) and status != DraftSubmission.Status.APPROVED:
         qs = qs.filter(author=user)
     qs = qs.filter(status=status)
     return list(qs)
 
 
-@news_router.get("/{draft_id}", response=DraftOut, auth=auth, summary="Get news draft")
+@news_router.get("/{draft_id}", response=DraftOut, auth=optional_auth, summary="Get news draft")
 def get_news_draft(request, draft_id: int):
     user = request.auth
     draft = _get_draft_or_404(draft_id, DraftSubmission.SubmissionType.NEWS)
-    _require_owner_or_admin(user, draft)
+    if draft.status != DraftSubmission.Status.APPROVED:
+        if not getattr(user, "is_authenticated", False):
+            raise HttpError(404, "Draft not found")
+        _require_owner_or_admin(user, draft)
     return draft
 
 
@@ -172,21 +178,26 @@ def delete_news_draft(request, draft_id: int):
 # -- Knowledge article endpoints ----------------------------------------------
 
 
-@knowledge_router.get("/", response=list[DraftOut], auth=auth, summary="List knowledge article drafts")
+@knowledge_router.get("/", response=list[DraftOut], auth=optional_auth, summary="List knowledge article drafts")
 def list_knowledge_drafts(request, status: DraftSubmission.Status = DraftSubmission.Status.APPROVED):
     user = request.auth
+    if not getattr(user, "is_authenticated", False) and status != DraftSubmission.Status.APPROVED:
+        raise HttpError(401, "Unauthorized")
     qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    if not is_admin(user) and status != DraftSubmission.Status.APPROVED:
+    if not is_admin(user) and getattr(user, "is_authenticated", False) and status != DraftSubmission.Status.APPROVED:
         qs = qs.filter(author=user)
     qs = qs.filter(status=status)
     return list(qs)
 
 
-@knowledge_router.get("/{draft_id}", response=DraftOut, auth=auth, summary="Get knowledge article draft")
+@knowledge_router.get("/{draft_id}", response=DraftOut, auth=optional_auth, summary="Get knowledge article draft")
 def get_knowledge_draft(request, draft_id: int):
     user = request.auth
     draft = _get_draft_or_404(draft_id, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    _require_owner_or_admin(user, draft)
+    if draft.status != DraftSubmission.Status.APPROVED:
+        if not getattr(user, "is_authenticated", False):
+            raise HttpError(404, "Draft not found")
+        _require_owner_or_admin(user, draft)
     return draft
 
 

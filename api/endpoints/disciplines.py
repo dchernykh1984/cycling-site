@@ -1,11 +1,12 @@
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
-from api.auth import ApiTokenAuth
+from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Discipline, DisciplineCategory, EventType
 
 auth = ApiTokenAuth()
+optional_auth = OptionalApiTokenAuth()
 router = Router(tags=["disciplines"])
 event_types_router = Router(tags=["event-types"])
 
@@ -48,13 +49,13 @@ class EventTypeOut(Schema):
 # -- Endpoints -----------------------------------------------------------------
 
 
-@router.get("/", response=list[DisciplineCategoryOut], auth=auth, summary="List discipline categories with disciplines")
+@router.get("/", response=list[DisciplineCategoryOut], auth=optional_auth, summary="List discipline categories")
 def list_disciplines(request):
     categories = DisciplineCategory.objects.prefetch_related("disciplines").order_by("order")
     return list(categories)
 
 
-@router.get("/{category_id}", response=DisciplineCategoryOut, auth=auth, summary="Get discipline category")
+@router.get("/{category_id}", response=DisciplineCategoryOut, auth=optional_auth, summary="Get discipline category")
 def get_discipline_category(request, category_id: int):
     try:
         return DisciplineCategory.objects.prefetch_related("disciplines").get(pk=category_id)
@@ -62,6 +63,6 @@ def get_discipline_category(request, category_id: int):
         raise HttpError(404, "Discipline category not found") from None
 
 
-@event_types_router.get("/", response=list[EventTypeOut], auth=auth, summary="List event types")
+@event_types_router.get("/", response=list[EventTypeOut], auth=optional_auth, summary="List event types")
 def list_event_types(request):
     return list(EventType.objects.order_by("order"))
