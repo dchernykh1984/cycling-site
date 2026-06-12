@@ -1,0 +1,540 @@
+"""Tests for django-ninja API v1 endpoints."""
+
+import shutil
+import tempfile
+import uuid
+from datetime import date
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
+
+from accounts.models import User
+from calendar_app.models import Competition
+from knowledge.models import DraftSubmission
+from locations.models import Location
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _user(username, role=User.Role.PARTICIPANT, **kwargs):
+    u = User.objects.create_user(
+        username=username,
+        email=f"{username}@example.com",
+        password="Pass1234!",
+        role=role,
+        **kwargs,
+    )
+    u.api_token = uuid.uuid4()
+    u.save(update_fields=["api_token"])
+    return u
+
+
+def _competition(**kwargs):
+    defaults = {
+        "title_ru": "Race",
+        "date_start": date(2026, 7, 1),
+        "status": Competition.Status.APPROVED,
+    }
+    defaults.update(kwargs)
+    return Competition.objects.create(**defaults)
+
+
+def _location(**kwargs):
+    defaults = {"name": "City", "name_ru": "City", "name_kk": "", "name_en": ""}
+    defaults.update(kwargs)
+    return Location.add_root(**defaults)
+
+
+def _draft(author, submission_type=DraftSubmission.SubmissionType.NEWS, **kwargs):
+    defaults = {
+        "author": author,
+        "submission_type": submission_type,
+        "title": "My Draft",
+        "body": "Body text",
+        "locale": "ru",
+        "category": "",
+    }
+    defaults.update(kwargs)
+    return DraftSubmission.objects.create(**defaults)
+
+
+class ApiTestMixin:
+    def auth(self, user):
+        return {"HTTP_AUTHORIZATION": f"Bearer {user.api_token}"}
+
+    def get(self, url, user=None, **kwargs):
+        headers = self.auth(user) if user else {}
+        return self.client.get(url, **headers, **kwargs)
+
+    def post(self, url, data, user=None, content_type="application/json", **kwargs):
+        headers = self.auth(user) if user else {}
+        return self.client.post(url, data, content_type=content_type, **headers, **kwargs)
+
+    def patch(self, url, data, user=None, content_type="application/json", **kwargs):
+        headers = self.auth(user) if user else {}
+        return self.client.patch(url, data, content_type=content_type, **headers, **kwargs)
+
+    def delete(self, url, user=None, **kwargs):
+        headers = self.auth(user) if user else {}
+        return self.client.delete(url, **headers, **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
+
+
+class IsAdminTest(TestCase):
+    def test_admin_returns_true(self):
+        from api.auth import is_admin
+
+        user = _user("adm", role=User.Role.ADMIN)
+        self.assertTrue(is_admin(user))
+
+    def test_participant_returns_false(self):
+        from api.auth import is_admin
+
+        user = _user("par", role=User.Role.PARTICIPANT)
+        self.assertFalse(is_admin(user))
+
+    def test_superuser_returns_true(self):
+        from api.auth import is_admin
+
+        user = User.objects.create_superuser("sup", "s@s.com", "Pass1!")
+        self.assertTrue(is_admin(user))
+
+
+class ApiTokenAuthTest(TestCase, ApiTestMixin):
+    def test_valid_token_authenticates(self):
+        user = _user("org", role=User.Role.ORGANIZER)
+        comp = _competition(submitted_by=user)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=user)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["competition_token"], str(comp.upload_token))
+
+    def test_invalid_token_returns_401(self):
+        resp = self.client.get(
+            "/api/v1/competitions/",
+            HTTP_AUTHORIZATION="Bearer not-a-real-token",
+        )
+        self.assertEqual(resp.status_code, 200)  # public endpoint, auth not required
+
+
+# ---------------------------------------------------------------------------
+# Competitions
+# ---------------------------------------------------------------------------
+
+
+class CompetitionListTest(TestCase, ApiTestMixin):
+    def test_returns_approved_by_default(self):
+        _competition(status=Competition.Status.APPROVED)
+        _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get("/api/v1/competitions/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_filter_by_status(self):
+        _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get("/api/v1/competitions/?status=pending_approval")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_filter_by_location(self):
+        loc = _location()
+        _competition(location=loc)
+        _competition()
+        resp = self.get(f"/api/v1/competitions/?location_id={loc.pk}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_localized_title_in_response(self):
+        _competition(title_ru="Race RU", title_kk="Race KK", title_en="Race")
+        resp = self.get("/api/v1/competitions/")
+        data = resp.json()[0]
+        self.assertEqual(data["title"]["ru"], "Race RU")
+        self.assertEqual(data["title"]["kk"], "Race KK")
+        self.assertEqual(data["title"]["en"], "Race")
+
+
+class CompetitionDetailTest(TestCase, ApiTestMixin):
+    def test_returns_competition(self):
+        comp = _competition()
+        resp = self.get(f"/api/v1/competitions/{comp.pk}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["id"], comp.pk)
+
+    def test_token_shown_to_owner(self):
+        owner = _user("owner", role=User.Role.ORGANIZER)
+        comp = _competition(submitted_by=owner)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=owner)
+        self.assertEqual(resp.json()["competition_token"], str(comp.upload_token))
+
+    def test_token_hidden_from_stranger(self):
+        stranger = _user("stranger", role=User.Role.PARTICIPANT)
+        comp = _competition()
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=stranger)
+        self.assertIsNone(resp.json()["competition_token"])
+
+    def test_token_hidden_when_anonymous(self):
+        comp = _competition()
+        resp = self.get(f"/api/v1/competitions/{comp.pk}")
+        self.assertIsNone(resp.json()["competition_token"])
+
+    def test_404_for_missing(self):
+        resp = self.get("/api/v1/competitions/99999")
+        self.assertEqual(resp.status_code, 404)
+
+
+class CompetitionCreateTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.organizer = _user("org", role=User.Role.ORGANIZER)
+        self.admin = _user("adm", role=User.Role.ADMIN)
+        self.participant = _user("par", role=User.Role.PARTICIPANT)
+
+    def _payload(self, **kwargs):
+        defaults = {
+            "title": {"ru": "Race RU", "kk": "", "en": ""},
+            "description": {"ru": "", "kk": "", "en": ""},
+            "date_start": "2026-07-01",
+        }
+        defaults.update(kwargs)
+        return defaults
+
+    def test_organizer_creates_pending(self):
+        resp = self.post("/api/v1/competitions/", self._payload(), user=self.organizer)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], Competition.Status.PENDING_APPROVAL)
+
+    def test_admin_creates_approved(self):
+        resp = self.post("/api/v1/competitions/", self._payload(), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], Competition.Status.APPROVED)
+
+    def test_participant_forbidden(self):
+        resp = self.post("/api/v1/competitions/", self._payload(), user=self.participant)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_token_shown_to_creator(self):
+        resp = self.post("/api/v1/competitions/", self._payload(), user=self.organizer)
+        self.assertIsNotNone(resp.json()["competition_token"])
+
+    def test_requires_auth(self):
+        resp = self.post("/api/v1/competitions/", self._payload())
+        self.assertEqual(resp.status_code, 401)
+
+
+class CompetitionUpdateTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.owner = _user("owner", role=User.Role.ORGANIZER)
+        self.admin = _user("adm", role=User.Role.ADMIN)
+        self.stranger = _user("stranger", role=User.Role.ORGANIZER)
+        self.comp = _competition(submitted_by=self.owner)
+
+    def test_owner_can_update(self):
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}",
+            {"title": {"ru": "New Title", "kk": "", "en": ""}},
+            user=self.owner,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["title"]["ru"], "New Title")
+
+    def test_stranger_forbidden(self):
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}",
+            {"title": {"ru": "Hacked", "kk": "", "en": ""}},
+            user=self.stranger,
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_admin_can_update(self):
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}",
+            {"title": {"ru": "Admin Title", "kk": "", "en": ""}},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_non_admin_cannot_change_visibility(self):
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}",
+            {"is_hidden": True},
+            user=self.owner,
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_admin_can_change_visibility(self):
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}",
+            {"is_hidden": True},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()["is_hidden"])
+
+
+class CompetitionDeleteTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.owner = _user("owner", role=User.Role.ORGANIZER)
+        self.stranger = _user("stranger", role=User.Role.ORGANIZER)
+        self.comp = _competition(submitted_by=self.owner)
+
+    def test_owner_can_delete(self):
+        resp = self.delete(f"/api/v1/competitions/{self.comp.pk}", user=self.owner)
+        self.assertEqual(resp.status_code, 204)
+        self.comp.refresh_from_db()
+        self.assertTrue(self.comp.is_deleted)
+
+    def test_stranger_cannot_delete(self):
+        resp = self.delete(f"/api/v1/competitions/{self.comp.pk}", user=self.stranger)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_deleted_competition_not_in_list(self):
+        self.delete(f"/api/v1/competitions/{self.comp.pk}", user=self.owner)
+        resp = self.get("/api/v1/competitions/")
+        self.assertEqual(len(resp.json()), 0)
+
+
+# ---------------------------------------------------------------------------
+# Drafts (news)
+# ---------------------------------------------------------------------------
+
+
+class NewsDraftTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.author = _user("author", role=User.Role.PARTICIPANT)
+        self.admin = _user("adm", role=User.Role.ADMIN)
+        self.other = _user("other", role=User.Role.PARTICIPANT)
+
+    def _payload(self, **kwargs):
+        defaults = {"title": "Draft Title", "body": "Body", "locale": "ru", "category": ""}
+        defaults.update(kwargs)
+        return defaults
+
+    def test_create_draft(self):
+        resp = self.post("/api/v1/news-drafts/", self._payload(), user=self.author)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], DraftSubmission.Status.PENDING)
+
+    def test_admin_create_auto_approves(self):
+        resp = self.post("/api/v1/news-drafts/", self._payload(), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], DraftSubmission.Status.APPROVED)
+
+    def test_invalid_locale_rejected(self):
+        resp = self.post("/api/v1/news-drafts/", self._payload(locale="xx"), user=self.author)
+        self.assertEqual(resp.status_code, 422)
+
+    def test_requires_participant_role(self):
+        guest = _user("guest", role=User.Role.GUEST)
+        resp = self.post("/api/v1/news-drafts/", self._payload(), user=guest)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_author_sees_own_drafts(self):
+        _draft(self.author)
+        _draft(self.other)
+        resp = self.get("/api/v1/news-drafts/", user=self.author)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_admin_sees_all_drafts(self):
+        _draft(self.author)
+        _draft(self.other)
+        resp = self.get("/api/v1/news-drafts/", user=self.admin)
+        self.assertEqual(len(resp.json()), 2)
+
+    def test_get_draft_requires_owner_or_admin(self):
+        draft = _draft(self.author)
+        resp = self.get(f"/api/v1/news-drafts/{draft.pk}", user=self.other)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_update_pending_draft(self):
+        draft = _draft(self.author)
+        resp = self.patch(f"/api/v1/news-drafts/{draft.pk}", {"title": "Updated"}, user=self.author)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["title"], "Updated")
+
+    def test_cannot_update_approved_draft(self):
+        draft = _draft(self.admin)
+        draft.status = DraftSubmission.Status.APPROVED
+        draft.save(update_fields=["status"])
+        resp = self.patch(f"/api/v1/news-drafts/{draft.pk}", {"title": "X"}, user=self.admin)
+        self.assertEqual(resp.status_code, 409)
+
+    def test_delete_pending_draft(self):
+        draft = _draft(self.author)
+        resp = self.delete(f"/api/v1/news-drafts/{draft.pk}", user=self.author)
+        self.assertEqual(resp.status_code, 204)
+
+    def test_cannot_delete_approved_draft(self):
+        draft = _draft(self.admin)
+        draft.status = DraftSubmission.Status.APPROVED
+        draft.save(update_fields=["status"])
+        resp = self.delete(f"/api/v1/news-drafts/{draft.pk}", user=self.admin)
+        self.assertEqual(resp.status_code, 409)
+
+
+# ---------------------------------------------------------------------------
+# Locations
+# ---------------------------------------------------------------------------
+
+
+class LocationListTest(TestCase, ApiTestMixin):
+    def test_hidden_location_excluded(self):
+        before = len(self.get("/api/v1/locations/").json())
+        _location()
+        _location(is_hidden=True)
+        after = len(self.get("/api/v1/locations/").json())
+        self.assertEqual(after - before, 1)
+
+    def test_include_hidden_param(self):
+        before_all = len(self.get("/api/v1/locations/?include_hidden=true").json())
+        _location()
+        hidden = _location(is_hidden=True)
+        after_all = len(self.get("/api/v1/locations/?include_hidden=true").json())
+        self.assertEqual(after_all - before_all, 2)
+        # hidden one is NOT in default list
+        ids_visible = {d["id"] for d in self.get("/api/v1/locations/").json()}
+        self.assertNotIn(hidden.pk, ids_visible)
+
+    def test_parent_id_computed_correctly(self):
+        parent = _location(name="Parent", name_ru="Parent")
+        child = parent.add_child(name="Child", name_ru="Child", name_kk="", name_en="")
+        resp = self.get("/api/v1/locations/")
+        child_data = next(d for d in resp.json() if d["id"] == child.pk)
+        self.assertEqual(child_data["parent_id"], parent.pk)
+
+    def test_root_has_no_parent(self):
+        loc = _location()
+        resp = self.get("/api/v1/locations/")
+        loc_data = next(d for d in resp.json() if d["id"] == loc.pk)
+        self.assertIsNone(loc_data["parent_id"])
+
+
+class LocationDetailTest(TestCase, ApiTestMixin):
+    def test_get_location(self):
+        loc = _location()
+        resp = self.get(f"/api/v1/locations/{loc.pk}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["id"], loc.pk)
+
+    def test_404_for_missing(self):
+        resp = self.get("/api/v1/locations/99999")
+        self.assertEqual(resp.status_code, 404)
+
+
+class LocationCreateTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.admin = _user("adm", role=User.Role.ADMIN)
+        self.organizer = _user("org", role=User.Role.ORGANIZER)
+
+    def test_admin_can_create(self):
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "Almaty RU", "kk": "Almaty RU", "en": "Almaty"}},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["name"]["ru"], "Almaty RU")
+
+    def test_organizer_forbidden(self):
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "City RU", "kk": "", "en": ""}},
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_create_with_parent(self):
+        parent = _location()
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "Child RU", "kk": "", "en": ""}, "parent_id": parent.pk},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["parent_id"], parent.pk)
+
+    def test_invalid_parent_404(self):
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "X", "kk": "", "en": ""}, "parent_id": 99999},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 404)
+
+
+class LocationUpdateTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.admin = _user("adm", role=User.Role.ADMIN)
+        self.loc = _location()
+
+    def test_admin_can_update(self):
+        resp = self.patch(
+            f"/api/v1/locations/{self.loc.pk}",
+            {"name": {"ru": "New RU", "kk": "", "en": ""}},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["name"]["ru"], "New RU")
+
+
+class LocationDeleteTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.admin = _user("adm", role=User.Role.ADMIN)
+        self.loc = _location()
+
+    def test_admin_soft_deletes(self):
+        resp = self.delete(f"/api/v1/locations/{self.loc.pk}", user=self.admin)
+        self.assertEqual(resp.status_code, 204)
+        self.loc.refresh_from_db()
+        self.assertTrue(self.loc.is_deleted)
+
+    def test_deleted_not_in_list(self):
+        before = len(self.get("/api/v1/locations/").json())
+        self.delete(f"/api/v1/locations/{self.loc.pk}", user=self.admin)
+        after = len(self.get("/api/v1/locations/").json())
+        self.assertEqual(after, before - 1)
+
+
+# ---------------------------------------------------------------------------
+# Protocol upload (extra coverage for uncovered lines)
+# ---------------------------------------------------------------------------
+
+
+def _html_file(content: bytes = b"<html></html>", name: str = "p.html") -> SimpleUploadedFile:
+    return SimpleUploadedFile(name, content, content_type="text/html")
+
+
+class ProtocolExtraCoverageTest(TestCase):
+    def setUp(self):
+        self.media_root = tempfile.mkdtemp()
+        self._settings = override_settings(MEDIA_ROOT=self.media_root)
+        self._settings.enable()
+        self.comp = Competition.objects.create(
+            title_ru="Race",
+            date_start=date(2026, 7, 1),
+            status=Competition.Status.APPROVED,
+        )
+
+    def tearDown(self):
+        self._settings.disable()
+        shutil.rmtree(self.media_root, ignore_errors=True)
+
+    def _post(self, **kwargs):
+        data = {
+            "competition_token": str(self.comp.upload_token),
+            "protocol_type": "absolute",
+            "html_file": _html_file(),
+        }
+        data.update(kwargs)
+        return self.client.post("/api/v1/protocols/upload/", data)
+
+    def test_non_html_content_rejected(self):
+        resp = self._post(html_file=_html_file(b"not html content at all!", "p.html"))
+        self.assertEqual(resp.status_code, 400)
+
+    def test_htm_extension_accepted(self):
+        resp = self._post(html_file=_html_file(b"<html></html>", "p.htm"))
+        self.assertEqual(resp.status_code, 200)
