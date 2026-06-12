@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-11 16:40+0000\n"
+"POT-Creation-Date: 2026-06-12 16:14+0000\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -26,8 +26,8 @@ msgid ""
 "If you use Gmail and the confirmation email does not arrive, please try "
 "registering with a non-Gmail address."
 msgstr ""
-"Егер сіз Gmail пайдалансаңыз және растау хаты келмесе — "
-"Gmail емес мекенжаймен тіркелуге тырысыңыз."
+"Егер сіз Gmail пайдалансаңыз және растау хаты келмесе — Gmail емес "
+"мекенжаймен тіркелуге тырысыңыз."
 
 #: accounts/templates/account/signup.html:42
 msgid "Sign up using a passkey"
@@ -82,58 +82,31 @@ msgstr ""
 "Email-дi растамадыныз. Катысушы болу ушiн хабарларды тексерiп, мекен-жайды "
 "растаныз."
 
-#: accounts/templates/accounts/profile.html
+#: accounts/templates/accounts/profile.html:40
+#: accounts/templates/accounts/profile.html:41
 msgid "Resend confirmation email"
 msgstr "Растау хатын кайта жiберу"
 
-#: accounts/templates/accounts/profile.html
-msgid "API access"
-msgstr "API кiруi"
-
-#: accounts/templates/accounts/profile.html
-msgid ""
-"Use this token to authenticate API requests: <code>Authorization: Bearer "
-"&lt;token&gt;</code>"
-msgstr ""
-"API сурауларын растау ушiн осы токендi пайдаланыныз: <code>Authorization: "
-"Bearer &lt;token&gt;</code>"
-
-#: accounts/templates/accounts/profile.html
-msgid "No token yet. Generate one below."
-msgstr "Токен алi жок. Томенде жасаныз."
-
-#: accounts/templates/accounts/profile.html
-msgid "Regenerate token"
-msgstr "Токендi жаналау"
-
-#: accounts/templates/accounts/profile.html
-msgid "Generate token"
-msgstr "Токен жасау"
-
-#: accounts/templates/accounts/profile.html
-msgid "API docs (Swagger)"
-msgstr "API кужаттамасы (Swagger)"
-
-#: accounts/templates/accounts/profile.html:36
+#: accounts/templates/accounts/profile.html:72
 msgid "Appearance"
 msgstr "Корiнiс"
 
-#: accounts/templates/accounts/profile.html:38
+#: accounts/templates/accounts/profile.html:74
 msgid "Theme"
 msgstr "Такырып"
 
-#: accounts/templates/accounts/profile.html:46
+#: accounts/templates/accounts/profile.html:82
 msgid "My submissions"
 msgstr "Менiн материалдарым"
 
-#: accounts/templates/accounts/profile.html:50
+#: accounts/templates/accounts/profile.html:86
 #: knowledge/templates/knowledge/knowledge_index_page.html:21
 #: knowledge/templates/knowledge/submit.html:4
 #: knowledge/templates/knowledge/submit.html:9
 msgid "Submit article"
 msgstr "Мақала жіберу"
 
-#: accounts/templates/accounts/profile.html:59
+#: accounts/templates/accounts/profile.html:95
 #: calendar_app/templates/calendar_app/edit.html:37
 #: calendar_app/templates/calendar_app/edit.html:49
 #: calendar_app/templates/calendar_app/edit.html:61
@@ -145,65 +118,98 @@ msgstr "Мақала жіберу"
 msgid "Title"
 msgstr "Атауы"
 
-#: accounts/templates/accounts/profile.html:60
+#: accounts/templates/accounts/profile.html:96
 #: calendar_app/templates/calendar_app/detail.html:28
 #: calendar_app/templates/calendar_app/list.html:259
 msgid "Type"
 msgstr "Түрі"
 
-#: accounts/templates/accounts/profile.html:61
+#: accounts/templates/accounts/profile.html:97
 msgid "Language"
 msgstr "Тіл"
 
-#: accounts/templates/accounts/profile.html:62
-#: accounts/templates/accounts/profile.html:101
+#: accounts/templates/accounts/profile.html:98
+#: accounts/templates/accounts/profile.html:137
 msgid "Date"
 msgstr "Күні"
 
-#: accounts/templates/accounts/profile.html:63
-#: accounts/templates/accounts/profile.html:102
+#: accounts/templates/accounts/profile.html:99
+#: accounts/templates/accounts/profile.html:138
 #: locations/templates/locations/locations_map_page.html:41
 msgid "Status"
 msgstr "Күйі"
 
-#: accounts/templates/accounts/profile.html:91
+#: accounts/templates/accounts/profile.html:127
 msgid "No submissions yet."
 msgstr "Материалдар жоқ."
 
-#: accounts/templates/accounts/profile.html:93
+#: accounts/templates/accounts/profile.html:129
 msgid "My registrations"
 msgstr "Менің тіркелулерім"
 
-#: accounts/templates/accounts/profile.html:99
+#: accounts/templates/accounts/profile.html:135
 msgid "Competition"
 msgstr "Жарыс"
 
-#: accounts/templates/accounts/profile.html:100
+#: accounts/templates/accounts/profile.html:136
 #: registrations/templates/registrations/participant_list.html:57
 #: registrations/templates/registrations/register.html:157
 msgid "Category"
 msgstr "Санат"
 
-#: accounts/templates/accounts/profile.html:113
+#: accounts/templates/accounts/profile.html:149
 #: registrations/templates/registrations/participant_list.html:63
 msgid "Rejected"
 msgstr "Қабылданбады"
 
-#: accounts/templates/accounts/profile.html:118
+#: accounts/templates/accounts/profile.html:154
 #: registrations/templates/registrations/participant_list.html:61
 msgid "Approved"
 msgstr "Бекітілді"
 
-#: accounts/templates/accounts/profile.html:120
+#: accounts/templates/accounts/profile.html:156
 #: news/templates/news/news_page.html:75
 msgid "Pending"
 msgstr "Қарастырылуда"
 
-#: accounts/templates/accounts/profile.html:129
+#: accounts/templates/accounts/profile.html:165
 msgid "No registrations yet."
 msgstr "Тіркелулер жоқ."
 
-#: accounts/templates/accounts/profile.html:133
+#: accounts/templates/accounts/profile.html:170
+msgid "API access"
+msgstr "API кiруi"
+
+#: accounts/templates/accounts/profile.html:173
+msgid ""
+"Use this token to authenticate API requests: <code>Authorization: Bearer "
+"&lt;token&gt;</code>"
+msgstr ""
+"API сурауларын растау ушiн осы токендi пайдаланыныз: <code>Authorization: "
+"Bearer &lt;token&gt;</code>"
+
+#: accounts/templates/accounts/profile.html:178
+#: calendar_app/templates/calendar_app/detail.html:101
+msgid "Copy"
+msgstr "Көшіру"
+
+#: accounts/templates/accounts/profile.html:181
+msgid "No token yet. Generate one below."
+msgstr "Токен алi жок. Томенде жасаныз."
+
+#: accounts/templates/accounts/profile.html:186
+msgid "Regenerate token"
+msgstr "Токендi жаналау"
+
+#: accounts/templates/accounts/profile.html:186
+msgid "Generate token"
+msgstr "Токен жасау"
+
+#: accounts/templates/accounts/profile.html:189
+msgid "API docs (Swagger)"
+msgstr "API кужаттамасы (Swagger)"
+
+#: accounts/templates/accounts/profile.html:195
 #: cycling_site/templates/base.html:122
 msgid "Log out"
 msgstr "Шыгу"
@@ -614,13 +620,9 @@ msgstr "Топтық нәтижелер"
 msgid "Live"
 msgstr "Тікелей эфир"
 
-#: calendar_app/templates/calendar_app/detail.html:96 tmp/plan.txt:428
+#: calendar_app/templates/calendar_app/detail.html:96
 msgid "Timing system token"
 msgstr "Хронометраж жүйесінің токені"
-
-#: calendar_app/templates/calendar_app/detail.html:101
-msgid "Copy"
-msgstr "Көшіру"
 
 #: calendar_app/templates/calendar_app/detail.html:105
 msgid "Access token for the offline timing system:"
@@ -1283,6 +1285,11 @@ msgstr "Команда"
 msgid "Paid"
 msgstr "Төлем"
 
+#: registrations/templates/registrations/participant_list.html:63
+#, fuzzy
+msgid "Actions"
+msgstr "Әрекеттер"
+
 #: registrations/templates/registrations/participant_list.html:78
 #: registrations/templates/registrations/participant_list.html:81
 #: registrations/templates/registrations/participant_list.html:84
@@ -1355,32 +1362,42 @@ msgid "No results found"
 msgstr "Ештенiе табылмады"
 
 # allauth social account
-msgid "Or use a third-party"
-msgstr "Немесе үшінші тарапты пайдалану"
+#~ msgid "Or use a third-party"
+#~ msgstr "Немесе үшінші тарапты пайдалану"
 
 # Django password validators (django.contrib.auth)
-msgid "Your password can’t be too similar to your other personal information."
-msgstr "Құпия сөзіңіз жеке ақпаратыңызға тым ұқсас болмауы керек."
+#~ msgid ""
+#~ "Your password can’t be too similar to your other personal information."
+#~ msgstr "Құпия сөзіңіз жеке ақпаратыңызға тым ұқсас болмауы керек."
 
 #, python-format
-msgid "Your password must contain at least %(min_length)d character."
-msgid_plural "Your password must contain at least %(min_length)d characters."
-msgstr[0] "Құпия сөзіңіз кемінде %(min_length)d таңбадан тұруы керек."
-msgstr[1] "Құпия сөзіңіз кемінде %(min_length)d таңбадан тұруы керек."
+#~ msgid "Your password must contain at least %(min_length)d character."
+#~ msgid_plural ""
+#~ "Your password must contain at least %(min_length)d characters."
+#~ msgstr[0] "Құпия сөзіңіз кемінде %(min_length)d таңбадан тұруы керек."
+#~ msgstr[1] "Құпия сөзіңіз кемінде %(min_length)d таңбадан тұруы керек."
 
-msgid "Your password can’t be a commonly used password."
-msgstr "Құпия сөзіңіз кең тараған болмауы керек."
+#~ msgid "Your password can’t be a commonly used password."
+#~ msgstr "Құпия сөзіңіз кең тараған болмауы керек."
 
-msgid "Your password can’t be entirely numeric."
-msgstr "Құпия сөзіңіз тек сандардан тұрмауы керек."
+#~ msgid "Your password can’t be entirely numeric."
+#~ msgstr "Құпия сөзіңіз тек сандардан тұрмауы керек."
 
 # allauth email verification page
-msgid "Verify Your Email Address"
-msgstr "Электрондық пошта мекенжайыңызды растаңыз"
+#~ msgid "Verify Your Email Address"
+#~ msgstr "Электрондық пошта мекенжайыңызды растаңыз"
 
-msgid "We have sent an email to you for verification. Follow the link provided to finalize the signup process. If you do not see the verification email in your main inbox, check your spam folder. Please contact us if you do not receive the verification email within a few minutes."
-msgstr "Растау үшін сізге электрондық хат жібердік. Тіркелу процесін аяқтау үшін берілген сілтемеге өтіңіз. Растау хатын негізгі кіріс жәшігіңізден көрмесеңіз, спам қалтасын тексеріңіз. Бірнеше минут ішінде растау хатын алмасаңыз, бізге хабарласыңыз."
+#~ msgid ""
+#~ "We have sent an email to you for verification. Follow the link provided "
+#~ "to finalize the signup process. If you do not see the verification email "
+#~ "in your main inbox, check your spam folder. Please contact us if you do "
+#~ "not receive the verification email within a few minutes."
+#~ msgstr ""
+#~ "Растау үшін сізге электрондық хат жібердік. Тіркелу процесін аяқтау үшін "
+#~ "берілген сілтемеге өтіңіз. Растау хатын негізгі кіріс жәшігіңізден "
+#~ "көрмесеңіз, спам қалтасын тексеріңіз. Бірнеше минут ішінде растау хатын "
+#~ "алмасаңыз, бізге хабарласыңыз."
 
 #, python-format
-msgid "Confirmation email sent to %(email)s."
-msgstr "%(email)s мекенжайына растау хаты жіберілді."
+#~ msgid "Confirmation email sent to %(email)s."
+#~ msgstr "%(email)s мекенжайына растау хаты жіберілді."
