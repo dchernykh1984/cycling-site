@@ -82,6 +82,10 @@ msgstr ""
 "Email ещё не подтверждён. Проверьте почту и подтвердите адрес, чтобы стать "
 "участником."
 
+#: accounts/templates/accounts/profile.html
+msgid "Resend confirmation email"
+msgstr "Отправить письмо ещё раз"
+
 #: accounts/templates/accounts/profile.html:36
 msgid "Appearance"
 msgstr "Внешний вид"

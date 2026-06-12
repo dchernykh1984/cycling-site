@@ -82,6 +82,10 @@ msgstr ""
 "Email-дi растамадыныз. Катысушы болу ушiн хабарларды тексерiп, мекен-жайды "
 "растаныз."
 
+#: accounts/templates/accounts/profile.html
+msgid "Resend confirmation email"
+msgstr "Растау хатын кайта жiберу"
+
 #: accounts/templates/accounts/profile.html:36
 msgid "Appearance"
 msgstr "Корiнiс"

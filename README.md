@@ -108,6 +108,18 @@ on `accounts.User.role` and control access permissions throughout the app.
 
 New users who register get the **Participant** role automatically.
 
+### Manually confirming a user's email
+
+If the confirmation email was not received, an admin can manually mark the
+address as verified in two steps:
+
+1. **Django admin** - `/django-admin/account/emailaddress/` - find the record
+   by email, set **Verified** to checked, save.
+2. **Django admin** - `/django-admin/accounts/user/` - find the user, change
+   **Role** from `guest` to `participant`, save.
+
+Step 1 alone does not change the role; both steps are required.
+
 ### Granting Owner access
 
 Owner is the highest role: it gives full Wagtail admin access and Django

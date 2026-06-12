@@ -8,4 +8,5 @@ urlpatterns = [
     path("profile/edit/", views.ProfileEditView.as_view(), name="account_profile_edit"),
     path("theme/", views.ThemeUpdateView.as_view(), name="account_theme"),
     path("api-token/regenerate/", views.ApiTokenRegenerateView.as_view(), name="account_api_token_regenerate"),
+    path("resend-confirmation/", views.ResendEmailConfirmationView.as_view(), name="account_resend_confirmation"),
 ]
