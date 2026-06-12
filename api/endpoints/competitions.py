@@ -3,12 +3,11 @@ from datetime import date
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
-from api.auth import _ANONYMOUS, ApiTokenAuth, OptionalApiTokenAuth, is_admin
+from api.auth import ApiTokenAuth, is_admin
 from api.schemas import LocalizedStr
 from calendar_app.models import Competition
 
 auth = ApiTokenAuth()
-optional_auth = OptionalApiTokenAuth()
 router = Router(tags=["competitions"])
 
 
@@ -121,7 +120,7 @@ def _to_detail(competition: Competition, user=None) -> Competition:
 # -- Endpoints -------------------------------------------------------------
 
 
-@router.get("/", response=list[CompetitionOut], auth=None, summary="List competitions")
+@router.get("/", response=list[CompetitionOut], auth=auth, summary="List competitions")
 def list_competitions(
     request,
     status: str | None = None,
@@ -143,11 +142,10 @@ def list_competitions(
     return list(qs)
 
 
-@router.get("/{competition_id}", response=CompetitionDetailOut, auth=optional_auth, summary="Get competition detail")
+@router.get("/{competition_id}", response=CompetitionDetailOut, auth=auth, summary="Get competition detail")
 def get_competition(request, competition_id: int):
     competition = _get_or_404(competition_id)
-    user = request.auth if request.auth is not _ANONYMOUS else None
-    return _to_detail(competition, user)
+    return _to_detail(competition, request.auth)
 
 
 @router.post("/", response={201: CompetitionDetailOut}, auth=auth, summary="Create competition")

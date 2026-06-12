@@ -78,7 +78,7 @@ def _apply_name(location: Location, name: LocalizedStr) -> None:
 # -- Endpoints -------------------------------------------------------------
 
 
-@router.get("/", response=list[LocationOut], auth=None, summary="List locations")
+@router.get("/", response=list[LocationOut], auth=auth, summary="List locations")
 def list_locations(request, include_hidden: bool = False):
     # Load all non-deleted locations in one query for path-based parent resolution.
     all_locs = list(Location.objects.filter(is_deleted=False))
@@ -92,7 +92,7 @@ def list_locations(request, include_hidden: bool = False):
     return all_locs
 
 
-@router.get("/{location_id}", response=LocationOut, auth=None, summary="Get location detail")
+@router.get("/{location_id}", response=LocationOut, auth=auth, summary="Get location detail")
 def get_location(request, location_id: int):
     return _get_or_404(location_id)
 

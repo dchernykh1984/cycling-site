@@ -165,7 +165,7 @@
         <p class="text-muted small">{% trans "No registrations yet." %}</p>
         {% endif %}
 
-        {% if user.get_role_rank >= 2 %}
+        {% if user.get_role_rank >= 1 %}
         <div class="card mb-4">
             <div class="card-header">{% trans "API access" %}</div>
             <div class="card-body">
