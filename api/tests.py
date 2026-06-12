@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 
 from accounts.models import User
-from calendar_app.models import Competition
+from calendar_app.models import Competition, Discipline, DisciplineCategory, EventType
 from knowledge.models import DraftSubmission
 from locations.models import Location
 from registrations.models import CompetitionRegistration
@@ -171,19 +171,102 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 1)
 
-    def test_filter_by_status(self):
+    def test_non_admin_cannot_see_others_pending_via_status_filter(self):
+        _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get("/api/v1/competitions/?status=pending_approval", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 0)
+
+    def test_non_admin_sees_own_pending_via_status_filter(self):
+        _competition(status=Competition.Status.PENDING_APPROVAL, submitted_by=self.reader)
         _competition(status=Competition.Status.PENDING_APPROVAL)
         resp = self.get("/api/v1/competitions/?status=pending_approval", user=self.reader)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 1)
 
-    def test_filter_by_location(self):
-        loc = _location()
-        _competition(location=loc)
+    def test_admin_sees_all_pending_via_status_filter(self):
+        admin = _user("list_admin", role=User.Role.ADMIN)
+        _competition(status=Competition.Status.PENDING_APPROVAL)
+        _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get("/api/v1/competitions/?status=pending_approval", user=admin)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 2)
+
+    def test_filter_by_city_ids(self):
+        city = _location()
+        _competition(location=city)
         _competition()
-        resp = self.get(f"/api/v1/competitions/?location_id={loc.pk}", user=self.reader)
+        resp = self.get(f"/api/v1/competitions/?city_ids={city.pk}", user=self.reader)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 1)
+
+    def test_filter_by_country_includes_child_locations(self):
+        country = _location(name="Country", name_ru="Country")
+        region = country.add_child(name="Region", name_ru="Region", name_kk="", name_en="")
+        city = region.add_child(name="City", name_ru="City", name_kk="", name_en="")
+        _competition(location=city)
+        _competition()
+        resp = self.get(f"/api/v1/competitions/?country_ids={country.pk}", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_filter_by_discipline_ids(self):
+        cat = DisciplineCategory.objects.create(name="Road")
+        disc = Discipline.objects.create(name="Race", category=cat)
+        _competition(discipline=disc)
+        _competition()
+        resp = self.get(f"/api/v1/competitions/?discipline_ids={disc.pk}", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_filter_by_event_type_ids(self):
+        et = EventType.objects.create(name="Stage race")
+        _competition(event_type=et)
+        _competition()
+        resp = self.get(f"/api/v1/competitions/?event_type_ids={et.pk}", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_multiple_discipline_ids_or_logic(self):
+        cat = DisciplineCategory.objects.create(name="Cat")
+        d1 = Discipline.objects.create(name="D1", category=cat)
+        d2 = Discipline.objects.create(name="D2", category=cat)
+        _competition(discipline=d1)
+        _competition(discipline=d2)
+        _competition()
+        resp = self.get(f"/api/v1/competitions/?discipline_ids={d1.pk}&discipline_ids={d2.pk}", user=self.reader)
+        self.assertEqual(len(resp.json()), 2)
+
+    def test_hidden_competition_not_in_list_for_non_admin(self):
+        _competition(is_hidden=True)
+        resp = self.get("/api/v1/competitions/", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 0)
+
+    def test_hidden_competition_visible_to_owner(self):
+        owner = _user("hidden_owner", role=User.Role.ORGANIZER)
+        _competition(submitted_by=owner, is_hidden=True)
+        resp = self.get("/api/v1/competitions/", user=owner)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_hidden_competition_visible_to_admin(self):
+        admin = _user("hidden_admin", role=User.Role.ADMIN)
+        _competition(is_hidden=True)
+        resp = self.get("/api/v1/competitions/", user=admin)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_filter_by_combined_country_and_city_ids_uses_or_semantics(self):
+        country = _location(name="Country", name_ru="Country")
+        other_city = _location(name="OtherCity", name_ru="OtherCity")
+        _competition(location=country)
+        _competition(location=other_city)
+        _competition()
+        resp = self.get(
+            f"/api/v1/competitions/?country_ids={country.pk}&city_ids={other_city.pk}",
+            user=self.reader,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 2)
 
     def test_localized_title_in_response(self):
         _competition(title_ru="Race RU", title_kk="Race KK", title_en="Race")
@@ -219,6 +302,41 @@ class CompetitionDetailTest(TestCase, ApiTestMixin):
         comp = _competition()
         resp = self.get(f"/api/v1/competitions/{comp.pk}", user=stranger)
         self.assertIsNone(resp.json()["competition_token"])
+
+    def test_pending_competition_hidden_from_stranger(self):
+        owner = _user("pending_owner", role=User.Role.ORGANIZER)
+        comp = _competition(submitted_by=owner, status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=self.reader)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_owner_can_get_own_pending(self):
+        owner = _user("own_pending", role=User.Role.ORGANIZER)
+        comp = _competition(submitted_by=owner, status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=owner)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_admin_can_get_pending(self):
+        admin = _user("det_admin", role=User.Role.ADMIN)
+        comp = _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=admin)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_hidden_competition_returns_404_for_stranger(self):
+        comp = _competition(is_hidden=True)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=self.reader)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_hidden_competition_accessible_to_owner(self):
+        owner = _user("hidden_det_owner", role=User.Role.ORGANIZER)
+        comp = _competition(submitted_by=owner, is_hidden=True)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=owner)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_hidden_competition_accessible_to_admin(self):
+        admin = _user("hidden_det_admin", role=User.Role.ADMIN)
+        comp = _competition(is_hidden=True)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=admin)
+        self.assertEqual(resp.status_code, 200)
 
     def test_anonymous_returns_401(self):
         comp = _competition()
@@ -292,6 +410,15 @@ class CompetitionUpdateTest(TestCase, ApiTestMixin):
         )
         self.assertEqual(resp.status_code, 403)
 
+    def test_stranger_gets_404_for_pending_competition(self):
+        pending = _competition(submitted_by=self.owner, status=Competition.Status.PENDING_APPROVAL)
+        resp = self.patch(
+            f"/api/v1/competitions/{pending.pk}",
+            {"title": {"ru": "X", "kk": "", "en": ""}},
+            user=self.stranger,
+        )
+        self.assertEqual(resp.status_code, 404)
+
     def test_admin_can_update(self):
         resp = self.patch(
             f"/api/v1/competitions/{self.comp.pk}",
@@ -334,6 +461,11 @@ class CompetitionDeleteTest(TestCase, ApiTestMixin):
         resp = self.delete(f"/api/v1/competitions/{self.comp.pk}", user=self.stranger)
         self.assertEqual(resp.status_code, 403)
 
+    def test_stranger_gets_404_for_pending_competition(self):
+        pending = _competition(submitted_by=self.owner, status=Competition.Status.PENDING_APPROVAL)
+        resp = self.delete(f"/api/v1/competitions/{pending.pk}", user=self.stranger)
+        self.assertEqual(resp.status_code, 404)
+
     def test_deleted_competition_not_in_list(self):
         self.delete(f"/api/v1/competitions/{self.comp.pk}", user=self.owner)
         resp = self.get("/api/v1/competitions/", user=self.owner)
@@ -357,44 +489,44 @@ class NewsDraftTest(TestCase, ApiTestMixin):
         return defaults
 
     def test_create_draft(self):
-        resp = self.post("/api/v1/news-drafts/", self._payload(), user=self.author)
+        resp = self.post("/api/v1/news/", self._payload(), user=self.author)
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["status"], DraftSubmission.Status.PENDING)
 
     def test_admin_create_auto_approves(self):
-        resp = self.post("/api/v1/news-drafts/", self._payload(), user=self.admin)
+        resp = self.post("/api/v1/news/", self._payload(), user=self.admin)
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["status"], DraftSubmission.Status.APPROVED)
 
     def test_invalid_locale_rejected(self):
-        resp = self.post("/api/v1/news-drafts/", self._payload(locale="xx"), user=self.author)
+        resp = self.post("/api/v1/news/", self._payload(locale="xx"), user=self.author)
         self.assertEqual(resp.status_code, 422)
 
     def test_requires_participant_role(self):
         guest = _user("guest", role=User.Role.GUEST)
-        resp = self.post("/api/v1/news-drafts/", self._payload(), user=guest)
+        resp = self.post("/api/v1/news/", self._payload(), user=guest)
         self.assertEqual(resp.status_code, 403)
 
     def test_author_sees_own_drafts(self):
         _draft(self.author)
         _draft(self.other)
-        resp = self.get("/api/v1/news-drafts/", user=self.author)
+        resp = self.get("/api/v1/news/?status=pending", user=self.author)
         self.assertEqual(len(resp.json()), 1)
 
     def test_admin_sees_all_drafts(self):
         _draft(self.author)
         _draft(self.other)
-        resp = self.get("/api/v1/news-drafts/", user=self.admin)
+        resp = self.get("/api/v1/news/?status=pending", user=self.admin)
         self.assertEqual(len(resp.json()), 2)
 
     def test_get_draft_requires_owner_or_admin(self):
         draft = _draft(self.author)
-        resp = self.get(f"/api/v1/news-drafts/{draft.pk}", user=self.other)
+        resp = self.get(f"/api/v1/news/{draft.pk}", user=self.other)
         self.assertEqual(resp.status_code, 403)
 
     def test_update_pending_draft(self):
         draft = _draft(self.author)
-        resp = self.patch(f"/api/v1/news-drafts/{draft.pk}", {"title": "Updated"}, user=self.author)
+        resp = self.patch(f"/api/v1/news/{draft.pk}", {"title": "Updated"}, user=self.author)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["title"], "Updated")
 
@@ -402,19 +534,19 @@ class NewsDraftTest(TestCase, ApiTestMixin):
         draft = _draft(self.admin)
         draft.status = DraftSubmission.Status.APPROVED
         draft.save(update_fields=["status"])
-        resp = self.patch(f"/api/v1/news-drafts/{draft.pk}", {"title": "X"}, user=self.admin)
+        resp = self.patch(f"/api/v1/news/{draft.pk}", {"title": "X"}, user=self.admin)
         self.assertEqual(resp.status_code, 409)
 
     def test_delete_pending_draft(self):
         draft = _draft(self.author)
-        resp = self.delete(f"/api/v1/news-drafts/{draft.pk}", user=self.author)
+        resp = self.delete(f"/api/v1/news/{draft.pk}", user=self.author)
         self.assertEqual(resp.status_code, 204)
 
     def test_cannot_delete_approved_draft(self):
         draft = _draft(self.admin)
         draft.status = DraftSubmission.Status.APPROVED
         draft.save(update_fields=["status"])
-        resp = self.delete(f"/api/v1/news-drafts/{draft.pk}", user=self.admin)
+        resp = self.delete(f"/api/v1/news/{draft.pk}", user=self.admin)
         self.assertEqual(resp.status_code, 409)
 
 
@@ -613,25 +745,25 @@ class KnowledgeArticleDraftTest(TestCase, ApiTestMixin):
         return defaults
 
     def test_create_knowledge_draft(self):
-        resp = self.post("/api/v1/knowledge-drafts/", self._payload(), user=self.author)
+        resp = self.post("/api/v1/knowledge/", self._payload(), user=self.author)
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["submission_type"], DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
 
     def test_knowledge_draft_not_visible_via_news_endpoint(self):
         kdraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-        resp = self.get("/api/v1/news-drafts/", user=self.author)
+        resp = self.get("/api/v1/news/?status=pending", user=self.author)
         ids = [d["id"] for d in resp.json()]
         self.assertNotIn(kdraft.pk, ids)
 
     def test_news_draft_not_visible_via_knowledge_endpoint(self):
         ndraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.NEWS)
-        resp = self.get("/api/v1/knowledge-drafts/", user=self.author)
+        resp = self.get("/api/v1/knowledge/?status=pending", user=self.author)
         ids = [d["id"] for d in resp.json()]
         self.assertNotIn(ndraft.pk, ids)
 
     def test_other_user_cannot_access_knowledge_draft(self):
         kdraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-        resp = self.get(f"/api/v1/knowledge-drafts/{kdraft.pk}", user=self.other)
+        resp = self.get(f"/api/v1/knowledge/{kdraft.pk}", user=self.other)
         self.assertEqual(resp.status_code, 403)
 
 
@@ -739,3 +871,62 @@ class ProtocolUploadSuccessTest(TestCase):
     def test_group_protocol_type_accepted(self):
         resp = self._post(protocol_type="group")
         self.assertEqual(resp.status_code, 200)
+
+
+# ---------------------------------------------------------------------------
+# Disciplines & EventTypes
+# ---------------------------------------------------------------------------
+
+
+class DisciplineListTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.reader = _user("disc_reader", role=User.Role.PARTICIPANT)
+        self.cat = DisciplineCategory.objects.create(name="Road", name_ru="Road_ru", name_kk="", name_en="Road")
+        self.disc = Discipline.objects.create(
+            name="Race", name_ru="Race_ru", name_kk="", name_en="Race", category=self.cat
+        )
+
+    def test_returns_categories_with_disciplines(self):
+        resp = self.get("/api/v1/disciplines/", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        cat_data = next((d for d in data if d["id"] == self.cat.pk), None)
+        self.assertIsNotNone(cat_data)
+        self.assertEqual(cat_data["name"]["ru"], "Road_ru")
+        disc_ids = [d["id"] for d in cat_data["disciplines"]]
+        self.assertIn(self.disc.pk, disc_ids)
+        disc_data = next(d for d in cat_data["disciplines"] if d["id"] == self.disc.pk)
+        self.assertEqual(disc_data["name"]["en"], "Race")
+
+    def test_get_single_category(self):
+        resp = self.get(f"/api/v1/disciplines/{self.cat.pk}", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["id"], self.cat.pk)
+
+    def test_404_for_missing_category(self):
+        resp = self.get("/api/v1/disciplines/99999", user=self.reader)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_anonymous_returns_401(self):
+        resp = self.get("/api/v1/disciplines/")
+        self.assertEqual(resp.status_code, 401)
+
+
+class EventTypeListTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.reader = _user("et_reader", role=User.Role.PARTICIPANT)
+        self.et = EventType.objects.create(name="Stage race", name_ru="Stage_ru", name_kk="", name_en="Stage race")
+
+    def test_returns_event_types(self):
+        resp = self.get("/api/v1/event-types/", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        ids = [d["id"] for d in data]
+        self.assertIn(self.et.pk, ids)
+        entry = next(d for d in data if d["id"] == self.et.pk)
+        self.assertEqual(entry["name"]["ru"], "Stage_ru")
+        self.assertEqual(entry["name"]["en"], "Stage race")
+
+    def test_anonymous_returns_401(self):
+        resp = self.get("/api/v1/event-types/")
+        self.assertEqual(resp.status_code, 401)

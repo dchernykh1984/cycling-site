@@ -1,11 +1,13 @@
 from datetime import date
 
-from ninja import Router, Schema
+from django.db.models import Q
+from ninja import Query, Router, Schema
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, is_admin
-from api.schemas import LocalizedStr
+from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
+from locations.models import Location
 
 auth = ApiTokenAuth()
 router = Router(tags=["competitions"])
@@ -66,11 +68,11 @@ class CompetitionOut(Schema):
 
     @staticmethod
     def resolve_title(obj: Competition) -> LocalizedStr:
-        return LocalizedStr(ru=obj.title_ru or "", kk=obj.title_kk or "", en=obj.title_en or "")
+        return localize_field(obj, "title")
 
     @staticmethod
     def resolve_description(obj: Competition) -> LocalizedStr:
-        return LocalizedStr(ru=obj.description_ru or "", kk=obj.description_kk or "", en=obj.description_en or "")
+        return localize_field(obj, "description")
 
 
 class CompetitionDetailOut(CompetitionOut):
@@ -82,6 +84,19 @@ class CompetitionDetailOut(CompetitionOut):
 
 
 # -- Helpers ---------------------------------------------------------------
+
+
+def _descendant_location_ids(location_ids: list[int]) -> set[int]:
+    """Return PKs of all locations at or below the given location IDs (treebeard path prefix match)."""
+    if not location_ids:
+        return set()
+    paths = list(Location.objects.filter(pk__in=location_ids).values_list("path", flat=True))
+    if not paths:
+        return set()
+    q = Q()
+    for path in paths:
+        q |= Q(path__startswith=path)
+    return set(Location.objects.filter(q).values_list("pk", flat=True))
 
 
 def _is_owner(user, competition: Competition) -> bool:
@@ -98,6 +113,12 @@ def _get_or_404(pk: int) -> Competition:
 def _require_owner_or_admin(user, competition: Competition) -> None:
     if not (_is_owner(user, competition) or is_admin(user)):
         raise HttpError(403, "Forbidden")
+
+
+def _require_visible_or_404(user, competition: Competition) -> None:
+    is_privileged = _is_owner(user, competition) or is_admin(user)
+    if not is_privileged and (competition.status != Competition.Status.APPROVED or competition.is_hidden):
+        raise HttpError(404, "Competition not found")
 
 
 def _apply_localized(obj, field: str, value: LocalizedStr) -> list[str]:
@@ -123,29 +144,34 @@ def _to_detail(competition: Competition, user=None) -> Competition:
 @router.get("/", response=list[CompetitionOut], auth=auth, summary="List competitions")
 def list_competitions(
     request,
-    status: str | None = None,
-    location_id: int | None = None,
-    discipline_id: int | None = None,
-    event_type_id: int | None = None,
+    status: Competition.Status = Competition.Status.APPROVED,
+    discipline_ids: list[int] = Query(default=[]),  # noqa: B008
+    event_type_ids: list[int] = Query(default=[]),  # noqa: B008
+    country_ids: list[int] = Query(default=[]),  # noqa: B008
+    region_ids: list[int] = Query(default=[]),  # noqa: B008
+    city_ids: list[int] = Query(default=[]),  # noqa: B008
 ):
+    user = request.auth
     qs = Competition.objects.filter(is_deleted=False)
-    if status:
-        qs = qs.filter(status=status)
-    else:
-        qs = qs.filter(status=Competition.Status.APPROVED)
-    if location_id:
-        qs = qs.filter(location_id=location_id)
-    if discipline_id:
-        qs = qs.filter(discipline_id=discipline_id)
-    if event_type_id:
-        qs = qs.filter(event_type_id=event_type_id)
+    if not is_admin(user):
+        qs = qs.filter(Q(status=Competition.Status.APPROVED, is_hidden=False) | Q(submitted_by=user))
+    qs = qs.filter(status=status)
+    if discipline_ids:
+        qs = qs.filter(discipline_id__in=discipline_ids)
+    if event_type_ids:
+        qs = qs.filter(event_type_id__in=event_type_ids)
+    combined_loc_ids = list(country_ids) + list(region_ids) + list(city_ids)
+    if combined_loc_ids:
+        qs = qs.filter(location_id__in=_descendant_location_ids(combined_loc_ids))
     return list(qs)
 
 
 @router.get("/{competition_id}", response=CompetitionDetailOut, auth=auth, summary="Get competition detail")
 def get_competition(request, competition_id: int):
     competition = _get_or_404(competition_id)
-    return _to_detail(competition, request.auth)
+    user = request.auth
+    _require_visible_or_404(user, competition)
+    return _to_detail(competition, user)
 
 
 @router.post("/", response={201: CompetitionDetailOut}, auth=auth, summary="Create competition")
@@ -181,6 +207,7 @@ def create_competition(request, payload: CompetitionIn):
 def update_competition(request, competition_id: int, payload: CompetitionPatchIn):
     user = request.auth
     competition = _get_or_404(competition_id)
+    _require_visible_or_404(user, competition)
     _require_owner_or_admin(user, competition)
 
     data = payload.dict(exclude_unset=True)
@@ -208,6 +235,7 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 def delete_competition(request, competition_id: int):
     user = request.auth
     competition = _get_or_404(competition_id)
+    _require_visible_or_404(user, competition)
     _require_owner_or_admin(user, competition)
     competition.is_deleted = True
     competition.save(update_fields=["is_deleted"])
