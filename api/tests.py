@@ -64,15 +64,15 @@ def _draft(author, submission_type=DraftSubmission.SubmissionType.NEWS, **kwargs
 
 def _article(**kwargs):
     defaults = {
-        "title_ru": "Test Article",
-        "title_kk": "",
-        "title_en": "",
-        "intro_ru": "",
-        "intro_kk": "",
-        "intro_en": "",
-        "body_ru": "Article body",
-        "body_kk": "",
-        "body_en": "",
+        "title_ru": "Title RU",
+        "title_kk": "Title KK",
+        "title_en": "Title EN",
+        "intro_ru": "Intro RU",
+        "intro_kk": "Intro KK",
+        "intro_en": "Intro EN",
+        "body_ru": "Body RU",
+        "body_kk": "Body KK",
+        "body_en": "Body EN",
     }
     defaults.update(kwargs)
     return NewsArticle.objects.create(**defaults)
@@ -609,6 +609,39 @@ class NewsDraftTest(TestCase, ApiTestMixin):
         resp = self.get("/api/v1/news/")
         self.assertEqual(resp.json(), [])
 
+    def test_article_returns_all_locale_fields(self):
+        article = _article(
+            title_ru="Title RU",
+            title_kk="Title KK",
+            title_en="Title EN",
+            intro_ru="Intro RU",
+            intro_kk="Intro KK",
+            intro_en="Intro EN",
+            body_ru="Body RU",
+            body_kk="Body KK",
+            body_en="Body EN",
+        )
+        resp = self.get(f"/api/v1/news/{article.pk}")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["title"]["ru"], "Title RU")
+        self.assertEqual(data["title"]["kk"], "Title KK")
+        self.assertEqual(data["title"]["en"], "Title EN")
+        self.assertEqual(data["intro"]["ru"], "Intro RU")
+        self.assertEqual(data["intro"]["kk"], "Intro KK")
+        self.assertEqual(data["intro"]["en"], "Intro EN")
+        self.assertEqual(data["body"]["ru"], "Body RU")
+        self.assertEqual(data["body"]["kk"], "Body KK")
+        self.assertEqual(data["body"]["en"], "Body EN")
+
+    def test_article_locale_fields_in_list_response(self):
+        _article(title_ru="RU Title", title_kk="KK Title", title_en="EN Title")
+        resp = self.get("/api/v1/news/")
+        data = resp.json()[0]
+        self.assertEqual(data["title"]["ru"], "RU Title")
+        self.assertEqual(data["title"]["kk"], "KK Title")
+        self.assertEqual(data["title"]["en"], "EN Title")
+
     def test_invalid_token_still_returns_401_on_public_endpoints(self):
         resp = self.client.get("/api/v1/competitions/", HTTP_AUTHORIZATION="Bearer bad-token")
         self.assertEqual(resp.status_code, 401)
@@ -669,6 +702,14 @@ class LocationListTest(TestCase, ApiTestMixin):
         resp = self.get("/api/v1/locations/")
         self.assertEqual(resp.status_code, 200)
 
+    def test_localized_name_in_list_response(self):
+        loc = _location(name="City RU", name_ru="City RU", name_kk="City KK", name_en="City EN")
+        resp = self.get("/api/v1/locations/", user=self.reader)
+        data = next(d for d in resp.json() if d["id"] == loc.pk)
+        self.assertEqual(data["name"]["ru"], "City RU")
+        self.assertEqual(data["name"]["kk"], "City KK")
+        self.assertEqual(data["name"]["en"], "City EN")
+
 
 class LocationDetailTest(TestCase, ApiTestMixin):
     def setUp(self):
@@ -688,6 +729,14 @@ class LocationDetailTest(TestCase, ApiTestMixin):
         loc = _location()
         resp = self.get(f"/api/v1/locations/{loc.pk}")
         self.assertEqual(resp.status_code, 200)
+
+    def test_localized_name_in_detail_response(self):
+        loc = _location(name="City RU", name_ru="City RU", name_kk="City KK", name_en="City EN")
+        resp = self.get(f"/api/v1/locations/{loc.pk}", user=self.reader)
+        data = resp.json()
+        self.assertEqual(data["name"]["ru"], "City RU")
+        self.assertEqual(data["name"]["kk"], "City KK")
+        self.assertEqual(data["name"]["en"], "City EN")
 
 
 class LocationCreateTest(TestCase, ApiTestMixin):

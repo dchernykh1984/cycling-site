@@ -62,10 +62,6 @@ class LocationNodeOut(Schema):
     is_hidden: bool
     children: list["LocationNodeOut"] = Field(default_factory=list)
 
-    @staticmethod
-    def resolve_name(obj: Location) -> LocalizedStr:
-        return localize_field(obj, "name")
-
 
 LocationNodeOut.model_rebuild()
 
