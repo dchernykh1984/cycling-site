@@ -99,7 +99,7 @@ def test_self_only_registration_appears_in_profile(page: Page, live_server, orga
     inject_session(page, live_server, rider)
 
     page.goto(f"{live_server.url}/competitions/{comp.pk}/register/")
-    page.select_option("select[name='category']", index=0)
+    page.select_option("select[name='category']", index=1)
     page.locator("#registration-form button[type='submit']").click()
     page.wait_for_url(f"{live_server.url}/competitions/{comp.pk}/participants/")
 
@@ -126,7 +126,7 @@ def test_free_mode_registration_appears_in_profile(page: Page, live_server, orga
     page.fill("input[name='last_name']", "Rider")
     page.fill("input[name='birth_year']", "1990")
     page.locator("input[name='gender'][value='M']").dispatch_event("change")
-    page.select_option("select[name='category']", index=0)
+    page.select_option("select[name='category']", index=1)
     page.locator("#registration-form button[type='submit']").click()
     page.wait_for_url(f"{live_server.url}/competitions/{comp.pk}/participants/")
 
@@ -198,7 +198,7 @@ def test_payment_required_registration_shows_pending_in_profile(page: Page, live
         registration_mode=Competition.RegistrationMode.FREE,
         require_payment=True,
     )
-    _make_reg(comp, rider)
+    _make_reg(comp, rider, is_approved=True)
     inject_session(page, live_server, rider)
 
     _go_profile(page, live_server)
