@@ -240,6 +240,46 @@ class RegisterForCompetitionViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    def test_auto_approved_when_approval_not_required(self):
+        self.client.force_login(self.user)
+        cat = make_category(self.comp)
+        self.client.post(
+            self.url, {"first_name": "Denis", "last_name": "T", "gender": "M", "birth_year": 1990, "category": cat.pk}
+        )
+        reg = CompetitionRegistration.objects.get(competition=self.comp)
+        self.assertTrue(reg.is_approved)
+
+    def test_not_auto_approved_when_approval_required(self):
+        comp = make_open_competition(require_approval=True)
+        self.client.force_login(self.user)
+        cat = make_category(comp)
+        self.client.post(
+            reverse("registrations:register", args=[comp.pk]),
+            {"first_name": "Denis", "last_name": "T", "gender": "M", "birth_year": 1990, "category": cat.pk},
+        )
+        reg = CompetitionRegistration.objects.get(competition=comp)
+        self.assertFalse(reg.is_approved)
+
+    def test_auto_paid_when_payment_not_required(self):
+        self.client.force_login(self.user)
+        cat = make_category(self.comp)
+        self.client.post(
+            self.url, {"first_name": "Denis", "last_name": "T", "gender": "M", "birth_year": 1990, "category": cat.pk}
+        )
+        reg = CompetitionRegistration.objects.get(competition=self.comp)
+        self.assertTrue(reg.is_paid)
+
+    def test_not_auto_paid_when_payment_required(self):
+        comp = make_open_competition(require_payment=True)
+        self.client.force_login(self.user)
+        cat = make_category(comp)
+        self.client.post(
+            reverse("registrations:register", args=[comp.pk]),
+            {"first_name": "Denis", "last_name": "T", "gender": "M", "birth_year": 1990, "category": cat.pk},
+        )
+        reg = CompetitionRegistration.objects.get(competition=comp)
+        self.assertFalse(reg.is_paid)
+
     def test_duplicate_registration_rejected(self):
         self.client.force_login(self.user)
         cat = make_category(self.comp)

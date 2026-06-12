@@ -150,10 +150,19 @@
                             {% if reg.rejection_note %}
                             <div class="text-muted small mt-1">{{ reg.rejection_note }}</div>
                             {% endif %}
-                            {% elif reg.is_approved %}
+                            {% else %}
+                            {% if reg.is_approved %}
                             <span class="badge bg-success">{% trans "Approved" %}</span>
                             {% else %}
                             <span class="badge bg-warning text-dark">{% trans "Pending" %}</span>
+                            {% endif %}
+                            {% if reg.competition.require_payment %}
+                            {% if reg.is_paid %}
+                            <span class="badge bg-success">{% trans "Paid" %}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{% trans "Not paid" %}</span>
+                            {% endif %}
+                            {% endif %}
                             {% endif %}
                         </td>
                     </tr>

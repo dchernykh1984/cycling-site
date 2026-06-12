@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-12 16:14+0000\n"
+"POT-Creation-Date: 2026-06-12 16:20+0000\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -162,25 +162,34 @@ msgstr "Санат"
 msgid "Rejected"
 msgstr "Қабылданбады"
 
-#: accounts/templates/accounts/profile.html:154
+#: accounts/templates/accounts/profile.html:155
 #: registrations/templates/registrations/participant_list.html:61
 msgid "Approved"
 msgstr "Бекітілді"
 
-#: accounts/templates/accounts/profile.html:156
+#: accounts/templates/accounts/profile.html:157
 #: news/templates/news/news_page.html:75
 msgid "Pending"
 msgstr "Қарастырылуда"
 
-#: accounts/templates/accounts/profile.html:165
+#: accounts/templates/accounts/profile.html:161
+#: registrations/templates/registrations/participant_list.html:62
+msgid "Paid"
+msgstr "Төленді"
+
+#: accounts/templates/accounts/profile.html:163
+msgid "Not paid"
+msgstr "Төленбеді"
+
+#: accounts/templates/accounts/profile.html:174
 msgid "No registrations yet."
 msgstr "Тіркелулер жоқ."
 
-#: accounts/templates/accounts/profile.html:170
+#: accounts/templates/accounts/profile.html:179
 msgid "API access"
 msgstr "API кiруi"
 
-#: accounts/templates/accounts/profile.html:173
+#: accounts/templates/accounts/profile.html:182
 msgid ""
 "Use this token to authenticate API requests: <code>Authorization: Bearer "
 "&lt;token&gt;</code>"
@@ -188,28 +197,28 @@ msgstr ""
 "API сурауларын растау ушiн осы токендi пайдаланыныз: <code>Authorization: "
 "Bearer &lt;token&gt;</code>"
 
-#: accounts/templates/accounts/profile.html:178
+#: accounts/templates/accounts/profile.html:187
 #: calendar_app/templates/calendar_app/detail.html:101
 msgid "Copy"
 msgstr "Көшіру"
 
-#: accounts/templates/accounts/profile.html:181
+#: accounts/templates/accounts/profile.html:190
 msgid "No token yet. Generate one below."
 msgstr "Токен алi жок. Томенде жасаныз."
 
-#: accounts/templates/accounts/profile.html:186
+#: accounts/templates/accounts/profile.html:195
 msgid "Regenerate token"
 msgstr "Токендi жаналау"
 
-#: accounts/templates/accounts/profile.html:186
+#: accounts/templates/accounts/profile.html:195
 msgid "Generate token"
 msgstr "Токен жасау"
 
-#: accounts/templates/accounts/profile.html:189
+#: accounts/templates/accounts/profile.html:198
 msgid "API docs (Swagger)"
 msgstr "API кужаттамасы (Swagger)"
 
-#: accounts/templates/accounts/profile.html:195
+#: accounts/templates/accounts/profile.html:204
 #: cycling_site/templates/base.html:122
 msgid "Log out"
 msgstr "Шыгу"
@@ -1280,10 +1289,6 @@ msgstr "Туған жылы"
 #: registrations/templates/registrations/register.html:179
 msgid "Team"
 msgstr "Команда"
-
-#: registrations/templates/registrations/participant_list.html:62
-msgid "Paid"
-msgstr "Төлем"
 
 #: registrations/templates/registrations/participant_list.html:63
 #, fuzzy
