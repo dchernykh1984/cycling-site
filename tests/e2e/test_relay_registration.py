@@ -278,3 +278,31 @@ def test_individual_registration_still_shows_last_first(page: Page, live_server,
     page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/participants/")
 
     expect(page.locator("text=Testov Ivan")).to_be_visible()
+
+
+# ---------------------------------------------------------------------------
+# profile: relay registration appears in personal account
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db(transaction=True)
+def test_relay_registration_appears_in_user_profile(
+    page: Page, live_server, participant_user, relay_competition, relay_category
+):
+    """After submitting a relay registration, it must appear in the user's profile under 'My registrations'."""
+    inject_session(page, live_server, participant_user)
+    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/register/")
+
+    page.locator("input[name='participant_name']").first.fill("Ivanov Ivan")
+    page.locator("input[name='participant_birth_year']").first.fill("1990")
+    page.locator("input[name='participant_city']").first.fill("Almaty")
+
+    page.locator("input[name='gender'][value='M']").dispatch_event("change")
+    expect(page.locator("select[name='category'] option", has_text="Mixed Relay")).to_be_attached()
+    page.select_option("select[name='category']", label="Mixed Relay")
+
+    page.locator("#registration-form button[type='submit']").click()
+    page.wait_for_url(f"{live_server.url}/competitions/{relay_competition.pk}/participants/")
+
+    page.goto(f"{live_server.url}/accounts/profile/")
+    expect(page.locator("text=Relay Race")).to_be_visible()
