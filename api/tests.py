@@ -237,6 +237,37 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         resp = self.get(f"/api/v1/competitions/?discipline_ids={d1.pk}&discipline_ids={d2.pk}", user=self.reader)
         self.assertEqual(len(resp.json()), 2)
 
+    def test_hidden_competition_not_in_list_for_non_admin(self):
+        _competition(is_hidden=True)
+        resp = self.get("/api/v1/competitions/", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 0)
+
+    def test_hidden_competition_visible_to_owner(self):
+        owner = _user("hidden_owner", role=User.Role.ORGANIZER)
+        _competition(submitted_by=owner, is_hidden=True)
+        resp = self.get("/api/v1/competitions/", user=owner)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_hidden_competition_visible_to_admin(self):
+        admin = _user("hidden_admin", role=User.Role.ADMIN)
+        _competition(is_hidden=True)
+        resp = self.get("/api/v1/competitions/", user=admin)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_filter_by_combined_country_and_city_ids_uses_or_semantics(self):
+        country = _location(name="Country", name_ru="Country")
+        other_city = _location(name="OtherCity", name_ru="OtherCity")
+        _competition(location=country)
+        _competition(location=other_city)
+        _competition()
+        resp = self.get(
+            f"/api/v1/competitions/?country_ids={country.pk}&city_ids={other_city.pk}",
+            user=self.reader,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 2)
+
     def test_localized_title_in_response(self):
         _competition(title_ru="Race RU", title_kk="Race KK", title_en="Race")
         resp = self.get("/api/v1/competitions/", user=self.reader)
@@ -287,6 +318,23 @@ class CompetitionDetailTest(TestCase, ApiTestMixin):
     def test_admin_can_get_pending(self):
         admin = _user("det_admin", role=User.Role.ADMIN)
         comp = _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=admin)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_hidden_competition_returns_404_for_stranger(self):
+        comp = _competition(is_hidden=True)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=self.reader)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_hidden_competition_accessible_to_owner(self):
+        owner = _user("hidden_det_owner", role=User.Role.ORGANIZER)
+        comp = _competition(submitted_by=owner, is_hidden=True)
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=owner)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_hidden_competition_accessible_to_admin(self):
+        admin = _user("hidden_det_admin", role=User.Role.ADMIN)
+        comp = _competition(is_hidden=True)
         resp = self.get(f"/api/v1/competitions/{comp.pk}", user=admin)
         self.assertEqual(resp.status_code, 200)
 

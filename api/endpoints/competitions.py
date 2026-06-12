@@ -90,11 +90,11 @@ def _descendant_location_ids(location_ids: list[int]) -> set[int]:
     """Return PKs of all locations at or below the given location IDs (treebeard path prefix match)."""
     if not location_ids:
         return set()
-    roots = Location.objects.filter(pk__in=location_ids).values_list("path", flat=True)
-    if not roots:
+    paths = list(Location.objects.filter(pk__in=location_ids).values_list("path", flat=True))
+    if not paths:
         return set()
     q = Q()
-    for path in roots:
+    for path in paths:
         q |= Q(path__startswith=path)
     return set(Location.objects.filter(q).values_list("pk", flat=True))
 
@@ -116,7 +116,8 @@ def _require_owner_or_admin(user, competition: Competition) -> None:
 
 
 def _require_visible_or_404(user, competition: Competition) -> None:
-    if competition.status != Competition.Status.APPROVED and not (_is_owner(user, competition) or is_admin(user)):
+    is_privileged = _is_owner(user, competition) or is_admin(user)
+    if not is_privileged and (competition.status != Competition.Status.APPROVED or competition.is_hidden):
         raise HttpError(404, "Competition not found")
 
 
@@ -153,15 +154,15 @@ def list_competitions(
     user = request.auth
     qs = Competition.objects.filter(is_deleted=False)
     if not is_admin(user):
-        qs = qs.filter(Q(status=Competition.Status.APPROVED) | Q(submitted_by=user))
+        qs = qs.filter(Q(status=Competition.Status.APPROVED, is_hidden=False) | Q(submitted_by=user))
     qs = qs.filter(status=status)
     if discipline_ids:
         qs = qs.filter(discipline_id__in=discipline_ids)
     if event_type_ids:
         qs = qs.filter(event_type_id__in=event_type_ids)
-    for loc_ids in (country_ids, region_ids, city_ids):
-        if loc_ids:
-            qs = qs.filter(location_id__in=_descendant_location_ids(loc_ids))
+    combined_loc_ids = list(country_ids) + list(region_ids) + list(city_ids)
+    if combined_loc_ids:
+        qs = qs.filter(location_id__in=_descendant_location_ids(combined_loc_ids))
     return list(qs)
 
 
