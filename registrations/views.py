@@ -236,7 +236,7 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
 
             CompetitionRegistration.objects.create(
                 competition=competition,
-                user=user if competition.registration_mode == "self_only" else None,
+                user=user,
                 registered_by=user,
                 first_name=first_name,
                 last_name=last_name,
