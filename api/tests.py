@@ -714,6 +714,21 @@ class LocationListTest(TestCase, ApiTestMixin):
         self.assertEqual(node["name"]["kk"], "FallbackCity")
         self.assertEqual(node["name"]["en"], "FallbackCity")
 
+    def test_name_falls_back_to_canonical_when_locale_variants_null(self):
+        # Pre-migration rows may have NULL (not empty string) in locale columns.
+        loc = _location()
+        with connection.cursor() as cur:
+            cur.execute(
+                "UPDATE locations_location SET name=%s, name_ru=NULL, name_kk=NULL, name_en=NULL WHERE id=%s",
+                ["NullFallback", loc.pk],
+            )
+        resp = self.get("/api/v1/locations/", user=self.reader)
+        data = resp.json()
+        node = next(d for d in data if d["id"] == loc.pk)
+        self.assertEqual(node["name"]["ru"], "NullFallback")
+        self.assertEqual(node["name"]["kk"], "NullFallback")
+        self.assertEqual(node["name"]["en"], "NullFallback")
+
     def test_locale_variant_takes_precedence_over_canonical(self):
         loc = _location()
         with connection.cursor() as cur:
@@ -726,6 +741,7 @@ class LocationListTest(TestCase, ApiTestMixin):
         node = next(d for d in data if d["id"] == loc.pk)
         self.assertEqual(node["name"]["ru"], "RuName")
         self.assertEqual(node["name"]["kk"], "Canonical")
+        self.assertEqual(node["name"]["en"], "Canonical")
 
     def test_anonymous_can_list_locations(self):
         resp = self.get("/api/v1/locations/")

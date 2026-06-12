@@ -129,6 +129,9 @@ def _apply_localized(obj, field: str, value: LocalizedStr) -> list[str]:
     for lang, val in (("ru", value.ru), ("kk", value.kk), ("en", value.en)):
         setattr(obj, f"{field}_{lang}", val)
         updated.append(f"{field}_{lang}")
+    # Keep canonical column in sync so localize_field fallback stays correct.
+    setattr(obj, field, value.ru or value.kk or value.en)
+    updated.append(field)
     return updated
 
 
