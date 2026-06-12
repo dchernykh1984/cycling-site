@@ -90,12 +90,35 @@ No manual database or host configuration is required in the dashboard.
 
 Live site: <https://cycling.codered.cloud>.
 
+## REST API
+
+The site exposes a REST API at `/api/v1/`. It supports CRUD for competitions,
+news and knowledge-article drafts, locations, plus endpoints for participant
+list retrieval and protocol file uploads used by the offline referee tools.
+
+All write operations require a Bearer token: `Authorization: Bearer <token>`.
+Organizers and higher can generate their personal API token on the profile page.
+The full interactive API reference (Swagger UI) is linked from the profile page
+after the token is generated.
+
 ## User roles
 
 The site has four roles: Guest, Participant, Organizer, Owner. Roles are stored
 on `accounts.User.role` and control access permissions throughout the app.
 
 New users who register get the **Participant** role automatically.
+
+### Manually confirming a user's email
+
+If the confirmation email was not received, an admin can manually mark the
+address as verified in two steps:
+
+1. **Django admin** - `/django-admin/account/emailaddress/` - find the record
+   by email, set **Verified** to checked, save.
+2. **Django admin** - `/django-admin/accounts/user/` - find the user, change
+   **Role** from `guest` to `participant`, save.
+
+Step 1 alone does not change the role; both steps are required.
 
 ### Granting Owner access
 

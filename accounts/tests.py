@@ -513,6 +513,71 @@ class DjangoAdminRoleEnforcementTests(TestCase):
         target.refresh_from_db()
         self.assertFalse(target.is_superuser)
 
+
+class ResendEmailConfirmationTests(TestCase):
+    def setUp(self):
+        self.user = make_user(username="resender", role=User.Role.GUEST)
+        self.url = reverse("account_resend_confirmation")
+
+    def test_redirects_anonymous(self):
+        resp = self.client.post(self.url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/accounts/login/", resp["Location"])
+
+    def test_sends_confirmation_and_sets_cooldown(self):
+        self.client.force_login(self.user)
+        with patch.object(EmailAddress, "send_confirmation") as mock_send:
+            resp = self.client.post(self.url)
+        self.assertRedirects(resp, reverse("account_profile"))
+        mock_send.assert_called_once()
+        self.user.refresh_from_db()
+        self.assertIsNotNone(self.user.email_confirmation_sent_at)
+
+    def test_cooldown_prevents_immediate_resend(self):
+        self.client.force_login(self.user)
+        with patch.object(EmailAddress, "send_confirmation"):
+            self.client.post(self.url)
+        with patch.object(EmailAddress, "send_confirmation") as mock_send:
+            resp = self.client.post(self.url)
+        self.assertRedirects(resp, reverse("account_profile"))
+        mock_send.assert_not_called()
+
+    def test_already_verified_skips_send(self):
+        EmailAddress.objects.create(user=self.user, email=self.user.email, verified=True, primary=True)
+        self.client.force_login(self.user)
+        with patch.object(EmailAddress, "send_confirmation") as mock_send:
+            resp = self.client.post(self.url)
+        self.assertRedirects(resp, reverse("account_profile"))
+        mock_send.assert_not_called()
+
+    def test_profile_shows_resend_button_when_unverified(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("account_profile"))
+        self.assertContains(resp, "/accounts/resend-confirmation/")
+
+    def test_profile_button_disabled_during_cooldown(self):
+        self.client.force_login(self.user)
+        with patch.object(EmailAddress, "send_confirmation"):
+            self.client.post(self.url)
+        resp = self.client.get(reverse("account_profile"))
+        self.assertContains(resp, "disabled")
+
+
+class _DjangoAdminRoleEnforcementExtraTests(TestCase):
+    def _make_staff_user(self, username, role):
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        user = make_user(username=username, role=role)
+        user.is_staff = True
+        user.save()
+        ct = ContentType.objects.get_for_model(User)
+        user.user_permissions.set(Permission.objects.filter(content_type=ct))
+        return user
+
+    def _change_url(self, target):
+        return reverse("admin:accounts_user_change", args=[target.pk])
+
     def test_owner_can_set_is_staff_via_django_admin(self):
         owner = self._make_staff_user("owner_staff", User.Role.OWNER)
         self.client.force_login(owner)

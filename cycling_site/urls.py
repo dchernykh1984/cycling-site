@@ -8,6 +8,7 @@ from wagtail.contrib.sitemaps.views import sitemap as wagtail_sitemap
 from wagtail.documents import urls as wagtaildocs_urls
 
 from accounts.views import set_language as accounts_set_language
+from api.router import api as ninja_api
 from cycling_site.sitemaps import WagtailPagesSitemap
 from search import views as search_views
 
@@ -29,6 +30,7 @@ sitemaps = {
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path("django-admin/", admin.site.urls),
+    path("api/v1/", ninja_api.urls),
     path("admin/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     path("i18n/set_language/", accounts_set_language, name="set_language"),

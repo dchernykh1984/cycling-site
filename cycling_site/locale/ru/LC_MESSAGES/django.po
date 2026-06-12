@@ -82,6 +82,38 @@ msgstr ""
 "Email ещё не подтверждён. Проверьте почту и подтвердите адрес, чтобы стать "
 "участником."
 
+#: accounts/templates/accounts/profile.html
+msgid "Resend confirmation email"
+msgstr "Отправить письмо ещё раз"
+
+#: accounts/templates/accounts/profile.html
+msgid "API access"
+msgstr "Доступ к API"
+
+#: accounts/templates/accounts/profile.html
+msgid ""
+"Use this token to authenticate API requests: <code>Authorization: Bearer "
+"&lt;token&gt;</code>"
+msgstr ""
+"Используйте этот токен для аутентификации API-запросов: <code>Authorization: "
+"Bearer &lt;token&gt;</code>"
+
+#: accounts/templates/accounts/profile.html
+msgid "No token yet. Generate one below."
+msgstr "Токен ещё не создан. Сгенерируйте его ниже."
+
+#: accounts/templates/accounts/profile.html
+msgid "Regenerate token"
+msgstr "Пересоздать токен"
+
+#: accounts/templates/accounts/profile.html
+msgid "Generate token"
+msgstr "Создать токен"
+
+#: accounts/templates/accounts/profile.html
+msgid "API docs (Swagger)"
+msgstr "Документация API (Swagger)"
+
 #: accounts/templates/accounts/profile.html:36
 msgid "Appearance"
 msgstr "Внешний вид"
@@ -465,57 +497,51 @@ msgstr "Дисциплина"
 
 #: calendar_app/templates/calendar_app/calendar.html:106
 msgid "January"
-msgstr ""
+msgstr "Январь"
 
 #: calendar_app/templates/calendar_app/calendar.html:106
 msgid "February"
-msgstr ""
+msgstr "Февраль"
 
 #: calendar_app/templates/calendar_app/calendar.html:106
-#, fuzzy
-#| msgid "Search"
 msgid "March"
-msgstr "Поиск"
+msgstr "Март"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
 msgid "April"
-msgstr ""
+msgstr "Апрель"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
-#, fuzzy
-#| msgid "Map"
 msgid "May"
-msgstr "Карта"
+msgstr "Май"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
 msgid "June"
-msgstr ""
+msgstr "Июнь"
 
 #: calendar_app/templates/calendar_app/calendar.html:108
 msgid "July"
-msgstr ""
+msgstr "Июль"
 
 #: calendar_app/templates/calendar_app/calendar.html:108
 msgid "August"
-msgstr ""
+msgstr "Август"
 
 #: calendar_app/templates/calendar_app/calendar.html:108
 msgid "September"
-msgstr ""
+msgstr "Сентябрь"
 
 #: calendar_app/templates/calendar_app/calendar.html:109
 msgid "October"
-msgstr ""
+msgstr "Октябрь"
 
 #: calendar_app/templates/calendar_app/calendar.html:109
 msgid "November"
-msgstr ""
+msgstr "Ноябрь"
 
 #: calendar_app/templates/calendar_app/calendar.html:109
-#, fuzzy
-#| msgid "Team members"
 msgid "December"
-msgstr "Участники команды"
+msgstr "Декабрь"
 
 #: calendar_app/templates/calendar_app/detail.html:12
 #: calendar_app/templates/calendar_app/edit.html:12

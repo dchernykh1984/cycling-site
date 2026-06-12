@@ -1,4 +1,6 @@
 import json
+import uuid
+from datetime import timedelta
 from typing import ClassVar
 
 from allauth.account.models import EmailAddress
@@ -6,10 +8,13 @@ from django import forms
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
 from accounts.models import User
+
+_RESEND_COOLDOWN_SECONDS = 600  # 10 minutes
 
 
 class ProfileEditForm(forms.ModelForm):
@@ -33,6 +38,14 @@ class ProfileView(TemplateView):
             user.role not in (user.Role.GUEST, user.Role.PARTICIPANT)
             or EmailAddress.objects.filter(user=user, verified=True).exists()
         )
+        cooldown_remaining = 0
+        sent_at = self.request.user.email_confirmation_sent_at
+        if sent_at:
+            elapsed = (timezone.now() - sent_at).total_seconds()
+            remaining = _RESEND_COOLDOWN_SECONDS - elapsed
+            if remaining > 0:
+                cooldown_remaining = int(remaining)
+        context["resend_cooldown_seconds"] = cooldown_remaining
         from knowledge.models import DraftSubmission
 
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
@@ -60,6 +73,36 @@ class ProfileEditView(LoginRequiredMixin, View):
             form.save()
             return redirect("account_profile")
         return render(request, self.template_name, {"form": form})
+
+
+class ResendEmailConfirmationView(LoginRequiredMixin, View):
+    def post(self, request):
+        user = request.user
+        if EmailAddress.objects.filter(user=user, verified=True).exists():
+            return redirect("account_profile")
+
+        sent_at = user.email_confirmation_sent_at
+        if sent_at and (timezone.now() - sent_at) < timedelta(seconds=_RESEND_COOLDOWN_SECONDS):
+            return redirect("account_profile")
+
+        email_address, _ = EmailAddress.objects.get_or_create(
+            user=user,
+            defaults={"email": user.email, "primary": True, "verified": False},
+        )
+        email_address.send_confirmation(request, signup=False)
+        user.email_confirmation_sent_at = timezone.now()
+        user.save(update_fields=["email_confirmation_sent_at"])
+        return redirect("account_profile")
+
+
+class ApiTokenRegenerateView(LoginRequiredMixin, View):
+    def post(self, request):
+        user = request.user
+        if user.get_role_rank() < user.ROLE_HIERARCHY.index(user.Role.ORGANIZER):
+            return JsonResponse({"error": "forbidden"}, status=403)
+        user.api_token = uuid.uuid4()
+        user.save(update_fields=["api_token"])
+        return redirect("account_profile")
 
 
 class ThemeUpdateView(LoginRequiredMixin, View):
