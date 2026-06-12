@@ -192,21 +192,21 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 2)
 
-    def test_filter_by_city_ids(self):
+    def test_filter_by_location_ids(self):
         city = _location()
         _competition(location=city)
         _competition()
-        resp = self.get(f"/api/v1/competitions/?city_ids={city.pk}", user=self.reader)
+        resp = self.get(f"/api/v1/competitions/?location_ids={city.pk}", user=self.reader)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 1)
 
-    def test_filter_by_country_includes_child_locations(self):
+    def test_filter_by_location_includes_descendants(self):
         country = _location(name="Country", name_ru="Country")
         region = country.add_child(name="Region", name_ru="Region", name_kk="", name_en="")
         city = region.add_child(name="City", name_ru="City", name_kk="", name_en="")
         _competition(location=city)
         _competition()
-        resp = self.get(f"/api/v1/competitions/?country_ids={country.pk}", user=self.reader)
+        resp = self.get(f"/api/v1/competitions/?location_ids={country.pk}", user=self.reader)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 1)
 
@@ -255,14 +255,14 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         resp = self.get("/api/v1/competitions/", user=admin)
         self.assertEqual(len(resp.json()), 1)
 
-    def test_filter_by_combined_country_and_city_ids_uses_or_semantics(self):
-        country = _location(name="Country", name_ru="Country")
-        other_city = _location(name="OtherCity", name_ru="OtherCity")
-        _competition(location=country)
-        _competition(location=other_city)
+    def test_filter_by_multiple_location_ids_uses_or_semantics(self):
+        loc_a = _location(name="LocA", name_ru="LocA")
+        loc_b = _location(name="LocB", name_ru="LocB")
+        _competition(location=loc_a)
+        _competition(location=loc_b)
         _competition()
         resp = self.get(
-            f"/api/v1/competitions/?country_ids={country.pk}&city_ids={other_city.pk}",
+            f"/api/v1/competitions/?location_ids={loc_a.pk}&location_ids={loc_b.pk}",
             user=self.reader,
         )
         self.assertEqual(resp.status_code, 200)
@@ -507,17 +507,25 @@ class NewsDraftTest(TestCase, ApiTestMixin):
         resp = self.post("/api/v1/news/", self._payload(), user=guest)
         self.assertEqual(resp.status_code, 403)
 
-    def test_author_sees_own_drafts(self):
+    def test_author_sees_own_pending_drafts(self):
         _draft(self.author)
         _draft(self.other)
         resp = self.get("/api/v1/news/?status=pending", user=self.author)
         self.assertEqual(len(resp.json()), 1)
 
-    def test_admin_sees_all_drafts(self):
+    def test_admin_sees_all_pending_drafts(self):
         _draft(self.author)
         _draft(self.other)
         resp = self.get("/api/v1/news/?status=pending", user=self.admin)
         self.assertEqual(len(resp.json()), 2)
+
+    def test_approved_news_visible_to_all_authenticated_users(self):
+        approved = _draft(self.other)
+        approved.status = DraftSubmission.Status.APPROVED
+        approved.save(update_fields=["status"])
+        resp = self.get("/api/v1/news/", user=self.author)
+        ids = [d["id"] for d in resp.json()]
+        self.assertIn(approved.pk, ids)
 
     def test_get_draft_requires_owner_or_admin(self):
         draft = _draft(self.author)
@@ -575,18 +583,31 @@ class LocationListTest(TestCase, ApiTestMixin):
         ids_visible = {d["id"] for d in self.get("/api/v1/locations/", user=self.reader).json()}
         self.assertNotIn(hidden.pk, ids_visible)
 
-    def test_parent_id_computed_correctly(self):
+    def test_tree_nests_children_under_parent(self):
         parent = _location(name="Parent", name_ru="Parent")
         child = parent.add_child(name="Child", name_ru="Child", name_kk="", name_en="")
         resp = self.get("/api/v1/locations/", user=self.reader)
-        child_data = next(d for d in resp.json() if d["id"] == child.pk)
-        self.assertEqual(child_data["parent_id"], parent.pk)
+        data = resp.json()
+        parent_data = next(d for d in data if d["id"] == parent.pk)
+        child_ids = [c["id"] for c in parent_data["children"]]
+        self.assertIn(child.pk, child_ids)
 
-    def test_root_has_no_parent(self):
+    def test_root_nodes_appear_at_top_level(self):
         loc = _location()
         resp = self.get("/api/v1/locations/", user=self.reader)
-        loc_data = next(d for d in resp.json() if d["id"] == loc.pk)
-        self.assertIsNone(loc_data["parent_id"])
+        top_ids = [d["id"] for d in resp.json()]
+        self.assertIn(loc.pk, top_ids)
+
+    def test_deep_tree_nests_correctly(self):
+        country = _location(name="Country", name_ru="Country")
+        region = country.add_child(name="Region", name_ru="Region", name_kk="", name_en="")
+        city = region.add_child(name="City", name_ru="City", name_kk="", name_en="")
+        resp = self.get("/api/v1/locations/", user=self.reader)
+        data = resp.json()
+        country_data = next(d for d in data if d["id"] == country.pk)
+        region_data = next(d for d in country_data["children"] if d["id"] == region.pk)
+        city_ids = [c["id"] for c in region_data["children"]]
+        self.assertIn(city.pk, city_ids)
 
     def test_anonymous_returns_401(self):
         resp = self.get("/api/v1/locations/")

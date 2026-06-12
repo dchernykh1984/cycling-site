@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from ninja import Router, Schema
 from ninja.errors import HttpError
+from ninja.schema import Field
 
 from api.auth import ApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
@@ -52,6 +53,22 @@ class LocationOut(Schema):
         return parent.pk if parent else None
 
 
+class LocationNodeOut(Schema):
+    id: int
+    name: LocalizedStr
+    lat: Decimal | None
+    lng: Decimal | None
+    is_hidden: bool
+    children: list["LocationNodeOut"] = Field(default_factory=list)
+
+    @staticmethod
+    def resolve_name(obj: Location) -> LocalizedStr:
+        return localize_field(obj, "name")
+
+
+LocationNodeOut.model_rebuild()
+
+
 # -- Helpers ---------------------------------------------------------------
 
 
@@ -78,18 +95,36 @@ def _apply_name(location: Location, name: LocalizedStr) -> None:
 # -- Endpoints -------------------------------------------------------------
 
 
-@router.get("/", response=list[LocationOut], auth=auth, summary="List locations")
+@router.get("/", response=list[LocationNodeOut], auth=auth, summary="List locations as hierarchy tree")
 def list_locations(request, include_hidden: bool = False):
-    # Load all non-deleted locations in one query for path-based parent resolution.
     all_locs = list(Location.objects.filter(is_deleted=False))
     step = Location.steplen
-    path_to_pk = {loc.path: loc.pk for loc in all_locs}
+    path_to_loc: dict[str, Location] = {loc.path: loc for loc in all_locs}
+    children_map: dict[int, list[Location]] = {loc.pk: [] for loc in all_locs}
+    roots: list[Location] = []
     for loc in all_locs:
         parent_path = loc.path[:-step] if len(loc.path) > step else None
-        loc._parent_pk = path_to_pk.get(parent_path) if parent_path else None
-    if not include_hidden:
-        return [loc for loc in all_locs if not loc.is_hidden]
-    return all_locs
+        parent = path_to_loc.get(parent_path) if parent_path else None
+        if parent is not None:
+            children_map[parent.pk].append(loc)
+        else:
+            roots.append(loc)
+
+    def build_node(loc: Location) -> LocationNodeOut:
+        kids = children_map[loc.pk]
+        if not include_hidden:
+            kids = [c for c in kids if not c.is_hidden]
+        return LocationNodeOut(
+            id=loc.pk,
+            name=localize_field(loc, "name"),
+            lat=loc.lat,
+            lng=loc.lng,
+            is_hidden=loc.is_hidden,
+            children=[build_node(c) for c in kids],
+        )
+
+    visible_roots = [r for r in roots if include_hidden or not r.is_hidden]
+    return [build_node(r) for r in visible_roots]
 
 
 @router.get("/{location_id}", response=LocationOut, auth=auth, summary="Get location detail")

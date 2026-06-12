@@ -138,7 +138,7 @@ def _delete_draft(request, pk: int, submission_type: str) -> None:
 def list_news_drafts(request, status: DraftSubmission.Status = DraftSubmission.Status.APPROVED):
     user = request.auth
     qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.NEWS)
-    if not is_admin(user):
+    if not is_admin(user) and status != DraftSubmission.Status.APPROVED:
         qs = qs.filter(author=user)
     qs = qs.filter(status=status)
     return list(qs)
@@ -176,7 +176,7 @@ def delete_news_draft(request, draft_id: int):
 def list_knowledge_drafts(request, status: DraftSubmission.Status = DraftSubmission.Status.APPROVED):
     user = request.auth
     qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    if not is_admin(user):
+    if not is_admin(user) and status != DraftSubmission.Status.APPROVED:
         qs = qs.filter(author=user)
     qs = qs.filter(status=status)
     return list(qs)
