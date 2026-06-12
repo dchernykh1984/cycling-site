@@ -44,6 +44,7 @@ def upload_protocol(  # noqa: C901
         competition = Competition.objects.get(
             upload_token=competition_token,
             status=Competition.Status.APPROVED,
+            is_deleted=False,
         )
     except (Competition.DoesNotExist, ValidationError):
         raise HttpError(401, "Invalid competition_token") from None

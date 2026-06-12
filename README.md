@@ -90,6 +90,17 @@ No manual database or host configuration is required in the dashboard.
 
 Live site: <https://cycling.codered.cloud>.
 
+## REST API
+
+The site exposes a REST API at `/api/v1/`. It supports CRUD for competitions,
+news and knowledge-article drafts, locations, plus endpoints for participant
+list retrieval and protocol file uploads used by the offline referee tools.
+
+All write operations require a Bearer token: `Authorization: Bearer <token>`.
+Organizers and higher can generate their personal API token on the profile page.
+The full interactive API reference (Swagger UI) is linked from the profile page
+after the token is generated.
+
 ## User roles
 
 The site has four roles: Guest, Participant, Organizer, Owner. Roles are stored

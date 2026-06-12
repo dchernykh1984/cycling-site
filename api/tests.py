@@ -12,6 +12,7 @@ from accounts.models import User
 from calendar_app.models import Competition
 from knowledge.models import DraftSubmission
 from locations.models import Location
+from registrations.models import CompetitionRegistration
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -58,6 +59,20 @@ def _draft(author, submission_type=DraftSubmission.SubmissionType.NEWS, **kwargs
     }
     defaults.update(kwargs)
     return DraftSubmission.objects.create(**defaults)
+
+
+def _registration(competition, **kwargs):
+    defaults = {
+        "competition": competition,
+        "first_name": "Ivan",
+        "last_name": "Petrov",
+        "birth_date": date(1990, 6, 15),
+        "gender": "M",
+        "is_approved": True,
+        "is_paid": True,
+    }
+    defaults.update(kwargs)
+    return CompetitionRegistration.objects.create(**defaults)
 
 
 class ApiTestMixin:
@@ -537,4 +552,148 @@ class ProtocolExtraCoverageTest(TestCase):
 
     def test_htm_extension_accepted(self):
         resp = self._post(html_file=_html_file(b"<html></html>", "p.htm"))
+        self.assertEqual(resp.status_code, 200)
+
+
+# ---------------------------------------------------------------------------
+# Knowledge article drafts
+# ---------------------------------------------------------------------------
+
+
+class KnowledgeArticleDraftTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.author = _user("k_author", role=User.Role.PARTICIPANT)
+        self.other = _user("k_other", role=User.Role.PARTICIPANT)
+
+    def _payload(self, **kwargs):
+        defaults = {"title": "Article Title", "body": "Body", "locale": "ru", "category": ""}
+        defaults.update(kwargs)
+        return defaults
+
+    def test_create_knowledge_draft(self):
+        resp = self.post("/api/v1/knowledge-drafts/", self._payload(), user=self.author)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["submission_type"], DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+
+    def test_knowledge_draft_not_visible_via_news_endpoint(self):
+        kdraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        resp = self.get("/api/v1/news-drafts/", user=self.author)
+        ids = [d["id"] for d in resp.json()]
+        self.assertNotIn(kdraft.pk, ids)
+
+    def test_news_draft_not_visible_via_knowledge_endpoint(self):
+        ndraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.NEWS)
+        resp = self.get("/api/v1/knowledge-drafts/", user=self.author)
+        ids = [d["id"] for d in resp.json()]
+        self.assertNotIn(ndraft.pk, ids)
+
+    def test_other_user_cannot_access_knowledge_draft(self):
+        kdraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        resp = self.get(f"/api/v1/knowledge-drafts/{kdraft.pk}", user=self.other)
+        self.assertEqual(resp.status_code, 403)
+
+
+# ---------------------------------------------------------------------------
+# Participants
+# ---------------------------------------------------------------------------
+
+
+class ParticipantsAPITest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.comp = _competition()
+
+    def test_returns_participants(self):
+        _registration(self.comp)
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["competition_id"], self.comp.pk)
+        self.assertEqual(len(data["participants"]), 1)
+
+    def test_invalid_token_returns_401(self):
+        resp = self.get("/api/v1/participants/?competition_token=not-a-valid-uuid")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_unknown_token_returns_401(self):
+        resp = self.get(f"/api/v1/participants/?competition_token={uuid.uuid4()}")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_deleted_competition_returns_401(self):
+        self.comp.is_deleted = True
+        self.comp.save(update_fields=["is_deleted"])
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_pending_competition_returns_401(self):
+        comp = _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.get(f"/api/v1/participants/?competition_token={comp.upload_token}")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_unapproved_excluded_when_approval_required(self):
+        self.comp.require_approval = True
+        self.comp.save(update_fields=["require_approval"])
+        _registration(self.comp, is_approved=True)
+        _registration(self.comp, is_approved=False, first_name="Unapproved")
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
+        self.assertEqual(len(resp.json()["participants"]), 1)
+
+    def test_all_returned_when_no_approval_required(self):
+        _registration(self.comp, is_approved=False)
+        _registration(self.comp, is_approved=True)
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
+        self.assertEqual(len(resp.json()["participants"]), 2)
+
+
+# ---------------------------------------------------------------------------
+# Protocol upload (success paths)
+# ---------------------------------------------------------------------------
+
+
+class ProtocolUploadSuccessTest(TestCase):
+    def setUp(self):
+        self.media_root = tempfile.mkdtemp()
+        self._settings = override_settings(MEDIA_ROOT=self.media_root)
+        self._settings.enable()
+        self.comp = Competition.objects.create(
+            title_ru="Race",
+            date_start=date(2026, 7, 1),
+            status=Competition.Status.APPROVED,
+        )
+
+    def tearDown(self):
+        self._settings.disable()
+        shutil.rmtree(self.media_root, ignore_errors=True)
+
+    def _post(self, **kwargs):
+        data = {
+            "competition_token": str(self.comp.upload_token),
+            "protocol_type": "absolute",
+            "html_file": SimpleUploadedFile("p.html", b"<html></html>", content_type="text/html"),
+        }
+        data.update(kwargs)
+        return self.client.post("/api/v1/protocols/upload/", data)
+
+    def test_success_returns_id_and_hash(self):
+        resp = self._post()
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("id", data)
+        self.assertIn("file_hash", data)
+
+    def test_invalid_token_returns_401(self):
+        resp = self._post(competition_token=str(uuid.uuid4()))
+        self.assertEqual(resp.status_code, 401)
+
+    def test_deleted_competition_returns_401(self):
+        self.comp.is_deleted = True
+        self.comp.save(update_fields=["is_deleted"])
+        resp = self._post()
+        self.assertEqual(resp.status_code, 401)
+
+    def test_invalid_protocol_type_returns_400(self):
+        resp = self._post(protocol_type="invalid")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_group_protocol_type_accepted(self):
+        resp = self._post(protocol_type="group")
         self.assertEqual(resp.status_code, 200)
