@@ -1,6 +1,7 @@
 """
-Shared endpoint logic for DraftSubmission-backed resources (news and knowledge articles).
-Both submission types use the same model; they differ only in submission_type value.
+News GET endpoints serve NewsArticle (officially published articles).
+POST/PATCH/DELETE operate on DraftSubmission (community submission workflow).
+Knowledge GET/write endpoints use DraftSubmission throughout.
 """
 
 from datetime import datetime
@@ -10,6 +11,7 @@ from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from knowledge.models import DraftSubmission
+from news.models import NewsArticle
 
 auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
@@ -48,6 +50,17 @@ class DraftOut(Schema):
     submitted_at: datetime
     author_id: int
     reviewer_note: str
+
+
+class NewsArticleOut(Schema):
+    id: int
+    title: str
+    intro: str
+    body: str
+    slug: str
+    published_at: datetime
+    is_hidden: bool
+    published_by_id: int | None
 
 
 # -- Helpers ------------------------------------------------------------------
@@ -135,27 +148,25 @@ def _delete_draft(request, pk: int, submission_type: str) -> None:
 # -- News endpoints -----------------------------------------------------------
 
 
-@news_router.get("/", response=list[DraftOut], auth=optional_auth, summary="List news drafts")
-def list_news_drafts(request, status: DraftSubmission.Status = DraftSubmission.Status.APPROVED):
+@news_router.get("/", response=list[NewsArticleOut], auth=optional_auth, summary="List news articles")
+def list_news(request):
     user = request.auth
-    if not getattr(user, "is_authenticated", False) and status != DraftSubmission.Status.APPROVED:
-        raise HttpError(401, "Unauthorized")
-    qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.NEWS)
-    if not is_admin(user) and getattr(user, "is_authenticated", False) and status != DraftSubmission.Status.APPROVED:
-        qs = qs.filter(author=user)
-    qs = qs.filter(status=status)
+    qs = NewsArticle.objects.filter(is_deleted=False)
+    if not is_admin(user):
+        qs = qs.filter(is_hidden=False)
     return list(qs)
 
 
-@news_router.get("/{draft_id}", response=DraftOut, auth=optional_auth, summary="Get news draft")
-def get_news_draft(request, draft_id: int):
+@news_router.get("/{pk}", response=NewsArticleOut, auth=optional_auth, summary="Get news article")
+def get_news(request, pk: int):
     user = request.auth
-    draft = _get_draft_or_404(draft_id, DraftSubmission.SubmissionType.NEWS)
-    if draft.status != DraftSubmission.Status.APPROVED:
-        if not getattr(user, "is_authenticated", False):
-            raise HttpError(404, "Draft not found")
-        _require_owner_or_admin(user, draft)
-    return draft
+    try:
+        article = NewsArticle.objects.get(pk=pk, is_deleted=False)
+    except NewsArticle.DoesNotExist:
+        raise HttpError(404, "Not found") from None
+    if article.is_hidden and not is_admin(user):
+        raise HttpError(404, "Not found")
+    return article
 
 
 @news_router.post("/", response={201: DraftOut}, auth=auth, summary="Create news draft")
@@ -164,14 +175,14 @@ def create_news_draft(request, payload: DraftIn):
     return 201, draft
 
 
-@news_router.patch("/{draft_id}", response=DraftOut, auth=auth, summary="Update news draft")
-def update_news_draft(request, draft_id: int, payload: DraftPatchIn):
-    return _update_draft(request, draft_id, payload, DraftSubmission.SubmissionType.NEWS)
+@news_router.patch("/{pk}", response=DraftOut, auth=auth, summary="Update news draft")
+def update_news_draft(request, pk: int, payload: DraftPatchIn):
+    return _update_draft(request, pk, payload, DraftSubmission.SubmissionType.NEWS)
 
 
-@news_router.delete("/{draft_id}", response={204: None}, auth=auth, summary="Delete news draft")
-def delete_news_draft(request, draft_id: int):
-    _delete_draft(request, draft_id, DraftSubmission.SubmissionType.NEWS)
+@news_router.delete("/{pk}", response={204: None}, auth=auth, summary="Delete news draft")
+def delete_news_draft(request, pk: int):
+    _delete_draft(request, pk, DraftSubmission.SubmissionType.NEWS)
     return 204, None
 
 
