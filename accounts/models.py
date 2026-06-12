@@ -37,6 +37,7 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     )
 
     gender = models.CharField(max_length=1, choices=Gender.choices, blank=True, default="")
+    api_token = models.UUIDField(null=True, blank=True, unique=True, db_index=True)
     birth_date = models.DateField(null=True, blank=True)
 
     ROLE_HIERARCHY: ClassVar[list[str]] = [

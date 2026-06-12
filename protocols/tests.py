@@ -34,7 +34,7 @@ class UploadProtocolTest(TestCase):
         self._settings.enable()
         self.client = Client()
         self.competition = _make_competition()
-        self.url = "/api/protocols/upload/"
+        self.url = "/api/v1/protocols/upload/"
 
     def tearDown(self):
         self._settings.disable()
@@ -42,7 +42,7 @@ class UploadProtocolTest(TestCase):
 
     def _post(self, **kwargs):
         data = {
-            "upload_token": str(self.competition.upload_token),
+            "competition_token": str(self.competition.upload_token),
             "protocol_type": "absolute",
             "is_live": "true",
             "html_file": _html_file(),
@@ -66,36 +66,41 @@ class UploadProtocolTest(TestCase):
         self.assertIn("file_hash", data)
         self.assertEqual(data["file_hash"], hashlib.sha256(HTML).hexdigest())
 
-    def test_missing_upload_token_returns_400(self):
-        response = self._post(upload_token="")
-        self.assertEqual(response.status_code, 400)
+    def test_missing_competition_token_returns_422(self):
+        data = {
+            "protocol_type": "absolute",
+            "is_live": "true",
+            "html_file": _html_file(),
+        }
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 422)
 
-    def test_invalid_upload_token_returns_401(self):
-        response = self._post(upload_token="00000000-0000-0000-0000-000000000000")
+    def test_invalid_competition_token_returns_401(self):
+        response = self._post(competition_token="00000000-0000-0000-0000-000000000000")
         self.assertEqual(response.status_code, 401)
 
-    def test_malformed_upload_token_returns_401(self):
-        response = self._post(upload_token="not-a-uuid")
+    def test_malformed_competition_token_returns_401(self):
+        response = self._post(competition_token="not-a-uuid")
         self.assertEqual(response.status_code, 401)
 
     def test_non_approved_competition_returns_401(self):
         pending = _make_competition(status=Competition.Status.PENDING_APPROVAL)
-        response = self._post(upload_token=str(pending.upload_token))
+        response = self._post(competition_token=str(pending.upload_token))
         self.assertEqual(response.status_code, 401)
 
     def test_invalid_protocol_type_returns_400(self):
         response = self._post(protocol_type="invalid")
         self.assertEqual(response.status_code, 400)
 
-    def test_missing_html_file_returns_400(self):
+    def test_missing_html_file_returns_422(self):
         response = self.client.post(
             self.url,
             {
-                "upload_token": str(self.competition.upload_token),
+                "competition_token": str(self.competition.upload_token),
                 "protocol_type": "absolute",
             },
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 422)
 
     def test_file_too_large_returns_400(self):
         large = SimpleUploadedFile("big.html", b"x" * (6 * 1024 * 1024), content_type="text/html")
@@ -118,9 +123,9 @@ class UploadProtocolTest(TestCase):
         response = self._post(html_file=f)
         self.assertEqual(response.status_code, 200)
 
-    def test_invalid_is_live_returns_400(self):
+    def test_invalid_is_live_returns_422(self):
         response = self._post(is_live="ture")
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 422)
 
     def test_second_upload_updates_protocol(self):
         self._post()

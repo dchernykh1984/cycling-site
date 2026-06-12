@@ -30,5 +30,4 @@ urlpatterns = [
     ),
     path("api/teams/autocomplete/", views.TeamAutocompleteView.as_view(), name="team_autocomplete"),
     path("api/cities/autocomplete/", views.CityAutocompleteView.as_view(), name="city_autocomplete"),
-    path("api/participants/", views.ParticipantsAPIView.as_view(), name="participants_api"),
 ]

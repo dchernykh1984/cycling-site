@@ -416,22 +416,22 @@ class ParticipantsAPIViewTests(TestCase):
             registration_mode="free",
         )
         self.token = str(self.comp.upload_token)
-        self.url = reverse("registrations:participants_api")
+        self.url = "/api/v1/participants/"
 
-    def test_missing_token_returns_400(self):
+    def test_missing_token_returns_422(self):
         response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 422)
 
     def test_invalid_token_returns_401(self):
-        response = self.client.get(self.url, {"token": "00000000-0000-0000-0000-000000000000"})
+        response = self.client.get(self.url, {"competition_token": "00000000-0000-0000-0000-000000000000"})
         self.assertEqual(response.status_code, 401)
 
     def test_valid_token_returns_200(self):
-        response = self.client.get(self.url, {"token": self.token})
+        response = self.client.get(self.url, {"competition_token": self.token})
         self.assertEqual(response.status_code, 200)
 
     def test_response_structure(self):
-        response = self.client.get(self.url, {"token": self.token})
+        response = self.client.get(self.url, {"competition_token": self.token})
         data = json.loads(response.content)
         self.assertIn("participants", data)
         self.assertIn("categories", data)
@@ -441,7 +441,7 @@ class ParticipantsAPIViewTests(TestCase):
     def test_rejected_excluded_from_response(self):
         make_registration(self.comp, first_name="Rejected", is_rejected=True)
         make_registration(self.comp, first_name="Valid")
-        response = self.client.get(self.url, {"token": self.token})
+        response = self.client.get(self.url, {"competition_token": self.token})
         data = json.loads(response.content)
         names = [p["first_name"] for p in data["participants"]]
         self.assertNotIn("Rejected", names)
@@ -452,7 +452,7 @@ class ParticipantsAPIViewTests(TestCase):
         self.comp.save()
         make_registration(self.comp, first_name="Approved", is_approved=True)
         make_registration(self.comp, first_name="Pending", is_approved=False)
-        response = self.client.get(self.url, {"token": self.token})
+        response = self.client.get(self.url, {"competition_token": self.token})
         data = json.loads(response.content)
         names = [p["first_name"] for p in data["participants"]]
         self.assertIn("Approved", names)
@@ -463,7 +463,7 @@ class ParticipantsAPIViewTests(TestCase):
         self.comp.save()
         make_registration(self.comp, first_name="Paid", is_paid=True)
         make_registration(self.comp, first_name="Unpaid", is_paid=False)
-        response = self.client.get(self.url, {"token": self.token})
+        response = self.client.get(self.url, {"competition_token": self.token})
         data = json.loads(response.content)
         names = [p["first_name"] for p in data["participants"]]
         self.assertIn("Paid", names)
@@ -472,7 +472,7 @@ class ParticipantsAPIViewTests(TestCase):
     def test_category_id_in_participant_json(self):
         cat = make_category(self.comp)
         make_registration(self.comp, category=cat)
-        response = self.client.get(self.url, {"token": self.token})
+        response = self.client.get(self.url, {"competition_token": self.token})
         data = json.loads(response.content)
         self.assertIn("category_id", data["participants"][0])
 
@@ -481,7 +481,7 @@ class ParticipantsAPIViewTests(TestCase):
         make_registration(self.comp, category=cat)
         cat.is_deleted = True
         cat.save()
-        response = self.client.get(self.url, {"token": self.token})
+        response = self.client.get(self.url, {"competition_token": self.token})
         data = json.loads(response.content)
         category_ids = [c["id"] for c in data["categories"]]
         self.assertIn(cat.pk, category_ids)
@@ -492,7 +492,7 @@ class ParticipantsAPIViewTests(TestCase):
             status=Competition.Status.PENDING_APPROVAL,
             registration_enabled=True,
         )
-        response = self.client.get(self.url, {"token": str(comp.upload_token)})
+        response = self.client.get(self.url, {"competition_token": str(comp.upload_token)})
         self.assertEqual(response.status_code, 401)
 
 
@@ -670,7 +670,7 @@ class RelayAPITests(TestCase):
     def setUp(self):
         self.comp = make_relay_competition()
         self.token = str(self.comp.upload_token)
-        self.url = reverse("registrations:participants_api")
+        self.url = "/api/v1/participants/"
 
     def test_relay_participant_names_in_api(self):
         CompetitionRegistration.objects.create(
@@ -681,7 +681,7 @@ class RelayAPITests(TestCase):
             birth_date=datetime.date(1990, 1, 1),
             gender="M",
         )
-        response = self.client.get(self.url, {"token": self.token})
+        response = self.client.get(self.url, {"competition_token": self.token})
         data = json.loads(response.content)
         self.assertEqual(data["participants"][0]["participant_names"], "Ivanov Ivan<BR>Petrov Vasya")
 
@@ -693,7 +693,7 @@ class RelayAPITests(TestCase):
             birth_date=datetime.date(1990, 1, 1),
             gender="M",
         )
-        response = self.client.get(self.url, {"token": self.token})
+        response = self.client.get(self.url, {"competition_token": self.token})
         data = json.loads(response.content)
         self.assertEqual(data["participants"][0]["participant_names"], "Petrov Ivan")
 

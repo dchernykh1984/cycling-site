@@ -33,6 +33,7 @@ AUTH_USER_MODEL = "accounts.User"
 
 INSTALLED_APPS = [
     "accounts",
+    "api",
     "audit",
     "home",
     "search",
