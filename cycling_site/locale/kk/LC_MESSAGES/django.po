@@ -86,6 +86,34 @@ msgstr ""
 msgid "Resend confirmation email"
 msgstr "Растау хатын кайта жiберу"
 
+#: accounts/templates/accounts/profile.html
+msgid "API access"
+msgstr "API кiруi"
+
+#: accounts/templates/accounts/profile.html
+msgid ""
+"Use this token to authenticate API requests: <code>Authorization: Bearer "
+"&lt;token&gt;</code>"
+msgstr ""
+"API сурауларын растау ушiн осы токендi пайдаланыныз: <code>Authorization: "
+"Bearer &lt;token&gt;</code>"
+
+#: accounts/templates/accounts/profile.html
+msgid "No token yet. Generate one below."
+msgstr "Токен алi жок. Томенде жасаныз."
+
+#: accounts/templates/accounts/profile.html
+msgid "Regenerate token"
+msgstr "Токендi жаналау"
+
+#: accounts/templates/accounts/profile.html
+msgid "Generate token"
+msgstr "Токен жасау"
+
+#: accounts/templates/accounts/profile.html
+msgid "API docs (Swagger)"
+msgstr "API кужаттамасы (Swagger)"
+
 #: accounts/templates/accounts/profile.html:36
 msgid "Appearance"
 msgstr "Корiнiс"
