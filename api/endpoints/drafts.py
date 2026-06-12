@@ -8,7 +8,7 @@ from datetime import datetime
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
-from api.auth import ApiTokenAuth
+from api.auth import ApiTokenAuth, is_admin
 from knowledge.models import DraftSubmission
 
 auth = ApiTokenAuth()
@@ -52,12 +52,6 @@ class DraftOut(Schema):
 # -- Helpers ------------------------------------------------------------------
 
 
-def _is_admin(user) -> bool:
-    from accounts.models import User
-
-    return user.is_superuser or user.get_role_rank() >= user.ROLE_HIERARCHY.index(User.Role.ADMIN)
-
-
 def _require_min_participant(user) -> None:
     if user.get_role_rank() < 1:
         raise HttpError(403, "Verified participant role or higher is required")
@@ -71,7 +65,7 @@ def _get_draft_or_404(pk: int, submission_type: str) -> DraftSubmission:
 
 
 def _require_owner_or_admin(user, draft: DraftSubmission) -> None:
-    if draft.author_id != user.pk and not _is_admin(user):
+    if draft.author_id != user.pk and not is_admin(user):
         raise HttpError(403, "Forbidden")
 
 
@@ -94,7 +88,7 @@ def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmi
         category=payload.category,
     )
 
-    if _is_admin(user):
+    if is_admin(user):
         try:
             draft.approve(reviewer=user)
         except ValueError as exc:
@@ -144,7 +138,7 @@ def _delete_draft(request, pk: int, submission_type: str) -> None:
 def list_news_drafts(request, status: str | None = None):
     user = request.auth
     qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.NEWS)
-    if not _is_admin(user):
+    if not is_admin(user):
         qs = qs.filter(author=user)
     if status:
         qs = qs.filter(status=status)
@@ -183,7 +177,7 @@ def delete_news_draft(request, draft_id: int):
 def list_knowledge_drafts(request, status: str | None = None):
     user = request.auth
     qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    if not _is_admin(user):
+    if not is_admin(user):
         qs = qs.filter(author=user)
     if status:
         qs = qs.filter(status=status)

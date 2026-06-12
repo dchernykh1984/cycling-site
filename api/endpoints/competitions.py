@@ -3,14 +3,12 @@ from datetime import date
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
-from api.auth import ApiTokenAuth
+from api.auth import ApiTokenAuth, is_admin
 from api.schemas import LocalizedStr
 from calendar_app.models import Competition
 
 auth = ApiTokenAuth()
 router = Router(tags=["competitions"])
-
-_ORGANIZER_RANK = 2  # Role.ORGANIZER index in ROLE_HIERARCHY
 
 
 # -- Schemas ---------------------------------------------------------------
@@ -78,14 +76,12 @@ class CompetitionOut(Schema):
 class CompetitionDetailOut(CompetitionOut):
     competition_token: str | None = None
 
+    @staticmethod
+    def resolve_competition_token(obj: Competition) -> str | None:
+        return getattr(obj, "_api_token", None)
+
 
 # -- Helpers ---------------------------------------------------------------
-
-
-def _is_admin(user) -> bool:
-    from accounts.models import User
-
-    return user.is_superuser or user.get_role_rank() >= user.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
 
 def _is_owner(user, competition: Competition) -> bool:
@@ -100,7 +96,7 @@ def _get_or_404(pk: int) -> Competition:
 
 
 def _require_owner_or_admin(user, competition: Competition) -> None:
-    if not (_is_owner(user, competition) or _is_admin(user)):
+    if not (_is_owner(user, competition) or is_admin(user)):
         raise HttpError(403, "Forbidden")
 
 
@@ -116,9 +112,7 @@ def _apply_localized(obj, field: str, value: LocalizedStr) -> list[str]:
 def _to_detail(competition: Competition, user=None) -> Competition:
     """Attach competition_token to obj for serialization (avoids extra dict merging)."""
     competition._api_token = (
-        str(competition.upload_token)
-        if user is not None and (_is_owner(user, competition) or _is_admin(user))
-        else None
+        str(competition.upload_token) if user is not None and (_is_owner(user, competition) or is_admin(user)) else None
     )
     return competition
 
@@ -158,10 +152,10 @@ def get_competition(request, competition_id: int):
 @router.post("/", response={201: CompetitionDetailOut}, auth=auth, summary="Create competition")
 def create_competition(request, payload: CompetitionIn):
     user = request.auth
-    if user.get_role_rank() < _ORGANIZER_RANK:
+    if user.get_role_rank() < user.ROLE_HIERARCHY.index(user.Role.ORGANIZER):
         raise HttpError(403, "ORGANIZER role or higher is required")
 
-    status = Competition.Status.APPROVED if _is_admin(user) else Competition.Status.PENDING_APPROVAL
+    status = Competition.Status.APPROVED if is_admin(user) else Competition.Status.PENDING_APPROVAL
     competition = Competition(submitted_by=user, status=status)
     _apply_localized(competition, "title", payload.title)
     _apply_localized(competition, "description", payload.description)
@@ -192,7 +186,7 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 
     data = payload.dict(exclude_unset=True)
 
-    if "is_hidden" in data and not _is_admin(user):
+    if "is_hidden" in data and not is_admin(user):
         raise HttpError(403, "Only admins can change visibility")
 
     update_fields: list[str] = []

@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Any
 
+from django.core.exceptions import ValidationError
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
@@ -65,7 +66,7 @@ def get_participants(request, competition_token: str):
     """
     try:
         competition = Competition.objects.get(upload_token=competition_token)
-    except (Competition.DoesNotExist, Exception):
+    except (Competition.DoesNotExist, ValidationError):
         raise HttpError(401, "invalid competition_token") from None
 
     if competition.status != Competition.Status.APPROVED or competition.is_deleted:

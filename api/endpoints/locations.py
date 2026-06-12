@@ -3,7 +3,7 @@ from decimal import Decimal
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
-from api.auth import ApiTokenAuth
+from api.auth import ApiTokenAuth, is_admin
 from api.schemas import LocalizedStr
 from locations.models import Location
 
@@ -45,6 +45,9 @@ class LocationOut(Schema):
 
     @staticmethod
     def resolve_parent_id(obj: Location) -> int | None:
+        # list_locations pre-computes _parent_pk via path arithmetic to avoid N+1
+        if hasattr(obj, "_parent_pk"):
+            return obj._parent_pk
         parent = obj.get_parent()
         return parent.pk if parent else None
 
@@ -52,14 +55,8 @@ class LocationOut(Schema):
 # -- Helpers ---------------------------------------------------------------
 
 
-def _is_admin(user) -> bool:
-    from accounts.models import User
-
-    return user.is_superuser or user.get_role_rank() >= user.ROLE_HIERARCHY.index(User.Role.ADMIN)
-
-
 def _require_admin(user) -> None:
-    if not _is_admin(user):
+    if not is_admin(user):
         raise HttpError(403, "ADMIN role or higher is required")
 
 
@@ -83,10 +80,16 @@ def _apply_name(location: Location, name: LocalizedStr) -> None:
 
 @router.get("/", response=list[LocationOut], auth=None, summary="List locations")
 def list_locations(request, include_hidden: bool = False):
-    qs = Location.objects.filter(is_deleted=False)
+    # Load all non-deleted locations in one query for path-based parent resolution.
+    all_locs = list(Location.objects.filter(is_deleted=False))
+    step = Location.steplen
+    path_to_pk = {loc.path: loc.pk for loc in all_locs}
+    for loc in all_locs:
+        parent_path = loc.path[:-step] if len(loc.path) > step else None
+        loc._parent_pk = path_to_pk.get(parent_path) if parent_path else None
     if not include_hidden:
-        qs = qs.filter(is_hidden=False)
-    return list(qs)
+        return [loc for loc in all_locs if not loc.is_hidden]
+    return all_locs
 
 
 @router.get("/{location_id}", response=LocationOut, auth=None, summary="Get location detail")

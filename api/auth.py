@@ -13,3 +13,9 @@ class ApiTokenAuth(HttpBearer):
             return None
         request.user = user
         return user
+
+
+def is_admin(user) -> bool:
+    from accounts.models import User
+
+    return user.is_superuser or user.get_role_rank() >= user.ROLE_HIERARCHY.index(User.Role.ADMIN)
