@@ -4,11 +4,12 @@ from ninja import Router, Schema
 from ninja.errors import HttpError
 from ninja.schema import Field
 
-from api.auth import ApiTokenAuth, is_admin
+from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
 from locations.models import Location
 
 auth = ApiTokenAuth()
+optional_auth = OptionalApiTokenAuth()
 router = Router(tags=["locations"])
 
 
@@ -95,7 +96,7 @@ def _apply_name(location: Location, name: LocalizedStr) -> None:
 # -- Endpoints -------------------------------------------------------------
 
 
-@router.get("/", response=list[LocationNodeOut], auth=auth, summary="List locations as hierarchy tree")
+@router.get("/", response=list[LocationNodeOut], auth=optional_auth, summary="List locations as hierarchy tree")
 def list_locations(request, include_hidden: bool = False):
     all_locs = list(Location.objects.filter(is_deleted=False))
     step = Location.steplen
@@ -127,7 +128,7 @@ def list_locations(request, include_hidden: bool = False):
     return [build_node(r) for r in visible_roots]
 
 
-@router.get("/{location_id}", response=LocationOut, auth=auth, summary="Get location detail")
+@router.get("/{location_id}", response=LocationOut, auth=optional_auth, summary="Get location detail")
 def get_location(request, location_id: int):
     return _get_or_404(location_id)
 
