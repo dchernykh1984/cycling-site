@@ -5,7 +5,7 @@ from ninja import Query, Router, Schema
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, is_admin
-from api.schemas import LocalizedStr
+from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
 from locations.models import Location
 
@@ -68,11 +68,11 @@ class CompetitionOut(Schema):
 
     @staticmethod
     def resolve_title(obj: Competition) -> LocalizedStr:
-        return LocalizedStr(ru=obj.title_ru or "", kk=obj.title_kk or "", en=obj.title_en or "")
+        return localize_field(obj, "title")
 
     @staticmethod
     def resolve_description(obj: Competition) -> LocalizedStr:
-        return LocalizedStr(ru=obj.description_ru or "", kk=obj.description_kk or "", en=obj.description_en or "")
+        return localize_field(obj, "description")
 
 
 class CompetitionDetailOut(CompetitionOut):
@@ -115,6 +115,11 @@ def _require_owner_or_admin(user, competition: Competition) -> None:
         raise HttpError(403, "Forbidden")
 
 
+def _require_visible_or_404(user, competition: Competition) -> None:
+    if competition.status != Competition.Status.APPROVED and not (_is_owner(user, competition) or is_admin(user)):
+        raise HttpError(404, "Competition not found")
+
+
 def _apply_localized(obj, field: str, value: LocalizedStr) -> list[str]:
     """Set all three language variants of a translated field; return the updated field names."""
     updated = []
@@ -138,7 +143,7 @@ def _to_detail(competition: Competition, user=None) -> Competition:
 @router.get("/", response=list[CompetitionOut], auth=auth, summary="List competitions")
 def list_competitions(
     request,
-    status: Competition.Status | None = Competition.Status.APPROVED,
+    status: Competition.Status = Competition.Status.APPROVED,
     discipline_ids: list[int] = Query(default=[]),  # noqa: B008
     event_type_ids: list[int] = Query(default=[]),  # noqa: B008
     country_ids: list[int] = Query(default=[]),  # noqa: B008
@@ -149,7 +154,7 @@ def list_competitions(
     qs = Competition.objects.filter(is_deleted=False)
     if not is_admin(user):
         qs = qs.filter(Q(status=Competition.Status.APPROVED) | Q(submitted_by=user))
-    qs = qs.filter(status=status) if status else qs.filter(status=Competition.Status.APPROVED)
+    qs = qs.filter(status=status)
     if discipline_ids:
         qs = qs.filter(discipline_id__in=discipline_ids)
     if event_type_ids:
@@ -164,8 +169,7 @@ def list_competitions(
 def get_competition(request, competition_id: int):
     competition = _get_or_404(competition_id)
     user = request.auth
-    if competition.status != Competition.Status.APPROVED and not (_is_owner(user, competition) or is_admin(user)):
-        raise HttpError(404, "Competition not found")
+    _require_visible_or_404(user, competition)
     return _to_detail(competition, user)
 
 
@@ -202,6 +206,7 @@ def create_competition(request, payload: CompetitionIn):
 def update_competition(request, competition_id: int, payload: CompetitionPatchIn):
     user = request.auth
     competition = _get_or_404(competition_id)
+    _require_visible_or_404(user, competition)
     _require_owner_or_admin(user, competition)
 
     data = payload.dict(exclude_unset=True)
@@ -229,6 +234,7 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 def delete_competition(request, competition_id: int):
     user = request.auth
     competition = _get_or_404(competition_id)
+    _require_visible_or_404(user, competition)
     _require_owner_or_admin(user, competition)
     competition.is_deleted = True
     competition.save(update_fields=["is_deleted"])

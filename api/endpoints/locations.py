@@ -4,7 +4,7 @@ from ninja import Router, Schema
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, is_admin
-from api.schemas import LocalizedStr
+from api.schemas import LocalizedStr, localize_field
 from locations.models import Location
 
 auth = ApiTokenAuth()
@@ -41,7 +41,7 @@ class LocationOut(Schema):
 
     @staticmethod
     def resolve_name(obj: Location) -> LocalizedStr:
-        return LocalizedStr(ru=obj.name_ru or "", kk=obj.name_kk or "", en=obj.name_en or "")
+        return localize_field(obj, "name")
 
     @staticmethod
     def resolve_parent_id(obj: Location) -> int | None:

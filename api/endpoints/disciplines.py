@@ -2,16 +2,12 @@ from ninja import Router, Schema
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth
-from api.schemas import LocalizedStr
+from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Discipline, DisciplineCategory, EventType
 
 auth = ApiTokenAuth()
 router = Router(tags=["disciplines"])
 event_types_router = Router(tags=["event-types"])
-
-
-def _localize_name(obj) -> LocalizedStr:  # type: ignore[no-untyped-def]
-    return LocalizedStr(ru=obj.name_ru or "", kk=obj.name_kk or "", en=obj.name_en or "")  # type: ignore[attr-defined]
 
 
 # -- Schemas -------------------------------------------------------------------
@@ -23,7 +19,7 @@ class DisciplineOut(Schema):
 
     @staticmethod
     def resolve_name(obj: Discipline) -> LocalizedStr:
-        return _localize_name(obj)
+        return localize_field(obj, "name")
 
 
 class DisciplineCategoryOut(Schema):
@@ -33,7 +29,7 @@ class DisciplineCategoryOut(Schema):
 
     @staticmethod
     def resolve_name(obj: DisciplineCategory) -> LocalizedStr:
-        return _localize_name(obj)
+        return localize_field(obj, "name")
 
     @staticmethod
     def resolve_disciplines(obj: DisciplineCategory) -> list[Discipline]:
@@ -46,7 +42,7 @@ class EventTypeOut(Schema):
 
     @staticmethod
     def resolve_name(obj: EventType) -> LocalizedStr:
-        return _localize_name(obj)
+        return localize_field(obj, "name")
 
 
 # -- Endpoints -----------------------------------------------------------------

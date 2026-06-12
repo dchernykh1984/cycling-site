@@ -135,13 +135,12 @@ def _delete_draft(request, pk: int, submission_type: str) -> None:
 
 
 @news_router.get("/", response=list[DraftOut], auth=auth, summary="List news drafts")
-def list_news_drafts(request, status: DraftSubmission.Status | None = DraftSubmission.Status.APPROVED):
+def list_news_drafts(request, status: DraftSubmission.Status = DraftSubmission.Status.APPROVED):
     user = request.auth
     qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.NEWS)
     if not is_admin(user):
         qs = qs.filter(author=user)
-    if status:
-        qs = qs.filter(status=status)
+    qs = qs.filter(status=status)
     return list(qs)
 
 
@@ -174,13 +173,12 @@ def delete_news_draft(request, draft_id: int):
 
 
 @knowledge_router.get("/", response=list[DraftOut], auth=auth, summary="List knowledge article drafts")
-def list_knowledge_drafts(request, status: DraftSubmission.Status | None = DraftSubmission.Status.APPROVED):
+def list_knowledge_drafts(request, status: DraftSubmission.Status = DraftSubmission.Status.APPROVED):
     user = request.auth
     qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
     if not is_admin(user):
         qs = qs.filter(author=user)
-    if status:
-        qs = qs.filter(status=status)
+    qs = qs.filter(status=status)
     return list(qs)
 
 

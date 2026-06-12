@@ -362,6 +362,15 @@ class CompetitionUpdateTest(TestCase, ApiTestMixin):
         )
         self.assertEqual(resp.status_code, 403)
 
+    def test_stranger_gets_404_for_pending_competition(self):
+        pending = _competition(submitted_by=self.owner, status=Competition.Status.PENDING_APPROVAL)
+        resp = self.patch(
+            f"/api/v1/competitions/{pending.pk}",
+            {"title": {"ru": "X", "kk": "", "en": ""}},
+            user=self.stranger,
+        )
+        self.assertEqual(resp.status_code, 404)
+
     def test_admin_can_update(self):
         resp = self.patch(
             f"/api/v1/competitions/{self.comp.pk}",
@@ -403,6 +412,11 @@ class CompetitionDeleteTest(TestCase, ApiTestMixin):
     def test_stranger_cannot_delete(self):
         resp = self.delete(f"/api/v1/competitions/{self.comp.pk}", user=self.stranger)
         self.assertEqual(resp.status_code, 403)
+
+    def test_stranger_gets_404_for_pending_competition(self):
+        pending = _competition(submitted_by=self.owner, status=Competition.Status.PENDING_APPROVAL)
+        resp = self.delete(f"/api/v1/competitions/{pending.pk}", user=self.stranger)
+        self.assertEqual(resp.status_code, 404)
 
     def test_deleted_competition_not_in_list(self):
         self.delete(f"/api/v1/competitions/{self.comp.pk}", user=self.owner)
@@ -689,13 +703,13 @@ class KnowledgeArticleDraftTest(TestCase, ApiTestMixin):
 
     def test_knowledge_draft_not_visible_via_news_endpoint(self):
         kdraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-        resp = self.get("/api/v1/news/", user=self.author)
+        resp = self.get("/api/v1/news/?status=pending", user=self.author)
         ids = [d["id"] for d in resp.json()]
         self.assertNotIn(kdraft.pk, ids)
 
     def test_news_draft_not_visible_via_knowledge_endpoint(self):
         ndraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.NEWS)
-        resp = self.get("/api/v1/knowledge/", user=self.author)
+        resp = self.get("/api/v1/knowledge/?status=pending", user=self.author)
         ids = [d["id"] for d in resp.json()]
         self.assertNotIn(ndraft.pk, ids)
 
