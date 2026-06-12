@@ -448,13 +448,13 @@ class NewsDraftTest(TestCase, ApiTestMixin):
     def test_author_sees_own_drafts(self):
         _draft(self.author)
         _draft(self.other)
-        resp = self.get("/api/v1/news/", user=self.author)
+        resp = self.get("/api/v1/news/?status=pending", user=self.author)
         self.assertEqual(len(resp.json()), 1)
 
     def test_admin_sees_all_drafts(self):
         _draft(self.author)
         _draft(self.other)
-        resp = self.get("/api/v1/news/", user=self.admin)
+        resp = self.get("/api/v1/news/?status=pending", user=self.admin)
         self.assertEqual(len(resp.json()), 2)
 
     def test_get_draft_requires_owner_or_admin(self):

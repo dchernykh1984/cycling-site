@@ -138,7 +138,7 @@ def _to_detail(competition: Competition, user=None) -> Competition:
 @router.get("/", response=list[CompetitionOut], auth=auth, summary="List competitions")
 def list_competitions(
     request,
-    status: str | None = None,
+    status: Competition.Status | None = Competition.Status.APPROVED,
     discipline_ids: list[int] = Query(default=[]),  # noqa: B008
     event_type_ids: list[int] = Query(default=[]),  # noqa: B008
     country_ids: list[int] = Query(default=[]),  # noqa: B008
