@@ -247,6 +247,124 @@ class ProfileViewTests(TestCase):
         self.assertNotContains(response, "alert-warning")
 
 
+class ProfileRegistrationListTests(TestCase):
+    """Profile page 'My registrations' section shows only the logged-in user's registrations
+    across all competition types and hides other users' registrations."""
+
+    def setUp(self):
+        import datetime
+
+        from calendar_app.models import Competition
+        from registrations.models import CompetitionRegistration
+
+        self.Competition = Competition
+        self.CompetitionRegistration = CompetitionRegistration
+
+        self.user = make_user("reg_user", role=User.Role.PARTICIPANT, gender="M", birth_date=datetime.date(1990, 1, 1))
+        self.other = make_user("other_user", role=User.Role.PARTICIPANT)
+        self.url = reverse("account_profile")
+
+    def _make_comp(self, **kwargs):
+        import datetime
+
+        defaults = {
+            "title_ru": "Race",
+            "date_start": datetime.date(2026, 9, 1),
+            "status": self.Competition.Status.APPROVED,
+            "registration_enabled": True,
+            "registration_mode": self.Competition.RegistrationMode.FREE,
+            "birth_date_mode": "year",
+        }
+        defaults.update(kwargs)
+        return self.Competition.objects.create(**defaults)
+
+    _UNSET = object()
+
+    def _make_reg(self, competition, user=_UNSET, **kwargs):
+        import datetime
+
+        defaults = {
+            "competition": competition,
+            "user": self.user if user is self._UNSET else user,
+            "first_name": "Denis",
+            "last_name": "Test",
+            "birth_date": datetime.date(1990, 1, 1),
+            "gender": "M",
+        }
+        defaults.update(kwargs)
+        return self.CompetitionRegistration.objects.create(**defaults)
+
+    def _registrations_in_response(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        return list(response.context["registrations"])
+
+    def test_self_only_registration_appears_in_profile(self):
+        comp = self._make_comp(registration_mode=self.Competition.RegistrationMode.SELF_ONLY)
+        reg = self._make_reg(comp)
+        regs = self._registrations_in_response()
+        self.assertIn(reg, regs)
+
+    def test_free_mode_registration_appears_in_profile(self):
+        comp = self._make_comp(registration_mode=self.Competition.RegistrationMode.FREE)
+        reg = self._make_reg(comp)
+        regs = self._registrations_in_response()
+        self.assertIn(reg, regs)
+
+    def test_relay_registration_appears_in_profile(self):
+        comp = self._make_comp(
+            registration_mode=self.Competition.RegistrationMode.FREE,
+            relay_enabled=True,
+            relay_max_members=4,
+        )
+        reg = self._make_reg(comp, first_name="", last_name="", participant_names="Ivan<BR>Vasya")
+        regs = self._registrations_in_response()
+        self.assertIn(reg, regs)
+
+    def test_registration_with_approval_required_appears_in_profile(self):
+        comp = self._make_comp(require_approval=True)
+        reg = self._make_reg(comp, is_approved=False)
+        regs = self._registrations_in_response()
+        self.assertIn(reg, regs)
+
+    def test_registration_with_payment_required_appears_in_profile(self):
+        comp = self._make_comp(require_payment=True)
+        reg = self._make_reg(comp, is_paid=False)
+        regs = self._registrations_in_response()
+        self.assertIn(reg, regs)
+
+    def test_approved_registration_appears_in_profile(self):
+        comp = self._make_comp(require_approval=True)
+        reg = self._make_reg(comp, is_approved=True)
+        regs = self._registrations_in_response()
+        self.assertIn(reg, regs)
+
+    def test_rejected_registration_appears_in_profile(self):
+        comp = self._make_comp(require_approval=True)
+        reg = self._make_reg(comp, is_rejected=True, rejection_note="Too slow")
+        regs = self._registrations_in_response()
+        self.assertIn(reg, regs)
+
+    def test_other_users_registration_not_shown(self):
+        comp = self._make_comp()
+        own_reg = self._make_reg(comp, user=self.user)
+        other_reg = self._make_reg(comp, user=self.other, first_name="Other")
+        regs = self._registrations_in_response()
+        self.assertIn(own_reg, regs)
+        self.assertNotIn(other_reg, regs)
+
+    def test_registration_with_user_none_not_shown(self):
+        comp = self._make_comp()
+        self._make_reg(comp, user=None)
+        regs = self._registrations_in_response()
+        self.assertEqual(len(regs), 0)
+
+    def test_profile_shows_no_registrations_when_none(self):
+        regs = self._registrations_in_response()
+        self.assertEqual(len(regs), 0)
+
+
 class RegistrationFlowTests(TestCase):
     def test_signup_creates_guest_user(self):
         response = self.client.post(
