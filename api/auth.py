@@ -1,7 +1,5 @@
 from ninja.security import HttpBearer
 
-_ANONYMOUS = object()  # sentinel for unauthenticated requests in optional auth
-
 
 class ApiTokenAuth(HttpBearer):
     """Authenticate requests using a user's personal API token (Bearer header)."""
