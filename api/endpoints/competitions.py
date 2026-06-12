@@ -147,9 +147,7 @@ def list_competitions(
     status: Competition.Status = Competition.Status.APPROVED,
     discipline_ids: list[int] = Query(default=[]),  # noqa: B008
     event_type_ids: list[int] = Query(default=[]),  # noqa: B008
-    country_ids: list[int] = Query(default=[]),  # noqa: B008
-    region_ids: list[int] = Query(default=[]),  # noqa: B008
-    city_ids: list[int] = Query(default=[]),  # noqa: B008
+    location_ids: list[int] = Query(default=[]),  # noqa: B008
 ):
     user = request.auth
     qs = Competition.objects.filter(is_deleted=False)
@@ -160,9 +158,8 @@ def list_competitions(
         qs = qs.filter(discipline_id__in=discipline_ids)
     if event_type_ids:
         qs = qs.filter(event_type_id__in=event_type_ids)
-    combined_loc_ids = list(country_ids) + list(region_ids) + list(city_ids)
-    if combined_loc_ids:
-        qs = qs.filter(location_id__in=_descendant_location_ids(combined_loc_ids))
+    if location_ids:
+        qs = qs.filter(location_id__in=_descendant_location_ids(list(location_ids)))
     return list(qs)
 
 
