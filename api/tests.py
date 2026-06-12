@@ -12,6 +12,7 @@ from accounts.models import User
 from calendar_app.models import Competition, Discipline, DisciplineCategory, EventType
 from knowledge.models import DraftSubmission
 from locations.models import Location
+from news.models import NewsArticle
 from registrations.models import CompetitionRegistration
 
 # ---------------------------------------------------------------------------
@@ -59,6 +60,22 @@ def _draft(author, submission_type=DraftSubmission.SubmissionType.NEWS, **kwargs
     }
     defaults.update(kwargs)
     return DraftSubmission.objects.create(**defaults)
+
+
+def _article(**kwargs):
+    defaults = {
+        "title_ru": "Test Article",
+        "title_kk": "",
+        "title_en": "",
+        "intro_ru": "",
+        "intro_kk": "",
+        "intro_en": "",
+        "body_ru": "Article body",
+        "body_kk": "",
+        "body_en": "",
+    }
+    defaults.update(kwargs)
+    return NewsArticle.objects.create(**defaults)
 
 
 def _registration(competition, **kwargs):
@@ -524,30 +541,16 @@ class NewsDraftTest(TestCase, ApiTestMixin):
         resp = self.post("/api/v1/news/", self._payload(), user=guest)
         self.assertEqual(resp.status_code, 403)
 
-    def test_author_sees_own_pending_drafts(self):
-        _draft(self.author)
-        _draft(self.other)
-        resp = self.get("/api/v1/news/?status=pending", user=self.author)
-        self.assertEqual(len(resp.json()), 1)
-
-    def test_admin_sees_all_pending_drafts(self):
-        _draft(self.author)
-        _draft(self.other)
-        resp = self.get("/api/v1/news/?status=pending", user=self.admin)
-        self.assertEqual(len(resp.json()), 2)
-
-    def test_approved_news_visible_to_all_authenticated_users(self):
-        approved = _draft(self.other)
-        approved.status = DraftSubmission.Status.APPROVED
-        approved.save(update_fields=["status"])
+    def test_published_article_visible_to_authenticated_users(self):
+        article = _article()
         resp = self.get("/api/v1/news/", user=self.author)
-        ids = [d["id"] for d in resp.json()]
-        self.assertIn(approved.pk, ids)
+        self.assertIn(article.pk, [d["id"] for d in resp.json()])
 
-    def test_get_draft_requires_owner_or_admin(self):
-        draft = _draft(self.author)
-        resp = self.get(f"/api/v1/news/{draft.pk}", user=self.other)
-        self.assertEqual(resp.status_code, 403)
+    def test_any_user_can_get_published_article(self):
+        article = _article()
+        resp = self.get(f"/api/v1/news/{article.pk}", user=self.other)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["id"], article.pk)
 
     def test_update_pending_draft(self):
         draft = _draft(self.author)
@@ -574,29 +577,37 @@ class NewsDraftTest(TestCase, ApiTestMixin):
         resp = self.delete(f"/api/v1/news/{draft.pk}", user=self.admin)
         self.assertEqual(resp.status_code, 409)
 
-    def test_anonymous_can_list_approved_news(self):
-        approved = _draft(self.author)
-        approved.status = DraftSubmission.Status.APPROVED
-        approved.save(update_fields=["status"])
+    def test_anonymous_can_list_published_articles(self):
+        article = _article()
         resp = self.get("/api/v1/news/")
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(approved.pk, [d["id"] for d in resp.json()])
+        self.assertIn(article.pk, [d["id"] for d in resp.json()])
 
-    def test_anonymous_cannot_list_pending_news(self):
-        resp = self.client.get("/api/v1/news/?status=pending")
-        self.assertEqual(resp.status_code, 401)
+    def test_hidden_article_not_in_public_list(self):
+        _article(is_hidden=True)
+        resp = self.get("/api/v1/news/")
+        self.assertEqual(resp.json(), [])
 
-    def test_anonymous_can_get_approved_news(self):
-        approved = _draft(self.author)
-        approved.status = DraftSubmission.Status.APPROVED
-        approved.save(update_fields=["status"])
-        resp = self.get(f"/api/v1/news/{approved.pk}")
+    def test_admin_sees_hidden_article_in_list(self):
+        article = _article(is_hidden=True)
+        resp = self.get("/api/v1/news/", user=self.admin)
+        self.assertIn(article.pk, [d["id"] for d in resp.json()])
+
+    def test_anonymous_can_get_published_article(self):
+        article = _article()
+        resp = self.get(f"/api/v1/news/{article.pk}")
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["id"], article.pk)
 
-    def test_anonymous_cannot_get_pending_news(self):
-        draft = _draft(self.author)
-        resp = self.get(f"/api/v1/news/{draft.pk}")
+    def test_hidden_article_returns_404_for_anonymous(self):
+        article = _article(is_hidden=True)
+        resp = self.get(f"/api/v1/news/{article.pk}")
         self.assertEqual(resp.status_code, 404)
+
+    def test_news_submission_draft_not_in_article_list(self):
+        _draft(self.author)
+        resp = self.get("/api/v1/news/")
+        self.assertEqual(resp.json(), [])
 
     def test_invalid_token_still_returns_401_on_public_endpoints(self):
         resp = self.client.get("/api/v1/competitions/", HTTP_AUTHORIZATION="Bearer bad-token")
@@ -816,10 +827,11 @@ class KnowledgeArticleDraftTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.json()["submission_type"], DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
 
     def test_knowledge_draft_not_visible_via_news_endpoint(self):
-        kdraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-        resp = self.get("/api/v1/news/?status=pending", user=self.author)
+        _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        article = _article()
+        resp = self.get("/api/v1/news/", user=self.author)
         ids = [d["id"] for d in resp.json()]
-        self.assertNotIn(kdraft.pk, ids)
+        self.assertEqual(ids, [article.pk])
 
     def test_news_draft_not_visible_via_knowledge_endpoint(self):
         ndraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.NEWS)
