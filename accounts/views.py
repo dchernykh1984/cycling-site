@@ -98,7 +98,7 @@ class ResendEmailConfirmationView(LoginRequiredMixin, View):
 class ApiTokenRegenerateView(LoginRequiredMixin, View):
     def post(self, request):
         user = request.user
-        if user.get_role_rank() < user.ROLE_HIERARCHY.index(user.Role.ORGANIZER):
+        if user.get_role_rank() < user.ROLE_HIERARCHY.index(user.Role.PARTICIPANT):
             return JsonResponse({"error": "forbidden"}, status=403)
         user.api_token = uuid.uuid4()
         user.save(update_fields=["api_token"])

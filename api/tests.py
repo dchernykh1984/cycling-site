@@ -134,7 +134,25 @@ class ApiTokenAuthTest(TestCase, ApiTestMixin):
             "/api/v1/competitions/",
             HTTP_AUTHORIZATION="Bearer not-a-real-token",
         )
-        self.assertEqual(resp.status_code, 200)  # public endpoint, auth not required
+        self.assertEqual(resp.status_code, 401)
+
+    def test_no_token_returns_401(self):
+        resp = self.client.get("/api/v1/competitions/")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_no_token_on_locations_returns_401(self):
+        resp = self.client.get("/api/v1/locations/")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_participant_token_grants_read_access(self):
+        participant = _user("par_read", role=User.Role.PARTICIPANT)
+        resp = self.get("/api/v1/competitions/", user=participant)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_participant_token_grants_location_read_access(self):
+        participant = _user("par_loc", role=User.Role.PARTICIPANT)
+        resp = self.get("/api/v1/locations/", user=participant)
+        self.assertEqual(resp.status_code, 200)
 
 
 # ---------------------------------------------------------------------------
@@ -143,16 +161,19 @@ class ApiTokenAuthTest(TestCase, ApiTestMixin):
 
 
 class CompetitionListTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.reader = _user("reader", role=User.Role.PARTICIPANT)
+
     def test_returns_approved_by_default(self):
         _competition(status=Competition.Status.APPROVED)
         _competition(status=Competition.Status.PENDING_APPROVAL)
-        resp = self.get("/api/v1/competitions/")
+        resp = self.get("/api/v1/competitions/", user=self.reader)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 1)
 
     def test_filter_by_status(self):
         _competition(status=Competition.Status.PENDING_APPROVAL)
-        resp = self.get("/api/v1/competitions/?status=pending_approval")
+        resp = self.get("/api/v1/competitions/?status=pending_approval", user=self.reader)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 1)
 
@@ -160,23 +181,30 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         loc = _location()
         _competition(location=loc)
         _competition()
-        resp = self.get(f"/api/v1/competitions/?location_id={loc.pk}")
+        resp = self.get(f"/api/v1/competitions/?location_id={loc.pk}", user=self.reader)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 1)
 
     def test_localized_title_in_response(self):
         _competition(title_ru="Race RU", title_kk="Race KK", title_en="Race")
-        resp = self.get("/api/v1/competitions/")
+        resp = self.get("/api/v1/competitions/", user=self.reader)
         data = resp.json()[0]
         self.assertEqual(data["title"]["ru"], "Race RU")
         self.assertEqual(data["title"]["kk"], "Race KK")
         self.assertEqual(data["title"]["en"], "Race")
 
+    def test_anonymous_returns_401(self):
+        resp = self.get("/api/v1/competitions/")
+        self.assertEqual(resp.status_code, 401)
+
 
 class CompetitionDetailTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.reader = _user("det_reader", role=User.Role.PARTICIPANT)
+
     def test_returns_competition(self):
         comp = _competition()
-        resp = self.get(f"/api/v1/competitions/{comp.pk}")
+        resp = self.get(f"/api/v1/competitions/{comp.pk}", user=self.reader)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["id"], comp.pk)
 
@@ -192,13 +220,13 @@ class CompetitionDetailTest(TestCase, ApiTestMixin):
         resp = self.get(f"/api/v1/competitions/{comp.pk}", user=stranger)
         self.assertIsNone(resp.json()["competition_token"])
 
-    def test_token_hidden_when_anonymous(self):
+    def test_anonymous_returns_401(self):
         comp = _competition()
         resp = self.get(f"/api/v1/competitions/{comp.pk}")
-        self.assertIsNone(resp.json()["competition_token"])
+        self.assertEqual(resp.status_code, 401)
 
     def test_404_for_missing(self):
-        resp = self.get("/api/v1/competitions/99999")
+        resp = self.get("/api/v1/competitions/99999", user=self.reader)
         self.assertEqual(resp.status_code, 404)
 
 
@@ -308,7 +336,7 @@ class CompetitionDeleteTest(TestCase, ApiTestMixin):
 
     def test_deleted_competition_not_in_list(self):
         self.delete(f"/api/v1/competitions/{self.comp.pk}", user=self.owner)
-        resp = self.get("/api/v1/competitions/")
+        resp = self.get("/api/v1/competitions/", user=self.owner)
         self.assertEqual(len(resp.json()), 0)
 
 
@@ -396,47 +424,61 @@ class NewsDraftTest(TestCase, ApiTestMixin):
 
 
 class LocationListTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.reader = _user("loc_reader", role=User.Role.PARTICIPANT)
+
     def test_hidden_location_excluded(self):
-        before = len(self.get("/api/v1/locations/").json())
+        before = len(self.get("/api/v1/locations/", user=self.reader).json())
         _location()
         _location(is_hidden=True)
-        after = len(self.get("/api/v1/locations/").json())
+        after = len(self.get("/api/v1/locations/", user=self.reader).json())
         self.assertEqual(after - before, 1)
 
     def test_include_hidden_param(self):
-        before_all = len(self.get("/api/v1/locations/?include_hidden=true").json())
+        before_all = len(self.get("/api/v1/locations/?include_hidden=true", user=self.reader).json())
         _location()
         hidden = _location(is_hidden=True)
-        after_all = len(self.get("/api/v1/locations/?include_hidden=true").json())
+        after_all = len(self.get("/api/v1/locations/?include_hidden=true", user=self.reader).json())
         self.assertEqual(after_all - before_all, 2)
-        # hidden one is NOT in default list
-        ids_visible = {d["id"] for d in self.get("/api/v1/locations/").json()}
+        ids_visible = {d["id"] for d in self.get("/api/v1/locations/", user=self.reader).json()}
         self.assertNotIn(hidden.pk, ids_visible)
 
     def test_parent_id_computed_correctly(self):
         parent = _location(name="Parent", name_ru="Parent")
         child = parent.add_child(name="Child", name_ru="Child", name_kk="", name_en="")
-        resp = self.get("/api/v1/locations/")
+        resp = self.get("/api/v1/locations/", user=self.reader)
         child_data = next(d for d in resp.json() if d["id"] == child.pk)
         self.assertEqual(child_data["parent_id"], parent.pk)
 
     def test_root_has_no_parent(self):
         loc = _location()
-        resp = self.get("/api/v1/locations/")
+        resp = self.get("/api/v1/locations/", user=self.reader)
         loc_data = next(d for d in resp.json() if d["id"] == loc.pk)
         self.assertIsNone(loc_data["parent_id"])
 
+    def test_anonymous_returns_401(self):
+        resp = self.get("/api/v1/locations/")
+        self.assertEqual(resp.status_code, 401)
+
 
 class LocationDetailTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.reader = _user("loc_det_reader", role=User.Role.PARTICIPANT)
+
     def test_get_location(self):
         loc = _location()
-        resp = self.get(f"/api/v1/locations/{loc.pk}")
+        resp = self.get(f"/api/v1/locations/{loc.pk}", user=self.reader)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["id"], loc.pk)
 
     def test_404_for_missing(self):
-        resp = self.get("/api/v1/locations/99999")
+        resp = self.get("/api/v1/locations/99999", user=self.reader)
         self.assertEqual(resp.status_code, 404)
+
+    def test_anonymous_returns_401(self):
+        loc = _location()
+        resp = self.get(f"/api/v1/locations/{loc.pk}")
+        self.assertEqual(resp.status_code, 401)
 
 
 class LocationCreateTest(TestCase, ApiTestMixin):
@@ -507,9 +549,9 @@ class LocationDeleteTest(TestCase, ApiTestMixin):
         self.assertTrue(self.loc.is_deleted)
 
     def test_deleted_not_in_list(self):
-        before = len(self.get("/api/v1/locations/").json())
+        before = len(self.get("/api/v1/locations/", user=self.admin).json())
         self.delete(f"/api/v1/locations/{self.loc.pk}", user=self.admin)
-        after = len(self.get("/api/v1/locations/").json())
+        after = len(self.get("/api/v1/locations/", user=self.admin).json())
         self.assertEqual(after, before - 1)
 
 

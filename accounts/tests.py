@@ -761,3 +761,42 @@ class ThemeUpdateViewTests(TestCase):
             content_type="application/json",
         )
         self.assertIn(response.status_code, [302, 403])
+
+
+class ApiTokenRegenerateViewTests(TestCase):
+    def setUp(self):
+        self.url = reverse("account_api_token_regenerate")
+
+    def test_guest_cannot_generate_token(self):
+        guest = make_user(username="token_guest", role=User.Role.GUEST)
+        self.client.force_login(guest)
+        resp = self.client.post(self.url)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_participant_can_generate_token(self):
+        participant = make_user(username="token_part", role=User.Role.PARTICIPANT)
+        self.client.force_login(participant)
+        resp = self.client.post(self.url)
+        self.assertRedirects(resp, reverse("account_profile"))
+        participant.refresh_from_db()
+        self.assertIsNotNone(participant.api_token)
+
+    def test_organizer_can_generate_token(self):
+        organizer = make_user(username="token_org", role=User.Role.ORGANIZER)
+        self.client.force_login(organizer)
+        resp = self.client.post(self.url)
+        self.assertRedirects(resp, reverse("account_profile"))
+        organizer.refresh_from_db()
+        self.assertIsNotNone(organizer.api_token)
+
+    def test_profile_shows_api_section_for_participant(self):
+        participant = make_user(username="api_part_profile", role=User.Role.PARTICIPANT)
+        self.client.force_login(participant)
+        resp = self.client.get(reverse("account_profile"))
+        self.assertContains(resp, "api-token/regenerate")
+
+    def test_profile_hides_api_section_for_guest(self):
+        guest = make_user(username="api_guest_profile", role=User.Role.GUEST)
+        self.client.force_login(guest)
+        resp = self.client.get(reverse("account_profile"))
+        self.assertNotContains(resp, "api-token/regenerate")

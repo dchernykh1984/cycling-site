@@ -69,8 +69,20 @@ def test_regenerate_form_present_when_no_token(page: Page, live_server, organize
 
 
 @pytest.mark.django_db(transaction=True)
-def test_api_section_absent_for_participant(page: Page, live_server, participant_user):
+def test_api_section_visible_for_participant(page: Page, live_server, participant_user):
     inject_session(page, live_server, participant_user)
     page.goto(_profile_url(live_server))
-    # Participants (rank < 2) should not see the API section at all
+    expect(page.locator("form[action*='api-token/regenerate']")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_api_section_absent_for_guest(page: Page, live_server, db):
+    guest = User.objects.create_user(
+        username="e2e_guest",
+        email="e2e_guest@test.local",
+        password="TestPass123!",
+        role=User.Role.GUEST,
+    )
+    inject_session(page, live_server, guest)
+    page.goto(_profile_url(live_server))
     expect(page.locator("form[action*='api-token/regenerate']")).not_to_be_visible()
