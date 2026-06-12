@@ -6,6 +6,7 @@ import uuid
 from datetime import date
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
 from django.test import TestCase, override_settings
 
 from accounts.models import User
@@ -697,6 +698,34 @@ class LocationListTest(TestCase, ApiTestMixin):
         region_data = next(d for d in country_data["children"] if d["id"] == region.pk)
         city_ids = [c["id"] for c in region_data["children"]]
         self.assertIn(city.pk, city_ids)
+
+    def test_name_falls_back_to_canonical_when_locale_variants_empty(self):
+        # Simulate pre-modeltranslation data: only the canonical `name` column has a value.
+        loc = _location()
+        with connection.cursor() as cur:
+            cur.execute(
+                "UPDATE locations_location SET name=%s, name_ru=%s, name_kk=%s, name_en=%s WHERE id=%s",
+                ["FallbackCity", "", "", "", loc.pk],
+            )
+        resp = self.get("/api/v1/locations/", user=self.reader)
+        data = resp.json()
+        node = next(d for d in data if d["id"] == loc.pk)
+        self.assertEqual(node["name"]["ru"], "FallbackCity")
+        self.assertEqual(node["name"]["kk"], "FallbackCity")
+        self.assertEqual(node["name"]["en"], "FallbackCity")
+
+    def test_locale_variant_takes_precedence_over_canonical(self):
+        loc = _location()
+        with connection.cursor() as cur:
+            cur.execute(
+                "UPDATE locations_location SET name=%s, name_ru=%s, name_kk=%s, name_en=%s WHERE id=%s",
+                ["Canonical", "RuName", "", "", loc.pk],
+            )
+        resp = self.get("/api/v1/locations/", user=self.reader)
+        data = resp.json()
+        node = next(d for d in data if d["id"] == loc.pk)
+        self.assertEqual(node["name"]["ru"], "RuName")
+        self.assertEqual(node["name"]["kk"], "Canonical")
 
     def test_anonymous_can_list_locations(self):
         resp = self.get("/api/v1/locations/")
