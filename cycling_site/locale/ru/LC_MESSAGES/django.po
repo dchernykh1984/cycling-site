@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-11 16:40+0000\n"
+"POT-Creation-Date: 2026-06-12 16:14+0000\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -26,8 +26,8 @@ msgid ""
 "If you use Gmail and the confirmation email does not arrive, please try "
 "registering with a non-Gmail address."
 msgstr ""
-"Если вы используете Gmail и письмо с подтверждением не приходит — "
-"попробуйте зарегистрироваться с адресом не на Gmail."
+"Если вы используете Gmail и письмо с подтверждением не приходит — попробуйте "
+"зарегистрироваться с адресом не на Gmail."
 
 #: accounts/templates/account/signup.html:42
 msgid "Sign up using a passkey"
@@ -82,58 +82,31 @@ msgstr ""
 "Email ещё не подтверждён. Проверьте почту и подтвердите адрес, чтобы стать "
 "участником."
 
-#: accounts/templates/accounts/profile.html
+#: accounts/templates/accounts/profile.html:40
+#: accounts/templates/accounts/profile.html:41
 msgid "Resend confirmation email"
 msgstr "Отправить письмо ещё раз"
 
-#: accounts/templates/accounts/profile.html
-msgid "API access"
-msgstr "Доступ к API"
-
-#: accounts/templates/accounts/profile.html
-msgid ""
-"Use this token to authenticate API requests: <code>Authorization: Bearer "
-"&lt;token&gt;</code>"
-msgstr ""
-"Используйте этот токен для аутентификации API-запросов: <code>Authorization: "
-"Bearer &lt;token&gt;</code>"
-
-#: accounts/templates/accounts/profile.html
-msgid "No token yet. Generate one below."
-msgstr "Токен ещё не создан. Сгенерируйте его ниже."
-
-#: accounts/templates/accounts/profile.html
-msgid "Regenerate token"
-msgstr "Пересоздать токен"
-
-#: accounts/templates/accounts/profile.html
-msgid "Generate token"
-msgstr "Создать токен"
-
-#: accounts/templates/accounts/profile.html
-msgid "API docs (Swagger)"
-msgstr "Документация API (Swagger)"
-
-#: accounts/templates/accounts/profile.html:36
+#: accounts/templates/accounts/profile.html:72
 msgid "Appearance"
 msgstr "Внешний вид"
 
-#: accounts/templates/accounts/profile.html:38
+#: accounts/templates/accounts/profile.html:74
 msgid "Theme"
 msgstr "Тема"
 
-#: accounts/templates/accounts/profile.html:46
+#: accounts/templates/accounts/profile.html:82
 msgid "My submissions"
 msgstr "Мои материалы"
 
-#: accounts/templates/accounts/profile.html:50
+#: accounts/templates/accounts/profile.html:86
 #: knowledge/templates/knowledge/knowledge_index_page.html:21
 #: knowledge/templates/knowledge/submit.html:4
 #: knowledge/templates/knowledge/submit.html:9
 msgid "Submit article"
 msgstr "Отправить статью"
 
-#: accounts/templates/accounts/profile.html:59
+#: accounts/templates/accounts/profile.html:95
 #: calendar_app/templates/calendar_app/edit.html:37
 #: calendar_app/templates/calendar_app/edit.html:49
 #: calendar_app/templates/calendar_app/edit.html:61
@@ -145,65 +118,98 @@ msgstr "Отправить статью"
 msgid "Title"
 msgstr "Заголовок"
 
-#: accounts/templates/accounts/profile.html:60
+#: accounts/templates/accounts/profile.html:96
 #: calendar_app/templates/calendar_app/detail.html:28
 #: calendar_app/templates/calendar_app/list.html:259
 msgid "Type"
 msgstr "Тип"
 
-#: accounts/templates/accounts/profile.html:61
+#: accounts/templates/accounts/profile.html:97
 msgid "Language"
 msgstr "Язык"
 
-#: accounts/templates/accounts/profile.html:62
-#: accounts/templates/accounts/profile.html:101
+#: accounts/templates/accounts/profile.html:98
+#: accounts/templates/accounts/profile.html:137
 msgid "Date"
 msgstr "Дата"
 
-#: accounts/templates/accounts/profile.html:63
-#: accounts/templates/accounts/profile.html:102
+#: accounts/templates/accounts/profile.html:99
+#: accounts/templates/accounts/profile.html:138
 #: locations/templates/locations/locations_map_page.html:41
 msgid "Status"
 msgstr "Статус"
 
-#: accounts/templates/accounts/profile.html:91
+#: accounts/templates/accounts/profile.html:127
 msgid "No submissions yet."
 msgstr "Подано материалов пока нет."
 
-#: accounts/templates/accounts/profile.html:93
+#: accounts/templates/accounts/profile.html:129
 msgid "My registrations"
 msgstr "Мои регистрации"
 
-#: accounts/templates/accounts/profile.html:99
+#: accounts/templates/accounts/profile.html:135
 msgid "Competition"
 msgstr "Соревнование"
 
-#: accounts/templates/accounts/profile.html:100
+#: accounts/templates/accounts/profile.html:136
 #: registrations/templates/registrations/participant_list.html:57
 #: registrations/templates/registrations/register.html:157
 msgid "Category"
 msgstr "Категория"
 
-#: accounts/templates/accounts/profile.html:113
+#: accounts/templates/accounts/profile.html:149
 #: registrations/templates/registrations/participant_list.html:63
 msgid "Rejected"
 msgstr "Отклонено"
 
-#: accounts/templates/accounts/profile.html:118
+#: accounts/templates/accounts/profile.html:154
 #: registrations/templates/registrations/participant_list.html:61
 msgid "Approved"
 msgstr "Одобрено"
 
-#: accounts/templates/accounts/profile.html:120
+#: accounts/templates/accounts/profile.html:156
 #: news/templates/news/news_page.html:75
 msgid "Pending"
 msgstr "На рассмотрении"
 
-#: accounts/templates/accounts/profile.html:129
+#: accounts/templates/accounts/profile.html:165
 msgid "No registrations yet."
 msgstr "Регистраций пока нет."
 
-#: accounts/templates/accounts/profile.html:133
+#: accounts/templates/accounts/profile.html:170
+msgid "API access"
+msgstr "Доступ к API"
+
+#: accounts/templates/accounts/profile.html:173
+msgid ""
+"Use this token to authenticate API requests: <code>Authorization: Bearer "
+"&lt;token&gt;</code>"
+msgstr ""
+"Используйте этот токен для аутентификации API-запросов: <code>Authorization: "
+"Bearer &lt;token&gt;</code>"
+
+#: accounts/templates/accounts/profile.html:178
+#: calendar_app/templates/calendar_app/detail.html:101
+msgid "Copy"
+msgstr "Копировать"
+
+#: accounts/templates/accounts/profile.html:181
+msgid "No token yet. Generate one below."
+msgstr "Токен ещё не создан. Сгенерируйте его ниже."
+
+#: accounts/templates/accounts/profile.html:186
+msgid "Regenerate token"
+msgstr "Пересоздать токен"
+
+#: accounts/templates/accounts/profile.html:186
+msgid "Generate token"
+msgstr "Создать токен"
+
+#: accounts/templates/accounts/profile.html:189
+msgid "API docs (Swagger)"
+msgstr "Документация API (Swagger)"
+
+#: accounts/templates/accounts/profile.html:195
 #: cycling_site/templates/base.html:122
 msgid "Log out"
 msgstr "Выйти"
@@ -614,13 +620,9 @@ msgstr "Результаты по группам"
 msgid "Live"
 msgstr "Прямой эфир"
 
-#: calendar_app/templates/calendar_app/detail.html:96 tmp/plan.txt:428
+#: calendar_app/templates/calendar_app/detail.html:96
 msgid "Timing system token"
 msgstr "Токен системы хронометража"
-
-#: calendar_app/templates/calendar_app/detail.html:101
-msgid "Copy"
-msgstr "Копировать"
 
 #: calendar_app/templates/calendar_app/detail.html:105
 msgid "Access token for the offline timing system:"
@@ -1283,6 +1285,11 @@ msgstr "Команда"
 #: registrations/templates/registrations/participant_list.html:62
 msgid "Paid"
 msgstr "Оплата"
+
+#: registrations/templates/registrations/participant_list.html:63
+#, fuzzy
+msgid "Actions"
+msgstr "Действия"
 
 #: registrations/templates/registrations/participant_list.html:78
 #: registrations/templates/registrations/participant_list.html:81
