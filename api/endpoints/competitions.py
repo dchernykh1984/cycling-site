@@ -1,11 +1,12 @@
 from datetime import date
 
-from ninja import Router, Schema
+from ninja import Query, Router, Schema
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, is_admin
 from api.schemas import LocalizedStr
 from calendar_app.models import Competition
+from locations.models import Location
 
 auth = ApiTokenAuth()
 router = Router(tags=["competitions"])
@@ -84,6 +85,21 @@ class CompetitionDetailOut(CompetitionOut):
 # -- Helpers ---------------------------------------------------------------
 
 
+def _descendant_location_ids(location_ids: list[int]) -> set[int]:
+    """Return PKs of all locations at or below the given location IDs (treebeard path prefix match)."""
+    if not location_ids:
+        return set()
+    from django.db.models import Q
+
+    roots = Location.objects.filter(pk__in=location_ids, is_deleted=False).values_list("path", flat=True)
+    if not roots:
+        return set()
+    q = Q()
+    for path in roots:
+        q |= Q(path__startswith=path)
+    return set(Location.objects.filter(q, is_deleted=False).values_list("pk", flat=True))
+
+
 def _is_owner(user, competition: Competition) -> bool:
     return competition.submitted_by_id == user.pk
 
@@ -124,21 +140,21 @@ def _to_detail(competition: Competition, user=None) -> Competition:
 def list_competitions(
     request,
     status: str | None = None,
-    location_id: int | None = None,
-    discipline_id: int | None = None,
-    event_type_id: int | None = None,
+    discipline_ids: list[int] = Query(default=[]),  # noqa: B008
+    event_type_ids: list[int] = Query(default=[]),  # noqa: B008
+    country_ids: list[int] = Query(default=[]),  # noqa: B008
+    region_ids: list[int] = Query(default=[]),  # noqa: B008
+    city_ids: list[int] = Query(default=[]),  # noqa: B008
 ):
     qs = Competition.objects.filter(is_deleted=False)
-    if status:
-        qs = qs.filter(status=status)
-    else:
-        qs = qs.filter(status=Competition.Status.APPROVED)
-    if location_id:
-        qs = qs.filter(location_id=location_id)
-    if discipline_id:
-        qs = qs.filter(discipline_id=discipline_id)
-    if event_type_id:
-        qs = qs.filter(event_type_id=event_type_id)
+    qs = qs.filter(status=status) if status else qs.filter(status=Competition.Status.APPROVED)
+    if discipline_ids:
+        qs = qs.filter(discipline_id__in=discipline_ids)
+    if event_type_ids:
+        qs = qs.filter(event_type_id__in=event_type_ids)
+    for loc_ids in (country_ids, region_ids, city_ids):
+        if loc_ids:
+            qs = qs.filter(location_id__in=_descendant_location_ids(loc_ids))
     return list(qs)
 
 
