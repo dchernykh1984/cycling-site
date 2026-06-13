@@ -151,6 +151,17 @@ def owner(db):
     )
 
 
+@pytest.fixture
+def admin_user(db):
+    """Non-superuser with ADMIN role - can manage locations."""
+    return User.objects.create_user(
+        username="e2e_loc_admin",
+        email="e2e_loc_admin@test.local",
+        password="testpass123!",
+        role=User.Role.ADMIN,
+    )
+
+
 # ---------------------------------------------------------------------------
 # competition fixtures
 # ---------------------------------------------------------------------------

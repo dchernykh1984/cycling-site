@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.urls import reverse
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTests
 
@@ -48,7 +49,7 @@ class LocationsMapPageHierarchyTests(WagtailPageTests):
 class LocationsMapPageRenderTests(TestCase):
     def setUp(self):
         root = _get_site_root()
-        self.map_page = LocationsMapPage(title="Map", slug="map")
+        self.map_page = LocationsMapPage(title="Map Render Test", slug="map-render-test")
         root.add_child(instance=self.map_page)
         self.loc = Location.add_root(
             name_ru="Almaty",
@@ -193,3 +194,158 @@ class LocationAdminFormTests(TestCase):
         city = form.save()
         self.assertEqual(city.depth, 2)
         self.assertEqual(city.get_parent().pk, parent.pk)
+
+
+def _make_user(username, role, is_superuser=False):
+    return User.objects.create_user(
+        username=username,
+        email=username,
+        password="pass",
+        role=role,
+        is_superuser=is_superuser,
+    )
+
+
+class LocationCreateViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("admin@x.com", User.Role.ADMIN)
+        self.participant = _make_user("part@x.com", User.Role.PARTICIPANT)
+        self.url = reverse("location_add")
+
+    def test_anonymous_redirects_to_login(self):
+        resp = self.client.get(self.url)
+        self.assertRedirects(resp, f"/accounts/login/?next={self.url}", fetch_redirect_response=False)
+
+    def test_participant_forbidden(self):
+        self.client.force_login(self.participant)
+        resp = self.client.post(self.url, {"name_ru": "City"})
+        self.assertEqual(resp.status_code, 403)
+
+    def test_admin_get_returns_200(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_admin_creates_root_location(self):
+        self.client.force_login(self.admin)
+        self.client.post(self.url, {"name_ru": "Country", "name_kk": "", "name_en": ""})
+        self.assertTrue(Location.objects.filter(name_ru="Country", depth=1).exists())
+
+    def test_admin_creates_child_location(self):
+        self.client.force_login(self.admin)
+        parent = Location.add_root(name="P", name_ru="P", name_en="P")
+        self.client.post(
+            self.url,
+            {
+                "name_ru": "City",
+                "name_kk": "",
+                "name_en": "",
+                "parent": str(parent.pk),
+            },
+        )
+        child = Location.objects.filter(name_ru="City").first()
+        self.assertIsNotNone(child)
+        self.assertEqual(child.get_parent().pk, parent.pk)
+
+    def test_missing_name_ru_shows_form_error(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(self.url, {"name_ru": ""})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("name_ru", resp.context["form"].errors)
+
+
+class LocationEditViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("admin2@x.com", User.Role.ADMIN)
+        self.participant = _make_user("part2@x.com", User.Role.PARTICIPANT)
+        self.loc = Location.add_root(name="OldName", name_ru="OldName", name_en="OldName")
+
+    def _url(self):
+        return reverse("location_edit", args=[self.loc.pk])
+
+    def test_anonymous_redirects_to_login(self):
+        resp = self.client.get(self._url())
+        self.assertRedirects(resp, f"/accounts/login/?next={self._url()}", fetch_redirect_response=False)
+
+    def test_participant_forbidden(self):
+        self.client.force_login(self.participant)
+        resp = self.client.post(self._url(), {"name_ru": "X"})
+        self.assertEqual(resp.status_code, 403)
+
+    def test_admin_get_returns_200(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+
+    def test_admin_updates_name(self):
+        self.client.force_login(self.admin)
+        self.client.post(self._url(), {"name_ru": "NewName", "name_kk": "", "name_en": ""})
+        self.loc.refresh_from_db()
+        self.assertEqual(self.loc.name_ru, "NewName")
+        self.assertEqual(self.loc.name, "NewName")
+
+    def test_admin_changes_parent(self):
+        self.client.force_login(self.admin)
+        new_parent = Location.add_root(name="Parent", name_ru="Parent", name_en="Parent")
+        self.client.post(
+            self._url(),
+            {
+                "name_ru": "OldName",
+                "name_kk": "",
+                "name_en": "",
+                "parent": str(new_parent.pk),
+            },
+        )
+        self.loc.refresh_from_db()
+        self.assertEqual(self.loc.get_parent().pk, new_parent.pk)
+
+    def test_admin_hides_location(self):
+        self.client.force_login(self.admin)
+        self.client.post(
+            self._url(),
+            {
+                "name_ru": "OldName",
+                "name_kk": "",
+                "name_en": "",
+                "is_hidden": "on",
+            },
+        )
+        self.loc.refresh_from_db()
+        self.assertTrue(self.loc.is_hidden)
+
+
+class LocationDeleteViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("admin3@x.com", User.Role.ADMIN)
+        self.loc = Location.add_root(name="ToDelete", name_ru="ToDelete", name_en="ToDelete")
+
+    def test_soft_delete_sets_is_deleted(self):
+        self.client.force_login(self.admin)
+        self.client.post(reverse("location_delete", args=[self.loc.pk]))
+        self.loc.refresh_from_db()
+        self.assertTrue(self.loc.is_deleted)
+
+    def test_participant_forbidden(self):
+        part = _make_user("part3@x.com", User.Role.PARTICIPANT)
+        self.client.force_login(part)
+        resp = self.client.post(reverse("location_delete", args=[self.loc.pk]))
+        self.assertEqual(resp.status_code, 403)
+
+
+class LocationHideViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("admin4@x.com", User.Role.ADMIN)
+        self.loc = Location.add_root(name="Visible", name_ru="Visible", name_en="Visible")
+
+    def test_toggle_hides_location(self):
+        self.client.force_login(self.admin)
+        self.client.post(reverse("location_hide", args=[self.loc.pk]))
+        self.loc.refresh_from_db()
+        self.assertTrue(self.loc.is_hidden)
+
+    def test_toggle_twice_restores_visibility(self):
+        self.client.force_login(self.admin)
+        self.client.post(reverse("location_hide", args=[self.loc.pk]))
+        self.client.post(reverse("location_hide", args=[self.loc.pk]))
+        self.loc.refresh_from_db()
+        self.assertFalse(self.loc.is_hidden)
