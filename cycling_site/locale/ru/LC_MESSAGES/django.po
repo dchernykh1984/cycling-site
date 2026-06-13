@@ -1406,5 +1406,20 @@ msgstr "Ничего не найдено"
 msgid "Satellite"
 msgstr "Спутник"
 
+msgid "Coordinates"
+msgstr "Координаты"
+
+msgid "N"
+msgstr "с.ш."
+
+msgid "S"
+msgstr "ю.ш."
+
+msgid "E"
+msgstr "в.д."
+
+msgid "W"
+msgstr "з.д."
+
 msgid "Labels"
 msgstr "Подписи"

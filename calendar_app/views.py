@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import get_language
+from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 
 from accounts.models import User
@@ -251,8 +252,14 @@ class CompetitionDetailView(View):
         }
         loc = competition.location
         if loc and loc.lat and loc.lng:
-            ctx["location_lat"] = f"{float(loc.lat):.6f}"
-            ctx["location_lng"] = f"{float(loc.lng):.6f}"
+            lat = float(loc.lat)
+            lng = float(loc.lng)
+            ctx["location_lat"] = f"{lat:.6f}"
+            ctx["location_lng"] = f"{lng:.6f}"
+            lat_dir = _("N") if lat >= 0 else _("S")
+            lng_dir = _("E") if lng >= 0 else _("W")
+            ctx["location_lat_display"] = f"{abs(lat):.6f}\u00b0 {lat_dir}"
+            ctx["location_lng_display"] = f"{abs(lng):.6f}\u00b0 {lng_dir}"
         return render(request, "calendar_app/detail.html", ctx)
 
 
