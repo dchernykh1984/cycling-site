@@ -263,6 +263,31 @@ class CompetitionDetailViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertIn(self._token(), response.content.decode())
 
+    def test_location_with_coords_adds_context_variables(self):
+        from locations.models import Location
+
+        loc = Location.add_root(name_ru="Velodrome", name_en="Velodrome", lat="43.238949", lng="76.889709")
+        comp = _make_competition("Mapped Race", location=loc)
+        response = self.client.get(reverse("competition_detail", args=[comp.pk]))
+        self.assertIn("location_lat", response.context)
+        self.assertIn("location_lng", response.context)
+        self.assertContains(response, "competition-map")
+        self.assertContains(response, "43.238949")
+
+    def test_location_without_coords_omits_map(self):
+        from locations.models import Location
+
+        loc = Location.add_root(name_ru="Country", name_en="Country")
+        comp = _make_competition("No Coords Race", location=loc)
+        response = self.client.get(reverse("competition_detail", args=[comp.pk]))
+        self.assertNotIn("location_lat", response.context)
+        self.assertNotContains(response, "competition-map")
+
+    def test_no_location_omits_map(self):
+        response = self.client.get(self.url)
+        self.assertNotIn("location_lat", response.context)
+        self.assertNotContains(response, "competition-map")
+
 
 class SubmitCompetitionViewTests(TestCase):
     def setUp(self):

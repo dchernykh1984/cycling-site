@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% block extra_css %}
+{% if location_lat %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+{% endif %}
+{% endblock %}
+
 {% block title %}{{ competition.title }}{% endblock %}
 
 {% block content %}
@@ -34,6 +40,10 @@
       <span><strong>{% trans "Location" %}:</strong> {{ competition.location_full_label }}</span>
       {% endif %}
     </div>
+
+    {% if location_lat %}
+    <div id="competition-map" class="mb-4" style="height: 300px; border-radius: 0.375rem;"></div>
+    {% endif %}
 
     {% if competition.description %}
     <div class="mb-4">{{ competition.description|linebreaks }}</div>
@@ -205,4 +215,22 @@
 
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if location_lat %}
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+  var lat = {{ location_lat }};
+  var lng = {{ location_lng }};
+  var map = L.map('competition-map').setView([lat, lng], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  }).addTo(map);
+  L.marker([lat, lng]).addTo(map);
+})();
+</script>
+{% endif %}
 {% endblock %}
