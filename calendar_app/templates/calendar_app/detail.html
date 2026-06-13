@@ -22,7 +22,7 @@
 
     <h1 class="mb-2">{{ competition.title }}</h1>
 
-    <div class="d-flex flex-wrap gap-3 mb-4 text-muted small">
+    <div class="d-flex flex-wrap gap-3 mb-2 text-muted small">
       <span>
         <strong>{% trans "Dates" %}:</strong>
         {{ competition.date_start|date:"d.m.Y" }}
@@ -36,10 +36,17 @@
       {% if competition.discipline %}
       <span><strong>{% trans "Discipline" %}:</strong> {{ competition.discipline.name }}</span>
       {% endif %}
-      {% if competition.location_full_label %}
-      <span><strong>{% trans "Location" %}:</strong> {{ competition.location_full_label }}</span>
-      {% endif %}
     </div>
+    {% if competition.location_full_label %}
+    <div class="mb-2 text-muted small">
+      <strong>{% trans "Location" %}:</strong> {{ competition.location_full_label }}
+    </div>
+    {% endif %}
+    {% if location_lat_display %}
+    <div class="mb-4 text-muted small">
+      <strong>{% trans "Latitude" %}:</strong> {{ location_lat_display }}&emsp;<strong>{% trans "Longitude" %}:</strong> {{ location_lng_display }}
+    </div>
+    {% endif %}
 
     {% if location_lat %}
     <div id="competition-map" class="mb-4" style="height: 300px; border-radius: 0.375rem;"></div>

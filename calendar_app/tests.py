@@ -271,6 +271,8 @@ class CompetitionDetailViewTests(TestCase):
         response = self.client.get(reverse("competition_detail", args=[comp.pk]))
         self.assertIn("location_lat", response.context)
         self.assertIn("location_lng", response.context)
+        self.assertIn("location_lat_display", response.context)
+        self.assertIn("location_lng_display", response.context)
         self.assertContains(response, "competition-map")
         self.assertContains(response, "43.238949")
 
@@ -287,6 +289,35 @@ class CompetitionDetailViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertNotIn("location_lat", response.context)
         self.assertNotContains(response, "competition-map")
+
+    def test_positive_coords_show_abs_value_without_sign(self):
+        from locations.models import Location
+
+        loc = Location.add_root(name_ru="NE", name_en="NE", lat="43.238949", lng="76.889709")
+        comp = _make_competition("NE Race", location=loc)
+        response = self.client.get(reverse("competition_detail", args=[comp.pk]))
+        self.assertIn("43.238949\u00b0", response.context["location_lat_display"])
+        self.assertIn("76.889709\u00b0", response.context["location_lng_display"])
+        self.assertNotIn("-", response.context["location_lat_display"])
+        self.assertNotIn("-", response.context["location_lng_display"])
+
+    def test_negative_coords_show_abs_value_and_different_direction_from_positive(self):
+        from locations.models import Location
+
+        south = Location.add_root(name_ru="SW", name_en="SW", lat="-33.868820", lng="-70.676150")
+        north = Location.add_root(name_ru="NE", name_en="NE", lat="33.868820", lng="70.676150")
+        comp_s = _make_competition("SW Race", location=south)
+        comp_n = _make_competition("NE Race", location=north)
+        resp_s = self.client.get(reverse("competition_detail", args=[comp_s.pk]))
+        resp_n = self.client.get(reverse("competition_detail", args=[comp_n.pk]))
+        # absolute value shown, no minus sign
+        self.assertIn("33.868820\u00b0", resp_s.context["location_lat_display"])
+        self.assertNotIn("-", resp_s.context["location_lat_display"])
+        self.assertIn("70.676150\u00b0", resp_s.context["location_lng_display"])
+        self.assertNotIn("-", resp_s.context["location_lng_display"])
+        # direction label differs between south and north, west and east
+        self.assertNotEqual(resp_s.context["location_lat_display"], resp_n.context["location_lat_display"])
+        self.assertNotEqual(resp_s.context["location_lng_display"], resp_n.context["location_lng_display"])
 
 
 class SubmitCompetitionViewTests(TestCase):

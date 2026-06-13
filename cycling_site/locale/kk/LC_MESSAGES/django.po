@@ -1405,6 +1405,21 @@ msgstr "Ештенiе табылмады"
 msgid "Satellite"
 msgstr "Жер серiгi"
 
+msgid "Coordinates"
+msgstr "Координаттар"
+
+msgid "N"
+msgstr "с.е."
+
+msgid "S"
+msgstr "о.е."
+
+msgid "E"
+msgstr "ш.б."
+
+msgid "W"
+msgstr "б.б."
+
 msgid "Labels"
 msgstr "Белгiлер"
 
