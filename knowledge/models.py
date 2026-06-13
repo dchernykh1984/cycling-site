@@ -72,6 +72,7 @@ class KnowledgeIndexPage(AsciiSlugMixin, Page):
 
     def get_context(self, request):
         from django.core.paginator import Paginator
+        from django.urls import reverse
 
         from accounts.models import User
 
@@ -93,7 +94,15 @@ class KnowledgeIndexPage(AsciiSlugMixin, Page):
             participant_rank = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
             can_add = request.user.get_role_rank() >= participant_rank
         if can_manage:
-            add_article_url = f"/admin/pages/add/knowledge/knowledgearticlepage/{self.pk}/"
+            add_article_url = reverse("knowledge_add")
+            context["pending_submissions"] = (
+                DraftSubmission.objects.filter(
+                    status=DraftSubmission.Status.PENDING,
+                    submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+                )
+                .select_related("author")
+                .order_by("submitted_at")
+            )
         context["can_add"] = can_add
         context["can_manage"] = can_manage
         context["add_article_url"] = add_article_url
