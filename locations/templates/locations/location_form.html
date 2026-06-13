@@ -21,8 +21,11 @@
   {% if is_edit %}{% trans "Edit location" %}{% else %}{% trans "Add location" %}{% endif %}
 </h1>
 
+{{ all_locations_json|json_script:"all-locations-data" }}
+
 <form method="post" id="location-form">
 {% csrf_token %}
+{{ form.city }}
 <div class="row g-4">
   <div class="col-md-6">
 
@@ -74,20 +77,32 @@
       </div>
     </div>
 
-    <div class="mb-3">
-      <label for="id_parent" class="form-label">{% trans "Parent location" %}</label>
-      <select name="parent" id="id_parent"
-              class="form-select{% if form.parent.errors %} is-invalid{% endif %}">
-        <option value="">— {% trans "top level" %} —</option>
-        {% for val, label in parent_choices %}{% if val %}
-        <option value="{{ val }}"
-          {% if form.parent.value|stringformat:"s" == val|stringformat:"s" %}selected{% endif %}>
-          {{ label }}
-        </option>
-        {% endif %}{% endfor %}
-      </select>
-      {% for e in form.parent.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+    {% if location_depth >= 4 %}
+    <div class="mb-2">
+      <label class="form-label fw-semibold">{% trans "Location" %} *</label>
+      {% if form.city.errors %}
+      {% for e in form.city.errors %}<div class="text-danger small mb-1">{{ e }}</div>{% endfor %}
+      {% endif %}
+      <div class="mb-2">
+        <label class="form-label form-label-sm mb-1">{% trans "Country" %}</label>
+        <select id="loc-country" class="form-select{% if form.city.errors %} is-invalid{% endif %}">
+          <option value="">--</option>
+        </select>
+      </div>
+      <div class="mb-2">
+        <label class="form-label form-label-sm mb-1">{% trans "Region" %}</label>
+        <select id="loc-region" class="form-select{% if form.city.errors %} is-invalid{% endif %}" disabled>
+          <option value="">--</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label form-label-sm mb-1">{% trans "City" %}</label>
+        <select id="loc-city" class="form-select{% if form.city.errors %} is-invalid{% endif %}" disabled>
+          <option value="">--</option>
+        </select>
+      </div>
     </div>
+    {% endif %}
 
     <div class="row mb-3">
       <div class="col-6">
@@ -133,6 +148,80 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function () {
+  {% if location_depth >= 4 %}
+  // --- Location cascade ---
+  var allLocs = JSON.parse(document.getElementById('all-locations-data').textContent);
+  var lang = (document.documentElement.lang || 'ru').split('-')[0];
+  var nameField = (['ru', 'kk', 'en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
+  function locName(l) { return l[nameField] || l.name_ru || ''; }
+
+  var cntEl  = document.getElementById('loc-country');
+  var regEl  = document.getElementById('loc-region');
+  var cityEl = document.getElementById('loc-city');
+  var cityInp = document.getElementById('id_city');
+
+  function buildOpts(sel, nodes, placeholder) {
+    sel.innerHTML = '<option value="">' + placeholder + '</option>';
+    nodes.filter(function(n) { return !n.is_hidden; }).forEach(function(l) {
+      var o = document.createElement('option');
+      o.value = l.pk; o.textContent = locName(l);
+      sel.appendChild(o);
+    });
+  }
+
+  function pathOf(pk) {
+    var n = allLocs.find(function(l) { return String(l.pk) === String(pk); });
+    return n ? n.path : '';
+  }
+
+  function disableSel(sel) {
+    sel.innerHTML = '<option value="">--</option>'; sel.disabled = true;
+  }
+
+  buildOpts(cntEl, allLocs.filter(function(l) { return l.depth === 1; }), '--');
+
+  cntEl.addEventListener('change', function () {
+    disableSel(regEl); disableSel(cityEl); cityInp.value = '';
+    var cp = pathOf(cntEl.value);
+    if (!cp) return;
+    buildOpts(regEl, allLocs.filter(function(l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
+    regEl.disabled = false;
+  });
+
+  regEl.addEventListener('change', function () {
+    disableSel(cityEl); cityInp.value = '';
+    var rp = pathOf(regEl.value);
+    if (!rp) return;
+    buildOpts(cityEl, allLocs.filter(function(l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
+    cityEl.disabled = false;
+  });
+
+  cityEl.addEventListener('change', function () {
+    cityInp.value = cityEl.value;
+  });
+
+  // Pre-populate from the hidden city input (set by server on initial render or POST re-render)
+  var initCityPk = cityInp ? cityInp.value : '';
+  if (initCityPk && parseInt(initCityPk) > 0) {
+    var cityLoc = allLocs.find(function(l) { return String(l.pk) === String(initCityPk) && l.depth === 3; });
+    if (cityLoc) {
+      var stepLen = cityLoc.path.length / cityLoc.depth;
+      var cp = cityLoc.path.slice(0, stepLen);
+      var rp = cityLoc.path.slice(0, stepLen * 2);
+      var cntLoc = allLocs.find(function(l) { return l.path === cp && l.depth === 1; });
+      if (cntLoc) cntEl.value = cntLoc.pk;
+      buildOpts(regEl, allLocs.filter(function(l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
+      regEl.disabled = false;
+      var regLoc = allLocs.find(function(l) { return l.path === rp && l.depth === 2; });
+      if (regLoc) regEl.value = regLoc.pk;
+      buildOpts(cityEl, allLocs.filter(function(l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
+      cityEl.disabled = false;
+      cityEl.value = cityLoc.pk;
+    }
+  }
+  {% endif %}
+
+  // --- Coordinate picker map ---
   var latInput = document.getElementById('id_lat');
   var lngInput = document.getElementById('id_lng');
 
@@ -166,11 +255,7 @@
     var lng = parseFloat(lngInput.value);
     if (!isNaN(lat) && !isNaN(lng)) {
       var ll = L.latLng(lat, lng);
-      if (marker) {
-        marker.setLatLng(ll);
-      } else {
-        marker = L.marker(ll).addTo(map);
-      }
+      if (marker) { marker.setLatLng(ll); } else { marker = L.marker(ll).addTo(map); }
       map.panTo(ll);
     }
   }

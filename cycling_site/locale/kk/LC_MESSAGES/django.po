@@ -1137,6 +1137,42 @@ msgstr "Бұл орынды жойғыңыз келетінін растайсы
 msgid "Read article"
 msgstr "Мақаланы оқу"
 
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Name (RU)"
+msgstr "Атауы (RU)"
+
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Name (KK)"
+msgstr "Атауы (KK)"
+
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Name (EN)"
+msgstr "Атауы (EN)"
+
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Latitude"
+msgstr "Кеңдік"
+
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Longitude"
+msgstr "Ұзындық"
+
+#: locations/templates/locations/location_form.html
+msgid "Click the map to set coordinates, or enter them manually."
+msgstr "Координаттарды таңдау үшін картаны нұқыңыз немесе қолмен енгізіңіз."
+
+#: locations/templates/locations/location_form.html
+msgid "Edit location"
+msgstr "Орынды өңдеу"
+
+#: locations/views.py
+msgid "Location added."
+msgstr "Орын қосылды."
+
+#: locations/views.py
+msgid "Location saved."
+msgstr "Орын сақталды."
+
 #: news/forms.py:46 news/forms.py:52 news/forms.py:58
 msgid "Short description"
 msgstr "Қысқаша сипаттама"
