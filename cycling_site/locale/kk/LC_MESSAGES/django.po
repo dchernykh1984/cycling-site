@@ -1402,6 +1402,12 @@ msgstr "Беттер"
 msgid "No results found"
 msgstr "Ештенiе табылмады"
 
+msgid "Satellite"
+msgstr "Жер серiгi"
+
+msgid "Labels"
+msgstr "Белгiлер"
+
 # allauth social account
 #~ msgid "Or use a third-party"
 #~ msgstr "Немесе үшінші тарапты пайдалану"
