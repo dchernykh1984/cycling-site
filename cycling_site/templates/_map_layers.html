@@ -1,0 +1,23 @@
+{% load i18n %}
+<script>
+window._addMapLayers = function (map) {
+  var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  });
+  var sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19
+  });
+  var lbls = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  });
+  var hybrid = L.layerGroup([sat, lbls]);
+  osm.addTo(map);
+  L.control.layers(
+    { '{% trans "Map" %}': osm, '{% trans "Satellite" %}': hybrid }
+  ).addTo(map);
+};
+</script>
