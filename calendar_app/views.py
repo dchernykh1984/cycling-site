@@ -237,22 +237,23 @@ class CompetitionDetailView(View):
             request.user.is_superuser
             or request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
         )
-        return render(
-            request,
-            "calendar_app/detail.html",
-            {
-                "competition": competition,
-                "protocols": protocols,
-                "show_upload_token": show_upload_token,
-                "is_manager": is_manager,
-                "already_registered": already_registered,
-                "site_base_url": getattr(settings, "SITE_BASE_URL", ""),
-                "comments": comments,
-                "can_comment": can_comment,
-                "comment_form": AddCompetitionCommentForm() if can_comment else None,
-                "user_can_delete_comment": is_manager,
-            },
-        )
+        ctx: dict = {
+            "competition": competition,
+            "protocols": protocols,
+            "show_upload_token": show_upload_token,
+            "is_manager": is_manager,
+            "already_registered": already_registered,
+            "site_base_url": getattr(settings, "SITE_BASE_URL", ""),
+            "comments": comments,
+            "can_comment": can_comment,
+            "comment_form": AddCompetitionCommentForm() if can_comment else None,
+            "user_can_delete_comment": is_manager,
+        }
+        loc = competition.location
+        if loc and loc.lat and loc.lng:
+            ctx["location_lat"] = f"{float(loc.lat):.6f}"
+            ctx["location_lng"] = f"{float(loc.lng):.6f}"
+        return render(request, "calendar_app/detail.html", ctx)
 
 
 def _validate_deadline(form, reg_form, date_start, date_end):
