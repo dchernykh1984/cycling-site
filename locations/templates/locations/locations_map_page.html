@@ -17,7 +17,7 @@
             {% endif %}
         </div>
         {% if can_add %}
-        <a href="/admin/snippets/locations/location/add/" class="btn btn-primary btn-sm mt-1">
+        <a href="{% url 'location_add' %}" class="btn btn-primary btn-sm mt-1">
             {% trans "Add location" %}
         </a>
         {% endif %}
@@ -50,6 +50,7 @@
                         {% if loc.is_hidden %}<span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>{% endif %}
                     </td>
                     <td class="text-end">
+                        <a href="{% url 'location_edit' loc.pk %}" class="btn btn-outline-secondary btn-sm py-0 px-2">{% trans "Edit" %}</a>
                         <form method="post" action="{% url 'location_hide' loc.pk %}" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2">
