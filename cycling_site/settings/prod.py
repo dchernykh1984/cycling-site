@@ -74,7 +74,7 @@ LOGGING = {
     "root": {"handlers": ["console", "file"], "level": "WARNING"},
     "loggers": {
         "django": {"handlers": ["console", "file"], "level": "WARNING", "propagate": False},
-        "django.request": {"handlers": ["console", "file"], "level": "ERROR", "propagate": False},
+        "django.request": {"handlers": ["console", "file"], "level": "WARNING", "propagate": False},
         "django.security": {"handlers": ["console", "file"], "level": "WARNING", "propagate": False},
     },
 }
