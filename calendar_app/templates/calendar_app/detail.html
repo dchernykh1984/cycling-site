@@ -224,11 +224,22 @@
 (function () {
   var lat = {{ location_lat }};
   var lng = {{ location_lng }};
-  var map = L.map('competition-map').setView([lat, lng], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  var sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19
+  });
+  var lbls = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19
+  });
+  var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19
-  }).addTo(map);
+  });
+  var map = L.map('competition-map', { layers: [sat, lbls] }).setView([lat, lng], 13);
+  L.control.layers(
+    { '{% trans "Satellite" %}': sat, '{% trans "Map" %}': osm },
+    { '{% trans "Labels" %}': lbls }
+  ).addTo(map);
   L.marker([lat, lng]).addTo(map);
 })();
 </script>

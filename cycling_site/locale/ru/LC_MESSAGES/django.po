@@ -1402,3 +1402,9 @@ msgstr "Страницы"
 #: search/templates/search/search.html:74
 msgid "No results found"
 msgstr "Ничего не найдено"
+
+msgid "Satellite"
+msgstr "Спутник"
+
+msgid "Labels"
+msgstr "Подписи"
