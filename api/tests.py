@@ -656,89 +656,98 @@ class NewsDraftTest(TestCase, ApiTestMixin):
 class LocationListTest(TestCase, ApiTestMixin):
     def setUp(self):
         self.reader = _user("loc_reader", role=User.Role.PARTICIPANT)
+        self.admin = _user("loc_list_adm", role=User.Role.ADMIN)
+
+    def _api_location(self, name_ru="City", name_kk="", name_en="", parent_id=None, is_hidden=False):
+        payload = {"name": {"ru": name_ru, "kk": name_kk, "en": name_en}, "is_hidden": is_hidden}
+        if parent_id is not None:
+            payload["parent_id"] = parent_id
+        resp = self.post("/api/v1/locations/", payload, user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        return resp.json()
 
     def test_hidden_location_excluded(self):
         before = len(self.get("/api/v1/locations/", user=self.reader).json())
-        _location()
-        _location(is_hidden=True)
+        self._api_location()
+        self._api_location(is_hidden=True)
         after = len(self.get("/api/v1/locations/", user=self.reader).json())
         self.assertEqual(after - before, 1)
 
     def test_include_hidden_param(self):
         before_all = len(self.get("/api/v1/locations/?include_hidden=true", user=self.reader).json())
-        _location()
-        hidden = _location(is_hidden=True)
+        self._api_location()
+        hidden = self._api_location(is_hidden=True)
         after_all = len(self.get("/api/v1/locations/?include_hidden=true", user=self.reader).json())
         self.assertEqual(after_all - before_all, 2)
         ids_visible = {d["id"] for d in self.get("/api/v1/locations/", user=self.reader).json()}
-        self.assertNotIn(hidden.pk, ids_visible)
+        self.assertNotIn(hidden["id"], ids_visible)
 
     def test_tree_nests_children_under_parent(self):
-        parent = _location(name="Parent", name_ru="Parent")
-        child = parent.add_child(name="Child", name_ru="Child", name_kk="", name_en="")
+        parent = self._api_location(name_ru="Parent")
+        child = self._api_location(name_ru="Child", parent_id=parent["id"])
         resp = self.get("/api/v1/locations/", user=self.reader)
         data = resp.json()
-        parent_data = next(d for d in data if d["id"] == parent.pk)
+        parent_data = next(d for d in data if d["id"] == parent["id"])
         child_ids = [c["id"] for c in parent_data["children"]]
-        self.assertIn(child.pk, child_ids)
+        self.assertIn(child["id"], child_ids)
 
     def test_root_nodes_appear_at_top_level(self):
-        loc = _location()
+        loc = self._api_location()
         resp = self.get("/api/v1/locations/", user=self.reader)
         top_ids = [d["id"] for d in resp.json()]
-        self.assertIn(loc.pk, top_ids)
+        self.assertIn(loc["id"], top_ids)
 
     def test_deep_tree_nests_correctly(self):
-        country = _location(name="Country", name_ru="Country")
-        region = country.add_child(name="Region", name_ru="Region", name_kk="", name_en="")
-        city = region.add_child(name="City", name_ru="City", name_kk="", name_en="")
+        country = self._api_location(name_ru="Country")
+        region = self._api_location(name_ru="Region", parent_id=country["id"])
+        city = self._api_location(name_ru="City", parent_id=region["id"])
         resp = self.get("/api/v1/locations/", user=self.reader)
         data = resp.json()
-        country_data = next(d for d in data if d["id"] == country.pk)
-        region_data = next(d for d in country_data["children"] if d["id"] == region.pk)
+        country_data = next(d for d in data if d["id"] == country["id"])
+        region_data = next(d for d in country_data["children"] if d["id"] == region["id"])
         city_ids = [c["id"] for c in region_data["children"]]
-        self.assertIn(city.pk, city_ids)
+        self.assertIn(city["id"], city_ids)
 
     def test_name_falls_back_to_canonical_when_locale_variants_empty(self):
         # Simulate pre-modeltranslation data: only the canonical `name` column has a value.
-        loc = _location()
+        loc = self._api_location()
         with connection.cursor() as cur:
             cur.execute(
                 "UPDATE locations_location SET name=%s, name_ru=%s, name_kk=%s, name_en=%s WHERE id=%s",
-                ["FallbackCity", "", "", "", loc.pk],
+                ["FallbackCity", "", "", "", loc["id"]],
             )
         resp = self.get("/api/v1/locations/", user=self.reader)
         data = resp.json()
-        node = next(d for d in data if d["id"] == loc.pk)
+        node = next(d for d in data if d["id"] == loc["id"])
         self.assertEqual(node["name"]["ru"], "FallbackCity")
         self.assertEqual(node["name"]["kk"], "FallbackCity")
         self.assertEqual(node["name"]["en"], "FallbackCity")
 
     def test_name_falls_back_to_canonical_when_locale_variants_null(self):
         # Pre-migration rows may have NULL (not empty string) in locale columns.
-        loc = _location()
+        loc = self._api_location()
         with connection.cursor() as cur:
             cur.execute(
                 "UPDATE locations_location SET name=%s, name_ru=NULL, name_kk=NULL, name_en=NULL WHERE id=%s",
-                ["NullFallback", loc.pk],
+                ["NullFallback", loc["id"]],
             )
         resp = self.get("/api/v1/locations/", user=self.reader)
         data = resp.json()
-        node = next(d for d in data if d["id"] == loc.pk)
+        node = next(d for d in data if d["id"] == loc["id"])
         self.assertEqual(node["name"]["ru"], "NullFallback")
         self.assertEqual(node["name"]["kk"], "NullFallback")
         self.assertEqual(node["name"]["en"], "NullFallback")
 
     def test_locale_variant_takes_precedence_over_canonical(self):
-        loc = _location()
+        loc = self._api_location()
         with connection.cursor() as cur:
             cur.execute(
                 "UPDATE locations_location SET name=%s, name_ru=%s, name_kk=%s, name_en=%s WHERE id=%s",
-                ["Canonical", "RuName", "", "", loc.pk],
+                ["Canonical", "RuName", "", "", loc["id"]],
             )
         resp = self.get("/api/v1/locations/", user=self.reader)
         data = resp.json()
-        node = next(d for d in data if d["id"] == loc.pk)
+        node = next(d for d in data if d["id"] == loc["id"])
         self.assertEqual(node["name"]["ru"], "RuName")
         self.assertEqual(node["name"]["kk"], "Canonical")
         self.assertEqual(node["name"]["en"], "Canonical")
@@ -748,9 +757,9 @@ class LocationListTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200)
 
     def test_localized_name_in_list_response(self):
-        loc = _location(name="City RU", name_ru="City RU", name_kk="City KK", name_en="City EN")
+        loc = self._api_location(name_ru="City RU", name_kk="City KK", name_en="City EN")
         resp = self.get("/api/v1/locations/", user=self.reader)
-        data = next(d for d in resp.json() if d["id"] == loc.pk)
+        data = next(d for d in resp.json() if d["id"] == loc["id"])
         self.assertEqual(data["name"]["ru"], "City RU")
         self.assertEqual(data["name"]["kk"], "City KK")
         self.assertEqual(data["name"]["en"], "City EN")
@@ -759,25 +768,34 @@ class LocationListTest(TestCase, ApiTestMixin):
 class LocationDetailTest(TestCase, ApiTestMixin):
     def setUp(self):
         self.reader = _user("loc_det_reader", role=User.Role.PARTICIPANT)
+        self.admin = _user("loc_det_adm", role=User.Role.ADMIN)
+
+    def _api_location(self, name_ru="City", name_kk="", name_en="", parent_id=None, is_hidden=False):
+        payload = {"name": {"ru": name_ru, "kk": name_kk, "en": name_en}, "is_hidden": is_hidden}
+        if parent_id is not None:
+            payload["parent_id"] = parent_id
+        resp = self.post("/api/v1/locations/", payload, user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        return resp.json()
 
     def test_get_location(self):
-        loc = _location()
-        resp = self.get(f"/api/v1/locations/{loc.pk}", user=self.reader)
+        loc = self._api_location()
+        resp = self.get(f"/api/v1/locations/{loc['id']}", user=self.reader)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["id"], loc.pk)
+        self.assertEqual(resp.json()["id"], loc["id"])
 
     def test_404_for_missing(self):
         resp = self.get("/api/v1/locations/99999", user=self.reader)
         self.assertEqual(resp.status_code, 404)
 
     def test_anonymous_can_get_location(self):
-        loc = _location()
-        resp = self.get(f"/api/v1/locations/{loc.pk}")
+        loc = self._api_location()
+        resp = self.get(f"/api/v1/locations/{loc['id']}")
         self.assertEqual(resp.status_code, 200)
 
     def test_localized_name_in_detail_response(self):
-        loc = _location(name="City RU", name_ru="City RU", name_kk="City KK", name_en="City EN")
-        resp = self.get(f"/api/v1/locations/{loc.pk}", user=self.reader)
+        loc = self._api_location(name_ru="City RU", name_kk="City KK", name_en="City EN")
+        resp = self.get(f"/api/v1/locations/{loc['id']}", user=self.reader)
         data = resp.json()
         self.assertEqual(data["name"]["ru"], "City RU")
         self.assertEqual(data["name"]["kk"], "City KK")
