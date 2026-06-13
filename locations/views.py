@@ -16,12 +16,15 @@ def _can_manage_locations(user) -> bool:
     return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
 
 
-def _parent_choices(form) -> list:
-    field = form.fields["parent"]
-    choices = [("", "")]
-    for loc in field.queryset:
-        choices.append((loc.pk, field.label_from_instance(loc)))
-    return choices
+def _get_all_locations_json() -> list:
+    """Depths 1-3 for the cascade widget on the location form."""
+    from locations.models import Location
+
+    return list(
+        Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3])
+        .order_by("path")
+        .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden")
+    )
 
 
 def _safe_move(location, target, pos: str) -> None:
@@ -84,7 +87,7 @@ class LocationCreateView(LoginRequiredMixin, View):
 
         if not _can_manage_locations(request.user):
             raise PermissionDenied
-        form = LocationForm()
+        form = LocationForm(location_depth=4)
         return render(
             request,
             "locations/location_form.html",
@@ -92,21 +95,22 @@ class LocationCreateView(LoginRequiredMixin, View):
                 "form": form,
                 "is_edit": False,
                 "map_url": _get_map_url(),
-                "parent_choices": _parent_choices(form),
+                "all_locations_json": _get_all_locations_json(),
+                "location_depth": 4,
             },
         )
 
     def post(self, request):
         from locations.forms import LocationForm
-        from locations.models import Location
 
         if not _can_manage_locations(request.user):
             raise PermissionDenied
-        form = LocationForm(request.POST)
+        form = LocationForm(request.POST, location_depth=4)
         if form.is_valid():
             cd = form.cleaned_data
             name = cd["name_ru"] or cd.get("name_kk") or cd.get("name_en") or ""
-            kwargs = dict(
+            city = cd["city"]
+            city.add_child(
                 name=name,
                 name_ru=cd["name_ru"],
                 name_kk=cd.get("name_kk") or "",
@@ -115,11 +119,6 @@ class LocationCreateView(LoginRequiredMixin, View):
                 lng=cd.get("lng"),
                 is_hidden=cd.get("is_hidden", False),
             )
-            parent = cd.get("parent")
-            if parent:
-                parent.add_child(**kwargs)
-            else:
-                Location.add_root(**kwargs)
             messages.success(request, _("Location added."))
             return redirect(_get_map_url())
         return render(
@@ -129,7 +128,8 @@ class LocationCreateView(LoginRequiredMixin, View):
                 "form": form,
                 "is_edit": False,
                 "map_url": _get_map_url(),
-                "parent_choices": _parent_choices(form),
+                "all_locations_json": _get_all_locations_json(),
+                "location_depth": 4,
             },
         )
 
@@ -142,18 +142,22 @@ class LocationEditView(LoginRequiredMixin, View):
         if not _can_manage_locations(request.user):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
-        current_parent = location.get_parent()
+        location_depth = location.depth
+
+        initial_city = location.get_parent() if location_depth >= 4 else None
+
         form = LocationForm(
             initial={
                 "name_ru": location.name_ru,
                 "name_kk": location.name_kk,
                 "name_en": location.name_en,
-                "parent": current_parent,
+                "city": initial_city,
                 "lat": location.lat,
                 "lng": location.lng,
                 "is_hidden": location.is_hidden,
             },
             exclude_pk=pk,
+            location_depth=location_depth,
         )
         return render(
             request,
@@ -163,7 +167,8 @@ class LocationEditView(LoginRequiredMixin, View):
                 "is_edit": True,
                 "location": location,
                 "map_url": _get_map_url(),
-                "parent_choices": _parent_choices(form),
+                "all_locations_json": _get_all_locations_json(),
+                "location_depth": location_depth,
             },
         )
 
@@ -174,7 +179,8 @@ class LocationEditView(LoginRequiredMixin, View):
         if not _can_manage_locations(request.user):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
-        form = LocationForm(request.POST, exclude_pk=pk)
+        location_depth = location.depth
+        form = LocationForm(request.POST, exclude_pk=pk, location_depth=location_depth)
         if form.is_valid():
             cd = form.cleaned_data
             location.name_ru = cd["name_ru"]
@@ -186,19 +192,13 @@ class LocationEditView(LoginRequiredMixin, View):
             location.is_hidden = cd.get("is_hidden", False)
             location.save(update_fields=["name", "name_ru", "name_kk", "name_en", "lat", "lng", "is_hidden"])
 
-            new_parent = cd.get("parent")
-            current_parent = location.get_parent()
-            current_parent_pk = current_parent.pk if current_parent else None
-            new_parent_pk = new_parent.pk if new_parent else None
-            if current_parent_pk != new_parent_pk:
-                location.refresh_from_db()
-                if new_parent:
-                    new_parent.refresh_from_db()
-                    _safe_move(location, new_parent, pos="sorted-child")
-                else:
-                    root = Location.get_root_nodes().exclude(pk=pk).first()
-                    if root:
-                        _safe_move(location, root, pos="sorted-sibling")
+            new_city = cd.get("city")
+            if new_city is not None:
+                current_parent = location.get_parent()
+                if current_parent is None or current_parent.pk != new_city.pk:
+                    location.refresh_from_db()
+                    new_city.refresh_from_db()
+                    _safe_move(location, new_city, pos="sorted-child")
 
             messages.success(request, _("Location saved."))
             return redirect(_get_map_url())
@@ -210,6 +210,7 @@ class LocationEditView(LoginRequiredMixin, View):
                 "is_edit": True,
                 "location": location,
                 "map_url": _get_map_url(),
-                "parent_choices": _parent_choices(form),
+                "all_locations_json": _get_all_locations_json(),
+                "location_depth": location_depth,
             },
         )

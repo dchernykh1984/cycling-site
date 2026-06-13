@@ -206,11 +206,20 @@ def _make_user(username, role, is_superuser=False):
     )
 
 
+def _make_tree():
+    """Minimal 4-level tree: KZ -> Region -> City -> (returned as dict)."""
+    country = Location.add_root(name="KZ", name_ru="KZ", name_en="KZ")
+    region = country.add_child(name="Region", name_ru="Region", name_en="Region")
+    city = region.add_child(name="City", name_ru="City", name_en="City")
+    return country, region, city
+
+
 class LocationCreateViewTests(TestCase):
     def setUp(self):
         self.admin = _make_user("admin@x.com", User.Role.ADMIN)
         self.participant = _make_user("part@x.com", User.Role.PARTICIPANT)
         self.url = reverse("location_add")
+        self.country, self.region, self.city = _make_tree()
 
     def test_anonymous_redirects_to_login(self):
         resp = self.client.get(self.url)
@@ -218,7 +227,7 @@ class LocationCreateViewTests(TestCase):
 
     def test_participant_forbidden(self):
         self.client.force_login(self.participant)
-        resp = self.client.post(self.url, {"name_ru": "City"})
+        resp = self.client.post(self.url, {"name_ru": "Venue", "city": str(self.city.pk)})
         self.assertEqual(resp.status_code, 403)
 
     def test_admin_get_returns_200(self):
@@ -226,30 +235,23 @@ class LocationCreateViewTests(TestCase):
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
 
-    def test_admin_creates_root_location(self):
+    def test_admin_creates_venue_under_city(self):
         self.client.force_login(self.admin)
-        self.client.post(self.url, {"name_ru": "Country", "name_kk": "", "name_en": ""})
-        self.assertTrue(Location.objects.filter(name_ru="Country", depth=1).exists())
+        self.client.post(self.url, {"name_ru": "Velodrome", "name_kk": "", "name_en": "", "city": str(self.city.pk)})
+        venue = Location.objects.filter(name_ru="Velodrome").first()
+        self.assertIsNotNone(venue)
+        self.assertEqual(venue.depth, 4)
+        self.assertEqual(venue.get_parent().pk, self.city.pk)
 
-    def test_admin_creates_child_location(self):
+    def test_missing_city_shows_form_error(self):
         self.client.force_login(self.admin)
-        parent = Location.add_root(name="P", name_ru="P", name_en="P")
-        self.client.post(
-            self.url,
-            {
-                "name_ru": "City",
-                "name_kk": "",
-                "name_en": "",
-                "parent": str(parent.pk),
-            },
-        )
-        child = Location.objects.filter(name_ru="City").first()
-        self.assertIsNotNone(child)
-        self.assertEqual(child.get_parent().pk, parent.pk)
+        resp = self.client.post(self.url, {"name_ru": "Venue", "city": ""})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("city", resp.context["form"].errors)
 
     def test_missing_name_ru_shows_form_error(self):
         self.client.force_login(self.admin)
-        resp = self.client.post(self.url, {"name_ru": ""})
+        resp = self.client.post(self.url, {"name_ru": "", "city": str(self.city.pk)})
         self.assertEqual(resp.status_code, 200)
         self.assertIn("name_ru", resp.context["form"].errors)
 
@@ -258,7 +260,8 @@ class LocationEditViewTests(TestCase):
     def setUp(self):
         self.admin = _make_user("admin2@x.com", User.Role.ADMIN)
         self.participant = _make_user("part2@x.com", User.Role.PARTICIPANT)
-        self.loc = Location.add_root(name="OldName", name_ru="OldName", name_en="OldName")
+        self.country, self.region, self.city = _make_tree()
+        self.loc = self.city.add_child(name="OldName", name_ru="OldName", name_en="OldName")
 
     def _url(self):
         return reverse("location_edit", args=[self.loc.pk])
@@ -269,7 +272,7 @@ class LocationEditViewTests(TestCase):
 
     def test_participant_forbidden(self):
         self.client.force_login(self.participant)
-        resp = self.client.post(self._url(), {"name_ru": "X"})
+        resp = self.client.post(self._url(), {"name_ru": "X", "city": str(self.city.pk)})
         self.assertEqual(resp.status_code, 403)
 
     def test_admin_get_returns_200(self):
@@ -279,39 +282,37 @@ class LocationEditViewTests(TestCase):
 
     def test_admin_updates_name(self):
         self.client.force_login(self.admin)
-        self.client.post(self._url(), {"name_ru": "NewName", "name_kk": "", "name_en": ""})
+        self.client.post(self._url(), {"name_ru": "NewName", "name_kk": "", "name_en": "", "city": str(self.city.pk)})
         self.loc.refresh_from_db()
         self.assertEqual(self.loc.name_ru, "NewName")
         self.assertEqual(self.loc.name, "NewName")
 
-    def test_admin_changes_parent(self):
+    def test_admin_changes_city(self):
         self.client.force_login(self.admin)
-        new_parent = Location.add_root(name="Parent", name_ru="Parent", name_en="Parent")
+        new_city = self.region.add_child(name="NewCity", name_ru="NewCity", name_en="NewCity")
         self.client.post(
             self._url(),
-            {
-                "name_ru": "OldName",
-                "name_kk": "",
-                "name_en": "",
-                "parent": str(new_parent.pk),
-            },
+            {"name_ru": "OldName", "name_kk": "", "name_en": "", "city": str(new_city.pk)},
         )
         self.loc.refresh_from_db()
-        self.assertEqual(self.loc.get_parent().pk, new_parent.pk)
+        self.assertEqual(self.loc.get_parent().pk, new_city.pk)
 
     def test_admin_hides_location(self):
         self.client.force_login(self.admin)
         self.client.post(
             self._url(),
-            {
-                "name_ru": "OldName",
-                "name_kk": "",
-                "name_en": "",
-                "is_hidden": "on",
-            },
+            {"name_ru": "OldName", "name_kk": "", "name_en": "", "city": str(self.city.pk), "is_hidden": "on"},
         )
         self.loc.refresh_from_db()
         self.assertTrue(self.loc.is_hidden)
+
+    def test_edit_depth1_location_updates_name(self):
+        """Structural locations (countries) can have name updated without city field."""
+        self.client.force_login(self.admin)
+        url = reverse("location_edit", args=[self.country.pk])
+        self.client.post(url, {"name_ru": "KZ Updated", "name_kk": "", "name_en": ""})
+        self.country.refresh_from_db()
+        self.assertEqual(self.country.name_ru, "KZ Updated")
 
 
 class LocationDeleteViewTests(TestCase):

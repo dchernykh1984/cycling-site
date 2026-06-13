@@ -39,14 +39,27 @@ def map_page(db, wagtail_home_page):
 
 
 @pytest.fixture
-def location_with_coords(db):
+def location_tree_basic(db):
+    """Minimal country -> region -> city tree for form tests."""
     from locations.models import Location
 
-    return Location.add_root(
-        name="Almaty",
-        name_ru="Almaty",
-        name_kk="Almaty",
-        name_en="Almaty",
+    country = Location.add_root(name="KZ", name_ru="KZ", name_kk="KZ", name_en="KZ")
+    region = country.add_child(
+        name="Almaty Region", name_ru="Almaty Region", name_kk="Almaty Region", name_en="Almaty Region"
+    )
+    city = region.add_child(name="Almaty", name_ru="Almaty", name_kk="Almaty", name_en="Almaty")
+    return {"country": country, "region": region, "city": city}
+
+
+@pytest.fixture
+def location_with_coords(db, location_tree_basic):
+
+    city = location_tree_basic["city"]
+    return city.add_child(
+        name="Velodrome",
+        name_ru="Velodrome",
+        name_kk="Velodrome",
+        name_en="Velodrome",
         lat="43.238949",
         lng="76.889709",
     )
@@ -103,16 +116,24 @@ def test_add_form_forbidden_for_participant(page: Page, live_server, map_page, o
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_can_create_location(page: Page, live_server, map_page, admin_user):
+def test_admin_can_create_location(page: Page, live_server, map_page, admin_user, location_tree_basic):
     inject_session(page, live_server, admin_user)
     page.goto(f"{live_server.url}/locations/add/")
-    page.fill("#id_name_ru", "Test City")
+
+    country = location_tree_basic["country"]
+    region = location_tree_basic["region"]
+    city = location_tree_basic["city"]
+
+    page.select_option("#loc-country", str(country.pk))
+    page.select_option("#loc-region", str(region.pk))
+    page.select_option("#loc-city", str(city.pk))
+    page.fill("#id_name_ru", "Test Venue")
     page.locator("#location-form button[type=submit]").click()
     page.wait_for_load_state("networkidle")
 
     from locations.models import Location
 
-    assert Location.objects.filter(name_ru="Test City").exists()
+    assert Location.objects.filter(name_ru="Test Venue").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -124,19 +145,19 @@ def test_admin_can_create_location(page: Page, live_server, map_page, admin_user
 def test_edit_form_accessible_for_admin(page: Page, live_server, map_page, admin_user, location_with_coords):
     inject_session(page, live_server, admin_user)
     page.goto(f"{live_server.url}/locations/{location_with_coords.pk}/edit/")
-    expect(page.locator("#id_name_ru")).to_have_value("Almaty")
+    expect(page.locator("#id_name_ru")).to_have_value("Velodrome")
 
 
 @pytest.mark.django_db(transaction=True)
 def test_admin_can_edit_location(page: Page, live_server, map_page, admin_user, location_with_coords):
     inject_session(page, live_server, admin_user)
     page.goto(f"{live_server.url}/locations/{location_with_coords.pk}/edit/")
-    page.fill("#id_name_ru", "Renamed City")
+    page.fill("#id_name_ru", "Renamed Venue")
     page.locator("#location-form button[type=submit]").click()
     page.wait_for_load_state("networkidle")
 
     location_with_coords.refresh_from_db()
-    assert location_with_coords.name_ru == "Renamed City"
+    assert location_with_coords.name_ru == "Renamed Venue"
 
 
 # ---------------------------------------------------------------------------

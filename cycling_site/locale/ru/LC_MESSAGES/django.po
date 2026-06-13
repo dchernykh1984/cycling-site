@@ -1138,6 +1138,42 @@ msgstr "Вы уверены, что хотите удалить эту лока�
 msgid "Read article"
 msgstr "Читать статью"
 
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Name (RU)"
+msgstr "Название (RU)"
+
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Name (KK)"
+msgstr "Название (KK)"
+
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Name (EN)"
+msgstr "Название (EN)"
+
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Latitude"
+msgstr "Широта"
+
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Longitude"
+msgstr "Долгота"
+
+#: locations/templates/locations/location_form.html
+msgid "Click the map to set coordinates, or enter them manually."
+msgstr "Нажмите на карту, чтобы выбрать координаты, или введите вручную."
+
+#: locations/templates/locations/location_form.html
+msgid "Edit location"
+msgstr "Редактировать локацию"
+
+#: locations/views.py
+msgid "Location added."
+msgstr "Локация добавлена."
+
+#: locations/views.py
+msgid "Location saved."
+msgstr "Локация сохранена."
+
 #: news/forms.py:46 news/forms.py:52 news/forms.py:58
 msgid "Short description"
 msgstr "Краткое описание"
