@@ -66,14 +66,14 @@ def test_map_page_renders_for_anonymous(page: Page, live_server, map_page):
 @pytest.mark.django_db(transaction=True)
 def test_map_page_no_add_button_for_anonymous(page: Page, live_server, map_page):
     page.goto(_map_url(live_server))
-    expect(page.get_by_role("link", name="Add location")).not_to_be_visible()
+    expect(page.locator("a[href='/locations/add/']")).not_to_be_attached()
 
 
 @pytest.mark.django_db(transaction=True)
 def test_map_page_add_button_visible_for_admin(page: Page, live_server, map_page, admin_user):
     inject_session(page, live_server, admin_user)
     page.goto(_map_url(live_server))
-    expect(page.get_by_role("link", name="Add location")).to_be_visible()
+    expect(page.locator("a[href='/locations/add/']")).to_be_visible()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -107,7 +107,7 @@ def test_admin_can_create_location(page: Page, live_server, map_page, admin_user
     inject_session(page, live_server, admin_user)
     page.goto(f"{live_server.url}/locations/add/")
     page.fill("#id_name_ru", "Test City")
-    page.locator("button[type=submit]").click()
+    page.locator("#location-form button[type=submit]").click()
     page.wait_for_load_state("networkidle")
 
     from locations.models import Location
@@ -132,7 +132,7 @@ def test_admin_can_edit_location(page: Page, live_server, map_page, admin_user, 
     inject_session(page, live_server, admin_user)
     page.goto(f"{live_server.url}/locations/{location_with_coords.pk}/edit/")
     page.fill("#id_name_ru", "Renamed City")
-    page.locator("button[type=submit]").click()
+    page.locator("#location-form button[type=submit]").click()
     page.wait_for_load_state("networkidle")
 
     location_with_coords.refresh_from_db()
