@@ -163,6 +163,14 @@ html {
     min-height: 300px;
 }
 
+/* Dark theme: prevent Bootstrap from darkening Leaflet tile images */
+[data-bs-theme="dark"] .leaflet-container {
+    background: #374151;
+}
+[data-bs-theme="dark"] .leaflet-tile {
+    filter: none !important;
+}
+
 /* Protocol iframe wrapper (for Phase 9) */
 .protocol-iframe-wrapper {
     width: 100%;
