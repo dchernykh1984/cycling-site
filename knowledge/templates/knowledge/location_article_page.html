@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 {% if linked_location or page.gpx_file %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 {% endif %}
 {% endblock %}
 
@@ -115,10 +115,11 @@
 
 {% block extra_js %}
 {% if linked_location_lat or page.gpx_file %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLs=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 {% if page.gpx_file %}
-<script src="https://unpkg.com/leaflet-gpx@2.1.2/gpx.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-gpx@2.1.2/gpx.js"></script>
 {% endif %}
+{% include "_map_layers.html" %}
 <script>
 (function () {
     {% if linked_location_lat %}
@@ -129,10 +130,7 @@
     var map = L.map('location-map').setView([48.0, 68.0], 6);
     {% endif %}
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-    }).addTo(map);
+    _addMapLayers(map);
 
     {% if linked_location_lat %}
     L.marker([lat, lng]).addTo(map).bindPopup('{{ page.title|escapejs }}');

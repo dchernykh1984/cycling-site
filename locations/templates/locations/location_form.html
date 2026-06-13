@@ -146,6 +146,7 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+{% include "_map_layers.html" %}
 <script>
 (function () {
   {% if location_depth >= 4 %}
@@ -230,10 +231,7 @@
   var initZoom = latInput.value ? 10 : 5;
 
   var map = L.map('coord-picker').setView([initLat, initLng], initZoom);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19
-  }).addTo(map);
+  _addMapLayers(map);
 
   var marker = null;
   if (latInput.value && lngInput.value) {
