@@ -158,7 +158,7 @@
   <select name="category" id="category-select"
           class="form-select{% if form.category.errors %} is-invalid{% endif %}" required>
     <option value="">— {% trans "select" %} —</option>
-    {% for c in form.category.queryset %}
+    {% for c in form.category.field.queryset %}
     <option value="{{ c.pk }}" {% if form.category.value|stringformat:"s" == c.pk|stringformat:"s" %}selected{% endif %}>
       {{ c.name }}
     </option>
