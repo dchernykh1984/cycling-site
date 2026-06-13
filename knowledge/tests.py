@@ -343,3 +343,222 @@ class DraftSubmissionApproveRejectTests(TestCase):
         self.assertEqual(KnowledgeArticlePage.objects.filter(title="Breaking News").count(), 0)
         sub.refresh_from_db()
         self.assertEqual(sub.status, DraftSubmission.Status.APPROVED)
+
+
+class AddArticleViewTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="admin-add@example.com",
+            email="admin-add@example.com",
+            password="password123",
+            role=User.Role.ADMIN,
+        )
+        self.participant = User.objects.create_user(
+            username="participant-add@example.com",
+            email="participant-add@example.com",
+            password="password123",
+            role=User.Role.PARTICIPANT,
+        )
+
+    def test_anonymous_redirected_to_login(self):
+        response = self.client.get(reverse("knowledge_add"))
+        self.assertRedirects(
+            response,
+            f"/accounts/login/?next={reverse('knowledge_add')}",
+        )
+
+    def test_participant_gets_403(self):
+        self.client.login(username="participant-add@example.com", password="password123")
+        response = self.client.get(reverse("knowledge_add"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_can_view_form(self):
+        self.client.login(username="admin-add@example.com", password="password123")
+        response = self.client.get(reverse("knowledge_add"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_post_creates_and_publishes_article(self):
+        self.client.login(username="admin-add@example.com", password="password123")
+        response = self.client.post(
+            reverse("knowledge_add"),
+            {
+                "locale": "ru",
+                "title": "Published Article",
+                "body": "Article content",
+                "category": "Routes",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(KnowledgeArticlePage.objects.filter(title="Published Article").count(), 1)
+        sub = DraftSubmission.objects.get(title="Published Article")
+        self.assertEqual(sub.status, DraftSubmission.Status.APPROVED)
+        self.assertEqual(sub.author, self.admin)
+
+    def test_admin_post_does_not_leave_pending_submission(self):
+        self.client.login(username="admin-add@example.com", password="password123")
+        self.client.post(
+            reverse("knowledge_add"),
+            {
+                "locale": "ru",
+                "title": "Instant Article",
+                "body": "Body",
+                "category": "",
+            },
+        )
+        sub = DraftSubmission.objects.get(title="Instant Article")
+        self.assertNotEqual(sub.status, DraftSubmission.Status.PENDING)
+
+
+class SubmissionDetailViewTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="admin-detail@example.com",
+            email="admin-detail@example.com",
+            password="password123",
+            role=User.Role.ADMIN,
+        )
+        self.participant = User.objects.create_user(
+            username="participant-detail@example.com",
+            email="participant-detail@example.com",
+            password="password123",
+            role=User.Role.PARTICIPANT,
+        )
+        self.submission = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="Pending Article Detail",
+            body="Body text",
+        )
+
+    def test_anonymous_redirected_to_login(self):
+        response = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
+        self.assertEqual(response.status_code, 302)
+
+    def test_participant_gets_403(self):
+        self.client.login(username="participant-detail@example.com", password="password123")
+        response = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_can_view_detail(self):
+        self.client.login(username="admin-detail@example.com", password="password123")
+        response = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pending Article Detail")
+
+    def test_detail_shows_approve_and_reject_buttons_for_pending(self):
+        self.client.login(username="admin-detail@example.com", password="password123")
+        response = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
+        self.assertContains(response, reverse("knowledge_submission_approve", args=[self.submission.pk]))
+        self.assertContains(response, reverse("knowledge_submission_reject", args=[self.submission.pk]))
+
+
+class ApproveSubmissionViewTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="admin-approve@example.com",
+            email="admin-approve@example.com",
+            password="password123",
+            role=User.Role.ADMIN,
+        )
+        self.participant = User.objects.create_user(
+            username="participant-approve@example.com",
+            email="participant-approve@example.com",
+            password="password123",
+            role=User.Role.PARTICIPANT,
+        )
+        self.submission = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="To Be Approved Via View",
+            body="Body text",
+        )
+
+    def test_admin_approve_creates_article(self):
+        self.client.login(username="admin-approve@example.com", password="password123")
+        response = self.client.post(reverse("knowledge_submission_approve", args=[self.submission.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
+        self.assertEqual(KnowledgeArticlePage.objects.filter(title="To Be Approved Via View").count(), 1)
+
+    def test_participant_cannot_approve(self):
+        self.client.login(username="participant-approve@example.com", password="password123")
+        response = self.client.post(reverse("knowledge_submission_approve", args=[self.submission.pk]))
+        self.assertEqual(response.status_code, 403)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
+
+    def test_double_approve_redirects_to_detail(self):
+        self.submission.approve(reviewer=self.admin)
+        self.client.login(username="admin-approve@example.com", password="password123")
+        response = self.client.post(reverse("knowledge_submission_approve", args=[self.submission.pk]))
+        self.assertRedirects(
+            response,
+            reverse("knowledge_submission_detail", args=[self.submission.pk]),
+        )
+
+
+class RejectSubmissionViewTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="admin-reject@example.com",
+            email="admin-reject@example.com",
+            password="password123",
+            role=User.Role.ADMIN,
+        )
+        self.participant = User.objects.create_user(
+            username="participant-reject@example.com",
+            email="participant-reject@example.com",
+            password="password123",
+            role=User.Role.PARTICIPANT,
+        )
+        self.submission = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="To Be Rejected Via View",
+            body="Body text",
+        )
+
+    def test_admin_reject_with_note(self):
+        self.client.login(username="admin-reject@example.com", password="password123")
+        response = self.client.post(
+            reverse("knowledge_submission_reject", args=[self.submission.pk]),
+            {"note": "Not suitable content"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.REJECTED)
+        self.assertEqual(self.submission.reviewer_note, "Not suitable content")
+        self.assertEqual(self.submission.reviewed_by, self.admin)
+
+    def test_admin_reject_without_note(self):
+        self.client.login(username="admin-reject@example.com", password="password123")
+        response = self.client.post(reverse("knowledge_submission_reject", args=[self.submission.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.REJECTED)
+        self.assertEqual(self.submission.reviewer_note, "")
+
+    def test_participant_cannot_reject(self):
+        self.client.login(username="participant-reject@example.com", password="password123")
+        response = self.client.post(
+            reverse("knowledge_submission_reject", args=[self.submission.pk]),
+            {"note": "Sneaky reject"},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
+
+    def test_reject_redirects_to_detail(self):
+        self.client.login(username="admin-reject@example.com", password="password123")
+        response = self.client.post(
+            reverse("knowledge_submission_reject", args=[self.submission.pk]),
+            {"note": ""},
+        )
+        self.assertRedirects(
+            response,
+            reverse("knowledge_submission_detail", args=[self.submission.pk]),
+        )

@@ -24,6 +24,21 @@
     </div>
 </div>
 
+{% if can_manage and pending_submissions %}
+<div class="alert alert-warning mb-4">
+    <h2 class="h6 fw-semibold mb-2">{% trans "Pending submissions" %}</h2>
+    <ul class="mb-0 list-unstyled">
+        {% for sub in pending_submissions %}
+        <li class="py-1{% if not forloop.last %} border-bottom{% endif %}">
+            <a href="{% url 'knowledge_submission_detail' sub.pk %}" class="text-decoration-none fw-semibold">{{ sub.title }}</a>
+            <span class="text-muted small ms-2">{{ sub.author.get_full_name|default:sub.author.email }}</span>
+            <span class="text-muted small ms-1">{{ sub.submitted_at|date:"d.m.Y" }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 {% if articles %}
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
     {% for article in articles %}
