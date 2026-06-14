@@ -1,7 +1,7 @@
 from typing import ClassVar
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
@@ -272,19 +272,21 @@ class DraftSubmission(models.Model):
         return f"{self.get_submission_type_display()} - {self.title}"
 
     def approve(self, reviewer) -> None:
-        if self.status != DraftSubmission.Status.PENDING:
-            raise ValueError(f"Cannot approve: submission is already '{self.get_status_display()}'.")
+        with transaction.atomic():
+            locked = DraftSubmission.objects.select_for_update().get(pk=self.pk)
+            if locked.status != DraftSubmission.Status.PENDING:
+                raise ValueError(f"Cannot approve: submission is already '{locked.get_status_display()}'.")
 
-        if self.submission_type == DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE:
-            self._create_knowledge_article(reviewer)
-        elif self.submission_type == DraftSubmission.SubmissionType.NEWS:
-            self._create_news_page(reviewer)
-        else:
-            raise ValueError(f"Unknown submission type: '{self.submission_type}'.")
+            if locked.submission_type == DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE:
+                locked._create_knowledge_article(reviewer)
+            elif locked.submission_type == DraftSubmission.SubmissionType.NEWS:
+                locked._create_news_page(reviewer)
+            else:
+                raise ValueError(f"Unknown submission type: '{locked.submission_type}'.")
 
-        self.status = DraftSubmission.Status.APPROVED
-        self.reviewed_by = reviewer
-        self.save(update_fields=["status", "reviewed_by"])
+            locked.status = DraftSubmission.Status.APPROVED
+            locked.reviewed_by = reviewer
+            locked.save(update_fields=["status", "reviewed_by"])
 
     def _create_knowledge_article(self, reviewer) -> None:
         import json
@@ -362,9 +364,11 @@ class DraftSubmission(models.Model):
         news_page.save_revision(user=reviewer).publish()
 
     def reject(self, reviewer, note: str = "") -> None:
-        if self.status != DraftSubmission.Status.PENDING:
-            raise ValueError(f"Cannot reject: submission is already '{self.get_status_display()}'.")
-        self.status = DraftSubmission.Status.REJECTED
-        self.reviewed_by = reviewer
-        self.reviewer_note = note
-        self.save(update_fields=["status", "reviewed_by", "reviewer_note"])
+        with transaction.atomic():
+            locked = DraftSubmission.objects.select_for_update().get(pk=self.pk)
+            if locked.status != DraftSubmission.Status.PENDING:
+                raise ValueError(f"Cannot reject: submission is already '{locked.get_status_display()}'.")
+            locked.status = DraftSubmission.Status.REJECTED
+            locked.reviewed_by = reviewer
+            locked.reviewer_note = note
+            locked.save(update_fields=["status", "reviewed_by", "reviewer_note"])

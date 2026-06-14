@@ -356,6 +356,23 @@ class DraftSubmissionApproveRejectTests(TestCase):
             self.submission.approve(reviewer=self.staff)
         self.assertEqual(KnowledgeArticlePage.objects.filter(title=self.submission.title).count(), 1)
 
+    def test_approve_reads_db_status_not_memory_status(self):
+        # Simulate race: DB has APPROVED but in-memory object still shows PENDING.
+        DraftSubmission.objects.filter(pk=self.submission.pk).update(status=DraftSubmission.Status.APPROVED)
+        stale = DraftSubmission.objects.get(pk=self.submission.pk)
+        stale.status = DraftSubmission.Status.PENDING
+        with self.assertRaises(ValueError):
+            stale.approve(reviewer=self.staff)
+        self.assertEqual(KnowledgeArticlePage.objects.filter(title=self.submission.title).count(), 0)
+
+    def test_reject_reads_db_status_not_memory_status(self):
+        # Simulate race: DB has APPROVED but in-memory object still shows PENDING.
+        DraftSubmission.objects.filter(pk=self.submission.pk).update(status=DraftSubmission.Status.APPROVED)
+        stale = DraftSubmission.objects.get(pk=self.submission.pk)
+        stale.status = DraftSubmission.Status.PENDING
+        with self.assertRaises(ValueError):
+            stale.reject(reviewer=self.staff, note="oops")
+
     def test_reject_after_approve_raises_error(self):
         self.submission.approve(reviewer=self.staff)
         with self.assertRaises(ValueError):
