@@ -60,3 +60,17 @@ class LocaleFallbackMiddlewareTests(TestCase):
             with patch("wagtail.views.serve", side_effect=Http404()):
                 self.middleware.process_exception(request, Http404())
             self.assertEqual(translation.get_language(), "kk")
+
+    def test_wagtail_route_cache_is_cleared_before_retry(self):
+        # Wagtail caches the failed KK route as None on the request;
+        # the middleware must delete it so the RU retry re-routes correctly.
+        request = self.factory.get("/knowledge/article/")
+        request._wagtail_route_for_request = None  # simulate failed KK cache
+        fallback_response = HttpResponse("fallback content")
+
+        with translation.override("kk"):
+            with patch("wagtail.views.serve", return_value=fallback_response):
+                result = self.middleware.process_exception(request, Http404())
+
+        self.assertFalse(hasattr(request, "_wagtail_route_for_request"))
+        self.assertIs(result, fallback_response)

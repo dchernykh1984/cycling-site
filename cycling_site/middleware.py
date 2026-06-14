@@ -46,6 +46,9 @@ class LocaleFallbackMiddleware:
         from wagtail.views import serve as wagtail_serve
 
         path = request.path_info.lstrip("/")
+        # Wagtail caches the route result on the request; clear it so the
+        # retry with the default locale re-routes through the correct page tree.
+        request.__dict__.pop("_wagtail_route_for_request", None)
         translation.activate(default_lang)
         request.LANGUAGE_CODE = default_lang
         try:
