@@ -687,14 +687,23 @@ class LocationListTest(TestCase, ApiTestMixin):
         after = len(self.get("/api/v1/locations/", user=self.reader).json())
         self.assertEqual(after - before, 1)
 
-    def test_include_hidden_param(self):
-        before_all = len(self.get("/api/v1/locations/?include_hidden=true", user=self.reader).json())
+    def test_include_hidden_ignored_for_non_admin(self):
+        before = len(self.get("/api/v1/locations/?include_hidden=true", user=self.reader).json())
         self._api_location()
         hidden = self._api_location(is_hidden=True)
-        after_all = len(self.get("/api/v1/locations/?include_hidden=true", user=self.reader).json())
-        self.assertEqual(after_all - before_all, 2)
-        ids_visible = {d["id"] for d in self.get("/api/v1/locations/", user=self.reader).json()}
-        self.assertNotIn(hidden["id"], ids_visible)
+        after = len(self.get("/api/v1/locations/?include_hidden=true", user=self.reader).json())
+        self.assertEqual(after - before, 1)
+        ids = {d["id"] for d in self.get("/api/v1/locations/?include_hidden=true", user=self.reader).json()}
+        self.assertNotIn(hidden["id"], ids)
+
+    def test_include_hidden_works_for_admin(self):
+        before = len(self.get("/api/v1/locations/?include_hidden=true", user=self.admin).json())
+        self._api_location()
+        hidden = self._api_location(is_hidden=True)
+        after = len(self.get("/api/v1/locations/?include_hidden=true", user=self.admin).json())
+        self.assertEqual(after - before, 2)
+        ids = {d["id"] for d in self.get("/api/v1/locations/?include_hidden=true", user=self.admin).json()}
+        self.assertIn(hidden["id"], ids)
 
     def test_tree_nests_children_under_parent(self):
         parent = self._api_location(name_ru="Parent")
@@ -814,6 +823,21 @@ class LocationDetailTest(TestCase, ApiTestMixin):
         self.assertEqual(data["name"]["ru"], "City RU")
         self.assertEqual(data["name"]["kk"], "City KK")
         self.assertEqual(data["name"]["en"], "City EN")
+
+    def test_hidden_location_returns_404_for_participant(self):
+        loc = self._api_location(is_hidden=True)
+        resp = self.get(f"/api/v1/locations/{loc['id']}", user=self.reader)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_hidden_location_returns_404_for_anonymous(self):
+        loc = self._api_location(is_hidden=True)
+        resp = self.get(f"/api/v1/locations/{loc['id']}")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_hidden_location_accessible_to_admin(self):
+        loc = self._api_location(is_hidden=True)
+        resp = self.get(f"/api/v1/locations/{loc['id']}", user=self.admin)
+        self.assertEqual(resp.status_code, 200)
 
 
 class LocationCreateTest(TestCase, ApiTestMixin):

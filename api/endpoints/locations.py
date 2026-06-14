@@ -94,6 +94,8 @@ def _apply_name(location: Location, name: LocalizedStr) -> None:
 
 @router.get("/", response=list[LocationNodeOut], auth=optional_auth, summary="List locations as hierarchy tree")
 def list_locations(request, include_hidden: bool = False):
+    if include_hidden and not is_admin(request.auth):
+        include_hidden = False
     all_locs = list(Location.objects.filter(is_deleted=False))
     step = Location.steplen
     path_to_loc: dict[str, Location] = {loc.path: loc for loc in all_locs}
@@ -126,7 +128,10 @@ def list_locations(request, include_hidden: bool = False):
 
 @router.get("/{location_id}", response=LocationOut, auth=optional_auth, summary="Get location detail")
 def get_location(request, location_id: int):
-    return _get_or_404(location_id)
+    location = _get_or_404(location_id)
+    if location.is_hidden and not is_admin(request.auth):
+        raise HttpError(404, "Location not found")
+    return location
 
 
 @router.post("/", response={201: LocationOut}, auth=auth, summary="Create location (ADMIN+)")
