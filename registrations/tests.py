@@ -129,6 +129,46 @@ class TeamModelTests(TestCase):
         cities = [r["name"] for r in data["results"]]
         self.assertIn("PublicCity", cities)
 
+    def test_city_autocomplete_excludes_deleted_competition_cities(self):
+        deleted_comp = make_competition(title="Deleted Race", is_deleted=True)
+        make_registration(deleted_comp, city="DeletedCompCity")
+        response = self.client.get(reverse("registrations:city_autocomplete"))
+        data = json.loads(response.content)
+        cities = [r["name"] for r in data["results"]]
+        self.assertNotIn("DeletedCompCity", cities)
+
+    def test_city_autocomplete_excludes_rejected_registration_cities(self):
+        comp = make_competition(title="Active Race")
+        make_registration(comp, city="RejectedCity", is_rejected=True)
+        response = self.client.get(reverse("registrations:city_autocomplete"))
+        data = json.loads(response.content)
+        cities = [r["name"] for r in data["results"]]
+        self.assertNotIn("RejectedCity", cities)
+
+    def test_city_autocomplete_excludes_unapproved_city_when_approval_required(self):
+        comp = make_competition(title="Approval Race", require_approval=True)
+        make_registration(comp, city="UnapprovedCity", is_approved=False)
+        response = self.client.get(reverse("registrations:city_autocomplete"))
+        data = json.loads(response.content)
+        cities = [r["name"] for r in data["results"]]
+        self.assertNotIn("UnapprovedCity", cities)
+
+    def test_city_autocomplete_excludes_unpaid_city_when_payment_required(self):
+        comp = make_competition(title="Payment Race", require_payment=True)
+        make_registration(comp, city="UnpaidCity", is_paid=False)
+        response = self.client.get(reverse("registrations:city_autocomplete"))
+        data = json.loads(response.content)
+        cities = [r["name"] for r in data["results"]]
+        self.assertNotIn("UnpaidCity", cities)
+
+    def test_city_autocomplete_includes_approved_paid_city(self):
+        comp = make_competition(title="Full Race", require_approval=True, require_payment=True)
+        make_registration(comp, city="ApprovedPaidCity", is_approved=True, is_paid=True)
+        response = self.client.get(reverse("registrations:city_autocomplete"))
+        data = json.loads(response.content)
+        cities = [r["name"] for r in data["results"]]
+        self.assertIn("ApprovedPaidCity", cities)
+
 
 class RegistrationCategoryMatchesTests(TestCase):
     def setUp(self):
