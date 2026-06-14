@@ -105,6 +105,30 @@ class TeamModelTests(TestCase):
         self.assertIsNotNone(reg.team)
         self.assertEqual(reg.team.name, "OldTeam")
 
+    def test_city_autocomplete_excludes_pending_competition_cities(self):
+        pending_comp = make_competition(title="Pending", status=Competition.Status.PENDING_APPROVAL)
+        make_registration(pending_comp, city="SecretCity")
+        response = self.client.get(reverse("registrations:city_autocomplete"))
+        data = json.loads(response.content)
+        cities = [r["name"] for r in data["results"]]
+        self.assertNotIn("SecretCity", cities)
+
+    def test_city_autocomplete_excludes_hidden_competition_cities(self):
+        hidden_comp = make_competition(title="Hidden", is_hidden=True)
+        make_registration(hidden_comp, city="HiddenCity")
+        response = self.client.get(reverse("registrations:city_autocomplete"))
+        data = json.loads(response.content)
+        cities = [r["name"] for r in data["results"]]
+        self.assertNotIn("HiddenCity", cities)
+
+    def test_city_autocomplete_includes_approved_competition_cities(self):
+        approved_comp = make_competition(title="Approved Race")
+        make_registration(approved_comp, city="PublicCity")
+        response = self.client.get(reverse("registrations:city_autocomplete"))
+        data = json.loads(response.content)
+        cities = [r["name"] for r in data["results"]]
+        self.assertIn("PublicCity", cities)
+
 
 class RegistrationCategoryMatchesTests(TestCase):
     def setUp(self):
