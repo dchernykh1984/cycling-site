@@ -1,12 +1,13 @@
 from typing import ClassVar
 
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from knowledge.models import DraftSubmission
 
 
 class DraftSubmissionForm(forms.ModelForm):
-    locale = forms.ChoiceField(choices=DraftSubmission.LOCALE_CHOICES)
+    locale = forms.ChoiceField(choices=DraftSubmission.LOCALE_CHOICES, label=_("Locale"))
 
     class Meta:
         model = DraftSubmission
