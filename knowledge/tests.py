@@ -446,6 +446,18 @@ class SubmissionDetailViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Pending Article Detail")
 
+    def test_news_submission_returns_404_on_detail(self):
+        news_sub = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.NEWS,
+            locale="ru",
+            title="News Detail 404",
+            body="Body",
+        )
+        self.client.login(username="admin-detail@example.com", password="password123")
+        response = self.client.get(reverse("knowledge_submission_detail", args=[news_sub.pk]))
+        self.assertEqual(response.status_code, 404)
+
     def test_detail_shows_approve_and_reject_buttons_for_pending(self):
         self.client.login(username="admin-detail@example.com", password="password123")
         response = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
@@ -482,6 +494,30 @@ class ApproveSubmissionViewTests(TestCase):
         self.submission.refresh_from_db()
         self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
         self.assertEqual(KnowledgeArticlePage.objects.filter(title="To Be Approved Via View").count(), 1)
+
+    def test_approve_returns_success_message(self):
+        self.client.login(username="admin-approve@example.com", password="password123")
+        response = self.client.post(
+            reverse("knowledge_submission_approve", args=[self.submission.pk]),
+            follow=True,
+        )
+        self.assertContains(response, "alert-success")
+
+    def test_news_submission_returns_404(self):
+        from news.models import NewsIndexPage
+
+        news_index = NewsIndexPage(title="News", slug="news-approve-view-test")
+        _get_site_root().add_child(instance=news_index)
+        news_sub = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.NEWS,
+            locale="ru",
+            title="News Via Knowledge URL",
+            body="Body",
+        )
+        self.client.login(username="admin-approve@example.com", password="password123")
+        response = self.client.post(reverse("knowledge_submission_approve", args=[news_sub.pk]))
+        self.assertEqual(response.status_code, 404)
 
     def test_participant_cannot_approve(self):
         self.client.login(username="participant-approve@example.com", password="password123")
