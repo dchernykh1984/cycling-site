@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-13 17:22+0000\n"
+"POT-Creation-Date: 2026-06-14 02:04+0000\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -113,8 +113,8 @@ msgstr "Мақала жіберу"
 #: calendar_app/templates/calendar_app/list.html:257
 #: calendar_app/templates/calendar_app/submit.html:29
 #: calendar_app/templates/calendar_app/submit.html:41
-#: calendar_app/templates/calendar_app/submit.html:53 news/forms.py:29
-#: news/forms.py:34 news/forms.py:40
+#: calendar_app/templates/calendar_app/submit.html:53 knowledge/models.py:253
+#: news/forms.py:29 news/forms.py:34 news/forms.py:40
 msgid "Title"
 msgstr "Атауы"
 
@@ -151,7 +151,7 @@ msgstr "Менің тіркелулерім"
 msgid "Competition"
 msgstr "Жарыс"
 
-#: accounts/templates/accounts/profile.html:136
+#: accounts/templates/accounts/profile.html:136 knowledge/models.py:255
 #: knowledge/templates/knowledge/submission_detail.html:31
 #: registrations/templates/registrations/participant_list.html:57
 #: registrations/templates/registrations/register.html:157
@@ -1087,6 +1087,27 @@ msgstr "Әкімші интерфейсі"
 msgid "Create your superuser first!"
 msgstr "Алдымен суперпайдаланушы жасаңыз!"
 
+#: knowledge/forms.py:10 knowledge/models.py:252
+#: knowledge/templates/knowledge/submission_detail.html:27
+msgid "Locale"
+msgstr "Тіл"
+
+#: knowledge/models.py:249
+msgid "Russian"
+msgstr "Орыс тілі"
+
+#: knowledge/models.py:249
+msgid "Kazakh"
+msgstr "Қазақ тілі"
+
+#: knowledge/models.py:249
+msgid "English"
+msgstr "Ағылшын тілі"
+
+#: knowledge/models.py:254 news/forms.py:61 news/forms.py:62 news/forms.py:63
+msgid "Body"
+msgstr "Мәтін"
+
 #: knowledge/templates/knowledge/add_article.html:4
 #: knowledge/templates/knowledge/add_article.html:9
 #: knowledge/templates/knowledge/knowledge_index_page.html:17
@@ -1184,10 +1205,6 @@ msgstr "Автор"
 msgid "Submitted"
 msgstr "Қосқан"
 
-#: knowledge/templates/knowledge/submission_detail.html:27
-msgid "Locale"
-msgstr "Тіл"
-
 #: knowledge/templates/knowledge/submission_detail.html:36
 msgid "Reviewed by"
 msgstr "Тексерді"
@@ -1201,7 +1218,7 @@ msgid ""
 "Your submission will be reviewed by the editorial team before publishing."
 msgstr "Жіберілгеніңіз жарияланбас бұрын редакция тексереді."
 
-#: knowledge/views.py:121
+#: knowledge/views.py:122
 msgid "Article published successfully."
 msgstr "Мақала жарияланды."
 
@@ -1258,10 +1275,6 @@ msgstr "Орын сақталды."
 #: news/forms.py:46 news/forms.py:52 news/forms.py:58
 msgid "Short description"
 msgstr "Қысқаша сипаттама"
-
-#: news/forms.py:61 news/forms.py:62 news/forms.py:63
-msgid "Body"
-msgstr "Мәтін"
 
 #: news/templates/news/article_form.html:4
 #: news/templates/news/article_form.html:18

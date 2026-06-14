@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.utils.html import escape
+from django.utils.translation import gettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from taggit.models import TaggedItemBase
@@ -245,13 +246,13 @@ class DraftSubmission(models.Model):
         on_delete=models.CASCADE,
         related_name="draft_submissions",
     )
-    LOCALE_CHOICES: ClassVar[list] = [("ru", "Russian"), ("kk", "Kazakh"), ("en", "English")]
+    LOCALE_CHOICES: ClassVar[list] = [("ru", _("Russian")), ("kk", _("Kazakh")), ("en", _("English"))]
 
     submission_type = models.CharField(max_length=30, choices=SubmissionType.choices)
-    locale = models.CharField(max_length=10, choices=LOCALE_CHOICES)
-    title = models.CharField(max_length=255)
-    body = models.TextField()
-    category = models.CharField(max_length=100, blank=True)
+    locale = models.CharField(max_length=10, choices=LOCALE_CHOICES, verbose_name=_("Locale"))
+    title = models.CharField(max_length=255, verbose_name=_("Title"))
+    body = models.TextField(verbose_name=_("Body"))
+    category = models.CharField(max_length=100, blank=True, verbose_name=_("Category"))
     submitted_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     reviewed_by = models.ForeignKey(

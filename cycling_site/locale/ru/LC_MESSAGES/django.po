@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-13 17:22+0000\n"
+"POT-Creation-Date: 2026-06-14 02:04+0000\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -113,8 +113,8 @@ msgstr "Отправить статью"
 #: calendar_app/templates/calendar_app/list.html:257
 #: calendar_app/templates/calendar_app/submit.html:29
 #: calendar_app/templates/calendar_app/submit.html:41
-#: calendar_app/templates/calendar_app/submit.html:53 news/forms.py:29
-#: news/forms.py:34 news/forms.py:40
+#: calendar_app/templates/calendar_app/submit.html:53 knowledge/models.py:253
+#: news/forms.py:29 news/forms.py:34 news/forms.py:40
 msgid "Title"
 msgstr "Заголовок"
 
@@ -151,7 +151,7 @@ msgstr "Мои регистрации"
 msgid "Competition"
 msgstr "Соревнование"
 
-#: accounts/templates/accounts/profile.html:136
+#: accounts/templates/accounts/profile.html:136 knowledge/models.py:255
 #: knowledge/templates/knowledge/submission_detail.html:31
 #: registrations/templates/registrations/participant_list.html:57
 #: registrations/templates/registrations/register.html:157
@@ -1087,6 +1087,27 @@ msgstr "Интерфейс администратора"
 msgid "Create your superuser first!"
 msgstr "Сначала создайте суперпользователя!"
 
+#: knowledge/forms.py:10 knowledge/models.py:252
+#: knowledge/templates/knowledge/submission_detail.html:27
+msgid "Locale"
+msgstr "Язык"
+
+#: knowledge/models.py:249
+msgid "Russian"
+msgstr "Русский"
+
+#: knowledge/models.py:249
+msgid "Kazakh"
+msgstr "Казахский"
+
+#: knowledge/models.py:249
+msgid "English"
+msgstr "Английский"
+
+#: knowledge/models.py:254 news/forms.py:61 news/forms.py:62 news/forms.py:63
+msgid "Body"
+msgstr "Текст"
+
 #: knowledge/templates/knowledge/add_article.html:4
 #: knowledge/templates/knowledge/add_article.html:9
 #: knowledge/templates/knowledge/knowledge_index_page.html:17
@@ -1185,10 +1206,6 @@ msgstr "Автор"
 msgid "Submitted"
 msgstr "Добавлено"
 
-#: knowledge/templates/knowledge/submission_detail.html:27
-msgid "Locale"
-msgstr "Язык"
-
 #: knowledge/templates/knowledge/submission_detail.html:36
 msgid "Reviewed by"
 msgstr "Проверил(а)"
@@ -1202,7 +1219,7 @@ msgid ""
 "Your submission will be reviewed by the editorial team before publishing."
 msgstr "Ваша заявка будет проверена редакцией перед публикацией."
 
-#: knowledge/views.py:121
+#: knowledge/views.py:122
 msgid "Article published successfully."
 msgstr "Статья опубликована."
 
@@ -1259,10 +1276,6 @@ msgstr "Локация сохранена."
 #: news/forms.py:46 news/forms.py:52 news/forms.py:58
 msgid "Short description"
 msgstr "Краткое описание"
-
-#: news/forms.py:61 news/forms.py:62 news/forms.py:63
-msgid "Body"
-msgstr "Текст"
 
 #: news/templates/news/article_form.html:4
 #: news/templates/news/article_form.html:18
