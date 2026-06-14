@@ -330,19 +330,48 @@ class DraftSubmissionApproveRejectTests(TestCase):
         self.submission.refresh_from_db()
         self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
 
-    def test_approve_escapes_body_html(self):
+    def test_approve_strips_dangerous_html(self):
         sub = DraftSubmission.objects.create(
             author=self.participant,
             submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
             locale="ru",
             title="XSS Test Article",
-            body="<script>alert('xss')</script>",
+            body='<p onclick="evil()">hi</p><script>alert(\'xss\')</script><a href="javascript:evil()">link</a>',
         )
         sub.approve(reviewer=self.staff)
         article = KnowledgeArticlePage.objects.get(title="XSS Test Article")
+        stored = str(article.body)
+        self.assertNotIn("<script", stored)
+        self.assertNotIn("onclick", stored)
+        self.assertNotIn("javascript:", stored)
+        self.assertIn("hi", stored)  # benign text is preserved
+        # page still renders fine
+        self.assertEqual(self.client.get(article.url).status_code, 200)
+
+    def test_approve_renders_rich_html_body(self):
+        body = (
+            "<h2>Section</h2><p>Intro with <strong>bold</strong>.</p>"
+            "<ul><li>first</li><li>second</li></ul>"
+            "<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>"
+        )
+        sub = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="Rich Body Article",
+            body=body,
+        )
+        sub.approve(reviewer=self.staff)
+        article = KnowledgeArticlePage.objects.get(title="Rich Body Article")
+        # body stored as real rich HTML, not escaped into a single <p>
+        self.assertIn("<h2>Section</h2>", str(article.body))
+        self.assertIn("<li>first</li>", str(article.body))
+        self.assertIn("<strong>bold</strong>", str(article.body))
+        self.assertIn("<table>", str(article.body))
+        self.assertNotIn("&lt;h2&gt;", str(article.body))
         response = self.client.get(article.url)
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "<script>alert")
+        self.assertContains(response, "<h2>Section</h2>", html=False)
 
     def test_approve_unknown_locale_raises_error(self):
         sub = DraftSubmission.objects.create(
