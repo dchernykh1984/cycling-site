@@ -313,6 +313,18 @@ class RegisterForCompetitionViewTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
+    def test_registration_rejected_when_limit_already_reached(self):
+        comp = make_open_competition(max_participants=1)
+        make_registration(comp)
+        url = reverse("registrations:register", args=[comp.pk])
+        self.client.force_login(self.user)
+        response = self.client.post(
+            url,
+            {"first_name": "New", "last_name": "Person", "gender": "M", "birth_year": 1990},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(CompetitionRegistration.objects.filter(competition=comp).count(), 1)
+
 
 class ParticipantListViewTests(TestCase):
     def setUp(self):
