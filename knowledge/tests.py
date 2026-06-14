@@ -3,6 +3,8 @@ from unittest import skip
 
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import translation
+from django.utils.translation import gettext as _
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTests
 
@@ -598,3 +600,94 @@ class RejectSubmissionViewTests(TestCase):
             response,
             reverse("knowledge_submission_detail", args=[self.submission.pk]),
         )
+
+
+class SubmissionDetailTranslationTests(TestCase):
+    """submission_detail.html 'Submitted' label is translated (no fuzzy marker)."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="admin-trans@example.com",
+            email="admin-trans@example.com",
+            password="password123",
+            role=User.Role.ADMIN,
+        )
+        self.participant = User.objects.create_user(
+            username="participant-trans@example.com",
+            email="participant-trans@example.com",
+            password="password123",
+            role=User.Role.PARTICIPANT,
+        )
+        self.submission = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="Trans Test Article",
+            body="body",
+        )
+        self.client.login(username="admin-trans@example.com", password="password123")
+        self.url = reverse("knowledge_submission_detail", args=[self.submission.pk])
+
+    def test_submitted_label_in_russian(self):
+        response = self.client.get(self.url)
+        with translation.override("ru"):
+            self.assertContains(response, _("Submitted"))
+
+    def test_submitted_label_in_kazakh(self):
+        response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="kk")
+        with translation.override("kk"):
+            self.assertContains(response, _("Submitted"))
+
+    def test_author_label_in_russian(self):
+        response = self.client.get(self.url)
+        with translation.override("ru"):
+            self.assertContains(response, _("Author"))
+
+    def test_author_label_in_kazakh(self):
+        response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="kk")
+        with translation.override("kk"):
+            self.assertContains(response, _("Author"))
+
+
+class AddArticleFormLocalizationTests(TestCase):
+    """add_article.html form labels and locale choices are translated."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="admin-loc@example.com",
+            email="admin-loc@example.com",
+            password="password123",
+            role=User.Role.ADMIN,
+        )
+        self.client.login(username="admin-loc@example.com", password="password123")
+        self.url = reverse("knowledge_add")
+
+    def test_field_labels_in_russian(self):
+        response = self.client.get(self.url)
+        with translation.override("ru"):
+            self.assertContains(response, _("Locale"))
+            self.assertContains(response, _("Title"))
+            self.assertContains(response, _("Body"))
+            self.assertContains(response, _("Category"))
+
+    def test_locale_choices_in_russian(self):
+        response = self.client.get(self.url)
+        with translation.override("ru"):
+            self.assertContains(response, _("Russian"))
+            self.assertContains(response, _("Kazakh"))
+            self.assertContains(response, _("English"))
+
+    def test_field_labels_in_kazakh(self):
+        response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="kk")
+        with translation.override("kk"):
+            self.assertContains(response, _("Locale"))
+            self.assertContains(response, _("Title"))
+            self.assertContains(response, _("Body"))
+            self.assertContains(response, _("Category"))
+
+    def test_locale_choices_in_kazakh(self):
+        response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="kk")
+        with translation.override("kk"):
+            self.assertContains(response, _("Russian"))
+            self.assertContains(response, _("Kazakh"))
+            self.assertContains(response, _("English"))
