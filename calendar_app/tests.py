@@ -9,6 +9,7 @@ from django.utils.translation import override as translation_override
 
 from accounts.models import User
 from calendar_app.models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
+from locations.models import Location
 
 
 def _make_user(email, role, is_staff=False):
@@ -888,3 +889,62 @@ class CompetitionCommentTests(TestCase):
         self._make_comment(body="Visible comment")
         response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
         self.assertContains(response, "Visible comment")
+
+
+class CompetitionDirectionLocationLabelTests(TestCase):
+    """Direction / country / region / city helper properties used by the list table."""
+
+    def setUp(self):
+        self.country = Location.add_root(name_ru="Kazakhstan", name_kk="Kazakhstan", name_en="Kazakhstan")
+        self.region = self.country.add_child(name_ru="Almaty Region", name_kk="Almaty Region", name_en="Almaty Region")
+        self.city = self.region.add_child(name_ru="Almaty", name_kk="Almaty", name_en="Almaty")
+        self.venue = self.city.add_child(name_ru="Sokol", name_kk="Sokol", name_en="Sokol")
+        self.category = DisciplineCategory.objects.create(name_ru="Road", name_en="Road")
+        self.discipline = Discipline.objects.create(name_ru="Road Race", name_en="Road Race", category=self.category)
+
+    def test_labels_for_venue_location(self):
+        comp = _make_competition("Venue race", location=self.venue, discipline=self.discipline)
+        self.assertEqual(comp.direction_label, "Road")
+        self.assertEqual(comp.country_label, "Kazakhstan")
+        self.assertEqual(comp.region_label, "Almaty Region")
+        self.assertEqual(comp.city_label, "Almaty")
+
+    def test_labels_for_city_location(self):
+        comp = _make_competition("City race", location=self.city, discipline=self.discipline)
+        self.assertEqual(comp.country_label, "Kazakhstan")
+        self.assertEqual(comp.region_label, "Almaty Region")
+        self.assertEqual(comp.city_label, "Almaty")
+
+    def test_region_location_has_no_city(self):
+        comp = _make_competition("Region race", location=self.region)
+        self.assertEqual(comp.country_label, "Kazakhstan")
+        self.assertEqual(comp.region_label, "Almaty Region")
+        self.assertEqual(comp.city_label, "")
+
+    def test_labels_empty_without_location_or_discipline(self):
+        comp = _make_competition("Bare race")
+        self.assertEqual(comp.country_label, "")
+        self.assertEqual(comp.region_label, "")
+        self.assertEqual(comp.city_label, "")
+        self.assertEqual(comp.direction_label, "")
+
+
+class CompetitionListColumnsViewTests(TestCase):
+    def test_list_shows_direction_country_region_city_columns(self):
+        country = Location.add_root(name_ru="Kazakhstan", name_kk="Kazakhstan", name_en="Kazakhstan")
+        region = country.add_child(name_ru="Almaty Region", name_kk="Almaty Region", name_en="Almaty Region")
+        city = region.add_child(name_ru="Almaty", name_kk="Almaty", name_en="Almaty")
+        category = DisciplineCategory.objects.create(name_ru="Road", name_en="Road")
+        discipline = Discipline.objects.create(name_ru="Road Race", name_en="Road Race", category=category)
+        _make_competition(
+            "Visible Race",
+            location=city,
+            discipline=discipline,
+            date_start=timezone.localdate() + datetime.timedelta(days=3),
+        )
+        response = self.client.get(reverse("calendar_list"), HTTP_ACCEPT_LANGUAGE="en")
+        for header in ("Direction", "Country", "Region", "City"):
+            self.assertContains(response, f"<th>{header}</th>")
+        self.assertContains(response, "Road")
+        self.assertContains(response, "Kazakhstan")
+        self.assertContains(response, "Almaty Region")

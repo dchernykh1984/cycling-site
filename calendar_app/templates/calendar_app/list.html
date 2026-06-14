@@ -257,7 +257,11 @@
         <th>{% trans "Title" %}</th>
         <th>{% trans "Dates" %}</th>
         <th>{% trans "Type" %}</th>
+        <th>{% trans "Direction" %}</th>
         <th>{% trans "Discipline" %}</th>
+        <th>{% trans "Country" %}</th>
+        <th>{% trans "Region" %}</th>
+        <th>{% trans "City" %}</th>
         <th>{% trans "Location" %}</th>
         <th>{% trans "Links" %}</th>
       </tr>
@@ -278,7 +282,11 @@
           {% endif %}
         </td>
         <td>{{ comp.event_type.name|default:"—" }}</td>
+        <td>{{ comp.direction_label|default:"—" }}</td>
         <td>{{ comp.discipline.name|default:"—" }}</td>
+        <td>{{ comp.country_label|default:"—" }}</td>
+        <td>{{ comp.region_label|default:"—" }}</td>
+        <td>{{ comp.city_label|default:"—" }}</td>
         <td>{{ comp.location_label|default:"—" }}</td>
         <td class="text-nowrap">
           {% if comp.url_announcement %}
