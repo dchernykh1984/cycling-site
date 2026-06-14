@@ -1436,7 +1436,6 @@ msgid "Team"
 msgstr "Команда"
 
 #: registrations/templates/registrations/participant_list.html:63
-#, fuzzy
 msgid "Actions"
 msgstr "Әрекеттер"
 
@@ -1510,6 +1509,22 @@ msgstr "Беттер"
 #: search/templates/search/search.html:74
 msgid "No results found"
 msgstr "Ештенiе табылмады"
+
+#: calendar_app/forms.py:106
+msgid "End date cannot be before start date."
+msgstr "Аяқталу күні басталу күнінен бұрын болмауы керек."
+
+#: cycling_site/templates/base.html:141
+msgid "Close"
+msgstr "Жабу"
+
+#: cycling_site/templates/500.html:6 cycling_site/templates/500.html:12
+msgid "Internal server error"
+msgstr "Ішкі сервер қатесі"
+
+#: cycling_site/templates/500.html:13
+msgid "Sorry, there seems to be an error. Please try again soon."
+msgstr "Қате орын алды. Кейінірек қайталап көріңіз."
 
 #~ msgid "Coordinates"
 #~ msgstr "Координаттар"

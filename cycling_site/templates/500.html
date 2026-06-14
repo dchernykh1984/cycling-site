@@ -1,13 +1,17 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-    <head>
-        <meta charset="utf-8" />
-        <title>Internal server error</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-    </head>
-    <body>
-        <h1>Internal server error</h1>
+{% extends "base.html" %}
+{% load i18n %}
 
-        <h2>Sorry, there seems to be an error. Please try again soon.</h2>
-    </body>
-</html>
+{% block title %}{% trans "Internal server error" %}{% endblock %}
+
+{% block body_class %}template-500{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6 text-center">
+        <h1 class="display-1 fw-bold text-muted">500</h1>
+        <h2 class="mb-3">{% trans "Internal server error" %}</h2>
+        <p class="text-muted mb-4">{% trans "Sorry, there seems to be an error. Please try again soon." %}</p>
+        <a href="/" class="btn btn-primary">{% trans "Go to home page" %}</a>
+    </div>
+</div>
+{% endblock %}

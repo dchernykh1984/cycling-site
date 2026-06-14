@@ -103,7 +103,7 @@ class SubmitCompetitionForm(forms.Form):
         date_start = cleaned_data.get("date_start")
         date_end = cleaned_data.get("date_end")
         if date_start and date_end and date_end < date_start:
-            raise forms.ValidationError("End date cannot be before start date.")
+            raise forms.ValidationError(_("End date cannot be before start date."))
         return cleaned_data
 
 

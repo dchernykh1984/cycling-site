@@ -366,6 +366,7 @@ class SubmitCompetitionViewTests(TestCase):
         response = self.client.post(
             self._submit_url(),
             self._payload(date_start="2026-09-05", date_end="2026-09-01"),
+            HTTP_ACCEPT_LANGUAGE="en",
         )
         self.assertEqual(response.status_code, 200)
         self.assertFormError(response.context["form"], None, "End date cannot be before start date.")

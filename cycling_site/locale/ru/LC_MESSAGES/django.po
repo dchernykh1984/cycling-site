@@ -9,17 +9,17 @@ msgstr ""
 
 #: accounts/templates/account/signup.html:4
 msgid "Signup"
-msgstr ""
+msgstr "Зарегистрироваться"
 
 #: accounts/templates/account/signup.html:8
 #: accounts/templates/account/signup.html:33
 msgid "Sign Up"
-msgstr ""
+msgstr "Зарегистрироваться"
 
 #: accounts/templates/account/signup.html:17
 #, python-format
 msgid "Already have an account? Then please %(link)ssign in%(end_link)s."
-msgstr ""
+msgstr "Уже есть аккаунт? %(link)sВойдите%(end_link)s."
 
 #: accounts/templates/account/signup.html:28
 msgid ""
@@ -31,7 +31,7 @@ msgstr ""
 
 #: accounts/templates/account/signup.html:42
 msgid "Sign up using a passkey"
-msgstr ""
+msgstr "Зарегистрироваться с помощью ключа доступа"
 
 #: accounts/templates/accounts/profile.html:4
 #: accounts/templates/accounts/profile.html:9
@@ -294,12 +294,12 @@ msgstr "Дата окончания"
 
 #: calendar_app/forms.py:82
 msgid "File size must not exceed 10 MB."
-msgstr ""
+msgstr "Размер файла не должен превышать 10 МБ."
 
 #: calendar_app/forms.py:86
 #, python-format
 msgid "Unsupported file type. Allowed: %(allowed)s."
-msgstr ""
+msgstr "Неподдерживаемый тип файла. Разрешены: %(allowed)s."
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:3
 #: calendar_app/templates/calendar_app/detail.html:42
@@ -727,7 +727,7 @@ msgstr "чтобы оставить комментарий."
 
 #: calendar_app/templates/calendar_app/detail.html:198
 msgid "Commenting is available to verified participants."
-msgstr ""
+msgstr "Комментирование доступно подтверждённым участникам."
 
 #: calendar_app/templates/calendar_app/detail.html:204
 #: calendar_app/templates/calendar_app/moderate.html:40
@@ -944,7 +944,7 @@ msgstr "Спутник"
 
 #: cycling_site/templates/base.html:20 cycling_site/templates/base.html:31
 msgid "Cycling events, news and knowledge base"
-msgstr ""
+msgstr "Соревнования по велоспорту, новости и база знаний"
 
 #: cycling_site/templates/base.html:51
 msgid "Cycling"
@@ -1133,7 +1133,7 @@ msgstr "Добавить статью"
 #: knowledge/templates/knowledge/add_article.html:52
 #: news/templates/news/article_form.html:132
 msgid "Publish"
-msgstr ""
+msgstr "Опубликовать"
 
 #: knowledge/templates/knowledge/admin/approve_confirm.html:4
 #: knowledge/templates/knowledge/admin/approve_confirm.html:8
@@ -1303,11 +1303,11 @@ msgstr "Добавить новость"
 
 #: news/templates/news/article_form.html:111
 msgid "Published at"
-msgstr ""
+msgstr "Дата публикации"
 
 #: news/templates/news/article_form.html:118
 msgid "Cover image"
-msgstr ""
+msgstr "Обложка"
 
 #: news/templates/news/news_index_page.html:43
 #: news/templates/news/news_list.html:45
@@ -1437,7 +1437,6 @@ msgid "Team"
 msgstr "Команда"
 
 #: registrations/templates/registrations/participant_list.html:63
-#, fuzzy
 msgid "Actions"
 msgstr "Действия"
 
@@ -1511,6 +1510,22 @@ msgstr "Страницы"
 #: search/templates/search/search.html:74
 msgid "No results found"
 msgstr "Ничего не найдено"
+
+#: calendar_app/forms.py:106
+msgid "End date cannot be before start date."
+msgstr "Дата окончания не может быть раньше даты начала."
+
+#: cycling_site/templates/base.html:141
+msgid "Close"
+msgstr "Закрыть"
+
+#: cycling_site/templates/500.html:6 cycling_site/templates/500.html:12
+msgid "Internal server error"
+msgstr "Внутренняя ошибка сервера"
+
+#: cycling_site/templates/500.html:13
+msgid "Sorry, there seems to be an error. Please try again soon."
+msgstr "Похоже, произошла ошибка. Пожалуйста, попробуйте снова позже."
 
 #~ msgid "Coordinates"
 #~ msgstr "Координаты"
