@@ -1181,8 +1181,6 @@ msgid "Author"
 msgstr "Автор"
 
 #: knowledge/templates/knowledge/submission_detail.html:24
-#, fuzzy
-#| msgid "Submitted by"
 msgid "Submitted"
 msgstr "Қосқан"
 
