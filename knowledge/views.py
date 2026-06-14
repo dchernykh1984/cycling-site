@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils.translation import get_language
+from django.utils.translation import gettext as _
 from django.views.generic import CreateView, View
 from wagtail.models import Locale
 
@@ -94,18 +95,31 @@ class AddArticleView(ManagerRequiredMixin, CreateView):
 
 class SubmissionDetailView(ManagerRequiredMixin, View):
     def get(self, request, pk):
-        submission = get_object_or_404(DraftSubmission, pk=pk)
-        return render(request, "knowledge/submission_detail.html", {"submission": submission})
+        submission = get_object_or_404(
+            DraftSubmission,
+            pk=pk,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+        )
+        return render(
+            request,
+            "knowledge/submission_detail.html",
+            {"submission": submission},
+        )
 
 
 class ApproveSubmissionView(ManagerRequiredMixin, View):
     def post(self, request, pk):
-        submission = get_object_or_404(DraftSubmission, pk=pk)
+        submission = get_object_or_404(
+            DraftSubmission,
+            pk=pk,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+        )
         try:
             submission.approve(reviewer=request.user)
         except ValueError as e:
             messages.error(request, str(e))
             return redirect("knowledge_submission_detail", pk=pk)
+        messages.success(request, _("Article published successfully."))
         locale = Locale.objects.filter(language_code=submission.locale).first()
         if locale:
             index = KnowledgeIndexPage.objects.live().filter(locale=locale).first()
@@ -116,7 +130,11 @@ class ApproveSubmissionView(ManagerRequiredMixin, View):
 
 class RejectSubmissionView(ManagerRequiredMixin, View):
     def post(self, request, pk):
-        submission = get_object_or_404(DraftSubmission, pk=pk)
+        submission = get_object_or_404(
+            DraftSubmission,
+            pk=pk,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+        )
         note = request.POST.get("note", "")
         try:
             submission.reject(reviewer=request.user, note=note)
@@ -125,10 +143,8 @@ class RejectSubmissionView(ManagerRequiredMixin, View):
         return redirect("knowledge_submission_detail", pk=pk)
 
 
-class KnowledgeArticleDeleteView(LoginRequiredMixin, View):
+class KnowledgeArticleDeleteView(ManagerRequiredMixin, View):
     def post(self, request, pk):
-        if not _can_manage_knowledge(request.user):
-            raise PermissionDenied
         article = get_object_or_404(KnowledgeArticlePage, pk=pk, is_deleted=False)
         article.is_deleted = True
         article.save(update_fields=["is_deleted"])
@@ -136,10 +152,8 @@ class KnowledgeArticleDeleteView(LoginRequiredMixin, View):
         return redirect(parent.url if parent else "/")
 
 
-class KnowledgeArticleHideView(LoginRequiredMixin, View):
+class KnowledgeArticleHideView(ManagerRequiredMixin, View):
     def post(self, request, pk):
-        if not _can_manage_knowledge(request.user):
-            raise PermissionDenied
         article = get_object_or_404(KnowledgeArticlePage, pk=pk, is_deleted=False)
         article.is_hidden = not article.is_hidden
         article.save(update_fields=["is_hidden"])
