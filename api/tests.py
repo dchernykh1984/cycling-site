@@ -662,6 +662,93 @@ class NewsDraftTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 401)
 
 
+class NewsArticleCreateTest(TestCase, ApiTestMixin):
+    """POST /api/v1/news/articles/ writes a published NewsArticle shown on the front."""
+
+    def setUp(self):
+        self.admin = _user("news_art_adm", role=User.Role.ADMIN)
+        self.participant = _user("news_art_part", role=User.Role.PARTICIPANT)
+
+    def _payload(self, **kwargs):
+        defaults = {
+            "title": {"ru": "Zagolovok", "kk": "Taqyryp", "en": "Headline"},
+            "intro": {"ru": "Vstuplenie", "kk": "Kirispe", "en": "Intro line"},
+            "body": {
+                "ru": "<h2>Razdel</h2><p>Tekst</p>",
+                "kk": "<h2>Bolim</h2><p>Maatin</p>",
+                "en": "<h2>Section</h2><p>Body text</p>",
+            },
+        }
+        defaults.update(kwargs)
+        return defaults
+
+    def test_admin_creates_article(self):
+        resp = self.post("/api/v1/news/articles/", self._payload(), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        data = resp.json()
+        self.assertEqual(data["title"]["en"], "Headline")
+        self.assertEqual(data["title"]["ru"], "Zagolovok")
+        self.assertEqual(data["title"]["kk"], "Taqyryp")
+        article = NewsArticle.objects.get(pk=data["id"])
+        self.assertEqual(article.published_by_id, self.admin.pk)
+        self.assertTrue(article.slug)
+
+    def test_created_article_appears_in_api_list(self):
+        resp = self.post("/api/v1/news/articles/", self._payload(), user=self.admin)
+        pk = resp.json()["id"]
+        listed = self.get("/api/v1/news/").json()
+        self.assertIn(pk, [d["id"] for d in listed])
+
+    def test_created_article_appears_on_front_list_and_detail(self):
+        resp = self.post("/api/v1/news/articles/", self._payload(), user=self.admin)
+        pk = resp.json()["id"]
+        # Front list page (rendered NewsListView) shows the localized title.
+        front = self.client.get("/news/", HTTP_ACCEPT_LANGUAGE="en")
+        self.assertEqual(front.status_code, 200)
+        self.assertContains(front, "Headline")
+        # Detail page renders the rich HTML body unescaped.
+        detail = self.client.get(f"/news/articles/{pk}/", HTTP_ACCEPT_LANGUAGE="en")
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, "<h2>Section</h2>")
+        self.assertContains(detail, "Body text")
+
+    def test_participant_cannot_create_article(self):
+        resp = self.post("/api/v1/news/articles/", self._payload(), user=self.participant)
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(NewsArticle.objects.count(), 0)
+
+    def test_anonymous_cannot_create_article(self):
+        resp = self.client.post(
+            "/api/v1/news/articles/",
+            self._payload(),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(NewsArticle.objects.count(), 0)
+
+    def test_body_is_sanitized(self):
+        payload = self._payload(
+            body={
+                "ru": "<p>safe</p><script>alert(1)</script>",
+                "kk": '<p onclick="x()">kk</p>',
+                "en": '<p>ok</p><a href="javascript:alert(1)">x</a>',
+            }
+        )
+        resp = self.post("/api/v1/news/articles/", payload, user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        article = NewsArticle.objects.get(pk=resp.json()["id"])
+        self.assertNotIn("<script", article.body_ru)
+        self.assertIn("safe", article.body_ru)
+        self.assertNotIn("onclick", article.body_kk)
+        self.assertNotIn("javascript:", article.body_en)
+
+    def test_hidden_article_not_on_public_front(self):
+        resp = self.post("/api/v1/news/articles/", self._payload(is_hidden=True), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        front = self.client.get("/news/", HTTP_ACCEPT_LANGUAGE="en")
+        self.assertNotContains(front, "Headline")
+
+
 # ---------------------------------------------------------------------------
 # Locations
 # ---------------------------------------------------------------------------
