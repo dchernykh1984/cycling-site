@@ -12,7 +12,7 @@ class ApiTokenAuth(HttpBearer):
         from audit.middleware import _thread_locals
 
         try:
-            user = User.objects.get(api_token=token)
+            user = User.objects.get(api_token=token, is_active=True)
         except (User.DoesNotExist, ValueError, ValidationError):
             return None
         request.user = user
@@ -43,7 +43,7 @@ class OptionalApiTokenAuth(HttpBearer):
         from audit.middleware import _thread_locals
 
         try:
-            user = User.objects.get(api_token=token)
+            user = User.objects.get(api_token=token, is_active=True)
         except (User.DoesNotExist, ValueError, ValidationError):
             return None
         request.user = user

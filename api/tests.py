@@ -179,6 +179,20 @@ class ApiTokenAuthTest(TestCase, ApiTestMixin):
         resp = self.get("/api/v1/locations/", user=participant)
         self.assertEqual(resp.status_code, 200)
 
+    def test_inactive_user_token_returns_401_on_auth_endpoint(self):
+        user = _user("inactive_auth", role=User.Role.PARTICIPANT)
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+        resp = self.get("/api/v1/competitions/", user=user)
+        self.assertEqual(resp.status_code, 401)
+
+    def test_inactive_user_token_returns_401_on_optional_auth_endpoint(self):
+        user = _user("inactive_opt", role=User.Role.PARTICIPANT)
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+        resp = self.get("/api/v1/locations/", user=user)
+        self.assertEqual(resp.status_code, 401)
+
 
 # ---------------------------------------------------------------------------
 # Competitions
