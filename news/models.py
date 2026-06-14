@@ -119,7 +119,11 @@ class NewsPage(AsciiSlugMixin, Page):
 
         context = super().get_context(request)
         qs = Comment.objects.filter(page=self).select_related("author").order_by("created_at")
-        if not request.user.is_staff:
+        admin_rank = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
+        is_manager = request.user.is_authenticated and (
+            request.user.is_superuser or request.user.get_role_rank() >= admin_rank
+        )
+        if not is_manager:
             qs = qs.filter(is_approved=True)
         context["comments"] = qs
 
@@ -130,7 +134,7 @@ class NewsPage(AsciiSlugMixin, Page):
         context["can_comment"] = can_comment
         if can_comment:
             context["comment_form"] = AddCommentForm()
-        context["user_can_delete_comment"] = request.user.is_staff
+        context["user_can_delete_comment"] = is_manager
         return context
 
     class Meta:

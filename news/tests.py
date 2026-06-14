@@ -248,6 +248,19 @@ class DeleteCommentViewTests(TestCase):
         self.client.login(username="participant@example.com", password="password123")
         response = self.client.post(self._delete_url())
         self.assertEqual(response.status_code, 403)
+
+    def test_staff_without_admin_role_cannot_delete_comment(self):
+        User.objects.create_user(
+            username="staff_organizer@example.com",
+            email="staff_organizer@example.com",
+            password="password123",
+            is_staff=True,
+            role=User.Role.ORGANIZER,
+        )
+        self.client.login(username="staff_organizer@example.com", password="password123")
+        response = self.client.post(self._delete_url())
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Comment.objects.filter(pk=self.comment.pk).exists())
         self.assertTrue(Comment.objects.filter(pk=self.comment.pk).exists())
 
     def test_anonymous_cannot_delete_comment(self):
