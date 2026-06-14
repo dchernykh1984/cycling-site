@@ -1,5 +1,4 @@
 import json
-from unittest import skip
 
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -36,22 +35,23 @@ def _get_site_root():
 class KnowledgeArticlePageRenderTests(TestCase):
     def setUp(self):
         root = _get_site_root()
-        self.index = KnowledgeIndexPage(title="Knowledge", slug="knowledge")
+        self.index = KnowledgeIndexPage(title="Knowledge Render", slug="knowledge-render-test")
         root.add_child(instance=self.index)
+        self.index.save_revision().publish()
         self.article = KnowledgeArticlePage(
             title="Test Article",
-            slug="test-article",
+            slug="test-article-render",
             body=json.dumps([{"type": "text", "value": "<p>Hello world</p>"}]),
         )
         self.index.add_child(instance=self.article)
+        self.article.save_revision().publish()
+        self.article = KnowledgeArticlePage.objects.get(pk=self.article.pk)
 
-    @skip("slug conflict with migration-created KnowledgeIndexPage -fix test setUp to handle migration data")
     def test_index_renders(self):
         response = self.client.get(self.index.url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Article")
 
-    @skip("slug conflict with migration-created KnowledgeIndexPage -fix test setUp to handle migration data")
     def test_article_renders(self):
         response = self.client.get(self.article.url)
         self.assertEqual(response.status_code, 200)
@@ -62,15 +62,17 @@ class KnowledgeArticlePageRenderTests(TestCase):
 class LocationArticlePageRenderTests(TestCase):
     def setUp(self):
         root = _get_site_root()
-        index = KnowledgeIndexPage(title="Knowledge", slug="knowledge")
+        index = KnowledgeIndexPage(title="Knowledge Location", slug="knowledge-location-test")
         root.add_child(instance=index)
+        index.save_revision().publish()
         self.location = LocationArticlePage(
             title="Almaty Loop Route",
-            slug="almaty-loop",
+            slug="almaty-loop-render",
         )
         index.add_child(instance=self.location)
+        self.location.save_revision().publish()
+        self.location = LocationArticlePage.objects.get(pk=self.location.pk)
 
-    @skip("slug conflict with migration-created KnowledgeIndexPage -fix test setUp to handle migration data")
     def test_location_article_renders(self):
         response = self.client.get(self.location.url)
         self.assertEqual(response.status_code, 200)
@@ -80,20 +82,21 @@ class LocationArticlePageRenderTests(TestCase):
 class SearchReturnsKnowledgeArticleTests(TestCase):
     def setUp(self):
         root = _get_site_root()
-        index = KnowledgeIndexPage(title="Knowledge", slug="knowledge")
+        index = KnowledgeIndexPage(title="Knowledge Search", slug="knowledge-search-test")
         root.add_child(instance=index)
+        index.save_revision().publish()
         self.article = KnowledgeArticlePage(
             title="Cycling Routes in Almaty",
-            slug="cycling-routes-almaty",
+            slug="cycling-routes-almaty-test",
         )
         index.add_child(instance=self.article)
+        self.article.save_revision().publish()
+        self.article = KnowledgeArticlePage.objects.get(pk=self.article.pk)
 
-    @skip("slug conflict with migration-created KnowledgeIndexPage -fix test setUp to handle migration data")
     def test_search_page_returns_200(self):
         response = self.client.get(reverse("search") + "?query=Almaty")
         self.assertEqual(response.status_code, 200)
 
-    @skip("slug conflict with migration-created KnowledgeIndexPage -fix test setUp to handle migration data")
     def test_search_finds_article_by_title(self):
         from wagtail.search.backends import get_search_backend
 
@@ -236,8 +239,11 @@ class DraftSubmissionApproveRejectTests(TestCase):
         self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
         self.assertEqual(self.submission.reviewed_by, self.staff)
 
-    @skip("migration creates KnowledgeIndexPage for all locales -fix test to use a locale without index page")
     def test_approve_fails_without_index_page(self):
+        from wagtail.models import Locale
+
+        locale_kk = Locale.objects.get(language_code="kk")
+        KnowledgeIndexPage.objects.filter(locale=locale_kk).delete()
         sub = DraftSubmission.objects.create(
             author=self.participant,
             submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,

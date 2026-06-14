@@ -2,7 +2,7 @@ from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTestCase
 
 from home.models import HomePage
-from knowledge.models import KnowledgeArticlePage, KnowledgeIndexPage
+from knowledge.models import KnowledgeArticlePage, KnowledgeIndexPage, LocationArticlePage
 
 
 class SearchViewTests(WagtailPageTestCase):
@@ -23,6 +23,15 @@ class SearchViewTests(WagtailPageTestCase):
         index = KnowledgeIndexPage(title="KB Index", slug="kb-index")
         self.homepage.add_child(instance=index)
         article = KnowledgeArticlePage(
+            title=title, slug=title.lower().replace(" ", "-"), is_hidden=is_hidden, is_deleted=is_deleted
+        )
+        index.add_child(instance=article)
+        return article
+
+    def _make_location_article(self, title="Location", is_hidden=False, is_deleted=False):
+        index = KnowledgeIndexPage(title="Loc Index", slug=f"loc-index-{title.lower().replace(' ', '-')}")
+        self.homepage.add_child(instance=index)
+        article = LocationArticlePage(
             title=title, slug=title.lower().replace(" ", "-"), is_hidden=is_hidden, is_deleted=is_deleted
         )
         index.add_child(instance=article)
@@ -62,6 +71,26 @@ class SearchViewTests(WagtailPageTestCase):
         page_ids = [r.id for r in response.context["search_results"].object_list]
         deleted_ids = list(
             KnowledgeArticlePage.objects.filter(title="DeletedSecret").values_list("page_ptr_id", flat=True)
+        )
+        for did in deleted_ids:
+            self.assertNotIn(did, page_ids)
+
+    def test_hidden_location_article_excluded_from_search(self):
+        self._make_location_article(title="HiddenRoute", is_hidden=True)
+        response = self.client.get("/search/", {"query": "HiddenRoute"})
+        self.assertEqual(response.status_code, 200)
+        page_ids = [r.id for r in response.context["search_results"].object_list]
+        hidden_ids = list(LocationArticlePage.objects.filter(title="HiddenRoute").values_list("page_ptr_id", flat=True))
+        for hid in hidden_ids:
+            self.assertNotIn(hid, page_ids)
+
+    def test_deleted_location_article_excluded_from_search(self):
+        self._make_location_article(title="DeletedRoute", is_deleted=True)
+        response = self.client.get("/search/", {"query": "DeletedRoute"})
+        self.assertEqual(response.status_code, 200)
+        page_ids = [r.id for r in response.context["search_results"].object_list]
+        deleted_ids = list(
+            LocationArticlePage.objects.filter(title="DeletedRoute").values_list("page_ptr_id", flat=True)
         )
         for did in deleted_ids:
             self.assertNotIn(did, page_ids)
