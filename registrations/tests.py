@@ -447,6 +447,51 @@ class EditRegistrationViewTests(TestCase):
         self.assertEqual(self.reg_free.first_name, "Updated")
         self.assertEqual(self.reg_free.gender, "F")
 
+    def test_xss_payload_in_relay_fields_is_escaped_on_save(self):
+        relay_reg = make_registration(
+            self.comp_free,
+            participant_names="Rider One<BR>Rider Two",
+            participant_birth_years="1990<BR>1995",
+            participant_cities="City A<BR>City B",
+        )
+        url = reverse("registrations:edit_registration", args=[self.comp_free.pk, relay_reg.pk])
+        self.client.post(
+            url,
+            {
+                "first_name": "",
+                "last_name": "",
+                "birth_date": "1990-01-01",
+                "gender": "M",
+                "participant_names": "<script>alert(1)</script><BR>Rider Two",
+                "participant_birth_years": "<img src=x><BR>1995",
+                "participant_cities": "<b>City A</b><BR>City B",
+            },
+        )
+        relay_reg.refresh_from_db()
+        self.assertNotIn("<script>", relay_reg.participant_names)
+        self.assertNotIn("<img", relay_reg.participant_birth_years)
+        self.assertNotIn("<b>", relay_reg.participant_cities)
+
+    def test_relay_xss_not_rendered_as_html_in_participant_list(self):
+        relay_reg = make_registration(
+            self.comp_free,
+            participant_names="Rider One<BR>Rider Two",
+        )
+        url_edit = reverse("registrations:edit_registration", args=[self.comp_free.pk, relay_reg.pk])
+        self.client.post(
+            url_edit,
+            {
+                "first_name": "",
+                "last_name": "",
+                "birth_date": "1990-01-01",
+                "gender": "M",
+                "participant_names": "<script>xss</script><BR>Rider Two",
+            },
+        )
+        url_list = reverse("registrations:participant_list", args=[self.comp_free.pk])
+        resp = self.client.get(url_list)
+        self.assertNotIn(b"<script>xss</script>", resp.content)
+
 
 class ParticipantsAPIViewTests(TestCase):
     def setUp(self):

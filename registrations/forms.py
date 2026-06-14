@@ -1,7 +1,9 @@
 import datetime
+import re
 from typing import ClassVar
 
 from django import forms
+from django.utils.html import escape
 
 from .models import CompetitionRegistration, RegistrationCategory
 
@@ -86,6 +88,20 @@ class EditRegistrationForm(forms.ModelForm):
             "participant_birth_years": forms.TextInput(attrs={"placeholder": "1990<BR>1995<BR>2000"}),
             "participant_cities": forms.TextInput(attrs={"placeholder": "City1<BR>City2<BR>City3"}),
         }
+
+    def _sanitize_relay_field(self, field_name):
+        value = self.cleaned_data.get(field_name, "") or ""
+        parts = re.split(r"<BR>", value, flags=re.IGNORECASE)
+        return "<BR>".join(escape(p.strip()) for p in parts if p.strip())
+
+    def clean_participant_names(self):
+        return self._sanitize_relay_field("participant_names")
+
+    def clean_participant_birth_years(self):
+        return self._sanitize_relay_field("participant_birth_years")
+
+    def clean_participant_cities(self):
+        return self._sanitize_relay_field("participant_cities")
 
     def __init__(self, *args, competition=None, service_fields_only=False, **kwargs):
         super().__init__(*args, **kwargs)
