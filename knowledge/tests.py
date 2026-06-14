@@ -288,6 +288,42 @@ class DraftSubmissionApproveRejectTests(TestCase):
         response = self.client.post(approve_url)
         self.assertNotEqual(response.status_code, 200)
 
+    def test_staff_without_admin_role_cannot_approve(self):
+        User.objects.create_user(
+            username="staff_organizer@example.com",
+            email="staff_organizer@example.com",
+            password="password123",
+            is_staff=True,
+            role=User.Role.ORGANIZER,
+        )
+        self.client.login(username="staff_organizer@example.com", password="password123")
+        approve_url = reverse(
+            "wagtailsnippets_knowledge_draftsubmission:approve",
+            args=[self.submission.pk],
+        )
+        response = self.client.post(approve_url)
+        self.assertNotEqual(response.status_code, 200)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
+
+    def test_staff_without_admin_role_cannot_reject(self):
+        User.objects.create_user(
+            username="staff_org2@example.com",
+            email="staff_org2@example.com",
+            password="password123",
+            is_staff=True,
+            role=User.Role.ORGANIZER,
+        )
+        self.client.login(username="staff_org2@example.com", password="password123")
+        reject_url = reverse(
+            "wagtailsnippets_knowledge_draftsubmission:reject",
+            args=[self.submission.pk],
+        )
+        response = self.client.post(reject_url)
+        self.assertNotEqual(response.status_code, 200)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
+
     def test_approve_escapes_body_html(self):
         sub = DraftSubmission.objects.create(
             author=self.participant,

@@ -160,7 +160,7 @@ class AddCommentView(ParticipantRequiredMixin, View):
 
 class DeleteCommentView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        if not request.user.is_staff:
+        if not _can_manage_news(request.user):
             raise PermissionDenied
         comment = get_object_or_404(Comment, pk=pk)
         page_url = comment.page.url

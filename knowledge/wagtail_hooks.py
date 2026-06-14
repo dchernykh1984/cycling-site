@@ -9,9 +9,15 @@ from wagtail.admin.widgets.button import ListingButton
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
 
+from accounts.models import User
 from knowledge.models import DraftSubmission
 
 _LIST_URL_NAME = "wagtailsnippets_knowledge_draftsubmission:list"
+_ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
+
+
+def _can_manage_knowledge(user) -> bool:
+    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
 
 
 class DraftSubmissionViewSet(SnippetViewSet):
@@ -39,7 +45,7 @@ class DraftSubmissionViewSet(SnippetViewSet):
         ]
 
     def approve_view(self, request, pk):
-        if not request.user.is_staff:
+        if not _can_manage_knowledge(request.user):
             raise PermissionDenied
         sub = get_object_or_404(DraftSubmission, pk=pk)
         if sub.status != DraftSubmission.Status.PENDING:
@@ -59,7 +65,7 @@ class DraftSubmissionViewSet(SnippetViewSet):
         )
 
     def reject_view(self, request, pk):
-        if not request.user.is_staff:
+        if not _can_manage_knowledge(request.user):
             raise PermissionDenied
         sub = get_object_or_404(DraftSubmission, pk=pk)
         if sub.status != DraftSubmission.Status.PENDING:
