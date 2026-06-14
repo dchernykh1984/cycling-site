@@ -617,7 +617,15 @@ class TeamAutocompleteView(View):
 class CityAutocompleteView(View):
     def get(self, request):
         q = request.GET.get("q", "").strip()
-        qs = CompetitionRegistration.objects.exclude(city="").values_list("city", flat=True).distinct()
+        qs = (
+            CompetitionRegistration.objects.filter(
+                competition__status=Competition.Status.APPROVED,
+                competition__is_hidden=False,
+            )
+            .exclude(city="")
+            .values_list("city", flat=True)
+            .distinct()
+        )
         if q:
             qs = qs.filter(city__icontains=q)
         cities = sorted(set(qs[:50]))
