@@ -4,6 +4,8 @@ import json
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext
+from django.utils.translation import override as translation_override
 
 from accounts.models import User
 from calendar_app.models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
@@ -370,6 +372,18 @@ class SubmitCompetitionViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertFormError(response.context["form"], None, "End date cannot be before start date.")
+
+    def test_date_range_error_translated_to_ru(self):
+        self.client.login(username="participant@example.com", password="password123")
+        response = self.client.post(
+            self._submit_url(),
+            self._payload(date_start="2026-09-05", date_end="2026-09-01"),
+            HTTP_ACCEPT_LANGUAGE="ru",
+        )
+        self.assertEqual(response.status_code, 200)
+        with translation_override("ru"):
+            expected = gettext("End date cannot be before start date.")
+        self.assertFormError(response.context["form"], None, expected)
 
     def test_get_shows_form(self):
         self.client.login(username="participant@example.com", password="password123")
