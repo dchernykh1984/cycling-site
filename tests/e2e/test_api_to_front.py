@@ -28,6 +28,27 @@ def api_admin(db):
     )
 
 
+@pytest.fixture
+def knowledge_index(db, wagtail_home_page):
+    """Guarantee a live ru KnowledgeIndexPage so approved knowledge drafts have a parent.
+
+    The migration-created index pages are flushed in the transactional e2e DB (they exist
+    locally but not in CI), so approve() would otherwise fail with 'No live
+    KnowledgeIndexPage'. The article may end up under a different index than this one when
+    several exist, so the test navigates via the created article rather than this object.
+    """
+    from wagtail.models import Page, Site
+
+    from knowledge.models import KnowledgeIndexPage
+
+    site = Site.objects.filter(is_default_site=True).first()
+    root = site.root_page if site else Page.objects.filter(depth=1).first()
+    index = KnowledgeIndexPage(title="Knowledge Base", slug="knowledge-base")
+    root.add_child(instance=index)
+    index.save_revision().publish()
+    return KnowledgeIndexPage.objects.get(pk=index.pk)
+
+
 def _api_post(page, url, token, payload):
     return page.request.post(
         url,
@@ -85,7 +106,7 @@ def test_competition_created_via_api_appears_on_front(page: Page, live_server, a
 
 
 @pytest.mark.django_db(transaction=True)
-def test_knowledge_article_created_via_api_appears_on_front(page: Page, live_server, api_admin):
+def test_knowledge_article_created_via_api_appears_on_front(page: Page, live_server, api_admin, knowledge_index):
     resp = _api_post(
         page,
         f"{live_server.url}/api/v1/knowledge/",
@@ -98,7 +119,7 @@ def test_knowledge_article_created_via_api_appears_on_front(page: Page, live_ser
         },
     )
     # Admin POST auto-approves the draft, which creates a live KnowledgeArticlePage
-    # under the locale's KnowledgeIndexPage (created by migration 0005).
+    # under the ru KnowledgeIndexPage (guaranteed by the knowledge_index fixture).
     assert resp.status == 201, resp.text()
     assert resp.json()["status"] == DraftSubmission.Status.APPROVED
 
