@@ -251,7 +251,7 @@
 
 {% if competitions %}
 <div class="table-responsive">
-  <table class="table table-hover align-middle">
+  <table class="table table-hover align-middle table-sm small">
     <thead>
       <tr>
         <th>{% trans "Title" %}</th>
@@ -275,7 +275,7 @@
           </a>
           {% if is_manager and comp.is_hidden %}<span class="badge bg-warning text-dark ms-1">{% trans "Hidden" %}</span>{% endif %}
         </td>
-        <td class="text-nowrap">
+        <td>
           {{ comp.date_start|date:"d.m.Y" }}
           {% if comp.date_end and comp.date_end != comp.date_start %}
           — {{ comp.date_end|date:"d.m.Y" }}
@@ -288,15 +288,17 @@
         <td>{{ comp.region_label|default:"—" }}</td>
         <td>{{ comp.city_label|default:"—" }}</td>
         <td>{{ comp.location_label|default:"—" }}</td>
-        <td class="text-nowrap">
-          {% if comp.url_announcement %}
-          <a href="{{ comp.url_announcement }}" target="_blank" rel="noopener"
-             class="btn btn-sm btn-outline-secondary me-1">{% trans "Info" %}</a>
-          {% endif %}
-          {% if comp.url_registration %}
-          <a href="{{ comp.url_registration }}" target="_blank" rel="noopener"
-             class="btn btn-sm btn-primary">{% trans "Register" %}</a>
-          {% endif %}
+        <td>
+          <div class="d-flex flex-column gap-1">
+            {% if comp.url_announcement %}
+            <a href="{{ comp.url_announcement }}" target="_blank" rel="noopener"
+               class="btn btn-sm btn-outline-secondary">{% trans "Info" %}</a>
+            {% endif %}
+            {% if comp.url_registration %}
+            <a href="{{ comp.url_registration }}" target="_blank" rel="noopener"
+               class="btn btn-sm btn-primary">{% trans "Register" %}</a>
+            {% endif %}
+          </div>
         </td>
       </tr>
       {% endfor %}
