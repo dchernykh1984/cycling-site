@@ -621,7 +621,11 @@ class CityAutocompleteView(View):
             CompetitionRegistration.objects.filter(
                 competition__status=Competition.Status.APPROVED,
                 competition__is_hidden=False,
+                competition__is_deleted=False,
+                is_rejected=False,
             )
+            .exclude(competition__require_approval=True, is_approved=False)
+            .exclude(competition__require_payment=True, is_paid=False)
             .exclude(city="")
             .values_list("city", flat=True)
             .distinct()
