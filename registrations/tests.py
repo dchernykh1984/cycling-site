@@ -306,6 +306,13 @@ class RegisterForCompetitionViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(CompetitionRegistration.objects.filter(competition=self.comp).count(), 1)
 
+    def test_pending_competition_register_returns_404(self):
+        pending_comp = make_open_competition(status=Competition.Status.PENDING_APPROVAL)
+        url = reverse("registrations:register", args=[pending_comp.pk])
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
 
 class ParticipantListViewTests(TestCase):
     def setUp(self):
@@ -342,6 +349,21 @@ class ParticipantListViewTests(TestCase):
         regs = list(response.context["registrations"])
         self.assertEqual(len(regs), 1)
         self.assertTrue(regs[0].is_approved)
+
+    def test_pending_competition_participant_list_returns_404(self):
+        pending_comp = make_competition(title="Pending Race", status=Competition.Status.PENDING_APPROVAL)
+        url = reverse("registrations:participant_list", args=[pending_comp.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_pending_competition_participant_list_accessible_to_manager(self):
+        pending_comp = make_competition(
+            title="Manager Pending", status=Competition.Status.PENDING_APPROVAL, submitted_by=self.organizer
+        )
+        url = reverse("registrations:participant_list", args=[pending_comp.pk])
+        self.client.force_login(self.organizer)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
 
 
 class ManagementActionTests(TestCase):

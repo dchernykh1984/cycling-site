@@ -55,6 +55,8 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
         competition = self._get_competition(pk)
         if competition.is_hidden and not can_manage(request.user, competition):
             raise Http404
+        if competition.status != Competition.Status.APPROVED and not can_manage(request.user, competition):
+            raise Http404
         if not competition.is_registration_open():
             return render(
                 request,
@@ -131,6 +133,8 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
         self._check_participant(request)
         competition = self._get_competition(pk)
         if competition.is_hidden and not can_manage(request.user, competition):
+            raise Http404
+        if competition.status != Competition.Status.APPROVED and not can_manage(request.user, competition):
             raise Http404
         if not competition.is_registration_open():
             raise PermissionDenied
@@ -287,6 +291,8 @@ class ParticipantListView(TemplateView):
         is_manager = can_manage(user, competition)
 
         if competition.is_hidden and not is_manager:
+            raise Http404
+        if competition.status != Competition.Status.APPROVED and not is_manager:
             raise Http404
 
         if is_manager:
