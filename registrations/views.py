@@ -4,6 +4,7 @@ import json
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.html import escape
@@ -199,67 +200,83 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
                         else datetime.date(1900, 1, 1)
                     )
 
-            if not relay_enabled and check_duplicate(competition, user, first_name, last_name, birth_date):
-                form.add_error(None, "You are already registered for this competition.")
-                return render(
-                    request,
-                    self.template_name,
-                    {
-                        "competition": competition,
-                        "form": form,
-                        "is_free": is_free,
-                        "relay_enabled": relay_enabled,
-                        "relay_max_members": competition.relay_max_members,
-                    },
+            with transaction.atomic():
+                competition = Competition.objects.select_for_update().get(pk=competition.pk)
+                if not relay_enabled and check_duplicate(competition, user, first_name, last_name, birth_date):
+                    form.add_error(None, "You are already registered for this competition.")
+                    return render(
+                        request,
+                        self.template_name,
+                        {
+                            "competition": competition,
+                            "form": form,
+                            "is_free": is_free,
+                            "relay_enabled": relay_enabled,
+                            "relay_max_members": competition.relay_max_members,
+                        },
+                    )
+
+                team = None
+                team_name = cleaned.get("team_name", "").strip()
+                if team_name:
+                    team = Team.get_or_restore(team_name)
+
+                category = cleaned.get("category")
+                # For relay only check gender; birth years span multiple age groups
+                cat_ok = not category or (
+                    category.is_open()
+                    and (category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date))
+                )
+                if not cat_ok:
+                    form.add_error("category", "This category is not available.")
+                    return render(
+                        request,
+                        self.template_name,
+                        {
+                            "competition": competition,
+                            "form": form,
+                            "is_free": is_free,
+                            "relay_enabled": relay_enabled,
+                            "relay_max_members": competition.relay_max_members,
+                        },
+                    )
+
+                if not competition.is_registration_open():
+                    form.add_error(None, "Registration is no longer available.")
+                    return render(
+                        request,
+                        self.template_name,
+                        {
+                            "competition": competition,
+                            "form": form,
+                            "is_free": is_free,
+                            "relay_enabled": relay_enabled,
+                            "relay_max_members": competition.relay_max_members,
+                        },
+                    )
+
+                CompetitionRegistration.objects.create(
+                    competition=competition,
+                    user=user,
+                    registered_by=user,
+                    first_name=first_name,
+                    last_name=last_name,
+                    participant_names="<BR>".join(relay_names) if relay_enabled else "",
+                    participant_birth_years="<BR>".join(relay_birth_years) if relay_enabled else "",
+                    participant_cities="<BR>".join(relay_cities) if relay_enabled else "",
+                    birth_date=birth_date,
+                    gender=gender,
+                    category=category,
+                    city="" if relay_enabled else cleaned.get("city", ""),
+                    team=team,
+                    additional_info=cleaned.get("additional_info", ""),
+                    is_approved=not competition.require_approval,
+                    is_paid=not competition.require_payment,
                 )
 
-            team = None
-            team_name = cleaned.get("team_name", "").strip()
-            if team_name:
-                team = Team.get_or_restore(team_name)
-
-            category = cleaned.get("category")
-            # For relay only check gender; birth years span multiple age groups
-            cat_ok = not category or (
-                category.is_open()
-                and (category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date))
-            )
-            if not cat_ok:
-                form.add_error("category", "This category is not available.")
-                return render(
-                    request,
-                    self.template_name,
-                    {
-                        "competition": competition,
-                        "form": form,
-                        "is_free": is_free,
-                        "relay_enabled": relay_enabled,
-                        "relay_max_members": competition.relay_max_members,
-                    },
+                Competition.objects.filter(pk=competition.pk, registration_mode_locked=False).update(
+                    registration_mode_locked=True
                 )
-
-            CompetitionRegistration.objects.create(
-                competition=competition,
-                user=user,
-                registered_by=user,
-                first_name=first_name,
-                last_name=last_name,
-                participant_names="<BR>".join(relay_names) if relay_enabled else "",
-                participant_birth_years="<BR>".join(relay_birth_years) if relay_enabled else "",
-                participant_cities="<BR>".join(relay_cities) if relay_enabled else "",
-                birth_date=birth_date,
-                gender=gender,
-                category=category,
-                city="" if relay_enabled else cleaned.get("city", ""),
-                team=team,
-                additional_info=cleaned.get("additional_info", ""),
-                is_approved=not competition.require_approval,
-                is_paid=not competition.require_payment,
-            )
-
-            Competition.objects.filter(pk=competition.pk, registration_mode_locked=False).update(
-                registration_mode_locked=True
-            )
 
             return redirect("registrations:participant_list", pk=competition.pk)
 
@@ -495,37 +512,39 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
                     else datetime.date(1900, 1, 1)
                 )
 
-            cat_ok = not category or (
-                category.is_open()
-                and (category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date))
-            )
-            if not cat_ok:
-                form.add_error("category", "This category is not available.")
-                return render(request, self.template_name, ctx)
+            with transaction.atomic():
+                competition = Competition.objects.select_for_update().get(pk=competition.pk)
+                cat_ok = not category or (
+                    category.is_open()
+                    and (category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date))
+                )
+                if not cat_ok:
+                    form.add_error("category", "This category is not available.")
+                    return render(request, self.template_name, ctx)
 
-            if not relay_enabled and check_duplicate(competition, None, first_name, last_name, birth_date):
-                form.add_error(None, "A participant with this name and birth year is already registered.")
-                return render(request, self.template_name, ctx)
+                if not relay_enabled and check_duplicate(competition, None, first_name, last_name, birth_date):
+                    form.add_error(None, "A participant with this name and birth year is already registered.")
+                    return render(request, self.template_name, ctx)
 
-            team_name = cleaned.get("team_name", "").strip()
-            team = Team.get_or_restore(team_name) if team_name else None
-            CompetitionRegistration.objects.create(
-                competition=competition,
-                registered_by=request.user,
-                first_name=first_name,
-                last_name=last_name,
-                participant_names="<BR>".join(relay_names) if relay_enabled else "",
-                participant_birth_years="<BR>".join(relay_birth_years) if relay_enabled else "",
-                participant_cities="<BR>".join(relay_cities) if relay_enabled else "",
-                birth_date=birth_date,
-                gender=gender,
-                category=category,
-                city="" if relay_enabled else cleaned.get("city", ""),
-                team=team,
-                additional_info=cleaned.get("additional_info", ""),
-                is_approved=not competition.require_approval,
-                is_paid=not competition.require_payment,
-            )
+                team_name = cleaned.get("team_name", "").strip()
+                team = Team.get_or_restore(team_name) if team_name else None
+                CompetitionRegistration.objects.create(
+                    competition=competition,
+                    registered_by=request.user,
+                    first_name=first_name,
+                    last_name=last_name,
+                    participant_names="<BR>".join(relay_names) if relay_enabled else "",
+                    participant_birth_years="<BR>".join(relay_birth_years) if relay_enabled else "",
+                    participant_cities="<BR>".join(relay_cities) if relay_enabled else "",
+                    birth_date=birth_date,
+                    gender=gender,
+                    category=category,
+                    city="" if relay_enabled else cleaned.get("city", ""),
+                    team=team,
+                    additional_info=cleaned.get("additional_info", ""),
+                    is_approved=not competition.require_approval,
+                    is_paid=not competition.require_payment,
+                )
             return redirect("registrations:participant_list", pk=pk)
 
         return render(request, self.template_name, ctx)
