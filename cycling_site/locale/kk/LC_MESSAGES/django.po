@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-14 02:04+0000\n"
+"POT-Creation-Date: 2026-06-14 02:20+0000\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -114,7 +114,8 @@ msgstr "Мақала жіберу"
 #: calendar_app/templates/calendar_app/submit.html:29
 #: calendar_app/templates/calendar_app/submit.html:41
 #: calendar_app/templates/calendar_app/submit.html:53 knowledge/models.py:253
-#: news/forms.py:29 news/forms.py:34 news/forms.py:40
+#: knowledge/tests.py:669 knowledge/tests.py:684 news/forms.py:29
+#: news/forms.py:34 news/forms.py:40
 msgid "Title"
 msgstr "Атауы"
 
@@ -153,6 +154,7 @@ msgstr "Жарыс"
 
 #: accounts/templates/accounts/profile.html:136 knowledge/models.py:255
 #: knowledge/templates/knowledge/submission_detail.html:31
+#: knowledge/tests.py:671 knowledge/tests.py:686
 #: registrations/templates/registrations/participant_list.html:57
 #: registrations/templates/registrations/register.html:157
 msgid "Category"
@@ -918,6 +920,18 @@ msgstr "ш.б."
 msgid "W"
 msgstr "б.б."
 
+#: cycling_site/templates/404.html:4 cycling_site/templates/404.html:12
+msgid "Page not found"
+msgstr "Бет табылмады"
+
+#: cycling_site/templates/404.html:13
+msgid "Sorry, the page you are looking for does not exist."
+msgstr "Сіз іздеген бет табылмады."
+
+#: cycling_site/templates/404.html:14
+msgid "Go to home page"
+msgstr "Басты бетке"
+
 #: cycling_site/templates/_map_layers.html:22
 #: cycling_site/templates/base.html:68
 #: locations/templates/locations/location_form.html:13
@@ -1089,22 +1103,24 @@ msgstr "Алдымен суперпайдаланушы жасаңыз!"
 
 #: knowledge/forms.py:10 knowledge/models.py:252
 #: knowledge/templates/knowledge/submission_detail.html:27
+#: knowledge/tests.py:668 knowledge/tests.py:683
 msgid "Locale"
 msgstr "Тіл"
 
-#: knowledge/models.py:249
+#: knowledge/models.py:249 knowledge/tests.py:676 knowledge/tests.py:691
 msgid "Russian"
 msgstr "Орыс тілі"
 
-#: knowledge/models.py:249
+#: knowledge/models.py:249 knowledge/tests.py:677 knowledge/tests.py:692
 msgid "Kazakh"
 msgstr "Қазақ тілі"
 
-#: knowledge/models.py:249
+#: knowledge/models.py:249 knowledge/tests.py:678 knowledge/tests.py:693
 msgid "English"
 msgstr "Ағылшын тілі"
 
-#: knowledge/models.py:254 news/forms.py:61 news/forms.py:62 news/forms.py:63
+#: knowledge/models.py:254 knowledge/tests.py:670 knowledge/tests.py:685
+#: news/forms.py:61 news/forms.py:62 news/forms.py:63
 msgid "Body"
 msgstr "Мәтін"
 
@@ -1198,10 +1214,12 @@ msgid "Submission type"
 msgstr "Материал түрі"
 
 #: knowledge/templates/knowledge/submission_detail.html:21
+#: knowledge/tests.py:644 knowledge/tests.py:649
 msgid "Author"
 msgstr "Автор"
 
 #: knowledge/templates/knowledge/submission_detail.html:24
+#: knowledge/tests.py:634 knowledge/tests.py:639
 msgid "Submitted"
 msgstr "Қосқан"
 
