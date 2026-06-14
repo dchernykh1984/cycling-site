@@ -97,7 +97,7 @@ news and knowledge-article drafts, locations, plus endpoints for participant
 list retrieval and protocol file uploads used by the offline referee tools.
 
 All write operations require a Bearer token: `Authorization: Bearer <token>`.
-Organizers and higher can generate their personal API token on the profile page.
+Participants and higher can generate their personal API token on the profile page.
 The full interactive API reference (Swagger UI) is linked from the profile page
 after the token is generated.
 
