@@ -172,7 +172,7 @@ class CompetitionListView(TemplateView):
 
         is_manager = _can_manage_any_competition(self.request.user)
         qs = Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False).select_related(
-            "event_type", "discipline", "location"
+            "event_type", "discipline", "discipline__category", "location"
         )
         if not is_manager:
             qs = qs.filter(is_hidden=False)

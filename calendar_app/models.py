@@ -5,6 +5,7 @@ from typing import ClassVar
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.functional import cached_property
 from wagtail.search import index
 
 
@@ -267,6 +268,39 @@ class Competition(index.Indexed, models.Model):
         if not loc:
             return ""
         return ", ".join(n.name for n in [*loc.get_ancestors(), loc])
+
+    @property
+    def direction_label(self) -> str:
+        """Discipline category (e.g. Road, MTB) - the "direction" used in filters."""
+        if self.discipline and self.discipline.category:
+            return self.discipline.category.name
+        return ""
+
+    @cached_property
+    def _location_nodes_by_depth(self) -> dict:
+        """Maps tree depth -> location node for this competition's location chain.
+
+        Depth convention: 1=country, 2=region, 3=city, 4=venue.
+        """
+        loc = self.location
+        if not loc:
+            return {}
+        return {node.depth: node for node in [*loc.get_ancestors(), loc]}
+
+    @property
+    def country_label(self) -> str:
+        node = self._location_nodes_by_depth.get(1)
+        return node.name if node else ""
+
+    @property
+    def region_label(self) -> str:
+        node = self._location_nodes_by_depth.get(2)
+        return node.name if node else ""
+
+    @property
+    def city_label(self) -> str:
+        node = self._location_nodes_by_depth.get(3)
+        return node.name if node else ""
 
 
 class CompetitionComment(models.Model):
