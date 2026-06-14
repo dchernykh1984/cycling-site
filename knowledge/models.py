@@ -277,16 +277,16 @@ class DraftSubmission(models.Model):
             if locked.status != DraftSubmission.Status.PENDING:
                 raise ValueError(f"Cannot approve: submission is already '{locked.get_status_display()}'.")
 
-            if locked.submission_type == DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE:
-                locked._create_knowledge_article(reviewer)
-            elif locked.submission_type == DraftSubmission.SubmissionType.NEWS:
-                locked._create_news_page(reviewer)
+            if self.submission_type == DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE:
+                self._create_knowledge_article(reviewer)
+            elif self.submission_type == DraftSubmission.SubmissionType.NEWS:
+                self._create_news_page(reviewer)
             else:
-                raise ValueError(f"Unknown submission type: '{locked.submission_type}'.")
+                raise ValueError(f"Unknown submission type: '{self.submission_type}'.")
 
-            locked.status = DraftSubmission.Status.APPROVED
-            locked.reviewed_by = reviewer
-            locked.save(update_fields=["status", "reviewed_by"])
+            self.status = DraftSubmission.Status.APPROVED
+            self.reviewed_by = reviewer
+            self.save(update_fields=["status", "reviewed_by"])
 
     def _create_knowledge_article(self, reviewer) -> None:
         import json
@@ -368,7 +368,7 @@ class DraftSubmission(models.Model):
             locked = DraftSubmission.objects.select_for_update().get(pk=self.pk)
             if locked.status != DraftSubmission.Status.PENDING:
                 raise ValueError(f"Cannot reject: submission is already '{locked.get_status_display()}'.")
-            locked.status = DraftSubmission.Status.REJECTED
-            locked.reviewed_by = reviewer
-            locked.reviewer_note = note
-            locked.save(update_fields=["status", "reviewed_by", "reviewer_note"])
+            self.status = DraftSubmission.Status.REJECTED
+            self.reviewed_by = reviewer
+            self.reviewer_note = note
+            self.save(update_fields=["status", "reviewed_by", "reviewer_note"])
