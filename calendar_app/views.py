@@ -53,6 +53,30 @@ def _disciplines_for_locale() -> list:
     return [{"pk": r["pk"], "name": r[name_field], "category_id": r["category_id"]} for r in rows]
 
 
+def _location_descendant_pks(location_ids) -> set:
+    """Union of descendant pks (incl. self) for all given location ids.
+
+    Supports multi-select location filtering: each value may itself be a
+    comma-separated group of ids (same-name nodes merged into one choice), and
+    several ids may be passed. Non-integer values are ignored.
+    """
+    ids: set[int] = set()
+    for value in location_ids:
+        for part in str(value).split(","):
+            part = part.strip()
+            if part:
+                try:
+                    ids.add(int(part))
+                except (ValueError, TypeError):
+                    continue
+    if not ids:
+        return set()
+    pks: set[int] = set()
+    for loc in Location.objects.filter(pk__in=ids):
+        pks.update(loc.get_descendants(include_self=True).values_list("pk", flat=True))
+    return pks
+
+
 def _apply_id_filters(qs, event_type_id, discipline_id, direction_id):
     """Apply integer-keyed filters; ignore any non-integer value silently."""
     if event_type_id:
@@ -133,15 +157,10 @@ class CalendarEventsAPIView(View):
         event_type_id = request.GET.get("event_type")
         discipline_id = request.GET.get("discipline")
         direction_id = request.GET.get("direction")
-        location_id = request.GET.get("location")
+        location_ids = request.GET.getlist("location")
         qs = _apply_id_filters(qs, event_type_id, discipline_id, direction_id)
-        if location_id:
-            try:
-                loc = Location.objects.get(pk=location_id)
-                descendant_pks = loc.get_descendants(include_self=True).values_list("pk", flat=True)
-                qs = qs.filter(location_id__in=descendant_pks)
-            except Location.DoesNotExist:
-                qs = qs.none()
+        if location_ids:
+            qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
 
         events = [
             {
@@ -184,14 +203,14 @@ class CompetitionListView(TemplateView):
                 qs = qs.filter(discipline=form.cleaned_data["discipline"])
             elif form.cleaned_data.get("discipline_category"):
                 qs = qs.filter(discipline__category=form.cleaned_data["discipline_category"])
-            if form.cleaned_data.get("location"):
-                loc = form.cleaned_data["location"]
-                descendant_pks = loc.get_descendants(include_self=True).values_list("pk", flat=True)
-                qs = qs.filter(location_id__in=descendant_pks)
             if form.cleaned_data.get("date_from"):
                 date_from = form.cleaned_data["date_from"]
             if form.cleaned_data.get("date_to"):
                 date_to = form.cleaned_data["date_to"]
+
+        location_ids = self.request.GET.getlist("location")
+        if location_ids:
+            qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
 
         qs = qs.filter(date_start__gte=date_from, date_start__lte=date_to).order_by("date_start")
         paginator = Paginator(qs, 20)

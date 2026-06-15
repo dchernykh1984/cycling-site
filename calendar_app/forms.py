@@ -189,12 +189,6 @@ class CompetitionFilterForm(forms.Form):
         empty_label="-",
         widget=forms.Select(attrs={"class": "form-select form-select-sm", "id": "filter-discipline"}),
     )
-    location = forms.ModelChoiceField(
-        queryset=Location.objects.filter(is_deleted=False),
-        required=False,
-        empty_label="-",
-        widget=forms.HiddenInput(),
-    )
     date_from = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),

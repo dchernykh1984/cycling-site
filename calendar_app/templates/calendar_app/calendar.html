@@ -62,31 +62,7 @@
             {% endfor %}
           </select>
         </div>
-        <div class="col-sm-4 col-lg-2">
-          <label class="form-label form-label-sm mb-1">{% trans "Country" %}</label>
-          <select id="filter-country" class="form-select form-select-sm">
-            <option value="">{% trans "All" %}</option>
-          </select>
-        </div>
-        <div class="col-sm-4 col-lg-2">
-          <label class="form-label form-label-sm mb-1">{% trans "Region" %}</label>
-          <select id="filter-oblast" class="form-select form-select-sm" disabled>
-            <option value="">{% trans "All" %}</option>
-          </select>
-        </div>
-        <div class="col-sm-4 col-lg-2">
-          <label class="form-label form-label-sm mb-1">{% trans "City" %}</label>
-          <select id="filter-city" class="form-select form-select-sm" disabled>
-            <option value="">{% trans "All" %}</option>
-          </select>
-        </div>
-        <div class="col-sm-4 col-lg-2">
-          <label class="form-label form-label-sm mb-1">{% trans "Venue" %}</label>
-          <select id="filter-venue" class="form-select form-select-sm" disabled>
-            <option value="">{% trans "All" %}</option>
-          </select>
-        </div>
-        <input type="hidden" id="filter-location" value="">
+        {% include "calendar_app/_location_filter.html" %}
       </div>
     </div>
   </div>
@@ -111,109 +87,9 @@ var FC_MONTHS = [
 document.addEventListener('DOMContentLoaded', function () {
   var eventsUrl = '{% url "calendar_events_api" %}';
 
-  // --- Cascading location dropdown ---
-  var allLocations = JSON.parse(document.getElementById('locations-data').textContent);
-  var lang = (document.documentElement.lang || 'ru').split('-')[0];
-  var nameField = (['ru','kk','en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
-  function locName(l) { return l[nameField] || l.name_ru || ''; }
-
-  var countrySelect = document.getElementById('filter-country');
-  var oblastSelect = document.getElementById('filter-oblast');
-  var citySelect = document.getElementById('filter-city');
-  var venueSelect = document.getElementById('filter-venue');
-  var locationInput = document.getElementById('filter-location');
-
-  function buildOptions(select, nodes, emptyLabel) {
-    select.innerHTML = '<option value="">' + emptyLabel + '</option>';
-    nodes.filter(function (l) { return !l.is_hidden; }).forEach(function (loc) {
-      var opt = document.createElement('option');
-      opt.value = loc.pk;
-      opt.textContent = locName(loc);
-      select.appendChild(opt);
-    });
-  }
-
-  function clearSelect(select) {
-    select.innerHTML = '<option value=""></option>';
-    select.disabled = true;
-  }
-
-  function pathOf(pk) {
-    var n = allLocations.find(function (l) { return String(l.pk) === String(pk); });
-    return n ? n.path : '';
-  }
-
-  function hiddenVenueOf(cityPath) {
-    return allLocations.find(function (l) {
-      return l.depth === 4 && l.is_hidden && l.path.indexOf(cityPath) === 0;
-    });
-  }
-
-  function updateLocationValue() {
-    var venue = venueSelect.value;
-    var city = citySelect.value;
-    var oblast = oblastSelect.value;
-    var country = countrySelect.value;
-    locationInput.value = venue || city || oblast || country;
-    calendar.refetchEvents();
-    updateListViewLink();
-  }
-
-  // Populate countries (depth=1)
-  var countries = allLocations.filter(function (l) { return l.depth === 1; });
-  buildOptions(countrySelect, countries, '{% trans "All" %}');
-
-  countrySelect.addEventListener('change', function () {
-    clearSelect(venueSelect);
-    clearSelect(citySelect);
-    clearSelect(oblastSelect);
-    var countryPath = '';
-    countries.forEach(function (c) { if (String(c.pk) === countrySelect.value) countryPath = c.path; });
-    if (countryPath) {
-      var oblasts = allLocations.filter(function (l) {
-        return l.depth === 2 && !l.is_hidden && l.path.indexOf(countryPath) === 0;
-      });
-      buildOptions(oblastSelect, oblasts, '{% trans "All" %}');
-      oblastSelect.disabled = false;
-    }
-    updateLocationValue();
-  });
-
-  oblastSelect.addEventListener('change', function () {
-    clearSelect(venueSelect);
-    clearSelect(citySelect);
-    var oblastPath = '';
-    allLocations.forEach(function (l) { if (String(l.pk) === oblastSelect.value) oblastPath = l.path; });
-    if (oblastPath) {
-      var cities = allLocations.filter(function (l) {
-        return l.depth === 3 && !l.is_hidden && l.path.indexOf(oblastPath) === 0;
-      });
-      buildOptions(citySelect, cities, '{% trans "All" %}');
-      citySelect.disabled = false;
-    }
-    updateLocationValue();
-  });
-
-  citySelect.addEventListener('change', function () {
-    clearSelect(venueSelect);
-    var cp = pathOf(citySelect.value);
-    if (cp) {
-      var realVenues = allLocations.filter(function (l) {
-        return l.depth === 4 && !l.is_hidden && l.path.indexOf(cp) === 0;
-      });
-      buildOptions(venueSelect, realVenues, '{% trans "All" %}');
-      var hv = hiddenVenueOf(cp);
-      if (hv) {
-        var hvOpt = document.createElement('option');
-        hvOpt.value = hv.pk; hvOpt.textContent = locName(hv);
-        venueSelect.appendChild(hvOpt);
-      }
-      venueSelect.disabled = false;
-    }
-    updateLocationValue();
-  });
-
-  venueSelect.addEventListener('change', updateLocationValue);
+  // Location multi-select cascade (country/region/city/location) is provided by
+  // _location_filter.html, which exposes window.getLocationFilterIds() and calls
+  // window.onLocationFilterChange() (defined below) whenever the selection changes.
 
   // --- Direction / Discipline cascade ---
   var directionSelect = document.getElementById('filter-direction');
@@ -246,7 +122,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (et) params.set('event_type', et);
     if (directionSelect.value) params.set('discipline_category', directionSelect.value);
     if (disciplineSelect.value) params.set('discipline', disciplineSelect.value);
-    if (locationInput.value) params.set('location', locationInput.value);
+    (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
+      params.append('location', id);
+    });
     var df = sessionStorage.getItem('cal_date_from');
     var dt = sessionStorage.getItem('cal_date_to');
     if (df) params.set('date_from', df);
@@ -269,53 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var dt = p.get('date_to');
     if (df) sessionStorage.setItem('cal_date_from', df);
     if (dt) sessionStorage.setItem('cal_date_to', dt);
-    var locId = p.get('location');
-    if (locId) {
-      locationInput.value = locId;
-      var initLoc = allLocations.find(function (l) { return String(l.pk) === locId; });
-      if (initLoc) {
-        var stepLen = initLoc.path.length / initLoc.depth;
-        var cp = initLoc.path.slice(0, stepLen);
-        var cntLoc = allLocations.find(function (l) { return l.path === cp && l.depth === 1; });
-        if (cntLoc) {
-          countrySelect.value = cntLoc.pk;
-          buildOptions(oblastSelect, allLocations.filter(function (l) {
-            return l.depth === 2 && !l.is_hidden && l.path.indexOf(cp) === 0;
-          }), '{% trans "All" %}');
-          oblastSelect.disabled = false;
-          if (initLoc.depth >= 2) {
-            var rp = initLoc.path.slice(0, stepLen * 2);
-            var regLoc = allLocations.find(function (l) { return l.path === rp && l.depth === 2; });
-            if (regLoc) {
-              oblastSelect.value = regLoc.pk;
-              buildOptions(citySelect, allLocations.filter(function (l) {
-                return l.depth === 3 && !l.is_hidden && l.path.indexOf(rp) === 0;
-              }), '{% trans "All" %}');
-              citySelect.disabled = false;
-              if (initLoc.depth >= 3) {
-                var cityPath = initLoc.path.slice(0, stepLen * 3);
-                var cityLoc = allLocations.find(function (l) { return l.path === cityPath && l.depth === 3; });
-                if (cityLoc) {
-                  citySelect.value = cityLoc.pk;
-                  var realVenues = allLocations.filter(function (l) {
-                    return l.depth === 4 && !l.is_hidden && l.path.indexOf(cityPath) === 0;
-                  });
-                  buildOptions(venueSelect, realVenues, '{% trans "All" %}');
-                  var hv = hiddenVenueOf(cityPath);
-                  if (hv) {
-                    var hvOpt = document.createElement('option');
-                    hvOpt.value = hv.pk; hvOpt.textContent = locName(hv);
-                    venueSelect.appendChild(hvOpt);
-                  }
-                  venueSelect.disabled = false;
-                  if (initLoc.depth === 4) venueSelect.value = locId;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    // Location selection is restored by _location_filter.html from ?location= params.
     updateListViewLink();
   }());
 
@@ -325,7 +157,6 @@ document.addEventListener('DOMContentLoaded', function () {
       event_type: document.getElementById('filter-event-type').value,
       direction: directionSelect.value,
       discipline: disciplineSelect.value,
-      location: locationInput.value,
     };
   }
 
@@ -346,6 +177,9 @@ document.addEventListener('DOMContentLoaded', function () {
       Object.keys(filters).forEach(function (k) {
         if (filters[k]) params.set(k, filters[k]);
       });
+      (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
+        params.append('location', id);
+      });
       fetch(eventsUrl + '?' + params.toString())
         .then(function (r) { return r.json(); })
         .then(successCallback)
@@ -360,6 +194,12 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   calendar.render();
+
+  // Called by _location_filter.html whenever the location multi-select changes.
+  window.onLocationFilterChange = function () {
+    calendar.refetchEvents();
+    updateListViewLink();
+  };
 
   ['filter-event-type', 'filter-discipline'].forEach(function (id) {
     document.getElementById(id).addEventListener('change', function () {

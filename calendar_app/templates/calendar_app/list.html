@@ -55,31 +55,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-sm-4 col-md-2">
-        <label class="form-label form-label-sm mb-1">{% trans "Country" %}</label>
-        <select id="flt-country" class="form-select form-select-sm">
-          <option value="">-</option>
-        </select>
-      </div>
-      <div class="col-sm-4 col-md-2">
-        <label class="form-label form-label-sm mb-1">{% trans "Region" %}</label>
-        <select id="flt-region" class="form-select form-select-sm" disabled>
-          <option value="">-</option>
-        </select>
-      </div>
-      <div class="col-sm-4 col-md-2">
-        <label class="form-label form-label-sm mb-1">{% trans "City" %}</label>
-        <select id="flt-city" class="form-select form-select-sm" disabled>
-          <option value="">-</option>
-        </select>
-      </div>
-      <div class="col-sm-4 col-md-2">
-        <label class="form-label form-label-sm mb-1">{% trans "Venue" %}</label>
-        <select id="flt-venue" class="form-select form-select-sm" disabled>
-          <option value="">-</option>
-        </select>
-      </div>
-      {{ filter_form.location }}
+      {% include "calendar_app/_location_filter.html" %}
       <div class="col-sm-12 col-md-2 d-flex gap-2">
         <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary btn-sm flex-grow-1">{% trans "Reset" %}</a>
       </div>
@@ -119,8 +95,9 @@
         if (etSel && etSel.value) params.set('event_type', etSel.value);
         if (dirSelect.value) params.set('discipline_category', dirSelect.value);
         if (discSelect.value) params.set('discipline', discSelect.value);
-        var locEl = document.getElementById('id_location');
-        if (locEl && locEl.value) params.set('location', locEl.value);
+        (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
+          params.append('location', id);
+        });
         var dfEl = form.querySelector('input[name="date_from"]');
         var dtEl = form.querySelector('input[name="date_to"]');
         if (dfEl && dfEl.value) {
@@ -137,110 +114,26 @@
       }
       updateCalendarLink();
 
-      // --- Location cascade ---
-      var allLocs = JSON.parse(document.getElementById('locations-data').textContent);
-      var lang = (document.documentElement.lang || 'ru').split('-')[0];
-      var nameField = (['ru','kk','en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
-      function locName(l) { return l[nameField] || l.name_ru || ''; }
-
-      var cntSel   = document.getElementById('flt-country');
-      var regSel   = document.getElementById('flt-region');
-      var citySel  = document.getElementById('flt-city');
-      var venueSel = document.getElementById('flt-venue');
-      var locInp   = document.getElementById('id_location');
-
-      function buildOpts(sel, nodes, placeholder) {
-        sel.innerHTML = '<option value="">' + placeholder + '</option>';
-        nodes.filter(function (n) { return !n.is_hidden; }).forEach(function (l) {
-          var o = document.createElement('option'); o.value = l.pk; o.textContent = locName(l);
-          sel.appendChild(o);
+      // --- Location multi-select cascade ---
+      // The selects + cascade logic live in _location_filter.html (loaded on
+      // DOMContentLoaded). On every submit we mirror the effective location ids into
+      // hidden inputs so the GET carries each selected id; a selection change
+      // auto-submits, consistent with the other filters.
+      // Mirror the effective location ids into hidden inputs so every submit (location,
+      // date or discipline change) carries them. form.submit() does not fire the 'submit'
+      // event, so we sync explicitly on change and once after the partial restores state.
+      function syncLocationInputs() {
+        form.querySelectorAll('input.mf-location-input').forEach(function (el) { el.remove(); });
+        (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
+          var inp = document.createElement('input');
+          inp.type = 'hidden'; inp.name = 'location'; inp.value = id; inp.className = 'mf-location-input';
+          form.appendChild(inp);
         });
       }
-      function disableSel(sel) { sel.innerHTML = '<option value="">-</option>'; sel.disabled = true; }
+      window.onLocationFilterChange = function () { syncLocationInputs(); updateCalendarLink(); form.submit(); };
+      document.addEventListener('DOMContentLoaded', syncLocationInputs);
 
-      buildOpts(cntSel, allLocs.filter(function (l) { return l.depth === 1; }), '-');
-
-      cntSel.addEventListener('change', function () {
-        disableSel(venueSel); disableSel(citySel); disableSel(regSel);
-        locInp.value = cntSel.value;
-        var cp = '';
-        allLocs.forEach(function (l) { if (String(l.pk) === cntSel.value) cp = l.path; });
-        if (!cp) { form.submit(); return; }
-        buildOpts(regSel, allLocs.filter(function (l) { return l.depth === 2 && !l.is_hidden && l.path.indexOf(cp) === 0; }), '-');
-        regSel.disabled = false;
-        form.submit();
-      });
-
-      regSel.addEventListener('change', function () {
-        disableSel(venueSel); disableSel(citySel);
-        locInp.value = regSel.value;
-        var rp = '';
-        allLocs.forEach(function (l) { if (String(l.pk) === regSel.value) rp = l.path; });
-        if (!rp) { form.submit(); return; }
-        buildOpts(citySel, allLocs.filter(function (l) { return l.depth === 3 && !l.is_hidden && l.path.indexOf(rp) === 0; }), '-');
-        citySel.disabled = false;
-        form.submit();
-      });
-
-      citySel.addEventListener('change', function () {
-        disableSel(venueSel);
-        locInp.value = citySel.value;
-        form.submit();
-      });
-
-      venueSel.addEventListener('change', function () {
-        locInp.value = venueSel.value || citySel.value;
-        form.submit();
-      });
-
-      // Pre-populate from GET param
-      var initLocId = locInp.value;
-      if (initLocId) {
-        var initLoc = allLocs.find(function (l) { return String(l.pk) === String(initLocId); });
-        if (initLoc) {
-          var stepLen = initLoc.path.length / initLoc.depth;
-          var cp = initLoc.path.slice(0, stepLen);
-          var rp = initLoc.path.slice(0, stepLen * 2);
-          var cntLoc = allLocs.find(function (l) { return l.path === cp && l.depth === 1; });
-          if (cntLoc) {
-            buildOpts(cntSel, allLocs.filter(function (l) { return l.depth === 1; }), '-');
-            cntSel.value = cntLoc.pk;
-            buildOpts(regSel, allLocs.filter(function (l) { return l.depth === 2 && !l.is_hidden && l.path.indexOf(cp) === 0; }), '-');
-            regSel.disabled = false;
-            if (initLoc.depth >= 2) {
-              var regLoc = allLocs.find(function (l) { return l.path === rp && l.depth === 2; });
-              if (regLoc) {
-                regSel.value = regLoc.pk;
-                buildOpts(citySel, allLocs.filter(function (l) { return l.depth === 3 && !l.is_hidden && l.path.indexOf(rp) === 0; }), '-');
-                citySel.disabled = false;
-                if (initLoc.depth >= 3) {
-                  var cityPath = initLoc.path.slice(0, stepLen * 3);
-                  var cityLoc = allLocs.find(function (l) { return l.path === cityPath && l.depth === 3; });
-                  if (cityLoc) {
-                    citySel.value = cityLoc.pk;
-                    var realVenues = allLocs.filter(function (l) {
-                      return l.depth === 4 && !l.is_hidden && l.path.indexOf(cityPath) === 0;
-                    });
-                    buildOpts(venueSel, realVenues, '-');
-                    var hvLoc = allLocs.find(function (l) {
-                      return l.depth === 4 && l.is_hidden && l.path.indexOf(cityPath) === 0;
-                    });
-                    if (hvLoc) {
-                      var hvOpt = document.createElement('option');
-                      hvOpt.value = hvLoc.pk; hvOpt.textContent = locName(hvLoc);
-                      venueSel.appendChild(hvOpt);
-                    }
-                    venueSel.disabled = false;
-                    if (initLoc.depth === 4) venueSel.value = String(initLocId);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Auto-submit other selects and date inputs (exclude location cascade — they submit themselves)
+      // Auto-submit date inputs.
       form.querySelectorAll('input[type="date"]').forEach(function (el) {
         el.addEventListener('change', function () { form.submit(); });
       });
