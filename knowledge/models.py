@@ -109,6 +109,22 @@ class KnowledgeIndexPage(AsciiSlugMixin, Page):
         context["add_article_url"] = add_article_url
         return context
 
+    def route(self, request, path_components):
+        from django.http import Http404
+
+        try:
+            return super().route(request, path_components)
+        except Http404:
+            # Articles live in per-locale index trees, so an article written in another
+            # locale than the active one is not a child of this index and would 404.
+            # Fall back to the article in its own locale (slugs are globally unique) so the
+            # detail view can show it with a "different language" banner instead of a 404.
+            if len(path_components) == 1:
+                article = KnowledgeArticlePage.objects.live().filter(slug=path_components[0], is_deleted=False).first()
+                if article is not None:
+                    return article.specific.route(request, [])
+            raise
+
     class Meta:
         verbose_name = "Knowledge index page"
 
@@ -175,6 +191,10 @@ class KnowledgeArticlePage(AsciiSlugMixin, Page):
         return response
 
     def get_context(self, request, *args, **kwargs):
+        from django.urls import reverse
+        from django.utils.translation import get_language, gettext
+        from django.utils.translation import override as translation_override
+
         from accounts.models import User as _User
 
         context = super().get_context(request, *args, **kwargs)
@@ -182,6 +202,19 @@ class KnowledgeArticlePage(AsciiSlugMixin, Page):
             request.user.is_superuser or request.user.get_role_rank() >= _User.ROLE_HIERARCHY.index(_User.Role.ADMIN)
         )
         context["can_edit"] = can_manage
+
+        # Page.serve() activates the article's own locale, so compare against the user's
+        # requested language (set by LocaleMiddleware) and build the banner text in it.
+        user_lang = (getattr(request, "LANGUAGE_CODE", None) or get_language() or "").split("-")[0]
+        article_lang = self.locale.language_code.split("-")[0]
+        if user_lang and user_lang != article_lang:
+            with translation_override(user_lang):
+                context["locale_mismatch_message"] = gettext(
+                    "This article isn't available in your selected language, so it's shown in its original language."
+                )
+                context["locale_mismatch_search_cta"] = gettext("Search for a similar article in your language")
+            context["locale_mismatch"] = True
+            context["search_url"] = reverse("search")
         return context
 
     class Meta:
