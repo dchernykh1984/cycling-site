@@ -171,24 +171,9 @@ class RejectCompetitionForm(forms.Form):
 
 
 class CompetitionFilterForm(forms.Form):
-    event_type = forms.ModelChoiceField(
-        queryset=EventType.objects.all(),
-        required=False,
-        empty_label="-",
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
-    )
-    discipline_category = forms.ModelChoiceField(
-        queryset=DisciplineCategory.objects.all(),
-        required=False,
-        empty_label="-",
-        widget=forms.Select(attrs={"class": "form-select form-select-sm", "id": "filter-direction"}),
-    )
-    discipline = forms.ModelChoiceField(
-        queryset=Discipline.objects.select_related("category"),
-        required=False,
-        empty_label="-",
-        widget=forms.Select(attrs={"class": "form-select form-select-sm", "id": "filter-discipline"}),
-    )
+    # event_type / direction / discipline are multi-select dropdowns (issue #108)
+    # handled directly in the view via request.GET.getlist(); only the date range
+    # is parsed through this form.
     date_from = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),

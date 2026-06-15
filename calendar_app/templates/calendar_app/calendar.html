@@ -34,34 +34,10 @@
 <div class="card mb-3">
   <div class="card-body py-2">
     <div id="filter-panel" class="collapse d-lg-block">
+      {% include "calendar_app/_filter_multiselect_js.html" %}
       <div class="row g-2 align-items-end">
-        <div class="col-sm-6 col-lg-3">
-          <label class="form-label form-label-sm mb-1">{% trans "Event type" %}</label>
-          <select id="filter-event-type" class="form-select form-select-sm">
-            <option value="">{% trans "All" %}</option>
-            {% for et in event_types %}
-            <option value="{{ et.pk }}">{{ et.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-          <label class="form-label form-label-sm mb-1">{% trans "Direction" %}</label>
-          <select id="filter-direction" class="form-select form-select-sm">
-            <option value="">{% trans "All" %}</option>
-            {% for cat in discipline_categories %}
-            <option value="{{ cat.pk }}">{{ cat.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-          <label class="form-label form-label-sm mb-1">{% trans "Discipline" %}</label>
-          <select id="filter-discipline" class="form-select form-select-sm">
-            <option value="">{% trans "All" %}</option>
-            {% for d in disciplines_json %}
-            <option value="{{ d.pk }}" data-cat="{{ d.category_id }}">{{ d.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
+        {% include "calendar_app/_event_type_filter.html" %}
+        {% include "calendar_app/_direction_filter.html" %}
         {% include "calendar_app/_location_filter.html" %}
       </div>
     </div>
@@ -86,45 +62,27 @@ var FC_MONTHS = [
 ];
 document.addEventListener('DOMContentLoaded', function () {
   var eventsUrl = '{% url "calendar_events_api" %}';
-
-  // Location multi-select cascade (country/region/city/location) is provided by
-  // _location_filter.html, which exposes window.getLocationFilterIds() and calls
-  // window.onLocationFilterChange() (defined below) whenever the selection changes.
-
-  // --- Direction / Discipline cascade ---
-  var directionSelect = document.getElementById('filter-direction');
-  var disciplineSelect = document.getElementById('filter-discipline');
-  var allDisciplineOpts = Array.from(disciplineSelect.options).slice(1); // skip empty option
-
-  function syncDisciplineOpts() {
-    var catId = directionSelect.value;
-    disciplineSelect.innerHTML = '<option value=""></option>';
-    allDisciplineOpts.forEach(function (opt) {
-      if (!catId || String(opt.dataset.cat) === catId) {
-        disciplineSelect.appendChild(opt.cloneNode(true));
-      }
-    });
-  }
-
-  directionSelect.addEventListener('change', function () {
-    disciplineSelect.value = '';
-    syncDisciplineOpts();
-    calendar.refetchEvents();
-    updateListViewLink();
-  });
-
-  // --- View-switch link & filter state ---
   var listViewUrl = '{% url "calendar_list" %}';
 
-  function updateListViewLink() {
-    var params = new URLSearchParams();
-    var et = document.getElementById('filter-event-type').value;
-    if (et) params.set('event_type', et);
-    if (directionSelect.value) params.set('discipline_category', directionSelect.value);
-    if (disciplineSelect.value) params.set('discipline', disciplineSelect.value);
+  // The event-type, direction/discipline and location multi-selects are provided by
+  // their partials, which run on DOMContentLoaded (before this handler) and expose
+  // window.getEventTypeFilterIds(), window.applyDirectionParams(params, dirParam) and
+  // window.getLocationFilterIds(). They restore their own state from the URL and call
+  // window.onCalendarFilterChange() (defined below) whenever the selection changes.
+
+  function appendFilterParams(params, directionParam) {
+    (window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []).forEach(function (id) {
+      params.append('event_type', id);
+    });
+    if (window.applyDirectionParams) window.applyDirectionParams(params, directionParam);
     (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
       params.append('location', id);
     });
+  }
+
+  function updateListViewLink() {
+    var params = new URLSearchParams();
+    appendFilterParams(params, 'discipline_category');
     var df = sessionStorage.getItem('cal_date_from');
     var dt = sessionStorage.getItem('cal_date_to');
     if (df) params.set('date_from', df);
@@ -134,32 +92,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btn) btn.href = listViewUrl + (qs ? '?' + qs : '');
   }
 
-  // Restore filter state from URL params (supports switching from list view)
+  // Persist date range from the URL (supports switching from list view). The filter
+  // dropdowns restore themselves from ?event_type=/?discipline=/?location= params.
   (function () {
     var p = new URLSearchParams(window.location.search);
-    var et = p.get('event_type');
-    if (et) document.getElementById('filter-event-type').value = et;
-    var dir = p.get('discipline_category');
-    if (dir) { directionSelect.value = dir; syncDisciplineOpts(); }
-    var disc = p.get('discipline');
-    if (disc) disciplineSelect.value = disc;
     var df = p.get('date_from');
     var dt = p.get('date_to');
     if (df) sessionStorage.setItem('cal_date_from', df);
     if (dt) sessionStorage.setItem('cal_date_to', dt);
-    // Location selection is restored by _location_filter.html from ?location= params.
     updateListViewLink();
   }());
 
   // --- FullCalendar ---
-  function getFilters() {
-    return {
-      event_type: document.getElementById('filter-event-type').value,
-      direction: directionSelect.value,
-      discipline: disciplineSelect.value,
-    };
-  }
-
   var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
     initialView: 'dayGridMonth',
     locale: '{{ CURRENT_LANGUAGE }}',
@@ -172,14 +116,8 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     height: 'auto',
     events: function (fetchInfo, successCallback, failureCallback) {
-      var filters = getFilters();
       var params = new URLSearchParams({start: fetchInfo.startStr, end: fetchInfo.endStr});
-      Object.keys(filters).forEach(function (k) {
-        if (filters[k]) params.set(k, filters[k]);
-      });
-      (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
-        params.append('location', id);
-      });
+      appendFilterParams(params, 'direction');
       fetch(eventsUrl + '?' + params.toString())
         .then(function (r) { return r.json(); })
         .then(successCallback)
@@ -195,18 +133,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   calendar.render();
 
-  // Called by _location_filter.html whenever the location multi-select changes.
-  window.onLocationFilterChange = function () {
+  // Called by the filter partials whenever any multi-select changes.
+  window.onCalendarFilterChange = function () {
     calendar.refetchEvents();
     updateListViewLink();
   };
-
-  ['filter-event-type', 'filter-discipline'].forEach(function (id) {
-    document.getElementById(id).addEventListener('change', function () {
-      calendar.refetchEvents();
-      updateListViewLink();
-    });
-  });
 });
 </script>
 {% endblock %}

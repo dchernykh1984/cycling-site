@@ -53,22 +53,44 @@ def _disciplines_for_locale() -> list:
     return [{"pk": r["pk"], "name": r[name_field], "category_id": r["category_id"]} for r in rows]
 
 
-def _location_descendant_pks(location_ids) -> set:
-    """Union of descendant pks (incl. self) for all given location ids.
+def _categories_for_locale() -> list:
+    """Direction categories with the name field for the current active language."""
+    lang = (get_language() or "ru").split("-")[0]
+    name_field = f"name_{lang}" if lang in _SUPPORTED_LANGS else "name_ru"
+    rows = list(DisciplineCategory.objects.values("pk", name_field))
+    return [{"pk": r["pk"], "name": r[name_field]} for r in rows]
 
-    Supports multi-select location filtering: each value may itself be a
-    comma-separated group of ids (same-name nodes merged into one choice), and
-    several ids may be passed. Non-integer values are ignored.
+
+def _event_types_for_locale() -> list:
+    """Event types with the name field for the current active language."""
+    lang = (get_language() or "ru").split("-")[0]
+    name_field = f"name_{lang}" if lang in _SUPPORTED_LANGS else "name_ru"
+    rows = list(EventType.objects.values("pk", name_field))
+    return [{"pk": r["pk"], "name": r[name_field]} for r in rows]
+
+
+def _parse_int_ids(values) -> set:
+    """Flatten GET values into a set of ints; ignore non-integer junk.
+
+    Each value may itself be a comma-joined group of ids (same-name nodes merged
+    into one multi-select choice), and several values may be passed via getlist.
     """
     ids: set[int] = set()
-    for value in location_ids:
+    for value in values or []:
         for part in str(value).split(","):
             part = part.strip()
-            if part:
-                try:
-                    ids.add(int(part))
-                except (ValueError, TypeError):
-                    continue
+            if not part:
+                continue
+            try:
+                ids.add(int(part))
+            except (ValueError, TypeError):
+                continue
+    return ids
+
+
+def _location_descendant_pks(location_ids) -> set:
+    """Union of descendant pks (incl. self) for all given location ids."""
+    ids = _parse_int_ids(location_ids)
     if not ids:
         return set()
     pks: set[int] = set()
@@ -77,23 +99,23 @@ def _location_descendant_pks(location_ids) -> set:
     return pks
 
 
-def _apply_id_filters(qs, event_type_id, discipline_id, direction_id):
-    """Apply integer-keyed filters; ignore any non-integer value silently."""
-    if event_type_id:
-        try:
-            qs = qs.filter(event_type_id=int(event_type_id))
-        except (ValueError, TypeError):
-            return qs.none()
-    if discipline_id:
-        try:
-            qs = qs.filter(discipline_id=int(discipline_id))
-        except (ValueError, TypeError):
-            return qs.none()
-    elif direction_id:
-        try:
-            qs = qs.filter(discipline__category_id=int(direction_id))
-        except (ValueError, TypeError):
-            return qs.none()
+def _apply_id_filters(qs, event_type_ids, discipline_ids, direction_ids):
+    """Apply integer-keyed multi-select filters; non-integer values are ignored.
+
+    Each argument is a list of GET values (each value may itself be a comma-joined
+    group of ids). When both disciplines and directions are selected, the more
+    specific discipline filter takes priority.
+    """
+    event_types = _parse_int_ids(event_type_ids)
+    if event_types:
+        qs = qs.filter(event_type_id__in=event_types)
+    disciplines = _parse_int_ids(discipline_ids)
+    if disciplines:
+        qs = qs.filter(discipline_id__in=disciplines)
+    else:
+        directions = _parse_int_ids(direction_ids)
+        if directions:
+            qs = qs.filter(discipline__category_id__in=directions)
     return qs
 
 
@@ -126,6 +148,8 @@ class CalendarView(TemplateView):
         context = super().get_context_data(**kwargs)
         context["event_types"] = EventType.objects.all()
         context["discipline_categories"] = DisciplineCategory.objects.all()
+        context["event_types_json"] = _event_types_for_locale()
+        context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
         context["locations_data"] = _get_locations_data()
         return context
@@ -154,11 +178,13 @@ class CalendarEventsAPIView(View):
             qs = qs.filter(Q(date_end__gte=start) | Q(date_end__isnull=True, date_start__gte=start))
         elif end:
             qs = qs.filter(date_start__lt=end)
-        event_type_id = request.GET.get("event_type")
-        discipline_id = request.GET.get("discipline")
-        direction_id = request.GET.get("direction")
+        qs = _apply_id_filters(
+            qs,
+            request.GET.getlist("event_type"),
+            request.GET.getlist("discipline"),
+            request.GET.getlist("direction"),
+        )
         location_ids = request.GET.getlist("location")
-        qs = _apply_id_filters(qs, event_type_id, discipline_id, direction_id)
         if location_ids:
             qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
 
@@ -197,17 +223,17 @@ class CompetitionListView(TemplateView):
             qs = qs.filter(is_hidden=False)
 
         if form.is_valid():
-            if form.cleaned_data.get("event_type"):
-                qs = qs.filter(event_type=form.cleaned_data["event_type"])
-            if form.cleaned_data.get("discipline"):
-                qs = qs.filter(discipline=form.cleaned_data["discipline"])
-            elif form.cleaned_data.get("discipline_category"):
-                qs = qs.filter(discipline__category=form.cleaned_data["discipline_category"])
             if form.cleaned_data.get("date_from"):
                 date_from = form.cleaned_data["date_from"]
             if form.cleaned_data.get("date_to"):
                 date_to = form.cleaned_data["date_to"]
 
+        qs = _apply_id_filters(
+            qs,
+            self.request.GET.getlist("event_type"),
+            self.request.GET.getlist("discipline"),
+            self.request.GET.getlist("discipline_category"),
+        )
         location_ids = self.request.GET.getlist("location")
         if location_ids:
             qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
@@ -220,6 +246,8 @@ class CompetitionListView(TemplateView):
         context["date_to"] = date_to
         context["is_manager"] = is_manager
         context["discipline_categories"] = DisciplineCategory.objects.all()
+        context["event_types_json"] = _event_types_for_locale()
+        context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
         context["locations_data"] = _get_locations_data()
         return context
