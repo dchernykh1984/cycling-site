@@ -350,3 +350,18 @@ class LocationHideViewTests(TestCase):
         self.client.post(reverse("location_hide", args=[self.loc.pk]))
         self.loc.refresh_from_db()
         self.assertFalse(self.loc.is_hidden)
+
+
+class LocationsMapLocaleTests(TestCase):
+    """The map page must render (not 404) and be localized in all three locales."""
+
+    def test_map_page_renders_localized_in_all_locales(self):
+        from django.utils import translation
+        from django.utils.translation import gettext as _
+
+        for lang in ("ru", "kk", "en"):
+            response = self.client.get("/map/", HTTP_ACCEPT_LANGUAGE=lang)
+            self.assertEqual(response.status_code, 200, f"map page should be 200 for locale {lang}")
+            self.assertContains(response, "locations-map")  # the map page itself rendered, not a 404
+            with translation.override(lang):
+                self.assertContains(response, _("Map"))  # heading localized to the active locale
