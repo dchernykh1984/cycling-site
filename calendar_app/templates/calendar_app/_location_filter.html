@@ -1,0 +1,222 @@
+{% load i18n %}
+{% comment %}
+Multi-select location cascade: country -> region -> city -> location. Each level is a
+Bootstrap dropdown of checkboxes with a master "All" checkbox; lower levels are merged
+across all selected parents and de-duplicated by name (same name => one checkbox whose
+value carries all matching ids). Hidden fallback venues ("Другая локация") are shown
+only at the location level. The page defines window.onLocationFilterChange(ids) and may
+call window.getLocationFilterIds().
+{% endcomment %}
+<div class="col-sm-6 col-lg-3">
+  <label class="form-label form-label-sm mb-1">{% trans "Country" %}</label>
+  <div class="dropdown">
+    <button class="form-select form-select-sm text-start" type="button" id="mf-btn-1"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+      <span class="mf-text text-muted">{% trans "All" %}</span>
+    </button>
+    <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="mf-menu-1"></ul>
+  </div>
+</div>
+<div class="col-sm-6 col-lg-3">
+  <label class="form-label form-label-sm mb-1">{% trans "Region" %}</label>
+  <div class="dropdown">
+    <button class="form-select form-select-sm text-start" type="button" id="mf-btn-2"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" disabled>
+      <span class="mf-text text-muted">{% trans "All" %}</span>
+    </button>
+    <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="mf-menu-2"></ul>
+  </div>
+</div>
+<div class="col-sm-6 col-lg-3">
+  <label class="form-label form-label-sm mb-1">{% trans "City" %}</label>
+  <div class="dropdown">
+    <button class="form-select form-select-sm text-start" type="button" id="mf-btn-3"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" disabled>
+      <span class="mf-text text-muted">{% trans "All" %}</span>
+    </button>
+    <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="mf-menu-3"></ul>
+  </div>
+</div>
+<div class="col-sm-6 col-lg-3">
+  <label class="form-label form-label-sm mb-1">{% trans "Location" %}</label>
+  <div class="dropdown">
+    <button class="form-select form-select-sm text-start" type="button" id="mf-btn-4"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" disabled>
+      <span class="mf-text text-muted">{% trans "All" %}</span>
+    </button>
+    <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="mf-menu-4"></ul>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var dataEl = document.getElementById('locations-data');
+  if (!dataEl) return;
+  var allLocations = JSON.parse(dataEl.textContent);
+  var lang = (document.documentElement.lang || 'ru').split('-')[0];
+  var nameField = (['ru', 'kk', 'en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
+  var ALL_LABEL = '{% trans "All" %}';
+  var SELECTED_LABEL = '{% trans "selected" %}';
+  function nm(l) { return l[nameField] || l.name_ru || ''; }
+  function byPk(pk) { return allLocations.find(function (l) { return String(l.pk) === String(pk); }); }
+
+  var menu = {}, btn = {}, selected = {}, currentGroups = {};
+  [1, 2, 3, 4].forEach(function (d) {
+    menu[d] = document.getElementById('mf-menu-' + d);
+    btn[d] = document.getElementById('mf-btn-' + d);
+    selected[d] = new Set();
+  });
+
+  function selectedPks(d) {
+    var out = [];
+    selected[d].forEach(function (v) { v.split(',').forEach(function (p) { out.push(p); }); });
+    return out;
+  }
+
+  function nodesUnder(d, parentPks) {
+    var parents = parentPks.map(byPk).filter(Boolean);
+    return allLocations.filter(function (l) {
+      if (l.depth !== d) return false;
+      // Hidden fallback venues ("Другая локация") are surfaced only at the location level.
+      if (l.is_hidden && d !== 4) return false;
+      if (d === 1) return true;
+      return parents.some(function (p) { return l.path.indexOf(p.path) === 0; });
+    });
+  }
+
+  // Merge same-name nodes into one choice (value = comma-joined ids).
+  function dedupByName(nodes) {
+    var order = [], map = {};
+    nodes.forEach(function (l) {
+      var k = nm(l);
+      if (!map[k]) { map[k] = []; order.push(k); }
+      map[k].push(l.pk);
+    });
+    // Sort ids so the merged value is order-stable across re-renders (otherwise a stored
+    // selection like "5,9" can stop matching a regenerated "9,5" and the count drifts).
+    return order.map(function (k) {
+      return { name: k, pks: map[k].sort(function (a, b) { return a - b; }) };
+    });
+  }
+
+  function setLabel(d) {
+    // Derive the label from the selection state + current options (source of truth),
+    // not the live checkboxes, so the count stays correct after every re-render.
+    var groups = currentGroups[d] || [];
+    var names = groups
+      .filter(function (g) { return selected[d].has(g.pks.join(',')); })
+      .map(function (g) { return g.name; });
+    var t = btn[d].querySelector('.mf-text');
+    if (names.length === 0) { t.textContent = ALL_LABEL; t.classList.add('text-muted'); }
+    else {
+      t.textContent = names.length <= 2 ? names.join(', ') : (names.length + ' ' + SELECTED_LABEL);
+      t.classList.remove('text-muted');
+    }
+  }
+
+  function updateMaster(d, groups) {
+    var m = menu[d].querySelector('.mf-all');
+    if (!m) return;
+    var total = groups.length, sel = 0;
+    groups.forEach(function (g) { if (selected[d].has(g.pks.join(','))) sel++; });
+    m.checked = total > 0 && sel === total;
+    m.indeterminate = sel > 0 && sel < total;
+  }
+
+  function notifyChange(d) {
+    rebuildFrom(d + 1);
+    setLabel(d);
+    if (window.onLocationFilterChange) window.onLocationFilterChange(effectivePks());
+  }
+
+  function buildMenu(d, groups) {
+    currentGroups[d] = groups;
+    menu[d].innerHTML = '';
+    btn[d].disabled = groups.length === 0;
+    if (groups.length === 0) { setLabel(d); return; }
+
+    var mLi = document.createElement('li');
+    var mLab = document.createElement('label');
+    mLab.className = 'dropdown-item d-flex align-items-center gap-2 px-2 fw-semibold';
+    var mCb = document.createElement('input');
+    mCb.type = 'checkbox'; mCb.className = 'form-check-input mt-0 mf-all';
+    mCb.addEventListener('change', function () {
+      selected[d].clear();
+      if (mCb.checked) groups.forEach(function (g) { selected[d].add(g.pks.join(',')); });
+      menu[d].querySelectorAll('input.mf-item').forEach(function (cb) { cb.checked = mCb.checked; });
+      mCb.indeterminate = false;
+      notifyChange(d);
+    });
+    var mSpan = document.createElement('span'); mSpan.textContent = ALL_LABEL;
+    mLab.appendChild(mCb); mLab.appendChild(mSpan); mLi.appendChild(mLab); menu[d].appendChild(mLi);
+    var divLi = document.createElement('li'); divLi.innerHTML = '<hr class="dropdown-divider my-1">';
+    menu[d].appendChild(divLi);
+
+    groups.forEach(function (g) {
+      var val = g.pks.join(',');
+      var li = document.createElement('li');
+      var lab = document.createElement('label');
+      lab.className = 'dropdown-item d-flex align-items-center gap-2 px-2';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'form-check-input mt-0 mf-item'; cb.value = val; cb.dataset.name = g.name;
+      cb.checked = selected[d].has(val);
+      cb.addEventListener('change', function () {
+        if (cb.checked) selected[d].add(val); else selected[d].delete(val);
+        updateMaster(d, groups);
+        notifyChange(d);
+      });
+      var span = document.createElement('span'); span.textContent = g.name;
+      lab.appendChild(cb); lab.appendChild(span); li.appendChild(lab); menu[d].appendChild(li);
+    });
+    updateMaster(d, groups);
+    setLabel(d);
+  }
+
+  function rebuildFrom(depth) {
+    for (var d = depth; d <= 4; d++) {
+      var groups;
+      if (d === 1) {
+        groups = dedupByName(nodesUnder(1, []));
+      } else {
+        var parentPks = selectedPks(d - 1);
+        groups = parentPks.length ? dedupByName(nodesUnder(d, parentPks)) : [];
+      }
+      var valid = {};
+      groups.forEach(function (g) { valid[g.pks.join(',')] = 1; });
+      Array.from(selected[d]).forEach(function (v) { if (!valid[v]) selected[d].delete(v); });
+      buildMenu(d, groups);
+    }
+  }
+
+  // Effective filter = selected ids at the deepest level that has any selection.
+  function effectivePks() {
+    for (var d = 4; d >= 1; d--) {
+      var p = selectedPks(d);
+      if (p.length) return p;
+    }
+    return [];
+  }
+
+  rebuildFrom(1);
+  window.getLocationFilterIds = effectivePks;
+
+  // Restore selection from ?location= ids in the URL. For each target node we also
+  // select its ancestors level by level so the cascade populates down to it.
+  var initIds = new URLSearchParams(window.location.search).getAll('location')
+    .reduce(function (acc, v) { return acc.concat(v.split(',')); }, []);
+  initIds.map(byPk).filter(Boolean).forEach(function (target) {
+    var stepLen = target.path.length / target.depth;
+    for (var k = 1; k <= target.depth; k++) {
+      var ancestorPath = target.path.slice(0, stepLen * k);
+      var ancestor = allLocations.find(function (l) { return l.depth === k && l.path === ancestorPath; });
+      if (!ancestor) continue;
+      var parentPks = k === 1 ? [] : selectedPks(k - 1);
+      var groups = dedupByName(nodesUnder(k, parentPks));
+      groups.forEach(function (g) {
+        if (g.pks.map(String).indexOf(String(ancestor.pk)) >= 0) selected[k].add(g.pks.join(','));
+      });
+      rebuildFrom(k);
+    }
+  });
+});
+</script>

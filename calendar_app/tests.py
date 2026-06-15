@@ -948,3 +948,67 @@ class CompetitionListColumnsViewTests(TestCase):
         self.assertContains(response, "Road")
         self.assertContains(response, "Kazakhstan")
         self.assertContains(response, "Almaty Region")
+
+
+class MultiLocationFilterTests(TestCase):
+    """Multi-select location filtering: union of descendants across selected nodes,
+    with same-name nodes merged into one comma-joined value (issue #108)."""
+
+    def setUp(self):
+        # KZ > Almaty obl > Almaty > Venue A ; RU > Moscow obl > Moscow > Venue B
+        self.kz = Location.add_root(name_ru="KZ", name_en="KZ")
+        self.kz_obl = self.kz.add_child(name_ru="Almaty obl", name_en="Almaty obl")
+        self.kz_city = self.kz_obl.add_child(name_ru="Almaty", name_en="Almaty")
+        self.kz_venue = self.kz_city.add_child(name_ru="Venue A", name_en="Venue A")
+        self.ru = Location.add_root(name_ru="RU", name_en="RU")
+        self.ru_obl = self.ru.add_child(name_ru="Moscow obl", name_en="Moscow obl")
+        self.ru_city = self.ru_obl.add_child(name_ru="Moscow", name_en="Moscow")
+        self.ru_venue = self.ru_city.add_child(name_ru="Venue B", name_en="Venue B")
+        self.comp_kz = _make_competition("KZ Race", location=self.kz_venue, date_start=datetime.date(2026, 7, 1))
+        self.comp_ru = _make_competition("RU Race", location=self.ru_venue, date_start=datetime.date(2026, 7, 1))
+
+    def test_helper_unions_descendants_of_multiple_ids(self):
+        from calendar_app.views import _location_descendant_pks
+
+        pks = _location_descendant_pks([self.kz.pk, self.ru.pk])
+        self.assertIn(self.kz_venue.pk, pks)
+        self.assertIn(self.ru_venue.pk, pks)
+
+    def test_helper_splits_comma_joined_and_ignores_invalid(self):
+        from calendar_app.views import _location_descendant_pks
+
+        pks = _location_descendant_pks([f"{self.kz_obl.pk},{self.ru_obl.pk}", "not-an-int", ""])
+        self.assertIn(self.kz_venue.pk, pks)
+        self.assertIn(self.ru_venue.pk, pks)
+
+    def test_events_api_filters_by_multiple_location_params(self):
+        resp = self.client.get(reverse("calendar_events_api"), {"location": [self.kz.pk, self.ru.pk]})
+        ids = {e["id"] for e in resp.json()}
+        self.assertEqual(ids, {self.comp_kz.pk, self.comp_ru.pk})
+
+    def test_events_api_single_country_excludes_other(self):
+        resp = self.client.get(reverse("calendar_events_api"), {"location": [self.kz.pk]})
+        ids = {e["id"] for e in resp.json()}
+        self.assertEqual(ids, {self.comp_kz.pk})
+
+    def test_events_api_comma_joined_value_filters_all_matching(self):
+        # A merged same-name choice carries several ids as one comma-joined value.
+        resp = self.client.get(reverse("calendar_events_api") + f"?location={self.kz_obl.pk},{self.ru_obl.pk}")
+        ids = {e["id"] for e in resp.json()}
+        self.assertEqual(ids, {self.comp_kz.pk, self.comp_ru.pk})
+
+    def test_list_view_filters_by_multiple_locations(self):
+        resp = self.client.get(
+            reverse("calendar_list"),
+            {"location": [self.kz.pk, self.ru.pk], "date_from": "2026-01-01", "date_to": "2026-12-31"},
+        )
+        self.assertContains(resp, "KZ Race")
+        self.assertContains(resp, "RU Race")
+
+    def test_list_view_single_location_excludes_other(self):
+        resp = self.client.get(
+            reverse("calendar_list"),
+            {"location": [self.ru.pk], "date_from": "2026-01-01", "date_to": "2026-12-31"},
+        )
+        self.assertContains(resp, "RU Race")
+        self.assertNotContains(resp, "KZ Race")
