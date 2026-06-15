@@ -779,3 +779,44 @@ class AddArticleFormLocalizationTests(TestCase):
             self.assertContains(response, _("Russian"))
             self.assertContains(response, _("Kazakh"))
             self.assertContains(response, _("English"))
+
+
+class KnowledgeForeignLocaleBannerTests(TestCase):
+    """A KB article opened under a different locale shows the original with a banner, not 404."""
+
+    def setUp(self):
+        from wagtail.models import Locale
+
+        ru = Locale.objects.get(language_code="ru")
+        self.index = KnowledgeIndexPage.objects.filter(locale=ru, slug="knowledge").first()
+        self.assertIsNotNone(self.index, "ru KnowledgeIndexPage (migration 0005) must exist")
+        self.article = KnowledgeArticlePage(
+            title="Foreign Locale Banner Article",
+            slug="foreign-locale-banner-article",
+            body=json.dumps([{"type": "text", "value": "<p>Original body content</p>"}]),
+            locale=ru,
+        )
+        self.index.add_child(instance=self.article)
+        self.article.save_revision().publish()
+        self.article = KnowledgeArticlePage.objects.get(pk=self.article.pk)
+
+    def test_same_locale_serves_without_banner(self):
+        response = self.client.get(self.article.url, HTTP_ACCEPT_LANGUAGE="ru")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Original body content")
+        with translation.override("ru"):
+            self.assertNotContains(response, _("Search for a similar article in your language"))
+
+    def test_foreign_locale_serves_original_article_with_banner(self):
+        response = self.client.get(self.article.url, HTTP_ACCEPT_LANGUAGE="en")
+        self.assertEqual(response.status_code, 200)
+        # The original (Russian) article is shown...
+        self.assertContains(response, "Original body content")
+        # ...with the banner rendered in the user's language (English) plus a search link.
+        self.assertContains(response, "shown in its original language")
+        self.assertContains(response, "Search for a similar article in your language")
+        self.assertContains(response, reverse("search"))
+
+    def test_unknown_article_slug_still_returns_404(self):
+        response = self.client.get("/knowledge/no-such-article-xyz/", HTTP_ACCEPT_LANGUAGE="en")
+        self.assertEqual(response.status_code, 404)
