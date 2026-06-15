@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 09:15+0000\n"
+"POT-Creation-Date: 2026-06-15 10:17+0000\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -113,7 +113,7 @@ msgstr "Отправить статью"
 #: calendar_app/templates/calendar_app/list.html:257
 #: calendar_app/templates/calendar_app/submit.html:29
 #: calendar_app/templates/calendar_app/submit.html:41
-#: calendar_app/templates/calendar_app/submit.html:53 knowledge/models.py:293
+#: calendar_app/templates/calendar_app/submit.html:53 knowledge/models.py:286
 #: knowledge/tests.py:757 knowledge/tests.py:772 news/forms.py:29
 #: news/forms.py:34 news/forms.py:40
 msgid "Title"
@@ -152,7 +152,7 @@ msgstr "Мои регистрации"
 msgid "Competition"
 msgstr "Соревнование"
 
-#: accounts/templates/accounts/profile.html:136 knowledge/models.py:295
+#: accounts/templates/accounts/profile.html:136 knowledge/models.py:288
 #: knowledge/templates/knowledge/submission_detail.html:31
 #: knowledge/tests.py:759 knowledge/tests.py:774
 #: registrations/templates/registrations/participant_list.html:57
@@ -951,6 +951,9 @@ msgstr "Похоже, произошла ошибка. Пожалуйста, п�
 #: cycling_site/templates/_map_layers.html:22
 #: cycling_site/templates/base.html:68
 #: locations/templates/locations/location_form.html:13
+#: locations/templates/locations/locations_map_page.html:4
+#: locations/templates/locations/locations_map_page.html:14
+#: locations/tests.py:367
 msgid "Map"
 msgstr "Карта"
 
@@ -1121,36 +1124,36 @@ msgstr "Интерфейс администратора"
 msgid "Create your superuser first!"
 msgstr "Сначала создайте суперпользователя!"
 
-#: knowledge/forms.py:10 knowledge/models.py:292
+#: knowledge/forms.py:10 knowledge/models.py:285
 #: knowledge/templates/knowledge/submission_detail.html:27
 #: knowledge/tests.py:756 knowledge/tests.py:771
 msgid "Locale"
 msgstr "Язык"
 
-#: knowledge/models.py:217
+#: knowledge/models.py:213
 msgid ""
 "This article isn't available in your selected language, so it's shown in its "
 "original language."
 msgstr ""
 "Эта статья недоступна на выбранном вами языке и показана на языке оригинала."
 
-#: knowledge/models.py:221
+#: knowledge/models.py:215 knowledge/tests.py:808
 msgid "Search for a similar article in your language"
 msgstr "Найти похожую статью на вашем языке"
 
-#: knowledge/models.py:289 knowledge/tests.py:764 knowledge/tests.py:779
+#: knowledge/models.py:282 knowledge/tests.py:764 knowledge/tests.py:779
 msgid "Russian"
 msgstr "Русский"
 
-#: knowledge/models.py:289 knowledge/tests.py:765 knowledge/tests.py:780
+#: knowledge/models.py:282 knowledge/tests.py:765 knowledge/tests.py:780
 msgid "Kazakh"
 msgstr "Казахский"
 
-#: knowledge/models.py:289 knowledge/tests.py:766 knowledge/tests.py:781
+#: knowledge/models.py:282 knowledge/tests.py:766 knowledge/tests.py:781
 msgid "English"
 msgstr "Английский"
 
-#: knowledge/models.py:294 knowledge/tests.py:758 knowledge/tests.py:773
+#: knowledge/models.py:287 knowledge/tests.py:758 knowledge/tests.py:773
 #: news/forms.py:61 news/forms.py:62 news/forms.py:63
 msgid "Body"
 msgstr "Текст"
