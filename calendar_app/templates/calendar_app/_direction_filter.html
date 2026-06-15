@@ -1,0 +1,84 @@
+{% load i18n %}
+{% comment %}
+Direction -> Discipline multi-select cascade (issue #108), built on the generic
+window.MultiSelectCascade factory. Disciplines of the same name appear under several
+directions; they are merged into one checkbox carrying all matching ids. The deepest
+selected level wins: chosen disciplines go to the GET as ?discipline=, otherwise the
+chosen directions go as ?<dirParam>= (the calendar API reads "direction", the list
+view "discipline_category"). Exposes window.directionFilter + window.applyDirectionParams().
+{% endcomment %}
+<div class="col-sm-6 col-lg-3">
+  <label class="form-label form-label-sm mb-1">{% trans "Direction" %}</label>
+  <div class="dropdown">
+    <button class="form-select form-select-sm text-start" type="button" id="dd-btn-1"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+      <span class="mf-text text-muted">{% trans "All" %}</span>
+    </button>
+    <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="dd-menu-1"></ul>
+  </div>
+</div>
+<div class="col-sm-6 col-lg-3">
+  <label class="form-label form-label-sm mb-1">{% trans "Discipline" %}</label>
+  <div class="dropdown">
+    <button class="form-select form-select-sm text-start" type="button" id="dd-btn-2"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" disabled>
+      <span class="mf-text text-muted">{% trans "All" %}</span>
+    </button>
+    <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="dd-menu-2"></ul>
+  </div>
+</div>
+{{ categories_json|json_script:"categories-data" }}
+{{ disciplines_json|json_script:"disciplines-data" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var catEl = document.getElementById('categories-data');
+  var discEl = document.getElementById('disciplines-data');
+  if (!catEl || !discEl || !window.MultiSelectCascade) return;
+  var categories = JSON.parse(catEl.textContent);
+  var disciplines = JSON.parse(discEl.textContent);
+  function discById(pk) { return disciplines.find(function (d) { return String(d.pk) === String(pk); }); }
+
+  function nodesUnder(depth, parentPks) {
+    if (depth === 1) {
+      return categories.map(function (c) { return { pk: c.pk, name: c.name }; });
+    }
+    var parentSet = {};
+    parentPks.forEach(function (p) { parentSet[String(p)] = 1; });
+    return disciplines
+      .filter(function (d) { return parentSet[String(d.category_id)]; })
+      .map(function (d) { return { pk: d.pk, name: d.name }; });
+  }
+
+  function restoreChains() {
+    var p = new URLSearchParams(window.location.search);
+    var chains = [];
+    p.getAll('discipline_category').concat(p.getAll('direction'))
+      .reduce(function (a, v) { return a.concat(v.split(',')); }, [])
+      .forEach(function (catId) { chains.push([{ depth: 1, pk: catId }]); });
+    p.getAll('discipline')
+      .reduce(function (a, v) { return a.concat(v.split(',')); }, [])
+      .forEach(function (discId) {
+        var d = discById(discId);
+        if (d) chains.push([{ depth: 1, pk: d.category_id }, { depth: 2, pk: discId }]);
+      });
+    return chains;
+  }
+
+  var inst = window.MultiSelectCascade({
+    levels: [
+      { btn: document.getElementById('dd-btn-1'), menu: document.getElementById('dd-menu-1') },
+      { btn: document.getElementById('dd-btn-2'), menu: document.getElementById('dd-menu-2') }
+    ],
+    nodesUnder: nodesUnder,
+    restoreChains: restoreChains,
+    labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}' },
+    onChange: function () { if (window.onCalendarFilterChange) window.onCalendarFilterChange(); }
+  });
+  window.directionFilter = inst;
+  window.applyDirectionParams = function (params, dirParam) {
+    var e = inst.effective();
+    if (e.depth === 2) e.pks.forEach(function (id) { params.append('discipline', id); });
+    else if (e.depth === 1) e.pks.forEach(function (id) { params.append(dirParam, id); });
+  };
+});
+</script>

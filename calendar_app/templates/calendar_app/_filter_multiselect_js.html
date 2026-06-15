@@ -1,0 +1,171 @@
+{% comment %}
+Generic multi-select cascade factory shared by the location, direction/discipline
+and event-type filters (issue #108). window.MultiSelectCascade(config) wires a set
+of Bootstrap dropdown menus (one per cascade level) of checkboxes with a master
+"All" checkbox; each lower level merges the children of every selected parent and
+de-duplicates them by name (same name => one checkbox whose value carries all ids,
+so a stored selection stays order-stable across re-renders).
+
+config:
+  levels:        [{btn: HTMLElement, menu: HTMLElement}, ...]  // index 0 == depth 1
+  nodesUnder(depth, parentPks): [{pk, name}, ...]  // children for the selected parents
+  restoreChains(): [[{depth, pk}, ...], ...]       // ancestor chains to pre-select
+  labels:        {all: "...", selected: "..."}
+  onChange():    called after every user-driven selection change
+returns {effective(), effectivePks(), effectiveDepth(), refresh()}.
+{% endcomment %}
+<script>
+window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
+  var N = config.levels.length;
+  var menu = {}, btn = {}, selected = {}, currentGroups = {};
+  for (var i = 0; i < N; i++) {
+    var d = i + 1;
+    menu[d] = config.levels[i].menu;
+    btn[d] = config.levels[i].btn;
+    selected[d] = new Set();
+  }
+  var ALL_LABEL = config.labels.all;
+  var SELECTED_LABEL = config.labels.selected;
+
+  function selectedPks(d) {
+    var out = [];
+    selected[d].forEach(function (v) { v.split(',').forEach(function (p) { out.push(p); }); });
+    return out;
+  }
+
+  // Merge same-name nodes into one choice (value = comma-joined ids). Sort the ids so
+  // the merged value is order-stable across re-renders (otherwise a stored selection
+  // like "5,9" can stop matching a regenerated "9,5" and the count drifts).
+  function dedupByName(nodes) {
+    var order = [], map = {};
+    nodes.forEach(function (n) {
+      var k = n.name;
+      if (!map[k]) { map[k] = []; order.push(k); }
+      map[k].push(n.pk);
+    });
+    return order.map(function (k) {
+      return { name: k, pks: map[k].sort(function (a, b) { return a - b; }) };
+    });
+  }
+
+  function setLabel(d) {
+    // Derive the label from the selection state + current options (source of truth),
+    // not the live checkboxes, so the count stays correct after every re-render.
+    var groups = currentGroups[d] || [];
+    var names = groups
+      .filter(function (g) { return selected[d].has(g.pks.join(',')); })
+      .map(function (g) { return g.name; });
+    var t = btn[d].querySelector('.mf-text');
+    if (names.length === 0) { t.textContent = ALL_LABEL; t.classList.add('text-muted'); }
+    else {
+      t.textContent = names.length <= 2 ? names.join(', ') : (names.length + ' ' + SELECTED_LABEL);
+      t.classList.remove('text-muted');
+    }
+  }
+
+  function updateMaster(d, groups) {
+    var m = menu[d].querySelector('.mf-all');
+    if (!m) return;
+    var total = groups.length, sel = 0;
+    groups.forEach(function (g) { if (selected[d].has(g.pks.join(','))) sel++; });
+    m.checked = total > 0 && sel === total;
+    m.indeterminate = sel > 0 && sel < total;
+  }
+
+  function notifyChange(d) {
+    rebuildFrom(d + 1);
+    setLabel(d);
+    if (config.onChange) config.onChange();
+  }
+
+  function buildMenu(d, groups) {
+    currentGroups[d] = groups;
+    menu[d].innerHTML = '';
+    btn[d].disabled = groups.length === 0;
+    if (groups.length === 0) { setLabel(d); return; }
+
+    var mLi = document.createElement('li');
+    var mLab = document.createElement('label');
+    mLab.className = 'dropdown-item d-flex align-items-center gap-2 px-2 fw-semibold';
+    var mCb = document.createElement('input');
+    mCb.type = 'checkbox'; mCb.className = 'form-check-input mt-0 mf-all';
+    mCb.addEventListener('change', function () {
+      selected[d].clear();
+      if (mCb.checked) groups.forEach(function (g) { selected[d].add(g.pks.join(',')); });
+      menu[d].querySelectorAll('input.mf-item').forEach(function (cb) { cb.checked = mCb.checked; });
+      mCb.indeterminate = false;
+      notifyChange(d);
+    });
+    var mSpan = document.createElement('span'); mSpan.textContent = ALL_LABEL;
+    mLab.appendChild(mCb); mLab.appendChild(mSpan); mLi.appendChild(mLab); menu[d].appendChild(mLi);
+    var divLi = document.createElement('li'); divLi.innerHTML = '<hr class="dropdown-divider my-1">';
+    menu[d].appendChild(divLi);
+
+    groups.forEach(function (g) {
+      var val = g.pks.join(',');
+      var li = document.createElement('li');
+      var lab = document.createElement('label');
+      lab.className = 'dropdown-item d-flex align-items-center gap-2 px-2';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'form-check-input mt-0 mf-item'; cb.value = val; cb.dataset.name = g.name;
+      cb.checked = selected[d].has(val);
+      cb.addEventListener('change', function () {
+        if (cb.checked) selected[d].add(val); else selected[d].delete(val);
+        updateMaster(d, groups);
+        notifyChange(d);
+      });
+      var span = document.createElement('span'); span.textContent = g.name;
+      lab.appendChild(cb); lab.appendChild(span); li.appendChild(lab); menu[d].appendChild(li);
+    });
+    updateMaster(d, groups);
+    setLabel(d);
+  }
+
+  function rebuildFrom(depth) {
+    for (var d = depth; d <= N; d++) {
+      var groups;
+      if (d === 1) {
+        groups = dedupByName(config.nodesUnder(1, []));
+      } else {
+        var parentPks = selectedPks(d - 1);
+        groups = parentPks.length ? dedupByName(config.nodesUnder(d, parentPks)) : [];
+      }
+      var valid = {};
+      groups.forEach(function (g) { valid[g.pks.join(',')] = 1; });
+      Array.from(selected[d]).forEach(function (v) { if (!valid[v]) selected[d].delete(v); });
+      buildMenu(d, groups);
+    }
+  }
+
+  // Effective filter = selected ids at the deepest level that has any selection.
+  function effective() {
+    for (var d = N; d >= 1; d--) {
+      var p = selectedPks(d);
+      if (p.length) return { depth: d, pks: p };
+    }
+    return { depth: 0, pks: [] };
+  }
+
+  rebuildFrom(1);
+
+  // Restore selection from ancestor chains (e.g. ?location= / ?discipline= ids). For
+  // each chain we select every ancestor level by level so the cascade populates down.
+  (config.restoreChains ? config.restoreChains() : []).forEach(function (chain) {
+    chain.forEach(function (step) {
+      var parentPks = step.depth === 1 ? [] : selectedPks(step.depth - 1);
+      var groups = dedupByName(config.nodesUnder(step.depth, parentPks));
+      groups.forEach(function (g) {
+        if (g.pks.map(String).indexOf(String(step.pk)) >= 0) selected[step.depth].add(g.pks.join(','));
+      });
+      rebuildFrom(step.depth);
+    });
+  });
+
+  return {
+    effective: effective,
+    effectivePks: function () { return effective().pks; },
+    effectiveDepth: function () { return effective().depth; },
+    refresh: function () { rebuildFrom(1); }
+  };
+};
+</script>

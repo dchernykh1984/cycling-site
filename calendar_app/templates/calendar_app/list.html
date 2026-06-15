@@ -33,28 +33,9 @@
         <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}"
                class="form-control form-control-sm">
       </div>
-      <div class="col-sm-6 col-md-2">
-        <label class="form-label form-label-sm mb-1">{% trans "Event type" %}</label>
-        {{ filter_form.event_type }}
-      </div>
-      <div class="col-sm-6 col-md-2">
-        <label class="form-label form-label-sm mb-1">{% trans "Direction" %}</label>
-        <select id="filter-direction" name="discipline_category" class="form-select form-select-sm">
-          <option value="">-</option>
-          {% for cat in discipline_categories %}
-          <option value="{{ cat.pk }}"{% if request.GET.discipline_category == cat.pk|stringformat:"s" %} selected{% endif %}>{{ cat.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-sm-6 col-md-2">
-        <label class="form-label form-label-sm mb-1">{% trans "Discipline" %}</label>
-        <select id="filter-discipline" name="discipline" class="form-select form-select-sm">
-          <option value="">-</option>
-          {% for d in disciplines_json %}
-          <option value="{{ d.pk }}" data-cat="{{ d.category_id }}"{% if request.GET.discipline == d.pk|stringformat:"s" %} selected{% endif %}>{{ d.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
+      {% include "calendar_app/_filter_multiselect_js.html" %}
+      {% include "calendar_app/_event_type_filter.html" %}
+      {% include "calendar_app/_direction_filter.html" %}
       {% include "calendar_app/_location_filter.html" %}
       <div class="col-sm-12 col-md-2 d-flex gap-2">
         <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary btn-sm flex-grow-1">{% trans "Reset" %}</a>
@@ -65,36 +46,18 @@
       var form = document.getElementById('filter-form');
       if (!form) return;
 
-      // --- Discipline cascade ---
-      var dirSelect = document.getElementById('filter-direction');
-      var discSelect = document.getElementById('filter-discipline');
-      var allDiscOpts = Array.from(discSelect.options).slice(1);
+      // The event-type, direction/discipline and location multi-selects live in their
+      // partials (loaded on DOMContentLoaded) and expose window.getEventTypeFilterIds(),
+      // window.directionFilter and window.getLocationFilterIds().
 
-      function syncDisciplineOpts(resetValue) {
-        var catId = dirSelect.value;
-        discSelect.innerHTML = '<option value="">-</option>';
-        allDiscOpts.forEach(function (opt) {
-          if (!catId || String(opt.dataset.cat) === catId) {
-            discSelect.appendChild(opt.cloneNode(true));
-          }
-        });
-        if (resetValue) discSelect.value = '';
-      }
-      syncDisciplineOpts(false);
-      dirSelect.addEventListener('change', function () { syncDisciplineOpts(true); form.submit(); });
-      discSelect.addEventListener('change', function () { form.submit(); });
-
-      // Auto-submit event type (has no submit button, unlike other selects)
-      var etSel = document.getElementById('id_event_type');
-      if (etSel) etSel.addEventListener('change', function () { form.submit(); });
-
-      // Keep "Calendar view" link in sync with current filter state + dates
+      // Keep "Calendar view" link in sync with the current filter state + dates.
       var calViewUrl = '{% url "calendar" %}';
       function updateCalendarLink() {
         var params = new URLSearchParams();
-        if (etSel && etSel.value) params.set('event_type', etSel.value);
-        if (dirSelect.value) params.set('discipline_category', dirSelect.value);
-        if (discSelect.value) params.set('discipline', discSelect.value);
+        (window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []).forEach(function (id) {
+          params.append('event_type', id);
+        });
+        if (window.applyDirectionParams) window.applyDirectionParams(params, 'discipline_category');
         (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
           params.append('location', id);
         });
@@ -112,26 +75,31 @@
         var btn = document.getElementById('calendar-view-btn');
         if (btn) btn.href = calViewUrl + (qs ? '?' + qs : '');
       }
-      updateCalendarLink();
 
-      // --- Location multi-select cascade ---
-      // The selects + cascade logic live in _location_filter.html (loaded on
-      // DOMContentLoaded). On every submit we mirror the effective location ids into
-      // hidden inputs so the GET carries each selected id; a selection change
-      // auto-submits, consistent with the other filters.
-      // Mirror the effective location ids into hidden inputs so every submit (location,
-      // date or discipline change) carries them. form.submit() does not fire the 'submit'
-      // event, so we sync explicitly on change and once after the partial restores state.
-      function syncLocationInputs() {
-        form.querySelectorAll('input.mf-location-input').forEach(function (el) { el.remove(); });
+      // Mirror the effective filter ids into hidden inputs so every submit (filter or
+      // date change) carries them. form.submit() does not fire the 'submit' event, so we
+      // sync explicitly on change and once after the partials restore their state.
+      function addInput(name, id) {
+        var inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = name; inp.value = id; inp.className = 'mf-filter-input';
+        form.appendChild(inp);
+      }
+      function syncFilterInputs() {
+        form.querySelectorAll('input.mf-filter-input').forEach(function (el) { el.remove(); });
+        (window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []).forEach(function (id) {
+          addInput('event_type', id);
+        });
+        if (window.directionFilter) {
+          var e = window.directionFilter.effective();
+          if (e.depth === 2) e.pks.forEach(function (id) { addInput('discipline', id); });
+          else if (e.depth === 1) e.pks.forEach(function (id) { addInput('discipline_category', id); });
+        }
         (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
-          var inp = document.createElement('input');
-          inp.type = 'hidden'; inp.name = 'location'; inp.value = id; inp.className = 'mf-location-input';
-          form.appendChild(inp);
+          addInput('location', id);
         });
       }
-      window.onLocationFilterChange = function () { syncLocationInputs(); updateCalendarLink(); form.submit(); };
-      document.addEventListener('DOMContentLoaded', syncLocationInputs);
+      window.onCalendarFilterChange = function () { syncFilterInputs(); updateCalendarLink(); form.submit(); };
+      document.addEventListener('DOMContentLoaded', function () { syncFilterInputs(); updateCalendarLink(); });
 
       // Auto-submit date inputs.
       form.querySelectorAll('input[type="date"]').forEach(function (el) {

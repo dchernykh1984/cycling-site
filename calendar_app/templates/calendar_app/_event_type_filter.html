@@ -1,0 +1,42 @@
+{% load i18n %}
+{% comment %}
+Event-type multi-select (single-level cascade, issue #108), built on the generic
+window.MultiSelectCascade factory. Exposes window.getEventTypeFilterIds() and calls
+window.onCalendarFilterChange() on change. Selected ids go to the GET as ?event_type=.
+{% endcomment %}
+<div class="col-sm-6 col-lg-3">
+  <label class="form-label form-label-sm mb-1">{% trans "Event type" %}</label>
+  <div class="dropdown">
+    <button class="form-select form-select-sm text-start" type="button" id="et-btn-1"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+      <span class="mf-text text-muted">{% trans "All" %}</span>
+    </button>
+    <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="et-menu-1"></ul>
+  </div>
+</div>
+{{ event_types_json|json_script:"event-types-data" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var el = document.getElementById('event-types-data');
+  if (!el || !window.MultiSelectCascade) return;
+  var eventTypes = JSON.parse(el.textContent);
+
+  function nodesUnder() {
+    return eventTypes.map(function (e) { return { pk: e.pk, name: e.name }; });
+  }
+  function restoreChains() {
+    return new URLSearchParams(window.location.search).getAll('event_type')
+      .reduce(function (a, v) { return a.concat(v.split(',')); }, [])
+      .map(function (id) { return [{ depth: 1, pk: id }]; });
+  }
+  var inst = window.MultiSelectCascade({
+    levels: [{ btn: document.getElementById('et-btn-1'), menu: document.getElementById('et-menu-1') }],
+    nodesUnder: nodesUnder,
+    restoreChains: restoreChains,
+    labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}' },
+    onChange: function () { if (window.onCalendarFilterChange) window.onCalendarFilterChange(); }
+  });
+  window.eventTypeFilter = inst;
+  window.getEventTypeFilterIds = function () { return inst.effectivePks(); };
+});
+</script>

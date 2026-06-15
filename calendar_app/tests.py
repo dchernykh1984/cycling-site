@@ -1012,3 +1012,98 @@ class MultiLocationFilterTests(TestCase):
         )
         self.assertContains(resp, "RU Race")
         self.assertNotContains(resp, "KZ Race")
+
+
+class MultiSelectIdFilterTests(TestCase):
+    """Multi-select event-type / direction / discipline filtering (issue #108).
+
+    Each filter accepts several ids via getlist; a value may be comma-joined (same-name
+    nodes merged into one choice). Disciplines take priority over directions.
+    """
+
+    def setUp(self):
+        self.race = EventType.objects.create(name_ru="Race", order=1)
+        self.training = EventType.objects.create(name_ru="Training", order=2)
+        self.festival = EventType.objects.create(name_ru="Festival", order=3)
+        self.road = DisciplineCategory.objects.create(name_ru="Road", order=1)
+        self.mtb = DisciplineCategory.objects.create(name_ru="MTB", order=2)
+        self.run = DisciplineCategory.objects.create(name_ru="Run", order=3)
+        self.road_disc = Discipline.objects.create(name_ru="Road Race", category=self.road, order=1)
+        self.mtb_disc = Discipline.objects.create(name_ru="XCO", category=self.mtb, order=1)
+        self.run_disc = Discipline.objects.create(name_ru="10k", category=self.run, order=1)
+        # Same-name discipline under two categories -> merged choice carries both ids.
+        self.road_relay = Discipline.objects.create(name_ru="Relay", category=self.road, order=2)
+        self.mtb_relay = Discipline.objects.create(name_ru="Relay", category=self.mtb, order=2)
+        d = datetime.date(2026, 9, 1)
+        self.c_race_road = _make_competition("Race Road", event_type=self.race, discipline=self.road_disc, date_start=d)
+        self.c_train_mtb = _make_competition(
+            "Train MTB", event_type=self.training, discipline=self.mtb_disc, date_start=d
+        )
+        self.c_fest_run = _make_competition(
+            "Fest Run", event_type=self.festival, discipline=self.run_disc, date_start=d
+        )
+        self.c_road_relay = _make_competition("Road Relay", discipline=self.road_relay, date_start=d)
+        self.c_mtb_relay = _make_competition("MTB Relay", discipline=self.mtb_relay, date_start=d)
+
+    def _api_titles(self, params):
+        return {e["title"] for e in self.client.get(reverse("calendar_events_api"), params).json()}
+
+    def _list(self, params):
+        params = {**params, "date_from": "2026-09-01", "date_to": "2026-09-30"}
+        return self.client.get(reverse("calendar_list"), params)
+
+    def test_helper_parses_comma_joined_and_ignores_junk(self):
+        from calendar_app.views import _parse_int_ids
+
+        self.assertEqual(_parse_int_ids(["1,2", "3", "x", ""]), {1, 2, 3})
+
+    def test_multiple_event_types(self):
+        self.assertEqual(self._api_titles({"event_type": [self.race.pk, self.festival.pk]}), {"Race Road", "Fest Run"})
+
+    def test_multiple_directions(self):
+        titles = self._api_titles({"direction": [self.road.pk, self.mtb.pk]})
+        self.assertEqual(titles, {"Race Road", "Train MTB", "Road Relay", "MTB Relay"})
+
+    def test_multiple_disciplines(self):
+        self.assertEqual(
+            self._api_titles({"discipline": [self.road_disc.pk, self.run_disc.pk]}), {"Race Road", "Fest Run"}
+        )
+
+    def test_comma_joined_direction_value_filters_all(self):
+        resp = self.client.get(reverse("calendar_events_api") + f"?direction={self.road.pk},{self.mtb.pk}")
+        titles = {e["title"] for e in resp.json()}
+        self.assertNotIn("Fest Run", titles)
+        self.assertIn("Race Road", titles)
+        self.assertIn("Train MTB", titles)
+
+    def test_comma_joined_discipline_value_filters_merged_same_name(self):
+        resp = self.client.get(reverse("calendar_events_api") + f"?discipline={self.road_relay.pk},{self.mtb_relay.pk}")
+        self.assertEqual({e["title"] for e in resp.json()}, {"Road Relay", "MTB Relay"})
+
+    def test_discipline_priority_over_direction_with_multi(self):
+        self.assertEqual(
+            self._api_titles({"direction": [self.road.pk], "discipline": [self.mtb_disc.pk]}), {"Train MTB"}
+        )
+
+    def test_invalid_value_is_ignored_not_emptied(self):
+        titles = self._api_titles({"event_type": ["not-an-int"]})
+        self.assertIn("Race Road", titles)
+        self.assertIn("Train MTB", titles)
+
+    def test_list_view_multiple_event_types(self):
+        resp = self._list({"event_type": [self.race.pk, self.festival.pk]})
+        self.assertContains(resp, "Race Road")
+        self.assertContains(resp, "Fest Run")
+        self.assertNotContains(resp, "Train MTB")
+
+    def test_list_view_multiple_directions(self):
+        resp = self._list({"discipline_category": [self.road.pk, self.run.pk]})
+        self.assertContains(resp, "Race Road")
+        self.assertContains(resp, "Fest Run")
+        self.assertNotContains(resp, "Train MTB")
+
+    def test_list_view_multiple_disciplines(self):
+        resp = self._list({"discipline": [self.mtb_disc.pk, self.run_disc.pk]})
+        self.assertContains(resp, "Train MTB")
+        self.assertContains(resp, "Fest Run")
+        self.assertNotContains(resp, "Race Road")

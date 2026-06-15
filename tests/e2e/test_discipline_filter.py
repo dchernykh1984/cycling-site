@@ -1,4 +1,11 @@
-"""E2E tests for direction/discipline cascade dropdowns on calendar and list pages."""
+"""E2E tests for the multi-select direction/discipline and event-type filters (issue #108).
+
+Direction (dd-btn-1/menu-1) and Discipline (dd-btn-2/menu-2) form a 2-level cascade;
+Event type (et-btn-1/menu-1) is a single-level dropdown. Each level is a Bootstrap
+dropdown of checkboxes with a master "All" checkbox; the discipline level merges the
+disciplines of every selected direction. Selecting a checkbox auto-submits the list
+form (one ?param= per selected id) and refetches the calendar.
+"""
 
 import datetime
 
@@ -8,109 +15,166 @@ from playwright.sync_api import Page, expect
 from calendar_app.models import Competition
 from tests.e2e.conftest import open_filter_panel
 
-
-@pytest.mark.django_db(transaction=True)
-def test_direction_dropdown_filters_disciplines_on_calendar(
-    page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
-):
-    """Selecting a direction shows only matching disciplines in the discipline dropdown."""
-    page.goto(f"{live_server.url}/calendar/")
-    open_filter_panel(page)
-    expect(page.locator("#filter-discipline")).to_be_visible()
-
-    page.select_option("#filter-direction", str(road_category.pk))
-
-    # After selecting road: empty option + road discipline only
-    expect(page.locator("#filter-discipline option")).to_have_count(2)
-    expect(page.locator(f"#filter-discipline option[value='{road_discipline.pk}']")).to_have_count(1)
-    expect(page.locator(f"#filter-discipline option[value='{mtb_discipline.pk}']")).to_have_count(0)
+_DATES = "date_from=2026-09-01&date_to=2026-09-30"
 
 
-@pytest.mark.django_db(transaction=True)
-def test_direction_dropdown_switch_shows_other_category_disciplines(
-    page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
-):
-    """Switching direction updates the discipline dropdown to the new category."""
-    page.goto(f"{live_server.url}/calendar/")
-    open_filter_panel(page)
-
-    page.select_option("#filter-direction", str(road_category.pk))
-    expect(page.locator(f"#filter-discipline option[value='{mtb_discipline.pk}']")).to_have_count(0)
-
-    page.select_option("#filter-direction", str(mtb_category.pk))
-    expect(page.locator(f"#filter-discipline option[value='{mtb_discipline.pk}']")).to_have_count(1)
-    expect(page.locator(f"#filter-discipline option[value='{road_discipline.pk}']")).to_have_count(0)
-
-
-@pytest.mark.django_db(transaction=True)
-def test_direction_dropdown_reset_shows_all_disciplines(
-    page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
-):
-    """Resetting direction to empty shows all disciplines again."""
-    page.goto(f"{live_server.url}/calendar/")
-    open_filter_panel(page)
-
-    page.select_option("#filter-direction", str(road_category.pk))
-    expect(page.locator("#filter-discipline option")).to_have_count(2)
-
-    page.select_option("#filter-direction", "")
-    # empty option + road + mtb
-    expect(page.locator("#filter-discipline option")).to_have_count(3)
-
-
-@pytest.mark.django_db(transaction=True)
-def test_direction_filter_on_list_page_auto_submits(
-    page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
-):
-    """Selecting a direction on the list page auto-submits the form and updates the URL."""
-    page.goto(f"{live_server.url}/calendar/list/")
-
-    with page.expect_navigation():
-        page.select_option("#filter-direction", str(road_category.pk))
-
-    assert f"discipline_category={road_category.pk}" in page.url
-    # After reload: discipline dropdown filtered to road only
-    expect(page.locator(f"#filter-discipline option[value='{road_discipline.pk}']")).to_have_count(1)
-    expect(page.locator(f"#filter-discipline option[value='{mtb_discipline.pk}']")).to_have_count(0)
-
-
-@pytest.mark.django_db(transaction=True)
-def test_list_page_shows_competition_when_direction_matches(
-    page: Page, live_server, organizer, road_category, road_discipline
-):
-    """List page shows competitions whose discipline belongs to the selected direction."""
+def _make_comp(organizer, title, discipline=None, event_type=None):
     Competition.objects.create(
-        title_ru="Road Race Event",
+        title_ru=title,
         date_start=datetime.date(2026, 9, 15),
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
-        discipline=road_discipline,
+        discipline=discipline,
+        event_type=event_type,
     )
+
+
+# --------------------------------------------------------------------------- #
+# Direction -> Discipline cascade
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.django_db(transaction=True)
+def test_direction_dropdown_lists_categories_on_calendar(
+    page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
+):
+    page.goto(f"{live_server.url}/calendar/")
+    open_filter_panel(page)
+    page.click("#dd-btn-1")
+    expect(page.locator(f"#dd-menu-1 input[value='{road_category.pk}']")).to_have_count(1)
+    expect(page.locator(f"#dd-menu-1 input[value='{mtb_category.pk}']")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_discipline_dropdown_disabled_before_direction_chosen(page: Page, live_server, road_category, road_discipline):
+    page.goto(f"{live_server.url}/calendar/")
+    open_filter_panel(page)
+    expect(page.locator("#dd-btn-2")).to_be_disabled()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_selecting_direction_populates_matching_disciplines(
+    page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
+):
+    page.goto(f"{live_server.url}/calendar/")
+    open_filter_panel(page)
+    page.click("#dd-btn-1")
+    page.check(f"#dd-menu-1 input[value='{road_category.pk}']")
+    expect(page.locator("#dd-btn-2")).not_to_be_disabled()
+    expect(page.locator(f"#dd-menu-2 input[value='{road_discipline.pk}']")).to_have_count(1)
+    expect(page.locator(f"#dd-menu-2 input[value='{mtb_discipline.pk}']")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_multiselect_two_directions_merges_disciplines(
+    page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
+):
+    page.goto(f"{live_server.url}/calendar/")
+    open_filter_panel(page)
+    page.click("#dd-btn-1")
+    page.check(f"#dd-menu-1 input[value='{road_category.pk}']")
+    page.check(f"#dd-menu-1 input[value='{mtb_category.pk}']")
+    expect(page.locator(f"#dd-menu-2 input[value='{road_discipline.pk}']")).to_have_count(1)
+    expect(page.locator(f"#dd-menu-2 input[value='{mtb_discipline.pk}']")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_direction_auto_submits_on_list(
+    page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
+):
+    page.goto(f"{live_server.url}/calendar/list/")
+    page.click("#dd-btn-1")
+    with page.expect_navigation():
+        page.check(f"#dd-menu-1 input[value='{road_category.pk}']")
+    assert f"discipline_category={road_category.pk}" in page.url
+    # After reload the discipline dropdown is restored to the chosen direction.
+    expect(page.locator(f"#dd-menu-2 input[value='{road_discipline.pk}']")).to_have_count(1)
+    expect(page.locator(f"#dd-menu-2 input[value='{mtb_discipline.pk}']")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_list_filters_by_single_direction(
+    page: Page, live_server, organizer, road_category, road_discipline, mtb_category, mtb_discipline
+):
+    _make_comp(organizer, "Road Race Event", discipline=road_discipline)
+    _make_comp(organizer, "MTB Race Event", discipline=mtb_discipline)
+    page.goto(f"{live_server.url}/calendar/list/?discipline_category={road_category.pk}&{_DATES}")
+    expect(page.locator("body")).to_contain_text("Road Race Event")
+    expect(page.locator("body")).not_to_contain_text("MTB Race Event")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_list_multiselect_two_directions_shows_both(
+    page: Page, live_server, organizer, road_category, road_discipline, mtb_category, mtb_discipline
+):
+    _make_comp(organizer, "Road Race Event", discipline=road_discipline)
+    _make_comp(organizer, "MTB Race Event", discipline=mtb_discipline)
     url = (
         f"{live_server.url}/calendar/list/"
-        f"?discipline_category={road_category.pk}"
-        f"&date_from=2026-09-01&date_to=2026-09-30"
+        f"?discipline_category={road_category.pk}&discipline_category={mtb_category.pk}&{_DATES}"
     )
     page.goto(url)
     expect(page.locator("body")).to_contain_text("Road Race Event")
+    expect(page.locator("body")).to_contain_text("MTB Race Event")
 
 
 @pytest.mark.django_db(transaction=True)
-def test_list_page_hides_competition_when_direction_differs(
-    page: Page, live_server, organizer, road_category, road_discipline, mtb_category
+def test_discipline_level_filter_on_list(
+    page: Page, live_server, organizer, road_category, road_discipline, mtb_category, mtb_discipline
 ):
-    """List page hides competitions whose discipline does not belong to the selected direction."""
-    Competition.objects.create(
-        title_ru="Road Race Event",
-        date_start=datetime.date(2026, 9, 15),
-        submitted_by=organizer,
-        status=Competition.Status.APPROVED,
-        discipline=road_discipline,
-    )
-    url = (
-        f"{live_server.url}/calendar/list/"
-        f"?discipline_category={mtb_category.pk}"
-        f"&date_from=2026-09-01&date_to=2026-09-30"
-    )
-    page.goto(url)
-    expect(page.locator("body")).not_to_contain_text("Road Race Event")
+    _make_comp(organizer, "Road Race Event", discipline=road_discipline)
+    _make_comp(organizer, "MTB Race Event", discipline=mtb_discipline)
+    page.goto(f"{live_server.url}/calendar/list/?discipline={road_discipline.pk}&{_DATES}")
+    expect(page.locator("body")).to_contain_text("Road Race Event")
+    expect(page.locator("body")).not_to_contain_text("MTB Race Event")
+    # The discipline checkbox is restored as checked.
+    expect(page.locator(f"#dd-menu-2 input[value='{road_discipline.pk}']")).to_be_checked()
+
+
+# --------------------------------------------------------------------------- #
+# Event type
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.django_db(transaction=True)
+def test_event_type_dropdown_has_checkbox_options(page: Page, live_server, race_event_type, training_event_type):
+    page.goto(f"{live_server.url}/calendar/")
+    open_filter_panel(page)
+    page.click("#et-btn-1")
+    expect(page.locator(f"#et-menu-1 input[value='{race_event_type.pk}']")).to_have_count(1)
+    expect(page.locator(f"#et-menu-1 input[value='{training_event_type.pk}']")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_event_type_auto_submits_on_list(page: Page, live_server, race_event_type):
+    page.goto(f"{live_server.url}/calendar/list/")
+    page.click("#et-btn-1")
+    with page.expect_navigation():
+        page.check(f"#et-menu-1 input[value='{race_event_type.pk}']")
+    assert f"event_type={race_event_type.pk}" in page.url
+
+
+@pytest.mark.django_db(transaction=True)
+def test_event_type_checkbox_restored_from_url(page: Page, live_server, race_event_type):
+    page.goto(f"{live_server.url}/calendar/list/?event_type={race_event_type.pk}")
+    page.click("#et-btn-1")
+    expect(page.locator(f"#et-menu-1 input[value='{race_event_type.pk}']")).to_be_checked()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_event_type_filters_list(page: Page, live_server, organizer, race_event_type, training_event_type):
+    _make_comp(organizer, "Race Event", event_type=race_event_type)
+    _make_comp(organizer, "Training Event", event_type=training_event_type)
+    page.goto(f"{live_server.url}/calendar/list/?event_type={race_event_type.pk}&{_DATES}")
+    expect(page.locator("body")).to_contain_text("Race Event")
+    expect(page.locator("body")).not_to_contain_text("Training Event")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_event_type_master_checkbox_selects_all(page: Page, live_server, race_event_type, training_event_type):
+    page.goto(f"{live_server.url}/calendar/list/")
+    page.click("#et-btn-1")
+    with page.expect_navigation():
+        page.check("#et-menu-1 input.mf-all")
+    assert f"event_type={race_event_type.pk}" in page.url
+    assert f"event_type={training_event_type.pk}" in page.url

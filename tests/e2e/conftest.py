@@ -247,6 +247,20 @@ def mtb_discipline(db, mtb_category):
     )
 
 
+@pytest.fixture
+def race_event_type(db):
+    from calendar_app.models import EventType
+
+    return EventType.objects.create(name_ru="Race", name_en="Race", order=1)
+
+
+@pytest.fixture
+def training_event_type(db):
+    from calendar_app.models import EventType
+
+    return EventType.objects.create(name_ru="Training", name_en="Training", order=2)
+
+
 # ---------------------------------------------------------------------------
 # location fixtures
 # ---------------------------------------------------------------------------
