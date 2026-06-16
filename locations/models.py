@@ -276,6 +276,7 @@ class LocationsMapPage(AsciiSlugMixin, Page):
 
         context = super().get_context(request)
         admin_rank = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
+        participant_rank = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
         can_manage = request.user.is_authenticated and (
             request.user.is_superuser or request.user.get_role_rank() >= admin_rank
         )
@@ -285,8 +286,11 @@ class LocationsMapPage(AsciiSlugMixin, Page):
             .select_related("knowledge_article")
         )
         context["locations_data"] = _build_map_locations(all_locs)
-        # Any registered user may propose a location (issue #111); managers manage them.
-        context["can_add"] = request.user.is_authenticated
+        # Only confirmed users (participant+) may propose a location, so only they see the
+        # "Add location" button - a guest would otherwise click through to a 403 (issue #118).
+        context["can_add"] = request.user.is_authenticated and (
+            request.user.is_superuser or request.user.get_role_rank() >= participant_rank
+        )
         context["can_manage"] = can_manage
         if can_manage:
             all_locs = Location.objects.filter(is_deleted=False).order_by("name")
