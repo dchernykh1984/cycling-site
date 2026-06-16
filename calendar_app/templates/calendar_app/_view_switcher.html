@@ -1,0 +1,18 @@
+{% load i18n %}
+{% comment %}
+Calendar / List / Map segmented switcher (issue #107). The active view is passed as
+`active_view` ("calendar" | "list" | "map"). The two inactive links carry the current
+filter state — each view's JS rewrites their href on filter change so switching keeps
+the active date range / event type / direction+discipline (and location where present).
+{% endcomment %}
+<div class="btn-group btn-group-sm" role="group" aria-label="{% trans 'View' %}">
+  <a href="{% url 'calendar' %}" id="view-link-calendar"
+     class="btn {% if active_view == 'calendar' %}btn-secondary active{% else %}btn-outline-secondary{% endif %}"
+     {% if active_view == 'calendar' %}aria-current="page"{% endif %}>{% trans "Calendar" %}</a>
+  <a href="{% url 'calendar_list' %}" id="view-link-list"
+     class="btn {% if active_view == 'list' %}btn-secondary active{% else %}btn-outline-secondary{% endif %}"
+     {% if active_view == 'list' %}aria-current="page"{% endif %}>{% trans "List" %}</a>
+  <a href="{% url 'calendar_map' %}" id="view-link-map"
+     class="btn {% if active_view == 'map' %}btn-secondary active{% else %}btn-outline-secondary{% endif %}"
+     {% if active_view == 'map' %}aria-current="page"{% endif %}>{% trans "Map" %}</a>
+</div>

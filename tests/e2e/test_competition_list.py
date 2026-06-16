@@ -30,6 +30,8 @@ def test_date_filter_auto_submits(page: Page, live_server, approved_competition)
 def test_reset_link_clears_filters(page: Page, live_server):
     """The Reset link navigates to the plain list URL."""
     page.goto(f"{live_server.url}/calendar/list/?date_from=2026-01-01")
-    page.locator("a[href*='calendar/list']").click()
+    # The Reset link lives inside the filter form (the header has a view switcher that
+    # also points at the list URL), so scope the selector to the form.
+    page.locator("#filter-form a[href*='calendar/list']").click()
     # After reset, no query params
     assert "date_from" not in page.url
