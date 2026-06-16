@@ -50,6 +50,13 @@ def _location(**kwargs):
     return Location.add_root(**defaults)
 
 
+def _city():
+    """A depth-3 city node (Country > Region > City) for venue-proposal tests."""
+    country = Location.add_root(name="KZ", name_ru="KZ")
+    region = country.add_child(name="Region", name_ru="Region")
+    return region.add_child(name="City", name_ru="City")
+
+
 def _draft(author, submission_type=DraftSubmission.SubmissionType.NEWS, **kwargs):
     defaults = {
         "author": author,
@@ -941,15 +948,31 @@ class LocationCreateTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["name"]["ru"], "Almaty RU")
 
-    def test_organizer_creates_approved(self):
-        # Issue #111: organizer+ may create locations directly (approved, no proposal).
+    def test_organizer_creates_approved_venue_under_city(self):
+        # Issue #111 + review #2: organizer creates an approved venue (depth 4) under a city.
+        city = _city()
         resp = self.post(
             "/api/v1/locations/",
-            {"name": {"ru": "City RU", "kk": "", "en": ""}},
+            {"name": {"ru": "City RU", "kk": "", "en": ""}, "parent_id": city.pk},
             user=self.organizer,
         )
         self.assertEqual(resp.status_code, 201)
-        self.assertFalse(Location.objects.get(pk=resp.json()["id"]).is_pending)
+        loc = Location.objects.get(pk=resp.json()["id"])
+        self.assertFalse(loc.is_pending)
+        self.assertEqual(loc.depth, 4)
+
+    def test_organizer_without_city_parent_forbidden(self):
+        resp = self.post("/api/v1/locations/", {"name": {"ru": "X", "kk": "", "en": ""}}, user=self.organizer)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_organizer_under_non_city_parent_forbidden(self):
+        country = _location()  # depth 1
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "X", "kk": "", "en": ""}, "parent_id": country.pk},
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 403)
 
     def test_create_with_parent(self):
         parent = _location()
@@ -2016,20 +2039,27 @@ class LocationAccessTest(TestCase, ApiTestMixin):
         self.assertEqual(self.post("/api/v1/locations/", self._create_payload(), user=self.guest).status_code, 403)
 
     def test_create_participant_proposes_pending(self):
-        # Issue #111: a participant may create a location as a pending proposal.
-        resp = self.post("/api/v1/locations/", self._create_payload(), user=self.participant)
+        # Issue #111: a participant may create a venue under a city as a pending proposal.
+        resp = self.post(
+            "/api/v1/locations/", {**self._create_payload(), "parent_id": _city().pk}, user=self.participant
+        )
         self.assertEqual(resp.status_code, 201)
         loc = Location.objects.get(pk=resp.json()["id"])
         self.assertTrue(loc.is_pending)
         self.assertEqual(loc.proposal.submitted_by, self.participant)
 
     def test_create_organizer_creates_approved(self):
-        # Issue #111: organizer+ creates an approved location directly (no proposal).
-        resp = self.post("/api/v1/locations/", self._create_payload(), user=self.organizer)
+        # Issue #111: organizer+ creates an approved venue under a city (no proposal).
+        resp = self.post("/api/v1/locations/", {**self._create_payload(), "parent_id": _city().pk}, user=self.organizer)
         self.assertEqual(resp.status_code, 201)
         loc = Location.objects.get(pk=resp.json()["id"])
         self.assertFalse(loc.is_pending)
         self.assertFalse(hasattr(loc, "proposal"))
+
+    def test_create_non_admin_requires_city_parent(self):
+        # Review #2: non-admins cannot create root/structural nodes via the API.
+        resp = self.post("/api/v1/locations/", self._create_payload(), user=self.organizer)
+        self.assertEqual(resp.status_code, 403)
 
     def test_create_admin_returns_201(self):
         resp = self.post("/api/v1/locations/", self._create_payload(), user=self.admin)
@@ -2042,12 +2072,21 @@ class LocationAccessTest(TestCase, ApiTestMixin):
     # --- Pending-proposal visibility (issue #111) ---
 
     def _propose_pending(self):
-        resp = self.post("/api/v1/locations/", self._create_payload(), user=self.participant)
+        resp = self.post(
+            "/api/v1/locations/", {**self._create_payload(), "parent_id": _city().pk}, user=self.participant
+        )
         self.assertEqual(resp.status_code, 201)
         return resp.json()["id"]
 
     def _list_ids(self, user=None):
-        return {d["id"] for d in self.get("/api/v1/locations/", user=user).json()}
+        def collect(nodes):
+            ids = set()
+            for n in nodes:
+                ids.add(n["id"])
+                ids |= collect(n.get("children", []))
+            return ids
+
+        return collect(self.get("/api/v1/locations/", user=user).json())
 
     def test_pending_location_hidden_from_anonymous_and_others(self):
         pid = self._propose_pending()

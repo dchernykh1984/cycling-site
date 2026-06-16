@@ -195,14 +195,19 @@ def create_location(request, payload: LocationIn):
         is_hidden=payload.is_hidden if is_admin(user) else False,
     )
 
+    parent = None
     if payload.parent_id is not None:
         try:
             parent = Location.objects.get(pk=payload.parent_id, is_deleted=False)
         except Location.DoesNotExist:
             raise HttpError(404, "Parent location not found") from None
-        location = parent.add_child(**kwargs)
-    else:
-        location = Location.add_root(**kwargs)
+
+    # Non-admins may only create a venue (depth 4) under a city (depth 3); building the
+    # geographic hierarchy (root/region/city) is admin-only (review #2).
+    if not is_admin(user) and (parent is None or parent.depth != 3):
+        raise HttpError(403, "A city (depth-3) parent_id is required to create a venue")
+
+    location = parent.add_child(**kwargs) if parent is not None else Location.add_root(**kwargs)
 
     # Below organizer the location is a proposal: usable by the author, pending review.
     if not approved:
