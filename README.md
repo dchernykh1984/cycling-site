@@ -103,10 +103,94 @@ after the token is generated.
 
 ## User roles
 
-The site has four roles: Guest, Participant, Organizer, Owner. Roles are stored
-on `accounts.User.role` and control access permissions throughout the app.
+The role hierarchy is `guest < participant < organizer < admin < owner`, defined
+in `accounts.User.Role` and stored on `accounts.User.role`. Each role includes
+every capability of the roles below it.
 
-New users who register get the **Participant** role automatically.
+Notes:
+
+- **Anonymous** visitors are not a role: they can read public pages, public
+  list/detail views and optional-auth read APIs, but cannot perform actions.
+- New users register as **Guest** and are promoted to **Participant**
+  automatically once they confirm their email.
+- Saving a user with `role = owner` forces `is_staff = True` and
+  `is_superuser = True`. `is_superuser` bypasses most checks, but editing the
+  home page / `SiteContent` specifically requires `role = owner`.
+- Role-gated API actions use `Authorization: Bearer <api_token>`; regenerating a
+  personal API token requires `participant+`.
+- Proposing locations and competitions requires `participant+`; a guest must
+  confirm their email first.
+- Capabilities exposed through Wagtail/Django admin are granted via the per-role
+  groups (`Participants`/`Organizers`/`Admins`/`Owners`) plus
+  `is_staff`/`is_superuser`, which are kept in sync with the role.
+- Uploading protocols and listing participants via a competition's
+  `competition_token` is outside the user-role system.
+
+### Guest (`guest`)
+
+- Browse the public calendar, competition list/map, news, knowledge base,
+  locations and public read-only APIs.
+- Sign in, edit basic profile data, theme and language.
+- Resend the email confirmation while the address is unverified.
+- Is promoted to **Participant** automatically after confirming email.
+
+### Participant (`participant`)
+
+- Everything a Guest can do.
+- Regenerate a personal API token and use the Bearer-auth API.
+- Propose competitions through the web form (sent to moderation).
+- Propose a new venue together with a competition and use that pending venue
+  immediately.
+- Propose locations through the web form and the API (kept pending until
+  moderated).
+- Register for approved competitions, including entering a team in the entry.
+- Comment on competitions and news.
+- Submit news and knowledge-base articles (as drafts/submissions) via web/API,
+  and edit or delete their own pending drafts via the API.
+- See their registrations and submissions in their profile, and manage their own
+  submitted competitions via the API (without changing `is_hidden`).
+
+### Organizer (`organizer`)
+
+- Everything a Participant can do.
+- Create competitions through the web form as **approved** immediately, or
+  through the API as **pending approval**.
+- Configure registration, categories, limits, payment, approval, relay and
+  related fields for their own competitions.
+- Edit, hide and soft-delete their own competitions, and see their upload tokens.
+- Moderate pending competitions (approve/reject); approving a competition
+  auto-approves the location proposed with it.
+- Add an approved venue under a city via web/API without separate moderation.
+- Manage entrants of their own competitions: approve/reject, mark paid, edit,
+  delete, add manually (free registration) and export to CSV.
+- Delete comments on their own competitions.
+
+### Admin (`admin`)
+
+- Everything an Organizer can do.
+- See hidden competitions, news, knowledge articles and hidden/pending
+  locations.
+- Manage **all** competitions globally: edit, hide/unhide, soft-delete,
+  registration settings, categories and participants.
+- Via the API: create approved competitions and toggle `is_hidden`.
+- Moderate proposed locations directly (approve/reject); edit, hide and
+  soft-delete any location; create hidden fallback venues and structural
+  location nodes.
+- Create, edit, hide and soft-delete news articles, and delete comments on news.
+- Add knowledge-base articles directly, approve/reject submissions, hide/delete
+  articles; via the API publish news and auto-approve news/knowledge drafts.
+- In Wagtail/Django admin: manage users up to the `admin` role (cannot assign or
+  demote `owner`) and manage the Teams snippet.
+
+### Owner (`owner`)
+
+- Everything an Admin can do.
+- Is automatically staff/superuser and passes superuser-only checks.
+- Edit the home page and the global `SiteContent`.
+- View the audit log.
+- Assign and change any role, including `owner`, and edit privilege fields
+  (`is_staff`, `is_superuser`, groups, permissions).
+- Full Django/Wagtail admin access, including deleting users.
 
 ### Manually confirming a user's email
 
