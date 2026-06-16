@@ -1550,3 +1550,30 @@ msgstr "Список"
 
 msgid "View"
 msgstr "Вид"
+
+msgid "Other location"
+msgstr "Другая локация"
+
+msgid "Location proposed for review."
+msgstr "Локация предложена на рассмотрение."
+
+msgid "Propose a new venue"
+msgstr "Предложить новую локацию"
+
+msgid "New venue name"
+msgstr "Название новой локации"
+
+msgid "Your proposed venue is usable right away and will be reviewed by a moderator."
+msgstr "Предложенную локацию можно использовать сразу, её проверит модератор."
+
+msgid "Proposed locations"
+msgstr "Предложенные локации"
+
+msgid "No locations pending approval."
+msgstr "Нет локаций, ожидающих одобрения."
+
+msgid "Reject this location? Competitions using it will fall back to the city's other location."
+msgstr "Отклонить эту локацию? Старты с ней будут переведены на «другую локацию» города."
+
+msgid "Click the map to set the venue point, or drag the marker."
+msgstr "Нажмите на карту, чтобы поставить точку, или перетащите маркер."

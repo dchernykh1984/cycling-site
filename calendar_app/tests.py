@@ -1201,3 +1201,147 @@ class CalendarMapAPIViewTests(TestCase):
         _make_competition("Hidden Race", location=self.loc, is_hidden=True, date_start=datetime.date(2026, 7, 11))
         titles = {c["title"] for c in self._group(self._data())["competitions"]}
         self.assertNotIn("Hidden Race", titles)
+
+
+class LocationProposalInSubmitTests(TestCase):
+    """Proposing a venue while submitting a competition (issue #111)."""
+
+    def setUp(self):
+        self.participant = _make_user("p_loc@example.com", User.Role.PARTICIPANT)
+        self.organizer = _make_user("o_loc@example.com", User.Role.ORGANIZER)
+        self.country = Location.add_root(name_ru="KZ", name_en="KZ")
+        self.region = self.country.add_child(name_ru="Region", name_en="Region")
+        self.city = self.region.add_child(name_ru="City", name_en="City")
+
+    def _payload(self, **kw):
+        data = {
+            "title_ru": "Race",
+            "date_start": "2026-09-01",
+            "new_venue_city": str(self.city.pk),
+            "new_venue_name": "Proposed Venue",
+        }
+        data.update(kw)
+        return data
+
+    def test_participant_proposes_pending_venue_used_by_competition(self):
+        self.client.force_login(self.participant)
+        self.client.post(reverse("calendar_submit"), self._payload())
+        comp = Competition.objects.get(title_ru="Race")
+        self.assertIsNotNone(comp.location)
+        self.assertEqual(comp.location.name_ru, "Proposed Venue")
+        self.assertTrue(comp.location.is_pending)
+        self.assertEqual(comp.location.proposal.submitted_by, self.participant)
+        self.assertEqual(comp.status, Competition.Status.PENDING_APPROVAL)
+
+    def test_organizer_proposed_venue_is_approved(self):
+        self.client.force_login(self.organizer)
+        self.client.post(reverse("calendar_submit"), self._payload(title_ru="OrgRace", new_venue_name="Org Venue"))
+        comp = Competition.objects.get(title_ru="OrgRace")
+        self.assertEqual(comp.location.name_ru, "Org Venue")
+        self.assertFalse(comp.location.is_pending)
+
+    def test_approving_competition_auto_approves_location(self):
+        self.client.force_login(self.participant)
+        self.client.post(reverse("calendar_submit"), self._payload(new_venue_name="Auto Venue"))
+        comp = Competition.objects.get(title_ru="Race")
+        self.assertTrue(comp.location.is_pending)
+        comp.approve(reviewer=self.organizer)
+        comp.location.refresh_from_db()
+        self.assertFalse(comp.location.is_pending)
+
+    def test_existing_venue_used_when_no_proposal(self):
+        venue = self.city.add_child(name_ru="Existing", name_en="Existing")
+        self.client.force_login(self.participant)
+        self.client.post(
+            reverse("calendar_submit"),
+            {"title_ru": "Plain", "date_start": "2026-09-01", "location": str(venue.pk)},
+        )
+        comp = Competition.objects.get(title_ru="Plain")
+        self.assertEqual(comp.location.pk, venue.pk)
+
+    def test_forged_post_cannot_use_other_users_pending_location(self):
+        other = _make_user("forger_owner@example.com", User.Role.PARTICIPANT)
+        pending = Location.propose_venue(self.city, "Other Pending", submitted_by=other)
+        self.client.force_login(self.participant)
+        resp = self.client.post(
+            reverse("calendar_submit"),
+            {"title_ru": "Forge", "date_start": "2026-09-01", "location": str(pending.pk)},
+        )
+        self.assertEqual(resp.status_code, 200)  # re-rendered with a form error
+        self.assertFalse(Competition.objects.filter(title_ru="Forge").exists())
+
+    def test_can_use_own_pending_location(self):
+        pending = Location.propose_venue(self.city, "Mine", submitted_by=self.participant)
+        self.client.force_login(self.participant)
+        self.client.post(
+            reverse("calendar_submit"),
+            {"title_ru": "MineRace", "date_start": "2026-09-01", "location": str(pending.pk)},
+        )
+        self.assertEqual(Competition.objects.get(title_ru="MineRace").location_id, pending.pk)
+
+    def test_forged_post_rejects_non_city_new_venue_parent(self):
+        self.client.force_login(self.participant)
+        resp = self.client.post(
+            reverse("calendar_submit"),
+            {
+                "title_ru": "BadCity",
+                "date_start": "2026-09-01",
+                "new_venue_city": str(self.country.pk),  # depth 1, not a city
+                "new_venue_name": "X",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Competition.objects.filter(title_ru="BadCity").exists())
+
+
+class LocationDataVisibilityTests(TestCase):
+    """Pending locations are visible only to their proposer (issue #111)."""
+
+    def setUp(self):
+        self.user = _make_user("viz@example.com", User.Role.PARTICIPANT)
+        self.other = _make_user("other_viz@example.com", User.Role.PARTICIPANT)
+        country = Location.add_root(name_ru="KZ", name_en="KZ")
+        region = country.add_child(name_ru="Region", name_en="Region")
+        self.city = region.add_child(name_ru="City", name_en="City")
+        self.approved = Location.propose_venue(self.city, "Approved Venue", submitted_by=self.user, approved=True)
+        self.pending = Location.propose_venue(self.city, "Pending Venue", submitted_by=self.user)
+
+    def test_approved_visible_without_user(self):
+        from calendar_app.views import _get_locations_data
+
+        pks = {loc["pk"] for loc in _get_locations_data()}
+        self.assertIn(self.approved.pk, pks)
+        self.assertNotIn(self.pending.pk, pks)
+
+    def test_own_pending_visible_to_submitter(self):
+        from calendar_app.views import _get_locations_data
+
+        pks = {loc["pk"] for loc in _get_locations_data(self.user)}
+        self.assertIn(self.pending.pk, pks)
+
+    def test_pending_not_visible_to_other_user(self):
+        from calendar_app.views import _get_locations_data
+
+        pks = {loc["pk"] for loc in _get_locations_data(self.other)}
+        self.assertNotIn(self.pending.pk, pks)
+
+
+class ModerationPendingLocationsTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("modadmin@example.com", User.Role.ADMIN)
+        self.organizer = _make_user("modorg@example.com", User.Role.ORGANIZER)
+        country = Location.add_root(name_ru="KZ", name_en="KZ")
+        region = country.add_child(name_ru="Region", name_en="Region")
+        city = region.add_child(name_ru="City", name_en="City")
+        self.pending = Location.propose_venue(city, "Pending Venue", submitted_by=self.organizer)
+
+    def test_admin_sees_pending_locations(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(reverse("calendar_moderate"))
+        self.assertIn("pending_locations", resp.context)
+        self.assertIn(self.pending, list(resp.context["pending_locations"]))
+
+    def test_organizer_does_not_see_pending_locations(self):
+        self.client.force_login(self.organizer)
+        resp = self.client.get(reverse("calendar_moderate"))
+        self.assertIsNone(resp.context.get("pending_locations"))

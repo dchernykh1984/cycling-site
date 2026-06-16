@@ -10,6 +10,11 @@ from .models import Competition, CompetitionComment, Discipline, DisciplineCateg
 
 
 class SubmitCompetitionForm(forms.Form):
+    def __init__(self, *args, user=None, **kwargs):
+        # The submitting user is needed to validate location ownership (issue #111).
+        self.user = user
+        super().__init__(*args, **kwargs)
+
     title_ru = forms.CharField(max_length=255, widget=forms.TextInput(attrs={"class": "form-control"}))
     title_kk = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
     title_en = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
@@ -50,6 +55,31 @@ class SubmitCompetitionForm(forms.Form):
         required=False,
         empty_label="--",
         widget=forms.HiddenInput(),
+    )
+    # Proposing a new venue: any registered user can suggest a venue under the chosen
+    # city (issue #111). new_venue_city carries the selected city; if new_venue_name is
+    # filled, the view creates the venue (pending unless the submitter is organizer+).
+    new_venue_city: forms.ModelChoiceField[Location] = forms.ModelChoiceField(
+        queryset=Location.objects.filter(is_deleted=False),
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+    new_venue_name = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "id": "new-venue-name"}),
+    )
+    new_venue_lat = forms.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "any", "id": "new-venue-lat"}),
+    )
+    new_venue_lng = forms.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "any", "id": "new-venue-lng"}),
     )
     date_start = forms.DateField(
         label=_("Date start"),
@@ -100,11 +130,30 @@ class SubmitCompetitionForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        self._validate_location(cleaned_data)
         date_start = cleaned_data.get("date_start")
         date_end = cleaned_data.get("date_end")
         if date_start and date_end and date_end < date_start:
             raise forms.ValidationError(_("End date cannot be before start date."))
         return cleaned_data
+
+    def _validate_location(self, cleaned_data) -> None:
+        """Guard against forged POSTs (issue #111): a new venue must hang off a city, and a
+        chosen location must be one this user may use (not someone else's pending proposal)."""
+        city = cleaned_data.get("new_venue_city")
+        new_name = (cleaned_data.get("new_venue_name") or "").strip()
+        if city is not None and city.depth != 3:
+            self.add_error("new_venue_city", _("Please choose a city for the new venue."))
+        # If a new venue is being proposed it is used instead of `location`, so skip that check.
+        if new_name and city is not None:
+            return
+        location = cleaned_data.get("location")
+        if location is not None and location.is_pending:
+            proposal = getattr(location, "proposal", None)
+            owner_id = getattr(proposal, "submitted_by_id", None)
+            user = self.user
+            if not (getattr(user, "is_authenticated", False) and owner_id == user.pk):
+                self.add_error("location", _("This location is not available."))
 
 
 class RegistrationSettingsForm(forms.Form):

@@ -204,6 +204,10 @@ class Competition(index.Indexed, models.Model):
         self.approved_at = timezone.now()
         self.rejection_reason = ""
         self.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
+        # Approving a competition auto-approves its proposed location (issue #111).
+        location = self.location
+        if location is not None:
+            location.approve_with_competition()
 
     def reject(self, reviewer, reason: str = "") -> None:
         if self.status not in (self.Status.PENDING_APPROVAL, self.Status.DRAFT):

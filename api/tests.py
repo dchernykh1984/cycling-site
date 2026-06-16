@@ -941,13 +941,15 @@ class LocationCreateTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["name"]["ru"], "Almaty RU")
 
-    def test_organizer_forbidden(self):
+    def test_organizer_creates_approved(self):
+        # Issue #111: organizer+ may create locations directly (approved, no proposal).
         resp = self.post(
             "/api/v1/locations/",
             {"name": {"ru": "City RU", "kk": "", "en": ""}},
             user=self.organizer,
         )
-        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(resp.status_code, 201)
+        self.assertFalse(Location.objects.get(pk=resp.json()["id"]).is_pending)
 
     def test_create_with_parent(self):
         parent = _location()
@@ -2013,13 +2015,21 @@ class LocationAccessTest(TestCase, ApiTestMixin):
     def test_create_guest_returns_403(self):
         self.assertEqual(self.post("/api/v1/locations/", self._create_payload(), user=self.guest).status_code, 403)
 
-    def test_create_participant_returns_403(self):
-        self.assertEqual(
-            self.post("/api/v1/locations/", self._create_payload(), user=self.participant).status_code, 403
-        )
+    def test_create_participant_proposes_pending(self):
+        # Issue #111: a participant may create a location as a pending proposal.
+        resp = self.post("/api/v1/locations/", self._create_payload(), user=self.participant)
+        self.assertEqual(resp.status_code, 201)
+        loc = Location.objects.get(pk=resp.json()["id"])
+        self.assertTrue(loc.is_pending)
+        self.assertEqual(loc.proposal.submitted_by, self.participant)
 
-    def test_create_organizer_returns_403(self):
-        self.assertEqual(self.post("/api/v1/locations/", self._create_payload(), user=self.organizer).status_code, 403)
+    def test_create_organizer_creates_approved(self):
+        # Issue #111: organizer+ creates an approved location directly (no proposal).
+        resp = self.post("/api/v1/locations/", self._create_payload(), user=self.organizer)
+        self.assertEqual(resp.status_code, 201)
+        loc = Location.objects.get(pk=resp.json()["id"])
+        self.assertFalse(loc.is_pending)
+        self.assertFalse(hasattr(loc, "proposal"))
 
     def test_create_admin_returns_201(self):
         resp = self.post("/api/v1/locations/", self._create_payload(), user=self.admin)
@@ -2028,6 +2038,38 @@ class LocationAccessTest(TestCase, ApiTestMixin):
         self.assertEqual(data["name"]["ru"], "Loc RU")
         self.assertEqual(data["name"]["kk"], "Loc KK")
         self.assertEqual(data["name"]["en"], "Loc EN")
+
+    # --- Pending-proposal visibility (issue #111) ---
+
+    def _propose_pending(self):
+        resp = self.post("/api/v1/locations/", self._create_payload(), user=self.participant)
+        self.assertEqual(resp.status_code, 201)
+        return resp.json()["id"]
+
+    def _list_ids(self, user=None):
+        return {d["id"] for d in self.get("/api/v1/locations/", user=user).json()}
+
+    def test_pending_location_hidden_from_anonymous_and_others(self):
+        pid = self._propose_pending()
+        other = _user("la_other", role=User.Role.PARTICIPANT)
+        self.assertNotIn(pid, self._list_ids())
+        self.assertNotIn(pid, self._list_ids(user=other))
+
+    def test_pending_location_visible_to_author_and_admin(self):
+        pid = self._propose_pending()
+        self.assertIn(pid, self._list_ids(user=self.participant))
+        self.assertIn(pid, self._list_ids(user=self.admin))
+
+    def test_pending_location_detail_404_for_other_user(self):
+        pid = self._propose_pending()
+        other = _user("la_other2", role=User.Role.PARTICIPANT)
+        self.assertEqual(self.get(f"/api/v1/locations/{pid}").status_code, 404)
+        self.assertEqual(self.get(f"/api/v1/locations/{pid}", user=other).status_code, 404)
+
+    def test_pending_location_detail_visible_to_author_and_admin(self):
+        pid = self._propose_pending()
+        self.assertEqual(self.get(f"/api/v1/locations/{pid}", user=self.participant).status_code, 200)
+        self.assertEqual(self.get(f"/api/v1/locations/{pid}", user=self.admin).status_code, 200)
 
     # --- PATCH update (ADMIN only) ---
 

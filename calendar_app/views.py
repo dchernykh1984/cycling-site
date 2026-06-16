@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -13,7 +14,7 @@ from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 
 from accounts.models import User
-from locations.models import Location
+from locations.models import Location, LocationProposal
 
 from .forms import (
     AddCompetitionCommentForm,
@@ -25,17 +26,24 @@ from .forms import (
 from .models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
+_ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
 _SUPPORTED_LANGS = frozenset(("ru", "kk", "en"))
 
 
-def _get_locations_data() -> list:
-    """All non-deleted Location nodes with names in all 3 languages.
+def _get_locations_data(user=None) -> list:
+    """Approved Location nodes (+ the given user's own pending proposals) in 3 languages.
 
-    Includes hidden depth-4 fallback venue nodes so that JS can use them
-    for auto-assignment when no real venue is selected.
+    Includes hidden depth-4 fallback venue nodes so that JS can use them for
+    auto-assignment when no real venue is selected. Pending locations are visible
+    only to the user who proposed them, so they can pick their own before approval.
     """
+    # Public = no proposal or an approved one; a pending proposal is visible only to its proposer.
+    visible = Q(proposal__isnull=True) | Q(proposal__status=LocationProposal.Status.APPROVED)
+    if user is not None and getattr(user, "is_authenticated", False):
+        visible |= Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
     return list(
         Location.objects.filter(is_deleted=False)
+        .filter(visible)
         .order_by("path")
         .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden")
     )
@@ -43,6 +51,30 @@ def _get_locations_data() -> list:
 
 def _can_manage_any_competition(user) -> bool:
     return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
+
+
+def _is_organizer_plus(user) -> bool:
+    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ORGANIZER_RANK)
+
+
+def _resolve_competition_location(cd, user, *, approved):
+    """Location for a competition: a freshly proposed venue if the form asked for one.
+
+    Organizer+ submitters get an approved venue directly; everyone else proposes a
+    pending venue they can use immediately (issue #111).
+    """
+    new_name = (cd.get("new_venue_name") or "").strip()
+    city = cd.get("new_venue_city")
+    if new_name and city is not None:
+        return Location.propose_venue(
+            city,
+            new_name,
+            cd.get("new_venue_lat"),
+            cd.get("new_venue_lng"),
+            submitted_by=user,
+            approved=approved,
+        )
+    return cd.get("location")
 
 
 def _disciplines_for_locale() -> list:
@@ -509,15 +541,15 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
     def _is_organizer_plus(self, user):
         return user.is_superuser or user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
 
-    def _discipline_context(self):
+    def _discipline_context(self, user):
         return {
             "discipline_categories": DisciplineCategory.objects.all(),
             "disciplines_json": _disciplines_for_locale(),
-            "locations_data": _get_locations_data(),
+            "locations_data": _get_locations_data(user),
         }
 
     def get(self, request):
-        form = SubmitCompetitionForm()
+        form = SubmitCompetitionForm(user=request.user)
         reg_form = RegistrationSettingsForm()
         return render(
             request,
@@ -526,12 +558,12 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 "form": form,
                 "reg_form": reg_form,
                 "is_organizer_plus": self._is_organizer_plus(request.user),
-                **self._discipline_context(),
+                **self._discipline_context(request.user),
             },
         )
 
     def post(self, request):
-        form = SubmitCompetitionForm(request.POST, request.FILES)
+        form = SubmitCompetitionForm(request.POST, request.FILES, user=request.user)
         reg_form = RegistrationSettingsForm(request.POST)
         is_organizer = self._is_organizer_plus(request.user)
         if form.is_valid() and (not is_organizer or reg_form.is_valid()):
@@ -544,7 +576,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         "form": form,
                         "reg_form": reg_form,
                         "is_organizer_plus": is_organizer,
-                        **self._discipline_context(),
+                        **self._discipline_context(request.user),
                     },
                 )
             comp = Competition(
@@ -556,7 +588,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 description_en=cd.get("description_en", ""),
                 event_type=cd.get("event_type"),
                 discipline=cd.get("discipline"),
-                location=cd.get("location"),
+                location=_resolve_competition_location(cd, request.user, approved=is_organizer),
                 date_start=cd["date_start"],
                 date_end=cd.get("date_end"),
                 url_announcement=cd.get("url_announcement", ""),
@@ -591,7 +623,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 "form": form,
                 "reg_form": reg_form,
                 "is_organizer_plus": is_organizer,
-                **self._discipline_context(),
+                **self._discipline_context(request.user),
             },
         )
 
@@ -628,7 +660,8 @@ class EditCompetitionView(View):
                 "url_route": comp.url_route,
                 "url_regulations": comp.url_regulations,
                 "url_results": comp.url_results,
-            }
+            },
+            user=request.user,
         )
         reg_form = RegistrationSettingsForm(
             initial={
@@ -677,7 +710,7 @@ class EditCompetitionView(View):
         disc_ctx = {
             "discipline_categories": DisciplineCategory.objects.all(),
             "disciplines_json": _disciplines_for_locale(),
-            "locations_data": _get_locations_data(),
+            "locations_data": _get_locations_data(request.user),
             "initial_location_id": comp.location_id or "",
         }
         return render(
@@ -695,7 +728,7 @@ class EditCompetitionView(View):
 
     def post(self, request, pk):
         comp = self._get_competition_or_403(request, pk)
-        form = SubmitCompetitionForm(request.POST, request.FILES)
+        form = SubmitCompetitionForm(request.POST, request.FILES, user=request.user)
         reg_form = RegistrationSettingsForm(request.POST)
         if form.is_valid() and reg_form.is_valid():
             cd = form.cleaned_data
@@ -739,7 +772,7 @@ class EditCompetitionView(View):
                         "mode_locked": comp.registration_mode_locked,
                         "discipline_categories": DisciplineCategory.objects.all(),
                         "disciplines_json": _disciplines_for_locale(),
-                        "locations_data": _get_locations_data(),
+                        "locations_data": _get_locations_data(request.user),
                         "initial_location_id": form["location"].value() or "",
                     },
                 )
@@ -751,7 +784,7 @@ class EditCompetitionView(View):
             comp.description_en = cd.get("description_en", "")
             comp.event_type = cd.get("event_type")
             comp.discipline = cd.get("discipline")
-            comp.location = cd.get("location")
+            comp.location = _resolve_competition_location(cd, request.user, approved=_is_organizer_plus(request.user))
             comp.date_start = cd["date_start"]
             comp.date_end = cd.get("date_end")
             comp.url_announcement = cd.get("url_announcement", "")
@@ -788,7 +821,7 @@ class EditCompetitionView(View):
         disc_ctx = {
             "discipline_categories": DisciplineCategory.objects.all(),
             "disciplines_json": _disciplines_for_locale(),
-            "locations_data": _get_locations_data(),
+            "locations_data": _get_locations_data(request.user),
             "initial_location_id": comp.location_id or "",
         }
         return render(
@@ -816,6 +849,12 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
             .order_by("date_start")
         )
         context["reject_form"] = RejectCompetitionForm()
+        if _can_manage_any_competition(self.request.user):
+            context["pending_locations"] = (
+                Location.objects.filter(proposal__status=LocationProposal.Status.PENDING_APPROVAL, is_deleted=False)
+                .select_related("proposal__submitted_by")
+                .order_by("path")
+            )
         return context
 
 
