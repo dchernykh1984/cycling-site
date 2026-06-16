@@ -967,3 +967,31 @@ class ApiTokenRegenerateViewTests(TestCase):
         self.client.force_login(guest)
         resp = self.client.get(reverse("account_profile"))
         self.assertNotContains(resp, "api-token/regenerate")
+
+    def test_regenerate_invalidates_old_token(self):
+        participant = make_user(username="token_rotate", role=User.Role.PARTICIPANT)
+        self.client.force_login(participant)
+
+        self.client.post(self.url)
+        participant.refresh_from_db()
+        old_token = participant.api_token
+        self.assertIsNotNone(old_token)
+        self.assertEqual(
+            self.client.get("/api/v1/competitions/", HTTP_AUTHORIZATION=f"Bearer {old_token}").status_code,
+            200,
+        )
+
+        self.client.post(self.url)
+        participant.refresh_from_db()
+        new_token = participant.api_token
+        self.assertNotEqual(new_token, old_token)
+
+        # The regenerated token replaces the field, so the old token matches no user.
+        self.assertEqual(
+            self.client.get("/api/v1/competitions/", HTTP_AUTHORIZATION=f"Bearer {old_token}").status_code,
+            401,
+        )
+        self.assertEqual(
+            self.client.get("/api/v1/competitions/", HTTP_AUTHORIZATION=f"Bearer {new_token}").status_code,
+            200,
+        )
