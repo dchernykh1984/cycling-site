@@ -1,7 +1,7 @@
 from datetime import date
 
 from django.db.models import Q
-from ninja import Query, Router, Schema
+from ninja import Query, Router, Schema, Status
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
@@ -218,7 +218,7 @@ def create_competition(request, payload: CompetitionIn):
         setattr(competition, field, getattr(payload, field))
 
     competition.save()
-    return 201, _to_detail(competition, user)
+    return Status(201, _to_detail(competition, user))
 
 
 @router.patch("/{competition_id}", response=CompetitionDetailOut, auth=auth, summary="Update competition")
@@ -259,4 +259,4 @@ def delete_competition(request, competition_id: int):
     _require_owner_or_admin(user, competition)
     competition.is_deleted = True
     competition.save(update_fields=["is_deleted"])
-    return 204, None
+    return Status(204, None)

@@ -6,7 +6,7 @@ Knowledge GET/write endpoints use DraftSubmission throughout.
 
 from datetime import datetime
 
-from ninja import Router, Schema
+from ninja import Router, Schema, Status
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
@@ -214,13 +214,13 @@ def create_news_article(request, payload: NewsArticleIn):
         canonical = value.ru or value.kk or value.en
         setattr(article, field, sanitize_rich_html(canonical) if field == "body" else canonical)
     article.save()
-    return 201, article
+    return Status(201, article)
 
 
 @news_router.post("/", response={201: DraftOut}, auth=auth, summary="Create news draft")
 def create_news_draft(request, payload: DraftIn):
     draft = _create_draft(request, payload, DraftSubmission.SubmissionType.NEWS)
-    return 201, draft
+    return Status(201, draft)
 
 
 @news_router.patch("/{pk}", response=DraftOut, auth=auth, summary="Update news draft")
@@ -231,7 +231,7 @@ def update_news_draft(request, pk: int, payload: DraftPatchIn):
 @news_router.delete("/{pk}", response={204: None}, auth=auth, summary="Delete news draft")
 def delete_news_draft(request, pk: int):
     _delete_draft(request, pk, DraftSubmission.SubmissionType.NEWS)
-    return 204, None
+    return Status(204, None)
 
 
 # -- Knowledge article endpoints ----------------------------------------------
@@ -263,7 +263,7 @@ def get_knowledge_draft(request, draft_id: int):
 @knowledge_router.post("/", response={201: DraftOut}, auth=auth, summary="Create knowledge article draft")
 def create_knowledge_draft(request, payload: DraftIn):
     draft = _create_draft(request, payload, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    return 201, draft
+    return Status(201, draft)
 
 
 @knowledge_router.patch("/{draft_id}", response=DraftOut, auth=auth, summary="Update knowledge article draft")
@@ -274,4 +274,4 @@ def update_knowledge_draft(request, draft_id: int, payload: DraftPatchIn):
 @knowledge_router.delete("/{draft_id}", response={204: None}, auth=auth, summary="Delete knowledge article draft")
 def delete_knowledge_draft(request, draft_id: int):
     _delete_draft(request, draft_id, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    return 204, None
+    return Status(204, None)

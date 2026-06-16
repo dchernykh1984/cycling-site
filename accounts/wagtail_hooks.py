@@ -17,7 +17,7 @@ def admin_dark_mode_css():
 
 
 @hooks.register("construct_wagtail_userbar")
-def disable_button_name_axe_rule(_request, items):
+def disable_button_name_axe_rule(_request, items, page=None):
     for item in items:
         if isinstance(item, AccessibilityItem):
             item.axe_run_only = [r for r in item.axe_run_only if r != "button-name"]

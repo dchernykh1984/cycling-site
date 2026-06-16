@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.db.models import Q
-from ninja import Router, Schema
+from ninja import Router, Schema, Status
 from ninja.errors import HttpError
 from ninja.schema import Field
 
@@ -213,7 +213,7 @@ def create_location(request, payload: LocationIn):
     if not approved:
         LocationProposal.objects.create(location=location, submitted_by=user)
 
-    return 201, location
+    return Status(201, location)
 
 
 @router.patch("/{location_id}", response=LocationOut, auth=auth, summary="Update location (ADMIN+)")
@@ -247,4 +247,4 @@ def delete_location(request, location_id: int):
     location = _get_or_404(location_id)
     location.is_deleted = True
     location.save(update_fields=["is_deleted"])
-    return 204, None
+    return Status(204, None)
