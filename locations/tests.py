@@ -87,6 +87,49 @@ class LocationsMapPageRenderTests(TestCase):
         self.assertNotIn("No Coords", names)
 
 
+class LocationsMapHiddenResolutionTests(TestCase):
+    """Hidden 'other location' nodes are shown on the map at the nearest ancestor with
+    coordinates, labelled with that ancestor's name; skipped if none has coords (issue #113)."""
+
+    def setUp(self):
+        root = _get_site_root()
+        self.map_page = LocationsMapPage(title="Map Hidden Test", slug="map-hidden-test")
+        root.add_child(instance=self.map_page)
+
+    def _data(self):
+        return self.client.get(self.map_page.url).context["locations_data"]
+
+    def test_hidden_resolves_to_city_and_dedupes(self):
+        country = Location.add_root(name="KZ", name_ru="KZ")
+        region = country.add_child(name="Region", name_ru="Region")
+        city = region.add_child(name="Almaty", name_ru="Almaty", lat="43.200000", lng="76.900000")
+        city.add_child(name="Other location", name_ru="Other location", is_hidden=True)
+        almaty = [d for d in self._data() if d["name"] == "Almaty"]
+        self.assertEqual(len(almaty), 1)  # one marker, not city + resolved-hidden
+        self.assertAlmostEqual(almaty[0]["lat"], 43.2)
+        self.assertNotIn("Other location", [d["name"] for d in self._data()])
+
+    def test_hidden_falls_back_to_region_when_city_has_no_coords(self):
+        country = Location.add_root(name="KZ2", name_ru="KZ2")
+        region = country.add_child(name="RegionC", name_ru="RegionC", lat="48.000000", lng="66.000000")
+        city = region.add_child(name="NoCoordCity", name_ru="NoCoordCity")
+        city.add_child(name="Other location", name_ru="Other location", is_hidden=True)
+        data = self._data()
+        self.assertNotIn("NoCoordCity", [d["name"] for d in data])
+        region_pts = [d for d in data if d["name"] == "RegionC"]
+        self.assertEqual(len(region_pts), 1)
+        self.assertAlmostEqual(region_pts[0]["lat"], 48.0)
+
+    def test_hidden_skipped_when_no_ancestor_has_coords(self):
+        country = Location.add_root(name="KZ3", name_ru="KZ3")
+        region = country.add_child(name="R3", name_ru="R3")
+        city = region.add_child(name="C3", name_ru="C3")
+        city.add_child(name="Other location", name_ru="Other location", is_hidden=True)
+        names = [d["name"] for d in self._data()]
+        for n in ("Other location", "C3", "R3", "KZ3"):
+            self.assertNotIn(n, names)
+
+
 class LocationArticlePageWithMapTests(TestCase):
     def setUp(self):
         from knowledge.models import KnowledgeIndexPage, LocationArticlePage

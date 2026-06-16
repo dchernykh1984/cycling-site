@@ -88,3 +88,17 @@ def test_hidden_fallback_venue_shown_at_location_level(page: Page, live_server, 
     page.click("#mf-btn-4")
     expect(page.locator(f"#mf-menu-4 input[value='{location_tree['hidden'].pk}']")).to_have_count(1)
     expect(page.locator(f"#mf-menu-4 input[value='{location_tree['real'].pk}']")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_hidden_country_is_selectable_in_filter(page: Page, live_server, location_tree):
+    # Issue #113: a hidden real country/region/city stays selectable in the filter
+    # (hidden matters only for the virtual "other location" venue).
+    from locations.models import Location
+
+    hidden_country = Location.add_root(
+        name="HiddenLand", name_ru="HiddenLand", name_kk="HiddenLand", name_en="HiddenLand", is_hidden=True
+    )
+    page.goto(f"{live_server.url}{_LIST_URL}")
+    page.click("#mf-btn-1")
+    expect(page.locator(f"#mf-menu-1 input[value='{hidden_country.pk}']")).to_have_count(1)
