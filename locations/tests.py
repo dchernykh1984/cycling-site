@@ -6,7 +6,7 @@ from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTests
 
 from accounts.models import User
-from locations.models import Location, LocationsMapPage
+from locations.models import Location, LocationProposal, LocationsMapPage
 
 
 def _get_site_root():
@@ -331,6 +331,21 @@ class LocationCreateViewTests(TestCase):
         resp = self.client.post(self.url, {"name_ru": "", "city": str(self.city.pk)})
         self.assertEqual(resp.status_code, 200)
         self.assertIn("name_ru", resp.context["form"].errors)
+
+    def test_venues_json_lists_only_selectable_venues_with_coords(self):
+        # Issue #118: the form map shows existing selectable venues (depth-4, not hidden, with coords).
+        self.city.add_child(name_ru="Stadium", name_en="Stadium", lat="43.200000", lng="76.900000")
+        self.city.add_child(name_ru="NoCoords", name_en="NoCoords")  # no coords -> excluded
+        self.city.add_child(name_ru="Hidden", name_en="Hidden", is_hidden=True, lat="43.3", lng="77.0")  # excluded
+        pending = self.city.add_child(name_ru="Pending", name_en="Pending", lat="43.4", lng="77.1")
+        LocationProposal.objects.create(location=pending, submitted_by=self.participant)  # unapproved -> excluded
+        self.client.force_login(self.admin)
+        venues = self.client.get(self.url).context["venues_json"]
+        names = {v["name_ru"] for v in venues}
+        self.assertEqual(names, {"Stadium"})
+        stadium = next(v for v in venues if v["name_ru"] == "Stadium")
+        self.assertAlmostEqual(stadium["lat"], 43.2, places=5)
+        self.assertAlmostEqual(stadium["lng"], 76.9, places=5)
 
 
 class LocationEditViewTests(TestCase):
