@@ -86,6 +86,27 @@ class LocationsMapPageRenderTests(TestCase):
         names = [d["name"] for d in data]
         self.assertNotIn("No Coords", names)
 
+    def test_add_location_cta_hidden_for_anonymous(self):
+        response = self.client.get(self.map_page.url)
+        self.assertFalse(response.context["can_add"])
+        self.assertNotContains(response, reverse("location_add"))
+
+    def test_add_location_cta_hidden_for_guest(self):
+        # Issue #118: a guest cannot propose a location, so the CTA must not be shown
+        # (clicking it would only hit the backend 403).
+        guest = _make_user("map_guest@x.com", User.Role.GUEST)
+        self.client.force_login(guest)
+        response = self.client.get(self.map_page.url)
+        self.assertFalse(response.context["can_add"])
+        self.assertNotContains(response, reverse("location_add"))
+
+    def test_add_location_cta_shown_for_participant(self):
+        participant = _make_user("map_part@x.com", User.Role.PARTICIPANT)
+        self.client.force_login(participant)
+        response = self.client.get(self.map_page.url)
+        self.assertTrue(response.context["can_add"])
+        self.assertContains(response, reverse("location_add"))
+
 
 class LocationsMapHiddenResolutionTests(TestCase):
     """Hidden 'other location' nodes are shown on the map at the nearest ancestor with
