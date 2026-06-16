@@ -1203,6 +1203,65 @@ class CalendarMapAPIViewTests(TestCase):
         self.assertNotIn("Hidden Race", titles)
 
 
+class CalendarMapResolutionTests(TestCase):
+    """A competition at a hidden/coordinate-less venue is shown on the calendar map at the
+    nearest ancestor with coordinates, labelled with that ancestor's name (issue #113)."""
+
+    def setUp(self):
+        self.country = Location.add_root(name_ru="KZ", name_en="KZ", lat="48.000000", lng="68.000000")
+        self.region = self.country.add_child(name_ru="Region", name_en="Region", lat="49.000000", lng="69.000000")
+        self.city = self.region.add_child(name_ru="Almaty", name_en="Almaty", lat="43.200000", lng="76.900000")
+
+    def _data(self, params=None):
+        return self.client.get(reverse("calendar_map_api"), params or {}).json()
+
+    def test_hidden_venue_resolves_to_city_not_its_own_coords(self):
+        # The hidden venue carries its own (placeholder) coords; the marker must use the city's.
+        other = self.city.add_child(
+            name_ru="Other location", name_en="Other location", is_hidden=True, lat="11.111111", lng="22.222222"
+        )
+        _make_competition("Race", location=other, date_start=datetime.date(2026, 7, 10))
+        data = self._data()
+        self.assertEqual(len(data), 1)
+        group = data[0]
+        self.assertEqual(group["location_id"], self.city.pk)
+        self.assertEqual(group["name"], "Almaty")
+        self.assertAlmostEqual(group["lat"], 43.2, places=5)
+        self.assertEqual({c["title"] for c in group["competitions"]}, {"Race"})
+
+    def test_hidden_venue_falls_back_to_region_when_city_has_no_coords(self):
+        city2 = self.region.add_child(name_ru="NoCoordCity", name_en="NoCoordCity")
+        other = city2.add_child(name_ru="Other location", name_en="Other location", is_hidden=True)
+        _make_competition("R2", location=other, date_start=datetime.date(2026, 7, 10))
+        groups = {g["location_id"]: g for g in self._data()}
+        self.assertIn(self.region.pk, groups)
+        self.assertNotIn(city2.pk, groups)
+        self.assertEqual(groups[self.region.pk]["name"], "Region")
+
+    def test_venue_with_own_coords_stays_at_venue(self):
+        venue = self.city.add_child(name_ru="Velodrome", name_en="Velodrome", lat="43.300000", lng="77.000000")
+        _make_competition("VRace", location=venue, date_start=datetime.date(2026, 7, 10))
+        groups = {g["location_id"]: g for g in self._data()}
+        self.assertIn(venue.pk, groups)
+        self.assertAlmostEqual(groups[venue.pk]["lat"], 43.3, places=5)
+
+    def test_multiple_hidden_venue_competitions_group_under_one_city_marker(self):
+        other = self.city.add_child(name_ru="Other location", name_en="Other location", is_hidden=True)
+        _make_competition("A", location=other, date_start=datetime.date(2026, 7, 10))
+        _make_competition("B", location=other, date_start=datetime.date(2026, 7, 12))
+        groups = {g["location_id"]: g for g in self._data()}
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(len(groups[self.city.pk]["competitions"]), 2)
+
+    def test_unresolvable_venue_is_skipped(self):
+        country = Location.add_root(name_ru="NoWhere", name_en="NoWhere")
+        region = country.add_child(name_ru="NR", name_en="NR")
+        city = region.add_child(name_ru="NC", name_en="NC")
+        other = city.add_child(name_ru="Other location", name_en="Other location", is_hidden=True)
+        _make_competition("Ghost", location=other, date_start=datetime.date(2026, 7, 10))
+        self.assertEqual(self._data(), [])
+
+
 class LocationProposalInSubmitTests(TestCase):
     """Proposing a venue while submitting a competition (issue #111)."""
 
