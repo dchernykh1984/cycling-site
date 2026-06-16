@@ -200,6 +200,7 @@ class LocationEditView(LoginRequiredMixin, View):
             {
                 "form": form,
                 "is_edit": True,
+                "can_manage": _can_manage_locations(request.user),
                 "location": location,
                 "map_url": _get_map_url(),
                 "all_locations_json": _get_all_locations_json(),
@@ -243,6 +244,7 @@ class LocationEditView(LoginRequiredMixin, View):
             {
                 "form": form,
                 "is_edit": True,
+                "can_manage": _can_manage_locations(request.user),
                 "location": location,
                 "map_url": _get_map_url(),
                 "all_locations_json": _get_all_locations_json(),

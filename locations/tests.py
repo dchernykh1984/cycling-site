@@ -236,6 +236,15 @@ class LocationCreateViewTests(TestCase):
         self.assertTrue(venue.is_pending)
         self.assertEqual(venue.proposal.submitted_by, self.participant)
 
+    def test_participant_cannot_create_hidden_location(self):
+        # Non-managers must not be able to create hidden fallback venues.
+        self.client.force_login(self.participant)
+        self.client.post(
+            self.url,
+            {"name_ru": "Sneaky", "name_kk": "", "name_en": "", "city": str(self.city.pk), "is_hidden": "on"},
+        )
+        self.assertFalse(Location.objects.get(name_ru="Sneaky").is_hidden)
+
     def test_organizer_adds_approved_location_directly(self):
         organizer = _make_user("org_loc@x.com", User.Role.ORGANIZER)
         self.client.force_login(organizer)
