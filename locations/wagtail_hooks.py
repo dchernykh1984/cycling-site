@@ -4,7 +4,7 @@ from django import forms
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
 
-from .models import Location
+from .models import Location, add_location_child
 
 
 class LocationForm(forms.ModelForm):
@@ -32,7 +32,7 @@ class LocationForm(forms.ModelForm):
                 "knowledge_article": instance.knowledge_article,
             }
             if parent:
-                return parent.add_child(**kwargs)
+                return add_location_child(parent, **kwargs)
             return Location.add_root(**kwargs)
         if commit:
             instance.save()

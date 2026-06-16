@@ -14,6 +14,35 @@ from wagtail_localize.fields import SynchronizedField
 from cycling_site.page_mixins import AsciiSlugMixin
 
 
+def add_location_child(parent, **kwargs):
+    """Append a child under ``parent`` at the next free path, sidestepping treebeard's
+    sorted ``add_child``.
+
+    A sorted MP tree assumes a sibling's path order matches its sort order, so inserting
+    shifts later siblings' paths. Renaming a location changes its ``name`` sort key without
+    re-pathing, which breaks that invariant and makes the next sorted insert collide on the
+    unique ``path`` constraint -- a 500 when proposing/creating a venue. Appending at the
+    real last path never shifts an existing node, and recomputing ``numchild`` heals a
+    counter that has drifted (e.g. ``is_leaf`` wrongly reporting a populated node as empty).
+    """
+    cls = parent.__class__
+    children = list(
+        cls.objects.filter(
+            depth=parent.depth + 1,
+            path__range=cls._get_children_path_interval(parent.path),
+        ).order_by("path")
+    )
+    last = children[-1] if children else None
+    newpath = last._inc_path() if last is not None else cls._get_path(parent.path, parent.depth + 1, 1)
+    obj = cls(path=newpath, depth=parent.depth + 1, numchild=0, **kwargs)
+    obj.save()
+    new_count = len(children) + 1
+    if parent.numchild != new_count:
+        cls.objects.filter(pk=parent.pk).update(numchild=new_count)
+        parent.numchild = new_count
+    return obj
+
+
 class Location(MP_Node, index.Indexed):
     name = models.CharField(max_length=255)
     lat = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
@@ -69,7 +98,9 @@ class Location(MP_Node, index.Indexed):
     @classmethod
     def propose_venue(cls, city, name, lat=None, lng=None, *, submitted_by=None, approved=False) -> "Location":
         """Create a depth-4 venue under ``city``; pending (with a proposal) unless ``approved``."""
-        venue = city.add_child(name=name, name_ru=name, name_kk=name, name_en=name, lat=lat, lng=lng, is_hidden=False)
+        venue = add_location_child(
+            city, name=name, name_ru=name, name_kk=name, name_en=name, lat=lat, lng=lng, is_hidden=False
+        )
         if not approved:
             LocationProposal.objects.create(location=venue, submitted_by=submitted_by)
         return venue
@@ -77,11 +108,23 @@ class Location(MP_Node, index.Indexed):
     @classmethod
     def get_or_create_other_location(cls, city) -> "Location":
         """The city's hidden "other location" fallback venue, created if missing."""
-        existing = city.get_children().filter(is_hidden=True, is_deleted=False).first()
+        # Query children by path (not get_children(), which returns nothing when a drifted
+        # numchild makes the city look like a leaf) so we never create a duplicate fallback.
+        existing = (
+            cls.objects.filter(
+                depth=city.depth + 1,
+                path__range=cls._get_children_path_interval(city.path),
+                is_hidden=True,
+                is_deleted=False,
+            )
+            .order_by("path")
+            .first()
+        )
         if existing:
             return existing
         names = cls._localized_names("Other location")
-        return city.add_child(
+        return add_location_child(
+            city,
             name=names["ru"],
             name_ru=names["ru"],
             name_kk=names["kk"],

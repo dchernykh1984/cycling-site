@@ -6,7 +6,7 @@ from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTests
 
 from accounts.models import User
-from locations.models import Location, LocationProposal, LocationsMapPage
+from locations.models import Location, LocationProposal, LocationsMapPage, add_location_child
 
 
 def _get_site_root():
@@ -566,3 +566,86 @@ class LocationApproveRejectViewTests(TestCase):
         self.client.force_login(self.admin)
         resp = self.client.post(reverse("location_approve", args=[approved.pk]))
         self.assertEqual(resp.status_code, 404)
+
+
+class AddLocationChildRobustnessTests(TestCase):
+    """add_location_child / propose_venue must not collide when a city's child path order
+    drifts from its sort order (e.g. after a rename) or its numchild drifts. Treebeard's
+    sorted add_child shifts sibling paths and used to raise IntegrityError -> 500 (#118)."""
+
+    def _city(self):
+        country = Location.add_root(name="KZ", name_ru="KZ")
+        region = country.add_child(name="R", name_ru="R")
+        return region.add_child(name="City", name_ru="City")
+
+    def _child_paths(self, city):
+        return list(
+            Location.objects.filter(
+                depth=city.depth + 1, path__range=Location._get_children_path_interval(city.path)
+            ).values_list("path", flat=True)
+        )
+
+    def test_append_after_rename_desync_does_not_collide(self):
+        city = self._city()
+        for nm in ["A", "B", "D", "E"]:
+            city.add_child(name=nm, name_ru=nm, sort_order=0)
+        first = city.get_children().order_by("path").first()
+        first.name = first.name_ru = "Z"  # path stays first, sort order moves last -> desync
+        first.save()
+        city.refresh_from_db()
+        venue = add_location_child(city, name="M", name_ru="M")
+        self.assertEqual(venue.get_parent().pk, city.pk)
+        paths = self._child_paths(city)
+        self.assertEqual(len(paths), 5)
+        self.assertEqual(len(paths), len(set(paths)))  # no duplicate path
+
+    def test_append_heals_numchild_zero(self):
+        city = self._city()
+        city.add_child(name="A", name_ru="A")
+        Location.objects.filter(pk=city.pk).update(numchild=0)  # looks like a leaf
+        city.refresh_from_db()
+        add_location_child(city, name="B", name_ru="B")
+        city.refresh_from_db()
+        self.assertEqual(city.numchild, 2)
+        paths = self._child_paths(city)
+        self.assertEqual(len(paths), len(set(paths)))
+
+    def test_append_heals_numchild_too_high(self):
+        city = self._city()
+        city.add_child(name="A", name_ru="A")
+        Location.objects.filter(pk=city.pk).update(numchild=9)
+        city.refresh_from_db()
+        add_location_child(city, name="B", name_ru="B")
+        city.refresh_from_db()
+        self.assertEqual(city.numchild, 2)
+
+    def test_get_or_create_other_no_duplicate_under_numchild_zero(self):
+        city = self._city()
+        first = Location.get_or_create_other_location(city)
+        Location.objects.filter(pk=city.pk).update(numchild=0)
+        city.refresh_from_db()
+        second = Location.get_or_create_other_location(city)
+        self.assertEqual(first.pk, second.pk)
+
+    def test_propose_venue_after_rename_creates_pending(self):
+        city = self._city()
+        city.add_child(name="A", name_ru="A", sort_order=0)
+        existing = city.get_children().order_by("path").first()
+        existing.name = existing.name_ru = "Z"
+        existing.save()
+        city.refresh_from_db()
+        venue = Location.propose_venue(city, "New venue")
+        self.assertTrue(venue.is_pending)
+        self.assertEqual(venue.get_parent().pk, city.pk)
+
+    def test_repeated_appends_with_renames_keep_unique_paths(self):
+        city = self._city()
+        for i in range(8):
+            add_location_child(city, name=f"v{i}", name_ru=f"v{i}", sort_order=0)
+            first = city.get_children().order_by("path").first()
+            first.name = first.name_ru = f"z{i}"  # keep desyncing each round
+            first.save()
+            city.refresh_from_db()
+        paths = self._child_paths(city)
+        self.assertEqual(len(paths), 8)
+        self.assertEqual(len(paths), len(set(paths)))
