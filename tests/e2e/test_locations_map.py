@@ -109,10 +109,12 @@ def test_add_form_accessible_for_admin(page: Page, live_server, map_page, admin_
 
 
 @pytest.mark.django_db(transaction=True)
-def test_add_form_forbidden_for_participant(page: Page, live_server, map_page, organizer):
+def test_add_form_accessible_for_non_admin(page: Page, live_server, map_page, organizer):
+    # Issue #111: any registered user may open the location form (to propose); not 403.
     inject_session(page, live_server, organizer)
     page.goto(f"{live_server.url}/locations/add/")
-    expect(page.locator("body")).to_contain_text("403")
+    expect(page.locator("#id_name_ru")).to_be_visible()
+    expect(page.locator("body")).not_to_contain_text("403")
 
 
 @pytest.mark.django_db(transaction=True)
