@@ -70,4 +70,47 @@
 {% else %}
 <div class="alert alert-success">{% trans "No competitions pending approval." %}</div>
 {% endif %}
+
+{% if pending_locations is not None %}
+<div class="row mt-5 mb-3">
+  <div class="col-12 d-flex justify-content-between align-items-center">
+    <h2 class="h4 mb-0">{% trans "Proposed locations" %}</h2>
+    <span class="badge bg-warning text-dark fs-6">{{ pending_locations|length }} {% trans "pending" %}</span>
+  </div>
+</div>
+{% if pending_locations %}
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>{% trans "Name" %}</th>
+        <th>{% trans "Submitted by" %}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for loc in pending_locations %}
+      <tr>
+        <td>{{ loc.name }}</td>
+        <td class="small text-muted">{{ loc.proposal.submitted_by.email|default:"—" }}</td>
+        <td class="text-end">
+          <form method="post" action="{% url 'location_approve' loc.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success btn-sm py-0 px-2">{% trans "Approve" %}</button>
+          </form>
+          <form method="post" action="{% url 'location_reject' loc.pk %}" class="d-inline"
+                onsubmit="return confirm('{% trans "Reject this location? Competitions using it will fall back to the city's other location." %}')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">{% trans "Reject" %}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-success">{% trans "No locations pending approval." %}</div>
+{% endif %}
+{% endif %}
 {% endblock %}

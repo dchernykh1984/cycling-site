@@ -1,6 +1,9 @@
 from typing import ClassVar
 
+from django.conf import settings
 from django.db import models
+from django.utils import translation
+from django.utils.translation import gettext
 from treebeard.mp_tree import MP_Node
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
@@ -48,9 +51,94 @@ class Location(MP_Node, index.Indexed):
     def __str__(self) -> str:
         return self.name or f"Location #{self.pk}"
 
+    @staticmethod
+    def _localized_names(source: str) -> dict:
+        """Return {ru, kk, en} translations of a gettext source string."""
+        names = {}
+        for lang in ("ru", "kk", "en"):
+            with translation.override(lang):
+                names[lang] = gettext(source)
+        return names
+
+    @property
+    def is_pending(self) -> bool:
+        """True while the location has an unresolved proposal (issue #111)."""
+        proposal = getattr(self, "proposal", None)
+        return proposal is not None and proposal.status == LocationProposal.Status.PENDING_APPROVAL
+
+    @classmethod
+    def propose_venue(cls, city, name, lat=None, lng=None, *, submitted_by=None, approved=False) -> "Location":
+        """Create a depth-4 venue under ``city``; pending (with a proposal) unless ``approved``."""
+        venue = city.add_child(name=name, name_ru=name, name_kk=name, name_en=name, lat=lat, lng=lng, is_hidden=False)
+        if not approved:
+            LocationProposal.objects.create(location=venue, submitted_by=submitted_by)
+        return venue
+
+    @classmethod
+    def get_or_create_other_location(cls, city) -> "Location":
+        """The city's hidden "other location" fallback venue, created if missing."""
+        existing = city.get_children().filter(is_hidden=True, is_deleted=False).first()
+        if existing:
+            return existing
+        names = cls._localized_names("Other location")
+        return city.add_child(
+            name=names["ru"],
+            name_ru=names["ru"],
+            name_kk=names["kk"],
+            name_en=names["en"],
+            is_hidden=True,
+        )
+
+    def approve_with_competition(self) -> None:
+        """Auto-approve a pending location when its competition is approved."""
+        proposal = getattr(self, "proposal", None)
+        if proposal is not None and proposal.status != LocationProposal.Status.APPROVED:
+            proposal.status = LocationProposal.Status.APPROVED
+            proposal.save(update_fields=["status"])
+
+    def reject_and_reset_competitions(self) -> None:
+        """Reject a proposed location: move its competitions to the city's other-location, then soft-delete it."""
+        parent = self.get_parent()
+        fallback = self.get_or_create_other_location(parent) if parent is not None else None
+        self.competitions.update(location=fallback)
+        self.is_deleted = True
+        self.save(update_fields=["is_deleted"])
+
     class Meta:
         verbose_name = "Location"
         verbose_name_plural = "Locations"
+
+
+class LocationProposal(models.Model):
+    """A user-proposed location awaiting moderation (issue #111).
+
+    Locations seeded or created by organizer+ have no proposal and are public at once.
+    A pending proposal makes the location visible only to its proposer until approved;
+    approving the competition that uses it (or a moderator) approves the proposal.
+    """
+
+    class Status(models.TextChoices):
+        PENDING_APPROVAL = "pending_approval", "Pending approval"
+        APPROVED = "approved", "Approved"
+
+    location = models.OneToOneField(Location, on_delete=models.CASCADE, related_name="proposal")
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING_APPROVAL,
+        db_index=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"Proposal #{self.pk} for location {self.location_id} ({self.status})"
 
 
 class LocationsMapPage(AsciiSlugMixin, Page):
@@ -73,7 +161,9 @@ class LocationsMapPage(AsciiSlugMixin, Page):
         can_manage = request.user.is_authenticated and (
             request.user.is_superuser or request.user.get_role_rank() >= admin_rank
         )
-        loc_qs = Location.objects.filter(lat__isnull=False, lng__isnull=False, is_deleted=False)
+        loc_qs = Location.objects.filter(lat__isnull=False, lng__isnull=False, is_deleted=False).filter(
+            models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
+        )
         if not can_manage:
             loc_qs = loc_qs.filter(is_hidden=False)
         locations = loc_qs.select_related("knowledge_article")
@@ -90,7 +180,8 @@ class LocationsMapPage(AsciiSlugMixin, Page):
                 entry["url"] = loc.knowledge_article.url
             loc_data.append(entry)
         context["locations_data"] = loc_data
-        context["can_add"] = can_manage
+        # Any registered user may propose a location (issue #111); managers manage them.
+        context["can_add"] = request.user.is_authenticated
         context["can_manage"] = can_manage
         if can_manage:
             all_locs = Location.objects.filter(is_deleted=False).order_by("name")

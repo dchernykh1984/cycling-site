@@ -1,3 +1,5 @@
+import datetime
+
 from django.test import TestCase
 from django.urls import reverse
 from wagtail.models import Page, Site
@@ -225,10 +227,22 @@ class LocationCreateViewTests(TestCase):
         resp = self.client.get(self.url)
         self.assertRedirects(resp, f"/accounts/login/?next={self.url}", fetch_redirect_response=False)
 
-    def test_participant_forbidden(self):
+    def test_participant_proposes_pending_location(self):
+        # Issue #111: any registered user may propose a location (pending), not 403.
         self.client.force_login(self.participant)
-        resp = self.client.post(self.url, {"name_ru": "Venue", "city": str(self.city.pk)})
-        self.assertEqual(resp.status_code, 403)
+        self.client.post(self.url, {"name_ru": "Venue", "name_kk": "", "name_en": "", "city": str(self.city.pk)})
+        venue = Location.objects.filter(name_ru="Venue").first()
+        self.assertIsNotNone(venue)
+        self.assertTrue(venue.is_pending)
+        self.assertEqual(venue.proposal.submitted_by, self.participant)
+
+    def test_organizer_adds_approved_location_directly(self):
+        organizer = _make_user("org_loc@x.com", User.Role.ORGANIZER)
+        self.client.force_login(organizer)
+        self.client.post(self.url, {"name_ru": "OrgVenue", "name_kk": "", "name_en": "", "city": str(self.city.pk)})
+        venue = Location.objects.get(name_ru="OrgVenue")
+        self.assertFalse(venue.is_pending)
+        self.assertFalse(hasattr(venue, "proposal"))
 
     def test_admin_get_returns_200(self):
         self.client.force_login(self.admin)
@@ -242,6 +256,7 @@ class LocationCreateViewTests(TestCase):
         self.assertIsNotNone(venue)
         self.assertEqual(venue.depth, 4)
         self.assertEqual(venue.get_parent().pk, self.city.pk)
+        self.assertFalse(venue.is_pending)
 
     def test_missing_city_shows_form_error(self):
         self.client.force_login(self.admin)
@@ -365,3 +380,93 @@ class LocationsMapLocaleTests(TestCase):
             self.assertContains(response, "locations-map")  # the map page itself rendered, not a 404
             with translation.override(lang):
                 self.assertContains(response, _("Map"))  # heading localized to the active locale
+
+
+class LocationProposalModelTests(TestCase):
+    """Location approval workflow helpers (issue #111)."""
+
+    def setUp(self):
+        self.user = _make_user("proposer@x.com", User.Role.PARTICIPANT)
+        self.country, self.region, self.city = _make_tree()
+
+    def test_propose_venue_is_pending_with_submitter(self):
+        venue = Location.propose_venue(self.city, "My Venue", submitted_by=self.user)
+        self.assertTrue(venue.is_pending)
+        self.assertEqual(venue.proposal.submitted_by, self.user)
+        self.assertEqual(venue.get_parent().pk, self.city.pk)
+        self.assertFalse(venue.is_hidden)
+
+    def test_propose_venue_approved_flag(self):
+        venue = Location.propose_venue(self.city, "Approved Venue", submitted_by=self.user, approved=True)
+        self.assertFalse(venue.is_pending)
+        self.assertFalse(hasattr(venue, "proposal"))
+
+    def test_approve_with_competition_sets_approved(self):
+        from locations.models import LocationProposal
+
+        venue = Location.propose_venue(self.city, "Pending Venue", submitted_by=self.user)
+        venue.approve_with_competition()
+        venue.proposal.refresh_from_db()
+        self.assertEqual(venue.proposal.status, LocationProposal.Status.APPROVED)
+        self.assertFalse(venue.is_pending)
+
+    def test_get_or_create_other_location_creates_hidden_child(self):
+        other = Location.get_or_create_other_location(self.city)
+        self.assertTrue(other.is_hidden)
+        self.assertEqual(other.get_parent().pk, self.city.pk)
+        # Idempotent: returns the same node next time.
+        self.assertEqual(Location.get_or_create_other_location(self.city).pk, other.pk)
+
+    def test_get_or_create_other_location_reuses_existing_hidden(self):
+        existing = self.city.add_child(name="Other", name_ru="Other", is_hidden=True)
+        self.assertEqual(Location.get_or_create_other_location(self.city).pk, existing.pk)
+
+    def test_reject_resets_competitions_to_other_location(self):
+        from calendar_app.models import Competition
+
+        venue = Location.propose_venue(self.city, "Rejected Venue", submitted_by=self.user)
+        comp = Competition.objects.create(title_ru="C", date_start=datetime.date(2026, 7, 1), location=venue)
+        venue.reject_and_reset_competitions()
+        venue.refresh_from_db()
+        comp.refresh_from_db()
+        self.assertTrue(venue.is_deleted)
+        self.assertIsNotNone(comp.location)
+        self.assertTrue(comp.location.is_hidden)
+        self.assertEqual(comp.location.get_parent().pk, self.city.pk)
+
+
+class LocationApproveRejectViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("locmod@x.com", User.Role.ADMIN)
+        self.participant = _make_user("locpart@x.com", User.Role.PARTICIPANT)
+        self.country, self.region, self.city = _make_tree()
+        self.venue = Location.propose_venue(self.city, "Pending Venue", submitted_by=self.participant)
+
+    def test_participant_cannot_approve(self):
+        self.client.force_login(self.participant)
+        resp = self.client.post(reverse("location_approve", args=[self.venue.pk]))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_admin_approves(self):
+        from locations.models import LocationProposal
+
+        self.client.force_login(self.admin)
+        self.client.post(reverse("location_approve", args=[self.venue.pk]))
+        self.venue.proposal.refresh_from_db()
+        self.assertEqual(self.venue.proposal.status, LocationProposal.Status.APPROVED)
+
+    def test_participant_cannot_reject(self):
+        self.client.force_login(self.participant)
+        resp = self.client.post(reverse("location_reject", args=[self.venue.pk]))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_admin_rejects_and_resets_competition(self):
+        from calendar_app.models import Competition
+
+        comp = Competition.objects.create(title_ru="C", date_start=datetime.date(2026, 7, 1), location=self.venue)
+        self.client.force_login(self.admin)
+        self.client.post(reverse("location_reject", args=[self.venue.pk]))
+        self.venue.refresh_from_db()
+        comp.refresh_from_db()
+        self.assertTrue(self.venue.is_deleted)
+        self.assertTrue(comp.location.is_hidden)

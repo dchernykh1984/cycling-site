@@ -1,4 +1,7 @@
 {% load i18n %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+{% include "_map_layers.html" %}
 <div class="mb-3">
   <label class="form-label fw-semibold">{% trans "Location" %}</label>
   <div class="row g-2">
@@ -28,6 +31,32 @@
     </div>
   </div>
   {{ form.location }}{% comment %}renders as <input type="hidden" name="location" id="id_location">{% endcomment %}
+
+  <div id="new-venue-toggle-wrap" class="mt-2" style="display:none">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="add-venue-btn">
+      + {% trans "Propose a new venue" %}
+    </button>
+  </div>
+  <div id="new-venue-box" class="border rounded p-2 mt-2" style="display:none">
+    <div class="row g-2">
+      <div class="col-sm-6">
+        <label class="form-label form-label-sm mb-1" for="new-venue-name">{% trans "New venue name" %}</label>
+        {{ form.new_venue_name }}
+      </div>
+      <div class="col-sm-3">
+        <label class="form-label form-label-sm mb-1" for="new-venue-lat">{% trans "Latitude" %}</label>
+        {{ form.new_venue_lat }}
+      </div>
+      <div class="col-sm-3">
+        <label class="form-label form-label-sm mb-1" for="new-venue-lng">{% trans "Longitude" %}</label>
+        {{ form.new_venue_lng }}
+      </div>
+    </div>
+    <div id="new-venue-map" class="mt-2" style="height:220px;border-radius:.375rem;"></div>
+    <div class="form-text">{% trans "Click the map to set the venue point, or drag the marker." %}
+      {% trans "Your proposed venue is usable right away and will be reviewed by a moderator." %}</div>
+  </div>
+  {{ form.new_venue_city }}
 </div>
 
 <script>
@@ -43,6 +72,68 @@
   var venEl  = document.getElementById('loc-venue');
   var venWrap = document.getElementById('loc-venue-wrap');
   var locInp = document.getElementById('id_location');
+  // Propose-a-new-venue controls (issue #111)
+  var addVenueBtn = document.getElementById('add-venue-btn');
+  var addVenueToggle = document.getElementById('new-venue-toggle-wrap');
+  var newVenueBox = document.getElementById('new-venue-box');
+  var newVenueCity = document.getElementById('id_new_venue_city');
+  var nvNameInp = document.getElementById('new-venue-name');
+  var nvLatInp = document.getElementById('new-venue-lat');
+  var nvLngInp = document.getElementById('new-venue-lng');
+
+  function syncNewVenueCity() { if (newVenueCity) newVenueCity.value = cityEl.value || ''; }
+  function showAddVenue(show) {
+    if (addVenueToggle) addVenueToggle.style.display = show ? '' : 'none';
+    if (!show && newVenueBox) newVenueBox.style.display = 'none';
+  }
+
+  // --- Mini-map for picking the proposed venue point ---
+  var venueMap = null, venueMarker = null;
+  function setLatLng(lat, lng) {
+    if (nvLatInp) nvLatInp.value = lat.toFixed(6);
+    if (nvLngInp) nvLngInp.value = lng.toFixed(6);
+  }
+  function placeMarker(latlng) {
+    if (!venueMarker) {
+      venueMarker = L.marker(latlng, { draggable: true }).addTo(venueMap);
+      venueMarker.on('dragend', function () {
+        var p = venueMarker.getLatLng();
+        setLatLng(p.lat, p.lng);
+      });
+    } else {
+      venueMarker.setLatLng(latlng);
+    }
+  }
+  function initVenueMap() {
+    var el = document.getElementById('new-venue-map');
+    if (venueMap || !el || !window.L) return;
+    var start = [48.0, 68.0], zoom = 5;
+    var la = parseFloat(nvLatInp && nvLatInp.value), ln = parseFloat(nvLngInp && nvLngInp.value);
+    if (!isNaN(la) && !isNaN(ln)) { start = [la, ln]; zoom = 13; }
+    venueMap = L.map(el).setView(start, zoom);
+    if (window._addMapLayers) window._addMapLayers(venueMap);
+    if (!isNaN(la) && !isNaN(ln)) placeMarker(start);
+    venueMap.on('click', function (e) { placeMarker(e.latlng); setLatLng(e.latlng.lat, e.latlng.lng); });
+  }
+  if (nvLatInp && nvLngInp) {
+    [nvLatInp, nvLngInp].forEach(function (el) {
+      el.addEventListener('change', function () {
+        var la = parseFloat(nvLatInp.value), ln = parseFloat(nvLngInp.value);
+        if (venueMap && !isNaN(la) && !isNaN(ln)) { placeMarker([la, ln]); venueMap.setView([la, ln], 13); }
+      });
+    });
+  }
+
+  if (addVenueBtn) {
+    addVenueBtn.addEventListener('click', function () {
+      if (newVenueBox) newVenueBox.style.display = '';
+      if (addVenueToggle) addVenueToggle.style.display = 'none';
+      syncNewVenueCity();
+      initVenueMap();
+      // Leaflet mis-measures a container that was display:none at init.
+      if (venueMap) setTimeout(function () { venueMap.invalidateSize(); }, 50);
+    });
+  }
 
   function buildOpts(sel, nodes, placeholder) {
     sel.innerHTML = '<option value="">' + placeholder + '</option>';
@@ -77,7 +168,7 @@
   cntEl.addEventListener('change', function () {
     disable(cityEl); disable(regEl);
     venEl.innerHTML = '<option value=""></option>'; venWrap.style.display = 'none';
-    locInp.value = '';
+    locInp.value = ''; showAddVenue(false); syncNewVenueCity();
     var cp = pathOf(cntEl.value);
     if (!cp) return;
     buildOpts(regEl, allLocs.filter(function (l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
@@ -93,6 +184,7 @@
   regEl.addEventListener('change', function () {
     disable(cityEl);
     venEl.innerHTML = '<option value=""></option>'; venWrap.style.display = 'none';
+    showAddVenue(false); syncNewVenueCity();
     var rp = pathOf(regEl.value);
     if (!rp) return;
     buildOpts(cityEl, allLocs.filter(function (l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
@@ -105,7 +197,7 @@
     venEl.innerHTML = '<option value=""></option>'; venWrap.style.display = 'none';
     locInp.value = '';
     var cp = pathOf(cityEl.value);
-    if (!cp) return;
+    if (!cp) { showAddVenue(false); return; }
     var realVenues = allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cp) === 0; });
     buildOpts(venEl, realVenues, '--');
     var hv = hiddenVenueOf(cp);
@@ -117,11 +209,16 @@
       locInp.value = hv.pk;
     }
     venWrap.style.display = '';
+    showAddVenue(true); syncNewVenueCity();
   });
 
   venEl.addEventListener('change', function () {
     if (venEl.value) {
       locInp.value = venEl.value;
+      // Picking an existing venue cancels any in-progress proposal and restores the button.
+      if (newVenueBox) newVenueBox.style.display = 'none';
+      if (nvNameInp) nvNameInp.value = '';
+      showAddVenue(true);
     } else {
       autoVenue(pathOf(cityEl.value));
     }
@@ -166,6 +263,7 @@
       venWrap.style.display = '';
       venEl.value = initLoc.is_hidden ? (hv ? hv.pk : '') : initLoc.pk;
       locInp.value = venEl.value;
+      showAddVenue(true); syncNewVenueCity();
     }
   }
 }());

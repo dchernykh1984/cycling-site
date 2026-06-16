@@ -51,6 +51,31 @@ class SubmitCompetitionForm(forms.Form):
         empty_label="--",
         widget=forms.HiddenInput(),
     )
+    # Proposing a new venue: any registered user can suggest a venue under the chosen
+    # city (issue #111). new_venue_city carries the selected city; if new_venue_name is
+    # filled, the view creates the venue (pending unless the submitter is organizer+).
+    new_venue_city: forms.ModelChoiceField[Location] = forms.ModelChoiceField(
+        queryset=Location.objects.filter(is_deleted=False),
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+    new_venue_name = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "id": "new-venue-name"}),
+    )
+    new_venue_lat = forms.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "any", "id": "new-venue-lat"}),
+    )
+    new_venue_lng = forms.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "any", "id": "new-venue-lng"}),
+    )
     date_start = forms.DateField(
         label=_("Date start"),
         widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}, format="%Y-%m-%d"),

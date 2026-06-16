@@ -10,10 +10,16 @@ from django.views.generic import View
 from accounts.models import User
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
+_ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
 
 
 def _can_manage_locations(user) -> bool:
     return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
+
+
+def _can_add_location_directly(user) -> bool:
+    """Organizer+ may add approved locations directly; everyone else proposes (issue #111)."""
+    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ORGANIZER_RANK)
 
 
 def _get_all_locations_json() -> list:
@@ -82,11 +88,10 @@ class LocationHideView(LoginRequiredMixin, View):
 
 
 class LocationCreateView(LoginRequiredMixin, View):
+    # Any registered user may propose a location; organizer+ add it approved directly.
     def get(self, request):
         from locations.forms import LocationForm
 
-        if not _can_manage_locations(request.user):
-            raise PermissionDenied
         form = LocationForm(location_depth=4)
         return render(
             request,
@@ -94,6 +99,7 @@ class LocationCreateView(LoginRequiredMixin, View):
             {
                 "form": form,
                 "is_edit": False,
+                "can_manage": _can_manage_locations(request.user),
                 "map_url": _get_map_url(),
                 "all_locations_json": _get_all_locations_json(),
                 "location_depth": 4,
@@ -102,24 +108,28 @@ class LocationCreateView(LoginRequiredMixin, View):
 
     def post(self, request):
         from locations.forms import LocationForm
+        from locations.models import LocationProposal
 
-        if not _can_manage_locations(request.user):
-            raise PermissionDenied
         form = LocationForm(request.POST, location_depth=4)
         if form.is_valid():
             cd = form.cleaned_data
             name = cd["name_ru"] or cd.get("name_kk") or cd.get("name_en") or ""
             city = cd["city"]
-            city.add_child(
+            approved = _can_add_location_directly(request.user)
+            venue = city.add_child(
                 name=name,
                 name_ru=cd["name_ru"],
                 name_kk=cd.get("name_kk") or "",
                 name_en=cd.get("name_en") or "",
                 lat=cd.get("lat"),
                 lng=cd.get("lng"),
-                is_hidden=cd.get("is_hidden", False),
+                # Only managers may create hidden fallback venues.
+                is_hidden=cd.get("is_hidden", False) if _can_manage_locations(request.user) else False,
             )
-            messages.success(request, _("Location added."))
+            # Non-managers propose; a pending proposal hides the venue from others until approved.
+            if not approved:
+                LocationProposal.objects.create(location=venue, submitted_by=request.user)
+            messages.success(request, _("Location added.") if approved else _("Location proposed for review."))
             return redirect(_get_map_url())
         return render(
             request,
@@ -127,11 +137,36 @@ class LocationCreateView(LoginRequiredMixin, View):
             {
                 "form": form,
                 "is_edit": False,
+                "can_manage": _can_manage_locations(request.user),
                 "map_url": _get_map_url(),
                 "all_locations_json": _get_all_locations_json(),
                 "location_depth": 4,
             },
         )
+
+
+class LocationApproveView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        from locations.models import Location
+
+        if not _can_manage_locations(request.user):
+            raise PermissionDenied
+        location = get_object_or_404(Location, pk=pk, is_deleted=False)
+        location.approve_with_competition()
+        safe_path = urlparse(request.META.get("HTTP_REFERER", "")).path or "/"
+        return redirect(safe_path)
+
+
+class LocationRejectView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        from locations.models import Location
+
+        if not _can_manage_locations(request.user):
+            raise PermissionDenied
+        location = get_object_or_404(Location, pk=pk, is_deleted=False)
+        location.reject_and_reset_competitions()
+        safe_path = urlparse(request.META.get("HTTP_REFERER", "")).path or "/"
+        return redirect(safe_path)
 
 
 class LocationEditView(LoginRequiredMixin, View):

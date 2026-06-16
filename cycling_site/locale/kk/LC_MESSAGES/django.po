@@ -1591,3 +1591,30 @@ msgstr "Тізім"
 
 msgid "View"
 msgstr "Көрініс"
+
+msgid "Other location"
+msgstr "Басқа орын"
+
+msgid "Location proposed for review."
+msgstr "Орын қарауға ұсынылды."
+
+msgid "Propose a new venue"
+msgstr "Жаңа орын ұсыну"
+
+msgid "New venue name"
+msgstr "Жаңа орын атауы"
+
+msgid "Your proposed venue is usable right away and will be reviewed by a moderator."
+msgstr "Ұсынылған орынды бірден қолдануға болады, оны модератор тексереді."
+
+msgid "Proposed locations"
+msgstr "Ұсынылған орындар"
+
+msgid "No locations pending approval."
+msgstr "Бекітуді күтіп тұрған орындар жоқ."
+
+msgid "Reject this location? Competitions using it will fall back to the city's other location."
+msgstr "Бұл орынды қабылдамау керек пе? Оны қолданатын жарыстар қаланың «басқа орнына» ауысады."
+
+msgid "Click the map to set the venue point, or drag the marker."
+msgstr "Нүктені белгілеу үшін картаны басыңыз немесе маркерді сүйреңіз."
