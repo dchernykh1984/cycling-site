@@ -1261,6 +1261,25 @@ class CalendarMapResolutionTests(TestCase):
         _make_competition("Ghost", location=other, date_start=datetime.date(2026, 7, 10))
         self.assertEqual(self._data(), [])
 
+    def test_hidden_ancestor_with_coords_is_skipped(self):
+        # A hidden city must never be a marker even if it carries coordinates: resolve up.
+        hidden_city = self.region.add_child(
+            name_ru="HiddenCity", name_en="HiddenCity", is_hidden=True, lat="50.000000", lng="50.000000"
+        )
+        other = hidden_city.add_child(name_ru="Other location", name_en="Other location", is_hidden=True)
+        _make_competition("HRace", location=other, date_start=datetime.date(2026, 7, 10))
+        groups = {g["location_id"]: g for g in self._data()}
+        self.assertIn(self.region.pk, groups)
+        self.assertNotIn(hidden_city.pk, groups)
+        self.assertEqual(groups[self.region.pk]["name"], "Region")
+
+    def test_deleted_location_competition_is_excluded(self):
+        venue = self.city.add_child(name_ru="DeadVenue", name_en="DeadVenue", lat="43.300000", lng="77.000000")
+        _make_competition("DeadRace", location=venue, date_start=datetime.date(2026, 7, 10))
+        venue.is_deleted = True
+        venue.save(update_fields=["is_deleted"])
+        self.assertEqual(self._data(), [])
+
 
 class LocationProposalInSubmitTests(TestCase):
     """Proposing a venue while submitting a competition (issue #111)."""

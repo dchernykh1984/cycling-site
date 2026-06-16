@@ -326,6 +326,7 @@ class CalendarMapAPIView(View):
             status=Competition.Status.APPROVED,
             is_deleted=False,
             location__isnull=False,
+            location__is_deleted=False,
         ).select_related("location")
         if not is_manager:
             qs = qs.filter(is_hidden=False)
