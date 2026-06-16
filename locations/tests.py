@@ -129,6 +129,16 @@ class LocationsMapHiddenResolutionTests(TestCase):
         for n in ("Other location", "C3", "R3", "KZ3"):
             self.assertNotIn(n, names)
 
+    def test_hidden_ancestor_with_coords_is_never_a_marker(self):
+        # A hidden node is skipped as a resolution target even if it has coordinates.
+        country = Location.add_root(name="KZ4", name_ru="KZ4", lat="48.000000", lng="68.000000")
+        hidden_region = country.add_child(name="HiddenR", name_ru="HiddenR", is_hidden=True, lat="50.0", lng="50.0")
+        city = hidden_region.add_child(name="C4", name_ru="C4")
+        city.add_child(name="Other location", name_ru="Other location", is_hidden=True)
+        names = [d["name"] for d in self._data()]
+        self.assertNotIn("HiddenR", names)
+        self.assertIn("KZ4", names)  # resolution skipped the hidden region up to the country
+
 
 class LocationArticlePageWithMapTests(TestCase):
     def setUp(self):

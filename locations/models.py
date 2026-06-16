@@ -162,13 +162,15 @@ def competition_location_block_reason(location, user, *, is_admin=False) -> str 
     return None
 
 
-def nearest_ancestor_with_coords(loc, by_path, step):
-    """The nearest ancestor of ``loc`` (city -> region -> country) that has coordinates,
-    looked up in ``by_path`` (path -> Location); None if no ancestor has coordinates."""
+def nearest_visible_ancestor_with_coords(loc, by_path, step):
+    """The nearest ancestor of ``loc`` (city -> region -> country) that is NOT hidden and
+    has coordinates, looked up in ``by_path`` (path -> Location). Hidden ancestors are
+    skipped so a hidden node never becomes a marker; None if none qualifies. ``by_path``
+    is expected to exclude deleted nodes, so deleted ancestors are skipped too."""
     path = loc.path[:-step]
     while path:
         anc = by_path.get(path)
-        if anc is not None and anc.lat is not None and anc.lng is not None:
+        if anc is not None and not anc.is_hidden and anc.lat is not None and anc.lng is not None:
             return anc
         path = path[:-step]
     return None
@@ -176,12 +178,13 @@ def nearest_ancestor_with_coords(loc, by_path, step):
 
 def map_display_node(loc, by_path, step):
     """The node ``loc`` should be drawn as on a map: itself when it is a visible node with
-    coordinates, otherwise the nearest ancestor (city -> region -> country) that has them.
-    Hidden nodes (the "other location" placeholder) always resolve to an ancestor so the
-    marker shows the real place name, not the placeholder. None if nothing has coords."""
+    coordinates, otherwise the nearest non-hidden ancestor (city -> region -> country) that
+    has coordinates. A hidden node (the "other location" placeholder) is never drawn and
+    always resolves up to the real place, so the marker shows its name. None if nothing
+    qualifies."""
     if not loc.is_hidden and loc.lat is not None and loc.lng is not None:
         return loc
-    return nearest_ancestor_with_coords(loc, by_path, step)
+    return nearest_visible_ancestor_with_coords(loc, by_path, step)
 
 
 def _build_map_locations(all_locs) -> list:
