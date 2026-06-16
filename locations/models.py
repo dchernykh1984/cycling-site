@@ -162,6 +162,51 @@ def competition_location_block_reason(location, user, *, is_admin=False) -> str 
     return None
 
 
+def _build_map_locations(all_locs) -> list:
+    """Map markers (issue #113): non-hidden locations at their own coordinates; each hidden
+    "other location" at the nearest ancestor (city -> region -> country) that has
+    coordinates, labelled with that ancestor's name; skipped if no ancestor has coords.
+    Deduplicated so a city isn't drawn twice (its own marker + a resolved hidden child)."""
+    by_path = {loc.path: loc for loc in all_locs}
+    step = Location.steplen
+
+    def nearest_with_coords(loc):
+        path = loc.path[:-step]
+        while path:
+            anc = by_path.get(path)
+            if anc is not None and anc.lat is not None and anc.lng is not None:
+                return anc
+            path = path[:-step]
+        return None
+
+    data: list = []
+    seen: set = set()
+    for loc in all_locs:
+        if loc.is_hidden:
+            display = nearest_with_coords(loc)
+            if display is None:
+                continue
+        elif loc.lat is None or loc.lng is None:
+            continue
+        else:
+            display = loc
+        key = (str(display.lat), str(display.lng), display.name)
+        if key in seen:
+            continue
+        seen.add(key)
+        entry = {
+            "id": display.pk,
+            "name": display.name,
+            "lat": float(display.lat),
+            "lng": float(display.lng),
+            "is_hidden": display.is_hidden,
+        }
+        if display.knowledge_article_id and display.knowledge_article.live:
+            entry["url"] = display.knowledge_article.url
+        data.append(entry)
+    return data
+
+
 class LocationsMapPage(AsciiSlugMixin, Page):
     intro = RichTextField(blank=True)
 
@@ -182,25 +227,12 @@ class LocationsMapPage(AsciiSlugMixin, Page):
         can_manage = request.user.is_authenticated and (
             request.user.is_superuser or request.user.get_role_rank() >= admin_rank
         )
-        loc_qs = Location.objects.filter(lat__isnull=False, lng__isnull=False, is_deleted=False).filter(
-            models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
+        all_locs = list(
+            Location.objects.filter(is_deleted=False)
+            .filter(models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED))
+            .select_related("knowledge_article")
         )
-        if not can_manage:
-            loc_qs = loc_qs.filter(is_hidden=False)
-        locations = loc_qs.select_related("knowledge_article")
-        loc_data = []
-        for loc in locations:
-            entry = {
-                "id": loc.pk,
-                "name": loc.name,
-                "lat": float(loc.lat),
-                "lng": float(loc.lng),
-                "is_hidden": loc.is_hidden,
-            }
-            if loc.knowledge_article_id and loc.knowledge_article.live:
-                entry["url"] = loc.knowledge_article.url
-            loc_data.append(entry)
-        context["locations_data"] = loc_data
+        context["locations_data"] = _build_map_locations(all_locs)
         # Any registered user may propose a location (issue #111); managers manage them.
         context["can_add"] = request.user.is_authenticated
         context["can_manage"] = can_manage
