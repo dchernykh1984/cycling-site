@@ -8,7 +8,7 @@ from ninja.schema import Field
 from accounts.models import User
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
-from locations.models import Location, LocationProposal
+from locations.models import Location, LocationProposal, add_location_child
 
 _PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
 _ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
@@ -207,7 +207,7 @@ def create_location(request, payload: LocationIn):
     if not is_admin(user) and (parent is None or parent.depth != 3):
         raise HttpError(403, "A city (depth-3) parent_id is required to create a venue")
 
-    location = parent.add_child(**kwargs) if parent is not None else Location.add_root(**kwargs)
+    location = add_location_child(parent, **kwargs) if parent is not None else Location.add_root(**kwargs)
 
     # Below organizer the location is a proposal: usable by the author, pending review.
     if not approved:

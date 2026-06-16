@@ -1382,6 +1382,176 @@ class LocationProposalInSubmitTests(TestCase):
         self.assertFalse(Competition.objects.filter(title_ru="BadCity").exists())
 
 
+class SubmitCompetitionScenariosTests(TestCase):
+    """Dense coverage of competition creation - a core flow with many parameters. In
+    particular submitting must never 500 when a city's venue paths have drifted from sort
+    order, which used to crash the propose-a-new-venue path (#118)."""
+
+    def setUp(self):
+        self.participant = _make_user("p_sub@example.com", User.Role.PARTICIPANT)
+        self.organizer = _make_user("o_sub@example.com", User.Role.ORGANIZER)
+        self.cat = DisciplineCategory.objects.create(name_ru="Road", order=1)
+        self.disc = Discipline.objects.create(name_ru="Road Race", category=self.cat, order=1)
+        self.event_type = EventType.objects.create(name_ru="Race", order=1)
+        self.country = Location.add_root(name_ru="KZ", name_en="KZ")
+        self.region = self.country.add_child(name_ru="Region", name_en="Region")
+        self.city = self.region.add_child(name_ru="City", name_en="City")
+        self.venue = self.city.add_child(name_ru="Velodrome", name_en="Velodrome", lat="43.200000", lng="76.900000")
+        self.url = reverse("calendar_submit")
+
+    def _payload(self, **kw):
+        data = {"title_ru": "Race", "date_start": "2026-09-01"}
+        data.update(kw)
+        return data
+
+    def _desync_city(self):
+        """Rename the city's first venue so its path order no longer matches sort order."""
+        first = self.city.get_children().order_by("path").first()
+        first.name = first.name_ru = "ZZZ Renamed"
+        first.save()
+        self.city.refresh_from_db()
+
+    # --- existing-venue selection ---
+    def test_organizer_existing_venue_is_approved(self):
+        self.client.force_login(self.organizer)
+        resp = self.client.post(self.url, self._payload(title_ru="V1", location=str(self.venue.pk)))
+        self.assertEqual(resp.status_code, 302)
+        comp = Competition.objects.get(title_ru="V1")
+        self.assertEqual(comp.location.pk, self.venue.pk)
+        self.assertEqual(comp.status, Competition.Status.APPROVED)
+
+    def test_participant_existing_venue_is_pending(self):
+        self.client.force_login(self.participant)
+        self.client.post(self.url, self._payload(title_ru="V2", location=str(self.venue.pk)))
+        self.assertEqual(Competition.objects.get(title_ru="V2").status, Competition.Status.PENDING_APPROVAL)
+
+    def test_hidden_fallback_venue_is_accepted(self):
+        hidden = Location.get_or_create_other_location(self.city)
+        self.client.force_login(self.organizer)
+        self.client.post(self.url, self._payload(title_ru="V3", location=str(hidden.pk)))
+        self.assertEqual(Competition.objects.get(title_ru="V3").location.pk, hidden.pk)
+
+    # --- propose a new venue ---
+    def test_participant_proposes_pending_venue(self):
+        self.client.force_login(self.participant)
+        self.client.post(
+            self.url, self._payload(title_ru="V4", new_venue_city=str(self.city.pk), new_venue_name="New Spot")
+        )
+        comp = Competition.objects.get(title_ru="V4")
+        self.assertEqual(comp.location.name_ru, "New Spot")
+        self.assertTrue(comp.location.is_pending)
+
+    def test_organizer_proposes_approved_venue_with_coords(self):
+        self.client.force_login(self.organizer)
+        self.client.post(
+            self.url,
+            self._payload(
+                title_ru="V5",
+                new_venue_city=str(self.city.pk),
+                new_venue_name="Org Spot",
+                new_venue_lat="43.100000",
+                new_venue_lng="76.800000",
+            ),
+        )
+        comp = Competition.objects.get(title_ru="V5")
+        self.assertFalse(comp.location.is_pending)
+        self.assertEqual(str(comp.location.lat), "43.100000")
+
+    # --- regression: a desynced city must not 500 ---
+    def test_propose_new_venue_into_desynced_city_does_not_500(self):
+        self._desync_city()
+        self.client.force_login(self.participant)
+        resp = self.client.post(
+            self.url, self._payload(title_ru="V6", new_venue_city=str(self.city.pk), new_venue_name="After Rename")
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(Competition.objects.filter(title_ru="V6").exists())
+
+    def test_existing_venue_in_desynced_city_does_not_500(self):
+        self._desync_city()
+        self.client.force_login(self.organizer)
+        resp = self.client.post(self.url, self._payload(title_ru="V7", location=str(self.venue.pk)))
+        self.assertEqual(resp.status_code, 302)
+
+    def test_propose_into_city_with_many_venues_does_not_500(self):
+        for i in range(6):
+            self.city.add_child(name_ru=f"v{i}", name_en=f"v{i}", sort_order=0)
+        self._desync_city()
+        self.client.force_login(self.organizer)
+        resp = self.client.post(
+            self.url, self._payload(title_ru="V8", new_venue_city=str(self.city.pk), new_venue_name="Crowded")
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(Competition.objects.filter(title_ru="V8").exists())
+
+    def test_two_successive_proposals_into_same_city(self):
+        self.client.force_login(self.organizer)
+        self.client.post(
+            self.url, self._payload(title_ru="V9a", new_venue_city=str(self.city.pk), new_venue_name="First")
+        )
+        self.client.post(
+            self.url, self._payload(title_ru="V9b", new_venue_city=str(self.city.pk), new_venue_name="Second")
+        )
+        self.assertTrue(Competition.objects.filter(title_ru="V9a").exists())
+        self.assertTrue(Competition.objects.filter(title_ru="V9b").exists())
+
+    # --- varied parameters ---
+    def test_full_details_with_date_end_discipline_and_urls(self):
+        self.client.force_login(self.organizer)
+        resp = self.client.post(
+            self.url,
+            self._payload(
+                title_ru="V10",
+                title_en="V10en",
+                date_start="2026-09-01",
+                date_end="2026-09-03",
+                discipline=str(self.disc.pk),
+                event_type=str(self.event_type.pk),
+                description_ru="Some description",
+                url_announcement="https://example.com/a",
+                url_results="https://example.com/r",
+                location=str(self.venue.pk),
+            ),
+        )
+        self.assertEqual(resp.status_code, 302)
+        comp = Competition.objects.get(title_ru="V10")
+        self.assertEqual(comp.date_end, datetime.date(2026, 9, 3))
+        self.assertEqual(comp.discipline.pk, self.disc.pk)
+        self.assertEqual(comp.event_type.pk, self.event_type.pk)
+
+    def test_without_date_end(self):
+        self.client.force_login(self.organizer)
+        self.client.post(self.url, self._payload(title_ru="V11", location=str(self.venue.pk)))
+        self.assertIsNone(Competition.objects.get(title_ru="V11").date_end)
+
+    def test_missing_title_returns_form_not_500(self):
+        self.client.force_login(self.organizer)
+        resp = self.client.post(self.url, self._payload(title_ru="", location=str(self.venue.pk)))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Competition.objects.filter(location=self.venue).exists())
+
+    def test_missing_date_returns_form_not_500(self):
+        self.client.force_login(self.organizer)
+        resp = self.client.post(self.url, {"title_ru": "NoDate", "location": str(self.venue.pk)})
+        self.assertEqual(resp.status_code, 200)
+
+    def test_end_before_start_returns_form_not_500(self):
+        self.client.force_login(self.organizer)
+        resp = self.client.post(
+            self.url,
+            self._payload(title_ru="V12", date_start="2026-09-05", date_end="2026-09-01", location=str(self.venue.pk)),
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Competition.objects.filter(title_ru="V12").exists())
+
+    def test_new_venue_without_city_is_ignored_not_500(self):
+        # A venue name with no city is silently ignored (no venue created), but must not 500.
+        self.client.force_login(self.organizer)
+        resp = self.client.post(self.url, self._payload(title_ru="V13", new_venue_name="Orphan"))
+        self.assertIn(resp.status_code, (200, 302))
+        self.assertFalse(Location.objects.filter(name_ru="Orphan").exists())
+
+
 class LocationDataVisibilityTests(TestCase):
     """Pending locations are visible only to their proposer (issue #111)."""
 

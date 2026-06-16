@@ -125,7 +125,7 @@ class LocationCreateView(LoginRequiredMixin, View):
 
     def post(self, request):
         from locations.forms import LocationForm
-        from locations.models import LocationProposal
+        from locations.models import LocationProposal, add_location_child
 
         form = LocationForm(request.POST, location_depth=4)
         if form.is_valid():
@@ -133,7 +133,8 @@ class LocationCreateView(LoginRequiredMixin, View):
             name = cd["name_ru"] or cd.get("name_kk") or cd.get("name_en") or ""
             city = cd["city"]
             approved = _can_add_location_directly(request.user)
-            venue = city.add_child(
+            venue = add_location_child(
+                city,
                 name=name,
                 name_ru=cd["name_ru"],
                 name_kk=cd.get("name_kk") or "",
