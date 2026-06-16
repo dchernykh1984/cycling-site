@@ -65,10 +65,10 @@ document.addEventListener('DOMContentLoaded', function () {
   var dfEl = document.getElementById('map-date-from');
   var dtEl = document.getElementById('map-date-to');
 
-  var map = L.map('calendar-map');
+  var DEFAULT_CENTER = [48.0, 68.0], DEFAULT_ZOOM = 5;  // Kazakhstan/Central Asia overview
+  var map = L.map('calendar-map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
   _addMapLayers(map);
   var markersLayer = L.layerGroup().addTo(map);
-  var defaultViewSet = false;
 
   function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -111,14 +111,11 @@ document.addEventListener('DOMContentLoaded', function () {
           L.marker([loc.lat, loc.lng]).bindPopup(html).addTo(markersLayer);
           bounds.push([loc.lat, loc.lng]);
         });
-        if (bounds.length) {
-          map.fitBounds(bounds, {padding: [30, 30], maxZoom: 12});
-          defaultViewSet = true;
-        } else if (!defaultViewSet) {
-          map.setView([48.0, 68.0], 5);
-          defaultViewSet = true;
-        }
-      });
+        // Fit to the matching markers; keep the default overview when nothing matches.
+        if (bounds.length) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 12});
+        else map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+      })
+      .catch(function () { /* leave the current view on a transient fetch error */ });
     updateSwitcherLinks();
   }
 
