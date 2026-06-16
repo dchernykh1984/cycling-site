@@ -416,6 +416,18 @@ class RegistrationFlowTests(TestCase):
         user = User.objects.get(email="newuser@example.com")
         self.assertEqual(user.role, User.Role.GUEST)
 
+    def test_signup_with_existing_email_does_not_reveal_account(self):
+        # Enumeration prevention (review #4): signing up with an existing email must not
+        # error that the email is taken, nor create a duplicate account.
+        User.objects.create_user(username="exists@example.com", email="exists@example.com", password="SuperPass123!")
+        response = self.client.post(
+            reverse("account_signup"),
+            {"email": "exists@example.com", "password1": "SuperPass123!", "password2": "SuperPass123!"},
+        )
+        self.assertIn(response.status_code, [200, 302])
+        self.assertNotIn(b"already registered", response.content)
+        self.assertEqual(User.objects.filter(email="exists@example.com").count(), 1)
+
     def test_email_confirmation_flow(self):
         from django.core import mail
 
