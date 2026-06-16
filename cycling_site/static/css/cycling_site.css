@@ -163,6 +163,22 @@ html {
     min-height: 300px;
 }
 
+/* Competition list table: a fixed layout makes the (many) columns share the available
+   width and wrap their content, so the table always fits without a horizontal scroll
+   regardless of how long the titles / location names are. */
+.calendar-list-table {
+    table-layout: fixed;
+    width: 100%;
+}
+.calendar-list-table th,
+.calendar-list-table td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+.calendar-list-table .btn {
+    white-space: normal;
+}
+
 /* Dark theme: prevent Bootstrap from darkening Leaflet tile images */
 [data-bs-theme="dark"] .leaflet-container {
     background: #374151;
