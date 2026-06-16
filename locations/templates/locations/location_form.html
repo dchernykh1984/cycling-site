@@ -22,6 +22,7 @@
 </h1>
 
 {{ all_locations_json|json_script:"all-locations-data" }}
+{{ venues_json|json_script:"venues-data" }}
 
 <form method="post" id="location-form">
 {% csrf_token %}
@@ -234,6 +235,23 @@
 
   var map = L.map('coord-picker').setView([initLat, initLng], initZoom);
   _addMapLayers(map);
+
+  // Existing selectable venues as reference markers (issue #118) so users can see what
+  // already exists and avoid creating duplicates. These are read-only (not the new point).
+  function escHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  var venuesEl = document.getElementById('venues-data');
+  if (venuesEl) {
+    var venues = JSON.parse(venuesEl.textContent);
+    var vLang = (document.documentElement.lang || 'ru').split('-')[0];
+    var vField = (['ru', 'kk', 'en'].indexOf(vLang) >= 0) ? ('name_' + vLang) : 'name_ru';
+    venues.forEach(function (v) {
+      L.circleMarker([v.lat, v.lng], { radius: 6, color: '#6c757d', weight: 1, fillColor: '#adb5bd', fillOpacity: 0.85 })
+        .bindPopup(escHtml(v[vField] || v.name_ru || ''))
+        .addTo(map);
+    });
+  }
 
   var marker = null;
   if (latInput.value && lngInput.value) {
