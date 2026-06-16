@@ -14,6 +14,15 @@ ALLOWED_HOSTS = [os.environ["VIRTUAL_HOST"]]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
+# HTTPS hardening (review #5). CodeRed terminates TLS and forwards the original
+# scheme via X-Forwarded-Proto, so trust that header and redirect any HTTP request
+# to HTTPS; advertise HSTS so browsers stick to HTTPS. Clears check --deploy W004/W008.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
 # CodeRed Cloud provides PostgreSQL connection details via these env vars
 # (not via DATABASE_URL). The database requires SSL and uses UTF8.
 # See https://www.codered.cloud/docs/django/environment/
