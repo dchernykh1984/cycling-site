@@ -442,6 +442,58 @@ class CompetitionCreateTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 401)
 
 
+class CompetitionLocationValidationTest(TestCase, ApiTestMixin):
+    """Competition location_id can't be a deleted node or another user's pending proposal (review #3)."""
+
+    def setUp(self):
+        self.organizer = _user("clv_org", role=User.Role.ORGANIZER)
+        self.admin = _user("clv_adm", role=User.Role.ADMIN)
+        self.participant = _user("clv_par", role=User.Role.PARTICIPANT)
+        self.city = _city()
+        self.venue = self.city.add_child(name="Venue", name_ru="Venue")
+
+    def _payload(self, **kw):
+        d = {
+            "title": {"ru": "Race", "kk": "", "en": ""},
+            "description": {"ru": "", "kk": "", "en": ""},
+            "date_start": "2026-07-01",
+        }
+        d.update(kw)
+        return d
+
+    def test_create_with_approved_location_ok(self):
+        resp = self.post("/api/v1/competitions/", self._payload(location_id=self.venue.pk), user=self.organizer)
+        self.assertEqual(resp.status_code, 201)
+
+    def test_create_rejects_other_users_pending_location(self):
+        pending = Location.propose_venue(self.city, "Pend", submitted_by=self.participant)
+        resp = self.post("/api/v1/competitions/", self._payload(location_id=pending.pk), user=self.organizer)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_create_rejects_nonexistent_location(self):
+        resp = self.post("/api/v1/competitions/", self._payload(location_id=999999), user=self.organizer)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_create_rejects_deleted_location(self):
+        self.venue.is_deleted = True
+        self.venue.save(update_fields=["is_deleted"])
+        resp = self.post("/api/v1/competitions/", self._payload(location_id=self.venue.pk), user=self.organizer)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_admin_may_use_other_users_pending_location(self):
+        pending = Location.propose_venue(self.city, "Pend2", submitted_by=self.participant)
+        resp = self.post("/api/v1/competitions/", self._payload(location_id=pending.pk), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+
+    def test_update_rejects_other_users_pending_location(self):
+        created = self.post(
+            "/api/v1/competitions/", self._payload(location_id=self.venue.pk), user=self.organizer
+        ).json()
+        pending = Location.propose_venue(self.city, "Pend3", submitted_by=self.participant)
+        resp = self.patch(f"/api/v1/competitions/{created['id']}", {"location_id": pending.pk}, user=self.organizer)
+        self.assertEqual(resp.status_code, 403)
+
+
 class CompetitionUpdateTest(TestCase, ApiTestMixin):
     def setUp(self):
         self.owner = _user("owner", role=User.Role.ORGANIZER)

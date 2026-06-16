@@ -4,9 +4,12 @@ from typing import ClassVar
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from locations.models import Location
+from accounts.models import User
+from locations.models import Location, competition_location_block_reason
 
 from .models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
+
+_ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
 
 class SubmitCompetitionForm(forms.Form):
@@ -148,12 +151,12 @@ class SubmitCompetitionForm(forms.Form):
         if new_name and city is not None:
             return
         location = cleaned_data.get("location")
-        if location is not None and location.is_pending:
-            proposal = getattr(location, "proposal", None)
-            owner_id = getattr(proposal, "submitted_by_id", None)
-            user = self.user
-            if not (getattr(user, "is_authenticated", False) and owner_id == user.pk):
-                self.add_error("location", _("This location is not available."))
+        user = self.user
+        is_admin = bool(getattr(user, "is_superuser", False)) or (
+            getattr(user, "is_authenticated", False) and user.get_role_rank() >= _ADMIN_RANK
+        )
+        if competition_location_block_reason(location, user, is_admin=is_admin):
+            self.add_error("location", _("This location is not available."))
 
 
 class RegistrationSettingsForm(forms.Form):
