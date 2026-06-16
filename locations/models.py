@@ -162,34 +162,40 @@ def competition_location_block_reason(location, user, *, is_admin=False) -> str 
     return None
 
 
+def nearest_ancestor_with_coords(loc, by_path, step):
+    """The nearest ancestor of ``loc`` (city -> region -> country) that has coordinates,
+    looked up in ``by_path`` (path -> Location); None if no ancestor has coordinates."""
+    path = loc.path[:-step]
+    while path:
+        anc = by_path.get(path)
+        if anc is not None and anc.lat is not None and anc.lng is not None:
+            return anc
+        path = path[:-step]
+    return None
+
+
+def map_display_node(loc, by_path, step):
+    """The node ``loc`` should be drawn as on a map: itself when it is a visible node with
+    coordinates, otherwise the nearest ancestor (city -> region -> country) that has them.
+    Hidden nodes (the "other location" placeholder) always resolve to an ancestor so the
+    marker shows the real place name, not the placeholder. None if nothing has coords."""
+    if not loc.is_hidden and loc.lat is not None and loc.lng is not None:
+        return loc
+    return nearest_ancestor_with_coords(loc, by_path, step)
+
+
 def _build_map_locations(all_locs) -> list:
-    """Map markers (issue #113): non-hidden locations at their own coordinates; each hidden
-    "other location" at the nearest ancestor (city -> region -> country) that has
-    coordinates, labelled with that ancestor's name; skipped if no ancestor has coords.
-    Deduplicated so a city isn't drawn twice (its own marker + a resolved hidden child)."""
+    """Map markers (issue #113): each location at its own coordinates, or at the nearest
+    ancestor with coordinates when it is hidden or has none (see ``map_display_node``).
+    Deduplicated so a place isn't drawn twice (its own marker + a resolved child)."""
     by_path = {loc.path: loc for loc in all_locs}
     step = Location.steplen
-
-    def nearest_with_coords(loc):
-        path = loc.path[:-step]
-        while path:
-            anc = by_path.get(path)
-            if anc is not None and anc.lat is not None and anc.lng is not None:
-                return anc
-            path = path[:-step]
-        return None
-
     data: list = []
     seen: set = set()
     for loc in all_locs:
-        if loc.is_hidden:
-            display = nearest_with_coords(loc)
-            if display is None:
-                continue
-        elif loc.lat is None or loc.lng is None:
+        display = map_display_node(loc, by_path, step)
+        if display is None:
             continue
-        else:
-            display = loc
         key = (str(display.lat), str(display.lng), display.name)
         if key in seen:
             continue

@@ -14,7 +14,7 @@ from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 
 from accounts.models import User
-from locations.models import Location, LocationProposal
+from locations.models import Location, LocationProposal, map_display_node
 
 from .forms import (
     AddCompetitionCommentForm,
@@ -310,11 +310,14 @@ class CalendarMapView(TemplateView):
 
 
 class CalendarMapAPIView(View):
-    """Locations (with coordinates) that have competitions matching the filters.
+    """Locations that have competitions matching the filters.
 
     Filters: date range + event type + direction/discipline (no location filter -
-    the map itself is the location view). Each location carries the matching
-    competitions so the marker popup can link to them.
+    the map itself is the location view). A competition attached to a hidden "other
+    location" venue (or any venue without coordinates) is shown at the nearest ancestor
+    with coordinates (city -> region -> country), labelled with that ancestor's name, so
+    the city appears rather than an "other location" pin (issue #113). Each marker
+    carries its matching competitions so the popup can link to them.
     """
 
     def get(self, request):
@@ -323,8 +326,6 @@ class CalendarMapAPIView(View):
             status=Competition.Status.APPROVED,
             is_deleted=False,
             location__isnull=False,
-            location__lat__isnull=False,
-            location__lng__isnull=False,
         ).select_related("location")
         if not is_manager:
             qs = qs.filter(is_hidden=False)
@@ -341,16 +342,21 @@ class CalendarMapAPIView(View):
             request.GET.getlist("direction"),
         )
 
+        by_path = {loc.path: loc for loc in Location.objects.filter(is_deleted=False)}
+        step = Location.steplen
         groups: dict = {}
         for comp in qs.order_by("date_start"):
-            loc = comp.location
-            group = groups.get(loc.id)
+            base = by_path.get(comp.location.path, comp.location)
+            display = map_display_node(base, by_path, step)
+            if display is None:
+                continue  # nothing in the ancestry has coordinates - cannot place it
+            group = groups.get(display.pk)
             if group is None:
-                group = groups[loc.id] = {
-                    "location_id": loc.id,
-                    "name": loc.name,
-                    "lat": float(loc.lat),
-                    "lng": float(loc.lng),
+                group = groups[display.pk] = {
+                    "location_id": display.pk,
+                    "name": display.name,
+                    "lat": float(display.lat),
+                    "lng": float(display.lng),
                     "competitions": [],
                 }
             group["competitions"].append(
