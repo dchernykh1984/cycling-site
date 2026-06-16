@@ -168,6 +168,49 @@ def test_edit_form_cascade_prepopulated_real_venue(page: Page, live_server, orga
     expect(page.locator("#loc-venue")).to_have_value(str(location_tree["real"].pk))
 
 
+# ---------------------------------------------------------------------------
+# issue #118 - existing venues shown on the maps; click a marker to select one
+# ---------------------------------------------------------------------------
+
+
+def _venue_with_coords(location_tree):
+    real = location_tree["real"]
+    real.lat = "43.230000"
+    real.lng = "76.940000"
+    real.save(update_fields=["lat", "lng"])
+    return real
+
+
+@pytest.mark.django_db(transaction=True)
+def test_add_location_page_shows_existing_venue_markers(page: Page, live_server, organizer, location_tree):
+    _venue_with_coords(location_tree)
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/locations/add/")
+    expect(page.locator("#coord-picker path.leaflet-interactive")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_submit_form_shows_existing_venue_markers(page: Page, live_server, organizer, location_tree):
+    _venue_with_coords(location_tree)
+    _goto_submit(page, live_server, organizer)
+    expect(page.locator("#venue-map path.leaflet-interactive")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_submit_form_clicking_marker_selects_venue_and_hides_propose(page: Page, live_server, organizer, location_tree):
+    real = _venue_with_coords(location_tree)
+    _goto_submit(page, live_server, organizer)
+    page.select_option("#loc-country", str(location_tree["kz"].pk))
+    page.select_option("#loc-region", str(location_tree["region"].pk))
+    page.select_option("#loc-city", str(location_tree["city"].pk))
+    page.click("#add-venue-btn")
+    expect(page.locator("#new-venue-box")).to_be_visible()
+    page.locator("#venue-map path.leaflet-interactive").first.click()
+    assert page.locator("#id_location").input_value() == str(real.pk)
+    expect(page.locator("#loc-venue")).to_have_value(str(real.pk))
+    expect(page.locator("#new-venue-box")).not_to_be_visible()
+
+
 @pytest.mark.django_db(transaction=True)
 def test_submit_form_hidden_city_is_selectable(page: Page, live_server, organizer, location_tree):
     # Issue #113: a hidden real city must stay selectable when creating a competition.

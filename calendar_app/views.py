@@ -41,12 +41,17 @@ def _get_locations_data(user=None) -> list:
     visible = Q(proposal__isnull=True) | Q(proposal__status=LocationProposal.Status.APPROVED)
     if user is not None and getattr(user, "is_authenticated", False):
         visible |= Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
-    return list(
+    rows = list(
         Location.objects.filter(is_deleted=False)
         .filter(visible)
         .order_by("path")
-        .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden")
+        .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden", "lat", "lng")
     )
+    # Coordinates let the form render existing venues as map markers (issue #118).
+    for row in rows:
+        row["lat"] = float(row["lat"]) if row["lat"] is not None else None
+        row["lng"] = float(row["lng"]) if row["lng"] is not None else None
+    return rows
 
 
 def _can_manage_any_competition(user) -> bool:
