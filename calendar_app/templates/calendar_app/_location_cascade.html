@@ -136,8 +136,10 @@
   }
 
   function buildOpts(sel, nodes, placeholder) {
+    // hidden country/region/city are still selectable (issue #113): the hidden flag is
+    // meaningful only for the virtual "other location" venue, which is handled separately.
     sel.innerHTML = '<option value="">' + placeholder + '</option>';
-    nodes.filter(function (n) { return !n.is_hidden; }).forEach(function (l) {
+    nodes.forEach(function (l) {
       var o = document.createElement('option');
       o.value = l.pk; o.textContent = locName(l);
       sel.appendChild(o);

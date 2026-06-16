@@ -60,8 +60,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var parents = parentPks.map(byPk).filter(Boolean);
     return allLocations.filter(function (l) {
       if (l.depth !== d) return false;
-      // Hidden fallback venues ("other location") are surfaced only at the location level.
-      if (l.is_hidden && d !== 4) return false;
+      // hidden country/region/city stay selectable (issue #113); the hidden flag matters only
+      // for the virtual "other location" venue, which is shown at the location level anyway.
       if (d === 1) return true;
       return parents.some(function (p) { return l.path.indexOf(p.path) === 0; });
     }).map(function (l) { return { pk: l.pk, name: nm(l) }; });

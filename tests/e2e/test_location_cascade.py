@@ -166,3 +166,16 @@ def test_edit_form_cascade_prepopulated_real_venue(page: Page, live_server, orga
     _goto_edit(page, live_server, organizer, comp)
     expect(page.locator("#loc-venue-wrap")).to_be_visible()
     expect(page.locator("#loc-venue")).to_have_value(str(location_tree["real"].pk))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_submit_form_hidden_city_is_selectable(page: Page, live_server, organizer, location_tree):
+    # Issue #113: a hidden real city must stay selectable when creating a competition.
+
+    hidden_city = location_tree["region"].add_child(
+        name="HiddenCity", name_ru="HiddenCity", name_kk="HiddenCity", name_en="HiddenCity", is_hidden=True
+    )
+    _goto_submit(page, live_server, organizer)
+    page.select_option("#loc-country", str(location_tree["kz"].pk))
+    page.select_option("#loc-region", str(location_tree["region"].pk))
+    expect(page.locator(f"#loc-city option[value='{hidden_city.pk}']")).to_have_count(1)
