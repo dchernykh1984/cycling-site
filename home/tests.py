@@ -297,9 +297,12 @@ class HomeEditViewTests(TestCase):
 class HomePageContextTests(WagtailPageTestCase):
     def setUp(self):
         root_page = Page.get_first_root_node()
-        Site.objects.create(hostname="testsite3", root_page=root_page, is_default_site=True)
-        self.homepage = HomePage(title="Home")
+        self.homepage = HomePage(title="Home", slug="home-ctx")
         root_page.add_child(instance=self.homepage)
+        # Route this homepage at "/" via a clean default site so the tests don't depend on
+        # the slug a sibling test may have already taken ("home" -> "home-2") on the worker.
+        Site.objects.all().delete()
+        Site.objects.create(hostname="testserver", root_page=self.homepage, is_default_site=True)
         self.sc = SiteContent.objects.get_or_create(pk=1, defaults={"navbar_title_ru": "TestNavbar"})[0]
 
     def test_home_page_context_has_site_content(self):
