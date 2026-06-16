@@ -20,7 +20,7 @@
               aria-expanded="false" aria-controls="filter-panel">
         {% trans "Filters" %}
       </button>
-      <a href="{% url 'calendar_list' %}" id="list-view-btn" class="btn btn-outline-secondary btn-sm">{% trans "List view" %}</a>
+      {% include "calendar_app/_view_switcher.html" with active_view="calendar" %}
       {% if request.user.is_authenticated %}
       <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm">{% trans "Submit competition" %}</a>
       {% if request.user.is_superuser or request.user.role == 'organizer' or request.user.role == 'admin' or request.user.role == 'owner' %}
@@ -62,7 +62,6 @@ var FC_MONTHS = [
 ];
 document.addEventListener('DOMContentLoaded', function () {
   var eventsUrl = '{% url "calendar_events_api" %}';
-  var listViewUrl = '{% url "calendar_list" %}';
 
   // The event-type, direction/discipline and location multi-selects are provided by
   // their partials, which run on DOMContentLoaded (before this handler) and expose
@@ -80,7 +79,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  function updateListViewLink() {
+  // Keep the List/Map switcher links in sync with the current filters + date range.
+  function updateSwitcherLinks() {
     var params = new URLSearchParams();
     appendFilterParams(params, 'discipline_category');
     var df = sessionStorage.getItem('cal_date_from');
@@ -88,8 +88,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (df) params.set('date_from', df);
     if (dt) params.set('date_to', dt);
     var qs = params.toString();
-    var btn = document.getElementById('list-view-btn');
-    if (btn) btn.href = listViewUrl + (qs ? '?' + qs : '');
+    ['view-link-list', 'view-link-map'].forEach(function (id) {
+      var a = document.getElementById(id);
+      if (a) a.href = a.pathname + (qs ? '?' + qs : '');
+    });
   }
 
   // Persist date range from the URL (supports switching from list view). The filter
@@ -100,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var dt = p.get('date_to');
     if (df) sessionStorage.setItem('cal_date_from', df);
     if (dt) sessionStorage.setItem('cal_date_to', dt);
-    updateListViewLink();
+    updateSwitcherLinks();
   }());
 
   // --- FullCalendar ---
@@ -136,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Called by the filter partials whenever any multi-select changes.
   window.onCalendarFilterChange = function () {
     calendar.refetchEvents();
-    updateListViewLink();
+    updateSwitcherLinks();
   };
 });
 </script>

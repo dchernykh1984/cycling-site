@@ -1107,3 +1107,97 @@ class MultiSelectIdFilterTests(TestCase):
         self.assertContains(resp, "Train MTB")
         self.assertContains(resp, "Fest Run")
         self.assertNotContains(resp, "Race Road")
+
+
+class CalendarMapViewTests(TestCase):
+    """Map view page + the 3-button calendar/list/map switcher (issue #107)."""
+
+    def test_map_returns_200(self):
+        self.assertEqual(self.client.get(reverse("calendar_map")).status_code, 200)
+
+    def test_map_has_context(self):
+        response = self.client.get(reverse("calendar_map"))
+        for key in ("date_from", "date_to", "event_types_json", "categories_json", "disciplines_json"):
+            self.assertIn(key, response.context)
+
+    def test_map_has_three_view_switch_links(self):
+        response = self.client.get(reverse("calendar_map"))
+        for view_id in ("view-link-calendar", "view-link-list", "view-link-map"):
+            self.assertContains(response, view_id)
+
+    def test_list_and_calendar_pages_carry_the_switcher(self):
+        for url_name in ("calendar", "calendar_list"):
+            response = self.client.get(reverse(url_name))
+            self.assertContains(response, "view-link-map")
+
+
+class CalendarMapAPIViewTests(TestCase):
+    """Map API: locations with coordinates that have competitions matching the filters."""
+
+    def setUp(self):
+        self.cat = DisciplineCategory.objects.create(name_ru="Road", order=1)
+        self.disc = Discipline.objects.create(name_ru="Road Race", category=self.cat, order=1)
+        self.event_type = EventType.objects.create(name_ru="Race", order=1)
+        self.loc = Location.add_root(name_ru="Almaty", name_en="Almaty", lat="43.238949", lng="76.889709")
+        self.loc_nocoords = Location.add_root(name_ru="NoCoords", name_en="NoCoords")
+        self.comp = _make_competition(
+            "Mapped Race",
+            location=self.loc,
+            discipline=self.disc,
+            event_type=self.event_type,
+            date_start=datetime.date(2026, 7, 10),
+        )
+        _make_competition("Unmapped", location=self.loc_nocoords, date_start=datetime.date(2026, 7, 10))
+        _make_competition("NoLoc", date_start=datetime.date(2026, 7, 10))
+        _make_competition(
+            "Pending",
+            status=Competition.Status.PENDING_APPROVAL,
+            location=self.loc,
+            date_start=datetime.date(2026, 7, 10),
+        )
+
+    def _data(self, params=None):
+        return self.client.get(reverse("calendar_map_api"), params or {}).json()
+
+    def _group(self, data):
+        return next(g for g in data if g["location_id"] == self.loc.pk)
+
+    def test_only_locations_with_coords_and_approved_matches(self):
+        data = self._data()
+        ids = {g["location_id"] for g in data}
+        self.assertIn(self.loc.pk, ids)
+        self.assertNotIn(self.loc_nocoords.pk, ids)  # no coordinates
+        titles = {c["title"] for c in self._group(data)["competitions"]}
+        self.assertIn("Mapped Race", titles)
+        self.assertNotIn("Pending", titles)  # not approved
+
+    def test_marker_carries_coords_and_competition_link(self):
+        group = self._group(self._data())
+        self.assertAlmostEqual(group["lat"], 43.238949, places=5)
+        self.assertAlmostEqual(group["lng"], 76.889709, places=5)
+        comp = group["competitions"][0]
+        self.assertIn(f"/calendar/{self.comp.pk}/", comp["url"])
+        self.assertEqual(comp["date_start"], "2026-07-10")
+
+    def test_event_type_filter(self):
+        other = EventType.objects.create(name_ru="Training", order=2)
+        self.assertEqual(self._data({"event_type": other.pk}), [])
+        self.assertTrue(self._data({"event_type": self.event_type.pk}))
+
+    def test_direction_filter(self):
+        self.assertTrue(self._data({"direction": self.cat.pk}))
+        other = DisciplineCategory.objects.create(name_ru="MTB", order=2)
+        self.assertEqual(self._data({"direction": other.pk}), [])
+
+    def test_date_range_filter(self):
+        self.assertEqual(self._data({"date_from": "2026-07-01", "date_to": "2026-07-05"}), [])
+        self.assertTrue(self._data({"date_from": "2026-07-01", "date_to": "2026-07-31"}))
+
+    def test_groups_multiple_competitions_at_one_location(self):
+        _make_competition("Second Race", location=self.loc, date_start=datetime.date(2026, 7, 12))
+        self.assertEqual(len(self._group(self._data())["competitions"]), 2)
+
+    def test_hidden_competition_excluded_for_anonymous(self):
+        _make_competition("Hidden Race", location=self.loc, is_hidden=True, date_start=datetime.date(2026, 7, 11))
+        titles = {c["title"] for c in self._group(self._data())["competitions"]}
+        self.assertNotIn("Hidden Race", titles)

@@ -9,7 +9,7 @@
   <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h1 class="mb-0">{% trans "Competitions" %}</h1>
     <div class="d-flex gap-2">
-      <a href="{% url 'calendar' %}" id="calendar-view-btn" class="btn btn-outline-secondary btn-sm">{% trans "Calendar view" %}</a>
+      {% include "calendar_app/_view_switcher.html" with active_view="list" %}
       {% if request.user.is_authenticated %}
       <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm">{% trans "Submit competition" %}</a>
       {% if request.user.is_superuser or request.user.role == 'organizer' or request.user.role == 'admin' or request.user.role == 'owner' %}
@@ -50,9 +50,8 @@
       // partials (loaded on DOMContentLoaded) and expose window.getEventTypeFilterIds(),
       // window.directionFilter and window.getLocationFilterIds().
 
-      // Keep "Calendar view" link in sync with the current filter state + dates.
-      var calViewUrl = '{% url "calendar" %}';
-      function updateCalendarLink() {
+      // Keep the Calendar/Map switcher links in sync with the current filters + dates.
+      function updateSwitcherLinks() {
         var params = new URLSearchParams();
         (window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []).forEach(function (id) {
           params.append('event_type', id);
@@ -72,8 +71,10 @@
           sessionStorage.setItem('cal_date_to', dtEl.value);
         }
         var qs = params.toString();
-        var btn = document.getElementById('calendar-view-btn');
-        if (btn) btn.href = calViewUrl + (qs ? '?' + qs : '');
+        ['view-link-calendar', 'view-link-map'].forEach(function (id) {
+          var a = document.getElementById(id);
+          if (a) a.href = a.pathname + (qs ? '?' + qs : '');
+        });
       }
 
       // Mirror the effective filter ids into hidden inputs so every submit (filter or
@@ -98,8 +99,8 @@
           addInput('location', id);
         });
       }
-      window.onCalendarFilterChange = function () { syncFilterInputs(); updateCalendarLink(); form.submit(); };
-      document.addEventListener('DOMContentLoaded', function () { syncFilterInputs(); updateCalendarLink(); });
+      window.onCalendarFilterChange = function () { syncFilterInputs(); updateSwitcherLinks(); form.submit(); };
+      document.addEventListener('DOMContentLoaded', function () { syncFilterInputs(); updateSwitcherLinks(); });
 
       // Auto-submit date inputs.
       form.querySelectorAll('input[type="date"]').forEach(function (el) {

@@ -1585,3 +1585,9 @@ msgstr "Ештенiе табылмады"
 #, python-format
 #~ msgid "Confirmation email sent to %(email)s."
 #~ msgstr "%(email)s мекенжайына растау хаты жіберілді."
+
+msgid "List"
+msgstr "Тізім"
+
+msgid "View"
+msgstr "Көрініс"

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Calendar" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  #calendar-map { height: 520px; min-height: 300px; border-radius: 0.375rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="mb-0">{% trans "Calendar" %}</h1>
+    <div class="d-flex gap-2 align-items-center">
+      <button class="btn btn-outline-secondary btn-sm d-lg-none" type="button"
+              data-bs-toggle="collapse" data-bs-target="#filter-panel"
+              aria-expanded="false" aria-controls="filter-panel">
+        {% trans "Filters" %}
+      </button>
+      {% include "calendar_app/_view_switcher.html" with active_view="map" %}
+      {% if request.user.is_authenticated %}
+      <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm">{% trans "Submit competition" %}</a>
+      {% if request.user.is_superuser or request.user.role == 'organizer' or request.user.role == 'admin' or request.user.role == 'owner' %}
+      <a href="{% url 'calendar_moderate' %}" class="btn btn-outline-warning btn-sm">{% trans "Moderation" %}</a>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <div id="filter-panel" class="collapse d-lg-block">
+      {% include "calendar_app/_filter_multiselect_js.html" %}
+      <div class="row g-2 align-items-end">
+        <div class="col-sm-6 col-lg-3">
+          <label class="form-label form-label-sm mb-1">{% trans "Date from" %}</label>
+          <input type="date" id="map-date-from" value="{{ date_from|date:'Y-m-d' }}"
+                 class="form-control form-control-sm">
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <label class="form-label form-label-sm mb-1">{% trans "Date to" %}</label>
+          <input type="date" id="map-date-to" value="{{ date_to|date:'Y-m-d' }}"
+                 class="form-control form-control-sm">
+        </div>
+        {% include "calendar_app/_event_type_filter.html" %}
+        {% include "calendar_app/_direction_filter.html" %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="calendar-map"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+{% include "_map_layers.html" %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var mapUrl = '{% url "calendar_map_api" %}';
+  var dfEl = document.getElementById('map-date-from');
+  var dtEl = document.getElementById('map-date-to');
+
+  var map = L.map('calendar-map');
+  _addMapLayers(map);
+  var markersLayer = L.layerGroup().addTo(map);
+  var defaultViewSet = false;
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function fmtDate(iso) { var p = iso.split('-'); return p[2] + '.' + p[1] + '.' + p[0]; }
+
+  function appendFilters(params, directionParam) {
+    if (dfEl.value) params.set('date_from', dfEl.value);
+    if (dtEl.value) params.set('date_to', dtEl.value);
+    (window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []).forEach(function (id) {
+      params.append('event_type', id);
+    });
+    if (window.applyDirectionParams) window.applyDirectionParams(params, directionParam);
+  }
+
+  function updateSwitcherLinks() {
+    var params = new URLSearchParams();
+    appendFilters(params, 'discipline_category');
+    var qs = params.toString();
+    ['view-link-calendar', 'view-link-list'].forEach(function (id) {
+      var a = document.getElementById(id);
+      if (a) a.href = a.pathname + (qs ? '?' + qs : '');
+    });
+  }
+
+  function refresh() {
+    var params = new URLSearchParams();
+    appendFilters(params, 'direction');
+    fetch(mapUrl + '?' + params.toString())
+      .then(function (r) { return r.json(); })
+      .then(function (locations) {
+        markersLayer.clearLayers();
+        var bounds = [];
+        locations.forEach(function (loc) {
+          var html = '<strong>' + esc(loc.name) + '</strong>';
+          loc.competitions.forEach(function (c) {
+            html += '<br><a href="' + esc(c.url) + '" target="_blank" rel="noopener">' +
+                    esc(c.title) + '</a> &mdash; ' + fmtDate(c.date_start);
+          });
+          L.marker([loc.lat, loc.lng]).bindPopup(html).addTo(markersLayer);
+          bounds.push([loc.lat, loc.lng]);
+        });
+        if (bounds.length) {
+          map.fitBounds(bounds, {padding: [30, 30], maxZoom: 12});
+          defaultViewSet = true;
+        } else if (!defaultViewSet) {
+          map.setView([48.0, 68.0], 5);
+          defaultViewSet = true;
+        }
+      });
+    updateSwitcherLinks();
+  }
+
+  // Called by the event-type / direction filter partials whenever a selection changes.
+  window.onCalendarFilterChange = function () { refresh(); };
+  [dfEl, dtEl].forEach(function (el) { el.addEventListener('change', refresh); });
+  refresh();
+});
+</script>
+{% endblock %}

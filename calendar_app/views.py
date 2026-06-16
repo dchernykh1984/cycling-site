@@ -69,6 +69,16 @@ def _event_types_for_locale() -> list:
     return [{"pk": r["pk"], "name": r[name_field]} for r in rows]
 
 
+def _parse_date(value, default):
+    """Parse an ISO date string, falling back to ``default`` on missing/invalid input."""
+    if value:
+        try:
+            return datetime.date.fromisoformat(value)
+        except (ValueError, TypeError):
+            return default
+    return default
+
+
 def _parse_int_ids(values) -> set:
     """Flatten GET values into a set of ints; ignore non-integer junk.
 
@@ -251,6 +261,76 @@ class CompetitionListView(TemplateView):
         context["disciplines_json"] = _disciplines_for_locale()
         context["locations_data"] = _get_locations_data()
         return context
+
+
+class CalendarMapView(TemplateView):
+    template_name = "calendar_app/map.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = timezone.localdate()
+        context["date_from"] = _parse_date(self.request.GET.get("date_from"), today)
+        context["date_to"] = _parse_date(self.request.GET.get("date_to"), today + datetime.timedelta(days=30))
+        context["event_types_json"] = _event_types_for_locale()
+        context["categories_json"] = _categories_for_locale()
+        context["disciplines_json"] = _disciplines_for_locale()
+        return context
+
+
+class CalendarMapAPIView(View):
+    """Locations (with coordinates) that have competitions matching the filters.
+
+    Filters: date range + event type + direction/discipline (no location filter -
+    the map itself is the location view). Each location carries the matching
+    competitions so the marker popup can link to them.
+    """
+
+    def get(self, request):
+        is_manager = _can_manage_any_competition(request.user)
+        qs = Competition.objects.filter(
+            status=Competition.Status.APPROVED,
+            is_deleted=False,
+            location__isnull=False,
+            location__lat__isnull=False,
+            location__lng__isnull=False,
+        ).select_related("location")
+        if not is_manager:
+            qs = qs.filter(is_hidden=False)
+        date_from = _parse_date(request.GET.get("date_from"), None)
+        date_to = _parse_date(request.GET.get("date_to"), None)
+        if date_from:
+            qs = qs.filter(date_start__gte=date_from)
+        if date_to:
+            qs = qs.filter(date_start__lte=date_to)
+        qs = _apply_id_filters(
+            qs,
+            request.GET.getlist("event_type"),
+            request.GET.getlist("discipline"),
+            request.GET.getlist("direction"),
+        )
+
+        groups: dict = {}
+        for comp in qs.order_by("date_start"):
+            loc = comp.location
+            group = groups.get(loc.id)
+            if group is None:
+                group = groups[loc.id] = {
+                    "location_id": loc.id,
+                    "name": loc.name,
+                    "lat": float(loc.lat),
+                    "lng": float(loc.lng),
+                    "competitions": [],
+                }
+            group["competitions"].append(
+                {
+                    "id": comp.id,
+                    "title": comp.title,
+                    "url": reverse("competition_detail", args=[comp.id]),
+                    "date_start": comp.date_start.isoformat(),
+                    "date_end": comp.date_end.isoformat() if comp.date_end else None,
+                }
+            )
+        return JsonResponse(list(groups.values()), safe=False)
 
 
 class CompetitionDetailView(View):

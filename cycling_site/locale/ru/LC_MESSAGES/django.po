@@ -1544,3 +1544,9 @@ msgstr "Ничего не найдено"
 
 #~ msgid "Labels"
 #~ msgstr "Подписи"
+
+msgid "List"
+msgstr "Список"
+
+msgid "View"
+msgstr "Вид"
