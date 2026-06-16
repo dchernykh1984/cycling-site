@@ -217,6 +217,21 @@ class ProtocolLastUpdatedTest(TestCase):
         response = self.client.get(f"/api/protocols/{protocol.pk}/last_updated/")
         self.assertEqual(response.status_code, 404)
 
+    def _protocol_for_flagged_competition(self, **flags):
+        comp = _make_competition()
+        for field, value in flags.items():
+            setattr(comp, field, value)
+        comp.save(update_fields=list(flags))
+        return Protocol.objects.create(competition=comp, protocol_type="absolute", is_live=True, file_hash="abc")
+
+    def test_hidden_competition_returns_404(self):
+        protocol = self._protocol_for_flagged_competition(is_hidden=True)
+        self.assertEqual(self.client.get(f"/api/protocols/{protocol.pk}/last_updated/").status_code, 404)
+
+    def test_deleted_competition_returns_404(self):
+        protocol = self._protocol_for_flagged_competition(is_deleted=True)
+        self.assertEqual(self.client.get(f"/api/protocols/{protocol.pk}/last_updated/").status_code, 404)
+
 
 class ProtocolHtmlTest(TestCase):
     def setUp(self):
@@ -300,6 +315,24 @@ class ProtocolHtmlTest(TestCase):
         response = self.client.get(f"/protocols/{protocol.pk}/html/")
         self.assertEqual(response.status_code, 404)
 
+    def _html_protocol_for_flagged_competition(self, **flags):
+        comp = _make_competition()
+        for field, value in flags.items():
+            setattr(comp, field, value)
+        comp.save(update_fields=list(flags))
+        protocol = Protocol(competition=comp, protocol_type="absolute", is_live=True, file_hash="abc")
+        protocol.html_file.save("protocol.html", ContentFile(HTML), save=False)
+        protocol.save()
+        return protocol
+
+    def test_hidden_competition_returns_404(self):
+        protocol = self._html_protocol_for_flagged_competition(is_hidden=True)
+        self.assertEqual(self.client.get(f"/protocols/{protocol.pk}/html/").status_code, 404)
+
+    def test_deleted_competition_returns_404(self):
+        protocol = self._html_protocol_for_flagged_competition(is_deleted=True)
+        self.assertEqual(self.client.get(f"/protocols/{protocol.pk}/html/").status_code, 404)
+
 
 class ProtocolDetailTest(TestCase):
     def setUp(self):
@@ -356,6 +389,24 @@ class ProtocolDetailTest(TestCase):
         protocol.save()
         response = self.client.get(f"/protocols/{protocol.pk}/")
         self.assertEqual(response.status_code, 404)
+
+    def _detail_protocol_for_flagged_competition(self, **flags):
+        comp = _make_competition()
+        for field, value in flags.items():
+            setattr(comp, field, value)
+        comp.save(update_fields=list(flags))
+        protocol = Protocol(competition=comp, protocol_type="absolute", is_live=True, file_hash="abc")
+        protocol.html_file.save("p.html", ContentFile(HTML), save=False)
+        protocol.save()
+        return protocol
+
+    def test_hidden_competition_returns_404(self):
+        protocol = self._detail_protocol_for_flagged_competition(is_hidden=True)
+        self.assertEqual(self.client.get(f"/protocols/{protocol.pk}/").status_code, 404)
+
+    def test_deleted_competition_returns_404(self):
+        protocol = self._detail_protocol_for_flagged_competition(is_deleted=True)
+        self.assertEqual(self.client.get(f"/protocols/{protocol.pk}/").status_code, 404)
 
     @override_settings(LANGUAGE_CODE="en")
     def test_version_history_shown(self):

@@ -141,6 +141,27 @@ class LocationProposal(models.Model):
         return f"Proposal #{self.pk} for location {self.location_id} ({self.status})"
 
 
+def competition_location_block_reason(location, user, *, is_admin=False) -> str | None:
+    """Why ``user`` may not attach a competition to ``location`` (review #3), else None.
+
+    Shared by the web submit/edit form and the competition API so a forged request can't
+    use a deleted location or another user's pending (unmoderated) proposal.
+    """
+    if location is None:
+        return None
+    if getattr(location, "is_deleted", False):
+        return "Location is deleted"
+    # A competition must point at a specific venue (depth 4), never a country/region/city.
+    if location.depth != 4:
+        return "Competition location must be a specific venue, not a country/region/city"
+    proposal = getattr(location, "proposal", None)
+    if proposal is not None and proposal.status == LocationProposal.Status.PENDING_APPROVAL and not is_admin:
+        owner_id = proposal.submitted_by_id
+        if not (getattr(user, "is_authenticated", False) and owner_id == getattr(user, "pk", None)):
+            return "Location proposal belongs to another user"
+    return None
+
+
 class LocationsMapPage(AsciiSlugMixin, Page):
     intro = RichTextField(blank=True)
 

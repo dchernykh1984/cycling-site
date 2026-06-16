@@ -1,13 +1,13 @@
 from datetime import date
 
 from django.db.models import Q
-from ninja import Query, Router, Schema
+from ninja import Query, Router, Schema, Status
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
-from locations.models import Location
+from locations.models import Location, competition_location_block_reason
 
 auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
@@ -135,6 +135,18 @@ def _apply_localized(obj, field: str, value: LocalizedStr) -> list[str]:
     return updated
 
 
+def _validate_location_id(location_id, user) -> None:
+    """Reject a forged location_id: missing, deleted, or another user's pending proposal (review #3)."""
+    if location_id is None:
+        return
+    location = Location.objects.filter(pk=location_id).first()
+    if location is None:
+        raise HttpError(404, "Location not found")
+    reason = competition_location_block_reason(location, user, is_admin=is_admin(user))
+    if reason:
+        raise HttpError(403, reason)
+
+
 def _to_detail(competition: Competition, user=None) -> Competition:
     """Attach competition_token to obj for serialization (avoids extra dict merging)."""
     competition._api_token = (
@@ -185,6 +197,7 @@ def create_competition(request, payload: CompetitionIn):
     if user.get_role_rank() < user.ROLE_HIERARCHY.index(user.Role.ORGANIZER):
         raise HttpError(403, "ORGANIZER role or higher is required")
 
+    _validate_location_id(payload.location_id, user)
     status = Competition.Status.APPROVED if is_admin(user) else Competition.Status.PENDING_APPROVAL
     competition = Competition(submitted_by=user, status=status)
     _apply_localized(competition, "title", payload.title)
@@ -205,7 +218,7 @@ def create_competition(request, payload: CompetitionIn):
         setattr(competition, field, getattr(payload, field))
 
     competition.save()
-    return 201, _to_detail(competition, user)
+    return Status(201, _to_detail(competition, user))
 
 
 @router.patch("/{competition_id}", response=CompetitionDetailOut, auth=auth, summary="Update competition")
@@ -219,6 +232,8 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 
     if "is_hidden" in data and not is_admin(user):
         raise HttpError(403, "Only admins can change visibility")
+    if "location_id" in data:
+        _validate_location_id(data["location_id"], user)
 
     update_fields: list[str] = []
 
@@ -244,4 +259,4 @@ def delete_competition(request, competition_id: int):
     _require_owner_or_admin(user, competition)
     competition.is_deleted = True
     competition.save(update_fields=["is_deleted"])
-    return 204, None
+    return Status(204, None)

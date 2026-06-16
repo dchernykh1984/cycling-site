@@ -102,7 +102,8 @@ ACCOUNT_RATE_LIMITS = {
     "reset_password": "5/h",
     "reset_password_from_key": "5/h",
 }
-ACCOUNT_PREVENT_ENUMERATION = False
+# Don't reveal whether an email is registered on signup/login/password-reset (review #4).
+ACCOUNT_PREVENT_ENUMERATION = True
 ACCOUNT_SESSION_REMEMBER = True
 LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
