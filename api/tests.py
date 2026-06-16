@@ -474,6 +474,11 @@ class CompetitionLocationValidationTest(TestCase, ApiTestMixin):
         resp = self.post("/api/v1/competitions/", self._payload(location_id=999999), user=self.organizer)
         self.assertEqual(resp.status_code, 404)
 
+    def test_create_rejects_structural_location(self):
+        # A competition must point at a venue (depth 4), not a city/region/country.
+        resp = self.post("/api/v1/competitions/", self._payload(location_id=self.city.pk), user=self.organizer)
+        self.assertEqual(resp.status_code, 403)
+
     def test_create_rejects_deleted_location(self):
         self.venue.is_deleted = True
         self.venue.save(update_fields=["is_deleted"])

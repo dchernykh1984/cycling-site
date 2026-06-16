@@ -1279,6 +1279,16 @@ class LocationProposalInSubmitTests(TestCase):
         )
         self.assertEqual(Competition.objects.get(title_ru="MineRace").location_id, pending.pk)
 
+    def test_forged_post_rejects_structural_location(self):
+        # A competition must point at a venue, not a city/region/country (depth 3 here).
+        self.client.force_login(self.participant)
+        resp = self.client.post(
+            reverse("calendar_submit"),
+            {"title_ru": "Struct", "date_start": "2026-09-01", "location": str(self.city.pk)},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Competition.objects.filter(title_ru="Struct").exists())
+
     def test_forged_post_rejects_non_city_new_venue_parent(self):
         self.client.force_login(self.participant)
         resp = self.client.post(
