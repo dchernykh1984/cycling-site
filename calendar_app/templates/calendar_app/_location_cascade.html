@@ -32,6 +32,11 @@
   </div>
   {{ form.location }}{% comment %}renders as <input type="hidden" name="location" id="id_location">{% endcomment %}
 
+  <!-- Always-visible map of existing venues (issue #118): users see what already exists
+       and can click a marker to pick it instead of creating a duplicate. -->
+  <div id="venue-map" class="mt-2" style="height:260px;border-radius:.375rem;"></div>
+  <div class="form-text">{% trans "Markers are existing locations - click one to select it instead of creating a duplicate." %}</div>
+
   <div id="new-venue-toggle-wrap" class="mt-2" style="display:none">
     <button type="button" class="btn btn-sm btn-outline-secondary" id="add-venue-btn">
       + {% trans "Propose a new venue" %}
@@ -52,7 +57,6 @@
         {{ form.new_venue_lng }}
       </div>
     </div>
-    <div id="new-venue-map" class="mt-2" style="height:220px;border-radius:.375rem;"></div>
     <div class="form-text">{% trans "Click the map to set the venue point, or drag the marker." %}
       {% trans "Your proposed venue is usable right away and will be reviewed by a moderator." %}</div>
   </div>
@@ -65,6 +69,9 @@
   var lang = (document.documentElement.lang || 'ru').split('-')[0];
   var nameField = (['ru','kk','en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
   function locName(l) { return l[nameField] || l.name_ru || ''; }
+  function escHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 
   var cntEl  = document.getElementById('loc-country');
   var regEl  = document.getElementById('loc-region');
@@ -81,13 +88,19 @@
   var nvLatInp = document.getElementById('new-venue-lat');
   var nvLngInp = document.getElementById('new-venue-lng');
 
+  var proposing = false;  // true while the user is placing a new venue point on the map
+
   function syncNewVenueCity() { if (newVenueCity) newVenueCity.value = cityEl.value || ''; }
   function showAddVenue(show) {
     if (addVenueToggle) addVenueToggle.style.display = show ? '' : 'none';
-    if (!show && newVenueBox) newVenueBox.style.display = 'none';
+    if (!show) closeProposeBox();
+  }
+  function closeProposeBox() {
+    proposing = false;
+    if (newVenueBox) newVenueBox.style.display = 'none';
   }
 
-  // --- Mini-map for picking the proposed venue point ---
+  // --- Map: existing venues + new-venue point picker (issues #111, #118) ---
   var venueMap = null, venueMarker = null;
   function setLatLng(lat, lng) {
     if (nvLatInp) nvLatInp.value = lat.toFixed(6);
@@ -105,15 +118,28 @@
     }
   }
   function initVenueMap() {
-    var el = document.getElementById('new-venue-map');
+    var el = document.getElementById('venue-map');
     if (venueMap || !el || !window.L) return;
-    var start = [48.0, 68.0], zoom = 5;
-    var la = parseFloat(nvLatInp && nvLatInp.value), ln = parseFloat(nvLngInp && nvLngInp.value);
-    if (!isNaN(la) && !isNaN(ln)) { start = [la, ln]; zoom = 13; }
-    venueMap = L.map(el).setView(start, zoom);
+    venueMap = L.map(el).setView([48.0, 68.0], 5);
     if (window._addMapLayers) window._addMapLayers(venueMap);
-    if (!isNaN(la) && !isNaN(ln)) placeMarker(start);
-    venueMap.on('click', function (e) { placeMarker(e.latlng); setLatLng(e.latlng.lat, e.latlng.lng); });
+    // Existing selectable venues as clickable markers.
+    var bounds = [];
+    allLocs.forEach(function (l) {
+      if (l.depth !== 4 || l.is_hidden || l.lat == null || l.lng == null) return;
+      var m = L.circleMarker([l.lat, l.lng],
+        { radius: 6, color: '#0d6efd', weight: 1, fillColor: '#0d6efd', fillOpacity: 0.7 });
+      m.bindTooltip(escHtml(locName(l)));
+      m.on('click', function () { selectExistingVenue(l.pk); });
+      m.addTo(venueMap);
+      bounds.push([l.lat, l.lng]);
+    });
+    if (bounds.length) venueMap.fitBounds(bounds, { padding: [20, 20], maxZoom: 10 });
+    // Click empty map to place the proposed point (only while proposing a new venue).
+    venueMap.on('click', function (e) {
+      if (proposing) { placeMarker(e.latlng); setLatLng(e.latlng.lat, e.latlng.lng); }
+    });
+    // The map starts visible, but if it lives inside a collapsed panel re-measure it.
+    setTimeout(function () { if (venueMap) venueMap.invalidateSize(); }, 50);
   }
   if (nvLatInp && nvLngInp) {
     [nvLatInp, nvLngInp].forEach(function (el) {
@@ -126,12 +152,14 @@
 
   if (addVenueBtn) {
     addVenueBtn.addEventListener('click', function () {
+      proposing = true;
       if (newVenueBox) newVenueBox.style.display = '';
       if (addVenueToggle) addVenueToggle.style.display = 'none';
+      // Proposing a new venue clears any existing-venue selection.
+      venEl.value = ''; locInp.value = '';
       syncNewVenueCity();
-      initVenueMap();
-      // Leaflet mis-measures a container that was display:none at init.
-      if (venueMap) setTimeout(function () { venueMap.invalidateSize(); }, 50);
+      var la = parseFloat(nvLatInp && nvLatInp.value), ln = parseFloat(nvLngInp && nvLngInp.value);
+      if (!isNaN(la) && !isNaN(ln)) { placeMarker([la, ln]); venueMap.setView([la, ln], 13); }
     });
   }
 
@@ -162,6 +190,10 @@
   function pathOf(pk) {
     var n = allLocs.find(function (l) { return String(l.pk) === String(pk); });
     return n ? n.path : '';
+  }
+
+  function venuesUnder(cityPath) {
+    return allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cityPath) === 0; });
   }
 
   // Populate countries (depth=1)
@@ -200,8 +232,7 @@
     locInp.value = '';
     var cp = pathOf(cityEl.value);
     if (!cp) { showAddVenue(false); return; }
-    var realVenues = allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cp) === 0; });
-    buildOpts(venEl, realVenues, '--');
+    buildOpts(venEl, venuesUnder(cp), '--');
     var hv = hiddenVenueOf(cp);
     if (hv) {
       var hvOpt = document.createElement('option');
@@ -218,7 +249,7 @@
     if (venEl.value) {
       locInp.value = venEl.value;
       // Picking an existing venue cancels any in-progress proposal and restores the button.
-      if (newVenueBox) newVenueBox.style.display = 'none';
+      closeProposeBox();
       if (nvNameInp) nvNameInp.value = '';
       showAddVenue(true);
     } else {
@@ -226,47 +257,53 @@
     }
   });
 
+  // Select an existing venue by pk: populate the whole cascade, set it, and close the
+  // propose box. Shared by the initial value and by clicking a marker on the map (#118).
+  function selectExistingVenue(pk) {
+    var loc = allLocs.find(function (l) { return String(l.pk) === String(pk); });
+    if (!loc || loc.depth !== 4) return;
+    var stepLen = loc.path.length / loc.depth;
+    var cp = loc.path.slice(0, stepLen);
+    var rp = loc.path.slice(0, stepLen * 2);
+    var cityPath = loc.path.slice(0, stepLen * 3);
+
+    buildOpts(cntEl, allLocs.filter(function (l) { return l.depth === 1; }), '--');
+    var cntLoc = allLocs.find(function (l) { return l.path === cp && l.depth === 1; });
+    if (cntLoc) cntEl.value = cntLoc.pk;
+
+    buildOpts(regEl, allLocs.filter(function (l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
+    regEl.disabled = false;
+    var regLoc = allLocs.find(function (l) { return l.path === rp && l.depth === 2; });
+    if (regLoc) regEl.value = regLoc.pk;
+
+    buildOpts(cityEl, allLocs.filter(function (l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
+    cityEl.disabled = false;
+    var cityLoc = allLocs.find(function (l) { return l.path === cityPath && l.depth === 3; });
+    if (cityLoc) cityEl.value = cityLoc.pk;
+
+    buildOpts(venEl, venuesUnder(cityPath), '--');
+    var hv = hiddenVenueOf(cityPath);
+    if (hv) {
+      var hvOpt = document.createElement('option');
+      hvOpt.value = hv.pk; hvOpt.textContent = locName(hv);
+      venEl.appendChild(hvOpt);
+    }
+    venWrap.style.display = '';
+    venEl.value = loc.is_hidden ? (hv ? hv.pk : '') : loc.pk;
+    locInp.value = venEl.value;
+    closeProposeBox();
+    if (nvNameInp) nvNameInp.value = '';
+    showAddVenue(true); syncNewVenueCity();
+  }
+
+  // Build the map first so its markers are clickable even before any selection.
+  initVenueMap();
+
   // Pre-populate from initial value
   var initId = '{{ initial_location_id|default:"" }}';
   if (initId) {
     var initLoc = allLocs.find(function (l) { return String(l.pk) === String(initId); });
-    if (initLoc && initLoc.depth === 4) {
-      var stepLen = initLoc.path.length / initLoc.depth;
-      var cp = initLoc.path.slice(0, stepLen);
-      var rp = initLoc.path.slice(0, stepLen * 2);
-      var cityPath = initLoc.path.slice(0, stepLen * 3);
-
-      // Populate and select country
-      buildOpts(cntEl, allLocs.filter(function (l) { return l.depth === 1; }), '--');
-      var cntLoc = allLocs.find(function (l) { return l.path === cp && l.depth === 1; });
-      if (cntLoc) cntEl.value = cntLoc.pk;
-
-      // Populate and select region
-      buildOpts(regEl, allLocs.filter(function (l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
-      regEl.disabled = false;
-      var regLoc = allLocs.find(function (l) { return l.path === rp && l.depth === 2; });
-      if (regLoc) regEl.value = regLoc.pk;
-
-      // Populate and select city
-      buildOpts(cityEl, allLocs.filter(function (l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
-      cityEl.disabled = false;
-      var cityLoc = allLocs.find(function (l) { return l.path === cityPath && l.depth === 3; });
-      if (cityLoc) cityEl.value = cityLoc.pk;
-
-      // Populate venues - always show, including hidden fallback
-      var realVenues = allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cityPath) === 0; });
-      buildOpts(venEl, realVenues, '--');
-      var hv = hiddenVenueOf(cityPath);
-      if (hv) {
-        var hvOpt = document.createElement('option');
-        hvOpt.value = hv.pk; hvOpt.textContent = locName(hv);
-        venEl.appendChild(hvOpt);
-      }
-      venWrap.style.display = '';
-      venEl.value = initLoc.is_hidden ? (hv ? hv.pk : '') : initLoc.pk;
-      locInp.value = venEl.value;
-      showAddVenue(true); syncNewVenueCity();
-    }
+    if (initLoc && initLoc.depth === 4) selectExistingVenue(initId);
   }
 }());
 </script>
