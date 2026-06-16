@@ -1,12 +1,17 @@
 from decimal import Decimal
 
+from django.db.models import Q
 from ninja import Router, Schema
 from ninja.errors import HttpError
 from ninja.schema import Field
 
+from accounts.models import User
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
-from locations.models import Location
+from locations.models import Location, LocationProposal
+
+_PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
+_ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
 
 auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
@@ -74,6 +79,36 @@ def _require_admin(user) -> None:
         raise HttpError(403, "ADMIN role or higher is required")
 
 
+def _role_rank(user) -> int:
+    return user.get_role_rank() if hasattr(user, "get_role_rank") else -1
+
+
+def _can_add_directly(user) -> bool:
+    """Organizer+ create approved locations directly (issue #111)."""
+    return bool(getattr(user, "is_superuser", False)) or _role_rank(user) >= _ORGANIZER_RANK
+
+
+def _proposal_visible(location: Location, user) -> bool:
+    """A pending proposed location is visible only to its proposer (or an admin)."""
+    proposal = getattr(location, "proposal", None)
+    if proposal is None or proposal.status == LocationProposal.Status.APPROVED:
+        return True
+    if is_admin(user):
+        return True
+    return getattr(user, "is_authenticated", False) and proposal.submitted_by_id == user.pk
+
+
+def _visible_locations_qs(user):
+    """Non-deleted locations honouring proposal visibility (pending = proposer/admin only)."""
+    qs = Location.objects.filter(is_deleted=False)
+    if is_admin(user):
+        return qs
+    visible = Q(proposal__isnull=True) | Q(proposal__status=LocationProposal.Status.APPROVED)
+    if getattr(user, "is_authenticated", False):
+        visible |= Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
+    return qs.filter(visible)
+
+
 def _get_or_404(pk: int) -> Location:
     try:
         return Location.objects.get(pk=pk, is_deleted=False)
@@ -96,7 +131,7 @@ def _apply_name(location: Location, name: LocalizedStr) -> None:
 def list_locations(request, include_hidden: bool = False):
     if include_hidden and not is_admin(request.auth):
         include_hidden = False
-    all_locs = list(Location.objects.filter(is_deleted=False))
+    all_locs = list(_visible_locations_qs(request.auth))
     step = Location.steplen
     path_to_loc: dict[str, Location] = {loc.path: loc for loc in all_locs}
     children_map: dict[int, list[Location]] = {loc.pk: [] for loc in all_locs}
@@ -131,13 +166,23 @@ def get_location(request, location_id: int):
     location = _get_or_404(location_id)
     if location.is_hidden and not is_admin(request.auth):
         raise HttpError(404, "Location not found")
+    # A pending proposed location is visible only to its proposer (or an admin).
+    if not _proposal_visible(location, request.auth):
+        raise HttpError(404, "Location not found")
     return location
 
 
-@router.post("/", response={201: LocationOut}, auth=auth, summary="Create location (ADMIN+)")
+@router.post(
+    "/",
+    response={201: LocationOut},
+    auth=auth,
+    summary="Create location (organizer+ approved; participant proposes; pending until reviewed)",
+)
 def create_location(request, payload: LocationIn):
     user = request.auth
-    _require_admin(user)
+    if _role_rank(user) < _PARTICIPANT_RANK and not getattr(user, "is_superuser", False):
+        raise HttpError(403, "PARTICIPANT role or higher is required")
+    approved = _can_add_directly(user)
 
     kwargs = dict(
         name=payload.name.ru or payload.name.kk or payload.name.en,
@@ -146,7 +191,8 @@ def create_location(request, payload: LocationIn):
         name_en=payload.name.en,
         lat=payload.lat,
         lng=payload.lng,
-        is_hidden=payload.is_hidden,
+        # Only managers may create hidden fallback venues.
+        is_hidden=payload.is_hidden if is_admin(user) else False,
     )
 
     if payload.parent_id is not None:
@@ -157,6 +203,10 @@ def create_location(request, payload: LocationIn):
         location = parent.add_child(**kwargs)
     else:
         location = Location.add_root(**kwargs)
+
+    # Below organizer the location is a proposal: usable by the author, pending review.
+    if not approved:
+        LocationProposal.objects.create(location=location, submitted_by=user)
 
     return 201, location
 

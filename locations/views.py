@@ -147,11 +147,14 @@ class LocationCreateView(LoginRequiredMixin, View):
 
 class LocationApproveView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        from locations.models import Location
+        from locations.models import Location, LocationProposal
 
         if not _can_manage_locations(request.user):
             raise PermissionDenied
-        location = get_object_or_404(Location, pk=pk, is_deleted=False)
+        # Only act on a pending proposal; approving a non-pending location is a 404.
+        location = get_object_or_404(
+            Location, pk=pk, is_deleted=False, proposal__status=LocationProposal.Status.PENDING_APPROVAL
+        )
         location.approve_with_competition()
         safe_path = urlparse(request.META.get("HTTP_REFERER", "")).path or "/"
         return redirect(safe_path)
@@ -159,11 +162,15 @@ class LocationApproveView(LoginRequiredMixin, View):
 
 class LocationRejectView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        from locations.models import Location
+        from locations.models import Location, LocationProposal
 
         if not _can_manage_locations(request.user):
             raise PermissionDenied
-        location = get_object_or_404(Location, pk=pk, is_deleted=False)
+        # Only reject a pending proposal; rejecting a non-pending location (which would
+        # destructively reset its competitions) is a 404.
+        location = get_object_or_404(
+            Location, pk=pk, is_deleted=False, proposal__status=LocationProposal.Status.PENDING_APPROVAL
+        )
         location.reject_and_reset_competitions()
         safe_path = urlparse(request.META.get("HTTP_REFERER", "")).path or "/"
         return redirect(safe_path)

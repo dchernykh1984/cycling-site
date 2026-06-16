@@ -549,7 +549,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
         }
 
     def get(self, request):
-        form = SubmitCompetitionForm()
+        form = SubmitCompetitionForm(user=request.user)
         reg_form = RegistrationSettingsForm()
         return render(
             request,
@@ -563,7 +563,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
         )
 
     def post(self, request):
-        form = SubmitCompetitionForm(request.POST, request.FILES)
+        form = SubmitCompetitionForm(request.POST, request.FILES, user=request.user)
         reg_form = RegistrationSettingsForm(request.POST)
         is_organizer = self._is_organizer_plus(request.user)
         if form.is_valid() and (not is_organizer or reg_form.is_valid()):
@@ -660,7 +660,8 @@ class EditCompetitionView(View):
                 "url_route": comp.url_route,
                 "url_regulations": comp.url_regulations,
                 "url_results": comp.url_results,
-            }
+            },
+            user=request.user,
         )
         reg_form = RegistrationSettingsForm(
             initial={
@@ -727,7 +728,7 @@ class EditCompetitionView(View):
 
     def post(self, request, pk):
         comp = self._get_competition_or_403(request, pk)
-        form = SubmitCompetitionForm(request.POST, request.FILES)
+        form = SubmitCompetitionForm(request.POST, request.FILES, user=request.user)
         reg_form = RegistrationSettingsForm(request.POST)
         if form.is_valid() and reg_form.is_valid():
             cd = form.cleaned_data

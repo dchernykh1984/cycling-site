@@ -10,6 +10,11 @@ from .models import Competition, CompetitionComment, Discipline, DisciplineCateg
 
 
 class SubmitCompetitionForm(forms.Form):
+    def __init__(self, *args, user=None, **kwargs):
+        # The submitting user is needed to validate location ownership (issue #111).
+        self.user = user
+        super().__init__(*args, **kwargs)
+
     title_ru = forms.CharField(max_length=255, widget=forms.TextInput(attrs={"class": "form-control"}))
     title_kk = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
     title_en = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
@@ -125,11 +130,30 @@ class SubmitCompetitionForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        self._validate_location(cleaned_data)
         date_start = cleaned_data.get("date_start")
         date_end = cleaned_data.get("date_end")
         if date_start and date_end and date_end < date_start:
             raise forms.ValidationError(_("End date cannot be before start date."))
         return cleaned_data
+
+    def _validate_location(self, cleaned_data) -> None:
+        """Guard against forged POSTs (issue #111): a new venue must hang off a city, and a
+        chosen location must be one this user may use (not someone else's pending proposal)."""
+        city = cleaned_data.get("new_venue_city")
+        new_name = (cleaned_data.get("new_venue_name") or "").strip()
+        if city is not None and city.depth != 3:
+            self.add_error("new_venue_city", _("Please choose a city for the new venue."))
+        # If a new venue is being proposed it is used instead of `location`, so skip that check.
+        if new_name and city is not None:
+            return
+        location = cleaned_data.get("location")
+        if location is not None and location.is_pending:
+            proposal = getattr(location, "proposal", None)
+            owner_id = getattr(proposal, "submitted_by_id", None)
+            user = self.user
+            if not (getattr(user, "is_authenticated", False) and owner_id == user.pk):
+                self.add_error("location", _("This location is not available."))
 
 
 class RegistrationSettingsForm(forms.Form):

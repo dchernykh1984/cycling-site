@@ -1259,6 +1259,40 @@ class LocationProposalInSubmitTests(TestCase):
         comp = Competition.objects.get(title_ru="Plain")
         self.assertEqual(comp.location.pk, venue.pk)
 
+    def test_forged_post_cannot_use_other_users_pending_location(self):
+        other = _make_user("forger_owner@example.com", User.Role.PARTICIPANT)
+        pending = Location.propose_venue(self.city, "Other Pending", submitted_by=other)
+        self.client.force_login(self.participant)
+        resp = self.client.post(
+            reverse("calendar_submit"),
+            {"title_ru": "Forge", "date_start": "2026-09-01", "location": str(pending.pk)},
+        )
+        self.assertEqual(resp.status_code, 200)  # re-rendered with a form error
+        self.assertFalse(Competition.objects.filter(title_ru="Forge").exists())
+
+    def test_can_use_own_pending_location(self):
+        pending = Location.propose_venue(self.city, "Mine", submitted_by=self.participant)
+        self.client.force_login(self.participant)
+        self.client.post(
+            reverse("calendar_submit"),
+            {"title_ru": "MineRace", "date_start": "2026-09-01", "location": str(pending.pk)},
+        )
+        self.assertEqual(Competition.objects.get(title_ru="MineRace").location_id, pending.pk)
+
+    def test_forged_post_rejects_non_city_new_venue_parent(self):
+        self.client.force_login(self.participant)
+        resp = self.client.post(
+            reverse("calendar_submit"),
+            {
+                "title_ru": "BadCity",
+                "date_start": "2026-09-01",
+                "new_venue_city": str(self.country.pk),  # depth 1, not a city
+                "new_venue_name": "X",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Competition.objects.filter(title_ru="BadCity").exists())
+
 
 class LocationDataVisibilityTests(TestCase):
     """Pending locations are visible only to their proposer (issue #111)."""

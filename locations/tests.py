@@ -479,3 +479,22 @@ class LocationApproveRejectViewTests(TestCase):
         comp.refresh_from_db()
         self.assertTrue(self.venue.is_deleted)
         self.assertTrue(comp.location.is_hidden)
+
+    def test_reject_non_pending_location_returns_404_and_keeps_competition(self):
+        from calendar_app.models import Competition
+
+        approved = self.city.add_child(name="Approved", name_ru="Approved")  # no proposal -> not pending
+        comp = Competition.objects.create(title_ru="C2", date_start=datetime.date(2026, 7, 1), location=approved)
+        self.client.force_login(self.admin)
+        resp = self.client.post(reverse("location_reject", args=[approved.pk]))
+        self.assertEqual(resp.status_code, 404)
+        approved.refresh_from_db()
+        comp.refresh_from_db()
+        self.assertFalse(approved.is_deleted)
+        self.assertEqual(comp.location_id, approved.pk)
+
+    def test_approve_non_pending_location_returns_404(self):
+        approved = self.city.add_child(name="Approved2", name_ru="Approved2")
+        self.client.force_login(self.admin)
+        resp = self.client.post(reverse("location_approve", args=[approved.pk]))
+        self.assertEqual(resp.status_code, 404)
