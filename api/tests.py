@@ -831,6 +831,12 @@ class LocationListTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 201)
         return resp.json()
 
+    def test_guest_cannot_create_location(self):
+        # An unconfirmed user (GUEST) may not propose a location via the API either.
+        guest = _user("loc_guest", role=User.Role.GUEST)
+        resp = self.post("/api/v1/locations/", {"name": {"ru": "GuestLoc", "kk": "", "en": ""}}, user=guest)
+        self.assertEqual(resp.status_code, 403)
+
     def test_hidden_location_excluded(self):
         before = len(self.get("/api/v1/locations/", user=self.reader).json())
         self._api_location()

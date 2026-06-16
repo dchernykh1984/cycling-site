@@ -280,6 +280,21 @@ class LocationCreateViewTests(TestCase):
         resp = self.client.get(self.url)
         self.assertRedirects(resp, f"/accounts/login/?next={self.url}", fetch_redirect_response=False)
 
+    def test_guest_cannot_open_propose_form(self):
+        # An unconfirmed user (GUEST) must verify their email (become PARTICIPANT) first.
+        guest = _make_user("guest_loc@x.com", User.Role.GUEST)
+        self.client.force_login(guest)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+
+    def test_guest_cannot_propose_location(self):
+        guest = _make_user("guest_loc2@x.com", User.Role.GUEST)
+        self.client.force_login(guest)
+        resp = self.client.post(
+            self.url, {"name_ru": "GuestVenue", "name_kk": "", "name_en": "", "city": str(self.city.pk)}
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.assertFalse(Location.objects.filter(name_ru="GuestVenue").exists())
+
     def test_participant_proposes_pending_location(self):
         # Issue #111: any registered user may propose a location (pending), not 403.
         self.client.force_login(self.participant)
