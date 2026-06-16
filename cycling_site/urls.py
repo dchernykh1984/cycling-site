@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.urls import URLPattern, URLResolver, include, path
 from wagtail import urls as wagtail_urls
 from wagtail.admin import urls as wagtailadmin_urls
@@ -11,6 +12,14 @@ from accounts.views import set_language as accounts_set_language
 from api.router import api as ninja_api
 from cycling_site.sitemaps import WagtailPagesSitemap
 from search import views as search_views
+
+
+def favicon_redirect(request):
+    """Browsers probe the site root for /favicon.ico; point them at the static file.
+    Resolved lazily so it also works with hashed names under ManifestStaticFilesStorage."""
+    from django.templatetags.static import static
+
+    return redirect(static("favicon.ico"))
 
 
 def robots_txt(request):
@@ -43,6 +52,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("", include("protocols.urls")),
     path("", include("registrations.urls")),
     path("search/", search_views.search, name="search"),
+    path("favicon.ico", favicon_redirect, name="favicon"),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", wagtail_sitemap, {"sitemaps": sitemaps}, name="sitemap"),
     path("", include("home.urls")),
