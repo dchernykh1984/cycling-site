@@ -56,7 +56,13 @@ def _inject_resize_script(content: bytes) -> bytes:
 
 
 def protocol_last_updated(request, pk):
-    protocol = get_object_or_404(Protocol, pk=pk, competition__status=Competition.Status.APPROVED)
+    protocol = get_object_or_404(
+        Protocol,
+        pk=pk,
+        competition__status=Competition.Status.APPROVED,
+        competition__is_hidden=False,
+        competition__is_deleted=False,
+    )
     return JsonResponse(
         {
             "last_updated": protocol.last_updated.isoformat(),
@@ -68,7 +74,13 @@ def protocol_last_updated(request, pk):
 
 @xframe_options_sameorigin
 def protocol_html(request, pk):
-    protocol = get_object_or_404(Protocol, pk=pk, competition__status=Competition.Status.APPROVED)
+    protocol = get_object_or_404(
+        Protocol,
+        pk=pk,
+        competition__status=Competition.Status.APPROVED,
+        competition__is_hidden=False,
+        competition__is_deleted=False,
+    )
     if not protocol.html_file:
         raise Http404
     try:
@@ -96,7 +108,13 @@ def protocol_html(request, pk):
 
 
 def protocol_detail(request, pk):
-    protocol = get_object_or_404(Protocol, pk=pk, competition__status=Competition.Status.APPROVED)
+    protocol = get_object_or_404(
+        Protocol,
+        pk=pk,
+        competition__status=Competition.Status.APPROVED,
+        competition__is_hidden=False,
+        competition__is_deleted=False,
+    )
     versions = protocol.versions.all()[:_MAX_VERSIONS]
     return render(
         request,
