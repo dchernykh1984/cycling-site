@@ -34,13 +34,13 @@ def test_propose_box_with_minimap_appears_and_sets_coords(page: Page, live_serve
     _tree()
     inject_session(page, live_server, organizer)
     _open_city(page, live_server)
+    # The venue map is always visible now (issue #118) and initialised (leaflet-container).
+    expect(page.locator("#venue-map")).to_have_class(re.compile(r"leaflet-container"))
     expect(page.locator("#add-venue-btn")).to_be_visible()
     page.click("#add-venue-btn")
     expect(page.locator("#new-venue-box")).to_be_visible()
-    # The mini-map initialised (Leaflet adds the leaflet-container class).
-    expect(page.locator("#new-venue-map")).to_have_class(re.compile(r"leaflet-container"))
-    # Clicking the map fills the latitude/longitude fields.
-    page.click("#new-venue-map", position={"x": 110, "y": 110})
+    # While proposing, clicking an empty spot on the map fills the latitude/longitude fields.
+    page.click("#venue-map", position={"x": 110, "y": 110})
     expect(page.locator("#new-venue-lat")).not_to_have_value("")
     expect(page.locator("#new-venue-lng")).not_to_have_value("")
 
