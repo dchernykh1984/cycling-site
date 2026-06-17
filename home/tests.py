@@ -1,9 +1,15 @@
 import importlib
+import io
+import shutil
+import tempfile
 
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from PIL import Image as PILImage
+from wagtail.images import get_image_model
 from wagtail.models import Locale, Page, Site
 from wagtail.test.utils import WagtailPageTestCase
 from wagtail_localize.fields import SynchronizedField
@@ -342,3 +348,57 @@ class LangDisplayCodeFilterTest(TestCase):
 
     def test_unknown_code_uppercased(self):
         self.assertEqual(self.f("fr"), "FR")
+
+
+class AdminUploadAndEditScenarioTests(TestCase):
+    """Regression for the production 500s reported on 2026-06-17: adding an image via the
+    Wagtail admin (multiple-image upload) and opening a page for editing. Both flows must
+    work end to end (they pass locally; the prod failure is environment-specific)."""
+
+    def setUp(self):
+        self._media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self._media, ignore_errors=True)
+        self.admin = User.objects.create_user(
+            username="wagtail_admin",
+            email="wagtail_admin@example.com",
+            password="Pass1234!",
+            role=User.Role.OWNER,
+            is_staff=True,
+            is_superuser=True,
+        )
+        self.client.force_login(self.admin)
+
+    @staticmethod
+    def _png(name="logo.png", mode="RGB", color=(255, 128, 0)):
+        buf = io.BytesIO()
+        PILImage.new(mode, (40, 40), color).save(buf, format="PNG")
+        return SimpleUploadedFile(name, buf.getvalue(), content_type="image/png")
+
+    def test_multiple_image_upload_creates_image_and_rendition(self):
+        image_model = get_image_model()
+        with override_settings(MEDIA_ROOT=self._media):
+            resp = self.client.post("/admin/images/multiple/add/", {"files[]": self._png()})
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            self.assertTrue(data["success"])
+            image = image_model.objects.get(pk=data["image_id"])
+            # Generating a rendition exercises the media write/read path the admin relies on.
+            self.assertTrue(image.get_rendition("max-100x100").url)
+
+    def test_rgba_png_upload_succeeds(self):
+        with override_settings(MEDIA_ROOT=self._media):
+            resp = self.client.post(
+                "/admin/images/multiple/add/",
+                {"files[]": self._png(name="rgba.png", mode="RGBA", color=(0, 128, 255, 128))},
+            )
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()["success"])
+
+    def test_homepage_edit_view_renders(self):
+        home = HomePage.objects.first()
+        if home is None:
+            root = Page.objects.get(depth=1)
+            home = HomePage(title="Home", slug="home-edit-test")
+            root.add_child(instance=home)
+        resp = self.client.get(reverse("wagtailadmin_pages:edit", args=[home.id]))
+        self.assertEqual(resp.status_code, 200)

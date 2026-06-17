@@ -1,11 +1,18 @@
-from django.test import TestCase
+import io
+import shutil
+import tempfile
+from pathlib import Path
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
 from django.urls import reverse
+from PIL import Image as PILImage
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTests
 
 from accounts.models import User
 from news.forms import SubmitNewsForm
-from news.models import Comment, NewsIndexPage, NewsPage, NewsSettings
+from news.models import Comment, NewsArticle, NewsIndexPage, NewsPage, NewsSettings
 
 
 def _get_site_root():
@@ -340,3 +347,59 @@ class NewsTagsTest(TestCase):
         result = get_news_index_url()
         self.assertIsNotNone(result)
         self.assertIn("news", result)
+
+
+class NewsArticleHeroUploadTests(TestCase):
+    """Frontend add-news cover upload: the hero image must save to news/hero/ and the
+    stored cover must be served back (the prod scenario the user reported)."""
+
+    def setUp(self):
+        self._media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self._media, ignore_errors=True)
+        self.admin = User.objects.create_user(
+            username="news_admin",
+            email="news_admin@example.com",
+            password="Pass1234!",
+            role=User.Role.ADMIN,
+        )
+        self.client.force_login(self.admin)
+
+    @staticmethod
+    def _png(name="cover.png"):
+        buf = io.BytesIO()
+        PILImage.new("RGB", (32, 32), (255, 128, 0)).save(buf, format="PNG")
+        return SimpleUploadedFile(name, buf.getvalue(), content_type="image/png")
+
+    def _create_with_cover(self):
+        return self.client.post(
+            reverse("news_article_create"),
+            {
+                "title_ru": "Logo news",
+                "title_kk": "",
+                "title_en": "",
+                "intro_ru": "",
+                "intro_kk": "",
+                "intro_en": "",
+                "body_ru": "",
+                "body_kk": "",
+                "body_en": "",
+                "published_at": "2026-06-17 16:51:00",
+                "hero_image": self._png(),
+            },
+        )
+
+    def test_create_article_saves_hero_image_file(self):
+        with override_settings(MEDIA_ROOT=self._media):
+            resp = self._create_with_cover()
+            self.assertEqual(resp.status_code, 302)
+            article = NewsArticle.objects.latest("id")
+            self.assertTrue(article.hero_image.name.startswith("news/hero/"))
+            self.assertTrue((Path(self._media) / article.hero_image.name).exists())
+
+    def test_uploaded_cover_is_served_in_production(self):
+        with override_settings(MEDIA_ROOT=self._media):
+            self._create_with_cover()
+            article = NewsArticle.objects.latest("id")
+            with override_settings(DEBUG=False):
+                resp = self.client.get(article.hero_image.url)
+            self.assertEqual(resp.status_code, 200)
