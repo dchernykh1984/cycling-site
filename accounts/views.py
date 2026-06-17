@@ -162,25 +162,19 @@ class ContactOwnersView(LoginRequiredMixin, View):
         cd = form.cleaned_data
         # Collapse any whitespace/newlines in the subject so it can't inject email headers.
         subject_line = " ".join(cd["subject"].split())
-        body = gettext(
-            "New message from a registered site user.\n\n"
-            "User: %(username)s\n"
-            "Registered email: %(email)s\n"
-            "Role: %(role)s\n"
-            "Sent: %(when)s\n\n"
-            "Subject: %(subject)s\n\n"
-            "Message:\n%(message)s\n"
-        ) % {
-            "username": user.get_username(),
-            "email": user.email,
-            "role": user.get_role_display(),
-            "when": timezone.now().strftime("%Y-%m-%d %H:%M %Z"),
-            "subject": subject_line,
-            "message": cd["message"],
-        }
+        # The owner notification is internal and always English (not the sender's UI language).
+        body = (
+            f"New message from a registered site user.\n\n"
+            f"User: {user.get_username()}\n"
+            f"Registered email: {user.email}\n"
+            f"Role: {user.get_role_display()}\n"
+            f"Sent: {timezone.now():%Y-%m-%d %H:%M %Z}\n\n"
+            f"Subject: {subject_line}\n\n"
+            f"Message:\n{cd['message']}\n"
+        )
         try:
             send_mail(
-                subject=gettext("Site contact: %(subject)s") % {"subject": subject_line},
+                subject=f"Site contact: {subject_line}",
                 message=body,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[settings.DEFAULT_FROM_EMAIL],
