@@ -9,4 +9,5 @@ urlpatterns = [
     path("theme/", views.ThemeUpdateView.as_view(), name="account_theme"),
     path("api-token/regenerate/", views.ApiTokenRegenerateView.as_view(), name="account_api_token_regenerate"),
     path("resend-confirmation/", views.ResendEmailConfirmationView.as_view(), name="account_resend_confirmation"),
+    path("contact/", views.ContactOwnersView.as_view(), name="account_contact_owners"),
 ]

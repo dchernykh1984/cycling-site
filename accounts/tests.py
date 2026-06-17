@@ -4,7 +4,9 @@ from unittest.mock import MagicMock, patch
 
 from allauth.account.models import EmailAddress
 from allauth.account.signals import email_confirmed
+from django.conf import settings
 from django.contrib.auth.models import Group
+from django.core import mail
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
@@ -995,3 +997,77 @@ class ApiTokenRegenerateViewTests(TestCase):
             self.client.get("/api/v1/competitions/", HTTP_AUTHORIZATION=f"Bearer {new_token}").status_code,
             200,
         )
+
+
+class ContactOwnersViewTests(TestCase):
+    """Registered users (participant+) can email the site owners (issue #122)."""
+
+    def setUp(self):
+        self.url = reverse("account_contact_owners")
+
+    def test_anonymous_redirects_to_login(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("login", resp.url)
+
+    def test_guest_cannot_access(self):
+        guest = make_user(username="contact_guest", role=User.Role.GUEST)
+        self.client.force_login(guest)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        self.assertEqual(self.client.post(self.url, {"subject": "x", "message": "y"}).status_code, 403)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_participant_can_open_form(self):
+        self.client.force_login(make_user(username="contact_part", role=User.Role.PARTICIPANT))
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'name="subject"')
+        self.assertContains(resp, 'name="message"')
+
+    def test_post_sends_email_to_owner_mailbox(self):
+        self.client.force_login(make_user(username="contact_sender", role=User.Role.PARTICIPANT))
+        resp = self.client.post(self.url, {"subject": "Need help", "message": "Reach me at @mytg; my problem is X."})
+        self.assertRedirects(resp, reverse("account_profile"))
+        self.assertEqual(len(mail.outbox), 1)
+        msg = mail.outbox[0]
+        self.assertEqual(msg.to, [settings.DEFAULT_FROM_EMAIL])
+        self.assertEqual(msg.from_email, settings.DEFAULT_FROM_EMAIL)
+        self.assertIn("Need help", msg.subject)
+        self.assertIn("contact_sender@example.com", msg.body)
+        self.assertIn("contact_sender", msg.body)
+        self.assertIn("Reach me at @mytg", msg.body)
+
+    def test_organizer_can_send(self):
+        self.client.force_login(make_user(username="contact_org", role=User.Role.ORGANIZER))
+        resp = self.client.post(self.url, {"subject": "Q", "message": "body"})
+        self.assertRedirects(resp, reverse("account_profile"))
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_empty_message_shows_error_and_sends_nothing(self):
+        self.client.force_login(make_user(username="contact_empty", role=User.Role.PARTICIPANT))
+        resp = self.client.post(self.url, {"subject": "Hi", "message": ""})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("message", resp.context["form"].errors)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_profile_shows_contact_button_for_participant(self):
+        self.client.force_login(make_user(username="contact_btn", role=User.Role.PARTICIPANT))
+        resp = self.client.get(reverse("account_profile"))
+        self.assertContains(resp, reverse("account_contact_owners"))
+
+    def test_profile_hides_contact_button_for_guest(self):
+        self.client.force_login(make_user(username="contact_nobtn", role=User.Role.GUEST))
+        resp = self.client.get(reverse("account_profile"))
+        self.assertNotContains(resp, reverse("account_contact_owners"))
+
+    def test_labels_are_localized(self):
+        # The page must render the Russian translation (pulled from the catalog, not the
+        # English source) - confirms the .po/.mo translations are wired up.
+        from django.utils import translation
+
+        with translation.override("ru"):
+            expected = translation.gettext("Contact site owners")
+        self.assertNotEqual(expected, "Contact site owners")  # a real translation exists
+        self.client.force_login(make_user(username="contact_loc", role=User.Role.PARTICIPANT))
+        resp = self.client.get(self.url, headers={"accept-language": "ru"})
+        self.assertContains(resp, expected)

@@ -26,6 +26,16 @@
             </div>
         </div>
 
+        {% if user.get_role_rank >= 1 %}
+        <div class="card mb-4">
+            <div class="card-header">{% trans "Contact site owners" %}</div>
+            <div class="card-body">
+                <p class="mb-2 small text-muted">{% trans "Have a question or a request? Send a message to the people who run the site." %}</p>
+                <a href="{% url 'account_contact_owners' %}" class="btn btn-sm btn-outline-primary">{% trans "Contact site owners" %}</a>
+            </div>
+        </div>
+        {% endif %}
+
         {% if not has_verified_email %}
         <div class="alert alert-warning" role="alert">
             <p class="mb-2">{% trans "Your email is not confirmed yet. Check your inbox and confirm it to become a participant." %}</p>
