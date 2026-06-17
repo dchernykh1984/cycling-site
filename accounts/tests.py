@@ -1056,6 +1056,21 @@ class ContactOwnersViewTests(TestCase):
         resp = self.client.get(reverse("account_profile"))
         self.assertContains(resp, reverse("account_contact_owners"))
 
+    def test_contact_button_disabled_with_countdown_during_cooldown(self):
+        user = make_user(username="contact_cd_btn", role=User.Role.PARTICIPANT)
+        user.email_confirmation_sent_at = timezone.now()
+        user.save(update_fields=["email_confirmation_sent_at"])
+        self.client.force_login(user)
+        resp = self.client.get(reverse("account_profile"))
+        self.assertGreater(resp.context["contact_cooldown_seconds"], 0)
+        self.assertContains(resp, "btn btn-sm btn-outline-primary disabled")
+
+    def test_contact_button_enabled_without_cooldown(self):
+        self.client.force_login(make_user(username="contact_nocd_btn", role=User.Role.PARTICIPANT))
+        resp = self.client.get(reverse("account_profile"))
+        self.assertEqual(resp.context["contact_cooldown_seconds"], 0)
+        self.assertNotContains(resp, "btn btn-sm btn-outline-primary disabled")
+
     def test_profile_hides_contact_button_for_guest(self):
         self.client.force_login(make_user(username="contact_nobtn", role=User.Role.GUEST))
         resp = self.client.get(reverse("account_profile"))

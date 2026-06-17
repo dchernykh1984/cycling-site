@@ -31,9 +31,42 @@
             <div class="card-header">{% trans "Contact site owners" %}</div>
             <div class="card-body">
                 <p class="mb-2 small text-muted">{% trans "Have a question or a request? Send a message to the people who run the site." %}</p>
-                <a href="{% url 'account_contact_owners' %}" class="btn btn-sm btn-outline-primary">{% trans "Contact site owners" %}</a>
+                <a id="contact-btn"
+                   href="{% url 'account_contact_owners' %}"
+                   class="btn btn-sm btn-outline-primary{% if contact_cooldown_seconds %} disabled{% endif %}"
+                   {% if contact_cooldown_seconds %}aria-disabled="true" tabindex="-1"{% endif %}
+                   data-cooldown="{{ contact_cooldown_seconds }}"
+                   data-label="{% trans 'Contact site owners' %}">
+                    {% trans "Contact site owners" %}
+                </a>
             </div>
         </div>
+        <script>
+        (function () {
+            var btn = document.getElementById('contact-btn');
+            if (!btn) return;
+            var remaining = parseInt(btn.dataset.cooldown, 10);
+            if (!remaining || remaining <= 0) return;
+            var label = btn.dataset.label;
+            function fmt(s) {
+                var m = Math.floor(s / 60), sec = s % 60;
+                return m + ':' + (sec < 10 ? '0' : '') + sec;
+            }
+            btn.textContent = label + ' (' + fmt(remaining) + ')';
+            var iv = setInterval(function () {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(iv);
+                    btn.classList.remove('disabled');
+                    btn.removeAttribute('aria-disabled');
+                    btn.removeAttribute('tabindex');
+                    btn.textContent = label;
+                } else {
+                    btn.textContent = label + ' (' + fmt(remaining) + ')';
+                }
+            }, 1000);
+        })();
+        </script>
         {% endif %}
 
         {% if not has_verified_email %}
