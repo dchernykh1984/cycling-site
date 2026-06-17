@@ -732,6 +732,43 @@ class ResendEmailConfirmationTests(TestCase):
         resp = self.client.get(reverse("account_profile"))
         self.assertContains(resp, "disabled")
 
+    def test_concurrent_resends_send_only_one_email(self):
+        # A second resend from the same guest arriving while the first is still inside
+        # send_confirmation() must be throttled: the slot is reserved before sending, so a
+        # check-then-send-then-save TOCTOU race cannot fire two confirmation emails.
+        from django.test import Client
+
+        self.client.force_login(self.user)
+        concurrent = Client()
+        concurrent.force_login(self.user)
+        original = EmailAddress.send_confirmation
+        state = {"reentered": False}
+
+        def reentrant_send(email_address, *args, **kwargs):
+            if not state["reentered"]:
+                state["reentered"] = True
+                concurrent.post(self.url)  # concurrent resend lands mid-send
+            return original(email_address, *args, **kwargs)
+
+        with patch.object(EmailAddress, "send_confirmation", autospec=True, side_effect=reentrant_send):
+            resp = self.client.post(self.url)
+        self.assertRedirects(resp, reverse("account_profile"))
+        self.assertTrue(state["reentered"])  # the concurrent resend really ran mid-send
+        self.assertEqual(len(mail.outbox), 1)  # only one confirmation email went out
+
+    def test_send_failure_releases_resend_slot(self):
+        self.client.force_login(self.user)
+        with (
+            patch.object(EmailAddress, "send_confirmation", side_effect=Exception("smtp down")),
+            self.assertLogs("accounts.views", level="ERROR") as cm,
+        ):
+            resp = self.client.post(self.url)
+        self.assertRedirects(resp, reverse("account_profile"))
+        self.user.refresh_from_db()
+        self.assertIsNone(self.user.last_mail_action_at)  # slot released so the guest can retry
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertTrue(any("Failed to resend confirmation email" in line for line in cm.output))
+
 
 class _DjangoAdminRoleEnforcementExtraTests(TestCase):
     def _make_staff_user(self, username, role):

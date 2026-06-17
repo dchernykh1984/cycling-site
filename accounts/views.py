@@ -92,17 +92,34 @@ class ResendEmailConfirmationView(LoginRequiredMixin, View):
         if EmailAddress.objects.filter(user=user, verified=True).exists():
             return redirect("account_profile")
 
-        sent_at = user.last_mail_action_at
-        if sent_at and (timezone.now() - sent_at) < timedelta(seconds=_RESEND_COOLDOWN_SECONDS):
+        now = timezone.now()
+        cutoff = now - timedelta(seconds=_RESEND_COOLDOWN_SECONDS)
+        previous_sent_at = user.last_mail_action_at
+        # Reserve the send slot atomically *before* sending, exactly like ContactOwnersView.
+        # A check-then-send-then-save order lets concurrent resends from one guest all pass the
+        # stale cooldown check and each fire a confirmation email (TOCTOU). last_mail_action_at
+        # is the single controller for all outgoing mail, so reserving it here serializes them.
+        reserved = (
+            User.objects.filter(pk=user.pk)
+            .filter(Q(last_mail_action_at__isnull=True) | Q(last_mail_action_at__lt=cutoff))
+            .update(last_mail_action_at=now)
+        )
+        if not reserved:
             return redirect("account_profile")
+        user.last_mail_action_at = now
 
         email_address, _ = EmailAddress.objects.get_or_create(
             user=user,
             defaults={"email": user.email, "primary": True, "verified": False},
         )
-        email_address.send_confirmation(request, signup=False)
-        user.last_mail_action_at = timezone.now()
-        user.save(update_fields=["last_mail_action_at"])
+        try:
+            email_address.send_confirmation(request, signup=False)
+        except Exception:
+            # Release the reserved slot so a transient mail failure does not lock the guest
+            # out of resending for the whole cooldown window.
+            logger.exception("Failed to resend confirmation email for user %s", user.pk)
+            User.objects.filter(pk=user.pk, last_mail_action_at=now).update(last_mail_action_at=previous_sent_at)
+            user.last_mail_action_at = previous_sent_at
         return redirect("account_profile")
 
 
