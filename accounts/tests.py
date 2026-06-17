@@ -1116,6 +1116,15 @@ class ContactOwnersViewTests(TestCase):
         self.assertNotIn("\r", mail.outbox[0].subject)
         self.assertIn("Line1 Line2 Line3", mail.outbox[0].subject)
 
+    def test_owner_email_is_fixed_english_regardless_of_locale(self):
+        # The owner notification is internal and must not depend on the sender's UI language.
+        self.client.force_login(make_user(username="contact_en", role=User.Role.PARTICIPANT))
+        resp = self.client.post(self.url, {"subject": "Hi", "message": "M"}, headers={"accept-language": "ru"})
+        self.assertRedirects(resp, reverse("account_profile"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("New message from a registered site user", mail.outbox[0].body)
+        self.assertTrue(mail.outbox[0].subject.startswith("Site contact:"))
+
     def test_labels_are_localized(self):
         # The page must render the Russian translation (pulled from the catalog, not the
         # English source) - confirms the .po/.mo translations are wired up.
