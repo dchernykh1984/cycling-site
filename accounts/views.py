@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from datetime import timedelta
 from typing import ClassVar
@@ -21,6 +22,7 @@ from accounts.models import User
 
 _RESEND_COOLDOWN_SECONDS = 600  # 10 minutes
 _PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
+logger = logging.getLogger(__name__)
 
 
 class ProfileEditForm(forms.ModelForm):
@@ -185,7 +187,8 @@ class ContactOwnersView(LoginRequiredMixin, View):
                 fail_silently=False,
             )
         except Exception:
-            # A mail-server failure must not 500 the user; let them retry.
+            # A mail-server failure must not 500 the user; log it so it is noticed, let them retry.
+            logger.exception("Failed to send contact-owners email for user %s", user.pk)
             messages.error(request, gettext("Sorry, we could not send your message right now. Please try again later."))
             return render(request, self.template_name, {"form": form})
         user.email_confirmation_sent_at = timezone.now()

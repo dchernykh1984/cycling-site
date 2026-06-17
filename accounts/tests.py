@@ -1094,14 +1094,18 @@ class ContactOwnersViewTests(TestCase):
         self.assertRedirects(resp, reverse("account_profile"))
         self.assertEqual(len(mail.outbox), 1)
 
-    def test_email_failure_does_not_500(self):
+    def test_email_failure_is_logged_and_does_not_500(self):
         from unittest.mock import patch
 
         self.client.force_login(make_user(username="contact_fail", role=User.Role.PARTICIPANT))
-        with patch("accounts.views.send_mail", side_effect=Exception("smtp down")):
+        with (
+            patch("accounts.views.send_mail", side_effect=Exception("smtp down")),
+            self.assertLogs("accounts.views", level="ERROR") as cm,
+        ):
             resp = self.client.post(self.url, {"subject": "S", "message": "M"})
         self.assertEqual(resp.status_code, 200)  # re-rendered, not a 500 or redirect
         self.assertEqual(len(mail.outbox), 0)
+        self.assertTrue(any("Failed to send contact-owners email" in line for line in cm.output))
 
     def test_subject_newlines_are_sanitized(self):
         self.client.force_login(make_user(username="contact_nl", role=User.Role.PARTICIPANT))
