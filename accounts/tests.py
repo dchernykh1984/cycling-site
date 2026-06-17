@@ -1081,6 +1081,19 @@ class ContactOwnersViewTests(TestCase):
         self.assertRedirects(self.client.post(self.url, {"subject": "c", "message": "d"}), reverse("account_profile"))
         self.assertEqual(len(mail.outbox), 2)
 
+    def test_overlong_message_is_rejected(self):
+        self.client.force_login(make_user(username="contact_long", role=User.Role.PARTICIPANT))
+        resp = self.client.post(self.url, {"subject": "S", "message": "x" * 5001})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("message", resp.context["form"].errors)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_long_but_allowed_message_is_sent(self):
+        self.client.force_login(make_user(username="contact_ok_long", role=User.Role.PARTICIPANT))
+        resp = self.client.post(self.url, {"subject": "S", "message": "y" * 5000})
+        self.assertRedirects(resp, reverse("account_profile"))
+        self.assertEqual(len(mail.outbox), 1)
+
     def test_email_failure_does_not_500(self):
         from unittest.mock import patch
 

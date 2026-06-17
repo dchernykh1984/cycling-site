@@ -118,11 +118,12 @@ class ContactOwnersForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     message = forms.CharField(
+        max_length=5000,  # generous for a detailed hand-typed message, but blocks huge payloads
         label=gettext_lazy("Message"),
         help_text=gettext_lazy(
             "Please tell us how to reach you (e.g. email or messenger) and describe your question or problem in detail."
         ),
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 6}),
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 6, "maxlength": 5000}),
     )
 
 
