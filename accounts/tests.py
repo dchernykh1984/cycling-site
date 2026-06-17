@@ -1151,3 +1151,36 @@ class ContactOwnersViewTests(TestCase):
         self.client.force_login(make_user(username="contact_loc", role=User.Role.PARTICIPANT))
         resp = self.client.get(self.url, headers={"accept-language": "ru"})
         self.assertContains(resp, expected)
+
+
+class OptionalEmailVerificationTests(TestCase):
+    """With ACCOUNT_EMAIL_VERIFICATION='optional' an unverified user can log in but gets a
+    minimal cabinet (data + resend) until they confirm and become participant+."""
+
+    def test_signup_logs_in_unverified_user(self):
+        self.client.post(
+            reverse("account_signup"),
+            {"email": "opt_signup@example.com", "password1": "SuperPass123!", "password2": "SuperPass123!"},
+        )
+        # optional verification logs the user in immediately (mandatory would not)
+        self.assertEqual(self.client.get(reverse("account_profile")).status_code, 200)
+
+    def test_unverified_guest_can_open_profile(self):
+        self.client.force_login(make_user(username="opt_guest", role=User.Role.GUEST))
+        self.assertEqual(self.client.get(reverse("account_profile")).status_code, 200)
+
+    def test_guest_cabinet_is_minimal(self):
+        self.client.force_login(make_user(username="opt_guest2", role=User.Role.GUEST))
+        resp = self.client.get(reverse("account_profile"))
+        self.assertContains(resp, reverse("account_resend_confirmation"))  # resend block shown
+        self.assertNotContains(resp, reverse("account_api_token_regenerate"))  # API section hidden
+        self.assertNotContains(resp, reverse("knowledge_submit"))  # submissions section hidden
+
+    def test_verified_participant_sees_full_cabinet(self):
+        user = make_user(username="opt_part", role=User.Role.PARTICIPANT)
+        EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+        self.client.force_login(user)
+        resp = self.client.get(reverse("account_profile"))
+        self.assertContains(resp, reverse("account_api_token_regenerate"))
+        self.assertContains(resp, reverse("knowledge_submit"))
+        self.assertNotContains(resp, reverse("account_resend_confirmation"))  # verified -> no resend

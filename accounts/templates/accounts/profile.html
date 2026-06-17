@@ -111,6 +111,9 @@
         </script>
         {% endif %}
 
+        {# Unverified users (GUEST) get a minimal cabinet: profile data + the resend block #}
+        {# above. Everything below requires a confirmed account (participant+). #}
+        {% if user.get_role_rank >= 1 %}
         <div class="card mb-4">
             <div class="card-header">{% trans "Appearance" %}</div>
             <div class="card-body d-flex align-items-center gap-3">
@@ -218,7 +221,6 @@
         <p class="text-muted small">{% trans "No submissions yet." %}</p>
         {% endif %}
 
-        {% if user.get_role_rank >= 1 %}
         <div class="card mb-4">
             <div class="card-header">{% trans "API access" %}</div>
             <div class="card-body">
