@@ -174,13 +174,11 @@
         {% endif %}
 
         <h2 class="h5 mb-3 mt-2">{% trans "My submissions" %}</h2>
-        {% if user.get_role_rank >= 1 %}
         <div class="mb-3">
             <a href="{% url 'knowledge_submit' %}" class="btn btn-sm btn-outline-primary">
                 + {% trans "Submit article" %}
             </a>
         </div>
-        {% endif %}
         {% if submissions %}
         <div class="table-responsive mb-3">
             <table class="table table-sm">
