@@ -54,6 +54,8 @@ class ProfileView(TemplateView):
             if remaining > 0:
                 cooldown_remaining = int(remaining)
         context["resend_cooldown_seconds"] = cooldown_remaining
+        # The contact-owners button shares the same timestamp/cooldown (issue #122).
+        context["contact_cooldown_seconds"] = cooldown_remaining
         from knowledge.models import DraftSubmission
 
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
