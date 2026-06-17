@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from ..logconfig import build_logging_config
 from .base import *
 
 DEBUG = False
@@ -54,39 +55,19 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", f"noreply@{os.environ.get('VIRTUAL_HOST', 'localhost')}")
 
-_LOG_DIR = Path(os.environ.get("LOG_DIR", "/data/logs"))
+# Write logs under BASE_DIR (=/www in prod) so they are reachable via `cr download`;
+# SFTP is jailed to /www and the old /data/logs default could not be fetched on this plan.
+_LOG_DIR = Path(os.environ.get("LOG_DIR", str(BASE_DIR / "logs")))
 _LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "{asctime} {levelname} {name} {message}",
-            "style": "{",
-        },
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
-        },
-        "file": {
-            "class": "logging.handlers.TimedRotatingFileHandler",
-            "filename": str(_LOG_DIR / "django.log"),
-            "when": "midnight",
-            "backupCount": 14,
-            "encoding": "utf-8",
-            "formatter": "verbose",
-        },
-    },
-    "root": {"handlers": ["console", "file"], "level": "WARNING"},
-    "loggers": {
-        "django": {"handlers": ["console", "file"], "level": "WARNING", "propagate": False},
-        "django.request": {"handlers": ["console", "file"], "level": "WARNING", "propagate": False},
-        "django.security": {"handlers": ["console", "file"], "level": "WARNING", "propagate": False},
-    },
-}
+LOGGING = build_logging_config(_LOG_DIR)
+
+# Email 500s to the site admins. SMTP is configured above; SERVER_EMAIL must be the
+# authenticated Gmail sender or Gmail rejects the message, so it defaults to the same
+# mailbox the site already sends from. Override recipients via the ADMINS env var
+# (comma-separated emails) and the sender via SERVER_EMAIL.
+ADMINS = [_e.strip() for _e in os.environ.get("ADMINS", DEFAULT_FROM_EMAIL).split(",") if _e.strip()]
+SERVER_EMAIL = os.environ.get("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
 
 try:
     from .local import *
