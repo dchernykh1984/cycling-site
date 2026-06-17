@@ -1152,6 +1152,52 @@ class ContactOwnersViewTests(TestCase):
         resp = self.client.get(self.url, headers={"accept-language": "ru"})
         self.assertContains(resp, expected)
 
+    def test_concurrent_posts_reserve_slot_and_send_one_email(self):
+        # The slot must be reserved (timestamp flipped) *before* the email is sent, so a
+        # second request from the same user arriving mid-send is throttled. A
+        # check-then-send-then-save flow (TOCTOU) would let both pass the stale check and
+        # fire two emails. We simulate the concurrent request from inside send_mail().
+        from unittest.mock import patch
+
+        from django.test import Client
+
+        from accounts import views as accounts_views
+
+        user = make_user(username="contact_race", role=User.Role.PARTICIPANT)
+        self.client.force_login(user)
+        concurrent = Client()
+        concurrent.force_login(user)
+
+        original_send_mail = accounts_views.send_mail
+        state = {"reentered": False}
+
+        def reentrant_send_mail(*args, **kwargs):
+            if not state["reentered"]:
+                state["reentered"] = True
+                # A concurrent POST from the same user lands while we are still "sending".
+                concurrent.post(self.url, {"subject": "race2", "message": "m2"})
+            return original_send_mail(*args, **kwargs)
+
+        with patch("accounts.views.send_mail", side_effect=reentrant_send_mail):
+            resp = self.client.post(self.url, {"subject": "race1", "message": "m1"})
+        self.assertRedirects(resp, reverse("account_profile"))
+        self.assertTrue(state["reentered"])  # the concurrent request really ran mid-send
+        self.assertEqual(len(mail.outbox), 1)  # only the first send went out
+
+    def test_send_failure_releases_slot_for_retry(self):
+        from unittest.mock import patch
+
+        user = make_user(username="contact_release", role=User.Role.PARTICIPANT)
+        self.client.force_login(user)
+        with patch("accounts.views.send_mail", side_effect=Exception("smtp down")):
+            self.client.post(self.url, {"subject": "S", "message": "M"})
+        user.refresh_from_db()
+        # The reserved slot is rolled back so a transient failure does not lock the user out.
+        self.assertIsNone(user.email_confirmation_sent_at)
+        resp = self.client.post(self.url, {"subject": "S2", "message": "M2"})
+        self.assertRedirects(resp, reverse("account_profile"))
+        self.assertEqual(len(mail.outbox), 1)
+
 
 class OptionalEmailVerificationTests(TestCase):
     """With ACCOUNT_EMAIL_VERIFICATION='optional' an unverified user can log in but gets a
