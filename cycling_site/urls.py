@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse
 from django.shortcuts import redirect
-from django.urls import URLPattern, URLResolver, include, path
+from django.urls import URLPattern, URLResolver, include, path, re_path
 from wagtail import urls as wagtail_urls
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.contrib.sitemaps.views import sitemap as wagtail_sitemap
@@ -33,6 +33,20 @@ def robots_txt(request):
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
 
+def serve_media(request, path):
+    """Serve user-uploaded media through the WSGI app.
+
+    On CodeRed Cloud /media/ requests reach the app instead of being served from disk,
+    and Django only auto-serves media under DEBUG, so production media 404s (the Wagtail
+    catch-all below turns it into a page-not-found) without this route. MEDIA_ROOT is read
+    per request so tests can override it. This routes every media hit through a worker --
+    acceptable for this low-traffic site; a web server/CDN would be preferable at scale.
+    """
+    from django.views.static import serve as django_serve
+
+    return django_serve(request, path, document_root=settings.MEDIA_ROOT)
+
+
 sitemaps = {
     "wagtail": WagtailPagesSitemap,
 }
@@ -55,14 +69,14 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("favicon.ico", favicon_redirect, name="favicon"),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", wagtail_sitemap, {"sitemaps": sitemaps}, name="sitemap"),
+    # Serve user-uploaded media in every environment (must precede the Wagtail catch-all).
+    re_path(r"^media/(?P<path>.*)$", serve_media, name="media"),
     path("", include("home.urls")),
     path("", include(wagtail_urls)),  # must be last
 ]
 
 
 if settings.DEBUG:  # pragma: no cover - dev-only static serving; tests force DEBUG=False
-    from django.conf.urls.static import static
     from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
     urlpatterns += staticfiles_urlpatterns()
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
