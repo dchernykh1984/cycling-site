@@ -121,3 +121,28 @@ class LoggingConfigTests(SimpleTestCase):
         ):
             self._log_a_request_error()
         self.assertEqual(len(mail.outbox), 0)
+
+
+class MediaServingTests(TestCase):
+    """User-uploaded media must be served by the app in production too: CodeRed forwards
+    /media/ to the app and Django only auto-serves media under DEBUG, so without an explicit
+    route the Wagtail catch-all turns every /media/ hit into a 404 (works locally, 404s in prod)."""
+
+    def test_media_file_is_served_when_not_debug(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        hero_dir = Path(tmp) / "news" / "hero"
+        hero_dir.mkdir(parents=True)
+        payload = b"\xff\xd8\xff\xe0\x00\x10JFIF fake image bytes"
+        (hero_dir / "logo.jpg").write_bytes(payload)
+        with override_settings(DEBUG=False, MEDIA_ROOT=tmp):
+            resp = self.client.get("/media/news/hero/logo.jpg")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(b"".join(resp.streaming_content), payload)
+
+    def test_missing_media_returns_404_not_500(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        with override_settings(DEBUG=False, MEDIA_ROOT=tmp):
+            resp = self.client.get("/media/news/hero/missing.jpg")
+        self.assertEqual(resp.status_code, 404)
