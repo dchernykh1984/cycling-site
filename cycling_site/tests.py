@@ -1,7 +1,14 @@
+import logging
+import shutil
+import tempfile
+from pathlib import Path
+
+from django.core import mail
 from django.http import Http404, HttpResponse
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.utils import translation
 
+from cycling_site.logconfig import build_logging_config
 from cycling_site.middleware import LocaleFallbackMiddleware
 
 
@@ -59,3 +66,58 @@ class Custom404IntegrationTests(TestCase):
         response = self.client.get("/bulbul/", HTTP_ACCEPT_LANGUAGE="kk")
         self.assertEqual(response.status_code, 404)
         self.assertTemplateUsed(response, "404.html")
+
+
+class LoggingConfigTests(SimpleTestCase):
+    def test_file_handler_writes_under_given_log_dir(self):
+        # Logs must live under BASE_DIR (=/www in prod) so they are reachable via `cr download`.
+        cfg = build_logging_config(Path("/www/logs"))
+        self.assertEqual(cfg["handlers"]["file"]["filename"], "/www/logs/django.log")
+
+    def test_request_errors_are_wired_to_admin_email_handler(self):
+        cfg = build_logging_config(Path("/www/logs"))
+        self.assertIn("mail_admins", cfg["loggers"]["django.request"]["handlers"])
+        mail_admins = cfg["handlers"]["mail_admins"]
+        self.assertEqual(mail_admins["class"], "django.utils.log.AdminEmailHandler")
+        self.assertIn("require_debug_false", mail_admins["filters"])
+
+    def _log_a_request_error(self):
+        request = RequestFactory().get("/boom")
+        logger = logging.getLogger("django.request")
+        try:
+            raise ValueError("boom")
+        except ValueError:
+            logger.error(
+                "Internal Server Error: /boom",
+                exc_info=True,
+                extra={"status_code": 500, "request": request},
+            )
+
+    def test_500_emails_admins_when_not_debug(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        cfg = build_logging_config(Path(tmp))
+        with override_settings(
+            LOGGING=cfg,
+            DEBUG=False,
+            ADMINS=["ops@example.com"],
+            SERVER_EMAIL="server@example.com",
+        ):
+            self._log_a_request_error()
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["ops@example.com"])
+        self.assertEqual(mail.outbox[0].from_email, "server@example.com")
+        self.assertIn("Internal Server Error", mail.outbox[0].subject)
+
+    def test_no_admin_email_when_debug(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        cfg = build_logging_config(Path(tmp))
+        with override_settings(
+            LOGGING=cfg,
+            DEBUG=True,
+            ADMINS=["ops@example.com"],
+            SERVER_EMAIL="server@example.com",
+        ):
+            self._log_a_request_error()
+        self.assertEqual(len(mail.outbox), 0)
