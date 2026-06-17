@@ -9,6 +9,7 @@ from django.contrib.auth.models import Group
 from django.core import mail
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.adapters import AccountAdapter, SocialAccountAdapter
 from accounts.models import User
@@ -1059,6 +1060,26 @@ class ContactOwnersViewTests(TestCase):
         self.client.force_login(make_user(username="contact_nobtn", role=User.Role.GUEST))
         resp = self.client.get(reverse("account_profile"))
         self.assertNotContains(resp, reverse("account_contact_owners"))
+
+    def test_second_message_is_rate_limited(self):
+        self.client.force_login(make_user(username="contact_rl", role=User.Role.PARTICIPANT))
+        r1 = self.client.post(self.url, {"subject": "a", "message": "b"})
+        self.assertRedirects(r1, reverse("account_profile"))
+        self.assertEqual(len(mail.outbox), 1)
+        r2 = self.client.post(self.url, {"subject": "c", "message": "d"})
+        self.assertEqual(r2.status_code, 200)  # blocked, re-rendered (not sent)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_can_send_again_after_cooldown(self):
+        user = make_user(username="contact_cd", role=User.Role.PARTICIPANT)
+        self.client.force_login(user)
+        self.assertRedirects(self.client.post(self.url, {"subject": "a", "message": "b"}), reverse("account_profile"))
+        self.assertEqual(len(mail.outbox), 1)
+        User.objects.filter(pk=user.pk).update(
+            email_confirmation_sent_at=timezone.now() - datetime.timedelta(seconds=601)
+        )
+        self.assertRedirects(self.client.post(self.url, {"subject": "c", "message": "d"}), reverse("account_profile"))
+        self.assertEqual(len(mail.outbox), 2)
 
     def test_email_failure_does_not_500(self):
         from unittest.mock import patch

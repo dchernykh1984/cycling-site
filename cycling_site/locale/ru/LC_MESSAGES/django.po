@@ -1606,3 +1606,6 @@ msgstr "Ваше сообщение отправлено владельцам с
 
 msgid "Sorry, we could not send your message right now. Please try again later."
 msgstr "Извините, сейчас не получилось отправить ваше сообщение. Пожалуйста, попробуйте позже."
+
+msgid "Please wait a few minutes before sending another message."
+msgstr "Пожалуйста, подождите несколько минут перед отправкой следующего сообщения."

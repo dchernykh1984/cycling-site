@@ -1647,3 +1647,6 @@ msgstr "Хабарламаңыз сайт иелеріне жіберілді."
 
 msgid "Sorry, we could not send your message right now. Please try again later."
 msgstr "Кешіріңіз, қазір хабарламаңызды жіберу мүмкін болмады. Кейінірек қайталап көріңіз."
+
+msgid "Please wait a few minutes before sending another message."
+msgstr "Келесі хабарламаны жіберер алдында бірнеше минут күте тұрыңыз."

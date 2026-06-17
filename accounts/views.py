@@ -150,6 +150,12 @@ class ContactOwnersView(LoginRequiredMixin, View):
         if not form.is_valid():
             return render(request, self.template_name, {"form": form})
         user = request.user
+        # Rate limit: reuse the same timestamp/cooldown as the confirmation-email resend
+        # (participant+ are already verified, so the resend flow never uses this field) (#122).
+        sent_at = user.email_confirmation_sent_at
+        if sent_at and (timezone.now() - sent_at) < timedelta(seconds=_RESEND_COOLDOWN_SECONDS):
+            messages.error(request, gettext("Please wait a few minutes before sending another message."))
+            return render(request, self.template_name, {"form": form})
         cd = form.cleaned_data
         # Collapse any whitespace/newlines in the subject so it can't inject email headers.
         subject_line = " ".join(cd["subject"].split())
@@ -181,6 +187,8 @@ class ContactOwnersView(LoginRequiredMixin, View):
             # A mail-server failure must not 500 the user; let them retry.
             messages.error(request, gettext("Sorry, we could not send your message right now. Please try again later."))
             return render(request, self.template_name, {"form": form})
+        user.email_confirmation_sent_at = timezone.now()
+        user.save(update_fields=["email_confirmation_sent_at"])
         messages.success(request, gettext("Your message has been sent to the site owners."))
         return redirect("account_profile")
 
