@@ -151,6 +151,8 @@ class ContactOwnersView(LoginRequiredMixin, View):
             return render(request, self.template_name, {"form": form})
         user = request.user
         cd = form.cleaned_data
+        # Collapse any whitespace/newlines in the subject so it can't inject email headers.
+        subject_line = " ".join(cd["subject"].split())
         body = gettext(
             "New message from a registered site user.\n\n"
             "User: %(username)s\n"
@@ -164,16 +166,21 @@ class ContactOwnersView(LoginRequiredMixin, View):
             "email": user.email,
             "role": user.get_role_display(),
             "when": timezone.now().strftime("%Y-%m-%d %H:%M %Z"),
-            "subject": cd["subject"],
+            "subject": subject_line,
             "message": cd["message"],
         }
-        send_mail(
-            subject=gettext("Site contact: %(subject)s") % {"subject": cd["subject"]},
-            message=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[settings.DEFAULT_FROM_EMAIL],
-            fail_silently=False,
-        )
+        try:
+            send_mail(
+                subject=gettext("Site contact: %(subject)s") % {"subject": subject_line},
+                message=body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[settings.DEFAULT_FROM_EMAIL],
+                fail_silently=False,
+            )
+        except Exception:
+            # A mail-server failure must not 500 the user; let them retry.
+            messages.error(request, gettext("Sorry, we could not send your message right now. Please try again later."))
+            return render(request, self.template_name, {"form": form})
         messages.success(request, gettext("Your message has been sent to the site owners."))
         return redirect("account_profile")
 

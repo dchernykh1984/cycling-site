@@ -1060,6 +1060,24 @@ class ContactOwnersViewTests(TestCase):
         resp = self.client.get(reverse("account_profile"))
         self.assertNotContains(resp, reverse("account_contact_owners"))
 
+    def test_email_failure_does_not_500(self):
+        from unittest.mock import patch
+
+        self.client.force_login(make_user(username="contact_fail", role=User.Role.PARTICIPANT))
+        with patch("accounts.views.send_mail", side_effect=Exception("smtp down")):
+            resp = self.client.post(self.url, {"subject": "S", "message": "M"})
+        self.assertEqual(resp.status_code, 200)  # re-rendered, not a 500 or redirect
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_subject_newlines_are_sanitized(self):
+        self.client.force_login(make_user(username="contact_nl", role=User.Role.PARTICIPANT))
+        resp = self.client.post(self.url, {"subject": "Line1\nLine2\rLine3", "message": "M"})
+        self.assertRedirects(resp, reverse("account_profile"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertNotIn("\n", mail.outbox[0].subject)
+        self.assertNotIn("\r", mail.outbox[0].subject)
+        self.assertIn("Line1 Line2 Line3", mail.outbox[0].subject)
+
     def test_labels_are_localized(self):
         # The page must render the Russian translation (pulled from the catalog, not the
         # English source) - confirms the .po/.mo translations are wired up.

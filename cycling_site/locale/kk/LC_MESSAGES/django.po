@@ -1644,3 +1644,6 @@ msgstr "Сұрағыңыз немесе өтінішіңіз бар ма? Сай
 
 msgid "Your message has been sent to the site owners."
 msgstr "Хабарламаңыз сайт иелеріне жіберілді."
+
+msgid "Sorry, we could not send your message right now. Please try again later."
+msgstr "Кешіріңіз, қазір хабарламаңызды жіберу мүмкін болмады. Кейінірек қайталап көріңіз."

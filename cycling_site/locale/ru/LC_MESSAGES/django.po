@@ -1603,3 +1603,6 @@ msgstr "Есть вопрос или просьба? Напишите тем, к
 
 msgid "Your message has been sent to the site owners."
 msgstr "Ваше сообщение отправлено владельцам сайта."
+
+msgid "Sorry, we could not send your message right now. Please try again later."
+msgstr "Извините, сейчас не получилось отправить ваше сообщение. Пожалуйста, попробуйте позже."
