@@ -11,6 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -155,12 +156,23 @@ class ContactOwnersView(LoginRequiredMixin, View):
         if not form.is_valid():
             return render(request, self.template_name, {"form": form})
         user = request.user
-        # Rate limit: reuse the same timestamp/cooldown as the confirmation-email resend
-        # (participant+ are already verified, so the resend flow never uses this field) (#122).
-        sent_at = user.email_confirmation_sent_at
-        if sent_at and (timezone.now() - sent_at) < timedelta(seconds=_RESEND_COOLDOWN_SECONDS):
+        now = timezone.now()
+        cutoff = now - timedelta(seconds=_RESEND_COOLDOWN_SECONDS)
+        previous_sent_at = user.email_confirmation_sent_at
+        # Atomically reserve the send slot *before* sending. A plain check-then-send-then-save
+        # is a TOCTOU race: concurrent POSTs from one participant+ would all read the stale
+        # timestamp and each fire an email. This conditional UPDATE lets only one request flip
+        # the timestamp; the losers get reserved=0 and are throttled. Reuses the same
+        # timestamp/cooldown as the confirmation-email resend (participant+ never use that flow).
+        reserved = (
+            User.objects.filter(pk=user.pk)
+            .filter(Q(email_confirmation_sent_at__isnull=True) | Q(email_confirmation_sent_at__lt=cutoff))
+            .update(email_confirmation_sent_at=now)
+        )
+        if not reserved:
             messages.error(request, gettext("Please wait a few minutes before sending another message."))
             return render(request, self.template_name, {"form": form})
+        user.email_confirmation_sent_at = now
         cd = form.cleaned_data
         # Collapse any whitespace/newlines in the subject so it can't inject email headers.
         subject_line = " ".join(cd["subject"].split())
@@ -170,7 +182,7 @@ class ContactOwnersView(LoginRequiredMixin, View):
             f"User: {user.get_username()}\n"
             f"Registered email: {user.email}\n"
             f"Role: {user.get_role_display()}\n"
-            f"Sent: {timezone.now():%Y-%m-%d %H:%M %Z}\n\n"
+            f"Sent: {now:%Y-%m-%d %H:%M %Z}\n\n"
             f"Subject: {subject_line}\n\n"
             f"Message:\n{cd['message']}\n"
         )
@@ -183,12 +195,15 @@ class ContactOwnersView(LoginRequiredMixin, View):
                 fail_silently=False,
             )
         except Exception:
-            # A mail-server failure must not 500 the user; log it so it is noticed, let them retry.
+            # A mail-server failure must not 500 the user; log it and release the slot we
+            # reserved so a transient failure does not lock them out for the whole cooldown.
             logger.exception("Failed to send contact-owners email for user %s", user.pk)
+            User.objects.filter(pk=user.pk, email_confirmation_sent_at=now).update(
+                email_confirmation_sent_at=previous_sent_at
+            )
+            user.email_confirmation_sent_at = previous_sent_at
             messages.error(request, gettext("Sorry, we could not send your message right now. Please try again later."))
             return render(request, self.template_name, {"form": form})
-        user.email_confirmation_sent_at = timezone.now()
-        user.save(update_fields=["email_confirmation_sent_at"])
         messages.success(request, gettext("Your message has been sent to the site owners."))
         return redirect("account_profile")
 
