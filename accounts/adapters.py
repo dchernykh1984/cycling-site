@@ -1,5 +1,6 @@
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.utils import timezone
 
 
 class AccountAdapter(DefaultAccountAdapter):
@@ -9,6 +10,15 @@ class AccountAdapter(DefaultAccountAdapter):
         if commit:
             user.save()
         return user
+
+    def send_confirmation_mail(self, request, emailconfirmation, signup):
+        # Stamp the shared mail-rate-limit timestamp for *every* confirmation email,
+        # including the very first one sent by allauth at signup. Otherwise a guest could
+        # hit "resend" right after registering and send a second email past the cooldown.
+        super().send_confirmation_mail(request, emailconfirmation, signup)
+        user = emailconfirmation.email_address.user
+        user.last_mail_action_at = timezone.now()
+        user.save(update_fields=["last_mail_action_at"])
 
     def confirm_email(self, request, email_address):
         super().confirm_email(request, email_address)
