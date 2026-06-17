@@ -5,16 +5,22 @@ from typing import ClassVar
 
 from allauth.account.models import EmailAddress
 from django import forms
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.core.mail import send_mail
 from django.http import JsonResponse
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_lazy
 from django.views import View
 from django.views.generic import TemplateView
 
 from accounts.models import User
 
 _RESEND_COOLDOWN_SECONDS = 600  # 10 minutes
+_PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
 
 
 class ProfileEditForm(forms.ModelForm):
@@ -102,6 +108,73 @@ class ApiTokenRegenerateView(LoginRequiredMixin, View):
             return JsonResponse({"error": "forbidden"}, status=403)
         user.api_token = uuid.uuid4()
         user.save(update_fields=["api_token"])
+        return redirect("account_profile")
+
+
+class ContactOwnersForm(forms.Form):
+    subject = forms.CharField(
+        max_length=200,
+        label=gettext_lazy("Subject"),
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    message = forms.CharField(
+        label=gettext_lazy("Message"),
+        help_text=gettext_lazy(
+            "Please tell us how to reach you (e.g. email or messenger) and describe your question or problem in detail."
+        ),
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 6}),
+    )
+
+
+class ContactOwnersView(LoginRequiredMixin, View):
+    """Registered users (participant+) can email the site owners (issue #122).
+
+    The message goes to the same mailbox that sends the registration confirmation
+    (DEFAULT_FROM_EMAIL) and includes who wrote it, when, and how they registered.
+    """
+
+    template_name = "accounts/contact_owners.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        if not request.user.is_superuser and request.user.get_role_rank() < _PARTICIPANT_RANK:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        return render(request, self.template_name, {"form": ContactOwnersForm()})
+
+    def post(self, request):
+        form = ContactOwnersForm(request.POST)
+        if not form.is_valid():
+            return render(request, self.template_name, {"form": form})
+        user = request.user
+        cd = form.cleaned_data
+        body = gettext(
+            "New message from a registered site user.\n\n"
+            "User: %(username)s\n"
+            "Registered email: %(email)s\n"
+            "Role: %(role)s\n"
+            "Sent: %(when)s\n\n"
+            "Subject: %(subject)s\n\n"
+            "Message:\n%(message)s\n"
+        ) % {
+            "username": user.get_username(),
+            "email": user.email,
+            "role": user.get_role_display(),
+            "when": timezone.now().strftime("%Y-%m-%d %H:%M %Z"),
+            "subject": cd["subject"],
+            "message": cd["message"],
+        }
+        send_mail(
+            subject=gettext("Site contact: %(subject)s") % {"subject": cd["subject"]},
+            message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.DEFAULT_FROM_EMAIL],
+            fail_silently=False,
+        )
+        messages.success(request, gettext("Your message has been sent to the site owners."))
         return redirect("account_profile")
 
 

@@ -1618,3 +1618,29 @@ msgstr "Бұл орынды қабылдамау керек пе? Оны қол�
 
 msgid "Click the map to set the venue point, or drag the marker."
 msgstr "Нүктені белгілеу үшін картаны басыңыз немесе маркерді сүйреңіз."
+
+# issue #122 - contact site owners
+
+msgid "Contact site owners"
+msgstr "Сайт иелерімен байланыс"
+
+msgid "Send a message to the people who run the site. We will reply to the contact you leave in your message."
+msgstr "Сайтты басқаратын адамдарға хабарлама жіберіңіз. Хабарламада қалдырған байланысыңызға жауап береміз."
+
+msgid "Send message"
+msgstr "Хабарлама жіберу"
+
+msgid "Subject"
+msgstr "Тақырып"
+
+msgid "Message"
+msgstr "Хабарлама"
+
+msgid "Please tell us how to reach you (e.g. email or messenger) and describe your question or problem in detail."
+msgstr "Өзіңізбен қалай байланысуға болатынын (мысалы, email немесе мессенджер) көрсетіп, сұрағыңыз бен мәселеңізді толық сипаттаңыз."
+
+msgid "Have a question or a request? Send a message to the people who run the site."
+msgstr "Сұрағыңыз немесе өтінішіңіз бар ма? Сайтты басқаратын адамдарға жазыңыз."
+
+msgid "Your message has been sent to the site owners."
+msgstr "Хабарламаңыз сайт иелеріне жіберілді."

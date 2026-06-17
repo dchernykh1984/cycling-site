@@ -1577,3 +1577,29 @@ msgstr "Отклонить эту локацию? Старты с ней буд�
 
 msgid "Click the map to set the venue point, or drag the marker."
 msgstr "Нажмите на карту, чтобы поставить точку, или перетащите маркер."
+
+# issue #122 - contact site owners
+
+msgid "Contact site owners"
+msgstr "Связь с владельцами сайта"
+
+msgid "Send a message to the people who run the site. We will reply to the contact you leave in your message."
+msgstr "Отправьте сообщение тем, кто управляет сайтом. Мы ответим на контакт, который вы укажете в сообщении."
+
+msgid "Send message"
+msgstr "Отправить сообщение"
+
+msgid "Subject"
+msgstr "Тема"
+
+msgid "Message"
+msgstr "Сообщение"
+
+msgid "Please tell us how to reach you (e.g. email or messenger) and describe your question or problem in detail."
+msgstr "Пожалуйста, укажите, как с вами связаться (например, email или мессенджер), и подробно опишите ваш вопрос или проблему."
+
+msgid "Have a question or a request? Send a message to the people who run the site."
+msgstr "Есть вопрос или просьба? Напишите тем, кто управляет сайтом."
+
+msgid "Your message has been sent to the site owners."
+msgstr "Ваше сообщение отправлено владельцам сайта."
