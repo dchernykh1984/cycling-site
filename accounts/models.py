@@ -39,7 +39,9 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     gender = models.CharField(max_length=1, choices=Gender.choices, blank=True, default="")
     api_token = models.UUIDField(null=True, blank=True, unique=True, db_index=True)
     birth_date = models.DateField(null=True, blank=True)
-    email_confirmation_sent_at = models.DateTimeField(null=True, blank=True)
+    # Timestamp of the last rate-limited outgoing mail action (confirmation email at
+    # signup/resend and the contact-owners message). Shared cooldown across all of them.
+    last_mail_action_at = models.DateTimeField(null=True, blank=True)
 
     ROLE_HIERARCHY: ClassVar[list[str]] = [
         Role.GUEST,

@@ -48,7 +48,7 @@ class ProfileView(TemplateView):
             or EmailAddress.objects.filter(user=user, verified=True).exists()
         )
         cooldown_remaining = 0
-        sent_at = self.request.user.email_confirmation_sent_at
+        sent_at = self.request.user.last_mail_action_at
         if sent_at:
             elapsed = (timezone.now() - sent_at).total_seconds()
             remaining = _RESEND_COOLDOWN_SECONDS - elapsed
@@ -92,7 +92,7 @@ class ResendEmailConfirmationView(LoginRequiredMixin, View):
         if EmailAddress.objects.filter(user=user, verified=True).exists():
             return redirect("account_profile")
 
-        sent_at = user.email_confirmation_sent_at
+        sent_at = user.last_mail_action_at
         if sent_at and (timezone.now() - sent_at) < timedelta(seconds=_RESEND_COOLDOWN_SECONDS):
             return redirect("account_profile")
 
@@ -101,8 +101,8 @@ class ResendEmailConfirmationView(LoginRequiredMixin, View):
             defaults={"email": user.email, "primary": True, "verified": False},
         )
         email_address.send_confirmation(request, signup=False)
-        user.email_confirmation_sent_at = timezone.now()
-        user.save(update_fields=["email_confirmation_sent_at"])
+        user.last_mail_action_at = timezone.now()
+        user.save(update_fields=["last_mail_action_at"])
         return redirect("account_profile")
 
 
@@ -158,7 +158,7 @@ class ContactOwnersView(LoginRequiredMixin, View):
         user = request.user
         now = timezone.now()
         cutoff = now - timedelta(seconds=_RESEND_COOLDOWN_SECONDS)
-        previous_sent_at = user.email_confirmation_sent_at
+        previous_sent_at = user.last_mail_action_at
         # Atomically reserve the send slot *before* sending. A plain check-then-send-then-save
         # is a TOCTOU race: concurrent POSTs from one participant+ would all read the stale
         # timestamp and each fire an email. This conditional UPDATE lets only one request flip
@@ -166,13 +166,13 @@ class ContactOwnersView(LoginRequiredMixin, View):
         # timestamp/cooldown as the confirmation-email resend (participant+ never use that flow).
         reserved = (
             User.objects.filter(pk=user.pk)
-            .filter(Q(email_confirmation_sent_at__isnull=True) | Q(email_confirmation_sent_at__lt=cutoff))
-            .update(email_confirmation_sent_at=now)
+            .filter(Q(last_mail_action_at__isnull=True) | Q(last_mail_action_at__lt=cutoff))
+            .update(last_mail_action_at=now)
         )
         if not reserved:
             messages.error(request, gettext("Please wait a few minutes before sending another message."))
             return render(request, self.template_name, {"form": form})
-        user.email_confirmation_sent_at = now
+        user.last_mail_action_at = now
         cd = form.cleaned_data
         # Collapse any whitespace/newlines in the subject so it can't inject email headers.
         subject_line = " ".join(cd["subject"].split())
@@ -198,10 +198,8 @@ class ContactOwnersView(LoginRequiredMixin, View):
             # A mail-server failure must not 500 the user; log it and release the slot we
             # reserved so a transient failure does not lock them out for the whole cooldown.
             logger.exception("Failed to send contact-owners email for user %s", user.pk)
-            User.objects.filter(pk=user.pk, email_confirmation_sent_at=now).update(
-                email_confirmation_sent_at=previous_sent_at
-            )
-            user.email_confirmation_sent_at = previous_sent_at
+            User.objects.filter(pk=user.pk, last_mail_action_at=now).update(last_mail_action_at=previous_sent_at)
+            user.last_mail_action_at = previous_sent_at
             messages.error(request, gettext("Sorry, we could not send your message right now. Please try again later."))
             return render(request, self.template_name, {"form": form})
         messages.success(request, gettext("Your message has been sent to the site owners."))

@@ -701,7 +701,7 @@ class ResendEmailConfirmationTests(TestCase):
         self.assertRedirects(resp, reverse("account_profile"))
         mock_send.assert_called_once()
         self.user.refresh_from_db()
-        self.assertIsNotNone(self.user.email_confirmation_sent_at)
+        self.assertIsNotNone(self.user.last_mail_action_at)
 
     def test_cooldown_prevents_immediate_resend(self):
         self.client.force_login(self.user)
@@ -1058,8 +1058,8 @@ class ContactOwnersViewTests(TestCase):
 
     def test_contact_button_disabled_with_countdown_during_cooldown(self):
         user = make_user(username="contact_cd_btn", role=User.Role.PARTICIPANT)
-        user.email_confirmation_sent_at = timezone.now()
-        user.save(update_fields=["email_confirmation_sent_at"])
+        user.last_mail_action_at = timezone.now()
+        user.save(update_fields=["last_mail_action_at"])
         self.client.force_login(user)
         resp = self.client.get(reverse("account_profile"))
         self.assertGreater(resp.context["contact_cooldown_seconds"], 0)
@@ -1090,9 +1090,7 @@ class ContactOwnersViewTests(TestCase):
         self.client.force_login(user)
         self.assertRedirects(self.client.post(self.url, {"subject": "a", "message": "b"}), reverse("account_profile"))
         self.assertEqual(len(mail.outbox), 1)
-        User.objects.filter(pk=user.pk).update(
-            email_confirmation_sent_at=timezone.now() - datetime.timedelta(seconds=601)
-        )
+        User.objects.filter(pk=user.pk).update(last_mail_action_at=timezone.now() - datetime.timedelta(seconds=601))
         self.assertRedirects(self.client.post(self.url, {"subject": "c", "message": "d"}), reverse("account_profile"))
         self.assertEqual(len(mail.outbox), 2)
 
@@ -1193,7 +1191,7 @@ class ContactOwnersViewTests(TestCase):
             self.client.post(self.url, {"subject": "S", "message": "M"})
         user.refresh_from_db()
         # The reserved slot is rolled back so a transient failure does not lock the user out.
-        self.assertIsNone(user.email_confirmation_sent_at)
+        self.assertIsNone(user.last_mail_action_at)
         resp = self.client.post(self.url, {"subject": "S2", "message": "M2"})
         self.assertRedirects(resp, reverse("account_profile"))
         self.assertEqual(len(mail.outbox), 1)
@@ -1230,3 +1228,29 @@ class OptionalEmailVerificationTests(TestCase):
         self.assertContains(resp, reverse("account_api_token_regenerate"))
         self.assertContains(resp, reverse("knowledge_submit"))
         self.assertNotContains(resp, reverse("account_resend_confirmation"))  # verified -> no resend
+
+
+class SignupConfirmationRateLimitTests(TestCase):
+    """The shared mail cooldown (last_mail_action_at) must also cover the first confirmation
+    email allauth sends at signup, otherwise a fresh guest could immediately resend a second
+    one and bypass the 10-minute limit."""
+
+    def test_signup_stamps_last_mail_action_at(self):
+        self.client.post(
+            reverse("account_signup"),
+            {"email": "stamp@example.com", "password1": "SuperPass123!", "password2": "SuperPass123!"},
+        )
+        user = User.objects.get(email="stamp@example.com")
+        self.assertEqual(len(mail.outbox), 1)  # exactly one confirmation email at signup
+        self.assertIsNotNone(user.last_mail_action_at)  # ...and the cooldown is recorded
+
+    def test_resend_right_after_signup_is_rate_limited(self):
+        self.client.post(
+            reverse("account_signup"),
+            {"email": "fresh@example.com", "password1": "SuperPass123!", "password2": "SuperPass123!"},
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        # The signup confirmation already stamped the cooldown, so an immediate resend is blocked.
+        resp = self.client.post(reverse("account_resend_confirmation"))
+        self.assertRedirects(resp, reverse("account_profile"))
+        self.assertEqual(len(mail.outbox), 1)  # no second email within the cooldown window
