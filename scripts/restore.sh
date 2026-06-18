@@ -250,6 +250,22 @@ echo "Restoring database..."
 # PGSSLMODE is read by libpq; --sslmode is not a valid pg_restore CLI flag.
 [[ "$PRODUCTION_RESTORE" == "true" ]] && export PGSSLMODE=require
 
+# Reset the target to an empty schema before restoring. pg_restore --clean only drops
+# objects that exist in the dump, so anything present in the target but absent from the
+# dump (e.g. a table dropped by a later migration) survives and blocks the restore with
+# dependency / "already exists" / "duplicate key" errors. A schema reset guarantees a
+# faithful restore into a clean target regardless of the target's prior state.
+echo "Resetting target schema (drops existing objects in 'public')..."
+PGPASSWORD="$DB_PASSWORD" psql \
+    --host="$DB_HOST" \
+    --port="$DB_PORT" \
+    --username="$DB_USER" \
+    --dbname="$DB_NAME" \
+    --no-password \
+    --quiet \
+    -v ON_ERROR_STOP=1 \
+    -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"
+
 PGPASSWORD="$DB_PASSWORD" pg_restore \
     --host="$DB_HOST" \
     --port="$DB_PORT" \
