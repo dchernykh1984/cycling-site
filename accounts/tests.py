@@ -7,6 +7,7 @@ from allauth.account.signals import email_confirmed
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core import mail
+from django.db import connection
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -1291,3 +1292,71 @@ class SignupConfirmationRateLimitTests(TestCase):
         resp = self.client.post(reverse("account_resend_confirmation"))
         self.assertRedirects(resp, reverse("account_profile"))
         self.assertEqual(len(mail.outbox), 1)  # no second email within the cooldown window
+
+
+class RepointUserForeignKeysTests(TestCase):
+    """Regression for issue #124: production had user FKs pointing at the legacy auth_user
+    table, raising IntegrityError -> 500 on image/document upload and page editing. The
+    repair SQL must move a drifted FK back to accounts_user (idempotently) and must be a
+    safe no-op when there is no auth_user table (fresh/CI database)."""
+
+    def _fk_target(self, table, column):
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                SELECT confrelid::regclass::text
+                FROM pg_constraint
+                WHERE contype = 'f' AND conrelid = %s::regclass
+                  AND conkey[1] = (
+                      SELECT attnum FROM pg_attribute
+                      WHERE attrelid = %s::regclass AND attname = %s
+                  )
+                """,
+                [table, table, column],
+            )
+            row = cur.fetchone()
+            return row[0] if row else None
+
+    def _fk_name(self, table, column):
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                SELECT conname
+                FROM pg_constraint
+                WHERE contype = 'f' AND conrelid = %s::regclass
+                  AND conkey[1] = (
+                      SELECT attnum FROM pg_attribute
+                      WHERE attrelid = %s::regclass AND attname = %s
+                  )
+                """,
+                [table, table, column],
+            )
+            return cur.fetchone()[0]
+
+    def test_repoints_drifted_fk_back_to_accounts_user(self):
+        from accounts.user_fk_repair import REPOINT_USER_FKS_SQL
+
+        table, column = "wagtailimages_image", "uploaded_by_user_id"
+        self.assertEqual(self._fk_target(table, column), "accounts_user")
+        original = self._fk_name(table, column)
+        with connection.cursor() as cur:
+            # Reproduce the production drift: a legacy auth_user table and the FK on it.
+            cur.execute("CREATE TABLE auth_user (id integer PRIMARY KEY)")
+            cur.execute(f'ALTER TABLE {table} DROP CONSTRAINT "{original}"')
+            cur.execute(
+                f"ALTER TABLE {table} ADD CONSTRAINT {table}_uploaded_by_fk_auth_user "
+                f"FOREIGN KEY ({column}) REFERENCES auth_user(id) DEFERRABLE INITIALLY DEFERRED"
+            )
+            self.assertEqual(self._fk_target(table, column), "auth_user")
+            cur.execute(REPOINT_USER_FKS_SQL)
+            cur.execute(REPOINT_USER_FKS_SQL)  # idempotent: second pass is a no-op
+        self.assertEqual(self._fk_target(table, column), "accounts_user")
+
+    def test_noop_when_auth_user_absent(self):
+        from accounts.user_fk_repair import REPOINT_USER_FKS_SQL
+
+        table, column = "wagtailimages_image", "uploaded_by_user_id"
+        self.assertEqual(self._fk_target(table, column), "accounts_user")
+        with connection.cursor() as cur:
+            cur.execute(REPOINT_USER_FKS_SQL)  # must not raise on a healthy database
+        self.assertEqual(self._fk_target(table, column), "accounts_user")
