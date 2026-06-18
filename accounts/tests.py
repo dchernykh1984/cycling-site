@@ -1360,3 +1360,40 @@ class RepointUserForeignKeysTests(TestCase):
         with connection.cursor() as cur:
             cur.execute(REPOINT_USER_FKS_SQL)  # must not raise on a healthy database
         self.assertEqual(self._fk_target(table, column), "accounts_user")
+
+
+class DropLegacyAuthUserTests(TestCase):
+    """Cleanup migration (#124): once user FKs are repointed, the legacy auth_user table
+    and its m2m tables must be dropped, idempotently, and only when present."""
+
+    def _table_exists(self, name):
+        with connection.cursor() as cur:
+            cur.execute("SELECT to_regclass(%s)", [name])
+            return cur.fetchone()[0] is not None
+
+    def test_drops_legacy_auth_user_and_its_m2m_tables(self):
+        from accounts.user_fk_repair import DROP_LEGACY_AUTH_USER_SQL
+
+        self.assertFalse(self._table_exists("auth_user"))  # fresh DB never had it
+        with connection.cursor() as cur:
+            cur.execute("CREATE TABLE auth_user (id integer PRIMARY KEY)")
+            cur.execute(
+                "CREATE TABLE auth_user_groups (id integer PRIMARY KEY, user_id integer REFERENCES auth_user(id))"
+            )
+            cur.execute(
+                "CREATE TABLE auth_user_user_permissions "
+                "(id integer PRIMARY KEY, user_id integer REFERENCES auth_user(id))"
+            )
+            self.assertTrue(self._table_exists("auth_user"))
+            cur.execute(DROP_LEGACY_AUTH_USER_SQL)
+            cur.execute(DROP_LEGACY_AUTH_USER_SQL)  # idempotent: second pass is a no-op
+        self.assertFalse(self._table_exists("auth_user"))
+        self.assertFalse(self._table_exists("auth_user_groups"))
+        self.assertFalse(self._table_exists("auth_user_user_permissions"))
+
+    def test_noop_when_auth_user_absent(self):
+        from accounts.user_fk_repair import DROP_LEGACY_AUTH_USER_SQL
+
+        with connection.cursor() as cur:
+            cur.execute(DROP_LEGACY_AUTH_USER_SQL)  # must not raise on a healthy database
+        self.assertFalse(self._table_exists("auth_user"))

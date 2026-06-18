@@ -50,3 +50,24 @@ BEGIN
     END LOOP;
 END $$;
 """
+
+
+# Cleanup: once every real FK has been repointed (REPOINT_USER_FKS_SQL), the legacy
+# auth_user table and its two self-owned m2m tables (auth_user_groups,
+# auth_user_user_permissions) are unused -- accounts.User has its own
+# accounts_user_groups / accounts_user_user_permissions. Drop them. Idempotent and a
+# no-op where auth_user never existed. Run only after the repoint migration. auth_group
+# and auth_permission are intentionally kept -- accounts.User still uses them.
+DROP_LEGACY_AUTH_USER_SQL = r"""
+DO $$
+BEGIN
+    IF to_regclass('auth_user') IS NULL THEN
+        RETURN;
+    END IF;
+
+    -- m2m tables first (they carry FKs to auth_user), then the table itself.
+    DROP TABLE IF EXISTS auth_user_groups;
+    DROP TABLE IF EXISTS auth_user_user_permissions;
+    DROP TABLE IF EXISTS auth_user;
+END $$;
+"""
