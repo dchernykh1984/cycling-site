@@ -10,6 +10,7 @@ from django.utils import translation
 
 from cycling_site.logconfig import build_logging_config
 from cycling_site.middleware import LocaleFallbackMiddleware
+from cycling_site.sanitize import plaintext_to_html, sanitize_rich_html
 
 
 class LocaleFallbackMiddlewareTests(TestCase):
@@ -146,3 +147,49 @@ class MediaServingTests(TestCase):
         with override_settings(DEBUG=False, MEDIA_ROOT=tmp):
             resp = self.client.get("/media/news/hero/missing.jpg")
         self.assertEqual(resp.status_code, 404)
+
+
+class SanitizeRichHtmlTests(SimpleTestCase):
+    def test_strips_script_keeps_formatting(self):
+        out = sanitize_rich_html("<p>Hi <strong>bold</strong></p><script>alert(1)</script>")
+        self.assertIn("<strong>bold</strong>", out)
+        self.assertNotIn("<script", out)
+
+    def test_link_opens_in_new_tab(self):
+        out = sanitize_rich_html('<a href="https://x.com">x</a>')
+        self.assertIn('href="https://x.com"', out)
+        self.assertIn('target="_blank"', out)
+        self.assertIn('rel="noopener"', out)
+
+    def test_javascript_href_dropped(self):
+        out = sanitize_rich_html('<a href="javascript:alert(1)">x</a>')
+        self.assertNotIn("javascript:", out)
+
+    def test_img_stripped_by_default(self):
+        out = sanitize_rich_html('<p>a<img src="https://x.com/i.png">b</p>')
+        self.assertNotIn("<img", out)
+
+    def test_img_kept_when_allowed_attrs_filtered(self):
+        out = sanitize_rich_html('<img src="https://x.com/i.png" alt="t" onerror="hack()">', allow_img=True)
+        self.assertIn("<img", out)
+        self.assertIn('src="https://x.com/i.png"', out)
+        self.assertIn('alt="t"', out)
+        self.assertNotIn("onerror", out)
+
+    def test_img_base64_raster_kept(self):
+        out = sanitize_rich_html('<img src="data:image/png;base64,AAAA">', allow_img=True)
+        self.assertIn("<img", out)
+
+    def test_img_svg_and_js_data_dropped(self):
+        self.assertNotIn("<img", sanitize_rich_html('<img src="data:image/svg+xml;base64,AAAA">', allow_img=True))
+        self.assertNotIn("<img", sanitize_rich_html('<img src="javascript:alert(1)">', allow_img=True))
+
+    def test_plaintext_to_html_escapes_and_linkifies(self):
+        out = plaintext_to_html("See https://almaty-marathon.kz/ru/events\n\n<b>x</b> & y")
+        self.assertIn(
+            '<a target="_blank" rel="noopener noreferrer nofollow" href="https://almaty-marathon.kz/ru/events"',
+            out,
+        )
+        self.assertIn("&lt;b&gt;", out)  # HTML escaped, not interpreted
+        self.assertIn("&amp;", out)
+        self.assertIn("<p>", out)

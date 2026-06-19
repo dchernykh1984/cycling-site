@@ -31,7 +31,8 @@
               {% if form.title_ru.errors %}<div class="text-danger small mt-1">{% for e in form.title_ru.errors %}{{ e }}{% endfor %}</div>{% endif %}
             </div>
             <div class="mb-0">
-              <label class="form-label fw-semibold" for="{{ form.description_ru.id_for_label }}">{% trans "Description" %}</label>
+              <label class="form-label fw-semibold">{% trans "Description" %}</label>
+              <div id="quill-desc-ru" class="quill-desc-box" data-target="id_description_ru" data-init="init-desc-ru"></div>
               {{ form.description_ru }}
               {% if form.description_ru.errors %}<div class="text-danger small mt-1">{% for e in form.description_ru.errors %}{{ e }}{% endfor %}</div>{% endif %}
             </div>
@@ -43,7 +44,8 @@
               {% if form.title_kk.errors %}<div class="text-danger small mt-1">{% for e in form.title_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
             </div>
             <div class="mb-0">
-              <label class="form-label fw-semibold" for="{{ form.description_kk.id_for_label }}">{% trans "Description" %}</label>
+              <label class="form-label fw-semibold">{% trans "Description" %}</label>
+              <div id="quill-desc-kk" class="quill-desc-box" data-target="id_description_kk" data-init="init-desc-kk"></div>
               {{ form.description_kk }}
               {% if form.description_kk.errors %}<div class="text-danger small mt-1">{% for e in form.description_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
             </div>
@@ -55,7 +57,8 @@
               {% if form.title_en.errors %}<div class="text-danger small mt-1">{% for e in form.title_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
             </div>
             <div class="mb-0">
-              <label class="form-label fw-semibold" for="{{ form.description_en.id_for_label }}">{% trans "Description" %}</label>
+              <label class="form-label fw-semibold">{% trans "Description" %}</label>
+              <div id="quill-desc-en" class="quill-desc-box" data-target="id_description_en" data-init="init-desc-en"></div>
               {{ form.description_en }}
               {% if form.description_en.errors %}<div class="text-danger small mt-1">{% for e in form.description_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
             </div>
@@ -193,6 +196,7 @@
 </div>
 {% endblock %}
 {% block extra_js %}{{ block.super }}
+{% include "calendar_app/_description_editor.html" %}
 <script>
 ['tab-ru','tab-kk','tab-en'].some(function(id) {
   var pane = document.getElementById(id);

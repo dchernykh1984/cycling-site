@@ -558,6 +558,48 @@ class CompetitionUpdateTest(TestCase, ApiTestMixin):
         self.assertTrue(resp.json()["is_hidden"])
 
 
+class CompetitionDescriptionSanitizeTest(TestCase, ApiTestMixin):
+    _DIRTY = (
+        "<p>Hi <strong>x</strong></p>"
+        '<a href="https://x.com">l</a>'
+        '<img src="https://x.com/i.png" alt="a">'
+        "<script>alert(1)</script>"
+    )
+
+    def setUp(self):
+        self.admin = _user("desc_adm", role=User.Role.ADMIN)
+        self.organizer = _user("desc_org", role=User.Role.ORGANIZER)
+
+    def test_create_sanitizes_description(self):
+        resp = self.post(
+            "/api/v1/competitions/",
+            {
+                "title": {"ru": "Desc Race", "kk": "", "en": ""},
+                "description": {"ru": self._DIRTY, "kk": "", "en": ""},
+                "date_start": "2026-07-01",
+            },
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 201)
+        desc = resp.json()["description"]["ru"]
+        self.assertIn("<strong>x</strong>", desc)
+        self.assertIn('href="https://x.com"', desc)
+        self.assertIn("<img", desc)  # images allowed for competition descriptions
+        self.assertNotIn("<script", desc)
+
+    def test_patch_sanitizes_description(self):
+        comp = _competition(submitted_by=self.organizer)
+        resp = self.patch(
+            f"/api/v1/competitions/{comp.pk}",
+            {"description": {"ru": self._DIRTY, "kk": "", "en": ""}},
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 200)
+        desc = resp.json()["description"]["ru"]
+        self.assertIn("<img", desc)
+        self.assertNotIn("<script", desc)
+
+
 class CompetitionDeleteTest(TestCase, ApiTestMixin):
     def setUp(self):
         self.owner = _user("owner", role=User.Role.ORGANIZER)

@@ -1,0 +1,43 @@
+{# Rich-text editor for the per-locale competition description fields.
+   Include once per page (e.g. in the extra_js block). The editor boxes themselves
+   (<div class="quill-desc-box" data-target="id_description_XX" data-init="init-desc-XX">)
+   are placed inline in the form next to the hidden description_XX inputs.
+   On submit each editor's HTML is copied into its hidden field; the server sanitizes it. #}
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>.quill-desc-box{background:#fff}.quill-desc-box .ql-container{min-height:160px;font-size:1rem}</style>
+{{ form.description_ru.value|default:""|json_script:"init-desc-ru" }}
+{{ form.description_kk.value|default:""|json_script:"init-desc-kk" }}
+{{ form.description_en.value|default:""|json_script:"init-desc-en" }}
+<script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
+<script>
+(function () {
+  if (typeof Quill === 'undefined') return;
+  var TOOLBAR = [
+    [{ 'header': [2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['blockquote', 'link', 'image'],
+    ['clean']
+  ];
+  document.querySelectorAll('.quill-desc-box').forEach(function (box) {
+    var hidden = document.getElementById(box.dataset.target);
+    var initEl = document.getElementById(box.dataset.init);
+    var quill = new Quill(box, { theme: 'snow', modules: { toolbar: TOOLBAR } });
+    if (initEl) {
+      var html = JSON.parse(initEl.textContent);
+      if (html) quill.clipboard.dangerouslyPasteHTML(html);
+    }
+    if (hidden && hidden.form) {
+      hidden.form.addEventListener('submit', function () { hidden.value = quill.root.innerHTML; });
+    }
+  });
+  // Editors initialised inside a hidden Bootstrap tab-pane need a focus call when shown.
+  document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (btn) {
+    btn.addEventListener('shown.bs.tab', function () {
+      var pane = document.querySelector(btn.dataset.bsTarget);
+      var ed = pane && pane.querySelector('.ql-editor');
+      if (ed) ed.focus();
+    });
+  });
+}());
+</script>

@@ -53,7 +53,8 @@
     {% endif %}
 
     {% if competition.description %}
-    <div class="mb-4">{{ competition.description|linebreaks }}</div>
+    {# Description is sanitized rich HTML on save (forms + API), so render as-is. #}
+    <div class="mb-4 competition-description">{{ competition.description|safe }}</div>
     {% endif %}
 
     {% if competition.url_announcement or competition.file_announcement or competition.url_registration or competition.url_route or competition.file_route or competition.url_regulations or competition.file_regulations or competition.url_results or competition.file_results %}

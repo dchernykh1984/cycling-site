@@ -28,7 +28,7 @@
           <span>{% trans "Submitted by" %}: {{ comp.submitted_by.email|default:"—" }}</span>
         </div>
         {% if comp.description %}
-        <p class="mt-2 mb-0 small">{{ comp.description|truncatechars:200 }}</p>
+        <p class="mt-2 mb-0 small">{{ comp.description|striptags|truncatechars:200 }}</p>
         {% endif %}
         <div class="mt-2 d-flex flex-wrap gap-1">
           {% if comp.url_announcement %}

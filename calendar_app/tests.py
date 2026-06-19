@@ -1603,3 +1603,60 @@ class ModerationPendingLocationsTests(TestCase):
         self.client.force_login(self.organizer)
         resp = self.client.get(reverse("calendar_moderate"))
         self.assertIsNone(resp.context.get("pending_locations"))
+
+
+class CompetitionRichDescriptionTests(TestCase):
+    def setUp(self):
+        self.organizer = _make_user("rt_org@example.com", User.Role.ORGANIZER)
+
+    def test_submit_sanitizes_description(self):
+        self.client.force_login(self.organizer)
+        html = (
+            "<p>Hi <strong>x</strong></p>"
+            '<a href="https://x.com">l</a>'
+            '<img src="https://x.com/i.png" alt="a">'
+            "<script>alert(1)</script>"
+        )
+        self.client.post(
+            reverse("calendar_submit"),
+            {"title_ru": "RT Race", "date_start": "2026-09-01", "description_ru": html},
+        )
+        comp = Competition.objects.get(title_ru="RT Race")
+        self.assertIn("<strong>x</strong>", comp.description_ru)
+        self.assertIn('href="https://x.com"', comp.description_ru)
+        self.assertIn('target="_blank"', comp.description_ru)
+        self.assertIn("<img", comp.description_ru)  # images allowed for competitions
+        self.assertNotIn("<script", comp.description_ru)
+
+    def test_detail_renders_description_as_html(self):
+        comp = _make_competition(
+            title="RT Detail",
+            description_ru='<p>see <a target="_blank" rel="noopener" href="https://x.com">link</a></p>',
+        )
+        resp = self.client.get(reverse("competition_detail", args=[comp.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, '<a target="_blank" rel="noopener" href="https://x.com">link</a>')
+
+    def test_migration_converts_plaintext_descriptions(self):
+        import importlib
+
+        from django.apps import apps as django_apps
+
+        comp = _make_competition(title="Mig", description_ru="Plain text https://x.com line")
+        mig = importlib.import_module("calendar_app.migrations.0013_descriptions_to_html")
+        mig.plaintext_to_html(django_apps, None)
+        comp.refresh_from_db()
+        self.assertIn('href="https://x.com"', comp.description_ru)
+        self.assertIn("<p>", comp.description_ru)
+
+    def test_migration_leaves_existing_html_untouched(self):
+        import importlib
+
+        from django.apps import apps as django_apps
+
+        html = '<p>already <a href="https://x.com">html</a></p>'
+        comp = _make_competition(title="Mig2", description_ru=html)
+        mig = importlib.import_module("calendar_app.migrations.0013_descriptions_to_html")
+        mig.plaintext_to_html(django_apps, None)
+        comp.refresh_from_db()
+        self.assertEqual(comp.description_ru, html)
