@@ -5,6 +5,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import User
+from cycling_site.sanitize import sanitize_rich_html
 from locations.models import Location, competition_location_block_reason
 
 from .models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
@@ -21,18 +22,11 @@ class SubmitCompetitionForm(forms.Form):
     title_ru = forms.CharField(max_length=255, widget=forms.TextInput(attrs={"class": "form-control"}))
     title_kk = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
     title_en = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
-    description_ru = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={"rows": 4, "class": "form-control"}),
-    )
-    description_kk = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={"rows": 4, "class": "form-control"}),
-    )
-    description_en = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={"rows": 4, "class": "form-control"}),
-    )
+    # Rich-text descriptions: the Quill editor (see _description_editor.html) writes HTML
+    # into these hidden fields per locale; the HTML is sanitized in clean_* below.
+    description_ru = forms.CharField(required=False, widget=forms.HiddenInput())
+    description_kk = forms.CharField(required=False, widget=forms.HiddenInput())
+    description_en = forms.CharField(required=False, widget=forms.HiddenInput())
     event_type: forms.ModelChoiceField[EventType] = forms.ModelChoiceField(
         queryset=EventType.objects.all(),
         required=False,
@@ -118,6 +112,18 @@ class SubmitCompetitionForm(forms.Form):
             allowed = ", ".join(sorted(self._ALLOWED_EXTENSIONS))
             raise forms.ValidationError(_("Unsupported file type. Allowed: %(allowed)s.") % {"allowed": allowed})
         return f
+
+    def _clean_description(self, field):
+        return sanitize_rich_html(self.cleaned_data.get(field) or "", allow_img=True)
+
+    def clean_description_ru(self):
+        return self._clean_description("description_ru")
+
+    def clean_description_kk(self):
+        return self._clean_description("description_kk")
+
+    def clean_description_en(self):
+        return self._clean_description("description_en")
 
     def clean_file_announcement(self):
         return self._validate_file(self.cleaned_data.get("file_announcement"))
