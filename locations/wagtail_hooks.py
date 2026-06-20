@@ -17,7 +17,7 @@ class LocationForm(forms.ModelForm):
 
     class Meta:
         model = Location
-        fields: ClassVar[list] = ["parent", "name_ru", "name_kk", "name_en", "lat", "lng", "knowledge_article"]
+        fields: ClassVar[list] = ["parent", "name_ru", "name_kk", "name_en", "lat", "lng"]
 
     def save(self, commit=True):
         parent = self.cleaned_data.get("parent")
@@ -29,7 +29,6 @@ class LocationForm(forms.ModelForm):
                 "name_en": instance.name_en or "",
                 "lat": instance.lat,
                 "lng": instance.lng,
-                "knowledge_article": instance.knowledge_article,
             }
             if parent:
                 return add_location_child(parent, **kwargs)
@@ -41,7 +40,7 @@ class LocationForm(forms.ModelForm):
 
 class LocationViewSet(SnippetViewSet):
     model = Location
-    list_display: ClassVar[list] = ["__str__", "depth", "lat", "lng", "knowledge_article"]
+    list_display: ClassVar[list] = ["__str__", "depth", "lat", "lng"]
     search_fields: ClassVar[list] = ["name_ru", "name_kk", "name_en"]
 
     def get_form_class(self, for_update=False):

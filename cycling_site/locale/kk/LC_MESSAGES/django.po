@@ -581,6 +581,10 @@ msgstr "Желтоқсан"
 msgid "Competitions"
 msgstr "Жарыстар"
 
+#: search/templates/search/search.html:39
+msgid "Knowledge base"
+msgstr "Білім қоры"
+
 #: calendar_app/templates/calendar_app/detail.html:27
 #: calendar_app/templates/calendar_app/list.html:147
 msgid "Dates"

@@ -161,50 +161,6 @@ class LocationsMapHiddenResolutionTests(TestCase):
         self.assertIn("KZ4", names)  # resolution skipped the hidden region up to the country
 
 
-class LocationArticlePageWithMapTests(TestCase):
-    def setUp(self):
-        from knowledge.models import KnowledgeIndexPage, LocationArticlePage
-
-        root = _get_site_root()
-        index = KnowledgeIndexPage(title="Knowledge", slug="knowledge-map-test")
-        root.add_child(instance=index)
-        self.article = LocationArticlePage(title="Almaty Loop", slug="almaty-loop-map")
-        index.add_child(instance=self.article)
-
-    def test_article_renders_without_linked_location(self):
-        response = self.client.get(self.article.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.context["linked_location"])
-        self.assertNotContains(response, "location-map")
-
-    def test_article_renders_with_linked_location_with_coords(self):
-        loc = Location.add_root(
-            name_ru="Almaty",
-            name_en="Almaty",
-            lat="43.238949",
-            lng="76.889709",
-            knowledge_article=self.article,
-        )
-        response = self.client.get(self.article.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["linked_location"].pk, loc.pk)
-        self.assertIn("linked_location_lat", response.context)
-        self.assertContains(response, "43.238949")
-        self.assertContains(response, "location-map")
-
-    def test_article_with_linked_location_no_coords_does_not_render_invalid_js(self):
-        Location.add_root(
-            name_en="Country Only",
-            name_ru="Country Only",
-            knowledge_article=self.article,
-        )
-        response = self.client.get(self.article.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertNotIn("linked_location_lat", response.context)
-        self.assertNotContains(response, "var lat = ;")
-        self.assertNotContains(response, "location-map")
-
-
 class LocationSearchTests(TestCase):
     def test_location_can_be_found_via_search_backend(self):
         from wagtail.search.backends import get_search_backend
@@ -243,7 +199,6 @@ class LocationAdminFormTests(TestCase):
                 "name_en": "Kazakhstan",
                 "lat": "",
                 "lng": "",
-                "knowledge_article": "",
             }
         )
         self.assertTrue(form.is_valid(), form.errors)
@@ -263,7 +218,6 @@ class LocationAdminFormTests(TestCase):
                 "name_en": "Almaty",
                 "lat": "43.238949",
                 "lng": "76.889709",
-                "knowledge_article": "",
             }
         )
         self.assertTrue(form.is_valid(), form.errors)

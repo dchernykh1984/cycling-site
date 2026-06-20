@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10 col-lg-8">
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ page.url }}">{{ page.title }}</a></li>
+        <li class="breadcrumb-item active">{{ article.title }}</li>
+      </ol>
+    </nav>
+
+    {% if locale_mismatch %}
+    <div class="alert alert-info py-2 mb-4" role="alert">
+      <div>{{ locale_mismatch_message }}</div>
+      <a href="{{ search_url }}" class="alert-link">{{ locale_mismatch_search_cta }}</a>
+    </div>
+    {% endif %}
+
+    <h1 class="mb-2">{{ article.title }}</h1>
+
+    <div class="d-flex flex-wrap gap-2 mb-4 text-muted small align-items-center">
+      {% if article.category %}<span class="badge bg-secondary">{{ article.category }}</span>{% endif %}
+      {% for tag in article.tags.all %}<span class="badge bg-outline-secondary border">{{ tag }}</span>{% endfor %}
+      {% if article.published_at %}<span>{{ article.published_at|date:"d.m.Y" }}</span>{% endif %}
+      {% if article.published_by %}<span>{{ article.published_by.get_full_name|default:article.published_by.email }}</span>{% endif %}
+    </div>
+
+    <div class="article-body richtext">{{ article.body|safe }}</div>
+
+    {% if article.is_hidden and can_edit %}
+    <div class="alert alert-warning py-2 mt-3">{% trans "This article is hidden from public view." %}</div>
+    {% endif %}
+
+    {% if can_edit %}
+    <div class="mt-4 pt-3 border-top d-flex flex-wrap gap-2">
+      <a href="{% url 'knowledge_article_edit' article.pk %}" class="btn btn-outline-secondary btn-sm">
+        {% trans "Edit article" %}
+      </a>
+      <form method="post" action="{% url 'knowledge_article_hide' article.pk %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-warning btn-sm">
+          {% if article.is_hidden %}{% trans "Unhide" %}{% else %}{% trans "Hide" %}{% endif %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'knowledge_article_delete' article.pk %}" class="d-inline"
+            onsubmit="return confirm('{% trans "Are you sure you want to delete this article?" %}')">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm">{% trans "Delete" %}</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
