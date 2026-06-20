@@ -11,7 +11,7 @@ from django.test import TestCase, override_settings
 
 from accounts.models import User
 from calendar_app.models import Competition, Discipline, DisciplineCategory, EventType
-from knowledge.models import DraftSubmission
+from knowledge.models import DraftSubmission, KnowledgeArticle
 from locations.models import Location
 from news.models import NewsArticle
 from registrations.models import CompetitionRegistration
@@ -1271,6 +1271,50 @@ class ProtocolExtraCoverageTest(TestCase):
 # ---------------------------------------------------------------------------
 
 
+class KnowledgeArticlePublicApiTest(TestCase, ApiTestMixin):
+    """Public knowledge GET endpoints serve the published KnowledgeArticle (sanitized, with
+    hide/delete filters), not the approved DraftSubmission."""
+
+    def setUp(self):
+        self.admin = _user("ka_adm", role=User.Role.ADMIN)
+        self.visible = KnowledgeArticle.objects.create(title="Visible KA", locale="ru", body="<p>ok</p>")
+        self.hidden = KnowledgeArticle.objects.create(title="Hidden KA", locale="ru", is_hidden=True)
+        self.deleted = KnowledgeArticle.objects.create(title="Deleted KA", locale="ru", is_deleted=True)
+
+    def test_list_returns_visible_only_for_public(self):
+        ids = [a["id"] for a in self.get("/api/v1/knowledge/").json()]
+        self.assertIn(self.visible.pk, ids)
+        self.assertNotIn(self.hidden.pk, ids)
+        self.assertNotIn(self.deleted.pk, ids)
+
+    def test_admin_sees_hidden_but_not_deleted(self):
+        ids = [a["id"] for a in self.get("/api/v1/knowledge/", user=self.admin).json()]
+        self.assertIn(self.hidden.pk, ids)
+        self.assertNotIn(self.deleted.pk, ids)
+
+    def test_detail_returns_article(self):
+        resp = self.get(f"/api/v1/knowledge/{self.visible.pk}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["title"], "Visible KA")
+
+    def test_hidden_detail_404_public_but_200_admin(self):
+        self.assertEqual(self.get(f"/api/v1/knowledge/{self.hidden.pk}").status_code, 404)
+        self.assertEqual(self.get(f"/api/v1/knowledge/{self.hidden.pk}", user=self.admin).status_code, 200)
+
+    def test_deleted_detail_404_even_for_admin(self):
+        self.assertEqual(self.get(f"/api/v1/knowledge/{self.deleted.pk}", user=self.admin).status_code, 404)
+
+    def test_body_is_sanitized_in_api(self):
+        art = KnowledgeArticle.objects.create(title="Dirty KA", locale="ru", body="<p>ok</p><script>alert(1)</script>")
+        self.assertNotIn("<script", self.get(f"/api/v1/knowledge/{art.pk}").json()["body"])
+
+    def test_hide_and_delete_reflected_in_api(self):
+        self.assertEqual(self.get(f"/api/v1/knowledge/{self.visible.pk}").status_code, 200)
+        self.visible.is_hidden = True
+        self.visible.save(update_fields=["is_hidden"])
+        self.assertEqual(self.get(f"/api/v1/knowledge/{self.visible.pk}").status_code, 404)
+
+
 class KnowledgeArticleDraftTest(TestCase, ApiTestMixin):
     def setUp(self):
         self.author = _user("k_author", role=User.Role.PARTICIPANT)
@@ -1282,14 +1326,14 @@ class KnowledgeArticleDraftTest(TestCase, ApiTestMixin):
         return defaults
 
     def test_create_knowledge_draft(self):
-        resp = self.post("/api/v1/knowledge/", self._payload(), user=self.author)
+        resp = self.post("/api/v1/knowledge/drafts/", self._payload(), user=self.author)
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["submission_type"], DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
 
     def test_create_rejects_oversized_body(self):
         from knowledge.models import MAX_BODY_LENGTH
 
-        resp = self.post("/api/v1/knowledge/", self._payload(body="a" * (MAX_BODY_LENGTH + 1)), user=self.author)
+        resp = self.post("/api/v1/knowledge/drafts/", self._payload(body="a" * (MAX_BODY_LENGTH + 1)), user=self.author)
         self.assertEqual(resp.status_code, 422)
         self.assertEqual(DraftSubmission.objects.count(), 0)
 
@@ -1302,13 +1346,13 @@ class KnowledgeArticleDraftTest(TestCase, ApiTestMixin):
 
     def test_news_draft_not_visible_via_knowledge_endpoint(self):
         ndraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.NEWS)
-        resp = self.get("/api/v1/knowledge/?status=pending", user=self.author)
+        resp = self.get("/api/v1/knowledge/drafts/?status=pending", user=self.author)
         ids = [d["id"] for d in resp.json()]
         self.assertNotIn(ndraft.pk, ids)
 
     def test_other_user_cannot_access_knowledge_draft(self):
         kdraft = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-        resp = self.get(f"/api/v1/knowledge/{kdraft.pk}", user=self.other)
+        resp = self.get(f"/api/v1/knowledge/drafts/{kdraft.pk}", user=self.other)
         self.assertEqual(resp.status_code, 403)
 
 
@@ -1992,7 +2036,7 @@ class KnowledgeLocaleCRUDTest(TestCase, ApiTestMixin):
     def _create(self, user=None, **overrides):
         payload = {"title": "Knowledge Title", "body": "Body text", "locale": "ru", "category": ""}
         payload.update(overrides)
-        resp = self.post("/api/v1/knowledge/", payload, user=user or self.admin)
+        resp = self.post("/api/v1/knowledge/drafts/", payload, user=user or self.admin)
         self.assertEqual(resp.status_code, 201)
         return resp.json()
 
@@ -2009,38 +2053,38 @@ class KnowledgeLocaleCRUDTest(TestCase, ApiTestMixin):
 
     def test_approved_draft_visible_to_anonymous(self):
         data = self._create()
-        resp = self.get(f"/api/v1/knowledge/{data['id']}")
+        resp = self.get(f"/api/v1/knowledge/drafts/{data['id']}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["title"], "Knowledge Title")
 
     def test_pending_draft_visible_to_author(self):
         data = self._create(user=self.author)
-        resp = self.get(f"/api/v1/knowledge/{data['id']}", user=self.author)
+        resp = self.get(f"/api/v1/knowledge/drafts/{data['id']}", user=self.author)
         self.assertEqual(resp.status_code, 200)
 
     def test_approved_drafts_appear_in_list(self):
         data = self._create()
-        ids = [d["id"] for d in self.get("/api/v1/knowledge/").json()]
+        ids = [d["id"] for d in self.get("/api/v1/knowledge/drafts/").json()]
         self.assertIn(data["id"], ids)
 
     def test_patch_updates_title(self):
         data = self._create(user=self.author)
         pk = data["id"]
-        self.patch(f"/api/v1/knowledge/{pk}", {"title": "Updated"}, user=self.author)
-        resp = self.get(f"/api/v1/knowledge/{pk}", user=self.author)
+        self.patch(f"/api/v1/knowledge/drafts/{pk}", {"title": "Updated"}, user=self.author)
+        resp = self.get(f"/api/v1/knowledge/drafts/{pk}", user=self.author)
         self.assertEqual(resp.json()["title"], "Updated")
 
     def test_patch_updates_locale(self):
         data = self._create(user=self.author)
         pk = data["id"]
-        self.patch(f"/api/v1/knowledge/{pk}", {"locale": "kk"}, user=self.author)
-        self.assertEqual(self.get(f"/api/v1/knowledge/{pk}", user=self.author).json()["locale"], "kk")
+        self.patch(f"/api/v1/knowledge/drafts/{pk}", {"locale": "kk"}, user=self.author)
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{pk}", user=self.author).json()["locale"], "kk")
 
     def test_delete_removes_draft(self):
         data = self._create(user=self.author)
         pk = data["id"]
-        self.delete(f"/api/v1/knowledge/{pk}", user=self.author)
-        self.assertEqual(self.get(f"/api/v1/knowledge/{pk}", user=self.author).status_code, 404)
+        self.delete(f"/api/v1/knowledge/drafts/{pk}", user=self.author)
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{pk}", user=self.author).status_code, 404)
 
     def test_web_form_creates_draft_visible_via_api(self):
         participant = _user("kl_wf_par", role=User.Role.PARTICIPANT)
@@ -2051,7 +2095,7 @@ class KnowledgeLocaleCRUDTest(TestCase, ApiTestMixin):
         )
         draft = DraftSubmission.objects.filter(title="Web Draft", author=participant).first()
         self.assertIsNotNone(draft, "Draft not created via web form")
-        resp = self.get(f"/api/v1/knowledge/{draft.pk}", user=participant)
+        resp = self.get(f"/api/v1/knowledge/drafts/{draft.pk}", user=participant)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["title"], "Web Draft")
 
@@ -2083,121 +2127,151 @@ class KnowledgeAccessTest(TestCase, ApiTestMixin):
     # --- GET list ---
 
     def test_list_anonymous_sees_approved(self):
-        resp = self.get("/api/v1/knowledge/")
+        resp = self.get("/api/v1/knowledge/drafts/")
         self.assertEqual(resp.status_code, 200)
         ids = [d["id"] for d in resp.json()]
         self.assertIn(self.approved_draft.pk, ids)
 
     def test_list_anonymous_no_pending(self):
-        ids = [d["id"] for d in self.get("/api/v1/knowledge/").json()]
+        ids = [d["id"] for d in self.get("/api/v1/knowledge/drafts/").json()]
         self.assertNotIn(self.pending_draft.pk, ids)
 
     def test_list_pending_anonymous_returns_401(self):
-        self.assertEqual(self.get("/api/v1/knowledge/?status=pending").status_code, 401)
+        self.assertEqual(self.get("/api/v1/knowledge/drafts/?status=pending").status_code, 401)
 
     def test_list_pending_non_admin_sees_only_own(self):
-        resp = self.get("/api/v1/knowledge/?status=pending", user=self.author)
+        resp = self.get("/api/v1/knowledge/drafts/?status=pending", user=self.author)
         ids = [d["id"] for d in resp.json()]
         self.assertIn(self.pending_draft.pk, ids)
 
     def test_list_pending_non_admin_does_not_see_others(self):
-        resp = self.get("/api/v1/knowledge/?status=pending", user=self.other)
+        resp = self.get("/api/v1/knowledge/drafts/?status=pending", user=self.other)
         ids = [d["id"] for d in resp.json()]
         self.assertNotIn(self.pending_draft.pk, ids)
 
     def test_list_pending_admin_sees_all(self):
-        resp = self.get("/api/v1/knowledge/?status=pending", user=self.admin)
+        resp = self.get("/api/v1/knowledge/drafts/?status=pending", user=self.admin)
         ids = [d["id"] for d in resp.json()]
         self.assertIn(self.pending_draft.pk, ids)
 
     # --- GET detail ---
 
     def test_detail_anonymous_200_for_approved(self):
-        self.assertEqual(self.get(f"/api/v1/knowledge/{self.approved_draft.pk}").status_code, 200)
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{self.approved_draft.pk}").status_code, 200)
 
     def test_detail_anonymous_404_for_pending(self):
-        self.assertEqual(self.get(f"/api/v1/knowledge/{self.pending_draft.pk}").status_code, 404)
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{self.pending_draft.pk}").status_code, 404)
 
     def test_detail_author_200_for_own_pending(self):
-        self.assertEqual(self.get(f"/api/v1/knowledge/{self.pending_draft.pk}", user=self.author).status_code, 200)
+        self.assertEqual(
+            self.get(f"/api/v1/knowledge/drafts/{self.pending_draft.pk}", user=self.author).status_code, 200
+        )
 
     def test_detail_other_participant_403_for_pending(self):
-        self.assertEqual(self.get(f"/api/v1/knowledge/{self.pending_draft.pk}", user=self.other).status_code, 403)
+        self.assertEqual(
+            self.get(f"/api/v1/knowledge/drafts/{self.pending_draft.pk}", user=self.other).status_code, 403
+        )
 
     def test_detail_admin_200_for_pending(self):
-        self.assertEqual(self.get(f"/api/v1/knowledge/{self.pending_draft.pk}", user=self.admin).status_code, 200)
+        self.assertEqual(
+            self.get(f"/api/v1/knowledge/drafts/{self.pending_draft.pk}", user=self.admin).status_code, 200
+        )
 
     # --- POST create ---
 
     def test_create_anonymous_returns_401(self):
-        self.assertEqual(self.post("/api/v1/knowledge/", self._payload()).status_code, 401)
+        self.assertEqual(self.post("/api/v1/knowledge/drafts/", self._payload()).status_code, 401)
 
     def test_create_guest_returns_403(self):
-        self.assertEqual(self.post("/api/v1/knowledge/", self._payload(), user=self.guest).status_code, 403)
+        self.assertEqual(self.post("/api/v1/knowledge/drafts/", self._payload(), user=self.guest).status_code, 403)
 
     def test_create_participant_returns_201_pending(self):
-        resp = self.post("/api/v1/knowledge/", self._payload(), user=self.author)
+        resp = self.post("/api/v1/knowledge/drafts/", self._payload(), user=self.author)
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["status"], DraftSubmission.Status.PENDING)
 
     def test_create_admin_returns_201_approved(self):
-        resp = self.post("/api/v1/knowledge/", self._payload(), user=self.admin)
+        resp = self.post("/api/v1/knowledge/drafts/", self._payload(), user=self.admin)
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["status"], DraftSubmission.Status.APPROVED)
 
     # --- PATCH update ---
 
     def test_update_anonymous_returns_401(self):
-        self.assertEqual(self.patch(f"/api/v1/knowledge/{self.pending_draft.pk}", {"title": "X"}).status_code, 401)
+        self.assertEqual(
+            self.patch(f"/api/v1/knowledge/drafts/{self.pending_draft.pk}", {"title": "X"}).status_code, 401
+        )
 
     def test_update_guest_not_owner_returns_403(self):
         self.assertEqual(
-            self.patch(f"/api/v1/knowledge/{self.pending_draft.pk}", {"title": "X"}, user=self.guest).status_code, 403
+            self.patch(
+                f"/api/v1/knowledge/drafts/{self.pending_draft.pk}", {"title": "X"}, user=self.guest
+            ).status_code,
+            403,
         )
 
     def test_update_author_returns_200(self):
         self.assertEqual(
-            self.patch(f"/api/v1/knowledge/{self.pending_draft.pk}", {"title": "X"}, user=self.author).status_code, 200
+            self.patch(
+                f"/api/v1/knowledge/drafts/{self.pending_draft.pk}", {"title": "X"}, user=self.author
+            ).status_code,
+            200,
         )
 
     def test_update_other_participant_returns_403(self):
         self.assertEqual(
-            self.patch(f"/api/v1/knowledge/{self.pending_draft.pk}", {"title": "X"}, user=self.other).status_code, 403
+            self.patch(
+                f"/api/v1/knowledge/drafts/{self.pending_draft.pk}", {"title": "X"}, user=self.other
+            ).status_code,
+            403,
         )
 
     def test_update_admin_not_owner_returns_200(self):
         self.assertEqual(
-            self.patch(f"/api/v1/knowledge/{self.pending_draft.pk}", {"title": "X"}, user=self.admin).status_code, 200
+            self.patch(
+                f"/api/v1/knowledge/drafts/{self.pending_draft.pk}", {"title": "X"}, user=self.admin
+            ).status_code,
+            200,
         )
 
     def test_update_approved_draft_returns_409(self):
         self.assertEqual(
-            self.patch(f"/api/v1/knowledge/{self.approved_draft.pk}", {"title": "X"}, user=self.author).status_code, 409
+            self.patch(
+                f"/api/v1/knowledge/drafts/{self.approved_draft.pk}", {"title": "X"}, user=self.author
+            ).status_code,
+            409,
         )
 
     def test_update_approved_draft_by_admin_returns_409(self):
         self.assertEqual(
-            self.patch(f"/api/v1/knowledge/{self.approved_draft.pk}", {"title": "X"}, user=self.admin).status_code, 409
+            self.patch(
+                f"/api/v1/knowledge/drafts/{self.approved_draft.pk}", {"title": "X"}, user=self.admin
+            ).status_code,
+            409,
         )
 
     # --- DELETE ---
 
     def test_delete_anonymous_returns_401(self):
-        self.assertEqual(self.delete(f"/api/v1/knowledge/{self.pending_draft.pk}").status_code, 401)
+        self.assertEqual(self.delete(f"/api/v1/knowledge/drafts/{self.pending_draft.pk}").status_code, 401)
 
     def test_delete_author_returns_204(self):
         d = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-        self.assertEqual(self.delete(f"/api/v1/knowledge/{d.pk}", user=self.author).status_code, 204)
+        self.assertEqual(self.delete(f"/api/v1/knowledge/drafts/{d.pk}", user=self.author).status_code, 204)
 
     def test_delete_other_participant_returns_403(self):
-        self.assertEqual(self.delete(f"/api/v1/knowledge/{self.pending_draft.pk}", user=self.other).status_code, 403)
+        self.assertEqual(
+            self.delete(f"/api/v1/knowledge/drafts/{self.pending_draft.pk}", user=self.other).status_code, 403
+        )
 
     def test_delete_admin_not_owner_returns_204(self):
         d = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-        self.assertEqual(self.delete(f"/api/v1/knowledge/{d.pk}", user=self.admin).status_code, 204)
+        self.assertEqual(self.delete(f"/api/v1/knowledge/drafts/{d.pk}", user=self.admin).status_code, 204)
 
     def test_delete_approved_draft_returns_409(self):
-        self.assertEqual(self.delete(f"/api/v1/knowledge/{self.approved_draft.pk}", user=self.admin).status_code, 409)
+        self.assertEqual(
+            self.delete(f"/api/v1/knowledge/drafts/{self.approved_draft.pk}", user=self.admin).status_code, 409
+        )
 
 
 # ===========================================================================
