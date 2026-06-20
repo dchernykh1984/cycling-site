@@ -15,7 +15,25 @@ stylesheet link, breaking the editor.
 {% endcomment %}
 {% load static %}
 <link href="{% static 'calendar_app/vendor/quill/quill.snow.css' %}" rel="stylesheet">
-<style>.quill-desc-box{background:#fff}.quill-desc-box .ql-container{min-height:160px;font-size:1rem}</style>
+<style>
+.quill-desc-box{background:#fff}
+.quill-desc-box .ql-container{min-height:160px;font-size:1rem}
+/* Quill Snow hardcodes English heading-picker labels; localize them by the UI language
+   on <html lang>. en keeps the upstream English labels. We only ship the header values
+   used by the toolbar ([2, 3, false] -> Normal / Heading 2 / Heading 3). */
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label::before,
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item::before{content:"Обычный"}
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before{content:"Заголовок 2"}
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before{content:"Заголовок 3"}
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label::before,
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item::before{content:"Қалыпты"}
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before{content:"Тақырып 2"}
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before{content:"Тақырып 3"}
+</style>
 {{ form.description_ru.value|default:""|json_script:"init-desc-ru" }}
 {{ form.description_kk.value|default:""|json_script:"init-desc-kk" }}
 {{ form.description_en.value|default:""|json_script:"init-desc-en" }}

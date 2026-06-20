@@ -13,7 +13,15 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import inject_session, switch_locale
+
+
+def _header_label_text(page: Page) -> str:
+    # ::before carries the (localized) heading-picker label; quoted by getComputedStyle.
+    return page.locator(".ql-picker.ql-header .ql-picker-label").first.evaluate(
+        "el => getComputedStyle(el, '::before').content"
+    )
+
 
 # Reading ``cssRules`` only succeeds for a same-origin stylesheet that actually
 # loaded and parsed; if the snow ``<link>`` was removed/never applied this is null.
@@ -116,6 +124,22 @@ def test_submit_strips_script_from_editor_html(page: Page, live_server, organize
     comp = Competition.objects.get(title_ru="XSS Race")
     assert "safe text" in comp.description_ru
     assert "<script" not in comp.description_ru.lower()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_heading_picker_labels_are_localized(page: Page, live_server, organizer):
+    # Asserted structurally (no Cyrillic literals in .py): en keeps Quill's upstream
+    # "Normal"; ru and kk are each localized to a distinct non-English label.
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/calendar/submit/")
+    ru = _header_label_text(page)  # default UI locale is ru (autouse cookie fixture)
+    switch_locale(page, "en")
+    en = _header_label_text(page)
+    switch_locale(page, "kk")
+    kk = _header_label_text(page)
+    assert "Normal" in en
+    assert "Normal" not in ru and "Normal" not in kk
+    assert ru != kk
 
 
 @pytest.mark.django_db(transaction=True)
