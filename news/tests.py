@@ -478,3 +478,29 @@ class NewsRichTextLimitTests(TestCase):
         )
         self.assertFalse(form.is_valid())
         self.assertIn("body_ru", form.errors)
+
+    def test_article_form_view_renders_oversized_body_error(self):
+        # The hidden body field's error must be shown in the template, not silently swallowed.
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
+
+        admin = User.objects.create_user(
+            username="ned@example.com", email="ned@example.com", password="password123", role=User.Role.ADMIN
+        )
+        self.client.force_login(admin)
+        response = self.client.post(
+            reverse("news_article_create"),
+            {
+                "title_ru": "T",
+                "title_kk": "",
+                "title_en": "",
+                "intro_ru": "",
+                "intro_kk": "",
+                "intro_en": "",
+                "body_ru": "a" * (MAX_RICH_TEXT_LENGTH + 1),
+                "body_kk": "",
+                "body_en": "",
+                "published_at": "2026-01-01T00:00",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "too large")

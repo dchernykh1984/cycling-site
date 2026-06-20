@@ -58,6 +58,7 @@
             <label class="form-label fw-semibold">{% trans "Body (RU)" %}</label>
             <div id="quill-ru" class="quill-editor" data-target="id_body_ru" data-init="init-body-ru"></div>
             {{ form.body_ru }}
+            {% if form.body_ru.errors %}<div class="text-danger small mt-1">{% for e in form.body_ru.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
         </div>
 
@@ -79,6 +80,7 @@
             <label class="form-label fw-semibold">{% trans "Body (KK)" %}</label>
             <div id="quill-kk" class="quill-editor" data-target="id_body_kk" data-init="init-body-kk"></div>
             {{ form.body_kk }}
+            {% if form.body_kk.errors %}<div class="text-danger small mt-1">{% for e in form.body_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
         </div>
 
@@ -100,6 +102,7 @@
             <label class="form-label fw-semibold">{% trans "Body (EN)" %}</label>
             <div id="quill-en" class="quill-editor" data-target="id_body_en" data-init="init-body-en"></div>
             {{ form.body_en }}
+            {% if form.body_en.errors %}<div class="text-danger small mt-1">{% for e in form.body_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
         </div>
 

@@ -368,6 +368,7 @@ class HomeEditViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)  # re-render with errors, not a redirect
         self.assertFalse(SiteContent.objects.get(pk=1).body_ru)
+        self.assertContains(response, "too large")  # the body error is rendered next to the editor
 
 
 class HomePageContextTests(WagtailPageTestCase):
