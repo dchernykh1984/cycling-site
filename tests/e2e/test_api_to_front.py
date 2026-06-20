@@ -109,7 +109,7 @@ def test_competition_created_via_api_appears_on_front(page: Page, live_server, a
 def test_knowledge_article_created_via_api_appears_on_front(page: Page, live_server, api_admin, knowledge_index):
     resp = _api_post(
         page,
-        f"{live_server.url}/api/v1/knowledge/",
+        f"{live_server.url}/api/v1/knowledge/drafts/",
         api_admin.api_token,
         {
             "title": "E2E API Knowledge RU",

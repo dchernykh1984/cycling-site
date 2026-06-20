@@ -1,7 +1,7 @@
 """
-News GET endpoints serve NewsArticle (officially published articles).
-POST/PATCH/DELETE operate on DraftSubmission (community submission workflow).
-Knowledge GET/write endpoints use DraftSubmission throughout.
+Public GET endpoints serve the published models (NewsArticle, KnowledgeArticle) with their
+sanitized bodies and hide/delete filters. The DraftSubmission community-submission workflow
+lives under explicitly moderation paths (POST /news/, GET/POST/... /knowledge/drafts/).
 """
 
 from datetime import datetime
@@ -12,7 +12,7 @@ from ninja.errors import HttpError
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
-from knowledge.models import DraftSubmission
+from knowledge.models import DraftSubmission, KnowledgeArticle
 from news.models import NewsArticle
 
 auth = ApiTokenAuth()
@@ -245,10 +245,34 @@ def delete_news_draft(request, pk: int):
     return Status(204, None)
 
 
-# -- Knowledge article endpoints ----------------------------------------------
+# -- Knowledge: public read serves the published KnowledgeArticle -------------
 
 
-@knowledge_router.get("/", response=list[DraftOut], auth=optional_auth, summary="List knowledge article drafts")
+class KnowledgeArticleOut(Schema):
+    id: int
+    title: str
+    slug: str
+    locale: str
+    category: str
+    body: str  # already-sanitized HTML
+    published_at: datetime
+    is_hidden: bool
+    published_by_id: int | None
+
+
+@knowledge_router.get("/", response=list[KnowledgeArticleOut], auth=optional_auth, summary="List knowledge articles")
+def list_knowledge_articles(request):
+    user = request.auth
+    qs = KnowledgeArticle.objects.filter(is_deleted=False)
+    if not is_admin(user):
+        qs = qs.filter(is_hidden=False)
+    return list(qs)
+
+
+# -- Knowledge: draft submission workflow (separate moderation contract) -------
+
+
+@knowledge_router.get("/drafts/", response=list[DraftOut], auth=optional_auth, summary="List knowledge article drafts")
 def list_knowledge_drafts(request, status: DraftSubmission.Status = DraftSubmission.Status.APPROVED):
     user = request.auth
     if not getattr(user, "is_authenticated", False) and status != DraftSubmission.Status.APPROVED:
@@ -260,7 +284,7 @@ def list_knowledge_drafts(request, status: DraftSubmission.Status = DraftSubmiss
     return list(qs)
 
 
-@knowledge_router.get("/{draft_id}", response=DraftOut, auth=optional_auth, summary="Get knowledge article draft")
+@knowledge_router.get("/drafts/{draft_id}", response=DraftOut, auth=optional_auth, summary="Get knowledge draft")
 def get_knowledge_draft(request, draft_id: int):
     user = request.auth
     draft = _get_draft_or_404(draft_id, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
@@ -271,18 +295,34 @@ def get_knowledge_draft(request, draft_id: int):
     return draft
 
 
-@knowledge_router.post("/", response={201: DraftOut}, auth=auth, summary="Create knowledge article draft")
+@knowledge_router.post("/drafts/", response={201: DraftOut}, auth=auth, summary="Create knowledge article draft")
 def create_knowledge_draft(request, payload: DraftIn):
     draft = _create_draft(request, payload, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
     return Status(201, draft)
 
 
-@knowledge_router.patch("/{draft_id}", response=DraftOut, auth=auth, summary="Update knowledge article draft")
+@knowledge_router.patch("/drafts/{draft_id}", response=DraftOut, auth=auth, summary="Update knowledge article draft")
 def update_knowledge_draft(request, draft_id: int, payload: DraftPatchIn):
     return _update_draft(request, draft_id, payload, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
 
 
-@knowledge_router.delete("/{draft_id}", response={204: None}, auth=auth, summary="Delete knowledge article draft")
+@knowledge_router.delete(
+    "/drafts/{draft_id}", response={204: None}, auth=auth, summary="Delete knowledge article draft"
+)
 def delete_knowledge_draft(request, draft_id: int):
     _delete_draft(request, draft_id, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
     return Status(204, None)
+
+
+@knowledge_router.get(
+    "/{article_id}", response=KnowledgeArticleOut, auth=optional_auth, summary="Get knowledge article"
+)
+def get_knowledge_article(request, article_id: int):
+    user = request.auth
+    try:
+        article = KnowledgeArticle.objects.get(pk=article_id, is_deleted=False)
+    except KnowledgeArticle.DoesNotExist:
+        raise HttpError(404, "Not found") from None
+    if article.is_hidden and not is_admin(user):
+        raise HttpError(404, "Not found")
+    return article
