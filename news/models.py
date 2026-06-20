@@ -19,6 +19,7 @@ from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.page_mixins import AsciiSlugMixin
+from cycling_site.sanitize import sanitize_rich_html
 
 
 class NewsPageTag(TaggedItemBase):
@@ -160,7 +161,7 @@ class Comment(models.Model):
         return f"Comment by {self.author} on {self.page}"
 
 
-class NewsArticle(models.Model):  # type: ignore[django-manager-missing]
+class NewsArticle(index.Indexed, models.Model):  # type: ignore[django-manager-missing]
     """Frontend-managed news article with per-locale title/intro/body fields.
 
     Modeltranslation adds title_ru/kk/en, intro_ru/kk/en, body_ru/kk/en.
@@ -183,6 +184,22 @@ class NewsArticle(models.Model):  # type: ignore[django-manager-missing]
     is_hidden = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
 
+    # Per-locale rich-text body columns, sanitized on every write. Accessed via __dict__ in
+    # save() so we never go through modeltranslation's canonical `body` descriptor (whose
+    # getter returns another language's fallback for an empty translation).
+    _BODY_FIELDS: ClassVar[tuple] = ("body", "body_ru", "body_kk", "body_en")
+
+    search_fields: ClassVar[list] = [
+        index.SearchField("title_ru"),
+        index.SearchField("title_kk"),
+        index.SearchField("title_en"),
+        index.SearchField("body_ru"),
+        index.SearchField("body_kk"),
+        index.SearchField("body_en"),
+        index.FilterField("is_hidden"),
+        index.FilterField("is_deleted"),
+    ]
+
     class Meta:
         ordering: ClassVar[list] = ["-published_at"]
         verbose_name = "News article"
@@ -192,6 +209,14 @@ class NewsArticle(models.Model):  # type: ignore[django-manager-missing]
         return self.title or ""
 
     def save(self, *args, **kwargs) -> None:
+        # Bodies are rendered with |safe, so sanitize on every write (single choke point for
+        # the manager form and Django admin). See _BODY_FIELDS for the __dict__ rationale.
+        update_fields = kwargs.get("update_fields")
+        if update_fields is None or any(f in update_fields for f in self._BODY_FIELDS):
+            for field in self._BODY_FIELDS:
+                value = self.__dict__.get(field)
+                if value:
+                    self.__dict__[field] = sanitize_rich_html(value, allow_img=True)
         if not self.slug:
             # Prefer Russian title for the slug (stable across locale switches).
             base = slugify(getattr(self, "title_ru", None) or self.title or "article")
