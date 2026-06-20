@@ -1,7 +1,8 @@
 """
 Public GET endpoints serve the published models (NewsArticle, KnowledgeArticle) with their
-sanitized bodies and hide/delete filters. The DraftSubmission community-submission workflow
-lives under explicitly moderation paths (POST /news/, GET/POST/... /knowledge/drafts/).
+sanitized bodies and hide/delete filters. News still accepts community submissions through the
+DraftSubmission workflow (POST /news/); knowledge submissions and moderation live entirely in the
+on-site Django views (knowledge/views.py), so the knowledge API is read-only (articles only).
 """
 
 from datetime import datetime
@@ -267,49 +268,6 @@ def list_knowledge_articles(request):
     if not is_admin(user):
         qs = qs.filter(is_hidden=False)
     return list(qs)
-
-
-# -- Knowledge: draft submission workflow (separate moderation contract) -------
-
-
-@knowledge_router.get("/drafts/", response=list[DraftOut], auth=auth, summary="List own knowledge article drafts")
-def list_knowledge_drafts(request, status: DraftSubmission.Status | None = None):
-    # Drafts are moderation data, never public: require auth and show a non-admin only their
-    # own submissions. Published content is read via the public KnowledgeArticle endpoints.
-    user = request.auth
-    qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    if not is_admin(user):
-        qs = qs.filter(author=user)
-    if status is not None:
-        qs = qs.filter(status=status)
-    return list(qs)
-
-
-@knowledge_router.get("/drafts/{draft_id}", response=DraftOut, auth=auth, summary="Get own knowledge article draft")
-def get_knowledge_draft(request, draft_id: int):
-    user = request.auth
-    draft = _get_draft_or_404(draft_id, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    _require_owner_or_admin(user, draft)
-    return draft
-
-
-@knowledge_router.post("/drafts/", response={201: DraftOut}, auth=auth, summary="Create knowledge article draft")
-def create_knowledge_draft(request, payload: DraftIn):
-    draft = _create_draft(request, payload, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    return Status(201, draft)
-
-
-@knowledge_router.patch("/drafts/{draft_id}", response=DraftOut, auth=auth, summary="Update knowledge article draft")
-def update_knowledge_draft(request, draft_id: int, payload: DraftPatchIn):
-    return _update_draft(request, draft_id, payload, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-
-
-@knowledge_router.delete(
-    "/drafts/{draft_id}", response={204: None}, auth=auth, summary="Delete knowledge article draft"
-)
-def delete_knowledge_draft(request, draft_id: int):
-    _delete_draft(request, draft_id, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    return Status(204, None)
 
 
 @knowledge_router.get(
