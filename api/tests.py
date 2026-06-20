@@ -923,6 +923,16 @@ class NewsArticleCreateTest(TestCase, ApiTestMixin):
         self.assertNotIn("onclick", article.body_kk)
         self.assertNotIn("javascript:", article.body_en)
 
+    def test_body_keeps_safe_image(self):
+        # Regression: the endpoint must not strip images the model allows (no double, stricter
+        # sanitize) -- API and on-site form must store identical markup.
+        payload = self._payload(body={"ru": '<p><img src="https://x.com/i.png" alt="a"></p>', "kk": "", "en": ""})
+        resp = self.post("/api/v1/news/articles/", payload, user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        article = NewsArticle.objects.get(pk=resp.json()["id"])
+        self.assertIn("<img", article.body_ru)
+        self.assertIn('src="https://x.com/i.png"', article.body_ru)
+
     def test_hidden_article_not_on_public_front(self):
         resp = self.post("/api/v1/news/articles/", self._payload(is_hidden=True), user=self.admin)
         self.assertEqual(resp.status_code, 201)
