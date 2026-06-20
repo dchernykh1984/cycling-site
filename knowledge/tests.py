@@ -52,6 +52,16 @@ class KnowledgeArticleModelTests(TestCase):
         art.refresh_from_db()
         self.assertIn("<img", art.body)
 
+    def test_partial_save_keeps_body(self):
+        # The shared sanitize helper skips a body not listed in update_fields, so a partial save
+        # (e.g. toggling is_hidden) leaves the stored body untouched.
+        art = KnowledgeArticle.objects.create(title="Partial", locale="ru", body="<p>keep</p>")
+        art.is_hidden = True
+        art.save(update_fields=["is_hidden"])
+        art.refresh_from_db()
+        self.assertEqual(art.body, "<p>keep</p>")
+        self.assertTrue(art.is_hidden)
+
     def test_autoslug_from_title_is_ascii_and_unique(self):
         a1 = KnowledgeArticle.objects.create(title="Hello World", locale="en")
         a2 = KnowledgeArticle.objects.create(title="Hello World", locale="en")
