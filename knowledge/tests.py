@@ -1,5 +1,6 @@
 import importlib
 import json
+import time
 
 from django.test import TestCase
 from django.urls import reverse
@@ -89,6 +90,25 @@ class KnowledgeArticleModelTests(TestCase):
         with self.assertNumQueries(0):
             for art in articles[1:]:
                 art.get_absolute_url()
+
+    def test_fresh_index_url_entry_is_served_from_cache(self):
+        # A non-expired entry is returned without re-resolving (the N+1 guard relies on this).
+        from knowledge import models as kmodels
+
+        self.addCleanup(kmodels._index_url_cache.clear)
+        art = KnowledgeArticle.objects.create(title="Cached", locale="ru", body="<p>x</p>")
+        kmodels._index_url_cache["ru"] = ("/CACHED/", time.monotonic() + 1000)
+        self.assertTrue(art.get_absolute_url().startswith("/CACHED/"))
+
+    def test_expired_index_url_entry_is_refetched(self):
+        # Bounded cross-worker staleness: once the TTL passes, a worker that never saw the edit
+        # signal re-resolves the index URL instead of serving the stale one until it restarts.
+        from knowledge import models as kmodels
+
+        self.addCleanup(kmodels._index_url_cache.clear)
+        art = KnowledgeArticle.objects.create(title="Stale", locale="ru", body="<p>x</p>")
+        kmodels._index_url_cache["ru"] = ("/STALE/", time.monotonic() - 1)  # already expired
+        self.assertFalse(art.get_absolute_url().startswith("/STALE/"))
 
 
 class KnowledgeReservedSlugTests(TestCase):
