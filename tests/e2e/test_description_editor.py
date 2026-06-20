@@ -51,6 +51,12 @@ def _assert_editor_healthy(page: Page) -> None:
     )
     assert box["toolbarH"] is not None and box["toolbarH"] < 120, box
     assert box["svgW"] is not None and box["svgW"] < 40, box
+    # The shared partial must give the editable area a real min-height; regression guard against a
+    # `.quill-editor .ql-container` descendant rule that never matched (collapsing the field to 0).
+    min_h = page.evaluate(
+        "() => parseInt(getComputedStyle(document.querySelector('.quill-editor .ql-editor')).minHeight) || 0"
+    )
+    assert min_h >= 100, f"editor min-height not applied: {min_h}"
 
 
 @pytest.mark.django_db(transaction=True)
