@@ -707,35 +707,14 @@ class CompetitionDeleteTest(TestCase, ApiTestMixin):
 # ---------------------------------------------------------------------------
 
 
-class NewsDraftTest(TestCase, ApiTestMixin):
+class NewsReadApiTest(TestCase, ApiTestMixin):
+    """Public reads of the published NewsArticle (list/detail, hide/delete filters); a news
+    DraftSubmission must never leak into the article API."""
+
     def setUp(self):
         self.author = _user("author", role=User.Role.PARTICIPANT)
         self.admin = _user("adm", role=User.Role.ADMIN)
         self.other = _user("other", role=User.Role.PARTICIPANT)
-
-    def _payload(self, **kwargs):
-        defaults = {"title": "Draft Title", "body": "Body", "locale": "ru", "category": ""}
-        defaults.update(kwargs)
-        return defaults
-
-    def test_create_draft(self):
-        resp = self.post("/api/v1/news/", self._payload(), user=self.author)
-        self.assertEqual(resp.status_code, 201)
-        self.assertEqual(resp.json()["status"], DraftSubmission.Status.PENDING)
-
-    def test_admin_create_auto_approves(self):
-        resp = self.post("/api/v1/news/", self._payload(), user=self.admin)
-        self.assertEqual(resp.status_code, 201)
-        self.assertEqual(resp.json()["status"], DraftSubmission.Status.APPROVED)
-
-    def test_invalid_locale_rejected(self):
-        resp = self.post("/api/v1/news/", self._payload(locale="xx"), user=self.author)
-        self.assertEqual(resp.status_code, 422)
-
-    def test_requires_participant_role(self):
-        guest = _user("guest", role=User.Role.GUEST)
-        resp = self.post("/api/v1/news/", self._payload(), user=guest)
-        self.assertEqual(resp.status_code, 403)
 
     def test_published_article_visible_to_authenticated_users(self):
         article = _article()
@@ -747,31 +726,6 @@ class NewsDraftTest(TestCase, ApiTestMixin):
         resp = self.get(f"/api/v1/news/{article.pk}", user=self.other)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["id"], article.pk)
-
-    def test_update_pending_draft(self):
-        draft = _draft(self.author)
-        resp = self.patch(f"/api/v1/news/{draft.pk}", {"title": "Updated"}, user=self.author)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["title"], "Updated")
-
-    def test_cannot_update_approved_draft(self):
-        draft = _draft(self.admin)
-        draft.status = DraftSubmission.Status.APPROVED
-        draft.save(update_fields=["status"])
-        resp = self.patch(f"/api/v1/news/{draft.pk}", {"title": "X"}, user=self.admin)
-        self.assertEqual(resp.status_code, 409)
-
-    def test_delete_pending_draft(self):
-        draft = _draft(self.author)
-        resp = self.delete(f"/api/v1/news/{draft.pk}", user=self.author)
-        self.assertEqual(resp.status_code, 204)
-
-    def test_cannot_delete_approved_draft(self):
-        draft = _draft(self.admin)
-        draft.status = DraftSubmission.Status.APPROVED
-        draft.save(update_fields=["status"])
-        resp = self.delete(f"/api/v1/news/{draft.pk}", user=self.admin)
-        self.assertEqual(resp.status_code, 409)
 
     def test_anonymous_can_list_published_articles(self):
         article = _article()
@@ -843,8 +797,9 @@ class NewsDraftTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 401)
 
 
-class NewsArticleCreateTest(TestCase, ApiTestMixin):
-    """POST /api/v1/news/articles/ writes a published NewsArticle shown on the front."""
+class NewsArticleCrudTest(TestCase, ApiTestMixin):
+    """Admin CRUD for NewsArticle via the API (create/update/soft-delete); body is sanitized and
+    size-limited centrally, mirroring the competitions API."""
 
     def setUp(self):
         self.admin = _user("news_art_adm", role=User.Role.ADMIN)
@@ -864,7 +819,7 @@ class NewsArticleCreateTest(TestCase, ApiTestMixin):
         return defaults
 
     def test_admin_creates_article(self):
-        resp = self.post("/api/v1/news/articles/", self._payload(), user=self.admin)
+        resp = self.post("/api/v1/news/", self._payload(), user=self.admin)
         self.assertEqual(resp.status_code, 201)
         data = resp.json()
         self.assertEqual(data["title"]["en"], "Headline")
@@ -875,13 +830,13 @@ class NewsArticleCreateTest(TestCase, ApiTestMixin):
         self.assertTrue(article.slug)
 
     def test_created_article_appears_in_api_list(self):
-        resp = self.post("/api/v1/news/articles/", self._payload(), user=self.admin)
+        resp = self.post("/api/v1/news/", self._payload(), user=self.admin)
         pk = resp.json()["id"]
         listed = self.get("/api/v1/news/").json()
         self.assertIn(pk, [d["id"] for d in listed])
 
     def test_created_article_appears_on_front_list_and_detail(self):
-        resp = self.post("/api/v1/news/articles/", self._payload(), user=self.admin)
+        resp = self.post("/api/v1/news/", self._payload(), user=self.admin)
         pk = resp.json()["id"]
         # Front list page (rendered NewsListView) shows the localized title.
         front = self.client.get("/news/", HTTP_ACCEPT_LANGUAGE="en")
@@ -894,13 +849,13 @@ class NewsArticleCreateTest(TestCase, ApiTestMixin):
         self.assertContains(detail, "Body text")
 
     def test_participant_cannot_create_article(self):
-        resp = self.post("/api/v1/news/articles/", self._payload(), user=self.participant)
+        resp = self.post("/api/v1/news/", self._payload(), user=self.participant)
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(NewsArticle.objects.count(), 0)
 
     def test_anonymous_cannot_create_article(self):
         resp = self.client.post(
-            "/api/v1/news/articles/",
+            "/api/v1/news/",
             self._payload(),
             content_type="application/json",
         )
@@ -915,7 +870,7 @@ class NewsArticleCreateTest(TestCase, ApiTestMixin):
                 "en": '<p>ok</p><a href="javascript:alert(1)">x</a>',
             }
         )
-        resp = self.post("/api/v1/news/articles/", payload, user=self.admin)
+        resp = self.post("/api/v1/news/", payload, user=self.admin)
         self.assertEqual(resp.status_code, 201)
         article = NewsArticle.objects.get(pk=resp.json()["id"])
         self.assertNotIn("<script", article.body_ru)
@@ -927,7 +882,7 @@ class NewsArticleCreateTest(TestCase, ApiTestMixin):
         from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 
         payload = self._payload(body={"ru": "a" * (MAX_RICH_TEXT_LENGTH + 1), "kk": "", "en": ""})
-        resp = self.post("/api/v1/news/articles/", payload, user=self.admin)
+        resp = self.post("/api/v1/news/", payload, user=self.admin)
         self.assertEqual(resp.status_code, 422)
         self.assertEqual(NewsArticle.objects.count(), 0)
 
@@ -935,17 +890,70 @@ class NewsArticleCreateTest(TestCase, ApiTestMixin):
         # Regression: the endpoint must not strip images the model allows (no double, stricter
         # sanitize) -- API and on-site form must store identical markup.
         payload = self._payload(body={"ru": '<p><img src="https://x.com/i.png" alt="a"></p>', "kk": "", "en": ""})
-        resp = self.post("/api/v1/news/articles/", payload, user=self.admin)
+        resp = self.post("/api/v1/news/", payload, user=self.admin)
         self.assertEqual(resp.status_code, 201)
         article = NewsArticle.objects.get(pk=resp.json()["id"])
         self.assertIn("<img", article.body_ru)
         self.assertIn('src="https://x.com/i.png"', article.body_ru)
 
     def test_hidden_article_not_on_public_front(self):
-        resp = self.post("/api/v1/news/articles/", self._payload(is_hidden=True), user=self.admin)
+        resp = self.post("/api/v1/news/", self._payload(is_hidden=True), user=self.admin)
         self.assertEqual(resp.status_code, 201)
         front = self.client.get("/news/", HTTP_ACCEPT_LANGUAGE="en")
         self.assertNotContains(front, "Headline")
+
+    def _create(self):
+        return self.post("/api/v1/news/", self._payload(), user=self.admin).json()["id"]
+
+    def test_admin_updates_article(self):
+        pk = self._create()
+        resp = self.patch(f"/api/v1/news/{pk}", {"title": {"ru": "Novyy", "kk": "", "en": "New"}}, user=self.admin)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["title"]["ru"], "Novyy")
+        self.assertEqual(NewsArticle.objects.get(pk=pk).title_ru, "Novyy")
+
+    def test_update_sanitizes_body(self):
+        pk = self._create()
+        resp = self.patch(
+            f"/api/v1/news/{pk}",
+            {"body": {"ru": "<p>ok</p><script>alert(1)</script>", "kk": "", "en": ""}},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 200)
+        article = NewsArticle.objects.get(pk=pk)
+        self.assertIn("ok", article.body_ru)
+        self.assertNotIn("<script", article.body_ru.lower())
+
+    def test_update_rejects_oversized_body(self):
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
+
+        pk = self._create()
+        resp = self.patch(
+            f"/api/v1/news/{pk}",
+            {"body": {"ru": "a" * (MAX_RICH_TEXT_LENGTH + 1), "kk": "", "en": ""}},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 422)
+
+    def test_participant_cannot_update_article(self):
+        pk = self._create()
+        resp = self.patch(f"/api/v1/news/{pk}", {"title": {"ru": "X", "kk": "", "en": ""}}, user=self.participant)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_update_missing_returns_404(self):
+        resp = self.patch("/api/v1/news/999999", {"title": {"ru": "X", "kk": "", "en": ""}}, user=self.admin)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_admin_soft_deletes_article(self):
+        pk = self._create()
+        self.assertEqual(self.delete(f"/api/v1/news/{pk}", user=self.admin).status_code, 204)
+        self.assertTrue(NewsArticle.objects.get(pk=pk).is_deleted)
+        self.assertEqual(self.get(f"/api/v1/news/{pk}", user=self.admin).status_code, 404)
+
+    def test_participant_cannot_delete_article(self):
+        pk = self._create()
+        self.assertEqual(self.delete(f"/api/v1/news/{pk}", user=self.participant).status_code, 403)
+        self.assertFalse(NewsArticle.objects.get(pk=pk).is_deleted)
 
 
 # ---------------------------------------------------------------------------
@@ -1870,10 +1878,9 @@ class NewsAccessTest(TestCase, ApiTestMixin):
         self.admin = _user("na_admin", role=User.Role.ADMIN)
         self.article = _article()
         self.hidden_article = _article(is_hidden=True)
-        self.draft = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.NEWS)
 
     def _payload(self):
-        return {"title": "T", "body": "B", "locale": "ru", "category": ""}
+        return {"title": {"ru": "T", "kk": "", "en": ""}, "body": {"ru": "<p>B</p>", "kk": "", "en": ""}}
 
     # --- GET list (NewsArticle) ---
 
@@ -1916,7 +1923,7 @@ class NewsAccessTest(TestCase, ApiTestMixin):
     def test_detail_admin_200_for_hidden(self):
         self.assertEqual(self.get(f"/api/v1/news/{self.hidden_article.pk}", user=self.admin).status_code, 200)
 
-    # --- POST create news draft ---
+    # --- POST create (NewsArticle, admin-only) ---
 
     def test_create_anonymous_returns_401(self):
         self.assertEqual(self.post("/api/v1/news/", self._payload()).status_code, 401)
@@ -1924,62 +1931,35 @@ class NewsAccessTest(TestCase, ApiTestMixin):
     def test_create_guest_returns_403(self):
         self.assertEqual(self.post("/api/v1/news/", self._payload(), user=self.guest).status_code, 403)
 
-    def test_create_participant_returns_201_pending(self):
-        resp = self.post("/api/v1/news/", self._payload(), user=self.participant)
-        self.assertEqual(resp.status_code, 201)
-        self.assertEqual(resp.json()["status"], DraftSubmission.Status.PENDING)
+    def test_create_participant_returns_403(self):
+        self.assertEqual(self.post("/api/v1/news/", self._payload(), user=self.participant).status_code, 403)
 
-    def test_create_admin_returns_201_approved(self):
-        resp = self.post("/api/v1/news/", self._payload(), user=self.admin)
-        self.assertEqual(resp.status_code, 201)
-        self.assertEqual(resp.json()["status"], DraftSubmission.Status.APPROVED)
+    def test_create_admin_returns_201(self):
+        self.assertEqual(self.post("/api/v1/news/", self._payload(), user=self.admin).status_code, 201)
 
-    # --- PATCH update news draft ---
+    # --- PATCH update (NewsArticle, admin-only) ---
 
     def test_update_anonymous_returns_401(self):
-        self.assertEqual(self.patch(f"/api/v1/news/{self.draft.pk}", {"title": "X"}).status_code, 401)
+        self.assertEqual(self.patch(f"/api/v1/news/{self.article.pk}", {"is_hidden": True}).status_code, 401)
 
-    def test_update_guest_not_owner_returns_403(self):
-        self.assertEqual(self.patch(f"/api/v1/news/{self.draft.pk}", {"title": "X"}, user=self.guest).status_code, 403)
+    def test_update_participant_returns_403(self):
+        resp = self.patch(f"/api/v1/news/{self.article.pk}", {"is_hidden": True}, user=self.participant)
+        self.assertEqual(resp.status_code, 403)
 
-    def test_update_author_returns_200(self):
-        self.assertEqual(
-            self.patch(f"/api/v1/news/{self.draft.pk}", {"title": "X"}, user=self.participant).status_code, 200
-        )
+    def test_update_admin_returns_200(self):
+        resp = self.patch(f"/api/v1/news/{self.article.pk}", {"is_hidden": True}, user=self.admin)
+        self.assertEqual(resp.status_code, 200)
 
-    def test_update_other_participant_returns_403(self):
-        self.assertEqual(self.patch(f"/api/v1/news/{self.draft.pk}", {"title": "X"}, user=self.other).status_code, 403)
-
-    def test_update_admin_not_owner_returns_200(self):
-        self.assertEqual(self.patch(f"/api/v1/news/{self.draft.pk}", {"title": "X"}, user=self.admin).status_code, 200)
-
-    def test_update_approved_draft_returns_409(self):
-        draft = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.NEWS)
-        draft.status = DraftSubmission.Status.APPROVED
-        draft.save(update_fields=["status"])
-        self.assertEqual(self.patch(f"/api/v1/news/{draft.pk}", {"title": "X"}, user=self.admin).status_code, 409)
-
-    # --- DELETE news draft ---
+    # --- DELETE (NewsArticle, admin-only, soft) ---
 
     def test_delete_anonymous_returns_401(self):
-        self.assertEqual(self.delete(f"/api/v1/news/{self.draft.pk}").status_code, 401)
+        self.assertEqual(self.delete(f"/api/v1/news/{self.article.pk}").status_code, 401)
 
-    def test_delete_author_returns_204(self):
-        d = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.NEWS)
-        self.assertEqual(self.delete(f"/api/v1/news/{d.pk}", user=self.participant).status_code, 204)
+    def test_delete_participant_returns_403(self):
+        self.assertEqual(self.delete(f"/api/v1/news/{self.article.pk}", user=self.participant).status_code, 403)
 
-    def test_delete_other_participant_returns_403(self):
-        self.assertEqual(self.delete(f"/api/v1/news/{self.draft.pk}", user=self.other).status_code, 403)
-
-    def test_delete_admin_not_owner_returns_204(self):
-        d = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.NEWS)
-        self.assertEqual(self.delete(f"/api/v1/news/{d.pk}", user=self.admin).status_code, 204)
-
-    def test_delete_approved_draft_returns_409(self):
-        draft = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.NEWS)
-        draft.status = DraftSubmission.Status.APPROVED
-        draft.save(update_fields=["status"])
-        self.assertEqual(self.delete(f"/api/v1/news/{draft.pk}", user=self.admin).status_code, 409)
+    def test_delete_admin_returns_204(self):
+        self.assertEqual(self.delete(f"/api/v1/news/{self.article.pk}", user=self.admin).status_code, 204)
 
 
 # ===========================================================================
