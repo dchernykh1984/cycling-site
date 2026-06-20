@@ -4,37 +4,57 @@ from django.db import migrations
 from django.utils import timezone
 
 
+def _body_from_blocks(raw) -> str:
+    """Concatenate the HTML of every "text" StreamField block (the only kind in the data)."""
+    try:
+        blocks = raw.raw_data
+    except AttributeError:
+        blocks = json.loads(raw) if raw else []
+    return "".join(b.get("value", "") for b in blocks if b.get("type") == "text")
+
+
+def _attach_tags(tagged_item_model, content_type, object_id, tag_ids) -> None:
+    """Re-create taggit links for the new model via its generic TaggedItem table."""
+    for tag_id in tag_ids:
+        tagged_item_model.objects.create(tag_id=tag_id, content_type=content_type, object_id=object_id)
+
+
 def copy_pages_to_articles(apps, schema_editor):
     """Copy existing KnowledgeArticlePage (Wagtail) rows into the plain KnowledgeArticle model.
 
     Bodies were stored as a StreamField; every existing article is a single (or several)
-    "text" RichText block(s) of already-sanitized HTML, so we concatenate the text blocks.
-    Non-text blocks (image/embed/code) don't exist in the data and are ignored. Self-contained
-    (no app-code import); a no-op on a fresh database with no pages.
+    "text" RichText block(s) of already-sanitized HTML, so we concatenate the text blocks
+    (non-text blocks don't exist in the data). Tags are re-pointed from the old
+    ClusterTaggable through-model to the new model's taggit TaggedItem rows before the old
+    tables are dropped in 0010. Self-contained; a no-op on a fresh database with no pages.
     """
     KnowledgeArticlePage = apps.get_model("knowledge", "KnowledgeArticlePage")
+    KnowledgeArticlePageTag = apps.get_model("knowledge", "KnowledgeArticlePageTag")
     KnowledgeArticle = apps.get_model("knowledge", "KnowledgeArticle")
     Locale = apps.get_model("wagtailcore", "Locale")
+    TaggedItem = apps.get_model("taggit", "TaggedItem")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+
+    # The KnowledgeArticle content type may not exist yet mid-migrate (created post_migrate).
+    article_ct, _ = ContentType.objects.get_or_create(app_label="knowledge", model="knowledgearticle")
     locale_code = {loc.pk: loc.language_code for loc in Locale.objects.all()}
 
     for page in KnowledgeArticlePage.objects.all().iterator():
-        raw = page.body
-        try:
-            blocks = raw.raw_data
-        except AttributeError:
-            blocks = json.loads(raw) if raw else []
-        body_html = "".join(b.get("value", "") for b in blocks if b.get("type") == "text")
-        KnowledgeArticle.objects.create(
+        article = KnowledgeArticle.objects.create(
             title=page.title,
             slug=page.slug,
             locale=locale_code.get(page.locale_id, "ru"),
-            body=body_html,
+            body=_body_from_blocks(page.body),
             category=page.category or "",
             published_by_id=page.published_by_id,
             published_at=page.published_at or page.first_published_at or timezone.now(),
             is_hidden=page.is_hidden,
             is_deleted=page.is_deleted,
         )
+        tag_ids = list(
+            KnowledgeArticlePageTag.objects.filter(content_object_id=page.pk).values_list("tag_id", flat=True)
+        )
+        _attach_tags(TaggedItem, article_ct, article.pk, tag_ids)
 
 
 class Migration(migrations.Migration):
