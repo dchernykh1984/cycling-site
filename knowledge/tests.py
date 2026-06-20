@@ -95,6 +95,16 @@ class KnowledgeMigrationHelperTests(TestCase):
         )
         self.assertEqual(mig._body_from_blocks(raw), "<p>a</p><p>b</p>")
 
+    def test_body_from_blocks_expands_wagtail_internal_links(self):
+        # Wagtail DB richtext stores internal links as <a linktype="page" id="N"> (no href);
+        # the converter must turn them into real frontend HTML, not copy the DB markup.
+        mig = importlib.import_module(_MIG_0008)
+        index = KnowledgeIndexPage.objects.live().first()
+        raw = json.dumps([{"type": "text", "value": f'<p><a linktype="page" id="{index.pk}">link</a></p>'}])
+        out = mig._body_from_blocks(raw)
+        self.assertNotIn("linktype", out)
+        self.assertIn("href=", out)
+
     def test_attach_tags_recreates_taggit_links(self):
         from django.contrib.contenttypes.models import ContentType
         from taggit.models import Tag, TaggedItem
