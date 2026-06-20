@@ -10,13 +10,14 @@ from wagtail.search import index
 
 from cycling_site.sanitize import sanitize_rich_html
 
-# Per-locale rich-text description fields, sanitized on every write whatever the entry point
-# (organizer form, API, Django admin, Wagtail snippet). We deliberately do NOT include the
-# canonical ``description``: it is a modeltranslation descriptor whose getter returns another
-# language's fallback for an empty translation, so reading+writing it here would copy e.g. the
-# RU body into an empty KK column. The canonical column is written from these (now sanitized)
-# fields by modeltranslation during the real save, so it stays clean without us touching it.
-_DESCRIPTION_FIELDS = ("description_ru", "description_kk", "description_en")
+# Rich-text description fields sanitized on every write whatever the entry point (organizer
+# form, API, Django admin, Wagtail snippet). Includes the canonical ``description``: the API
+# writes a raw value straight into that column and localize_field() serves it as the fallback
+# for empty translations, so it must be sanitized too. All four are accessed via __dict__ in
+# save() so we touch the concrete columns directly and never go through modeltranslation's
+# canonical descriptor (whose getter returns another language's fallback for an empty
+# translation, which would otherwise copy e.g. the RU body into an empty KK column).
+_DESCRIPTION_FIELDS = ("description", "description_ru", "description_kk", "description_en")
 
 # Cap the stored size (characters) of a single per-locale description. Inline images are
 # embedded as base64 data URIs, so without a limit a description could bloat the DB rows,
@@ -210,16 +211,16 @@ class Competition(index.Indexed, models.Model):
     def save(self, *args, **kwargs):
         # Descriptions are stored as rich HTML and rendered with |safe, so sanitize them on
         # every write -- this is the single choke point covering the organizer form, the API,
-        # Django admin and Wagtail snippets. Only the concrete per-locale fields are touched
-        # (see _DESCRIPTION_FIELDS); the canonical column is derived from them by
-        # modeltranslation on the real save below. Skip the (BeautifulSoup) work on partial
-        # saves that don't touch a description field. sanitize_rich_html is idempotent.
+        # Django admin and Wagtail snippets. Access the concrete columns via __dict__ so we
+        # never trip modeltranslation's canonical descriptor (see _DESCRIPTION_FIELDS). Skip
+        # the (BeautifulSoup) work on partial saves that don't touch a description field.
+        # sanitize_rich_html is idempotent.
         update_fields = kwargs.get("update_fields")
         if update_fields is None or any(f in update_fields for f in _DESCRIPTION_FIELDS):
             for field in _DESCRIPTION_FIELDS:
-                value = getattr(self, field, None)
+                value = self.__dict__.get(field)
                 if value:
-                    setattr(self, field, sanitize_rich_html(value, allow_img=True))
+                    self.__dict__[field] = sanitize_rich_html(value, allow_img=True)
         super().save(*args, **kwargs)
 
     def get_calendar_end(self) -> str | None:
