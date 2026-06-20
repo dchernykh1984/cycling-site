@@ -829,6 +829,19 @@ class NewsArticleCrudTest(TestCase, ApiTestMixin):
         self.assertEqual(article.published_by_id, self.admin.pk)
         self.assertTrue(article.slug)
 
+    def test_empty_active_locale_not_overwritten_by_fallback(self):
+        # Regression: the canonical column is set via __dict__, so an empty RU locale (the active
+        # language) is NOT overwritten with the kk/en fallback through modeltranslation's descriptor.
+        pk = self.post(
+            "/api/v1/news/",
+            self._payload(title={"ru": "", "kk": "Takyryp", "en": "Headline"}),
+            user=self.admin,
+        ).json()["id"]
+        article = NewsArticle.objects.get(pk=pk)
+        self.assertEqual(article.title_ru, "")
+        self.assertEqual(article.title_kk, "Takyryp")
+        self.assertEqual(article.title_en, "Headline")
+
     def test_created_article_appears_in_api_list(self):
         resp = self.post("/api/v1/news/", self._payload(), user=self.admin)
         pk = resp.json()["id"]
