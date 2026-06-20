@@ -1609,6 +1609,18 @@ class CompetitionRichDescriptionTests(TestCase):
     def setUp(self):
         self.organizer = _make_user("rt_org@example.com", User.Role.ORGANIZER)
 
+    def test_vendored_quill_ships_its_license(self):
+        # Quill is BSD-3-Clause; vendoring it requires shipping its license/notice.
+        from pathlib import Path
+
+        from django.contrib.staticfiles import finders
+
+        path = finders.find("calendar_app/vendor/quill/LICENSE")
+        self.assertIsNotNone(path, "vendored Quill LICENSE is missing")
+        text = Path(path).read_text(encoding="utf-8")
+        self.assertIn("BSD 3-Clause", text)
+        self.assertIn("Quill", text)
+
     def test_submit_page_ships_local_quill_editor(self):
         self.client.force_login(self.organizer)
         resp = self.client.get(reverse("calendar_submit"))
