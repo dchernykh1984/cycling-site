@@ -226,6 +226,27 @@ class SiteContentModelTests(TestCase):
         self.assertIn("safe", sc.body_ru)
         self.assertNotIn("<script", sc.body_ru.lower())
 
+    def test_backfill_migration_sanitizes_existing_body(self):
+        # The data migration must clean HTML stored before save()-time sanitization existed.
+        import importlib
+
+        from django.apps import apps as global_apps
+
+        SiteContent.objects.all().delete()
+        sc = SiteContent.objects.create()
+        # Inject unsafe HTML directly, bypassing SiteContent.save()'s sanitizer.
+        SiteContent.objects.filter(pk=sc.pk).update(
+            body="<p>x</p><script>a()</script>",
+            body_ru="<p>ru</p><script>b()</script>",
+            body_en="<p>en</p><script>c()</script>",
+        )
+        mig = importlib.import_module("home.migrations.0009_sanitize_sitecontent_body")
+        mig.sanitize_existing_body(global_apps, None)
+        sc.refresh_from_db()
+        for value in (sc.body, sc.body_ru, sc.body_en):
+            self.assertNotIn("<script", value.lower())
+        self.assertIn("ru", sc.body_ru)
+
 
 class HomeEditViewTests(TestCase):
     def setUp(self):
