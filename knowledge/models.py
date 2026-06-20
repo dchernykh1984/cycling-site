@@ -27,6 +27,9 @@ MAX_BODY_LENGTH = MAX_RICH_TEXT_LENGTH
 # (e.g. the add/submit form) before Wagtail's catch-all route.
 _RESERVED_SLUGS = frozenset({"add", "submit", "submissions", "articles"})
 
+# Single source of truth for the slug column width, reused by save() to bound generated slugs.
+_SLUG_MAX_LENGTH = 255
+
 
 class KnowledgeArticle(index.Indexed, models.Model):
     """Frontend-managed knowledge article: a plain Django model with an HTML body edited
@@ -40,7 +43,7 @@ class KnowledgeArticle(index.Indexed, models.Model):
     LOCALE_CHOICES: ClassVar[list] = [("ru", _("Russian")), ("kk", _("Kazakh")), ("en", _("English"))]
 
     title = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    slug = models.SlugField(max_length=_SLUG_MAX_LENGTH, unique=True, blank=True)
     locale = models.CharField(max_length=10, choices=LOCALE_CHOICES, default="ru", db_index=True)
     body = models.TextField(blank=True)
     category = models.CharField(max_length=100, blank=True)
@@ -80,11 +83,15 @@ class KnowledgeArticle(index.Indexed, models.Model):
         if self.body:
             self.body = sanitize_rich_html(self.body, allow_img=True)
         if not self.slug:
-            base = slugify(self.title or "", allow_unicode=False) or "article"
+            base = (slugify(self.title or "", allow_unicode=False) or "article")[:_SLUG_MAX_LENGTH]
             candidate = base
             n = 1
             while self._slug_unavailable(candidate):
-                candidate = f"{base}-{n}"
+                # Reserve room for the collision suffix so even a max-length title cannot push the
+                # slug past max_length (a 255-char title would otherwise yield a 257-char "...-1"
+                # and raise DataError on PostgreSQL).
+                suffix = f"-{n}"
+                candidate = f"{base[: _SLUG_MAX_LENGTH - len(suffix)]}{suffix}"
                 n += 1
             self.slug = candidate
         super().save(*args, **kwargs)
