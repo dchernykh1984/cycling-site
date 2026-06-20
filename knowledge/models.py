@@ -18,7 +18,7 @@ from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.page_mixins import AsciiSlugMixin
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
-from cycling_site.sanitize import sanitize_rich_html, sanitize_rich_text_columns
+from cycling_site.sanitize import sanitize_rich_text_columns
 
 # Backwards-compatible alias for the shared, site-wide rich-text size cap.
 MAX_BODY_LENGTH = MAX_RICH_TEXT_LENGTH
@@ -241,7 +241,7 @@ class DraftSubmission(models.Model):
             if self.submission_type == DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE:
                 self._create_knowledge_article(reviewer)
             elif self.submission_type == DraftSubmission.SubmissionType.NEWS:
-                self._create_news_page(reviewer)
+                self._create_news_article(reviewer)
             else:
                 raise ValueError(f"Unknown submission type: '{self.submission_type}'.")
 
@@ -262,43 +262,21 @@ class DraftSubmission(models.Model):
             published_at=timezone.now(),
         )
 
-    def _create_news_page(self, reviewer) -> None:
-        import json
+    def _create_news_article(self, reviewer) -> None:
+        # reviewer is unused for the plain model (kept for signature parity with knowledge).
+        del reviewer
+        from news.models import NewsArticle
 
-        from django.utils.text import slugify
-        from wagtail.models import Locale
-
-        from news.models import NewsIndexPage, NewsPage
-
-        try:
-            locale = Locale.objects.get(language_code=self.locale)
-        except Locale.DoesNotExist:
-            raise ValueError(f"Locale '{self.locale}' is not configured in this Wagtail instance.") from None
-
-        news_index = NewsIndexPage.objects.live().filter(locale=locale).first()
-        if news_index is None:
-            raise ValueError(
-                f"No live NewsIndexPage found for locale '{self.locale}'. Create one in the Wagtail admin first."
-            )
-
-        base_slug = slugify(self.title) or "news"
-        slug = base_slug
-        counter = 1
-        while NewsPage.objects.filter(slug=slug).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-
-        body_json = json.dumps([{"type": "text", "value": sanitize_rich_html(self.body)}])
-        news_page = NewsPage(
-            title=self.title,
-            slug=slug,
-            body=body_json,
-            published_by=self.author,
-            published_at=timezone.now(),
-            locale=locale,
-        )
-        news_index.add_child(instance=news_page)
-        news_page.save_revision(user=reviewer).publish()
+        # The submission is single-locale; populate that locale's columns plus the canonical ones
+        # (canonical via __dict__ so modeltranslation's active-language descriptor isn't tripped).
+        # NewsArticle.save() sanitizes the body and assigns a unique slug, so an approved
+        # submission appears on /news/ and the news API like any other article.
+        article = NewsArticle(published_by=self.author, published_at=timezone.now())
+        setattr(article, f"title_{self.locale}", self.title)
+        setattr(article, f"body_{self.locale}", self.body)
+        article.__dict__["title"] = self.title
+        article.__dict__["body"] = self.body
+        article.save()
 
     def reject(self, reviewer, note: str = "") -> None:
         with transaction.atomic():

@@ -326,6 +326,31 @@ class SubmitNewsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.context["form"], SubmitNewsForm)
 
+    def test_submitted_news_appears_on_front_and_api_after_approval(self):
+        # Full unification path: a community submission, once approved, becomes a NewsArticle that
+        # shows up on the public /news/ list and in the public news API (not a stranded NewsPage).
+        from knowledge.models import DraftSubmission
+
+        self.client.login(username="participant@example.com", password="password123")
+        self.client.post(
+            reverse("news_submit"),
+            {"locale": "ru", "title": "Community Story", "body": "<p>Reader-submitted</p>"},
+        )
+        sub = DraftSubmission.objects.get(title="Community Story")
+        admin = User.objects.create_user(
+            username="ed@example.com", email="ed@example.com", password="password123", role=User.Role.ADMIN
+        )
+        sub.approve(reviewer=admin)
+        self.client.logout()
+
+        page = self.client.get(reverse("news_index"))
+        self.assertContains(page, "Community Story")
+
+        api = self.client.get("/api/v1/news/")
+        self.assertEqual(api.status_code, 200)
+        self.assertIn("Community Story", [a["title"]["ru"] for a in api.json()])
+        self.assertTrue(any("Reader-submitted" in a["body"]["ru"] for a in api.json()))
+
 
 class NewsTagsTest(TestCase):
     def test_get_news_index_url_returns_none_when_no_index(self):
