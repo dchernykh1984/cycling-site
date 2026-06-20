@@ -55,16 +55,15 @@ def test_add_round_trips_body(page: Page, live_server, superuser, knowledge_inde
     inject_session(page, live_server, superuser)
     page.goto(f"{live_server.url}/knowledge/add/")
     page.fill("#id_title", "E2E Knowledge Article")
-    # Set the editor body via the DOM, then submit: deterministic on every engine (keyboard
-    # simulation in a contenteditable flakes across webkit desktop/mobile). The submit handler
-    # copies quill.root.innerHTML into the hidden field, so the editor -> save round-trip is
-    # exercised; real keyboard input through the shared editor is covered by the competition tests.
+    # Set the editor body via the DOM and submit in ONE synchronous step (see
+    # test_edit_prefills_and_updates): closes the Quill MutationObserver revert race that flakes on
+    # mobile webkit. Real keyboard input through the shared editor is covered by the competition tests.
     page.evaluate(
         """() => {
           document.querySelector('#quill-body .ql-editor').innerHTML = '<p>Body written in the browser</p>';
+          document.getElementById('id_title').form.requestSubmit();
         }"""
     )
-    page.eval_on_selector("#id_title", "el => el.form.requestSubmit()")
     page.wait_for_load_state("networkidle")
 
     art = KnowledgeArticle.objects.get(title="E2E Knowledge Article")
@@ -100,18 +99,16 @@ def test_edit_prefills_and_updates(page: Page, live_server, superuser, knowledge
     _assert_editor_healthy(page)
     expect(page.locator("#quill-body .ql-editor")).to_contain_text("Existing body")
 
-    # Append through the editor DOM, then submit: deterministic on every engine, including
-    # mobile webkit, where click+caret+keyboard editing of a pre-populated Quill flakes. The
-    # submit handler copies quill.root.innerHTML (this DOM) into the hidden field, so the
-    # edit->save->sanitize round-trip is still exercised; real keyboard input is covered by
-    # test_add_round_trips_body.
+    # Append through the editor DOM and submit in ONE synchronous step: the submit handler reads
+    # quill.root.innerHTML synchronously during requestSubmit(), before Quill's async
+    # MutationObserver can revert a raw DOM edit it doesn't track (that revert, when submit was a
+    # separate call, is what flaked on mobile webkit). Keyboard input is covered by the competition tests.
     page.evaluate(
         """() => {
-          const ed = document.querySelector('#quill-body .ql-editor');
-          ed.insertAdjacentHTML('beforeend', '<p>plus more</p>');
+          document.querySelector('#quill-body .ql-editor').insertAdjacentHTML('beforeend', '<p>plus more</p>');
+          document.getElementById('id_title').form.requestSubmit();
         }"""
     )
-    page.eval_on_selector("#id_title", "el => el.form.requestSubmit()")
     page.wait_for_load_state("networkidle")
 
     art.refresh_from_db()
