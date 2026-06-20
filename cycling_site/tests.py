@@ -193,6 +193,12 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         out = sanitize_rich_html('<a href="data:text/html,<script>alert(1)</script>">x</a>')
         self.assertNotIn("href=", out)
 
+    def test_underline_and_strike_kept(self):
+        # The Quill toolbar offers underline/strike, so <u>/<s> must survive sanitization.
+        out = sanitize_rich_html("<p><u>under</u> <s>strike</s></p>")
+        self.assertIn("<u>under</u>", out)
+        self.assertIn("<s>strike</s>", out)
+
     def test_img_stripped_by_default(self):
         out = sanitize_rich_html('<p>a<img src="https://x.com/i.png">b</p>')
         self.assertNotIn("<img", out)

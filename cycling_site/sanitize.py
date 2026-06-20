@@ -30,6 +30,8 @@ _ALLOWED_BODY_TAGS: frozenset[str] = frozenset(
         "b",
         "em",
         "i",
+        "u",
+        "s",
         "code",
         "pre",
         "a",
