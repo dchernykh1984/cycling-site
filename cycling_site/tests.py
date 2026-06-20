@@ -165,6 +165,34 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         out = sanitize_rich_html('<a href="javascript:alert(1)">x</a>')
         self.assertNotIn("javascript:", out)
 
+    def test_href_scheme_bypass_via_entities_and_control_chars_dropped(self):
+        # Browsers strip ASCII control/whitespace chars from a URL scheme, so these all
+        # resolve to javascript: and must be dropped. &#x0a;/&#10; are newline/tab entities
+        # (BeautifulSoup decodes them); \t/\x00 are literal control chars in the source.
+        for raw in (
+            '<a href="java&#x0a;script:alert(1)">x</a>',
+            '<a href="java&#10;script:alert(1)">x</a>',
+            '<a href="javascript&#58;alert(1)">x</a>',
+            '<a href="java\tscript:alert(1)">x</a>',
+            '<a href="\x00javascript:alert(1)">x</a>',
+            '<a href="  JAVASCRIPT:alert(1)">x</a>',
+            '<a href="vb\tscript:msgbox(1)">x</a>',
+        ):
+            out = sanitize_rich_html(raw)
+            self.assertNotIn("javascript", out.lower(), raw)
+            self.assertNotIn("vbscript", out.lower(), raw)
+            self.assertNotIn("href=", out, raw)
+
+    def test_safe_schemes_and_relative_links_kept(self):
+        for href in ("https://x.com", "http://x.com", "/calendar/1/", "#section", "?q=1", "mailto:a@b.com", "tel:+123"):
+            out = sanitize_rich_html(f'<a href="{href}">x</a>')
+            self.assertIn(f'href="{href}"', out, href)
+            self.assertIn('target="_blank"', out, href)
+
+    def test_data_href_dropped_on_anchor(self):
+        out = sanitize_rich_html('<a href="data:text/html,<script>alert(1)</script>">x</a>')
+        self.assertNotIn("href=", out)
+
     def test_img_stripped_by_default(self):
         out = sanitize_rich_html('<p>a<img src="https://x.com/i.png">b</p>')
         self.assertNotIn("<img", out)
