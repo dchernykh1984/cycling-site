@@ -21,4 +21,4 @@ class KnowledgeArticleSitemap(Sitemap):
         return obj.get_absolute_url()
 
     def lastmod(self, obj):
-        return obj.published_at
+        return obj.updated_at

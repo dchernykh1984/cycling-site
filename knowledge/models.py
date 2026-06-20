@@ -48,6 +48,7 @@ class KnowledgeArticle(index.Indexed, models.Model):
         related_name="+",
     )
     published_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)  # real last-edit time for the sitemap
     is_hidden = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
 
