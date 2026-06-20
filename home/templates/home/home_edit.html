@@ -4,9 +4,7 @@
 {% block title %}{% trans "Edit home page" %}{% endblock %}
 
 {% block extra_css %}
-<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <style>
-  .ql-editor { min-height: 300px; font-size: 1rem; }
   .nav-tabs .nav-link.active { font-weight: 600; }
 </style>
 {% endblock %}
@@ -58,7 +56,7 @@
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">{% trans "Body (RU)" %}</label>
-            <div id="quill-ru" class="quill-editor-container"></div>
+            <div id="quill-ru" class="quill-editor" data-target="id_body_ru" data-init="init-body-ru"></div>
             {{ form.body_ru }}
           </div>
         </div>
@@ -79,7 +77,7 @@
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">{% trans "Body (KK)" %}</label>
-            <div id="quill-kk" class="quill-editor-container"></div>
+            <div id="quill-kk" class="quill-editor" data-target="id_body_kk" data-init="init-body-kk"></div>
             {{ form.body_kk }}
           </div>
         </div>
@@ -100,7 +98,7 @@
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">{% trans "Body (EN)" %}</label>
-            <div id="quill-en" class="quill-editor-container"></div>
+            <div id="quill-en" class="quill-editor" data-target="id_body_en" data-init="init-body-en"></div>
             {{ form.body_en }}
           </div>
         </div>
@@ -117,51 +115,8 @@
 {% endblock %}
 
 {% block extra_js %}
-<textarea id="init-body-ru" style="display:none">{{ form.body_ru.value }}</textarea>
-<textarea id="init-body-kk" style="display:none">{{ form.body_kk.value }}</textarea>
-<textarea id="init-body-en" style="display:none">{{ form.body_en.value }}</textarea>
-<script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
-<script>
-(function () {
-  var TOOLBAR = [
-    [{ header: [2, 3, false] }],
-    ['bold', 'italic', 'underline', 'strike'],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    ['blockquote', 'link', 'image'],
-    ['clean']
-  ];
-
-  function getInitial(id) {
-    var el = document.getElementById(id);
-    return el ? el.value : '';
-  }
-
-  function makeEditor(editorId, initialHtml) {
-    var quill = new Quill('#' + editorId, { theme: 'snow', modules: { toolbar: TOOLBAR } });
-    if (initialHtml) quill.clipboard.dangerouslyPasteHTML(initialHtml);
-    return quill;
-  }
-
-  // Initialise only the active (RU) tab immediately; KK/EN are display:none at load
-  // time and Quill cannot measure layout on hidden elements.
-  var editors = { ru: null, kk: null, en: null };
-  editors.ru = makeEditor('quill-ru', getInitial('init-body-ru'));
-
-  // Lazy-initialise the other editors the first time their tab is shown.
-  document.getElementById('localeTabs').addEventListener('shown.bs.tab', function (e) {
-    var locale = e.target.getAttribute('data-bs-target').replace('#pane-', '');
-    if (!editors[locale]) {
-      editors[locale] = makeEditor('quill-' + locale, getInitial('init-body-' + locale));
-    }
-  });
-
-  // On submit: sync only initialised editors; un-opened tabs keep their hidden-input
-  // value (already set to the DB value by the form's initial data).
-  document.getElementById('home-edit-form').addEventListener('submit', function () {
-    if (editors.ru) document.getElementById('id_body_ru').value = editors.ru.root.innerHTML;
-    if (editors.kk) document.getElementById('id_body_kk').value = editors.kk.root.innerHTML;
-    if (editors.en) document.getElementById('id_body_en').value = editors.en.root.innerHTML;
-  });
-}());
-</script>
+{{ form.body_ru.value|default:""|json_script:"init-body-ru" }}
+{{ form.body_kk.value|default:""|json_script:"init-body-kk" }}
+{{ form.body_en.value|default:""|json_script:"init-body-en" }}
+{% include "includes/rich_text_editor.html" %}
 {% endblock %}
