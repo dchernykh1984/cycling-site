@@ -28,8 +28,8 @@ class SubmitCompetitionForm(forms.Form):
     title_ru = forms.CharField(max_length=255, widget=forms.TextInput(attrs={"class": "form-control"}))
     title_kk = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
     title_en = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
-    # Rich-text descriptions: the Quill editor (see _description_editor.html) writes HTML
-    # into these hidden fields per locale; the HTML is sanitized in clean_* below.
+    # Rich-text descriptions: the shared Quill editor (includes/rich_text_editor.html) writes
+    # HTML into these hidden fields per locale; the HTML is sanitized in clean_* below.
     description_ru = forms.CharField(required=False, widget=forms.HiddenInput())
     description_kk = forms.CharField(required=False, widget=forms.HiddenInput())
     description_en = forms.CharField(required=False, widget=forms.HiddenInput())

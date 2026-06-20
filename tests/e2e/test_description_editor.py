@@ -2,7 +2,7 @@
 
 These run a real browser, so they catch rendering bugs that string-level Django
 template tests cannot -- e.g. a leaking template comment that injected a phantom
-``.quill-desc-box`` which Quill then initialised over the stylesheet ``<link>``,
+``.quill-editor`` box which Quill then initialised over the stylesheet ``<link>``,
 leaving every toolbar unstyled (giant SVG icons). The HTML still *contained* the
 right strings, so ``assertContains`` stayed green; only a browser reveals it.
 """
