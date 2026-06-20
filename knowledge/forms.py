@@ -39,8 +39,14 @@ class KnowledgeArticleForm(forms.ModelForm):
 
     class Meta:
         model = KnowledgeArticle
-        fields: ClassVar[list] = ["locale", "title", "body", "category"]
+        fields: ClassVar[list] = ["locale", "title", "body", "category", "tags"]
         widgets: ClassVar[dict] = {
             "title": forms.TextInput(attrs=_TITLE_ATTRS),
             "category": forms.TextInput(attrs=_CATEGORY_ATTRS),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # taggit's TagField renders a plain text input; give it Bootstrap styling + a hint.
+        self.fields["tags"].widget.attrs.update({"class": "form-control", "placeholder": _("comma,separated,tags")})
+        self.fields["tags"].required = False

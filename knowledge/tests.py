@@ -395,6 +395,15 @@ class AddArticleViewTests(TestCase):
         art = KnowledgeArticle.objects.get(title="Add XSS")
         self.assertNotIn("<script", art.body)
 
+    def test_admin_post_saves_tags(self):
+        self.client.force_login(self.admin)
+        self.client.post(
+            reverse("knowledge_add"),
+            {"locale": "ru", "title": "Tagged Add", "body": "<p>x</p>", "category": "", "tags": "alpha, beta"},
+        )
+        art = KnowledgeArticle.objects.get(title="Tagged Add")
+        self.assertEqual(set(art.tags.names()), {"alpha", "beta"})
+
 
 class EditArticleViewTests(TestCase):
     def setUp(self):
@@ -439,6 +448,22 @@ class EditArticleViewTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.article.refresh_from_db()
         self.assertTrue(self.article.is_deleted)
+
+    def test_edit_form_prefills_tags(self):
+        self.article.tags.add("existing")
+        self.client.force_login(self.admin)
+        resp = self.client.get(reverse("knowledge_article_edit", args=[self.article.pk]))
+        self.assertContains(resp, "existing")
+
+    def test_admin_edit_updates_tags(self):
+        self.article.tags.add("old")
+        self.client.force_login(self.admin)
+        self.client.post(
+            reverse("knowledge_article_edit", args=[self.article.pk]),
+            {"locale": "ru", "title": "Editable", "body": "<p>x</p>", "category": "", "tags": "new1, new2"},
+        )
+        self.article.refresh_from_db()
+        self.assertEqual(set(self.article.tags.names()), {"new1", "new2"})
 
 
 # ---------------------------------------------------------------------------
