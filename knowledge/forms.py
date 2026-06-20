@@ -3,10 +3,16 @@ from typing import ClassVar
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from knowledge.models import DraftSubmission, KnowledgeArticle
+from knowledge.models import MAX_BODY_LENGTH, DraftSubmission, KnowledgeArticle
 
 _TITLE_ATTRS = {"class": "form-control"}
 _CATEGORY_ATTRS = {"class": "form-control"}
+
+
+def _validate_body_length(value: str) -> str:
+    if value and len(value) > MAX_BODY_LENGTH:
+        raise forms.ValidationError(_("The article is too large. Use fewer or smaller inline images."))
+    return value
 
 
 class DraftSubmissionForm(forms.ModelForm):
@@ -26,6 +32,9 @@ class DraftSubmissionForm(forms.ModelForm):
             "title": forms.TextInput(attrs=_TITLE_ATTRS),
             "category": forms.TextInput(attrs=_CATEGORY_ATTRS),
         }
+
+    def clean_body(self):
+        return _validate_body_length(self.cleaned_data.get("body") or "")
 
 
 class KnowledgeArticleForm(forms.ModelForm):
@@ -50,3 +59,6 @@ class KnowledgeArticleForm(forms.ModelForm):
         # taggit's TagField renders a plain text input; give it Bootstrap styling + a hint.
         self.fields["tags"].widget.attrs.update({"class": "form-control", "placeholder": _("comma,separated,tags")})
         self.fields["tags"].required = False
+
+    def clean_body(self):
+        return _validate_body_length(self.cleaned_data.get("body") or "")

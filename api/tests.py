@@ -1278,6 +1278,13 @@ class KnowledgeArticleDraftTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["submission_type"], DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
 
+    def test_create_rejects_oversized_body(self):
+        from knowledge.models import MAX_BODY_LENGTH
+
+        resp = self.post("/api/v1/knowledge/", self._payload(body="a" * (MAX_BODY_LENGTH + 1)), user=self.author)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(DraftSubmission.objects.count(), 0)
+
     def test_knowledge_draft_not_visible_via_news_endpoint(self):
         _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
         article = _article()

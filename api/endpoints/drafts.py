@@ -11,7 +11,7 @@ from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
-from knowledge.models import DraftSubmission
+from knowledge.models import MAX_BODY_LENGTH, DraftSubmission
 from news.models import NewsArticle
 
 auth = ApiTokenAuth()
@@ -108,10 +108,16 @@ def _validate_locale(locale: str) -> None:
         raise HttpError(422, f"locale must be one of: {', '.join(_LOCALE_VALUES)}")
 
 
+def _validate_body_length(body: str | None) -> None:
+    if body and len(body) > MAX_BODY_LENGTH:
+        raise HttpError(422, f"Body is too large (max {MAX_BODY_LENGTH} characters)")
+
+
 def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmission:
     user = request.auth
     _require_min_participant(user)
     _validate_locale(payload.locale)
+    _validate_body_length(payload.body)
 
     draft = DraftSubmission.objects.create(
         author=user,
@@ -142,6 +148,8 @@ def _update_draft(request, pk: int, payload: DraftPatchIn, submission_type: str)
     data = payload.dict(exclude_unset=True)
     if "locale" in data:
         _validate_locale(data["locale"])
+    if "body" in data:
+        _validate_body_length(data["body"])
 
     update_fields = []
     for field, value in data.items():

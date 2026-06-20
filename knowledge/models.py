@@ -16,6 +16,12 @@ from wagtail_localize.fields import SynchronizedField
 from cycling_site.page_mixins import AsciiSlugMixin
 from cycling_site.sanitize import sanitize_rich_html
 
+# Cap the stored size (characters) of an article body. Inline images are embedded as base64
+# data URIs, so without a limit a body could bloat the DB / API payloads / requests without
+# bound. Enforced on the untrusted write paths (organizer form, participant submission, API);
+# mirrors calendar_app.MAX_DESCRIPTION_LENGTH.
+MAX_BODY_LENGTH = 1_000_000
+
 
 class KnowledgeArticle(index.Indexed, models.Model):
     """Frontend-managed knowledge article: a plain Django model with an HTML body edited
