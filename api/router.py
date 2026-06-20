@@ -14,9 +14,9 @@ api = NinjaAPI(
 
 def _register_routers() -> None:
     from api.endpoints.competitions import router as competitions_router
+    from api.endpoints.content import knowledge_router, news_router
     from api.endpoints.disciplines import event_types_router
     from api.endpoints.disciplines import router as disciplines_router
-    from api.endpoints.drafts import knowledge_router, news_router
     from api.endpoints.locations import router as locations_router
     from api.endpoints.participants import router as participants_router
     from api.endpoints.protocols import router as protocols_router

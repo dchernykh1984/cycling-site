@@ -39,7 +39,7 @@ def _api_post(page, url, token, payload):
 def test_news_article_created_via_api_appears_on_front(page: Page, live_server, api_admin):
     resp = _api_post(
         page,
-        f"{live_server.url}/api/v1/news/articles/",
+        f"{live_server.url}/api/v1/news/",
         api_admin.api_token,
         {
             "title": {"ru": "E2E API News RU", "kk": "E2E API News KK", "en": "E2E API News EN"},
