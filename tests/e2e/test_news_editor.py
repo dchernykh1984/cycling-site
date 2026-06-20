@@ -41,9 +41,13 @@ def test_news_edit_round_trips_body(page: Page, live_server, superuser):
     page.goto(f"{live_server.url}/news/articles/{article.pk}/edit/")
     expect(page.locator("#quill-ru .ql-editor")).to_contain_text("Old body")
 
+    # Full innerHTML replace (old + new), then submit, in one synchronous step: the same pattern
+    # the create test uses and which is reliable across engines. insertAdjacentHTML on a populated
+    # Quill flaked on firefox (the appended node was lost before submit serialised the form).
     page.evaluate(
         """() => {
-          document.querySelector('#quill-ru .ql-editor').insertAdjacentHTML('beforeend', '<p>added in edit</p>');
+          const ed = document.querySelector('#quill-ru .ql-editor');
+          ed.innerHTML = ed.innerHTML + '<p>added in edit</p>';
           document.getElementById('id_title_ru').form.requestSubmit();
         }"""
     )
