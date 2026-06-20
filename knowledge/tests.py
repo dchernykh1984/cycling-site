@@ -1,3 +1,6 @@
+import importlib
+import json
+
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
@@ -6,6 +9,8 @@ from wagtail.models import Locale, Page, Site
 
 from accounts.models import User
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeIndexPage
+
+_MIG_0008 = "knowledge.migrations.0008_populate_knowledgearticle"
 
 
 def _get_site_root():
@@ -61,6 +66,33 @@ class KnowledgeArticleModelTests(TestCase):
     def test_get_absolute_url_uses_index_and_slug(self):
         art = KnowledgeArticle.objects.create(title="Url Article", locale="en")
         self.assertTrue(art.get_absolute_url().endswith(f"{art.slug}/"))
+
+
+class KnowledgeMigrationHelperTests(TestCase):
+    """The 0008 data migration's pure helpers (body extraction + tag re-link)."""
+
+    def test_body_from_blocks_concatenates_only_text_blocks(self):
+        mig = importlib.import_module(_MIG_0008)
+        raw = json.dumps(
+            [
+                {"type": "text", "value": "<p>a</p>"},
+                {"type": "image", "value": 1},
+                {"type": "text", "value": "<p>b</p>"},
+            ]
+        )
+        self.assertEqual(mig._body_from_blocks(raw), "<p>a</p><p>b</p>")
+
+    def test_attach_tags_recreates_taggit_links(self):
+        from django.contrib.contenttypes.models import ContentType
+        from taggit.models import Tag, TaggedItem
+
+        mig = importlib.import_module(_MIG_0008)
+        art = KnowledgeArticle.objects.create(title="Tagged Migrate", locale="ru")
+        t1 = Tag.objects.create(name="alpha", slug="alpha")
+        t2 = Tag.objects.create(name="beta", slug="beta")
+        ct = ContentType.objects.get_for_model(KnowledgeArticle)
+        mig._attach_tags(TaggedItem, ct, art.pk, [t1.pk, t2.pk])
+        self.assertEqual(set(art.tags.names()), {"alpha", "beta"})
 
 
 # ---------------------------------------------------------------------------
