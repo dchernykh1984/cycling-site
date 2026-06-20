@@ -1,3 +1,4 @@
+import time
 from typing import ClassVar
 
 from django.conf import settings
@@ -309,25 +310,33 @@ class DraftSubmission(models.Model):
             self.save(update_fields=["status", "reviewed_by", "reviewer_note"])
 
 
-# Cache of {locale_code: KnowledgeIndexPage URL}. Building an article URL needs the per-locale
-# index page's URL, which is two queries plus Wagtail's page-URL resolution; caching it keeps
-# listing/search/sitemap from scaling queries linearly with the number of articles. Cleared
-# whenever an index page changes (below), so a moved/renamed index can't go stale.
-_index_url_cache: dict[str, str] = {}
+# Per-process cache of {locale_code: (url, monotonic_expiry)}. Building an article URL needs the
+# per-locale index page's URL (a couple of queries plus Wagtail's page-URL resolution); caching it
+# keeps listing/search/sitemap from scaling queries with the number of articles. No shared cache is
+# configured, so each worker holds its own copy and the post_save/post_delete receiver below only
+# clears the worker that handled the edit. The TTL therefore bounds staleness to _INDEX_URL_TTL
+# seconds in *every* worker, so a moved/renamed/deleted index page can't keep returning a stale URL
+# (in search results or the sitemap) indefinitely until the process restarts.
+_INDEX_URL_TTL = 300.0
+_index_url_cache: dict[str, tuple[str, float]] = {}
 
 
 def knowledge_index_url(locale_code: str) -> str:
-    if locale_code not in _index_url_cache:
-        from wagtail.models import Locale
+    cached = _index_url_cache.get(locale_code)
+    if cached is not None and cached[1] > time.monotonic():
+        return cached[0]
 
-        loc = Locale.objects.filter(language_code=locale_code).first()
-        index_page = None
-        if loc is not None:
-            index_page = KnowledgeIndexPage.objects.live().filter(locale=loc).first()
-        if index_page is None:
-            index_page = KnowledgeIndexPage.objects.live().first()
-        _index_url_cache[locale_code] = index_page.url if index_page else "/knowledge/"
-    return _index_url_cache[locale_code]
+    from wagtail.models import Locale
+
+    loc = Locale.objects.filter(language_code=locale_code).first()
+    index_page = None
+    if loc is not None:
+        index_page = KnowledgeIndexPage.objects.live().filter(locale=loc).first()
+    if index_page is None:
+        index_page = KnowledgeIndexPage.objects.live().first()
+    url = index_page.url if index_page else "/knowledge/"
+    _index_url_cache[locale_code] = (url, time.monotonic() + _INDEX_URL_TTL)
+    return url
 
 
 @receiver([post_save, post_delete], sender=KnowledgeIndexPage)
