@@ -1609,6 +1609,25 @@ class CompetitionRichDescriptionTests(TestCase):
     def setUp(self):
         self.organizer = _make_user("rt_org@example.com", User.Role.ORGANIZER)
 
+    def test_submit_page_ships_local_quill_editor(self):
+        self.client.force_login(self.organizer)
+        resp = self.client.get(reverse("calendar_submit"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "vendor/quill/quill.snow.css")
+        self.assertContains(resp, "vendor/quill/quill.min.js")
+        self.assertNotContains(resp, "cdn.quilljs.com")  # vendored locally, not a CDN
+        for loc in ("ru", "kk", "en"):
+            self.assertContains(resp, f'id="quill-desc-{loc}"')
+            self.assertContains(resp, f'id="init-desc-{loc}"')
+
+    def test_edit_page_ships_local_quill_editor(self):
+        comp = _make_competition(title="Editable", description_ru="<p>hi</p>", submitted_by=self.organizer)
+        self.client.force_login(self.organizer)
+        resp = self.client.get(reverse("competition_edit", args=[comp.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "vendor/quill/quill.min.js")
+        self.assertContains(resp, 'id="quill-desc-ru"')
+
     def test_submit_sanitizes_description(self):
         self.client.force_login(self.organizer)
         html = (
