@@ -22,7 +22,9 @@ Must be a {% templatetag openblock %} comment {% templatetag closeblock %} block
 <link href="{% static 'calendar_app/vendor/quill/quill.snow.css' %}" rel="stylesheet">
 <style>
 .quill-editor{background:#fff}
-.quill-editor .ql-container{min-height:200px;font-size:1rem}
+/* Quill adds .ql-container to the .quill-editor element itself, so the editable area is the
+   inner .ql-editor; size that (a `.quill-editor .ql-container` descendant rule never matches). */
+.quill-editor .ql-editor{min-height:200px;font-size:1rem}
 /* Quill Snow hardcodes English heading-picker labels; localize them by the UI language on
    <html lang>. en keeps the upstream English labels. Only the toolbar values are shipped
    ([2, 3, false] -> Normal / Heading 2 / Heading 3). */
