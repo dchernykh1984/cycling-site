@@ -1200,8 +1200,8 @@ msgstr ""
 "        "
 
 #: knowledge/templates/knowledge/admin/approve_confirm.html:15
-msgid "A new knowledge article page will be created in the Wagtail page tree."
-msgstr ""
+msgid "A new knowledge article will be created and published on the site."
+msgstr "Будет создана и опубликована на сайте новая статья базы знаний."
 "Новая страница статьи базы знаний будет создана в дереве страниц Wagtail."
 
 #: knowledge/templates/knowledge/admin/approve_confirm.html:20

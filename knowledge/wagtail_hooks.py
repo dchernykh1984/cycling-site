@@ -54,7 +54,7 @@ class DraftSubmissionViewSet(SnippetViewSet):
         if request.method == "POST":
             try:
                 sub.approve(reviewer=request.user)
-                messages.success(request, f"Submission '{sub.title}' approved and page published.")
+                messages.success(request, f"Submission '{sub.title}' approved and published.")
             except ValueError as exc:
                 messages.error(request, str(exc))
             return redirect(reverse(_LIST_URL_NAME))

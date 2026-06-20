@@ -598,6 +598,38 @@ class RejectSubmissionViewTests(TestCase):
         self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
 
 
+class WagtailModerationTextTests(TestCase):
+    """The Wagtail snippet moderation path must describe the actual result (a plain article,
+    not a Wagtail page in the tree)."""
+
+    def setUp(self):
+        self.admin = _make_user("wm_admin@example.com", User.Role.ADMIN, is_staff=True)
+        self.participant = _make_user("wm_part@example.com", User.Role.PARTICIPANT)
+        self.submission = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="WM Article",
+            body="<p>x</p>",
+        )
+        self.client.force_login(self.admin)
+        self.url = reverse("wagtailsnippets_knowledge_draftsubmission:approve", args=[self.submission.pk])
+
+    def test_approve_confirm_does_not_mention_wagtail_page_tree(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, "Wagtail page tree")
+        self.assertNotContains(resp, "page will be created")
+
+    def test_approve_success_message_does_not_say_page(self):
+        from django.contrib.messages import get_messages
+
+        resp = self.client.post(self.url)
+        msgs = [str(m) for m in get_messages(resp.wsgi_request)]
+        self.assertTrue(any("approved and published" in m for m in msgs), msgs)
+        self.assertFalse(any("page published" in m for m in msgs), msgs)
+
+
 # ---------------------------------------------------------------------------
 # Localization of the on-site forms
 # ---------------------------------------------------------------------------

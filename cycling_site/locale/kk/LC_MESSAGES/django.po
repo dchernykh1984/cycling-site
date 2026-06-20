@@ -1201,8 +1201,8 @@ msgstr ""
 "        "
 
 #: knowledge/templates/knowledge/admin/approve_confirm.html:15
-msgid "A new knowledge article page will be created in the Wagtail page tree."
-msgstr "Wagtail беттер ағашында жаңа білім беттері жасалады."
+msgid "A new knowledge article will be created and published on the site."
+msgstr "Сайтта жаңа білім қоры мақаласы жасалып, жарияланады."
 
 #: knowledge/templates/knowledge/admin/approve_confirm.html:20
 msgid "Approve and publish"
