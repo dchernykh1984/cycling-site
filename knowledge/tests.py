@@ -94,6 +94,13 @@ class KnowledgeMigrationHelperTests(TestCase):
         mig._attach_tags(TaggedItem, ct, art.pk, [t1.pk, t2.pk])
         self.assertEqual(set(art.tags.names()), {"alpha", "beta"})
 
+    def test_data_migrations_are_irreversible(self):
+        # Reversing would silently lose data, so the destructive data migrations must refuse
+        # to roll back rather than recreate empty tables.
+        for name in (_MIG_0008, "knowledge.migrations.0009_delete_knowledge_pages_data"):
+            mig = importlib.import_module(name)
+            self.assertFalse(mig.Migration.operations[0].reversible, name)
+
 
 # ---------------------------------------------------------------------------
 # Public views (index listing + slug detail routed via KnowledgeIndexPage)

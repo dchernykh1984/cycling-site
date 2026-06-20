@@ -62,6 +62,8 @@ class Migration(migrations.Migration):
         ("knowledge", "0007_knowledgearticle"),
     ]
 
+    # Irreversible on purpose: a reverse would recreate empty Wagtail tables without the
+    # articles and then 0007 would drop KnowledgeArticle, silently losing data. Stop loudly.
     operations = [
-        migrations.RunPython(copy_pages_to_articles, migrations.RunPython.noop),
+        migrations.RunPython(copy_pages_to_articles),
     ]

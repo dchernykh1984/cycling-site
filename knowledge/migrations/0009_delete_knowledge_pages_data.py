@@ -31,6 +31,8 @@ class Migration(migrations.Migration):
         ("knowledge", "0008_populate_knowledgearticle"),
     ]
 
+    # Irreversible on purpose: the deleted Wagtail pages can't be reconstructed, so a
+    # rollback must stop here rather than silently leaving the tree without its articles.
     operations = [
-        migrations.RunPython(delete_legacy_pages, migrations.RunPython.noop),
+        migrations.RunPython(delete_legacy_pages),
     ]
