@@ -857,3 +857,32 @@ class KnowledgeArticleModelTests(TestCase):
     def test_get_absolute_url_uses_index_and_slug(self):
         art = KnowledgeArticle.objects.create(title="Url Article", locale="en")
         self.assertTrue(art.get_absolute_url().endswith(f"{art.slug}/"))
+
+
+class KnowledgeArticleDataMigrationTests(TestCase):
+    def test_copies_page_text_block_to_article(self):
+        import importlib
+
+        from django.apps import apps as django_apps
+
+        root = _get_site_root()
+        index = KnowledgeIndexPage(title="Mig Index", slug="mig-index-test")
+        root.add_child(instance=index)
+        index.save_revision().publish()
+        page = KnowledgeArticlePage(
+            title="Migrated Article",
+            slug="migrated-article-test",
+            category="guides",
+            body=json.dumps([{"type": "text", "value": "<p>Body <strong>x</strong></p>"}]),
+        )
+        index.add_child(instance=page)
+        page.save_revision().publish()
+
+        mig = importlib.import_module("knowledge.migrations.0008_populate_knowledgearticle")
+        mig.copy_pages_to_articles(django_apps, None)
+
+        art = KnowledgeArticle.objects.get(slug="migrated-article-test")
+        self.assertEqual(art.title, "Migrated Article")
+        self.assertEqual(art.category, "guides")
+        self.assertIn("<strong>x</strong>", art.body)
+        self.assertIn(art.locale, ("ru", "kk", "en"))
