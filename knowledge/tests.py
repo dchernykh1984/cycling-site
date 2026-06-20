@@ -10,6 +10,7 @@ from wagtail.test.utils import WagtailPageTests
 from accounts.models import User
 from knowledge.models import (
     DraftSubmission,
+    KnowledgeArticle,
     KnowledgeArticlePage,
     KnowledgeIndexPage,
     LocationArticlePage,
@@ -820,3 +821,39 @@ class KnowledgeForeignLocaleBannerTests(TestCase):
     def test_unknown_article_slug_still_returns_404(self):
         response = self.client.get("/knowledge/no-such-article-xyz/", HTTP_ACCEPT_LANGUAGE="en")
         self.assertEqual(response.status_code, 404)
+
+
+class KnowledgeArticleModelTests(TestCase):
+    def test_save_sanitizes_body(self):
+        art = KnowledgeArticle.objects.create(
+            title="Sanitize me",
+            locale="ru",
+            body='<p>Hi <strong>x</strong></p><a href="https://x.com">l</a><script>alert(1)</script>',
+        )
+        art.refresh_from_db()
+        self.assertIn("<strong>x</strong>", art.body)
+        self.assertIn('href="https://x.com"', art.body)
+        self.assertNotIn("<script", art.body)
+
+    def test_save_keeps_inline_image(self):
+        art = KnowledgeArticle.objects.create(
+            title="Img", locale="ru", body='<p><img src="https://x.com/i.png" alt="a"></p>'
+        )
+        art.refresh_from_db()
+        self.assertIn("<img", art.body)
+
+    def test_autoslug_from_title_is_ascii_and_unique(self):
+        a1 = KnowledgeArticle.objects.create(title="Hello World", locale="en")
+        a2 = KnowledgeArticle.objects.create(title="Hello World", locale="en")
+        self.assertEqual(a1.slug, "hello-world")
+        self.assertEqual(a2.slug, "hello-world-1")
+
+    def test_cyrillic_title_falls_back_to_ascii_slug(self):
+        # Cyrillic small 'a' x5 -> slugify(allow_unicode=False) == "" -> "article" base.
+        art = KnowledgeArticle.objects.create(title=chr(0x0430) * 5, locale="ru")
+        self.assertTrue(art.slug)
+        self.assertRegex(art.slug, r"^[a-z0-9-]+$")
+
+    def test_get_absolute_url_uses_index_and_slug(self):
+        art = KnowledgeArticle.objects.create(title="Url Article", locale="en")
+        self.assertTrue(art.get_absolute_url().endswith(f"{art.slug}/"))
