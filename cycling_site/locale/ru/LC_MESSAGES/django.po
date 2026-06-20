@@ -160,6 +160,14 @@ msgstr "Соревнование"
 msgid "Category"
 msgstr "Категория"
 
+#: knowledge/forms.py
+msgid "Tags"
+msgstr "Теги"
+
+#: knowledge/forms.py
+msgid "comma,separated,tags"
+msgstr "теги,через,запятую"
+
 #: accounts/templates/accounts/profile.html:149
 #: registrations/templates/registrations/participant_list.html:63
 msgid "Rejected"

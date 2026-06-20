@@ -76,6 +76,7 @@ class AddArticleView(ManagerRequiredMixin, View):
             article = form.save(commit=False)
             article.published_by = request.user
             article.save()
+            form.save_m2m()  # persist tags (commit=False skipped the M2M)
             return redirect(article.get_absolute_url())
         return render(request, self.template_name, {"form": form})
 

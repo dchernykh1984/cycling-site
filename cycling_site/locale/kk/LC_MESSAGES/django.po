@@ -160,6 +160,14 @@ msgstr "Жарыс"
 msgid "Category"
 msgstr "Санат"
 
+#: knowledge/forms.py
+msgid "Tags"
+msgstr "Тегтер"
+
+#: knowledge/forms.py
+msgid "comma,separated,tags"
+msgstr "үтірмен,бөлінген,тегтер"
+
 #: accounts/templates/accounts/profile.html:149
 #: registrations/templates/registrations/participant_list.html:63
 msgid "Rejected"
