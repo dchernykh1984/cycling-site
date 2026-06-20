@@ -227,3 +227,24 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         self.assertIn("&lt;b&gt;", out)  # HTML escaped, not interpreted
         self.assertIn("&amp;", out)
         self.assertIn("<p>", out)
+
+
+class VendoredStaticAssetsTests(SimpleTestCase):
+    def test_no_sourcemap_references_in_vendored_assets(self):
+        # prod uses ManifestStaticFilesStorage, which resolves //# sourceMappingURL refs while
+        # hashing and raises (500 on every page loading the asset + breaks collectstatic) when
+        # the .map isn't collected. We don't vendor .map files, so vendored JS/CSS must not
+        # reference one.
+        from django.apps import apps
+
+        offenders = []
+        for app_label in ("calendar_app", "knowledge"):
+            try:
+                app_path = Path(apps.get_app_config(app_label).path)
+            except LookupError:
+                continue
+            vendor = app_path / "static" / app_label / "vendor"
+            for asset in vendor.rglob("*"):
+                if asset.suffix in {".js", ".css"} and "sourceMappingURL" in asset.read_text(encoding="utf-8"):
+                    offenders.append(str(asset.relative_to(app_path)))
+        self.assertEqual(offenders, [], f"vendored assets reference uncollected sourcemaps: {offenders}")
