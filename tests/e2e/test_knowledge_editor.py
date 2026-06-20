@@ -57,7 +57,9 @@ def test_add_round_trips_body(page: Page, live_server, superuser, knowledge_inde
     page.fill("#id_title", "E2E Knowledge Article")
     editor = page.locator("#quill-body .ql-editor")
     editor.click()
-    editor.type("Body written in the browser")
+    # insert_text dispatches a real input event (not per-key keydowns), which Quill's
+    # contenteditable handles reliably on every engine; Locator.type() drops the text on webkit.
+    page.keyboard.insert_text("Body written in the browser")
     page.eval_on_selector("#id_title", "el => el.form.requestSubmit()")
     page.wait_for_load_state("networkidle")
 
@@ -97,7 +99,8 @@ def test_edit_prefills_and_updates(page: Page, live_server, superuser, knowledge
     editor = page.locator("#quill-body .ql-editor")
     editor.click()
     editor.press("End")
-    editor.type(" plus more")
+    # See test_add_round_trips_body: insert_text is webkit-safe where Locator.type() is not.
+    page.keyboard.insert_text(" plus more")
     page.eval_on_selector("#id_title", "el => el.form.requestSubmit()")
     page.wait_for_load_state("networkidle")
 
