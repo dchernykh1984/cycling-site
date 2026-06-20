@@ -129,8 +129,10 @@ def _apply_localized(obj, field: str, value: LocalizedStr) -> list[str]:
     for lang, val in (("ru", value.ru), ("kk", value.kk), ("en", value.en)):
         setattr(obj, f"{field}_{lang}", val)
         updated.append(f"{field}_{lang}")
-    # Keep canonical column in sync so localize_field fallback stays correct.
-    setattr(obj, field, value.ru or value.kk or value.en)
+    # Keep the canonical column in sync via __dict__: setattr(obj, field, ...) would go through
+    # modeltranslation's descriptor and, under a non-default active language, write the value
+    # into that language's column instead (corrupting an otherwise-empty translation).
+    obj.__dict__[field] = value.ru or value.kk or value.en
     updated.append(field)
     return updated
 
