@@ -55,11 +55,15 @@ def test_add_round_trips_body(page: Page, live_server, superuser, knowledge_inde
     inject_session(page, live_server, superuser)
     page.goto(f"{live_server.url}/knowledge/add/")
     page.fill("#id_title", "E2E Knowledge Article")
-    editor = page.locator("#quill-body .ql-editor")
-    editor.click()
-    # insert_text dispatches a real input event (not per-key keydowns), which Quill's
-    # contenteditable handles reliably on every engine; Locator.type() drops the text on webkit.
-    page.keyboard.insert_text("Body written in the browser")
+    # Set the editor body via the DOM, then submit: deterministic on every engine (keyboard
+    # simulation in a contenteditable flakes across webkit desktop/mobile). The submit handler
+    # copies quill.root.innerHTML into the hidden field, so the editor -> save round-trip is
+    # exercised; real keyboard input through the shared editor is covered by the competition tests.
+    page.evaluate(
+        """() => {
+          document.querySelector('#quill-body .ql-editor').innerHTML = '<p>Body written in the browser</p>';
+        }"""
+    )
     page.eval_on_selector("#id_title", "el => el.form.requestSubmit()")
     page.wait_for_load_state("networkidle")
 

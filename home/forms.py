@@ -3,6 +3,7 @@ from typing import ClassVar
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from cycling_site.richtext import validate_rich_text_length
 from home.models import SiteContent
 
 
@@ -39,3 +40,14 @@ class SiteContentForm(forms.ModelForm):
             "page_title_kk": _("Tab title (KK)"),
             "page_title_en": _("Tab title (EN)"),
         }
+
+    # Reject an oversized body per locale (inline images are base64); the body HTML itself is
+    # sanitized centrally in SiteContent.save().
+    def clean_body_ru(self):
+        return validate_rich_text_length(self.cleaned_data.get("body_ru") or "")
+
+    def clean_body_kk(self):
+        return validate_rich_text_length(self.cleaned_data.get("body_kk") or "")
+
+    def clean_body_en(self):
+        return validate_rich_text_length(self.cleaned_data.get("body_en") or "")

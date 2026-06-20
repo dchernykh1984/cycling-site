@@ -218,6 +218,14 @@ class SiteContentModelTests(TestCase):
         self.assertTrue(SiteContent.objects.filter(pk=1).exists())
         self.assertFalse(SiteContent.objects.filter(pk=99).exists())
 
+    def test_save_sanitizes_body(self):
+        # Body is rendered with |safe on the home page, so save() must strip scripts.
+        SiteContent.objects.all().delete()
+        SiteContent(body_ru="<p>safe</p><script>alert(1)</script>").save()
+        sc = SiteContent.objects.get(pk=1)
+        self.assertIn("safe", sc.body_ru)
+        self.assertNotIn("<script", sc.body_ru.lower())
+
 
 class HomeEditViewTests(TestCase):
     def setUp(self):
@@ -298,6 +306,47 @@ class HomeEditViewTests(TestCase):
             },
         )
         self.assertRedirects(response, "/", fetch_redirect_response=False)
+
+    def test_post_sanitizes_script_in_body(self):
+        self.client.force_login(self.owner)
+        self.client.post(
+            reverse("home_edit"),
+            {
+                "navbar_title_ru": "X",
+                "navbar_title_kk": "",
+                "navbar_title_en": "",
+                "page_title_ru": "",
+                "page_title_kk": "",
+                "page_title_en": "",
+                "body_ru": "<p>safe text</p><script>alert(1)</script>",
+                "body_kk": "",
+                "body_en": "",
+            },
+        )
+        sc = SiteContent.objects.get(pk=1)
+        self.assertIn("safe text", sc.body_ru)
+        self.assertNotIn("<script", sc.body_ru.lower())
+
+    def test_post_rejects_oversized_body(self):
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
+
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            reverse("home_edit"),
+            {
+                "navbar_title_ru": "X",
+                "navbar_title_kk": "",
+                "navbar_title_en": "",
+                "page_title_ru": "",
+                "page_title_kk": "",
+                "page_title_en": "",
+                "body_ru": "a" * (MAX_RICH_TEXT_LENGTH + 1),
+                "body_kk": "",
+                "body_en": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)  # re-render with errors, not a redirect
+        self.assertFalse(SiteContent.objects.get(pk=1).body_ru)
 
 
 class HomePageContextTests(WagtailPageTestCase):

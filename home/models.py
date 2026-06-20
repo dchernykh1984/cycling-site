@@ -11,6 +11,7 @@ from wagtail.models import Page
 from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.page_mixins import AsciiSlugMixin
+from cycling_site.sanitize import sanitize_rich_text_columns
 
 _SITE_CONTENT_CACHE_KEY = "site_content_obj"
 
@@ -22,6 +23,9 @@ class SiteContent(models.Model):  # type: ignore[django-manager-missing]
     page_title = models.CharField(max_length=200, blank=True, verbose_name="Page title")
     body = models.TextField(blank=True, verbose_name="Body")
 
+    # Canonical + per-locale rich-text body columns (modeltranslation), sanitized on save.
+    _BODY_FIELDS: ClassVar[tuple] = ("body", "body_ru", "body_kk", "body_en")
+
     class Meta:
         verbose_name = "Site content"
 
@@ -30,6 +34,9 @@ class SiteContent(models.Model):  # type: ignore[django-manager-missing]
 
     def save(self, *args, **kwargs) -> None:
         self.pk = 1
+        # Body is rich HTML rendered with |safe on the home page, so sanitize on every write
+        # (the home-edit form is the only writer). See _BODY_FIELDS for the __dict__ rationale.
+        sanitize_rich_text_columns(self, self._BODY_FIELDS, update_fields=kwargs.get("update_fields"))
         super().save(*args, **kwargs)
         cache.delete(_SITE_CONTENT_CACHE_KEY)
 
