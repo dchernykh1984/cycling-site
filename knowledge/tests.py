@@ -242,6 +242,17 @@ class SubmissionFormViewTests(TestCase):
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(DraftSubmission.objects.count(), 0)
 
+    def test_submit_rejects_oversized_body(self):
+        from knowledge.models import MAX_BODY_LENGTH
+
+        self.client.force_login(self.participant)
+        resp = self.client.post(
+            reverse("knowledge_submit"),
+            {"locale": "ru", "title": "Big Sub", "body": "a" * (MAX_BODY_LENGTH + 1), "category": ""},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(DraftSubmission.objects.filter(title="Big Sub").exists())
+
 
 # ---------------------------------------------------------------------------
 # DraftSubmission.approve / reject
@@ -403,6 +414,17 @@ class AddArticleViewTests(TestCase):
         )
         art = KnowledgeArticle.objects.get(title="Tagged Add")
         self.assertEqual(set(art.tags.names()), {"alpha", "beta"})
+
+    def test_add_rejects_oversized_body(self):
+        from knowledge.models import MAX_BODY_LENGTH
+
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            reverse("knowledge_add"),
+            {"locale": "ru", "title": "Too Big", "body": "a" * (MAX_BODY_LENGTH + 1), "category": "", "tags": ""},
+        )
+        self.assertEqual(resp.status_code, 200)  # re-rendered with error, not redirected
+        self.assertFalse(KnowledgeArticle.objects.filter(title="Too Big").exists())
 
 
 class EditArticleViewTests(TestCase):
