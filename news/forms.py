@@ -10,13 +10,18 @@ from news.models import Comment, NewsArticle
 
 
 class SubmitNewsForm(forms.ModelForm):
-    locale = forms.ChoiceField(choices=DraftSubmission.LOCALE_CHOICES)
+    locale = forms.ChoiceField(
+        choices=DraftSubmission.LOCALE_CHOICES, label=_("Locale"), widget=forms.Select(attrs={"class": "form-select"})
+    )
+    # Body is rich HTML written by the shared Quill editor into a hidden field; it is sanitized
+    # centrally when the submission is approved into a NewsArticle (NewsArticle.save()).
+    body = forms.CharField(widget=forms.HiddenInput(), label=_("Body"))
 
     class Meta:
         model = DraftSubmission
         fields: ClassVar[list] = ["locale", "title", "body"]
         widgets: ClassVar[dict] = {
-            "body": forms.Textarea(attrs={"rows": 10}),
+            "title": forms.TextInput(attrs={"class": "form-control"}),
         }
 
     def clean_body(self):

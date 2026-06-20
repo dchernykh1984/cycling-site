@@ -146,14 +146,3 @@ def test_knowledge_article_autoslug_strips_cyrillic():
     base_slug = slugify(cyrillic_title) or "article"
     assert base_slug == "article"
     assert _CYRILLIC_A not in base_slug
-
-
-def test_news_page_autoslug_strips_cyrillic():
-    """_create_news_page uses slugify() without allow_unicode - Cyrillic titles
-    fall back to 'news', never producing a Cyrillic slug."""
-    from django.utils.text import slugify
-
-    cyrillic_title = _CYRILLIC_A * 10
-    base_slug = slugify(cyrillic_title) or "news"
-    assert base_slug == "news"
-    assert _CYRILLIC_A not in base_slug

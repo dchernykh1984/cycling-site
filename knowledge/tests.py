@@ -420,11 +420,9 @@ class DraftSubmissionApproveRejectTests(TestCase):
         self.submission.refresh_from_db()
         self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
 
-    def test_news_submission_creates_news_page_not_article(self):
-        from news.models import NewsIndexPage, NewsPage
+    def test_news_submission_creates_news_article(self):
+        from news.models import NewsArticle, NewsPage
 
-        news_index = NewsIndexPage(title="News", slug="news-approve")
-        _get_site_root().add_child(instance=news_index)
         sub = DraftSubmission.objects.create(
             author=self.participant,
             submission_type=DraftSubmission.SubmissionType.NEWS,
@@ -433,7 +431,11 @@ class DraftSubmissionApproveRejectTests(TestCase):
             body="<p>News body</p>",
         )
         sub.approve(reviewer=self.staff)
-        self.assertEqual(NewsPage.objects.filter(title="Breaking News").count(), 1)
+        # Approval now creates a NewsArticle (shown on /news/ + the API), not a legacy NewsPage.
+        article = NewsArticle.objects.get(title_ru="Breaking News")
+        self.assertIn("News body", article.body_ru)
+        self.assertFalse(article.is_deleted)
+        self.assertEqual(NewsPage.objects.filter(title="Breaking News").count(), 0)
         self.assertEqual(KnowledgeArticle.objects.filter(title="Breaking News").count(), 0)
 
 

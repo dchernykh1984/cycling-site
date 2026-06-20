@@ -9,22 +9,38 @@
         <h1 class="mb-4">{% trans "Submit news" %}</h1>
         <form method="post">
             {% csrf_token %}
-            {% for field in form %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
             <div class="mb-3">
-                <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
-                    {{ field.label }}{% if field.field.required %} *{% endif %}
-                </label>
-                {{ field }}
-                {% if field.errors %}
-                <div class="text-danger small mt-1">
-                    {% for error in field.errors %}{{ error }}{% endfor %}
-                </div>
-                {% endif %}
+                <label class="form-label fw-semibold" for="{{ form.locale.id_for_label }}">{{ form.locale.label }}</label>
+                {{ form.locale }}
+                {% if form.locale.errors %}<div class="text-danger small mt-1">{% for e in form.locale.errors %}{{ e }}{% endfor %}</div>{% endif %}
             </div>
-            {% endfor %}
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold" for="{{ form.title.id_for_label }}">{{ form.title.label }} *</label>
+                {{ form.title }}
+                {% if form.title.errors %}<div class="text-danger small mt-1">{% for e in form.title.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{% trans "Body" %} *</label>
+                <div id="quill-body" class="quill-editor" data-target="id_body" data-init="init-body"></div>
+                {{ form.body }}
+                {% if form.body.errors %}<div class="text-danger small mt-1">{% for e in form.body.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+
             <button type="submit" class="btn btn-primary">{% trans "Submit for review" %}</button>
             <a href="{% url 'account_profile' %}" class="btn btn-outline-secondary ms-2">{% trans "Cancel" %}</a>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}{{ block.super }}
+{{ form.body.value|default:""|json_script:"init-body" }}
+{% include "includes/rich_text_editor.html" %}
 {% endblock %}
