@@ -1661,21 +1661,27 @@ class CompetitionRichDescriptionTests(TestCase):
 
         from django.apps import apps as django_apps
 
-        comp = _make_competition(title="Mig", description_ru="Plain text https://x.com line")
+        # Use a non-default locale field: the canonical ``description`` is a
+        # modeltranslation alias for the default language (ru) on the real model, so
+        # iterating both would convert ru twice here. In a real migration the historical
+        # model has independent columns, so each is converted exactly once.
+        comp = _make_competition(title="Mig", description_en="Plain text https://x.com line")
         mig = importlib.import_module("calendar_app.migrations.0013_descriptions_to_html")
-        mig.plaintext_to_html(django_apps, None)
+        mig.descriptions_to_html(django_apps, None)
         comp.refresh_from_db()
-        self.assertIn('href="https://x.com"', comp.description_ru)
-        self.assertIn("<p>", comp.description_ru)
+        self.assertIn('href="https://x.com"', comp.description_en)
+        self.assertIn("<p>", comp.description_en)
 
-    def test_migration_leaves_existing_html_untouched(self):
+    def test_migration_escapes_html_no_passthrough(self):
+        # Historical values that happen to contain HTML must be escaped, never passed
+        # through raw (which would become stored XSS once rendered with |safe).
         import importlib
 
         from django.apps import apps as django_apps
 
-        html = '<p>already <a href="https://x.com">html</a></p>'
-        comp = _make_competition(title="Mig2", description_ru=html)
+        comp = _make_competition(title="Mig2", description_en="<script>alert(1)</script>")
         mig = importlib.import_module("calendar_app.migrations.0013_descriptions_to_html")
-        mig.plaintext_to_html(django_apps, None)
+        mig.descriptions_to_html(django_apps, None)
         comp.refresh_from_db()
-        self.assertEqual(comp.description_ru, html)
+        self.assertNotIn("<script>", comp.description_en)
+        self.assertIn("&lt;script&gt;", comp.description_en)
