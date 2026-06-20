@@ -599,6 +599,25 @@ class CompetitionDescriptionSanitizeTest(TestCase, ApiTestMixin):
         self.assertIn("<img", desc)
         self.assertNotIn("<script", desc)
 
+    def test_create_under_non_default_locale_does_not_leak_translation(self):
+        # Regression: creating from a kk/en UI must not copy the RU body into the empty
+        # kk/en columns (modeltranslation descriptor footgun in _apply_localized).
+        resp = self.post(
+            "/api/v1/competitions/",
+            {
+                "title": {"ru": "Iso Race", "kk": "", "en": ""},
+                "description": {"ru": "<p>only ru</p>", "kk": "", "en": ""},
+                "date_start": "2026-07-01",
+            },
+            user=self.admin,
+            HTTP_ACCEPT_LANGUAGE="en",
+        )
+        self.assertEqual(resp.status_code, 201)
+        comp = Competition.objects.get(title_ru="Iso Race")
+        self.assertIn("<p>only ru</p>", comp.description_ru)
+        self.assertFalse(comp.description_kk)
+        self.assertFalse(comp.description_en)
+
     def test_create_rejects_oversized_description(self):
         from calendar_app.models import MAX_DESCRIPTION_LENGTH
 

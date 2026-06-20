@@ -1687,6 +1687,25 @@ class CompetitionRichDescriptionTests(TestCase):
         self.assertNotIn("<script", comp.description_ru)
         self.assertNotIn("javascript:", comp.description_en)
 
+    def test_save_does_not_leak_translation_across_active_locales(self):
+        # Regression: save() must not copy one language's body into an empty translation
+        # under a non-default active UI locale (modeltranslation canonical-fallback footgun).
+        from django.utils import translation
+
+        for active in ("ru", "kk", "en"):
+            with translation.override(active):
+                comp = Competition.objects.create(
+                    title_ru=f"Iso {active}",
+                    date_start=datetime.date(2026, 9, 1),
+                    description_ru="<p>RU body</p><script>x</script>",
+                )
+            comp.refresh_from_db()
+            self.assertIn("<p>RU body</p>", comp.description_ru)
+            self.assertNotIn("<script", comp.description_ru)
+            self.assertFalse(comp.description_kk, f"kk leaked under active={active}")
+            self.assertFalse(comp.description_en, f"en leaked under active={active}")
+            self.assertNotIn("<script", comp.__dict__.get("description") or "")
+
     def test_admin_save_model_sanitizes_description(self):
         from django.contrib.admin.sites import AdminSite
 
