@@ -83,6 +83,9 @@ def test_submit_round_trips_all_three_locales(page: Page, live_server, organizer
         editor = page.locator(f"#quill-desc-{loc} .ql-editor")
         editor.click()
         editor.type(text)
+    # Return to the RU tab so the required title field is in the visible pane: WebKit
+    # refuses to submit a form whose required control sits in a display:none tab pane.
+    page.click('button[data-bs-target="#tab-ru"]')
     page.click('form[enctype="multipart/form-data"] button[type=submit]')
     page.wait_for_load_state("networkidle")
 
