@@ -98,8 +98,11 @@ def _get_news_article_or_404(pk: int) -> NewsArticle:
 def _apply_news_localized(article: NewsArticle, field: str, value: LocalizedStr) -> None:
     for lang in ("ru", "kk", "en"):
         setattr(article, f"{field}_{lang}", getattr(value, lang))
-    # Keep the canonical column populated so the slug and locale fallbacks stay correct.
-    setattr(article, field, value.ru or value.kk or value.en)
+    # Set the canonical column via __dict__: setattr(article, field, ...) goes through
+    # modeltranslation's descriptor and, under a non-default active language, would write the value
+    # into that language's column instead (corrupting an otherwise-empty translation). Matches
+    # api/endpoints/competitions.py::_apply_localized.
+    article.__dict__[field] = value.ru or value.kk or value.en
 
 
 # -- News endpoints -----------------------------------------------------------
