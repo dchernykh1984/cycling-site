@@ -1,0 +1,95 @@
+{% comment %}
+Shared rich-text (Quill) editor used by every on-site content form: competitions, news,
+knowledge and the home page. Include ONCE per page (in the extra_js block). For each editable
+rich field, place inline in the form a box and its hidden field:
+
+  <div class="quill-editor" data-target="id_body_ru" data-init="init-body-ru"></div>
+  {{ form.body_ru }}   {# the hidden <input>/<textarea>; keep it next to the box #}
+
+and emit the initial HTML as a json_script (before this include), e.g.:
+
+  {{ form.body_ru.value|default:""|json_script:"init-body-ru" }}
+
+On submit each editor's HTML is copied into its hidden field; the server sanitizes it. All
+editors are initialised on load (including those in hidden Bootstrap tab-panes) and get a focus
+call when their tab is shown so cursor positioning is correct. Quill is vendored locally (no
+CDN) so the editor works offline.
+
+Must be a {% templatetag openblock %} comment {% templatetag closeblock %} block, not a Django
+"{#...#}" comment: the latter is single-line only, so a multi-line one would leak into the page.
+{% endcomment %}
+{% load static i18n %}
+<link href="{% static 'calendar_app/vendor/quill/quill.snow.css' %}" rel="stylesheet">
+<style>
+.quill-editor{background:#fff}
+.quill-editor .ql-container{min-height:200px;font-size:1rem}
+/* Quill Snow hardcodes English heading-picker labels; localize them by the UI language on
+   <html lang>. en keeps the upstream English labels. Only the toolbar values are shipped
+   ([2, 3, false] -> Normal / Heading 2 / Heading 3). */
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label::before,
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item::before{content:"Обычный"}
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before{content:"Заголовок 2"}
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before{content:"Заголовок 3"}
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label::before,
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item::before{content:"Қалыпты"}
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before{content:"Тақырып 2"}
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before{content:"Тақырып 3"}
+</style>
+{% trans "The text is too large. Use fewer or smaller inline images." as quill_too_large_msg %}
+{{ quill_too_large_msg|json_script:"quill-too-large-msg" }}
+<script src="{% static 'calendar_app/vendor/quill/quill.min.js' %}"></script>
+<script>
+(function () {
+  if (typeof Quill === 'undefined') return;
+  var TOOLBAR = [
+    [{ 'header': [2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['blockquote', 'link', 'image'],
+    ['clean']
+  ];
+  // Keep in sync with cycling_site.richtext.MAX_RICH_TEXT_LENGTH; reject before submit so an
+  // oversized base64 image fails with a clear message, not a raw HTTP 400 on the request body.
+  var MAX = 1000000;
+  var msgEl = document.getElementById('quill-too-large-msg');
+  var TOO_LARGE = msgEl ? JSON.parse(msgEl.textContent) : 'The text is too large.';
+
+  function initBox(box) {
+    if (box.dataset.quillReady) return;
+    box.dataset.quillReady = '1';
+    var hidden = document.getElementById(box.dataset.target);
+    var initEl = box.dataset.init ? document.getElementById(box.dataset.init) : null;
+    var quill = new Quill(box, { theme: 'snow', modules: { toolbar: TOOLBAR } });
+    if (initEl) {
+      var html = JSON.parse(initEl.textContent);
+      if (html) quill.clipboard.dangerouslyPasteHTML(html);
+    }
+    if (hidden && hidden.form) {
+      hidden.form.addEventListener('submit', function (ev) {
+        var content = quill.root.innerHTML;
+        if (content.length > MAX) {
+          ev.preventDefault();
+          window.alert(TOO_LARGE);
+          return;
+        }
+        hidden.value = content;
+      });
+    }
+  }
+
+  document.querySelectorAll('.quill-editor').forEach(initBox);
+  // Editors initialised inside a hidden Bootstrap tab-pane need a focus call when the pane is
+  // shown, otherwise cursor positioning breaks (Quill measured layout while it was hidden).
+  document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (btn) {
+    btn.addEventListener('shown.bs.tab', function () {
+      var pane = document.querySelector(btn.dataset.bsTarget);
+      var ed = pane && pane.querySelector('.quill-editor .ql-editor');
+      if (ed) ed.focus();
+    });
+  });
+}());
+</script>
