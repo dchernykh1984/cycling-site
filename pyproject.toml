@@ -1,39 +1,44 @@
-[tool.poetry]
+[project]
 name = "cycling-site"
 version = "0.1.0"
 description = "Cycling Wagtail website"
-authors = ["Denis Chernykh <education03@mail.ru>"]
-package-mode = false
+authors = [{ name = "Denis Chernykh", email = "education03@mail.ru" }]
+requires-python = ">=3.13,<4"
+dependencies = [
+    "Django>=5.2,<7.0",
+    "wagtail>=7.4,<8.0",
+    "gunicorn>=23,<27",
+    "whitenoise[brotli]>=6.9,<7",
+    "psycopg2-binary>=2.9.10,<3",
+    "dj-database-url>=3.1.2,<4",
+    "django-environ>=0.13.0,<0.14",
+    "django-allauth[socialaccount]>=65.0,<66",
+    "wagtail-localize>=1.13,<2.0",
+    "django-modeltranslation>=0.20,<0.21",
+    "django-treebeard>=4.8,<6.0",
+    "django-ninja>=1.6.2,<2",
+]
 
-[tool.poetry.dependencies]
-python = "^3.13"
-Django = ">=5.2,<7.0"
-wagtail = ">=7.4,<8.0"
-gunicorn = ">=23,<27"
-whitenoise = {extras = ["brotli"], version = "^6.9"}
-psycopg2-binary = "^2.9.10"
-dj-database-url = "^3.1.2"
-django-environ = "^0.13.0"
-django-allauth = {version = "^65.0", extras = ["socialaccount"]}
-wagtail-localize = ">=1.13,<2.0"
-django-modeltranslation = ">=0.20,<0.21"
-django-treebeard = ">=4.8,<6.0"
-django-ninja = "^1.6.2"
+[dependency-groups]
+dev = [
+    "ruff>=0.15.12,<0.16",
+    "pre-commit>=4.6.0,<5",
+    "mypy>=2.1.0,<3",
+    "commitizen>=4.13.10,<5",
+    "pytest>=9.0.3,<10",
+    "pytest-xdist>=3.8.0,<4",
+    "pytest-asyncio>=1.3.0,<2",
+    "pytest-cov>=7.1.0,<8",
+    "django-debug-toolbar>=6.3.0,<7",
+    "pytest-django>=4.12.0,<5",
+    "ipython>=9.13.0,<10",
+    "django-stubs>=5.1,<7.0",
+    "pytest-playwright>=0.7,<1.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.15.12"
-pre-commit = "^4.6.0"
-mypy = "^2.1.0"
-commitizen = "^4.13.10"
-pytest = "^9.0.3"
-pytest-xdist = "^3.8.0"
-pytest-asyncio = "^1.3.0"
-pytest-cov = "^7.1.0"
-django-debug-toolbar = "^6.3.0"
-pytest-django = "^4.12.0"
-ipython = "^9.13.0"
-django-stubs = ">=5.1,<7.0"
-pytest-playwright = ">=0.7,<1.0"
+[tool.uv]
+package = false
+default-groups = "all"
 
 [tool.ruff]
 line-length = 120

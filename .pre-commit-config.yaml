@@ -21,7 +21,7 @@ repos:
       - id: mypy
         name: mypy
         language: system
-        entry: poetry run mypy
+        entry: uv run mypy
         types_or: [python, pyi]
         require_serial: true
 
@@ -38,11 +38,11 @@ repos:
         language: pygrep
         entry: '[^\x00-\x7f]'
         types_or: [python, yaml, markdown, toml, shell, json]
-        exclude: ^(poetry\.lock|.*/migrations/.*)$
+        exclude: ^(uv\.lock|.*/migrations/.*)$
 
-      - id: poetry-export
-        name: export requirements.txt from poetry.lock
+      - id: uv-export
+        name: export requirements.txt from uv.lock
         language: system
-        entry: bash -c 'poetry export --without-hashes -f requirements.txt -o requirements.txt && git add requirements.txt'
+        entry: bash -c 'uv export --no-hashes --no-annotate --no-default-groups --no-emit-project -o requirements.txt && git add requirements.txt'
         pass_filenames: false
         always_run: true

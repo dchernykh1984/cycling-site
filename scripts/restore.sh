@@ -296,7 +296,7 @@ else
     echo "Restoring media..."
     MEDIA_ROOT=$(
         DATABASE_URL="$TARGET_DATABASE_URL" DJANGO_SETTINGS_MODULE="cycling_site.settings.dev" \
-        poetry run python manage.py shell -c "from django.conf import settings; print(settings.MEDIA_ROOT)" 2>/dev/null
+        uv run python manage.py shell -c "from django.conf import settings; print(settings.MEDIA_ROOT)" 2>/dev/null
     )
     if [[ -z "$MEDIA_ROOT" ]]; then
         echo "WARNING: Could not determine MEDIA_ROOT from Django settings; using ./media/" >&2
@@ -313,7 +313,7 @@ fi
 echo ""
 echo "Running migrations..."
 DATABASE_URL="$TARGET_DATABASE_URL" DJANGO_SETTINGS_MODULE="cycling_site.settings.dev" \
-    poetry run python manage.py migrate --no-input
+    uv run python manage.py migrate --no-input
 
 # ---------------------------------------------------------------------------
 # Summary

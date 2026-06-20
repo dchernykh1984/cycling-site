@@ -7,7 +7,7 @@ results processing.
 ## Prerequisites
 
 - Python 3.13
-- [Poetry](https://python-poetry.org/docs/#installation) 1.8+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - PostgreSQL 14+
 - Git
 
@@ -32,12 +32,12 @@ sudo systemctl start postgresql
 ```bash
 git clone git@github.com:dchernykh1984/cycling-site.git
 cd cycling-site
-poetry install --no-root
-poetry run pre-commit install
-poetry run pre-commit install --hook-type commit-msg
+uv sync
+uv run pre-commit install
+uv run pre-commit install --hook-type commit-msg
 createdb cycling_site_dev
-poetry run python manage.py migrate
-poetry run python manage.py createsuperuser
+uv run python manage.py migrate
+uv run python manage.py createsuperuser
 ```
 
 By default the project connects to `postgres://localhost/cycling_site_dev`
@@ -47,10 +47,10 @@ string, copy `.env.example` to `.env` and set `DATABASE_URL`.
 ## Running the dev server
 
 ```bash
-poetry run python manage.py runserver
+uv run python manage.py runserver
 ```
 
-Run `poetry run python manage.py migrate` again after pulling changes that
+Run `uv run python manage.py migrate` again after pulling changes that
 include new migrations.
 
 The dev server runs at:
@@ -231,8 +231,8 @@ admin access.
 
 Scripts live in `scripts/`. They require `pg_dump` / `pg_restore` (PostgreSQL
 client tools) to be installed, and must be run from the project root with
-[Poetry](https://python-poetry.org/) available on `PATH` (the scripts call
-`poetry run python manage.py` internally).
+[uv](https://docs.astral.sh/uv/) available on `PATH` (the scripts call
+`uv run python manage.py` internally).
 
 ### Local backup
 

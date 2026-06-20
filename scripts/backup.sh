@@ -246,7 +246,7 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # we just dumped without needing production-only env vars locally.
 APPLIED_MIGRATIONS=$(
     DATABASE_URL="$TARGET_DATABASE_URL" DJANGO_SETTINGS_MODULE="cycling_site.settings.dev" \
-    poetry run python manage.py showmigrations --list 2>/dev/null || echo "unavailable"
+    uv run python manage.py showmigrations --list 2>/dev/null || echo "unavailable"
 )
 
 # ---------------------------------------------------------------------------

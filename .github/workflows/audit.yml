@@ -12,15 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v6
         with:
+          enable-cache: true
           python-version: "3.13"
-          cache: "pip"
-      - name: Install Poetry
-        run: pip install poetry poetry-plugin-export
       - name: Export dependencies
-        run: poetry export --without-hashes --format=requirements.txt --output=requirements.txt
+        run: uv export --no-hashes --no-annotate --no-default-groups --no-emit-project -o requirements.txt
       - name: Run pip-audit
-        run: |
-          pip install pip-audit
-          pip-audit -r requirements.txt
+        run: uvx pip-audit -r requirements.txt
