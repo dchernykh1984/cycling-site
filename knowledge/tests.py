@@ -634,6 +634,14 @@ class WagtailModerationTextTests(TestCase):
         self.assertNotContains(resp, "Wagtail page tree")
         self.assertNotContains(resp, "page will be created")
 
+    def test_confirm_text_has_no_stale_wagtail_phrase_in_any_locale(self):
+        # A stale .po continuation line had concatenated the deleted "...Wagtail page tree"
+        # sentence onto the ru translation; assert no locale leaks it.
+        msgid = "A new knowledge article will be created and published on the site."
+        for lang in ("ru", "kk", "en"):
+            with translation.override(lang):
+                self.assertNotIn("Wagtail", _(msgid), lang)
+
     def test_approve_success_message_does_not_say_page(self):
         from django.contrib.messages import get_messages
 
