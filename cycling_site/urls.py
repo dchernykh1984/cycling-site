@@ -10,7 +10,7 @@ from wagtail.documents import urls as wagtaildocs_urls
 
 from accounts.views import set_language as accounts_set_language
 from api.router import api as ninja_api
-from cycling_site.sitemaps import WagtailPagesSitemap
+from cycling_site.sitemaps import KnowledgeArticleSitemap, WagtailPagesSitemap
 from search import views as search_views
 
 
@@ -49,6 +49,7 @@ def serve_media(request, path):
 
 sitemaps = {
     "wagtail": WagtailPagesSitemap,
+    "knowledge": KnowledgeArticleSitemap,
 }
 
 urlpatterns: list[URLPattern | URLResolver] = [
