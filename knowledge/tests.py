@@ -63,6 +63,17 @@ class KnowledgeArticleModelTests(TestCase):
         self.assertTrue(art.slug)
         self.assertRegex(art.slug, r"^[a-z0-9-]+$")
 
+    def test_colliding_max_length_titles_stay_within_slug_max_length(self):
+        # Two identical max-length ASCII titles must not produce a 256+ char slug for the second
+        # article (the "-1" suffix would otherwise overflow max_length and raise DataError on PG).
+        max_len = KnowledgeArticle._meta.get_field("slug").max_length
+        title = "a" * max_len
+        a1 = KnowledgeArticle.objects.create(title=title, locale="en")
+        a2 = KnowledgeArticle.objects.create(title=title, locale="en")
+        self.assertEqual(len(a1.slug), max_len)
+        self.assertLessEqual(len(a2.slug), max_len)
+        self.assertNotEqual(a1.slug, a2.slug)
+
     def test_get_absolute_url_uses_index_and_slug(self):
         art = KnowledgeArticle.objects.create(title="Url Article", locale="en")
         self.assertTrue(art.get_absolute_url().endswith(f"{art.slug}/"))
