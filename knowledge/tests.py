@@ -68,6 +68,19 @@ class KnowledgeArticleModelTests(TestCase):
         self.assertTrue(art.get_absolute_url().endswith(f"{art.slug}/"))
 
 
+class KnowledgeReservedSlugTests(TestCase):
+    def test_titles_matching_service_urls_get_non_colliding_slug(self):
+        from django.urls import resolve
+
+        for title, reserved in (("Add", "add"), ("Submit", "submit")):
+            art = KnowledgeArticle.objects.create(title=title, locale="ru", body="<p>x</p>")
+            self.assertNotIn(art.slug, {"add", "submit", "submissions", "articles"})
+            # The service URL still resolves to its own view (not shadowed by the article)...
+            self.assertEqual(resolve(f"/knowledge/{reserved}/").url_name, f"knowledge_{reserved}")
+            # ...and the article's own detail page is reachable.
+            self.assertEqual(self.client.get(art.get_absolute_url()).status_code, 200)
+
+
 class KnowledgeMigrationHelperTests(TestCase):
     """The 0008 data migration's pure helpers (body extraction + tag re-link)."""
 

@@ -20,6 +20,11 @@ from cycling_site.sanitize import sanitize_rich_html
 # Backwards-compatible alias for the shared, site-wide rich-text size cap.
 MAX_BODY_LENGTH = MAX_RICH_TEXT_LENGTH
 
+# Top-level path segments served by knowledge/urls.py under /knowledge/. An article slug must
+# never equal one of these, or its /knowledge/<slug>/ detail would resolve to the service view
+# (e.g. the add/submit form) before Wagtail's catch-all route.
+_RESERVED_SLUGS = frozenset({"add", "submit", "submissions", "articles"})
+
 
 class KnowledgeArticle(index.Indexed, models.Model):
     """Frontend-managed knowledge article: a plain Django model with an HTML body edited
@@ -76,7 +81,7 @@ class KnowledgeArticle(index.Indexed, models.Model):
             base = slugify(self.title or "", allow_unicode=False) or "article"
             candidate = base
             n = 1
-            while KnowledgeArticle.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+            while self._slug_unavailable(candidate):
                 candidate = f"{base}-{n}"
                 n += 1
             self.slug = candidate
@@ -92,6 +97,11 @@ class KnowledgeArticle(index.Indexed, models.Model):
         if index_page is None:
             index_page = KnowledgeIndexPage.objects.live().first()
         return f"{index_page.url}{self.slug}/" if index_page else f"/knowledge/{self.slug}/"
+
+    def _slug_unavailable(self, slug: str) -> bool:
+        # Reserved slugs would otherwise resolve to the service views under /knowledge/
+        # (knowledge/urls.py) before the Wagtail catch-all, hiding the article's detail page.
+        return slug in _RESERVED_SLUGS or KnowledgeArticle.objects.filter(slug=slug).exclude(pk=self.pk).exists()
 
 
 def _can_manage_knowledge(user) -> bool:
