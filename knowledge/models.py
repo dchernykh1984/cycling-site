@@ -2,6 +2,8 @@ from typing import ClassVar
 
 from django.conf import settings
 from django.db import models, transaction
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -88,15 +90,7 @@ class KnowledgeArticle(index.Indexed, models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self) -> str:
-        from wagtail.models import Locale
-
-        loc = Locale.objects.filter(language_code=self.locale).first()
-        index_page = None
-        if loc is not None:
-            index_page = KnowledgeIndexPage.objects.live().filter(locale=loc).first()
-        if index_page is None:
-            index_page = KnowledgeIndexPage.objects.live().first()
-        return f"{index_page.url}{self.slug}/" if index_page else f"/knowledge/{self.slug}/"
+        return f"{knowledge_index_url(self.locale)}{self.slug}/"
 
     def _slug_unavailable(self, slug: str) -> bool:
         # Reserved slugs would otherwise resolve to the service views under /knowledge/
@@ -306,3 +300,29 @@ class DraftSubmission(models.Model):
             self.reviewed_by = reviewer
             self.reviewer_note = note
             self.save(update_fields=["status", "reviewed_by", "reviewer_note"])
+
+
+# Cache of {locale_code: KnowledgeIndexPage URL}. Building an article URL needs the per-locale
+# index page's URL, which is two queries plus Wagtail's page-URL resolution; caching it keeps
+# listing/search/sitemap from scaling queries linearly with the number of articles. Cleared
+# whenever an index page changes (below), so a moved/renamed index can't go stale.
+_index_url_cache: dict[str, str] = {}
+
+
+def knowledge_index_url(locale_code: str) -> str:
+    if locale_code not in _index_url_cache:
+        from wagtail.models import Locale
+
+        loc = Locale.objects.filter(language_code=locale_code).first()
+        index_page = None
+        if loc is not None:
+            index_page = KnowledgeIndexPage.objects.live().filter(locale=loc).first()
+        if index_page is None:
+            index_page = KnowledgeIndexPage.objects.live().first()
+        _index_url_cache[locale_code] = index_page.url if index_page else "/knowledge/"
+    return _index_url_cache[locale_code]
+
+
+@receiver([post_save, post_delete], sender=KnowledgeIndexPage)
+def _clear_knowledge_index_url_cache(**kwargs):
+    _index_url_cache.clear()

@@ -67,6 +67,18 @@ class KnowledgeArticleModelTests(TestCase):
         art = KnowledgeArticle.objects.create(title="Url Article", locale="en")
         self.assertTrue(art.get_absolute_url().endswith(f"{art.slug}/"))
 
+    def test_get_absolute_url_does_not_query_per_article(self):
+        # The per-locale index URL is cached, so listing/search/sitemap don't run queries for
+        # every article (regression against the N+1 in the index/search/sitemap).
+        from knowledge.models import _index_url_cache
+
+        articles = [KnowledgeArticle.objects.create(title=f"Q{i}", locale="ru", body="<p>x</p>") for i in range(4)]
+        _index_url_cache.clear()
+        articles[0].get_absolute_url()  # warms the cache (does the lookups once)
+        with self.assertNumQueries(0):
+            for art in articles[1:]:
+                art.get_absolute_url()
+
 
 class KnowledgeReservedSlugTests(TestCase):
     def test_titles_matching_service_urls_get_non_colliding_slug(self):
