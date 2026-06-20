@@ -302,6 +302,10 @@ msgstr "Размер файла не должен превышать 10 МБ."
 msgid "Unsupported file type. Allowed: %(allowed)s."
 msgstr "Неподдерживаемый тип файла. Разрешены: %(allowed)s."
 
+#: calendar_app/forms.py:120
+msgid "Description is too large. Use fewer or smaller inline images."
+msgstr "Описание слишком большое. Используйте меньше изображений или уменьшите их размер."
+
 #: calendar_app/forms.py:106 calendar_app/tests.py:386
 msgid "End date cannot be before start date."
 msgstr "Дата окончания не может быть раньше даты начала."

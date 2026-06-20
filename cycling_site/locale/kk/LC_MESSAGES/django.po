@@ -302,6 +302,10 @@ msgstr "Файл өлшемі 10 МБ-тан аспауы керек."
 msgid "Unsupported file type. Allowed: %(allowed)s."
 msgstr "Қолданылмайтын файл түрі. Рұқсат етілген: %(allowed)s."
 
+#: calendar_app/forms.py:120
+msgid "Description is too large. Use fewer or smaller inline images."
+msgstr "Сипаттама тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
+
 #: calendar_app/forms.py:106 calendar_app/tests.py:386
 msgid "End date cannot be before start date."
 msgstr "Аяқталу күні басталу күнінен бұрын болмауы керек."

@@ -14,6 +14,12 @@ from cycling_site.sanitize import sanitize_rich_html
 # write, whatever the entry point (organizer form, API, Django admin, Wagtail snippet).
 _DESCRIPTION_FIELDS = ("description", "description_ru", "description_kk", "description_en")
 
+# Cap the stored size (characters) of a single per-locale description. Inline images are
+# embedded as base64 data URIs, so without a limit a description could bloat the DB rows,
+# API payloads and backups without bound. Enforced on the untrusted write paths (organizer
+# form + API); ~1 MB allows formatted text with a couple of modest inline images.
+MAX_DESCRIPTION_LENGTH = 1_000_000
+
 
 class EventType(models.Model):
     objects: ClassVar[models.Manager["EventType"]]
