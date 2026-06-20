@@ -792,8 +792,9 @@ class NewsReadApiTest(TestCase, ApiTestMixin):
         self.assertEqual(data["title"]["kk"], "KK Title")
         self.assertEqual(data["title"]["en"], "EN Title")
 
-    def test_invalid_token_still_returns_401_on_public_endpoints(self):
-        resp = self.client.get("/api/v1/competitions/", HTTP_AUTHORIZATION="Bearer bad-token")
+    def test_invalid_token_returns_401_on_news_endpoint(self):
+        # A bad token must 401 on the news router itself (not a different router).
+        resp = self.client.get("/api/v1/news/", HTTP_AUTHORIZATION="Bearer bad-token")
         self.assertEqual(resp.status_code, 401)
 
 
