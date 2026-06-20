@@ -1648,24 +1648,58 @@ class CompetitionRichDescriptionTests(TestCase):
         self.assertNotIn("<script", comp.description_ru)
 
     def test_detail_renders_description_as_html(self):
+        # Competition.save() sanitizes (which also normalises <a> attribute order).
         comp = _make_competition(
             title="RT Detail",
-            description_ru='<p>see <a target="_blank" rel="noopener" href="https://x.com">link</a></p>',
+            description_ru='<p>see <a href="https://x.com">link</a></p>',
         )
         resp = self.client.get(reverse("competition_detail", args=[comp.pk]))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, '<a target="_blank" rel="noopener" href="https://x.com">link</a>')
+        self.assertContains(resp, '<a href="https://x.com" rel="noopener" target="_blank">link</a>')
+        self.assertNotContains(resp, "&lt;p&gt;")  # rendered as HTML, not escaped
+
+    def test_model_save_sanitizes_description(self):
+        # Sanitization is centralized in Competition.save(), so every write path -- including
+        # Django admin and the Wagtail snippet, which both persist via the model -- is covered.
+        comp = Competition.objects.create(
+            title_ru="Model Save",
+            date_start=datetime.date(2026, 9, 1),
+            description_ru="<p>ok</p><script>alert(1)</script>",
+            description_en='<a href="javascript:alert(1)">x</a>',
+        )
+        comp.refresh_from_db()
+        self.assertIn("<p>ok</p>", comp.description_ru)
+        self.assertNotIn("<script", comp.description_ru)
+        self.assertNotIn("javascript:", comp.description_en)
+
+    def test_admin_save_model_sanitizes_description(self):
+        from django.contrib.admin.sites import AdminSite
+
+        from calendar_app.admin import CompetitionAdmin
+
+        obj = Competition(
+            title_ru="Admin Race",
+            date_start=datetime.date(2026, 9, 1),
+            description_ru="<p>fine</p><script>alert(1)</script>",
+        )
+        CompetitionAdmin(Competition, AdminSite()).save_model(None, obj, None, False)
+        obj.refresh_from_db()
+        self.assertIn("<p>fine</p>", obj.description_ru)
+        self.assertNotIn("<script", obj.description_ru)
 
     def test_migration_converts_plaintext_descriptions(self):
         import importlib
 
         from django.apps import apps as django_apps
 
-        # Use a non-default locale field: the canonical ``description`` is a
+        # Plant the historical value with .update() to bypass Competition.save()'s
+        # sanitizer -- the migration runs against rows written before that sanitizer
+        # existed. Use a non-default locale: the canonical ``description`` is a
         # modeltranslation alias for the default language (ru) on the real model, so
         # iterating both would convert ru twice here. In a real migration the historical
         # model has independent columns, so each is converted exactly once.
-        comp = _make_competition(title="Mig", description_en="Plain text https://x.com line")
+        comp = _make_competition(title="Mig")
+        Competition.objects.filter(pk=comp.pk).update(description_en="Plain text https://x.com line")
         mig = importlib.import_module("calendar_app.migrations.0013_descriptions_to_html")
         mig.descriptions_to_html(django_apps, None)
         comp.refresh_from_db()
@@ -1674,12 +1708,14 @@ class CompetitionRichDescriptionTests(TestCase):
 
     def test_migration_escapes_html_no_passthrough(self):
         # Historical values that happen to contain HTML must be escaped, never passed
-        # through raw (which would become stored XSS once rendered with |safe).
+        # through raw (which would become stored XSS once rendered with |safe). Plant the
+        # raw value with .update() to bypass the save()-time sanitizer (see above).
         import importlib
 
         from django.apps import apps as django_apps
 
-        comp = _make_competition(title="Mig2", description_en="<script>alert(1)</script>")
+        comp = _make_competition(title="Mig2")
+        Competition.objects.filter(pk=comp.pk).update(description_en="<script>alert(1)</script>")
         mig = importlib.import_module("calendar_app.migrations.0013_descriptions_to_html")
         mig.descriptions_to_html(django_apps, None)
         comp.refresh_from_db()

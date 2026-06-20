@@ -5,7 +5,6 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import User
-from cycling_site.sanitize import sanitize_rich_html
 from locations.models import Location, competition_location_block_reason
 
 from .models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
@@ -113,17 +112,8 @@ class SubmitCompetitionForm(forms.Form):
             raise forms.ValidationError(_("Unsupported file type. Allowed: %(allowed)s.") % {"allowed": allowed})
         return f
 
-    def _clean_description(self, field):
-        return sanitize_rich_html(self.cleaned_data.get(field) or "", allow_img=True)
-
-    def clean_description_ru(self):
-        return self._clean_description("description_ru")
-
-    def clean_description_kk(self):
-        return self._clean_description("description_kk")
-
-    def clean_description_en(self):
-        return self._clean_description("description_en")
+    # Descriptions arrive as raw Quill HTML in these hidden fields; sanitization happens
+    # centrally in Competition.save() so every write path (form, API, admin, snippet) is covered.
 
     def clean_file_announcement(self):
         return self._validate_file(self.cleaned_data.get("file_announcement"))
