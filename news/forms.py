@@ -4,6 +4,7 @@ from django import forms
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
+from cycling_site.richtext import validate_rich_text_length
 from knowledge.models import DraftSubmission
 from news.models import Comment, NewsArticle
 
@@ -17,6 +18,9 @@ class SubmitNewsForm(forms.ModelForm):
         widgets: ClassVar[dict] = {
             "body": forms.Textarea(attrs={"rows": 10}),
         }
+
+    def clean_body(self):
+        return validate_rich_text_length(self.cleaned_data.get("body") or "")
 
 
 _BODY_ATTRS = {"rows": 10, "class": "form-control quill-source"}
@@ -83,6 +87,15 @@ class NewsArticleForm(forms.ModelForm):
             ),
             "hero_image": forms.ClearableFileInput(attrs={"class": "form-control", "accept": "image/*"}),
         }
+
+    def clean_body_ru(self):
+        return validate_rich_text_length(self.cleaned_data.get("body_ru") or "")
+
+    def clean_body_kk(self):
+        return validate_rich_text_length(self.cleaned_data.get("body_kk") or "")
+
+    def clean_body_en(self):
+        return validate_rich_text_length(self.cleaned_data.get("body_en") or "")
 
 
 class AddCommentForm(forms.ModelForm):

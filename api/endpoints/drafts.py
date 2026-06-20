@@ -11,7 +11,8 @@ from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
-from knowledge.models import MAX_BODY_LENGTH, DraftSubmission
+from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
+from knowledge.models import DraftSubmission
 from news.models import NewsArticle
 
 auth = ApiTokenAuth()
@@ -109,8 +110,8 @@ def _validate_locale(locale: str) -> None:
 
 
 def _validate_body_length(body: str | None) -> None:
-    if body and len(body) > MAX_BODY_LENGTH:
-        raise HttpError(422, f"Body is too large (max {MAX_BODY_LENGTH} characters)")
+    if body and len(body) > MAX_RICH_TEXT_LENGTH:
+        raise HttpError(422, f"Body is too large (max {MAX_RICH_TEXT_LENGTH} characters)")
 
 
 def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmission:
@@ -212,6 +213,8 @@ def create_news_article(request, payload: NewsArticleIn):
     user = request.auth
     if not is_admin(user):
         raise HttpError(403, "Admin role is required")
+    for raw in (payload.body.ru, payload.body.kk, payload.body.en):
+        _validate_body_length(raw)
 
     article = NewsArticle(published_by=user, is_hidden=payload.is_hidden)
     for field, value in (("title", payload.title), ("intro", payload.intro), ("body", payload.body)):

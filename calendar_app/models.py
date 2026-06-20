@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from wagtail.search import index
 
+from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from cycling_site.sanitize import sanitize_rich_html
 
 # Rich-text description fields sanitized on every write whatever the entry point (organizer
@@ -19,11 +20,8 @@ from cycling_site.sanitize import sanitize_rich_html
 # translation, which would otherwise copy e.g. the RU body into an empty KK column).
 _DESCRIPTION_FIELDS = ("description", "description_ru", "description_kk", "description_en")
 
-# Cap the stored size (characters) of a single per-locale description. Inline images are
-# embedded as base64 data URIs, so without a limit a description could bloat the DB rows,
-# API payloads and backups without bound. Enforced on the untrusted write paths (organizer
-# form + API); ~1 MB allows formatted text with a couple of modest inline images.
-MAX_DESCRIPTION_LENGTH = 1_000_000
+# Backwards-compatible alias for the shared, site-wide rich-text size cap (organizer form + API).
+MAX_DESCRIPTION_LENGTH = MAX_RICH_TEXT_LENGTH
 
 
 class EventType(models.Model):

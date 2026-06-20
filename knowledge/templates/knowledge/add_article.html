@@ -41,7 +41,7 @@
 
       <div class="mb-3">
         <label class="form-label fw-semibold">{% trans "Body" %}</label>
-        <div id="quill-body" class="quill-body-box"></div>
+        <div id="quill-body" class="quill-body-box" data-too-large-msg="{% trans 'The text is too large. Use fewer or smaller inline images.' %}"></div>
         {{ form.body }}
         {% if form.body.errors %}<div class="text-danger small mt-1">{% for e in form.body.errors %}{{ e }}{% endfor %}</div>{% endif %}
       </div>

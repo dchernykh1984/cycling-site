@@ -14,13 +14,11 @@ from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.page_mixins import AsciiSlugMixin
+from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from cycling_site.sanitize import sanitize_rich_html
 
-# Cap the stored size (characters) of an article body. Inline images are embedded as base64
-# data URIs, so without a limit a body could bloat the DB / API payloads / requests without
-# bound. Enforced on the untrusted write paths (organizer form, participant submission, API);
-# mirrors calendar_app.MAX_DESCRIPTION_LENGTH.
-MAX_BODY_LENGTH = 1_000_000
+# Backwards-compatible alias for the shared, site-wide rich-text size cap.
+MAX_BODY_LENGTH = MAX_RICH_TEXT_LENGTH
 
 
 class KnowledgeArticle(index.Indexed, models.Model):

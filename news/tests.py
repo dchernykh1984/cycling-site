@@ -431,3 +431,25 @@ class NewsArticleSanitizeTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         titles = [a.title for a in resp.context["news_results"]]
         self.assertIn("SearchableNewsItem", titles)
+
+
+class NewsRichTextLimitTests(TestCase):
+    """The shared rich-text size cap is enforced on every news write path (review #2)."""
+
+    def test_submit_news_form_rejects_oversized_body(self):
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
+        from news.forms import SubmitNewsForm
+
+        form = SubmitNewsForm(data={"locale": "ru", "title": "T", "body": "a" * (MAX_RICH_TEXT_LENGTH + 1)})
+        self.assertFalse(form.is_valid())
+        self.assertIn("body", form.errors)
+
+    def test_news_article_form_rejects_oversized_body(self):
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
+        from news.forms import NewsArticleForm
+
+        form = NewsArticleForm(
+            data={"title_ru": "T", "body_ru": "a" * (MAX_RICH_TEXT_LENGTH + 1), "published_at": "2026-01-01T00:00"}
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("body_ru", form.errors)

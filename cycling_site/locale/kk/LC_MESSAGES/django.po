@@ -318,6 +318,10 @@ msgstr "Сипаттама тым үлкен. Суреттерді азайты�
 msgid "The article is too large. Use fewer or smaller inline images."
 msgstr "Мақала тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
 
+#: cycling_site/richtext.py
+msgid "The text is too large. Use fewer or smaller inline images."
+msgstr "Мәтін тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
+
 #: calendar_app/forms.py:106 calendar_app/tests.py:386
 msgid "End date cannot be before start date."
 msgstr "Аяқталу күні басталу күнінен бұрын болмауы керек."

@@ -40,6 +40,9 @@ html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::b
   var box = document.getElementById('quill-body');
   var hidden = document.getElementById('id_body');
   if (!box || !hidden) return;
+  // Keep in sync with cycling_site.richtext.MAX_RICH_TEXT_LENGTH; reject before submit so an
+  // oversized base64 image fails with a clear message, not a raw HTTP 400 on the request body.
+  var MAX = 1000000;
   var quill = new Quill(box, { theme: 'snow', modules: { toolbar: TOOLBAR } });
   var initEl = document.getElementById('init-body');
   if (initEl) {
@@ -47,7 +50,15 @@ html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::b
     if (html) quill.clipboard.dangerouslyPasteHTML(html);
   }
   if (hidden.form) {
-    hidden.form.addEventListener('submit', function () { hidden.value = quill.root.innerHTML; });
+    hidden.form.addEventListener('submit', function (ev) {
+      var content = quill.root.innerHTML;
+      if (content.length > MAX) {
+        ev.preventDefault();
+        window.alert(box.dataset.tooLargeMsg || 'The text is too large. Use fewer or smaller inline images.');
+        return;
+      }
+      hidden.value = content;
+    });
   }
 }());
 </script>

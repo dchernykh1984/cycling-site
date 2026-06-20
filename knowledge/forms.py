@@ -3,16 +3,11 @@ from typing import ClassVar
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from knowledge.models import MAX_BODY_LENGTH, DraftSubmission, KnowledgeArticle
+from cycling_site.richtext import validate_rich_text_length as _validate_body_length
+from knowledge.models import DraftSubmission, KnowledgeArticle
 
 _TITLE_ATTRS = {"class": "form-control"}
 _CATEGORY_ATTRS = {"class": "form-control"}
-
-
-def _validate_body_length(value: str) -> str:
-    if value and len(value) > MAX_BODY_LENGTH:
-        raise forms.ValidationError(_("The article is too large. Use fewer or smaller inline images."))
-    return value
 
 
 class DraftSubmissionForm(forms.ModelForm):
