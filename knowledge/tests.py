@@ -426,6 +426,19 @@ class AddArticleViewTests(TestCase):
         self.assertEqual(resp.status_code, 200)  # re-rendered with error, not redirected
         self.assertFalse(KnowledgeArticle.objects.filter(title="Too Big").exists())
 
+    def test_add_shows_category_error_when_too_long(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            reverse("knowledge_add"),
+            {"locale": "ru", "title": "CatErr", "body": "<p>x</p>", "category": "c" * 101, "tags": ""},
+        )
+        self.assertEqual(resp.status_code, 200)
+        # The category error must be rendered (locale-agnostic: assert the form's own message).
+        form = resp.context["form"]
+        self.assertIn("category", form.errors)
+        self.assertContains(resp, form.errors["category"][0])
+        self.assertFalse(KnowledgeArticle.objects.filter(title="CatErr").exists())
+
 
 class EditArticleViewTests(TestCase):
     def setUp(self):
