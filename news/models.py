@@ -19,7 +19,7 @@ from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.page_mixins import AsciiSlugMixin
-from cycling_site.sanitize import sanitize_rich_html
+from cycling_site.sanitize import sanitize_rich_text_columns
 
 
 class NewsPageTag(TaggedItemBase):
@@ -211,12 +211,7 @@ class NewsArticle(index.Indexed, models.Model):  # type: ignore[django-manager-m
     def save(self, *args, **kwargs) -> None:
         # Bodies are rendered with |safe, so sanitize on every write (single choke point for
         # the manager form and Django admin). See _BODY_FIELDS for the __dict__ rationale.
-        update_fields = kwargs.get("update_fields")
-        if update_fields is None or any(f in update_fields for f in self._BODY_FIELDS):
-            for field in self._BODY_FIELDS:
-                value = self.__dict__.get(field)
-                if value:
-                    self.__dict__[field] = sanitize_rich_html(value, allow_img=True)
+        sanitize_rich_text_columns(self, self._BODY_FIELDS, update_fields=kwargs.get("update_fields"))
         if not self.slug:
             # Prefer Russian title for the slug (stable across locale switches).
             base = slugify(getattr(self, "title_ru", None) or self.title or "article")
