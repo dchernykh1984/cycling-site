@@ -175,6 +175,25 @@ def test_edit_form_saves_all_locale_navbar_titles_and_reflect(page: Page, live_s
     expect(page.locator(".navbar-brand")).to_contain_text("TitleEN")
 
 
+@pytest.mark.django_db(transaction=True)
+def test_edit_form_saves_body_via_editor(page: Page, live_server, owner, site_content):
+    """Editing the RU body through the shared Quill editor saves and renders on the home page."""
+    inject_session(page, live_server, owner)
+    page.goto(f"{live_server.url}/home/edit/")
+    # Set the body through the shared editor DOM and submit in one synchronous step (deterministic
+    # across engines; see tests/e2e/test_knowledge_editor.py for the rationale).
+    page.evaluate(
+        """() => {
+          document.querySelector('#quill-ru .ql-editor').innerHTML = '<p>Home body via editor</p>';
+          document.getElementById('home-edit-form').requestSubmit();
+        }"""
+    )
+    page.wait_for_load_state("networkidle")
+
+    page.goto(f"{live_server.url}/")
+    expect(page.locator(".home-body")).to_contain_text("Home body via editor")
+
+
 # ---------------------------------------------------------------------------
 # Per-locale content display
 # ---------------------------------------------------------------------------
