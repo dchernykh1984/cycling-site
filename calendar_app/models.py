@@ -8,6 +8,12 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from wagtail.search import index
 
+from cycling_site.sanitize import sanitize_rich_html
+
+# Rich-text description fields (canonical + per-locale) that must be sanitized on every
+# write, whatever the entry point (organizer form, API, Django admin, Wagtail snippet).
+_DESCRIPTION_FIELDS = ("description", "description_ru", "description_kk", "description_en")
+
 
 class EventType(models.Model):
     objects: ClassVar[models.Manager["EventType"]]
@@ -190,6 +196,20 @@ class Competition(index.Indexed, models.Model):
 
     def __str__(self) -> str:
         return self.title or f"Competition #{self.pk}"
+
+    def save(self, *args, **kwargs):
+        # Descriptions are stored as rich HTML and rendered with |safe, so sanitize them on
+        # every write -- this is the single choke point covering the organizer form, the API,
+        # Django admin and Wagtail snippets. Skip the (BeautifulSoup) work on partial saves
+        # that don't touch a description field. sanitize_rich_html is idempotent, so the
+        # modeltranslation alias of ``description`` onto the default language is harmless.
+        update_fields = kwargs.get("update_fields")
+        if update_fields is None or any(f in update_fields for f in _DESCRIPTION_FIELDS):
+            for field in _DESCRIPTION_FIELDS:
+                value = getattr(self, field, None)
+                if value:
+                    setattr(self, field, sanitize_rich_html(value, allow_img=True))
+        super().save(*args, **kwargs)
 
     def get_calendar_end(self) -> str | None:
         if self.date_end:

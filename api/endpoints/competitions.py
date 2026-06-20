@@ -7,7 +7,6 @@ from ninja.errors import HttpError
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
-from cycling_site.sanitize import sanitize_rich_html
 from locations.models import Location, competition_location_block_reason
 
 auth = ApiTokenAuth()
@@ -136,15 +135,6 @@ def _apply_localized(obj, field: str, value: LocalizedStr) -> list[str]:
     return updated
 
 
-def _sanitize_description(value: LocalizedStr) -> LocalizedStr:
-    """Sanitize an incoming rich-text description (images allowed) for every locale."""
-    return LocalizedStr(
-        ru=sanitize_rich_html(value.ru, allow_img=True),
-        kk=sanitize_rich_html(value.kk, allow_img=True),
-        en=sanitize_rich_html(value.en, allow_img=True),
-    )
-
-
 def _validate_location_id(location_id, user) -> None:
     """Reject a forged location_id: missing, deleted, or another user's pending proposal (review #3)."""
     if location_id is None:
@@ -211,7 +201,8 @@ def create_competition(request, payload: CompetitionIn):
     status = Competition.Status.APPROVED if is_admin(user) else Competition.Status.PENDING_APPROVAL
     competition = Competition(submitted_by=user, status=status)
     _apply_localized(competition, "title", payload.title)
-    _apply_localized(competition, "description", _sanitize_description(payload.description))
+    # Descriptions are sanitized centrally in Competition.save().
+    _apply_localized(competition, "description", payload.description)
 
     for field in (
         "event_type_id",
@@ -249,10 +240,8 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 
     for field, value in data.items():
         if isinstance(value, dict) and field in ("title", "description"):
-            loc = LocalizedStr(**value)
-            if field == "description":
-                loc = _sanitize_description(loc)
-            update_fields.extend(_apply_localized(competition, field, loc))
+            # Descriptions are sanitized centrally in Competition.save().
+            update_fields.extend(_apply_localized(competition, field, LocalizedStr(**value)))
         else:
             setattr(competition, field, value)
             update_fields.append(field)
