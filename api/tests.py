@@ -1355,6 +1355,33 @@ class KnowledgeArticleDraftTest(TestCase, ApiTestMixin):
         resp = self.get(f"/api/v1/knowledge/drafts/{kdraft.pk}", user=self.other)
         self.assertEqual(resp.status_code, 403)
 
+    def test_anonymous_cannot_list_drafts(self):
+        self.assertEqual(self.get("/api/v1/knowledge/drafts/").status_code, 401)
+
+    def test_anonymous_cannot_read_approved_draft(self):
+        # Regression: an approved draft keeps its raw, pre-sanitization body and ignores the
+        # published article's is_hidden/is_deleted flags, so it must never be readable anonymously.
+        # Public reads go through the KnowledgeArticle endpoints, never the draft moderation API.
+        kdraft = _draft(
+            self.author,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            status=DraftSubmission.Status.APPROVED,
+        )
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{kdraft.pk}").status_code, 401)
+
+    def test_list_shows_only_own_drafts_to_non_admin(self):
+        mine = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        _draft(self.other, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        ids = [d["id"] for d in self.get("/api/v1/knowledge/drafts/", user=self.author).json()]
+        self.assertEqual(ids, [mine.pk])
+
+    def test_list_shows_all_drafts_to_admin(self):
+        admin = _user("k_admin", role=User.Role.ADMIN)
+        mine = _draft(self.author, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        theirs = _draft(self.other, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        ids = {d["id"] for d in self.get("/api/v1/knowledge/drafts/", user=admin).json()}
+        self.assertEqual(ids, {mine.pk, theirs.pk})
+
 
 # ---------------------------------------------------------------------------
 # Participants
@@ -2051,9 +2078,12 @@ class KnowledgeLocaleCRUDTest(TestCase, ApiTestMixin):
             data = self._create(locale=locale, title=f"Title {locale}")
             self.assertEqual(data["locale"], locale)
 
-    def test_approved_draft_visible_to_anonymous(self):
+    def test_draft_detail_requires_auth(self):
+        # Drafts are moderation data, not public content: even an approved draft is unreadable
+        # anonymously (public reads go through the KnowledgeArticle endpoints).
         data = self._create()
-        resp = self.get(f"/api/v1/knowledge/drafts/{data['id']}")
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{data['id']}").status_code, 401)
+        resp = self.get(f"/api/v1/knowledge/drafts/{data['id']}", user=self.admin)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["title"], "Knowledge Title")
 
@@ -2062,9 +2092,9 @@ class KnowledgeLocaleCRUDTest(TestCase, ApiTestMixin):
         resp = self.get(f"/api/v1/knowledge/drafts/{data['id']}", user=self.author)
         self.assertEqual(resp.status_code, 200)
 
-    def test_approved_drafts_appear_in_list(self):
+    def test_approved_drafts_appear_in_admin_list(self):
         data = self._create()
-        ids = [d["id"] for d in self.get("/api/v1/knowledge/drafts/").json()]
+        ids = [d["id"] for d in self.get("/api/v1/knowledge/drafts/", user=self.admin).json()]
         self.assertIn(data["id"], ids)
 
     def test_patch_updates_title(self):
@@ -2126,15 +2156,9 @@ class KnowledgeAccessTest(TestCase, ApiTestMixin):
 
     # --- GET list ---
 
-    def test_list_anonymous_sees_approved(self):
-        resp = self.get("/api/v1/knowledge/drafts/")
-        self.assertEqual(resp.status_code, 200)
-        ids = [d["id"] for d in resp.json()]
-        self.assertIn(self.approved_draft.pk, ids)
-
-    def test_list_anonymous_no_pending(self):
-        ids = [d["id"] for d in self.get("/api/v1/knowledge/drafts/").json()]
-        self.assertNotIn(self.pending_draft.pk, ids)
+    def test_list_anonymous_returns_401(self):
+        # The draft list is moderation-only; anonymous clients get no rows, only 401.
+        self.assertEqual(self.get("/api/v1/knowledge/drafts/").status_code, 401)
 
     def test_list_pending_anonymous_returns_401(self):
         self.assertEqual(self.get("/api/v1/knowledge/drafts/?status=pending").status_code, 401)
@@ -2156,11 +2180,10 @@ class KnowledgeAccessTest(TestCase, ApiTestMixin):
 
     # --- GET detail ---
 
-    def test_detail_anonymous_200_for_approved(self):
-        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{self.approved_draft.pk}").status_code, 200)
-
-    def test_detail_anonymous_404_for_pending(self):
-        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{self.pending_draft.pk}").status_code, 404)
+    def test_detail_anonymous_returns_401(self):
+        # Auth runs before the view, so drafts are unreadable anonymously regardless of status.
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{self.approved_draft.pk}").status_code, 401)
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{self.pending_draft.pk}").status_code, 401)
 
     def test_detail_author_200_for_own_pending(self):
         self.assertEqual(

@@ -272,26 +272,24 @@ def list_knowledge_articles(request):
 # -- Knowledge: draft submission workflow (separate moderation contract) -------
 
 
-@knowledge_router.get("/drafts/", response=list[DraftOut], auth=optional_auth, summary="List knowledge article drafts")
-def list_knowledge_drafts(request, status: DraftSubmission.Status = DraftSubmission.Status.APPROVED):
+@knowledge_router.get("/drafts/", response=list[DraftOut], auth=auth, summary="List own knowledge article drafts")
+def list_knowledge_drafts(request, status: DraftSubmission.Status | None = None):
+    # Drafts are moderation data, never public: require auth and show a non-admin only their
+    # own submissions. Published content is read via the public KnowledgeArticle endpoints.
     user = request.auth
-    if not getattr(user, "is_authenticated", False) and status != DraftSubmission.Status.APPROVED:
-        raise HttpError(401, "Unauthorized")
     qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    if not is_admin(user) and getattr(user, "is_authenticated", False) and status != DraftSubmission.Status.APPROVED:
+    if not is_admin(user):
         qs = qs.filter(author=user)
-    qs = qs.filter(status=status)
+    if status is not None:
+        qs = qs.filter(status=status)
     return list(qs)
 
 
-@knowledge_router.get("/drafts/{draft_id}", response=DraftOut, auth=optional_auth, summary="Get knowledge draft")
+@knowledge_router.get("/drafts/{draft_id}", response=DraftOut, auth=auth, summary="Get own knowledge article draft")
 def get_knowledge_draft(request, draft_id: int):
     user = request.auth
     draft = _get_draft_or_404(draft_id, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    if draft.status != DraftSubmission.Status.APPROVED:
-        if not getattr(user, "is_authenticated", False):
-            raise HttpError(404, "Draft not found")
-        _require_owner_or_admin(user, draft)
+    _require_owner_or_admin(user, draft)
     return draft
 
 
