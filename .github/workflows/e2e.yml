@@ -49,32 +49,21 @@ jobs:
           timeout 30 bash -c 'until pg_isready -h localhost -U postgres; do sleep 1; done'
           sudo -u postgres createdb cycling_site_test
 
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v6
         with:
+          enable-cache: true
           python-version: "3.13"
 
-      - name: Install Poetry
-        run: pip install poetry
-
-      - name: Configure Poetry
-        run: poetry config virtualenvs.in-project true
-
-      - name: Cache Poetry virtualenv
-        uses: actions/cache@v5
-        with:
-          path: .venv
-          key: venv-e2e-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
-
       - name: Install dependencies
-        run: poetry install --no-root
+        run: uv sync
 
       - name: Install Playwright browser
-        run: poetry run playwright install --with-deps ${{ matrix.browser }}
+        run: uv run playwright install --with-deps ${{ matrix.browser }}
 
       - name: Run E2E tests (desktop)
         if: matrix.device == ''
         run: >
-          poetry run pytest tests/e2e/
+          uv run pytest tests/e2e/
           --browser ${{ matrix.browser }}
           --tracing=retain-on-failure
           --no-cov
@@ -84,7 +73,7 @@ jobs:
       - name: Run E2E tests (mobile device)
         if: matrix.device != ''
         run: >
-          poetry run pytest tests/e2e/
+          uv run pytest tests/e2e/
           --browser ${{ matrix.browser }}
           --device "${{ matrix.device }}"
           --tracing=retain-on-failure
