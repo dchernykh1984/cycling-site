@@ -18,7 +18,7 @@ from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.page_mixins import AsciiSlugMixin
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
-from cycling_site.sanitize import sanitize_rich_html
+from cycling_site.sanitize import sanitize_rich_html, sanitize_rich_text_columns
 
 # Backwards-compatible alias for the shared, site-wide rich-text size cap.
 MAX_BODY_LENGTH = MAX_RICH_TEXT_LENGTH
@@ -79,10 +79,11 @@ class KnowledgeArticle(index.Indexed, models.Model):
         return self.title or ""
 
     def save(self, *args, **kwargs) -> None:
-        # Body is rendered with |safe, so sanitize on every write (single choke point for
-        # the organizer form, participant submission approval and Django admin).
-        if self.body:
-            self.body = sanitize_rich_html(self.body, allow_img=True)
+        # Body is rendered with |safe, so sanitize on every write (single choke point for the
+        # organizer form, participant submission approval and Django admin). The shared helper
+        # uses the same allowlist as news/competitions and skips the work on a partial save that
+        # doesn't touch the body.
+        sanitize_rich_text_columns(self, ("body",), update_fields=kwargs.get("update_fields"))
         if not self.slug:
             base = (slugify(self.title or "", allow_unicode=False) or "article")[:_SLUG_MAX_LENGTH]
             candidate = base
