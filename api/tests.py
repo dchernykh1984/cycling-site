@@ -599,6 +599,37 @@ class CompetitionDescriptionSanitizeTest(TestCase, ApiTestMixin):
         self.assertIn("<img", desc)
         self.assertNotIn("<script", desc)
 
+    def test_create_response_and_reget_sanitize_fallback_locales(self):
+        # The canonical column is served as the fallback for empty translations, so every
+        # locale of the create response AND a subsequent GET must be sanitized (not just ru).
+        resp = self.post(
+            "/api/v1/competitions/",
+            {
+                "title": {"ru": "Fallback Race", "kk": "", "en": ""},
+                "description": {"ru": self._DIRTY, "kk": "", "en": ""},
+                "date_start": "2026-07-01",
+            },
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 201)
+        for loc in ("ru", "kk", "en"):
+            self.assertNotIn("<script", resp.json()["description"][loc], f"create resp {loc}")
+        cid = Competition.objects.get(title_ru="Fallback Race").pk
+        got = self.get(f"/api/v1/competitions/{cid}", user=self.admin)
+        for loc in ("ru", "kk", "en"):
+            self.assertNotIn("<script", got.json()["description"][loc], f"reget {loc}")
+
+    def test_patch_response_sanitizes_fallback_locales(self):
+        comp = _competition(submitted_by=self.organizer)
+        resp = self.patch(
+            f"/api/v1/competitions/{comp.pk}",
+            {"description": {"ru": self._DIRTY, "kk": "", "en": ""}},
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 200)
+        for loc in ("ru", "kk", "en"):
+            self.assertNotIn("<script", resp.json()["description"][loc], f"patch resp {loc}")
+
     def test_create_under_non_default_locale_does_not_leak_translation(self):
         # Regression: creating from a kk/en UI must not copy the RU body into the empty
         # kk/en columns (modeltranslation descriptor footgun in _apply_localized).
