@@ -923,6 +923,14 @@ class NewsArticleCreateTest(TestCase, ApiTestMixin):
         self.assertNotIn("onclick", article.body_kk)
         self.assertNotIn("javascript:", article.body_en)
 
+    def test_create_rejects_oversized_body(self):
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
+
+        payload = self._payload(body={"ru": "a" * (MAX_RICH_TEXT_LENGTH + 1), "kk": "", "en": ""})
+        resp = self.post("/api/v1/news/articles/", payload, user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(NewsArticle.objects.count(), 0)
+
     def test_body_keeps_safe_image(self):
         # Regression: the endpoint must not strip images the model allows (no double, stricter
         # sanitize) -- API and on-site form must store identical markup.

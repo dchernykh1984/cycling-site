@@ -318,6 +318,10 @@ msgstr "Описание слишком большое. Используйте �
 msgid "The article is too large. Use fewer or smaller inline images."
 msgstr "Статья слишком большая. Используйте меньше изображений или уменьшите их размер."
 
+#: cycling_site/richtext.py
+msgid "The text is too large. Use fewer or smaller inline images."
+msgstr "Текст слишком большой. Используйте меньше изображений или уменьшите их размер."
+
 #: calendar_app/forms.py:106 calendar_app/tests.py:386
 msgid "End date cannot be before start date."
 msgstr "Дата окончания не может быть раньше даты начала."
