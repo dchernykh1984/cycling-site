@@ -7,7 +7,14 @@ from django.utils.translation import gettext_lazy as _
 from accounts.models import User
 from locations.models import Location, competition_location_block_reason
 
-from .models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
+from .models import (
+    MAX_DESCRIPTION_LENGTH,
+    Competition,
+    CompetitionComment,
+    Discipline,
+    DisciplineCategory,
+    EventType,
+)
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
@@ -113,7 +120,23 @@ class SubmitCompetitionForm(forms.Form):
         return f
 
     # Descriptions arrive as raw Quill HTML in these hidden fields; sanitization happens
-    # centrally in Competition.save() so every write path (form, API, admin, snippet) is covered.
+    # centrally in Competition.save() so every write path (form, API, admin, snippet) is
+    # covered. The form only bounds their size (inline images are embedded base64).
+
+    def _clean_description_length(self, field):
+        value = self.cleaned_data.get(field) or ""
+        if len(value) > MAX_DESCRIPTION_LENGTH:
+            raise forms.ValidationError(_("Description is too large. Use fewer or smaller inline images."))
+        return value
+
+    def clean_description_ru(self):
+        return self._clean_description_length("description_ru")
+
+    def clean_description_kk(self):
+        return self._clean_description_length("description_kk")
+
+    def clean_description_en(self):
+        return self._clean_description_length("description_en")
 
     def clean_file_announcement(self):
         return self._validate_file(self.cleaned_data.get("file_announcement"))

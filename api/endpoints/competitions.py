@@ -6,7 +6,7 @@ from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
-from calendar_app.models import Competition
+from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition
 from locations.models import Location, competition_location_block_reason
 
 auth = ApiTokenAuth()
@@ -135,6 +135,13 @@ def _apply_localized(obj, field: str, value: LocalizedStr) -> list[str]:
     return updated
 
 
+def _validate_description_length(value: LocalizedStr) -> None:
+    """Reject an oversized description (inline images are base64) on the untrusted API path."""
+    for loc in (value.ru, value.kk, value.en):
+        if loc and len(loc) > MAX_DESCRIPTION_LENGTH:
+            raise HttpError(422, f"Description is too large (max {MAX_DESCRIPTION_LENGTH} characters)")
+
+
 def _validate_location_id(location_id, user) -> None:
     """Reject a forged location_id: missing, deleted, or another user's pending proposal (review #3)."""
     if location_id is None:
@@ -200,6 +207,7 @@ def create_competition(request, payload: CompetitionIn):
     _validate_location_id(payload.location_id, user)
     status = Competition.Status.APPROVED if is_admin(user) else Competition.Status.PENDING_APPROVAL
     competition = Competition(submitted_by=user, status=status)
+    _validate_description_length(payload.description)
     _apply_localized(competition, "title", payload.title)
     # Descriptions are sanitized centrally in Competition.save().
     _apply_localized(competition, "description", payload.description)
@@ -240,8 +248,11 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 
     for field, value in data.items():
         if isinstance(value, dict) and field in ("title", "description"):
+            loc = LocalizedStr(**value)
+            if field == "description":
+                _validate_description_length(loc)
             # Descriptions are sanitized centrally in Competition.save().
-            update_fields.extend(_apply_localized(competition, field, LocalizedStr(**value)))
+            update_fields.extend(_apply_localized(competition, field, loc))
         else:
             setattr(competition, field, value)
             update_fields.append(field)

@@ -1658,6 +1658,21 @@ class CompetitionRichDescriptionTests(TestCase):
         self.assertContains(resp, '<a href="https://x.com" rel="noopener" target="_blank">link</a>')
         self.assertNotContains(resp, "&lt;p&gt;")  # rendered as HTML, not escaped
 
+    def test_submit_rejects_oversized_description(self):
+        from calendar_app.models import MAX_DESCRIPTION_LENGTH
+
+        self.client.force_login(self.organizer)
+        resp = self.client.post(
+            reverse("calendar_submit"),
+            {
+                "title_ru": "Too Big",
+                "date_start": "2026-09-01",
+                "description_ru": "a" * (MAX_DESCRIPTION_LENGTH + 1),
+            },
+        )
+        self.assertEqual(resp.status_code, 200)  # re-rendered with errors, not redirected
+        self.assertFalse(Competition.objects.filter(title_ru="Too Big").exists())
+
     def test_model_save_sanitizes_description(self):
         # Sanitization is centralized in Competition.save(), so every write path -- including
         # Django admin and the Wagtail snippet, which both persist via the model -- is covered.
