@@ -68,6 +68,54 @@ def test_submit_editor_is_typeable_and_fills_hidden_field(page: Page, live_serve
 
 
 @pytest.mark.django_db(transaction=True)
+def test_submit_round_trips_all_three_locales(page: Page, live_server, organizer):
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/calendar/submit/")
+    page.fill("#id_title_ru", "Trilingual Race")
+    page.fill("#id_date_start", "2026-09-01")
+    # The kk/en editors live in hidden tab-panes; switch to each before typing.
+    for loc, tab, text in (
+        ("ru", "#tab-ru", "Russian body"),
+        ("kk", "#tab-kk", "Kazakh body"),
+        ("en", "#tab-en", "English body"),
+    ):
+        page.click(f'button[data-bs-target="{tab}"]')
+        editor = page.locator(f"#quill-desc-{loc} .ql-editor")
+        editor.click()
+        editor.type(text)
+    page.click('form[enctype="multipart/form-data"] button[type=submit]')
+    page.wait_for_load_state("networkidle")
+
+    comp = Competition.objects.get(title_ru="Trilingual Race")
+    assert "Russian body" in comp.description_ru
+    assert "Kazakh body" in comp.description_kk
+    assert "English body" in comp.description_en
+
+
+@pytest.mark.django_db(transaction=True)
+def test_submit_strips_script_from_editor_html(page: Page, live_server, organizer):
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/calendar/submit/")
+    page.fill("#id_title_ru", "XSS Race")
+    page.fill("#id_date_start", "2026-09-01")
+    # Put markup containing a script into the editor's live DOM (as a malicious paste
+    # could); the submit handler copies quill.root.innerHTML into the hidden field, and the
+    # server must strip the script on save.
+    page.evaluate(
+        """() => {
+          const ed = document.querySelector('#quill-desc-ru .ql-editor');
+          ed.innerHTML = '<p>safe text</p><script>window.__x=1<\\/script>';
+        }"""
+    )
+    page.click('form[enctype="multipart/form-data"] button[type=submit]')
+    page.wait_for_load_state("networkidle")
+
+    comp = Competition.objects.get(title_ru="XSS Race")
+    assert "safe text" in comp.description_ru
+    assert "<script" not in comp.description_ru.lower()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_edit_editor_prefills_existing_description(page: Page, live_server, organizer):
     comp = Competition.objects.create(
         title_ru="Editor Prefill Race",
