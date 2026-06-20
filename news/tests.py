@@ -403,3 +403,31 @@ class NewsArticleHeroUploadTests(TestCase):
             with override_settings(DEBUG=False):
                 resp = self.client.get(article.hero_image.url)
             self.assertEqual(resp.status_code, 200)
+
+
+class NewsArticleSanitizeTests(TestCase):
+    def test_save_sanitizes_each_locale_body(self):
+        art = NewsArticle.objects.create(
+            title_ru="San",
+            body_ru="<p>ok</p><script>alert(1)</script>",
+            body_en='<a href="javascript:evil()">x</a>',
+        )
+        art.refresh_from_db()
+        self.assertIn("<p>ok</p>", art.body_ru)
+        self.assertNotIn("<script", art.body_ru)
+        self.assertNotIn("javascript:", art.body_en)
+
+    def test_save_keeps_inline_image(self):
+        art = NewsArticle.objects.create(title_ru="Img", body_ru='<p><img src="https://x.com/i.png" alt="a"></p>')
+        art.refresh_from_db()
+        self.assertIn("<img", art.body_ru)
+
+    def test_found_in_search(self):
+        from wagtail.search.backends import get_search_backend
+
+        art = NewsArticle.objects.create(title_ru="SearchableNewsItem", body_ru="<p>x</p>")
+        get_search_backend().add(art)
+        resp = self.client.get(reverse("search") + "?query=SearchableNewsItem", HTTP_ACCEPT_LANGUAGE="ru")
+        self.assertEqual(resp.status_code, 200)
+        titles = [a.title for a in resp.context["news_results"]]
+        self.assertIn("SearchableNewsItem", titles)

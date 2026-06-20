@@ -7,6 +7,7 @@ from wagtail.search.backends import get_search_backend
 from calendar_app.models import Competition
 from knowledge.models import KnowledgeArticle
 from locations.models import Location
+from news.models import NewsArticle
 
 
 def search(request):
@@ -28,6 +29,7 @@ def search(request):
                 KnowledgeArticle.objects.filter(locale=get_language() or "ru", is_deleted=False, is_hidden=False),
             )
         )
+        news_results = list(backend.search(search_query, NewsArticle.objects.filter(is_deleted=False, is_hidden=False)))
         location_results = list(
             backend.search(search_query, Location.objects.filter(is_deleted=False, is_hidden=False))
         )
@@ -35,6 +37,7 @@ def search(request):
         search_results = Page.objects.none()
         competition_results = []
         knowledge_results = []
+        news_results = []
         location_results = []
 
     paginator = Paginator(search_results, 10)
@@ -53,6 +56,7 @@ def search(request):
             "search_results": search_results,
             "competition_results": competition_results,
             "knowledge_results": knowledge_results,
+            "news_results": news_results,
             "location_results": location_results,
         },
     )

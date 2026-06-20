@@ -47,6 +47,18 @@
         </ul>
         {% endif %}
 
+        {% if news_results %}
+        <h2 class="h5 mb-3">{% trans "News" %}</h2>
+        <ul class="list-unstyled mb-4">
+            {% for art in news_results %}
+            <li class="mb-3 pb-3 border-bottom">
+                <h3 class="h5"><a href="{{ art.get_absolute_url }}">{{ art.title }}</a></h3>
+                {% if art.published_at %}<p class="text-muted mb-0 small">{{ art.published_at|date:"d.m.Y" }}</p>{% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
         {% if location_results %}
         <h2 class="h5 mb-3">{% trans "Locations" %}</h2>
         <ul class="list-unstyled mb-4">
@@ -59,7 +71,7 @@
         {% endif %}
 
         {% if search_results %}
-        {% if competition_results or knowledge_results or location_results %}<h2 class="h5 mb-3">{% trans "Pages" %}</h2>{% endif %}
+        {% if competition_results or knowledge_results or news_results or location_results %}<h2 class="h5 mb-3">{% trans "Pages" %}</h2>{% endif %}
         <ul class="list-unstyled">
             {% for result in search_results %}
             <li class="mb-3 pb-3 border-bottom">
@@ -82,7 +94,7 @@
             {% endif %}
         </div>
 
-        {% elif search_query and not competition_results and not knowledge_results and not location_results %}
+        {% elif search_query and not competition_results and not knowledge_results and not news_results and not location_results %}
         <p class="text-muted">{% trans "No results found" %}</p>
         {% endif %}
     </div>
