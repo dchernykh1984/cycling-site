@@ -9,7 +9,7 @@ from django.utils.functional import cached_property
 from wagtail.search import index
 
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
-from cycling_site.sanitize import sanitize_rich_html
+from cycling_site.sanitize import sanitize_rich_text_columns
 
 # Rich-text description fields sanitized on every write whatever the entry point (organizer
 # form, API, Django admin, Wagtail snippet). Includes the canonical ``description``: the API
@@ -208,17 +208,9 @@ class Competition(index.Indexed, models.Model):
 
     def save(self, *args, **kwargs):
         # Descriptions are stored as rich HTML and rendered with |safe, so sanitize them on
-        # every write -- this is the single choke point covering the organizer form, the API,
-        # Django admin and Wagtail snippets. Access the concrete columns via __dict__ so we
-        # never trip modeltranslation's canonical descriptor (see _DESCRIPTION_FIELDS). Skip
-        # the (BeautifulSoup) work on partial saves that don't touch a description field.
-        # sanitize_rich_html is idempotent.
-        update_fields = kwargs.get("update_fields")
-        if update_fields is None or any(f in update_fields for f in _DESCRIPTION_FIELDS):
-            for field in _DESCRIPTION_FIELDS:
-                value = self.__dict__.get(field)
-                if value:
-                    self.__dict__[field] = sanitize_rich_html(value, allow_img=True)
+        # every write -- the single choke point covering the organizer form, the API, Django
+        # admin and Wagtail snippets (see _DESCRIPTION_FIELDS for the __dict__ rationale).
+        sanitize_rich_text_columns(self, _DESCRIPTION_FIELDS, update_fields=kwargs.get("update_fields"))
         super().save(*args, **kwargs)
 
     def get_calendar_end(self) -> str | None:

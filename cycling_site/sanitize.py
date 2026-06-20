@@ -121,6 +121,24 @@ def sanitize_rich_html(raw: str, *, allow_img: bool = False) -> str:
     return str(soup).strip()
 
 
+def sanitize_rich_text_columns(instance, fields, *, update_fields=None) -> None:
+    """Sanitize the given rich-text columns of a model instance in place, for use in ``save()``.
+
+    The single choke point for models whose rich-text body/description is rendered with
+    ``|safe`` (competitions, news, the home page). Columns are read/written via ``__dict__`` so
+    modeltranslation's canonical descriptor is not tripped -- the canonical column and the
+    per-locale ``*_ru/_kk/_en`` columns are all plain ``__dict__`` entries. A no-op when an
+    ``update_fields`` save touches none of them; ``sanitize_rich_html`` is idempotent, so
+    re-saving an already-clean value is safe.
+    """
+    if update_fields is not None and not any(field in update_fields for field in fields):
+        return
+    for field in fields:
+        value = instance.__dict__.get(field)
+        if value:
+            instance.__dict__[field] = sanitize_rich_html(value, allow_img=True)
+
+
 def plaintext_to_html(text: str) -> str:
     """Convert a plain-text string to safe HTML.
 
