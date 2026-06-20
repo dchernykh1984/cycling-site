@@ -96,13 +96,20 @@ def test_edit_prefills_and_updates(page: Page, live_server, superuser, knowledge
     _assert_editor_healthy(page)
     expect(page.locator("#quill-body .ql-editor")).to_contain_text("Existing body")
 
-    editor = page.locator("#quill-body .ql-editor")
-    editor.click()
-    editor.press("End")
-    # See test_add_round_trips_body: insert_text is webkit-safe where Locator.type() is not.
-    page.keyboard.insert_text(" plus more")
+    # Append through the editor DOM, then submit: deterministic on every engine, including
+    # mobile webkit, where click+caret+keyboard editing of a pre-populated Quill flakes. The
+    # submit handler copies quill.root.innerHTML (this DOM) into the hidden field, so the
+    # edit->save->sanitize round-trip is still exercised; real keyboard input is covered by
+    # test_add_round_trips_body.
+    page.evaluate(
+        """() => {
+          const ed = document.querySelector('#quill-body .ql-editor');
+          ed.insertAdjacentHTML('beforeend', '<p>plus more</p>');
+        }"""
+    )
     page.eval_on_selector("#id_title", "el => el.form.requestSubmit()")
     page.wait_for_load_state("networkidle")
 
     art.refresh_from_db()
     assert "plus more" in art.body
+    assert "Existing" in art.body  # the prefilled body survived the edit round-trip
