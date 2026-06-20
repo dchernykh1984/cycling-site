@@ -5,12 +5,22 @@ from django.utils import timezone
 
 
 def _body_from_blocks(raw) -> str:
-    """Concatenate the HTML of every "text" StreamField block (the only kind in the data)."""
+    """Concatenate the HTML of every "text" StreamField block into frontend HTML.
+
+    RichTextBlock stores Wagtail's *DB* representation, where internal links/embeds look like
+    ``<a linktype="page" id="N">`` (no href). expand_db_html() turns those into real frontend
+    HTML (resolving hrefs) so they stay clickable after the move off Wagtail rendering; plain
+    HTML passes through unchanged. (The nine production articles have no such links, but this
+    keeps the conversion correct for any that do.)
+    """
+    from wagtail.rich_text import expand_db_html
+
     try:
         blocks = raw.raw_data
     except AttributeError:
         blocks = json.loads(raw) if raw else []
-    return "".join(b.get("value", "") for b in blocks if b.get("type") == "text")
+    html = "".join(b.get("value", "") for b in blocks if b.get("type") == "text")
+    return expand_db_html(html)
 
 
 def _attach_tags(tagged_item_model, content_type, object_id, tag_ids) -> None:
