@@ -118,20 +118,20 @@ def test_knowledge_article_created_via_api_appears_on_front(page: Page, live_ser
             "category": "",
         },
     )
-    # Admin POST auto-approves the draft, which creates a live KnowledgeArticlePage
-    # under the ru KnowledgeIndexPage (guaranteed by the knowledge_index fixture).
+    # Admin POST auto-approves the draft, which creates a live KnowledgeArticle whose URL
+    # resolves under the ru KnowledgeIndexPage (guaranteed by the knowledge_index fixture).
     assert resp.status == 201, resp.text()
     assert resp.json()["status"] == DraftSubmission.Status.APPROVED
 
-    from knowledge.models import KnowledgeArticlePage
+    from knowledge.models import KnowledgeArticle
 
-    article = KnowledgeArticlePage.objects.get(slug="e2e-api-knowledge-ru")
+    article = KnowledgeArticle.objects.get(slug="e2e-api-knowledge-ru")
 
-    # The article page renders its title and rich HTML body on the public front.
-    page.goto(f"{live_server.url}{article.url}")
+    # The article renders its title and rich HTML body on the public front.
+    page.goto(f"{live_server.url}{article.get_absolute_url()}")
     expect(page.get_by_role("heading", name="E2E API Knowledge RU")).to_be_visible()
     expect(page.get_by_text("Telo statyi")).to_be_visible()
 
     # It is also listed on its knowledge index page.
-    page.goto(f"{live_server.url}{article.get_parent().url}")
+    page.goto(f"{live_server.url}{knowledge_index.url}")
     expect(page.get_by_text("E2E API Knowledge RU").first).to_be_visible()

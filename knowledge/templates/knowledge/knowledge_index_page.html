@@ -46,18 +46,15 @@
         <div class="card h-100">
             <div class="card-body">
                 <h2 class="card-title h5">
-                    <a href="{% pageurl article %}" class="text-decoration-none stretched-link">{{ article.title }}</a>
+                    <a href="{{ article.get_absolute_url }}" class="text-decoration-none stretched-link">{{ article.title }}</a>
                 </h2>
                 {% if article.category %}
                 <span class="badge bg-secondary mb-2">{{ article.category }}</span>
                 {% endif %}
-                {% if article.search_description %}
-                <p class="card-text text-muted small">{{ article.search_description }}</p>
-                {% endif %}
             </div>
-            {% if article.first_published_at %}
+            {% if article.published_at %}
             <div class="card-footer text-muted small">
-                {{ article.first_published_at|date:"d.m.Y" }}
+                {{ article.published_at|date:"d.m.Y" }}
             </div>
             {% endif %}
         </div>

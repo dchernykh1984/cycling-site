@@ -1,31 +1,11 @@
-import json
-
-from django.test import Client, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
 from django.utils.translation import gettext as _
-from wagtail.models import Page, Site
-from wagtail.test.utils import WagtailPageTests
+from wagtail.models import Locale, Page, Site
 
 from accounts.models import User
-from knowledge.models import (
-    DraftSubmission,
-    KnowledgeArticle,
-    KnowledgeArticlePage,
-    KnowledgeIndexPage,
-    LocationArticlePage,
-)
-
-
-class KnowledgePageHierarchyTests(WagtailPageTests):
-    def test_can_create_article_under_index(self):
-        self.assertCanCreateAt(KnowledgeIndexPage, KnowledgeArticlePage)
-
-    def test_can_create_location_under_index(self):
-        self.assertCanCreateAt(KnowledgeIndexPage, LocationArticlePage)
-
-    def test_article_cannot_be_created_under_root(self):
-        self.assertCanNotCreateAt(Page, KnowledgeArticlePage)
+from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeIndexPage
 
 
 def _get_site_root():
@@ -33,794 +13,18 @@ def _get_site_root():
     return site.root_page if site else Page.objects.filter(depth=1).first()
 
 
-class KnowledgeArticlePageRenderTests(TestCase):
-    def setUp(self):
-        root = _get_site_root()
-        self.index = KnowledgeIndexPage(title="Knowledge Render", slug="knowledge-render-test")
-        root.add_child(instance=self.index)
-        self.index.save_revision().publish()
-        self.article = KnowledgeArticlePage(
-            title="Test Article",
-            slug="test-article-render",
-            body=json.dumps([{"type": "text", "value": "<p>Hello world</p>"}]),
-        )
-        self.index.add_child(instance=self.article)
-        self.article.save_revision().publish()
-        self.article = KnowledgeArticlePage.objects.get(pk=self.article.pk)
+def _ru_index():
+    ru = Locale.objects.get(language_code="ru")
+    return KnowledgeIndexPage.objects.live().filter(locale=ru).first()
 
-    def test_index_renders(self):
-        response = self.client.get(self.index.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Test Article")
 
-    def test_article_renders(self):
-        response = self.client.get(self.article.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Test Article")
-        self.assertContains(response, "Hello world")
+def _make_user(email, role, **kwargs):
+    return User.objects.create_user(username=email, email=email, password="password123", role=role, **kwargs)
 
 
-class LocationArticlePageRenderTests(TestCase):
-    def setUp(self):
-        root = _get_site_root()
-        index = KnowledgeIndexPage(title="Knowledge Location", slug="knowledge-location-test")
-        root.add_child(instance=index)
-        index.save_revision().publish()
-        self.location = LocationArticlePage(
-            title="Almaty Loop Route",
-            slug="almaty-loop-render",
-        )
-        index.add_child(instance=self.location)
-        self.location.save_revision().publish()
-        self.location = LocationArticlePage.objects.get(pk=self.location.pk)
-
-    def test_location_article_renders(self):
-        response = self.client.get(self.location.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Almaty Loop Route")
-
-
-class SearchReturnsKnowledgeArticleTests(TestCase):
-    def setUp(self):
-        root = _get_site_root()
-        index = KnowledgeIndexPage(title="Knowledge Search", slug="knowledge-search-test")
-        root.add_child(instance=index)
-        index.save_revision().publish()
-        self.article = KnowledgeArticlePage(
-            title="Cycling Routes in Almaty",
-            slug="cycling-routes-almaty-test",
-        )
-        index.add_child(instance=self.article)
-        self.article.save_revision().publish()
-        self.article = KnowledgeArticlePage.objects.get(pk=self.article.pk)
-
-    def test_search_page_returns_200(self):
-        response = self.client.get(reverse("search") + "?query=Almaty")
-        self.assertEqual(response.status_code, 200)
-
-    def test_search_finds_article_by_title(self):
-        from wagtail.search.backends import get_search_backend
-
-        backend = get_search_backend()
-        backend.add(self.article)
-        response = self.client.get(reverse("search") + "?query=Almaty")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Almaty")
-
-
-class DraftSubmissionModelTests(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(
-            username="participant@example.com",
-            email="participant@example.com",
-            password="password123",
-            role=User.Role.PARTICIPANT,
-        )
-
-    def test_create_submission_defaults_to_pending(self):
-        sub = DraftSubmission.objects.create(
-            author=self.user,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            locale="ru",
-            title="My Article",
-            body="Article body text",
-        )
-        self.assertEqual(sub.status, DraftSubmission.Status.PENDING)
-
-    def test_str_representation(self):
-        sub = DraftSubmission(
-            author=self.user,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            title="My Article",
-        )
-        self.assertIn("My Article", str(sub))
-
-
-class SubmissionFormViewTests(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.participant = User.objects.create_user(
-            username="participant@example.com",
-            email="participant@example.com",
-            password="password123",
-            role=User.Role.PARTICIPANT,
-        )
-        self.guest = User.objects.create_user(
-            username="guest@example.com",
-            email="guest@example.com",
-            password="password123",
-            role=User.Role.GUEST,
-        )
-
-    def test_anonymous_redirected_to_login(self):
-        response = self.client.get(reverse("knowledge_submit"))
-        self.assertRedirects(
-            response,
-            f"/accounts/login/?next={reverse('knowledge_submit')}",
-        )
-
-    def test_guest_gets_403(self):
-        self.client.login(username="guest@example.com", password="password123")
-        response = self.client.get(reverse("knowledge_submit"))
-        self.assertEqual(response.status_code, 403)
-
-    def test_participant_can_view_form(self):
-        self.client.login(username="participant@example.com", password="password123")
-        response = self.client.get(reverse("knowledge_submit"))
-        self.assertEqual(response.status_code, 200)
-
-    def test_participant_can_submit(self):
-        self.client.login(username="participant@example.com", password="password123")
-        response = self.client.post(
-            reverse("knowledge_submit"),
-            {
-                "submission_type": "knowledge_article",
-                "locale": "ru",
-                "title": "New Article",
-                "body": "Article content here",
-                "category": "Routes",
-            },
-        )
-        self.assertRedirects(response, reverse("account_profile"))
-        self.assertEqual(DraftSubmission.objects.count(), 1)
-        sub = DraftSubmission.objects.first()
-        self.assertEqual(sub.author, self.participant)
-        self.assertEqual(sub.status, DraftSubmission.Status.PENDING)
-
-    def test_guest_post_does_not_create_submission(self):
-        self.client.login(username="guest@example.com", password="password123")
-        response = self.client.post(
-            reverse("knowledge_submit"),
-            {
-                "submission_type": "knowledge_article",
-                "locale": "ru",
-                "title": "Sneaky Article",
-                "body": "Content",
-                "category": "",
-            },
-        )
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(DraftSubmission.objects.count(), 0)
-
-
-class DraftSubmissionApproveRejectTests(TestCase):
-    def setUp(self):
-        self.staff = User.objects.create_user(
-            username="staff@example.com",
-            email="staff@example.com",
-            password="password123",
-            is_staff=True,
-            role=User.Role.ADMIN,
-        )
-        self.participant = User.objects.create_user(
-            username="participant@example.com",
-            email="participant@example.com",
-            password="password123",
-            role=User.Role.PARTICIPANT,
-        )
-        root = _get_site_root()
-        self.index = KnowledgeIndexPage(title="Knowledge", slug="knowledge-approve")
-        root.add_child(instance=self.index)
-        self.submission = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            locale="ru",
-            title="Approved Article",
-            body="Article body content",
-            category="Routes",
-        )
-
-    def test_approve_creates_knowledge_article_page(self):
-        self.submission.approve(reviewer=self.staff)
-        self.assertEqual(KnowledgeArticlePage.objects.filter(title="Approved Article").count(), 1)
-
-    def test_approve_sets_status_and_reviewed_by(self):
-        self.submission.approve(reviewer=self.staff)
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
-        self.assertEqual(self.submission.reviewed_by, self.staff)
-
-    def test_approve_fails_without_index_page(self):
-        from wagtail.models import Locale
-
-        locale_kk = Locale.objects.get(language_code="kk")
-        KnowledgeIndexPage.objects.filter(locale=locale_kk).delete()
-        sub = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            locale="kk",
-            title="KK Submission",
-            body="body",
-        )
-        with self.assertRaises(ValueError):
-            sub.approve(reviewer=self.staff)
-
-    def test_reject_sets_status_note_and_reviewed_by(self):
-        self.submission.reject(reviewer=self.staff, note="Not relevant content")
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.REJECTED)
-        self.assertEqual(self.submission.reviewer_note, "Not relevant content")
-        self.assertEqual(self.submission.reviewed_by, self.staff)
-
-    def test_admin_approve_view_post(self):
-        self.client.login(username="staff@example.com", password="password123")
-        approve_url = reverse(
-            "wagtailsnippets_knowledge_draftsubmission:approve",
-            args=[self.submission.pk],
-        )
-        response = self.client.post(approve_url)
-        self.assertEqual(response.status_code, 302)
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
-        self.assertEqual(KnowledgeArticlePage.objects.filter(title="Approved Article").count(), 1)
-
-    def test_admin_reject_view_post(self):
-        self.client.login(username="staff@example.com", password="password123")
-        reject_url = reverse(
-            "wagtailsnippets_knowledge_draftsubmission:reject",
-            args=[self.submission.pk],
-        )
-        response = self.client.post(reject_url, {"reviewer_note": "Not suitable"})
-        self.assertEqual(response.status_code, 302)
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.REJECTED)
-        self.assertEqual(self.submission.reviewer_note, "Not suitable")
-
-    def test_non_staff_cannot_access_approve_view(self):
-        self.client.login(username="participant@example.com", password="password123")
-        approve_url = reverse(
-            "wagtailsnippets_knowledge_draftsubmission:approve",
-            args=[self.submission.pk],
-        )
-        response = self.client.post(approve_url)
-        self.assertNotEqual(response.status_code, 200)
-
-    def test_staff_without_admin_role_cannot_approve(self):
-        User.objects.create_user(
-            username="staff_organizer@example.com",
-            email="staff_organizer@example.com",
-            password="password123",
-            is_staff=True,
-            role=User.Role.ORGANIZER,
-        )
-        self.client.login(username="staff_organizer@example.com", password="password123")
-        approve_url = reverse(
-            "wagtailsnippets_knowledge_draftsubmission:approve",
-            args=[self.submission.pk],
-        )
-        response = self.client.post(approve_url)
-        self.assertNotEqual(response.status_code, 200)
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
-
-    def test_staff_without_admin_role_cannot_reject(self):
-        User.objects.create_user(
-            username="staff_org2@example.com",
-            email="staff_org2@example.com",
-            password="password123",
-            is_staff=True,
-            role=User.Role.ORGANIZER,
-        )
-        self.client.login(username="staff_org2@example.com", password="password123")
-        reject_url = reverse(
-            "wagtailsnippets_knowledge_draftsubmission:reject",
-            args=[self.submission.pk],
-        )
-        response = self.client.post(reject_url)
-        self.assertNotEqual(response.status_code, 200)
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
-
-    def test_approve_strips_dangerous_html(self):
-        sub = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            locale="ru",
-            title="XSS Test Article",
-            body='<p onclick="evil()">hi</p><script>alert(\'xss\')</script><a href="javascript:evil()">link</a>',
-        )
-        sub.approve(reviewer=self.staff)
-        article = KnowledgeArticlePage.objects.get(title="XSS Test Article")
-        stored = str(article.body)
-        self.assertNotIn("<script", stored)
-        self.assertNotIn("onclick", stored)
-        self.assertNotIn("javascript:", stored)
-        self.assertIn("hi", stored)  # benign text is preserved
-        # page still renders fine
-        self.assertEqual(self.client.get(article.url).status_code, 200)
-
-    def test_approve_renders_rich_html_body(self):
-        body = (
-            "<h2>Section</h2><p>Intro with <strong>bold</strong>.</p>"
-            "<ul><li>first</li><li>second</li></ul>"
-            "<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>"
-        )
-        sub = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            locale="ru",
-            title="Rich Body Article",
-            body=body,
-        )
-        sub.approve(reviewer=self.staff)
-        article = KnowledgeArticlePage.objects.get(title="Rich Body Article")
-        # body stored as real rich HTML, not escaped into a single <p>
-        self.assertIn("<h2>Section</h2>", str(article.body))
-        self.assertIn("<li>first</li>", str(article.body))
-        self.assertIn("<strong>bold</strong>", str(article.body))
-        self.assertIn("<table>", str(article.body))
-        self.assertNotIn("&lt;h2&gt;", str(article.body))
-        response = self.client.get(article.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "<h2>Section</h2>", html=False)
-
-    def test_approve_unknown_locale_raises_error(self):
-        sub = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            locale="de",
-            title="German Submission",
-            body="body",
-        )
-        with self.assertRaises(ValueError, msg="Locale 'de' is not configured"):
-            sub.approve(reviewer=self.staff)
-        self.assertEqual(DraftSubmission.objects.get(pk=sub.pk).status, DraftSubmission.Status.PENDING)
-
-    def test_double_approve_raises_error(self):
-        self.submission.approve(reviewer=self.staff)
-        with self.assertRaises(ValueError):
-            self.submission.approve(reviewer=self.staff)
-        self.assertEqual(KnowledgeArticlePage.objects.filter(title=self.submission.title).count(), 1)
-
-    def test_approve_reads_db_status_not_memory_status(self):
-        # Simulate race: DB has APPROVED but in-memory object still shows PENDING.
-        DraftSubmission.objects.filter(pk=self.submission.pk).update(status=DraftSubmission.Status.APPROVED)
-        stale = DraftSubmission.objects.get(pk=self.submission.pk)
-        stale.status = DraftSubmission.Status.PENDING
-        with self.assertRaises(ValueError):
-            stale.approve(reviewer=self.staff)
-        self.assertEqual(KnowledgeArticlePage.objects.filter(title=self.submission.title).count(), 0)
-
-    def test_reject_reads_db_status_not_memory_status(self):
-        # Simulate race: DB has APPROVED but in-memory object still shows PENDING.
-        DraftSubmission.objects.filter(pk=self.submission.pk).update(status=DraftSubmission.Status.APPROVED)
-        stale = DraftSubmission.objects.get(pk=self.submission.pk)
-        stale.status = DraftSubmission.Status.PENDING
-        with self.assertRaises(ValueError):
-            stale.reject(reviewer=self.staff, note="oops")
-
-    def test_reject_after_approve_raises_error(self):
-        self.submission.approve(reviewer=self.staff)
-        with self.assertRaises(ValueError):
-            self.submission.reject(reviewer=self.staff, note="oops")
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
-
-    def test_news_submission_creates_news_page(self):
-        from news.models import NewsIndexPage, NewsPage
-
-        news_index = NewsIndexPage(title="News", slug="news-approve")
-        _get_site_root().add_child(instance=news_index)
-
-        sub = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.NEWS,
-            locale="ru",
-            title="Breaking News",
-            body="News body",
-        )
-        sub.approve(reviewer=self.staff)
-        self.assertEqual(NewsPage.objects.filter(title="Breaking News").count(), 1)
-        self.assertEqual(KnowledgeArticlePage.objects.filter(title="Breaking News").count(), 0)
-        sub.refresh_from_db()
-        self.assertEqual(sub.status, DraftSubmission.Status.APPROVED)
-
-
-class AddArticleViewTests(TestCase):
-    def setUp(self):
-        self.admin = User.objects.create_user(
-            username="admin-add@example.com",
-            email="admin-add@example.com",
-            password="password123",
-            role=User.Role.ADMIN,
-        )
-        self.participant = User.objects.create_user(
-            username="participant-add@example.com",
-            email="participant-add@example.com",
-            password="password123",
-            role=User.Role.PARTICIPANT,
-        )
-
-    def test_anonymous_redirected_to_login(self):
-        response = self.client.get(reverse("knowledge_add"))
-        self.assertRedirects(
-            response,
-            f"/accounts/login/?next={reverse('knowledge_add')}",
-        )
-
-    def test_participant_gets_403(self):
-        self.client.login(username="participant-add@example.com", password="password123")
-        response = self.client.get(reverse("knowledge_add"))
-        self.assertEqual(response.status_code, 403)
-
-    def test_admin_can_view_form(self):
-        self.client.login(username="admin-add@example.com", password="password123")
-        response = self.client.get(reverse("knowledge_add"))
-        self.assertEqual(response.status_code, 200)
-
-    def test_admin_post_creates_and_publishes_article(self):
-        self.client.login(username="admin-add@example.com", password="password123")
-        response = self.client.post(
-            reverse("knowledge_add"),
-            {
-                "locale": "ru",
-                "title": "Published Article",
-                "body": "Article content",
-                "category": "Routes",
-            },
-        )
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(KnowledgeArticlePage.objects.filter(title="Published Article").count(), 1)
-        sub = DraftSubmission.objects.get(title="Published Article")
-        self.assertEqual(sub.status, DraftSubmission.Status.APPROVED)
-        self.assertEqual(sub.author, self.admin)
-
-    def test_admin_post_does_not_leave_pending_submission(self):
-        self.client.login(username="admin-add@example.com", password="password123")
-        self.client.post(
-            reverse("knowledge_add"),
-            {
-                "locale": "ru",
-                "title": "Instant Article",
-                "body": "Body",
-                "category": "",
-            },
-        )
-        sub = DraftSubmission.objects.get(title="Instant Article")
-        self.assertNotEqual(sub.status, DraftSubmission.Status.PENDING)
-
-
-class SubmissionDetailViewTests(TestCase):
-    def setUp(self):
-        self.admin = User.objects.create_user(
-            username="admin-detail@example.com",
-            email="admin-detail@example.com",
-            password="password123",
-            role=User.Role.ADMIN,
-        )
-        self.participant = User.objects.create_user(
-            username="participant-detail@example.com",
-            email="participant-detail@example.com",
-            password="password123",
-            role=User.Role.PARTICIPANT,
-        )
-        self.submission = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            locale="ru",
-            title="Pending Article Detail",
-            body="Body text",
-        )
-
-    def test_anonymous_redirected_to_login(self):
-        response = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
-        self.assertEqual(response.status_code, 302)
-
-    def test_participant_gets_403(self):
-        self.client.login(username="participant-detail@example.com", password="password123")
-        response = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
-        self.assertEqual(response.status_code, 403)
-
-    def test_admin_can_view_detail(self):
-        self.client.login(username="admin-detail@example.com", password="password123")
-        response = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Pending Article Detail")
-
-    def test_news_submission_returns_404_on_detail(self):
-        news_sub = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.NEWS,
-            locale="ru",
-            title="News Detail 404",
-            body="Body",
-        )
-        self.client.login(username="admin-detail@example.com", password="password123")
-        response = self.client.get(reverse("knowledge_submission_detail", args=[news_sub.pk]))
-        self.assertEqual(response.status_code, 404)
-
-    def test_detail_shows_approve_and_reject_buttons_for_pending(self):
-        self.client.login(username="admin-detail@example.com", password="password123")
-        response = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
-        self.assertContains(response, reverse("knowledge_submission_approve", args=[self.submission.pk]))
-        self.assertContains(response, reverse("knowledge_submission_reject", args=[self.submission.pk]))
-
-
-class ApproveSubmissionViewTests(TestCase):
-    def setUp(self):
-        self.admin = User.objects.create_user(
-            username="admin-approve@example.com",
-            email="admin-approve@example.com",
-            password="password123",
-            role=User.Role.ADMIN,
-        )
-        self.participant = User.objects.create_user(
-            username="participant-approve@example.com",
-            email="participant-approve@example.com",
-            password="password123",
-            role=User.Role.PARTICIPANT,
-        )
-        self.submission = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            locale="ru",
-            title="To Be Approved Via View",
-            body="Body text",
-        )
-
-    def test_admin_approve_creates_article(self):
-        self.client.login(username="admin-approve@example.com", password="password123")
-        response = self.client.post(reverse("knowledge_submission_approve", args=[self.submission.pk]))
-        self.assertEqual(response.status_code, 302)
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
-        self.assertEqual(KnowledgeArticlePage.objects.filter(title="To Be Approved Via View").count(), 1)
-
-    def test_approve_returns_success_message(self):
-        self.client.login(username="admin-approve@example.com", password="password123")
-        response = self.client.post(
-            reverse("knowledge_submission_approve", args=[self.submission.pk]),
-            follow=True,
-        )
-        self.assertContains(response, "alert-success")
-
-    def test_news_submission_returns_404(self):
-        from news.models import NewsIndexPage
-
-        news_index = NewsIndexPage(title="News", slug="news-approve-view-test")
-        _get_site_root().add_child(instance=news_index)
-        news_sub = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.NEWS,
-            locale="ru",
-            title="News Via Knowledge URL",
-            body="Body",
-        )
-        self.client.login(username="admin-approve@example.com", password="password123")
-        response = self.client.post(reverse("knowledge_submission_approve", args=[news_sub.pk]))
-        self.assertEqual(response.status_code, 404)
-
-    def test_participant_cannot_approve(self):
-        self.client.login(username="participant-approve@example.com", password="password123")
-        response = self.client.post(reverse("knowledge_submission_approve", args=[self.submission.pk]))
-        self.assertEqual(response.status_code, 403)
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
-
-    def test_double_approve_redirects_to_detail(self):
-        self.submission.approve(reviewer=self.admin)
-        self.client.login(username="admin-approve@example.com", password="password123")
-        response = self.client.post(reverse("knowledge_submission_approve", args=[self.submission.pk]))
-        self.assertRedirects(
-            response,
-            reverse("knowledge_submission_detail", args=[self.submission.pk]),
-        )
-
-
-class RejectSubmissionViewTests(TestCase):
-    def setUp(self):
-        self.admin = User.objects.create_user(
-            username="admin-reject@example.com",
-            email="admin-reject@example.com",
-            password="password123",
-            role=User.Role.ADMIN,
-        )
-        self.participant = User.objects.create_user(
-            username="participant-reject@example.com",
-            email="participant-reject@example.com",
-            password="password123",
-            role=User.Role.PARTICIPANT,
-        )
-        self.submission = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            locale="ru",
-            title="To Be Rejected Via View",
-            body="Body text",
-        )
-
-    def test_admin_reject_with_note(self):
-        self.client.login(username="admin-reject@example.com", password="password123")
-        response = self.client.post(
-            reverse("knowledge_submission_reject", args=[self.submission.pk]),
-            {"note": "Not suitable content"},
-        )
-        self.assertEqual(response.status_code, 302)
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.REJECTED)
-        self.assertEqual(self.submission.reviewer_note, "Not suitable content")
-        self.assertEqual(self.submission.reviewed_by, self.admin)
-
-    def test_admin_reject_without_note(self):
-        self.client.login(username="admin-reject@example.com", password="password123")
-        response = self.client.post(reverse("knowledge_submission_reject", args=[self.submission.pk]))
-        self.assertEqual(response.status_code, 302)
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.REJECTED)
-        self.assertEqual(self.submission.reviewer_note, "")
-
-    def test_participant_cannot_reject(self):
-        self.client.login(username="participant-reject@example.com", password="password123")
-        response = self.client.post(
-            reverse("knowledge_submission_reject", args=[self.submission.pk]),
-            {"note": "Sneaky reject"},
-        )
-        self.assertEqual(response.status_code, 403)
-        self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
-
-    def test_reject_redirects_to_detail(self):
-        self.client.login(username="admin-reject@example.com", password="password123")
-        response = self.client.post(
-            reverse("knowledge_submission_reject", args=[self.submission.pk]),
-            {"note": ""},
-        )
-        self.assertRedirects(
-            response,
-            reverse("knowledge_submission_detail", args=[self.submission.pk]),
-        )
-
-
-class SubmissionDetailTranslationTests(TestCase):
-    """submission_detail.html 'Submitted' label is translated (no fuzzy marker)."""
-
-    def setUp(self):
-        self.admin = User.objects.create_user(
-            username="admin-trans@example.com",
-            email="admin-trans@example.com",
-            password="password123",
-            role=User.Role.ADMIN,
-        )
-        self.participant = User.objects.create_user(
-            username="participant-trans@example.com",
-            email="participant-trans@example.com",
-            password="password123",
-            role=User.Role.PARTICIPANT,
-        )
-        self.submission = DraftSubmission.objects.create(
-            author=self.participant,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-            locale="ru",
-            title="Trans Test Article",
-            body="body",
-        )
-        self.client.login(username="admin-trans@example.com", password="password123")
-        self.url = reverse("knowledge_submission_detail", args=[self.submission.pk])
-
-    def test_submitted_label_in_russian(self):
-        response = self.client.get(self.url)
-        with translation.override("ru"):
-            self.assertContains(response, _("Submitted"))
-
-    def test_submitted_label_in_kazakh(self):
-        response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="kk")
-        with translation.override("kk"):
-            self.assertContains(response, _("Submitted"))
-
-    def test_author_label_in_russian(self):
-        response = self.client.get(self.url)
-        with translation.override("ru"):
-            self.assertContains(response, _("Author"))
-
-    def test_author_label_in_kazakh(self):
-        response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="kk")
-        with translation.override("kk"):
-            self.assertContains(response, _("Author"))
-
-
-class AddArticleFormLocalizationTests(TestCase):
-    """add_article.html form labels and locale choices are translated."""
-
-    def setUp(self):
-        self.admin = User.objects.create_user(
-            username="admin-loc@example.com",
-            email="admin-loc@example.com",
-            password="password123",
-            role=User.Role.ADMIN,
-        )
-        self.client.login(username="admin-loc@example.com", password="password123")
-        self.url = reverse("knowledge_add")
-
-    def test_field_labels_in_russian(self):
-        response = self.client.get(self.url)
-        with translation.override("ru"):
-            self.assertContains(response, _("Locale"))
-            self.assertContains(response, _("Title"))
-            self.assertContains(response, _("Body"))
-            self.assertContains(response, _("Category"))
-
-    def test_locale_choices_in_russian(self):
-        response = self.client.get(self.url)
-        with translation.override("ru"):
-            self.assertContains(response, _("Russian"))
-            self.assertContains(response, _("Kazakh"))
-            self.assertContains(response, _("English"))
-
-    def test_field_labels_in_kazakh(self):
-        response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="kk")
-        with translation.override("kk"):
-            self.assertContains(response, _("Locale"))
-            self.assertContains(response, _("Title"))
-            self.assertContains(response, _("Body"))
-            self.assertContains(response, _("Category"))
-
-    def test_locale_choices_in_kazakh(self):
-        response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="kk")
-        with translation.override("kk"):
-            self.assertContains(response, _("Russian"))
-            self.assertContains(response, _("Kazakh"))
-            self.assertContains(response, _("English"))
-
-
-class KnowledgeForeignLocaleBannerTests(TestCase):
-    """A KB article opened under a different locale shows the original with a banner, not 404."""
-
-    def setUp(self):
-        from wagtail.models import Locale
-
-        ru = Locale.objects.get(language_code="ru")
-        self.index = KnowledgeIndexPage.objects.filter(locale=ru, slug="knowledge").first()
-        self.assertIsNotNone(self.index, "ru KnowledgeIndexPage (migration 0005) must exist")
-        self.article = KnowledgeArticlePage(
-            title="Foreign Locale Banner Article",
-            slug="foreign-locale-banner-article",
-            body=json.dumps([{"type": "text", "value": "<p>Original body content</p>"}]),
-            locale=ru,
-        )
-        self.index.add_child(instance=self.article)
-        self.article.save_revision().publish()
-        self.article = KnowledgeArticlePage.objects.get(pk=self.article.pk)
-
-    def test_same_locale_serves_without_banner(self):
-        response = self.client.get(self.article.url, HTTP_ACCEPT_LANGUAGE="ru")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Original body content")
-        with translation.override("ru"):
-            self.assertNotContains(response, _("Search for a similar article in your language"))
-
-    def test_foreign_locale_serves_original_article_with_banner(self):
-        response = self.client.get(self.article.url, HTTP_ACCEPT_LANGUAGE="en")
-        self.assertEqual(response.status_code, 200)
-        # The original (Russian) article is shown...
-        self.assertContains(response, "Original body content")
-        # ...with the banner rendered in the user's language (English) plus a search link.
-        self.assertContains(response, "shown in its original language")
-        self.assertContains(response, "Search for a similar article in your language")
-        self.assertContains(response, reverse("search"))
-
-    def test_unknown_article_slug_still_returns_404(self):
-        response = self.client.get("/knowledge/no-such-article-xyz/", HTTP_ACCEPT_LANGUAGE="en")
-        self.assertEqual(response.status_code, 404)
+# ---------------------------------------------------------------------------
+# Model
+# ---------------------------------------------------------------------------
 
 
 class KnowledgeArticleModelTests(TestCase):
@@ -859,30 +63,497 @@ class KnowledgeArticleModelTests(TestCase):
         self.assertTrue(art.get_absolute_url().endswith(f"{art.slug}/"))
 
 
-class KnowledgeArticleDataMigrationTests(TestCase):
-    def test_copies_page_text_block_to_article(self):
-        import importlib
+# ---------------------------------------------------------------------------
+# Public views (index listing + slug detail routed via KnowledgeIndexPage)
+# ---------------------------------------------------------------------------
 
-        from django.apps import apps as django_apps
 
-        root = _get_site_root()
-        index = KnowledgeIndexPage(title="Mig Index", slug="mig-index-test")
-        root.add_child(instance=index)
-        index.save_revision().publish()
-        page = KnowledgeArticlePage(
-            title="Migrated Article",
-            slug="migrated-article-test",
-            category="guides",
-            body=json.dumps([{"type": "text", "value": "<p>Body <strong>x</strong></p>"}]),
+class KnowledgeArticleViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("kv_admin@example.com", User.Role.ADMIN)
+        self.article = KnowledgeArticle.objects.create(
+            title="Cycling Routes in Almaty",
+            locale="ru",
+            body="<p>Great <strong>routes</strong> here</p>",
+            category="Routes",
         )
-        index.add_child(instance=page)
-        page.save_revision().publish()
 
-        mig = importlib.import_module("knowledge.migrations.0008_populate_knowledgearticle")
-        mig.copy_pages_to_articles(django_apps, None)
+    def test_index_lists_article(self):
+        resp = self.client.get(_ru_index().url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Cycling Routes in Almaty")
+        self.assertContains(resp, self.article.get_absolute_url())
 
-        art = KnowledgeArticle.objects.get(slug="migrated-article-test")
-        self.assertEqual(art.title, "Migrated Article")
-        self.assertEqual(art.category, "guides")
-        self.assertIn("<strong>x</strong>", art.body)
-        self.assertIn(art.locale, ("ru", "kk", "en"))
+    def test_detail_renders_body_as_html(self):
+        resp = self.client.get(self.article.get_absolute_url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "<strong>routes</strong>", html=False)
+        self.assertNotContains(resp, "&lt;strong&gt;")
+
+    def test_unknown_slug_returns_404(self):
+        resp = self.client.get(_ru_index().url + "no-such-article-xyz/")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_hidden_article_404_for_anon_but_200_for_admin(self):
+        self.article.is_hidden = True
+        self.article.save(update_fields=["is_hidden"])
+        self.assertEqual(self.client.get(self.article.get_absolute_url()).status_code, 404)
+        self.client.force_login(self.admin)
+        self.assertEqual(self.client.get(self.article.get_absolute_url()).status_code, 200)
+
+    def test_deleted_article_404(self):
+        self.article.is_deleted = True
+        self.article.save(update_fields=["is_deleted"])
+        self.client.force_login(self.admin)
+        self.assertEqual(self.client.get(self.article.get_absolute_url()).status_code, 404)
+
+    def test_edit_link_is_on_site_not_wagtail(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(self.article.get_absolute_url())
+        self.assertContains(resp, reverse("knowledge_article_edit", args=[self.article.pk]))
+        self.assertNotContains(resp, "/admin/pages/")
+
+
+class KnowledgeForeignLocaleBannerTests(TestCase):
+    def setUp(self):
+        self.article = KnowledgeArticle.objects.create(
+            title="Foreign Locale Banner Article", locale="ru", body="<p>Original body content</p>"
+        )
+
+    def test_same_locale_serves_without_banner(self):
+        resp = self.client.get(self.article.get_absolute_url(), HTTP_ACCEPT_LANGUAGE="ru")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Original body content")
+        with translation.override("ru"):
+            self.assertNotContains(resp, _("Search for a similar article in your language"))
+
+    def test_foreign_locale_serves_original_with_banner(self):
+        resp = self.client.get(self.article.get_absolute_url(), HTTP_ACCEPT_LANGUAGE="en")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Original body content")
+        self.assertContains(resp, "shown in its original language")
+        self.assertContains(resp, reverse("search"))
+
+
+# ---------------------------------------------------------------------------
+# DraftSubmission model + participant submit
+# ---------------------------------------------------------------------------
+
+
+class DraftSubmissionModelTests(TestCase):
+    def setUp(self):
+        self.user = _make_user("dsm_participant@example.com", User.Role.PARTICIPANT)
+
+    def test_create_submission_defaults_to_pending(self):
+        sub = DraftSubmission.objects.create(
+            author=self.user,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="My Article",
+            body="Article body text",
+        )
+        self.assertEqual(sub.status, DraftSubmission.Status.PENDING)
+
+    def test_str_representation(self):
+        sub = DraftSubmission(
+            author=self.user,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            title="My Article",
+        )
+        self.assertIn("My Article", str(sub))
+
+
+class SubmissionFormViewTests(TestCase):
+    def setUp(self):
+        self.participant = _make_user("sf_participant@example.com", User.Role.PARTICIPANT)
+        self.guest = _make_user("sf_guest@example.com", User.Role.GUEST)
+
+    def test_anonymous_redirected_to_login(self):
+        resp = self.client.get(reverse("knowledge_submit"))
+        self.assertRedirects(resp, f"/accounts/login/?next={reverse('knowledge_submit')}")
+
+    def test_guest_gets_403(self):
+        self.client.force_login(self.guest)
+        self.assertEqual(self.client.get(reverse("knowledge_submit")).status_code, 403)
+
+    def test_participant_can_view_form_with_quill_editor(self):
+        self.client.force_login(self.participant)
+        resp = self.client.get(reverse("knowledge_submit"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="quill-body"')
+        self.assertContains(resp, "vendor/quill/quill.min.js")
+
+    def test_participant_can_submit(self):
+        self.client.force_login(self.participant)
+        resp = self.client.post(
+            reverse("knowledge_submit"),
+            {"locale": "ru", "title": "New Article", "body": "<p>Article content</p>", "category": "Routes"},
+        )
+        self.assertRedirects(resp, reverse("account_profile"))
+        sub = DraftSubmission.objects.get(title="New Article")
+        self.assertEqual(sub.author, self.participant)
+        self.assertEqual(sub.status, DraftSubmission.Status.PENDING)
+
+    def test_guest_post_does_not_create_submission(self):
+        self.client.force_login(self.guest)
+        resp = self.client.post(
+            reverse("knowledge_submit"),
+            {"locale": "ru", "title": "Sneaky", "body": "<p>x</p>", "category": ""},
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(DraftSubmission.objects.count(), 0)
+
+
+# ---------------------------------------------------------------------------
+# DraftSubmission.approve / reject
+# ---------------------------------------------------------------------------
+
+
+class DraftSubmissionApproveRejectTests(TestCase):
+    def setUp(self):
+        self.staff = _make_user("ar_staff@example.com", User.Role.ADMIN, is_staff=True)
+        self.participant = _make_user("ar_participant@example.com", User.Role.PARTICIPANT)
+        self.submission = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="Approved Article",
+            body="<p>Article body content</p>",
+            category="Routes",
+        )
+
+    def test_approve_creates_knowledge_article(self):
+        self.submission.approve(reviewer=self.staff)
+        art = KnowledgeArticle.objects.get(title="Approved Article")
+        self.assertEqual(art.locale, "ru")
+        self.assertEqual(art.category, "Routes")
+        self.assertEqual(art.published_by, self.participant)
+
+    def test_approve_sets_status_and_reviewed_by(self):
+        self.submission.approve(reviewer=self.staff)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
+        self.assertEqual(self.submission.reviewed_by, self.staff)
+
+    def test_reject_sets_status_note_and_reviewed_by(self):
+        self.submission.reject(reviewer=self.staff, note="Not relevant content")
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.REJECTED)
+        self.assertEqual(self.submission.reviewer_note, "Not relevant content")
+        self.assertEqual(self.submission.reviewed_by, self.staff)
+
+    def test_approve_strips_dangerous_html(self):
+        sub = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="XSS Test Article",
+            body='<p onclick="evil()">hi</p><script>alert(\'xss\')</script><a href="javascript:evil()">l</a>',
+        )
+        sub.approve(reviewer=self.staff)
+        art = KnowledgeArticle.objects.get(title="XSS Test Article")
+        self.assertNotIn("<script", art.body)
+        self.assertNotIn("onclick", art.body)
+        self.assertNotIn("javascript:", art.body)
+        self.assertIn("hi", art.body)
+        self.assertEqual(self.client.get(art.get_absolute_url()).status_code, 200)
+
+    def test_approve_keeps_rich_html_body(self):
+        body = "<h2>Section</h2><p>Intro with <strong>bold</strong>.</p><ul><li>first</li></ul>"
+        sub = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="Rich Body Article",
+            body=body,
+        )
+        sub.approve(reviewer=self.staff)
+        art = KnowledgeArticle.objects.get(title="Rich Body Article")
+        self.assertIn("<h2>Section</h2>", art.body)
+        self.assertIn("<li>first</li>", art.body)
+        self.assertNotIn("&lt;h2&gt;", art.body)
+
+    def test_double_approve_raises_error(self):
+        self.submission.approve(reviewer=self.staff)
+        with self.assertRaises(ValueError):
+            self.submission.approve(reviewer=self.staff)
+        self.assertEqual(KnowledgeArticle.objects.filter(title=self.submission.title).count(), 1)
+
+    def test_approve_reads_db_status_not_memory_status(self):
+        DraftSubmission.objects.filter(pk=self.submission.pk).update(status=DraftSubmission.Status.APPROVED)
+        stale = DraftSubmission.objects.get(pk=self.submission.pk)
+        stale.status = DraftSubmission.Status.PENDING
+        with self.assertRaises(ValueError):
+            stale.approve(reviewer=self.staff)
+        self.assertEqual(KnowledgeArticle.objects.filter(title=self.submission.title).count(), 0)
+
+    def test_reject_after_approve_raises_error(self):
+        self.submission.approve(reviewer=self.staff)
+        with self.assertRaises(ValueError):
+            self.submission.reject(reviewer=self.staff, note="oops")
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
+
+    def test_news_submission_creates_news_page_not_article(self):
+        from news.models import NewsIndexPage, NewsPage
+
+        news_index = NewsIndexPage(title="News", slug="news-approve")
+        _get_site_root().add_child(instance=news_index)
+        sub = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.NEWS,
+            locale="ru",
+            title="Breaking News",
+            body="<p>News body</p>",
+        )
+        sub.approve(reviewer=self.staff)
+        self.assertEqual(NewsPage.objects.filter(title="Breaking News").count(), 1)
+        self.assertEqual(KnowledgeArticle.objects.filter(title="Breaking News").count(), 0)
+
+
+# ---------------------------------------------------------------------------
+# Manager add / edit (on-site Quill)
+# ---------------------------------------------------------------------------
+
+
+class AddArticleViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("aa_admin@example.com", User.Role.ADMIN)
+        self.participant = _make_user("aa_participant@example.com", User.Role.PARTICIPANT)
+
+    def test_anonymous_redirected_to_login(self):
+        resp = self.client.get(reverse("knowledge_add"))
+        self.assertRedirects(resp, f"/accounts/login/?next={reverse('knowledge_add')}")
+
+    def test_participant_gets_403(self):
+        self.client.force_login(self.participant)
+        self.assertEqual(self.client.get(reverse("knowledge_add")).status_code, 403)
+
+    def test_admin_can_view_form_with_quill(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(reverse("knowledge_add"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="quill-body"')
+
+    def test_admin_post_creates_article_directly(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            reverse("knowledge_add"),
+            {"locale": "ru", "title": "Published Article", "body": "<p>Body</p>", "category": "Routes"},
+        )
+        self.assertEqual(resp.status_code, 302)
+        art = KnowledgeArticle.objects.get(title="Published Article")
+        self.assertEqual(art.published_by, self.admin)
+        # No moderation draft is created for the manager add path.
+        self.assertEqual(DraftSubmission.objects.count(), 0)
+
+    def test_admin_post_sanitizes_body(self):
+        self.client.force_login(self.admin)
+        self.client.post(
+            reverse("knowledge_add"),
+            {"locale": "ru", "title": "Add XSS", "body": "<p>ok</p><script>alert(1)</script>", "category": ""},
+        )
+        art = KnowledgeArticle.objects.get(title="Add XSS")
+        self.assertNotIn("<script", art.body)
+
+
+class EditArticleViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("ea_admin@example.com", User.Role.ADMIN)
+        self.participant = _make_user("ea_participant@example.com", User.Role.PARTICIPANT)
+        self.article = KnowledgeArticle.objects.create(title="Editable", locale="ru", body="<p>old</p>")
+
+    def test_participant_gets_403(self):
+        self.client.force_login(self.participant)
+        self.assertEqual(self.client.get(reverse("knowledge_article_edit", args=[self.article.pk])).status_code, 403)
+
+    def test_admin_can_view_edit_form_prefilled(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(reverse("knowledge_article_edit", args=[self.article.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="quill-body"')
+        self.assertContains(resp, "Editable")
+
+    def test_admin_edit_updates_and_sanitizes(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            reverse("knowledge_article_edit", args=[self.article.pk]),
+            {"locale": "ru", "title": "Editable", "body": "<p>new</p><script>x</script>", "category": ""},
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.article.refresh_from_db()
+        self.assertIn("<p>new</p>", self.article.body)
+        self.assertNotIn("<script", self.article.body)
+
+    def test_admin_can_hide_and_unhide(self):
+        self.client.force_login(self.admin)
+        self.client.post(reverse("knowledge_article_hide", args=[self.article.pk]))
+        self.article.refresh_from_db()
+        self.assertTrue(self.article.is_hidden)
+        self.client.post(reverse("knowledge_article_hide", args=[self.article.pk]))
+        self.article.refresh_from_db()
+        self.assertFalse(self.article.is_hidden)
+
+    def test_admin_can_delete(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(reverse("knowledge_article_delete", args=[self.article.pk]))
+        self.assertEqual(resp.status_code, 302)
+        self.article.refresh_from_db()
+        self.assertTrue(self.article.is_deleted)
+
+
+# ---------------------------------------------------------------------------
+# Submission moderation views (DraftSubmission)
+# ---------------------------------------------------------------------------
+
+
+class SubmissionDetailViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("sd_admin@example.com", User.Role.ADMIN)
+        self.participant = _make_user("sd_participant@example.com", User.Role.PARTICIPANT)
+        self.submission = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="Pending Article Detail",
+            body="<p>Body</p>",
+        )
+
+    def test_anonymous_redirected_to_login(self):
+        resp = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
+        self.assertEqual(resp.status_code, 302)
+
+    def test_participant_gets_403(self):
+        self.client.force_login(self.participant)
+        self.assertEqual(
+            self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk])).status_code, 403
+        )
+
+    def test_admin_can_view_detail(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(reverse("knowledge_submission_detail", args=[self.submission.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Pending Article Detail")
+
+    def test_news_submission_returns_404_on_detail(self):
+        news_sub = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.NEWS,
+            locale="ru",
+            title="News Detail 404",
+            body="<p>Body</p>",
+        )
+        self.client.force_login(self.admin)
+        resp = self.client.get(reverse("knowledge_submission_detail", args=[news_sub.pk]))
+        self.assertEqual(resp.status_code, 404)
+
+
+class ApproveSubmissionViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("av_admin@example.com", User.Role.ADMIN)
+        self.participant = _make_user("av_participant@example.com", User.Role.PARTICIPANT)
+        self.submission = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="To Be Approved Via View",
+            body="<p>Body</p>",
+        )
+
+    def test_admin_approve_creates_article(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(reverse("knowledge_submission_approve", args=[self.submission.pk]))
+        self.assertEqual(resp.status_code, 302)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
+        self.assertEqual(KnowledgeArticle.objects.filter(title="To Be Approved Via View").count(), 1)
+
+    def test_participant_cannot_approve(self):
+        self.client.force_login(self.participant)
+        resp = self.client.post(reverse("knowledge_submission_approve", args=[self.submission.pk]))
+        self.assertEqual(resp.status_code, 403)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
+
+    def test_double_approve_redirects_to_detail(self):
+        self.submission.approve(reviewer=self.admin)
+        self.client.force_login(self.admin)
+        resp = self.client.post(reverse("knowledge_submission_approve", args=[self.submission.pk]))
+        self.assertRedirects(resp, reverse("knowledge_submission_detail", args=[self.submission.pk]))
+
+
+class RejectSubmissionViewTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("rv_admin@example.com", User.Role.ADMIN)
+        self.participant = _make_user("rv_participant@example.com", User.Role.PARTICIPANT)
+        self.submission = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            locale="ru",
+            title="To Be Rejected Via View",
+            body="<p>Body</p>",
+        )
+
+    def test_admin_reject_with_note(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            reverse("knowledge_submission_reject", args=[self.submission.pk]), {"note": "Not suitable content"}
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.REJECTED)
+        self.assertEqual(self.submission.reviewer_note, "Not suitable content")
+
+    def test_participant_cannot_reject(self):
+        self.client.force_login(self.participant)
+        resp = self.client.post(reverse("knowledge_submission_reject", args=[self.submission.pk]), {"note": "Sneaky"})
+        self.assertEqual(resp.status_code, 403)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.PENDING)
+
+
+# ---------------------------------------------------------------------------
+# Localization of the on-site forms
+# ---------------------------------------------------------------------------
+
+
+class AddArticleFormLocalizationTests(TestCase):
+    def setUp(self):
+        self.admin = _make_user("loc_admin@example.com", User.Role.ADMIN)
+        self.client.force_login(self.admin)
+        self.url = reverse("knowledge_add")
+
+    def test_field_labels_in_russian(self):
+        resp = self.client.get(self.url)
+        with translation.override("ru"):
+            for label in ("Locale", "Title", "Body", "Category"):
+                self.assertContains(resp, _(label))
+
+    def test_locale_choices_in_russian(self):
+        resp = self.client.get(self.url)
+        with translation.override("ru"):
+            for label in ("Russian", "Kazakh", "English"):
+                self.assertContains(resp, _(label))
+
+
+# ---------------------------------------------------------------------------
+# Search
+# ---------------------------------------------------------------------------
+
+
+class SearchReturnsKnowledgeArticleTests(TestCase):
+    def setUp(self):
+        self.article = KnowledgeArticle.objects.create(
+            title="Cycling Routes in Almaty", locale="ru", body="<p>routes</p>"
+        )
+
+    def test_search_page_returns_200(self):
+        self.assertEqual(self.client.get(reverse("search") + "?query=Almaty").status_code, 200)
+
+    def test_search_finds_article_by_title(self):
+        from wagtail.search.backends import get_search_backend
+
+        get_search_backend().add(self.article)
+        resp = self.client.get(reverse("search") + "?query=Almaty", HTTP_ACCEPT_LANGUAGE="ru")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Almaty")

@@ -6,8 +6,7 @@ from .middleware import get_current_user
 # Each entry: (app_label, model_name)
 _WATCHED_MODELS = [
     ("calendar_app", "Competition"),
-    ("knowledge", "KnowledgeArticlePage"),
-    ("knowledge", "LocationArticlePage"),
+    ("knowledge", "KnowledgeArticle"),
     ("news", "NewsPage"),
     ("registrations", "CompetitionRegistration"),
     ("knowledge", "DraftSubmission"),

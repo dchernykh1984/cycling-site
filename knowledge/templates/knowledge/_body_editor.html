@@ -1,0 +1,53 @@
+{% comment %}
+Rich-text Quill editor for the knowledge article body. Include once in the page's extra_js
+block; the page must contain a hidden <input id="id_body"> (form.body) and, before it, a
+<div id="quill-body" class="quill-body-box"></div>. On submit the editor HTML is copied into
+the hidden field; the server sanitizes it in KnowledgeArticle.save(). Quill is vendored
+locally (reused from calendar_app) so the editor works offline and isn't broken by a CDN.
+{% endcomment %}
+{% load static %}
+<link href="{% static 'calendar_app/vendor/quill/quill.snow.css' %}" rel="stylesheet">
+<style>
+.quill-body-box{background:#fff}
+.quill-body-box .ql-container{min-height:240px;font-size:1rem}
+/* Quill Snow hardcodes English heading-picker labels; localize them by the UI language on
+   <html lang>. en keeps the upstream English labels; toolbar uses [2, 3, false]. */
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label::before,
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item::before{content:"Обычный"}
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before{content:"Заголовок 2"}
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before{content:"Заголовок 3"}
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label::before,
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item::before{content:"Қалыпты"}
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before{content:"Тақырып 2"}
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before{content:"Тақырып 3"}
+</style>
+{{ form.body.value|default:""|json_script:"init-body" }}
+<script src="{% static 'calendar_app/vendor/quill/quill.min.js' %}"></script>
+<script>
+(function () {
+  if (typeof Quill === 'undefined') return;
+  var TOOLBAR = [
+    [{ 'header': [2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['blockquote', 'link', 'image'],
+    ['clean']
+  ];
+  var box = document.getElementById('quill-body');
+  var hidden = document.getElementById('id_body');
+  if (!box || !hidden) return;
+  var quill = new Quill(box, { theme: 'snow', modules: { toolbar: TOOLBAR } });
+  var initEl = document.getElementById('init-body');
+  if (initEl) {
+    var html = JSON.parse(initEl.textContent);
+    if (html) quill.clipboard.dangerouslyPasteHTML(html);
+  }
+  if (hidden.form) {
+    hidden.form.addEventListener('submit', function () { hidden.value = quill.root.innerHTML; });
+  }
+}());
+</script>

@@ -47,13 +47,6 @@ class Location(MP_Node, index.Indexed):
     name = models.CharField(max_length=255)
     lat = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     lng = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    knowledge_article = models.OneToOneField(
-        "knowledge.LocationArticlePage",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="location",
-    )
 
     is_hidden = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
@@ -74,7 +67,6 @@ class Location(MP_Node, index.Indexed):
         FieldPanel("name"),
         FieldPanel("lat"),
         FieldPanel("lng"),
-        FieldPanel("knowledge_article"),
     ]
 
     def __str__(self) -> str:
@@ -253,8 +245,6 @@ def _build_map_locations(all_locs) -> list:
             "lng": float(display.lng),
             "is_hidden": display.is_hidden,
         }
-        if display.knowledge_article_id and display.knowledge_article.live:
-            entry["url"] = display.knowledge_article.url
         data.append(entry)
     return data
 
@@ -281,9 +271,9 @@ class LocationsMapPage(AsciiSlugMixin, Page):
             request.user.is_superuser or request.user.get_role_rank() >= admin_rank
         )
         all_locs = list(
-            Location.objects.filter(is_deleted=False)
-            .filter(models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED))
-            .select_related("knowledge_article")
+            Location.objects.filter(is_deleted=False).filter(
+                models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
+            )
         )
         context["locations_data"] = _build_map_locations(all_locs)
         # Only confirmed users (participant+) may propose a location, so only they see the

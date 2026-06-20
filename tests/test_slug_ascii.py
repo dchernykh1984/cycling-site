@@ -72,8 +72,6 @@ _PAGE_CLASSES = [
     ("news.models", "NewsIndexPage"),
     ("news.models", "NewsPage"),
     ("knowledge.models", "KnowledgeIndexPage"),
-    ("knowledge.models", "KnowledgeArticlePage"),
-    ("knowledge.models", "LocationArticlePage"),
     ("locations.models", "LocationsMapPage"),
 ]
 

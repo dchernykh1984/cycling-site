@@ -3,15 +3,44 @@ from typing import ClassVar
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from knowledge.models import DraftSubmission
+from knowledge.models import DraftSubmission, KnowledgeArticle
+
+_TITLE_ATTRS = {"class": "form-control"}
+_CATEGORY_ATTRS = {"class": "form-control"}
 
 
 class DraftSubmissionForm(forms.ModelForm):
-    locale = forms.ChoiceField(choices=DraftSubmission.LOCALE_CHOICES, label=_("Locale"))
+    """Participant-facing knowledge submission. Body is rich HTML written by Quill into a
+    hidden field; it is sanitized centrally when the submission is approved into a
+    KnowledgeArticle (KnowledgeArticle.save())."""
+
+    locale = forms.ChoiceField(
+        choices=DraftSubmission.LOCALE_CHOICES, label=_("Locale"), widget=forms.Select(attrs={"class": "form-select"})
+    )
+    body = forms.CharField(widget=forms.HiddenInput(), label=_("Body"))
 
     class Meta:
         model = DraftSubmission
         fields: ClassVar[list] = ["locale", "title", "body", "category"]
         widgets: ClassVar[dict] = {
-            "body": forms.Textarea(attrs={"rows": 10}),
+            "title": forms.TextInput(attrs=_TITLE_ATTRS),
+            "category": forms.TextInput(attrs=_CATEGORY_ATTRS),
+        }
+
+
+class KnowledgeArticleForm(forms.ModelForm):
+    """Manager-facing create/edit form for a KnowledgeArticle. Body is rich HTML from Quill;
+    sanitization happens in KnowledgeArticle.save()."""
+
+    locale = forms.ChoiceField(
+        choices=KnowledgeArticle.LOCALE_CHOICES, label=_("Locale"), widget=forms.Select(attrs={"class": "form-select"})
+    )
+    body = forms.CharField(required=False, widget=forms.HiddenInput(), label=_("Body"))
+
+    class Meta:
+        model = KnowledgeArticle
+        fields: ClassVar[list] = ["locale", "title", "body", "category"]
+        widgets: ClassVar[dict] = {
+            "title": forms.TextInput(attrs=_TITLE_ATTRS),
+            "category": forms.TextInput(attrs=_CATEGORY_ATTRS),
         }
