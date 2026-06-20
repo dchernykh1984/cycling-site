@@ -46,6 +46,35 @@ _IMG_ATTRS: set[str] = {"src", "alt"}
 # Only http(s) URLs or base64-encoded raster data URIs -- never javascript:, vbscript:,
 # data:text/html or data:image/svg+xml (SVG can carry script).
 _SAFE_IMG_SRC = re.compile(r"^(?:https?://|data:image/(?:png|jpe?g|gif|webp)[;,])", re.IGNORECASE)
+# Schemes allowed in <a href>; everything else (javascript:, data:, vbscript:, ...) is dropped.
+_ALLOWED_LINK_SCHEMES = ("http", "https", "mailto", "tel")
+# ASCII control chars + whitespace that browsers strip when resolving a URL (and which
+# BeautifulSoup produces when decoding entities like &#x0a;), so they cannot be used to
+# smuggle "java\nscript:" past a naive prefix check.
+_URL_STRIP_CHARS = re.compile(r"[\x00-\x20\x7f]")
+
+
+def _safe_href(href_raw: object) -> str | None:
+    """Return a control-char-stripped href if its scheme is safe, else None to drop it.
+
+    Browsers ignore ASCII control/whitespace characters when parsing a URL's scheme, so a
+    value such as ``java&#x0a;script:alert(1)`` (entity-decoded to ``java\\nscript:...`` by
+    the parser) would slip past a plain ``startswith("javascript:")`` check yet still run.
+    Strip those characters first, then allow an explicit scheme only if it is on the
+    allowlist; URLs with no scheme (relative, anchor, query) are kept.
+    """
+    if not isinstance(href_raw, str):
+        return None
+    cleaned = _URL_STRIP_CHARS.sub("", href_raw)
+    if not cleaned:
+        return None
+    for ch in cleaned:
+        if ch == ":":
+            scheme = cleaned.split(":", 1)[0].lower()
+            return cleaned if scheme in _ALLOWED_LINK_SCHEMES else None
+        if ch in "/?#":
+            break  # a path/query/fragment delimiter before any ':' -> no scheme, relative URL
+    return cleaned
 
 
 def _clean_attrs_and_links(tag) -> bool:
@@ -55,11 +84,11 @@ def _clean_attrs_and_links(tag) -> bool:
         if attr.startswith("on") or attr not in allowed:
             del tag[attr]
     if tag.name == "a":
-        href_raw = tag.get("href")
-        href = href_raw.strip() if isinstance(href_raw, str) else ""
-        if href.lower().startswith(("javascript:", "data:", "vbscript:")):
+        href = _safe_href(tag.get("href"))
+        if href is None:
             del tag["href"]
-        elif href:
+        else:
+            tag["href"] = href
             tag["rel"] = "noopener"
             tag["target"] = "_blank"
     elif tag.name == "img":
