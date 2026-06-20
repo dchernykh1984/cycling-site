@@ -11,7 +11,6 @@ from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
-from cycling_site.sanitize import sanitize_rich_html
 from knowledge.models import DraftSubmission
 from news.models import NewsArticle
 
@@ -209,10 +208,11 @@ def create_news_article(request, payload: NewsArticleIn):
     article = NewsArticle(published_by=user, is_hidden=payload.is_hidden)
     for field, value in (("title", payload.title), ("intro", payload.intro), ("body", payload.body)):
         for lang, raw in (("ru", value.ru), ("kk", value.kk), ("en", value.en)):
-            setattr(article, f"{field}_{lang}", sanitize_rich_html(raw) if field == "body" else raw)
+            setattr(article, f"{field}_{lang}", raw)
         # Keep the canonical column populated so the slug and locale fallbacks stay correct.
-        canonical = value.ru or value.kk or value.en
-        setattr(article, field, sanitize_rich_html(canonical) if field == "body" else canonical)
+        setattr(article, field, value.ru or value.kk or value.en)
+    # Body HTML is sanitized centrally in NewsArticle.save() (with images allowed), so the
+    # API and the on-site form store identical markup.
     article.save()
     return Status(201, article)
 
