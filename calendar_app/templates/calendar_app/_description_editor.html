@@ -1,10 +1,18 @@
-{# Rich-text editor for the per-locale competition description fields.
-   Include once per page (e.g. in the extra_js block). The editor boxes themselves
-   (<div class="quill-desc-box" data-target="id_description_XX" data-init="init-desc-XX">)
-   are placed inline in the form next to the hidden description_XX inputs.
-   On submit each editor's HTML is copied into its hidden field; the server sanitizes it.
-   Quill is vendored locally (not a CDN) so the editor works offline and isn't broken by a
-   blocked/unreachable CDN. #}
+{% comment %}
+Rich-text editor for the per-locale competition description fields.
+Include once per page (e.g. in the extra_js block). The editor boxes themselves
+(an editor div with class "quill-desc-box", a data-target pointing at the hidden
+field id and a data-init pointing at its json_script id) are placed inline in the
+form next to the hidden description fields. On submit each editor's HTML is copied
+into its hidden field; the server sanitizes it. Quill is vendored locally (not a
+CDN) so the editor works offline and isn't broken by a blocked/unreachable CDN.
+
+NOTE: this MUST be a {% templatetag openblock %} comment {% templatetag closeblock %}
+block, not a Django "{#...#}" comment -- the latter is single-line only, so a
+multi-line one leaks into the page and (because the prose used to contain a literal
+editor-box tag) injected a phantom .quill-desc-box that Quill initialised over the
+stylesheet link, breaking the editor.
+{% endcomment %}
 {% load static %}
 <link href="{% static 'calendar_app/vendor/quill/quill.snow.css' %}" rel="stylesheet">
 <style>.quill-desc-box{background:#fff}.quill-desc-box .ql-container{min-height:160px;font-size:1rem}</style>
