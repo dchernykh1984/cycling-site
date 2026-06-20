@@ -3,9 +3,11 @@ from typing import ClassVar
 from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
+from taggit.managers import TaggableManager
 from taggit.models import TaggedItemBase
 from wagtail.admin.panels import FieldPanel
 from wagtail.blocks import CharBlock, ChoiceBlock, RichTextBlock, StructBlock, TextBlock, URLBlock
@@ -18,6 +20,78 @@ from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.page_mixins import AsciiSlugMixin
 from cycling_site.sanitize import sanitize_rich_html
+
+
+class KnowledgeArticle(index.Indexed, models.Model):
+    """Frontend-managed knowledge article: a plain Django model with an HTML body edited
+    on-site via Quill (mirrors calendar_app.Competition / news.NewsArticle).
+
+    Single-language per article (the `locale` field), no per-locale translation columns:
+    users write in one language; we may add the same article in another language as a
+    separate row. Sanitized centrally in save(); searchable via index.Indexed.
+    """
+
+    LOCALE_CHOICES: ClassVar[list] = [("ru", _("Russian")), ("kk", _("Kazakh")), ("en", _("English"))]
+
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    locale = models.CharField(max_length=10, choices=LOCALE_CHOICES, default="ru", db_index=True)
+    body = models.TextField(blank=True)
+    category = models.CharField(max_length=100, blank=True)
+    tags = TaggableManager(blank=True)
+    published_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    published_at = models.DateTimeField(default=timezone.now)
+    is_hidden = models.BooleanField(default=False, db_index=True)
+    is_deleted = models.BooleanField(default=False, db_index=True)
+
+    search_fields: ClassVar[list] = [
+        index.SearchField("title"),
+        index.SearchField("body"),
+        index.FilterField("category"),
+        index.FilterField("locale"),
+        index.FilterField("is_hidden"),
+        index.FilterField("is_deleted"),
+    ]
+
+    class Meta:
+        ordering: ClassVar[list] = ["-published_at"]
+        verbose_name = "Knowledge article"
+        verbose_name_plural = "Knowledge articles"
+
+    def __str__(self) -> str:
+        return self.title or ""
+
+    def save(self, *args, **kwargs) -> None:
+        # Body is rendered with |safe, so sanitize on every write (single choke point for
+        # the organizer form, participant submission approval and Django admin).
+        if self.body:
+            self.body = sanitize_rich_html(self.body, allow_img=True)
+        if not self.slug:
+            base = slugify(self.title or "", allow_unicode=False) or "article"
+            candidate = base
+            n = 1
+            while KnowledgeArticle.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+                candidate = f"{base}-{n}"
+                n += 1
+            self.slug = candidate
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self) -> str:
+        from wagtail.models import Locale
+
+        loc = Locale.objects.filter(language_code=self.locale).first()
+        index_page = None
+        if loc is not None:
+            index_page = KnowledgeIndexPage.objects.live().filter(locale=loc).first()
+        if index_page is None:
+            index_page = KnowledgeIndexPage.objects.live().first()
+        return f"{index_page.url}{self.slug}/" if index_page else f"/knowledge/{self.slug}/"
 
 
 class CodeBlock(StructBlock):
