@@ -1364,7 +1364,15 @@ class StartListApiTest(TestCase, ApiTestMixin):
         self.token = str(self.comp.upload_token)
 
     def _post(self, **kwargs):
-        data = {"competition_token": self.token, "device_id": "dev-a", "items": ["1#Ivanov##1#", "2#Petrov##1#"]}
+        # Auto-increment the revision per call so successive uploads look like a real client
+        # (strictly-increasing counter); tests override client_revision explicitly when needed.
+        self._rev = getattr(self, "_rev", 0) + 1
+        data = {
+            "competition_token": self.token,
+            "device_id": "dev-a",
+            "items": ["1#Ivanov##1#", "2#Petrov##1#"],
+            "client_revision": self._rev,
+        }
         data.update(kwargs)
         return self.post("/api/v1/start-list/", data)
 
@@ -1437,17 +1445,33 @@ class StartListApiTest(TestCase, ApiTestMixin):
         self.assertEqual(upload.items, ["a", "b", "c"])  # newer list preserved, not truncated
         self.assertEqual(upload.client_revision, 1005)
 
-    def test_equal_revision_overwrites_idempotent(self):
-        # A re-sent snapshot with the same revision is accepted (idempotent retry), not rejected.
-        self._post(items=["a"], client_revision=1000)
-        self._post(items=["b"], client_revision=1000)
-        self.assertEqual(StartListUpload.objects.get(competition=self.comp, device_id="dev-a").items, ["b"])
+    def test_equal_revision_same_items_is_noop(self):
+        # A genuine retry (same revision, identical payload) is accepted as a no-op, not a conflict.
+        self._post(items=["a", "b"], client_revision=1000)
+        resp = self._post(items=["a", "b"], client_revision=1000)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(StartListUpload.objects.get(competition=self.comp, device_id="dev-a").items, ["a", "b"])
 
-    def test_legacy_client_without_revision_overwrites(self):
-        # A client that never sends a revision (default 0) keeps the old last-write-wins behaviour.
-        self._post(items=["a"])
-        self._post(items=["b"])
-        self.assertEqual(StartListUpload.objects.get(competition=self.comp, device_id="dev-a").items, ["b"])
+    def test_equal_revision_different_items_conflicts(self):
+        # Two different snapshots that collide on the same revision must not silently overwrite.
+        self._post(items=["a"], client_revision=1000)
+        resp = self._post(items=["b"], client_revision=1000)
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(StartListUpload.objects.get(competition=self.comp, device_id="dev-a").items, ["a"])
+
+    def test_missing_revision_rejected(self):
+        # The revision is required; a payload without it is a 422, not a silent last-write-wins.
+        resp = self.post(
+            "/api/v1/start-list/",
+            {"competition_token": self.token, "device_id": "dev-a", "items": ["a"]},
+        )
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(StartListUpload.objects.count(), 0)
+
+    def test_nonpositive_revision_rejected(self):
+        resp = self._post(client_revision=0)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(StartListUpload.objects.count(), 0)
 
 
 # ---------------------------------------------------------------------------
