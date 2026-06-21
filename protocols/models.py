@@ -50,3 +50,33 @@ class ProtocolVersion(models.Model):
 
     def __str__(self) -> str:
         return f"v{self.pk} of {self.protocol_id}"
+
+
+class StartListUpload(models.Model):
+    """Start-list state pushed from a StartProtocolMaker instance, keyed by ``device_id``.
+
+    Several referees register competitors on different machines; each pushes its own list under
+    its own ``device_id`` (re-posting the same ``device_id`` overwrites it). FinishProtocolGenerator
+    fetches every device's list for a competition and merges them into one start protocol.
+
+    ``items`` are the raw ``#``-delimited competitor lines, stored opaquely (the site neither
+    parses nor renders them).
+    """
+
+    objects: ClassVar[models.Manager[StartListUpload]]
+
+    competition = models.ForeignKey(
+        Competition,
+        on_delete=models.CASCADE,
+        related_name="start_list_uploads",
+    )
+    device_id = models.CharField(max_length=64)
+    items = models.JSONField(default=list)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together: ClassVar[list] = [("competition", "device_id")]
+        ordering: ClassVar[list] = ["device_id"]
+
+    def __str__(self) -> str:
+        return f"{self.competition} - {self.device_id} ({len(self.items)} items)"

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Protocol, ProtocolVersion
+from .models import Protocol, ProtocolVersion, StartListUpload
 
 
 @admin.register(Protocol)
@@ -14,3 +14,10 @@ class ProtocolAdmin(admin.ModelAdmin):
 class ProtocolVersionAdmin(admin.ModelAdmin):
     list_display = ("protocol", "saved_at", "file_hash")
     raw_id_fields = ("protocol",)
+
+
+@admin.register(StartListUpload)
+class StartListUploadAdmin(admin.ModelAdmin):
+    list_display = ("competition", "device_id", "updated_at")
+    search_fields = ("device_id",)
+    raw_id_fields = ("competition",)
