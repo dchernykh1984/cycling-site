@@ -92,9 +92,11 @@ Live site: <https://cycling.codered.cloud>.
 
 ## REST API
 
-The site exposes a REST API at `/api/v1/`. It supports CRUD for competitions,
-news and knowledge-article drafts, locations, plus endpoints for participant
-list retrieval and protocol file uploads used by the offline referee tools.
+The site exposes a REST API at `/api/v1/`. It supports admin CRUD for
+competitions and news articles, read-only knowledge articles, CRUD for locations,
+plus endpoints for participant list retrieval and protocol file uploads used by
+the offline referee tools. Community submission of news/knowledge happens through
+the on-site web forms, not the API.
 
 All write operations require a Bearer token: `Authorization: Bearer <token>`.
 Participants and higher can generate their personal API token on the profile page.
@@ -145,8 +147,8 @@ Notes:
   moderated).
 - Register for approved competitions, including entering a team in the entry.
 - Comment on competitions and news.
-- Submit news and knowledge-base articles (as drafts/submissions) via web/API,
-  and edit or delete their own pending drafts via the API.
+- Submit news and knowledge-base articles for moderation through the on-site web
+  forms (the draft submission/edit API has been removed).
 - See their registrations and submissions in their profile, and manage their own
   submitted competitions via the API (without changing `is_hidden`).
 
@@ -178,7 +180,8 @@ Notes:
   location nodes.
 - Create, edit, hide and soft-delete news articles, and delete comments on news.
 - Add knowledge-base articles directly, approve/reject submissions, hide/delete
-  articles; via the API publish news and auto-approve news/knowledge drafts.
+  articles. Via the API: full CRUD for news articles; knowledge articles are
+  read-only (authored and moderated on-site).
 - In Wagtail/Django admin: manage users up to the `admin` role (cannot assign or
   demote `owner`) and manage the Teams snippet.
 
