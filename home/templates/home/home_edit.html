@@ -122,4 +122,5 @@
 {{ form.body_kk.value|default:""|json_script:"init-body-kk" }}
 {{ form.body_en.value|default:""|json_script:"init-body-en" }}
 {% include "includes/rich_text_editor.html" %}
+{% include "includes/locale_tab_errors.html" %}
 {% endblock %}

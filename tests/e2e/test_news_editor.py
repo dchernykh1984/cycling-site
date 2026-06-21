@@ -56,3 +56,25 @@ def test_news_edit_round_trips_body(page: Page, live_server, superuser):
     article.refresh_from_db()
     assert "added in edit" in article.body_ru
     assert "Old body" in article.body_ru  # the prefilled body survived the edit round-trip
+
+
+@pytest.mark.django_db(transaction=True)
+def test_server_error_opens_the_errored_locale_tab(page: Page, live_server, superuser):
+    inject_session(page, live_server, superuser)
+    page.goto(f"{live_server.url}/news/articles/create/")
+    page.fill("#id_title_ru", "Valid RU title")
+    # Drop the maxlength attribute and set an over-limit KK title, so the server (not the browser)
+    # rejects it and the error lands in the KK tab; then submit in the same step.
+    page.evaluate(
+        """() => {
+          const el = document.getElementById('id_title_kk');
+          el.removeAttribute('maxlength');
+          el.value = 'k'.repeat(256);
+          document.getElementById('article-form').requestSubmit();
+        }"""
+    )
+    page.wait_for_load_state("networkidle")
+
+    # On re-render the KK tab is auto-opened so its error is visible, not stuck behind the RU tab.
+    expect(page.locator("#pane-kk")).to_be_visible()
+    expect(page.locator("#pane-kk .text-danger")).to_be_visible()

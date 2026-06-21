@@ -504,3 +504,31 @@ class NewsRichTextLimitTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "too large")
+
+    def test_article_form_view_renders_kk_and_en_field_errors(self):
+        # KK/EN tab errors must be rendered (they sit in hidden tabs that JS auto-opens).
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
+
+        admin = User.objects.create_user(
+            username="ned2@example.com", email="ned2@example.com", password="password123", role=User.Role.ADMIN
+        )
+        self.client.force_login(admin)
+        response = self.client.post(
+            reverse("news_article_create"),
+            {
+                "title_ru": "T",
+                "title_kk": "",
+                "title_en": "x" * 256,  # over title max_length=255
+                "intro_ru": "",
+                "intro_kk": "",
+                "intro_en": "",
+                "body_ru": "",
+                "body_kk": "a" * (MAX_RICH_TEXT_LENGTH + 1),  # over the body cap
+                "body_en": "",
+                "published_at": "2026-01-01T00:00",
+            },
+            HTTP_ACCEPT_LANGUAGE="en",  # assert the English error strings deterministically
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "too large")  # KK body error rendered
+        self.assertContains(response, "at most 255")  # EN title error rendered
