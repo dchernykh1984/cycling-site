@@ -17,6 +17,6 @@ jobs:
           enable-cache: true
           python-version: "3.13"
       - name: Export dependencies
-        run: uv export --no-hashes --no-annotate --no-default-groups --no-emit-project -o requirements.txt
+        run: uv export --locked --no-hashes --no-annotate --no-default-groups --no-emit-project -o requirements.txt
       - name: Run pip-audit
         run: uvx pip-audit -r requirements.txt
