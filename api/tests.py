@@ -830,6 +830,36 @@ class NewsArticleCrudTest(TestCase, ApiTestMixin):
         self.assertEqual(article.published_by_id, self.admin.pk)
         self.assertTrue(article.slug)
 
+    def test_create_rejects_empty_title(self):
+        resp = self.post("/api/v1/news/", self._payload(title={"ru": "", "kk": "", "en": ""}), user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(NewsArticle.objects.count(), 0)
+
+    def test_create_rejects_oversized_title(self):
+        # 256 chars > the model's 255 cap: must be a controlled 422, not a DB DataError (500).
+        resp = self.post("/api/v1/news/", self._payload(title={"ru": "a" * 256, "kk": "", "en": ""}), user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(NewsArticle.objects.count(), 0)
+
+    def test_create_rejects_oversized_intro(self):
+        resp = self.post("/api/v1/news/", self._payload(intro={"ru": "a" * 501, "kk": "", "en": ""}), user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(NewsArticle.objects.count(), 0)
+
+    def test_create_accepts_boundary_title(self):
+        resp = self.post("/api/v1/news/", self._payload(title={"ru": "a" * 255, "kk": "", "en": ""}), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+
+    def test_update_rejects_oversized_title(self):
+        pk = self.post("/api/v1/news/", self._payload(), user=self.admin).json()["id"]
+        resp = self.patch(f"/api/v1/news/{pk}", {"title": {"ru": "a" * 256, "kk": "", "en": ""}}, user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+
+    def test_update_rejects_blanking_title(self):
+        pk = self.post("/api/v1/news/", self._payload(), user=self.admin).json()["id"]
+        resp = self.patch(f"/api/v1/news/{pk}", {"title": {"ru": "", "kk": "", "en": ""}}, user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+
     def test_empty_active_locale_not_overwritten_by_fallback(self):
         # Regression: the canonical column is set via __dict__, so an empty RU locale (the active
         # language) is NOT overwritten with the kk/en fallback through modeltranslation's descriptor.
