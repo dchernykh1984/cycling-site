@@ -22,10 +22,13 @@ router = Router(tags=["start-list"])
 _MAX_ITEMS = 20000
 _MAX_ITEM_LEN = 2000
 _MAX_DEVICE_ID_LEN = 64
-# Cap the combined size so the JSON body stays well under Django's DATA_UPLOAD_MAX_MEMORY_SIZE
-# (2.5 MB default): otherwise a payload the per-item/count checks accept could still be rejected by
-# Django before this handler runs, surfacing as an infrastructure error for an "allowed" request.
-_MAX_TOTAL_CHARS = 1_000_000
+# Cap the combined character count so the *serialized* JSON body stays under Django's
+# DATA_UPLOAD_MAX_MEMORY_SIZE (2.5 MB default) for the worst case: the client uses
+# json.dumps(ensure_ascii=True), which escapes each non-ASCII (e.g. Cyrillic) char to "\uXXXX" =
+# 6 bytes. 350_000 chars * 6 ~= 2.1 MB, leaving headroom for the JSON structure, so a payload the
+# app accepts is never rejected by Django first. (For larger lists, raise both this and
+# DATA_UPLOAD_MAX_MEMORY_SIZE / the reverse-proxy body limit together.)
+_MAX_TOTAL_CHARS = 350_000
 
 
 class StartListIn(Schema):
