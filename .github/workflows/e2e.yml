@@ -55,7 +55,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --locked
 
       - name: Install Playwright browser
         run: uv run playwright install --with-deps ${{ matrix.browser }}
