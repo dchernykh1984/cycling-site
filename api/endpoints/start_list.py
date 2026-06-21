@@ -22,6 +22,10 @@ router = Router(tags=["start-list"])
 _MAX_ITEMS = 20000
 _MAX_ITEM_LEN = 2000
 _MAX_DEVICE_ID_LEN = 64
+# Cap the combined size so the JSON body stays well under Django's DATA_UPLOAD_MAX_MEMORY_SIZE
+# (2.5 MB default): otherwise a payload the per-item/count checks accept could still be rejected by
+# Django before this handler runs, surfacing as an infrastructure error for an "allowed" request.
+_MAX_TOTAL_CHARS = 1_000_000
 
 
 class StartListIn(Schema):
@@ -79,6 +83,8 @@ def upload_start_list(request, payload: StartListIn):
         raise HttpError(400, f"Too many items (max {_MAX_ITEMS})")
     if any(len(item) > _MAX_ITEM_LEN for item in items):
         raise HttpError(400, f"An item is too long (max {_MAX_ITEM_LEN} characters)")
+    if sum(len(item) for item in items) > _MAX_TOTAL_CHARS:
+        raise HttpError(400, f"Start list is too large (max {_MAX_TOTAL_CHARS} characters total)")
 
     revision = payload.client_revision
     # Atomic compare-and-set: lock the device's row, then reject a stale (older) snapshot and a
