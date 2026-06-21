@@ -94,6 +94,27 @@
     </div>
     {% endif %}
 
+    {% if competition.registration_enabled %}
+    <div class="mt-4 pt-3 border-top">
+      <h2 class="h5">{% trans "Registration" %}</h2>
+      <p class="text-muted small">{% trans "Registered" %}: {{ competition.qualified_count }}</p>
+      {% if competition.is_registration_open %}
+        {% if not already_registered or competition.allow_multiple_registrations %}
+        <a href="{% url 'registrations:register' competition.pk %}" class="btn btn-success btn-sm">
+          {% trans "Register" %}
+        </a>
+        {% else %}
+        <span class="badge bg-success">{% trans "You are registered" %}</span>
+        {% endif %}
+      {% else %}
+      <span class="badge bg-secondary">{% trans "Registration closed" %}</span>
+      {% endif %}
+      <a href="{% url 'registrations:participant_list' competition.pk %}" class="btn btn-outline-secondary btn-sm ms-2">
+        {% trans "Participant list" %} →
+      </a>
+    </div>
+    {% endif %}
+
     {% if protocols %}
     <div class="mt-4 pt-3 border-top">
       <h2 class="mb-3 h5">{% trans "Protocols" %}</h2>
@@ -199,27 +220,6 @@
       <p class="text-muted mt-3">{% trans "Commenting is available to verified participants." %}</p>
       {% endif %}
     </section>
-
-    {% if competition.registration_enabled %}
-    <div class="mt-4 pt-3 border-top">
-      <h2 class="h5">{% trans "Registration" %}</h2>
-      <p class="text-muted small">{% trans "Registered" %}: {{ competition.qualified_count }}</p>
-      {% if competition.is_registration_open %}
-        {% if not already_registered or competition.allow_multiple_registrations %}
-        <a href="{% url 'registrations:register' competition.pk %}" class="btn btn-success btn-sm">
-          {% trans "Register" %}
-        </a>
-        {% else %}
-        <span class="badge bg-success">{% trans "You are registered" %}</span>
-        {% endif %}
-      {% else %}
-      <span class="badge bg-secondary">{% trans "Registration closed" %}</span>
-      {% endif %}
-      <a href="{% url 'registrations:participant_list' competition.pk %}" class="btn btn-outline-secondary btn-sm ms-2">
-        {% trans "Participant list" %} →
-      </a>
-    </div>
-    {% endif %}
 
   </div>
 </div>

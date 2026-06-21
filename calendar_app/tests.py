@@ -244,6 +244,15 @@ class CompetitionDetailViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertNotIn(self._token(), response.content.decode())
 
+    def test_registration_section_precedes_comments(self):
+        # With registration enabled, the registration block must render right after the
+        # description/links, before the comments section (not below it).
+        comp = _make_competition("RegOrder", status=Competition.Status.APPROVED, registration_enabled=True)
+        content = self.client.get(reverse("competition_detail", args=[comp.pk])).content.decode()
+        reg_pos = content.index(reverse("registrations:participant_list", args=[comp.pk]))
+        comments_pos = content.index('id="comments"')
+        self.assertLess(reg_pos, comments_pos)
+
     def test_token_visible_to_organizer_who_submitted(self):
         # An organizer who submitted the competition sees its upload token.
         submitter = _make_user("submitter_org@example.com", User.Role.ORGANIZER)
