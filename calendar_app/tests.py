@@ -391,6 +391,19 @@ class SubmitCompetitionViewTests(TestCase):
         response = self.client.get(self._submit_url())
         self.assertEqual(response.status_code, 200)
 
+    def test_title_max_length_error_uses_project_catalog_kk(self):
+        """Regression: the shared mixin routes the title max_length error through the project
+        catalog so the KK tab shows Kazakh, not Django's Russian fallback."""
+        from calendar_app.forms import SubmitCompetitionForm
+
+        with translation_override("kk"):
+            form = SubmitCompetitionForm(
+                data={"title_ru": "x" * 256, "date_start": "2026-09-01"}, user=self.participant
+            )
+            self.assertFalse(form.is_valid())
+            expected = gettext("Ensure this value has at most %(limit_value)d characters.") % {"limit_value": 255}
+            self.assertIn(expected, str(form.errors["title_ru"]))
+
 
 class ModerationViewTests(TestCase):
     def setUp(self):

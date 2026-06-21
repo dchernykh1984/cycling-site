@@ -5,6 +5,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import User
+from cycling_site.forms import LocalizedMaxLengthMixin
 from locations.models import Location, competition_location_block_reason
 
 from .models import (
@@ -19,7 +20,7 @@ from .models import (
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
 
-class SubmitCompetitionForm(forms.Form):
+class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     def __init__(self, *args, user=None, **kwargs):
         # The submitting user is needed to validate location ownership (issue #111).
         self.user = user
