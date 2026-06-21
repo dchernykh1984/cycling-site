@@ -1381,7 +1381,7 @@ class StartListApiTest(TestCase, ApiTestMixin):
     def test_upload_creates_row(self):
         resp = self._post()
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json(), {"device_id": "dev-a", "count": 2})
+        self.assertEqual(resp.json(), {"device_id": "dev-a", "count": 2, "client_revision": self._rev})
         upload = StartListUpload.objects.get(competition=self.comp, device_id="dev-a")
         self.assertEqual(upload.items, ["1#Ivanov##1#", "2#Petrov##1#"])
 
@@ -1527,6 +1527,26 @@ class StartListApiTest(TestCase, ApiTestMixin):
         resp = self._post(client_revision=2**63)
         self.assertEqual(resp.status_code, 422)
         self.assertEqual(StartListUpload.objects.count(), 0)
+
+    def test_post_returns_accepted_revision(self):
+        resp = self._post(items=["a"], client_revision=42)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["client_revision"], 42)
+
+    def test_get_exposes_device_revision_for_recovery(self):
+        # A client that lost its local counter can read the device's current revision from GET and
+        # resume from there.
+        self._post(items=["a"], client_revision=7)
+        data = self.get(f"/api/v1/start-list/?competition_token={self.token}").json()
+        dev = next(d for d in data["devices"] if d["device_id"] == "dev-a")
+        self.assertEqual(dev["client_revision"], 7)
+
+    def test_stale_409_reports_stored_revision(self):
+        # The 409 detail carries the stored revision so a client can recover without a second call.
+        self._post(items=["a"], client_revision=1005)
+        resp = self._post(items=["a"], client_revision=1000)
+        self.assertEqual(resp.status_code, 409)
+        self.assertIn("1005", resp.json()["detail"])
 
 
 class StartListConcurrencyTest(TransactionTestCase):

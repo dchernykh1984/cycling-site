@@ -34,21 +34,29 @@ class StartListIn(Schema):
     competition_token: str
     device_id: str
     items: list[str] = Field(default_factory=list)
-    # Required, strictly-positive, per-device monotonic counter from the sender. A snapshot whose
-    # revision is older than the stored one is rejected, and a *different* snapshot at the same
-    # revision is a conflict (not a silent overwrite), so a delayed/reordered or colliding request
-    # can never roll the device's list back.
-    client_revision: int = Field(ge=1, le=2**63 - 1)  # bounded to PostgreSQL bigint to avoid a 500
+    client_revision: int = Field(
+        ge=1,
+        le=2**63 - 1,  # bounded to PostgreSQL bigint to avoid a 500
+        description=(
+            "Required strictly-increasing per-device counter. The stored list is replaced only by a "
+            "strictly-newer revision; an older revision -- or a different snapshot at the same "
+            "revision -- is rejected with 409, while an identical re-send at the same revision is a "
+            "no-op. A client that lost its counter reads the device's current revision from GET and "
+            "resumes from there."
+        ),
+    )
 
 
 class StartListUploadOut(Schema):
     device_id: str
     count: int
+    client_revision: int  # the revision now stored for this device (echoed for confirmation/recovery)
 
 
 class StartListDeviceOut(Schema):
     device_id: str
     items: list[str]
+    client_revision: int  # this device's current revision; resume from here after losing local state
     updated_at: datetime
 
 
@@ -70,8 +78,13 @@ def _competition_by_token(token: str) -> Competition:
 
 @router.post("/", response=StartListUploadOut, auth=None, summary="Upload a device's start list")
 def upload_start_list(request, payload: StartListIn):
-    """Upsert one device's start list for a competition. Re-posting the same `device_id`
-    overwrites the previously stored items."""
+    """Upsert one device's start list for a competition (compare-and-set on `client_revision`).
+
+    The stored list is replaced only by a strictly-newer revision. An older revision, or a
+    *different* snapshot at the same revision, is rejected with **409** (an identical re-send at the
+    same revision is a no-op). The accepted revision is returned, and GET exposes each device's
+    current revision, so a client that lost its local counter can resume from the server's value.
+    """
     competition = _competition_by_token(payload.competition_token)
 
     device_id = (payload.device_id or "").strip()
@@ -105,14 +118,22 @@ def upload_start_list(request, payload: StartListIn):
             StartListUpload.objects.select_for_update().filter(competition=competition, device_id=device_id).first()
         )
         if existing is not None:
+            # Include the stored revision in the 409s so a client that lost its counter can recover
+            # without a separate GET.
             if revision < existing.client_revision:
-                raise HttpError(409, "A newer start list is already stored for this device_id")
+                raise HttpError(409, f"A newer start list (revision {existing.client_revision}) is already stored")
             if revision == existing.client_revision:
                 if items != existing.items:
-                    raise HttpError(409, "A different start list is already stored at this revision")
+                    raise HttpError(
+                        409, f"A different start list is already stored at revision {existing.client_revision}"
+                    )
                 # Identical re-send (e.g. a network retry): a true no-op, so `updated_at` does not
                 # move and a consumer polling it isn't misled into seeing a new snapshot.
-                return {"device_id": device_id, "count": len(existing.items)}
+                return {
+                    "device_id": device_id,
+                    "count": len(existing.items),
+                    "client_revision": existing.client_revision,
+                }
             existing.items = items
             existing.client_revision = revision
             existing.save(update_fields=["items", "client_revision", "updated_at"])
@@ -120,7 +141,7 @@ def upload_start_list(request, payload: StartListIn):
             StartListUpload.objects.create(
                 competition=competition, device_id=device_id, items=items, client_revision=revision
             )
-    return {"device_id": device_id, "count": len(items)}
+    return {"device_id": device_id, "count": len(items), "client_revision": revision}
 
 
 @router.get("/", response=StartListOut, auth=None, summary="Get all devices' start lists")
@@ -128,6 +149,9 @@ def get_start_list(request, competition_token: str):
     """Return every device's start list for a competition plus a merged convenience list."""
     competition = _competition_by_token(competition_token)
     uploads = list(StartListUpload.objects.filter(competition=competition).order_by("device_id"))
-    devices = [{"device_id": u.device_id, "items": u.items, "updated_at": u.updated_at} for u in uploads]
+    devices = [
+        {"device_id": u.device_id, "items": u.items, "client_revision": u.client_revision, "updated_at": u.updated_at}
+        for u in uploads
+    ]
     merged = [line for u in uploads for line in u.items]
     return {"devices": devices, "items": merged}

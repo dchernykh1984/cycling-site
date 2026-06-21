@@ -72,9 +72,10 @@ class StartListUpload(models.Model):
     )
     device_id = models.CharField(max_length=64)
     items = models.JSONField(default=list)
-    # Monotonic client-supplied revision (the sender's epoch-ms at send time). The upload endpoint
-    # rejects a snapshot whose revision is older than the stored one, so a delayed/reordered request
-    # can't silently roll back the device's list. 0 = legacy client that doesn't send a revision.
+    # Strictly-increasing per-device revision supplied by the client; the upload endpoint rejects a
+    # snapshot whose revision is older than (or conflicts at) the stored one, so a delayed/reordered
+    # request can't roll the device's list back. The API requires a positive value; the column
+    # default 0 only applies to rows created before this field existed.
     client_revision = models.BigIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
