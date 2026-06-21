@@ -875,3 +875,17 @@ class KnowledgeArticleCommentTests(TestCase):
         response = self.client.post(reverse("knowledge_article_delete_comment", args=[comment.pk]))
         self.assertEqual(response.status_code, 403)
         self.assertEqual(KnowledgeArticleComment.objects.count(), 1)
+
+    def test_anonymous_detail_does_not_expose_author_email(self):
+        self._make_comment(body="Hi")  # author has no name set
+        response = self.client.get(self.article.get_absolute_url())
+        self.assertNotContains(response, self.participant.email)
+
+    def test_detail_shows_full_name_when_set(self):
+        self.participant.first_name = "Anna"
+        self.participant.last_name = "Smith"
+        self.participant.save()
+        self._make_comment(body="Hi")
+        response = self.client.get(self.article.get_absolute_url())
+        self.assertContains(response, "Anna Smith")
+        self.assertNotContains(response, self.participant.email)

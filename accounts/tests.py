@@ -50,6 +50,16 @@ class UserModelTests(TestCase):
         user = User(role="nonexistent")
         self.assertEqual(user.get_role_rank(), 0)
 
+    def test_public_display_name_uses_full_name(self):
+        user = User(first_name="Anna", last_name="Smith", email="anna@example.com")
+        self.assertEqual(user.public_display_name, "Anna Smith")
+
+    def test_public_display_name_falls_back_without_exposing_email(self):
+        user = User(email="secret@example.com")
+        name = user.public_display_name
+        self.assertNotIn("secret@example.com", name)
+        self.assertTrue(name)  # a non-empty neutral label
+
     def test_can_assign_role_guest_cannot_assign(self):
         guest = User(role=User.Role.GUEST)
         self.assertFalse(guest.can_assign_role(User.Role.PARTICIPANT))

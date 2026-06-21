@@ -1656,3 +1656,7 @@ msgstr "Анонс слишком длинный (максимум %(limit)d с�
 #, python-format
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Значение должно содержать не более %(limit_value)d символов."
+
+#: accounts/models.py
+msgid "Participant"
+msgstr "Участник"
