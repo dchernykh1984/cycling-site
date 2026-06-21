@@ -8,6 +8,7 @@ _WATCHED_MODELS = [
     ("calendar_app", "Competition"),
     ("knowledge", "KnowledgeArticle"),
     ("news", "NewsPage"),
+    ("news", "NewsArticle"),
     ("registrations", "CompetitionRegistration"),
     ("knowledge", "DraftSubmission"),
 ]
