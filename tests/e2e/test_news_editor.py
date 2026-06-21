@@ -92,14 +92,14 @@ def test_news_submit_form_round_trips_body_via_quill(page: Page, live_server, or
     page.fill("#id_title", "Reader Story")
     # Wait for the editor to initialise before scripting it.
     expect(page.locator("#quill-body .ql-editor")).to_have_count(1)
+    # Drive the editor through Quill's own API and submit WITHOUT touching #id_body, so the test
+    # actually exercises the shared editor's submit-listener (it copies quill.root.innerHTML into
+    # the hidden field). Going through the Quill API keeps its model in sync, avoiding the
+    # MutationObserver revert race that a raw DOM write hit on mobile webkit.
     page.evaluate(
         """() => {
-          const ed = document.querySelector('#quill-body .ql-editor');
-          ed.innerHTML = '<p>From the reader</p>';
-          // The hidden #id_body is required: populate it synchronously so requestSubmit()'s
-          // HTML5 validation passes. The editor's own submit handler only copies the body
-          // after validation, which races on slow runs and otherwise blocks the submit.
-          document.getElementById('id_body').value = ed.innerHTML;
+          const quill = Quill.find(document.querySelector('#quill-body'));
+          quill.setText('From the reader');
           document.getElementById('id_title').form.requestSubmit();
         }"""
     )
