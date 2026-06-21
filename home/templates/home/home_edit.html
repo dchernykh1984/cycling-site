@@ -69,12 +69,14 @@
               {% trans "Navbar title" %}
             </label>
             {{ form.navbar_title_kk }}
+            {% if form.navbar_title_kk.errors %}<div class="text-danger small mt-1">{% for e in form.navbar_title_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold" for="{{ form.page_title_kk.id_for_label }}">
               {% trans "Tab title" %}
             </label>
             {{ form.page_title_kk }}
+            {% if form.page_title_kk.errors %}<div class="text-danger small mt-1">{% for e in form.page_title_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">{% trans "Body (KK)" %}</label>
@@ -91,12 +93,14 @@
               {% trans "Navbar title" %}
             </label>
             {{ form.navbar_title_en }}
+            {% if form.navbar_title_en.errors %}<div class="text-danger small mt-1">{% for e in form.navbar_title_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold" for="{{ form.page_title_en.id_for_label }}">
               {% trans "Tab title" %}
             </label>
             {{ form.page_title_en }}
+            {% if form.page_title_en.errors %}<div class="text-danger small mt-1">{% for e in form.page_title_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">{% trans "Body (EN)" %}</label>
