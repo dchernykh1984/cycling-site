@@ -860,6 +860,20 @@ class NewsArticleCrudTest(TestCase, ApiTestMixin):
         resp = self.patch(f"/api/v1/news/{pk}", {"title": {"ru": "", "kk": "", "en": ""}}, user=self.admin)
         self.assertEqual(resp.status_code, 422)
 
+    def test_create_rejects_whitespace_only_title(self):
+        # A whitespace-only title is truthy but visually empty; it must be rejected, not saved as a
+        # blank article with the technical "article" slug.
+        resp = self.post("/api/v1/news/", self._payload(title={"ru": "   ", "kk": "", "en": ""}), user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(NewsArticle.objects.count(), 0)
+
+    def test_update_rejects_whitespace_only_title(self):
+        pk = self.post("/api/v1/news/", self._payload(), user=self.admin).json()["id"]
+        resp = self.patch(f"/api/v1/news/{pk}", {"title": {"ru": "   ", "kk": " ", "en": ""}}, user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+        # The stored title is left unchanged by the rejected update.
+        self.assertEqual(NewsArticle.objects.get(pk=pk).title_ru, "Zagolovok")
+
     def test_validation_error_is_localized_by_request_language(self):
         from django.utils.translation import gettext, override
 
