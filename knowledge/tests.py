@@ -752,6 +752,39 @@ class AddArticleFormLocalizationTests(TestCase):
             for label in ("Russian", "Kazakh", "English"):
                 self.assertContains(resp, _(label))
 
+    def test_max_length_errors_use_project_catalog_kk(self):
+        """Regression: the shared mixin routes max_length errors through the project catalog so the
+        KK tab shows Kazakh, not Django's Russian fallback (its bundled kk catalog lacks the string)."""
+        from knowledge.forms import DraftSubmissionForm, KnowledgeArticleForm
+
+        msg = "Ensure this value has at most %(limit_value)d characters."
+        cases = (
+            (
+                DraftSubmissionForm,
+                {"locale": "ru", "title": "x" * 256, "body": "<p>x</p>", "category": "c"},
+                "title",
+                255,
+            ),
+            (
+                DraftSubmissionForm,
+                {"locale": "ru", "title": "t", "body": "<p>x</p>", "category": "x" * 101},
+                "category",
+                100,
+            ),
+            (
+                KnowledgeArticleForm,
+                {"locale": "ru", "title": "x" * 256, "body": "<p>x</p>", "category": "c", "tags": ""},
+                "title",
+                255,
+            ),
+        )
+        with translation.override("kk"):
+            for form_cls, data, field, limit in cases:
+                with self.subTest(form=form_cls.__name__, field=field):
+                    form = form_cls(data=data)
+                    self.assertFalse(form.is_valid())
+                    self.assertIn(_(msg) % {"limit_value": limit}, str(form.errors[field]))
+
 
 # ---------------------------------------------------------------------------
 # Search

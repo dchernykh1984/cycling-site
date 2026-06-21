@@ -3,6 +3,7 @@ from typing import ClassVar
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from cycling_site.forms import LocalizedMaxLengthMixin
 from cycling_site.richtext import validate_rich_text_length as _validate_body_length
 from knowledge.models import DraftSubmission, KnowledgeArticle
 
@@ -10,7 +11,7 @@ _TITLE_ATTRS = {"class": "form-control"}
 _CATEGORY_ATTRS = {"class": "form-control"}
 
 
-class DraftSubmissionForm(forms.ModelForm):
+class DraftSubmissionForm(LocalizedMaxLengthMixin, forms.ModelForm):
     """Participant-facing knowledge submission. Body is rich HTML written by Quill into a
     hidden field; it is sanitized centrally when the submission is approved into a
     KnowledgeArticle (KnowledgeArticle.save())."""
@@ -32,7 +33,7 @@ class DraftSubmissionForm(forms.ModelForm):
         return _validate_body_length(self.cleaned_data.get("body") or "")
 
 
-class KnowledgeArticleForm(forms.ModelForm):
+class KnowledgeArticleForm(LocalizedMaxLengthMixin, forms.ModelForm):
     """Manager-facing create/edit form for a KnowledgeArticle. Body is rich HTML from Quill;
     sanitization happens in KnowledgeArticle.save()."""
 
