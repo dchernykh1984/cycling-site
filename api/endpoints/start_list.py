@@ -36,7 +36,7 @@ class StartListIn(Schema):
     # revision is older than the stored one is rejected, and a *different* snapshot at the same
     # revision is a conflict (not a silent overwrite), so a delayed/reordered or colliding request
     # can never roll the device's list back.
-    client_revision: int = Field(ge=1)
+    client_revision: int = Field(ge=1, le=2**63 - 1)  # bounded to PostgreSQL bigint to avoid a 500
 
 
 class StartListUploadOut(Schema):
