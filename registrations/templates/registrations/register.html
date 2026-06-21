@@ -255,6 +255,15 @@
 const allCategories = {{ all_categories_json|safe }};
 const relayEnabled = {{ relay_enabled|yesno:"true,false" }};
 
+// Parse a 'YYYY-MM-DD' string as a LOCAL date. new Date('YYYY-MM-DD') parses as UTC, which in
+// timezones ahead of UTC is an earlier instant than new Date(year, 0, 1) (local); comparing the
+// two then wrongly drops the boundary birth year (e.g. 2020 for a 2020-2025 category). Both
+// bounds are inclusive: 2020-2025 means 2020 through 2025 inclusive.
+function parseLocalDate(s) {
+  const p = String(s).split('-').map(Number);
+  return new Date(p[0], (p[1] || 1) - 1, p[2] || 1);
+}
+
 function updateCategories() {
   const gender = document.querySelector('input[name="gender"]:checked')?.value || '';
   let birthDate = null;
@@ -264,7 +273,7 @@ function updateCategories() {
     if (birthYearInput && birthYearInput.value) {
       birthDate = new Date(parseInt(birthYearInput.value), 0, 1);
     } else if (birthDateInput && birthDateInput.value) {
-      birthDate = new Date(birthDateInput.value);
+      birthDate = parseLocalDate(birthDateInput.value);
     }
   }
 
@@ -277,8 +286,8 @@ function updateCategories() {
     if (gender === 'M' && !c.male) return;
     if (gender === 'F' && !c.female) return;
     if (!relayEnabled && birthDate) {
-      if (c.birth_from && birthDate < new Date(c.birth_from)) return;
-      if (c.birth_to && birthDate > new Date(c.birth_to)) return;
+      if (c.birth_from && birthDate < parseLocalDate(c.birth_from)) return;
+      if (c.birth_to && birthDate > parseLocalDate(c.birth_to)) return;
     }
     const opt = document.createElement('option');
     opt.value = c.id;

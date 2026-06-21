@@ -206,6 +206,20 @@ class RegistrationCategoryMatchesTests(TestCase):
         self.assertTrue(cat.matches("M", datetime.date(1950, 1, 1)))
         self.assertFalse(cat.matches("M", datetime.date(2000, 6, 1)))
 
+    def test_matches_boundaries_are_inclusive(self):
+        # A "2020-2025" year category (birth_from = Jan 1 2020, birth_to = Dec 31 2025) must accept
+        # both ends inclusively: a 2020-born and a 2025-born are eligible, 2019/2026 are not.
+        cat = make_category(
+            self.comp,
+            birth_from=datetime.date(2020, 1, 1),
+            birth_to=datetime.date(2025, 12, 31),
+        )
+        self.assertTrue(cat.matches("F", datetime.date(2020, 1, 1)))  # lower boundary
+        self.assertTrue(cat.matches("F", datetime.date(2025, 12, 31)))  # upper boundary
+        self.assertTrue(cat.matches("F", datetime.date(2025, 6, 15)))
+        self.assertFalse(cat.matches("F", datetime.date(2019, 12, 31)))
+        self.assertFalse(cat.matches("F", datetime.date(2026, 1, 1)))
+
 
 class CheckDuplicateTests(TestCase):
     def setUp(self):
