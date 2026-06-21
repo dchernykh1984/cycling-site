@@ -45,10 +45,16 @@ def inject_session(page, live_server, user):
 
 
 def open_filter_panel(page) -> None:
-    """Expand the filter panel if it is collapsed (mobile layout hides it by default)."""
+    """Expand the filter panel if it is collapsed (mobile layout hides it by default).
+
+    No-op on pages whose filters are always visible (e.g. the list view has no collapse toggle).
+    """
+    toggle = page.locator("button[data-bs-target='#filter-panel']")
+    if toggle.count() == 0:
+        return
     panel = page.locator("#filter-panel")
     if not panel.is_visible():
-        page.click("button[data-bs-target='#filter-panel']")
+        toggle.click()
         panel.wait_for(state="visible")
 
 

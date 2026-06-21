@@ -23,6 +23,15 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     menu[d] = config.levels[i].menu;
     btn[d] = config.levels[i].btn;
     selected[d] = new Set();
+    if (config.searchable) {
+      // Bootstrap fires dropdown events on the toggle; focus the search box when the menu opens.
+      (function (toggle, menuEl) {
+        toggle.addEventListener('shown.bs.dropdown', function () {
+          var s = menuEl.querySelector('.mf-search');
+          if (s) s.focus();
+        });
+      })(btn[d], menu[d]);
+    }
   }
   var ALL_LABEL = config.labels.all;
   var SELECTED_LABEL = config.labels.selected;
@@ -84,6 +93,29 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     btn[d].disabled = groups.length === 0;
     if (groups.length === 0) { setLabel(d); return; }
 
+    // Optional type-to-filter box: shows only the checkboxes whose name contains the typed text
+    // (case-insensitive). It only affects which rows are visible, not the selection.
+    if (config.searchable) {
+      var sLi = document.createElement('li');
+      sLi.className = 'px-2 pb-1 mf-search-row';
+      var sInp = document.createElement('input');
+      sInp.type = 'search';
+      sInp.className = 'form-control form-control-sm mf-search';
+      sInp.placeholder = config.labels.search || '';
+      sInp.autocomplete = 'off';
+      sInp.addEventListener('input', function () {
+        var q = sInp.value.trim().toLowerCase();
+        menu[d].querySelectorAll('li.mf-item-row').forEach(function (row) {
+          var name = (row.dataset.name || '').toLowerCase();
+          row.style.display = (!q || name.indexOf(q) >= 0) ? '' : 'none';
+        });
+      });
+      // Keep typing (incl. space) inside the field instead of letting the dropdown handle keys.
+      sInp.addEventListener('keydown', function (e) { e.stopPropagation(); });
+      sLi.appendChild(sInp);
+      menu[d].appendChild(sLi);
+    }
+
     var mLi = document.createElement('li');
     var mLab = document.createElement('label');
     mLab.className = 'dropdown-item d-flex align-items-center gap-2 px-2 fw-semibold';
@@ -104,6 +136,8 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     groups.forEach(function (g) {
       var val = g.pks.join(',');
       var li = document.createElement('li');
+      li.className = 'mf-item-row';
+      li.dataset.name = g.name;  // lowercased-matched by the optional search box
       var lab = document.createElement('label');
       lab.className = 'dropdown-item d-flex align-items-center gap-2 px-2';
       var cb = document.createElement('input');
