@@ -22,13 +22,12 @@ router = Router(tags=["start-list"])
 _MAX_ITEMS = 20000
 _MAX_ITEM_LEN = 2000
 _MAX_DEVICE_ID_LEN = 64
-# Cap the combined character count so the *serialized* JSON body stays under Django's
-# DATA_UPLOAD_MAX_MEMORY_SIZE (2.5 MB default) for the worst case: the client uses
-# json.dumps(ensure_ascii=True), which escapes each non-ASCII (e.g. Cyrillic) char to "\uXXXX" =
-# 6 bytes. 350_000 chars * 6 ~= 2.1 MB, leaving headroom for the JSON structure, so a payload the
-# app accepts is never rejected by Django first. (For larger lists, raise both this and
-# DATA_UPLOAD_MAX_MEMORY_SIZE / the reverse-proxy body limit together.)
-_MAX_TOTAL_CHARS = 350_000
+# Reject when the actual request body exceeds this, kept well under Django's
+# DATA_UPLOAD_MAX_MEMORY_SIZE (2.5 MB default) so any payload the app accepts is never rejected by
+# Django (or the reverse proxy) before this handler runs. Measuring the real serialized body
+# (request.body) is exact for any content -- a char-count estimate under-counts non-BMP chars,
+# which json.dumps(ensure_ascii=True) escapes to a 12-byte surrogate pair (\uXXXX\uXXXX).
+_MAX_BODY_BYTES = 2_000_000
 
 
 class StartListIn(Schema):
@@ -81,13 +80,14 @@ def upload_start_list(request, payload: StartListIn):
     if len(device_id) > _MAX_DEVICE_ID_LEN:
         raise HttpError(400, f"device_id too long (max {_MAX_DEVICE_ID_LEN})")
 
+    if len(request.body) > _MAX_BODY_BYTES:
+        raise HttpError(400, f"Start list is too large (max {_MAX_BODY_BYTES} bytes)")
+
     items = payload.items or []
     if len(items) > _MAX_ITEMS:
         raise HttpError(400, f"Too many items (max {_MAX_ITEMS})")
     if any(len(item) > _MAX_ITEM_LEN for item in items):
         raise HttpError(400, f"An item is too long (max {_MAX_ITEM_LEN} characters)")
-    if sum(len(item) for item in items) > _MAX_TOTAL_CHARS:
-        raise HttpError(400, f"Start list is too large (max {_MAX_TOTAL_CHARS} characters total)")
 
     revision = payload.client_revision
     # Atomic compare-and-set: lock the device's row, then reject a stale (older) snapshot and a

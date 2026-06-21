@@ -1430,27 +1430,36 @@ class StartListApiTest(TestCase, ApiTestMixin):
         resp = self._post(items=["x"] * 20001)
         self.assertEqual(resp.status_code, 400)
 
-    def test_total_size_over_app_limit_is_clean_400(self):
-        # ~1.2M chars: over the app's total-size cap but under Django's DATA_UPLOAD_MAX_MEMORY_SIZE,
+    def test_body_over_byte_cap_is_clean_400(self):
+        # ~2.2 MB of ASCII: over the app's body cap but under Django's DATA_UPLOAD_MAX_MEMORY_SIZE,
         # so the handler returns a controlled 400 instead of Django rejecting the body first.
-        resp = self._post(items=["x" * 2000 for _ in range(600)])
+        resp = self._post(items=["x" * 2000 for _ in range(1100)])
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(StartListUpload.objects.count(), 0)
 
-    def test_total_size_under_limit_accepted(self):
-        resp = self._post(items=["x" * 1000 for _ in range(300)])  # 300k chars, within the cap
+    def test_body_under_byte_cap_accepted(self):
+        resp = self._post(items=["x" * 1000 for _ in range(300)])  # ~300 KB body
         self.assertEqual(resp.status_code, 200)
 
-    def test_cyrillic_payload_at_cap_fits_django_body_limit(self):
-        # A Cyrillic start list at the char cap is the worst case for json.dumps escaping. The
-        # serialized wire body (what the desktop client sends) must stay under Django's body limit,
-        # so an app-accepted payload is never rejected by Django before the handler runs.
+    def test_non_bmp_body_over_cap_is_clean_400(self):
+        # Non-BMP (emoji) chars escape to a 12-byte surrogate pair, so the same char count is twice
+        # the bytes of Cyrillic; a payload whose real serialized body exceeds the cap (but is under
+        # Django's limit) must still be a clean app 400 -- which a char-count estimate would miss.
+        from api.endpoints.start_list import _MAX_BODY_BYTES
+
+        emoji_item = chr(0x1F600) * 1000  # 1000 non-BMP chars -> ~12000 serialized bytes
+        n = _MAX_BODY_BYTES // 12000 + 5
+        resp = self._post(items=[emoji_item] * n)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(StartListUpload.objects.count(), 0)
+
+    def test_non_bmp_body_under_cap_fits_django_limit(self):
+        # An accepted non-BMP payload's real serialized body (what the client sends) stays under
+        # Django's body limit, so it is never rejected by Django before the handler runs.
         from django.conf import settings
 
-        from api.endpoints.start_list import _MAX_TOTAL_CHARS
-
-        cyrillic_item = chr(0x0430) * 100  # 100 Cyrillic letters; each escapes to 6 bytes on the wire
-        items = [cyrillic_item] * (_MAX_TOTAL_CHARS // 100)  # exactly at the char cap
+        emoji_item = chr(0x1F600) * 1000
+        items = [emoji_item] * 100  # ~1.2 MB serialized, under the cap
         payload = {"competition_token": self.token, "device_id": "dev-a", "items": items, "client_revision": 1}
         wire = json.dumps(payload).encode("utf-8")  # ensure_ascii=True, like the client
         self.assertLessEqual(len(wire), settings.DATA_UPLOAD_MAX_MEMORY_SIZE)
