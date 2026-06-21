@@ -351,6 +351,27 @@ class SubmitNewsViewTests(TestCase):
         self.assertIn("Community Story", [a["title"]["ru"] for a in api.json()])
         self.assertTrue(any("Reader-submitted" in a["body"]["ru"] for a in api.json()))
 
+    def test_approval_fills_the_submitted_locale_columns(self):
+        # Approval must populate the submission's own locale columns (not just RU) on the article.
+        from knowledge.models import DraftSubmission
+        from news.models import NewsArticle
+
+        admin = User.objects.create_user(
+            username="ed3@example.com", email="ed3@example.com", password="password123", role=User.Role.ADMIN
+        )
+        for locale in ("ru", "kk", "en"):
+            with self.subTest(locale=locale):
+                sub = DraftSubmission.objects.create(
+                    author=self.participant,
+                    submission_type=DraftSubmission.SubmissionType.NEWS,
+                    locale=locale,
+                    title=f"Title {locale}",
+                    body=f"<p>body {locale}</p>",
+                )
+                sub.approve(reviewer=admin)
+                article = NewsArticle.objects.get(**{f"title_{locale}": f"Title {locale}"})
+                self.assertIn(f"body {locale}", getattr(article, f"body_{locale}"))
+
 
 class NewsTagsTest(TestCase):
     def test_get_news_index_url_returns_none_when_no_index(self):
