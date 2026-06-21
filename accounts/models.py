@@ -3,6 +3,7 @@ from typing import ClassVar
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.translation import gettext
 
 
 class User(AbstractUser):  # type: ignore[django-manager-missing]
@@ -60,6 +61,15 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
             return self.ROLE_HIERARCHY.index(self.role)
         except ValueError:
             return 0
+
+    @property
+    def public_display_name(self) -> str:
+        """A name safe to show on public pages: the full name, or a neutral label.
+
+        Falls back to a generic label (never the email, which is usually the login and PII) so
+        leaving a comment on a public page can't expose the author's address.
+        """
+        return self.get_full_name() or gettext("Participant")
 
     def can_assign_role(self, target_role: str) -> bool:
         if target_role not in self.ROLE_HIERARCHY:

@@ -636,3 +636,17 @@ class NewsArticleCommentTests(TestCase):
         response = self.client.post(reverse("news_article_delete_comment", args=[comment.pk]))
         self.assertEqual(response.status_code, 403)
         self.assertEqual(NewsArticleComment.objects.count(), 1)
+
+    def test_anonymous_detail_does_not_expose_author_email(self):
+        self._make_comment(body="Hi")  # author has no name set
+        response = self.client.get(reverse("news_article_detail", args=[self.article.pk]))
+        self.assertNotContains(response, self.participant.email)
+
+    def test_detail_shows_full_name_when_set(self):
+        self.participant.first_name = "Anna"
+        self.participant.last_name = "Smith"
+        self.participant.save()
+        self._make_comment(body="Hi")
+        response = self.client.get(reverse("news_article_detail", args=[self.article.pk]))
+        self.assertContains(response, "Anna Smith")
+        self.assertNotContains(response, self.participant.email)

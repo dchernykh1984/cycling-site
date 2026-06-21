@@ -901,6 +901,11 @@ class CompetitionCommentTests(TestCase):
         self.assertIn(response.status_code, (302, 403))
         self.assertEqual(CompetitionComment.objects.count(), 1)
 
+    def test_anonymous_detail_does_not_expose_author_email(self):
+        self._make_comment(body="Hi")  # author has no name set
+        response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
+        self.assertNotContains(response, self.participant.email)
+
     def test_delete_nonexistent_comment_returns_404(self):
         delete_url = reverse("competition_delete_comment", args=[99999])
         self.client.login(username=self.organizer.email, password="password123")

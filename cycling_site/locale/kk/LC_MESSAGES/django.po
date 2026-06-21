@@ -1698,3 +1698,7 @@ msgstr "Кіріспе тым ұзын (ең көбі %(limit)d таңба)."
 #, python-format
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."
+
+#: accounts/models.py
+msgid "Participant"
+msgstr "Қатысушы"
