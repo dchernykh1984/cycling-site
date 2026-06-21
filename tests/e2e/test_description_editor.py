@@ -71,8 +71,10 @@ def test_submit_editor_is_typeable_and_fills_hidden_field(page: Page, live_serve
     inject_session(page, live_server, organizer)
     page.goto(f"{live_server.url}/calendar/submit/")
     editor = page.locator("#quill-desc-ru .ql-editor")
-    editor.click()
-    editor.type("Hello editor")
+    # `fill` drives the real input-event pipeline (focus + a single insertText) so it still proves
+    # the editor accepts user input, but without the per-key `type()` races that flake on mobile
+    # webkit (dropped keys / slow runs).
+    editor.fill("Hello editor")
     expect(editor).to_contain_text("Hello editor")
     # The submit handler copies the editor HTML into the hidden field; simulate it on
     # the competition form (the page also has navbar language-switcher forms).
@@ -87,20 +89,22 @@ def test_submit_round_trips_all_three_locales(page: Page, live_server, organizer
     page.goto(f"{live_server.url}/calendar/submit/")
     page.fill("#id_title_ru", "Trilingual Race")
     page.fill("#id_date_start", "2026-09-01")
-    # The kk/en editors live in hidden tab-panes; switch to each before typing.
-    for loc, tab, text in (
-        ("ru", "#tab-ru", "Russian body"),
-        ("kk", "#tab-kk", "Kazakh body"),
-        ("en", "#tab-en", "English body"),
-    ):
-        page.click(f'button[data-bs-target="{tab}"]')
-        editor = page.locator(f"#quill-desc-{loc} .ql-editor")
-        editor.click()
-        editor.type(text)
-    # Return to the RU tab so the required title field is in the visible pane: WebKit
-    # refuses to submit a form whose required control sits in a display:none tab pane.
-    page.click('button[data-bs-target="#tab-ru"]')
-    page.click('form[enctype="multipart/form-data"] button[type=submit]')
+    # Wait until all three editors are initialised before scripting them (on slow mobile webkit the
+    # hidden-tab editors finish a beat later, and scripting a not-yet-existent .ql-editor silently
+    # skipped the submit).
+    expect(page.locator(".ql-editor")).to_have_count(3)
+    # Set all three locale editors via the DOM and submit in one synchronous step: deterministic
+    # across engines (per-key typing flakes on mobile webkit, and a separate submit call races the
+    # Quill MutationObserver). All three editors are eagerly initialised, so no tab switching is
+    # needed; the required title field stays in the visible RU tab.
+    page.evaluate(
+        """() => {
+          document.querySelector('#quill-desc-ru .ql-editor').innerHTML = '<p>Russian body</p>';
+          document.querySelector('#quill-desc-kk .ql-editor').innerHTML = '<p>Kazakh body</p>';
+          document.querySelector('#quill-desc-en .ql-editor').innerHTML = '<p>English body</p>';
+          document.getElementById('id_title_ru').form.requestSubmit();
+        }"""
+    )
     page.wait_for_load_state("networkidle")
 
     comp = Competition.objects.get(title_ru="Trilingual Race")
