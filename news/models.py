@@ -229,6 +229,26 @@ class NewsArticle(index.Indexed, models.Model):  # type: ignore[django-manager-m
         return reverse("news_article_detail", kwargs={"pk": self.pk})
 
 
+class NewsArticleComment(models.Model):
+    """A reader comment on a NewsArticle (mirrors calendar_app.CompetitionComment). Distinct from
+    the legacy `Comment` model above, which belongs to the deprecated Wagtail `NewsPage`."""
+
+    article = models.ForeignKey(NewsArticle, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="news_article_comments",
+    )
+    body = models.CharField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering: ClassVar[list] = ["created_at"]
+
+    def __str__(self) -> str:
+        return f"Comment by {self.author} on {self.article}"
+
+
 @register_setting
 class NewsSettings(BaseGenericSetting):
     auto_approve_comments = models.BooleanField(

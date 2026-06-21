@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from cycling_site.forms import LocalizedMaxLengthMixin
 from cycling_site.richtext import validate_rich_text_length
 from knowledge.models import DraftSubmission
-from news.models import Comment, NewsArticle
+from news.models import Comment, NewsArticle, NewsArticleComment
 
 
 class SubmitNewsForm(LocalizedMaxLengthMixin, forms.ModelForm):
@@ -107,6 +107,19 @@ class NewsArticleForm(LocalizedMaxLengthMixin, forms.ModelForm):
 class AddCommentForm(forms.ModelForm):
     class Meta:
         model = Comment
+        fields: ClassVar[list] = ["body"]
+        widgets: ClassVar[dict] = {
+            "body": forms.Textarea(
+                attrs={"rows": 4, "placeholder": "Write a comment...", "class": "form-control w-100"}
+            ),
+        }
+
+
+class AddNewsArticleCommentForm(forms.ModelForm):
+    """Reader comment on a NewsArticle (mirrors calendar_app.AddCompetitionCommentForm)."""
+
+    class Meta:
+        model = NewsArticleComment
         fields: ClassVar[list] = ["body"]
         widgets: ClassVar[dict] = {
             "body": forms.Textarea(
