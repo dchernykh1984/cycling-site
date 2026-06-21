@@ -14,6 +14,7 @@ from calendar_app.models import Competition, Discipline, DisciplineCategory, Eve
 from knowledge.models import DraftSubmission, KnowledgeArticle
 from locations.models import Location
 from news.models import NewsArticle
+from protocols.models import StartListUpload
 from registrations.models import CompetitionRegistration
 
 # ---------------------------------------------------------------------------
@@ -1346,6 +1347,78 @@ class ProtocolExtraCoverageTest(TestCase):
     def test_htm_extension_accepted(self):
         resp = self._post(html_file=_html_file(b"<html></html>", "p.htm"))
         self.assertEqual(resp.status_code, 200)
+
+
+# ---------------------------------------------------------------------------
+# Start-list exchange (StartProtocolMaker -> site -> FinishProtocolGenerator)
+# ---------------------------------------------------------------------------
+
+
+class StartListApiTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.comp = Competition.objects.create(
+            title_ru="Race",
+            date_start=date(2026, 7, 1),
+            status=Competition.Status.APPROVED,
+        )
+        self.token = str(self.comp.upload_token)
+
+    def _post(self, **kwargs):
+        data = {"competition_token": self.token, "device_id": "dev-a", "items": ["1#Ivanov##1#", "2#Petrov##1#"]}
+        data.update(kwargs)
+        return self.post("/api/v1/start-list/", data)
+
+    def test_upload_creates_row(self):
+        resp = self._post()
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {"device_id": "dev-a", "count": 2})
+        upload = StartListUpload.objects.get(competition=self.comp, device_id="dev-a")
+        self.assertEqual(upload.items, ["1#Ivanov##1#", "2#Petrov##1#"])
+
+    def test_same_device_overwrites(self):
+        self._post()
+        self._post(items=["3#Sidorov##1#"])
+        self.assertEqual(StartListUpload.objects.filter(competition=self.comp).count(), 1)
+        upload = StartListUpload.objects.get(competition=self.comp, device_id="dev-a")
+        self.assertEqual(upload.items, ["3#Sidorov##1#"])
+
+    def test_invalid_token_rejected(self):
+        resp = self._post(competition_token=str(uuid.uuid4()))
+        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(StartListUpload.objects.count(), 0)
+
+    def test_malformed_token_rejected(self):
+        # A non-UUID token must be a clean 401, not a 500 from the UUID field's ValidationError.
+        resp = self._post(competition_token="not-a-uuid")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_blank_device_id_rejected(self):
+        resp = self._post(device_id="   ")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(StartListUpload.objects.count(), 0)
+
+    def test_get_merges_all_devices_in_device_order(self):
+        self._post(device_id="dev-b", items=["10#B##1#"])
+        self._post(device_id="dev-a", items=["1#A##1#", "2#A2##1#"])
+        resp = self.get(f"/api/v1/start-list/?competition_token={self.token}")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual([d["device_id"] for d in data["devices"]], ["dev-a", "dev-b"])
+        # merged convenience list is concatenated in device-id order
+        self.assertEqual(data["items"], ["1#A##1#", "2#A2##1#", "10#B##1#"])
+
+    def test_get_invalid_token_rejected(self):
+        resp = self.get(f"/api/v1/start-list/?competition_token={uuid.uuid4()}")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_get_empty_when_no_uploads(self):
+        resp = self.get(f"/api/v1/start-list/?competition_token={self.token}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {"devices": [], "items": []})
+
+    def test_upload_rejects_too_many_items(self):
+        resp = self._post(items=["x"] * 20001)
+        self.assertEqual(resp.status_code, 400)
 
 
 # ---------------------------------------------------------------------------
