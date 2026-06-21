@@ -1420,6 +1420,35 @@ class StartListApiTest(TestCase, ApiTestMixin):
         resp = self._post(items=["x"] * 20001)
         self.assertEqual(resp.status_code, 400)
 
+    def test_newer_revision_overwrites(self):
+        self._post(items=["old"], client_revision=1000)
+        self._post(items=["new"], client_revision=1005)
+        upload = StartListUpload.objects.get(competition=self.comp, device_id="dev-a")
+        self.assertEqual(upload.items, ["new"])
+        self.assertEqual(upload.client_revision, 1005)
+
+    def test_stale_revision_rejected_and_keeps_newer(self):
+        # Reverse-order delivery: the newer snapshot lands first, then a delayed older one arrives.
+        # The stale one must be rejected so registrations added after it are not rolled back.
+        self._post(items=["a", "b", "c"], client_revision=1005)
+        resp = self._post(items=["a"], client_revision=1000)
+        self.assertEqual(resp.status_code, 409)
+        upload = StartListUpload.objects.get(competition=self.comp, device_id="dev-a")
+        self.assertEqual(upload.items, ["a", "b", "c"])  # newer list preserved, not truncated
+        self.assertEqual(upload.client_revision, 1005)
+
+    def test_equal_revision_overwrites_idempotent(self):
+        # A re-sent snapshot with the same revision is accepted (idempotent retry), not rejected.
+        self._post(items=["a"], client_revision=1000)
+        self._post(items=["b"], client_revision=1000)
+        self.assertEqual(StartListUpload.objects.get(competition=self.comp, device_id="dev-a").items, ["b"])
+
+    def test_legacy_client_without_revision_overwrites(self):
+        # A client that never sends a revision (default 0) keeps the old last-write-wins behaviour.
+        self._post(items=["a"])
+        self._post(items=["b"])
+        self.assertEqual(StartListUpload.objects.get(competition=self.comp, device_id="dev-a").items, ["b"])
+
 
 # ---------------------------------------------------------------------------
 # Knowledge article drafts
