@@ -1486,6 +1486,16 @@ class StartListApiTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 422)
         self.assertEqual(StartListUpload.objects.count(), 0)
 
+    def test_max_bigint_revision_accepted(self):
+        resp = self._post(client_revision=2**63 - 1)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_revision_above_bigint_rejected_not_500(self):
+        # A value past PostgreSQL bigint must be a controlled 422, not a DB range error (500).
+        resp = self._post(client_revision=2**63)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(StartListUpload.objects.count(), 0)
+
 
 class StartListConcurrencyTest(TransactionTestCase):
     """Two parallel first uploads for the same device must not crash (IntegrityError/500) and must
