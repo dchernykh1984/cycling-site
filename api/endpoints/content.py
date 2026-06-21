@@ -104,7 +104,9 @@ def _validate_localized_length(value: LocalizedStr, field: str, message: str) ->
 
 
 def _validate_news_title(title: LocalizedStr) -> None:
-    if not (title.ru or title.kk or title.en):
+    # Require a non-whitespace title: a value like "   " is truthy but visually empty, and would
+    # otherwise save a blank article that slugifies to the technical "article" fallback.
+    if not any((value or "").strip() for value in (title.ru, title.kk, title.en)):
         raise HttpError(422, _("At least one title translation is required."))
     _validate_localized_length(title, "title", _("Title is too long (max %(limit)d characters)."))
 
