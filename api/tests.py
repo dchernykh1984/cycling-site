@@ -1430,6 +1430,17 @@ class StartListApiTest(TestCase, ApiTestMixin):
         resp = self._post(items=["x"] * 20001)
         self.assertEqual(resp.status_code, 400)
 
+    def test_total_size_over_app_limit_is_clean_400(self):
+        # ~1.2M chars: over the app's total-size cap but under Django's DATA_UPLOAD_MAX_MEMORY_SIZE,
+        # so the handler returns a controlled 400 instead of Django rejecting the body first.
+        resp = self._post(items=["x" * 2000 for _ in range(600)])
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(StartListUpload.objects.count(), 0)
+
+    def test_total_size_under_limit_accepted(self):
+        resp = self._post(items=["x" * 1000 for _ in range(900)])  # 900k chars, within the cap
+        self.assertEqual(resp.status_code, 200)
+
     def test_newer_revision_overwrites(self):
         self._post(items=["old"], client_revision=1000)
         self._post(items=["new"], client_revision=1005)
