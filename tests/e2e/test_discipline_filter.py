@@ -178,3 +178,47 @@ def test_event_type_master_checkbox_selects_all(page: Page, live_server, race_ev
         page.check("#et-menu-1 input.mf-all")
     assert f"event_type={race_event_type.pk}" in page.url
     assert f"event_type={training_event_type.pk}" in page.url
+
+
+# --------------------------------------------------------------------------- #
+# Type-to-filter search box (shared with the location filter)
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.django_db(transaction=True)
+def test_direction_search_filters_checkboxes(
+    page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
+):
+    page.goto(f"{live_server.url}/calendar/")
+    open_filter_panel(page)
+    page.click("#dd-btn-1")
+    road = page.locator(f"#dd-menu-1 li.mf-item-row:has(input[value='{road_category.pk}'])")
+    mtb = page.locator(f"#dd-menu-1 li.mf-item-row:has(input[value='{mtb_category.pk}'])")
+    expect(road).to_be_visible()
+    expect(mtb).to_be_visible()
+    page.fill("#dd-menu-1 .mf-search", "mtb")  # case-insensitive
+    expect(mtb).to_be_visible()
+    expect(road).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_event_type_search_filters_checkboxes(page: Page, live_server, race_event_type, training_event_type):
+    page.goto(f"{live_server.url}/calendar/list/")
+    open_filter_panel(page)
+    page.click("#et-btn-1")
+    race = page.locator(f"#et-menu-1 li.mf-item-row:has(input[value='{race_event_type.pk}'])")
+    training = page.locator(f"#et-menu-1 li.mf-item-row:has(input[value='{training_event_type.pk}'])")
+    expect(race).to_be_visible()
+    expect(training).to_be_visible()
+    page.fill("#et-menu-1 .mf-search", "train")  # case-insensitive
+    expect(training).to_be_visible()
+    expect(race).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_search_box_present_on_all_three_calendar_tabs(page: Page, live_server, race_event_type, training_event_type):
+    for path in ("/calendar/", "/calendar/list/", "/calendar/map/"):
+        page.goto(f"{live_server.url}{path}")
+        open_filter_panel(page)
+        page.click("#et-btn-1")
+        expect(page.locator("#et-menu-1 .mf-search")).to_have_count(1)

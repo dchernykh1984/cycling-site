@@ -33,7 +33,8 @@ document.addEventListener('DOMContentLoaded', function () {
     levels: [{ btn: document.getElementById('et-btn-1'), menu: document.getElementById('et-menu-1') }],
     nodesUnder: nodesUnder,
     restoreChains: restoreChains,
-    labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}' },
+    searchable: true,
+    labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}', search: '{% trans "Search..." %}' },
     onChange: function () { if (window.onCalendarFilterChange) window.onCalendarFilterChange(); }
   });
   window.eventTypeFilter = inst;

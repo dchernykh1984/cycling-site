@@ -91,6 +91,28 @@ def test_hidden_fallback_venue_shown_at_location_level(page: Page, live_server, 
 
 
 @pytest.mark.django_db(transaction=True)
+def test_search_box_filters_checkboxes_case_insensitively(page: Page, live_server, location_tree):
+    # The country dropdown has a type-to-filter box: typing shows only the checkboxes whose name
+    # contains the text (case-insensitive); clearing it restores all.
+    page.goto(f"{live_server.url}{_LIST_URL}")
+    page.click("#mf-btn-1")
+    search = page.locator("#mf-menu-1 .mf-search")
+    expect(search).to_have_count(1)
+    kz_row = page.locator(f"#mf-menu-1 li.mf-item-row:has(input[value='{location_tree['kz'].pk}'])")
+    ru_row = page.locator(f"#mf-menu-1 li.mf-item-row:has(input[value='{location_tree['ru'].pk}'])")
+    expect(kz_row).to_be_visible()
+    expect(ru_row).to_be_visible()
+
+    search.fill("kz")  # lower-case query matches "KZ"
+    expect(kz_row).to_be_visible()
+    expect(ru_row).to_be_hidden()
+
+    search.fill("")
+    expect(kz_row).to_be_visible()
+    expect(ru_row).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_hidden_country_is_selectable_in_filter(page: Page, live_server, location_tree):
     # Issue #113: a hidden real country/region/city stays selectable in the filter
     # (hidden matters only for the virtual "other location" venue).

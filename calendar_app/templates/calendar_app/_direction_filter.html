@@ -71,7 +71,8 @@ document.addEventListener('DOMContentLoaded', function () {
     ],
     nodesUnder: nodesUnder,
     restoreChains: restoreChains,
-    labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}' },
+    searchable: true,
+    labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}', search: '{% trans "Search..." %}' },
     onChange: function () { if (window.onCalendarFilterChange) window.onCalendarFilterChange(); }
   });
   window.directionFilter = inst;
