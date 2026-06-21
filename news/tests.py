@@ -637,6 +637,22 @@ class NewsArticleCommentTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(NewsArticleComment.objects.count(), 1)
 
+    def test_superuser_with_low_role_can_comment(self):
+        # A superuser whose role is below participant still sees the form (display check) and must
+        # be able to post it too, not get a 403.
+        su = User.objects.create_user(
+            username="su_news",
+            email="su_news@example.com",
+            password="password123",
+            role=User.Role.GUEST,
+            is_superuser=True,
+            is_staff=True,
+        )
+        self.client.force_login(su)
+        resp = self.client.post(self.add_url, {"body": "Admin note"})
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(NewsArticleComment.objects.filter(body="Admin note").exists())
+
     def test_anonymous_detail_does_not_expose_author_email(self):
         self._make_comment(body="Hi")  # author has no name set
         response = self.client.get(reverse("news_article_detail", args=[self.article.pk]))

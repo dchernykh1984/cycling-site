@@ -33,7 +33,9 @@ class ParticipantRequiredMixin(LoginRequiredMixin):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
         participant_rank = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-        if request.user.get_role_rank() < participant_rank:
+        # Superusers bypass the role gate, matching the comment-form display check so they don't
+        # see the form via GET only to be rejected on POST.
+        if not request.user.is_superuser and request.user.get_role_rank() < participant_rank:
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
