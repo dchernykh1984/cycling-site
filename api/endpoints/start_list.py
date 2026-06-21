@@ -87,6 +87,11 @@ def upload_start_list(request, payload: StartListIn):
     # device, and the GET reads a consistent MVCC snapshot, so a concurrent fetch never sees a
     # partially-written list.
     with transaction.atomic():
+        # Lock the competition row first: an empty queryset locks nothing, so two concurrent first
+        # uploads for the same device would both pass `existing is None` and collide on the unique
+        # constraint (IntegrityError/500, possibly leaving the older snapshot). Locking a row that
+        # always exists serializes them, so the second sees the row created by the first.
+        Competition.objects.select_for_update().get(pk=competition.pk)
         existing = (
             StartListUpload.objects.select_for_update().filter(competition=competition, device_id=device_id).first()
         )

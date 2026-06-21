@@ -1,13 +1,15 @@
 """Tests for django-ninja API v1 endpoints."""
 
+import json
 import shutil
 import tempfile
+import threading
 import uuid
 from datetime import date
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import connection
-from django.test import TestCase, override_settings
+from django.db import connection, connections
+from django.test import Client, TestCase, TransactionTestCase, override_settings
 
 from accounts.models import User
 from calendar_app.models import Competition, Discipline, DisciplineCategory, EventType
@@ -1472,6 +1474,54 @@ class StartListApiTest(TestCase, ApiTestMixin):
         resp = self._post(client_revision=0)
         self.assertEqual(resp.status_code, 422)
         self.assertEqual(StartListUpload.objects.count(), 0)
+
+
+class StartListConcurrencyTest(TransactionTestCase):
+    """Two parallel first uploads for the same device must not crash (IntegrityError/500) and must
+    end with the newer revision stored, never the older one."""
+
+    def setUp(self):
+        self.comp = Competition.objects.create(
+            title_ru="Race", date_start=date(2026, 7, 1), status=Competition.Status.APPROVED
+        )
+        self.token = str(self.comp.upload_token)
+
+    def _upload(self, results, name, revision, items):
+        try:
+            self._barrier.wait(timeout=10)
+            # raise_request_exception=False so a server-side crash surfaces as a captured 500
+            # response instead of re-raising in the thread (which would skip the assertion).
+            resp = Client(raise_request_exception=False).post(
+                "/api/v1/start-list/",
+                json.dumps(
+                    {"competition_token": self.token, "device_id": "dev", "items": items, "client_revision": revision}
+                ),
+                content_type="application/json",
+            )
+            results[name] = resp.status_code
+        finally:
+            connections.close_all()  # release the thread's DB connection so teardown can drop the DB
+
+    def test_concurrent_first_uploads_newer_wins_without_500(self):
+        self._barrier = threading.Barrier(2)
+        results: dict = {}
+        threads = [
+            threading.Thread(target=self._upload, args=(results, "older", 1000, ["old"])),
+            threading.Thread(target=self._upload, args=(results, "newer", 1005, ["a", "b"])),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=15)
+
+        # Both requests completed with a response, and neither crashed with a 500 on the
+        # unique-constraint collision.
+        self.assertEqual(len(results), 2, results)
+        self.assertNotIn(500, results.values())
+        # Exactly one row, holding the newer snapshot regardless of arrival order.
+        upload = StartListUpload.objects.get(competition=self.comp, device_id="dev")
+        self.assertEqual(upload.client_revision, 1005)
+        self.assertEqual(upload.items, ["a", "b"])
 
 
 # ---------------------------------------------------------------------------
