@@ -1438,7 +1438,23 @@ class StartListApiTest(TestCase, ApiTestMixin):
         self.assertEqual(StartListUpload.objects.count(), 0)
 
     def test_total_size_under_limit_accepted(self):
-        resp = self._post(items=["x" * 1000 for _ in range(900)])  # 900k chars, within the cap
+        resp = self._post(items=["x" * 1000 for _ in range(300)])  # 300k chars, within the cap
+        self.assertEqual(resp.status_code, 200)
+
+    def test_cyrillic_payload_at_cap_fits_django_body_limit(self):
+        # A Cyrillic start list at the char cap is the worst case for json.dumps escaping. The
+        # serialized wire body (what the desktop client sends) must stay under Django's body limit,
+        # so an app-accepted payload is never rejected by Django before the handler runs.
+        from django.conf import settings
+
+        from api.endpoints.start_list import _MAX_TOTAL_CHARS
+
+        cyrillic_item = chr(0x0430) * 100  # 100 Cyrillic letters; each escapes to 6 bytes on the wire
+        items = [cyrillic_item] * (_MAX_TOTAL_CHARS // 100)  # exactly at the char cap
+        payload = {"competition_token": self.token, "device_id": "dev-a", "items": items, "client_revision": 1}
+        wire = json.dumps(payload).encode("utf-8")  # ensure_ascii=True, like the client
+        self.assertLessEqual(len(wire), settings.DATA_UPLOAD_MAX_MEMORY_SIZE)
+        resp = self.post("/api/v1/start-list/", payload)
         self.assertEqual(resp.status_code, 200)
 
     def test_newer_revision_overwrites(self):
