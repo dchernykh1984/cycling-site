@@ -28,9 +28,11 @@ class StartListIn(Schema):
     competition_token: str
     device_id: str
     items: list[str] = Field(default_factory=list)
-    # Monotonic per-device revision (the sender's epoch-ms). A snapshot older than the stored one
-    # is rejected so a delayed/reordered request can't roll the device's list back. 0 = legacy.
-    client_revision: int = 0
+    # Required, strictly-positive, per-device monotonic counter from the sender. A snapshot whose
+    # revision is older than the stored one is rejected, and a *different* snapshot at the same
+    # revision is a conflict (not a silent overwrite), so a delayed/reordered or colliding request
+    # can never roll the device's list back.
+    client_revision: int = Field(ge=1)
 
 
 class StartListUploadOut(Schema):
@@ -78,25 +80,28 @@ def upload_start_list(request, payload: StartListIn):
     if any(len(item) > _MAX_ITEM_LEN for item in items):
         raise HttpError(400, f"An item is too long (max {_MAX_ITEM_LEN} characters)")
 
-    revision = payload.client_revision or 0
-    # Atomic compare-and-set: lock the device's row, reject a stale (older-revision) snapshot, and
-    # otherwise replace the items wholesale. The lock serializes concurrent uploads for the same
-    # device so a late request can't overwrite a newer one; the GET reads a consistent MVCC
-    # snapshot, so a concurrent fetch never sees a partially-written list.
+    revision = payload.client_revision
+    # Atomic compare-and-set: lock the device's row, then reject a stale (older) snapshot and a
+    # conflicting one at the same revision; only a strictly-newer revision (or an identical re-send
+    # at the same revision) replaces the items. The lock serializes concurrent uploads for the same
+    # device, and the GET reads a consistent MVCC snapshot, so a concurrent fetch never sees a
+    # partially-written list.
     with transaction.atomic():
         existing = (
             StartListUpload.objects.select_for_update().filter(competition=competition, device_id=device_id).first()
         )
-        if existing is not None and revision < existing.client_revision:
-            raise HttpError(409, "A newer start list is already stored for this device_id")
-        if existing is None:
-            StartListUpload.objects.create(
-                competition=competition, device_id=device_id, items=items, client_revision=revision
-            )
-        else:
+        if existing is not None:
+            if revision < existing.client_revision:
+                raise HttpError(409, "A newer start list is already stored for this device_id")
+            if revision == existing.client_revision and items != existing.items:
+                raise HttpError(409, "A different start list is already stored at this revision")
             existing.items = items
             existing.client_revision = revision
             existing.save(update_fields=["items", "client_revision", "updated_at"])
+        else:
+            StartListUpload.objects.create(
+                competition=competition, device_id=device_id, items=items, client_revision=revision
+            )
     return {"device_id": device_id, "count": len(items)}
 
 
