@@ -227,25 +227,30 @@ class SiteContentModelTests(TestCase):
         self.assertNotIn("<script", sc.body_ru.lower())
 
     def test_backfill_migration_sanitizes_existing_body(self):
-        # The data migration must clean HTML stored before save()-time sanitization existed.
+        # Run the migration's own sanitizer against the historical (pre-0009) bare model, whose
+        # save() does NOT sanitize -- so this proves the migration cleans data, not the model.
         import importlib
 
-        from django.apps import apps as global_apps
+        from django.db import connection
+        from django.db.migrations.executor import MigrationExecutor
 
-        SiteContent.objects.all().delete()
-        sc = SiteContent.objects.create()
-        # Inject unsafe HTML directly, bypassing SiteContent.save()'s sanitizer.
-        SiteContent.objects.filter(pk=sc.pk).update(
+        state = MigrationExecutor(connection).loader.project_state(("home", "0008_fix_wagtail_site_hostname"))
+        HistoricalSiteContent = state.apps.get_model("home", "SiteContent")  # noqa: N806 (model class)
+        HistoricalSiteContent.objects.all().delete()
+        HistoricalSiteContent.objects.create(
+            pk=1,
             body="<p>x</p><script>a()</script>",
             body_ru="<p>ru</p><script>b()</script>",
             body_en="<p>en</p><script>c()</script>",
         )
+
         mig = importlib.import_module("home.migrations.0009_sanitize_sitecontent_body")
-        mig.sanitize_existing_body(global_apps, None)
-        sc.refresh_from_db()
-        for value in (sc.body, sc.body_ru, sc.body_en):
+        mig.sanitize_existing_body(state.apps, None)
+
+        obj = HistoricalSiteContent.objects.get(pk=1)
+        for value in (obj.body, obj.body_ru, obj.body_en):
             self.assertNotIn("<script", value.lower())
-        self.assertIn("ru", sc.body_ru)
+        self.assertIn("ru", obj.body_ru)
 
 
 class HomeEditViewTests(TestCase):
