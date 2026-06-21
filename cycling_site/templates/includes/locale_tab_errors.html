@@ -1,0 +1,25 @@
+{% comment %}
+On a re-rendered locale-tabbed form, activate the first tab-pane that contains a field error so
+server-side validation (e.g. an oversized KK/EN body) is visible instead of hidden behind the
+default RU tab. Pure class toggling, so it needs no Bootstrap JS API.
+{% endcomment %}
+<script>
+(function () {
+  // div.text-danger is a field-error block; the required-field asterisk is a <span>, so exclude it.
+  var err = document.querySelector('.tab-pane div.text-danger');
+  if (!err) return;
+  var pane = err.closest('.tab-pane');
+  if (!pane || pane.classList.contains('active')) return;
+  document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (b) {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
+  document.querySelectorAll('.tab-pane').forEach(function (p) { p.classList.remove('show', 'active'); });
+  var btn = document.querySelector('[data-bs-target="#' + pane.id + '"]');
+  if (btn) {
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+  }
+  pane.classList.add('show', 'active');
+}());
+</script>

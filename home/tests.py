@@ -375,6 +375,28 @@ class HomeEditViewTests(TestCase):
         self.assertFalse(SiteContent.objects.get(pk=1).body_ru)
         self.assertContains(response, "too large")  # the body error is rendered next to the editor
 
+    def test_post_renders_kk_body_error(self):
+        # The KK body error lives in a hidden tab; it must still be rendered (JS auto-opens it).
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
+
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            reverse("home_edit"),
+            {
+                "navbar_title_ru": "X",
+                "navbar_title_kk": "",
+                "navbar_title_en": "",
+                "page_title_ru": "",
+                "page_title_kk": "",
+                "page_title_en": "",
+                "body_ru": "",
+                "body_kk": "a" * (MAX_RICH_TEXT_LENGTH + 1),
+                "body_en": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "too large")  # KK body error rendered
+
 
 class HomePageContextTests(WagtailPageTestCase):
     def setUp(self):

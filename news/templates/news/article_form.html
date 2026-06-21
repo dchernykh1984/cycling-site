@@ -72,10 +72,12 @@
           <div class="mb-3">
             <label class="form-label fw-semibold" for="{{ form.title_kk.id_for_label }}">{{ form.title_kk.label }}</label>
             {{ form.title_kk }}
+            {% if form.title_kk.errors %}<div class="text-danger small mt-1">{% for e in form.title_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold" for="{{ form.intro_kk.id_for_label }}">{{ form.intro_kk.label }}</label>
             {{ form.intro_kk }}
+            {% if form.intro_kk.errors %}<div class="text-danger small mt-1">{% for e in form.intro_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">{% trans "Body (KK)" %}</label>
@@ -90,10 +92,12 @@
           <div class="mb-3">
             <label class="form-label fw-semibold" for="{{ form.title_en.id_for_label }}">{{ form.title_en.label }}</label>
             {{ form.title_en }}
+            {% if form.title_en.errors %}<div class="text-danger small mt-1">{% for e in form.title_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold" for="{{ form.intro_en.id_for_label }}">{{ form.intro_en.label }}</label>
             {{ form.intro_en }}
+            {% if form.intro_en.errors %}<div class="text-danger small mt-1">{% for e in form.intro_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">{% trans "Body (EN)" %}</label>
@@ -151,4 +155,5 @@
 {{ form.body_kk.value|default:""|json_script:"init-body-kk" }}
 {{ form.body_en.value|default:""|json_script:"init-body-en" }}
 {% include "includes/rich_text_editor.html" %}
+{% include "includes/locale_tab_errors.html" %}
 {% endblock %}
