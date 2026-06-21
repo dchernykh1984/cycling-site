@@ -18,6 +18,7 @@ def test_news_create_round_trips_body(page: Page, live_server, superuser):
     inject_session(page, live_server, superuser)
     page.goto(f"{live_server.url}/news/articles/create/")  # published_at is pre-filled by the view
     page.fill("#id_title_ru", "E2E News Article")
+    expect(page.locator("#quill-ru .ql-editor")).to_have_count(1)
     page.evaluate(
         """() => {
           document.querySelector('#quill-ru .ql-editor').innerHTML = '<p>News body in browser</p>';
@@ -89,9 +90,16 @@ def test_news_submit_form_round_trips_body_via_quill(page: Page, live_server, or
     inject_session(page, live_server, organizer)
     page.goto(f"{live_server.url}/news/submit/")
     page.fill("#id_title", "Reader Story")
+    # Wait for the editor to initialise before scripting it.
+    expect(page.locator("#quill-body .ql-editor")).to_have_count(1)
     page.evaluate(
         """() => {
-          document.querySelector('#quill-body .ql-editor').innerHTML = '<p>From the reader</p>';
+          const ed = document.querySelector('#quill-body .ql-editor');
+          ed.innerHTML = '<p>From the reader</p>';
+          // The hidden #id_body is required: populate it synchronously so requestSubmit()'s
+          // HTML5 validation passes. The editor's own submit handler only copies the body
+          // after validation, which races on slow runs and otherwise blocks the submit.
+          document.getElementById('id_body').value = ed.innerHTML;
           document.getElementById('id_title').form.requestSubmit();
         }"""
     )

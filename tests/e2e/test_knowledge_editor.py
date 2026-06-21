@@ -55,6 +55,7 @@ def test_add_round_trips_body(page: Page, live_server, superuser, knowledge_inde
     inject_session(page, live_server, superuser)
     page.goto(f"{live_server.url}/knowledge/add/")
     page.fill("#id_title", "E2E Knowledge Article")
+    expect(page.locator("#quill-body .ql-editor")).to_have_count(1)
     # Set the editor body via the DOM and submit in ONE synchronous step (see
     # test_edit_prefills_and_updates): closes the Quill MutationObserver revert race that flakes on
     # mobile webkit. Real keyboard input through the shared editor is covered by the competition tests.
@@ -75,13 +76,17 @@ def test_add_strips_script_on_save(page: Page, live_server, superuser, knowledge
     inject_session(page, live_server, superuser)
     page.goto(f"{live_server.url}/knowledge/add/")
     page.fill("#id_title", "E2E KB XSS")
+    expect(page.locator("#quill-body .ql-editor")).to_have_count(1)
+    # Set the script markup and submit in ONE synchronous step: the submit handler copies
+    # quill.root.innerHTML before Quill's async MutationObserver reverts the raw DOM edit (a
+    # separate submit call races it and flakes on mobile webkit); the server strips the script.
     page.evaluate(
         """() => {
-          const ed = document.querySelector('#quill-body .ql-editor');
-          ed.innerHTML = '<p>safe text</p><script>window.__x=1<\\/script>';
+          document.querySelector('#quill-body .ql-editor').innerHTML =
+            '<p>safe text</p><script>window.__x=1<\\/script>';
+          document.getElementById('id_title').form.requestSubmit();
         }"""
     )
-    page.eval_on_selector("#id_title", "el => el.form.requestSubmit()")
     page.wait_for_load_state("networkidle")
 
     art = KnowledgeArticle.objects.get(title="E2E KB XSS")
