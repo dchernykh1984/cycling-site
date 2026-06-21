@@ -553,3 +553,17 @@ class NewsRichTextLimitTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "too large")  # KK body error rendered
         self.assertContains(response, "at most 255")  # EN title error rendered
+
+    def test_max_length_message_is_localized(self):
+        # The form length error must come from the project catalog (translated for every locale),
+        # not Django's built-in whose KK falls back to Russian.
+        from django.utils.translation import gettext, override
+
+        from news.forms import NewsArticleForm
+
+        for loc in ("ru", "kk", "en"):
+            with self.subTest(locale=loc), override(loc):
+                form = NewsArticleForm(data={"title_ru": "a" * 256, "published_at": "2026-01-01T00:00"})
+                self.assertFalse(form.is_valid())
+                expected = gettext("Ensure this value has at most %(limit_value)d characters.") % {"limit_value": 255}
+                self.assertEqual(form.errors["title_ru"][0], expected)

@@ -1632,3 +1632,27 @@ msgstr "Извините, сейчас не получилось отправи�
 
 msgid "Please wait a few minutes before sending another message."
 msgstr "Пожалуйста, подождите несколько минут перед отправкой следующего сообщения."
+
+#: api/endpoints/content.py
+#, python-format
+msgid "Body is too large (max %(limit)d characters)."
+msgstr "Текст слишком большой (максимум %(limit)d символов)."
+
+#: api/endpoints/content.py
+msgid "At least one title translation is required."
+msgstr "Требуется заголовок хотя бы на одном языке."
+
+#: api/endpoints/content.py
+#, python-format
+msgid "Title is too long (max %(limit)d characters)."
+msgstr "Заголовок слишком длинный (максимум %(limit)d символов)."
+
+#: api/endpoints/content.py
+#, python-format
+msgid "Intro is too long (max %(limit)d characters)."
+msgstr "Анонс слишком длинный (максимум %(limit)d символов)."
+
+#: cycling_site/forms.py
+#, python-format
+msgid "Ensure this value has at most %(limit_value)d characters."
+msgstr "Значение должно содержать не более %(limit_value)d символов."

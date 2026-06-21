@@ -860,6 +860,22 @@ class NewsArticleCrudTest(TestCase, ApiTestMixin):
         resp = self.patch(f"/api/v1/news/{pk}", {"title": {"ru": "", "kk": "", "en": ""}}, user=self.admin)
         self.assertEqual(resp.status_code, 422)
 
+    def test_validation_error_is_localized_by_request_language(self):
+        from django.utils.translation import gettext, override
+
+        for loc in ("ru", "kk", "en"):
+            with self.subTest(locale=loc):
+                resp = self.post(
+                    "/api/v1/news/",
+                    self._payload(title={"ru": "a" * 256, "kk": "", "en": ""}),
+                    user=self.admin,
+                    HTTP_ACCEPT_LANGUAGE=loc,
+                )
+                self.assertEqual(resp.status_code, 422)
+                with override(loc):
+                    expected = gettext("Title is too long (max %(limit)d characters).") % {"limit": 255}
+                self.assertEqual(resp.json()["detail"], expected)
+
     def test_empty_active_locale_not_overwritten_by_fallback(self):
         # Regression: the canonical column is set via __dict__, so an empty RU locale (the active
         # language) is NOT overwritten with the kk/en fallback through modeltranslation's descriptor.

@@ -8,6 +8,7 @@ views). The DraftSubmission community-submission workflow is web-only (news/know
 from datetime import datetime
 
 from django.db.models import Field
+from django.utils.translation import gettext as _
 from ninja import Router, Schema, Status
 from ninja.errors import HttpError
 
@@ -86,25 +87,26 @@ def _require_admin(user) -> None:
 
 def _validate_body_length(body: str | None) -> None:
     if body and len(body) > MAX_RICH_TEXT_LENGTH:
-        raise HttpError(422, f"Body is too large (max {MAX_RICH_TEXT_LENGTH} characters)")
+        raise HttpError(422, _("Body is too large (max %(limit)d characters).") % {"limit": MAX_RICH_TEXT_LENGTH})
 
 
-def _validate_localized_length(value: LocalizedStr, field: str, label: str) -> None:
+def _validate_localized_length(value: LocalizedStr, field: str, message: str) -> None:
     # Limit each locale to the model column width, so an over-long value fails with a 422 rather
-    # than a database DataError (500) inside NewsArticle.save().
+    # than a database DataError (500) inside NewsArticle.save(). `message` is an already-translated
+    # %(limit)d format string supplied by the caller.
     field_obj = NewsArticle._meta.get_field(field)
     limit = field_obj.max_length if isinstance(field_obj, Field) else None
     if limit is None:
         return
     for raw in (value.ru, value.kk, value.en):
         if raw and len(raw) > limit:
-            raise HttpError(422, f"{label} is too long (max {limit} characters)")
+            raise HttpError(422, message % {"limit": limit})
 
 
 def _validate_news_title(title: LocalizedStr) -> None:
     if not (title.ru or title.kk or title.en):
-        raise HttpError(422, "At least one title translation is required")
-    _validate_localized_length(title, "title", "Title")
+        raise HttpError(422, _("At least one title translation is required."))
+    _validate_localized_length(title, "title", _("Title is too long (max %(limit)d characters)."))
 
 
 def _get_news_article_or_404(pk: int) -> NewsArticle:
@@ -155,7 +157,7 @@ def create_news_article(request, payload: NewsArticleIn):
     user = request.auth
     _require_admin(user)
     _validate_news_title(payload.title)
-    _validate_localized_length(payload.intro, "intro", "Intro")
+    _validate_localized_length(payload.intro, "intro", _("Intro is too long (max %(limit)d characters)."))
     for raw in (payload.body.ru, payload.body.kk, payload.body.en):
         _validate_body_length(raw)
 
@@ -176,7 +178,7 @@ def update_news_article(request, pk: int, payload: NewsArticlePatchIn):
     if payload.title is not None:
         _validate_news_title(payload.title)
     if payload.intro is not None:
-        _validate_localized_length(payload.intro, "intro", "Intro")
+        _validate_localized_length(payload.intro, "intro", _("Intro is too long (max %(limit)d characters)."))
     if payload.body is not None:
         for raw in (payload.body.ru, payload.body.kk, payload.body.en):
             _validate_body_length(raw)
