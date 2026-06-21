@@ -119,16 +119,18 @@ def test_submit_strips_script_from_editor_html(page: Page, live_server, organize
     page.goto(f"{live_server.url}/calendar/submit/")
     page.fill("#id_title_ru", "XSS Race")
     page.fill("#id_date_start", "2026-09-01")
-    # Put markup containing a script into the editor's live DOM (as a malicious paste
-    # could); the submit handler copies quill.root.innerHTML into the hidden field, and the
-    # server must strip the script on save.
+    expect(page.locator(".ql-editor")).to_have_count(3)
+    # Put markup containing a script into the editor's live DOM (as a malicious paste could) and
+    # submit in one synchronous step: the submit handler copies quill.root.innerHTML into the
+    # hidden field before Quill's async MutationObserver can revert it (a separate click races it
+    # and flakes on mobile webkit), and the server must strip the script on save.
     page.evaluate(
         """() => {
-          const ed = document.querySelector('#quill-desc-ru .ql-editor');
-          ed.innerHTML = '<p>safe text</p><script>window.__x=1<\\/script>';
+          document.querySelector('#quill-desc-ru .ql-editor').innerHTML =
+            '<p>safe text</p><script>window.__x=1<\\/script>';
+          document.getElementById('id_title_ru').form.requestSubmit();
         }"""
     )
-    page.click('form[enctype="multipart/form-data"] button[type=submit]')
     page.wait_for_load_state("networkidle")
 
     comp = Competition.objects.get(title_ru="XSS Race")
