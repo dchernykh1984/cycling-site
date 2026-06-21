@@ -889,6 +889,15 @@ class KnowledgeArticleCommentTests(TestCase):
         response = self.client.get(self.article.get_absolute_url())
         self.assertNotContains(response, self.participant.email)
 
+    def test_comment_placeholder_localized(self):
+        from django.utils.translation import gettext, override
+
+        from knowledge.forms import AddKnowledgeArticleCommentForm
+
+        for loc in ("ru", "kk", "en"):
+            with self.subTest(locale=loc), override(loc):
+                self.assertIn(gettext("Write a comment..."), str(AddKnowledgeArticleCommentForm()))
+
     def test_detail_shows_full_name_when_set(self):
         self.participant.first_name = "Anna"
         self.participant.last_name = "Smith"

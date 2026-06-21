@@ -658,6 +658,15 @@ class NewsArticleCommentTests(TestCase):
         response = self.client.get(reverse("news_article_detail", args=[self.article.pk]))
         self.assertNotContains(response, self.participant.email)
 
+    def test_comment_placeholder_localized(self):
+        from django.utils.translation import gettext, override
+
+        from news.forms import AddNewsArticleCommentForm
+
+        for loc in ("ru", "kk", "en"):
+            with self.subTest(locale=loc), override(loc):
+                self.assertIn(gettext("Write a comment..."), str(AddNewsArticleCommentForm()))
+
     def test_detail_shows_full_name_when_set(self):
         self.participant.first_name = "Anna"
         self.participant.last_name = "Smith"

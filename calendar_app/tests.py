@@ -906,6 +906,15 @@ class CompetitionCommentTests(TestCase):
         response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
         self.assertNotContains(response, self.participant.email)
 
+    def test_comment_placeholder_localized(self):
+        from django.utils.translation import gettext, override
+
+        from calendar_app.forms import AddCompetitionCommentForm
+
+        for loc in ("ru", "kk", "en"):
+            with self.subTest(locale=loc), override(loc):
+                self.assertIn(gettext("Write a comment..."), str(AddCompetitionCommentForm()))
+
     def test_delete_nonexistent_comment_returns_404(self):
         delete_url = reverse("competition_delete_comment", args=[99999])
         self.client.login(username=self.organizer.email, password="password123")

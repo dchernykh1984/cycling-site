@@ -910,7 +910,7 @@ class AddCompetitionCommentView(ParticipantRequiredMixin, View):
             comment.save()
         else:
             first_errors = next(iter(form.errors.values()), [])
-            error = first_errors[0] if first_errors else "Invalid submission."
+            error = first_errors[0] if first_errors else _("Invalid submission.")
             messages.error(request, error)
         return redirect("competition_detail", pk=competition_pk)
 

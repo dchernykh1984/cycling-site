@@ -41,7 +41,7 @@ class AddKnowledgeArticleCommentForm(forms.ModelForm):
         fields: ClassVar[list] = ["body"]
         widgets: ClassVar[dict] = {
             "body": forms.Textarea(
-                attrs={"rows": 4, "placeholder": "Write a comment...", "class": "form-control w-100"}
+                attrs={"rows": 4, "placeholder": _("Write a comment..."), "class": "form-control w-100"}
             ),
         }
 

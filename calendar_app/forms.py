@@ -227,7 +227,7 @@ class RegistrationSettingsForm(forms.Form):
 class AddCompetitionCommentForm(forms.ModelForm):
     body = forms.CharField(
         max_length=2000,
-        widget=forms.Textarea(attrs={"rows": 4, "placeholder": "Write a comment...", "class": "form-control w-100"}),
+        widget=forms.Textarea(attrs={"rows": 4, "placeholder": _("Write a comment..."), "class": "form-control w-100"}),
     )
 
     class Meta:
