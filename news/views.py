@@ -6,7 +6,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.utils.translation import get_language
+from django.utils.translation import get_language, gettext
 from django.views.generic import CreateView, View
 
 from accounts.models import User
@@ -196,7 +196,7 @@ class AddNewsArticleCommentView(ParticipantRequiredMixin, View):
             comment.save()
         else:
             first_errors = next(iter(form.errors.values()), [])
-            messages.error(request, first_errors[0] if first_errors else "Invalid submission.")
+            messages.error(request, first_errors[0] if first_errors else gettext("Invalid submission."))
         return redirect("news_article_detail", pk=pk)
 
 

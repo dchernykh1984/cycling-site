@@ -1702,3 +1702,11 @@ msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы к
 #: accounts/models.py
 msgid "Participant"
 msgstr "Қатысушы"
+
+#: news/forms.py knowledge/forms.py calendar_app/forms.py
+msgid "Write a comment..."
+msgstr "Пікір жазыңыз..."
+
+#: news/views.py knowledge/views.py calendar_app/views.py
+msgid "Invalid submission."
+msgstr "Жарамсыз жіберу."

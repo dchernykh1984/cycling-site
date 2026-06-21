@@ -1660,3 +1660,11 @@ msgstr "Значение должно содержать не более %(limit
 #: accounts/models.py
 msgid "Participant"
 msgstr "Участник"
+
+#: news/forms.py knowledge/forms.py calendar_app/forms.py
+msgid "Write a comment..."
+msgstr "Напишите комментарий..."
+
+#: news/views.py knowledge/views.py calendar_app/views.py
+msgid "Invalid submission."
+msgstr "Некорректная отправка."

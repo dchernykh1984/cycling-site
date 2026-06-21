@@ -172,7 +172,7 @@ class AddKnowledgeArticleCommentView(ParticipantRequiredMixin, View):
             comment.save()
         else:
             first_errors = next(iter(form.errors.values()), [])
-            messages.error(request, first_errors[0] if first_errors else "Invalid submission.")
+            messages.error(request, first_errors[0] if first_errors else _("Invalid submission."))
         return redirect(article.get_absolute_url())
 
 
