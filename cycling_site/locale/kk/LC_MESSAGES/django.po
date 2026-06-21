@@ -1674,3 +1674,27 @@ msgstr "Кешіріңіз, қазір хабарламаңызды жіберу
 
 msgid "Please wait a few minutes before sending another message."
 msgstr "Келесі хабарламаны жіберер алдында бірнеше минут күте тұрыңыз."
+
+#: api/endpoints/content.py
+#, python-format
+msgid "Body is too large (max %(limit)d characters)."
+msgstr "Мәтін тым үлкен (ең көбі %(limit)d таңба)."
+
+#: api/endpoints/content.py
+msgid "At least one title translation is required."
+msgstr "Кемінде бір тілде тақырып қажет."
+
+#: api/endpoints/content.py
+#, python-format
+msgid "Title is too long (max %(limit)d characters)."
+msgstr "Тақырып тым ұзын (ең көбі %(limit)d таңба)."
+
+#: api/endpoints/content.py
+#, python-format
+msgid "Intro is too long (max %(limit)d characters)."
+msgstr "Кіріспе тым ұзын (ең көбі %(limit)d таңба)."
+
+#: cycling_site/forms.py
+#, python-format
+msgid "Ensure this value has at most %(limit_value)d characters."
+msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."

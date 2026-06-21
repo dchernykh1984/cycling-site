@@ -3,11 +3,12 @@ from typing import ClassVar
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from cycling_site.forms import LocalizedMaxLengthMixin
 from cycling_site.richtext import validate_rich_text_length
 from home.models import SiteContent
 
 
-class SiteContentForm(forms.ModelForm):
+class SiteContentForm(LocalizedMaxLengthMixin, forms.ModelForm):
     class Meta:
         model = SiteContent
         fields: ClassVar[list] = [

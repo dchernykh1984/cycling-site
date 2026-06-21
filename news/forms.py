@@ -4,12 +4,13 @@ from django import forms
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
+from cycling_site.forms import LocalizedMaxLengthMixin
 from cycling_site.richtext import validate_rich_text_length
 from knowledge.models import DraftSubmission
 from news.models import Comment, NewsArticle
 
 
-class SubmitNewsForm(forms.ModelForm):
+class SubmitNewsForm(LocalizedMaxLengthMixin, forms.ModelForm):
     locale = forms.ChoiceField(
         choices=DraftSubmission.LOCALE_CHOICES, label=_("Locale"), widget=forms.Select(attrs={"class": "form-select"})
     )
@@ -33,7 +34,7 @@ _TITLE_ATTRS = {"class": "form-control"}
 _INTRO_ATTRS = {"rows": 3, "class": "form-control"}
 
 
-class NewsArticleForm(forms.ModelForm):
+class NewsArticleForm(LocalizedMaxLengthMixin, forms.ModelForm):
     title_ru = forms.CharField(
         max_length=255, label=format_lazy("{} (RU)", _("Title")), widget=forms.TextInput(attrs=_TITLE_ATTRS)
     )
