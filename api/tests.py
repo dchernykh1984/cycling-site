@@ -1475,11 +1475,18 @@ class StartListApiTest(TestCase, ApiTestMixin):
         self.assertEqual(upload.client_revision, 1005)
 
     def test_equal_revision_same_items_is_noop(self):
-        # A genuine retry (same revision, identical payload) is accepted as a no-op, not a conflict.
+        # A genuine retry (same revision, identical payload) is accepted as a true no-op: the list
+        # is unchanged AND updated_at does not move (so a consumer polling it isn't misled).
+        import time
+
         self._post(items=["a", "b"], client_revision=1000)
+        before = StartListUpload.objects.get(competition=self.comp, device_id="dev-a").updated_at
+        time.sleep(0.01)  # ensure a stray save() would produce a visibly different timestamp
         resp = self._post(items=["a", "b"], client_revision=1000)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(StartListUpload.objects.get(competition=self.comp, device_id="dev-a").items, ["a", "b"])
+        after = StartListUpload.objects.get(competition=self.comp, device_id="dev-a")
+        self.assertEqual(after.items, ["a", "b"])
+        self.assertEqual(after.updated_at, before)
 
     def test_equal_revision_different_items_conflicts(self):
         # Two different snapshots that collide on the same revision must not silently overwrite.

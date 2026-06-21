@@ -107,8 +107,12 @@ def upload_start_list(request, payload: StartListIn):
         if existing is not None:
             if revision < existing.client_revision:
                 raise HttpError(409, "A newer start list is already stored for this device_id")
-            if revision == existing.client_revision and items != existing.items:
-                raise HttpError(409, "A different start list is already stored at this revision")
+            if revision == existing.client_revision:
+                if items != existing.items:
+                    raise HttpError(409, "A different start list is already stored at this revision")
+                # Identical re-send (e.g. a network retry): a true no-op, so `updated_at` does not
+                # move and a consumer polling it isn't misled into seeing a new snapshot.
+                return {"device_id": device_id, "count": len(existing.items)}
             existing.items = items
             existing.client_revision = revision
             existing.save(update_fields=["items", "client_revision", "updated_at"])
