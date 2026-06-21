@@ -78,3 +78,24 @@ def test_server_error_opens_the_errored_locale_tab(page: Page, live_server, supe
     # On re-render the KK tab is auto-opened so its error is visible, not stuck behind the RU tab.
     expect(page.locator("#pane-kk")).to_be_visible()
     expect(page.locator("#pane-kk .text-danger")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_news_submit_form_round_trips_body_via_quill(page: Page, live_server, organizer):
+    # The participant /news/submit/ form has its own Quill -> hidden #id_body wiring; verify the
+    # body reaches the DraftSubmission through the real editor (not just a direct Django POST).
+    from knowledge.models import DraftSubmission
+
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/news/submit/")
+    page.fill("#id_title", "Reader Story")
+    page.evaluate(
+        """() => {
+          document.querySelector('#quill-body .ql-editor').innerHTML = '<p>From the reader</p>';
+          document.getElementById('id_title').form.requestSubmit();
+        }"""
+    )
+    page.wait_for_load_state("networkidle")
+
+    sub = DraftSubmission.objects.get(title="Reader Story")
+    assert "From the reader" in sub.body
