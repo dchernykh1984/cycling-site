@@ -397,6 +397,28 @@ class HomeEditViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "too large")  # KK body error rendered
 
+    def test_post_renders_kk_and_en_title_errors(self):
+        # navbar/page title errors in KK/EN tabs must be rendered too (max_length 100/200).
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            reverse("home_edit"),
+            {
+                "navbar_title_ru": "X",
+                "navbar_title_kk": "k" * 101,  # over navbar_title max_length=100
+                "navbar_title_en": "",
+                "page_title_ru": "",
+                "page_title_kk": "",
+                "page_title_en": "p" * 201,  # over page_title max_length=200
+                "body_ru": "",
+                "body_kk": "",
+                "body_en": "",
+            },
+            HTTP_ACCEPT_LANGUAGE="en",  # deterministic English error strings
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "at most 100")  # KK navbar title error rendered
+        self.assertContains(response, "at most 200")  # EN page title error rendered
+
 
 class HomePageContextTests(WagtailPageTestCase):
     def setUp(self):
