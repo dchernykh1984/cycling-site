@@ -1,6 +1,8 @@
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -9,8 +11,15 @@ from django.views.generic import CreateView, View
 
 from accounts.models import User
 from knowledge.models import DraftSubmission
-from news.forms import AddCommentForm, NewsArticleForm, SubmitNewsForm
-from news.models import Comment, NewsArticle, NewsPage, NewsSettings
+from news.forms import AddCommentForm, AddNewsArticleCommentForm, NewsArticleForm, SubmitNewsForm
+from news.models import Comment, NewsArticle, NewsArticleComment, NewsPage, NewsSettings
+
+_PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
+
+
+def _can_comment(user) -> bool:
+    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _PARTICIPANT_RANK)
+
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
@@ -43,15 +52,18 @@ class NewsArticleDetailView(View):
         can_manage = _can_manage_news(request.user)
         article = get_object_or_404(NewsArticle, pk=pk, is_deleted=False)
         if article.is_deleted or (article.is_hidden and not can_manage):
-            from django.http import Http404
-
             raise Http404
+        can_comment = _can_comment(request.user)
         return render(
             request,
             "news/article_detail.html",
             {
                 "article": article,
                 "can_edit": can_manage,
+                "comments": article.comments.select_related("author"),
+                "can_comment": can_comment,
+                "comment_form": AddNewsArticleCommentForm() if can_comment else None,
+                "user_can_delete_comment": can_manage,
             },
         )
 
@@ -166,3 +178,31 @@ class DeleteCommentView(LoginRequiredMixin, View):
         page_url = comment.page.url
         comment.delete()
         return redirect(page_url)
+
+
+class AddNewsArticleCommentView(ParticipantRequiredMixin, View):
+    def post(self, request, pk):
+        can_manage = _can_manage_news(request.user)
+        article = get_object_or_404(NewsArticle, pk=pk, is_deleted=False)
+        if article.is_hidden and not can_manage:
+            raise Http404
+        form = AddNewsArticleCommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.article = article
+            comment.author = request.user
+            comment.save()
+        else:
+            first_errors = next(iter(form.errors.values()), [])
+            messages.error(request, first_errors[0] if first_errors else "Invalid submission.")
+        return redirect("news_article_detail", pk=pk)
+
+
+class DeleteNewsArticleCommentView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        if not _can_manage_news(request.user):
+            raise PermissionDenied
+        comment = get_object_or_404(NewsArticleComment, pk=pk)
+        article_pk = comment.article_id
+        comment.delete()
+        return redirect("news_article_detail", pk=article_pk)

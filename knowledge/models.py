@@ -107,6 +107,25 @@ class KnowledgeArticle(index.Indexed, models.Model):
         return slug in _RESERVED_SLUGS or KnowledgeArticle.objects.filter(slug=slug).exclude(pk=self.pk).exists()
 
 
+class KnowledgeArticleComment(models.Model):
+    """A reader comment on a KnowledgeArticle (mirrors calendar_app.CompetitionComment)."""
+
+    article = models.ForeignKey(KnowledgeArticle, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="knowledge_article_comments",
+    )
+    body = models.CharField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering: ClassVar[list] = ["created_at"]
+
+    def __str__(self) -> str:
+        return f"Comment by {self.author} on {self.article}"
+
+
 def _can_manage_knowledge(user) -> bool:
     from accounts.models import User
 
@@ -171,11 +190,26 @@ class KnowledgeIndexPage(RoutablePageMixin, AsciiSlugMixin, Page):
         from django.utils.translation import get_language, gettext
         from django.utils.translation import override as translation_override
 
+        from accounts.models import User
+        from knowledge.forms import AddKnowledgeArticleCommentForm
+
         can_manage = _can_manage_knowledge(request.user)
         article = KnowledgeArticle.objects.filter(slug=slug, is_deleted=False).first()
         if article is None or (article.is_hidden and not can_manage):
             raise Http404
-        context = {"page": self, "article": article, "can_edit": can_manage}
+        can_comment = request.user.is_authenticated and (
+            request.user.is_superuser
+            or request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
+        )
+        context = {
+            "page": self,
+            "article": article,
+            "can_edit": can_manage,
+            "comments": article.comments.select_related("author"),
+            "can_comment": can_comment,
+            "comment_form": AddKnowledgeArticleCommentForm() if can_comment else None,
+            "user_can_delete_comment": can_manage,
+        }
 
         user_lang = (getattr(request, "LANGUAGE_CODE", None) or get_language() or "").split("-")[0]
         if user_lang and user_lang != article.locale:

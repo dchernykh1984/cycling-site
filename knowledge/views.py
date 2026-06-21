@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils.translation import get_language
@@ -9,8 +10,8 @@ from django.views.generic import CreateView, View
 from wagtail.models import Locale
 
 from accounts.models import User
-from knowledge.forms import DraftSubmissionForm, KnowledgeArticleForm
-from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeIndexPage
+from knowledge.forms import AddKnowledgeArticleCommentForm, DraftSubmissionForm, KnowledgeArticleForm
+from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment, KnowledgeIndexPage
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
@@ -153,3 +154,31 @@ class KnowledgeArticleHideView(ManagerRequiredMixin, View):
         article.is_hidden = not article.is_hidden
         article.save(update_fields=["is_hidden"])
         return redirect(article.get_absolute_url())
+
+
+class AddKnowledgeArticleCommentView(ParticipantRequiredMixin, View):
+    def post(self, request, pk):
+        can_manage = _can_manage_knowledge(request.user)
+        article = get_object_or_404(KnowledgeArticle, pk=pk, is_deleted=False)
+        if article.is_hidden and not can_manage:
+            raise Http404
+        form = AddKnowledgeArticleCommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.article = article
+            comment.author = request.user
+            comment.save()
+        else:
+            first_errors = next(iter(form.errors.values()), [])
+            messages.error(request, first_errors[0] if first_errors else "Invalid submission.")
+        return redirect(article.get_absolute_url())
+
+
+class DeleteKnowledgeArticleCommentView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        if not _can_manage_knowledge(request.user):
+            raise PermissionDenied
+        comment = get_object_or_404(KnowledgeArticleComment.objects.select_related("article"), pk=pk)
+        article_url = comment.article.get_absolute_url()
+        comment.delete()
+        return redirect(article_url)

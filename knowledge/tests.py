@@ -9,7 +9,7 @@ from django.utils.translation import gettext as _
 from wagtail.models import Locale, Page, Site
 
 from accounts.models import User
-from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeIndexPage
+from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment, KnowledgeIndexPage
 
 _MIG_0008 = "knowledge.migrations.0008_populate_knowledgearticle"
 
@@ -807,3 +807,71 @@ class SearchReturnsKnowledgeArticleTests(TestCase):
         resp = self.client.get(reverse("search") + "?query=Almaty", HTTP_ACCEPT_LANGUAGE="ru")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Almaty")
+
+
+class KnowledgeArticleCommentTests(TestCase):
+    """Reader comments on a KnowledgeArticle (mirrors calendar_app.CompetitionCommentTests)."""
+
+    def setUp(self):
+        self.participant = _make_user("kc_part@example.com", User.Role.PARTICIPANT)
+        self.other = _make_user("kc_other@example.com", User.Role.PARTICIPANT)
+        self.admin = _make_user("kc_admin@example.com", User.Role.ADMIN)
+        self.article = KnowledgeArticle.objects.create(title="Comment KB", locale="ru", body="<p>x</p>")
+        self.add_url = reverse("knowledge_article_add_comment", args=[self.article.pk])
+
+    def _add(self, user, body="Helpful!"):
+        self.client.force_login(user)
+        return self.client.post(self.add_url, {"body": body})
+
+    def _make_comment(self, author=None, body="A comment"):
+        return KnowledgeArticleComment.objects.create(
+            article=self.article, author=author or self.participant, body=body
+        )
+
+    def test_participant_can_post_comment(self):
+        self._add(self.participant)
+        self.assertEqual(KnowledgeArticleComment.objects.count(), 1)
+        comment = KnowledgeArticleComment.objects.get()
+        self.assertEqual(comment.author, self.participant)
+        self.assertEqual(comment.article, self.article)
+
+    def test_unauthenticated_user_redirected(self):
+        response = self.client.post(self.add_url, {"body": "Hi"})
+        self.assertIn(response.status_code, (302, 403))
+        self.assertEqual(KnowledgeArticleComment.objects.count(), 0)
+
+    def test_guest_role_gets_403(self):
+        guest = _make_user("kc_guest@example.com", User.Role.GUEST)
+        self.client.force_login(guest)
+        response = self.client.post(self.add_url, {"body": "Hi"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_empty_body_is_rejected(self):
+        response = self._add(self.participant, body="")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(KnowledgeArticleComment.objects.count(), 0)
+
+    def test_add_to_hidden_article_returns_404(self):
+        self.article.is_hidden = True
+        self.article.save(update_fields=["is_hidden"])
+        response = self._add(self.participant)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(KnowledgeArticleComment.objects.count(), 0)
+
+    def test_detail_page_shows_comment(self):
+        self._make_comment(body="Visible KB comment")
+        response = self.client.get(self.article.get_absolute_url())
+        self.assertContains(response, "Visible KB comment")
+
+    def test_admin_can_delete_comment(self):
+        comment = self._make_comment()
+        self.client.force_login(self.admin)
+        self.client.post(reverse("knowledge_article_delete_comment", args=[comment.pk]))
+        self.assertEqual(KnowledgeArticleComment.objects.count(), 0)
+
+    def test_non_manager_cannot_delete_comment(self):
+        comment = self._make_comment(author=self.other)
+        self.client.force_login(self.participant)
+        response = self.client.post(reverse("knowledge_article_delete_comment", args=[comment.pk]))
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(KnowledgeArticleComment.objects.count(), 1)

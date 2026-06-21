@@ -12,7 +12,7 @@ from wagtail.test.utils import WagtailPageTests
 
 from accounts.models import User
 from news.forms import SubmitNewsForm
-from news.models import Comment, NewsArticle, NewsIndexPage, NewsPage, NewsSettings
+from news.models import Comment, NewsArticle, NewsArticleComment, NewsIndexPage, NewsPage, NewsSettings
 
 
 def _get_site_root():
@@ -567,3 +567,72 @@ class NewsRichTextLimitTests(TestCase):
                 self.assertFalse(form.is_valid())
                 expected = gettext("Ensure this value has at most %(limit_value)d characters.") % {"limit_value": 255}
                 self.assertEqual(form.errors["title_ru"][0], expected)
+
+
+class NewsArticleCommentTests(TestCase):
+    """Reader comments on a NewsArticle (mirrors calendar_app.CompetitionCommentTests)."""
+
+    def _user(self, name, role):
+        return User.objects.create_user(username=name, email=f"{name}@example.com", password="password123", role=role)
+
+    def setUp(self):
+        self.participant = self._user("news_commenter", User.Role.PARTICIPANT)
+        self.other = self._user("news_other", User.Role.PARTICIPANT)
+        self.admin = self._user("news_comment_admin", User.Role.ADMIN)
+        self.article = NewsArticle.objects.create(title_ru="Comment News", body_ru="<p>x</p>")
+        self.add_url = reverse("news_article_add_comment", args=[self.article.pk])
+
+    def _add(self, user, body="Nice article!"):
+        self.client.force_login(user)
+        return self.client.post(self.add_url, {"body": body})
+
+    def _make_comment(self, author=None, body="A comment"):
+        return NewsArticleComment.objects.create(article=self.article, author=author or self.participant, body=body)
+
+    def test_participant_can_post_comment(self):
+        self._add(self.participant)
+        self.assertEqual(NewsArticleComment.objects.count(), 1)
+        comment = NewsArticleComment.objects.get()
+        self.assertEqual(comment.author, self.participant)
+        self.assertEqual(comment.article, self.article)
+
+    def test_unauthenticated_user_redirected(self):
+        response = self.client.post(self.add_url, {"body": "Hi"})
+        self.assertIn(response.status_code, (302, 403))
+        self.assertEqual(NewsArticleComment.objects.count(), 0)
+
+    def test_guest_role_gets_403(self):
+        guest = self._user("news_guest", User.Role.GUEST)
+        self.client.force_login(guest)
+        response = self.client.post(self.add_url, {"body": "Hi"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_empty_body_is_rejected(self):
+        response = self._add(self.participant, body="")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(NewsArticleComment.objects.count(), 0)
+
+    def test_add_to_hidden_article_returns_404(self):
+        self.article.is_hidden = True
+        self.article.save(update_fields=["is_hidden"])
+        response = self._add(self.participant)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(NewsArticleComment.objects.count(), 0)
+
+    def test_detail_page_shows_comment(self):
+        self._make_comment(body="Visible comment")
+        response = self.client.get(reverse("news_article_detail", args=[self.article.pk]))
+        self.assertContains(response, "Visible comment")
+
+    def test_admin_can_delete_comment(self):
+        comment = self._make_comment()
+        self.client.force_login(self.admin)
+        self.client.post(reverse("news_article_delete_comment", args=[comment.pk]))
+        self.assertEqual(NewsArticleComment.objects.count(), 0)
+
+    def test_non_manager_cannot_delete_comment(self):
+        comment = self._make_comment(author=self.other)
+        self.client.force_login(self.participant)
+        response = self.client.post(reverse("news_article_delete_comment", args=[comment.pk]))
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(NewsArticleComment.objects.count(), 1)

@@ -11,4 +11,14 @@ urlpatterns = [
     path("articles/<int:pk>/edit/", views.EditArticleView.as_view(), name="knowledge_article_edit"),
     path("articles/<int:pk>/delete/", views.KnowledgeArticleDeleteView.as_view(), name="knowledge_article_delete"),
     path("articles/<int:pk>/hide/", views.KnowledgeArticleHideView.as_view(), name="knowledge_article_hide"),
+    path(
+        "articles/<int:pk>/comment/",
+        views.AddKnowledgeArticleCommentView.as_view(),
+        name="knowledge_article_add_comment",
+    ),
+    path(
+        "articles/comment/<int:pk>/delete/",
+        views.DeleteKnowledgeArticleCommentView.as_view(),
+        name="knowledge_article_delete_comment",
+    ),
 ]

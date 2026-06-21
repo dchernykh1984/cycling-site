@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from cycling_site.forms import LocalizedMaxLengthMixin
 from cycling_site.richtext import validate_rich_text_length as _validate_body_length
-from knowledge.models import DraftSubmission, KnowledgeArticle
+from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment
 
 _TITLE_ATTRS = {"class": "form-control"}
 _CATEGORY_ATTRS = {"class": "form-control"}
@@ -31,6 +31,19 @@ class DraftSubmissionForm(LocalizedMaxLengthMixin, forms.ModelForm):
 
     def clean_body(self):
         return _validate_body_length(self.cleaned_data.get("body") or "")
+
+
+class AddKnowledgeArticleCommentForm(forms.ModelForm):
+    """Reader comment on a KnowledgeArticle (mirrors calendar_app.AddCompetitionCommentForm)."""
+
+    class Meta:
+        model = KnowledgeArticleComment
+        fields: ClassVar[list] = ["body"]
+        widgets: ClassVar[dict] = {
+            "body": forms.Textarea(
+                attrs={"rows": 4, "placeholder": "Write a comment...", "class": "form-control w-100"}
+            ),
+        }
 
 
 class KnowledgeArticleForm(LocalizedMaxLengthMixin, forms.ModelForm):

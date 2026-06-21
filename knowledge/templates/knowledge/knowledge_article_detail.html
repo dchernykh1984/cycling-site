@@ -53,6 +53,52 @@
       </form>
     </div>
     {% endif %}
+
+    <hr class="mt-4">
+    <section id="comments">
+      <h2 class="mb-4 h5">{% trans "Comments" %} ({{ comments|length }})</h2>
+
+      {% for comment in comments %}
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <strong>{{ comment.author.get_full_name|default:comment.author.email }}</strong>
+              <small class="text-muted ms-2">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+            </div>
+            {% if user_can_delete_comment %}
+            <form method="post" action="{% url 'knowledge_article_delete_comment' comment.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Delete" %}</button>
+            </form>
+            {% endif %}
+          </div>
+          <p class="mb-0">{{ comment.body }}</p>
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-muted">{% trans "No comments yet. Be the first!" %}</p>
+      {% endfor %}
+
+      {% if can_comment %}
+      <div class="card mt-4">
+        <div class="card-body">
+          <h3 class="card-title h6">{% trans "Add a comment" %}</h3>
+          <form method="post" action="{% url 'knowledge_article_add_comment' article.pk %}">
+            {% csrf_token %}
+            <div class="mb-3">{{ comment_form.body }}</div>
+            <button type="submit" class="btn btn-primary btn-sm">{% trans "Submit comment" %}</button>
+          </form>
+        </div>
+      </div>
+      {% elif not request.user.is_authenticated %}
+      <p class="text-muted mt-3">
+        <a href="{% url 'account_login' %}">{% trans "Log in" %}</a> {% trans "to leave a comment." %}
+      </p>
+      {% else %}
+      <p class="text-muted mt-3">{% trans "Commenting is available to verified participants." %}</p>
+      {% endif %}
+    </section>
   </div>
 </div>
 {% endblock %}
