@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Location
+from .models import Location, selectable_parent_locations
 
 
 class LocationForm(forms.Form):
@@ -20,10 +20,12 @@ class LocationForm(forms.Form):
     lng = forms.DecimalField(max_digits=9, decimal_places=6, required=False, label=_("Longitude"))
     is_hidden = forms.BooleanField(required=False, label=_("Hidden"))
 
-    def __init__(self, *args, exclude_pk=None, instance=None, **kwargs):
+    def __init__(self, *args, exclude_pk=None, instance=None, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance = instance
-        qs = Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3]).order_by("path")
+        # Only public nodes (or the user's own pending proposal) are pickable as a parent, so a
+        # foreign pending node can't be used via the UI or a hand-crafted POST.
+        qs = selectable_parent_locations(user)
         if exclude_pk is not None:
             qs = qs.exclude(pk=exclude_pk)
         self.fields["parent"].queryset = qs
