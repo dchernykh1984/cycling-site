@@ -88,6 +88,7 @@
                     <td class="text-end">
                         <a href="{% url 'location_edit' loc.pk %}?next={{ request.get_full_path|urlencode }}"
                            class="btn btn-outline-secondary btn-sm py-0 px-2">{% trans "Edit" %}</a>
+                        {% if not loc.is_system_fallback %}
                         <form method="post" action="{% url 'location_hide' loc.pk %}" class="d-inline">
                             {% csrf_token %}
                             <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -101,6 +102,7 @@
                             <input type="hidden" name="next" value="{{ request.get_full_path }}">
                             <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">{% trans "Delete" %}</button>
                         </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -130,6 +132,7 @@
     // Only managers (admin+) may edit locations, so the popup "Edit" link is server-gated.
     {% if can_manage %}
     var editUrlTpl = "{% url 'location_edit' 0 %}";  // .../0/edit/ -> swap 0 for the marker id
+    var editReturnUrl = "{{ request.get_full_path|escapejs }}";
     {% else %}
     var editUrlTpl = null;
     {% endif %}
@@ -150,6 +153,7 @@
             }
             if (editUrlTpl && loc.id) {
                 popupContent += '<br><a href="' + editUrlTpl.replace('/0/', '/' + loc.id + '/') +
+                    '?next=' + encodeURIComponent(editReturnUrl) +
                     '" class="btn btn-sm btn-outline-secondary mt-1">{% trans "Edit" %}</a>';
             }
             marker.bindPopup(popupContent);

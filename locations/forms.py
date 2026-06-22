@@ -43,6 +43,11 @@ class LocationForm(forms.Form):
             )
         if self.instance is None:
             return parent
+        if self.instance.is_system_fallback:
+            current_parent = self.instance.get_parent()
+            current_parent_id = current_parent.pk if current_parent is not None else None
+            if getattr(parent, "pk", None) != current_parent_id:
+                raise forms.ValidationError(_("System fallback locations cannot be moved."))
         # The chosen parent must not be the location itself or one of its descendants -- that
         # would make a node its own ancestor (a treebeard cycle).
         if parent is not None and (parent.pk == self.instance.pk or parent.is_descendant_of(self.instance)):
@@ -57,3 +62,9 @@ class LocationForm(forms.Form):
                 _("This location has nested locations or competitions, so its level cannot be changed.")
             )
         return parent
+
+    def clean_is_hidden(self):
+        is_hidden = self.cleaned_data.get("is_hidden", False)
+        if self.instance is not None and self.instance.is_system_fallback and not is_hidden:
+            raise forms.ValidationError(_("System fallback locations must remain hidden."))
+        return is_hidden

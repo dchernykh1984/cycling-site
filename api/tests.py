@@ -1295,6 +1295,19 @@ class LocationUpdateTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["name"]["ru"], "New RU")
 
+    def test_system_fallback_cannot_be_unhidden(self):
+        region = self.loc.add_child(name="R", name_ru="R")
+        city = region.add_child(name="C", name_ru="C")
+        fallback = Location.get_or_create_other_location(city)
+        resp = self.patch(
+            f"/api/v1/locations/{fallback.pk}",
+            {"is_hidden": False},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 409)
+        fallback.refresh_from_db()
+        self.assertTrue(fallback.is_hidden)
+
 
 class LocationDeleteTest(TestCase, ApiTestMixin):
     def setUp(self):
@@ -1306,6 +1319,15 @@ class LocationDeleteTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 204)
         self.loc.refresh_from_db()
         self.assertTrue(self.loc.is_deleted)
+
+    def test_system_fallback_cannot_be_deleted(self):
+        region = self.loc.add_child(name="R", name_ru="R")
+        city = region.add_child(name="C", name_ru="C")
+        fallback = Location.get_or_create_other_location(city)
+        resp = self.delete(f"/api/v1/locations/{fallback.pk}", user=self.admin)
+        self.assertEqual(resp.status_code, 409)
+        fallback.refresh_from_db()
+        self.assertFalse(fallback.is_deleted)
 
     def test_deleted_not_in_list(self):
         before = len(self.get("/api/v1/locations/", user=self.admin).json())

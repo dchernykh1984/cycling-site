@@ -263,6 +263,33 @@ def test_edit_prefills_parent_cascade_and_coords(
     expect(page.locator("#id_lng")).to_have_value("76.889709")
 
 
+@pytest.mark.django_db(transaction=True)
+def test_edit_preserves_hidden_parent_on_plain_save(page: Page, live_server, map_page, admin_user, location_tree_basic):
+    from locations.models import Location
+
+    country = location_tree_basic["country"]
+    region = location_tree_basic["region"]
+    hidden_city = region.add_child(name="Hidden City", name_ru="Hidden City", is_hidden=True)
+    venue = hidden_city.add_child(name="Hidden Child Venue", name_ru="Hidden Child Venue")
+
+    inject_session(page, live_server, admin_user)
+    page.goto(f"{live_server.url}/locations/{venue.pk}/edit/")
+
+    expect(page.locator("#loc-country")).to_have_value(str(country.pk))
+    expect(page.locator("#loc-region")).to_have_value(str(region.pk))
+    expect(page.locator("#loc-city")).to_have_value(str(hidden_city.pk))
+    expect(page.locator("#id_parent")).to_have_value(str(hidden_city.pk))
+
+    page.fill("#id_name_ru", "Hidden Child Venue Renamed")
+    page.locator("#location-form button[type=submit]").click()
+    page.wait_for_url(lambda url: f"/locations/{venue.pk}/edit/" not in url)
+
+    venue = Location.objects.get(pk=venue.pk)
+    assert venue.name_ru == "Hidden Child Venue Renamed"
+    assert venue.depth == 4
+    assert venue.get_parent().pk == hidden_city.pk
+
+
 # ---------------------------------------------------------------------------
 # map-page filter, pager and action return targets
 # ---------------------------------------------------------------------------
@@ -297,9 +324,10 @@ def test_map_filter_checkbox_narrows_table(page: Page, live_server, map_page, ad
 
 @pytest.mark.django_db(transaction=True)
 def test_marker_popup_edit_link_navigates(page: Page, live_server, map_page, admin_user, location_with_coords):
-    # Clicking a map marker opens its popup; the manager-only Edit link navigates to the edit form.
+    # Clicking a filtered map marker opens its popup; Edit navigates to the form and saving returns
+    # to the same map filter/page rather than resetting the management view.
     inject_session(page, live_server, admin_user)
-    page.goto(_map_url(live_server))
+    page.goto(f"{_map_url(live_server)}?location={location_with_coords.pk}&page=1")
     marker = page.locator(".leaflet-marker-icon").first
     expect(marker).to_be_visible()
     marker.click()
@@ -309,6 +337,10 @@ def test_marker_popup_edit_link_navigates(page: Page, live_server, map_page, adm
         edit_link.click()
     assert f"/locations/{location_with_coords.pk}/edit/" in page.url
     expect(page.locator("#id_name_ru")).to_have_value("Velodrome")
+    with page.expect_navigation():
+        page.locator("#location-form button[type='submit']").click()
+    assert f"location={location_with_coords.pk}" in page.url
+    assert "page=1" in page.url
 
 
 @pytest.mark.django_db(transaction=True)

@@ -1754,3 +1754,19 @@ msgstr "Кірістірілген локациялары немесе жары�
 #: locations/views.py
 msgid "The selected parent location is no longer available."
 msgstr "Таңдалған аталық локация енді қолжетімді емес."
+
+#: calendar_app/views.py
+msgid "This location is not available."
+msgstr "Бұл локация қолжетімді емес."
+
+#: locations/forms.py
+msgid "System fallback locations cannot be moved."
+msgstr "Жүйелік резервтік локацияларды жылжытуға болмайды."
+
+#: locations/forms.py locations/views.py
+msgid "System fallback locations must remain hidden."
+msgstr "Жүйелік резервтік локациялар жасырын күйде қалуы керек."
+
+#: locations/views.py
+msgid "This location proposal is no longer pending."
+msgstr "Бұл локация ұсынысы енді модерацияны күтпейді."

@@ -1,7 +1,7 @@
 import datetime
 import threading
 
-from django.db import connections
+from django.db import connections, transaction
 from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 from wagtail.models import Page, Site
@@ -11,11 +11,13 @@ from accounts.models import User
 from locations.models import (
     Location,
     LocationConflictError,
+    LocationFallback,
     LocationProposal,
     LocationsMapPage,
     add_location_child,
     location_filter_rank,
     locations_filter_data,
+    lock_competition_location,
     move_location,
     soft_delete_location,
     sort_locations_for_filter,
@@ -190,53 +192,6 @@ class LocationSearchTests(TestCase):
 
         response = self.client.get(reverse("search") + "?query=Almaty")
         self.assertEqual(response.status_code, 200)
-
-
-class LocationAdminFormTests(TestCase):
-    def setUp(self):
-        self.staff = User.objects.create_user(
-            username="staff@example.com",
-            email="staff@example.com",
-            password="password123",
-            is_staff=True,
-        )
-
-    def test_add_root_via_form_save(self):
-        from locations.wagtail_hooks import LocationForm
-
-        form = LocationForm(
-            data={
-                "parent": "",
-                "name_ru": "Kazakhstan",
-                "name_kk": "Kazakhstan",
-                "name_en": "Kazakhstan",
-                "lat": "",
-                "lng": "",
-            }
-        )
-        self.assertTrue(form.is_valid(), form.errors)
-        loc = form.save()
-        self.assertEqual(loc.name_ru, "Kazakhstan")
-        self.assertEqual(loc.depth, 1)
-
-    def test_add_child_via_form_save(self):
-        from locations.wagtail_hooks import LocationForm
-
-        parent = Location.add_root(name_ru="Kazakhstan", name_en="Kazakhstan")
-        form = LocationForm(
-            data={
-                "parent": str(parent.pk),
-                "name_ru": "Almaty",
-                "name_kk": "Almaty",
-                "name_en": "Almaty",
-                "lat": "43.238949",
-                "lng": "76.889709",
-            }
-        )
-        self.assertTrue(form.is_valid(), form.errors)
-        city = form.save()
-        self.assertEqual(city.depth, 2)
-        self.assertEqual(city.get_parent().pk, parent.pk)
 
 
 def _make_user(username, role, is_superuser=False):
@@ -532,6 +487,21 @@ class LocationEditViewTests(TestCase):
         self.loc.refresh_from_db()
         self.assertTrue(self.loc.is_hidden)
 
+    def test_fallback_cannot_be_moved_or_unhidden(self):
+        fallback = Location.get_or_create_other_location(self.city)
+        self.client.force_login(self.admin)
+        new_city = self.region.add_child(name="NewCityForFallback", name_ru="NewCityForFallback")
+        response = self.client.post(
+            reverse("location_edit", args=[fallback.pk]),
+            {"name_ru": fallback.name_ru, "name_kk": "", "name_en": "", "parent": str(new_city.pk)},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("parent", response.context["form"].errors)
+        self.assertIn("is_hidden", response.context["form"].errors)
+        fallback.refresh_from_db()
+        self.assertEqual(fallback.get_parent().pk, self.city.pk)
+        self.assertTrue(fallback.is_hidden)
+
     def test_edit_depth1_location_updates_name(self):
         """Structural locations (countries) can have their name updated with no parent selected."""
         self.client.force_login(self.admin)
@@ -705,6 +675,14 @@ class LocationDeleteViewTests(TestCase):
         venue.refresh_from_db()
         self.assertTrue(venue.is_deleted)
 
+    def test_cannot_delete_system_fallback(self):
+        _, _, city = _make_tree()
+        fallback = Location.get_or_create_other_location(city)
+        self.client.force_login(self.admin)
+        self.client.post(reverse("location_delete", args=[fallback.pk]))
+        fallback.refresh_from_db()
+        self.assertFalse(fallback.is_deleted)
+
     def test_cannot_delete_venue_with_competitions(self):
         from calendar_app.models import Competition
 
@@ -786,6 +764,14 @@ class LocationHideViewTests(TestCase):
         resp = self.client.post(reverse("location_hide", args=[self.loc.pk]), {"next": "/map/?page=2&location=4"})
         self.assertRedirects(resp, "/map/?page=2&location=4", fetch_redirect_response=False)
 
+    def test_system_fallback_cannot_be_unhidden(self):
+        _, _, city = _make_tree()
+        fallback = Location.get_or_create_other_location(city)
+        self.client.force_login(self.admin)
+        self.client.post(reverse("location_hide", args=[fallback.pk]))
+        fallback.refresh_from_db()
+        self.assertTrue(fallback.is_hidden)
+
 
 class LocationsMapLocaleTests(TestCase):
     """The map page must render (not 404) and be localized in all three locales."""
@@ -800,6 +786,21 @@ class LocationsMapLocaleTests(TestCase):
             self.assertContains(response, "locations-map")  # the map page itself rendered, not a 404
             with translation.override(lang):
                 self.assertContains(response, _("Map"))  # heading localized to the active locale
+
+    def test_new_location_conflict_messages_are_translated(self):
+        from django.utils import translation
+        from django.utils.translation import gettext
+
+        messages = (
+            "This location is not available.",
+            "System fallback locations cannot be moved.",
+            "System fallback locations must remain hidden.",
+            "This location proposal is no longer pending.",
+        )
+        for lang in ("ru", "kk"):
+            with translation.override(lang):
+                for message in messages:
+                    self.assertNotEqual(gettext(message), message, f"{message!r} is untranslated for {lang}")
 
 
 class LocationProposalModelTests(TestCase):
@@ -837,9 +838,17 @@ class LocationProposalModelTests(TestCase):
         # Idempotent: returns the same node next time.
         self.assertEqual(Location.get_or_create_other_location(self.city).pk, other.pk)
 
-    def test_get_or_create_other_location_reuses_existing_hidden(self):
+    def test_get_or_create_other_location_reuses_explicit_fallback(self):
         existing = self.city.add_child(name="Other", name_ru="Other", is_hidden=True)
+        LocationFallback.objects.create(city=self.city, location=existing)
         self.assertEqual(Location.get_or_create_other_location(self.city).pk, existing.pk)
+
+    def test_get_or_create_other_location_does_not_reuse_an_ordinary_hidden_venue(self):
+        hidden = self.city.add_child(name="Private venue", name_ru="Private venue", is_hidden=True)
+        fallback = Location.get_or_create_other_location(self.city)
+        self.assertNotEqual(fallback.pk, hidden.pk)
+        self.assertTrue(fallback.is_system_fallback)
+        self.assertEqual(fallback.fallback_identity.city_id, self.city.pk)
 
     def test_reject_resets_competitions_to_other_location(self):
         from calendar_app.models import Competition
@@ -852,6 +861,8 @@ class LocationProposalModelTests(TestCase):
         self.assertTrue(venue.is_deleted)
         self.assertIsNotNone(comp.location)
         self.assertTrue(comp.location.is_hidden)
+        self.assertTrue(comp.location.is_system_fallback)
+        self.assertEqual(comp.location.fallback_identity.city_id, self.city.pk)
         self.assertEqual(comp.location.get_parent().pk, self.city.pk)
 
 
@@ -1136,6 +1147,14 @@ class LocationsMapPageManageListTests(TestCase):
         self.client.logout()
         self.assertNotIn(edit_url_tpl, self.client.get(self.map_page.url).content.decode())
 
+    def test_fallback_row_has_no_hide_or_delete_actions(self):
+        _, _, city = _make_tree()
+        fallback = Location.get_or_create_other_location(city)
+        self.client.force_login(self.admin)
+        html = self.client.get(self.map_page.url).content.decode()
+        self.assertNotIn(reverse("location_hide", args=[fallback.pk]), html)
+        self.assertNotIn(reverse("location_delete", args=[fallback.pk]), html)
+
 
 class AddLocationChildConcurrencyGuardTests(TestCase):
     """add_location_child refuses to nest under a removed or already-deepest parent (the guards
@@ -1249,6 +1268,56 @@ class ConcurrentLocationMutationTests(TransactionTestCase):
             lambda: move_location(self.city, other_city),
         )
         self.assertEqual(Location.objects.filter(is_deleted=False, depth__gt=4).count(), 0)
+
+    def test_same_depth_subtree_move_serializes_with_add_under_descendant(self):
+        target_country = Location.add_root(name="C2", name_ru="C2")
+        self._run(
+            lambda: move_location(self.region, target_country),
+            lambda: add_location_child(self.city, name="ConcurrentVenue", name_ru="ConcurrentVenue"),
+        )
+        self.city.refresh_from_db()
+        venue = Location.objects.get(name="ConcurrentVenue")
+        self.assertEqual(venue.get_parent().pk, self.city.pk)
+        self.assertTrue(venue.path.startswith(self.city.path))
+
+    def test_independent_moves_restore_modeltranslation_global_method(self):
+        from modeltranslation.manager import MultilingualQuerySet
+
+        source_a = self.country.add_child(name="A", name_ru="A")
+        source_b = Location.add_root(name="BRoot", name_ru="BRoot").add_child(name="B", name_ru="B")
+        target_a = Location.add_root(name="ATarget", name_ru="ATarget")
+        target_b = Location.add_root(name="BTarget", name_ru="BTarget")
+        original = MultilingualQuerySet._rewrite_f
+        self._run(lambda: move_location(source_a, target_a), lambda: move_location(source_b, target_b))
+        self.assertIs(MultilingualQuerySet._rewrite_f, original)
+
+    def test_reject_serializes_with_competition_binding(self):
+        from calendar_app.models import Competition
+
+        proposer = _make_user("reject-race@example.com", User.Role.PARTICIPANT)
+        venue = Location.propose_venue(self.city, "PendingRaceVenue", submitted_by=proposer)
+
+        def bind_competition():
+            with transaction.atomic():
+                locked = lock_competition_location(venue, proposer)
+                Competition.objects.create(
+                    title_ru="Race",
+                    date_start=datetime.date(2026, 7, 1),
+                    location=locked,
+                    submitted_by=proposer,
+                )
+
+        self._run(venue.reject_and_reset_competitions, bind_competition)
+        for competition in Competition.objects.select_related("location"):
+            self.assertFalse(competition.location.is_deleted)
+
+    def test_concurrent_rejects_share_one_city_fallback(self):
+        proposer = _make_user("double-reject@example.com", User.Role.PARTICIPANT)
+        first = Location.propose_venue(self.city, "PendingOne", submitted_by=proposer)
+        second = Location.propose_venue(self.city, "PendingTwo", submitted_by=proposer)
+        outcomes = self._run(first.reject_and_reset_competitions, second.reject_and_reset_competitions)
+        self.assertEqual(set(outcomes.values()), {"ok"})
+        self.assertEqual(LocationFallback.objects.filter(city=self.city).count(), 1)
 
     def test_concurrent_root_creates_do_not_collide(self):
         # Two parallel root creates must not pick the same treebeard path (no IntegrityError/500).

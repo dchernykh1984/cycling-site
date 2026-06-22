@@ -102,8 +102,11 @@ class LocationHideView(LoginRequiredMixin, View):
         if not _can_manage_locations(request.user):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
-        location.is_hidden = not location.is_hidden
-        location.save(update_fields=["is_hidden"])
+        if location.is_system_fallback:
+            messages.error(request, _("System fallback locations must remain hidden."))
+        else:
+            location.is_hidden = not location.is_hidden
+            location.save(update_fields=["is_hidden"])
         return redirect(_safe_return_url(request, "/"))
 
 
@@ -207,7 +210,7 @@ class LocationApproveView(LoginRequiredMixin, View):
 
 class LocationRejectView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        from locations.models import Location, LocationProposal
+        from locations.models import Location, LocationConflictError, LocationProposal
 
         if not _can_manage_locations(request.user):
             raise PermissionDenied
@@ -216,7 +219,10 @@ class LocationRejectView(LoginRequiredMixin, View):
         location = get_object_or_404(
             Location, pk=pk, is_deleted=False, proposal__status=LocationProposal.Status.PENDING_APPROVAL
         )
-        location.reject_and_reset_competitions()
+        try:
+            location.reject_and_reset_competitions()
+        except LocationConflictError:
+            messages.error(request, _("This location proposal is no longer pending."))
         safe_path = urlparse(request.META.get("HTTP_REFERER", "")).path or "/"
         return redirect(safe_path)
 
@@ -254,6 +260,7 @@ class LocationEditView(LoginRequiredMixin, View):
                 "is_edit": True,
                 "can_manage": _can_manage_locations(request.user),
                 "location": location,
+                "is_fallback": location.is_system_fallback,
                 "map_url": _get_map_url(),
                 "next_url": _safe_return_url(request, _get_map_url()),
                 "all_locations_json": _get_all_locations_json(request.user),
@@ -315,6 +322,7 @@ class LocationEditView(LoginRequiredMixin, View):
                 "is_edit": True,
                 "can_manage": _can_manage_locations(request.user),
                 "location": location,
+                "is_fallback": location.is_system_fallback,
                 "map_url": _get_map_url(),
                 "next_url": _safe_return_url(request, _get_map_url()),
                 "all_locations_json": _get_all_locations_json(request.user),
