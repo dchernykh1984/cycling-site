@@ -280,13 +280,35 @@ def test_map_filter_renders_country_options(page: Page, live_server, map_page, a
 
 
 @pytest.mark.django_db(transaction=True)
-def test_map_filter_narrows_management_table(page: Page, live_server, map_page, admin_user, location_tree):
-    # Applying the location filter narrows both the map markers and the management table.
+def test_map_filter_checkbox_narrows_table(page: Page, live_server, map_page, admin_user, location_tree):
+    # Real JS workflow: ticking a country checkbox runs onCalendarFilterChange -> sync -> submit,
+    # which narrows the URL, the management table and the map markers to that subtree.
     inject_session(page, live_server, admin_user)
-    page.goto(f"{_map_url(live_server)}?location={location_tree['kz'].pk}")
+    page.goto(_map_url(live_server))
+    page.click("#mf-btn-1", force=True)  # open the country dropdown (past the sticky navbar)
+    with page.expect_navigation():
+        # Click the menu item label, which ticks the checkbox and auto-submits the form.
+        page.locator(f"#mf-menu-1 label:has(input[value='{location_tree['kz'].pk}'])").click()
+    assert f"location={location_tree['kz'].pk}" in page.url
     table = page.locator("table")
     expect(table).to_contain_text("KZ Region")
     expect(table).not_to_contain_text("RU Region")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_marker_popup_edit_link_navigates(page: Page, live_server, map_page, admin_user, location_with_coords):
+    # Clicking a map marker opens its popup; the manager-only Edit link navigates to the edit form.
+    inject_session(page, live_server, admin_user)
+    page.goto(_map_url(live_server))
+    marker = page.locator(".leaflet-marker-icon").first
+    expect(marker).to_be_visible()
+    marker.click()
+    edit_link = page.locator(f".leaflet-popup a[href^='/locations/{location_with_coords.pk}/edit/']")
+    expect(edit_link).to_be_visible()
+    with page.expect_navigation():
+        edit_link.click()
+    assert f"/locations/{location_with_coords.pk}/edit/" in page.url
+    expect(page.locator("#id_name_ru")).to_have_value("Velodrome")
 
 
 @pytest.mark.django_db(transaction=True)
