@@ -915,6 +915,19 @@ class LocationsMapPageManageListTests(TestCase):
         self.assertIn("AA", names)
         self.assertNotIn("BB", names)
 
+    def test_filter_by_coordless_node_resolves_to_ancestor_coords(self):
+        # Filtering by a coordinate-less city must still show a marker at its ancestor's
+        # coordinates (the same fallback as the unfiltered map), not an empty map.
+        country = Location.add_root(name="KZf", name_ru="KZf", name_en="KZf", lat="48.000000", lng="68.000000")
+        region = country.add_child(name="Rf", name_ru="Rf", name_en="Rf")  # no coords
+        city = region.add_child(name="Cf", name_ru="Cf", name_en="Cf")  # no coords
+        self.client.force_login(self.admin)
+        resp = self.client.get(self.map_page.url, {"location": str(city.pk)})
+        data = resp.context["locations_data"]
+        self.assertEqual(len(data), 1)
+        self.assertAlmostEqual(data[0]["lat"], 48.0)
+        self.assertEqual(data[0]["name"], "KZf")
+
     def test_filter_data_present_for_manager(self):
         _make_tree()
         self.client.force_login(self.admin)

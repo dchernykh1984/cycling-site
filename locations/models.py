@@ -235,15 +235,19 @@ def map_display_node(loc, by_path, step):
     return nearest_visible_ancestor_with_coords(loc, by_path, step)
 
 
-def _build_map_locations(all_locs) -> list:
+def _build_map_locations(all_locs, candidates=None) -> list:
     """Map markers (issue #113): each location at its own coordinates, or at the nearest
     ancestor with coordinates when it is hidden or has none (see ``map_display_node``).
-    Deduplicated so a place isn't drawn twice (its own marker + a resolved child)."""
+    Deduplicated so a place isn't drawn twice (its own marker + a resolved child).
+
+    ``candidates`` (defaults to ``all_locs``) are the nodes to draw; ancestor resolution still
+    uses the full ``all_locs`` lookup, so filtering the drawn set to a subtree never hides a
+    coordinate-less node's resolved ancestor (issue: filtering blanked such markers)."""
     by_path = {loc.path: loc for loc in all_locs}
     step = Location.steplen
     data: list = []
     seen: set = set()
-    for loc in all_locs:
+    for loc in all_locs if candidates is None else candidates:
         display = map_display_node(loc, by_path, step)
         if display is None:
             continue
@@ -353,12 +357,13 @@ class LocationsMapPage(AsciiSlugMixin, Page):
             )
         )
         # The cascade filter (shown to managers above the map) narrows the map markers too:
-        # selecting a node keeps only that node and its descendants.
+        # selecting a node keeps only that node and its descendants. Pass the narrowed set as the
+        # drawn ``candidates`` but keep the full ``all_locs`` for ancestor resolution, so filtering
+        # by a coordinate-less city/venue still resolves to its ancestor's coordinates.
         location_ids = request.GET.getlist("location")
         filter_pks = filter_descendant_pks(location_ids) if location_ids else None
-        if filter_pks is not None:
-            all_locs = [loc for loc in all_locs if loc.pk in filter_pks]
-        context["locations_data"] = _build_map_locations(all_locs)
+        candidates = [loc for loc in all_locs if loc.pk in filter_pks] if filter_pks is not None else None
+        context["locations_data"] = _build_map_locations(all_locs, candidates=candidates)
         # Only confirmed users (participant+) may propose a location, so only they see the
         # "Add location" button - a guest would otherwise click through to a 403 (issue #118).
         context["can_add"] = request.user.is_authenticated and (
