@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n l10n %}
 
 {% block title %}{% if is_edit %}{% trans "Edit location" %}{% else %}{% trans "Add location" %}{% endif %}{% endblock %}
 
@@ -110,14 +110,14 @@
         <label for="id_lat" class="form-label">{% trans "Latitude" %}</label>
         <input type="number" name="lat" id="id_lat"
                class="form-control{% if form.lat.errors %} is-invalid{% endif %}"
-               value="{{ form.lat.value|default:'' }}" step="0.000001">
+               value="{% localize off %}{{ form.lat.value|default:'' }}{% endlocalize %}" step="0.000001">
         {% for e in form.lat.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
       </div>
       <div class="col-6">
         <label for="id_lng" class="form-label">{% trans "Longitude" %}</label>
         <input type="number" name="lng" id="id_lng"
                class="form-control{% if form.lng.errors %} is-invalid{% endif %}"
-               value="{{ form.lng.value|default:'' }}" step="0.000001">
+               value="{% localize off %}{{ form.lng.value|default:'' }}{% endlocalize %}" step="0.000001">
         {% for e in form.lng.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
       </div>
     </div>

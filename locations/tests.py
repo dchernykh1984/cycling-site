@@ -396,6 +396,20 @@ class LocationEditViewTests(TestCase):
         self.country.refresh_from_db()
         self.assertEqual(self.country.name_ru, "KZ Updated")
 
+    def test_edit_get_prefills_coords_with_dot_under_ru_locale(self):
+        # Regression: under the ru locale Django L10N formats Decimals with a comma ("43,26"),
+        # which an <input type=number> rejects, leaving lat/lng blank. They must be pre-filled
+        # with a dot decimal separator so the inputs (and the map marker) populate.
+        venue = self.city.add_child(name="Coords", name_ru="Coords", name_en="Coords", lat="43.263815", lng="76.817484")
+        self.client.force_login(self.admin)
+        resp = self.client.get(reverse("location_edit", args=[venue.pk]), HTTP_ACCEPT_LANGUAGE="ru")
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('value="43.263815"', html)
+        self.assertIn('value="76.817484"', html)
+        self.assertNotIn("43,263815", html)  # the comma form must not appear
+        self.assertNotIn("76,817484", html)
+
 
 class LocationDeleteViewTests(TestCase):
     def setUp(self):
