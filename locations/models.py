@@ -262,19 +262,41 @@ def _build_map_locations(all_locs) -> list:
     return data
 
 
+def location_filter_rank(row) -> int:
+    """Sort priority for a node in the cascade filter dropdowns: visible-with-coordinates
+    first, then visible-without-coordinates, then hidden-with-coordinates, then
+    hidden-without-coordinates. ``row`` is a dict with ``is_hidden``/``lat``/``lng``."""
+    has_coords = row.get("lat") is not None and row.get("lng") is not None
+    if not row["is_hidden"]:
+        return 0 if has_coords else 1
+    return 2 if has_coords else 3
+
+
+def sort_locations_for_filter(rows) -> list:
+    """Stable-sort path-ordered filter rows so hidden / coordinate-less nodes sink to the end
+    of every dropdown. The cascade builds each level's options by filtering this list while
+    preserving order, so sorting here orders the options (issue: hidden nodes shown last)."""
+    return sorted(rows, key=location_filter_rank)
+
+
 def locations_filter_data(user=None) -> list:
-    """Visible Location nodes (pk/depth/path/names) for the country->region->city->location
-    cascade filter, in the same shape the calendar list filter consumes. Pending locations
-    are visible only to the user who proposed them."""
+    """Visible Location nodes (pk/depth/path/names/coords) for the country->region->city->
+    location cascade filter, in the same shape the calendar list filter consumes. Pending
+    locations are visible only to the user who proposed them. Hidden / coordinate-less nodes
+    are ordered last within each dropdown level (see ``sort_locations_for_filter``)."""
     visible = models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
     if user is not None and getattr(user, "is_authenticated", False):
         visible |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
-    return list(
+    rows = list(
         Location.objects.filter(is_deleted=False)
         .filter(visible)
         .order_by("path")
-        .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden")
+        .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden", "lat", "lng")
     )
+    for row in rows:
+        row["lat"] = float(row["lat"]) if row["lat"] is not None else None
+        row["lng"] = float(row["lng"]) if row["lng"] is not None else None
+    return sort_locations_for_filter(rows)
 
 
 def filter_descendant_pks(location_ids) -> set:

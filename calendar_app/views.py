@@ -14,7 +14,7 @@ from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 
 from accounts.models import User
-from locations.models import Location, LocationProposal, map_display_node
+from locations.models import Location, LocationProposal, map_display_node, sort_locations_for_filter
 
 from .forms import (
     AddCompetitionCommentForm,
@@ -51,7 +51,9 @@ def _get_locations_data(user=None) -> list:
     for row in rows:
         row["lat"] = float(row["lat"]) if row["lat"] is not None else None
         row["lng"] = float(row["lng"]) if row["lng"] is not None else None
-    return rows
+    # Hidden / coordinate-less nodes sink to the end of each cascade dropdown level: the
+    # filters build options by filtering this list in order (see sort_locations_for_filter).
+    return sort_locations_for_filter(rows)
 
 
 def _can_manage_any_competition(user) -> bool:
