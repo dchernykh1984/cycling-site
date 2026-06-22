@@ -344,29 +344,53 @@ def _safe_move(location, target, pos: str) -> None:
 
 def move_location(location, new_parent) -> None:
     """Atomically re-parent (and re-level) ``location`` under ``new_parent`` (``None`` re-roots it
-    as a country). Locks the row and re-checks under the lock that a level change is still allowed
-    (an empty physical subtree), so a child/competition created concurrently can't be re-levelled to
-    a bad depth. Raises ``LocationConflictError`` if a level change is no longer safe. A no-op when
-    the parent is unchanged."""
+    as a country). Locks the moved node and the target parent (in pk order, to avoid deadlocks
+    between two moves) and re-validates everything under those locks -- the target still exists and
+    is live, the resulting depth fits the four-level tree, the target isn't inside the moved subtree
+    (cycle), and a level change only happens on an empty subtree. So a concurrent delete/move of
+    either node can't leave a live node under a removed parent, push it past depth 4, or form a
+    cycle. Raises ``LocationConflictError`` otherwise; a no-op when the parent is unchanged."""
     with transaction.atomic():
-        locked = Location.objects.select_for_update().get(pk=location.pk)
-        new_depth = new_parent.depth + 1 if new_parent is not None else 1
+        if new_parent is None:
+            locked = Location.objects.select_for_update().get(pk=location.pk)
+            locked_target = None
+            _lock_root_namespace()  # re-rooting joins the root namespace; serialize with root creates
+        else:
+            # Lock both rows in a single ordered query so concurrent moves acquire them in the same
+            # order (deadlock-free), then re-check the target under its lock.
+            rows = {
+                loc.pk: loc
+                for loc in Location.objects.select_for_update()
+                .filter(pk__in={location.pk, new_parent.pk})
+                .order_by("pk")
+            }
+            locked = rows.get(location.pk)
+            locked_target = rows.get(new_parent.pk)
+            if locked is None or locked_target is None:
+                raise LocationConflictError("Location no longer exists")
+            if locked_target.is_deleted:
+                raise LocationConflictError("Target parent was removed")
+            if locked_target.pk == locked.pk or locked_target.is_descendant_of(locked):
+                raise LocationConflictError("Target parent is inside the moved subtree")
+
+        new_depth = (locked_target.depth + 1) if locked_target is not None else 1
+        if new_depth > 4:
+            raise LocationConflictError("Resulting depth exceeds the four-level tree")
         if new_depth != locked.depth and location_subtree_is_nonempty(locked):
             raise LocationConflictError("Subtree changed under the node")
+
         current_parent = locked.get_parent()
         current_pk = current_parent.pk if current_parent is not None else None
-        new_pk = new_parent.pk if new_parent is not None else None
+        new_pk = locked_target.pk if locked_target is not None else None
         if new_pk == current_pk:
             return
-        locked.refresh_from_db()
-        if new_parent is None:
+        if locked_target is None:
             # Become a root by joining an existing root as a sorted sibling.
             root = Location.objects.filter(is_deleted=False, depth=1).exclude(pk=locked.pk).order_by("path").first()
             if root is not None:
                 _safe_move(locked, root, pos="sorted-sibling")
         else:
-            new_parent.refresh_from_db()
-            _safe_move(locked, new_parent, pos="sorted-child")
+            _safe_move(locked, locked_target, pos="sorted-child")
 
 
 def _build_map_locations(all_locs, candidates=None) -> list:

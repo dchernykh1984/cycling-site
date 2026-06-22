@@ -1226,6 +1226,30 @@ class ConcurrentLocationMutationTests(TransactionTestCase):
         # Whichever order won, no live node ends up deeper than the four-level tree.
         self.assertEqual(Location.objects.filter(is_deleted=False, depth__gt=4).count(), 0)
 
+    def test_move_vs_target_delete_never_orphans(self):
+        # Move the region (with its city) under a second country while that country is being deleted.
+        target = Location.add_root(name="C2", name_ru="C2")
+        self._run(
+            lambda: move_location(self.region, target),
+            lambda: soft_delete_location(target),
+        )
+        target.refresh_from_db()
+        self.region.refresh_from_db()
+        parent = self.region.get_parent()
+        # Never both: the target deleted while the region now hangs under it.
+        self.assertFalse(target.is_deleted and parent is not None and parent.pk == target.pk)
+
+    def test_move_vs_target_move_keeps_depth_within_limit(self):
+        # A makes the (empty) region a child of the city (depth 4); B makes the city a child of
+        # another city (depth 4). Either ordering must be refused so nothing lands at depth 5.
+        source = self.country.add_child(name="S", name_ru="S")
+        other_city = self.region.add_child(name="OtherCity", name_ru="OtherCity")
+        self._run(
+            lambda: move_location(source, self.city),
+            lambda: move_location(self.city, other_city),
+        )
+        self.assertEqual(Location.objects.filter(is_deleted=False, depth__gt=4).count(), 0)
+
     def test_concurrent_root_creates_do_not_collide(self):
         # Two parallel root creates must not pick the same treebeard path (no IntegrityError/500).
         outcomes = self._run(
