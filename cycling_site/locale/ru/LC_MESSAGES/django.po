@@ -1697,3 +1697,7 @@ msgstr "Локацию нельзя поместить внутрь самой �
 #: locations/forms.py
 msgid "This location has nested locations or competitions, so its level cannot be changed."
 msgstr "У этой локации есть вложенные локации или соревнования, поэтому её уровень нельзя изменить."
+
+#: locations/forms.py
+msgid "Select a country, region and city: a venue is added inside the chosen city."
+msgstr "Выберите страну, регион и город: локация добавляется внутри выбранного города."

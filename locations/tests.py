@@ -304,23 +304,25 @@ class LocationCreateViewTests(TestCase):
         self.assertFalse(venue.is_pending)
         self.assertFalse(hasattr(venue, "proposal"))
 
-    def test_participant_cannot_create_structural_node(self):
-        # Proposals are venue-only; a participant may not create a region/city (structural node).
+    def test_participant_incomplete_cascade_shows_field_error(self):
+        # A non-manager who doesn't pick a full city gets a clear parent field error (not a 403).
         self.client.force_login(self.participant)
         resp = self.client.post(
             self.url, {"name_ru": "NewRegion", "name_kk": "", "name_en": "", "parent": str(self.country.pk)}
         )
-        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("parent", resp.context["form"].errors)
         self.assertFalse(Location.objects.filter(name_ru="NewRegion").exists())
 
-    def test_participant_cannot_create_country(self):
+    def test_participant_empty_cascade_shows_field_error(self):
         self.client.force_login(self.participant)
         resp = self.client.post(self.url, {"name_ru": "NewCountry", "name_kk": "", "name_en": "", "parent": ""})
-        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("parent", resp.context["form"].errors)
         self.assertFalse(Location.objects.filter(name_ru="NewCountry").exists())
 
     def test_organizer_cannot_create_structural_node(self):
-        # Structural nodes (country/region/city) are admin-only; organizer is limited to venues.
+        # Structural nodes (country/region/city) are admin-only; organizer gets a field error per level.
         organizer = _make_user("org_struct@x.com", User.Role.ORGANIZER)
         self.client.force_login(organizer)
         cases = {
@@ -331,8 +333,18 @@ class LocationCreateViewTests(TestCase):
         for name, parent in cases.items():
             with self.subTest(name=name):
                 resp = self.client.post(self.url, {"name_ru": name, "name_kk": "", "name_en": "", "parent": parent})
-                self.assertEqual(resp.status_code, 403)
+                self.assertEqual(resp.status_code, 200)
+                self.assertIn("parent", resp.context["form"].errors)
                 self.assertFalse(Location.objects.filter(name_ru=name).exists())
+
+    def test_incomplete_cascade_field_error_is_localized(self):
+        # The "select a city" field error renders in English under en and is translated under ru.
+        self.client.force_login(self.participant)
+        data = {"name_ru": "X", "name_kk": "", "name_en": "", "parent": ""}
+        en = self.client.post(self.url, data, HTTP_ACCEPT_LANGUAGE="en")
+        self.assertContains(en, "a venue is added inside the chosen city")
+        ru = self.client.post(self.url, data, HTTP_ACCEPT_LANGUAGE="ru")
+        self.assertNotContains(ru, "a venue is added inside the chosen city")
 
     def test_organizer_can_still_create_venue(self):
         # organizer+ may add an approved depth-4 venue under a city directly (no proposal).

@@ -20,9 +20,10 @@ class LocationForm(forms.Form):
     lng = forms.DecimalField(max_digits=9, decimal_places=6, required=False, label=_("Longitude"))
     is_hidden = forms.BooleanField(required=False, label=_("Hidden"))
 
-    def __init__(self, *args, exclude_pk=None, instance=None, user=None, **kwargs):
+    def __init__(self, *args, exclude_pk=None, instance=None, user=None, can_manage=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance = instance
+        self.can_manage = can_manage
         # Only public nodes (or the user's own pending proposal) are pickable as a parent, so a
         # foreign pending node can't be used via the UI or a hand-crafted POST.
         qs = selectable_parent_locations(user)
@@ -32,6 +33,14 @@ class LocationForm(forms.Form):
 
     def clean_parent(self):
         parent = self.cleaned_data.get("parent")
+        new_depth = parent.depth + 1 if parent is not None else 1
+        # Non-managers may only add a depth-4 venue under a city. Surface a clear field error for an
+        # incomplete cascade instead of letting it fall through to the view's 403 authorization guard
+        # (which stays as defense against a forged POST).
+        if not self.can_manage and new_depth != 4:
+            raise forms.ValidationError(
+                _("Select a country, region and city: a venue is added inside the chosen city.")
+            )
         if self.instance is None:
             return parent
         # The chosen parent must not be the location itself or one of its descendants -- that
