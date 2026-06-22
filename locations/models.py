@@ -243,10 +243,13 @@ def _subtree_descendants(location, *, include_deleted):
 
 
 def location_subtree_has_live_competitions(location) -> bool:
-    """True if any non-deleted competition points at ``location`` or a node in its subtree."""
+    """True if any non-deleted competition points at a non-deleted node in ``location``'s subtree.
+    A soft-deleted competition no longer counts, so its venue can be deleted/re-levelled."""
     from calendar_app.models import Competition
 
-    return Competition.objects.filter(location__path__startswith=location.path, location__is_deleted=False).exists()
+    return Competition.objects.filter(
+        is_deleted=False, location__path__startswith=location.path, location__is_deleted=False
+    ).exists()
 
 
 def location_can_be_deleted(location) -> bool:

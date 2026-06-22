@@ -1325,6 +1325,15 @@ class LocationDeleteTest(TestCase, ApiTestMixin):
         venue.refresh_from_db()
         self.assertFalse(venue.is_deleted)
 
+    def test_can_delete_venue_with_only_soft_deleted_competitions(self):
+        # A soft-deleted competition does not keep the venue alive.
+        venue = self.loc.add_child(name="VArch", name_ru="VArch")
+        _competition(location=venue, is_deleted=True)
+        resp = self.delete(f"/api/v1/locations/{venue.pk}", user=self.admin)
+        self.assertEqual(resp.status_code, 204)
+        venue.refresh_from_db()
+        self.assertTrue(venue.is_deleted)
+
 
 # ---------------------------------------------------------------------------
 # Protocol upload (extra coverage for uncovered lines)
