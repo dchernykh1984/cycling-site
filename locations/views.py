@@ -1,9 +1,11 @@
 from urllib.parse import urlparse
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
@@ -251,14 +253,22 @@ class LocationEditView(LoginRequiredMixin, View):
         form = LocationForm(request.POST, exclude_pk=pk, instance=location)
         if form.is_valid():
             cd = form.cleaned_data
-            location.name_ru = cd["name_ru"]
-            location.name_kk = cd.get("name_kk") or ""
-            location.name_en = cd.get("name_en") or ""
-            location.name = location.name_ru or location.name_kk or location.name_en
-            location.lat = cd.get("lat")
-            location.lng = cd.get("lng")
-            location.is_hidden = cd.get("is_hidden", False)
-            location.save(update_fields=["name", "name_ru", "name_kk", "name_en", "lat", "lng", "is_hidden"])
+            # modeltranslation keeps the canonical ``name`` in sync with the *active* language, so
+            # do the whole assignment + save under the default language. Otherwise editing under a
+            # kk/en locale corrupts that locale's translation (and the canonical) with the RU value.
+            # Assign + save under the default language so modeltranslation keeps the canonical
+            # ``name`` synced to ``name_ru`` (its descriptor mirrors the *active* language on save).
+            # Editing under a kk/en locale would otherwise store that translation as the canonical
+            # name; the per-language columns themselves are written explicitly and stay correct.
+            with translation.override(settings.MODELTRANSLATION_DEFAULT_LANGUAGE):
+                location.name_ru = cd["name_ru"]
+                location.name_kk = cd.get("name_kk") or ""
+                location.name_en = cd.get("name_en") or ""
+                location.name = location.name_ru or location.name_kk or location.name_en
+                location.lat = cd.get("lat")
+                location.lng = cd.get("lng")
+                location.is_hidden = cd.get("is_hidden", False)
+                location.save(update_fields=["name", "name_ru", "name_kk", "name_en", "lat", "lng", "is_hidden"])
 
             # Re-parent (and re-level) when the chosen parent differs from the current one.
             # A None parent re-roots the node as a country; otherwise it becomes parent.depth + 1.

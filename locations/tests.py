@@ -393,6 +393,25 @@ class LocationEditViewTests(TestCase):
         resp = self.client.get(self._url())
         self.assertEqual(resp.status_code, 200)
 
+    def test_edit_preserves_distinct_translations_under_each_locale(self):
+        # Regression: writing the canonical ``name`` via the modeltranslation descriptor under a
+        # non-default active locale used to overwrite that locale's translation with the RU value
+        # (e.g. under kk, name_kk became the RU name). name_ru/kk/en are concrete columns, so
+        # reading them back reflects the true stored translation (no active-language rewrite).
+        self.client.force_login(self.admin)
+        for lang in ("ru", "kk", "en"):
+            with self.subTest(lang=lang):
+                loc = self.city.add_child(name="OldName", name_ru="OldName", name_kk="OldName", name_en="OldName")
+                self.client.post(
+                    reverse("location_edit", args=[loc.pk]),
+                    {"name_ru": "RuName", "name_kk": "KkName", "name_en": "EnName", "parent": str(self.city.pk)},
+                    HTTP_ACCEPT_LANGUAGE=lang,
+                )
+                loc.refresh_from_db()
+                self.assertEqual(loc.name_ru, "RuName")
+                self.assertEqual(loc.name_kk, "KkName")
+                self.assertEqual(loc.name_en, "EnName")
+
     def test_admin_updates_name(self):
         self.client.force_login(self.admin)
         self.client.post(self._url(), {"name_ru": "NewName", "name_kk": "", "name_en": "", "parent": str(self.city.pk)})
