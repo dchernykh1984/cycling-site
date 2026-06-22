@@ -262,6 +262,16 @@ def _build_map_locations(all_locs) -> list:
     return data
 
 
+def selectable_parent_locations(user=None):
+    """Depth 1-3 nodes a user may pick as a parent in the location form: not deleted and either
+    public (no proposal or an approved one) or the user's own pending proposal. Excludes other
+    users' pending proposals so nobody can build under -- or even see -- a foreign pending node."""
+    visible = models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
+    if user is not None and getattr(user, "is_authenticated", False):
+        visible |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
+    return Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3]).filter(visible).order_by("path")
+
+
 def location_filter_rank(row) -> int:
     """Sort priority for a node in the cascade filter dropdowns: visible-with-coordinates
     first, then visible-without-coordinates, then hidden-with-coordinates, then

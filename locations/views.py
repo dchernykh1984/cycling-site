@@ -26,14 +26,13 @@ def _can_add_location_directly(user) -> bool:
     return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ORGANIZER_RANK)
 
 
-def _get_all_locations_json() -> list:
-    """Depths 1-3 for the cascade widget on the location form."""
-    from locations.models import Location
+def _get_all_locations_json(user=None) -> list:
+    """Depths 1-3 for the cascade widget on the location form: public nodes plus the user's own
+    pending proposals (a foreign pending node must not appear as a selectable parent)."""
+    from locations.models import selectable_parent_locations
 
     return list(
-        Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3])
-        .order_by("path")
-        .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden")
+        selectable_parent_locations(user).values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden")
     )
 
 
@@ -120,7 +119,7 @@ class LocationCreateView(LoginRequiredMixin, View):
     def get(self, request):
         from locations.forms import LocationForm
 
-        form = LocationForm()
+        form = LocationForm(user=request.user)
         return render(
             request,
             "locations/location_form.html",
@@ -129,7 +128,7 @@ class LocationCreateView(LoginRequiredMixin, View):
                 "is_edit": False,
                 "can_manage": _can_manage_locations(request.user),
                 "map_url": _get_map_url(),
-                "all_locations_json": _get_all_locations_json(),
+                "all_locations_json": _get_all_locations_json(request.user),
                 "venues_json": _get_venues_json(),
             },
         )
@@ -138,14 +137,20 @@ class LocationCreateView(LoginRequiredMixin, View):
         from locations.forms import LocationForm
         from locations.models import LocationProposal, add_location_child
 
-        form = LocationForm(request.POST)
+        form = LocationForm(request.POST, user=request.user)
         if form.is_valid():
             cd = form.cleaned_data
             name = cd["name_ru"] or cd.get("name_kk") or cd.get("name_en") or ""
             # The deepest selected cascade node is the parent; None means a new country.
             # The new location's level is always parent.depth + 1 (depth 1 for a country).
             parent = cd.get("parent")
-            approved = _can_add_location_directly(request.user)
+            new_depth = parent.depth + 1 if parent is not None else 1
+            can_direct = _can_add_location_directly(request.user)
+            # The proposal/approve/reject workflow is venue-only. Structural nodes (country/
+            # region/city) are never proposed: only organizer+ may create them, always approved.
+            # Everyone else is limited to proposing a depth-4 venue under an existing city.
+            if new_depth != 4 and not can_direct:
+                raise PermissionDenied
             new_location = add_location_child(
                 parent,
                 name=name,
@@ -157,10 +162,11 @@ class LocationCreateView(LoginRequiredMixin, View):
                 # Only managers may create hidden fallback venues.
                 is_hidden=cd.get("is_hidden", False) if _can_manage_locations(request.user) else False,
             )
-            # Non-managers propose; a pending proposal hides the location from others until approved.
-            if not approved:
+            # A proposal only ever attaches to a venue a non-privileged user proposed; it hides
+            # the venue from others until approved.
+            if not can_direct:
                 LocationProposal.objects.create(location=new_location, submitted_by=request.user)
-            messages.success(request, _("Location added.") if approved else _("Location proposed for review."))
+            messages.success(request, _("Location added.") if can_direct else _("Location proposed for review."))
             return redirect(_get_map_url())
         return render(
             request,
@@ -170,7 +176,7 @@ class LocationCreateView(LoginRequiredMixin, View):
                 "is_edit": False,
                 "can_manage": _can_manage_locations(request.user),
                 "map_url": _get_map_url(),
-                "all_locations_json": _get_all_locations_json(),
+                "all_locations_json": _get_all_locations_json(request.user),
                 "venues_json": _get_venues_json(),
             },
         )
@@ -229,6 +235,7 @@ class LocationEditView(LoginRequiredMixin, View):
                 "is_hidden": location.is_hidden,
             },
             exclude_pk=pk,
+            user=request.user,
         )
         return render(
             request,
@@ -239,7 +246,7 @@ class LocationEditView(LoginRequiredMixin, View):
                 "can_manage": _can_manage_locations(request.user),
                 "location": location,
                 "map_url": _get_map_url(),
-                "all_locations_json": _get_all_locations_json(),
+                "all_locations_json": _get_all_locations_json(request.user),
                 "venues_json": _get_venues_json(),
             },
         )
@@ -251,7 +258,7 @@ class LocationEditView(LoginRequiredMixin, View):
         if not _can_manage_locations(request.user):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
-        form = LocationForm(request.POST, exclude_pk=pk, instance=location)
+        form = LocationForm(request.POST, exclude_pk=pk, instance=location, user=request.user)
         if form.is_valid():
             cd = form.cleaned_data
             new_parent = cd.get("parent")
@@ -305,7 +312,7 @@ class LocationEditView(LoginRequiredMixin, View):
                 "can_manage": _can_manage_locations(request.user),
                 "location": location,
                 "map_url": _get_map_url(),
-                "all_locations_json": _get_all_locations_json(),
+                "all_locations_json": _get_all_locations_json(request.user),
                 "venues_json": _get_venues_json(),
             },
         )

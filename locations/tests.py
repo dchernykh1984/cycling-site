@@ -304,6 +304,48 @@ class LocationCreateViewTests(TestCase):
         self.assertFalse(venue.is_pending)
         self.assertFalse(hasattr(venue, "proposal"))
 
+    def test_participant_cannot_create_structural_node(self):
+        # Proposals are venue-only; a participant may not create a region/city (structural node).
+        self.client.force_login(self.participant)
+        resp = self.client.post(
+            self.url, {"name_ru": "NewRegion", "name_kk": "", "name_en": "", "parent": str(self.country.pk)}
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.assertFalse(Location.objects.filter(name_ru="NewRegion").exists())
+
+    def test_participant_cannot_create_country(self):
+        self.client.force_login(self.participant)
+        resp = self.client.post(self.url, {"name_ru": "NewCountry", "name_kk": "", "name_en": "", "parent": ""})
+        self.assertEqual(resp.status_code, 403)
+        self.assertFalse(Location.objects.filter(name_ru="NewCountry").exists())
+
+    def test_organizer_creates_structural_node_approved(self):
+        # organizer+ may create structural nodes directly, always approved (never a proposal).
+        organizer = _make_user("org_struct@x.com", User.Role.ORGANIZER)
+        self.client.force_login(organizer)
+        self.client.post(
+            self.url, {"name_ru": "OrgRegion", "name_kk": "", "name_en": "", "parent": str(self.country.pk)}
+        )
+        region = Location.objects.get(name_ru="OrgRegion")
+        self.assertEqual(region.depth, 2)
+        self.assertFalse(region.is_pending)
+        self.assertFalse(hasattr(region, "proposal"))
+
+    def test_foreign_pending_parent_is_not_selectable(self):
+        # Another user's pending node must not appear as a parent in the cascade or validate on POST.
+        other = _make_user("other_owner@x.com", User.Role.PARTICIPANT)
+        pending_city = self.region.add_child(name="PendingCity", name_ru="PendingCity", name_en="PendingCity")
+        LocationProposal.objects.create(location=pending_city, submitted_by=other)
+        self.client.force_login(self.participant)
+        json_pks = {row["pk"] for row in self.client.get(self.url).context["all_locations_json"]}
+        self.assertNotIn(pending_city.pk, json_pks)
+        resp = self.client.post(
+            self.url, {"name_ru": "Venue", "name_kk": "", "name_en": "", "parent": str(pending_city.pk)}
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("parent", resp.context["form"].errors)
+        self.assertFalse(Location.objects.filter(name_ru="Venue").exists())
+
     def test_admin_get_returns_200(self):
         self.client.force_login(self.admin)
         resp = self.client.get(self.url)
