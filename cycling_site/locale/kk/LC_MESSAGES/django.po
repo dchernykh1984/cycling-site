@@ -1730,3 +1730,11 @@ msgstr "Локациялар табылмады."
 #: cycling_site/templates/_pagination.html
 msgid "Go to page"
 msgstr "Бетке өту"
+
+#: locations/forms.py
+msgid "A location cannot be placed inside itself."
+msgstr "Локацияны өз ішіне орналастыруға болмайды."
+
+#: locations/forms.py
+msgid "This location has nested locations or competitions, so its level cannot be changed."
+msgstr "Бұл локацияда кірістірілген локациялар немесе жарыстар бар, сондықтан оның деңгейін өзгерту мүмкін емес."
