@@ -214,11 +214,11 @@ def create_location(request, payload: LocationIn):
     if not is_admin(user) and (parent is None or parent.depth != 3):
         raise HttpError(403, "A city (depth-3) parent_id is required to create a venue")
 
-    # add_location_child locks the parent and the proposal shares the transaction, so a concurrent
-    # delete of the parent can't leave the new node orphaned (it raises LocationConflictError).
+    # add_location_child locks the parent (or the root namespace) and the proposal shares the
+    # transaction, so a concurrent delete can't orphan the node and two roots can't collide on path.
     try:
         with transaction.atomic():
-            location = add_location_child(parent, **kwargs) if parent is not None else Location.add_root(**kwargs)
+            location = add_location_child(parent, **kwargs)
             # Below organizer the location is a proposal: usable by the author, pending review.
             if not approved:
                 LocationProposal.objects.create(location=location, submitted_by=user)

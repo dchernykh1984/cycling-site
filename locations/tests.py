@@ -1225,3 +1225,14 @@ class ConcurrentLocationMutationTests(TransactionTestCase):
         )
         # Whichever order won, no live node ends up deeper than the four-level tree.
         self.assertEqual(Location.objects.filter(is_deleted=False, depth__gt=4).count(), 0)
+
+    def test_concurrent_root_creates_do_not_collide(self):
+        # Two parallel root creates must not pick the same treebeard path (no IntegrityError/500).
+        outcomes = self._run(
+            lambda: add_location_child(None, name="RootA", name_ru="RootA"),
+            lambda: add_location_child(None, name="RootB", name_ru="RootB"),
+        )
+        self.assertEqual(set(outcomes.values()), {"ok"})  # both succeeded
+        roots = Location.objects.filter(depth=1, name__in=["RootA", "RootB"])
+        self.assertEqual(roots.count(), 2)
+        self.assertEqual(len({r.path for r in roots}), 2)  # distinct paths
