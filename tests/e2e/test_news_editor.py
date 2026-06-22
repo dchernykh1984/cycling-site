@@ -25,7 +25,8 @@ def test_news_create_round_trips_body(page: Page, live_server, superuser):
           document.getElementById('id_title_ru').form.requestSubmit();
         }"""
     )
-    page.wait_for_load_state("networkidle")
+    # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
+    page.wait_for_url(lambda url: "/articles/create/" not in url)
 
     article = NewsArticle.objects.get(title_ru="E2E News Article")
     assert "News body in browser" in article.body_ru
@@ -52,7 +53,8 @@ def test_news_edit_round_trips_body(page: Page, live_server, superuser):
           document.getElementById('id_title_ru').form.requestSubmit();
         }"""
     )
-    page.wait_for_load_state("networkidle")
+    # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
+    page.wait_for_url(lambda url: "/edit/" not in url)
 
     article.refresh_from_db()
     assert "added in edit" in article.body_ru
@@ -103,7 +105,8 @@ def test_news_submit_form_round_trips_body_via_quill(page: Page, live_server, or
           document.getElementById('id_title').form.requestSubmit();
         }"""
     )
-    page.wait_for_load_state("networkidle")
+    # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
+    page.wait_for_url(lambda url: "/news/submit/" not in url)
 
     sub = DraftSubmission.objects.get(title="Reader Story")
     assert "From the reader" in sub.body
