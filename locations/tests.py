@@ -694,13 +694,26 @@ class LocationDeleteViewTests(TestCase):
         resp = self.client.post(reverse("location_delete", args=[self.loc.pk]), {"next": "/map/?page=3&location=7"})
         self.assertRedirects(resp, "/map/?page=3&location=7", fetch_redirect_response=False)
 
-    def test_delete_ignores_cross_origin_next_host(self):
-        # Only path + query are used, never the host, so the redirect can't be hijacked off-site.
+    def test_delete_rejects_open_redirect_next(self):
+        # Off-site and scheme-relative (//, ////, \\) targets fall back to the default, never to a
+        # foreign host (open-redirect guard).
         self.client.force_login(self.admin)
-        resp = self.client.post(
-            reverse("location_delete", args=[self.loc.pk]), {"next": "https://evil.example.com/x?a=1"}
-        )
-        self.assertRedirects(resp, "/x?a=1", fetch_redirect_response=False)
+        for bad in (
+            "https://evil.example.com/x?a=1",
+            "//evil.example.com/x",
+            "////evil.example.com/x",
+            "https:evil.example.com",
+            "\\\\evil.example.com/x",
+        ):
+            with self.subTest(bad=bad):
+                loc = Location.add_root(name=f"D-{bad[:6]}", name_ru="D")
+                resp = self.client.post(reverse("location_delete", args=[loc.pk]), {"next": bad})
+                self.assertRedirects(resp, "/", fetch_redirect_response=False)
+
+    def test_delete_allows_same_origin_relative_next(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(reverse("location_delete", args=[self.loc.pk]), {"next": "/map/?page=2"})
+        self.assertRedirects(resp, "/map/?page=2", fetch_redirect_response=False)
 
 
 class LocationHideViewTests(TestCase):

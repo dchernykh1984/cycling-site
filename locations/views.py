@@ -7,6 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import translation
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
@@ -83,8 +84,15 @@ def _get_map_url() -> str:
 def _safe_return_url(request, default: str) -> str:
     """A same-origin return target (path + query) from ``next`` or the referer, so an action
     taken on ``?page=N&location=...`` returns to that page/filter instead of the first page.
-    Only the path and query are used (never the host/scheme), so the redirect stays local."""
+
+    The candidate is validated with Django's host/scheme check (which also rejects scheme-relative
+    ``//evil`` and ``\\evil`` open-redirect forms), then reduced to path + query so we never emit a
+    foreign host."""
     candidate = request.POST.get("next") or request.GET.get("next") or request.META.get("HTTP_REFERER", "")
+    if not candidate or not url_has_allowed_host_and_scheme(
+        candidate, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return default
     parsed = urlparse(candidate)
     if not parsed.path:
         return default
