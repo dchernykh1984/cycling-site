@@ -141,7 +141,7 @@ class LocationCreateView(LoginRequiredMixin, View):
     def get(self, request):
         from locations.forms import LocationForm
 
-        form = LocationForm(user=request.user)
+        form = LocationForm(user=request.user, can_manage=_can_manage_locations(request.user))
         return render(
             request,
             "locations/location_form.html",
@@ -159,7 +159,7 @@ class LocationCreateView(LoginRequiredMixin, View):
         from locations.forms import LocationForm
         from locations.models import LocationProposal, add_location_child
 
-        form = LocationForm(request.POST, user=request.user)
+        form = LocationForm(request.POST, user=request.user, can_manage=_can_manage_locations(request.user))
         if form.is_valid():
             cd = form.cleaned_data
             name = cd["name_ru"] or cd.get("name_kk") or cd.get("name_en") or ""
@@ -258,6 +258,7 @@ class LocationEditView(LoginRequiredMixin, View):
             },
             exclude_pk=pk,
             user=request.user,
+            can_manage=_can_manage_locations(request.user),
         )
         return render(
             request,
@@ -281,7 +282,13 @@ class LocationEditView(LoginRequiredMixin, View):
         if not _can_manage_locations(request.user):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
-        form = LocationForm(request.POST, exclude_pk=pk, instance=location, user=request.user)
+        form = LocationForm(
+            request.POST,
+            exclude_pk=pk,
+            instance=location,
+            user=request.user,
+            can_manage=_can_manage_locations(request.user),
+        )
         if form.is_valid():
             cd = form.cleaned_data
             new_parent = cd.get("parent")
