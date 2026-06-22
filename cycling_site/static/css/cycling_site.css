@@ -246,3 +246,10 @@ input.page-jump {
     -moz-appearance: textfield;
     appearance: textfield;
 }
+
+/* Locations map: the country/region/city/location filter sits above the Leaflet map, whose
+   zoom (+/-) and layer controls have z-index ~1000. Lift the open filter dropdowns above them
+   so the controls don't show through the menu. */
+#loc-filter-form .dropdown-menu {
+    z-index: 1100;
+}
