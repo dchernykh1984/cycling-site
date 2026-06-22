@@ -457,14 +457,46 @@ class LocationEditViewTests(TestCase):
         self.assertEqual(self.loc.depth, 3)
         self.assertEqual(self.loc.get_parent().pk, self.region.pk)
 
-    def test_edit_promotes_region_to_country_when_parent_cleared(self):
-        # Clearing the parent entirely re-roots the node as a depth-1 country.
+    def test_edit_allows_level_change_for_childless_node(self):
+        # A region with no children/competitions can be promoted to a depth-1 country.
+        childless = self.country.add_child(name="Empty", name_ru="Empty", name_en="Empty")
+        self.client.force_login(self.admin)
+        url = reverse("location_edit", args=[childless.pk])
+        self.client.post(url, {"name_ru": "Empty", "name_kk": "", "name_en": "", "parent": ""})
+        childless.refresh_from_db()
+        self.assertEqual(childless.depth, 1)
+        self.assertIsNone(childless.get_parent())
+
+    def test_edit_forbids_level_change_when_node_has_children(self):
+        # self.region has a child city, so promoting it to a country (a level change) is rejected.
         self.client.force_login(self.admin)
         url = reverse("location_edit", args=[self.region.pk])
-        self.client.post(url, {"name_ru": "Region", "name_kk": "", "name_en": "", "parent": ""})
+        resp = self.client.post(url, {"name_ru": "Region", "name_kk": "", "name_en": "", "parent": ""})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("parent", resp.context["form"].errors)
         self.region.refresh_from_db()
-        self.assertEqual(self.region.depth, 1)
-        self.assertIsNone(self.region.get_parent())
+        self.assertEqual(self.region.depth, 2)  # unchanged
+        self.assertEqual(self.region.get_parent().pk, self.country.pk)
+
+    def test_edit_forbids_level_change_when_venue_has_competitions(self):
+        # A depth-4 venue with a competition cannot be demoted: competitions require a venue.
+        from calendar_app.models import Competition
+
+        Competition.objects.create(
+            title_ru="Race",
+            date_start=datetime.date(2026, 7, 1),
+            location=self.loc,
+            status=Competition.Status.APPROVED,
+        )
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            self._url(),
+            {"name_ru": "OldName", "name_kk": "", "name_en": "", "parent": str(self.region.pk)},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("parent", resp.context["form"].errors)
+        self.loc.refresh_from_db()
+        self.assertEqual(self.loc.depth, 4)  # unchanged
 
     def test_edit_rejects_descendant_as_parent(self):
         # Making a country a child of its own region would create a cycle -> validation error.
