@@ -3,7 +3,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import inject_session, switch_locale
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -229,6 +229,7 @@ def test_admin_can_create_region_under_country(page: Page, live_server, map_page
 def test_create_hint_for_organizer_is_venue_only(page: Page, live_server, map_page, organizer):
     inject_session(page, live_server, organizer)
     page.goto(f"{live_server.url}/locations/add/")
+    switch_locale(page, "en")  # the hint is localized; check the English source text
     expect(page.locator("#location-form")).to_contain_text("venue inside the chosen city")
 
 
@@ -236,6 +237,7 @@ def test_create_hint_for_organizer_is_venue_only(page: Page, live_server, map_pa
 def test_create_hint_for_admin_is_not_venue_only(page: Page, live_server, map_page, admin_user):
     inject_session(page, live_server, admin_user)
     page.goto(f"{live_server.url}/locations/add/")
+    switch_locale(page, "en")
     expect(page.locator("#location-form")).not_to_contain_text("venue inside the chosen city")
 
 

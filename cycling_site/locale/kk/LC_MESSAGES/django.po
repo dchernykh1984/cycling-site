@@ -1742,3 +1742,11 @@ msgstr "Бұл локацияда кірістірілген локацияла�
 #: locations/forms.py
 msgid "Select a country, region and city: a venue is added inside the chosen city."
 msgstr "Ел, өңір және қаланы таңдаңыз: локация таңдалған қаланың ішіне қосылады."
+
+#: locations/templates/locations/location_form.html
+msgid "Select the country, region and city; the new location is added as a venue inside the chosen city."
+msgstr "Ел, өңір және қаланы таңдаңыз; жаңа локация таңдалған қаланың ішіне алаң ретінде қосылады."
+
+#: locations/views.py
+msgid "Cannot delete a location that still has nested locations or competitions."
+msgstr "Кірістірілген локациялары немесе жарыстары бар локацияны жою мүмкін емес."

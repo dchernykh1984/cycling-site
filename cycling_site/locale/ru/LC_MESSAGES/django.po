@@ -1701,3 +1701,11 @@ msgstr "У этой локации есть вложенные локации и
 #: locations/forms.py
 msgid "Select a country, region and city: a venue is added inside the chosen city."
 msgstr "Выберите страну, регион и город: локация добавляется внутри выбранного города."
+
+#: locations/templates/locations/location_form.html
+msgid "Select the country, region and city; the new location is added as a venue inside the chosen city."
+msgstr "Выберите страну, регион и город; новая локация добавляется как площадка внутри выбранного города."
+
+#: locations/views.py
+msgid "Cannot delete a location that still has nested locations or competitions."
+msgstr "Нельзя удалить локацию, у которой ещё есть вложенные локации или соревнования."
