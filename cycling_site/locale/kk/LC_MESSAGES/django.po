@@ -1722,3 +1722,7 @@ msgid ""
 msgstr ""
 "Ең терең таңдалған деңгей аталық болады. Ел құру үшін «Ел» өрісін, өңір құру "
 "үшін «Өңір» өрісін, қала құру үшін «Қала» өрісін бос қалдырыңыз."
+
+#: locations/templates/locations/locations_map_page.html
+msgid "No locations found."
+msgstr "Локациялар табылмады."

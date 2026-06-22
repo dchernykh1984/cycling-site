@@ -23,6 +23,40 @@
         {% endif %}
     </div>
 </div>
+{% if can_manage %}
+{{ filter_locations_data|json_script:"filter-locations-data" }}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" id="loc-filter-form" class="row g-2 align-items-end">
+            {% include "calendar_app/_filter_multiselect_js.html" %}
+            {% include "calendar_app/_location_filter.html" with locations_data_element_id="filter-locations-data" %}
+            <div class="col-sm-12 col-md-2 d-flex gap-2">
+                <a href="{{ page.url }}" class="btn btn-outline-secondary btn-sm flex-grow-1">{% trans "Reset" %}</a>
+            </div>
+        </form>
+        <script>
+        (function () {
+            var form = document.getElementById('loc-filter-form');
+            if (!form) return;
+            // Mirror the cascade's effective ids into hidden inputs so a submit carries them.
+            // Submitting reloads the page, so the server filters both the map markers and the list.
+            function sync() {
+                form.querySelectorAll('input.loc-filter-input').forEach(function (el) { el.remove(); });
+                (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
+                    var inp = document.createElement('input');
+                    inp.type = 'hidden'; inp.name = 'location'; inp.value = id; inp.className = 'loc-filter-input';
+                    form.appendChild(inp);
+                });
+            }
+            // The location filter partial calls window.onCalendarFilterChange() on change.
+            window.onCalendarFilterChange = function () { sync(); form.submit(); };
+            document.addEventListener('DOMContentLoaded', sync);
+        })();
+        </script>
+    </div>
+</div>
+{% endif %}
+
 <div class="row">
     <div class="col-12">
         <div id="locations-map" style="height: 520px; min-height: 300px; border-radius: 0.375rem;"></div>
@@ -30,20 +64,22 @@
 </div>
 {{ locations_data|json_script:"locations-data" }}
 
-{% if can_manage and all_locations %}
+{% if can_manage %}
 <div class="row mt-4">
     <div class="col-12">
         <h2 class="h5">{% trans "Manage locations" %}</h2>
+
+        {% if locations_page %}
         <table class="table table-sm table-hover">
             <thead>
                 <tr>
                     <th>{% trans "Name" %}</th>
                     <th>{% trans "Status" %}</th>
-                    <th></th>
+                    <th class="text-end"><span class="visually-hidden">{% trans "Actions" %}</span></th>
                 </tr>
             </thead>
             <tbody>
-                {% for loc in all_locations %}
+                {% for loc in locations_page %}
                 <tr class="{% if loc.is_hidden %}text-muted{% endif %}">
                     <td>{{ loc.name }}</td>
                     <td>
@@ -67,6 +103,34 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        {% if locations_page.has_other_pages %}
+        <nav aria-label="{% trans 'Pagination' %}">
+          <ul class="pagination justify-content-center">
+            {% if locations_page.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ locations_page.previous_page_number }}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+                &laquo; {% trans "Previous" %}
+              </a>
+            </li>
+            {% endif %}
+            <li class="page-item disabled">
+              <span class="page-link">{{ locations_page.number }} / {{ locations_page.paginator.num_pages }}</span>
+            </li>
+            {% if locations_page.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ locations_page.next_page_number }}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+                {% trans "Next" %} &raquo;
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <p class="text-muted">{% trans "No locations found." %}</p>
+        {% endif %}
     </div>
 </div>
 {% endif %}
@@ -82,6 +146,13 @@
 
     _addMapLayers(map);
 
+    // Only managers (admin+) may edit locations, so the popup "Edit" link is server-gated.
+    {% if can_manage %}
+    var editUrlTpl = "{% url 'location_edit' 0 %}";  // .../0/edit/ -> swap 0 for the marker id
+    {% else %}
+    var editUrlTpl = null;
+    {% endif %}
+
     function esc(s) {
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
@@ -95,6 +166,10 @@
             var popupContent = '<strong>' + esc(loc.name) + '</strong>';
             if (loc.url) {
                 popupContent += '<br><a href="' + esc(loc.url) + '">{% trans "Read article" %}</a>';
+            }
+            if (editUrlTpl && loc.id) {
+                popupContent += '<br><a href="' + editUrlTpl.replace('/0/', '/' + loc.id + '/') +
+                    '" class="btn btn-sm btn-outline-secondary mt-1">{% trans "Edit" %}</a>';
             }
             marker.bindPopup(popupContent);
             bounds.push([loc.lat, loc.lng]);
