@@ -270,6 +270,17 @@ class RegisterForCompetitionViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
+    def test_birth_date_prefilled_as_iso_under_ru_locale(self):
+        # Regression: a date-mode competition pre-fills the user's birth_date; ru-locale L10N
+        # rendered it localized, which <input type=date> rejects. It must be ISO YYYY-MM-DD.
+        import re
+
+        comp = make_open_competition(birth_date_mode="date")
+        self.client.force_login(self.user)  # self.user.birth_date == 1990-01-01
+        resp = self.client.get(reverse("registrations:register", args=[comp.pk]), HTTP_ACCEPT_LANGUAGE="ru")
+        m = re.search(r'name="birth_date"[^>]*value="([^"]*)"', resp.content.decode())
+        self.assertEqual(m.group(1), "1990-01-01")
+
     def test_anonymous_redirected(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)

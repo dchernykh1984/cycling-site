@@ -85,7 +85,7 @@
   <div class="col-md-4">
     <label class="form-label">{% trans "Registration deadline" %}</label>
     <input type="date" name="registration_deadline" class="form-control"
-           value="{{ reg_form.registration_deadline.value|default:'' }}">
+           value="{{ reg_form.registration_deadline.value|date:'Y-m-d'|default:reg_form.registration_deadline.value|default:'' }}">
   </div>
   <div class="col-md-4">
     <label class="form-label">{% trans "Max participants" %}</label>

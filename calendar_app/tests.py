@@ -775,6 +775,19 @@ class EditCompetitionViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
+    def test_registration_deadline_prefilled_as_iso_under_ru_locale(self):
+        # Regression: the registration_deadline date input pre-fill was ru-localized, which
+        # <input type=date> rejects. It must be ISO YYYY-MM-DD on the edit page.
+        import re
+
+        self.comp.registration_enabled = True
+        self.comp.registration_deadline = datetime.date(2026, 9, 1)
+        self.comp.save()
+        self.client.login(username="edit_org@example.com", password="password123")
+        resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="ru")
+        m = re.search(r'name="registration_deadline"[^>]*value="([^"]*)"', resp.content.decode())
+        self.assertEqual(m.group(1), "2026-09-01")
+
     def test_participant_gets_403(self):
         self.client.login(username="edit_part@example.com", password="password123")
         response = self.client.get(self.url)
