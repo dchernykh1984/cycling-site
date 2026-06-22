@@ -2,7 +2,7 @@ from typing import ClassVar
 
 from django.conf import settings
 from django.core.paginator import Paginator
-from django.db import models
+from django.db import models, transaction
 from django.utils import translation
 from django.utils.translation import gettext
 from treebeard.mp_tree import MP_Node
@@ -13,6 +13,11 @@ from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.page_mixins import AsciiSlugMixin
+
+
+class LocationConflictError(Exception):
+    """A concurrent mutation made the requested location change unsafe (e.g. the parent was
+    soft-deleted, or a child/competition appeared) -- callers turn this into a user-facing error."""
 
 
 def add_location_child(parent, **kwargs):
@@ -26,34 +31,50 @@ def add_location_child(parent, **kwargs):
     unique ``path`` constraint -- a 500 when proposing/creating a venue. Appending at the
     real last path never shifts an existing node, and recomputing ``numchild`` heals a
     counter that has drifted (e.g. ``is_leaf`` wrongly reporting a populated node as empty).
+
+    The whole insert runs in a transaction that locks the parent row (``select_for_update``); a
+    concurrent delete/level-change of the parent locks the same row, so the two serialize and this
+    child can never be created under a parent that ends up soft-deleted or re-levelled (it raises
+    ``LocationConflictError`` instead). ``parent=None`` (a root) needs no such guard.
     """
     cls = parent.__class__ if parent is not None else Location
-    if parent is None:
-        depth = 1
-        siblings = list(cls.objects.filter(depth=1).order_by("path"))
-    else:
-        depth = parent.depth + 1
-        siblings = list(
-            cls.objects.filter(
-                depth=depth,
-                path__range=cls._get_children_path_interval(parent.path),
-            ).order_by("path")
-        )
-    last = siblings[-1] if siblings else None
-    if last is not None:
-        newpath = last._inc_path()
-    elif parent is not None:
-        newpath = cls._get_path(parent.path, depth, 1)
-    else:
-        newpath = cls._get_path(None, 1, 1)
-    obj = cls(path=newpath, depth=depth, numchild=0, **kwargs)
-    obj.save()
-    if parent is not None:
-        new_count = len(siblings) + 1
-        if parent.numchild != new_count:
-            cls.objects.filter(pk=parent.pk).update(numchild=new_count)
+    with transaction.atomic():
+        if parent is not None:
+            # Re-read the parent under a row lock; refuse if a concurrent delete removed it.
+            locked = cls.objects.select_for_update().get(pk=parent.pk)
+            if locked.is_deleted:
+                raise LocationConflictError("Parent location was removed")
+            # The tree is four levels (country/region/city/venue); never nest under a venue. Also
+            # closes a race where the parent was concurrently moved down to depth 4 before we lock.
+            if locked.depth >= 4:
+                raise LocationConflictError("Parent location is already at the deepest level")
+            depth = locked.depth + 1
+            siblings = list(
+                cls.objects.filter(
+                    depth=depth,
+                    path__range=cls._get_children_path_interval(locked.path),
+                ).order_by("path")
+            )
+        else:
+            depth = 1
+            siblings = list(cls.objects.filter(depth=1).order_by("path"))
+        last = siblings[-1] if siblings else None
+        if last is not None:
+            newpath = last._inc_path()
+        elif parent is not None:
+            newpath = cls._get_path(locked.path, depth, 1)
+        else:
+            newpath = cls._get_path(None, 1, 1)
+        obj = cls(path=newpath, depth=depth, numchild=0, **kwargs)
+        obj.save()
+        if parent is not None:
+            new_count = len(siblings) + 1
+            if locked.numchild != new_count:
+                cls.objects.filter(pk=parent.pk).update(numchild=new_count)
+            # Keep the caller's instance fresh: some callers immediately use parent.get_children(),
+            # which short-circuits on a stale numchild.
             parent.numchild = new_count
-    return obj
+        return obj
 
 
 class Location(MP_Node, index.Indexed):
@@ -268,6 +289,69 @@ def location_subtree_is_nonempty(location) -> bool:
     if _subtree_descendants(location, include_deleted=True).exists():
         return True
     return location_subtree_has_live_competitions(location)
+
+
+def soft_delete_location(location) -> None:
+    """Atomically soft-delete ``location``. Locks the row (``select_for_update``) and re-checks
+    under the lock that nothing live hangs off it, so a child/competition created concurrently
+    (``add_location_child`` locks the same row) can't be orphaned. Raises ``LocationConflictError``
+    if it can no longer be deleted (already gone, or a live child/competition appeared)."""
+    with transaction.atomic():
+        try:
+            locked = Location.objects.select_for_update().get(pk=location.pk, is_deleted=False)
+        except Location.DoesNotExist:
+            raise LocationConflictError("Location already deleted") from None
+        if not location_can_be_deleted(locked):
+            raise LocationConflictError("Location is no longer empty")
+        locked.is_deleted = True
+        locked.save(update_fields=["is_deleted"])
+
+
+def _safe_move(location, target, pos: str) -> None:
+    # modeltranslation's _rewrite_f() mutates Length() expression objects, which became read-only
+    # properties in Django 4+, crashing treebeard's bulk path update during move(). We temporarily
+    # make it a no-op for expression types it cannot rewrite.
+    import unittest.mock
+
+    from modeltranslation.manager import MultilingualQuerySet
+
+    orig = MultilingualQuerySet._rewrite_f
+
+    def _patched(self, q):  # type: ignore[misc]
+        try:
+            return orig(self, q)
+        except AttributeError:
+            return q
+
+    with unittest.mock.patch.object(MultilingualQuerySet, "_rewrite_f", _patched):
+        location.move(target, pos=pos)
+
+
+def move_location(location, new_parent) -> None:
+    """Atomically re-parent (and re-level) ``location`` under ``new_parent`` (``None`` re-roots it
+    as a country). Locks the row and re-checks under the lock that a level change is still allowed
+    (an empty physical subtree), so a child/competition created concurrently can't be re-levelled to
+    a bad depth. Raises ``LocationConflictError`` if a level change is no longer safe. A no-op when
+    the parent is unchanged."""
+    with transaction.atomic():
+        locked = Location.objects.select_for_update().get(pk=location.pk)
+        new_depth = new_parent.depth + 1 if new_parent is not None else 1
+        if new_depth != locked.depth and location_subtree_is_nonempty(locked):
+            raise LocationConflictError("Subtree changed under the node")
+        current_parent = locked.get_parent()
+        current_pk = current_parent.pk if current_parent is not None else None
+        new_pk = new_parent.pk if new_parent is not None else None
+        if new_pk == current_pk:
+            return
+        locked.refresh_from_db()
+        if new_parent is None:
+            # Become a root by joining an existing root as a sorted sibling.
+            root = Location.objects.filter(is_deleted=False, depth=1).exclude(pk=locked.pk).order_by("path").first()
+            if root is not None:
+                _safe_move(locked, root, pos="sorted-sibling")
+        else:
+            new_parent.refresh_from_db()
+            _safe_move(locked, new_parent, pos="sorted-child")
 
 
 def _build_map_locations(all_locs, candidates=None) -> list:

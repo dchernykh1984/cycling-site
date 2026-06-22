@@ -53,27 +53,6 @@ def _get_venues_json() -> list:
     return [{**r, "lat": float(r["lat"]), "lng": float(r["lng"])} for r in rows]
 
 
-def _safe_move(location, target, pos: str) -> None:
-    # modeltranslation's _rewrite_f() mutates Length() expression objects,
-    # which became read-only properties in Django 4+, crashing treebeard's
-    # bulk path update during move().  We temporarily make it a no-op for
-    # expression types it cannot rewrite.
-    import unittest.mock
-
-    from modeltranslation.manager import MultilingualQuerySet
-
-    orig = MultilingualQuerySet._rewrite_f
-
-    def _patched(self, q):  # type: ignore[misc]
-        try:
-            return orig(self, q)
-        except AttributeError:
-            return q
-
-    with unittest.mock.patch.object(MultilingualQuerySet, "_rewrite_f", _patched):
-        location.move(target, pos=pos)
-
-
 def _get_map_url() -> str:
     from locations.models import LocationsMapPage
 
@@ -101,18 +80,18 @@ def _safe_return_url(request, default: str) -> str:
 
 class LocationDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        from locations.models import Location, location_can_be_deleted
+        from locations.models import Location, LocationConflictError, soft_delete_location
 
         if not _can_manage_locations(request.user):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
         # Soft-deleting a node with a live subtree/competitions would orphan them under a vanished
-        # ancestor, so refuse it (the admin must clear the subtree first).
-        if not location_can_be_deleted(location):
+        # ancestor. soft_delete_location re-checks this under a row lock, so a concurrent create
+        # can't slip a child in between the check and the delete.
+        try:
+            soft_delete_location(location)
+        except LocationConflictError:
             messages.error(request, _("Cannot delete a location that still has nested locations or competitions."))
-            return redirect(_safe_return_url(request, "/"))
-        location.is_deleted = True
-        location.save(update_fields=["is_deleted"])
         return redirect(_safe_return_url(request, "/"))
 
 
@@ -157,7 +136,7 @@ class LocationCreateView(LoginRequiredMixin, View):
 
     def post(self, request):
         from locations.forms import LocationForm
-        from locations.models import LocationProposal, add_location_child
+        from locations.models import LocationConflictError, LocationProposal, add_location_child
 
         form = LocationForm(request.POST, user=request.user, can_manage=_can_manage_locations(request.user))
         if form.is_valid():
@@ -173,23 +152,30 @@ class LocationCreateView(LoginRequiredMixin, View):
             # proposes such a venue. The proposal/approve/reject workflow stays venue-only.
             if new_depth != 4 and not _can_manage_locations(request.user):
                 raise PermissionDenied
-            new_location = add_location_child(
-                parent,
-                name=name,
-                name_ru=cd["name_ru"],
-                name_kk=cd.get("name_kk") or "",
-                name_en=cd.get("name_en") or "",
-                lat=cd.get("lat"),
-                lng=cd.get("lng"),
-                # Only managers may create hidden fallback venues.
-                is_hidden=cd.get("is_hidden", False) if _can_manage_locations(request.user) else False,
-            )
-            # A proposal only ever attaches to a venue a non-privileged user proposed; it hides
-            # the venue from others until approved.
-            if not can_direct:
-                LocationProposal.objects.create(location=new_location, submitted_by=request.user)
-            messages.success(request, _("Location added.") if can_direct else _("Location proposed for review."))
-            return redirect(_get_map_url())
+            try:
+                # add_location_child locks the parent and the proposal shares the transaction, so a
+                # concurrent delete of the parent can't leave the new node orphaned.
+                with transaction.atomic():
+                    new_location = add_location_child(
+                        parent,
+                        name=name,
+                        name_ru=cd["name_ru"],
+                        name_kk=cd.get("name_kk") or "",
+                        name_en=cd.get("name_en") or "",
+                        lat=cd.get("lat"),
+                        lng=cd.get("lng"),
+                        # Only managers may create hidden fallback venues.
+                        is_hidden=cd.get("is_hidden", False) if _can_manage_locations(request.user) else False,
+                    )
+                    # A proposal only ever attaches to a venue a non-privileged user proposed; it
+                    # hides the venue from others until approved.
+                    if not can_direct:
+                        LocationProposal.objects.create(location=new_location, submitted_by=request.user)
+            except LocationConflictError:
+                form.add_error("parent", _("The selected parent location is no longer available."))
+            else:
+                messages.success(request, _("Location added.") if can_direct else _("Location proposed for review."))
+                return redirect(_get_map_url())
         return render(
             request,
             "locations/location_form.html",
@@ -277,7 +263,7 @@ class LocationEditView(LoginRequiredMixin, View):
 
     def post(self, request, pk):
         from locations.forms import LocationForm
-        from locations.models import Location
+        from locations.models import Location, LocationConflictError, move_location
 
         if not _can_manage_locations(request.user):
             raise PermissionDenied
@@ -292,47 +278,35 @@ class LocationEditView(LoginRequiredMixin, View):
         if form.is_valid():
             cd = form.cleaned_data
             new_parent = cd.get("parent")
-            # The field save and the re-parent move must be one transaction: a failed move must
-            # not leave a half-applied edit (renamed but not moved, or vice versa).
-            with transaction.atomic():
-                # Assign + save under the default language so modeltranslation keeps the canonical
-                # ``name`` synced to ``name_ru`` (its descriptor mirrors the *active* language on
-                # save). Editing under a kk/en locale would otherwise store that translation as the
-                # canonical name; the per-language columns are written explicitly and stay correct.
-                with translation.override(settings.MODELTRANSLATION_DEFAULT_LANGUAGE):
-                    location.name_ru = cd["name_ru"]
-                    location.name_kk = cd.get("name_kk") or ""
-                    location.name_en = cd.get("name_en") or ""
-                    location.name = location.name_ru or location.name_kk or location.name_en
-                    location.lat = cd.get("lat")
-                    location.lng = cd.get("lng")
-                    location.is_hidden = cd.get("is_hidden", False)
-                    location.save(update_fields=["name", "name_ru", "name_kk", "name_en", "lat", "lng", "is_hidden"])
-
-                # Re-parent (and re-level) when the chosen parent differs from the current one. A
-                # None parent re-roots the node as a country; otherwise it becomes parent.depth + 1.
-                # The form forbids a level change while the node still has children/competitions.
-                current_parent = location.get_parent()
-                current_pk = current_parent.pk if current_parent is not None else None
-                new_pk = new_parent.pk if new_parent is not None else None
-                if new_pk != current_pk:
-                    location.refresh_from_db()
-                    if new_parent is None:
-                        # Become a root by joining an existing root as a sorted sibling.
-                        root = (
-                            Location.objects.filter(is_deleted=False, depth=1)
-                            .exclude(pk=location.pk)
-                            .order_by("path")
-                            .first()
+            try:
+                # The field save and the re-parent move must be one transaction (a failed move must
+                # not leave a half-applied edit). move_location locks the row and re-checks the level
+                # change under that lock, so a child appearing between validation and the move is caught.
+                with transaction.atomic():
+                    # Assign + save under the default language so modeltranslation keeps the canonical
+                    # ``name`` synced to ``name_ru`` (its descriptor mirrors the *active* language on
+                    # save). Editing under a kk/en locale would otherwise store that translation as the
+                    # canonical name; the per-language columns are written explicitly and stay correct.
+                    with translation.override(settings.MODELTRANSLATION_DEFAULT_LANGUAGE):
+                        location.name_ru = cd["name_ru"]
+                        location.name_kk = cd.get("name_kk") or ""
+                        location.name_en = cd.get("name_en") or ""
+                        location.name = location.name_ru or location.name_kk or location.name_en
+                        location.lat = cd.get("lat")
+                        location.lng = cd.get("lng")
+                        location.is_hidden = cd.get("is_hidden", False)
+                        location.save(
+                            update_fields=["name", "name_ru", "name_kk", "name_en", "lat", "lng", "is_hidden"]
                         )
-                        if root is not None:
-                            _safe_move(location, root, pos="sorted-sibling")
-                    else:
-                        new_parent.refresh_from_db()
-                        _safe_move(location, new_parent, pos="sorted-child")
-
-            messages.success(request, _("Location saved."))
-            return redirect(_safe_return_url(request, _get_map_url()))
+                    move_location(location, new_parent)
+            except LocationConflictError:
+                form.add_error(
+                    "parent",
+                    _("This location has nested locations or competitions, so its level cannot be changed."),
+                )
+            else:
+                messages.success(request, _("Location saved."))
+                return redirect(_safe_return_url(request, _get_map_url()))
         return render(
             request,
             "locations/location_form.html",

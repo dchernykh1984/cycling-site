@@ -1709,3 +1709,7 @@ msgstr "Выберите страну, регион и город; новая л
 #: locations/views.py
 msgid "Cannot delete a location that still has nested locations or competitions."
 msgstr "Нельзя удалить локацию, у которой ещё есть вложенные локации или соревнования."
+
+#: locations/views.py
+msgid "The selected parent location is no longer available."
+msgstr "Выбранная родительская локация больше недоступна."

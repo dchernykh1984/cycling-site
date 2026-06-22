@@ -1750,3 +1750,7 @@ msgstr "Ел, өңір және қаланы таңдаңыз; жаңа лока
 #: locations/views.py
 msgid "Cannot delete a location that still has nested locations or competitions."
 msgstr "Кірістірілген локациялары немесе жарыстары бар локацияны жою мүмкін емес."
+
+#: locations/views.py
+msgid "The selected parent location is no longer available."
+msgstr "Таңдалған аталық локация енді қолжетімді емес."
