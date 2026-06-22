@@ -117,7 +117,7 @@ class LocationCreateView(LoginRequiredMixin, View):
     def get(self, request):
         from locations.forms import LocationForm
 
-        form = LocationForm(location_depth=4)
+        form = LocationForm()
         return render(
             request,
             "locations/location_form.html",
@@ -128,7 +128,6 @@ class LocationCreateView(LoginRequiredMixin, View):
                 "map_url": _get_map_url(),
                 "all_locations_json": _get_all_locations_json(),
                 "venues_json": _get_venues_json(),
-                "location_depth": 4,
             },
         )
 
@@ -136,14 +135,16 @@ class LocationCreateView(LoginRequiredMixin, View):
         from locations.forms import LocationForm
         from locations.models import LocationProposal, add_location_child
 
-        form = LocationForm(request.POST, location_depth=4)
+        form = LocationForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
             name = cd["name_ru"] or cd.get("name_kk") or cd.get("name_en") or ""
-            city = cd["city"]
+            # The deepest selected cascade node is the parent; None means a new country.
+            # The new location's level is always parent.depth + 1 (depth 1 for a country).
+            parent = cd.get("parent")
             approved = _can_add_location_directly(request.user)
-            venue = add_location_child(
-                city,
+            new_location = add_location_child(
+                parent,
                 name=name,
                 name_ru=cd["name_ru"],
                 name_kk=cd.get("name_kk") or "",
@@ -153,9 +154,9 @@ class LocationCreateView(LoginRequiredMixin, View):
                 # Only managers may create hidden fallback venues.
                 is_hidden=cd.get("is_hidden", False) if _can_manage_locations(request.user) else False,
             )
-            # Non-managers propose; a pending proposal hides the venue from others until approved.
+            # Non-managers propose; a pending proposal hides the location from others until approved.
             if not approved:
-                LocationProposal.objects.create(location=venue, submitted_by=request.user)
+                LocationProposal.objects.create(location=new_location, submitted_by=request.user)
             messages.success(request, _("Location added.") if approved else _("Location proposed for review."))
             return redirect(_get_map_url())
         return render(
@@ -168,7 +169,6 @@ class LocationCreateView(LoginRequiredMixin, View):
                 "map_url": _get_map_url(),
                 "all_locations_json": _get_all_locations_json(),
                 "venues_json": _get_venues_json(),
-                "location_depth": 4,
             },
         )
 
@@ -212,22 +212,20 @@ class LocationEditView(LoginRequiredMixin, View):
         if not _can_manage_locations(request.user):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
-        location_depth = location.depth
-
-        initial_city = location.get_parent() if location_depth >= 4 else None
 
         form = LocationForm(
             initial={
                 "name_ru": location.name_ru,
                 "name_kk": location.name_kk,
                 "name_en": location.name_en,
-                "city": initial_city,
+                # Pre-fill the cascade with the current parent chain; its depth determines
+                # which selects are filled (a country's parent is None -> all "--").
+                "parent": location.get_parent(),
                 "lat": location.lat,
                 "lng": location.lng,
                 "is_hidden": location.is_hidden,
             },
             exclude_pk=pk,
-            location_depth=location_depth,
         )
         return render(
             request,
@@ -240,7 +238,6 @@ class LocationEditView(LoginRequiredMixin, View):
                 "map_url": _get_map_url(),
                 "all_locations_json": _get_all_locations_json(),
                 "venues_json": _get_venues_json(),
-                "location_depth": location_depth,
             },
         )
 
@@ -251,8 +248,7 @@ class LocationEditView(LoginRequiredMixin, View):
         if not _can_manage_locations(request.user):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
-        location_depth = location.depth
-        form = LocationForm(request.POST, exclude_pk=pk, location_depth=location_depth)
+        form = LocationForm(request.POST, exclude_pk=pk, instance=location)
         if form.is_valid():
             cd = form.cleaned_data
             location.name_ru = cd["name_ru"]
@@ -264,13 +260,27 @@ class LocationEditView(LoginRequiredMixin, View):
             location.is_hidden = cd.get("is_hidden", False)
             location.save(update_fields=["name", "name_ru", "name_kk", "name_en", "lat", "lng", "is_hidden"])
 
-            new_city = cd.get("city")
-            if new_city is not None:
-                current_parent = location.get_parent()
-                if current_parent is None or current_parent.pk != new_city.pk:
-                    location.refresh_from_db()
-                    new_city.refresh_from_db()
-                    _safe_move(location, new_city, pos="sorted-child")
+            # Re-parent (and re-level) when the chosen parent differs from the current one.
+            # A None parent re-roots the node as a country; otherwise it becomes parent.depth + 1.
+            new_parent = cd.get("parent")
+            current_parent = location.get_parent()
+            current_pk = current_parent.pk if current_parent is not None else None
+            new_pk = new_parent.pk if new_parent is not None else None
+            if new_pk != current_pk:
+                location.refresh_from_db()
+                if new_parent is None:
+                    # Become a root by joining an existing root as a sorted sibling.
+                    root = (
+                        Location.objects.filter(is_deleted=False, depth=1)
+                        .exclude(pk=location.pk)
+                        .order_by("path")
+                        .first()
+                    )
+                    if root is not None:
+                        _safe_move(location, root, pos="sorted-sibling")
+                else:
+                    new_parent.refresh_from_db()
+                    _safe_move(location, new_parent, pos="sorted-child")
 
             messages.success(request, _("Location saved."))
             return redirect(_get_map_url())
@@ -285,6 +295,5 @@ class LocationEditView(LoginRequiredMixin, View):
                 "map_url": _get_map_url(),
                 "all_locations_json": _get_all_locations_json(),
                 "venues_json": _get_venues_json(),
-                "location_depth": location_depth,
             },
         )

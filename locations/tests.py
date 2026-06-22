@@ -265,7 +265,7 @@ class LocationCreateViewTests(TestCase):
         guest = _make_user("guest_loc2@x.com", User.Role.GUEST)
         self.client.force_login(guest)
         resp = self.client.post(
-            self.url, {"name_ru": "GuestVenue", "name_kk": "", "name_en": "", "city": str(self.city.pk)}
+            self.url, {"name_ru": "GuestVenue", "name_kk": "", "name_en": "", "parent": str(self.city.pk)}
         )
         self.assertEqual(resp.status_code, 403)
         self.assertFalse(Location.objects.filter(name_ru="GuestVenue").exists())
@@ -273,7 +273,7 @@ class LocationCreateViewTests(TestCase):
     def test_participant_proposes_pending_location(self):
         # Issue #111: any registered user may propose a location (pending), not 403.
         self.client.force_login(self.participant)
-        self.client.post(self.url, {"name_ru": "Venue", "name_kk": "", "name_en": "", "city": str(self.city.pk)})
+        self.client.post(self.url, {"name_ru": "Venue", "name_kk": "", "name_en": "", "parent": str(self.city.pk)})
         venue = Location.objects.filter(name_ru="Venue").first()
         self.assertIsNotNone(venue)
         self.assertTrue(venue.is_pending)
@@ -284,14 +284,14 @@ class LocationCreateViewTests(TestCase):
         self.client.force_login(self.participant)
         self.client.post(
             self.url,
-            {"name_ru": "Sneaky", "name_kk": "", "name_en": "", "city": str(self.city.pk), "is_hidden": "on"},
+            {"name_ru": "Sneaky", "name_kk": "", "name_en": "", "parent": str(self.city.pk), "is_hidden": "on"},
         )
         self.assertFalse(Location.objects.get(name_ru="Sneaky").is_hidden)
 
     def test_organizer_adds_approved_location_directly(self):
         organizer = _make_user("org_loc@x.com", User.Role.ORGANIZER)
         self.client.force_login(organizer)
-        self.client.post(self.url, {"name_ru": "OrgVenue", "name_kk": "", "name_en": "", "city": str(self.city.pk)})
+        self.client.post(self.url, {"name_ru": "OrgVenue", "name_kk": "", "name_en": "", "parent": str(self.city.pk)})
         venue = Location.objects.get(name_ru="OrgVenue")
         self.assertFalse(venue.is_pending)
         self.assertFalse(hasattr(venue, "proposal"))
@@ -303,22 +303,45 @@ class LocationCreateViewTests(TestCase):
 
     def test_admin_creates_venue_under_city(self):
         self.client.force_login(self.admin)
-        self.client.post(self.url, {"name_ru": "Velodrome", "name_kk": "", "name_en": "", "city": str(self.city.pk)})
+        self.client.post(self.url, {"name_ru": "Velodrome", "name_kk": "", "name_en": "", "parent": str(self.city.pk)})
         venue = Location.objects.filter(name_ru="Velodrome").first()
         self.assertIsNotNone(venue)
         self.assertEqual(venue.depth, 4)
         self.assertEqual(venue.get_parent().pk, self.city.pk)
         self.assertFalse(venue.is_pending)
 
-    def test_missing_city_shows_form_error(self):
+    def test_empty_parent_creates_country(self):
+        # No parent selected -> the new location is a depth-1 country (root).
         self.client.force_login(self.admin)
-        resp = self.client.post(self.url, {"name_ru": "Venue", "city": ""})
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn("city", resp.context["form"].errors)
+        self.client.post(self.url, {"name_ru": "Mongolia", "name_kk": "", "name_en": "", "parent": ""})
+        country = Location.objects.filter(name_ru="Mongolia").first()
+        self.assertIsNotNone(country)
+        self.assertEqual(country.depth, 1)
+        self.assertIsNone(country.get_parent())
+
+    def test_country_parent_creates_region(self):
+        # Selecting only a country -> the new location is a depth-2 region under it.
+        self.client.force_login(self.admin)
+        self.client.post(
+            self.url, {"name_ru": "NewRegion", "name_kk": "", "name_en": "", "parent": str(self.country.pk)}
+        )
+        region = Location.objects.filter(name_ru="NewRegion").first()
+        self.assertIsNotNone(region)
+        self.assertEqual(region.depth, 2)
+        self.assertEqual(region.get_parent().pk, self.country.pk)
+
+    def test_region_parent_creates_city(self):
+        # Selecting country + region -> the new location is a depth-3 city under the region.
+        self.client.force_login(self.admin)
+        self.client.post(self.url, {"name_ru": "NewCity", "name_kk": "", "name_en": "", "parent": str(self.region.pk)})
+        city = Location.objects.filter(name_ru="NewCity").first()
+        self.assertIsNotNone(city)
+        self.assertEqual(city.depth, 3)
+        self.assertEqual(city.get_parent().pk, self.region.pk)
 
     def test_missing_name_ru_shows_form_error(self):
         self.client.force_login(self.admin)
-        resp = self.client.post(self.url, {"name_ru": "", "city": str(self.city.pk)})
+        resp = self.client.post(self.url, {"name_ru": "", "parent": str(self.city.pk)})
         self.assertEqual(resp.status_code, 200)
         self.assertIn("name_ru", resp.context["form"].errors)
 
@@ -354,7 +377,7 @@ class LocationEditViewTests(TestCase):
 
     def test_participant_forbidden(self):
         self.client.force_login(self.participant)
-        resp = self.client.post(self._url(), {"name_ru": "X", "city": str(self.city.pk)})
+        resp = self.client.post(self._url(), {"name_ru": "X", "parent": str(self.city.pk)})
         self.assertEqual(resp.status_code, 403)
 
     def test_admin_get_returns_200(self):
@@ -364,7 +387,7 @@ class LocationEditViewTests(TestCase):
 
     def test_admin_updates_name(self):
         self.client.force_login(self.admin)
-        self.client.post(self._url(), {"name_ru": "NewName", "name_kk": "", "name_en": "", "city": str(self.city.pk)})
+        self.client.post(self._url(), {"name_ru": "NewName", "name_kk": "", "name_en": "", "parent": str(self.city.pk)})
         self.loc.refresh_from_db()
         self.assertEqual(self.loc.name_ru, "NewName")
         self.assertEqual(self.loc.name, "NewName")
@@ -374,7 +397,7 @@ class LocationEditViewTests(TestCase):
         new_city = self.region.add_child(name="NewCity", name_ru="NewCity", name_en="NewCity")
         self.client.post(
             self._url(),
-            {"name_ru": "OldName", "name_kk": "", "name_en": "", "city": str(new_city.pk)},
+            {"name_ru": "OldName", "name_kk": "", "name_en": "", "parent": str(new_city.pk)},
         )
         self.loc.refresh_from_db()
         self.assertEqual(self.loc.get_parent().pk, new_city.pk)
@@ -383,18 +406,54 @@ class LocationEditViewTests(TestCase):
         self.client.force_login(self.admin)
         self.client.post(
             self._url(),
-            {"name_ru": "OldName", "name_kk": "", "name_en": "", "city": str(self.city.pk), "is_hidden": "on"},
+            {"name_ru": "OldName", "name_kk": "", "name_en": "", "parent": str(self.city.pk), "is_hidden": "on"},
         )
         self.loc.refresh_from_db()
         self.assertTrue(self.loc.is_hidden)
 
     def test_edit_depth1_location_updates_name(self):
-        """Structural locations (countries) can have name updated without city field."""
+        """Structural locations (countries) can have their name updated with no parent selected."""
         self.client.force_login(self.admin)
         url = reverse("location_edit", args=[self.country.pk])
-        self.client.post(url, {"name_ru": "KZ Updated", "name_kk": "", "name_en": ""})
+        self.client.post(url, {"name_ru": "KZ Updated", "name_kk": "", "name_en": "", "parent": ""})
         self.country.refresh_from_db()
         self.assertEqual(self.country.name_ru, "KZ Updated")
+
+    def test_edit_demotes_venue_to_city_when_city_cleared(self):
+        # A depth-4 venue whose parent is changed to the region (city level "--") becomes a depth-3 city.
+        self.client.force_login(self.admin)
+        self.client.post(
+            self._url(),
+            {"name_ru": "OldName", "name_kk": "", "name_en": "", "parent": str(self.region.pk)},
+        )
+        self.loc.refresh_from_db()
+        self.assertEqual(self.loc.depth, 3)
+        self.assertEqual(self.loc.get_parent().pk, self.region.pk)
+
+    def test_edit_promotes_region_to_country_when_parent_cleared(self):
+        # Clearing the parent entirely re-roots the node as a depth-1 country.
+        self.client.force_login(self.admin)
+        url = reverse("location_edit", args=[self.region.pk])
+        self.client.post(url, {"name_ru": "Region", "name_kk": "", "name_en": "", "parent": ""})
+        self.region.refresh_from_db()
+        self.assertEqual(self.region.depth, 1)
+        self.assertIsNone(self.region.get_parent())
+
+    def test_edit_rejects_descendant_as_parent(self):
+        # Making a country a child of its own region would create a cycle -> validation error.
+        self.client.force_login(self.admin)
+        url = reverse("location_edit", args=[self.country.pk])
+        resp = self.client.post(url, {"name_ru": "KZ", "name_kk": "", "name_en": "", "parent": str(self.region.pk)})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("parent", resp.context["form"].errors)
+        self.country.refresh_from_db()
+        self.assertEqual(self.country.depth, 1)
+
+    def test_edit_get_prefills_parent_with_current_parent(self):
+        # The hidden parent field is pre-filled with the location's current parent (its city).
+        self.client.force_login(self.admin)
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.context["form"].initial["parent"].pk, self.city.pk)
 
     def test_edit_get_prefills_coords_with_dot_under_ru_locale(self):
         # Regression: under the ru locale Django L10N formats Decimals with a comma ("43,26"),
