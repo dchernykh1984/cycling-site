@@ -146,7 +146,7 @@
 {% if "birth_date" in form.fields %}
 <div class="mb-3">
   <label class="form-label">{% trans "Date of birth" %} *</label>
-  <input type="date" name="birth_date" value="{{ form.birth_date.value|default:'' }}"
+  <input type="date" name="birth_date" value="{{ form.birth_date.value|date:'Y-m-d'|default:form.birth_date.value|default:'' }}"
          class="form-control{% if form.birth_date.errors %} is-invalid{% endif %}"
          {% if form.fields.birth_date.widget.attrs.readonly %}readonly{% endif %} required>
   {% for e in form.birth_date.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}

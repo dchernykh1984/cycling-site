@@ -901,6 +901,18 @@ class ProfileEditViewTests(TestCase):
         self.assertEqual(self.user.gender, "F")
         self.assertEqual(self.user.birth_date, datetime.date(1995, 3, 10))
 
+    def test_birth_date_prefilled_as_iso_under_ru_locale(self):
+        # Regression: ru-locale L10N rendered the date in a localized form, which an
+        # <input type=date> rejects, leaving it blank. It must be pre-filled as ISO YYYY-MM-DD.
+        import re
+
+        self.user.birth_date = datetime.date(1990, 6, 21)
+        self.user.save()
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("account_profile_edit"), HTTP_ACCEPT_LANGUAGE="ru")
+        m = re.search(r'name="birth_date"[^>]*value="([^"]*)"', resp.content.decode())
+        self.assertEqual(m.group(1), "1990-06-21")
+
     def test_post_redirects_to_profile(self):
         self.client.force_login(self.user)
         response = self.client.post(

@@ -40,7 +40,7 @@
             <div class="mb-3">
                 <label class="form-label">{% trans "Date of birth" %}</label>
                 {{ form.birth_date.errors }}
-                <input type="date" name="birth_date" value="{{ form.birth_date.value|default:'' }}"
+                <input type="date" name="birth_date" value="{{ form.birth_date.value|date:'Y-m-d'|default:form.birth_date.value|default:'' }}"
                        class="form-control{% if form.birth_date.errors %} is-invalid{% endif %}">
             </div>
             <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
