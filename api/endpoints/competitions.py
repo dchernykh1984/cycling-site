@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.db import transaction
 from django.db.models import Q
 from ninja import Query, Router, Schema, Status
 from ninja.errors import HttpError
@@ -7,7 +8,12 @@ from ninja.errors import HttpError
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition
-from locations.models import Location, competition_location_block_reason
+from locations.models import (
+    Location,
+    LocationConflictError,
+    competition_location_block_reason,
+    lock_competition_location,
+)
 
 auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
@@ -156,6 +162,16 @@ def _validate_location_id(location_id, user) -> None:
         raise HttpError(403, reason)
 
 
+def _lock_location_for_competition(location_id, user):
+    """Lock + re-validate the location under its row lock (inside the caller's transaction) so a
+    concurrent delete/level-change can't bind a competition to a removed/non-venue node. Returns the
+    locked pk (or None). Raises LocationConflictError if it is no longer usable."""
+    if location_id is None:
+        return None
+    locked = lock_competition_location(Location(pk=location_id), user, is_admin=is_admin(user))
+    return locked.pk
+
+
 def _to_detail(competition: Competition, user=None) -> Competition:
     """Attach competition_token to obj for serialization (avoids extra dict merging)."""
     competition._api_token = (
@@ -217,7 +233,6 @@ def create_competition(request, payload: CompetitionIn):
     for field in (
         "event_type_id",
         "discipline_id",
-        "location_id",
         "date_start",
         "date_end",
         "url_route",
@@ -228,7 +243,14 @@ def create_competition(request, payload: CompetitionIn):
     ):
         setattr(competition, field, getattr(payload, field))
 
-    competition.save()
+    try:
+        # Lock + re-validate the location and save in one transaction so a concurrent
+        # delete/level-change can't bind the competition to a removed or non-venue node.
+        with transaction.atomic():
+            competition.location_id = _lock_location_for_competition(payload.location_id, user)
+            competition.save()
+    except LocationConflictError:
+        raise HttpError(409, "Location is no longer usable for a competition") from None
     return Status(201, _to_detail(competition, user))
 
 
@@ -248,19 +270,28 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 
     update_fields: list[str] = []
 
-    for field, value in data.items():
-        if isinstance(value, dict) and field in ("title", "description"):
-            loc = LocalizedStr(**value)
-            if field == "description":
-                _validate_description_length(loc)
-            # Descriptions are sanitized centrally in Competition.save().
-            update_fields.extend(_apply_localized(competition, field, loc))
-        else:
-            setattr(competition, field, value)
-            update_fields.append(field)
+    try:
+        # Lock + re-validate a changed location and save in one transaction so a concurrent
+        # delete/level-change can't bind the competition to a removed or non-venue node.
+        with transaction.atomic():
+            for field, value in data.items():
+                if isinstance(value, dict) and field in ("title", "description"):
+                    loc = LocalizedStr(**value)
+                    if field == "description":
+                        _validate_description_length(loc)
+                    # Descriptions are sanitized centrally in Competition.save().
+                    update_fields.extend(_apply_localized(competition, field, loc))
+                elif field == "location_id":
+                    competition.location_id = _lock_location_for_competition(value, user)
+                    update_fields.append("location_id")
+                else:
+                    setattr(competition, field, value)
+                    update_fields.append(field)
 
-    if update_fields:
-        competition.save(update_fields=update_fields)
+            if update_fields:
+                competition.save(update_fields=update_fields)
+    except LocationConflictError:
+        raise HttpError(409, "Location is no longer usable for a competition") from None
 
     return _to_detail(competition, user)
 

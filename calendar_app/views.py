@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -14,7 +15,14 @@ from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 
 from accounts.models import User
-from locations.models import Location, LocationProposal, map_display_node, sort_locations_for_filter
+from locations.models import (
+    Location,
+    LocationConflictError,
+    LocationProposal,
+    lock_competition_location,
+    map_display_node,
+    sort_locations_for_filter,
+)
 
 from .forms import (
     AddCompetitionCommentForm,
@@ -593,43 +601,53 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         **self._discipline_context(request.user),
                     },
                 )
-            comp = Competition(
-                title_ru=cd["title_ru"],
-                title_kk=cd.get("title_kk", ""),
-                title_en=cd.get("title_en", ""),
-                description_ru=cd.get("description_ru", ""),
-                description_kk=cd.get("description_kk", ""),
-                description_en=cd.get("description_en", ""),
-                event_type=cd.get("event_type"),
-                discipline=cd.get("discipline"),
-                location=_resolve_competition_location(cd, request.user, approved=is_organizer),
-                date_start=cd["date_start"],
-                date_end=cd.get("date_end"),
-                url_announcement=cd.get("url_announcement", ""),
-                url_registration=cd.get("url_registration", ""),
-                url_route=cd.get("url_route", ""),
-                url_regulations=cd.get("url_regulations", ""),
-                url_results=cd.get("url_results", ""),
-                submitted_by=request.user,
-            )
-            for fname in ("file_announcement", "file_route", "file_regulations", "file_results"):
-                f = cd.get(fname)
-                if f:
-                    setattr(comp, fname, f)
-            if is_organizer:
-                comp.status = Competition.Status.APPROVED
-                comp.approved_by = request.user
-                comp.approved_at = timezone.now()
+            try:
+                # Resolve, lock and re-validate the location, then save the competition in one
+                # transaction so a concurrent delete/level-change of the venue can't bind this
+                # competition to a removed node or a non-venue (review: competition-create vs delete).
+                with transaction.atomic():
+                    location = _resolve_competition_location(cd, request.user, approved=is_organizer)
+                    location = lock_competition_location(
+                        location, request.user, is_admin=_can_manage_any_competition(request.user)
+                    )
+                    comp = Competition(
+                        title_ru=cd["title_ru"],
+                        title_kk=cd.get("title_kk", ""),
+                        title_en=cd.get("title_en", ""),
+                        description_ru=cd.get("description_ru", ""),
+                        description_kk=cd.get("description_kk", ""),
+                        description_en=cd.get("description_en", ""),
+                        event_type=cd.get("event_type"),
+                        discipline=cd.get("discipline"),
+                        location=location,
+                        date_start=cd["date_start"],
+                        date_end=cd.get("date_end"),
+                        url_announcement=cd.get("url_announcement", ""),
+                        url_registration=cd.get("url_registration", ""),
+                        url_route=cd.get("url_route", ""),
+                        url_regulations=cd.get("url_regulations", ""),
+                        url_results=cd.get("url_results", ""),
+                        submitted_by=request.user,
+                    )
+                    for fname in ("file_announcement", "file_route", "file_regulations", "file_results"):
+                        f = cd.get(fname)
+                        if f:
+                            setattr(comp, fname, f)
+                    if is_organizer:
+                        comp.status = Competition.Status.APPROVED
+                        comp.approved_by = request.user
+                        comp.approved_at = timezone.now()
+                        _apply_registration_settings(comp, reg_form, True)
+                    else:
+                        comp.status = Competition.Status.PENDING_APPROVAL
+                        comp.registration_enabled = False
+                    comp.save()
+                    if is_organizer and reg_form.is_valid():
+                        _save_categories(comp, reg_form)
+            except LocationConflictError:
+                form.add_error("location", _("This location is not available."))
             else:
-                comp.status = Competition.Status.PENDING_APPROVAL
-            if is_organizer:
-                _apply_registration_settings(comp, reg_form, True)
-            else:
-                comp.registration_enabled = False
-            comp.save()
-            if is_organizer and reg_form.is_valid():
-                _save_categories(comp, reg_form)
-            return redirect("calendar_list")
+                return redirect("calendar_list")
         return render(
             request,
             self.template_name,
@@ -798,7 +816,6 @@ class EditCompetitionView(View):
             comp.description_en = cd.get("description_en", "")
             comp.event_type = cd.get("event_type")
             comp.discipline = cd.get("discipline")
-            comp.location = _resolve_competition_location(cd, request.user, approved=_is_organizer_plus(request.user))
             comp.date_start = cd["date_start"]
             comp.date_end = cd.get("date_end")
             comp.url_announcement = cd.get("url_announcement", "")
@@ -811,9 +828,23 @@ class EditCompetitionView(View):
                 if f:
                     setattr(comp, fname, f)
             _apply_registration_settings(comp, reg_form, True)
-            comp.save()
-            _save_categories(comp, reg_form)
-            return redirect("competition_detail", pk=comp.pk)
+            try:
+                # Resolve, lock and re-validate the location, then save in one transaction so a
+                # concurrent delete/level-change of the venue can't bind this competition to a
+                # removed node or a non-venue (review: competition-update vs delete).
+                with transaction.atomic():
+                    location = _resolve_competition_location(
+                        cd, request.user, approved=_is_organizer_plus(request.user)
+                    )
+                    comp.location = lock_competition_location(
+                        location, request.user, is_admin=_can_manage_any_competition(request.user)
+                    )
+                    comp.save()
+                    _save_categories(comp, reg_form)
+            except LocationConflictError:
+                form.add_error("location", _("This location is not available."))
+            else:
+                return redirect("competition_detail", pk=comp.pk)
         import json
 
         from registrations.models import RegistrationCategory

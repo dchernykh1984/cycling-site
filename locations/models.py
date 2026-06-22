@@ -246,6 +246,24 @@ def competition_location_block_reason(location, user, *, is_admin=False) -> str 
     return None
 
 
+def lock_competition_location(location, user, *, is_admin=False):
+    """Lock ``location`` ``FOR UPDATE`` and re-validate it as a competition target under that lock,
+    then return the locked row (``None`` if ``location`` is ``None``). A concurrent soft-delete or
+    level change locks the same row, so binding a competition to the location serializes with them
+    and can never attach it to a deleted node or one that is no longer a depth-4 venue. Must be
+    called inside the same ``transaction.atomic()`` that saves the competition. Raises
+    ``LocationConflictError`` if the location is no longer usable."""
+    if location is None:
+        return None
+    try:
+        locked = Location.objects.select_for_update().get(pk=location.pk)
+    except Location.DoesNotExist:
+        raise LocationConflictError("Location no longer exists") from None
+    if competition_location_block_reason(locked, user, is_admin=is_admin):
+        raise LocationConflictError("Location is no longer usable for a competition")
+    return locked
+
+
 def nearest_visible_ancestor_with_coords(loc, by_path, step):
     """The nearest ancestor of ``loc`` (city -> region -> country) that is NOT hidden and
     has coordinates, looked up in ``by_path`` (path -> Location). Hidden ancestors are

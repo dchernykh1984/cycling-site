@@ -8,13 +8,18 @@ import uuid
 from datetime import date
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import connection, connections
+from django.db import connection, connections, transaction
 from django.test import Client, TestCase, TransactionTestCase, override_settings
 
 from accounts.models import User
 from calendar_app.models import Competition, Discipline, DisciplineCategory, EventType
 from knowledge.models import DraftSubmission, KnowledgeArticle
-from locations.models import Location
+from locations.models import (
+    Location,
+    lock_competition_location,
+    move_location,
+    soft_delete_location,
+)
 from news.models import NewsArticle
 from protocols.models import StartListUpload
 from registrations.models import CompetitionRegistration
@@ -1573,6 +1578,91 @@ class StartListApiTest(TestCase, ApiTestMixin):
         resp = self._post(items=["a"], client_revision=1000)
         self.assertEqual(resp.status_code, 409)
         self.assertIn("1005", resp.json()["detail"])
+
+
+class CompetitionLocationConcurrencyTest(TransactionTestCase):
+    """Binding a competition to a venue must serialize with deleting / re-levelling that venue, so a
+    competition can never end up on a soft-deleted node or one that is no longer a depth-4 venue.
+    Driven through the same locked helpers the web/API create/update paths use."""
+
+    def setUp(self):
+        self.admin = _user("comp_conc_admin", role=User.Role.ADMIN)
+        country = Location.add_root(name="C", name_ru="C")
+        self.region = country.add_child(name="R", name_ru="R")
+        city = self.region.add_child(name="City", name_ru="City")
+        self.venue = city.add_child(name="V", name_ru="V")  # depth-4 venue
+
+    def _create_competition_on_venue(self):
+        # Mirrors the create paths: lock + re-validate the location, then save in one transaction.
+        with transaction.atomic():
+            location = lock_competition_location(self.venue, self.admin, is_admin=True)
+            Competition.objects.create(
+                title_ru="Race",
+                date_start=date(2026, 7, 1),
+                status=Competition.Status.APPROVED,
+                location=location,
+                submitted_by=self.admin,
+            )
+
+    def _run(self, fn_a, fn_b):
+        from locations.models import LocationConflictError
+
+        barrier = threading.Barrier(2)
+        outcomes: dict = {}
+
+        def wrap(key, fn):
+            try:
+                barrier.wait(timeout=10)
+                fn()
+                outcomes[key] = "ok"
+            except LocationConflictError:
+                outcomes[key] = "conflict"
+            except Exception as exc:  # surface a real crash as a failure
+                outcomes[key] = repr(exc)
+            finally:
+                connections.close_all()
+
+        threads = {
+            "a": threading.Thread(target=wrap, args=("a", fn_a)),
+            "b": threading.Thread(target=wrap, args=("b", fn_b)),
+        }
+        for t in threads.values():
+            t.start()
+        for t in threads.values():
+            t.join(timeout=15)
+        self.assertEqual([k for k, t in threads.items() if t.is_alive()], [], "thread hung")
+        self.assertEqual(set(outcomes), {"a", "b"}, outcomes)
+        for key, outcome in outcomes.items():
+            self.assertIn(outcome, ("ok", "conflict"), f"{key} crashed: {outcome}")
+
+    def test_create_vs_delete_never_binds_to_deleted_venue(self):
+        self._run(self._create_competition_on_venue, lambda: soft_delete_location(self.venue))
+        self.venue.refresh_from_db()
+        live_here = Competition.objects.filter(location=self.venue, is_deleted=False).exists()
+        self.assertFalse(self.venue.is_deleted and live_here)  # never a live comp on a deleted venue
+
+    def test_create_vs_level_change_keeps_competition_on_a_venue(self):
+        # Demote the venue to a city (depth 3) while a competition is being attached to it.
+        self._run(self._create_competition_on_venue, lambda: move_location(self.venue, self.region))
+        for comp in Competition.objects.filter(is_deleted=False).select_related("location"):
+            self.assertEqual(comp.location.depth, 4)  # every live competition still sits on a venue
+
+    def test_update_vs_delete_never_binds_to_deleted_venue(self):
+        # An existing competition is re-pointed to a second venue that is being deleted.
+        other = self.venue.get_parent().add_child(name="V2", name_ru="V2")  # another depth-4 venue
+        comp = Competition.objects.create(
+            title_ru="Race", date_start=date(2026, 7, 1), status=Competition.Status.APPROVED, location=self.venue
+        )
+
+        def repoint():
+            with transaction.atomic():
+                comp.location = lock_competition_location(other, self.admin, is_admin=True)
+                comp.save(update_fields=["location"])
+
+        self._run(repoint, lambda: soft_delete_location(other))
+        other.refresh_from_db()
+        comp.refresh_from_db()
+        self.assertFalse(other.is_deleted and comp.location_id == other.pk)
 
 
 class StartListConcurrencyTest(TransactionTestCase):
