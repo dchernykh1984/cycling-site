@@ -82,7 +82,11 @@
     <div class="mb-2">
       <label class="form-label fw-semibold">{% trans "Parent location" %}</label>
       <p class="text-muted small mb-2">
+        {% if can_manage %}
         {% trans "The deepest selected level is the parent. Leave Country empty to create a country, Region empty to create a region, City empty to create a city." %}
+        {% else %}
+        {% trans "Select the country, region and city; the new location is added as a venue inside the chosen city." %}
+        {% endif %}
       </p>
       {% for e in form.parent.errors %}<div class="text-danger small mb-1">{{ e }}</div>{% endfor %}
       <div class="mb-2">

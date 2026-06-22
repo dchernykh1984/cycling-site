@@ -319,17 +319,50 @@ class LocationCreateViewTests(TestCase):
         self.assertEqual(resp.status_code, 403)
         self.assertFalse(Location.objects.filter(name_ru="NewCountry").exists())
 
-    def test_organizer_creates_structural_node_approved(self):
-        # organizer+ may create structural nodes directly, always approved (never a proposal).
+    def test_organizer_cannot_create_structural_node(self):
+        # Structural nodes (country/region/city) are admin-only; organizer is limited to venues.
         organizer = _make_user("org_struct@x.com", User.Role.ORGANIZER)
         self.client.force_login(organizer)
+        cases = {
+            "OrgCountry": "",  # depth-1 country
+            "OrgRegion": str(self.country.pk),  # depth-2 region
+            "OrgCity": str(self.region.pk),  # depth-3 city
+        }
+        for name, parent in cases.items():
+            with self.subTest(name=name):
+                resp = self.client.post(self.url, {"name_ru": name, "name_kk": "", "name_en": "", "parent": parent})
+                self.assertEqual(resp.status_code, 403)
+                self.assertFalse(Location.objects.filter(name_ru=name).exists())
+
+    def test_organizer_can_still_create_venue(self):
+        # organizer+ may add an approved depth-4 venue under a city directly (no proposal).
+        organizer = _make_user("org_venue@x.com", User.Role.ORGANIZER)
+        self.client.force_login(organizer)
+        self.client.post(self.url, {"name_ru": "OrgVenue2", "name_kk": "", "name_en": "", "parent": str(self.city.pk)})
+        venue = Location.objects.get(name_ru="OrgVenue2")
+        self.assertEqual(venue.depth, 4)
+        self.assertFalse(venue.is_pending)
+
+    def test_admin_creates_structural_node_approved(self):
+        # Only admins may build the geographic hierarchy; the node is approved (never a proposal).
+        self.client.force_login(self.admin)
         self.client.post(
-            self.url, {"name_ru": "OrgRegion", "name_kk": "", "name_en": "", "parent": str(self.country.pk)}
+            self.url, {"name_ru": "AdminRegion", "name_kk": "", "name_en": "", "parent": str(self.country.pk)}
         )
-        region = Location.objects.get(name_ru="OrgRegion")
+        region = Location.objects.get(name_ru="AdminRegion")
         self.assertEqual(region.depth, 2)
         self.assertFalse(region.is_pending)
         self.assertFalse(hasattr(region, "proposal"))
+
+    def test_create_form_hint_is_role_aware(self):
+        # Non-managers see the venue-only hint; managers (admin) see the structural hint instead.
+        # (The venue hint text is the discriminator; the structural hint is locale-translated.)
+        venue_hint = "added as a venue inside the chosen city"
+        organizer = _make_user("org_hint@x.com", User.Role.ORGANIZER)
+        self.client.force_login(organizer)
+        self.assertContains(self.client.get(self.url), venue_hint)
+        self.client.force_login(self.admin)
+        self.assertNotContains(self.client.get(self.url), venue_hint)
 
     def test_foreign_pending_parent_is_not_selectable(self):
         # Another user's pending node must not appear as a parent in the cascade or validate on POST.
