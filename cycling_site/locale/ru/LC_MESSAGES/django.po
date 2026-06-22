@@ -1713,3 +1713,19 @@ msgstr "Нельзя удалить локацию, у которой ещё е�
 #: locations/views.py
 msgid "The selected parent location is no longer available."
 msgstr "Выбранная родительская локация больше недоступна."
+
+#: calendar_app/views.py
+msgid "This location is not available."
+msgstr "Эта локация недоступна."
+
+#: locations/forms.py
+msgid "System fallback locations cannot be moved."
+msgstr "Системные резервные локации нельзя перемещать."
+
+#: locations/forms.py locations/views.py
+msgid "System fallback locations must remain hidden."
+msgstr "Системные резервные локации должны оставаться скрытыми."
+
+#: locations/views.py
+msgid "This location proposal is no longer pending."
+msgstr "Это предложение локации больше не ожидает модерации."

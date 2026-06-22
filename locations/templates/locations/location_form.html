@@ -91,7 +91,8 @@
       {% for e in form.parent.errors %}<div class="text-danger small mb-1">{{ e }}</div>{% endfor %}
       <div class="mb-2">
         <label class="form-label form-label-sm mb-1">{% trans "Country" %}</label>
-        <select id="loc-country" class="form-select{% if form.parent.errors %} is-invalid{% endif %}">
+        <select id="loc-country" class="form-select{% if form.parent.errors %} is-invalid{% endif %}"
+                {% if is_fallback %}disabled{% endif %}>
           <option value="">--</option>
         </select>
       </div>
@@ -129,9 +130,11 @@
 
     {% if can_manage %}
     <div class="mb-3 form-check">
+      {% if is_fallback %}<input type="hidden" name="is_hidden" value="on">{% endif %}
       <input type="checkbox" name="is_hidden" id="id_is_hidden" class="form-check-input"
-             {% if form.is_hidden.value %}checked{% endif %}>
+             {% if form.is_hidden.value %}checked{% endif %} {% if is_fallback %}disabled{% endif %}>
       <label class="form-check-label" for="id_is_hidden">{% trans "Hidden" %}</label>
+      {% for e in form.is_hidden.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
     </div>
     {% endif %}
 
@@ -169,10 +172,12 @@
   var regEl  = document.getElementById('loc-region');
   var cityEl = document.getElementById('loc-city');
   var parentInp = document.getElementById('id_parent');
+  var parentLocked = {% if is_fallback %}true{% else %}false{% endif %};
+  var canManage = {% if can_manage %}true{% else %}false{% endif %};
 
   function buildOpts(sel, nodes, placeholder) {
     sel.innerHTML = '<option value="">' + placeholder + '</option>';
-    nodes.filter(function(n) { return !n.is_hidden; }).forEach(function(l) {
+    nodes.filter(function(n) { return canManage || !n.is_hidden; }).forEach(function(l) {
       var o = document.createElement('option');
       o.value = l.pk; o.textContent = locName(l);
       sel.appendChild(o);
@@ -189,6 +194,7 @@
   }
 
   function updateParent() {
+    if (parentLocked) return;
     parentInp.value = cityEl.value || regEl.value || cntEl.value || '';
   }
 
@@ -243,6 +249,11 @@
     }
   }
   updateParent();
+  if (parentLocked) {
+    cntEl.disabled = true;
+    regEl.disabled = true;
+    cityEl.disabled = true;
+  }
 
   // --- Coordinate picker map ---
   var latInput = document.getElementById('id_lat');

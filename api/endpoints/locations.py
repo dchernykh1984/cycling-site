@@ -235,6 +235,8 @@ def update_location(request, location_id: int, payload: LocationPatchIn):
     location = _get_or_404(location_id)
 
     data = payload.dict(exclude_unset=True)
+    if location.is_system_fallback and data.get("is_hidden") is False:
+        raise HttpError(409, "System fallback locations must remain hidden")
     update_fields: list[str] = []
 
     for field, value in data.items():
