@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Location, selectable_parent_locations
+from .models import Location, location_subtree_is_nonempty, selectable_parent_locations
 
 
 class LocationForm(forms.Form):
@@ -40,20 +40,11 @@ class LocationForm(forms.Form):
             raise forms.ValidationError(_("A location cannot be placed inside itself."))
         # Changing a node's level moves its whole subtree (children jump levels, venues stop
         # being depth-4) and orphans competitions that require a depth-4 venue. Forbid the level
-        # change while the node still has nested locations or attached competitions.
+        # change while the node has any physical subtree (even soft-deleted, which still moves)
+        # or competitions in that subtree.
         new_depth = parent.depth + 1 if parent is not None else 1
-        if new_depth != self.instance.depth and self._is_in_use():
+        if new_depth != self.instance.depth and location_subtree_is_nonempty(self.instance):
             raise forms.ValidationError(
                 _("This location has nested locations or competitions, so its level cannot be changed.")
             )
         return parent
-
-    def _is_in_use(self) -> bool:
-        """True if the edited location has non-deleted children (queried by path so a drifted
-        ``numchild`` can't hide them) or any competition still pointing at it."""
-        has_children = Location.objects.filter(
-            depth=self.instance.depth + 1,
-            path__range=Location._get_children_path_interval(self.instance.path),
-            is_deleted=False,
-        ).exists()
-        return has_children or self.instance.competitions.exists()

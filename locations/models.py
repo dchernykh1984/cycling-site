@@ -235,6 +235,38 @@ def map_display_node(loc, by_path, step):
     return nearest_visible_ancestor_with_coords(loc, by_path, step)
 
 
+def _subtree_descendants(location, *, include_deleted):
+    """Physical descendants of ``location`` (an MP descendant's path starts with the ancestor's
+    path); ``include_deleted`` keeps soft-deleted nodes, which still occupy the tree physically."""
+    qs = Location.objects.filter(path__startswith=location.path, depth__gt=location.depth)
+    return qs if include_deleted else qs.filter(is_deleted=False)
+
+
+def location_subtree_has_live_competitions(location) -> bool:
+    """True if any non-deleted competition points at ``location`` or a node in its subtree."""
+    from calendar_app.models import Competition
+
+    return Competition.objects.filter(location__path__startswith=location.path, location__is_deleted=False).exists()
+
+
+def location_can_be_deleted(location) -> bool:
+    """A location may be soft-deleted only when nothing live hangs off it: no non-deleted
+    descendants and no competitions in its subtree. Otherwise deleting it would orphan those
+    children/competitions under a vanished ancestor (review: structural soft-delete)."""
+    if _subtree_descendants(location, include_deleted=False).exists():
+        return False
+    return not location_subtree_has_live_competitions(location)
+
+
+def location_subtree_is_nonempty(location) -> bool:
+    """True if ``location`` has any physical descendant (deleted or not) or a competition in its
+    subtree. A level change re-levels the whole physical subtree, so even soft-deleted children
+    must block it (a deleted child still moves, and could resurface deeper than depth 4)."""
+    if _subtree_descendants(location, include_deleted=True).exists():
+        return True
+    return location_subtree_has_live_competitions(location)
+
+
 def _build_map_locations(all_locs, candidates=None) -> list:
     """Map markers (issue #113): each location at its own coordinates, or at the nearest
     ancestor with coordinates when it is hidden or has none (see ``map_display_node``).

@@ -1308,6 +1308,23 @@ class LocationDeleteTest(TestCase, ApiTestMixin):
         after = len(self.get("/api/v1/locations/", user=self.admin).json())
         self.assertEqual(after, before - 1)
 
+    def test_cannot_delete_node_with_active_subtree(self):
+        # Soft-deleting a node with live descendants would orphan them under a vanished ancestor.
+        region = self.loc.add_child(name="R", name_ru="R")
+        region.add_child(name="C", name_ru="C")
+        resp = self.delete(f"/api/v1/locations/{self.loc.pk}", user=self.admin)
+        self.assertEqual(resp.status_code, 409)
+        self.loc.refresh_from_db()
+        self.assertFalse(self.loc.is_deleted)
+
+    def test_cannot_delete_venue_with_competitions(self):
+        venue = self.loc.add_child(name="V", name_ru="V")
+        _competition(location=venue)
+        resp = self.delete(f"/api/v1/locations/{venue.pk}", user=self.admin)
+        self.assertEqual(resp.status_code, 409)
+        venue.refresh_from_db()
+        self.assertFalse(venue.is_deleted)
+
 
 # ---------------------------------------------------------------------------
 # Protocol upload (extra coverage for uncovered lines)

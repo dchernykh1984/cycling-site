@@ -553,6 +553,19 @@ class LocationEditViewTests(TestCase):
         self.assertEqual(self.region.depth, 2)  # unchanged
         self.assertEqual(self.region.get_parent().pk, self.country.pk)
 
+    def test_edit_forbids_level_change_with_only_soft_deleted_descendants(self):
+        # Even a soft-deleted descendant keeps the physical subtree non-empty: the level change
+        # would still re-level it, so promoting the region to a country must be refused.
+        self.city.is_deleted = True
+        self.city.save(update_fields=["is_deleted"])
+        self.client.force_login(self.admin)
+        url = reverse("location_edit", args=[self.region.pk])
+        resp = self.client.post(url, {"name_ru": "Region", "name_kk": "", "name_en": "", "parent": ""})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("parent", resp.context["form"].errors)
+        self.region.refresh_from_db()
+        self.assertEqual(self.region.depth, 2)
+
     def test_edit_forbids_level_change_when_venue_has_competitions(self):
         # A depth-4 venue with a competition cannot be demoted: competitions require a venue.
         from calendar_app.models import Competition
@@ -646,6 +659,35 @@ class LocationDeleteViewTests(TestCase):
         self.client.force_login(part)
         resp = self.client.post(reverse("location_delete", args=[self.loc.pk]))
         self.assertEqual(resp.status_code, 403)
+
+    def test_cannot_delete_structural_node_with_active_subtree(self):
+        # Soft-deleting a country with live region/city/venue below would orphan them.
+        country, _, _ = _make_tree()
+        self.client.force_login(self.admin)
+        self.client.post(reverse("location_delete", args=[country.pk]))
+        country.refresh_from_db()
+        self.assertFalse(country.is_deleted)
+
+    def test_can_delete_empty_venue(self):
+        _, _, city = _make_tree()
+        venue = city.add_child(name="EmptyVenue", name_ru="EmptyVenue", name_en="EmptyVenue")
+        self.client.force_login(self.admin)
+        self.client.post(reverse("location_delete", args=[venue.pk]))
+        venue.refresh_from_db()
+        self.assertTrue(venue.is_deleted)
+
+    def test_cannot_delete_venue_with_competitions(self):
+        from calendar_app.models import Competition
+
+        _, _, city = _make_tree()
+        venue = city.add_child(name="UsedVenue", name_ru="UsedVenue", name_en="UsedVenue")
+        Competition.objects.create(
+            title_ru="R", date_start=datetime.date(2026, 7, 1), location=venue, status=Competition.Status.APPROVED
+        )
+        self.client.force_login(self.admin)
+        self.client.post(reverse("location_delete", args=[venue.pk]))
+        venue.refresh_from_db()
+        self.assertFalse(venue.is_deleted)
 
     def test_delete_returns_to_page_and_filter(self):
         self.client.force_login(self.admin)

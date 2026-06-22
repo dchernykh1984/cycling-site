@@ -8,7 +8,7 @@ from ninja.schema import Field
 from accounts.models import User
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
-from locations.models import Location, LocationProposal, add_location_child
+from locations.models import Location, LocationProposal, add_location_child, location_can_be_deleted
 
 _PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
 _ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
@@ -245,6 +245,9 @@ def delete_location(request, location_id: int):
     user = request.auth
     _require_admin(user)
     location = _get_or_404(location_id)
+    # Same contract as the web form: refuse to orphan a live subtree/competitions (review #2).
+    if not location_can_be_deleted(location):
+        raise HttpError(409, "Location still has nested locations or competitions")
     location.is_deleted = True
     location.save(update_fields=["is_deleted"])
     return Status(204, None)

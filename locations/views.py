@@ -93,11 +93,16 @@ def _safe_return_url(request, default: str) -> str:
 
 class LocationDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        from locations.models import Location
+        from locations.models import Location, location_can_be_deleted
 
         if not _can_manage_locations(request.user):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
+        # Soft-deleting a node with a live subtree/competitions would orphan them under a vanished
+        # ancestor, so refuse it (the admin must clear the subtree first).
+        if not location_can_be_deleted(location):
+            messages.error(request, _("Cannot delete a location that still has nested locations or competitions."))
+            return redirect(_safe_return_url(request, "/"))
         location.is_deleted = True
         location.save(update_fields=["is_deleted"])
         return redirect(_safe_return_url(request, "/"))
