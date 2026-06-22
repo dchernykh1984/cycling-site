@@ -16,7 +16,8 @@ from cycling_site.page_mixins import AsciiSlugMixin
 
 def add_location_child(parent, **kwargs):
     """Append a child under ``parent`` at the next free path, sidestepping treebeard's
-    sorted ``add_child``.
+    sorted ``add_child``.  When ``parent`` is ``None`` the node is appended as a new root
+    (depth-1 country), sidestepping the sorted ``add_root`` for the same reason.
 
     A sorted MP tree assumes a sibling's path order matches its sort order, so inserting
     shifts later siblings' paths. Renaming a location changes its ``name`` sort key without
@@ -25,21 +26,32 @@ def add_location_child(parent, **kwargs):
     real last path never shifts an existing node, and recomputing ``numchild`` heals a
     counter that has drifted (e.g. ``is_leaf`` wrongly reporting a populated node as empty).
     """
-    cls = parent.__class__
-    children = list(
-        cls.objects.filter(
-            depth=parent.depth + 1,
-            path__range=cls._get_children_path_interval(parent.path),
-        ).order_by("path")
-    )
-    last = children[-1] if children else None
-    newpath = last._inc_path() if last is not None else cls._get_path(parent.path, parent.depth + 1, 1)
-    obj = cls(path=newpath, depth=parent.depth + 1, numchild=0, **kwargs)
+    cls = parent.__class__ if parent is not None else Location
+    if parent is None:
+        depth = 1
+        siblings = list(cls.objects.filter(depth=1).order_by("path"))
+    else:
+        depth = parent.depth + 1
+        siblings = list(
+            cls.objects.filter(
+                depth=depth,
+                path__range=cls._get_children_path_interval(parent.path),
+            ).order_by("path")
+        )
+    last = siblings[-1] if siblings else None
+    if last is not None:
+        newpath = last._inc_path()
+    elif parent is not None:
+        newpath = cls._get_path(parent.path, depth, 1)
+    else:
+        newpath = cls._get_path(None, 1, 1)
+    obj = cls(path=newpath, depth=depth, numchild=0, **kwargs)
     obj.save()
-    new_count = len(children) + 1
-    if parent.numchild != new_count:
-        cls.objects.filter(pk=parent.pk).update(numchild=new_count)
-        parent.numchild = new_count
+    if parent is not None:
+        new_count = len(siblings) + 1
+        if parent.numchild != new_count:
+            cls.objects.filter(pk=parent.pk).update(numchild=new_count)
+            parent.numchild = new_count
     return obj
 
 

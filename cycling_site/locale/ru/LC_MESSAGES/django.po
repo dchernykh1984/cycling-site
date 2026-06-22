@@ -1668,3 +1668,16 @@ msgstr "Напишите комментарий..."
 #: news/views.py knowledge/views.py calendar_app/views.py
 msgid "Invalid submission."
 msgstr "Некорректная отправка."
+
+#: locations/forms.py locations/templates/locations/location_form.html
+msgid "Parent location"
+msgstr "Родительская локация"
+
+#: locations/templates/locations/location_form.html
+msgid ""
+"The deepest selected level is the parent. Leave Country empty to create a "
+"country, Region empty to create a region, City empty to create a city."
+msgstr ""
+"Родителем становится самый глубокий выбранный уровень. Оставьте «Страна» "
+"пустой, чтобы создать страну, «Регион» — чтобы создать регион, «Город» — "
+"чтобы создать город."

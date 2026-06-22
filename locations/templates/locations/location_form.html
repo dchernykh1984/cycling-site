@@ -26,7 +26,7 @@
 
 <form method="post" id="location-form">
 {% csrf_token %}
-{{ form.city }}
+{{ form.parent }}
 <div class="row g-4">
   <div class="col-md-6">
 
@@ -78,32 +78,31 @@
       </div>
     </div>
 
-    {% if location_depth >= 4 %}
     <div class="mb-2">
-      <label class="form-label fw-semibold">{% trans "Location" %} *</label>
-      {% if form.city.errors %}
-      {% for e in form.city.errors %}<div class="text-danger small mb-1">{{ e }}</div>{% endfor %}
-      {% endif %}
+      <label class="form-label fw-semibold">{% trans "Parent location" %}</label>
+      <p class="text-muted small mb-2">
+        {% trans "The deepest selected level is the parent. Leave Country empty to create a country, Region empty to create a region, City empty to create a city." %}
+      </p>
+      {% for e in form.parent.errors %}<div class="text-danger small mb-1">{{ e }}</div>{% endfor %}
       <div class="mb-2">
         <label class="form-label form-label-sm mb-1">{% trans "Country" %}</label>
-        <select id="loc-country" class="form-select{% if form.city.errors %} is-invalid{% endif %}">
+        <select id="loc-country" class="form-select{% if form.parent.errors %} is-invalid{% endif %}">
           <option value="">--</option>
         </select>
       </div>
       <div class="mb-2">
         <label class="form-label form-label-sm mb-1">{% trans "Region" %}</label>
-        <select id="loc-region" class="form-select{% if form.city.errors %} is-invalid{% endif %}" disabled>
+        <select id="loc-region" class="form-select{% if form.parent.errors %} is-invalid{% endif %}" disabled>
           <option value="">--</option>
         </select>
       </div>
       <div class="mb-3">
         <label class="form-label form-label-sm mb-1">{% trans "City" %}</label>
-        <select id="loc-city" class="form-select{% if form.city.errors %} is-invalid{% endif %}" disabled>
+        <select id="loc-city" class="form-select{% if form.parent.errors %} is-invalid{% endif %}" disabled>
           <option value="">--</option>
         </select>
       </div>
     </div>
-    {% endif %}
 
     <div class="row mb-3">
       <div class="col-6">
@@ -152,8 +151,10 @@
 {% include "_map_layers.html" %}
 <script>
 (function () {
-  {% if location_depth >= 4 %}
   // --- Location cascade ---
+  // The deepest selected level (City > Region > Country) is the parent of the new/edited
+  // location; leaving a level "--" creates/keeps the location at that level. An empty
+  // Country means the location is itself a country (a depth-1 root).
   var allLocs = JSON.parse(document.getElementById('all-locations-data').textContent);
   var lang = (document.documentElement.lang || 'ru').split('-')[0];
   var nameField = (['ru', 'kk', 'en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
@@ -162,7 +163,7 @@
   var cntEl  = document.getElementById('loc-country');
   var regEl  = document.getElementById('loc-region');
   var cityEl = document.getElementById('loc-city');
-  var cityInp = document.getElementById('id_city');
+  var parentInp = document.getElementById('id_parent');
 
   function buildOpts(sel, nodes, placeholder) {
     sel.innerHTML = '<option value="">' + placeholder + '</option>';
@@ -182,48 +183,61 @@
     sel.innerHTML = '<option value="">--</option>'; sel.disabled = true;
   }
 
+  function updateParent() {
+    parentInp.value = cityEl.value || regEl.value || cntEl.value || '';
+  }
+
   buildOpts(cntEl, allLocs.filter(function(l) { return l.depth === 1; }), '--');
 
   cntEl.addEventListener('change', function () {
-    disableSel(regEl); disableSel(cityEl); cityInp.value = '';
+    disableSel(regEl); disableSel(cityEl);
     var cp = pathOf(cntEl.value);
-    if (!cp) return;
-    buildOpts(regEl, allLocs.filter(function(l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
-    regEl.disabled = false;
+    if (cp) {
+      buildOpts(regEl, allLocs.filter(function(l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
+      regEl.disabled = false;
+    }
+    updateParent();
   });
 
   regEl.addEventListener('change', function () {
-    disableSel(cityEl); cityInp.value = '';
+    disableSel(cityEl);
     var rp = pathOf(regEl.value);
-    if (!rp) return;
-    buildOpts(cityEl, allLocs.filter(function(l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
-    cityEl.disabled = false;
-  });
-
-  cityEl.addEventListener('change', function () {
-    cityInp.value = cityEl.value;
-  });
-
-  // Pre-populate from the hidden city input (set by server on initial render or POST re-render)
-  var initCityPk = cityInp ? cityInp.value : '';
-  if (initCityPk && parseInt(initCityPk) > 0) {
-    var cityLoc = allLocs.find(function(l) { return String(l.pk) === String(initCityPk) && l.depth === 3; });
-    if (cityLoc) {
-      var stepLen = cityLoc.path.length / cityLoc.depth;
-      var cp = cityLoc.path.slice(0, stepLen);
-      var rp = cityLoc.path.slice(0, stepLen * 2);
-      var cntLoc = allLocs.find(function(l) { return l.path === cp && l.depth === 1; });
-      if (cntLoc) cntEl.value = cntLoc.pk;
-      buildOpts(regEl, allLocs.filter(function(l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
-      regEl.disabled = false;
-      var regLoc = allLocs.find(function(l) { return l.path === rp && l.depth === 2; });
-      if (regLoc) regEl.value = regLoc.pk;
+    if (rp) {
       buildOpts(cityEl, allLocs.filter(function(l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
       cityEl.disabled = false;
-      cityEl.value = cityLoc.pk;
+    }
+    updateParent();
+  });
+
+  cityEl.addEventListener('change', updateParent);
+
+  // Pre-populate from the hidden parent input (set by the server on initial render or POST
+  // re-render). The parent may sit at any level, so fill selects down to the parent's depth.
+  var initParentPk = parentInp ? parentInp.value : '';
+  if (initParentPk && parseInt(initParentPk) > 0) {
+    var p = allLocs.find(function(l) { return String(l.pk) === String(initParentPk); });
+    if (p) {
+      var stepLen = p.path.length / p.depth;
+      var cp = p.path.slice(0, stepLen);
+      var cntLoc = allLocs.find(function(l) { return l.path === cp && l.depth === 1; });
+      if (cntLoc) {
+        cntEl.value = cntLoc.pk;
+        buildOpts(regEl, allLocs.filter(function(l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
+        regEl.disabled = false;
+        if (p.depth >= 2) {
+          var rp = p.path.slice(0, stepLen * 2);
+          var regLoc = allLocs.find(function(l) { return l.path === rp && l.depth === 2; });
+          if (regLoc) {
+            regEl.value = regLoc.pk;
+            buildOpts(cityEl, allLocs.filter(function(l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
+            cityEl.disabled = false;
+            if (p.depth >= 3) cityEl.value = p.pk;
+          }
+        }
+      }
     }
   }
-  {% endif %}
+  updateParent();
 
   // --- Coordinate picker map ---
   var latInput = document.getElementById('id_lat');
