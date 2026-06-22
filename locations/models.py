@@ -293,19 +293,21 @@ def sort_locations_for_filter(rows) -> list:
     return sorted(rows, key=location_filter_rank)
 
 
-def locations_filter_data(user=None) -> list:
-    """Visible Location nodes (pk/depth/path/names/coords) for the country->region->city->
-    location cascade filter, in the same shape the calendar list filter consumes. Pending
-    locations are visible only to the user who proposed them. Hidden / coordinate-less nodes
-    are ordered last within each dropdown level (see ``sort_locations_for_filter``)."""
-    visible = models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
-    if user is not None and getattr(user, "is_authenticated", False):
-        visible |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
+def locations_filter_data(user=None, include_all=False) -> list:
+    """Location nodes (pk/depth/path/names/coords) for the country->region->city->location
+    cascade filter, in the same shape the calendar list filter consumes. Pending locations are
+    visible only to the user who proposed them, unless ``include_all`` (the manager management
+    list, which shows every non-deleted row and must be searchable on all of them). Hidden /
+    coordinate-less nodes are ordered last within each dropdown level (see
+    ``sort_locations_for_filter``)."""
+    qs = Location.objects.filter(is_deleted=False)
+    if not include_all:
+        visible = models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
+        if user is not None and getattr(user, "is_authenticated", False):
+            visible |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
+        qs = qs.filter(visible)
     rows = list(
-        Location.objects.filter(is_deleted=False)
-        .filter(visible)
-        .order_by("path")
-        .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden", "lat", "lng")
+        qs.order_by("path").values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden", "lat", "lng")
     )
     for row in rows:
         row["lat"] = float(row["lat"]) if row["lat"] is not None else None
@@ -378,7 +380,9 @@ class LocationsMapPage(AsciiSlugMixin, Page):
                 qs = qs.filter(pk__in=filter_pks)
             paginator = Paginator(qs, 20)
             context["locations_page"] = paginator.get_page(request.GET.get("page", 1))
-            context["filter_locations_data"] = locations_filter_data(request.user)
+            # The management table lists every non-deleted node (incl. other users' pending), so
+            # the search cascade must cover all of them to stay consistent with what's shown.
+            context["filter_locations_data"] = locations_filter_data(request.user, include_all=True)
         return context
 
     class Meta:

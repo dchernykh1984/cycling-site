@@ -936,6 +936,18 @@ class LocationsMapPageManageListTests(TestCase):
         self.assertTrue(any(row["name_ru"] == "KZ" for row in data))
         self.assertContains(resp, "filter-locations-data")
 
+    def test_manager_filter_data_includes_foreign_pending(self):
+        # The management table shows every non-deleted node, including other users' pending ones,
+        # so the search cascade must include them too (admin must be able to find them by name).
+        other = _make_user("pend_owner@x.com", User.Role.PARTICIPANT)
+        _, _, city = _make_tree()
+        venue = city.add_child(name="ForeignPending", name_ru="ForeignPending", name_en="ForeignPending")
+        LocationProposal.objects.create(location=venue, submitted_by=other)
+        self.client.force_login(self.admin)
+        resp = self.client.get(self.map_page.url)
+        pks = {row["pk"] for row in resp.context["filter_locations_data"]}
+        self.assertIn(venue.pk, pks)
+
     def test_popup_edit_link_shown_only_to_manager(self):
         # The JS popup builds an edit link from the {location_edit 0} template URL, emitted
         # only when the viewer can manage locations.
