@@ -2,7 +2,7 @@ from typing import ClassVar
 
 from django.conf import settings
 from django.core.paginator import Paginator
-from django.db import models, transaction
+from django.db import connection, models, transaction
 from django.utils import translation
 from django.utils.translation import gettext
 from treebeard.mp_tree import MP_Node
@@ -20,6 +20,19 @@ class LocationConflictError(Exception):
     soft-deleted, or a child/competition appeared) -- callers turn this into a user-facing error."""
 
 
+# Arbitrary fixed key for the transaction-scoped advisory lock that serializes root creation
+# (roots have no parent row to lock, so two concurrent root inserts could pick the same path).
+_ROOT_NAMESPACE_LOCK = 0x10C_A710
+
+
+def _lock_root_namespace():
+    """Serialize concurrent root creation with a transaction-scoped advisory lock (Postgres). On
+    other backends writes already serialize at the DB level, so it's a no-op."""
+    if connection.vendor == "postgresql":
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_xact_lock(%s)", [_ROOT_NAMESPACE_LOCK])
+
+
 def add_location_child(parent, **kwargs):
     """Append a child under ``parent`` at the next free path, sidestepping treebeard's
     sorted ``add_child``.  When ``parent`` is ``None`` the node is appended as a new root
@@ -35,7 +48,8 @@ def add_location_child(parent, **kwargs):
     The whole insert runs in a transaction that locks the parent row (``select_for_update``); a
     concurrent delete/level-change of the parent locks the same row, so the two serialize and this
     child can never be created under a parent that ends up soft-deleted or re-levelled (it raises
-    ``LocationConflictError`` instead). ``parent=None`` (a root) needs no such guard.
+    ``LocationConflictError`` instead). For ``parent=None`` (a root) there is no parent row to lock,
+    so an advisory lock serializes concurrent root inserts that would otherwise pick the same path.
     """
     cls = parent.__class__ if parent is not None else Location
     with transaction.atomic():
@@ -56,6 +70,7 @@ def add_location_child(parent, **kwargs):
                 ).order_by("path")
             )
         else:
+            _lock_root_namespace()  # serialize concurrent root creation so paths can't collide
             depth = 1
             siblings = list(cls.objects.filter(depth=1).order_by("path"))
         last = siblings[-1] if siblings else None
