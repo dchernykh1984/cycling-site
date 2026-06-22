@@ -366,15 +366,17 @@ class LocationCreateViewTests(TestCase):
         self.assertFalse(region.is_pending)
         self.assertFalse(hasattr(region, "proposal"))
 
-    def test_create_form_hint_is_role_aware(self):
-        # Non-managers see the venue-only hint; managers (admin) see the structural hint instead.
-        # (The venue hint text is the discriminator; the structural hint is locale-translated.)
-        venue_hint = "added as a venue inside the chosen city"
+    def test_create_form_hint_is_role_aware_and_localized(self):
+        # The venue-only hint is shown to non-managers and translated: present in English under en,
+        # gone under ru (replaced by the translation), and never shown to admins (who get the
+        # structural hint). Cyrillic isn't spelled out in .py, so absence under ru proves the swap.
+        venue_hint_en = "added as a venue inside the chosen city"
         organizer = _make_user("org_hint@x.com", User.Role.ORGANIZER)
         self.client.force_login(organizer)
-        self.assertContains(self.client.get(self.url), venue_hint)
+        self.assertContains(self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="en"), venue_hint_en)
+        self.assertNotContains(self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="ru"), venue_hint_en)
         self.client.force_login(self.admin)
-        self.assertNotContains(self.client.get(self.url), venue_hint)
+        self.assertNotContains(self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="en"), venue_hint_en)
 
     def test_foreign_pending_parent_is_not_selectable(self):
         # Another user's pending node must not appear as a parent in the cascade or validate on POST.
@@ -679,6 +681,16 @@ class LocationDeleteViewTests(TestCase):
         self.client.post(reverse("location_delete", args=[country.pk]))
         country.refresh_from_db()
         self.assertFalse(country.is_deleted)
+
+    def test_delete_blocked_message_is_localized(self):
+        # The "cannot delete" message renders in English under en and is translated under ru.
+        msg_en = "Cannot delete a location that still has nested locations or competitions."
+        self.client.force_login(self.admin)
+        country, _, _ = _make_tree()
+        en = self.client.post(reverse("location_delete", args=[country.pk]), HTTP_ACCEPT_LANGUAGE="en", follow=True)
+        self.assertIn(msg_en, [str(m) for m in en.context["messages"]])
+        ru = self.client.post(reverse("location_delete", args=[country.pk]), HTTP_ACCEPT_LANGUAGE="ru", follow=True)
+        self.assertNotIn(msg_en, [str(m) for m in ru.context["messages"]])
 
     def test_can_delete_empty_venue(self):
         _, _, city = _make_tree()
