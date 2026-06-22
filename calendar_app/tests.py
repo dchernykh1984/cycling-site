@@ -1816,3 +1816,18 @@ class CompetitionRichDescriptionTests(TestCase):
         comp.refresh_from_db()
         self.assertNotIn("<script>", comp.description_en)
         self.assertIn("&lt;script&gt;", comp.description_en)
+
+
+class LocationsDataOrderingTests(TestCase):
+    """_get_locations_data feeds the cascade filters, so hidden / coordinate-less nodes must
+    come last in its output (the filters preserve this order when building options)."""
+
+    def test_get_locations_data_orders_hidden_and_coordless_last(self):
+        from calendar_app.views import _get_locations_data
+
+        Location.add_root(name="A", name_ru="A", name_en="A", lat="43.000000", lng="76.000000")
+        Location.add_root(name="Hidden", name_ru="Hidden", is_hidden=True, lat="44.0", lng="77.0")
+        Location.add_root(name="NoCoords", name_ru="NoCoords", name_en="NoCoords")
+        created = {"A", "NoCoords", "Hidden"}
+        names = [r["name_ru"] for r in _get_locations_data() if r["name_ru"] in created]
+        self.assertEqual(names, ["A", "NoCoords", "Hidden"])

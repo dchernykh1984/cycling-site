@@ -6,7 +6,15 @@ from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTests
 
 from accounts.models import User
-from locations.models import Location, LocationProposal, LocationsMapPage, add_location_child
+from locations.models import (
+    Location,
+    LocationProposal,
+    LocationsMapPage,
+    add_location_child,
+    location_filter_rank,
+    locations_filter_data,
+    sort_locations_for_filter,
+)
 
 
 def _get_site_root():
@@ -712,6 +720,40 @@ class AddLocationChildRobustnessTests(TestCase):
         paths = self._child_paths(city)
         self.assertEqual(len(paths), 8)
         self.assertEqual(len(paths), len(set(paths)))
+
+
+class LocationFilterOrderingTests(TestCase):
+    """Cascade filter dropdowns must list visible+coords nodes first, then visible without
+    coords, then hidden+coords, then hidden without coords (hidden / coordinate-less last)."""
+
+    def test_rank_orders_the_four_groups(self):
+        self.assertEqual(location_filter_rank({"is_hidden": False, "lat": 1.0, "lng": 1.0}), 0)
+        self.assertEqual(location_filter_rank({"is_hidden": False, "lat": None, "lng": None}), 1)
+        self.assertEqual(location_filter_rank({"is_hidden": True, "lat": 1.0, "lng": 1.0}), 2)
+        self.assertEqual(location_filter_rank({"is_hidden": True, "lat": None, "lng": None}), 3)
+
+    def test_sort_is_stable_within_a_group(self):
+        rows = [
+            {"name": "v_coords_1", "is_hidden": False, "lat": 1.0, "lng": 1.0},
+            {"name": "hidden_coords", "is_hidden": True, "lat": 1.0, "lng": 1.0},
+            {"name": "v_no_coords", "is_hidden": False, "lat": None, "lng": None},
+            {"name": "hidden_no_coords", "is_hidden": True, "lat": None, "lng": None},
+            {"name": "v_coords_2", "is_hidden": False, "lat": 2.0, "lng": 2.0},
+        ]
+        ordered = [r["name"] for r in sort_locations_for_filter(rows)]
+        # Two visible+coords keep their original relative order, then visible-no-coords,
+        # then hidden+coords, then hidden-no-coords.
+        self.assertEqual(ordered, ["v_coords_1", "v_coords_2", "v_no_coords", "hidden_coords", "hidden_no_coords"])
+
+    def test_locations_filter_data_orders_hidden_and_coordless_last(self):
+        Location.add_root(name="A", name_ru="A", name_en="A", lat="43.000000", lng="76.000000")
+        Location.add_root(name="HiddenCoords", name_ru="HiddenCoords", is_hidden=True, lat="44.0", lng="77.0")
+        Location.add_root(name="NoCoords", name_ru="NoCoords", name_en="NoCoords")
+        Location.add_root(name="HiddenNoCoords", name_ru="HiddenNoCoords", is_hidden=True)
+        Location.add_root(name="B", name_ru="B", name_en="B", lat="45.000000", lng="78.000000")
+        created = {"A", "B", "NoCoords", "HiddenCoords", "HiddenNoCoords"}
+        names = [r["name_ru"] for r in locations_filter_data() if r["name_ru"] in created]
+        self.assertEqual(names, ["A", "B", "NoCoords", "HiddenCoords", "HiddenNoCoords"])
 
 
 class LocationsMapPageManageListTests(TestCase):
