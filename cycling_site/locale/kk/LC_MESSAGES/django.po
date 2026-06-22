@@ -1726,3 +1726,7 @@ msgstr ""
 #: locations/templates/locations/locations_map_page.html
 msgid "No locations found."
 msgstr "Локациялар табылмады."
+
+#: cycling_site/templates/_pagination.html
+msgid "Go to page"
+msgstr "Бетке өту"
