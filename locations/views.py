@@ -155,10 +155,10 @@ class LocationCreateView(LoginRequiredMixin, View):
             parent = cd.get("parent")
             new_depth = parent.depth + 1 if parent is not None else 1
             can_direct = _can_add_location_directly(request.user)
-            # The proposal/approve/reject workflow is venue-only. Structural nodes (country/
-            # region/city) are never proposed: only organizer+ may create them, always approved.
-            # Everyone else is limited to proposing a depth-4 venue under an existing city.
-            if new_depth != 4 and not can_direct:
+            # Structural nodes (country/region/city) are admin-only, matching the API and the role
+            # contract; organizer+ may only add a depth-4 venue under a city, and everyone else
+            # proposes such a venue. The proposal/approve/reject workflow stays venue-only.
+            if new_depth != 4 and not _can_manage_locations(request.user):
                 raise PermissionDenied
             new_location = add_location_child(
                 parent,
