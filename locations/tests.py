@@ -1,6 +1,8 @@
 import datetime
+import threading
 
-from django.test import TestCase
+from django.db import connections
+from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTests
@@ -8,11 +10,14 @@ from wagtail.test.utils import WagtailPageTests
 from accounts.models import User
 from locations.models import (
     Location,
+    LocationConflictError,
     LocationProposal,
     LocationsMapPage,
     add_location_child,
     location_filter_rank,
     locations_filter_data,
+    move_location,
+    soft_delete_location,
     sort_locations_for_filter,
 )
 
@@ -1130,3 +1135,85 @@ class LocationsMapPageManageListTests(TestCase):
         self.assertIn(edit_url_tpl, self.client.get(self.map_page.url).content.decode())
         self.client.logout()
         self.assertNotIn(edit_url_tpl, self.client.get(self.map_page.url).content.decode())
+
+
+class AddLocationChildConcurrencyGuardTests(TestCase):
+    """add_location_child refuses to nest under a removed or already-deepest parent (the guards
+    that make the locked re-check meaningful)."""
+
+    def test_add_under_deleted_parent_raises_conflict(self):
+        country = Location.add_root(name="C", name_ru="C")
+        country.is_deleted = True
+        country.save(update_fields=["is_deleted"])
+        with self.assertRaises(LocationConflictError):
+            add_location_child(country, name="R", name_ru="R")
+
+    def test_add_under_depth4_parent_raises_conflict(self):
+        country = Location.add_root(name="C", name_ru="C")
+        venue = (
+            country.add_child(name="R", name_ru="R")
+            .add_child(name="City", name_ru="City")
+            .add_child(name="V", name_ru="V")
+        )
+        self.assertEqual(venue.depth, 4)
+        with self.assertRaises(LocationConflictError):
+            add_location_child(venue, name="X", name_ru="X")
+
+
+class ConcurrentLocationMutationTests(TransactionTestCase):
+    """The locked check-then-act in the mutation helpers must serialize with a racing create, so a
+    concurrent create can never leave a live node under a deleted or re-levelled ancestor. Driven
+    at the model-helper level (the locking primitive the views use) to avoid template rendering."""
+
+    def setUp(self):
+        self.country = Location.add_root(name="KZ", name_ru="KZ")
+        self.region = self.country.add_child(name="R", name_ru="R")
+        self.city = self.region.add_child(name="City", name_ru="City")
+
+    def _run(self, fn_a, fn_b):
+        """Run two mutations against the same node simultaneously; return {key: outcome} where
+        outcome is 'ok', 'conflict' (the expected serialized loser) or a repr of a real crash."""
+        barrier = threading.Barrier(2)
+        outcomes: dict = {}
+
+        def wrap(key, fn):
+            try:
+                barrier.wait(timeout=10)
+                fn()
+                outcomes[key] = "ok"
+            except LocationConflictError:
+                outcomes[key] = "conflict"
+            except Exception as exc:  # surface a real crash (IntegrityError etc.) as a failure
+                outcomes[key] = repr(exc)
+            finally:
+                connections.close_all()  # release the thread's connection so teardown can drop the DB
+
+        threads = [threading.Thread(target=wrap, args=("a", fn_a)), threading.Thread(target=wrap, args=("b", fn_b))]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=15)
+        for key, outcome in outcomes.items():
+            self.assertIn(outcome, ("ok", "conflict"), f"{key} crashed: {outcome}")
+        return outcomes
+
+    def test_create_under_node_being_deleted_never_orphans(self):
+        self._run(
+            lambda: soft_delete_location(self.city),
+            lambda: add_location_child(self.city, name="V", name_ru="V"),
+        )
+        self.city.refresh_from_db()
+        live_children = Location.objects.filter(
+            path__startswith=self.city.path, depth__gt=self.city.depth, is_deleted=False
+        )
+        # Never both: a deleted city with a live venue still hanging off it would be an orphan.
+        self.assertFalse(self.city.is_deleted and live_children.exists())
+
+    def test_create_under_node_being_relevelled_keeps_tree_valid(self):
+        # Promote the (empty) city to a country while a venue is being added under it.
+        self._run(
+            lambda: move_location(self.city, None),
+            lambda: add_location_child(self.city, name="V", name_ru="V"),
+        )
+        # Whichever order won, no live node ends up deeper than the four-level tree.
+        self.assertEqual(Location.objects.filter(is_deleted=False, depth__gt=4).count(), 0)

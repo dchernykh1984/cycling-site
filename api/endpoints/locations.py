@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.db import transaction
 from django.db.models import Q
 from ninja import Router, Schema, Status
 from ninja.errors import HttpError
@@ -8,7 +9,13 @@ from ninja.schema import Field
 from accounts.models import User
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
-from locations.models import Location, LocationProposal, add_location_child, location_can_be_deleted
+from locations.models import (
+    Location,
+    LocationConflictError,
+    LocationProposal,
+    add_location_child,
+    soft_delete_location,
+)
 
 _PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
 _ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
@@ -207,11 +214,16 @@ def create_location(request, payload: LocationIn):
     if not is_admin(user) and (parent is None or parent.depth != 3):
         raise HttpError(403, "A city (depth-3) parent_id is required to create a venue")
 
-    location = add_location_child(parent, **kwargs) if parent is not None else Location.add_root(**kwargs)
-
-    # Below organizer the location is a proposal: usable by the author, pending review.
-    if not approved:
-        LocationProposal.objects.create(location=location, submitted_by=user)
+    # add_location_child locks the parent and the proposal shares the transaction, so a concurrent
+    # delete of the parent can't leave the new node orphaned (it raises LocationConflictError).
+    try:
+        with transaction.atomic():
+            location = add_location_child(parent, **kwargs) if parent is not None else Location.add_root(**kwargs)
+            # Below organizer the location is a proposal: usable by the author, pending review.
+            if not approved:
+                LocationProposal.objects.create(location=location, submitted_by=user)
+    except LocationConflictError:
+        raise HttpError(409, "Parent location is no longer available") from None
 
     return Status(201, location)
 
@@ -245,9 +257,10 @@ def delete_location(request, location_id: int):
     user = request.auth
     _require_admin(user)
     location = _get_or_404(location_id)
-    # Same contract as the web form: refuse to orphan a live subtree/competitions (review #2).
-    if not location_can_be_deleted(location):
-        raise HttpError(409, "Location still has nested locations or competitions")
-    location.is_deleted = True
-    location.save(update_fields=["is_deleted"])
+    # Same contract as the web form: refuse to orphan a live subtree/competitions. soft_delete_location
+    # re-checks under a row lock, so a concurrent create can't slip a child in before the delete.
+    try:
+        soft_delete_location(location)
+    except LocationConflictError:
+        raise HttpError(409, "Location still has nested locations or competitions") from None
     return Status(204, None)
