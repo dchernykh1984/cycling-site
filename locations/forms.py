@@ -29,10 +29,29 @@ class LocationForm(forms.Form):
         self.fields["parent"].queryset = qs
 
     def clean_parent(self):
-        # When editing, the chosen parent must not be the location itself or one of its
-        # descendants -- that would make a node its own ancestor (a treebeard cycle).
         parent = self.cleaned_data.get("parent")
-        if parent is not None and self.instance is not None:
-            if parent.pk == self.instance.pk or parent.is_descendant_of(self.instance):
-                raise forms.ValidationError(_("A location cannot be placed inside itself."))
+        if self.instance is None:
+            return parent
+        # The chosen parent must not be the location itself or one of its descendants -- that
+        # would make a node its own ancestor (a treebeard cycle).
+        if parent is not None and (parent.pk == self.instance.pk or parent.is_descendant_of(self.instance)):
+            raise forms.ValidationError(_("A location cannot be placed inside itself."))
+        # Changing a node's level moves its whole subtree (children jump levels, venues stop
+        # being depth-4) and orphans competitions that require a depth-4 venue. Forbid the level
+        # change while the node still has nested locations or attached competitions.
+        new_depth = parent.depth + 1 if parent is not None else 1
+        if new_depth != self.instance.depth and self._is_in_use():
+            raise forms.ValidationError(
+                _("This location has nested locations or competitions, so its level cannot be changed.")
+            )
         return parent
+
+    def _is_in_use(self) -> bool:
+        """True if the edited location has non-deleted children (queried by path so a drifted
+        ``numchild`` can't hide them) or any competition still pointing at it."""
+        has_children = Location.objects.filter(
+            depth=self.instance.depth + 1,
+            path__range=Location._get_children_path_interval(self.instance.path),
+            is_deleted=False,
+        ).exists()
+        return has_children or self.instance.competitions.exists()
