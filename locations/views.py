@@ -80,6 +80,17 @@ def _get_map_url() -> str:
     return page.url if page else "/"
 
 
+def _safe_return_url(request, default: str) -> str:
+    """A same-origin return target (path + query) from ``next`` or the referer, so an action
+    taken on ``?page=N&location=...`` returns to that page/filter instead of the first page.
+    Only the path and query are used (never the host/scheme), so the redirect stays local."""
+    candidate = request.POST.get("next") or request.GET.get("next") or request.META.get("HTTP_REFERER", "")
+    parsed = urlparse(candidate)
+    if not parsed.path:
+        return default
+    return parsed.path + (f"?{parsed.query}" if parsed.query else "")
+
+
 class LocationDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk):
         from locations.models import Location
@@ -89,8 +100,7 @@ class LocationDeleteView(LoginRequiredMixin, View):
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
         location.is_deleted = True
         location.save(update_fields=["is_deleted"])
-        safe_path = urlparse(request.META.get("HTTP_REFERER", "")).path or "/"
-        return redirect(safe_path)
+        return redirect(_safe_return_url(request, "/"))
 
 
 class LocationHideView(LoginRequiredMixin, View):
@@ -102,8 +112,7 @@ class LocationHideView(LoginRequiredMixin, View):
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
         location.is_hidden = not location.is_hidden
         location.save(update_fields=["is_hidden"])
-        safe_path = urlparse(request.META.get("HTTP_REFERER", "")).path or "/"
-        return redirect(safe_path)
+        return redirect(_safe_return_url(request, "/"))
 
 
 class LocationCreateView(LoginRequiredMixin, View):
@@ -246,6 +255,7 @@ class LocationEditView(LoginRequiredMixin, View):
                 "can_manage": _can_manage_locations(request.user),
                 "location": location,
                 "map_url": _get_map_url(),
+                "next_url": _safe_return_url(request, _get_map_url()),
                 "all_locations_json": _get_all_locations_json(request.user),
                 "venues_json": _get_venues_json(),
             },
@@ -302,7 +312,7 @@ class LocationEditView(LoginRequiredMixin, View):
                         _safe_move(location, new_parent, pos="sorted-child")
 
             messages.success(request, _("Location saved."))
-            return redirect(_get_map_url())
+            return redirect(_safe_return_url(request, _get_map_url()))
         return render(
             request,
             "locations/location_form.html",
@@ -312,6 +322,7 @@ class LocationEditView(LoginRequiredMixin, View):
                 "can_manage": _can_manage_locations(request.user),
                 "location": location,
                 "map_url": _get_map_url(),
+                "next_url": _safe_return_url(request, _get_map_url()),
                 "all_locations_json": _get_all_locations_json(request.user),
                 "venues_json": _get_venues_json(),
             },

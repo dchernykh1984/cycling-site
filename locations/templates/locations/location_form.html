@@ -26,6 +26,7 @@
 
 <form method="post" id="location-form">
 {% csrf_token %}
+{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
 {{ form.parent }}
 <div class="row g-4">
   <div class="col-md-6">
@@ -134,7 +135,7 @@
       <button type="submit" class="btn btn-primary">
         {% if is_edit %}{% trans "Save" %}{% else %}{% trans "Add location" %}{% endif %}
       </button>
-      <a href="{{ map_url }}" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
+      <a href="{{ next_url|default:map_url }}" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
     </div>
 
   </div>

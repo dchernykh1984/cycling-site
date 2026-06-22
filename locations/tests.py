@@ -550,6 +550,21 @@ class LocationEditViewTests(TestCase):
         self.country.refresh_from_db()
         self.assertEqual(self.country.depth, 1)
 
+    def test_edit_save_returns_to_page_and_filter(self):
+        # Saving an edit returns to the page/filter the admin came from, not the first page.
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            self._url(),
+            {
+                "name_ru": "OldName",
+                "name_kk": "",
+                "name_en": "",
+                "parent": str(self.city.pk),
+                "next": "/map/?page=2&location=9",
+            },
+        )
+        self.assertRedirects(resp, "/map/?page=2&location=9", fetch_redirect_response=False)
+
     def test_cycle_error_is_localized(self):
         # The cycle validation message must be translated: present in English under en, absent
         # under ru (replaced by the Russian translation, which we avoid spelling out in .py).
@@ -599,6 +614,19 @@ class LocationDeleteViewTests(TestCase):
         resp = self.client.post(reverse("location_delete", args=[self.loc.pk]))
         self.assertEqual(resp.status_code, 403)
 
+    def test_delete_returns_to_page_and_filter(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(reverse("location_delete", args=[self.loc.pk]), {"next": "/map/?page=3&location=7"})
+        self.assertRedirects(resp, "/map/?page=3&location=7", fetch_redirect_response=False)
+
+    def test_delete_ignores_cross_origin_next_host(self):
+        # Only path + query are used, never the host, so the redirect can't be hijacked off-site.
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            reverse("location_delete", args=[self.loc.pk]), {"next": "https://evil.example.com/x?a=1"}
+        )
+        self.assertRedirects(resp, "/x?a=1", fetch_redirect_response=False)
+
 
 class LocationHideViewTests(TestCase):
     def setUp(self):
@@ -617,6 +645,11 @@ class LocationHideViewTests(TestCase):
         self.client.post(reverse("location_hide", args=[self.loc.pk]))
         self.loc.refresh_from_db()
         self.assertFalse(self.loc.is_hidden)
+
+    def test_hide_returns_to_page_and_filter(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(reverse("location_hide", args=[self.loc.pk]), {"next": "/map/?page=2&location=4"})
+        self.assertRedirects(resp, "/map/?page=2&location=4", fetch_redirect_response=False)
 
 
 class LocationsMapLocaleTests(TestCase):

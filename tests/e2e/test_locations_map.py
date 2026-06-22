@@ -179,5 +179,6 @@ def test_admin_can_edit_location(page: Page, live_server, map_page, admin_user, 
 def test_manage_table_has_edit_button(page: Page, live_server, map_page, admin_user, location_with_coords):
     inject_session(page, live_server, admin_user)
     page.goto(_map_url(live_server))
-    edit_link = page.locator(f"a[href='/locations/{location_with_coords.pk}/edit/']")
+    # The edit link carries a ?next= return target, so match by prefix.
+    edit_link = page.locator(f"a[href^='/locations/{location_with_coords.pk}/edit/']")
     expect(edit_link).to_be_visible()
