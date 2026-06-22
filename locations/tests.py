@@ -1188,11 +1188,19 @@ class ConcurrentLocationMutationTests(TransactionTestCase):
             finally:
                 connections.close_all()  # release the thread's connection so teardown can drop the DB
 
-        threads = [threading.Thread(target=wrap, args=("a", fn_a)), threading.Thread(target=wrap, args=("b", fn_b))]
-        for t in threads:
+        threads = {
+            "a": threading.Thread(target=wrap, args=("a", fn_a)),
+            "b": threading.Thread(target=wrap, args=("b", fn_b)),
+        }
+        for t in threads.values():
             t.start()
-        for t in threads:
+        for t in threads.values():
             t.join(timeout=15)
+        # Fail loudly on a hung/deadlocked thread instead of silently passing the invariant on the
+        # one result that did get recorded.
+        alive = [key for key, t in threads.items() if t.is_alive()]
+        self.assertEqual(alive, [], f"threads did not finish (deadlock/timeout?): {alive}")
+        self.assertEqual(set(outcomes), {"a", "b"}, outcomes)
         for key, outcome in outcomes.items():
             self.assertIn(outcome, ("ok", "conflict"), f"{key} crashed: {outcome}")
         return outcomes
