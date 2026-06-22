@@ -1689,3 +1689,11 @@ msgstr "Локации не найдены."
 #: cycling_site/templates/_pagination.html
 msgid "Go to page"
 msgstr "Перейти на страницу"
+
+#: locations/forms.py
+msgid "A location cannot be placed inside itself."
+msgstr "Локацию нельзя поместить внутрь самой себя."
+
+#: locations/forms.py
+msgid "This location has nested locations or competitions, so its level cannot be changed."
+msgstr "У этой локации есть вложенные локации или соревнования, поэтому её уровень нельзя изменить."

@@ -550,6 +550,17 @@ class LocationEditViewTests(TestCase):
         self.country.refresh_from_db()
         self.assertEqual(self.country.depth, 1)
 
+    def test_cycle_error_is_localized(self):
+        # The cycle validation message must be translated: present in English under en, absent
+        # under ru (replaced by the Russian translation, which we avoid spelling out in .py).
+        self.client.force_login(self.admin)
+        url = reverse("location_edit", args=[self.country.pk])
+        data = {"name_ru": "KZ", "name_kk": "", "name_en": "", "parent": str(self.region.pk)}
+        en = self.client.post(url, data, HTTP_ACCEPT_LANGUAGE="en")
+        self.assertContains(en, "cannot be placed inside itself")
+        ru = self.client.post(url, data, HTTP_ACCEPT_LANGUAGE="ru")
+        self.assertNotContains(ru, "cannot be placed inside itself")
+
     def test_edit_get_prefills_parent_with_current_parent(self):
         # The hidden parent field is pre-filled with the location's current parent (its city).
         self.client.force_login(self.admin)
