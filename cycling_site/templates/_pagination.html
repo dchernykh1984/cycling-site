@@ -1,0 +1,38 @@
+{% load i18n %}
+{% comment %}
+Reusable pager for any Django Page object. Include with:
+  {% include "_pagination.html" with page_obj=competitions %}
+The current-page field is an editable number input; submitting it (Enter or blur)
+jumps to that page. All current GET params except `page` are preserved -- including
+repeated ones like `location` -- via request.GET.lists.
+{% endcomment %}
+{% if page_obj.has_other_pages %}
+<nav aria-label="{% trans 'Pagination' %}">
+  <ul class="pagination justify-content-center align-items-center">
+    {% if page_obj.has_previous %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for k, values in request.GET.lists %}{% if k != 'page' %}{% for v in values %}&amp;{{ k|urlencode }}={{ v|urlencode }}{% endfor %}{% endif %}{% endfor %}">
+        &laquo; {% trans "Previous" %}
+      </a>
+    </li>
+    {% endif %}
+    <li class="page-item">
+      <form method="get" class="d-flex align-items-center gap-1 m-0 px-2">
+        {% for k, values in request.GET.lists %}{% if k != 'page' %}{% for v in values %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}{% endif %}{% endfor %}
+        <input type="number" name="page" min="1" max="{{ page_obj.paginator.num_pages }}"
+               value="{{ page_obj.number }}" onchange="this.form.submit()"
+               class="form-control form-control-sm text-center page-jump" style="width: 4.5rem;"
+               aria-label="{% trans 'Go to page' %}">
+        <span class="text-muted">/ {{ page_obj.paginator.num_pages }}</span>
+      </form>
+    </li>
+    {% if page_obj.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for k, values in request.GET.lists %}{% if k != 'page' %}{% for v in values %}&amp;{{ k|urlencode }}={{ v|urlencode }}{% endfor %}{% endif %}{% endfor %}">
+        {% trans "Next" %} &raquo;
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}

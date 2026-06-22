@@ -234,3 +234,15 @@ html {
     background-color: #2c3034;
     border-color: #495057;
 }
+
+/* Pager jump-to-page field: hide the number spinner arrows -- clicking them would fire the
+   change handler and reload the page one step at a time, which looks jarring. */
+input.page-jump::-webkit-outer-spin-button,
+input.page-jump::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input.page-jump {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}

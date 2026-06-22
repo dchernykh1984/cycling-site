@@ -784,6 +784,15 @@ class LocationsMapPageManageListTests(TestCase):
         resp = self.client.get(self.map_page.url, {"page": 2})
         self.assertEqual(resp.context["locations_page"].number, 2)
 
+    def test_pagination_renders_editable_page_input(self):
+        for i in range(25):
+            Location.add_root(name=f"F{i:02d}", name_ru=f"F{i:02d}", name_en=f"F{i:02d}")
+        self.client.force_login(self.admin)
+        html = self.client.get(self.map_page.url).content.decode()
+        self.assertIn('name="page"', html)
+        self.assertIn('type="number"', html)
+        self.assertIn("page-jump", html)  # CSS hook that hides the spinner arrows
+
     def test_list_hidden_for_anonymous(self):
         Location.add_root(name="Solo", name_ru="Solo", name_en="Solo")
         resp = self.client.get(self.map_page.url)

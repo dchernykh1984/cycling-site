@@ -193,6 +193,22 @@ class CompetitionListViewTests(TestCase):
         titles = [c.title for c in response.context["competitions"]]
         self.assertNotIn("Past Race", titles)
 
+    def test_pagination_renders_editable_page_input(self):
+        today = timezone.localdate()
+        for i in range(25):
+            _make_competition(f"Race {i:02d}", date_start=today + datetime.timedelta(days=i + 1))
+        html = self.client.get(reverse("calendar_list")).content.decode()
+        self.assertIn('name="page"', html)
+        self.assertIn('type="number"', html)
+        self.assertIn("page-jump", html)  # CSS hook that hides the spinner arrows
+
+    def test_can_jump_to_arbitrary_page(self):
+        today = timezone.localdate()
+        for i in range(25):
+            _make_competition(f"Race {i:02d}", date_start=today + datetime.timedelta(days=i + 1))
+        response = self.client.get(reverse("calendar_list"), {"page": 2})
+        self.assertEqual(response.context["competitions"].number, 2)
+
     def test_date_range_filter(self):
         past_date = (timezone.localdate() - datetime.timedelta(days=60)).isoformat()
         response = self.client.get(
