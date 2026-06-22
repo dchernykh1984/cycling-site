@@ -1,6 +1,7 @@
 from typing import ClassVar
 
 from django.conf import settings
+from django.core.paginator import Paginator
 from django.db import models
 from django.utils import translation
 from django.utils.translation import gettext
@@ -261,6 +262,38 @@ def _build_map_locations(all_locs) -> list:
     return data
 
 
+def locations_filter_data(user=None) -> list:
+    """Visible Location nodes (pk/depth/path/names) for the country->region->city->location
+    cascade filter, in the same shape the calendar list filter consumes. Pending locations
+    are visible only to the user who proposed them."""
+    visible = models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
+    if user is not None and getattr(user, "is_authenticated", False):
+        visible |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
+    return list(
+        Location.objects.filter(is_deleted=False)
+        .filter(visible)
+        .order_by("path")
+        .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden")
+    )
+
+
+def filter_descendant_pks(location_ids) -> set:
+    """Union of descendant pks (incl. self) for the selected filter ids. Each value may be a
+    comma-joined group of same-name ids (as the multi-select cascade emits)."""
+    ids: set[int] = set()
+    for value in location_ids or []:
+        for part in str(value).split(","):
+            part = part.strip()
+            if part.isdigit():
+                ids.add(int(part))
+    if not ids:
+        return set()
+    pks: set[int] = set()
+    for loc in Location.objects.filter(pk__in=ids, is_deleted=False):
+        pks.update(loc.get_descendants(include_self=True).values_list("pk", flat=True))
+    return pks
+
+
 class LocationsMapPage(AsciiSlugMixin, Page):
     intro = RichTextField(blank=True)
 
@@ -287,6 +320,12 @@ class LocationsMapPage(AsciiSlugMixin, Page):
                 models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
             )
         )
+        # The cascade filter (shown to managers above the map) narrows the map markers too:
+        # selecting a node keeps only that node and its descendants.
+        location_ids = request.GET.getlist("location")
+        filter_pks = filter_descendant_pks(location_ids) if location_ids else None
+        if filter_pks is not None:
+            all_locs = [loc for loc in all_locs if loc.pk in filter_pks]
         context["locations_data"] = _build_map_locations(all_locs)
         # Only confirmed users (participant+) may propose a location, so only they see the
         # "Add location" button - a guest would otherwise click through to a 403 (issue #118).
@@ -295,8 +334,14 @@ class LocationsMapPage(AsciiSlugMixin, Page):
         )
         context["can_manage"] = can_manage
         if can_manage:
-            all_locs = Location.objects.filter(is_deleted=False).order_by("name")
-            context["all_locations"] = all_locs
+            # Managers get a paginated, filterable list (same UX as the calendar list) instead
+            # of the full location dump. The cascade filter narrows by selected node + descendants.
+            qs = Location.objects.filter(is_deleted=False).order_by("path")
+            if filter_pks is not None:
+                qs = qs.filter(pk__in=filter_pks)
+            paginator = Paginator(qs, 20)
+            context["locations_page"] = paginator.get_page(request.GET.get("page", 1))
+            context["filter_locations_data"] = locations_filter_data(request.user)
         return context
 
     class Meta:

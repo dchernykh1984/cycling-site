@@ -48,7 +48,7 @@ window.getLocationFilterIds() and calls window.onCalendarFilterChange() on chang
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  var dataEl = document.getElementById('locations-data');
+  var dataEl = document.getElementById('{{ locations_data_element_id|default:"locations-data" }}');
   if (!dataEl || !window.MultiSelectCascade) return;
   var allLocations = JSON.parse(dataEl.textContent);
   var lang = (document.documentElement.lang || 'ru').split('-')[0];

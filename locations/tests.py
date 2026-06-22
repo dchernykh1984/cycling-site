@@ -712,3 +712,78 @@ class AddLocationChildRobustnessTests(TestCase):
         paths = self._child_paths(city)
         self.assertEqual(len(paths), 8)
         self.assertEqual(len(paths), len(set(paths)))
+
+
+class LocationsMapPageManageListTests(TestCase):
+    """The map page shows managers a paginated, filterable location list and a per-marker
+    edit link; non-managers see neither."""
+
+    def setUp(self):
+        root = _get_site_root()
+        self.map_page = LocationsMapPage(title="Map Manage Test", slug="map-manage-test")
+        root.add_child(instance=self.map_page)
+        self.admin = _make_user("map_admin@x.com", User.Role.ADMIN)
+        self.participant = _make_user("map_part2@x.com", User.Role.PARTICIPANT)
+
+    def test_manager_list_is_paginated(self):
+        for i in range(25):
+            Location.add_root(name=f"C{i:02d}", name_ru=f"C{i:02d}", name_en=f"C{i:02d}")
+        self.client.force_login(self.admin)
+        resp = self.client.get(self.map_page.url)
+        page = resp.context["locations_page"]
+        self.assertEqual(len(page), 20)  # first page is full
+        self.assertGreaterEqual(page.paginator.count, 25)
+        self.assertGreater(page.paginator.num_pages, 1)
+
+    def test_second_page_returns_remaining(self):
+        for i in range(25):
+            Location.add_root(name=f"D{i:02d}", name_ru=f"D{i:02d}", name_en=f"D{i:02d}")
+        self.client.force_login(self.admin)
+        resp = self.client.get(self.map_page.url, {"page": 2})
+        self.assertEqual(resp.context["locations_page"].number, 2)
+
+    def test_list_hidden_for_anonymous(self):
+        Location.add_root(name="Solo", name_ru="Solo", name_en="Solo")
+        resp = self.client.get(self.map_page.url)
+        self.assertNotIn("locations_page", resp.context)
+        self.assertNotContains(resp, "Manage locations")
+
+    def test_list_hidden_for_participant(self):
+        self.client.force_login(self.participant)
+        resp = self.client.get(self.map_page.url)
+        self.assertNotIn("locations_page", resp.context)
+
+    def test_filter_narrows_list_to_selected_subtree(self):
+        country_a, region_a, city_a = _make_tree()
+        country_b = Location.add_root(name="OtherCountry", name_ru="OtherCountry", name_en="OtherCountry")
+        self.client.force_login(self.admin)
+        resp = self.client.get(self.map_page.url, {"location": str(country_a.pk)})
+        pks = {loc.pk for loc in resp.context["locations_page"]}
+        self.assertEqual(pks, {country_a.pk, region_a.pk, city_a.pk})
+        self.assertNotIn(country_b.pk, pks)
+
+    def test_filter_narrows_map_markers(self):
+        country_a = Location.add_root(name="AA", name_ru="AA", name_en="AA", lat="43.200000", lng="76.900000")
+        Location.add_root(name="BB", name_ru="BB", name_en="BB", lat="51.100000", lng="71.400000")
+        self.client.force_login(self.admin)
+        resp = self.client.get(self.map_page.url, {"location": str(country_a.pk)})
+        names = {d["name"] for d in resp.context["locations_data"]}
+        self.assertIn("AA", names)
+        self.assertNotIn("BB", names)
+
+    def test_filter_data_present_for_manager(self):
+        _make_tree()
+        self.client.force_login(self.admin)
+        resp = self.client.get(self.map_page.url)
+        data = resp.context["filter_locations_data"]
+        self.assertTrue(any(row["name_ru"] == "KZ" for row in data))
+        self.assertContains(resp, "filter-locations-data")
+
+    def test_popup_edit_link_shown_only_to_manager(self):
+        # The JS popup builds an edit link from the {location_edit 0} template URL, emitted
+        # only when the viewer can manage locations.
+        edit_url_tpl = reverse("location_edit", args=[0])
+        self.client.force_login(self.admin)
+        self.assertIn(edit_url_tpl, self.client.get(self.map_page.url).content.decode())
+        self.client.logout()
+        self.assertNotIn(edit_url_tpl, self.client.get(self.map_page.url).content.decode())
