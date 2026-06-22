@@ -126,16 +126,24 @@ def test_admin_can_create_location(page: Page, live_server, map_page, admin_user
     region = location_tree_basic["region"]
     city = location_tree_basic["city"]
 
+    # Each cascade level is rebuilt by the previous level's change handler, so wait for the
+    # dependent select to become enabled before selecting in it (avoids a CI race).
     page.select_option("#loc-country", str(country.pk))
+    expect(page.locator("#loc-region")).to_be_enabled()
     page.select_option("#loc-region", str(region.pk))
+    expect(page.locator("#loc-city")).to_be_enabled()
     page.select_option("#loc-city", str(city.pk))
+    # The deepest selection is mirrored into the hidden parent field; wait for it before submit.
+    expect(page.locator("#id_parent")).to_have_value(str(city.pk))
     page.fill("#id_name_ru", "Test Venue")
     page.locator("#location-form button[type=submit]").click()
-    page.wait_for_load_state("networkidle")
+    page.wait_for_url(lambda url: "/locations/add/" not in url)
 
     from locations.models import Location
 
-    assert Location.objects.filter(name_ru="Test Venue").exists()
+    venue = Location.objects.get(name_ru="Test Venue")
+    assert venue.depth == 4
+    assert venue.get_parent().pk == city.pk
 
 
 # ---------------------------------------------------------------------------
