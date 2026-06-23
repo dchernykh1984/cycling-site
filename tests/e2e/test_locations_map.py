@@ -164,7 +164,8 @@ def test_admin_can_edit_location(page: Page, live_server, map_page, admin_user, 
     page.goto(f"{live_server.url}/locations/{location_with_coords.pk}/edit/")
     page.fill("#id_name_ru", "Renamed Venue")
     page.locator("#location-form button[type=submit]").click()
-    page.wait_for_load_state("networkidle")
+    # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
+    page.wait_for_url(lambda url: "/edit/" not in url)
 
     location_with_coords.refresh_from_db()
     assert location_with_coords.name_ru == "Renamed Venue"

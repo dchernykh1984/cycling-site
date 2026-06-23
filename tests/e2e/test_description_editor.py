@@ -105,7 +105,8 @@ def test_submit_round_trips_all_three_locales(page: Page, live_server, organizer
           document.getElementById('id_title_ru').form.requestSubmit();
         }"""
     )
-    page.wait_for_load_state("networkidle")
+    # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
+    page.wait_for_url(lambda url: "/calendar/submit/" not in url)
 
     comp = Competition.objects.get(title_ru="Trilingual Race")
     assert "Russian body" in comp.description_ru
@@ -131,7 +132,8 @@ def test_submit_strips_script_from_editor_html(page: Page, live_server, organize
           document.getElementById('id_title_ru').form.requestSubmit();
         }"""
     )
-    page.wait_for_load_state("networkidle")
+    # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
+    page.wait_for_url(lambda url: "/calendar/submit/" not in url)
 
     comp = Competition.objects.get(title_ru="XSS Race")
     assert "safe text" in comp.description_ru
