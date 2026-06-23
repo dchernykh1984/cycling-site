@@ -65,7 +65,8 @@ def test_add_round_trips_body(page: Page, live_server, superuser, knowledge_inde
           document.getElementById('id_title').form.requestSubmit();
         }"""
     )
-    page.wait_for_load_state("networkidle")
+    # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
+    page.wait_for_url(lambda url: "/knowledge/add/" not in url)
 
     art = KnowledgeArticle.objects.get(title="E2E Knowledge Article")
     assert "Body written in the browser" in art.body
@@ -87,7 +88,8 @@ def test_add_strips_script_on_save(page: Page, live_server, superuser, knowledge
           document.getElementById('id_title').form.requestSubmit();
         }"""
     )
-    page.wait_for_load_state("networkidle")
+    # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
+    page.wait_for_url(lambda url: "/knowledge/add/" not in url)
 
     art = KnowledgeArticle.objects.get(title="E2E KB XSS")
     assert "safe text" in art.body
@@ -114,7 +116,8 @@ def test_edit_prefills_and_updates(page: Page, live_server, superuser, knowledge
           document.getElementById('id_title').form.requestSubmit();
         }"""
     )
-    page.wait_for_load_state("networkidle")
+    # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
+    page.wait_for_url(lambda url: "/edit/" not in url)
 
     art.refresh_from_db()
     assert "plus more" in art.body
