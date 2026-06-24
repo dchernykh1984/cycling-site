@@ -34,41 +34,6 @@ def _pick_discipline(page: Page, value) -> None:
 
 
 @pytest.mark.django_db(transaction=True)
-def test_orphan_discipline_is_selectable_without_direction(page: Page, live_server, organizer):
-    # A discipline whose category was cleared in the admin must still be reachable, under the
-    # synthetic "Without direction" group, and savable (review: category is nullable).
-    orphan = Discipline.objects.create(name_ru="OrphanRU", name_en="Orphan", category=None, order=1)
-    inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/submit/")
-    page.fill("#id_title_ru", "Orphan Race")
-    page.fill("#id_date_start", "2026-09-01")
-    _pick_direction(page, "__none__")
-    _pick_discipline(page, orphan.pk)
-    expect(page.locator(f"#disciplines-hidden input[name='disciplines'][value='{orphan.pk}']")).to_have_count(1)
-    page.evaluate("() => document.getElementById('id_title_ru').form.requestSubmit()")
-    page.wait_for_url(lambda url: "/calendar/submit/" not in url)
-
-    comp = Competition.objects.get(title_ru="Orphan Race")
-    assert list(comp.disciplines.values_list("pk", flat=True)) == [orphan.pk]
-
-
-@pytest.mark.django_db(transaction=True)
-def test_edit_prefills_orphan_discipline(page: Page, live_server, organizer):
-    orphan = Discipline.objects.create(name_ru="OrphanRU", name_en="Orphan", category=None, order=1)
-    comp = Competition.objects.create(
-        title_ru="Has Orphan",
-        date_start=datetime.date(2026, 9, 1),
-        submitted_by=organizer,
-        status=Competition.Status.APPROVED,
-    )
-    comp.disciplines.set([orphan])
-    inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/{comp.pk}/edit/")
-    # The previously-attached orphan is mirrored into a hidden input on load.
-    expect(page.locator(f"#disciplines-hidden input[name='disciplines'][value='{orphan.pk}']")).to_have_count(1)
-
-
-@pytest.mark.django_db(transaction=True)
 def test_create_with_multiple_disciplines_across_directions(
     page: Page, live_server, organizer, road_category, road_discipline, mtb_category, mtb_discipline
 ):
@@ -114,7 +79,8 @@ def test_edit_prefilled_then_add_another_discipline(
 
 @pytest.mark.django_db(transaction=True)
 def test_detail_shows_discipline_name_in_active_locale(page: Page, live_server, organizer):
-    disc = Discipline.objects.create(name_ru="RoadRU", name_kk="RoadKK", name_en="RoadEN", category=None, order=1)
+    cat = DisciplineCategory.objects.create(name_ru="DirRU", name_en="DirEN", name_kk="DirKK", order=1)
+    disc = Discipline.objects.create(name_ru="RoadRU", name_kk="RoadKK", name_en="RoadEN", category=cat, order=1)
     comp = Competition.objects.create(
         title_ru="LocaleRace",
         title_en="LocaleRace",
