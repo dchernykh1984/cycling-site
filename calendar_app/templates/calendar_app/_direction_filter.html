@@ -77,9 +77,19 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   window.directionFilter = inst;
   window.applyDirectionParams = function (params, dirParam) {
-    var e = inst.effective();
-    if (e.depth === 2) e.pks.forEach(function (id) { params.append('discipline', id); });
-    else if (e.depth === 1) e.pks.forEach(function (id) { params.append(dirParam, id); });
+    // Emit every chosen discipline; and every chosen direction that has no discipline drilled into
+    // it (so e.g. "Road -> ITT" + a second whole direction "MTB" both survive the round-trip,
+    // instead of the deepest level swallowing the direction-only pick).
+    var discPks = inst.levelPks(2);
+    var coveredCats = {};
+    discPks.forEach(function (id) {
+      var d = discById(id);
+      if (d) coveredCats[String(d.category_id)] = 1;
+      params.append('discipline', id);
+    });
+    inst.levelPks(1).forEach(function (id) {
+      if (!coveredCats[String(id)]) params.append(dirParam, id);
+    });
   };
 });
 </script>
