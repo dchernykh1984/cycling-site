@@ -1105,8 +1105,10 @@ class CompetitionListColumnsViewTests(TestCase):
             date_start=timezone.localdate() + datetime.timedelta(days=3),
         )
         response = self.client.get(reverse("calendar_list"), HTTP_ACCEPT_LANGUAGE="en")
-        for header in ("Direction", "Country", "Region", "City"):
+        # Multi-valued columns are pluralized; single-valued ones stay singular.
+        for header in ("Type", "Directions", "Disciplines", "Country", "Region", "City", "Location"):
             self.assertContains(response, f"<th>{header}</th>")
+        self.assertNotContains(response, "<th>Discipline</th>")
         self.assertContains(response, "Road")
         self.assertContains(response, "Kazakhstan")
         self.assertContains(response, "Almaty Region")

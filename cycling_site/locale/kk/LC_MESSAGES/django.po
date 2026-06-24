@@ -293,6 +293,10 @@ msgstr "Іс-шара түрі"
 msgid "Direction"
 msgstr "Бағыт"
 
+#: calendar_app/templates/calendar_app/list.html:134
+msgid "Directions"
+msgstr "Бағыттар"
+
 #: calendar_app/forms.py:55
 msgid "Date start"
 msgstr "Басталу күні"
