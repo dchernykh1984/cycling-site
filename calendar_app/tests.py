@@ -2144,7 +2144,12 @@ class OtherAndMtbDisciplineMigrationTests(TransactionTestCase):
         self.assertFalse(apps.get_model(self.APP, "Discipline").objects.filter(name_en="Other").exists())
 
     def test_mtb_formats_are_added_under_mountain_bike(self):
-        self._migrate(self.BEFORE)
+        apps = self._migrate(self.BEFORE)
+        # The migration targets the seeded "Mountain Bike" category; in a full TransactionTestCase
+        # run the seed data is flushed, so ensure the category exists rather than relying on it.
+        apps.get_model(self.APP, "DisciplineCategory").objects.get_or_create(
+            name_en="Mountain Bike", defaults={"name": "MTB", "name_ru": "MTB", "name_kk": "MTB", "order": 50}
+        )
         apps = self._migrate(self.AFTER)
         Discipline = apps.get_model(self.APP, "Discipline")
         for name_en in ("Individual Time Trial (MTB)", "Hill Climb (MTB)"):
