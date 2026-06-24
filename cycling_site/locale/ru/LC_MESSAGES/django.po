@@ -293,6 +293,10 @@ msgstr "Тип события"
 msgid "Direction"
 msgstr "Направление"
 
+#: calendar_app/templates/calendar_app/list.html:134
+msgid "Directions"
+msgstr "Направления"
+
 #: calendar_app/forms.py:55
 msgid "Date start"
 msgstr "Дата начала"
