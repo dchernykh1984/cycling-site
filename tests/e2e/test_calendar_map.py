@@ -17,19 +17,20 @@ from locations.models import Location
 _SEPT = "date_from=2026-09-01&date_to=2026-09-30"
 
 
-def _mapped_competition(organizer, title="Mapped Race", discipline=None, event_type=None):
+def _mapped_competition(organizer, title="Mapped Race", disciplines=None, event_type=None):
     loc = Location.add_root(
         name="Almaty", name_ru="Almaty", name_kk="Almaty", name_en="Almaty", lat="43.238949", lng="76.889709"
     )
-    Competition.objects.create(
+    comp = Competition.objects.create(
         title_ru=title,
         date_start=datetime.date(2026, 9, 15),
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         location=loc,
-        discipline=discipline,
         event_type=event_type,
     )
+    if disciplines:
+        comp.disciplines.set(disciplines)
     return loc
 
 

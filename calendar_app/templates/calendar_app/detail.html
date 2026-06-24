@@ -33,8 +33,11 @@
       {% if competition.event_type %}
       <span><strong>{% trans "Type" %}:</strong> {{ competition.event_type.name }}</span>
       {% endif %}
-      {% if competition.discipline %}
-      <span><strong>{% trans "Discipline" %}:</strong> {{ competition.discipline.name }}</span>
+      {% if competition.direction_label %}
+      <span><strong>{% trans "Direction" %}:</strong> {{ competition.direction_label }}</span>
+      {% endif %}
+      {% if competition.disciplines_label %}
+      <span><strong>{% trans "Discipline" %}:</strong> {{ competition.disciplines_label }}</span>
       {% endif %}
     </div>
     {% if competition.location_full_label %}

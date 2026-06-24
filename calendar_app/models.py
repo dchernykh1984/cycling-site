@@ -91,12 +91,10 @@ class Competition(index.Indexed, models.Model):
         on_delete=models.SET_NULL,
         related_name="+",
     )
-    discipline = models.ForeignKey(
+    disciplines: models.ManyToManyField = models.ManyToManyField(
         "Discipline",
-        null=True,
         blank=True,
-        on_delete=models.SET_NULL,
-        related_name="+",
+        related_name="competitions",
     )
     location = models.ForeignKey(
         "locations.Location",
@@ -296,11 +294,18 @@ class Competition(index.Indexed, models.Model):
         return ", ".join(n.name for n in [*loc.get_ancestors(), loc])
 
     @property
+    def disciplines_label(self) -> str:
+        """All attached disciplines, comma-joined (a competition can have several)."""
+        return ", ".join(d.name for d in self.disciplines.all() if d.name)
+
+    @property
     def direction_label(self) -> str:
-        """Discipline category (e.g. Road, MTB) - the "direction" used in filters."""
-        if self.discipline and self.discipline.category:
-            return self.discipline.category.name
-        return ""
+        """Distinct discipline categories (e.g. Road, MTB) - the "directions" used in filters."""
+        names: dict[int, str] = {}
+        for d in self.disciplines.all():
+            if d.category_id and d.category_id not in names and d.category:
+                names[d.category_id] = d.category.name
+        return ", ".join(names.values())
 
     @cached_property
     def _location_nodes_by_depth(self) -> dict:

@@ -19,14 +19,15 @@ _DATES = "date_from=2026-09-01&date_to=2026-09-30"
 
 
 def _make_comp(organizer, title, discipline=None, event_type=None):
-    Competition.objects.create(
+    comp = Competition.objects.create(
         title_ru=title,
         date_start=datetime.date(2026, 9, 15),
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
-        discipline=discipline,
         event_type=event_type,
     )
+    if discipline is not None:
+        comp.disciplines.set([discipline])
 
 
 # --------------------------------------------------------------------------- #

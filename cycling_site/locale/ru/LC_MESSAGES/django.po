@@ -542,6 +542,15 @@ msgstr "Модерация"
 msgid "Discipline"
 msgstr "Дисциплина"
 
+#: calendar_app/forms.py:47
+#: calendar_app/templates/calendar_app/_disciplines_field.html:9
+msgid "Disciplines"
+msgstr "Дисциплины"
+
+#: calendar_app/templates/calendar_app/_disciplines_field.html:10
+msgid "Choose one or more disciplines — a competition can belong to several."
+msgstr "Выберите одну или несколько дисциплин — соревнование может относиться к нескольким."
+
 #: calendar_app/templates/calendar_app/calendar.html:82
 msgid "January"
 msgstr "Январь"

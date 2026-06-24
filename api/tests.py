@@ -49,7 +49,12 @@ def _competition(**kwargs):
         "status": Competition.Status.APPROVED,
     }
     defaults.update(kwargs)
-    return Competition.objects.create(**defaults)
+    # disciplines is a many-to-many - set it after the row exists.
+    disciplines = defaults.pop("disciplines", None)
+    comp = Competition.objects.create(**defaults)
+    if disciplines:
+        comp.disciplines.set(disciplines)
+    return comp
 
 
 def _location(**kwargs):
@@ -267,7 +272,7 @@ class CompetitionListTest(TestCase, ApiTestMixin):
     def test_filter_by_discipline_ids(self):
         cat = DisciplineCategory.objects.create(name="Road")
         disc = Discipline.objects.create(name="Race", category=cat)
-        _competition(discipline=disc)
+        _competition(disciplines=[disc])
         _competition()
         resp = self.get(f"/api/v1/competitions/?discipline_ids={disc.pk}", user=self.reader)
         self.assertEqual(resp.status_code, 200)
@@ -285,8 +290,8 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         cat = DisciplineCategory.objects.create(name="Cat")
         d1 = Discipline.objects.create(name="D1", category=cat)
         d2 = Discipline.objects.create(name="D2", category=cat)
-        _competition(discipline=d1)
-        _competition(discipline=d2)
+        _competition(disciplines=[d1])
+        _competition(disciplines=[d2])
         _competition()
         resp = self.get(f"/api/v1/competitions/?discipline_ids={d1.pk}&discipline_ids={d2.pk}", user=self.reader)
         self.assertEqual(len(resp.json()), 2)
@@ -449,6 +454,23 @@ class CompetitionCreateTest(TestCase, ApiTestMixin):
         resp = self.post("/api/v1/competitions/", self._payload())
         self.assertEqual(resp.status_code, 401)
 
+    def test_create_with_discipline_ids(self):
+        cat = DisciplineCategory.objects.create(name="Road")
+        d1 = Discipline.objects.create(name="Road Race", category=cat)
+        d2 = Discipline.objects.create(name="Gravel", category=cat)
+        resp = self.post("/api/v1/competitions/", self._payload(discipline_ids=[d1.pk, d2.pk]), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(set(resp.json()["discipline_ids"]), {d1.pk, d2.pk})
+
+    def test_create_defaults_to_no_disciplines(self):
+        resp = self.post("/api/v1/competitions/", self._payload(), user=self.admin)
+        self.assertEqual(resp.json()["discipline_ids"], [])
+
+    def test_create_rejects_unknown_discipline_id(self):
+        resp = self.post("/api/v1/competitions/", self._payload(discipline_ids=[999999]), user=self.admin)
+        self.assertEqual(resp.status_code, 404)
+        self.assertFalse(Competition.objects.filter(title_ru="Race RU").exists())
+
 
 class CompetitionLocationValidationTest(TestCase, ApiTestMixin):
     """Competition location_id can't be a deleted node or another user's pending proposal (review #3)."""
@@ -547,6 +569,52 @@ class CompetitionUpdateTest(TestCase, ApiTestMixin):
             user=self.admin,
         )
         self.assertEqual(resp.status_code, 200)
+
+    def test_owner_can_replace_disciplines(self):
+        cat = DisciplineCategory.objects.create(name="Road")
+        d1 = Discipline.objects.create(name="Road Race", category=cat)
+        d2 = Discipline.objects.create(name="Gravel", category=cat)
+        self.comp.disciplines.set([d1])
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}",
+            {"discipline_ids": [d2.pk]},
+            user=self.owner,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["discipline_ids"], [d2.pk])
+        self.assertEqual(list(self.comp.disciplines.values_list("pk", flat=True)), [d2.pk])
+
+    def test_patch_can_clear_disciplines(self):
+        cat = DisciplineCategory.objects.create(name="Road")
+        d1 = Discipline.objects.create(name="Road Race", category=cat)
+        self.comp.disciplines.set([d1])
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}",
+            {"discipline_ids": []},
+            user=self.owner,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["discipline_ids"], [])
+
+    def test_patch_omitting_disciplines_keeps_them(self):
+        cat = DisciplineCategory.objects.create(name="Road")
+        d1 = Discipline.objects.create(name="Road Race", category=cat)
+        self.comp.disciplines.set([d1])
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}",
+            {"title": {"ru": "Kept", "kk": "", "en": ""}},
+            user=self.owner,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(list(self.comp.disciplines.values_list("pk", flat=True)), [d1.pk])
+
+    def test_patch_rejects_unknown_discipline_id(self):
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}",
+            {"discipline_ids": [999999]},
+            user=self.owner,
+        )
+        self.assertEqual(resp.status_code, 404)
 
     def test_non_admin_cannot_change_visibility(self):
         resp = self.patch(

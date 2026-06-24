@@ -29,7 +29,12 @@ def _make_competition(title="Test Race", status=Competition.Status.APPROVED, **k
         "status": status,
     }
     defaults.update(kwargs)
-    return Competition.objects.create(**defaults)
+    # disciplines is a many-to-many - set it after the row exists.
+    disciplines = defaults.pop("disciplines", None)
+    comp = Competition.objects.create(**defaults)
+    if disciplines:
+        comp.disciplines.set(disciplines)
+    return comp
 
 
 class CompetitionModelTests(TestCase):
@@ -95,7 +100,7 @@ class CalendarEventsAPIViewTests(TestCase):
             status=Competition.Status.APPROVED,
             date_start=datetime.date(2026, 7, 10),
             event_type=self.event_type,
-            discipline=self.discipline,
+            disciplines=[self.discipline],
         )
         self.comp2 = _make_competition(
             "Race B",
@@ -474,13 +479,13 @@ class CalendarDirectionFilterTests(TestCase):
             "Road Race Event",
             status=Competition.Status.APPROVED,
             date_start=datetime.date(2026, 9, 1),
-            discipline=self.road_disc,
+            disciplines=[self.road_disc],
         )
         self.mtb_comp = _make_competition(
             "MTB Race Event",
             status=Competition.Status.APPROVED,
             date_start=datetime.date(2026, 9, 1),
-            discipline=self.mtb_disc,
+            disciplines=[self.mtb_disc],
         )
 
     def test_direction_filter_on_api(self):
@@ -829,6 +834,34 @@ class EditCompetitionViewTests(TestCase):
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.title_ru, "Updated Title")
 
+    def test_edit_updates_disciplines(self):
+        cat = DisciplineCategory.objects.create(name_ru="Road", order=1)
+        d1 = Discipline.objects.create(name_ru="Road Race", category=cat, order=1)
+        d2 = Discipline.objects.create(name_ru="Gravel", category=cat, order=2)
+        self.comp.disciplines.set([d1])
+        self.client.login(username="edit_org@example.com", password="password123")
+        self.client.post(
+            self.url,
+            {
+                "title_ru": "Editable Race",
+                "date_start": "2026-09-01",
+                "disciplines": [str(d1.pk), str(d2.pk)],
+                "registration_mode": "self_only",
+                "birth_date_mode": "year",
+                "categories_json": "[]",
+            },
+        )
+        self.comp.refresh_from_db()
+        self.assertEqual(set(self.comp.disciplines.values_list("pk", flat=True)), {d1.pk, d2.pk})
+
+    def test_edit_prefills_current_disciplines_as_checked(self):
+        cat = DisciplineCategory.objects.create(name_ru="Road", order=1)
+        d1 = Discipline.objects.create(name_ru="Road Race", category=cat, order=1)
+        self.comp.disciplines.set([d1])
+        self.client.login(username="edit_org@example.com", password="password123")
+        resp = self.client.get(self.url)
+        self.assertIn(d1.pk, resp.context["selected_disciplines"])
+
     def test_mode_not_changed_when_locked(self):
         self.comp.registration_mode = "self_only"
         self.comp.registration_mode_locked = True
@@ -968,14 +1001,14 @@ class CompetitionDirectionLocationLabelTests(TestCase):
         self.discipline = Discipline.objects.create(name_ru="Road Race", name_en="Road Race", category=self.category)
 
     def test_labels_for_venue_location(self):
-        comp = _make_competition("Venue race", location=self.venue, discipline=self.discipline)
+        comp = _make_competition("Venue race", location=self.venue, disciplines=[self.discipline])
         self.assertEqual(comp.direction_label, "Road")
         self.assertEqual(comp.country_label, "Kazakhstan")
         self.assertEqual(comp.region_label, "Almaty Region")
         self.assertEqual(comp.city_label, "Almaty")
 
     def test_labels_for_city_location(self):
-        comp = _make_competition("City race", location=self.city, discipline=self.discipline)
+        comp = _make_competition("City race", location=self.city, disciplines=[self.discipline])
         self.assertEqual(comp.country_label, "Kazakhstan")
         self.assertEqual(comp.region_label, "Almaty Region")
         self.assertEqual(comp.city_label, "Almaty")
@@ -1004,7 +1037,7 @@ class CompetitionListColumnsViewTests(TestCase):
         _make_competition(
             "Visible Race",
             location=city,
-            discipline=discipline,
+            disciplines=[discipline],
             date_start=timezone.localdate() + datetime.timedelta(days=3),
         )
         response = self.client.get(reverse("calendar_list"), HTTP_ACCEPT_LANGUAGE="en")
@@ -1100,15 +1133,17 @@ class MultiSelectIdFilterTests(TestCase):
         self.road_relay = Discipline.objects.create(name_ru="Relay", category=self.road, order=2)
         self.mtb_relay = Discipline.objects.create(name_ru="Relay", category=self.mtb, order=2)
         d = datetime.date(2026, 9, 1)
-        self.c_race_road = _make_competition("Race Road", event_type=self.race, discipline=self.road_disc, date_start=d)
+        self.c_race_road = _make_competition(
+            "Race Road", event_type=self.race, disciplines=[self.road_disc], date_start=d
+        )
         self.c_train_mtb = _make_competition(
-            "Train MTB", event_type=self.training, discipline=self.mtb_disc, date_start=d
+            "Train MTB", event_type=self.training, disciplines=[self.mtb_disc], date_start=d
         )
         self.c_fest_run = _make_competition(
-            "Fest Run", event_type=self.festival, discipline=self.run_disc, date_start=d
+            "Fest Run", event_type=self.festival, disciplines=[self.run_disc], date_start=d
         )
-        self.c_road_relay = _make_competition("Road Relay", discipline=self.road_relay, date_start=d)
-        self.c_mtb_relay = _make_competition("MTB Relay", discipline=self.mtb_relay, date_start=d)
+        self.c_road_relay = _make_competition("Road Relay", disciplines=[self.road_relay], date_start=d)
+        self.c_mtb_relay = _make_competition("MTB Relay", disciplines=[self.mtb_relay], date_start=d)
 
     def _api_titles(self, params):
         return {e["title"] for e in self.client.get(reverse("calendar_events_api"), params).json()}
@@ -1174,6 +1209,55 @@ class MultiSelectIdFilterTests(TestCase):
         self.assertNotContains(resp, "Race Road")
 
 
+class MultiDisciplinePerCompetitionTests(TestCase):
+    """A single competition can carry several disciplines (and thus directions); filters
+    match if it has at least one selected discipline/direction (#multi-discipline)."""
+
+    def setUp(self):
+        self.road = DisciplineCategory.objects.create(name_ru="Road", name_en="Road", order=1)
+        self.gravel = DisciplineCategory.objects.create(name_ru="Gravel", name_en="Gravel", order=2)
+        self.mtb = DisciplineCategory.objects.create(name_ru="MTB", name_en="MTB", order=3)
+        self.road_disc = Discipline.objects.create(name_ru="Road Race", name_en="Road Race", category=self.road)
+        self.gravel_disc = Discipline.objects.create(name_ru="Gravel Race", name_en="Gravel Race", category=self.gravel)
+        self.mtb_disc = Discipline.objects.create(name_ru="XCO", name_en="XCO", category=self.mtb)
+        d = datetime.date(2026, 9, 1)
+        # One event bound to two disciplines across two directions.
+        self.multi = _make_competition(
+            "Road+Gravel Fondo", disciplines=[self.road_disc, self.gravel_disc], date_start=d
+        )
+        self.mtb_only = _make_competition("MTB Marathon", disciplines=[self.mtb_disc], date_start=d)
+
+    def _api_titles(self, params):
+        return {e["title"] for e in self.client.get(reverse("calendar_events_api"), params).json()}
+
+    def test_labels_join_all_disciplines_and_distinct_directions(self):
+        self.assertEqual(self.multi.disciplines_label, "Road Race, Gravel Race")
+        self.assertEqual(self.multi.direction_label, "Road, Gravel")
+
+    def test_matches_when_any_discipline_selected(self):
+        self.assertEqual(self._api_titles({"discipline": self.road_disc.pk}), {"Road+Gravel Fondo"})
+        self.assertEqual(self._api_titles({"discipline": self.gravel_disc.pk}), {"Road+Gravel Fondo"})
+
+    def test_matches_when_any_direction_selected(self):
+        self.assertEqual(self._api_titles({"direction": self.road.pk}), {"Road+Gravel Fondo"})
+        self.assertEqual(self._api_titles({"direction": self.gravel.pk}), {"Road+Gravel Fondo"})
+
+    def test_not_matched_by_unrelated_discipline_or_direction(self):
+        self.assertNotIn("Road+Gravel Fondo", self._api_titles({"discipline": self.mtb_disc.pk}))
+        self.assertNotIn("Road+Gravel Fondo", self._api_titles({"direction": self.mtb.pk}))
+
+    def test_multi_discipline_event_listed_once_per_filter(self):
+        """The many-to-many join must be de-duplicated when several selected ids match."""
+        titles = [
+            e["title"]
+            for e in self.client.get(
+                reverse("calendar_events_api"),
+                {"direction": [self.road.pk, self.gravel.pk]},
+            ).json()
+        ]
+        self.assertEqual(titles.count("Road+Gravel Fondo"), 1)
+
+
 class CalendarMapViewTests(TestCase):
     """Map view page + the 3-button calendar/list/map switcher (issue #107)."""
 
@@ -1208,7 +1292,7 @@ class CalendarMapAPIViewTests(TestCase):
         self.comp = _make_competition(
             "Mapped Race",
             location=self.loc,
-            discipline=self.disc,
+            disciplines=[self.disc],
             event_type=self.event_type,
             date_start=datetime.date(2026, 7, 10),
         )
@@ -1570,7 +1654,7 @@ class SubmitCompetitionScenariosTests(TestCase):
                 title_en="V10en",
                 date_start="2026-09-01",
                 date_end="2026-09-03",
-                discipline=str(self.disc.pk),
+                disciplines=[str(self.disc.pk)],
                 event_type=str(self.event_type.pk),
                 description_ru="Some description",
                 url_announcement="https://example.com/a",
@@ -1581,8 +1665,23 @@ class SubmitCompetitionScenariosTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         comp = Competition.objects.get(title_ru="V10")
         self.assertEqual(comp.date_end, datetime.date(2026, 9, 3))
-        self.assertEqual(comp.discipline.pk, self.disc.pk)
+        self.assertEqual(list(comp.disciplines.values_list("pk", flat=True)), [self.disc.pk])
         self.assertEqual(comp.event_type.pk, self.event_type.pk)
+
+    def test_multiple_disciplines_are_saved(self):
+        self.client.force_login(self.organizer)
+        other = Discipline.objects.create(name_ru="Gravel", category=self.cat, order=2)
+        resp = self.client.post(
+            self.url,
+            self._payload(
+                title_ru="V-multi",
+                disciplines=[str(self.disc.pk), str(other.pk)],
+                location=str(self.venue.pk),
+            ),
+        )
+        self.assertEqual(resp.status_code, 302)
+        comp = Competition.objects.get(title_ru="V-multi")
+        self.assertEqual(set(comp.disciplines.values_list("pk", flat=True)), {self.disc.pk, other.pk})
 
     def test_without_date_end(self):
         self.client.force_login(self.organizer)

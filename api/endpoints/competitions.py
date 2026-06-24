@@ -7,7 +7,7 @@ from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
-from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition
+from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline
 from locations.models import (
     Location,
     LocationConflictError,
@@ -27,7 +27,7 @@ class CompetitionIn(Schema):
     title: LocalizedStr
     description: LocalizedStr = LocalizedStr()
     event_type_id: int | None = None
-    discipline_id: int | None = None
+    discipline_ids: list[int] = []  # noqa: RUF012
     location_id: int | None = None
     date_start: date
     date_end: date | None = None
@@ -42,7 +42,7 @@ class CompetitionPatchIn(Schema):
     title: LocalizedStr | None = None
     description: LocalizedStr | None = None
     event_type_id: int | None = None
-    discipline_id: int | None = None
+    discipline_ids: list[int] | None = None
     location_id: int | None = None
     date_start: date | None = None
     date_end: date | None = None
@@ -59,7 +59,7 @@ class CompetitionOut(Schema):
     title: LocalizedStr
     description: LocalizedStr
     event_type_id: int | None
-    discipline_id: int | None
+    discipline_ids: list[int]
     location_id: int | None
     date_start: date
     date_end: date | None
@@ -80,6 +80,10 @@ class CompetitionOut(Schema):
     @staticmethod
     def resolve_description(obj: Competition) -> LocalizedStr:
         return localize_field(obj, "description")
+
+    @staticmethod
+    def resolve_discipline_ids(obj: Competition) -> list[int]:
+        return [d.pk for d in obj.disciplines.all()]
 
 
 class CompetitionDetailOut(CompetitionOut):
@@ -113,7 +117,11 @@ def _is_owner(user, competition: Competition) -> bool:
 
 def _get_or_404(pk: int) -> Competition:
     try:
-        return Competition.objects.select_related("event_type", "discipline", "location").get(pk=pk, is_deleted=False)
+        return (
+            Competition.objects.select_related("event_type", "location")
+            .prefetch_related("disciplines")
+            .get(pk=pk, is_deleted=False)
+        )
     except Competition.DoesNotExist:
         raise HttpError(404, "Competition not found") from None
 
@@ -172,6 +180,17 @@ def _lock_location_for_competition(location_id, user):
     return locked.pk
 
 
+def _set_disciplines(competition: Competition, discipline_ids: list[int] | None) -> None:
+    """Replace the competition's disciplines from a list of IDs, rejecting any that don't exist."""
+    if discipline_ids is None:
+        return
+    ids = list(dict.fromkeys(discipline_ids))  # de-dup, keep order
+    disciplines = list(Discipline.objects.filter(pk__in=ids))
+    if len(disciplines) != len(ids):
+        raise HttpError(404, "Discipline not found")
+    competition.disciplines.set(disciplines)
+
+
 def _to_detail(competition: Competition, user=None) -> Competition:
     """Attach competition_token to obj for serialization (avoids extra dict merging)."""
     competition._api_token = (
@@ -192,7 +211,7 @@ def list_competitions(
     location_ids: list[int] = Query(default=[]),  # noqa: B008
 ):
     user = request.auth
-    qs = Competition.objects.filter(is_deleted=False)
+    qs = Competition.objects.filter(is_deleted=False).prefetch_related("disciplines")
     if not is_admin(user):
         base_q = Q(status=Competition.Status.APPROVED, is_hidden=False)
         if getattr(user, "is_authenticated", False):
@@ -200,7 +219,7 @@ def list_competitions(
         qs = qs.filter(base_q)
     qs = qs.filter(status=status)
     if discipline_ids:
-        qs = qs.filter(discipline_id__in=discipline_ids)
+        qs = qs.filter(disciplines__id__in=discipline_ids).distinct()
     if event_type_ids:
         qs = qs.filter(event_type_id__in=event_type_ids)
     if location_ids:
@@ -232,7 +251,6 @@ def create_competition(request, payload: CompetitionIn):
 
     for field in (
         "event_type_id",
-        "discipline_id",
         "date_start",
         "date_end",
         "url_route",
@@ -249,6 +267,7 @@ def create_competition(request, payload: CompetitionIn):
         with transaction.atomic():
             competition.location_id = _lock_location_for_competition(payload.location_id, user)
             competition.save()
+            _set_disciplines(competition, payload.discipline_ids)
     except LocationConflictError:
         raise HttpError(409, "Location is no longer usable for a competition") from None
     return Status(201, _to_detail(competition, user))
@@ -268,6 +287,9 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
     if "location_id" in data:
         _validate_location_id(data["location_id"], user)
 
+    # disciplines is a many-to-many: set it after the row is saved, not via update_fields.
+    set_disciplines = "discipline_ids" in data
+    discipline_ids = data.pop("discipline_ids", None)
     update_fields: list[str] = []
 
     try:
@@ -290,6 +312,8 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 
             if update_fields:
                 competition.save(update_fields=update_fields)
+            if set_disciplines:
+                _set_disciplines(competition, discipline_ids)
     except LocationConflictError:
         raise HttpError(409, "Location is no longer usable for a competition") from None
 

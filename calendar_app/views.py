@@ -100,6 +100,18 @@ def _disciplines_for_locale() -> list:
     return [{"pk": r["pk"], "name": r[name_field], "category_id": r["category_id"]} for r in rows]
 
 
+def _selected_discipline_ids(form) -> set:
+    """The discipline ids currently chosen on the submit/edit form (initial ints or POSTed
+    strings), so the grouped discipline checkboxes can render their checked state."""
+    selected: set[int] = set()
+    for value in form["disciplines"].value() or []:
+        try:
+            selected.add(int(value))
+        except (TypeError, ValueError):
+            continue
+    return selected
+
+
 def _categories_for_locale() -> list:
     """Direction categories with the name field for the current active language."""
     lang = (get_language() or "ru").split("-")[0]
@@ -160,19 +172,21 @@ def _apply_id_filters(qs, event_type_ids, discipline_ids, direction_ids):
     """Apply integer-keyed multi-select filters; non-integer values are ignored.
 
     Each argument is a list of GET values (each value may itself be a comma-joined
-    group of ids). When both disciplines and directions are selected, the more
-    specific discipline filter takes priority.
+    group of ids). A competition matches if it has at least one of the selected
+    disciplines (or, for directions, at least one discipline in a selected category);
+    ``disciplines`` is a many-to-many, so de-duplicate the join. When both disciplines and
+    directions are selected, the more specific discipline filter takes priority.
     """
     event_types = _parse_int_ids(event_type_ids)
     if event_types:
         qs = qs.filter(event_type_id__in=event_types)
     disciplines = _parse_int_ids(discipline_ids)
     if disciplines:
-        qs = qs.filter(discipline_id__in=disciplines)
+        qs = qs.filter(disciplines__in=disciplines).distinct()
     else:
         directions = _parse_int_ids(direction_ids)
         if directions:
-            qs = qs.filter(discipline__category_id__in=directions)
+            qs = qs.filter(disciplines__category_id__in=directions).distinct()
     return qs
 
 
@@ -217,8 +231,10 @@ class CalendarEventsAPIView(View):
         from django.db.models import Q
 
         is_manager = _can_manage_any_competition(request.user)
-        qs = Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False).select_related(
-            "event_type", "discipline"
+        qs = (
+            Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False)
+            .select_related("event_type")
+            .prefetch_related("disciplines__category")
         )
         if not is_manager:
             qs = qs.filter(is_hidden=False)
@@ -254,7 +270,7 @@ class CalendarEventsAPIView(View):
                 "url": reverse("competition_detail", args=[comp.pk]),
                 "extendedProps": {
                     "event_type": comp.event_type.name if comp.event_type else "",
-                    "discipline": comp.discipline.name if comp.discipline else "",
+                    "discipline": comp.disciplines_label,
                 },
             }
             for comp in qs
@@ -273,8 +289,10 @@ class CompetitionListView(TemplateView):
         date_to = today + datetime.timedelta(days=30)
 
         is_manager = _can_manage_any_competition(self.request.user)
-        qs = Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False).select_related(
-            "event_type", "discipline", "discipline__category", "location"
+        qs = (
+            Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False)
+            .select_related("event_type", "location")
+            .prefetch_related("disciplines__category")
         )
         if not is_manager:
             qs = qs.filter(is_hidden=False)
@@ -563,10 +581,11 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
     def _is_organizer_plus(self, user):
         return user.is_superuser or user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
 
-    def _discipline_context(self, user):
+    def _discipline_context(self, user, form):
         return {
             "discipline_categories": DisciplineCategory.objects.all(),
             "disciplines_json": _disciplines_for_locale(),
+            "selected_disciplines": _selected_discipline_ids(form),
             "locations_data": _get_locations_data(user),
         }
 
@@ -580,7 +599,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 "form": form,
                 "reg_form": reg_form,
                 "is_organizer_plus": self._is_organizer_plus(request.user),
-                **self._discipline_context(request.user),
+                **self._discipline_context(request.user, form),
             },
         )
 
@@ -598,7 +617,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         "form": form,
                         "reg_form": reg_form,
                         "is_organizer_plus": is_organizer,
-                        **self._discipline_context(request.user),
+                        **self._discipline_context(request.user, form),
                     },
                 )
             try:
@@ -618,7 +637,6 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         description_kk=cd.get("description_kk", ""),
                         description_en=cd.get("description_en", ""),
                         event_type=cd.get("event_type"),
-                        discipline=cd.get("discipline"),
                         location=location,
                         date_start=cd["date_start"],
                         date_end=cd.get("date_end"),
@@ -642,6 +660,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         comp.status = Competition.Status.PENDING_APPROVAL
                         comp.registration_enabled = False
                     comp.save()
+                    comp.disciplines.set(cd.get("disciplines") or [])
                     if is_organizer and reg_form.is_valid():
                         _save_categories(comp, reg_form)
             except LocationConflictError:
@@ -655,7 +674,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 "form": form,
                 "reg_form": reg_form,
                 "is_organizer_plus": is_organizer,
-                **self._discipline_context(request.user),
+                **self._discipline_context(request.user, form),
             },
         )
 
@@ -682,8 +701,7 @@ class EditCompetitionView(View):
                 "description_kk": comp.description_kk or "",
                 "description_en": comp.description_en or "",
                 "event_type": comp.event_type_id,
-                "discipline_category": comp.discipline.category_id if comp.discipline_id else None,
-                "discipline": comp.discipline_id,
+                "disciplines": list(comp.disciplines.values_list("pk", flat=True)),
                 "location": comp.location_id,
                 "date_start": comp.date_start,
                 "date_end": comp.date_end,
@@ -742,6 +760,7 @@ class EditCompetitionView(View):
         disc_ctx = {
             "discipline_categories": DisciplineCategory.objects.all(),
             "disciplines_json": _disciplines_for_locale(),
+            "selected_disciplines": _selected_discipline_ids(form),
             "locations_data": _get_locations_data(request.user),
             "initial_location_id": comp.location_id or "",
         }
@@ -804,6 +823,7 @@ class EditCompetitionView(View):
                         "mode_locked": comp.registration_mode_locked,
                         "discipline_categories": DisciplineCategory.objects.all(),
                         "disciplines_json": _disciplines_for_locale(),
+                        "selected_disciplines": _selected_discipline_ids(form),
                         "locations_data": _get_locations_data(request.user),
                         "initial_location_id": form["location"].value() or "",
                     },
@@ -815,7 +835,6 @@ class EditCompetitionView(View):
             comp.description_kk = cd.get("description_kk", "")
             comp.description_en = cd.get("description_en", "")
             comp.event_type = cd.get("event_type")
-            comp.discipline = cd.get("discipline")
             comp.date_start = cd["date_start"]
             comp.date_end = cd.get("date_end")
             comp.url_announcement = cd.get("url_announcement", "")
@@ -840,6 +859,7 @@ class EditCompetitionView(View):
                         location, request.user, is_admin=_can_manage_any_competition(request.user)
                     )
                     comp.save()
+                    comp.disciplines.set(cd.get("disciplines") or [])
                     _save_categories(comp, reg_form)
             except LocationConflictError:
                 form.add_error("location", _("This location is not available."))
@@ -866,6 +886,7 @@ class EditCompetitionView(View):
         disc_ctx = {
             "discipline_categories": DisciplineCategory.objects.all(),
             "disciplines_json": _disciplines_for_locale(),
+            "selected_disciplines": _selected_discipline_ids(form),
             "locations_data": _get_locations_data(request.user),
             "initial_location_id": comp.location_id or "",
         }
@@ -890,7 +911,8 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context["competitions"] = (
             Competition.objects.filter(status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
-            .select_related("submitted_by", "event_type", "discipline", "location")
+            .select_related("submitted_by", "event_type", "location")
+            .prefetch_related("disciplines__category")
             .order_by("date_start")
         )
         context["reject_form"] = RejectCompetitionForm()
