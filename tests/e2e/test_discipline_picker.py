@@ -12,16 +12,24 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition, Discipline
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import inject_session, switch_locale
+
+
+def _open(page: Page, btn: str, menu: str) -> None:
+    # The dropdowns use data-bs-auto-close="outside", so several boxes can be ticked while
+    # the menu stays open; only open it when it is not already showing.
+    if not page.locator(menu).is_visible():
+        page.click(btn)
+        page.locator(menu).wait_for(state="visible")
 
 
 def _pick_direction(page: Page, value) -> None:
-    page.click("#disc-dd-btn-1")
+    _open(page, "#disc-dd-btn-1", "#disc-dd-menu-1")
     page.click(f"#disc-dd-menu-1 input.mf-item[value='{value}']")
 
 
 def _pick_discipline(page: Page, value) -> None:
-    page.click("#disc-dd-btn-2")
+    _open(page, "#disc-dd-btn-2", "#disc-dd-menu-2")
     page.click(f"#disc-dd-menu-2 input.mf-item[value='{value}']")
 
 
@@ -58,3 +66,67 @@ def test_edit_prefills_orphan_discipline(page: Page, live_server, organizer):
     page.goto(f"{live_server.url}/calendar/{comp.pk}/edit/")
     # The previously-attached orphan is mirrored into a hidden input on load.
     expect(page.locator(f"#disciplines-hidden input[name='disciplines'][value='{orphan.pk}']")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_create_with_multiple_disciplines_across_directions(
+    page: Page, live_server, organizer, road_category, road_discipline, mtb_category, mtb_discipline
+):
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/calendar/submit/")
+    page.fill("#id_title_ru", "Multi Disc Race")
+    page.fill("#id_date_start", "2026-09-01")
+    _pick_direction(page, road_category.pk)
+    _pick_direction(page, mtb_category.pk)
+    _pick_discipline(page, road_discipline.pk)
+    _pick_discipline(page, mtb_discipline.pk)
+    expect(page.locator("#disciplines-hidden input[name='disciplines']")).to_have_count(2)
+    page.evaluate("() => document.getElementById('id_title_ru').form.requestSubmit()")
+    page.wait_for_url(lambda url: "/calendar/submit/" not in url)
+
+    comp = Competition.objects.get(title_ru="Multi Disc Race")
+    assert set(comp.disciplines.values_list("pk", flat=True)) == {road_discipline.pk, mtb_discipline.pk}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_edit_prefilled_then_add_another_discipline(
+    page: Page, live_server, organizer, road_category, road_discipline, mtb_category, mtb_discipline
+):
+    comp = Competition.objects.create(
+        title_ru="Editable Disc",
+        date_start=datetime.date(2026, 9, 1),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+    )
+    comp.disciplines.set([road_discipline])
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/calendar/{comp.pk}/edit/")
+    expect(page.locator(f"#disciplines-hidden input[value='{road_discipline.pk}']")).to_have_count(1)
+    _pick_direction(page, mtb_category.pk)
+    _pick_discipline(page, mtb_discipline.pk)
+    expect(page.locator("#disciplines-hidden input[name='disciplines']")).to_have_count(2)
+    page.evaluate("() => document.getElementById('id_title_ru').form.requestSubmit()")
+    page.wait_for_url(lambda url: f"/calendar/{comp.pk}/edit/" not in url)
+
+    comp.refresh_from_db()
+    assert set(comp.disciplines.values_list("pk", flat=True)) == {road_discipline.pk, mtb_discipline.pk}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_detail_shows_discipline_name_in_active_locale(page: Page, live_server, organizer):
+    disc = Discipline.objects.create(name_ru="RoadRU", name_kk="RoadKK", name_en="RoadEN", category=None, order=1)
+    comp = Competition.objects.create(
+        title_ru="LocaleRace",
+        title_en="LocaleRace",
+        date_start=datetime.date(2026, 9, 1),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+    )
+    comp.disciplines.set([disc])
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/calendar/{comp.pk}/")
+    expect(page.locator("body")).to_contain_text("RoadRU")  # ru is the default UI locale
+    switch_locale(page, "en")
+    expect(page.locator("body")).to_contain_text("RoadEN")
+    switch_locale(page, "kk")
+    expect(page.locator("body")).to_contain_text("RoadKK")
