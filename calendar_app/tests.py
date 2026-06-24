@@ -239,6 +239,23 @@ class CompetitionDetailViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
+    def test_detail_prefetches_disciplines(self):
+        # direction_label + disciplines_label both walk disciplines (and their categories); the
+        # view must prefetch them so the query count does not grow with the number of disciplines.
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        cats = [DisciplineCategory.objects.create(name_ru=f"C{i}", order=i) for i in range(3)]
+        discs = [Discipline.objects.create(name_ru=f"D{i}", category=cats[i], order=i) for i in range(3)]
+        one = _make_competition("One disc", disciplines=[discs[0]])
+        many = _make_competition("Many disc", disciplines=discs)
+        self.client.get(reverse("competition_detail", args=[one.pk]))  # warm process-level caches
+        with CaptureQueriesContext(connection) as q_one:
+            self.client.get(reverse("competition_detail", args=[one.pk]))
+        with CaptureQueriesContext(connection) as q_many:
+            self.client.get(reverse("competition_detail", args=[many.pk]))
+        self.assertEqual(len(q_many.captured_queries), len(q_one.captured_queries))
+
     def test_detail_returns_404_for_pending(self):
         response = self.client.get(reverse("competition_detail", args=[self.pending.pk]))
         self.assertEqual(response.status_code, 404)
