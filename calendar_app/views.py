@@ -10,7 +10,6 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 
@@ -35,7 +34,6 @@ from .models import Competition, CompetitionComment, Discipline, DisciplineCateg
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 _ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
-_SUPPORTED_LANGS = frozenset(("ru", "kk", "en"))
 
 
 def _get_locations_data(user=None) -> list:
@@ -93,11 +91,13 @@ def _resolve_competition_location(cd, user, *, approved):
 
 
 def _disciplines_for_locale() -> list:
-    """Return disciplines with the name field for the current active language."""
-    lang = (get_language() or "ru").split("-")[0]
-    name_field = f"name_{lang}" if lang in _SUPPORTED_LANGS else "name_ru"
-    rows = list(Discipline.objects.values("pk", "category_id", name_field))
-    return [{"pk": r["pk"], "name": r[name_field], "category_id": r["category_id"]} for r in rows]
+    """Disciplines with the name resolved for the active language.
+
+    Uses the model's translated ``name`` (modeltranslation fallback ru->en->kk) rather than the raw
+    ``name_<lang>`` column: an empty translation would otherwise yield blank picker options that
+    collapse distinct disciplines into one checkbox via the cascade's name de-duplication.
+    """
+    return [{"pk": d.pk, "name": d.name, "category_id": d.category_id} for d in Discipline.objects.all()]
 
 
 def _selected_discipline_ids(form) -> list:
@@ -115,11 +115,8 @@ def _selected_discipline_ids(form) -> list:
 
 
 def _categories_for_locale() -> list:
-    """Direction categories with the name field for the current active language."""
-    lang = (get_language() or "ru").split("-")[0]
-    name_field = f"name_{lang}" if lang in _SUPPORTED_LANGS else "name_ru"
-    rows = list(DisciplineCategory.objects.values("pk", name_field))
-    return [{"pk": r["pk"], "name": r[name_field]} for r in rows]
+    """Direction categories with the name resolved for the active language (modeltranslation fallback)."""
+    return [{"pk": c.pk, "name": c.name} for c in DisciplineCategory.objects.all()]
 
 
 def _discipline_picker_context(form) -> dict:
@@ -136,11 +133,8 @@ def _discipline_picker_context(form) -> dict:
 
 
 def _event_types_for_locale() -> list:
-    """Event types with the name field for the current active language."""
-    lang = (get_language() or "ru").split("-")[0]
-    name_field = f"name_{lang}" if lang in _SUPPORTED_LANGS else "name_ru"
-    rows = list(EventType.objects.values("pk", name_field))
-    return [{"pk": r["pk"], "name": r[name_field]} for r in rows]
+    """Event types with the name resolved for the active language (modeltranslation fallback)."""
+    return [{"pk": e.pk, "name": e.name} for e in EventType.objects.all()]
 
 
 def _parse_date(value, default):

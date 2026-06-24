@@ -572,6 +572,34 @@ class ListViewDisciplineContextTests(TestCase):
         self.assertIn(self.discipline.pk, disc_pks)
 
 
+class PickerLocaleFallbackTests(TestCase):
+    """The picker JSON helpers must resolve names with the modeltranslation fallback (ru->en->kk).
+    A blank translation would render empty options that the cascade merges into one checkbox,
+    binding unrelated disciplines/directions together."""
+
+    def test_disciplines_use_fallback_when_translation_missing(self):
+        from calendar_app.views import _disciplines_for_locale
+
+        cat = DisciplineCategory.objects.create(name_ru="Road", name_en="Road", name_kk="")
+        d1 = Discipline.objects.create(name_ru="Road Race", name_en="Road Race", name_kk="", category=cat)
+        d2 = Discipline.objects.create(name_ru="Crit", name_en="Crit", name_kk="", category=cat)
+        with translation_override("kk"):
+            names = {r["pk"]: r["name"] for r in _disciplines_for_locale()}
+        self.assertEqual(names[d1.pk], "Road Race")
+        self.assertEqual(names[d2.pk], "Crit")
+        self.assertNotEqual(names[d1.pk], names[d2.pk])  # distinct => the cascade keeps them separate
+
+    def test_categories_use_fallback_when_translation_missing(self):
+        from calendar_app.views import _categories_for_locale
+
+        c1 = DisciplineCategory.objects.create(name_ru="Road", name_en="Road", name_kk="")
+        c2 = DisciplineCategory.objects.create(name_ru="MTB", name_en="MTB", name_kk="")
+        with translation_override("kk"):
+            names = {r["pk"]: r["name"] for r in _categories_for_locale()}
+        self.assertEqual(names[c1.pk], "Road")
+        self.assertEqual(names[c2.pk], "MTB")
+
+
 class ApproveCompetitionViewTests(TestCase):
     def setUp(self):
         self.organizer = _make_user("organizer@example.com", User.Role.ORGANIZER)
