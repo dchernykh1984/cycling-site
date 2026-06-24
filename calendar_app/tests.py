@@ -1275,6 +1275,28 @@ class MultiDisciplinePerCompetitionTests(TestCase):
         self.assertEqual(titles.count("Road+Gravel Fondo"), 1)
 
 
+class CompetitionAdminCategoryFilterTests(TestCase):
+    """Wagtail admin: filtering by direction (category) must not duplicate a competition that has
+    several disciplines of that category - the M2M-spanning filter needs distinct()."""
+
+    def test_category_filter_dedups_multi_discipline_competition(self):
+        from calendar_app.wagtail_hooks import CompetitionFilterSet
+
+        cat = DisciplineCategory.objects.create(name_ru="Road")
+        d1 = Discipline.objects.create(name_ru="Road Race", category=cat)
+        d2 = Discipline.objects.create(name_ru="Crit", category=cat)
+        comp = _make_competition("Two of one category", disciplines=[d1, d2])
+        fs = CompetitionFilterSet(data={"disciplines__category": str(cat.pk)}, queryset=Competition.objects.all())
+        ids = list(fs.qs.values_list("pk", flat=True))
+        self.assertEqual(ids.count(comp.pk), 1)
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_viewset_uses_the_deduping_filterset(self):
+        from calendar_app.wagtail_hooks import CompetitionFilterSet, CompetitionViewSet
+
+        self.assertIs(CompetitionViewSet.filterset_class, CompetitionFilterSet)
+
+
 class CalendarMapViewTests(TestCase):
     """Map view page + the 3-button calendar/list/map switcher (issue #107)."""
 
