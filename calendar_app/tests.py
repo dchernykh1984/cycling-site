@@ -2156,3 +2156,43 @@ class OtherAndMtbDisciplineMigrationTests(TransactionTestCase):
             d = Discipline.objects.filter(name_en=name_en, category__name_en="Mountain Bike").first()
             self.assertIsNotNone(d, name_en)
             self.assertTrue(d.name_ru and d.name_kk, f"{name_en} missing localized names")
+
+    def _make_mtb_category(self, apps):
+        cat, _ = apps.get_model(self.APP, "DisciplineCategory").objects.get_or_create(
+            name_en="Mountain Bike", defaults={"name": "MTB", "name_ru": "MTB", "name_kk": "MTB", "order": 50}
+        )
+        return cat
+
+    def test_reverse_refuses_to_drop_an_mtb_discipline_linked_to_a_competition(self):
+        apps = self._migrate(self.BEFORE)
+        self._make_mtb_category(apps)
+        apps = self._migrate(self.AFTER)
+        Discipline = apps.get_model(self.APP, "Discipline")
+        Competition = apps.get_model(self.APP, "Competition")
+        itt = Discipline.objects.get(name_en="Individual Time Trial (MTB)", category__name_en="Mountain Bike")
+        comp = Competition.objects.create(title="Race", date_start=datetime.date(2026, 7, 1))
+        comp.disciplines.add(itt)
+        with self.assertRaises(RuntimeError):
+            self._migrate(self.BEFORE)
+        # The refused rollback left both the discipline and the competition link intact.
+        self.assertTrue(Discipline.objects.filter(pk=itt.pk).exists())
+        self.assertEqual(list(comp.disciplines.values_list("pk", flat=True)), [itt.pk])
+
+    def test_reverse_leaves_disciplines_added_after_the_migration_untouched(self):
+        apps = self._migrate(self.BEFORE)
+        self._make_mtb_category(apps)
+        apps = self._migrate(self.AFTER)
+        Discipline = apps.get_model(self.APP, "Discipline")
+        mtb = apps.get_model(self.APP, "DisciplineCategory").objects.get(name_en="Mountain Bike")
+        # A generic-looking discipline created AFTER the migration must survive a rollback unchanged.
+        custom = Discipline.objects.create(
+            name="Other (Custom)",
+            name_ru="Other (Custom)",
+            name_kk="Other (Custom)",
+            name_en="Other (Custom)",
+            category=mtb,
+            order=80,
+        )
+        apps = self._migrate(self.BEFORE)  # no linked MTB formats -> rollback is allowed
+        survived = apps.get_model(self.APP, "Discipline").objects.get(pk=custom.pk)
+        self.assertEqual(survived.name_en, "Other (Custom)")
