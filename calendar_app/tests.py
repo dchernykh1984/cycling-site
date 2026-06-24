@@ -2101,3 +2101,51 @@ class CompetitionDisciplinesMigrationTests(TransactionTestCase):
         comp.disciplines.set([d1, d2])
         with self.assertRaises(RuntimeError):
             self._migrate(self.BEFORE)
+
+
+class OtherAndMtbDisciplineMigrationTests(TransactionTestCase):
+    """0016 qualifies each generic "Other" discipline with its direction and adds the two missing
+    Mountain Bike formats. Assertions use ASCII (name_en) so the test file stays non-Cyrillic."""
+
+    APP = "calendar_app"
+    BEFORE = "0015_discipline_category_required"
+    AFTER = "0016_qualify_other_and_add_mtb_disciplines"
+
+    def tearDown(self):
+        from django.core.management import call_command
+
+        call_command("migrate", self.APP, verbosity=0)
+
+    def _migrate(self, target):
+        from django.db import connection
+        from django.db.migrations.executor import MigrationExecutor
+
+        executor = MigrationExecutor(connection)
+        executor.migrate([(self.APP, target)])
+        return executor.loader.project_state([(self.APP, target)]).apps
+
+    def test_other_discipline_gets_direction_suffix_in_every_locale(self):
+        apps = self._migrate(self.BEFORE)
+        cat = apps.get_model(self.APP, "DisciplineCategory").objects.create(
+            name="DirRU", name_ru="DirRU", name_kk="DirKK", name_en="DirEN", order=99
+        )
+        d = apps.get_model(self.APP, "Discipline").objects.create(
+            name="GenRU", name_ru="GenRU", name_kk="GenKK", name_en="Other", category=cat, order=99
+        )
+        apps = self._migrate(self.AFTER)
+        migrated = apps.get_model(self.APP, "Discipline").objects.get(pk=d.pk)
+        self.assertEqual(migrated.name_en, "Other (DirEN)")
+        self.assertEqual(migrated.name_ru, "GenRU (DirRU)")
+        self.assertEqual(migrated.name_kk, "GenKK (DirKK)")
+        self.assertEqual(migrated.name, "GenRU (DirRU)")
+        # No bare generic name should survive the migration.
+        self.assertFalse(apps.get_model(self.APP, "Discipline").objects.filter(name_en="Other").exists())
+
+    def test_mtb_formats_are_added_under_mountain_bike(self):
+        self._migrate(self.BEFORE)
+        apps = self._migrate(self.AFTER)
+        Discipline = apps.get_model(self.APP, "Discipline")
+        for name_en in ("Individual Time Trial (MTB)", "Hill Climb (MTB)"):
+            d = Discipline.objects.filter(name_en=name_en, category__name_en="Mountain Bike").first()
+            self.assertIsNotNone(d, name_en)
+            self.assertTrue(d.name_ru and d.name_kk, f"{name_en} missing localized names")
