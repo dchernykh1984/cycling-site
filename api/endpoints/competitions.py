@@ -229,6 +229,7 @@ def list_competitions(
     request,
     status: Competition.Status = Competition.Status.APPROVED,
     discipline_ids: list[int] = Query(default=[]),  # noqa: B008
+    direction_ids: list[int] = Query(default=[]),  # noqa: B008
     event_type_ids: list[int] = Query(default=[]),  # noqa: B008
     location_ids: list[int] = Query(default=[]),  # noqa: B008
 ):
@@ -242,6 +243,10 @@ def list_competitions(
     qs = qs.filter(status=status)
     if discipline_ids:
         qs = qs.filter(disciplines__id__in=discipline_ids).distinct()
+    # direction == DisciplineCategory: match any competition with a discipline in one of the
+    # given directions (OR within the list); distinct() drops the duplicate M2M-join rows.
+    if direction_ids:
+        qs = qs.filter(disciplines__category_id__in=direction_ids).distinct()
     if event_type_ids:
         qs = qs.filter(event_type_id__in=event_type_ids)
     if location_ids:
