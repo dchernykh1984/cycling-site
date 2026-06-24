@@ -339,6 +339,20 @@ class CompetitionListTest(TestCase, ApiTestMixin):
             resp = self.get(f"/api/v1/competitions/?direction_ids={direction.pk}", user=self.reader)
             self.assertEqual([c["id"] for c in resp.json()], [comp.pk])
 
+    def test_discipline_and_direction_filters_are_ored(self):
+        # Same contract as the web calendar/list/map: a whole direction plus another direction's
+        # discipline returns both groups (OR), not their intersection (AND).
+        road = DisciplineCategory.objects.create(name="Road")
+        mtb = DisciplineCategory.objects.create(name="MTB")
+        road_event = _competition(disciplines=[Discipline.objects.create(name="Road Race", category=road)])
+        mtb_disc = Discipline.objects.create(name="XCO", category=mtb)
+        mtb_event = _competition(disciplines=[mtb_disc])
+        _competition(
+            disciplines=[Discipline.objects.create(name="10k", category=DisciplineCategory.objects.create(name="Run"))]
+        )
+        resp = self.get(f"/api/v1/competitions/?direction_ids={road.pk}&discipline_ids={mtb_disc.pk}", user=self.reader)
+        self.assertEqual({c["id"] for c in resp.json()}, {road_event.pk, mtb_event.pk})
+
     def test_hidden_competition_not_in_list_for_non_admin(self):
         _competition(is_hidden=True)
         resp = self.get("/api/v1/competitions/", user=self.reader)
