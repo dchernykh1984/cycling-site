@@ -616,6 +616,19 @@ class CompetitionUpdateTest(TestCase, ApiTestMixin):
         )
         self.assertEqual(resp.status_code, 404)
 
+    def test_patch_rejects_null_disciplines(self):
+        cat = DisciplineCategory.objects.create(name="Road")
+        d1 = Discipline.objects.create(name="Road Race", category=cat)
+        self.comp.disciplines.set([d1])
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}",
+            {"discipline_ids": None},
+            user=self.owner,
+        )
+        self.assertEqual(resp.status_code, 422)
+        # The existing disciplines are left untouched.
+        self.assertEqual(list(self.comp.disciplines.values_list("pk", flat=True)), [d1.pk])
+
     def test_non_admin_cannot_change_visibility(self):
         resp = self.patch(
             f"/api/v1/competitions/{self.comp.pk}",
