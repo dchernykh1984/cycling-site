@@ -1,4 +1,5 @@
 from django.db import migrations, models
+from django.db.models import Count
 
 
 def copy_discipline_to_disciplines(apps, schema_editor):
@@ -9,8 +10,15 @@ def copy_discipline_to_disciplines(apps, schema_editor):
 
 
 def copy_disciplines_to_discipline(apps, schema_editor):
-    """Reverse: collapse the many-to-many set back to the first discipline (best effort)."""
+    """Reverse: restore the single discipline FK. Refuse the rollback if any competition has
+    several disciplines, since collapsing them to one column would silently drop data."""
     Competition = apps.get_model("calendar_app", "Competition")
+    multi = list(Competition.objects.annotate(n=Count("disciplines")).filter(n__gt=1).values_list("pk", flat=True))
+    if multi:
+        raise RuntimeError(
+            f"Cannot reverse 0014: competitions {multi} have multiple disciplines; "
+            "collapsing them to a single discipline would lose data."
+        )
     for comp in Competition.objects.iterator():
         first = comp.disciplines.first()
         if first is not None:

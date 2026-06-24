@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext
@@ -1946,3 +1946,51 @@ class LocationsDataOrderingTests(TestCase):
         created = {"A", "NoCoords", "Hidden"}
         names = [r["name_ru"] for r in _get_locations_data() if r["name_ru"] in created]
         self.assertEqual(names, ["A", "NoCoords", "Hidden"])
+
+
+class CompetitionDisciplinesMigrationTests(TransactionTestCase):
+    """0014 must copy the old single discipline FK into the new disciplines M2M, and must
+    refuse to reverse when collapsing several disciplines back to one would drop data."""
+
+    APP = "calendar_app"
+    BEFORE = "0013_descriptions_to_html"
+    AFTER = "0014_competition_disciplines"
+
+    def tearDown(self):
+        # Restore the schema to the latest migration for the rest of the suite.
+        from django.core.management import call_command
+
+        call_command("migrate", self.APP, verbosity=0)
+
+    def _migrate(self, target):
+        from django.db import connection
+        from django.db.migrations.executor import MigrationExecutor
+
+        executor = MigrationExecutor(connection)
+        executor.migrate([(self.APP, target)])
+        return executor.loader.project_state([(self.APP, target)]).apps
+
+    def test_forward_copies_discipline_fk_to_m2m(self):
+        import datetime
+
+        apps = self._migrate(self.BEFORE)
+        cat = apps.get_model(self.APP, "DisciplineCategory").objects.create(name="Road")
+        disc = apps.get_model(self.APP, "Discipline").objects.create(name="Road Race", category=cat)
+        comp = apps.get_model(self.APP, "Competition").objects.create(
+            title="X", date_start=datetime.date(2026, 7, 1), discipline=disc
+        )
+        apps = self._migrate(self.AFTER)
+        migrated = apps.get_model(self.APP, "Competition").objects.get(pk=comp.pk)
+        self.assertEqual(list(migrated.disciplines.values_list("pk", flat=True)), [disc.pk])
+
+    def test_reverse_refuses_when_a_competition_has_multiple_disciplines(self):
+        import datetime
+
+        apps = self._migrate(self.AFTER)
+        cat = apps.get_model(self.APP, "DisciplineCategory").objects.create(name="Road")
+        d1 = apps.get_model(self.APP, "Discipline").objects.create(name="Road Race", category=cat)
+        d2 = apps.get_model(self.APP, "Discipline").objects.create(name="Gravel", category=cat)
+        comp = apps.get_model(self.APP, "Competition").objects.create(title="X", date_start=datetime.date(2026, 7, 1))
+        comp.disciplines.set([d1, d2])
+        with self.assertRaises(RuntimeError):
+            self._migrate(self.BEFORE)
