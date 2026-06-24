@@ -152,11 +152,11 @@ def test_second_direction_survives_after_drilling_into_a_disciplines(
     with page.expect_navigation():
         page.check(f"#dd-menu-1 input[value='{mtb_category.pk}']")
 
-    # Both directions stay checked, and the drilled discipline too.
-    page.click("#dd-btn-1")
+    # Both directions stay checked, and the drilled discipline too. Assert on the checkboxes
+    # directly: to_be_checked() does not need the dropdown open, which avoids the open menu
+    # overlapping the other (stacked) dropdown button on narrow/mobile viewports.
     expect(page.locator(f"#dd-menu-1 input[value='{road_category.pk}']")).to_be_checked()
     expect(page.locator(f"#dd-menu-1 input[value='{mtb_category.pk}']")).to_be_checked()
-    page.click("#dd-btn-2")
     expect(page.locator(f"#dd-menu-2 input[value='{road_discipline.pk}']")).to_be_checked()
     # OR semantics: the Road discipline event and the whole-MTB event are both listed.
     expect(page.locator("body")).to_contain_text("Road Race Event")
