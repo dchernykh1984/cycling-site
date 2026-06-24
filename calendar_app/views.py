@@ -425,7 +425,9 @@ class CompetitionDetailView(View):
         from registrations.views import can_manage
 
         competition = get_object_or_404(
-            Competition.objects.select_related("submitted_by"), pk=pk, status=Competition.Status.APPROVED
+            Competition.objects.select_related("submitted_by").prefetch_related("disciplines__category"),
+            pk=pk,
+            status=Competition.Status.APPROVED,
         )
         is_manager = can_manage(request.user, competition)
         if competition.is_deleted or (competition.is_hidden and not is_manager):
