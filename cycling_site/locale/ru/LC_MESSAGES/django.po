@@ -551,6 +551,10 @@ msgstr "Дисциплины"
 msgid "Choose one or more disciplines — a competition can belong to several."
 msgstr "Выберите одну или несколько дисциплин — соревнование может относиться к нескольким."
 
+#: calendar_app/templates/calendar_app/_disciplines_field.html:64
+msgid "Without direction"
+msgstr "Без направления"
+
 #: calendar_app/templates/calendar_app/calendar.html:82
 msgid "January"
 msgstr "Январь"
