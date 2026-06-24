@@ -1,26 +1,98 @@
 {% load i18n %}
 {% comment %}
-Grouped discipline picker for the submit/edit forms. A competition can belong to several
-disciplines (and thus directions), so each discipline is a checkbox named "disciplines",
-grouped by direction (DisciplineCategory). Context: discipline_categories, disciplines_json
-(pk/name/category_id), selected_disciplines (set of chosen ids).
+Direction -> Discipline picker for the submit/edit forms, built on the same
+window.MultiSelectCascade factory as the event filters (searchable checkboxes). A
+competition can belong to several disciplines/directions; the disciplines chosen at the
+discipline level are mirrored into hidden <input name="disciplines"> fields so the form
+submits them. Pre-selected disciplines (selected_disciplines) are restored by selecting
+each one's parent direction, then the discipline itself.
+Context: discipline_categories_json, disciplines_json (pk/name/category_id),
+selected_disciplines (list of chosen discipline ids).
 {% endcomment %}
+{% include "calendar_app/_filter_multiselect_js.html" %}
 <div class="mb-3">
   <label class="form-label fw-semibold">{% trans "Disciplines" %}</label>
   <div class="form-text mb-2">{% trans "Choose one or more disciplines — a competition can belong to several." %}</div>
-  {% for cat in discipline_categories %}
-  <div class="mb-2">
-    <div class="small fw-semibold text-muted">{{ cat.name }}</div>
-    <div class="d-flex flex-wrap gap-3">
-      {% for d in disciplines_json %}{% if d.category_id == cat.pk %}
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="disciplines" value="{{ d.pk }}"
-               id="discipline-{{ d.pk }}"{% if d.pk in selected_disciplines %} checked{% endif %}>
-        <label class="form-check-label" for="discipline-{{ d.pk }}">{{ d.name }}</label>
+  <div class="row g-2">
+    <div class="col-sm-6">
+      <label class="form-label form-label-sm mb-1" for="disc-dd-btn-1">{% trans "Direction" %}</label>
+      <div class="dropdown">
+        <button class="form-select form-select-sm text-start" type="button" id="disc-dd-btn-1"
+                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+          <span class="mf-text text-muted">{% trans "All" %}</span>
+        </button>
+        <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="disc-dd-menu-1"></ul>
       </div>
-      {% endif %}{% endfor %}
+    </div>
+    <div class="col-sm-6">
+      <label class="form-label form-label-sm mb-1" for="disc-dd-btn-2">{% trans "Discipline" %}</label>
+      <div class="dropdown">
+        <button class="form-select form-select-sm text-start" type="button" id="disc-dd-btn-2"
+                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" disabled>
+          <span class="mf-text text-muted">{% trans "All" %}</span>
+        </button>
+        <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="disc-dd-menu-2"></ul>
+      </div>
     </div>
   </div>
-  {% endfor %}
+  <div id="disciplines-hidden"></div>
   {% if form.disciplines.errors %}<div class="text-danger small mt-1">{% for e in form.disciplines.errors %}{{ e }}{% endfor %}</div>{% endif %}
 </div>
+{{ discipline_categories_json|json_script:"disc-categories-data" }}
+{{ disciplines_json|json_script:"disc-disciplines-data" }}
+{{ selected_disciplines|json_script:"disc-selected-data" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var catEl = document.getElementById('disc-categories-data');
+  var discEl = document.getElementById('disc-disciplines-data');
+  var selEl = document.getElementById('disc-selected-data');
+  if (!catEl || !discEl || !window.MultiSelectCascade) return;
+  var categories = JSON.parse(catEl.textContent);
+  var disciplines = JSON.parse(discEl.textContent);
+  var selectedIds = selEl ? JSON.parse(selEl.textContent) : [];
+  var hidden = document.getElementById('disciplines-hidden');
+  function discById(pk) { return disciplines.find(function (d) { return String(d.pk) === String(pk); }); }
+
+  function nodesUnder(depth, parentPks) {
+    if (depth === 1) return categories.map(function (c) { return { pk: c.pk, name: c.name }; });
+    var parentSet = {};
+    parentPks.forEach(function (p) { parentSet[String(p)] = 1; });
+    return disciplines
+      .filter(function (d) { return parentSet[String(d.category_id)]; })
+      .map(function (d) { return { pk: d.pk, name: d.name }; });
+  }
+
+  // Restore each chosen discipline by selecting its parent direction then itself.
+  function restoreChains() {
+    return selectedIds.map(function (discId) {
+      var d = discById(discId);
+      return d ? [{ depth: 1, pk: d.category_id }, { depth: 2, pk: discId }] : null;
+    }).filter(Boolean);
+  }
+
+  var inst = window.MultiSelectCascade({
+    levels: [
+      { btn: document.getElementById('disc-dd-btn-1'), menu: document.getElementById('disc-dd-menu-1') },
+      { btn: document.getElementById('disc-dd-btn-2'), menu: document.getElementById('disc-dd-menu-2') }
+    ],
+    nodesUnder: nodesUnder,
+    restoreChains: restoreChains,
+    searchable: true,
+    labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}', search: '{% trans "Search..." %}' },
+    onChange: syncHidden
+  });
+
+  // Mirror the chosen disciplines (the deepest selected level) into hidden form inputs.
+  function syncHidden() {
+    hidden.innerHTML = '';
+    var e = inst.effective();
+    if (e.depth !== 2) return;
+    e.pks.forEach(function (id) {
+      var inp = document.createElement('input');
+      inp.type = 'hidden'; inp.name = 'disciplines'; inp.value = id;
+      hidden.appendChild(inp);
+    });
+  }
+  syncHidden();
+});
+</script>
