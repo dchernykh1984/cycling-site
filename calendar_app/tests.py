@@ -1297,6 +1297,25 @@ class CompetitionAdminCategoryFilterTests(TestCase):
         self.assertIs(CompetitionViewSet.filterset_class, CompetitionFilterSet)
 
 
+class CompetitionAdminListQueryTests(TestCase):
+    """The Wagtail admin index queryset must prefetch disciplines so disciplines_label (in
+    list_display) does not issue one query per row."""
+
+    def test_index_queryset_prefetches_disciplines(self):
+        from calendar_app.wagtail_hooks import CompetitionViewSet
+
+        cat = DisciplineCategory.objects.create(name_ru="Road")
+        discs = [Discipline.objects.create(name_ru=f"D{i}", category=cat, order=i) for i in range(3)]
+        for i in range(3):
+            _make_competition(f"Row {i}", disciplines=discs)
+        viewset = CompetitionViewSet()
+        # 1 query for the competitions + 1 for the prefetched disciplines, regardless of row count
+        # (without the prefetch this is 1 + N, i.e. 4 here).
+        with self.assertNumQueries(2):
+            labels = [c.disciplines_label for c in viewset.get_queryset(None)]
+        self.assertTrue(all(labels))
+
+
 class CalendarMapViewTests(TestCase):
     """Map view page + the 3-button calendar/list/map switcher (issue #107)."""
 

@@ -73,6 +73,11 @@ class CompetitionViewSet(SnippetViewSet):
     list_display: ClassVar[list] = ["title", "date_start", "event_type", "disciplines_label", "status", "submitted_by"]
     filterset_class = CompetitionFilterSet
     search_fields: ClassVar[list] = ["title_ru", "title_kk", "title_en"]
+
+    def get_queryset(self, request):
+        # disciplines_label (in list_display) walks disciplines per row; prefetch to avoid N+1.
+        return Competition.objects.prefetch_related("disciplines")
+
     panels: ClassVar[list] = [
         MultiFieldPanel(
             [FieldPanel("title_ru"), FieldPanel("title_kk"), FieldPanel("title_en")],
