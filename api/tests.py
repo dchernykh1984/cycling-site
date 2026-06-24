@@ -296,6 +296,49 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         resp = self.get(f"/api/v1/competitions/?discipline_ids={d1.pk}&discipline_ids={d2.pk}", user=self.reader)
         self.assertEqual(len(resp.json()), 2)
 
+    def test_filter_by_direction_ids(self):
+        road = DisciplineCategory.objects.create(name="Road")
+        mtb = DisciplineCategory.objects.create(name="MTB")
+        road_disc = Discipline.objects.create(name="Road Race", category=road)
+        mtb_disc = Discipline.objects.create(name="XCO", category=mtb)
+        _competition(disciplines=[road_disc])
+        _competition(disciplines=[mtb_disc])
+        resp = self.get(f"/api/v1/competitions/?direction_ids={road.pk}", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_multiple_direction_ids_or_logic(self):
+        road = DisciplineCategory.objects.create(name="Road")
+        mtb = DisciplineCategory.objects.create(name="MTB")
+        run = DisciplineCategory.objects.create(name="Run")
+        _competition(disciplines=[Discipline.objects.create(name="Road Race", category=road)])
+        _competition(disciplines=[Discipline.objects.create(name="XCO", category=mtb)])
+        _competition(disciplines=[Discipline.objects.create(name="10k", category=run)])
+        resp = self.get(f"/api/v1/competitions/?direction_ids={road.pk}&direction_ids={mtb.pk}", user=self.reader)
+        self.assertEqual(len(resp.json()), 2)
+
+    def test_direction_filter_matches_event_with_several_disciplines_once(self):
+        # A competition with two disciplines of the same direction must appear once (distinct join).
+        road = DisciplineCategory.objects.create(name="Road")
+        d1 = Discipline.objects.create(name="Road Race", category=road)
+        d2 = Discipline.objects.create(name="Crit", category=road)
+        _competition(disciplines=[d1, d2])
+        resp = self.get(f"/api/v1/competitions/?direction_ids={road.pk}", user=self.reader)
+        self.assertEqual(len(resp.json()), 1)
+
+    def test_direction_filter_matches_multi_direction_event(self):
+        road = DisciplineCategory.objects.create(name="Road")
+        gravel = DisciplineCategory.objects.create(name="Gravel")
+        comp = _competition(
+            disciplines=[
+                Discipline.objects.create(name="Road Race", category=road),
+                Discipline.objects.create(name="Gravel Race", category=gravel),
+            ]
+        )
+        for direction in (road, gravel):
+            resp = self.get(f"/api/v1/competitions/?direction_ids={direction.pk}", user=self.reader)
+            self.assertEqual([c["id"] for c in resp.json()], [comp.pk])
+
     def test_hidden_competition_not_in_list_for_non_admin(self):
         _competition(is_hidden=True)
         resp = self.get("/api/v1/competitions/", user=self.reader)
