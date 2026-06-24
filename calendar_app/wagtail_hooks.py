@@ -56,8 +56,8 @@ class CompetitionViewSet(SnippetViewSet):
     icon = "calendar-alt"
     menu_label = "Competitions"
     menu_order = 320
-    list_display: ClassVar[list] = ["title", "date_start", "event_type", "discipline", "status", "submitted_by"]
-    list_filter: ClassVar[list] = ["status", "event_type", "discipline__category", "discipline"]
+    list_display: ClassVar[list] = ["title", "date_start", "event_type", "disciplines_label", "status", "submitted_by"]
+    list_filter: ClassVar[list] = ["status", "event_type", "disciplines__category", "disciplines"]
     search_fields: ClassVar[list] = ["title_ru", "title_kk", "title_en"]
     panels: ClassVar[list] = [
         MultiFieldPanel(
@@ -69,7 +69,7 @@ class CompetitionViewSet(SnippetViewSet):
             heading="Description",
         ),
         FieldPanel("event_type"),
-        FieldPanel("discipline"),
+        FieldPanel("disciplines"),
         FieldPanel("location"),
         FieldPanel("date_start"),
         FieldPanel("date_end"),

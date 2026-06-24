@@ -13,7 +13,6 @@ from .models import (
     Competition,
     CompetitionComment,
     Discipline,
-    DisciplineCategory,
     EventType,
 )
 
@@ -41,18 +40,12 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         empty_label="--",
         widget=forms.Select(attrs={"class": "form-select"}),
     )
-    discipline_category: forms.ModelChoiceField[DisciplineCategory] = forms.ModelChoiceField(
-        queryset=DisciplineCategory.objects.all(),
-        required=False,
-        empty_label="--",
-        label=_("Direction"),
-        widget=forms.Select(attrs={"class": "form-select", "id": "id_discipline_category"}),
-    )
-    discipline: forms.ModelChoiceField[Discipline] = forms.ModelChoiceField(
+    # A competition can belong to several disciplines (and thus directions) at once (#multi-discipline).
+    disciplines: forms.ModelMultipleChoiceField[Discipline] = forms.ModelMultipleChoiceField(
         queryset=Discipline.objects.select_related("category"),
         required=False,
-        empty_label="--",
-        widget=forms.Select(attrs={"class": "form-select", "id": "id_discipline"}),
+        label=_("Disciplines"),
+        widget=forms.CheckboxSelectMultiple,
     )
     location: forms.ModelChoiceField[Location] = forms.ModelChoiceField(
         queryset=Location.objects.filter(is_deleted=False),

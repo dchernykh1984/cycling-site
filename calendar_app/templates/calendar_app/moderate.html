@@ -23,7 +23,7 @@
         <div class="text-muted small d-flex flex-wrap gap-2">
           <span>{{ comp.date_start|date:"d.m.Y" }}{% if comp.date_end and comp.date_end != comp.date_start %} — {{ comp.date_end|date:"d.m.Y" }}{% endif %}</span>
           {% if comp.event_type %}<span>{{ comp.event_type.name }}</span>{% endif %}
-          {% if comp.discipline %}<span>{{ comp.discipline.name }}</span>{% endif %}
+          {% if comp.disciplines_label %}<span>{{ comp.disciplines_label }}</span>{% endif %}
           {% if comp.location %}<span>{{ comp.location.name }}</span>{% endif %}
           <span>{% trans "Submitted by" %}: {{ comp.submitted_by.email|default:"—" }}</span>
         </div>
