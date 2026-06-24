@@ -10,27 +10,38 @@ import datetime
 
 import pytest
 from playwright.sync_api import Page, expect
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from calendar_app.models import Competition, Discipline, DisciplineCategory
 from tests.e2e.conftest import inject_session, switch_locale
 
 
 def _open(page: Page, btn: str, menu: str) -> None:
-    # The dropdowns use data-bs-auto-close="outside", so several boxes can be ticked while
-    # the menu stays open; only open it when it is not already showing.
-    if not page.locator(menu).is_visible():
+    # The dropdowns use data-bs-auto-close="outside", so several boxes can be ticked while the menu
+    # stays open; only open it when it is not already showing. On the heavy submit page (Quill x3),
+    # webkit can attach Bootstrap's dropdown handler a beat after load and drop the first toggle
+    # click, so retry the toggle until the menu actually opens.
+    menu_loc = page.locator(menu)
+    for _ in range(5):
+        if menu_loc.is_visible():
+            return
         page.click(btn)
-        page.locator(menu).wait_for(state="visible")
+        try:
+            menu_loc.wait_for(state="visible", timeout=2000)
+            return
+        except PlaywrightTimeoutError:
+            continue
+    menu_loc.wait_for(state="visible")
 
 
 def _pick_direction(page: Page, value) -> None:
     _open(page, "#disc-dd-btn-1", "#disc-dd-menu-1")
-    page.click(f"#disc-dd-menu-1 input.mf-item[value='{value}']")
+    page.check(f"#disc-dd-menu-1 input.mf-item[value='{value}']")
 
 
 def _pick_discipline(page: Page, value) -> None:
     _open(page, "#disc-dd-btn-2", "#disc-dd-menu-2")
-    page.click(f"#disc-dd-menu-2 input.mf-item[value='{value}']")
+    page.check(f"#disc-dd-menu-2 input.mf-item[value='{value}']")
 
 
 @pytest.mark.django_db(transaction=True)
