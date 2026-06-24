@@ -100,15 +100,17 @@ def _disciplines_for_locale() -> list:
     return [{"pk": r["pk"], "name": r[name_field], "category_id": r["category_id"]} for r in rows]
 
 
-def _selected_discipline_ids(form) -> set:
+def _selected_discipline_ids(form) -> list:
     """The discipline ids currently chosen on the submit/edit form (initial ints or POSTed
-    strings), so the grouped discipline checkboxes can render their checked state."""
-    selected: set[int] = set()
+    strings), as a JSON-serializable list so the discipline picker can restore its state."""
+    selected: list[int] = []
     for value in form["disciplines"].value() or []:
         try:
-            selected.add(int(value))
+            pk = int(value)
         except (TypeError, ValueError):
             continue
+        if pk not in selected:
+            selected.append(pk)
     return selected
 
 
@@ -118,6 +120,19 @@ def _categories_for_locale() -> list:
     name_field = f"name_{lang}" if lang in _SUPPORTED_LANGS else "name_ru"
     rows = list(DisciplineCategory.objects.values("pk", name_field))
     return [{"pk": r["pk"], "name": r[name_field]} for r in rows]
+
+
+def _discipline_picker_context(form) -> dict:
+    """Context for the direction->discipline cascade discipline picker on the submit/edit forms.
+
+    ``discipline_categories_json`` is keyed distinctly from the registration ``categories_json``
+    those views already pass, so the two never collide.
+    """
+    return {
+        "discipline_categories_json": _categories_for_locale(),
+        "disciplines_json": _disciplines_for_locale(),
+        "selected_disciplines": _selected_discipline_ids(form),
+    }
 
 
 def _event_types_for_locale() -> list:
@@ -583,9 +598,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
 
     def _discipline_context(self, user, form):
         return {
-            "discipline_categories": DisciplineCategory.objects.all(),
-            "disciplines_json": _disciplines_for_locale(),
-            "selected_disciplines": _selected_discipline_ids(form),
+            **_discipline_picker_context(form),
             "locations_data": _get_locations_data(user),
         }
 
@@ -758,9 +771,7 @@ class EditCompetitionView(View):
             if c["birth_to"]:
                 c["birth_to"] = c["birth_to"].isoformat() if comp.birth_date_mode == "date" else str(c["birth_to"].year)
         disc_ctx = {
-            "discipline_categories": DisciplineCategory.objects.all(),
-            "disciplines_json": _disciplines_for_locale(),
-            "selected_disciplines": _selected_discipline_ids(form),
+            **_discipline_picker_context(form),
             "locations_data": _get_locations_data(request.user),
             "initial_location_id": comp.location_id or "",
         }
@@ -821,9 +832,7 @@ class EditCompetitionView(View):
                         "reg_form": reg_form,
                         "categories_json": _json.dumps(_cats),
                         "mode_locked": comp.registration_mode_locked,
-                        "discipline_categories": DisciplineCategory.objects.all(),
-                        "disciplines_json": _disciplines_for_locale(),
-                        "selected_disciplines": _selected_discipline_ids(form),
+                        **_discipline_picker_context(form),
                         "locations_data": _get_locations_data(request.user),
                         "initial_location_id": form["location"].value() or "",
                     },
@@ -884,9 +893,7 @@ class EditCompetitionView(View):
             )
         )
         disc_ctx = {
-            "discipline_categories": DisciplineCategory.objects.all(),
-            "disciplines_json": _disciplines_for_locale(),
-            "selected_disciplines": _selected_discipline_ids(form),
+            **_discipline_picker_context(form),
             "locations_data": _get_locations_data(request.user),
             "initial_location_id": comp.location_id or "",
         }

@@ -532,9 +532,9 @@ class SubmitViewDisciplineContextTests(TestCase):
     def test_submit_view_has_discipline_context(self):
         self.client.force_login(self.participant)
         response = self.client.get(reverse("calendar_submit"))
-        self.assertIn("discipline_categories", response.context)
+        self.assertIn("discipline_categories_json", response.context)
         self.assertIn("disciplines_json", response.context)
-        cat_pks = [c.pk for c in response.context["discipline_categories"]]
+        cat_pks = [c["pk"] for c in response.context["discipline_categories_json"]]
         self.assertIn(self.category.pk, cat_pks)
         disc_cat_ids = [d["category_id"] for d in response.context["disciplines_json"]]
         self.assertIn(self.category.pk, disc_cat_ids)
