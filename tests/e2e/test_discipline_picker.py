@@ -11,7 +11,7 @@ import datetime
 import pytest
 from playwright.sync_api import Page, expect
 
-from calendar_app.models import Competition, Discipline
+from calendar_app.models import Competition, Discipline, DisciplineCategory
 from tests.e2e.conftest import inject_session, switch_locale
 
 
@@ -130,3 +130,22 @@ def test_detail_shows_discipline_name_in_active_locale(page: Page, live_server, 
     expect(page.locator("body")).to_contain_text("RoadEN")
     switch_locale(page, "kk")
     expect(page.locator("body")).to_contain_text("RoadKK")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_picker_falls_back_for_incomplete_translation(page: Page, live_server, organizer):
+    # Disciplines/category with no kk translation: the picker must show the fallback (ru) names as
+    # DISTINCT options, not blank ones that the cascade would merge into a single checkbox.
+    cat = DisciplineCategory.objects.create(name_ru="DirRU", name_en="DirEN", name_kk="", order=1)
+    d1 = Discipline.objects.create(name_ru="OneRU", name_en="OneEN", name_kk="", category=cat, order=1)
+    d2 = Discipline.objects.create(name_ru="TwoRU", name_en="TwoEN", name_kk="", category=cat, order=2)
+    inject_session(page, live_server, organizer)
+    host = live_server.url.split("//")[1].split(":")[0]
+    page.context.add_cookies([{"name": "django_language", "value": "kk", "domain": host, "path": "/"}])
+    page.goto(f"{live_server.url}/calendar/submit/")
+    _pick_direction(page, cat.pk)
+    _open(page, "#disc-dd-btn-2", "#disc-dd-menu-2")
+    # Two distinct discipline checkboxes (the bug merged the two blank names into one).
+    expect(page.locator("#disc-dd-menu-2 input.mf-item")).to_have_count(2)
+    expect(page.locator(f"#disc-dd-menu-2 input.mf-item[value='{d1.pk}']")).to_have_count(1)
+    expect(page.locator(f"#disc-dd-menu-2 input.mf-item[value='{d2.pk}']")).to_have_count(1)
