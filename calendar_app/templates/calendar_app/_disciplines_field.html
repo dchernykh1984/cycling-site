@@ -53,21 +53,12 @@ document.addEventListener('DOMContentLoaded', function () {
   var hidden = document.getElementById('disciplines-hidden');
   function discById(pk) { return disciplines.find(function (d) { return String(d.pk) === String(pk); }); }
 
-  // A discipline's category can be cleared in the admin; surface those orphans under a
-  // synthetic "Without direction" group so they stay selectable (and restorable) on the form.
-  var NO_DIR = '__none__';
-  var levelOne = categories.map(function (c) { return { pk: c.pk, name: c.name }; });
-  if (disciplines.some(function (d) { return d.category_id == null; })) {
-    levelOne.push({ pk: NO_DIR, name: '{% trans "Without direction" %}' });
-  }
-  function dirOf(d) { return d.category_id == null ? NO_DIR : d.category_id; }
-
   function nodesUnder(depth, parentPks) {
-    if (depth === 1) return levelOne;
+    if (depth === 1) return categories.map(function (c) { return { pk: c.pk, name: c.name }; });
     var parentSet = {};
     parentPks.forEach(function (p) { parentSet[String(p)] = 1; });
     return disciplines
-      .filter(function (d) { return parentSet[String(dirOf(d))]; })
+      .filter(function (d) { return parentSet[String(d.category_id)]; })
       .map(function (d) { return { pk: d.pk, name: d.name }; });
   }
 
@@ -75,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function restoreChains() {
     return selectedIds.map(function (discId) {
       var d = discById(discId);
-      return d ? [{ depth: 1, pk: dirOf(d) }, { depth: 2, pk: discId }] : null;
+      return d ? [{ depth: 1, pk: d.category_id }, { depth: 2, pk: discId }] : null;
     }).filter(Boolean);
   }
 

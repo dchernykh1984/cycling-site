@@ -57,9 +57,7 @@ class Discipline(models.Model):
     name = models.CharField(max_length=100)
     category = models.ForeignKey(
         "DisciplineCategory",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         related_name="disciplines",
     )
     order = models.PositiveIntegerField(default=0)

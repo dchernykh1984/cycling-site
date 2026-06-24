@@ -600,6 +600,25 @@ class PickerLocaleFallbackTests(TestCase):
         self.assertEqual(names[c2.pk], "MTB")
 
 
+class DisciplineCategoryRequiredTests(TestCase):
+    """Every discipline must belong to a direction: the category FK is mandatory and a category that
+    is in use cannot be deleted (PROTECT)."""
+
+    def test_discipline_requires_a_category(self):
+        from django.db import IntegrityError, transaction
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Discipline.objects.create(name_ru="No direction")
+
+    def test_category_in_use_cannot_be_deleted(self):
+        from django.db.models import ProtectedError
+
+        cat = DisciplineCategory.objects.create(name_ru="Road")
+        Discipline.objects.create(name_ru="Road Race", category=cat)
+        with self.assertRaises(ProtectedError):
+            cat.delete()
+
+
 class ApproveCompetitionViewTests(TestCase):
     def setUp(self):
         self.organizer = _make_user("organizer@example.com", User.Role.ORGANIZER)
