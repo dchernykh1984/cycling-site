@@ -1,10 +1,24 @@
 from typing import ClassVar
 
+from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
 
 from .models import Competition, Discipline, DisciplineCategory, EventType
+
+
+class CompetitionFilterSet(WagtailFilterSet):
+    class Meta:
+        model = Competition
+        fields: ClassVar[list] = ["status", "event_type", "disciplines__category", "disciplines"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The auto-generated category filter spans the disciplines M2M with a plain
+        # ModelChoiceFilter (distinct=False), so a competition with several disciplines of one
+        # category shows up multiple times. Force distinct() to collapse the duplicate rows.
+        self.filters["disciplines__category"].distinct = True
 
 
 class EventTypeViewSet(SnippetViewSet):
@@ -57,7 +71,7 @@ class CompetitionViewSet(SnippetViewSet):
     menu_label = "Competitions"
     menu_order = 320
     list_display: ClassVar[list] = ["title", "date_start", "event_type", "disciplines_label", "status", "submitted_by"]
-    list_filter: ClassVar[list] = ["status", "event_type", "disciplines__category", "disciplines"]
+    filterset_class = CompetitionFilterSet
     search_fields: ClassVar[list] = ["title_ru", "title_kk", "title_en"]
     panels: ClassVar[list] = [
         MultiFieldPanel(
