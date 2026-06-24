@@ -551,6 +551,10 @@ msgstr "Пәндер"
 msgid "Choose one or more disciplines — a competition can belong to several."
 msgstr "Бір немесе бірнеше пәнді таңдаңыз — жарыс бірнешеуіне жатуы мүмкін."
 
+#: calendar_app/templates/calendar_app/_disciplines_field.html:64
+msgid "Without direction"
+msgstr "Бағытсыз"
+
 #: calendar_app/templates/calendar_app/calendar.html:82
 msgid "January"
 msgstr "Қаңтар"
