@@ -90,10 +90,12 @@
         (window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []).forEach(function (id) {
           addInput('event_type', id);
         });
-        if (window.directionFilter) {
-          var e = window.directionFilter.effective();
-          if (e.depth === 2) e.pks.forEach(function (id) { addInput('discipline', id); });
-          else if (e.depth === 1) e.pks.forEach(function (id) { addInput('discipline_category', id); });
+        if (window.applyDirectionParams) {
+          // Single source of truth with the switcher links: emit chosen disciplines plus any
+          // direction picked without a drilled-in discipline (so a second direction is not lost).
+          var dirParams = new URLSearchParams();
+          window.applyDirectionParams(dirParams, 'discipline_category');
+          dirParams.forEach(function (value, key) { addInput(key, value); });
         }
         (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
           addInput('location', id);

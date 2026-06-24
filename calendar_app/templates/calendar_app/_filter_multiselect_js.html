@@ -199,6 +199,7 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     effective: effective,
     effectivePks: function () { return effective().pks; },
     effectiveDepth: function () { return effective().depth; },
+    levelPks: function (d) { return selectedPks(d); },
     refresh: function () { rebuildFrom(1); }
   };
 };

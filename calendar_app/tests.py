@@ -515,16 +515,16 @@ class CalendarDirectionFilterTests(TestCase):
         self.assertIn("Road Race Event", titles)
         self.assertNotIn("MTB Race Event", titles)
 
-    def test_discipline_filter_takes_priority_over_direction(self):
-        """When both discipline and direction params are present, discipline wins."""
+    def test_direction_and_discipline_filters_are_ored(self):
+        """A whole direction picked alongside another direction's discipline keeps both: an event
+        matches if it has a selected discipline OR a discipline in a selected direction."""
         response = self.client.get(
             reverse("calendar_events_api"),
             {"direction": self.road_cat.pk, "discipline": self.mtb_disc.pk},
         )
-        data = json.loads(response.content)
-        titles = [e["title"] for e in data]
-        self.assertNotIn("Road Race Event", titles)
-        self.assertIn("MTB Race Event", titles)
+        titles = [e["title"] for e in json.loads(response.content)]
+        self.assertIn("Road Race Event", titles)  # matched by the road direction
+        self.assertIn("MTB Race Event", titles)  # matched by the mtb discipline
 
     def test_direction_filter_on_list_view(self):
         response = self.client.get(
@@ -1246,9 +1246,11 @@ class MultiSelectIdFilterTests(TestCase):
         resp = self.client.get(reverse("calendar_events_api") + f"?discipline={self.road_relay.pk},{self.mtb_relay.pk}")
         self.assertEqual({e["title"] for e in resp.json()}, {"Road Relay", "MTB Relay"})
 
-    def test_discipline_priority_over_direction_with_multi(self):
+    def test_direction_and_discipline_ored_with_multi(self):
+        # direction=[Road] OR discipline=[XCO]: all Road events plus the MTB XCO event.
         self.assertEqual(
-            self._api_titles({"direction": [self.road.pk], "discipline": [self.mtb_disc.pk]}), {"Train MTB"}
+            self._api_titles({"direction": [self.road.pk], "discipline": [self.mtb_disc.pk]}),
+            {"Race Road", "Road Relay", "Train MTB"},
         )
 
     def test_invalid_value_is_ignored_not_emptied(self):

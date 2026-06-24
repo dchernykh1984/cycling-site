@@ -182,20 +182,22 @@ def _apply_id_filters(qs, event_type_ids, discipline_ids, direction_ids):
 
     Each argument is a list of GET values (each value may itself be a comma-joined
     group of ids). A competition matches if it has at least one of the selected
-    disciplines (or, for directions, at least one discipline in a selected category);
-    ``disciplines`` is a many-to-many, so de-duplicate the join. When both disciplines and
-    directions are selected, the more specific discipline filter takes priority.
+    disciplines OR at least one discipline in a selected direction (category); the two are
+    OR-ed so a direction picked without drilling into a discipline still filters alongside
+    another direction's discipline. ``disciplines`` is a many-to-many, so de-duplicate the join.
     """
     event_types = _parse_int_ids(event_type_ids)
     if event_types:
         qs = qs.filter(event_type_id__in=event_types)
     disciplines = _parse_int_ids(discipline_ids)
-    if disciplines:
-        qs = qs.filter(disciplines__in=disciplines).distinct()
-    else:
-        directions = _parse_int_ids(direction_ids)
+    directions = _parse_int_ids(direction_ids)
+    if disciplines or directions:
+        match = Q()
+        if disciplines:
+            match |= Q(disciplines__in=disciplines)
         if directions:
-            qs = qs.filter(disciplines__category_id__in=directions).distinct()
+            match |= Q(disciplines__category_id__in=directions)
+        qs = qs.filter(match).distinct()
     return qs
 
 
