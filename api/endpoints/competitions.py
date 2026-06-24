@@ -191,6 +191,28 @@ def _set_disciplines(competition: Competition, discipline_ids: list[int] | None)
     competition.disciplines.set(disciplines)
 
 
+def _apply_patch_fields(competition: Competition, data: dict, user) -> list[str]:
+    """Apply scalar/localized/location fields from a PATCH payload; return the changed columns.
+
+    The disciplines M2M is handled separately by the caller (it isn't an update_fields column).
+    """
+    update_fields: list[str] = []
+    for field, value in data.items():
+        if isinstance(value, dict) and field in ("title", "description"):
+            loc = LocalizedStr(**value)
+            if field == "description":
+                _validate_description_length(loc)
+            # Descriptions are sanitized centrally in Competition.save().
+            update_fields.extend(_apply_localized(competition, field, loc))
+        elif field == "location_id":
+            competition.location_id = _lock_location_for_competition(value, user)
+            update_fields.append("location_id")
+        else:
+            setattr(competition, field, value)
+            update_fields.append(field)
+    return update_fields
+
+
 def _to_detail(competition: Competition, user=None) -> Competition:
     """Attach competition_token to obj for serialization (avoids extra dict merging)."""
     competition._api_token = (
@@ -286,30 +308,19 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
         raise HttpError(403, "Only admins can change visibility")
     if "location_id" in data:
         _validate_location_id(data["location_id"], user)
+    # Unambiguous discipline semantics: omit = leave unchanged, [] = clear, null = error.
+    if "discipline_ids" in data and data["discipline_ids"] is None:
+        raise HttpError(422, "discipline_ids cannot be null; pass [] to clear")
 
     # disciplines is a many-to-many: set it after the row is saved, not via update_fields.
     set_disciplines = "discipline_ids" in data
     discipline_ids = data.pop("discipline_ids", None)
-    update_fields: list[str] = []
 
     try:
         # Lock + re-validate a changed location and save in one transaction so a concurrent
         # delete/level-change can't bind the competition to a removed or non-venue node.
         with transaction.atomic():
-            for field, value in data.items():
-                if isinstance(value, dict) and field in ("title", "description"):
-                    loc = LocalizedStr(**value)
-                    if field == "description":
-                        _validate_description_length(loc)
-                    # Descriptions are sanitized centrally in Competition.save().
-                    update_fields.extend(_apply_localized(competition, field, loc))
-                elif field == "location_id":
-                    competition.location_id = _lock_location_for_competition(value, user)
-                    update_fields.append("location_id")
-                else:
-                    setattr(competition, field, value)
-                    update_fields.append(field)
-
+            update_fields = _apply_patch_fields(competition, data, user)
             if update_fields:
                 competition.save(update_fields=update_fields)
             if set_disciplines:
