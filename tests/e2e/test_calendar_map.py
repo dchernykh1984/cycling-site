@@ -84,3 +84,25 @@ def test_map_marker_hidden_when_date_range_excludes_competition(page: Page, live
     page.goto(f"{live_server.url}/calendar/map/")
     expect(page.locator("#calendar-map")).to_have_count(1)
     expect(page.locator(".leaflet-marker-icon")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organizer):
+    # Changing a filter must update the markers in place without resetting the user's pan/zoom.
+    _mapped_competition(organizer)  # 2026-09-15, Almaty
+    page.goto(f"{live_server.url}/calendar/map/?{_SEPT}")
+    expect(page.locator(".leaflet-marker-icon")).to_have_count(1)  # initial load fits to the marker
+    # User pans/zooms somewhere specific.
+    page.wait_for_function("() => window.calendarMap")
+    page.evaluate("() => window.calendarMap.setView([50.0, 60.0], 6)")
+    # Narrow the date filter so the result set changes (the Sept event drops out).
+    page.fill("#map-date-to", "2026-09-10")
+    page.dispatch_event("#map-date-to", "change")
+    expect(page.locator(".leaflet-marker-icon")).to_have_count(0)  # markers refreshed in place
+    # ...but the map view stayed exactly where the user left it (no re-fit / no reset to default).
+    view = page.evaluate(
+        "() => ({z: window.calendarMap.getZoom(), lat: window.calendarMap.getCenter().lat,"
+        " lng: window.calendarMap.getCenter().lng})"
+    )
+    assert view["z"] == 6, view
+    assert abs(view["lat"] - 50.0) < 0.5 and abs(view["lng"] - 60.0) < 0.5, view

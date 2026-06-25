@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var DEFAULT_CENTER = [48.0, 68.0], DEFAULT_ZOOM = 5;  // Kazakhstan/Central Asia overview
   var map = L.map('calendar-map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+  window.calendarMap = map;  // exposed for e2e/debugging
   _addMapLayers(map);
   var markersLayer = L.layerGroup().addTo(map);
 
@@ -94,7 +95,9 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  function refresh() {
+  // fitView=true re-centers/zooms onto the matching markers (first load only). On later filter
+  // changes we pass false so the user's current pan/zoom stays put while only the markers update.
+  function refresh(fitView) {
     var params = new URLSearchParams();
     appendFilters(params, 'direction');
     fetch(mapUrl + '?' + params.toString())
@@ -111,18 +114,21 @@ document.addEventListener('DOMContentLoaded', function () {
           L.marker([loc.lat, loc.lng]).bindPopup(html).addTo(markersLayer);
           bounds.push([loc.lat, loc.lng]);
         });
-        // Fit to the matching markers; keep the default overview when nothing matches.
-        if (bounds.length) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 12});
-        else map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+        if (fitView) {
+          // Fit to the matching markers; keep the default overview when nothing matches.
+          if (bounds.length) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 12});
+          else map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+        }
       })
       .catch(function () { /* leave the current view on a transient fetch error */ });
     updateSwitcherLinks();
   }
 
-  // Called by the event-type / direction filter partials whenever a selection changes.
-  window.onCalendarFilterChange = function () { refresh(); };
-  [dfEl, dtEl].forEach(function (el) { el.addEventListener('change', refresh); });
-  refresh();
+  // Filter changes update markers in place without moving the map (fitView=false); only the
+  // initial load fits the view to the matching markers.
+  window.onCalendarFilterChange = function () { refresh(false); };
+  [dfEl, dtEl].forEach(function (el) { el.addEventListener('change', function () { refresh(false); }); });
+  refresh(true);
 });
 </script>
 {% endblock %}
