@@ -109,3 +109,20 @@ def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organiz
     )
     assert view["z"] == 6, view
     assert abs(view["lat"] - 50.0) < 0.5 and abs(view["lng"] - 60.0) < 0.5, view
+
+
+@pytest.mark.django_db(transaction=True)
+def test_map_filter_dropdown_renders_above_zoom_controls(page: Page, live_server, road_category):
+    # Regression: the Leaflet zoom (+/-) / layer controls (z-index ~1000) used to show through the
+    # open filter dropdown on mobile. The filter dropdowns must stack above the map controls.
+    page.goto(f"{live_server.url}/calendar/map/")
+    expect(page.locator(".leaflet-control-zoom")).to_have_count(1)  # map initialised
+    open_filter_panel(page)  # collapsed on mobile
+    page.click("#dd-btn-1")  # open the direction dropdown
+    expect(page.locator("#dd-menu-1")).to_be_visible()
+    z = page.evaluate(
+        "() => { const zi = el => el ? (parseInt(getComputedStyle(el).zIndex) || 0) : -1;"
+        " return {menu: zi(document.querySelector('#dd-menu-1')),"
+        " ctrl: zi(document.querySelector('.leaflet-top'))}; }"
+    )
+    assert z["menu"] > z["ctrl"], z
