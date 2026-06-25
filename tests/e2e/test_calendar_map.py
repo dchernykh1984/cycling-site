@@ -13,6 +13,7 @@ from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
 from locations.models import Location
+from tests.e2e.conftest import open_filter_panel
 
 _SEPT = "date_from=2026-09-01&date_to=2026-09-30"
 
@@ -95,7 +96,9 @@ def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organiz
     # User pans/zooms somewhere specific.
     page.wait_for_function("() => window.calendarMap")
     page.evaluate("() => window.calendarMap.setView([50.0, 60.0], 6)")
-    # Narrow the date filter so the result set changes (the Sept event drops out).
+    # Narrow the date filter so the result set changes (the Sept event drops out). On mobile the
+    # filter panel is collapsed, so expand it before touching the date input.
+    open_filter_panel(page)
     page.fill("#map-date-to", "2026-09-10")
     page.dispatch_event("#map-date-to", "change")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(0)  # markers refreshed in place
