@@ -34,14 +34,28 @@ def _open(page: Page, btn: str, menu: str) -> None:
     menu_loc.wait_for(state="visible")
 
 
+def _tick(page: Page, menu: str, value) -> None:
+    # page.check() flakes on webkit on the heavy submit page: a checkbox nested in its <label> can
+    # double-toggle (the click re-fires through the label) and end up unchanged. Click the box, and
+    # if it didn't stick, click the row's text label, which toggles it exactly once.
+    box = page.locator(f"{menu} input.mf-item[value='{value}']")
+    expect(box).to_be_visible()
+    if box.is_checked():
+        return
+    box.click()
+    if not box.is_checked():
+        page.locator(f"{menu} li.mf-item-row:has(input.mf-item[value='{value}']) span").click()
+    expect(box).to_be_checked()
+
+
 def _pick_direction(page: Page, value) -> None:
     _open(page, "#disc-dd-btn-1", "#disc-dd-menu-1")
-    page.check(f"#disc-dd-menu-1 input.mf-item[value='{value}']")
+    _tick(page, "#disc-dd-menu-1", value)
 
 
 def _pick_discipline(page: Page, value) -> None:
     _open(page, "#disc-dd-btn-2", "#disc-dd-menu-2")
-    page.check(f"#disc-dd-menu-2 input.mf-item[value='{value}']")
+    _tick(page, "#disc-dd-menu-2", value)
 
 
 @pytest.mark.django_db(transaction=True)
