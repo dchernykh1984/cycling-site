@@ -247,9 +247,10 @@ input.page-jump {
     appearance: textfield;
 }
 
-/* Locations map: the country/region/city/location filter sits above the Leaflet map, whose
-   zoom (+/-) and layer controls have z-index ~1000. Lift the open filter dropdowns above them
-   so the controls don't show through the menu. */
+/* Map pages: the filter dropdowns sit above a Leaflet map whose zoom (+/-) and layer controls
+   have z-index ~1000. Lift the open filter dropdowns above them so the controls don't show
+   through the menu - on the calendar map filter panel and the standalone locations map filter. */
+#filter-panel .dropdown-menu,
 #loc-filter-form .dropdown-menu {
     z-index: 1100;
 }
