@@ -7,7 +7,20 @@ from .base import *
 DEBUG = False
 
 SECRET_KEY = os.environ.get("SECRET_KEY") or os.environ["RANDOM_SECRET_KEY"]
-ALLOWED_HOSTS = [os.environ["VIRTUAL_HOST"]]
+
+# CodeRed sets VIRTUAL_HOST to the site's domain(s); with several domains attached it can hold more
+# than one host (comma/space separated). Parse them all, and always include the team domain so the
+# site answers on both cycling.codered.cloud and universalbicycle.team.
+_VIRTUAL_HOSTS = os.environ.get("VIRTUAL_HOST", "").replace(",", " ").split()
+_EXTRA_HOSTS = ["universalbicycle.team", "www.universalbicycle.team"]
+ALLOWED_HOSTS = list(dict.fromkeys(_VIRTUAL_HOSTS + _EXTRA_HOSTS))
+
+# Canonical host for absolute URLs (emails, sitemap, Wagtail admin links). Override with PRIMARY_HOST
+# to promote the team domain later; defaults to the first VIRTUAL_HOST, then the CodeRed subdomain.
+PRIMARY_HOST = os.environ.get("PRIMARY_HOST") or (_VIRTUAL_HOSTS[0] if _VIRTUAL_HOSTS else "cycling.codered.cloud")
+
+# Django 4+ validates the Origin header on secure POSTs against this list (admin, forms).
+CSRF_TRUSTED_ORIGINS = [f"https://{_h}" for _h in ALLOWED_HOSTS]
 
 # Only send session and CSRF cookies over HTTPS. CodeRed Cloud serves the site
 # over HTTPS, so this is safe. See Django's deployment checklist:
@@ -42,8 +55,8 @@ DATABASES = {
     }
 }
 
-WAGTAILADMIN_BASE_URL = f"https://{os.environ['VIRTUAL_HOST']}"
-SITE_BASE_URL = f"https://{os.environ['VIRTUAL_HOST']}"
+WAGTAILADMIN_BASE_URL = f"https://{PRIMARY_HOST}"
+SITE_BASE_URL = f"https://{PRIMARY_HOST}"
 
 STORAGES["staticfiles"]["BACKEND"] = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
 
@@ -53,7 +66,7 @@ EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() == "true"
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", f"noreply@{os.environ.get('VIRTUAL_HOST', 'localhost')}")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", f"noreply@{PRIMARY_HOST}")
 
 # Write logs under BASE_DIR (=/www in prod) so they are reachable via `cr download`;
 # SFTP is jailed to /www and the old /data/logs default could not be fetched on this plan.
