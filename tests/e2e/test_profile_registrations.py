@@ -84,6 +84,16 @@ def _go_profile(page, live_server):
     page.wait_for_load_state("networkidle")
 
 
+def _fire_gender_change(page, value="M"):
+    # The gender radio is pre-checked from the rider's profile; fire `change` to run the category
+    # filter JS. locator.dispatch_event flakes on firefox under CI load, so wait for the element and
+    # dispatch the event in-page via eval_on_selector, which is reliable across browsers.
+    page.eval_on_selector(
+        f"input[name='gender'][value='{value}']",
+        "el => el.dispatchEvent(new Event('change', { bubbles: true }))",
+    )
+
+
 # ---------------------------------------------------------------------------
 # self_only mode: registering yourself via the form
 # ---------------------------------------------------------------------------
@@ -125,7 +135,7 @@ def test_free_mode_registration_appears_in_profile(page: Page, live_server, orga
     page.fill("input[name='first_name']", "Denis")
     page.fill("input[name='last_name']", "Rider")
     page.fill("input[name='birth_year']", "1990")
-    page.locator("input[name='gender'][value='M']").dispatch_event("change")
+    _fire_gender_change(page)
     page.select_option("select[name='category']", index=1)
     page.locator("#registration-form button[type='submit']").click()
     page.wait_for_url(f"{live_server.url}/competitions/{comp.pk}/participants/")
@@ -153,7 +163,7 @@ def test_relay_registration_appears_in_profile(page: Page, live_server, organize
     page.goto(f"{live_server.url}/competitions/{comp.pk}/register/")
     page.locator("input[name='participant_name']").first.fill("Ivanov Ivan")
     page.locator("input[name='participant_birth_year']").first.fill("1990")
-    page.locator("input[name='gender'][value='M']").dispatch_event("change")
+    _fire_gender_change(page)
     expect(page.locator("select[name='category'] option", has_text="Mixed Relay")).to_be_attached()
     page.select_option("select[name='category']", label="Mixed Relay")
     page.locator("#registration-form button[type='submit']").click()
