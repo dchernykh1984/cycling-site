@@ -1,4 +1,5 @@
 import datetime
+import os
 import re
 from unittest.mock import MagicMock, patch
 
@@ -1419,3 +1420,43 @@ class DropLegacyAuthUserTests(TestCase):
         with connection.cursor() as cur:
             cur.execute(DROP_LEGACY_AUTH_USER_SQL)  # must not raise on a healthy database
         self.assertFalse(self._table_exists("auth_user"))
+
+
+class SyncDefaultSiteHostTests(TestCase):
+    """The deploy's migrate keeps the default Wagtail Site pointed at the canonical host, so
+    switching the live domain is just a PRIMARY_HOST env change + redeploy."""
+
+    def test_sets_host_and_https_port_from_primary_host(self):
+        from wagtail.models import Site
+
+        from accounts.management.commands.migrate import _sync_default_site_host
+
+        with patch.dict(os.environ, {"PRIMARY_HOST": "universalbicycle.team"}, clear=False):
+            _sync_default_site_host()
+        site = Site.objects.get(is_default_site=True)
+        self.assertEqual(site.hostname, "universalbicycle.team")
+        self.assertEqual(site.port, 443)
+
+    def test_falls_back_to_first_virtual_host(self):
+        from wagtail.models import Site
+
+        from accounts.management.commands.migrate import _sync_default_site_host
+
+        with patch.dict(os.environ, {"VIRTUAL_HOST": "cycling.codered.cloud,universalbicycle.team"}, clear=False):
+            os.environ.pop("PRIMARY_HOST", None)
+            _sync_default_site_host()
+        self.assertEqual(Site.objects.get(is_default_site=True).hostname, "cycling.codered.cloud")
+
+    def test_noop_without_env(self):
+        from wagtail.models import Site
+
+        from accounts.management.commands.migrate import _sync_default_site_host
+
+        site = Site.objects.get(is_default_site=True)
+        before = (site.hostname, site.port)
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("PRIMARY_HOST", None)
+            os.environ.pop("VIRTUAL_HOST", None)
+            _sync_default_site_host()
+        site.refresh_from_db()
+        self.assertEqual((site.hostname, site.port), before)

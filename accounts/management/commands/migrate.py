@@ -1,3 +1,6 @@
+import contextlib
+import os
+
 from django.core.management.commands.migrate import Command as MigrateCommand
 from django.db import connection
 from django.db.migrations.recorder import MigrationRecorder
@@ -6,11 +9,30 @@ from django.db.migrations.recorder import MigrationRecorder
 class Command(MigrateCommand):
     """Extends migrate with a one-time repair for the accounts.0001_initial
     inconsistency that occurs when the custom User model is deployed to a
-    database that already has admin.0001_initial applied."""
+    database that already has admin.0001_initial applied, and keeps the default
+    Wagtail Site pointed at the canonical host on every deploy."""
 
     def handle(self, *app_labels, **options):
         _repair_accounts_initial_if_needed()
         super().handle(*app_labels, **options)
+        _sync_default_site_host()
+
+
+def _sync_default_site_host() -> None:
+    """Point the default Wagtail Site at the canonical host (so sitemaps and ``page.full_url`` use
+    the right domain). Driven by ``PRIMARY_HOST``, falling back to the first ``VIRTUAL_HOST``; a
+    no-op when neither is set (local/test). This makes switching the live domain a config-only
+    change: set ``PRIMARY_HOST=universalbicycle.team`` and redeploy."""
+    host = os.environ.get("PRIMARY_HOST") or next(
+        iter(os.environ.get("VIRTUAL_HOST", "").replace(",", " ").split()), ""
+    )
+    if not host:
+        return
+    # A cosmetic host sync must never break the deploy's migrate step (e.g. Site table not ready).
+    with contextlib.suppress(Exception):
+        from wagtail.models import Site
+
+        Site.objects.filter(is_default_site=True).update(hostname=host, port=443)
 
 
 def _repair_accounts_initial_if_needed() -> None:
