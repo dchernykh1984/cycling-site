@@ -3,6 +3,7 @@
 import re
 
 import pytest
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, expect
 
 
@@ -21,9 +22,13 @@ def test_date_filter_auto_submits(page: Page, live_server, approved_competition)
     """Changing the date_from input auto-submits and reflects the new value in the URL."""
     page.goto(f"{live_server.url}/calendar/list/")
     page.locator("input[name=date_from]").fill("2026-09-01")
-    page.locator("input[name=date_from]").dispatch_event("change")
-    # Auto-submit may fire more than one navigation (the second aborts the first -> NS_BINDING_ABORTED
-    # on Firefox with expect_navigation); wait for the resulting URL instead, which tolerates that.
+    # The change handler auto-submits; on webkit the navigation it triggers can interrupt the
+    # dispatch call itself ("Frame load interrupted"), which is harmless here. Auto-submit may also
+    # fire more than one navigation. Ignore those and assert on the resulting URL instead.
+    try:
+        page.locator("input[name=date_from]").dispatch_event("change")
+    except PlaywrightError:
+        pass
     page.wait_for_url(re.compile(r"date_from=2026-09-01"))
 
 
