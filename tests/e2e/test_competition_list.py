@@ -29,7 +29,10 @@ def test_date_filter_auto_submits(page: Page, live_server, approved_competition)
         page.locator("input[name=date_from]").dispatch_event("change")
     except PlaywrightError:
         pass
-    page.wait_for_url(re.compile(r"date_from=2026-09-01"))
+    # Poll the current URL instead of wait_for_url: the latter tracks a single navigation event and
+    # raises "Frame load interrupted" on webkit when the auto-submit fires a second navigation that
+    # supersedes it. to_have_url re-reads page.url until it matches, so extra navigations are fine.
+    expect(page).to_have_url(re.compile(r"date_from=2026-09-01"), timeout=15000)
 
 
 @pytest.mark.django_db(transaction=True)
