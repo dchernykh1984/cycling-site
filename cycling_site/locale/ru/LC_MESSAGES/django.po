@@ -1517,7 +1517,7 @@ msgstr "Нет"
 
 #: registrations/templates/registrations/participant_list.html:103
 msgid "Mark paid"
-msgstr "Отметить оплату"
+msgstr "Пометить оплачено"
 
 #: registrations/templates/registrations/participant_list.html:108
 msgid "Delete?"
