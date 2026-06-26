@@ -37,14 +37,17 @@ class NewsListView(View):
         paginator = Paginator(qs, 12)
         news_items = paginator.get_page(request.GET.get("page", 1))
 
-        return render(
-            request,
-            "news/news_list.html",
-            {
-                "news_items": news_items,
-                "can_add": can_manage,
-            },
-        )
+        context = {"news_items": news_items, "can_add": can_manage}
+        if can_manage:
+            context["pending_submissions"] = (
+                DraftSubmission.objects.filter(
+                    status=DraftSubmission.Status.PENDING,
+                    submission_type=DraftSubmission.SubmissionType.NEWS,
+                )
+                .select_related("author")
+                .order_by("submitted_at")
+            )
+        return render(request, "news/news_list.html", context)
 
 
 class NewsArticleDetailView(View):
@@ -156,6 +159,36 @@ class SubmitNewsView(ParticipantRequiredMixin, CreateView):
         form.instance.author = self.request.user
         form.instance.submission_type = DraftSubmission.SubmissionType.NEWS
         return super().form_valid(form)
+
+
+class NewsSubmissionApproveView(LoginRequiredMixin, View):
+    """Publish a pending news submission straight from the news index (manager+ only)."""
+
+    def post(self, request, pk):
+        if not _can_manage_news(request.user):
+            raise PermissionDenied
+        submission = get_object_or_404(DraftSubmission, pk=pk, submission_type=DraftSubmission.SubmissionType.NEWS)
+        try:
+            submission.approve(reviewer=request.user)
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect("news_index")
+        messages.success(request, gettext("News published successfully."))
+        return redirect("news_index")
+
+
+class NewsSubmissionRejectView(LoginRequiredMixin, View):
+    """Reject a pending news submission from the news index (manager+ only)."""
+
+    def post(self, request, pk):
+        if not _can_manage_news(request.user):
+            raise PermissionDenied
+        submission = get_object_or_404(DraftSubmission, pk=pk, submission_type=DraftSubmission.SubmissionType.NEWS)
+        try:
+            submission.reject(reviewer=request.user, note=request.POST.get("note", ""))
+        except ValueError as e:
+            messages.error(request, str(e))
+        return redirect("news_index")
 
 
 class AddCommentView(ParticipantRequiredMixin, View):

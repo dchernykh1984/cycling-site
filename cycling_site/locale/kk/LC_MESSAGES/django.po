@@ -1783,3 +1783,39 @@ msgstr "Жүйелік резервтік локациялар жасырын к
 #: locations/views.py
 msgid "This location proposal is no longer pending."
 msgstr "Бұл локация ұсынысы енді модерацияны күтпейді."
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Items awaiting your moderation"
+msgstr "Сіздің модерациялауыңызды күтіп тұрған элементтер"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Awaiting your moderation"
+msgstr "Модерациялауыңызды күтуде"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Events awaiting approval"
+msgstr "Бекітуді күтіп тұрған іс-шаралар"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Locations awaiting approval"
+msgstr "Бекітуді күтіп тұрған локациялар"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Article submissions awaiting review"
+msgstr "Тексеруді күтіп тұрған мақала өтінімдері"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "News submissions awaiting review"
+msgstr "Тексеруді күтіп тұрған жаңалық өтінімдері"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Registrations awaiting approval for \"%(title)s\""
+msgstr "«%(title)s» үшін бекітуді күтіп тұрған тіркелулер"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Review"
+msgstr "Қарау"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "News published successfully."
+msgstr "Жаңалық сәтті жарияланды."
