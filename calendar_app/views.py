@@ -462,10 +462,17 @@ class CompetitionDetailView(View):
             "comment_form": AddCompetitionCommentForm() if can_comment else None,
             "user_can_delete_comment": is_manager,
         }
+        # Resolve the map pin: a venue with its own coordinates, else the nearest visible ancestor
+        # (city -> region -> country). The hidden "other location" placeholder carries no coordinates,
+        # so map_display_node resolves it up to the real place instead of showing nothing.
         loc = competition.location
-        if loc and loc.lat and loc.lng:
-            lat = float(loc.lat)
-            lng = float(loc.lng)
+        display = None
+        if loc is not None:
+            by_path = {node.path: node for node in [*loc.get_ancestors(), loc]}
+            display = map_display_node(loc, by_path, Location.steplen)
+        if display is not None:
+            lat = float(display.lat)
+            lng = float(display.lng)
             ctx["location_lat"] = f"{lat:.6f}"
             ctx["location_lng"] = f"{lng:.6f}"
             lat_dir = _("N") if lat >= 0 else _("S")
