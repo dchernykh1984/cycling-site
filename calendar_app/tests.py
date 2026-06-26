@@ -335,6 +335,23 @@ class CompetitionDetailViewTests(TestCase):
         self.assertNotIn("location_lat", response.context)
         self.assertNotContains(response, "competition-map")
 
+    def test_coordless_venue_falls_back_to_ancestor_coords(self):
+        # A venue may be the hidden "other location" placeholder with no coordinates of its own;
+        # the map/lat-lng must fall back to the nearest ancestor (here the city) so it still renders.
+        from locations.models import Location
+
+        country = Location.add_root(name_ru="China", name_en="China", lat="34.541225", lng="108.923707")
+        region = country.add_child(name_ru="Inner Mongolia", name_en="Inner Mongolia")
+        city = region.add_child(name_ru="West Ujimqin", name_en="West Ujimqin", lat="44.580860", lng="117.610187")
+        other = city.add_child(name_ru="Other location", name_en="Other location", is_hidden=True)
+        self.assertIsNone(other.lat)
+        comp = _make_competition("Steppe Race", location=other)
+        response = self.client.get(reverse("competition_detail", args=[comp.pk]))
+        self.assertContains(response, "competition-map")
+        # falls back to the city pin, not the region/country
+        self.assertEqual(response.context["location_lat"], "44.580860")
+        self.assertEqual(response.context["location_lng"], "117.610187")
+
     def test_no_location_omits_map(self):
         response = self.client.get(self.url)
         self.assertNotIn("location_lat", response.context)
