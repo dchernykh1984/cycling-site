@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ submission.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <h1 class="mb-0">{{ submission.title }}</h1>
+            <span class="badge {% if submission.status == 'pending' %}bg-warning text-dark{% elif submission.status == 'approved' %}bg-success{% else %}bg-danger{% endif %} ms-3">
+                {{ submission.get_status_display }}
+            </span>
+        </div>
+
+        <dl class="row mb-4">
+            <dt class="col-sm-3">{% trans "Submission type" %}</dt>
+            <dd class="col-sm-9">{{ submission.get_submission_type_display }}</dd>
+
+            <dt class="col-sm-3">{% trans "Author" %}</dt>
+            <dd class="col-sm-9">{{ submission.author.get_full_name|default:submission.author.email }}</dd>
+
+            <dt class="col-sm-3">{% trans "Submitted" %}</dt>
+            <dd class="col-sm-9">{{ submission.submitted_at|date:"d.m.Y H:i" }}</dd>
+
+            <dt class="col-sm-3">{% trans "Locale" %}</dt>
+            <dd class="col-sm-9">{{ submission.get_locale_display }}</dd>
+
+            {% if submission.reviewed_by %}
+            <dt class="col-sm-3">{% trans "Reviewed by" %}</dt>
+            <dd class="col-sm-9">{{ submission.reviewed_by.get_full_name|default:submission.reviewed_by.email }}</dd>
+            {% endif %}
+
+            {% if submission.reviewer_note %}
+            <dt class="col-sm-3">{% trans "Reviewer note" %}</dt>
+            <dd class="col-sm-9">{{ submission.reviewer_note }}</dd>
+            {% endif %}
+        </dl>
+
+        <div class="mb-4 p-3 border rounded bg-body-secondary">
+            <p class="mb-0" style="white-space: pre-wrap;">{{ submission.body }}</p>
+        </div>
+
+        {% if submission.status == 'pending' %}
+        <div class="d-flex flex-wrap gap-3 align-items-start">
+            <form method="post" action="{% url 'news_submission_approve' submission.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success">{% trans "Approve" %}</button>
+            </form>
+
+            <form method="post" action="{% url 'news_submission_reject' submission.pk %}" class="d-flex gap-2 align-items-center flex-wrap">
+                {% csrf_token %}
+                <input type="text" name="note" class="form-control form-control-sm"
+                       placeholder="{% trans 'Rejection reason (optional)' %}" style="width: 280px;">
+                <button type="submit" class="btn btn-danger btn-sm">{% trans "Reject" %}</button>
+            </form>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
