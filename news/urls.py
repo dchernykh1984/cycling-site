@@ -16,6 +16,8 @@ urlpatterns = [
         name="news_article_delete_comment",
     ),
     path("submit/", views.SubmitNewsView.as_view(), name="news_submit"),
+    path("submissions/<int:pk>/approve/", views.NewsSubmissionApproveView.as_view(), name="news_submission_approve"),
+    path("submissions/<int:pk>/reject/", views.NewsSubmissionRejectView.as_view(), name="news_submission_reject"),
     path("<int:page_pk>/comment/", views.AddCommentView.as_view(), name="news_add_comment"),
     path("comment/<int:pk>/delete/", views.DeleteCommentView.as_view(), name="news_delete_comment"),
 ]

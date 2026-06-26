@@ -1742,3 +1742,39 @@ msgstr "Системные резервные локации должны ост
 #: locations/views.py
 msgid "This location proposal is no longer pending."
 msgstr "Это предложение локации больше не ожидает модерации."
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Items awaiting your moderation"
+msgstr "Элементы, ожидающие вашей модерации"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Awaiting your moderation"
+msgstr "Ожидает вашей модерации"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Events awaiting approval"
+msgstr "События, ожидающие одобрения"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Locations awaiting approval"
+msgstr "Локации, ожидающие одобрения"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Article submissions awaiting review"
+msgstr "Заявки статей, ожидающие проверки"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "News submissions awaiting review"
+msgstr "Заявки новостей, ожидающие проверки"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Registrations awaiting approval for \"%(title)s\""
+msgstr "Регистрации, ожидающие одобрения, для «%(title)s»"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Review"
+msgstr "Проверить"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "News published successfully."
+msgstr "Новость успешно опубликована."

@@ -1,0 +1,21 @@
+{% load i18n %}
+{% if moderation_tasks %}
+<div class="alert alert-warning border shadow-sm" role="region" aria-label="{% trans 'Items awaiting your moderation' %}">
+    <div class="fw-semibold mb-2">{% trans "Awaiting your moderation" %}</div>
+    <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
+        {% for task in moderation_tasks %}
+        <li class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span>
+                {% if task.kind == "events" %}{% trans "Events awaiting approval" %}: {{ task.count }}
+                {% elif task.kind == "locations" %}{% trans "Locations awaiting approval" %}: {{ task.count }}
+                {% elif task.kind == "articles" %}{% trans "Article submissions awaiting review" %}: {{ task.count }}
+                {% elif task.kind == "news" %}{% trans "News submissions awaiting review" %}: {{ task.count }}
+                {% elif task.kind == "registrations" %}{% blocktrans with title=task.competition.title %}Registrations awaiting approval for "{{ title }}"{% endblocktrans %}: {{ task.count }}
+                {% endif %}
+            </span>
+            <a href="{{ task.url }}" class="btn btn-sm btn-outline-dark">{% trans "Review" %}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
