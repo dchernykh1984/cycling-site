@@ -131,7 +131,38 @@ class NewsSubmissionModerationViewTests(TestCase):
     def setUp(self):
         self.admin = _user("newsadmin@t.local", User.Role.ADMIN)
         self.participant = _user("newsp@t.local", User.Role.PARTICIPANT)
-        self.submission = _submission(self.participant, DraftSubmission.SubmissionType.NEWS, title="Breaking")
+        self.submission = DraftSubmission.objects.create(
+            author=self.participant,
+            submission_type=DraftSubmission.SubmissionType.NEWS,
+            locale="ru",
+            title="Breaking",
+            body="full breaking news body",
+        )
+
+    def test_manager_sees_news_body_on_detail_page(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("news_submission_detail", args=[self.submission.pk]))
+        self.assertEqual(response.status_code, 200)
+        # the moderator can read the full body before deciding, plus reach approve/reject from here
+        self.assertContains(response, "full breaking news body")
+        self.assertContains(response, reverse("news_submission_approve", args=[self.submission.pk]))
+        self.assertContains(response, reverse("news_submission_reject", args=[self.submission.pk]))
+
+    def test_participant_cannot_view_news_submission_detail(self):
+        self.client.force_login(self.participant)
+        response = self.client.get(reverse("news_submission_detail", args=[self.submission.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_knowledge_submission_not_reachable_via_news_detail(self):
+        knowledge_sub = _submission(self.participant, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("news_submission_detail", args=[knowledge_sub.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_news_index_pending_title_links_to_detail(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("news_index"))
+        self.assertContains(response, reverse("news_submission_detail", args=[self.submission.pk]))
 
     def test_manager_can_approve_news_submission(self):
         self.client.force_login(self.admin)

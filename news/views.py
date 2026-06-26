@@ -161,6 +161,17 @@ class SubmitNewsView(ParticipantRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
+class NewsSubmissionDetailView(LoginRequiredMixin, View):
+    """Full view of a pending news submission so a manager can read its body, locale and author
+    before approving or rejecting it (the inline list buttons only show the title)."""
+
+    def get(self, request, pk):
+        if not _can_manage_news(request.user):
+            raise PermissionDenied
+        submission = get_object_or_404(DraftSubmission, pk=pk, submission_type=DraftSubmission.SubmissionType.NEWS)
+        return render(request, "news/submission_detail.html", {"submission": submission})
+
+
 class NewsSubmissionApproveView(LoginRequiredMixin, View):
     """Publish a pending news submission straight from the news index (manager+ only)."""
 
