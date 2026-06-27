@@ -41,6 +41,12 @@ grep -qF '*render.com*)' "$SCRIPT_DIR/restore.sh" \
 grep -qF 'tar -xzf - -C' "$SCRIPT_DIR/restore.sh" \
     || fail "restore.sh is missing the Render media SSH upload"
 
+# 0c. backup.sh must symmetrically pull Render media over SSH (auto-detected by DB_HOST).
+grep -qF '*render.com*)' "$SCRIPT_DIR/backup.sh" \
+    || fail "backup.sh is missing the Render media auto-detect (DB_HOST case)"
+grep -qF 'tar -czf - -C' "$SCRIPT_DIR/backup.sh" \
+    || fail "backup.sh is missing the Render media SSH download"
+
 # 1. Source DB with data -> custom-format dump (same format as backup.sh's db.dump).
 createdb "$SRC"
 psql "$SRC" -v ON_ERROR_STOP=1 -q -c \
