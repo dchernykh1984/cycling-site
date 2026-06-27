@@ -48,8 +48,9 @@ def test_reset_link_clears_filters(page: Page, live_server):
 
 @pytest.mark.django_db(transaction=True)
 def test_list_table_fits_without_horizontal_scroll(page: Page, live_server, organizer):
-    """The list table must never produce a horizontal scrollbar, even with all 10 columns
-    filled with long titles / location names (table-layout: fixed)."""
+    """At desktop/tablet width (above the mobile card breakpoint) the fixed-layout table must
+    never produce a horizontal scrollbar, even with all 10 columns filled with long titles /
+    location names."""
     import datetime
 
     from calendar_app.models import Competition
@@ -76,10 +77,27 @@ def test_list_table_fits_without_horizontal_scroll(page: Page, live_server, orga
             url_registration="https://example.com/register",
         )
 
-    page.set_viewport_size({"width": 760, "height": 900})
+    page.set_viewport_size({"width": 800, "height": 900})
     page.goto(f"{live_server.url}/calendar/list/?date_from=2026-08-15&date_to=2026-09-15")
     expect(page.locator(".table-responsive")).to_be_visible()
     overflow = page.evaluate(
         "() => { const el = document.querySelector('.table-responsive'); return el.scrollWidth - el.clientWidth; }"
     )
     assert overflow <= 1, f"competition list table overflows horizontally by {overflow}px"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_list_table_stacks_into_cards_on_mobile(page: Page, live_server, approved_competition):
+    """On a phone-width viewport the 10-column table would otherwise squash to one character
+    per line, so below the md breakpoint each row renders as a stacked card: the header row is
+    hidden, every cell carries a data-label, and the page has no horizontal scroll."""
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}/calendar/list/?date_from=2026-08-15&date_to=2026-09-15")
+    # The table still renders (one approved competition in range), but as stacked cards: the
+    # header row is hidden and each cell exposes its column name via data-label.
+    expect(page.locator(".calendar-list-table")).to_be_visible()
+    expect(page.locator(".calendar-list-table thead")).to_be_hidden()
+    expect(page.locator(".calendar-list-table td[data-label]").first).to_be_visible()
+    # No horizontal scroll anywhere on the page.
+    overflow = page.evaluate("() => document.documentElement.scrollWidth - document.documentElement.clientWidth")
+    assert overflow <= 1, f"mobile list page overflows horizontally by {overflow}px"
