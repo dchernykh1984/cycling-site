@@ -69,26 +69,32 @@ PostgreSQL database.
 | -------------- | ------- | --------------------------------------- |
 | `DATABASE_URL` | dev     | `postgres://localhost/cycling_site_dev` |
 
-Production variables are provided automatically by CodeRed - see
-[Deployment](#deployment).
+Production configuration comes from environment variables set in the Render
+dashboard - see [Deployment](#deployment).
 
 ## Deployment
 
-Auto-deploys to [CodeRed Cloud](https://www.codered.cloud/) via GitHub Actions:
-a push to `main` triggers the CI workflow, and a successful run triggers the
-deploy workflow.
+Hosted on [Render](https://render.com/): a push to `main` triggers the CI workflow,
+and Render auto-deploys the new commit, running `python manage.py migrate` as a
+pre-deploy step. Configuration comes from environment variables set in the Render
+dashboard:
 
-In production the project reads its configuration from the environment variables
-CodeRed provides automatically:
+- `DATABASE_URL` - PostgreSQL connection (Render Postgres); `prod.py` also accepts
+  discrete `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD` as a fallback
+- `SECRET_KEY` - Django secret key (or `RANDOM_SECRET_KEY`)
+- `PRIMARY_HOST` - canonical host for absolute URLs (sitemap, account emails, Wagtail
+  admin); the custom `migrate` command syncs the Wagtail Site and the
+  `django.contrib.sites` Site to it on every deploy
+- `MEDIA_ROOT` - path to the mounted persistent disk that stores uploaded media
+- `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` - SMTP (Gmail)
+- `GOOGLE_`/`GITHUB_`/`STRAVA_` `CLIENT_ID` and `CLIENT_SECRET` - social login
 
-- `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` - PostgreSQL connection
-- `RANDOM_SECRET_KEY` - Django secret key (or set your own `SECRET_KEY`)
-- `VIRTUAL_HOST` - the site domain, used for `ALLOWED_HOSTS` and the Wagtail
-  admin base URL
+The team domain (`universalbicycle.team` and `www.universalbicycle.team`) is always
+in `ALLOWED_HOSTS`; set `VIRTUAL_HOST` to add more hosts. Static files are served by
+WhiteNoise. DNS is managed by Cloudflare, with the apex `universalbicycle.team` as
+the canonical host and `www` redirecting to it.
 
-No manual database or host configuration is required in the dashboard.
-
-Live site: <https://cycling.codered.cloud>.
+Live site: <https://universalbicycle.team>.
 
 ## REST API
 
@@ -212,14 +218,14 @@ Step 1 alone does not change the role; both steps are required.
 Owner is the highest role: it gives full Wagtail admin access and Django
 superuser rights. After a user registers, promote them in two admin panels:
 
-**1. Wagtail admin** - <https://cycling.codered.cloud/admin/users/>
+**1. Wagtail admin** - <https://universalbicycle.team/admin/users/>
 
 - Find the user, click Edit
 - Check **Administrator**
 - Add the **owner** group, remove all other groups
 - Save
 
-**2. Django admin** - <https://cycling.codered.cloud/django-admin/accounts/user/>
+**2. Django admin** - <https://universalbicycle.team/django-admin/accounts/user/>
 
 - Find the user, click their username
 - Set **Role** to `owner`
@@ -253,20 +259,15 @@ timestamped directory to `backup/YYYY-MM-DD_HH-MM/` containing:
 ### Production backup
 
 ```bash
-# .env: DB_HOST, DB_NAME, DB_USER (DB_PASSWORD is prompted). Media source is auto-detected:
-#   Render  -> RENDER_SSH (+ optional RENDER_MEDIA_PATH, default /var/media)
-#   CodeRed -> CR_TOKEN   (+ optional CR_MEDIA_REMOTE_PATH, default /www/media)
+# .env: DB_HOST, DB_NAME, DB_USER (DB_PASSWORD is prompted) plus RENDER_SSH
+# (and optional RENDER_MEDIA_PATH, default /var/media) for media collection.
 ./scripts/backup.sh --production
 ```
 
 Prompts for `DB_PASSWORD` interactively (not stored in `.env`) and connects to the
-production database over SSL (`PGSSLMODE=require`). Media is collected by platform,
-**auto-detected from `DB_HOST`**:
-
-- **Render** (`DB_HOST` contains `render.com`): media is pulled from the web service's
-  persistent disk over SSH (needs `RENDER_SSH` and your SSH public key in the Render account).
-- **CodeRed** (any other host): media is downloaded via `cr download` (needs `CR_TOKEN`;
-  remote path defaults to `/www/media`, override with `CR_MEDIA_REMOTE_PATH`).
+production database over SSL (`PGSSLMODE=require`). Media is pulled from the Render web
+service's persistent disk over SSH (needs `RENDER_SSH` and your SSH public key in the
+Render account; the disk path defaults to `/var/media`, override with `RENDER_MEDIA_PATH`).
 
 ### Local restore
 
@@ -284,9 +285,8 @@ Validates SHA-256 checksums, then restores the database and media, and runs
 ```
 
 Prompts for `DB_PASSWORD` and requires you to type the DB host name to confirm before
-any destructive action. After the DB restore it **also syncs media**, auto-detected from
-`DB_HOST` the same way as backup (Render: upload to the disk over SSH; other hosts: a
-manual note is printed).
+any destructive action. After the DB restore it **also syncs media**, uploading it to the
+Render web service's persistent disk over SSH (the same `RENDER_SSH` used by backup).
 
 #### Media-only restore, and why it exists
 
