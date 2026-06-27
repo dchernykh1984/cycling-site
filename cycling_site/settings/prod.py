@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+import dj_database_url
+
 from ..logconfig import build_logging_config
 from .base import *
 
@@ -37,28 +39,46 @@ SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
-# CodeRed Cloud provides PostgreSQL connection details via these env vars
-# (not via DATABASE_URL). The database requires SSL and uses UTF8.
-# See https://www.codered.cloud/docs/django/environment/
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ["DB_NAME"],
-        "USER": os.environ["DB_USER"],
-        "PASSWORD": os.environ["DB_PASSWORD"],
-        "HOST": os.environ["DB_HOST"],
-        "CONN_MAX_AGE": 600,
-        "OPTIONS": {
-            "client_encoding": "UTF8",
-            "sslmode": "require",
-        },
+# Render (and any host that provides a single connection string) sets DATABASE_URL; CodeRed Cloud
+# instead exposes discrete DB_* vars. Prefer DATABASE_URL when present and fall back to DB_*, so the
+# same prod settings deploy unchanged on both hosts. Both connections require SSL.
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(conn_max_age=600, ssl_require=True),
     }
-}
+else:
+    # CodeRed Cloud: https://www.codered.cloud/docs/django/environment/
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ["DB_NAME"],
+            "USER": os.environ["DB_USER"],
+            "PASSWORD": os.environ["DB_PASSWORD"],
+            "HOST": os.environ["DB_HOST"],
+            "CONN_MAX_AGE": 600,
+            "OPTIONS": {
+                "client_encoding": "UTF8",
+                "sslmode": "require",
+            },
+        }
+    }
 
 WAGTAILADMIN_BASE_URL = f"https://{PRIMARY_HOST}"
 SITE_BASE_URL = f"https://{PRIMARY_HOST}"
 
-STORAGES["staticfiles"]["BACKEND"] = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+# Render serves no static files itself (CodeRed does), so serve them from the app via WhiteNoise:
+# the middleware (right after SecurityMiddleware) handles requests, the storage backend hashes and
+# compresses assets. Both are harmless on CodeRed, keeping one prod config for both hosts.
+if "whitenoise.middleware.WhiteNoiseMiddleware" not in MIDDLEWARE:
+    MIDDLEWARE.insert(
+        MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,
+        "whitenoise.middleware.WhiteNoiseMiddleware",
+    )
+STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Media can live on a mounted persistent disk (Render) via MEDIA_ROOT; defaults to the repo's
+# media/ directory, as on CodeRed.
+MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", str(BASE_DIR / "media")))
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
