@@ -1423,10 +1423,12 @@ class DropLegacyAuthUserTests(TestCase):
 
 
 class SyncDefaultSiteHostTests(TestCase):
-    """The deploy's migrate keeps the default Wagtail Site pointed at the canonical host, so
-    switching the live domain is just a PRIMARY_HOST env change + redeploy."""
+    """The deploy's migrate keeps the default Wagtail Site -- and the django.contrib.sites Site
+    used by non-Wagtail sitemaps -- pointed at the canonical host, so switching the live domain is
+    just a PRIMARY_HOST env change + redeploy."""
 
     def test_sets_host_and_https_port_from_primary_host(self):
+        from django.contrib.sites.models import Site as DjangoSite
         from wagtail.models import Site
 
         from accounts.management.commands.migrate import _sync_default_site_host
@@ -1436,6 +1438,9 @@ class SyncDefaultSiteHostTests(TestCase):
         site = Site.objects.get(is_default_site=True)
         self.assertEqual(site.hostname, "universalbicycle.team")
         self.assertEqual(site.port, 443)
+        # The knowledge sitemap is a plain django.contrib.sitemaps.Sitemap, so its absolute URLs
+        # come from the django.contrib.sites Site, which must track the canonical host too.
+        self.assertEqual(DjangoSite.objects.get(pk=settings.SITE_ID).domain, "universalbicycle.team")
 
     def test_falls_back_to_first_virtual_host(self):
         from wagtail.models import Site
@@ -1448,15 +1453,18 @@ class SyncDefaultSiteHostTests(TestCase):
         self.assertEqual(Site.objects.get(is_default_site=True).hostname, "cycling.codered.cloud")
 
     def test_noop_without_env(self):
+        from django.contrib.sites.models import Site as DjangoSite
         from wagtail.models import Site
 
         from accounts.management.commands.migrate import _sync_default_site_host
 
         site = Site.objects.get(is_default_site=True)
         before = (site.hostname, site.port)
+        django_domain_before = DjangoSite.objects.get(pk=settings.SITE_ID).domain
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("PRIMARY_HOST", None)
             os.environ.pop("VIRTUAL_HOST", None)
             _sync_default_site_host()
         site.refresh_from_db()
         self.assertEqual((site.hostname, site.port), before)
+        self.assertEqual(DjangoSite.objects.get(pk=settings.SITE_ID).domain, django_domain_before)

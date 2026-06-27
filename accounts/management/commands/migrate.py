@@ -1,6 +1,7 @@
 import contextlib
 import os
 
+from django.conf import settings
 from django.core.management.commands.migrate import Command as MigrateCommand
 from django.db import connection
 from django.db.migrations.recorder import MigrationRecorder
@@ -19,20 +20,27 @@ class Command(MigrateCommand):
 
 
 def _sync_default_site_host() -> None:
-    """Point the default Wagtail Site at the canonical host (so sitemaps and ``page.full_url`` use
-    the right domain). Driven by ``PRIMARY_HOST``, falling back to the first ``VIRTUAL_HOST``; a
-    no-op when neither is set (local/test). This makes switching the live domain a config-only
-    change: set ``PRIMARY_HOST=universalbicycle.team`` and redeploy."""
+    """Point the default Wagtail Site -- and the django.contrib.sites Site that non-Wagtail
+    sitemaps build their absolute URLs from (e.g. the knowledge-article sitemap) -- at the
+    canonical host, so sitemaps and ``page.full_url`` use the right domain. Driven by
+    ``PRIMARY_HOST``, falling back to the first ``VIRTUAL_HOST``; a no-op when neither is set
+    (local/test). This makes switching the live domain a config-only change: set
+    ``PRIMARY_HOST=universalbicycle.team`` and redeploy."""
     host = os.environ.get("PRIMARY_HOST") or next(
         iter(os.environ.get("VIRTUAL_HOST", "").replace(",", " ").split()), ""
     )
     if not host:
         return
-    # A cosmetic host sync must never break the deploy's migrate step (e.g. Site table not ready).
+    # A cosmetic host sync must never break the deploy's migrate step (e.g. a table not ready), so
+    # guard each independently.
     with contextlib.suppress(Exception):
         from wagtail.models import Site
 
         Site.objects.filter(is_default_site=True).update(hostname=host, port=443)
+    with contextlib.suppress(Exception):
+        from django.contrib.sites.models import Site as DjangoSite
+
+        DjangoSite.objects.filter(pk=settings.SITE_ID).update(domain=host)
 
 
 def _repair_accounts_initial_if_needed() -> None:
