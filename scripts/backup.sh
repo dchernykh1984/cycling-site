@@ -212,27 +212,30 @@ if [[ "$PRODUCTION" == "true" ]]; then
                 echo "       Set RENDER_SSH=srv-xxxxxxxx@ssh.<region>.render.com in .env." >&2
                 exit 1
             fi
-            echo "Downloading production media from ${RENDER_SSH}:${RENDER_MEDIA_PATH} via ssh..."
-            # Create the archive on the server, then scp it down. scp (sftp) is reliable over Render's
-            # SSH gateway; the ssh-exec tar and the gateway's rate-limiting can fail intermittently, so
-            # retry. --exclude='._*' drops macOS AppleDouble files; tar -tzf guards a truncated copy.
-            _remote_tmp="/tmp/cycling_media_backup_$$.tar.gz"
+            echo "Downloading production media from ${RENDER_SSH}:${RENDER_MEDIA_PATH} via scp..."
+            # Copy the disk contents down with scp -r, then pack them locally. Plain scp transfers are
+            # reliable over Render's (Go) SSH gateway, whereas a remote `tar` is not. --exclude='._*'
+            # drops macOS AppleDouble files; tar -tzf guards a truncated archive.
+            _stage="$(mktemp -d)"
             _ssh_opts="-o StrictHostKeyChecking=accept-new -o UpdateHostKeys=no"
             _downloaded=false
             for _attempt in 1 2 3; do
                 # shellcheck disable=SC2086  # $_ssh_opts is intentionally word-split
-                if ssh $_ssh_opts "$RENDER_SSH" "tar -czf '${_remote_tmp}' -C '${RENDER_MEDIA_PATH}' --exclude='._*' ." >/dev/null 2>&1 \
-                   && scp $_ssh_opts "${RENDER_SSH}:${_remote_tmp}" "$MEDIA_ARCHIVE" >/dev/null 2>&1 \
-                   && tar -tzf "$MEDIA_ARCHIVE" >/dev/null 2>&1; then
-                    # shellcheck disable=SC2086
-                    ssh $_ssh_opts "$RENDER_SSH" "rm -f '${_remote_tmp}'" >/dev/null 2>&1 || true
+                if scp -r $_ssh_opts "${RENDER_SSH}:${RENDER_MEDIA_PATH}/*" "$_stage"/ >/dev/null 2>&1; then
                     _downloaded=true
                     break
                 fi
-                [[ "$_attempt" -lt 3 ]] && { echo "  media download attempt ${_attempt}/3 failed (Render SSH gateway flaky); retrying in 5s..." >&2; sleep 5; }
+                [[ "$_attempt" -lt 3 ]] && { echo "  media download attempt ${_attempt}/3 failed; retrying in 5s..." >&2; sleep 5; }
             done
             if [[ "$_downloaded" != "true" ]]; then
-                echo "ERROR: could not download production media after 3 attempts (SSH gateway flaky)." >&2
+                echo "ERROR: could not download production media after 3 attempts." >&2
+                rm -rf "$_stage"
+                exit 1
+            fi
+            tar -czf "$MEDIA_ARCHIVE" -C "$_stage" --exclude='._*' .
+            rm -rf "$_stage"
+            if ! tar -tzf "$MEDIA_ARCHIVE" >/dev/null 2>&1; then
+                echo "ERROR: produced media archive is not a valid gzip tar." >&2
                 exit 1
             fi
             ;;

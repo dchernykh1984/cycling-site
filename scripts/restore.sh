@@ -324,32 +324,29 @@ if [[ "$PRODUCTION_RESTORE" == "true" ]]; then
                 MEDIA_RESULT="skipped (set RENDER_SSH in .env to enable)"
             else
                 echo "Uploading media to ${RENDER_SSH}:${RENDER_MEDIA_PATH} ..."
-                # Copy the archive up with scp, then extract it on the server. scp (sftp) is reliable
-                # over Render's SSH gateway; the ssh-exec extract is dropped intermittently by the
-                # gateway (which also rate-limits rapid connections), so retry. Extracting from a file
-                # (not a binary stdin pipe) avoids the gateway truncating the transfer.
-                #   --no-same-owner: remote runs as non-root; --exclude='._*': drop macOS junk;
-                #   no --strip-components: the archive stores ./images, ./original_images, ...
-                _remote_tmp="/tmp/cycling_media_upload_$$.tar.gz"
+                # Extract the archive locally, then copy the files onto the disk with scp -r. Plain
+                # scp transfers are reliable over Render's (Go) SSH gateway; a remote `tar` extract is
+                # not (short commands work, but the longer extract is dropped intermittently). scp -r
+                # merges into the existing dir. --exclude='._*' drops macOS AppleDouble files.
+                _stage="$(mktemp -d)"
+                tar -xzf "$MEDIA_ARCHIVE" -C "$_stage" --exclude='._*'
                 _ssh_opts="-o StrictHostKeyChecking=accept-new -o UpdateHostKeys=no"
                 MEDIA_RESULT="FAILED -- DB restored, re-run media upload"
                 for _attempt in 1 2 3; do
                     # shellcheck disable=SC2086  # $_ssh_opts is intentionally word-split
-                    if scp $_ssh_opts "$MEDIA_ARCHIVE" "${RENDER_SSH}:${_remote_tmp}" >/dev/null 2>&1 \
-                       && ssh $_ssh_opts "$RENDER_SSH" \
-                            "mkdir -p '${RENDER_MEDIA_PATH}' && tar -xzf '${_remote_tmp}' -C '${RENDER_MEDIA_PATH}' --no-same-owner --exclude='._*' && rm -f '${_remote_tmp}'" >/dev/null 2>&1; then
+                    if scp -r $_ssh_opts "$_stage"/* "${RENDER_SSH}:${RENDER_MEDIA_PATH}/" >/dev/null 2>&1; then
                         echo "Media uploaded. Remote ${RENDER_MEDIA_PATH}:"
                         # shellcheck disable=SC2086
                         ssh $_ssh_opts "$RENDER_SSH" "ls -1 '${RENDER_MEDIA_PATH}'" 2>/dev/null || true
                         MEDIA_RESULT="uploaded to ${RENDER_SSH}:${RENDER_MEDIA_PATH}"
                         break
                     fi
-                    [[ "$_attempt" -lt 3 ]] && { echo "  upload attempt ${_attempt}/3 failed (Render SSH gateway flaky); retrying in 5s..." >&2; sleep 5; }
+                    [[ "$_attempt" -lt 3 ]] && { echo "  upload attempt ${_attempt}/3 failed; retrying in 5s..." >&2; sleep 5; }
                 done
+                rm -rf "$_stage"
                 if [[ "$MEDIA_RESULT" == FAILED* ]]; then
                     echo "WARNING: media upload failed after 3 attempts (the DB restore already succeeded)." >&2
-                    echo "         Render's SSH gateway may be rate-limiting; re-run later:" >&2
-                    echo "         ./scripts/restore.sh ${BACKUP_DIR} --production-restore --media-only" >&2
+                    echo "         Re-run: ./scripts/restore.sh ${BACKUP_DIR} --production-restore --media-only" >&2
                 fi
             fi
             ;;
