@@ -35,6 +35,12 @@ fail() { echo "FAIL: $1" >&2; exit 1; }
 grep -q "DROP SCHEMA IF EXISTS public CASCADE" "$SCRIPT_DIR/restore.sh" \
     || fail "restore.sh is missing the schema reset before pg_restore"
 
+# 0b. Production media must be auto-detected and uploaded (Render over SSH), not left manual.
+grep -qF '*render.com*)' "$SCRIPT_DIR/restore.sh" \
+    || fail "restore.sh is missing the Render media auto-detect (DB_HOST case)"
+grep -qF 'tar -xzf - -C' "$SCRIPT_DIR/restore.sh" \
+    || fail "restore.sh is missing the Render media SSH upload"
+
 # 1. Source DB with data -> custom-format dump (same format as backup.sh's db.dump).
 createdb "$SRC"
 psql "$SRC" -v ON_ERROR_STOP=1 -q -c \
