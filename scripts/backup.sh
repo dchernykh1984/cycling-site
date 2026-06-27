@@ -3,12 +3,18 @@
 #
 # Usage:
 #   ./scripts/backup.sh              # dev/local: local DB + local media/
-#   ./scripts/backup.sh --production # production: remote DB (SSL) + cr download media
+#   ./scripts/backup.sh --production # production: remote DB (SSL) + media (platform auto-detected)
+#
+# Production media is auto-detected from DB_HOST (symmetric to restore.sh):
+#   * Render (DB_HOST contains "render.com"): media is pulled from the web service disk over SSH.
+#     Requires RENDER_SSH=srv-xxxxxxxx@ssh.<region>.render.com in .env (service -> Connect -> SSH),
+#     optional RENDER_MEDIA_PATH (default /var/media), and your SSH public key in the Render account.
+#   * CodeRed (any other host): media is downloaded via `cr` (needs CR_TOKEN, CR_MEDIA_REMOTE_PATH).
 #
 # Production requires:
 #   .env with DB_HOST, DB_NAME, DB_USER (DB_PASSWORD prompted interactively)
-#   CR_TOKEN in env (for `cr download`)
-#   CR_MEDIA_REMOTE_PATH in .env or env (defaults to /www/media)
+#   Render: RENDER_SSH (+ optional RENDER_MEDIA_PATH, default /var/media)
+#   CodeRed: CR_TOKEN, CR_MEDIA_REMOTE_PATH (defaults to /www/media)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -195,29 +201,48 @@ echo "Database dump: ${DB_DUMP}"
 MEDIA_ARCHIVE="${BACKUP_DIR}/media.tar.gz"
 
 if [[ "$PRODUCTION" == "true" ]]; then
-    if [[ -z "${CR_TOKEN:-}" ]]; then
-        echo "ERROR: CR_TOKEN is required for production media download." >&2
-        exit 1
-    fi
-    MEDIA_TMP="${BACKUP_DIR}/media_tmp"
-    mkdir -p "$MEDIA_TMP"
-    echo "Downloading production media via cr..."
-    CR_STDERR_LOG=$(mktemp)
-    if cr download cycling --remote "$CR_MEDIA_REMOTE_PATH" --path "$MEDIA_TMP" 2>"$CR_STDERR_LOG"; then
-        echo "Archiving downloaded media..."
-        tar -czf "$MEDIA_ARCHIVE" -C "$MEDIA_TMP" .
-    elif grep -qi "No such file" "$CR_STDERR_LOG"; then
-        cat "$CR_STDERR_LOG" >&2
-        echo "WARNING: media directory not found on server (${CR_MEDIA_REMOTE_PATH}); creating empty archive."
-        tar -czf "$MEDIA_ARCHIVE" -T /dev/null
-    else
-        cat "$CR_STDERR_LOG" >&2
-        echo "ERROR: cr download failed (see above)." >&2
-        rm -f "$CR_STDERR_LOG"
-        exit 1
-    fi
-    rm -f "$CR_STDERR_LOG"
-    rm -rf "$MEDIA_TMP"
+    case "$DB_HOST" in
+        *render.com*)
+            # Render: media lives on the web service's disk, reachable only by SSH (not via the DB
+            # connection). `render ssh` is interactive-only, so use plain ssh -- needs your SSH public
+            # key in the Render account. Produces the same ./images... archive layout as the cr path.
+            RENDER_MEDIA_PATH="${RENDER_MEDIA_PATH:-/var/media}"
+            if [[ -z "${RENDER_SSH:-}" ]]; then
+                echo "ERROR: Render host detected but RENDER_SSH is not set." >&2
+                echo "       Set RENDER_SSH=srv-xxxxxxxx@ssh.<region>.render.com in .env." >&2
+                exit 1
+            fi
+            echo "Downloading production media from ${RENDER_SSH}:${RENDER_MEDIA_PATH} via ssh..."
+            ssh -o StrictHostKeyChecking=accept-new "$RENDER_SSH" \
+                "tar -czf - -C '${RENDER_MEDIA_PATH}' ." > "$MEDIA_ARCHIVE"
+            ;;
+        *)
+            # CodeRed: media is fetched with the cr CLI.
+            if [[ -z "${CR_TOKEN:-}" ]]; then
+                echo "ERROR: CR_TOKEN is required for production media download." >&2
+                exit 1
+            fi
+            MEDIA_TMP="${BACKUP_DIR}/media_tmp"
+            mkdir -p "$MEDIA_TMP"
+            echo "Downloading production media via cr..."
+            CR_STDERR_LOG=$(mktemp)
+            if cr download cycling --remote "$CR_MEDIA_REMOTE_PATH" --path "$MEDIA_TMP" 2>"$CR_STDERR_LOG"; then
+                echo "Archiving downloaded media..."
+                tar -czf "$MEDIA_ARCHIVE" -C "$MEDIA_TMP" .
+            elif grep -qi "No such file" "$CR_STDERR_LOG"; then
+                cat "$CR_STDERR_LOG" >&2
+                echo "WARNING: media directory not found on server (${CR_MEDIA_REMOTE_PATH}); creating empty archive."
+                tar -czf "$MEDIA_ARCHIVE" -T /dev/null
+            else
+                cat "$CR_STDERR_LOG" >&2
+                echo "ERROR: cr download failed (see above)." >&2
+                rm -f "$CR_STDERR_LOG"
+                exit 1
+            fi
+            rm -f "$CR_STDERR_LOG"
+            rm -rf "$MEDIA_TMP"
+            ;;
+    esac
 else
     if [[ -d "media" ]]; then
         echo "Archiving local media/..."
