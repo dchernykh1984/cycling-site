@@ -2,10 +2,16 @@
 # restore.sh - restore a backup created by backup.sh.
 #
 # Usage:
-#   ./scripts/restore.sh <backup-dir>                    # restore to local/dev DB
-#   ./scripts/restore.sh <backup-dir> --production-restore  # restore to production DB (requires confirmation)
+#   ./scripts/restore.sh <backup-dir>                       # restore to local/dev DB
+#   ./scripts/restore.sh <backup-dir> --production-restore  # restore DB + media to production (confirmation)
+#   ./scripts/restore.sh <backup-dir> --production-restore --media-only  # ONLY sync media, leave the DB
 #
 # <backup-dir>: path to a backup directory containing db.dump, media.tar.gz, manifest.json
+#
+# --media-only: skip the DB (no schema reset / pg_restore / migrate) and only sync media. Use it
+# because a live web service cannot have its DB reset underneath it (concurrent writes corrupt the
+# restore), while media needs the service running (the disk only mounts on a running instance). So a
+# live host is restored in two passes: suspend -> --production-restore (DB) -> resume -> --media-only.
 #
 # Media on --production-restore is auto-detected from DB_HOST:
 #   * Render (DB_HOST contains "render.com"): media is uploaded over SSH to the web service's disk.
@@ -25,11 +31,15 @@ cd "$PROJECT_ROOT"
 # ---------------------------------------------------------------------------
 BACKUP_DIR=""
 PRODUCTION_RESTORE=false
+MEDIA_ONLY=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --production-restore) PRODUCTION_RESTORE=true ;;
-        -*) echo "Unknown flag: $1" >&2; echo "Usage: $0 <backup-dir> [--production-restore]" >&2; exit 1 ;;
+        --media-only) MEDIA_ONLY=true ;;
+        -*) echo "Unknown flag: $1" >&2
+            echo "Usage: $0 <backup-dir> [--production-restore] [--media-only]" >&2
+            exit 1 ;;
         *) BACKUP_DIR="$1" ;;
     esac
     shift
@@ -143,9 +153,12 @@ PYEOF
 echo ""
 
 # ---------------------------------------------------------------------------
-# Production restore confirmation
+# Confirm the destructive DB restore (skipped entirely in --media-only mode)
 # ---------------------------------------------------------------------------
-if [[ "$PRODUCTION_RESTORE" == "true" ]]; then
+if [[ "$MEDIA_ONLY" == "true" ]]; then
+    echo "Media-only mode: skipping DB restore (no schema reset / pg_restore / migrate)."
+    echo ""
+elif [[ "$PRODUCTION_RESTORE" == "true" ]]; then
     echo "!!! WARNING: PRODUCTION RESTORE !!!"
     echo ""
     echo "Target database:"
@@ -155,9 +168,7 @@ if [[ "$PRODUCTION_RESTORE" == "true" ]]; then
     echo ""
     echo "This will OVERWRITE all data in the production database."
     echo ""
-    echo "NOTE: Production media is NOT restored by this script."
-    echo "      After DB restore, upload media.tar.gz to the server manually"
-    echo "      (e.g. via cr sftp cycling or your deployment workflow)."
+    echo "Media is synced after the DB restore (auto-detected from DB_HOST; see header)."
     echo ""
     read -rsp "DB password for ${DB_USER}@${DB_HOST}: " DB_PASSWORD
     echo ""
@@ -250,8 +261,9 @@ fi
 echo "  media.tar.gz OK (${ACTUAL_MEDIA_SHA})"
 
 # ---------------------------------------------------------------------------
-# Restore database
+# Restore database (skipped in --media-only mode)
 # ---------------------------------------------------------------------------
+if [[ "$MEDIA_ONLY" != "true" ]]; then
 echo ""
 echo "Restoring database..."
 
@@ -287,6 +299,7 @@ PGPASSWORD="$DB_PASSWORD" pg_restore \
     "$DB_DUMP"
 
 echo "Database restored."
+fi  # end DB restore (skipped in --media-only)
 
 # ---------------------------------------------------------------------------
 # Restore media
@@ -311,17 +324,32 @@ if [[ "$PRODUCTION_RESTORE" == "true" ]]; then
                 MEDIA_RESULT="skipped (set RENDER_SSH in .env to enable)"
             else
                 echo "Uploading media to ${RENDER_SSH}:${RENDER_MEDIA_PATH} ..."
-                # No --strip-components: the archive stores ./images, ./original_images, ... which a
-                # plain extract under -C places correctly (works with GNU tar on the server too).
-                if ssh -o StrictHostKeyChecking=accept-new "$RENDER_SSH" \
-                        "mkdir -p '${RENDER_MEDIA_PATH}' && tar -xzf - -C '${RENDER_MEDIA_PATH}'" < "$MEDIA_ARCHIVE"; then
-                    echo "Media uploaded. Remote ${RENDER_MEDIA_PATH}:"
-                    ssh -o StrictHostKeyChecking=accept-new "$RENDER_SSH" "ls -1 '${RENDER_MEDIA_PATH}'" || true
-                    MEDIA_RESULT="uploaded to ${RENDER_SSH}:${RENDER_MEDIA_PATH}"
-                else
-                    echo "WARNING: media upload over SSH failed (the DB restore already succeeded)." >&2
-                    echo "         Check RENDER_SSH and that your SSH public key is in the Render account." >&2
-                    MEDIA_RESULT="FAILED -- DB restored, re-run media upload"
+                # Copy the archive up with scp, then extract it on the server. scp (sftp) is reliable
+                # over Render's SSH gateway; the ssh-exec extract is dropped intermittently by the
+                # gateway (which also rate-limits rapid connections), so retry. Extracting from a file
+                # (not a binary stdin pipe) avoids the gateway truncating the transfer.
+                #   --no-same-owner: remote runs as non-root; --exclude='._*': drop macOS junk;
+                #   no --strip-components: the archive stores ./images, ./original_images, ...
+                _remote_tmp="/tmp/cycling_media_upload_$$.tar.gz"
+                _ssh_opts="-o StrictHostKeyChecking=accept-new -o UpdateHostKeys=no"
+                MEDIA_RESULT="FAILED -- DB restored, re-run media upload"
+                for _attempt in 1 2 3; do
+                    # shellcheck disable=SC2086  # $_ssh_opts is intentionally word-split
+                    if scp $_ssh_opts "$MEDIA_ARCHIVE" "${RENDER_SSH}:${_remote_tmp}" >/dev/null 2>&1 \
+                       && ssh $_ssh_opts "$RENDER_SSH" \
+                            "mkdir -p '${RENDER_MEDIA_PATH}' && tar -xzf '${_remote_tmp}' -C '${RENDER_MEDIA_PATH}' --no-same-owner --exclude='._*' && rm -f '${_remote_tmp}'" >/dev/null 2>&1; then
+                        echo "Media uploaded. Remote ${RENDER_MEDIA_PATH}:"
+                        # shellcheck disable=SC2086
+                        ssh $_ssh_opts "$RENDER_SSH" "ls -1 '${RENDER_MEDIA_PATH}'" 2>/dev/null || true
+                        MEDIA_RESULT="uploaded to ${RENDER_SSH}:${RENDER_MEDIA_PATH}"
+                        break
+                    fi
+                    [[ "$_attempt" -lt 3 ]] && { echo "  upload attempt ${_attempt}/3 failed (Render SSH gateway flaky); retrying in 5s..." >&2; sleep 5; }
+                done
+                if [[ "$MEDIA_RESULT" == FAILED* ]]; then
+                    echo "WARNING: media upload failed after 3 attempts (the DB restore already succeeded)." >&2
+                    echo "         Render's SSH gateway may be rate-limiting; re-run later:" >&2
+                    echo "         ./scripts/restore.sh ${BACKUP_DIR} --production-restore --media-only" >&2
                 fi
             fi
             ;;
@@ -348,12 +376,14 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Run migrations
+# Run migrations (skipped in --media-only mode)
 # ---------------------------------------------------------------------------
+if [[ "$MEDIA_ONLY" != "true" ]]; then
 echo ""
 echo "Running migrations..."
 DATABASE_URL="$TARGET_DATABASE_URL" DJANGO_SETTINGS_MODULE="cycling_site.settings.dev" \
     uv run python manage.py migrate --no-input
+fi  # end migrations (skipped in --media-only)
 
 # ---------------------------------------------------------------------------
 # Summary
@@ -361,5 +391,9 @@ DATABASE_URL="$TARGET_DATABASE_URL" DJANGO_SETTINGS_MODULE="cycling_site.setting
 echo ""
 echo "=== RESTORE COMPLETE ==="
 echo "  Backup  : ${BACKUP_DIR}"
-echo "  DB      : ${DB_NAME} @ ${DB_HOST}"
+if [[ "$MEDIA_ONLY" == "true" ]]; then
+    echo "  DB      : skipped (--media-only)"
+else
+    echo "  DB      : ${DB_NAME} @ ${DB_HOST}"
+fi
 echo "  Media   : ${MEDIA_RESULT:-skipped}"
