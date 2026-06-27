@@ -178,6 +178,42 @@ html {
 .calendar-list-table .btn {
     white-space: normal;
 }
+/* On phones the 10-column table cannot stay readable even with a fixed layout (columns
+   collapse to one character per line). Below the md breakpoint each row becomes a stacked
+   "card" with the column name shown as a label, keeping the page free of horizontal scroll. */
+@media (max-width: 767.98px) {
+    .calendar-list-table,
+    .calendar-list-table tbody,
+    .calendar-list-table tr {
+        display: block;
+        width: 100%;
+    }
+    .calendar-list-table thead {
+        display: none;
+    }
+    .calendar-list-table tr {
+        margin-bottom: 1rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+    }
+    .calendar-list-table td {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: space-between;
+        align-items: baseline;
+        border: 0;
+        padding: 0.2rem 0;
+        text-align: right;
+    }
+    .calendar-list-table td::before {
+        content: attr(data-label);
+        flex: 0 0 8rem;
+        font-weight: 600;
+        text-align: left;
+        color: var(--bs-secondary-color);
+    }
+}
 
 /* Dark theme: prevent Bootstrap from darkening Leaflet tile images */
 [data-bs-theme="dark"] .leaflet-container {
