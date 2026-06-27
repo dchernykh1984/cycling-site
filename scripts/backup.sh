@@ -213,8 +213,28 @@ if [[ "$PRODUCTION" == "true" ]]; then
                 exit 1
             fi
             echo "Downloading production media from ${RENDER_SSH}:${RENDER_MEDIA_PATH} via ssh..."
-            ssh -o StrictHostKeyChecking=accept-new "$RENDER_SSH" \
-                "tar -czf - -C '${RENDER_MEDIA_PATH}' ." > "$MEDIA_ARCHIVE"
+            # Create the archive on the server, then scp it down. scp (sftp) is reliable over Render's
+            # SSH gateway; the ssh-exec tar and the gateway's rate-limiting can fail intermittently, so
+            # retry. --exclude='._*' drops macOS AppleDouble files; tar -tzf guards a truncated copy.
+            _remote_tmp="/tmp/cycling_media_backup_$$.tar.gz"
+            _ssh_opts="-o StrictHostKeyChecking=accept-new -o UpdateHostKeys=no"
+            _downloaded=false
+            for _attempt in 1 2 3; do
+                # shellcheck disable=SC2086  # $_ssh_opts is intentionally word-split
+                if ssh $_ssh_opts "$RENDER_SSH" "tar -czf '${_remote_tmp}' -C '${RENDER_MEDIA_PATH}' --exclude='._*' ." >/dev/null 2>&1 \
+                   && scp $_ssh_opts "${RENDER_SSH}:${_remote_tmp}" "$MEDIA_ARCHIVE" >/dev/null 2>&1 \
+                   && tar -tzf "$MEDIA_ARCHIVE" >/dev/null 2>&1; then
+                    # shellcheck disable=SC2086
+                    ssh $_ssh_opts "$RENDER_SSH" "rm -f '${_remote_tmp}'" >/dev/null 2>&1 || true
+                    _downloaded=true
+                    break
+                fi
+                [[ "$_attempt" -lt 3 ]] && { echo "  media download attempt ${_attempt}/3 failed (Render SSH gateway flaky); retrying in 5s..." >&2; sleep 5; }
+            done
+            if [[ "$_downloaded" != "true" ]]; then
+                echo "ERROR: could not download production media after 3 attempts (SSH gateway flaky)." >&2
+                exit 1
+            fi
             ;;
         *)
             # CodeRed: media is fetched with the cr CLI.

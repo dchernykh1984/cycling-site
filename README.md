@@ -253,15 +253,20 @@ timestamped directory to `backup/YYYY-MM-DD_HH-MM/` containing:
 ### Production backup
 
 ```bash
-# Requires: DB_HOST, DB_NAME, DB_USER in .env; CR_TOKEN in env
+# .env: DB_HOST, DB_NAME, DB_USER (DB_PASSWORD is prompted). Media source is auto-detected:
+#   Render  -> RENDER_SSH (+ optional RENDER_MEDIA_PATH, default /var/media)
+#   CodeRed -> CR_TOKEN   (+ optional CR_MEDIA_REMOTE_PATH, default /www/media)
 ./scripts/backup.sh --production
 ```
 
-Prompts for `DB_PASSWORD` interactively (not stored in `.env`). Downloads media
-via `cr download`. Connects to the production database over SSL (`PGSSLMODE=require`).
+Prompts for `DB_PASSWORD` interactively (not stored in `.env`) and connects to the
+production database over SSL (`PGSSLMODE=require`). Media is collected by platform,
+**auto-detected from `DB_HOST`**:
 
-The remote media path defaults to `/www/media`. If the actual path on the server
-differs, set `CR_MEDIA_REMOTE_PATH` in `.env` (verify via `cr sftp cycling`).
+- **Render** (`DB_HOST` contains `render.com`): media is pulled from the web service's
+  persistent disk over SSH (needs `RENDER_SSH` and your SSH public key in the Render account).
+- **CodeRed** (any other host): media is downloaded via `cr download` (needs `CR_TOKEN`;
+  remote path defaults to `/www/media`, override with `CR_MEDIA_REMOTE_PATH`).
 
 ### Local restore
 
@@ -278,13 +283,33 @@ Validates SHA-256 checksums, then restores the database and media, and runs
 ./scripts/restore.sh backup/2024-06-01_14-30 --production-restore
 ```
 
-Prompts for `DB_PASSWORD` and requires you to type the DB host name to confirm
-before any destructive action is taken.
+Prompts for `DB_PASSWORD` and requires you to type the DB host name to confirm before
+any destructive action. After the DB restore it **also syncs media**, auto-detected from
+`DB_HOST` the same way as backup (Render: upload to the disk over SSH; other hosts: a
+manual note is printed).
 
-> **Media note:** production media is **not** restored by this script - the
-> archive cannot be uploaded to the remote server locally. After a successful
-> DB restore, upload `media.tar.gz` from the backup directory to the server
-> manually (e.g. via `cr sftp cycling`).
+#### Media-only restore, and why it exists
+
+```bash
+./scripts/restore.sh backup/2024-06-01_14-30 --production-restore --media-only
+```
+
+`--media-only` skips the database completely (no schema reset / `pg_restore` / migrate)
+and only syncs media. It is needed because **the DB restore and the media sync cannot run
+together against a live service**:
+
+- The DB restore drops and recreates the schema. If the web service is **running**, its
+  requests write to the DB mid-restore (e.g. the `SiteContent` singleton is re-created) and
+  collide with the dump, so the restore fails with duplicate-key errors.
+- Media, in contrast, needs the service **running**: the persistent disk only mounts on a
+  live instance.
+
+So a **live** host (e.g. Render) is restored in two passes:
+
+1. **Suspend** the web service, then run `--production-restore` (the DB restores with no
+   concurrent writes; the media step is skipped/warns while the service is suspended).
+2. **Resume** the service, then run `--production-restore --media-only` (uploads media to
+   the now-running instance without touching the DB).
 
 The `backup/` directory is git-ignored.
 

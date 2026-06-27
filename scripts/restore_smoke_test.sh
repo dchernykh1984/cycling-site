@@ -35,17 +35,21 @@ fail() { echo "FAIL: $1" >&2; exit 1; }
 grep -q "DROP SCHEMA IF EXISTS public CASCADE" "$SCRIPT_DIR/restore.sh" \
     || fail "restore.sh is missing the schema reset before pg_restore"
 
-# 0b. Production media must be auto-detected and uploaded (Render over SSH), not left manual.
+# 0b. Production media must be auto-detected and synced over scp (Render), not left manual.
 grep -qF '*render.com*)' "$SCRIPT_DIR/restore.sh" \
     || fail "restore.sh is missing the Render media auto-detect (DB_HOST case)"
-grep -qF 'tar -xzf - -C' "$SCRIPT_DIR/restore.sh" \
-    || fail "restore.sh is missing the Render media SSH upload"
+grep -qF 'cycling_media_upload' "$SCRIPT_DIR/restore.sh" \
+    || fail "restore.sh is missing the scp-based Render media upload"
 
-# 0c. backup.sh must symmetrically pull Render media over SSH (auto-detected by DB_HOST).
+# 0c. backup.sh must symmetrically pull Render media over scp (auto-detected by DB_HOST).
 grep -qF '*render.com*)' "$SCRIPT_DIR/backup.sh" \
     || fail "backup.sh is missing the Render media auto-detect (DB_HOST case)"
-grep -qF 'tar -czf - -C' "$SCRIPT_DIR/backup.sh" \
-    || fail "backup.sh is missing the Render media SSH download"
+grep -qF 'cycling_media_backup' "$SCRIPT_DIR/backup.sh" \
+    || fail "backup.sh is missing the scp-based Render media download"
+
+# 0d. restore.sh must support --media-only (sync media without touching the DB).
+grep -qF -- '--media-only' "$SCRIPT_DIR/restore.sh" \
+    || fail "restore.sh is missing the --media-only flag"
 
 # 1. Source DB with data -> custom-format dump (same format as backup.sh's db.dump).
 createdb "$SRC"
