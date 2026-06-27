@@ -1433,14 +1433,17 @@ class SyncDefaultSiteHostTests(TestCase):
 
         from accounts.management.commands.migrate import _sync_default_site_host
 
+        Site.objects.filter(is_default_site=True).update(site_name="Universal Bicycle Team")
         with patch.dict(os.environ, {"PRIMARY_HOST": "universalbicycle.team"}, clear=False):
             _sync_default_site_host()
         site = Site.objects.get(is_default_site=True)
         self.assertEqual(site.hostname, "universalbicycle.team")
         self.assertEqual(site.port, 443)
-        # The knowledge sitemap is a plain django.contrib.sitemaps.Sitemap, so its absolute URLs
-        # come from the django.contrib.sites Site, which must track the canonical host too.
-        self.assertEqual(DjangoSite.objects.get(pk=settings.SITE_ID).domain, "universalbicycle.team")
+        # The knowledge sitemap and allauth emails read the django.contrib.sites Site: its domain
+        # must track the canonical host, and its name must reuse the Wagtail display brand.
+        django_site = DjangoSite.objects.get(pk=settings.SITE_ID)
+        self.assertEqual(django_site.domain, "universalbicycle.team")
+        self.assertEqual(django_site.name, "Universal Bicycle Team")
 
     def test_falls_back_to_first_virtual_host(self):
         from wagtail.models import Site
