@@ -6,6 +6,14 @@
 #   ./scripts/restore.sh <backup-dir> --production-restore  # restore to production DB (requires confirmation)
 #
 # <backup-dir>: path to a backup directory containing db.dump, media.tar.gz, manifest.json
+#
+# Media on --production-restore is auto-detected from DB_HOST:
+#   * Render (DB_HOST contains "render.com"): media is uploaded over SSH to the web service's disk.
+#     Requires in .env: RENDER_SSH=srv-xxxxxxxx@ssh.<region>.render.com (service -> Connect -> SSH),
+#     optional RENDER_MEDIA_PATH (default /var/media), and your SSH public key added to the Render
+#     account (Account Settings -> SSH Public Keys). `render ssh` is interactive-only, so plain ssh
+#     is used. If RENDER_SSH is unset the upload is skipped with a note (the DB restore still runs).
+#   * Other hosts: media upload is left manual (the archive path is printed).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -285,13 +293,44 @@ echo "Database restored."
 # ---------------------------------------------------------------------------
 echo ""
 MEDIA_ROOT=""
+MEDIA_RESULT=""
 if [[ "$PRODUCTION_RESTORE" == "true" ]]; then
-    # Production media lives on the remote server. Uploading it from a local
-    # script is out of scope -- restore media manually via cr sftp or your
-    # deployment workflow after confirming the DB restore is correct.
-    echo "NOTE: Production media restore is out of scope for this script."
-    echo "      Media archive is preserved at: ${MEDIA_ARCHIVE}"
-    echo "      Upload it to the server manually if needed."
+    # Production media lives on the web service's filesystem, not on the DB host, so it is synced
+    # over SSH rather than through the DB connection. Auto-detect the platform from DB_HOST.
+    case "$DB_HOST" in
+        *render.com*)
+            # Render: the media disk is reachable only by SSH to the web service. `render ssh` is
+            # interactive-only, so use plain ssh -- which needs your SSH public key registered in the
+            # Render account (Account Settings -> SSH Public Keys). Configure RENDER_SSH (and
+            # optionally RENDER_MEDIA_PATH) in .env.
+            RENDER_MEDIA_PATH="${RENDER_MEDIA_PATH:-/var/media}"
+            if [[ -z "${RENDER_SSH:-}" ]]; then
+                echo "NOTE: Render DB host detected but RENDER_SSH is not set -- skipping media upload."
+                echo "      Set RENDER_SSH (and optionally RENDER_MEDIA_PATH) in .env and re-run,"
+                echo "      or upload ${MEDIA_ARCHIVE} manually."
+                MEDIA_RESULT="skipped (set RENDER_SSH in .env to enable)"
+            else
+                echo "Uploading media to ${RENDER_SSH}:${RENDER_MEDIA_PATH} ..."
+                # No --strip-components: the archive stores ./images, ./original_images, ... which a
+                # plain extract under -C places correctly (works with GNU tar on the server too).
+                if ssh -o StrictHostKeyChecking=accept-new "$RENDER_SSH" \
+                        "mkdir -p '${RENDER_MEDIA_PATH}' && tar -xzf - -C '${RENDER_MEDIA_PATH}'" < "$MEDIA_ARCHIVE"; then
+                    echo "Media uploaded. Remote ${RENDER_MEDIA_PATH}:"
+                    ssh -o StrictHostKeyChecking=accept-new "$RENDER_SSH" "ls -1 '${RENDER_MEDIA_PATH}'" || true
+                    MEDIA_RESULT="uploaded to ${RENDER_SSH}:${RENDER_MEDIA_PATH}"
+                else
+                    echo "WARNING: media upload over SSH failed (the DB restore already succeeded)." >&2
+                    echo "         Check RENDER_SSH and that your SSH public key is in the Render account." >&2
+                    MEDIA_RESULT="FAILED -- DB restored, re-run media upload"
+                fi
+            fi
+            ;;
+        *)
+            echo "NOTE: automated media upload is implemented for Render hosts only."
+            echo "      Media archive preserved at: ${MEDIA_ARCHIVE} -- upload manually if needed."
+            MEDIA_RESULT="skipped (non-Render host; upload manually)"
+            ;;
+    esac
 else
     echo "Restoring media..."
     MEDIA_ROOT=$(
@@ -305,6 +344,7 @@ else
     mkdir -p "$MEDIA_ROOT"
     tar -xzf "$MEDIA_ARCHIVE" -C "$MEDIA_ROOT" --strip-components=1
     echo "Media restored to: ${MEDIA_ROOT}"
+    MEDIA_RESULT="$MEDIA_ROOT"
 fi
 
 # ---------------------------------------------------------------------------
@@ -322,8 +362,4 @@ echo ""
 echo "=== RESTORE COMPLETE ==="
 echo "  Backup  : ${BACKUP_DIR}"
 echo "  DB      : ${DB_NAME} @ ${DB_HOST}"
-if [[ -n "$MEDIA_ROOT" ]]; then
-    echo "  Media   : ${MEDIA_ROOT}"
-else
-    echo "  Media   : skipped (production -- restore manually)"
-fi
+echo "  Media   : ${MEDIA_RESULT:-skipped}"
