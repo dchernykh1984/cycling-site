@@ -215,6 +215,14 @@ html {
     }
 }
 
+/* Participant list: many (conditional) columns. Let long names / team / city values wrap
+   instead of widening the table past its container and forcing a horizontal scrollbar. Only
+   data cells break inside words; headers wrap between words so a heading word is never split. */
+.participant-list-table td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 /* Dark theme: prevent Bootstrap from darkening Leaflet tile images */
 [data-bs-theme="dark"] .leaflet-container {
     background: #374151;
