@@ -1778,3 +1778,6 @@ msgstr "Проверить"
 #: cycling_site/templates/_moderation_banner.html
 msgid "News published successfully."
 msgstr "Новость успешно опубликована."
+
+msgid "Markers are existing locations - click one to select it instead of creating a duplicate."
+msgstr "Маркеры — это существующие локации; нажмите на маркер, чтобы выбрать его и не создавать дубликат."

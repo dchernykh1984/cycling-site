@@ -102,7 +102,7 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label fw-semibold" for="{{ form.url_registration.id_for_label }}">{{ form.url_registration.label }}</label>
+        <label class="form-label fw-semibold" for="{{ form.url_registration.id_for_label }}">{% trans "Registration" %}</label>
         {{ form.url_registration }}
         {% if form.url_registration.errors %}<div class="text-danger small mt-1">{% for e in form.url_registration.errors %}{{ e }}{% endfor %}</div>{% endif %}
       </div>

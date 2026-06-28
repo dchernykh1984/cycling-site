@@ -223,6 +223,38 @@ html {
     word-break: break-word;
 }
 
+/* Content images stay within their column so large uploads (e.g. the home-page logo) never
+   force a horizontal scrollbar. Leaflet sizes its own map tiles, so exclude the map. */
+main img {
+    max-width: 100%;
+    height: auto;
+}
+.leaflet-container img {
+    max-width: none;
+    height: auto;
+}
+
+/* Rich article bodies (news / knowledge) can hold author-pasted tables, wide media and long
+   URLs; keep them inside the page instead of overflowing it on narrow screens. */
+.article-body {
+    overflow-wrap: anywhere;
+    max-width: 760px;
+}
+.article-body table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+}
+.article-body pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* Keep each top-level nav item on one line (avoid a "База / знаний" mid-item wrap). */
+.navbar .nav-link {
+    white-space: nowrap;
+}
+
 /* Dark theme: prevent Bootstrap from darkening Leaflet tile images */
 [data-bs-theme="dark"] .leaflet-container {
     background: #374151;

@@ -1819,3 +1819,6 @@ msgstr "Қарау"
 #: cycling_site/templates/_moderation_banner.html
 msgid "News published successfully."
 msgstr "Жаңалық сәтті жарияланды."
+
+msgid "Markers are existing locations - click one to select it instead of creating a duplicate."
+msgstr "Маркерлер — бұрыннан бар локациялар; қайталаманы жасаудың орнына маркерді басып таңдаңыз."
