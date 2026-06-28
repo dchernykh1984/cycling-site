@@ -222,6 +222,18 @@ html {
     overflow-wrap: anywhere;
     word-break: break-word;
 }
+/* Keep action-button labels on one line and give the actions column enough width so Edit/Delete
+   sit side by side instead of collapsing into a vertical stack when other columns wrap. */
+.participant-list-table .btn {
+    white-space: nowrap;
+}
+.participant-list-table .reg-actions {
+    min-width: 14rem;
+}
+.participant-list-table .reg-actions .btn {
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+}
 
 /* Content images stay within their column so large uploads (e.g. the home-page logo) never
    force a horizontal scrollbar. Leaflet sizes its own map tiles, so exclude the map. */
