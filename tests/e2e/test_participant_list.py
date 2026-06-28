@@ -142,3 +142,39 @@ def test_approved_column_hidden_without_approval(page: Page, live_server, organi
     # "Approved" column header must not appear for manager when require_approval=False
     header_texts = page.locator("table thead th").all_inner_texts()
     assert not any("approved" in t.lower() for t in header_texts)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_participant_list_no_horizontal_scroll_with_long_values(page: Page, live_server, organizer, db):
+    """Long names / city values must wrap (overflow-wrap), not push the participant table past
+    its container and produce a horizontal scrollbar."""
+    import datetime
+
+    from registrations.models import CompetitionRegistration
+
+    long = "Averyveryverylongunbreakableplaceholdervalueforlayouttest"
+    comp = Competition.objects.create(
+        title_ru="Scroll Test RU",
+        title_en="Scroll Test",
+        date_start=datetime.date(2026, 9, 1),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        registration_enabled=True,
+        registration_mode=Competition.RegistrationMode.FREE,
+    )
+    CompetitionRegistration.objects.create(
+        competition=comp,
+        first_name=long,
+        last_name=long,
+        city=long,
+        birth_date=datetime.date(1990, 1, 1),
+        gender="M",
+    )
+    inject_session(page, live_server, organizer)
+    page.set_viewport_size({"width": 1200, "height": 800})
+    page.goto(f"{live_server.url}/competitions/{comp.pk}/participants/")
+    expect(page.locator(".participant-list-table")).to_be_visible()
+    overflow = page.evaluate(
+        "() => { const el = document.querySelector('.table-responsive'); return el.scrollWidth - el.clientWidth; }"
+    )
+    assert overflow <= 1, f"participant list overflows horizontally by {overflow}px"
