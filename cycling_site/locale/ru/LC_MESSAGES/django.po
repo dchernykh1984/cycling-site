@@ -839,10 +839,15 @@ msgstr "Текущий файл"
 msgid "Download"
 msgstr "Скачать"
 
-#: calendar_app/templates/calendar_app/edit.html:196
-#: calendar_app/templates/calendar_app/submit.html:178
-msgid "Enable registration for this competition"
-msgstr "Включить регистрацию для этого соревнования"
+#: calendar_app/templates/calendar_app/edit.html:161
+#: calendar_app/templates/calendar_app/submit.html:143
+msgid "Set up registration on our site"
+msgstr "Настроить регистрацию на нашем сайте"
+
+#: calendar_app/templates/calendar_app/edit.html:115
+#: calendar_app/templates/calendar_app/submit.html:137
+msgid "External registration link"
+msgstr "Ссылка на внешнюю регистрацию"
 
 #: calendar_app/templates/calendar_app/list.html:4
 msgid "Competition list"
