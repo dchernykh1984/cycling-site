@@ -99,7 +99,7 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
 
     _MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
     _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = frozenset(
-        {"pdf", "doc", "docx", "xls", "xlsx", "gpx", "kml", "jpg", "jpeg", "png", "gif", "webp"}
+        {"pdf", "doc", "docx", "xls", "xlsx", "gpx", "kml", "zip", "jpg", "jpeg", "png", "gif", "webp"}
     )
 
     def _validate_file(self, f):

@@ -455,6 +455,27 @@ class SubmitCompetitionViewTests(TestCase):
         response = self.client.get(self._submit_url())
         self.assertEqual(response.status_code, 200)
 
+    def test_file_route_accepts_zip(self):
+        """Route/document uploads may be zip archives."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from calendar_app.forms import SubmitCompetitionForm
+
+        upload = SimpleUploadedFile("route.zip", b"PK\x03\x04 dummy", content_type="application/zip")
+        form = SubmitCompetitionForm(data=self._payload(), files={"file_route": upload}, user=self.participant)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertNotIn("file_route", form.errors)
+
+    def test_file_route_rejects_unsupported_extension(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from calendar_app.forms import SubmitCompetitionForm
+
+        upload = SimpleUploadedFile("route.exe", b"MZ dummy", content_type="application/octet-stream")
+        form = SubmitCompetitionForm(data=self._payload(), files={"file_route": upload}, user=self.participant)
+        self.assertFalse(form.is_valid())
+        self.assertIn("file_route", form.errors)
+
     def test_title_max_length_error_uses_project_catalog_kk(self):
         """Regression: the shared mixin routes the title max_length error through the project
         catalog so the KK tab shows Kazakh, not Django's Russian fallback."""
