@@ -239,6 +239,52 @@ html {
     padding-left: 0.4rem;
     padding-right: 0.4rem;
 }
+/* On phones the participant table (up to ~12 columns) collapses to one character per line.
+   Below the md breakpoint each row becomes a stacked "card" with the column name as a label,
+   mirroring the calendar list above. The actions cell stays a full-width block so its button
+   group and the inline reject form are not forced into the label/value flex row. */
+@media (max-width: 767.98px) {
+    .participant-list-table,
+    .participant-list-table tbody,
+    .participant-list-table tr {
+        display: block;
+        width: 100%;
+    }
+    .participant-list-table thead {
+        display: none;
+    }
+    .participant-list-table tr {
+        margin-bottom: 1rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+    }
+    .participant-list-table td {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: space-between;
+        align-items: baseline;
+        border: 0;
+        padding: 0.2rem 0;
+        text-align: right;
+    }
+    .participant-list-table td::before {
+        content: attr(data-label);
+        flex: 0 0 7rem;
+        font-weight: 600;
+        text-align: left;
+        color: var(--bs-secondary-color);
+    }
+    .participant-list-table td.reg-actions {
+        display: block;
+        width: auto;
+        text-align: left;
+        margin-top: 0.25rem;
+    }
+    .participant-list-table td.reg-actions::before {
+        content: none;
+    }
+}
 
 /* Content images stay within their column so large uploads (e.g. the home-page logo) never
    force a horizontal scrollbar. Leaflet sizes its own map tiles, so exclude the map. */
