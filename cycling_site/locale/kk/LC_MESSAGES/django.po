@@ -849,6 +849,11 @@ msgstr "Біздің сайтта тіркеуді баптау"
 msgid "External registration link"
 msgstr "Сыртқы тіркеуге сілтеме"
 
+#: calendar_app/templates/calendar_app/edit.html:139
+#: calendar_app/templates/calendar_app/submit.html:123
+msgid "External results link"
+msgstr "Нәтижелерге сыртқы сілтеме"
+
 #: calendar_app/templates/calendar_app/list.html:4
 msgid "Competition list"
 msgstr "Жарыстар тізімі"

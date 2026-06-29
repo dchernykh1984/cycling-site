@@ -136,7 +136,7 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label fw-semibold">{% trans "Results" %}</label>
+        <label class="form-label fw-semibold">{% trans "External results link" %}</label>
         {{ form.url_results }}
         {% if form.url_results.errors %}<div class="text-danger small mt-1">{% for e in form.url_results.errors %}{{ e }}{% endfor %}</div>{% endif %}
         <div class="form-text">{% trans "or upload file" %}</div>
