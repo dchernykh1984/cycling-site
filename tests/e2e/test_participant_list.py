@@ -178,3 +178,39 @@ def test_participant_list_no_horizontal_scroll_with_long_values(page: Page, live
         "() => { const el = document.querySelector('.table-responsive'); return el.scrollWidth - el.clientWidth; }"
     )
     assert overflow <= 1, f"participant list overflows horizontally by {overflow}px"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_participant_list_stacks_into_cards_on_mobile(page: Page, live_server, organizer, db):
+    """On a phone-width viewport the participant table renders as stacked cards: the header row
+    is hidden, every data cell exposes its column name via data-label, and there is no
+    horizontal scroll (mirrors the calendar list's mobile card layout)."""
+    import datetime
+
+    from registrations.models import CompetitionRegistration
+
+    comp = Competition.objects.create(
+        title_ru="Cards Test RU",
+        title_en="Cards Test",
+        date_start=datetime.date(2026, 9, 1),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        registration_enabled=True,
+        registration_mode=Competition.RegistrationMode.FREE,
+    )
+    CompetitionRegistration.objects.create(
+        competition=comp,
+        first_name="Denis",
+        last_name="Chernykh",
+        city="Almaty",
+        birth_date=datetime.date(1984, 1, 1),
+        gender="M",
+    )
+    inject_session(page, live_server, organizer)
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}/competitions/{comp.pk}/participants/")
+
+    expect(page.locator(".participant-list-table thead")).to_be_hidden()
+    expect(page.locator(".participant-list-table td[data-label]").first).to_be_visible()
+    overflow = page.evaluate("() => document.documentElement.scrollWidth - document.documentElement.clientWidth")
+    assert overflow <= 1, f"mobile participant list overflows horizontally by {overflow}px"
