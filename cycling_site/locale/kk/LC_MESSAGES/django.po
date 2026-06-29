@@ -839,10 +839,15 @@ msgstr "Ағымдағы файл"
 msgid "Download"
 msgstr "Жүктеп алу"
 
-#: calendar_app/templates/calendar_app/edit.html:196
-#: calendar_app/templates/calendar_app/submit.html:178
-msgid "Enable registration for this competition"
-msgstr "Осы жарыс үшін тіркелуді қосу"
+#: calendar_app/templates/calendar_app/edit.html:161
+#: calendar_app/templates/calendar_app/submit.html:143
+msgid "Set up registration on our site"
+msgstr "Біздің сайтта тіркеуді баптау"
+
+#: calendar_app/templates/calendar_app/edit.html:115
+#: calendar_app/templates/calendar_app/submit.html:137
+msgid "External registration link"
+msgstr "Сыртқы тіркеуге сілтеме"
 
 #: calendar_app/templates/calendar_app/list.html:4
 msgid "Competition list"

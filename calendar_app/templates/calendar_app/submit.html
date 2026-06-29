@@ -102,12 +102,6 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label fw-semibold" for="{{ form.url_registration.id_for_label }}">{% trans "Registration" %}</label>
-        {{ form.url_registration }}
-        {% if form.url_registration.errors %}<div class="text-danger small mt-1">{% for e in form.url_registration.errors %}{{ e }}{% endfor %}</div>{% endif %}
-      </div>
-
-      <div class="mb-3">
         <label class="form-label fw-semibold">{% trans "Route" %}</label>
         {{ form.url_route }}
         {% if form.url_route.errors %}<div class="text-danger small mt-1">{% for e in form.url_route.errors %}{{ e }}{% endfor %}</div>{% endif %}
@@ -134,13 +128,19 @@
         {% if form.file_results.errors %}<div class="text-danger small mt-1">{% for e in form.file_results.errors %}{{ e }}{% endfor %}</div>{% endif %}
       </div>
 
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="{{ form.url_registration.id_for_label }}">{% trans "External registration link" %}</label>
+        {{ form.url_registration }}
+        {% if form.url_registration.errors %}<div class="text-danger small mt-1">{% for e in form.url_registration.errors %}{{ e }}{% endfor %}</div>{% endif %}
+      </div>
+
       {% if is_organizer_plus %}
       <div class="card mb-4">
         <div class="card-header d-flex align-items-center gap-2">
           <div class="form-check mb-0">
             <input class="form-check-input" type="checkbox" name="registration_enabled" id="reg_enabled"
                    {% if reg_form.registration_enabled.value %}checked{% endif %}>
-            <label class="form-check-label fw-semibold" for="reg_enabled">{% trans "Enable registration for this competition" %}</label>
+            <label class="form-check-label fw-semibold" for="reg_enabled">{% trans "Set up registration on our site" %}</label>
           </div>
         </div>
         <div class="card-body collapse" id="reg-collapse">
