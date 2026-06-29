@@ -438,6 +438,9 @@ msgid "Registration deadline"
 msgstr "Срок регистрации"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:91
+msgid "Total participant limit"
+msgstr "Максимум регистраций"
+
 #: calendar_app/templates/calendar_app/_registration_fields.html:260
 msgid "Max participants"
 msgstr "Максимум участников"
@@ -451,8 +454,8 @@ msgid "Allow relay / team registration"
 msgstr "Разрешить эстафету / командную регистрацию"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:114
-msgid "Max members"
-msgstr "Макс. участников"
+msgid "Max members per team"
+msgstr "Макс. участников в команде"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:134
 msgid "Display settings"

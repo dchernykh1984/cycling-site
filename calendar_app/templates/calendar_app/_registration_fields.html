@@ -88,7 +88,7 @@
            value="{{ reg_form.registration_deadline.value|date:'Y-m-d'|default:reg_form.registration_deadline.value|default:'' }}">
   </div>
   <div class="col-md-4">
-    <label class="form-label">{% trans "Max participants" %}</label>
+    <label class="form-label">{% trans "Total participant limit" %}</label>
     <input type="number" name="max_participants" class="form-control" min="1"
            value="{{ reg_form.max_participants.value|default:'' }}">
   </div>
@@ -111,7 +111,7 @@
     </div>
     <div id="relay_max_wrap" style="display:none;">
       <div class="d-flex align-items-center gap-2">
-        <label class="form-label mb-0 small">{% trans "Max members" %}</label>
+        <label class="form-label mb-0 small">{% trans "Max members per team" %}</label>
         <input type="number" name="relay_max_members" class="form-control form-control-sm"
                min="2" style="width:80px;"
                value="{{ reg_form.relay_max_members.value|default:10 }}">

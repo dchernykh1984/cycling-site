@@ -438,6 +438,9 @@ msgid "Registration deadline"
 msgstr "Тіркелу мерзімі"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:91
+msgid "Total participant limit"
+msgstr "Тіркеулердің ең көп саны"
+
 #: calendar_app/templates/calendar_app/_registration_fields.html:260
 msgid "Max participants"
 msgstr "Қатысушылар саны"
@@ -451,8 +454,8 @@ msgid "Allow relay / team registration"
 msgstr "Эстафета / командық тіркелуге рұқсат"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:114
-msgid "Max members"
-msgstr "Макс. мүшелер"
+msgid "Max members per team"
+msgstr "Командадағы макс. қатысушы"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:134
 msgid "Display settings"
