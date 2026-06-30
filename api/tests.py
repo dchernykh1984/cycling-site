@@ -21,7 +21,11 @@ from locations.models import (
     soft_delete_location,
 )
 from news.models import NewsArticle
-from protocols.models import StartListUpload
+from protocols.models import (
+    FinishTimesUpload,
+    RemotePointUpload,
+    StartListUpload,
+)
 from registrations.models import CompetitionRegistration
 
 # ---------------------------------------------------------------------------
@@ -2739,3 +2743,97 @@ class LocationAccessTest(TestCase, ApiTestMixin):
     def test_delete_admin_returns_204(self):
         loc = _location()
         self.assertEqual(self.delete(f"/api/v1/locations/{loc.pk}", user=self.admin).status_code, 204)
+
+
+class TimingsApiTest(TestCase, ApiTestMixin):
+    """Group / finish / remote-point timing exchange (mirrors the start-list endpoint)."""
+
+    def setUp(self):
+        self.comp = Competition.objects.create(
+            title_ru="Race",
+            date_start=date(2026, 7, 1),
+            status=Competition.Status.APPROVED,
+        )
+        self.token = str(self.comp.upload_token)
+        self._rev = 0
+
+    def _post(self, url, **kwargs):
+        self._rev += 1
+        data = {
+            "competition_token": self.token,
+            "device_id": "dev-a",
+            "items": ["1#0 0:0:1#"],
+            "client_revision": self._rev,
+        }
+        data.update(kwargs)
+        return self.post(url, data)
+
+    # -- group times --
+    def test_group_upload_and_merge(self):
+        self.assertEqual(self._post("/api/v1/group-times/", device_id="dev-b", items=["G2#0 0:0:2#"]).status_code, 200)
+        self.assertEqual(self._post("/api/v1/group-times/", device_id="dev-a", items=["G1#0 0:0:1#"]).status_code, 200)
+        data = self.get(f"/api/v1/group-times/?competition_token={self.token}").json()
+        self.assertEqual([d["device_id"] for d in data["devices"]], ["dev-a", "dev-b"])
+        self.assertEqual(data["items"], ["G1#0 0:0:1#", "G2#0 0:0:2#"])
+
+    # -- finish times --
+    def test_finish_upload_overwrites_same_device(self):
+        self._post("/api/v1/finish-times/")
+        self._post("/api/v1/finish-times/", items=["9#0 0:9:9#finish#"])
+        self.assertEqual(FinishTimesUpload.objects.filter(competition=self.comp).count(), 1)
+        self.assertEqual(
+            FinishTimesUpload.objects.get(competition=self.comp, device_id="dev-a").items, ["9#0 0:9:9#finish#"]
+        )
+
+    # -- remote points --
+    def test_remote_points_merge_per_point_across_devices(self):
+        # Two devices time point 1; one device times point 2.
+        self.assertEqual(
+            self._post("/api/v1/remote-points/", device_id="dev-a", point_number=1, items=["1#0 0:1:0#"]).status_code,
+            200,
+        )
+        self.assertEqual(
+            self._post("/api/v1/remote-points/", device_id="dev-b", point_number=1, items=["2#0 0:1:5#"]).status_code,
+            200,
+        )
+        self.assertEqual(
+            self._post("/api/v1/remote-points/", device_id="dev-a", point_number=2, items=["1#0 0:2:0#"]).status_code,
+            200,
+        )
+        data = self.get(f"/api/v1/remote-points/?competition_token={self.token}").json()
+        self.assertEqual([p["point_number"] for p in data["points"]], [1, 2])
+        # point 1 merges both devices (device-id order); point 2 has one device
+        self.assertEqual(data["points"][0]["items"], ["1#0 0:1:0#", "2#0 0:1:5#"])
+        self.assertEqual(data["points"][1]["items"], ["1#0 0:2:0#"])
+
+    def test_remote_point_number_keys_separate_rows(self):
+        self._post("/api/v1/remote-points/", point_number=1)
+        self._post("/api/v1/remote-points/", point_number=2)
+        self.assertEqual(RemotePointUpload.objects.filter(competition=self.comp, device_id="dev-a").count(), 2)
+
+    def test_remote_requires_point_number(self):
+        # point_number is required (>=1) on the remote endpoint.
+        resp = self.post(
+            "/api/v1/remote-points/",
+            {"competition_token": self.token, "device_id": "dev-a", "items": [], "client_revision": 1},
+        )
+        self.assertEqual(resp.status_code, 422)
+
+    # -- shared behaviour --
+    def test_stale_revision_conflict(self):
+        self._post("/api/v1/finish-times/", client_revision=5)
+        resp = self._post("/api/v1/finish-times/", client_revision=3, items=["x#0 0:0:9#"])
+        self.assertEqual(resp.status_code, 409)
+
+    def test_invalid_token_rejected_on_all_streams(self):
+        for url in ("/api/v1/group-times/", "/api/v1/finish-times/"):
+            self.assertEqual(self._post(url, competition_token=str(uuid.uuid4())).status_code, 401)
+        self.assertEqual(
+            self._post("/api/v1/remote-points/", competition_token=str(uuid.uuid4()), point_number=1).status_code, 401
+        )
+
+    def test_get_empty_streams(self):
+        self.assertEqual(
+            self.get(f"/api/v1/group-times/?competition_token={self.token}").json(), {"devices": [], "items": []}
+        )
+        self.assertEqual(self.get(f"/api/v1/remote-points/?competition_token={self.token}").json(), {"points": []})

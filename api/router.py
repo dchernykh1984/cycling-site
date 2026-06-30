@@ -21,6 +21,11 @@ def _register_routers() -> None:
     from api.endpoints.participants import router as participants_router
     from api.endpoints.protocols import router as protocols_router
     from api.endpoints.start_list import router as start_list_router
+    from api.endpoints.timings import (
+        finish_times_router,
+        group_times_router,
+        remote_points_router,
+    )
 
     api.add_router("/competitions/", competitions_router)
     api.add_router("/news/", news_router)
@@ -31,6 +36,9 @@ def _register_routers() -> None:
     api.add_router("/participants/", participants_router)
     api.add_router("/protocols/", protocols_router)
     api.add_router("/start-list/", start_list_router)
+    api.add_router("/group-times/", group_times_router)
+    api.add_router("/finish-times/", finish_times_router)
+    api.add_router("/remote-points/", remote_points_router)
 
 
 _register_routers()
