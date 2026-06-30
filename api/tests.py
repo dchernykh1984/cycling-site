@@ -2754,6 +2754,54 @@ _TIMING_STREAMS = [
 ]
 
 
+class TimingsConcurrencyTest(TransactionTestCase):
+    """Concurrent first uploads for timing streams must behave like start-list uploads."""
+
+    def setUp(self):
+        self.comp = Competition.objects.create(
+            title_ru="Race",
+            date_start=date(2026, 7, 1),
+            status=Competition.Status.APPROVED,
+        )
+        self.token = str(self.comp.upload_token)
+
+    def _upload(self, url, extra, results, name, revision, items):
+        try:
+            self._barrier.wait(timeout=10)
+            payload = {"competition_token": self.token, "device_id": "dev", "items": items, "client_revision": revision}
+            payload.update(extra)
+            resp = Client(raise_request_exception=False).post(
+                url,
+                json.dumps(payload),
+                content_type="application/json",
+            )
+            results[name] = resp.status_code
+        finally:
+            connections.close_all()
+
+    def test_concurrent_first_uploads_newer_wins_without_500(self):
+        for url, model, extra in _TIMING_STREAMS:
+            with self.subTest(url=url):
+                model.objects.all().delete()
+                self._barrier = threading.Barrier(2)
+                results: dict = {}
+                threads = [
+                    threading.Thread(target=self._upload, args=(url, extra, results, "older", 1000, ["old"])),
+                    threading.Thread(target=self._upload, args=(url, extra, results, "newer", 1005, ["a", "b"])),
+                ]
+                for t in threads:
+                    t.start()
+                for t in threads:
+                    t.join(timeout=15)
+
+                self.assertEqual([t for t in threads if t.is_alive()], [], "thread hung")
+                self.assertEqual(len(results), 2, results)
+                self.assertNotIn(500, results.values())
+                upload = model.objects.get(competition=self.comp, device_id="dev", **extra)
+                self.assertEqual(upload.client_revision, 1005)
+                self.assertEqual(upload.items, ["a", "b"])
+
+
 class TimingsApiTest(TestCase, ApiTestMixin):
     """Group / finish / remote-point timing exchange (mirrors the start-list endpoint)."""
 
