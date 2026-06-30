@@ -249,3 +249,36 @@ def test_other_users_registration_not_in_my_profile(page: Page, live_server, org
 
     _go_profile(page, live_server)
     expect(page.locator("text=Profile Test Race")).to_have_count(0)
+
+
+# ---------------------------------------------------------------------------
+# issue #161: titles link to the competition page; deleted competitions are hidden
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db(transaction=True)
+def test_competition_title_links_to_detail_page(page: Page, live_server, organizer, rider):
+    comp = _base_comp(submitted_by=organizer, registration_mode=Competition.RegistrationMode.FREE)
+    _make_reg(comp, rider)
+    inject_session(page, live_server, rider)
+
+    _go_profile(page, live_server)
+    link = page.get_by_role("link", name="Profile Test Race")
+    expect(link).to_have_attribute("href", f"/calendar/{comp.pk}/")
+    link.click()
+    page.wait_for_url(f"{live_server.url}/calendar/{comp.pk}/")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_deleted_competition_registration_hidden(page: Page, live_server, organizer, rider):
+    comp = _base_comp(
+        submitted_by=organizer,
+        registration_mode=Competition.RegistrationMode.FREE,
+        is_deleted=True,
+    )
+    _make_reg(comp, rider)
+    inject_session(page, live_server, rider)
+
+    _go_profile(page, live_server)
+    expect(page.locator("text=Profile Test Race")).to_have_count(0)
+    expect(page.locator(f"a[href='/calendar/{comp.pk}/']")).to_have_count(0)
