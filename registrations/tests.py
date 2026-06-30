@@ -4,6 +4,7 @@ import json
 from django.test import TestCase
 from django.urls import reverse
 
+from accounts.access import EMAIL_CONFIRMATION_REQUIRED_MESSAGE
 from accounts.models import User
 from calendar_app.models import Competition
 from registrations.models import (
@@ -284,6 +285,44 @@ class RegisterForCompetitionViewTests(TestCase):
     def test_anonymous_redirected(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
+
+    def test_guest_redirected_to_profile(self):
+        guest = make_user("guest_reg", role=User.Role.GUEST)
+        self.client.force_login(guest)
+        response = self.client.get(self.url)
+        self.assertRedirects(response, reverse("account_profile"))
+
+    def test_unverified_signup_user_redirected_to_profile_when_registering(self):
+        from allauth.account.models import EmailAddress
+
+        signup_email = "unverified-registration@example.com"
+        self.client.post(
+            reverse("account_signup"),
+            {"email": signup_email, "password1": "SuperPass123!", "password2": "SuperPass123!"},
+        )
+        user = User.objects.get(email=signup_email)
+        self.assertEqual(user.role, User.Role.GUEST)
+        self.assertFalse(EmailAddress.objects.filter(user=user, verified=True).exists())
+
+        response = self.client.get(self.url, follow=True)
+        self.assertRedirects(response, reverse("account_profile"))
+        self.assertContains(response, EMAIL_CONFIRMATION_REQUIRED_MESSAGE)
+
+        category = make_category(self.comp)
+        response = self.client.post(
+            self.url,
+            {
+                "first_name": "Unverified",
+                "last_name": "Rider",
+                "gender": "M",
+                "birth_year": 1990,
+                "category": category.pk,
+            },
+            follow=True,
+        )
+        self.assertRedirects(response, reverse("account_profile"))
+        self.assertContains(response, EMAIL_CONFIRMATION_REQUIRED_MESSAGE)
+        self.assertFalse(CompetitionRegistration.objects.filter(competition=self.comp, user=user).exists())
 
     def test_registration_closed_when_disabled(self):
         self.comp.registration_enabled = False

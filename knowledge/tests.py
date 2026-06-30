@@ -287,9 +287,9 @@ class SubmissionFormViewTests(TestCase):
         resp = self.client.get(reverse("knowledge_submit"))
         self.assertRedirects(resp, f"/accounts/login/?next={reverse('knowledge_submit')}")
 
-    def test_guest_gets_403(self):
+    def test_guest_redirected_to_profile(self):
         self.client.force_login(self.guest)
-        self.assertEqual(self.client.get(reverse("knowledge_submit")).status_code, 403)
+        self.assertRedirects(self.client.get(reverse("knowledge_submit")), reverse("account_profile"))
 
     def test_participant_can_view_form_with_quill_editor(self):
         self.client.force_login(self.participant)
@@ -315,7 +315,7 @@ class SubmissionFormViewTests(TestCase):
             reverse("knowledge_submit"),
             {"locale": "ru", "title": "Sneaky", "body": "<p>x</p>", "category": ""},
         )
-        self.assertEqual(resp.status_code, 403)
+        self.assertRedirects(resp, reverse("account_profile"))
         self.assertEqual(DraftSubmission.objects.count(), 0)
 
     def test_submit_rejects_oversized_body(self):
@@ -840,11 +840,12 @@ class KnowledgeArticleCommentTests(TestCase):
         self.assertIn(response.status_code, (302, 403))
         self.assertEqual(KnowledgeArticleComment.objects.count(), 0)
 
-    def test_guest_role_gets_403(self):
+    def test_guest_role_redirected_to_profile(self):
         guest = _make_user("kc_guest@example.com", User.Role.GUEST)
         self.client.force_login(guest)
         response = self.client.post(self.add_url, {"body": "Hi"})
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(response, reverse("account_profile"))
+        self.assertEqual(KnowledgeArticleComment.objects.count(), 0)
 
     def test_empty_body_is_rejected(self):
         response = self._add(self.participant, body="")

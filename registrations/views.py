@@ -11,6 +11,7 @@ from django.utils.html import escape
 from django.views import View
 from django.views.generic import TemplateView
 
+from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from calendar_app.models import Competition
 
@@ -31,17 +32,11 @@ def can_manage(user, competition) -> bool:
     return False
 
 
-class RegisterForCompetitionView(LoginRequiredMixin, View):
+class RegisterForCompetitionView(ParticipantRequiredMixin, View):
     template_name = "registrations/register.html"
 
     def _get_competition(self, pk):
         return get_object_or_404(Competition, pk=pk, is_deleted=False)
-
-    def _check_participant(self, request):
-        if not request.user.is_superuser and request.user.get_role_rank() < User.ROLE_HIERARCHY.index(
-            User.Role.PARTICIPANT
-        ):
-            raise PermissionDenied
 
     def _available_categories(self, competition, gender, birth_date):
         qs = RegistrationCategory.objects.filter(competition=competition, is_deleted=False)
@@ -52,7 +47,6 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
         return qs
 
     def get(self, request, pk):
-        self._check_participant(request)
         competition = self._get_competition(pk)
         if competition.is_hidden and not can_manage(request.user, competition):
             raise Http404
@@ -131,7 +125,6 @@ class RegisterForCompetitionView(LoginRequiredMixin, View):
         )
 
     def post(self, request, pk):  # noqa: C901
-        self._check_participant(request)
         competition = self._get_competition(pk)
         if competition.is_hidden and not can_manage(request.user, competition):
             raise Http404

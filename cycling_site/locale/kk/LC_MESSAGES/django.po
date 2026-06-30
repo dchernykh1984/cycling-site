@@ -74,13 +74,17 @@ msgstr "Туған күні"
 msgid "Edit profile"
 msgstr "Профильді өңдеу"
 
-#: accounts/templates/accounts/profile.html:31
+#: accounts/access.py:9
+#: accounts/templates/accounts/profile.html:12
 msgid ""
-"Your email is not confirmed yet. Check your inbox and confirm it to become a "
-"participant."
+"Please confirm your email address to activate your account. Until your email "
+"is confirmed, you can view the site but cannot submit, register, comment, "
+"contact site owners, or use API features."
 msgstr ""
-"Email-дi растамадыныз. Катысушы болу ушiн хабарларды тексерiп, мекен-жайды "
-"растаныз."
+"Аккаунтыңызды белсендіру үшін e-mail мекенжайыңызды растаңыз. E-mail "
+"расталғанға дейін сайтты қарай аласыз, бірақ материалдар жібере алмайсыз, "
+"старттарға тіркеле алмайсыз, пікір қалдыра алмайсыз, сайт иелеріне жаза "
+"алмайсыз немесе API пайдалана алмайсыз."
 
 #: accounts/templates/accounts/profile.html:40
 #: accounts/templates/accounts/profile.html:41

@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 
+from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from locations.models import (
     Location,
@@ -199,17 +200,6 @@ def _apply_id_filters(qs, event_type_ids, discipline_ids, direction_ids):
             match |= Q(disciplines__category_id__in=directions)
         qs = qs.filter(match).distinct()
     return qs
-
-
-class ParticipantRequiredMixin(LoginRequiredMixin):
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        if not request.user.is_superuser and request.user.get_role_rank() < User.ROLE_HIERARCHY.index(
-            User.Role.PARTICIPANT
-        ):
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
 
 
 class OrganizerRequiredMixin(LoginRequiredMixin):
