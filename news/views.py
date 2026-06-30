@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.utils.translation import get_language, gettext
 from django.views.generic import CreateView, View
 
+from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from knowledge.models import DraftSubmission
 from news.forms import AddCommentForm, AddNewsArticleCommentForm, NewsArticleForm, SubmitNewsForm
@@ -130,18 +131,6 @@ class NewsArticleEditView(LoginRequiredMixin, View):
             form.save()
             return redirect(article.get_absolute_url())
         return render(request, "news/article_form.html", {"form": form, "article": article, "action": "edit"})
-
-
-class ParticipantRequiredMixin(LoginRequiredMixin):
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        participant_rank = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-        # Superusers bypass the role gate, matching the comment-form display check (_can_comment)
-        # so they don't see the form via GET only to be rejected on POST.
-        if not request.user.is_superuser and request.user.get_role_rank() < participant_rank:
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
 
 
 class SubmitNewsView(ParticipantRequiredMixin, CreateView):

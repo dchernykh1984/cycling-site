@@ -13,6 +13,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.access import EMAIL_CONFIRMATION_REQUIRED_MESSAGE
 from accounts.adapters import AccountAdapter, SocialAccountAdapter
 from accounts.models import User
 from accounts.signals import ROLE_GROUP_MAP, _sync_user_group
@@ -251,7 +252,8 @@ class ProfileViewTests(TestCase):
     def test_profile_shows_unverified_warning_without_confirmed_email(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("account_profile"))
-        self.assertContains(response, "alert-warning")
+        self.assertContains(response, "alert-danger")
+        self.assertContains(response, EMAIL_CONFIRMATION_REQUIRED_MESSAGE)
 
     def test_profile_hides_unverified_warning_when_email_confirmed(self):
         from allauth.account.models import EmailAddress
@@ -259,7 +261,7 @@ class ProfileViewTests(TestCase):
         EmailAddress.objects.create(user=self.user, email=self.user.email, verified=True, primary=True)
         self.client.force_login(self.user)
         response = self.client.get(reverse("account_profile"))
-        self.assertNotContains(response, "alert-warning")
+        self.assertNotContains(response, "alert-danger")
 
 
 class ProfileRegistrationListTests(TestCase):
@@ -998,11 +1000,13 @@ class ApiTokenRegenerateViewTests(TestCase):
     def setUp(self):
         self.url = reverse("account_api_token_regenerate")
 
-    def test_guest_cannot_generate_token(self):
+    def test_guest_redirected_to_profile_when_generating_token(self):
         guest = make_user(username="token_guest", role=User.Role.GUEST)
         self.client.force_login(guest)
         resp = self.client.post(self.url)
-        self.assertEqual(resp.status_code, 403)
+        self.assertRedirects(resp, reverse("account_profile"))
+        guest.refresh_from_db()
+        self.assertIsNone(guest.api_token)
 
     def test_participant_can_generate_token(self):
         participant = make_user(username="token_part", role=User.Role.PARTICIPANT)
@@ -1072,11 +1076,11 @@ class ContactOwnersViewTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertIn("login", resp.url)
 
-    def test_guest_cannot_access(self):
+    def test_guest_redirected_to_profile(self):
         guest = make_user(username="contact_guest", role=User.Role.GUEST)
         self.client.force_login(guest)
-        self.assertEqual(self.client.get(self.url).status_code, 403)
-        self.assertEqual(self.client.post(self.url, {"subject": "x", "message": "y"}).status_code, 403)
+        self.assertRedirects(self.client.get(self.url), reverse("account_profile"))
+        self.assertRedirects(self.client.post(self.url, {"subject": "x", "message": "y"}), reverse("account_profile"))
         self.assertEqual(len(mail.outbox), 0)
 
     def test_participant_can_open_form(self):

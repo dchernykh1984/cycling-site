@@ -9,7 +9,6 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import JsonResponse
@@ -19,10 +18,15 @@ from django.utils.translation import gettext, gettext_lazy
 from django.views import View
 from django.views.generic import TemplateView
 
+from accounts.access import (
+    EMAIL_CONFIRMATION_REQUIRED_MESSAGE,
+    ParticipantRequiredMixin,
+    needs_email_confirmation,
+    redirect_to_profile_for_email_confirmation,
+)
 from accounts.models import User
 
 _RESEND_COOLDOWN_SECONDS = 600  # 10 minutes
-_PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
 logger = logging.getLogger(__name__)
 
 
@@ -47,6 +51,7 @@ class ProfileView(TemplateView):
             user.role not in (user.Role.GUEST, user.Role.PARTICIPANT)
             or EmailAddress.objects.filter(user=user, verified=True).exists()
         )
+        context["email_confirmation_required_message"] = EMAIL_CONFIRMATION_REQUIRED_MESSAGE
         cooldown_remaining = 0
         sent_at = self.request.user.last_mail_action_at
         if sent_at:
@@ -126,8 +131,8 @@ class ResendEmailConfirmationView(LoginRequiredMixin, View):
 class ApiTokenRegenerateView(LoginRequiredMixin, View):
     def post(self, request):
         user = request.user
-        if user.get_role_rank() < user.ROLE_HIERARCHY.index(user.Role.PARTICIPANT):
-            return JsonResponse({"error": "forbidden"}, status=403)
+        if needs_email_confirmation(user):
+            return redirect_to_profile_for_email_confirmation(request)
         user.api_token = uuid.uuid4()
         user.save(update_fields=["api_token"])
         return redirect("account_profile")
@@ -149,7 +154,7 @@ class ContactOwnersForm(forms.Form):
     )
 
 
-class ContactOwnersView(LoginRequiredMixin, View):
+class ContactOwnersView(ParticipantRequiredMixin, View):
     """Registered users (participant+) can email the site owners (issue #122).
 
     The message goes to the same mailbox that sends the registration confirmation
@@ -157,13 +162,6 @@ class ContactOwnersView(LoginRequiredMixin, View):
     """
 
     template_name = "accounts/contact_owners.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        if not request.user.is_superuser and request.user.get_role_rank() < _PARTICIPANT_RANK:
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request):
         return render(request, self.template_name, {"form": ContactOwnersForm()})

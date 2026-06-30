@@ -9,6 +9,7 @@ from django.utils.translation import gettext as _
 from django.views.generic import CreateView, View
 from wagtail.models import Locale
 
+from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from knowledge.forms import AddKnowledgeArticleCommentForm, DraftSubmissionForm, KnowledgeArticleForm
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment, KnowledgeIndexPage
@@ -26,18 +27,6 @@ def _knowledge_index_url(locale_code: str) -> str:
     if index is None:
         index = KnowledgeIndexPage.objects.live().first()
     return index.url if index else "/"
-
-
-class ParticipantRequiredMixin(LoginRequiredMixin):
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        participant_rank = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-        # Superusers bypass the role gate, matching the comment-form display check so they don't
-        # see the form via GET only to be rejected on POST.
-        if not request.user.is_superuser and request.user.get_role_rank() < participant_rank:
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
 
 
 class ManagerRequiredMixin(LoginRequiredMixin):

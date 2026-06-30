@@ -11,6 +11,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
+from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
@@ -110,16 +111,9 @@ class LocationHideView(LoginRequiredMixin, View):
         return redirect(_safe_return_url(request, "/"))
 
 
-class LocationCreateView(LoginRequiredMixin, View):
+class LocationCreateView(ParticipantRequiredMixin, View):
     # Confirmed users (PARTICIPANT+) may propose a location; organizer+ add it approved
     # directly. Guests (unconfirmed email) must verify first, like submitting a competition.
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        if not request.user.is_superuser and request.user.get_role_rank() < _PARTICIPANT_RANK:
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
-
     def get(self, request):
         from locations.forms import LocationForm
 

@@ -208,10 +208,10 @@ class AddCommentViewTests(TestCase):
         self.assertNotEqual(response.status_code, 200)
         self.assertEqual(Comment.objects.filter(page=self.news_page).count(), 0)
 
-    def test_guest_cannot_post_comment(self):
+    def test_guest_redirected_to_profile_when_posting_comment(self):
         self.client.login(username="guest@example.com", password="password123")
         response = self.client.post(self._add_comment_url(), {"body": "Guest comment"})
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(response, reverse("account_profile"))
         self.assertEqual(Comment.objects.filter(page=self.news_page).count(), 0)
 
 
@@ -312,13 +312,13 @@ class SubmitNewsViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("login", response["Location"])
 
-    def test_guest_gets_403(self):
+    def test_guest_redirected_to_profile(self):
         self.client.login(username="guest@example.com", password="password123")
         response = self.client.post(
             reverse("news_submit"),
             {"locale": "ru", "title": "News", "body": "body"},
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(response, reverse("account_profile"))
 
     def test_get_shows_form(self):
         self.client.login(username="participant@example.com", password="password123")
@@ -601,11 +601,12 @@ class NewsArticleCommentTests(TestCase):
         self.assertIn(response.status_code, (302, 403))
         self.assertEqual(NewsArticleComment.objects.count(), 0)
 
-    def test_guest_role_gets_403(self):
+    def test_guest_role_redirected_to_profile(self):
         guest = self._user("news_guest", User.Role.GUEST)
         self.client.force_login(guest)
         response = self.client.post(self.add_url, {"body": "Hi"})
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(response, reverse("account_profile"))
+        self.assertEqual(NewsArticleComment.objects.count(), 0)
 
     def test_empty_body_is_rejected(self):
         response = self._add(self.participant, body="")

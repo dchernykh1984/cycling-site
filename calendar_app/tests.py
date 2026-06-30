@@ -423,10 +423,10 @@ class SubmitCompetitionViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("login", response["Location"])
 
-    def test_guest_gets_403(self):
+    def test_guest_redirected_to_profile(self):
         self.client.login(username="guest@example.com", password="password123")
         response = self.client.post(self._submit_url(), self._payload())
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(response, reverse("account_profile"))
 
     def test_invalid_date_range_shows_error(self):
         self.client.login(username="participant@example.com", password="password123")
@@ -1023,11 +1023,12 @@ class CompetitionCommentTests(TestCase):
         self.assertIn(response.status_code, (302, 403))
         self.assertEqual(CompetitionComment.objects.count(), 0)
 
-    def test_guest_role_gets_403(self):
+    def test_guest_role_redirected_to_profile(self):
         _make_user("guest@example.com", User.Role.GUEST)
         self.client.login(username="guest@example.com", password="password123")
         response = self.client.post(self.add_url, {"body": "Hi"})
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(response, reverse("account_profile"))
+        self.assertEqual(CompetitionComment.objects.count(), 0)
 
     def test_add_to_non_approved_competition_returns_404(self):
         pending = _make_competition("Pending", status=Competition.Status.PENDING_APPROVAL)

@@ -7,6 +7,48 @@
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
         <h1 class="mb-4">{% trans "Profile" %}</h1>
+        {% if not has_verified_email %}
+        <div class="alert alert-danger border-danger" role="alert">
+            <p class="fw-bold mb-2">{{ email_confirmation_required_message }}</p>
+            <form method="post" action="{% url 'account_resend_confirmation' %}">
+                {% csrf_token %}
+                <button
+                    id="resend-btn"
+                    type="submit"
+                    class="btn btn-sm btn-danger"
+                    {% if resend_cooldown_seconds %}disabled{% endif %}
+                    data-cooldown="{{ resend_cooldown_seconds }}"
+                    data-label="{% trans 'Resend confirmation email' %}">
+                    {% trans "Resend confirmation email" %}
+                </button>
+            </form>
+        </div>
+        <script>
+        (function () {
+            var btn = document.getElementById('resend-btn');
+            if (!btn) return;
+            var remaining = parseInt(btn.dataset.cooldown, 10);
+            if (!remaining || remaining <= 0) return;
+            var label = btn.dataset.label;
+            function fmt(s) {
+                var m = Math.floor(s / 60), sec = s % 60;
+                return m + ':' + (sec < 10 ? '0' : '') + sec;
+            }
+            btn.textContent = label + ' (' + fmt(remaining) + ')';
+            var iv = setInterval(function () {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(iv);
+                    btn.disabled = false;
+                    btn.textContent = label;
+                } else {
+                    btn.textContent = label + ' (' + fmt(remaining) + ')';
+                }
+            }, 1000);
+        })();
+        </script>
+        {% endif %}
+
         <div class="card mb-4">
             <div class="card-body">
                 <p class="mb-1"><strong>{% trans "Email" %}:</strong> {{ user.email }}</p>
@@ -60,48 +102,6 @@
                     btn.classList.remove('disabled');
                     btn.removeAttribute('aria-disabled');
                     btn.removeAttribute('tabindex');
-                    btn.textContent = label;
-                } else {
-                    btn.textContent = label + ' (' + fmt(remaining) + ')';
-                }
-            }, 1000);
-        })();
-        </script>
-        {% endif %}
-
-        {% if not has_verified_email %}
-        <div class="alert alert-warning" role="alert">
-            <p class="mb-2">{% trans "Your email is not confirmed yet. Check your inbox and confirm it to become a participant." %}</p>
-            <form method="post" action="{% url 'account_resend_confirmation' %}">
-                {% csrf_token %}
-                <button
-                    id="resend-btn"
-                    type="submit"
-                    class="btn btn-sm btn-warning"
-                    {% if resend_cooldown_seconds %}disabled{% endif %}
-                    data-cooldown="{{ resend_cooldown_seconds }}"
-                    data-label="{% trans 'Resend confirmation email' %}">
-                    {% trans "Resend confirmation email" %}
-                </button>
-            </form>
-        </div>
-        <script>
-        (function () {
-            var btn = document.getElementById('resend-btn');
-            if (!btn) return;
-            var remaining = parseInt(btn.dataset.cooldown, 10);
-            if (!remaining || remaining <= 0) return;
-            var label = btn.dataset.label;
-            function fmt(s) {
-                var m = Math.floor(s / 60), sec = s % 60;
-                return m + ':' + (sec < 10 ? '0' : '') + sec;
-            }
-            btn.textContent = label + ' (' + fmt(remaining) + ')';
-            var iv = setInterval(function () {
-                remaining -= 1;
-                if (remaining <= 0) {
-                    clearInterval(iv);
-                    btn.disabled = false;
                     btn.textContent = label;
                 } else {
                     btn.textContent = label + ' (' + fmt(remaining) + ')';

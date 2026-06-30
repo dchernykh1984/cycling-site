@@ -223,11 +223,11 @@ class LocationCreateViewTests(TestCase):
         resp = self.client.get(self.url)
         self.assertRedirects(resp, f"/accounts/login/?next={self.url}", fetch_redirect_response=False)
 
-    def test_guest_cannot_open_propose_form(self):
+    def test_guest_redirected_to_profile_when_opening_propose_form(self):
         # An unconfirmed user (GUEST) must verify their email (become PARTICIPANT) first.
         guest = _make_user("guest_loc@x.com", User.Role.GUEST)
         self.client.force_login(guest)
-        self.assertEqual(self.client.get(self.url).status_code, 403)
+        self.assertRedirects(self.client.get(self.url), reverse("account_profile"))
 
     def test_guest_cannot_propose_location(self):
         guest = _make_user("guest_loc2@x.com", User.Role.GUEST)
@@ -235,7 +235,7 @@ class LocationCreateViewTests(TestCase):
         resp = self.client.post(
             self.url, {"name_ru": "GuestVenue", "name_kk": "", "name_en": "", "parent": str(self.city.pk)}
         )
-        self.assertEqual(resp.status_code, 403)
+        self.assertRedirects(resp, reverse("account_profile"))
         self.assertFalse(Location.objects.filter(name_ru="GuestVenue").exists())
 
     def test_participant_proposes_pending_location(self):
