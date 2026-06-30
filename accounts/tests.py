@@ -377,6 +377,24 @@ class ProfileRegistrationListTests(TestCase):
         regs = self._registrations_in_response()
         self.assertEqual(len(regs), 0)
 
+    def test_deleted_competition_registration_not_shown(self):
+        # Registrations for soft-deleted competitions must not appear (issue #161).
+        comp = self._make_comp()
+        reg = self._make_reg(comp)
+        comp.is_deleted = True
+        comp.save(update_fields=["is_deleted"])
+        regs = self._registrations_in_response()
+        self.assertNotIn(reg, regs)
+
+    def test_competition_title_links_to_detail_page(self):
+        # The competition name in "my registrations" links to its calendar page (issue #161).
+        comp = self._make_comp(title_ru="Linkable Race")
+        self._make_reg(comp)
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        detail_url = reverse("competition_detail", args=[comp.pk])
+        self.assertContains(response, f'href="{detail_url}"')
+
     def test_profile_shows_no_registrations_when_none(self):
         regs = self._registrations_in_response()
         self.assertEqual(len(regs), 0)
