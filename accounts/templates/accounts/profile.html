@@ -146,7 +146,7 @@
                 <tbody>
                     {% for reg in registrations %}
                     <tr>
-                        <td>{{ reg.competition.title }}</td>
+                        <td><a href="{% url 'competition_detail' reg.competition.pk %}">{{ reg.competition.title }}</a></td>
                         <td>{{ reg.category.name|default:"—" }}</td>
                         <td>{{ reg.registered_at|date:"d.m.Y" }}</td>
                         <td>

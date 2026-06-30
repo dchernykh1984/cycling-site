@@ -66,9 +66,12 @@ class ProfileView(TemplateView):
 
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
         if self.request.user.is_authenticated:
-            context["registrations"] = self.request.user.competition_registrations.select_related(
-                "competition", "category"
-            ).order_by("-registered_at")
+            # Hide registrations whose competition was soft-deleted (issue #161).
+            context["registrations"] = (
+                self.request.user.competition_registrations.filter(competition__is_deleted=False)
+                .select_related("competition", "category")
+                .order_by("-registered_at")
+            )
         return context
 
 
