@@ -904,6 +904,23 @@ class ProfileEditViewTests(TestCase):
         self.assertEqual(self.user.gender, "F")
         self.assertEqual(self.user.birth_date, datetime.date(1995, 3, 10))
 
+    def test_post_updates_team_and_city(self):
+        self.client.force_login(self.user)
+        self.client.post(
+            reverse("account_profile_edit"),
+            {
+                "first_name": "Alice",
+                "last_name": "Smith",
+                "gender": "F",
+                "birth_date": "1995-03-10",
+                "team": "UBT",
+                "city": "Almaty",
+            },
+        )
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.team, "UBT")
+        self.assertEqual(self.user.city, "Almaty")
+
     def test_birth_date_prefilled_as_iso_under_ru_locale(self):
         # Regression: ru-locale L10N rendered the date in a localized form, which an
         # <input type=date> rejects, leaving it blank. It must be pre-filled as ISO YYYY-MM-DD.

@@ -1839,3 +1839,7 @@ msgstr "Жаңалық сәтті жарияланды."
 
 msgid "Markers are existing locations - click one to select it instead of creating a duplicate."
 msgstr "Маркерлер — бұрыннан бар локациялар; қайталаманы жасаудың орнына маркерді басып таңдаңыз."
+
+#: accounts/templates/accounts/profile_edit.html
+msgid "Prefilled when you register for a competition."
+msgstr "Жарысқа тіркелу кезінде автоматты түрде толтырылады."

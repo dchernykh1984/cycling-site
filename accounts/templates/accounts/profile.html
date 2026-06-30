@@ -60,7 +60,13 @@
                 <p class="mb-1"><strong>{% trans "Gender" %}:</strong> {{ user.get_gender_display }}</p>
                 {% endif %}
                 {% if user.birth_date %}
-                <p class="mb-0"><strong>{% trans "Date of birth" %}:</strong> {{ user.birth_date|date:"d.m.Y" }}</p>
+                <p class="mb-1"><strong>{% trans "Date of birth" %}:</strong> {{ user.birth_date|date:"d.m.Y" }}</p>
+                {% endif %}
+                {% if user.team %}
+                <p class="mb-1"><strong>{% trans "Team" %}:</strong> {{ user.team }}</p>
+                {% endif %}
+                {% if user.city %}
+                <p class="mb-0"><strong>{% trans "City" %}:</strong> {{ user.city }}</p>
                 {% endif %}
             </div>
             <div class="card-footer">

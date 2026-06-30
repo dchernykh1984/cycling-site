@@ -83,6 +83,8 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "gender": gender,
+            "city": user.city,
+            "team_name": user.team,
         }
         if competition.birth_date_mode == "year":
             initial["birth_year"] = birth_date.year if birth_date else None
