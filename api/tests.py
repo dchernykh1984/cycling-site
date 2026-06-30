@@ -23,6 +23,7 @@ from locations.models import (
 from news.models import NewsArticle
 from protocols.models import (
     FinishTimesUpload,
+    GroupTimesUpload,
     RemotePointUpload,
     StartListUpload,
 )
@@ -2745,6 +2746,14 @@ class LocationAccessTest(TestCase, ApiTestMixin):
         self.assertEqual(self.delete(f"/api/v1/locations/{loc.pk}", user=self.admin).status_code, 204)
 
 
+# (url, model, extra payload fields) for each per-device timing stream.
+_TIMING_STREAMS = [
+    ("/api/v1/group-times/", GroupTimesUpload, {}),
+    ("/api/v1/finish-times/", FinishTimesUpload, {}),
+    ("/api/v1/remote-points/", RemotePointUpload, {"point_number": 1}),
+]
+
+
 class TimingsApiTest(TestCase, ApiTestMixin):
     """Group / finish / remote-point timing exchange (mirrors the start-list endpoint)."""
 
@@ -2837,3 +2846,64 @@ class TimingsApiTest(TestCase, ApiTestMixin):
             self.get(f"/api/v1/group-times/?competition_token={self.token}").json(), {"devices": [], "items": []}
         )
         self.assertEqual(self.get(f"/api/v1/remote-points/?competition_token={self.token}").json(), {"points": []})
+
+    # -- compare-and-set invariants shared with /start-list/ (group/finish/remote) --
+
+    def _payload(self, url, *, items, revision, extra):
+        data = {"competition_token": self.token, "device_id": "dev-a", "items": items, "client_revision": revision}
+        data.update(extra)
+        return self.post(url, data)
+
+    def test_same_revision_same_items_is_noop(self):
+        # Re-sending the identical snapshot at the same revision (e.g. a background retry) is a
+        # no-op: it returns the stored row and does not move updated_at.
+        for url, model, extra in _TIMING_STREAMS:
+            with self.subTest(url=url):
+                model.objects.all().delete()
+                items = ["1#0 0:0:1#"]
+                self.assertEqual(self._payload(url, items=items, revision=5, extra=extra).status_code, 200)
+                row = model.objects.get(competition=self.comp, device_id="dev-a")
+                ts = row.updated_at
+                resp = self._payload(url, items=items, revision=5, extra=extra)
+                self.assertEqual(resp.status_code, 200)
+                self.assertEqual(resp.json()["client_revision"], 5)
+                row.refresh_from_db()
+                self.assertEqual(row.updated_at, ts)  # unchanged: true no-op
+
+    def test_same_revision_different_items_conflicts(self):
+        for url, model, extra in _TIMING_STREAMS:
+            with self.subTest(url=url):
+                model.objects.all().delete()
+                self._payload(url, items=["1#0 0:0:1#"], revision=5, extra=extra)
+                resp = self._payload(url, items=["2#0 0:0:2#"], revision=5, extra=extra)
+                self.assertEqual(resp.status_code, 409)
+
+    def test_stale_revision_409_reports_stored_revision(self):
+        # A client that lost its counter recovers the stored revision from the 409 message.
+        for url, model, extra in _TIMING_STREAMS:
+            with self.subTest(url=url):
+                model.objects.all().delete()
+                self._payload(url, items=["1#0 0:0:1#"], revision=7, extra=extra)
+                resp = self._payload(url, items=["9#0 0:9:9#"], revision=3, extra=extra)
+                self.assertEqual(resp.status_code, 409)
+                self.assertIn("7", resp.json()["detail"])
+
+    def test_limits_apply_to_all_streams(self):
+        from api.endpoints.timings import _MAX_BODY_BYTES
+
+        for url, model, extra in _TIMING_STREAMS:
+            with self.subTest(url=url):
+                model.objects.all().delete()
+                self.assertEqual(self._payload(url, items=["x"] * 20001, revision=1, extra=extra).status_code, 400)
+                self.assertEqual(self._payload(url, items=["x" * 2001], revision=1, extra=extra).status_code, 400)
+                # Real serialized body over the cap (but under Django's limit) is a clean 400.
+                big = ["x" * 2000 for _ in range(_MAX_BODY_BYTES // 2000 + 5)]
+                self.assertEqual(self._payload(url, items=big, revision=1, extra=extra).status_code, 400)
+                self.assertEqual(model.objects.count(), 0)
+
+    def test_remote_point_number_is_part_of_the_cas_key(self):
+        # Same device + same revision but a different point_number is a separate row, not a conflict.
+        self._payload("/api/v1/remote-points/", items=["1#0 0:1:0#"], revision=5, extra={"point_number": 1})
+        resp = self._payload("/api/v1/remote-points/", items=["1#0 0:2:0#"], revision=5, extra={"point_number": 2})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(RemotePointUpload.objects.filter(competition=self.comp, device_id="dev-a").count(), 2)
