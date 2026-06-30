@@ -1798,3 +1798,7 @@ msgstr "Новость успешно опубликована."
 
 msgid "Markers are existing locations - click one to select it instead of creating a duplicate."
 msgstr "Маркеры — это существующие локации; нажмите на маркер, чтобы выбрать его и не создавать дубликат."
+
+#: accounts/templates/accounts/profile_edit.html
+msgid "Prefilled when you register for a competition."
+msgstr "Подставится при регистрации на соревнование."

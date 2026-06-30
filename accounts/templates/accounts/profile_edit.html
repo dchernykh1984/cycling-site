@@ -43,6 +43,20 @@
                 <input type="date" name="birth_date" value="{{ form.birth_date.value|date:'Y-m-d'|default:form.birth_date.value|default:'' }}"
                        class="form-control{% if form.birth_date.errors %} is-invalid{% endif %}">
             </div>
+            <div class="mb-3">
+                <label class="form-label">{% trans "Team" %}</label>
+                {{ form.team.errors }}
+                <input type="text" name="team" value="{{ form.team.value|default:'' }}"
+                       class="form-control{% if form.team.errors %} is-invalid{% endif %}">
+                <div class="form-text">{% trans "Prefilled when you register for a competition." %}</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{% trans "City" %}</label>
+                {{ form.city.errors }}
+                <input type="text" name="city" value="{{ form.city.value|default:'' }}"
+                       class="form-control{% if form.city.errors %} is-invalid{% endif %}">
+                <div class="form-text">{% trans "Prefilled when you register for a competition." %}</div>
+            </div>
             <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
             <a href="{% url 'account_profile' %}" class="btn btn-outline-secondary ms-2">{% trans "Cancel" %}</a>
         </form>

@@ -282,6 +282,19 @@ class RegisterForCompetitionViewTests(TestCase):
         m = re.search(r'name="birth_date"[^>]*value="([^"]*)"', resp.content.decode())
         self.assertEqual(m.group(1), "1990-01-01")
 
+    def test_team_and_city_prefilled_from_profile(self):
+        import re
+
+        self.user.team = "UBT"
+        self.user.city = "Almaty"
+        self.user.save()
+        self.client.force_login(self.user)
+        html = self.client.get(self.url).content.decode()
+        city = re.search(r'name="city"[^>]*value="([^"]*)"', html)
+        team = re.search(r'name="team_name"[^>]*value="([^"]*)"', html)
+        self.assertEqual(city.group(1), "Almaty")
+        self.assertEqual(team.group(1), "UBT")
+
     def test_anonymous_redirected(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
