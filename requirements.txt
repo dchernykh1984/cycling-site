@@ -50,7 +50,7 @@ typing-extensions==4.15.0
 typing-inspection==0.4.2
 tzdata==2026.2 ; sys_platform == 'win32'
 urllib3==2.7.0
-wagtail==7.4.1
+wagtail==7.4.2
 wagtail-localize==1.13.1
 whitenoise==6.12.0
 willow==1.12.0
