@@ -164,7 +164,7 @@ class Competition(index.Indexed, models.Model):
     require_approval = models.BooleanField(default=False)
     require_payment = models.BooleanField(default=False)
     allow_multiple_registrations = models.BooleanField(default=False)
-    registration_deadline = models.DateField(null=True, blank=True)
+    registration_deadline = models.DateTimeField(null=True, blank=True)
     max_participants = models.PositiveIntegerField(null=True, blank=True)
 
     show_unapproved_in_list = models.BooleanField(default=False)
@@ -241,7 +241,7 @@ class Competition(index.Indexed, models.Model):
             return False
         if self.status != self.Status.APPROVED:
             return False
-        if self.registration_deadline and self.registration_deadline < datetime.date.today():
+        if self.registration_deadline and self.registration_deadline < timezone.now():
             return False
         return not self.is_limit_reached()
 

@@ -3,6 +3,7 @@ import json
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.access import EMAIL_CONFIRMATION_REQUIRED_MESSAGE
 from accounts.models import User
@@ -346,11 +347,21 @@ class RegisterForCompetitionViewTests(TestCase):
         self.assertTrue(response.context["registration_closed"])
 
     def test_registration_closed_after_deadline(self):
-        self.comp.registration_deadline = datetime.date(2020, 1, 1)
+        # A deadline earlier today (time already passed) closes registration.
+        self.comp.registration_deadline = timezone.now() - datetime.timedelta(hours=1)
         self.comp.save()
         self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertTrue(response.context["registration_closed"])
+
+    def test_registration_open_when_deadline_later_today(self):
+        # A deadline later today (time not yet passed) keeps registration open.
+        self.comp.registration_deadline = timezone.now() + datetime.timedelta(hours=1)
+        self.comp.save()
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertNotIn("registration_closed", response.context)
+        self.assertIn("form", response.context)
 
     def test_post_creates_registration(self):
         self.client.force_login(self.user)
