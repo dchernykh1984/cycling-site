@@ -2272,3 +2272,56 @@ class OtherAndMtbDisciplineMigrationTests(TransactionTestCase):
         apps = self._migrate(self.BEFORE)  # no linked MTB formats -> rollback is allowed
         survived = apps.get_model(self.APP, "Discipline").objects.get(pk=custom.pk)
         self.assertEqual(survived.name_en, "Other (Custom)")
+
+
+class RegistrationDeadlineMigrationTests(TransactionTestCase):
+    """0018 shifts legacy date-only (midnight) deadlines to end-of-day so registration stays
+    open for the whole deadline day, preserving the old DateField semantics."""
+
+    APP = "calendar_app"
+    BEFORE = "0017_alter_competition_registration_deadline"
+    AFTER = "0018_shift_date_deadlines_to_end_of_day"
+
+    def tearDown(self):
+        from django.core.management import call_command
+
+        call_command("migrate", self.APP, verbosity=0)
+
+    def _migrate(self, target):
+        from django.db import connection
+        from django.db.migrations.executor import MigrationExecutor
+
+        executor = MigrationExecutor(connection)
+        executor.migrate([(self.APP, target)])
+        return executor.loader.project_state([(self.APP, target)]).apps
+
+    def test_forward_shifts_legacy_midnight_deadline_to_end_of_day(self):
+        import datetime
+
+        from calendar_app.registration_deadline import BUSINESS_TZ
+
+        apps = self._migrate(self.BEFORE)
+        comp = apps.get_model(self.APP, "Competition").objects.create(
+            title="X",
+            date_start=datetime.date(2026, 9, 1),
+            registration_deadline=datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC),
+        )
+        apps = self._migrate(self.AFTER)
+        migrated = apps.get_model(self.APP, "Competition").objects.get(pk=comp.pk)
+        local = migrated.registration_deadline.astimezone(BUSINESS_TZ)
+        self.assertEqual(
+            (local.date(), local.hour, local.minute, local.second),
+            (datetime.date(2026, 9, 1), 23, 59, 59),
+        )
+
+    def test_forward_leaves_real_time_deadline_untouched(self):
+        import datetime
+
+        apps = self._migrate(self.BEFORE)
+        dt = datetime.datetime(2026, 9, 1, 14, 30, tzinfo=datetime.UTC)
+        comp = apps.get_model(self.APP, "Competition").objects.create(
+            title="Y", date_start=datetime.date(2026, 9, 1), registration_deadline=dt
+        )
+        apps = self._migrate(self.AFTER)
+        migrated = apps.get_model(self.APP, "Competition").objects.get(pk=comp.pk)
+        self.assertEqual(migrated.registration_deadline, dt)
