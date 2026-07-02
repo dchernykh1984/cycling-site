@@ -16,9 +16,24 @@ router = Router(tags=["protocols"])
 _MAX_VERSIONS = 10
 
 
+def _competition_by_token(token: str) -> Competition:
+    try:
+        return Competition.objects.get(
+            upload_token=token,
+            status=Competition.Status.APPROVED,
+            is_deleted=False,
+        )
+    except (Competition.DoesNotExist, ValidationError):
+        raise HttpError(401, "Invalid competition_token") from None
+
+
 class ProtocolUploadOut(Schema):
     id: int
     file_hash: str
+
+
+class ProtocolDeleteOut(Schema):
+    deleted: bool
 
 
 @router.post(
@@ -40,14 +55,7 @@ def upload_protocol(  # noqa: C901
     Uses `competition_token` (the competition's upload token) for authentication.
     Called by FinishProtocolGenerator.
     """
-    try:
-        competition = Competition.objects.get(
-            upload_token=competition_token,
-            status=Competition.Status.APPROVED,
-            is_deleted=False,
-        )
-    except (Competition.DoesNotExist, ValidationError):
-        raise HttpError(401, "Invalid competition_token") from None
+    competition = _competition_by_token(competition_token)
 
     if protocol_type not in ("absolute", "group"):
         raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
@@ -106,3 +114,38 @@ def upload_protocol(  # noqa: C901
         ProtocolVersion.objects.filter(pk__in=old_ids).delete()
 
     return {"id": protocol.pk, "file_hash": file_hash}
+
+
+@router.post(
+    "/delete/",
+    response=ProtocolDeleteOut,
+    auth=None,
+    summary="Delete a protocol (removes its live-broadcast link from the competition page)",
+)
+def delete_protocol(
+    request,
+    competition_token: str = Form(...),
+    protocol_type: str = Form("absolute"),
+):
+    """Delete a competition's protocol of the given type, if present.
+
+    Idempotent: returns ``deleted=False`` (200) when there is nothing to delete. Called by
+    FinishProtocolGenerator to drop a protocol the organizer no longer publishes, so its results
+    link disappears from the competition detail page.
+    """
+    competition = _competition_by_token(competition_token)
+    if protocol_type not in ("absolute", "group"):
+        raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
+
+    protocol = Protocol.objects.filter(competition=competition, protocol_type=protocol_type).first()
+    if protocol is None:
+        return {"deleted": False}
+
+    # Remove the stored files (rows cascade), so nothing is orphaned on disk.
+    for version in protocol.versions.all():
+        if version.html_file:
+            version.html_file.delete(save=False)
+    if protocol.html_file:
+        protocol.html_file.delete(save=False)
+    protocol.delete()
+    return {"deleted": True}

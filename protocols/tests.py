@@ -175,6 +175,75 @@ class UploadProtocolTest(TestCase):
         self.assertEqual(response.status_code, 405)
 
 
+class DeleteProtocolTest(TestCase):
+    def setUp(self):
+        self.media_root = tempfile.mkdtemp()
+        self._settings = override_settings(MAX_PROTOCOL_SIZE_MB=5, MEDIA_ROOT=self.media_root)
+        self._settings.enable()
+        self.client = Client()
+        self.competition = _make_competition()
+        self.upload_url = "/api/v1/protocols/upload/"
+        self.delete_url = "/api/v1/protocols/delete/"
+
+    def tearDown(self):
+        self._settings.disable()
+        shutil.rmtree(self.media_root, ignore_errors=True)
+
+    def _upload(self, protocol_type="absolute"):
+        return self.client.post(
+            self.upload_url,
+            {
+                "competition_token": str(self.competition.upload_token),
+                "protocol_type": protocol_type,
+                "is_live": "true",
+                "html_file": _html_file(),
+            },
+        )
+
+    def _delete(self, **kwargs):
+        data = {"competition_token": str(self.competition.upload_token), "protocol_type": "absolute"}
+        data.update(kwargs)
+        return self.client.post(self.delete_url, data)
+
+    def test_delete_removes_protocol_and_versions(self):
+        self._upload("absolute")
+        self.assertEqual(Protocol.objects.count(), 1)
+        resp = self._delete(protocol_type="absolute")
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()["deleted"])
+        self.assertEqual(Protocol.objects.count(), 0)
+        self.assertEqual(ProtocolVersion.objects.count(), 0)
+
+    def test_delete_missing_protocol_returns_false(self):
+        resp = self._delete(protocol_type="group")
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.json()["deleted"])
+
+    def test_delete_only_removes_matching_type(self):
+        self._upload("absolute")
+        self._upload("group")
+        self._delete(protocol_type="group")
+        self.assertEqual(Protocol.objects.filter(protocol_type="absolute").count(), 1)
+        self.assertEqual(Protocol.objects.filter(protocol_type="group").count(), 0)
+
+    def test_delete_invalid_type_returns_400(self):
+        resp = self._delete(protocol_type="nonsense")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_delete_invalid_token_returns_401(self):
+        resp = self._delete(competition_token="00000000-0000-0000-0000-000000000000")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_deleted_protocol_link_gone_from_detail_page(self):
+        self._upload("absolute")
+        proto = Protocol.objects.get()
+        detail_url = f"/calendar/{self.competition.pk}/"
+        link = f"/protocols/{proto.pk}/"
+        self.assertContains(self.client.get(detail_url), link)
+        self._delete(protocol_type="absolute")
+        self.assertNotContains(self.client.get(detail_url), link)
+
+
 class ProtocolLastUpdatedTest(TestCase):
     def setUp(self):
         self.client = Client()
