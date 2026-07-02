@@ -1802,3 +1802,7 @@ msgstr "Маркеры — это существующие локации; на�
 #: accounts/templates/accounts/profile_edit.html
 msgid "Prefilled when you register for a competition."
 msgstr "Подставится при регистрации на соревнование."
+
+#: calendar_app/templates/calendar_app/_registration_fields.html
+msgid "Times are in Astana time (UTC+5)."
+msgstr "Время указывается по времени Астаны (UTC+5)."
