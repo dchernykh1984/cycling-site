@@ -49,7 +49,7 @@ jobs:
           timeout 30 bash -c 'until pg_isready -h localhost -U postgres; do sleep 1; done'
           sudo -u postgres createdb cycling_site_test
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           python-version: "3.13"
