@@ -233,7 +233,10 @@ WAGTAIL_CONTENT_LANGUAGES = [
     ("en", "English"),
 ]
 
-TIME_ZONE = "UTC"
+# Business timezone for the Kazakhstan cycling community: naive datetimes the organizer types
+# into the datetime-local registration-deadline control are wall-clock time in this zone, and
+# all datetimes render in it. The DB still stores UTC (USE_TZ).
+TIME_ZONE = "Asia/Almaty"
 
 USE_I18N = True
 

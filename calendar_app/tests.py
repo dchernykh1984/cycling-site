@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext
@@ -1019,6 +1019,27 @@ class EditCompetitionViewTests(TestCase):
         self.assertIsNotNone(self.comp.registration_deadline)
         local = timezone.localtime(self.comp.registration_deadline)
         self.assertEqual((local.date(), local.hour, local.minute), (datetime.date(2026, 9, 1), 14, 30))
+
+    @override_settings(TIME_ZONE="Asia/Almaty")
+    def test_deadline_interpreted_in_business_timezone_not_utc(self):
+        # Under a non-UTC business tz, datetime-local "14:30" is local wall time (Astana, UTC+5)
+        # = 09:30 UTC, not 14:30 UTC -- the field must not be silently treated as UTC.
+        self.client.login(username="edit_org@example.com", password="password123")
+        self.client.post(
+            self.url,
+            {
+                "title_ru": "Editable Race",
+                "date_start": "2026-09-01",
+                "registration_enabled": "on",
+                "registration_mode": "free",
+                "birth_date_mode": "year",
+                "registration_deadline": "2026-09-01T14:30",
+                "categories_json": "[]",
+            },
+        )
+        self.comp.refresh_from_db()
+        utc = self.comp.registration_deadline.astimezone(datetime.UTC)
+        self.assertEqual((utc.hour, utc.minute), (9, 30))
 
 
 class CompetitionCommentTests(TestCase):

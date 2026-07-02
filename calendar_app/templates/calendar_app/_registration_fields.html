@@ -86,6 +86,7 @@
     <label class="form-label">{% trans "Registration deadline" %}</label>
     <input type="datetime-local" name="registration_deadline" class="form-control"
            value="{{ reg_form.registration_deadline.value|date:'Y-m-d\TH:i'|default:reg_form.registration_deadline.value|default:'' }}">
+    <div class="form-text">{% trans "Times are in Astana time (UTC+5)." %}</div>
   </div>
   <div class="col-md-4">
     <label class="form-label">{% trans "Total participant limit" %}</label>
