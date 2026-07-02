@@ -7,19 +7,26 @@ the start of the deadline day instead of the end. Shift those legacy midnight va
 """
 
 import datetime
+from zoneinfo import ZoneInfo
 
 from django.db import migrations
 
+# Frozen at release time: a data migration must stay self-contained and must NOT import runtime
+# app code -- a helper could later be renamed or have its semantics/timezone changed, which would
+# break a from-scratch migrate or a DB restore that replays this step.
+_BUSINESS_TZ = ZoneInfo("Asia/Almaty")
+
 
 def _forward(apps, schema_editor):
-    from calendar_app.registration_deadline import date_only_to_end_of_day
-
     Competition = apps.get_model("calendar_app", "Competition")
     for comp in Competition.objects.filter(registration_deadline__isnull=False).iterator():
         d_utc = comp.registration_deadline.astimezone(datetime.UTC)
         # Only the legacy date-only values 0017 produced (exactly midnight UTC).
         if (d_utc.hour, d_utc.minute, d_utc.second, d_utc.microsecond) == (0, 0, 0, 0):
-            comp.registration_deadline = date_only_to_end_of_day(comp.registration_deadline)
+            local_date = comp.registration_deadline.astimezone(_BUSINESS_TZ).date()
+            comp.registration_deadline = datetime.datetime.combine(
+                local_date, datetime.time(23, 59, 59), tzinfo=_BUSINESS_TZ
+            )
             comp.save(update_fields=["registration_deadline"])
 
 
