@@ -2319,21 +2319,18 @@ class RegistrationDeadlineMigrationTests(TransactionTestCase):
     def test_forward_shifts_legacy_midnight_deadline_to_end_of_day(self):
         import datetime
 
-        from calendar_app.registration_deadline import BUSINESS_TZ
+        # The runtime helper computes the expected value, cross-checking the migration's own
+        # (deliberately self-contained) copy of the same transform.
+        from calendar_app.registration_deadline import date_only_to_end_of_day
 
         apps = self._migrate(self.BEFORE)
+        midnight_utc = datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC)
         comp = apps.get_model(self.APP, "Competition").objects.create(
-            title="X",
-            date_start=datetime.date(2026, 9, 1),
-            registration_deadline=datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC),
+            title="X", date_start=datetime.date(2026, 9, 1), registration_deadline=midnight_utc
         )
         apps = self._migrate(self.AFTER)
         migrated = apps.get_model(self.APP, "Competition").objects.get(pk=comp.pk)
-        local = migrated.registration_deadline.astimezone(BUSINESS_TZ)
-        self.assertEqual(
-            (local.date(), local.hour, local.minute, local.second),
-            (datetime.date(2026, 9, 1), 23, 59, 59),
-        )
+        self.assertEqual(migrated.registration_deadline, date_only_to_end_of_day(midnight_utc))
 
     def test_forward_leaves_real_time_deadline_untouched(self):
         import datetime
