@@ -478,7 +478,9 @@ def _validate_deadline(form, reg_form, date_start, date_end):
     if not deadline:
         return True
     max_date = date_end if date_end else date_start
-    if deadline > max_date:
+    # deadline is a datetime; compare its calendar day (in the active timezone) to the event date.
+    deadline_date = timezone.localtime(deadline).date() if timezone.is_aware(deadline) else deadline.date()
+    if deadline_date > max_date:
         label = "date end" if date_end else "date start"
         reg_form.add_error(
             "registration_deadline",
@@ -504,7 +506,11 @@ def _apply_registration_settings(comp, reg_form, is_organizer_plus):
     comp.allow_multiple_registrations = (
         False if effective_mode == "self_only" else cd.get("allow_multiple_registrations", False)
     )
-    comp.registration_deadline = cd.get("registration_deadline")
+    deadline = cd.get("registration_deadline")
+    # The datetime-local field yields a naive datetime; interpret it in the active timezone.
+    if deadline and timezone.is_naive(deadline):
+        deadline = timezone.make_aware(deadline)
+    comp.registration_deadline = deadline
     comp.max_participants = cd.get("max_participants")
     comp.show_unapproved_in_list = cd.get("show_unapproved_in_list", False) if comp.require_approval else False
     comp.show_unpaid_in_list = cd.get("show_unpaid_in_list", False) if comp.require_payment else False

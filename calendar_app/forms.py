@@ -187,9 +187,11 @@ class RegistrationSettingsForm(forms.Form):
     require_approval = forms.BooleanField(required=False)
     require_payment = forms.BooleanField(required=False)
     allow_multiple_registrations = forms.BooleanField(required=False)
-    registration_deadline = forms.DateField(
+    registration_deadline = forms.DateTimeField(
         required=False,
-        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}, format="%Y-%m-%d"),
+        # <input type="datetime-local"> submits/expects "YYYY-MM-DDTHH:MM" (no seconds).
+        input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"],
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}, format="%Y-%m-%dT%H:%M"),
     )
     max_participants = forms.IntegerField(
         required=False, min_value=1, widget=forms.NumberInput(attrs={"class": "form-control"})

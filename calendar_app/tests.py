@@ -729,8 +729,26 @@ class CompetitionIsRegistrationOpenTests(TestCase):
 
     def test_closed_when_deadline_passed(self):
         comp = self._make_open_comp()
-        comp.registration_deadline = datetime.date(2020, 1, 1)
+        comp.registration_deadline = timezone.now() - datetime.timedelta(days=1)
         self.assertFalse(comp.is_registration_open())
+
+    def test_closed_when_deadline_earlier_today(self):
+        # The deadline is a datetime: registration closes once the time of day has passed.
+        comp = self._make_open_comp()
+        comp.registration_deadline = timezone.now() - datetime.timedelta(hours=1)
+        self.assertFalse(comp.is_registration_open())
+
+    def test_open_when_deadline_later_today(self):
+        comp = self._make_open_comp()
+        comp.registration_deadline = timezone.now() + datetime.timedelta(hours=1)
+        self.assertTrue(comp.is_registration_open())
+
+    def test_deadline_field_parses_datetime_local_value(self):
+        # The form field accepts the <input type="datetime-local"> value and keeps the time.
+        from calendar_app.forms import RegistrationSettingsForm
+
+        value = RegistrationSettingsForm().fields["registration_deadline"].clean("2026-09-01T14:30")
+        self.assertEqual((value.year, value.month, value.day, value.hour, value.minute), (2026, 9, 1, 14, 30))
 
     def test_closed_when_overall_limit_reached(self):
         comp = self._make_open_comp()
@@ -899,17 +917,17 @@ class EditCompetitionViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_registration_deadline_prefilled_as_iso_under_ru_locale(self):
-        # Regression: the registration_deadline date input pre-fill was ru-localized, which
-        # <input type=date> rejects. It must be ISO YYYY-MM-DD on the edit page.
+        # Regression: the registration_deadline input pre-fill was ru-localized, which
+        # <input type=datetime-local> rejects. It must be ISO YYYY-MM-DDTHH:MM on the edit page.
         import re
 
         self.comp.registration_enabled = True
-        self.comp.registration_deadline = datetime.date(2026, 9, 1)
+        self.comp.registration_deadline = timezone.make_aware(datetime.datetime(2026, 9, 1, 14, 30))
         self.comp.save()
         self.client.login(username="edit_org@example.com", password="password123")
         resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="ru")
         m = re.search(r'name="registration_deadline"[^>]*value="([^"]*)"', resp.content.decode())
-        self.assertEqual(m.group(1), "2026-09-01")
+        self.assertEqual(m.group(1), "2026-09-01T14:30")
 
     def test_participant_gets_403(self):
         self.client.login(username="edit_part@example.com", password="password123")
@@ -982,6 +1000,25 @@ class EditCompetitionViewTests(TestCase):
         )
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.registration_mode, "self_only")
+
+    def test_edit_saves_registration_deadline_with_time(self):
+        self.client.login(username="edit_org@example.com", password="password123")
+        self.client.post(
+            self.url,
+            {
+                "title_ru": "Editable Race",
+                "date_start": "2026-09-01",
+                "registration_enabled": "on",
+                "registration_mode": "free",
+                "birth_date_mode": "year",
+                "registration_deadline": "2026-09-01T14:30",
+                "categories_json": "[]",
+            },
+        )
+        self.comp.refresh_from_db()
+        self.assertIsNotNone(self.comp.registration_deadline)
+        local = timezone.localtime(self.comp.registration_deadline)
+        self.assertEqual((local.date(), local.hour, local.minute), (datetime.date(2026, 9, 1), 14, 30))
 
 
 class CompetitionCommentTests(TestCase):
