@@ -1149,6 +1149,17 @@ class CompetitionCommentTests(TestCase):
         response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
         self.assertContains(response, "Visible comment")
 
+    def test_comment_newlines_preserved_on_detail_page(self):
+        # The author's line breaks must survive to the output inside the pre-wrap container
+        # (regression: HTML collapses raw newlines unless the comment-body class is applied).
+        import re
+
+        self._make_comment(body="line one\nline two")
+        response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
+        m = re.search(r'class="[^"]*comment-body[^"]*">(.*?)</p>', response.content.decode(), re.S)
+        self.assertIsNotNone(m)
+        self.assertIn("line one\nline two", m.group(1))
+
 
 class CompetitionDirectionLocationLabelTests(TestCase):
     """Direction / country / region / city helper properties used by the list table."""
