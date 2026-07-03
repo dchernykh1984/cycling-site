@@ -137,6 +137,17 @@ class NewsPageRenderTests(TestCase):
         response = self.client.get(self.news_page.url)
         self.assertContains(response, "Approved comment")
 
+    def test_comment_newlines_preserved(self):
+        import re
+
+        Comment.objects.create(
+            page=self.news_page, author=self.participant, body="line one\nline two", is_approved=True
+        )
+        response = self.client.get(self.news_page.url)
+        m = re.search(r'class="[^"]*comment-body[^"]*">(.*?)</p>', response.content.decode(), re.S)
+        self.assertIsNotNone(m)
+        self.assertIn("line one\nline two", m.group(1))
+
     def test_unapproved_comments_hidden_from_non_staff(self):
         Comment.objects.create(
             page=self.news_page,
@@ -588,6 +599,15 @@ class NewsArticleCommentTests(TestCase):
 
     def _make_comment(self, author=None, body="A comment"):
         return NewsArticleComment.objects.create(article=self.article, author=author or self.participant, body=body)
+
+    def test_comment_newlines_preserved_on_detail_page(self):
+        import re
+
+        self._make_comment(body="line one\nline two")
+        response = self.client.get(reverse("news_article_detail", args=[self.article.pk]))
+        m = re.search(r'class="[^"]*comment-body[^"]*">(.*?)</p>', response.content.decode(), re.S)
+        self.assertIsNotNone(m)
+        self.assertIn("line one\nline two", m.group(1))
 
     def test_participant_can_post_comment(self):
         self._add(self.participant)

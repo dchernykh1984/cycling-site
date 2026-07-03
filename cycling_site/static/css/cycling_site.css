@@ -313,6 +313,13 @@ main img {
     overflow-wrap: anywhere;
 }
 
+/* User comments are plain text: keep the author's line breaks and runs of spaces (HTML would
+   otherwise collapse them), and wrap long unbroken strings so they don't overflow. */
+.comment-body {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 /* Keep each top-level nav item on one line (avoid a "База / знаний" mid-item wrap). */
 .navbar .nav-link {
     white-space: nowrap;

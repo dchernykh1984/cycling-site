@@ -864,6 +864,15 @@ class KnowledgeArticleCommentTests(TestCase):
         response = self.client.get(self.article.get_absolute_url())
         self.assertContains(response, "Visible KB comment")
 
+    def test_comment_newlines_preserved_on_detail_page(self):
+        import re
+
+        self._make_comment(body="line one\nline two")
+        response = self.client.get(self.article.get_absolute_url())
+        m = re.search(r'class="[^"]*comment-body[^"]*">(.*?)</p>', response.content.decode(), re.S)
+        self.assertIsNotNone(m)
+        self.assertIn("line one\nline two", m.group(1))
+
     def test_admin_can_delete_comment(self):
         comment = self._make_comment()
         self.client.force_login(self.admin)
