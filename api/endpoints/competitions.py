@@ -215,9 +215,9 @@ def _apply_patch_fields(competition: Competition, data: dict, user) -> list[str]
 
 def _to_detail(competition: Competition, user=None) -> Competition:
     """Attach competition_token to obj for serialization (avoids extra dict merging)."""
-    competition._api_token = (
-        str(competition.upload_token) if user is not None and (_is_owner(user, competition) or is_admin(user)) else None
-    )
+    can_see = user is not None and (_is_owner(user, competition) or is_admin(user))
+    # upload_token is nullable (a manager can delete it); don't serialize a null as "None".
+    competition._api_token = str(competition.upload_token) if can_see and competition.upload_token else None
     return competition
 
 

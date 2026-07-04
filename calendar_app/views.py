@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -406,6 +407,19 @@ class CalendarMapAPIView(View):
         return JsonResponse(list(groups.values()), safe=False)
 
 
+def _can_manage_token(user, competition) -> bool:
+    """Who may see and manage a competition's upload token: its submitter, or an admin+/superuser.
+
+    Kept in sync with the ``show_upload_token`` gate: the token is a secret credential, so only the
+    people it is shown to may regenerate or delete it.
+    """
+    from registrations.views import can_manage
+
+    return bool(getattr(user, "is_authenticated", False)) and (
+        can_manage(user, competition) or user == competition.submitted_by
+    )
+
+
 class CompetitionDetailView(View):
     def get(self, request, pk):
         from registrations.views import can_manage
@@ -425,7 +439,7 @@ class CompetitionDetailView(View):
         # who can manage this specific competition (superuser, admin+, or the organizer
         # who submitted it). Removed the broad rank >= ORGANIZER check that exposed
         # tokens of other organizers' competitions.
-        show_upload_token = request.user.is_authenticated and (is_manager or request.user == competition.submitted_by)
+        show_upload_token = _can_manage_token(request.user, competition)
         already_registered = False
         if request.user.is_authenticated:
             from registrations.models import CompetitionRegistration
@@ -1011,4 +1025,26 @@ class CompetitionHideView(LoginRequiredMixin, View):
             raise PermissionDenied
         competition.is_hidden = not competition.is_hidden
         competition.save(update_fields=["is_hidden"])
+        return redirect("competition_detail", pk=pk)
+
+
+class RegenerateUploadTokenView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+        if not _can_manage_token(request.user, competition):
+            raise PermissionDenied
+        competition.upload_token = uuid.uuid4()
+        competition.save(update_fields=["upload_token"])
+        messages.success(request, _("Timing token regenerated. The previous token no longer works."))
+        return redirect("competition_detail", pk=pk)
+
+
+class DeleteUploadTokenView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+        if not _can_manage_token(request.user, competition):
+            raise PermissionDenied
+        competition.upload_token = None
+        competition.save(update_fields=["upload_token"])
+        messages.success(request, _("Timing token deleted. Timing tools can no longer access this competition."))
         return redirect("competition_detail", pk=pk)

@@ -2354,3 +2354,90 @@ class RegistrationDeadlineMigrationTests(TransactionTestCase):
         apps = self._migrate(self.AFTER)
         migrated = apps.get_model(self.APP, "Competition").objects.get(pk=comp.pk)
         self.assertEqual(migrated.registration_deadline, dt)
+
+
+class UploadTokenManagementTests(TestCase):
+    """Regenerate/delete of a competition's timing upload token (issue: revoke a leaked token)."""
+
+    def setUp(self):
+        self.owner = _make_user("tok_owner@example.com", User.Role.OWNER)
+        self.admin = _make_user("tok_admin@example.com", User.Role.ADMIN)
+        self.organizer = _make_user("tok_org@example.com", User.Role.ORGANIZER)
+        self.other_org = _make_user("tok_other@example.com", User.Role.ORGANIZER)
+        self.participant = _make_user("tok_part@example.com", User.Role.PARTICIPANT)
+        self.comp = _make_competition("Token Race", status=Competition.Status.APPROVED, submitted_by=self.organizer)
+        self.regen_url = reverse("competition_regenerate_token", args=[self.comp.pk])
+        self.del_url = reverse("competition_delete_token", args=[self.comp.pk])
+        self.detail_url = reverse("competition_detail", args=[self.comp.pk])
+
+    def test_submitter_can_regenerate(self):
+        old = self.comp.upload_token
+        self.client.force_login(self.organizer)
+        resp = self.client.post(self.regen_url)
+        self.assertRedirects(resp, self.detail_url)
+        self.comp.refresh_from_db()
+        self.assertIsNotNone(self.comp.upload_token)
+        self.assertNotEqual(self.comp.upload_token, old)
+
+    def test_submitter_can_delete(self):
+        self.client.force_login(self.organizer)
+        resp = self.client.post(self.del_url)
+        self.assertRedirects(resp, self.detail_url)
+        self.comp.refresh_from_db()
+        self.assertIsNone(self.comp.upload_token)
+
+    def test_admin_and_owner_can_regenerate(self):
+        for user in (self.admin, self.owner):
+            old = Competition.objects.get(pk=self.comp.pk).upload_token
+            self.client.force_login(user)
+            self.client.post(self.regen_url)
+            new = Competition.objects.get(pk=self.comp.pk).upload_token
+            self.assertIsNotNone(new)
+            self.assertNotEqual(new, old)
+
+    def test_other_organizer_forbidden(self):
+        old = self.comp.upload_token
+        self.client.force_login(self.other_org)
+        self.assertEqual(self.client.post(self.regen_url).status_code, 403)
+        self.assertEqual(self.client.post(self.del_url).status_code, 403)
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.upload_token, old)
+
+    def test_participant_forbidden(self):
+        self.client.force_login(self.participant)
+        self.assertEqual(self.client.post(self.regen_url).status_code, 403)
+        self.assertEqual(self.client.post(self.del_url).status_code, 403)
+
+    def test_anonymous_redirected_to_login(self):
+        resp = self.client.post(self.regen_url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("login", resp["Location"])
+        self.comp.refresh_from_db()
+        self.assertIsNotNone(self.comp.upload_token)
+
+    def test_deleted_token_revokes_api_access(self):
+        old = str(self.comp.upload_token)
+        self.client.force_login(self.organizer)
+        self.client.post(self.del_url)
+        resp = self.client.post(
+            "/api/v1/protocols/delete/",
+            {"competition_token": old, "protocol_type": "absolute"},
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_regenerate_after_delete_mints_new_token(self):
+        self.client.force_login(self.organizer)
+        self.client.post(self.del_url)
+        self.client.post(self.regen_url)
+        self.comp.refresh_from_db()
+        self.assertIsNotNone(self.comp.upload_token)
+
+    def test_buttons_shown_to_manager_hidden_from_participant(self):
+        self.client.force_login(self.organizer)
+        html = self.client.get(self.detail_url).content.decode()
+        self.assertIn(self.regen_url, html)
+        self.assertIn(self.del_url, html)
+        self.client.force_login(self.participant)
+        html2 = self.client.get(self.detail_url).content.decode()
+        self.assertNotIn(self.regen_url, html2)
+        self.assertNotIn(self.del_url, html2)
