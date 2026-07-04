@@ -1806,3 +1806,27 @@ msgstr "Подставится при регистрации на соревно
 #: calendar_app/templates/calendar_app/_registration_fields.html
 msgid "Times are in Astana time (UTC+5)."
 msgstr "Время указывается по времени Астаны (UTC+5)."
+
+#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
+msgid "Delete token"
+msgstr "Удалить токен"
+
+#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
+msgid "If this token leaks, anyone could later alter or delete the results — regenerate or delete it."
+msgstr "Если токен утечёт, кто-то сможет позже изменить или удалить результаты — пересоздайте или удалите его."
+
+#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
+msgid "Regenerate the timing token? The current token will stop working immediately."
+msgstr "Пересоздать токен хронометража? Текущий токен сразу перестанет работать."
+
+#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
+msgid "Delete the timing token? Timing tools will lose access until you generate a new one."
+msgstr "Удалить токен хронометража? Инструменты хронометража потеряют доступ, пока вы не создадите новый."
+
+#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
+msgid "Timing token regenerated. The previous token no longer works."
+msgstr "Токен хронометража пересоздан. Прежний токен больше не работает."
+
+#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
+msgid "Timing token deleted. Timing tools can no longer access this competition."
+msgstr "Токен хронометража удалён. Инструменты хронометража больше не имеют доступа к этому соревнованию."

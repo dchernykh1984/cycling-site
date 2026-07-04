@@ -134,7 +134,9 @@ class Competition(index.Indexed, models.Model):
     file_regulations = models.FileField(upload_to="competitions/regulations/", blank=True)
     file_route = models.FileField(upload_to="competitions/routes/", blank=True)
     file_results = models.FileField(upload_to="competitions/results/", blank=True)
-    upload_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    # Secret credential for the offline timing tools. Nullable so a manager can delete it (revoke
+    # all timing access) if it leaks; a new one is minted by the regenerate action.
+    upload_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, null=True, blank=True)
 
     # --- Registration feature ---
     registration_enabled = models.BooleanField(default=False)
