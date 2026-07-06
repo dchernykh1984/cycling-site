@@ -27,7 +27,7 @@ from protocols.models import (
     RemotePointUpload,
     StartListUpload,
 )
-from registrations.models import CompetitionRegistration
+from registrations.models import CompetitionRegistration, RegistrationCategory
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -1976,6 +1976,33 @@ class ParticipantsAPITest(TestCase, ApiTestMixin):
         _registration(self.comp, is_approved=True)
         resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
         self.assertEqual(len(resp.json()["participants"]), 2)
+
+    def test_returns_all_groups_even_without_participants(self):
+        # Groups (categories) are returned in full so the offline timing tools can sync the group
+        # list even before anyone registers for a given group.
+        RegistrationCategory.objects.create(competition=self.comp, name="Elite", laps=5, bib_from=1)
+        RegistrationCategory.objects.create(competition=self.comp, name="Amateur", laps=3, bib_from=100)
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
+        self.assertEqual(resp.status_code, 200)
+        cats = resp.json()["categories"]
+        self.assertEqual([c["name"] for c in cats], ["Elite", "Amateur"])
+        self.assertEqual([c["laps"] for c in cats], [5, 3])
+        self.assertEqual(len(resp.json()["participants"]), 0)
+
+    def test_groups_include_unused_categories(self):
+        used = RegistrationCategory.objects.create(competition=self.comp, name="Used", laps=2, bib_from=1)
+        RegistrationCategory.objects.create(competition=self.comp, name="Unused", laps=4, bib_from=50)
+        _registration(self.comp, category=used)
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
+        names = {c["name"] for c in resp.json()["categories"]}
+        self.assertEqual(names, {"Used", "Unused"})
+
+    def test_groups_scoped_to_competition(self):
+        other = _competition()
+        RegistrationCategory.objects.create(competition=other, name="OtherGroup", bib_from=1)
+        RegistrationCategory.objects.create(competition=self.comp, name="MineGroup", bib_from=1)
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
+        self.assertEqual([c["name"] for c in resp.json()["categories"]], ["MineGroup"])
 
 
 # ---------------------------------------------------------------------------
