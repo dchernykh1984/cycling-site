@@ -72,8 +72,6 @@ def get_participants(request, competition_token: str):
     if competition.status != Competition.Status.APPROVED or competition.is_deleted:
         raise HttpError(401, "competition not found or not approved")
 
-    from registrations.models import RegistrationCategory
-
     qs = competition.registrations.filter(is_rejected=False).select_related("category", "team")
     if competition.require_approval:
         qs = qs.filter(is_approved=True)
@@ -81,8 +79,10 @@ def get_participants(request, competition_token: str):
         qs = qs.filter(is_paid=True)
 
     participant_list = list(qs)
-    referenced_category_ids = {r.category_id for r in participant_list if r.category_id}
-    categories = RegistrationCategory.objects.filter(pk__in=referenced_category_ids)
+    # Return every group (category) defined for the competition, not only those a participant is
+    # registered in, so the offline timing tools can sync the full group list even before anyone has
+    # signed up for a group. Ordered deterministically (by bib range, then name) for a stable dropdown.
+    categories = competition.registration_categories.all().order_by("bib_from", "name", "id")
 
     def _participant(r) -> dict[str, Any]:
         return {
