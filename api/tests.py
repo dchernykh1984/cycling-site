@@ -2004,6 +2004,23 @@ class ParticipantsAPITest(TestCase, ApiTestMixin):
         resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
         self.assertEqual([c["name"] for c in resp.json()["categories"]], ["MineGroup"])
 
+    def test_unused_soft_deleted_group_excluded(self):
+        RegistrationCategory.objects.create(competition=self.comp, name="Active", bib_from=1)
+        RegistrationCategory.objects.create(competition=self.comp, name="Removed", bib_from=50, is_deleted=True)
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
+        self.assertEqual([c["name"] for c in resp.json()["categories"]], ["Active"])
+
+    def test_soft_deleted_group_kept_when_a_participant_still_in_it(self):
+        # A category removed after someone registered in it must still be returned, so the
+        # participant's group name is not lost for the timing tools.
+        removed = RegistrationCategory.objects.create(
+            competition=self.comp, name="Removed", bib_from=1, is_deleted=True
+        )
+        _registration(self.comp, category=removed)
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
+        names = {c["name"] for c in resp.json()["categories"]}
+        self.assertIn("Removed", names)
+
 
 # ---------------------------------------------------------------------------
 # Protocol upload (success paths)

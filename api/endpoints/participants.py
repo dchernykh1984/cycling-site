@@ -2,6 +2,7 @@ from datetime import date
 from typing import Any
 
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
@@ -79,10 +80,15 @@ def get_participants(request, competition_token: str):
         qs = qs.filter(is_paid=True)
 
     participant_list = list(qs)
-    # Return every group (category) defined for the competition, not only those a participant is
+    # Return every active group (category) of the competition, not only those a participant is
     # registered in, so the offline timing tools can sync the full group list even before anyone has
-    # signed up for a group. Ordered deterministically (by bib range, then name) for a stable dropdown.
-    categories = competition.registration_categories.all().order_by("bib_from", "name", "id")
+    # signed up for a group. Soft-deleted categories are excluded (like the rest of the app) -- except
+    # ones a returned participant is still registered in, so their group name is not lost. Ordered
+    # deterministically (by bib range, then name) for a stable dropdown.
+    referenced_category_ids = {r.category_id for r in participant_list if r.category_id}
+    categories = competition.registration_categories.filter(
+        Q(is_deleted=False) | Q(pk__in=referenced_category_ids)
+    ).order_by("bib_from", "name", "id")
 
     def _participant(r) -> dict[str, Any]:
         return {
