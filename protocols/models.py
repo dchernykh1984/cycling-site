@@ -170,3 +170,31 @@ class RemotePointUpload(_TimingUploadBase):
 
     def __str__(self) -> str:
         return f"{self.competition} - point {self.point_number} - {self.device_id} ({len(self.items)} items)"
+
+
+class CompetitionLiveStats(models.Model):
+    """Per-competitor live standings pushed by FinishProtocolGenerator for the Garmin data field.
+
+    One row per competition. ``data`` maps a competitor's bib (str) to an opaque dict of
+    string->string stats (``place_group``, ``gap_prev_abs``, ``laps``, ...). The site neither
+    parses nor validates the individual keys, so new stats can be added without a site change --
+    it only bounds sizes. The public GET serves one bib's dict for an approved, visible
+    competition; the generator replaces the whole snapshot on each regeneration.
+    """
+
+    objects: ClassVar[models.Manager[CompetitionLiveStats]]
+
+    competition = models.OneToOneField(
+        Competition,
+        on_delete=models.CASCADE,
+        related_name="live_stats",
+    )
+    data = models.JSONField(default=dict)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Competition live stats"
+        verbose_name_plural = "Competition live stats"
+
+    def __str__(self) -> str:
+        return f"{self.competition} - live stats ({len(self.data)} competitors)"
