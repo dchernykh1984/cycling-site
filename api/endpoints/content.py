@@ -1,8 +1,9 @@
 """
 Admin-writable, publicly-readable content API for the published models (NewsArticle,
 KnowledgeArticle). News exposes full admin CRUD plus public reads, mirroring the competitions
-API; knowledge is read-only (its articles are authored and moderated through the on-site Django
-views). The DraftSubmission community-submission workflow is web-only (news/knowledge views).
+API; knowledge exposes public reads plus admin create (one article per locale, each with its own
+slug/URL) -- editing/moderation still happens through the on-site Django views. The DraftSubmission
+community-submission workflow is web-only (news/knowledge views).
 """
 
 from datetime import datetime
@@ -77,6 +78,14 @@ class KnowledgeArticleOut(Schema):
     published_by_id: int | None
 
 
+class KnowledgeArticleIn(Schema):
+    title: str
+    locale: str = "ru"
+    body: str = ""
+    category: str = ""
+    is_hidden: bool = False
+
+
 # -- Helpers ------------------------------------------------------------------
 
 
@@ -109,6 +118,24 @@ def _validate_news_title(title: LocalizedStr) -> None:
     if not any((value or "").strip() for value in (title.ru, title.kk, title.en)):
         raise HttpError(422, _("At least one title translation is required."))
     _validate_localized_length(title, "title", _("Title is too long (max %(limit)d characters)."))
+
+
+def _validate_knowledge_payload(payload: KnowledgeArticleIn) -> None:
+    if payload.locale not in {code for code, _label in KnowledgeArticle.LOCALE_CHOICES}:
+        raise HttpError(422, _("Unknown locale."))
+    if not (payload.title or "").strip():
+        raise HttpError(422, _("A title is required."))
+    # Bound title/category to their column widths so an over-long value fails with a 422
+    # rather than a database DataError (500) inside KnowledgeArticle.save().
+    for field, value, message in (
+        ("title", payload.title, _("Title is too long (max %(limit)d characters).")),
+        ("category", payload.category, _("Category is too long (max %(limit)d characters).")),
+    ):
+        field_obj = KnowledgeArticle._meta.get_field(field)
+        limit = field_obj.max_length if isinstance(field_obj, Field) else None
+        if limit is not None and value and len(value) > limit:
+            raise HttpError(422, message % {"limit": limit})
+    _validate_body_length(payload.body)
 
 
 def _get_news_article_or_404(pk: int) -> NewsArticle:
@@ -227,3 +254,28 @@ def get_knowledge_article(request, article_id: int):
     if article.is_hidden and not is_admin(user):
         raise HttpError(404, "Not found")
     return article
+
+
+@knowledge_router.post(
+    "/", response={201: KnowledgeArticleOut}, auth=auth, summary="Create a knowledge article (admin)"
+)
+def create_knowledge_article(request, payload: KnowledgeArticleIn):
+    """Create a KnowledgeArticle (rendered under /knowledge/) for one locale.
+
+    Each locale is its own article with its own slug/URL. Body HTML is sanitized centrally in
+    KnowledgeArticle.save() (same allowlist as the on-site form), and the slug is generated there.
+    """
+    user = request.auth
+    _require_admin(user)
+    _validate_knowledge_payload(payload)
+
+    article = KnowledgeArticle(
+        title=payload.title.strip(),
+        locale=payload.locale,
+        body=payload.body,
+        category=payload.category.strip(),
+        is_hidden=payload.is_hidden,
+        published_by=user,
+    )
+    article.save()
+    return Status(201, article)
