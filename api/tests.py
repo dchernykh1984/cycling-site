@@ -22,6 +22,7 @@ from locations.models import (
 )
 from news.models import NewsArticle
 from protocols.models import (
+    CompetitionLiveStats,
     FinishTimesUpload,
     GroupTimesUpload,
     RemotePointUpload,
@@ -3184,3 +3185,104 @@ class TimingsApiTest(TestCase, ApiTestMixin):
         resp = self._payload("/api/v1/remote-points/", items=["1#0 0:2:0#"], revision=5, extra={"point_number": 2})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(RemotePointUpload.objects.filter(competition=self.comp, device_id="dev-a").count(), 2)
+
+
+# ---------------------------------------------------------------------------
+# Live stats (Garmin data field)
+# ---------------------------------------------------------------------------
+
+
+class LiveStatsApiTest(TestCase, ApiTestMixin):
+    def setUp(self):
+        self.comp = _competition()
+        self.token = str(self.comp.upload_token)
+        self.stats = {
+            "12": {"place_abs": "3", "qty_abs": "48", "gap_prev_abs": "+0:12", "laps": "3/7"},
+            "7": {"place_abs": "DSQ", "qty_abs": "48", "laps": "2/7"},
+        }
+
+    def _upload(self, stats=None, token=None):
+        return self.post(
+            "/api/v1/live-stats/",
+            {"competition_token": token or self.token, "stats": self.stats if stats is None else stats},
+        )
+
+    def test_upload_then_get_bib(self):
+        self.assertEqual(self._upload().status_code, 200)
+        resp = self.get(f"/api/v1/live-stats/{self.comp.pk}/12")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["bib"], "12")
+        self.assertEqual(data["stats"]["place_abs"], "3")
+        self.assertEqual(data["stats"]["laps"], "3/7")
+        self.assertIn("updated_at", data)
+
+    def test_get_is_public_no_auth(self):
+        self._upload()
+        # No Authorization header at all.
+        resp = self.client.get(f"/api/v1/live-stats/{self.comp.pk}/7")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["stats"]["place_abs"], "DSQ")
+
+    def test_upload_replaces_whole_snapshot(self):
+        self._upload()
+        self._upload(stats={"99": {"place_abs": "1"}})
+        self.assertEqual(self.get(f"/api/v1/live-stats/{self.comp.pk}/12").status_code, 404)
+        self.assertEqual(self.get(f"/api/v1/live-stats/{self.comp.pk}/99").status_code, 200)
+
+    def test_invalid_token_401(self):
+        self.assertEqual(self._upload(token="not-a-uuid").status_code, 401)
+        self.assertEqual(self._upload(token=str(uuid.uuid4())).status_code, 401)
+
+    def test_pending_competition_upload_401(self):
+        comp = _competition(status=Competition.Status.PENDING_APPROVAL)
+        resp = self.post(
+            "/api/v1/live-stats/",
+            {"competition_token": str(comp.upload_token), "stats": {"1": {"place_abs": "1"}}},
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_get_unknown_bib_404(self):
+        self._upload()
+        self.assertEqual(self.get(f"/api/v1/live-stats/{self.comp.pk}/9999").status_code, 404)
+
+    def test_get_no_snapshot_404(self):
+        self.assertEqual(self.get(f"/api/v1/live-stats/{self.comp.pk}/12").status_code, 404)
+
+    def test_get_hidden_competition_404(self):
+        self._upload()
+        self.comp.is_hidden = True
+        self.comp.save(update_fields=["is_hidden"])
+        self.assertEqual(self.get(f"/api/v1/live-stats/{self.comp.pk}/12").status_code, 404)
+
+    def test_get_deleted_competition_404(self):
+        self._upload()
+        self.comp.is_deleted = True
+        self.comp.save(update_fields=["is_deleted"])
+        self.assertEqual(self.get(f"/api/v1/live-stats/{self.comp.pk}/12").status_code, 404)
+
+    def test_get_pending_competition_404(self):
+        self._upload()
+        self.comp.status = Competition.Status.PENDING_APPROVAL
+        self.comp.save(update_fields=["status"])
+        self.assertEqual(self.get(f"/api/v1/live-stats/{self.comp.pk}/12").status_code, 404)
+
+    def test_non_string_value_rejected_422(self):
+        resp = self.post(
+            "/api/v1/live-stats/",
+            {"competition_token": self.token, "stats": {"12": {"place_abs": 3}}},
+        )
+        self.assertEqual(resp.status_code, 422)
+
+    def test_oversized_value_400(self):
+        resp = self._upload(stats={"12": {"place_abs": "x" * 257}})
+        self.assertEqual(resp.status_code, 400)
+
+    def test_too_many_keys_400(self):
+        resp = self._upload(stats={"12": {f"k{i}": "v" for i in range(51)}})
+        self.assertEqual(resp.status_code, 400)
+
+    def test_empty_snapshot_ok(self):
+        resp = self._upload(stats={})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(CompetitionLiveStats.objects.get(competition=self.comp).data, {})
