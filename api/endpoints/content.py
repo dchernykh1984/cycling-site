@@ -1,9 +1,9 @@
 """
 Admin-writable, publicly-readable content API for the published models (NewsArticle,
 KnowledgeArticle). News exposes full admin CRUD plus public reads, mirroring the competitions
-API; knowledge exposes public reads plus admin create (one article per locale, each with its own
-slug/URL) -- editing/moderation still happens through the on-site Django views. The DraftSubmission
-community-submission workflow is web-only (news/knowledge views).
+API; knowledge exposes public reads, admin create (one article per locale, each with its own
+slug/URL), and the participant/organizer draft-submission workflow (POST /knowledge/drafts/, with
+admin authors auto-approved) -- article editing/hiding still happens through the on-site views.
 """
 
 from datetime import datetime
@@ -16,7 +16,7 @@ from ninja.errors import HttpError
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, localize_field
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
-from knowledge.models import KnowledgeArticle
+from knowledge.models import DraftSubmission, KnowledgeArticle
 from news.models import NewsArticle
 
 auth = ApiTokenAuth()
@@ -24,6 +24,8 @@ optional_auth = OptionalApiTokenAuth()
 
 news_router = Router(tags=["news"])
 knowledge_router = Router(tags=["knowledge"])
+
+_LOCALE_VALUES = ("ru", "kk", "en")
 
 
 # -- Schemas ------------------------------------------------------------------
@@ -86,6 +88,33 @@ class KnowledgeArticleIn(Schema):
     is_hidden: bool = False
 
 
+class DraftIn(Schema):
+    title: str
+    body: str
+    locale: str
+    category: str = ""
+
+
+class DraftPatchIn(Schema):
+    title: str | None = None
+    body: str | None = None
+    locale: str | None = None
+    category: str | None = None
+
+
+class DraftOut(Schema):
+    id: int
+    submission_type: str
+    title: str
+    body: str
+    locale: str
+    category: str
+    status: str
+    submitted_at: datetime
+    author_id: int
+    reviewer_note: str
+
+
 # -- Helpers ------------------------------------------------------------------
 
 
@@ -136,6 +165,92 @@ def _validate_knowledge_payload(payload: KnowledgeArticleIn) -> None:
         if limit is not None and value and len(value) > limit:
             raise HttpError(422, message % {"limit": limit})
     _validate_body_length(payload.body)
+
+
+# -- Knowledge draft-submission helpers (participant/organizer authoring) ------
+
+
+def _require_min_participant(user) -> None:
+    if user.get_role_rank() < 1:
+        raise HttpError(403, "Verified participant role or higher is required")
+
+
+def _get_draft_or_404(pk: int, submission_type: str) -> DraftSubmission:
+    try:
+        return DraftSubmission.objects.get(pk=pk, submission_type=submission_type)
+    except DraftSubmission.DoesNotExist:
+        raise HttpError(404, "Draft not found") from None
+
+
+def _require_owner_or_admin(user, draft: DraftSubmission) -> None:
+    if draft.author_id != user.pk and not is_admin(user):
+        raise HttpError(403, "Forbidden")
+
+
+def _validate_locale(locale: str) -> None:
+    if locale not in _LOCALE_VALUES:
+        raise HttpError(422, f"locale must be one of: {', '.join(_LOCALE_VALUES)}")
+
+
+def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmission:
+    user = request.auth
+    _require_min_participant(user)
+    _validate_locale(payload.locale)
+    _validate_body_length(payload.body)
+
+    draft = DraftSubmission.objects.create(
+        author=user,
+        submission_type=submission_type,
+        title=payload.title,
+        body=payload.body,
+        locale=payload.locale,
+        category=payload.category,
+    )
+
+    # An admin/owner author needs no moderation, so publish immediately (mirrors the on-site
+    # "add article" flow); a lower role's submission stays PENDING for a manager to approve.
+    if is_admin(user):
+        try:
+            draft.approve(reviewer=user)
+        except ValueError as exc:
+            raise HttpError(422, str(exc)) from exc
+
+    return draft
+
+
+def _update_draft(request, pk: int, payload: DraftPatchIn, submission_type: str) -> DraftSubmission:
+    user = request.auth
+    draft = _get_draft_or_404(pk, submission_type)
+    _require_owner_or_admin(user, draft)
+
+    if draft.status != DraftSubmission.Status.PENDING:
+        raise HttpError(409, "Only PENDING drafts can be edited")
+
+    data = payload.dict(exclude_unset=True)
+    if "locale" in data:
+        _validate_locale(data["locale"])
+    if "body" in data:
+        _validate_body_length(data["body"])
+
+    update_fields = []
+    for field, value in data.items():
+        setattr(draft, field, value)
+        update_fields.append(field)
+    if update_fields:
+        draft.save(update_fields=update_fields)
+
+    return draft
+
+
+def _delete_draft(request, pk: int, submission_type: str) -> None:
+    user = request.auth
+    draft = _get_draft_or_404(pk, submission_type)
+    _require_owner_or_admin(user, draft)
+
+    if draft.status != DraftSubmission.Status.PENDING:
+        raise HttpError(409, "Only PENDING drafts can be deleted")
+
+    draft.delete()
 
 
 def _get_news_article_or_404(pk: int) -> NewsArticle:
@@ -240,6 +355,55 @@ def list_knowledge_articles(request):
     if not is_admin(user):
         qs = qs.filter(is_hidden=False)
     return list(qs)
+
+
+# Draft submissions: authoring for participants/organizers. Registered before the
+# "/{article_id}" article route (drafts are moderation data, never public reads).
+
+
+@knowledge_router.get("/drafts/", response=list[DraftOut], auth=auth, summary="List own knowledge article drafts")
+def list_knowledge_drafts(request, status: DraftSubmission.Status | None = None):
+    # Drafts are moderation data, never public: require auth and show a non-admin only their own
+    # submissions. Published content is read via the public KnowledgeArticle endpoints.
+    user = request.auth
+    qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+    if not is_admin(user):
+        qs = qs.filter(author=user)
+    if status is not None:
+        qs = qs.filter(status=status)
+    return list(qs)
+
+
+@knowledge_router.get("/drafts/{draft_id}", response=DraftOut, auth=auth, summary="Get own knowledge article draft")
+def get_knowledge_draft(request, draft_id: int):
+    user = request.auth
+    draft = _get_draft_or_404(draft_id, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+    _require_owner_or_admin(user, draft)
+    return draft
+
+
+@knowledge_router.post("/drafts/", response={201: DraftOut}, auth=auth, summary="Create knowledge article draft")
+def create_knowledge_draft(request, payload: DraftIn):
+    """Submit a knowledge article for moderation.
+
+    Any verified participant or higher may submit; an admin/owner author is auto-approved and the
+    article is published immediately, matching the on-site authoring flow.
+    """
+    draft = _create_draft(request, payload, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+    return Status(201, draft)
+
+
+@knowledge_router.patch("/drafts/{draft_id}", response=DraftOut, auth=auth, summary="Update knowledge article draft")
+def update_knowledge_draft(request, draft_id: int, payload: DraftPatchIn):
+    return _update_draft(request, draft_id, payload, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+
+
+@knowledge_router.delete(
+    "/drafts/{draft_id}", response={204: None}, auth=auth, summary="Delete knowledge article draft"
+)
+def delete_knowledge_draft(request, draft_id: int):
+    _delete_draft(request, draft_id, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+    return Status(204, None)
 
 
 @knowledge_router.get(

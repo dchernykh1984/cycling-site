@@ -2012,6 +2012,106 @@ class KnowledgeArticleCreateApiTest(TestCase, ApiTestMixin):
         self.assertTrue(KnowledgeArticle.objects.get(pk=resp.json()["id"]).is_hidden)
 
 
+class KnowledgeDraftApiTest(TestCase, ApiTestMixin):
+    """Participant/organizer draft-submission workflow (admin authors auto-publish)."""
+
+    def setUp(self):
+        self.participant = _user("kd_part", role=User.Role.PARTICIPANT)
+        self.organizer = _user("kd_org", role=User.Role.ORGANIZER)
+        self.admin = _user("kd_adm", role=User.Role.ADMIN)
+        self.guest = _user("kd_guest", role=User.Role.GUEST)
+
+    def _payload(self, **kwargs):
+        defaults = {"title": "Draft T", "body": "<p>Draft body</p>", "locale": "ru", "category": "Tools"}
+        defaults.update(kwargs)
+        return defaults
+
+    def test_participant_submits_pending_draft(self):
+        resp = self.post("/api/v1/knowledge/drafts/", self._payload(), user=self.participant)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], DraftSubmission.Status.PENDING)
+        # A participant's submission is not published until a manager approves it.
+        self.assertEqual(KnowledgeArticle.objects.count(), 0)
+
+    def test_organizer_submits_pending_draft(self):
+        resp = self.post("/api/v1/knowledge/drafts/", self._payload(), user=self.organizer)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], DraftSubmission.Status.PENDING)
+
+    def test_admin_submission_is_auto_published(self):
+        resp = self.post("/api/v1/knowledge/drafts/", self._payload(title="Auto Pub"), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["status"], DraftSubmission.Status.APPROVED)
+        self.assertTrue(KnowledgeArticle.objects.filter(title="Auto Pub", locale="ru").exists())
+
+    def test_guest_role_forbidden(self):
+        resp = self.post("/api/v1/knowledge/drafts/", self._payload(), user=self.guest)
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(DraftSubmission.objects.count(), 0)
+
+    def test_anonymous_unauthorized(self):
+        resp = self.post("/api/v1/knowledge/drafts/", self._payload())
+        self.assertEqual(resp.status_code, 401)
+
+    def test_create_rejects_unknown_locale(self):
+        resp = self.post("/api/v1/knowledge/drafts/", self._payload(locale="fr"), user=self.participant)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(DraftSubmission.objects.count(), 0)
+
+    def test_list_scopes_to_own_for_non_admin(self):
+        _draft(self.participant, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE, title="Mine")
+        _draft(self.organizer, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE, title="Theirs")
+        titles = [d["title"] for d in self.get("/api/v1/knowledge/drafts/", user=self.participant).json()]
+        self.assertEqual(titles, ["Mine"])
+
+    def test_admin_lists_all_drafts(self):
+        _draft(self.participant, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE, title="Mine")
+        _draft(self.organizer, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE, title="Theirs")
+        titles = {d["title"] for d in self.get("/api/v1/knowledge/drafts/", user=self.admin).json()}
+        self.assertEqual(titles, {"Mine", "Theirs"})
+
+    def test_get_draft_owner_ok_stranger_forbidden_admin_ok(self):
+        draft = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{draft.pk}", user=self.participant).status_code, 200)
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{draft.pk}", user=self.organizer).status_code, 403)
+        self.assertEqual(self.get(f"/api/v1/knowledge/drafts/{draft.pk}", user=self.admin).status_code, 200)
+
+    def test_owner_updates_pending_draft(self):
+        draft = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        resp = self.patch(f"/api/v1/knowledge/drafts/{draft.pk}", {"title": "Edited"}, user=self.participant)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["title"], "Edited")
+
+    def test_non_owner_cannot_update(self):
+        draft = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        resp = self.patch(f"/api/v1/knowledge/drafts/{draft.pk}", {"title": "Hax"}, user=self.organizer)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_cannot_edit_approved_draft(self):
+        draft = _draft(
+            self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            status=DraftSubmission.Status.APPROVED,
+        )
+        resp = self.patch(f"/api/v1/knowledge/drafts/{draft.pk}", {"title": "Edited"}, user=self.participant)
+        self.assertEqual(resp.status_code, 409)
+
+    def test_owner_deletes_pending_draft(self):
+        draft = _draft(self.participant, submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
+        resp = self.delete(f"/api/v1/knowledge/drafts/{draft.pk}", user=self.participant)
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(DraftSubmission.objects.filter(pk=draft.pk).exists())
+
+    def test_cannot_delete_approved_draft(self):
+        draft = _draft(
+            self.participant,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+            status=DraftSubmission.Status.APPROVED,
+        )
+        resp = self.delete(f"/api/v1/knowledge/drafts/{draft.pk}", user=self.participant)
+        self.assertEqual(resp.status_code, 409)
+
+
 # ---------------------------------------------------------------------------
 # Participants
 # ---------------------------------------------------------------------------
