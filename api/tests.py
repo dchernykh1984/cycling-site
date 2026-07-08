@@ -1927,6 +1927,91 @@ class KnowledgeArticlePublicApiTest(TestCase, ApiTestMixin):
         self.assertEqual(self.get(f"/api/v1/knowledge/{self.visible.pk}").status_code, 404)
 
 
+class KnowledgeArticleCreateApiTest(TestCase, ApiTestMixin):
+    """Admin create of a KnowledgeArticle (one article per locale, own slug/URL)."""
+
+    def setUp(self):
+        self.admin = _user("ka_create_adm", role=User.Role.ADMIN)
+        self.participant = _user("ka_create_part", role=User.Role.PARTICIPANT)
+
+    def _payload(self, **kwargs):
+        defaults = {
+            "title": "Kak polzovatsya",
+            "locale": "ru",
+            "body": "<h2>Razdel</h2><p>Tekst</p>",
+            "category": "Instrumenty",
+        }
+        defaults.update(kwargs)
+        return defaults
+
+    def test_admin_creates_article(self):
+        resp = self.post("/api/v1/knowledge/", self._payload(), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        data = resp.json()
+        self.assertEqual(data["title"], "Kak polzovatsya")
+        self.assertEqual(data["locale"], "ru")
+        self.assertEqual(data["category"], "Instrumenty")
+        article = KnowledgeArticle.objects.get(pk=data["id"])
+        self.assertEqual(article.published_by_id, self.admin.pk)
+        self.assertTrue(article.slug)
+
+    def test_each_locale_is_its_own_article(self):
+        ids = set()
+        slugs = set()
+        for loc in ("ru", "kk", "en"):
+            resp = self.post("/api/v1/knowledge/", self._payload(locale=loc, title=f"T {loc}"), user=self.admin)
+            self.assertEqual(resp.status_code, 201)
+            ids.add(resp.json()["id"])
+            slugs.add(resp.json()["slug"])
+        self.assertEqual(len(ids), 3)
+        self.assertEqual(len(slugs), 3)  # distinct slugs -> distinct URLs per locale
+
+    def test_participant_forbidden(self):
+        resp = self.post("/api/v1/knowledge/", self._payload(), user=self.participant)
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(KnowledgeArticle.objects.count(), 0)
+
+    def test_anonymous_unauthorized(self):
+        resp = self.post("/api/v1/knowledge/", self._payload())
+        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(KnowledgeArticle.objects.count(), 0)
+
+    def test_rejects_empty_title(self):
+        resp = self.post("/api/v1/knowledge/", self._payload(title="   "), user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(KnowledgeArticle.objects.count(), 0)
+
+    def test_rejects_unknown_locale(self):
+        resp = self.post("/api/v1/knowledge/", self._payload(locale="fr"), user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(KnowledgeArticle.objects.count(), 0)
+
+    def test_rejects_oversized_title(self):
+        # 256 chars > the model's 255 cap: a controlled 422, not a DB DataError (500).
+        resp = self.post("/api/v1/knowledge/", self._payload(title="a" * 256), user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(KnowledgeArticle.objects.count(), 0)
+
+    def test_rejects_oversized_category(self):
+        resp = self.post("/api/v1/knowledge/", self._payload(category="a" * 101), user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+        self.assertEqual(KnowledgeArticle.objects.count(), 0)
+
+    def test_body_is_sanitized_on_create(self):
+        resp = self.post(
+            "/api/v1/knowledge/",
+            self._payload(body="<p>ok</p><script>alert(1)</script>"),
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertNotIn("<script", resp.json()["body"])
+
+    def test_hidden_flag_respected(self):
+        resp = self.post("/api/v1/knowledge/", self._payload(is_hidden=True), user=self.admin)
+        self.assertEqual(resp.status_code, 201)
+        self.assertTrue(KnowledgeArticle.objects.get(pk=resp.json()["id"]).is_hidden)
+
+
 # ---------------------------------------------------------------------------
 # Participants
 # ---------------------------------------------------------------------------
