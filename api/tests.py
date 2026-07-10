@@ -2013,6 +2013,77 @@ class KnowledgeArticleCreateApiTest(TestCase, ApiTestMixin):
         self.assertTrue(KnowledgeArticle.objects.get(pk=resp.json()["id"]).is_hidden)
 
 
+class KnowledgeArticleUpdateApiTest(TestCase, ApiTestMixin):
+    """Admin PATCH of a published KnowledgeArticle."""
+
+    def setUp(self):
+        self.admin = _user("ka_upd_adm", role=User.Role.ADMIN)
+        self.participant = _user("ka_upd_part", role=User.Role.PARTICIPANT)
+        self.article = KnowledgeArticle.objects.create(
+            title="Original", locale="ru", body="<p>original</p>", category="Cat"
+        )
+
+    def test_admin_updates_body(self):
+        resp = self.patch(f"/api/v1/knowledge/{self.article.pk}", {"body": "<p>updated body</p>"}, user=self.admin)
+        self.assertEqual(resp.status_code, 200)
+        self.article.refresh_from_db()
+        self.assertIn("updated body", self.article.body)
+        self.assertEqual(self.article.title, "Original")  # untouched fields kept
+
+    def test_slug_is_stable_on_title_change(self):
+        original_slug = self.article.slug
+        resp = self.patch(f"/api/v1/knowledge/{self.article.pk}", {"title": "Renamed"}, user=self.admin)
+        self.assertEqual(resp.status_code, 200)
+        self.article.refresh_from_db()
+        self.assertEqual(self.article.slug, original_slug)
+        self.assertEqual(self.article.title, "Renamed")
+
+    def test_body_is_sanitized_on_update(self):
+        resp = self.patch(
+            f"/api/v1/knowledge/{self.article.pk}",
+            {"body": "<p>ok</p><script>alert(1)</script>"},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn("<script", resp.json()["body"])
+
+    def test_hidden_can_be_toggled(self):
+        self.patch(f"/api/v1/knowledge/{self.article.pk}", {"is_hidden": True}, user=self.admin)
+        self.assertTrue(KnowledgeArticle.objects.get(pk=self.article.pk).is_hidden)
+
+    def test_participant_forbidden(self):
+        resp = self.patch(f"/api/v1/knowledge/{self.article.pk}", {"body": "<p>x</p>"}, user=self.participant)
+        self.assertEqual(resp.status_code, 403)
+        self.article.refresh_from_db()
+        self.assertIn("original", self.article.body)
+
+    def test_anonymous_unauthorized(self):
+        resp = self.patch(f"/api/v1/knowledge/{self.article.pk}", {"body": "<p>x</p>"})
+        self.assertEqual(resp.status_code, 401)
+
+    def test_unknown_article_404(self):
+        resp = self.patch("/api/v1/knowledge/999999", {"body": "<p>x</p>"}, user=self.admin)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_deleted_article_404(self):
+        self.article.is_deleted = True
+        self.article.save(update_fields=["is_deleted"])
+        resp = self.patch(f"/api/v1/knowledge/{self.article.pk}", {"body": "<p>x</p>"}, user=self.admin)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_rejects_blank_title(self):
+        resp = self.patch(f"/api/v1/knowledge/{self.article.pk}", {"title": "   "}, user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+
+    def test_rejects_unknown_locale(self):
+        resp = self.patch(f"/api/v1/knowledge/{self.article.pk}", {"locale": "fr"}, user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+
+    def test_rejects_oversized_title(self):
+        resp = self.patch(f"/api/v1/knowledge/{self.article.pk}", {"title": "a" * 256}, user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+
+
 class KnowledgeDraftApiTest(TestCase, ApiTestMixin):
     """Participant/organizer draft-submission workflow (admin authors auto-publish)."""
 
