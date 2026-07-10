@@ -88,6 +88,14 @@ class KnowledgeArticleIn(Schema):
     is_hidden: bool = False
 
 
+class KnowledgeArticlePatchIn(Schema):
+    title: str | None = None
+    locale: str | None = None
+    body: str | None = None
+    category: str | None = None
+    is_hidden: bool | None = None
+
+
 class DraftIn(Schema):
     title: str
     body: str
@@ -165,6 +173,31 @@ def _validate_knowledge_payload(payload: KnowledgeArticleIn) -> None:
         if limit is not None and value and len(value) > limit:
             raise HttpError(422, message % {"limit": limit})
     _validate_body_length(payload.body)
+
+
+def _validate_knowledge_patch(data: dict) -> None:
+    if "locale" in data and data["locale"] not in {code for code, _label in KnowledgeArticle.LOCALE_CHOICES}:
+        raise HttpError(422, _("Unknown locale."))
+    if "title" in data and not (data["title"] or "").strip():
+        raise HttpError(422, _("A title is required."))
+    for field, message in (
+        ("title", _("Title is too long (max %(limit)d characters).")),
+        ("category", _("Category is too long (max %(limit)d characters).")),
+    ):
+        if data.get(field):
+            field_obj = KnowledgeArticle._meta.get_field(field)
+            limit = field_obj.max_length if isinstance(field_obj, Field) else None
+            if limit is not None and len(data[field]) > limit:
+                raise HttpError(422, message % {"limit": limit})
+    if "body" in data:
+        _validate_body_length(data["body"])
+
+
+def _get_knowledge_article_or_404(article_id: int) -> KnowledgeArticle:
+    try:
+        return KnowledgeArticle.objects.get(pk=article_id, is_deleted=False)
+    except KnowledgeArticle.DoesNotExist:
+        raise HttpError(404, "Not found") from None
 
 
 # -- Knowledge draft-submission helpers (participant/organizer authoring) ------
@@ -411,10 +444,7 @@ def delete_knowledge_draft(request, draft_id: int):
 )
 def get_knowledge_article(request, article_id: int):
     user = request.auth
-    try:
-        article = KnowledgeArticle.objects.get(pk=article_id, is_deleted=False)
-    except KnowledgeArticle.DoesNotExist:
-        raise HttpError(404, "Not found") from None
+    article = _get_knowledge_article_or_404(article_id)
     if article.is_hidden and not is_admin(user):
         raise HttpError(404, "Not found")
     return article
@@ -443,3 +473,27 @@ def create_knowledge_article(request, payload: KnowledgeArticleIn):
     )
     article.save()
     return Status(201, article)
+
+
+@knowledge_router.patch(
+    "/{article_id}", response=KnowledgeArticleOut, auth=auth, summary="Update a knowledge article (admin)"
+)
+def update_knowledge_article(request, article_id: int, payload: KnowledgeArticlePatchIn):
+    """Patch a published KnowledgeArticle (only the given fields).
+
+    The slug is not regenerated on a title change, so the article URL stays stable. Body HTML is
+    re-sanitized in KnowledgeArticle.save().
+    """
+    user = request.auth
+    _require_admin(user)
+    article = _get_knowledge_article_or_404(article_id)
+    data = payload.dict(exclude_unset=True)
+    _validate_knowledge_patch(data)
+    for field in ("title", "locale", "body", "category", "is_hidden"):
+        if field in data:
+            value = data[field]
+            if field in ("title", "category") and value is not None:
+                value = value.strip()
+            setattr(article, field, value)
+    article.save()
+    return article
