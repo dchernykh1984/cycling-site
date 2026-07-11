@@ -48,6 +48,14 @@
         </div>
         {% include "calendar_app/_event_type_filter.html" %}
         {% include "calendar_app/_direction_filter.html" %}
+        {% if request.user.is_authenticated %}
+        <div class="col-auto">
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" id="map-favorite-filter" {% if only_favorite %}checked{% endif %}>
+            <label class="form-check-label" for="map-favorite-filter">{% trans "Only favorites" %}</label>
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -64,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var mapUrl = '{% url "calendar_map_api" %}';
   var dfEl = document.getElementById('map-date-from');
   var dtEl = document.getElementById('map-date-to');
+  var favEl = document.getElementById('map-favorite-filter');
 
   var DEFAULT_CENTER = [48.0, 68.0], DEFAULT_ZOOM = 5;  // Kazakhstan/Central Asia overview
   var map = L.map('calendar-map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
@@ -83,6 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
       params.append('event_type', id);
     });
     if (window.applyDirectionParams) window.applyDirectionParams(params, directionParam);
+    if (favEl && favEl.checked) params.set('favorite', '1');
   }
 
   function updateSwitcherLinks() {
@@ -128,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // initial load fits the view to the matching markers.
   window.onCalendarFilterChange = function () { refresh(false); };
   [dfEl, dtEl].forEach(function (el) { el.addEventListener('change', function () { refresh(false); }); });
+  if (favEl) favEl.addEventListener('change', function () { refresh(false); });
   refresh(true);
 });
 </script>
