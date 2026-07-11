@@ -197,30 +197,38 @@ def test_text_color_and_alignment_saved(page: Page, live_server, superuser, know
 
 
 @pytest.mark.django_db(transaction=True)
-def test_floated_image_does_not_overlap_list_markers(page: Page, live_server, superuser, knowledge_index):
-    """A list next to a left-floated image must not have its number markers land on the image.
-
-    Regression: a plain <ol>/<ul> is a full-width block, so its markers (drawn in the left
-    padding) render under a left float unless the list establishes its own block formatting
-    context. The public article page must render the two boxes without overlap.
+def test_floated_image_list_wraps_without_overlap_or_gap(page: Page, live_server, superuser, knowledge_index):
+    """A list beside a left-floated image keeps its markers off the image *and* still reflows to
+    full width once the image ends -- neither markers painted on the image (the outside-marker
+    bug) nor an empty gap under it ("chin", which display:flow-root would leave).
     """
-    # An inline height makes the 1x1 PNG a tall float that the short list flows beside.
+    # Inline height makes the 1x1 PNG a float the first items sit beside and the last flows under.
+    items = "".join(
+        f"<li>Install step {i} with enough text to wrap onto more than one line beside the "
+        "floated image on the right of the column.</li>"
+        for i in range(1, 6)
+    )
     body = (
-        f'<p><img src="{_PNG}" style="float: left; width: 50%; height: 300px; margin: 0 1rem 0.5rem 0;">'
-        " Intro line beside the image.</p>"
-        "<ol><li>First step.</li><li>Second step whose number must clear the image.</li>"
-        "<li>Third step.</li></ol>"
+        f'<p><img src="{_PNG}" style="float: left; width: 50%; height: 220px; margin: 0 1rem 0.5rem 0;">'
+        f" Intro line beside the image.</p><ol>{items}</ol>"
     )
     art = KnowledgeArticle.objects.create(title="KB Float List", locale="ru", body=body)
     page.goto(f"{live_server.url}{art.get_absolute_url()}")
     expect(page.locator(".article-body ol")).to_have_count(1)
-    # True only if the image and list rectangles actually intersect (overlap in both axes).
-    overlaps = page.evaluate(
+    result = page.evaluate(
         """() => {
-          const img = document.querySelector('.article-body img');
+          const img = document.querySelector('.article-body img').getBoundingClientRect();
           const ol = document.querySelector('.article-body ol');
-          const i = img.getBoundingClientRect(), o = ol.getBoundingClientRect();
-          return !(o.right <= i.left || o.left >= i.right || o.bottom <= i.top || o.top >= i.bottom);
+          const lis = [...ol.querySelectorAll('li')];
+          const r = document.createRange(); r.selectNodeContents(lis[lis.length - 1]);
+          const rects = [...r.getClientRects()];
+          return {
+            list_style_position: getComputedStyle(ol).listStylePosition,
+            reflows_below_image: rects.some(rc => rc.top >= img.bottom - 2 && rc.left < img.right - 20),
+          };
         }"""
     )
-    assert overlaps is False
+    # Markers ride in the text flow beside the image, never painted on top of it.
+    assert result["list_style_position"] == "inside"
+    # And the list flows back to full width under the image -- no empty gap beside it.
+    assert result["reflows_below_image"] is True
