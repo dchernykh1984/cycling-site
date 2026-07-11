@@ -1576,6 +1576,17 @@ class CalendarMapAPIViewTests(TestCase):
         titles = {c["title"] for c in self._group(self._data())["competitions"]}
         self.assertNotIn("Hidden Race", titles)
 
+    def test_favorite_filter(self):
+        user = _make_user("mapfan@example.com", User.Role.PARTICIPANT)
+        CompetitionFavorite.objects.create(user=user, competition=self.comp)
+        _make_competition("Other Mapped", location=self.loc, date_start=datetime.date(2026, 7, 13))
+        # Anonymous users have no favorites, so the filter yields nothing.
+        self.assertEqual(self._data({"favorite": "1"}), [])
+        # Signed in, only the favorited competition remains at the location.
+        self.client.force_login(user)
+        titles = {c["title"] for c in self._group(self._data({"favorite": "1"}))["competitions"]}
+        self.assertEqual(titles, {"Mapped Race"})
+
 
 class CalendarMapResolutionTests(TestCase):
     """A competition at a hidden/coordinate-less venue is shown on the calendar map at the
