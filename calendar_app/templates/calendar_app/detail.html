@@ -29,7 +29,6 @@
         <button type="submit" id="favorite-btn"
                 class="btn btn-link p-0 border-0 lh-1 fs-3 text-decoration-none {% if is_favorited %}text-warning{% else %}text-secondary{% endif %}"
                 aria-pressed="{% if is_favorited %}true{% else %}false{% endif %}"
-                data-favorited="{% if is_favorited %}1{% else %}0{% endif %}"
                 data-label-add="{% trans 'Add to favorites' %}"
                 data-label-remove="{% trans 'Remove from favorites' %}"
                 title="{% if is_favorited %}{% trans 'Remove from favorites' %}{% else %}{% trans 'Add to favorites' %}{% endif %}">
@@ -295,7 +294,6 @@
       .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
       .then(function (data) {
         var on = !!data.favorited;
-        btn.dataset.favorited = on ? '1' : '0';
         btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         btn.classList.toggle('text-warning', on);
         btn.classList.toggle('text-secondary', !on);
