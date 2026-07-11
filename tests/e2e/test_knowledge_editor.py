@@ -194,3 +194,33 @@ def test_text_color_and_alignment_saved(page: Page, live_server, superuser, know
     art = KnowledgeArticle.objects.get(title="KB Colored")
     assert "ql-align-center" in art.body
     assert "color: rgb(230, 0, 0)" in art.body
+
+
+@pytest.mark.django_db(transaction=True)
+def test_floated_image_does_not_overlap_list_markers(page: Page, live_server, superuser, knowledge_index):
+    """A list next to a left-floated image must not have its number markers land on the image.
+
+    Regression: a plain <ol>/<ul> is a full-width block, so its markers (drawn in the left
+    padding) render under a left float unless the list establishes its own block formatting
+    context. The public article page must render the two boxes without overlap.
+    """
+    # An inline height makes the 1x1 PNG a tall float that the short list flows beside.
+    body = (
+        f'<p><img src="{_PNG}" style="float: left; width: 50%; height: 300px; margin: 0 1rem 0.5rem 0;">'
+        " Intro line beside the image.</p>"
+        "<ol><li>First step.</li><li>Second step whose number must clear the image.</li>"
+        "<li>Third step.</li></ol>"
+    )
+    art = KnowledgeArticle.objects.create(title="KB Float List", locale="ru", body=body)
+    page.goto(f"{live_server.url}{art.get_absolute_url()}")
+    expect(page.locator(".article-body ol")).to_have_count(1)
+    # True only if the image and list rectangles actually intersect (overlap in both axes).
+    overlaps = page.evaluate(
+        """() => {
+          const img = document.querySelector('.article-body img');
+          const ol = document.querySelector('.article-body ol');
+          const i = img.getBoundingClientRect(), o = ol.getBoundingClientRect();
+          return !(o.right <= i.left || o.left >= i.right || o.bottom <= i.top || o.top >= i.bottom);
+        }"""
+    )
+    assert overlaps is False
