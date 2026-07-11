@@ -301,7 +301,10 @@ class CalendarEventsAPIView(View):
             qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
         qs = _apply_favorite_filter(qs, request)
 
-        favorited_ids = _favorited_ids(request, qs)
+        # Evaluate once (with its select_related/prefetch) and reuse the rows for the favorite
+        # lookup, so the events query is not re-run as an IN subquery just to flag favorites.
+        competitions = list(qs)
+        favorited_ids = _favorited_ids(request, competitions)
         events = [
             {
                 "id": comp.pk,
@@ -315,7 +318,7 @@ class CalendarEventsAPIView(View):
                     "favorite": comp.pk in favorited_ids,
                 },
             }
-            for comp in qs
+            for comp in competitions
         ]
         return JsonResponse(events, safe=False)
 
