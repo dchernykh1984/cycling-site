@@ -400,3 +400,33 @@ input.page-jump {
 #loc-filter-form .dropdown-menu {
     z-index: 1100;
 }
+
+/* Rich-text block alignment and indentation from the editor toolbar. Quill emits these as
+   ql-align-* / ql-indent-* classes and styles them only in its own (editor-only) CSS, so mirror
+   the same rules here for the public article pages, where Quill is not loaded. Values match
+   Quill: 3em of padding per indent level. Text direction is left-to-right for all our locales. */
+main .ql-align-center { text-align: center; }
+main .ql-align-right { text-align: right; }
+main .ql-align-justify { text-align: justify; }
+main .ql-indent-1 { padding-left: 3em; }
+main .ql-indent-2 { padding-left: 6em; }
+main .ql-indent-3 { padding-left: 9em; }
+main .ql-indent-4 { padding-left: 12em; }
+main .ql-indent-5 { padding-left: 15em; }
+main .ql-indent-6 { padding-left: 18em; }
+main .ql-indent-7 { padding-left: 21em; }
+main .ql-indent-8 { padding-left: 24em; }
+
+/* A floated image (left/right alignment from the image tool) needs breathing room so body text
+   never touches it. blot-formatter writes an inline margin too, but keep a fallback here for
+   images floated via the API or older content that lacks it. */
+main .article-body img[style*="float"],
+main .home-body img[style*="float"],
+main .competition-description img[style*="float"] {
+    margin: 0.25rem 1rem 0.5rem 0;
+}
+main .article-body img[style*="float: right"],
+main .home-body img[style*="float: right"],
+main .competition-description img[style*="float: right"] {
+    margin: 0.25rem 0 0.5rem 1rem;
+}

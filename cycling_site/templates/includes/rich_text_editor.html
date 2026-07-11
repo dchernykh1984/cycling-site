@@ -44,16 +44,52 @@ html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::b
 {% trans "The text is too large. Use fewer or smaller inline images." as quill_too_large_msg %}
 {{ quill_too_large_msg|json_script:"quill-too-large-msg" }}
 <script src="{% static 'calendar_app/vendor/quill/quill.min.js' %}"></script>
+<script src="{% static 'calendar_app/vendor/quill/blot-formatter.min.js' %}"></script>
 <script>
 (function () {
   if (typeof Quill === 'undefined') return;
   var TOOLBAR = [
-    [{ 'header': [2, 3, false] }],
+    [{ 'header': [2, 3, 4, false] }],
     ['bold', 'italic', 'underline', 'strike'],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'script': 'sub' }, { 'script': 'super' }],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-    ['blockquote', 'link', 'image'],
+    [{ 'indent': '-1' }, { 'indent': '+1' }],
+    [{ 'align': [] }],
+    ['blockquote', 'code-block', 'link', 'image'],
     ['clean']
   ];
+
+  // Persist the geometry the image tool writes. Quill's default image blot keeps only
+  // alt/width/height, so re-opening an edited article would drop the inline float/margin and
+  // the data-align marker; widen the blot's attribute list so they round-trip through Quill.
+  // The server re-checks every one against its own allowlist (cycling_site.sanitize) on save.
+  var ImageBlot = Quill.import('formats/image');
+  var IMAGE_ATTRS = ['alt', 'height', 'width', 'style', 'data-align'];
+  ImageBlot.formats = function (domNode) {
+    return IMAGE_ATTRS.reduce(function (formats, name) {
+      if (domNode.hasAttribute(name)) formats[name] = domNode.getAttribute(name);
+      return formats;
+    }, {});
+  };
+  var baseImageFormat = ImageBlot.prototype.format;
+  ImageBlot.prototype.format = function (name, value) {
+    if (IMAGE_ATTRS.indexOf(name) > -1) {
+      if (value) this.domNode.setAttribute(name, value);
+      else this.domNode.removeAttribute(name);
+    } else {
+      baseImageFormat.call(this, name, value);
+    }
+  };
+  Quill.register(ImageBlot, true);
+
+  // Drag-to-resize + left/center/right alignment overlay for images (vendored, offline). With
+  // its default options it writes width/height attributes and inline float/margin straight onto
+  // the <img>, so the result renders on the public article page with no Quill and no extra CSS.
+  var hasBlotFormatter = !!(window.QuillBlotFormatter && window.QuillBlotFormatter.default);
+  if (hasBlotFormatter) {
+    Quill.register('modules/blotFormatter', window.QuillBlotFormatter.default);
+  }
   // Keep in sync with cycling_site.richtext.MAX_RICH_TEXT_LENGTH; reject before submit so an
   // oversized base64 image fails with a clear message, not a raw HTTP 400 on the request body.
   var MAX = 1000000;
@@ -65,7 +101,9 @@ html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::b
     box.dataset.quillReady = '1';
     var hidden = document.getElementById(box.dataset.target);
     var initEl = box.dataset.init ? document.getElementById(box.dataset.init) : null;
-    var quill = new Quill(box, { theme: 'snow', modules: { toolbar: TOOLBAR } });
+    var modules = { toolbar: TOOLBAR };
+    if (hasBlotFormatter) modules.blotFormatter = {};
+    var quill = new Quill(box, { theme: 'snow', modules: modules });
     if (initEl) {
       var html = JSON.parse(initEl.textContent);
       if (html) quill.clipboard.dangerouslyPasteHTML(html);
