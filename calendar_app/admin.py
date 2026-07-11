@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.db import models
 from django.forms import Textarea
 
-from .models import Competition, CompetitionComment
+from .models import Competition, CompetitionComment, CompetitionFavorite
 
 
 @admin.register(Competition)
@@ -26,3 +26,10 @@ class CompetitionCommentAdmin(admin.ModelAdmin):
     formfield_overrides: ClassVar[dict] = {
         models.CharField: {"widget": Textarea(attrs={"rows": 4, "cols": 80})},
     }
+
+
+@admin.register(CompetitionFavorite)
+class CompetitionFavoriteAdmin(admin.ModelAdmin):
+    list_display = ("user", "competition", "created_at")
+    readonly_fields = ("created_at",)
+    search_fields = ("user__email", "competition__title_ru", "competition__title_en")
