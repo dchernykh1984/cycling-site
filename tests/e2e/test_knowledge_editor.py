@@ -122,3 +122,75 @@ def test_edit_prefills_and_updates(page: Page, live_server, superuser, knowledge
     art.refresh_from_db()
     assert "plus more" in art.body
     assert "Existing" in art.body  # the prefilled body survived the edit round-trip
+
+
+# A 1x1 transparent PNG as a base64 data URI -- a valid raster src the sanitizer accepts.
+_PNG = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk"
+    "+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_editor_exposes_richtext_tools(page: Page, live_server, superuser, knowledge_index):
+    """The enriched toolbar (colour/align/indent) renders and blot-formatter is loaded."""
+    inject_session(page, live_server, superuser)
+    page.goto(f"{live_server.url}/knowledge/add/")
+    _assert_editor_healthy(page)
+    # Quill renders each colour/align picker as both a hidden <select> and a picker <span> (so
+    # the class resolves to 2 nodes); assert the control exists rather than an exact count.
+    assert page.locator(".ql-toolbar .ql-color").count() >= 1
+    assert page.locator(".ql-toolbar .ql-background").count() >= 1
+    assert page.locator(".ql-toolbar .ql-align").count() >= 1
+    expect(page.locator('.ql-toolbar button.ql-indent[value="+1"]')).to_have_count(1)
+    # The vendored image-resize module is present and registered (offline, no CDN).
+    assert page.evaluate("() => !!(window.QuillBlotFormatter && window.QuillBlotFormatter.default)")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_image_size_and_float_survive_edit_round_trip(page: Page, live_server, superuser, knowledge_index):
+    """A resized, left-floated image loads into the editor and re-saves with its geometry intact.
+
+    Exercises both halves: the custom image blot keeps width/float/data-align through Quill's
+    load + observer, and the server sanitizer keeps them on save.
+    """
+    body = (
+        f'<p>Text <img src="{_PNG}" width="120" height="80" data-align="left" '
+        'style="float: left; margin: 0px 1em 1em 0px;"> wraps to the right.</p>'
+    )
+    art = KnowledgeArticle.objects.create(title="KB Image", locale="ru", body=body)
+    inject_session(page, live_server, superuser)
+    page.goto(f"{live_server.url}/knowledge/articles/{art.pk}/edit/")
+    _assert_editor_healthy(page)
+    expect(page.locator("#quill-body .ql-editor img")).to_have_count(1)
+    # Re-submit unchanged; the sized/floated image must round-trip.
+    page.evaluate("() => document.getElementById('id_title').form.requestSubmit()")
+    page.wait_for_url(lambda url: "/edit/" not in url)
+
+    art.refresh_from_db()
+    assert 'width="120"' in art.body
+    assert "float: left" in art.body
+    assert 'data-align="left"' in art.body
+
+
+@pytest.mark.django_db(transaction=True)
+def test_text_color_and_alignment_saved(page: Page, live_server, superuser, knowledge_index):
+    """Toolbar colour + block alignment survive the save-time sanitizer end to end."""
+    inject_session(page, live_server, superuser)
+    page.goto(f"{live_server.url}/knowledge/add/")
+    page.fill("#id_title", "KB Colored")
+    expect(page.locator("#quill-body .ql-editor")).to_have_count(1)
+    # Set the markup and submit synchronously (same MutationObserver race as the tests above).
+    page.evaluate(
+        """() => {
+          document.querySelector('#quill-body .ql-editor').innerHTML =
+            '<p class="ql-align-center">Centered</p>' +
+            '<p><span style="color: rgb(230, 0, 0);">Red</span></p>';
+          document.getElementById('id_title').form.requestSubmit();
+        }"""
+    )
+    page.wait_for_url(lambda url: "/knowledge/add/" not in url)
+
+    art = KnowledgeArticle.objects.get(title="KB Colored")
+    assert "ql-align-center" in art.body
+    assert "color: rgb(230, 0, 0)" in art.body

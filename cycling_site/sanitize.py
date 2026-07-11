@@ -32,6 +32,9 @@ _ALLOWED_BODY_TAGS: frozenset[str] = frozenset(
         "i",
         "u",
         "s",
+        "sub",
+        "sup",
+        "span",
         "code",
         "pre",
         "a",
@@ -44,7 +47,13 @@ _ALLOWED_BODY_TAGS: frozenset[str] = frozenset(
     }
 )
 _ALLOWED_BODY_ATTRS: dict[str, set[str]] = {"a": {"href", "title"}}
-_IMG_ATTRS: set[str] = {"src", "alt"}
+# On <img>: the alt text and safe src, plus the geometry the editor's image tool (blot-formatter)
+# writes -- numeric width/height and a data-align keyword; the inline float/margin it also writes
+# is handled by the style allowlist below.
+_IMG_ATTRS: set[str] = {"src", "alt", "width", "height", "data-align"}
+_ALIGN_KEYWORDS = frozenset({"left", "right", "center"})
+# A non-negative CSS length for a width/height *attribute* (bare number = px, or px/%).
+_DIMENSION = re.compile(r"^\d+(?:\.\d+)?(?:px|%)?$")
 # Only http(s) URLs or base64-encoded raster data URIs -- never javascript:, vbscript:,
 # data:text/html or data:image/svg+xml (SVG can carry script).
 _SAFE_IMG_SRC = re.compile(r"^(?:https?://|data:image/(?:png|jpe?g|gif|webp)[;,])", re.IGNORECASE)
@@ -79,13 +88,120 @@ def _safe_href(href_raw: object) -> str | None:
     return cleaned
 
 
-def _clean_attrs_and_links(tag) -> bool:
-    """Strip disallowed attrs and normalize <a>/<img>; return False if the tag must be dropped."""
-    allowed = _IMG_ATTRS if tag.name == "img" else _ALLOWED_BODY_ATTRS.get(tag.name, set())
+# CSS classes kept on any tag: only Quill's block alignment / indentation classes. They carry
+# no behaviour, just layout, and are rendered on public article pages by cycling_site.css
+# (Quill's own CSS is editor-only). Every other class is dropped.
+_ALLOWED_CLASSES = frozenset(
+    {"ql-align-left", "ql-align-center", "ql-align-right", "ql-align-justify"}
+    | {f"ql-indent-{level}" for level in range(1, 9)}
+)
+# Inline style is permitted only on <span> (text colour, from the colour picker) and <img>
+# (size + float, from the image tool), and only for these properties with a strictly validated
+# value -- so url()/expression()/scripts can never ride in on a style attribute.
+_UNSAFE_STYLE = re.compile(r"url\(|expression|javascript|/\*|\\|[<>]", re.IGNORECASE)
+_LENGTH = re.compile(r"^-?\d+(?:\.\d+)?(?:px|%|em|rem)$|^0$")
+_COLOR = re.compile(r"^#[0-9a-fA-F]{3,8}$|^rgba?\(\s*[\d.,%\s]+\)$", re.IGNORECASE)
+
+
+def _is_length(value: str) -> bool:
+    return bool(_LENGTH.match(value.strip()))
+
+
+def _is_length_or_auto(value: str) -> bool:
+    return value.strip() == "auto" or _is_length(value)
+
+
+def _is_margin(value: str) -> bool:
+    parts = value.split()
+    return 1 <= len(parts) <= 4 and all(_is_length_or_auto(part) for part in parts)
+
+
+def _is_color(value: str) -> bool:
+    return bool(_COLOR.match(value.strip()))
+
+
+_SPAN_STYLE = {"color": _is_color, "background-color": _is_color}
+_IMG_STYLE = {
+    "width": _is_length,
+    "height": _is_length,
+    "max-width": _is_length,
+    "float": lambda v: v.strip().lower() in {"left", "right", "none"},
+    "display": lambda v: v.strip().lower() in {"block", "inline", "inline-block"},
+    "margin": _is_margin,
+    "margin-left": _is_length_or_auto,
+    "margin-right": _is_length_or_auto,
+    "margin-top": _is_length,
+    "margin-bottom": _is_length,
+}
+
+
+def _sanitize_class(value: object) -> list[str]:
+    """Return the allowlisted CSS classes present on ``value`` (possibly empty)."""
+    classes = value if isinstance(value, list) else str(value or "").split()
+    return [cls for cls in classes if cls in _ALLOWED_CLASSES]
+
+
+def _sanitize_style(value: object, allowed: dict) -> str:
+    """Keep only allowlisted ``prop: value`` declarations with a validated value.
+
+    Returns the rebuilt style string ("" if nothing survives). A value containing url(),
+    expression(), an escape or angle brackets drops the whole attribute -- no safe declaration
+    needs them, and they are the vectors a style attribute could smuggle a fetch/script through.
+    """
+    if not isinstance(value, str) or _UNSAFE_STYLE.search(value):
+        return ""
+    kept = []
+    for declaration in value.split(";"):
+        prop, sep, raw = declaration.partition(":")
+        if not sep:
+            continue
+        prop, raw = prop.strip().lower(), raw.strip()
+        validator = allowed.get(prop)
+        if raw and validator is not None and validator(raw):
+            kept.append(f"{prop}: {raw}")
+    return "; ".join(kept)
+
+
+def _keep_only(tag, allowed: set) -> None:
+    """Drop every attribute not in ``allowed`` (and any ``on*`` handler)."""
     for attr in list(tag.attrs):
         if attr.startswith("on") or attr not in allowed:
             del tag[attr]
-    if tag.name == "a":
+
+
+def _apply_class_and_style(tag, style_allowed: dict | None) -> None:
+    """Reduce the tag's ``class`` to the allowlist and its ``style`` to ``style_allowed``."""
+    classes = _sanitize_class(tag.get("class"))
+    if classes:
+        tag["class"] = classes
+    else:
+        del tag["class"]
+    style = _sanitize_style(tag.get("style"), style_allowed) if style_allowed is not None else ""
+    if style:
+        tag["style"] = style
+    else:
+        del tag["style"]
+
+
+def _clean_attrs_and_links(tag) -> bool:
+    """Strip disallowed attrs and normalize <a>/<img>; return False if the tag must be dropped."""
+    name = tag.name
+    if name == "img":
+        src_raw = tag.get("src")
+        src = src_raw.strip() if isinstance(src_raw, str) else ""
+        if not _SAFE_IMG_SRC.match(src):
+            return False  # an image without a safe src is useless -- drop it
+        _keep_only(tag, _IMG_ATTRS | {"class", "style"})
+        tag["src"] = src
+        for dimension in ("width", "height"):
+            if tag.has_attr(dimension) and not _DIMENSION.match(str(tag[dimension]).strip()):
+                del tag[dimension]
+        if tag.has_attr("data-align") and str(tag["data-align"]).strip().lower() not in _ALIGN_KEYWORDS:
+            del tag["data-align"]
+        _apply_class_and_style(tag, _IMG_STYLE)
+        return True
+    if name == "a":
+        _keep_only(tag, _ALLOWED_BODY_ATTRS["a"] | {"class"})
         href = _safe_href(tag.get("href"))
         if href is None:
             del tag["href"]
@@ -93,11 +209,11 @@ def _clean_attrs_and_links(tag) -> bool:
             tag["href"] = href
             tag["rel"] = "noopener"
             tag["target"] = "_blank"
-    elif tag.name == "img":
-        src_raw = tag.get("src")
-        src = src_raw.strip() if isinstance(src_raw, str) else ""
-        if not _SAFE_IMG_SRC.match(src):
-            return False  # an image without a safe src is useless -- drop it
+        _apply_class_and_style(tag, None)
+        return True
+    style_allowed = _SPAN_STYLE if name == "span" else None
+    _keep_only(tag, _ALLOWED_BODY_ATTRS.get(name, set()) | {"class"} | ({"style"} if style_allowed else set()))
+    _apply_class_and_style(tag, style_allowed)
     return True
 
 

@@ -218,6 +218,80 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         self.assertNotIn("<img", sanitize_rich_html('<img src="data:image/svg+xml;base64,AAAA">', allow_img=True))
         self.assertNotIn("<img", sanitize_rich_html('<img src="javascript:alert(1)">', allow_img=True))
 
+    def test_img_size_and_float_kept(self):
+        # The image tool writes width/height attributes + inline float/margin/display and a
+        # data-align keyword; all of that must survive so a resized, wrapped image renders.
+        raw = (
+            '<img src="data:image/png;base64,AAAA" width="120" height="80" data-align="left"'
+            ' style="float: left; margin: 0px 1em 1em 0px; display: inline;">'
+        )
+        out = sanitize_rich_html(raw, allow_img=True)
+        self.assertIn('width="120"', out)
+        self.assertIn('height="80"', out)
+        self.assertIn('data-align="left"', out)
+        self.assertIn("float: left", out)
+        self.assertIn("margin: 0px 1em 1em 0px", out)
+
+    def test_img_style_with_url_or_expression_dropped(self):
+        # A style value that carries url()/expression() (a fetch/script vector) drops the whole
+        # style attribute, but the image itself (safe src) is kept.
+        bad_styles = (
+            "background: url(javascript:alert(1))",
+            "width: expression(alert(1))",
+            "float: left; behavior: url(x)",
+        )
+        for bad in bad_styles:
+            out = sanitize_rich_html(f'<img src="data:image/png;base64,AAAA" style="{bad}">', allow_img=True)
+            self.assertIn("<img", out, bad)
+            self.assertNotIn("url(", out, bad)
+            self.assertNotIn("expression", out, bad)
+
+    def test_img_bad_dimension_and_align_dropped(self):
+        out = sanitize_rich_html(
+            '<img src="data:image/png;base64,AAAA" width="alert(1)" height="9e9px" data-align="evil">',
+            allow_img=True,
+        )
+        self.assertIn("<img", out)
+        self.assertNotIn("width=", out)
+        self.assertNotIn("data-align", out)
+
+    def test_img_position_style_dropped(self):
+        # Only size/float properties are allowed on an image; layout-escaping ones are dropped.
+        out = sanitize_rich_html(
+            '<img src="data:image/png;base64,AAAA" style="width: 50%; position: fixed; top: 0;">',
+            allow_img=True,
+        )
+        self.assertIn("width: 50%", out)
+        self.assertNotIn("position", out)
+
+    def test_span_text_color_kept_other_style_dropped(self):
+        out = sanitize_rich_html(
+            '<p><span style="color: rgb(230, 0, 0); position: fixed;">r</span>'
+            '<span style="background-color: #ff0;">h</span></p>'
+        )
+        self.assertIn("color: rgb(230, 0, 0)", out)
+        self.assertIn("background-color: #ff0", out)
+        self.assertNotIn("position", out)
+
+    def test_align_and_indent_classes_kept_others_dropped(self):
+        out = sanitize_rich_html('<p class="ql-align-center hacker">c</p><ol><li class="ql-indent-2">i</li></ol>')
+        self.assertIn('class="ql-align-center"', out)
+        self.assertIn('class="ql-indent-2"', out)
+        self.assertNotIn("hacker", out)
+
+    def test_style_on_block_tag_dropped(self):
+        # Alignment is carried by a class, so an inline style on a block tag is never needed and
+        # is stripped (a paragraph cannot smuggle arbitrary CSS).
+        out = sanitize_rich_html('<p style="color: red" class="evil">t</p>')
+        self.assertIn("<p>t</p>", out)
+        self.assertNotIn("style", out)
+        self.assertNotIn("evil", out)
+
+    def test_subscript_superscript_kept(self):
+        out = sanitize_rich_html("<p>x<sub>2</sub> y<sup>n</sup></p>")
+        self.assertIn("<sub>2</sub>", out)
+        self.assertIn("<sup>n</sup>", out)
+
     def test_plaintext_to_html_escapes_and_linkifies(self):
         out = plaintext_to_html("See https://almaty-marathon.kz/ru/events\n\n<b>x</b> & y")
         self.assertIn(
