@@ -20,7 +20,24 @@
       </ol>
     </nav>
 
-    <h1 class="mb-2">{{ competition.title }}</h1>
+    <div class="d-flex align-items-start gap-2 mb-2">
+      <h1 class="mb-0">{{ competition.title }}</h1>
+      {% if user.is_authenticated %}
+      <form method="post" action="{% url 'competition_toggle_favorite' competition.pk %}"
+            id="favorite-form" class="mt-1">
+        {% csrf_token %}
+        <button type="submit" id="favorite-btn"
+                class="btn btn-link p-0 border-0 lh-1 fs-3 text-decoration-none {% if is_favorited %}text-warning{% else %}text-secondary{% endif %}"
+                aria-pressed="{% if is_favorited %}true{% else %}false{% endif %}"
+                data-favorited="{% if is_favorited %}1{% else %}0{% endif %}"
+                data-label-add="{% trans 'Add to favorites' %}"
+                data-label-remove="{% trans 'Remove from favorites' %}"
+                title="{% if is_favorited %}{% trans 'Remove from favorites' %}{% else %}{% trans 'Add to favorites' %}{% endif %}">
+          <span aria-hidden="true">{% if is_favorited %}&#9733;{% else %}&#9734;{% endif %}</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
 
     <div class="d-flex flex-wrap gap-3 mb-2 text-muted small">
       <span>
@@ -263,4 +280,30 @@
 })();
 </script>
 {% endif %}
+<script>
+(function () {
+  var form = document.getElementById('favorite-form');
+  if (!form) return;  // only rendered for signed-in users
+  var btn = document.getElementById('favorite-btn');
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();  // fall back to a normal submit only if fetch fails
+    fetch(form.action, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: new FormData(form),
+    })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (data) {
+        var on = !!data.favorited;
+        btn.dataset.favorited = on ? '1' : '0';
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.classList.toggle('text-warning', on);
+        btn.classList.toggle('text-secondary', !on);
+        btn.title = on ? btn.dataset.labelRemove : btn.dataset.labelAdd;
+        btn.querySelector('span').innerHTML = on ? '★' : '☆';
+      })
+      .catch(function () { form.submit(); });  // network/JS error: let the server round-trip it
+  });
+}());
+</script>
 {% endblock %}

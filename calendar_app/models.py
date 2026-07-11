@@ -351,3 +351,31 @@ class CompetitionComment(models.Model):
 
     def __str__(self) -> str:
         return f"Comment by {self.author} on {self.competition}"
+
+
+class CompetitionFavorite(models.Model):
+    """A per-user "favorite" mark on a competition (issue #183).
+
+    Lets a signed-in user star events they care about and filter the calendar/list/map (and the
+    REST list endpoint) down to them. A plain join row -- one per (user, competition) pair -- so a
+    user can favorite any number of events and toggling just creates or deletes the row.
+    """
+
+    objects: ClassVar[models.Manager["CompetitionFavorite"]]
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="competition_favorites",
+    )
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="favorited_by")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Competition favorite"
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(fields=["user", "competition"], name="uniq_user_competition_favorite"),
+        ]
+        indexes: ClassVar[list] = [models.Index(fields=["user", "competition"])]
+
+    def __str__(self) -> str:
+        return f"{self.user} favorites {self.competition}"

@@ -32,7 +32,14 @@ from .forms import (
     RejectCompetitionForm,
     SubmitCompetitionForm,
 )
-from .models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
+from .models import (
+    Competition,
+    CompetitionComment,
+    CompetitionFavorite,
+    Discipline,
+    DisciplineCategory,
+    EventType,
+)
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 _ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
@@ -203,6 +210,31 @@ def _apply_id_filters(qs, event_type_ids, discipline_ids, direction_ids):
     return qs
 
 
+def _only_favorite_requested(request) -> bool:
+    """Whether the ``?favorite`` flag asks to show only the current user's favorites (issue #183)."""
+    return (request.GET.get("favorite") or "").strip().lower() in ("1", "true", "on", "yes")
+
+
+def _apply_favorite_filter(qs, request):
+    """Restrict ``qs`` to the user's favorites when ``?favorite`` is set; anonymous users have none."""
+    if not _only_favorite_requested(request):
+        return qs
+    if not request.user.is_authenticated:
+        return qs.none()
+    return qs.filter(favorited_by__user=request.user)
+
+
+def _favorited_ids(request, qs) -> set:
+    """Ids in ``qs`` the current user has favorited (empty for anonymous), for the star markers."""
+    if not request.user.is_authenticated:
+        return set()
+    return set(
+        CompetitionFavorite.objects.filter(user=request.user, competition__in=qs).values_list(
+            "competition_id", flat=True
+        )
+    )
+
+
 class OrganizerRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -225,6 +257,7 @@ class CalendarView(TemplateView):
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
         context["locations_data"] = _get_locations_data()
+        context["only_favorite"] = _only_favorite_requested(self.request)
         return context
 
 
@@ -262,7 +295,9 @@ class CalendarEventsAPIView(View):
         location_ids = request.GET.getlist("location")
         if location_ids:
             qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
+        qs = _apply_favorite_filter(qs, request)
 
+        favorited_ids = _favorited_ids(request, qs)
         events = [
             {
                 "id": comp.pk,
@@ -273,6 +308,7 @@ class CalendarEventsAPIView(View):
                 "extendedProps": {
                     "event_type": comp.event_type.name if comp.event_type else "",
                     "discipline": comp.disciplines_label,
+                    "favorite": comp.pk in favorited_ids,
                 },
             }
             for comp in qs
@@ -314,10 +350,14 @@ class CompetitionListView(TemplateView):
         location_ids = self.request.GET.getlist("location")
         if location_ids:
             qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
+        qs = _apply_favorite_filter(qs, self.request)
 
         qs = qs.filter(date_start__gte=date_from, date_start__lte=date_to).order_by("date_start")
         paginator = Paginator(qs, 20)
-        context["competitions"] = paginator.get_page(self.request.GET.get("page", 1))
+        page = paginator.get_page(self.request.GET.get("page", 1))
+        context["competitions"] = page
+        context["favorited_ids"] = _favorited_ids(self.request, page.object_list)
+        context["only_favorite"] = _only_favorite_requested(self.request)
         context["filter_form"] = form
         context["date_from"] = date_from
         context["date_to"] = date_to
@@ -341,6 +381,7 @@ class CalendarMapView(TemplateView):
         context["event_types_json"] = _event_types_for_locale()
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
+        context["only_favorite"] = _only_favorite_requested(self.request)
         return context
 
 
@@ -377,6 +418,7 @@ class CalendarMapAPIView(View):
             request.GET.getlist("discipline"),
             request.GET.getlist("direction"),
         )
+        qs = _apply_favorite_filter(qs, request)
 
         by_path = {loc.path: loc for loc in Location.objects.filter(is_deleted=False)}
         step = Location.steplen
@@ -465,6 +507,8 @@ class CompetitionDetailView(View):
             "can_comment": can_comment,
             "comment_form": AddCompetitionCommentForm() if can_comment else None,
             "user_can_delete_comment": is_manager,
+            "is_favorited": request.user.is_authenticated
+            and CompetitionFavorite.objects.filter(user=request.user, competition=competition).exists(),
         }
         # Resolve the map pin: a venue with its own coordinates, else the nearest visible ancestor
         # (city -> region -> country). The hidden "other location" placeholder carries no coordinates,
@@ -990,6 +1034,30 @@ class AddCompetitionCommentView(ParticipantRequiredMixin, View):
             error = first_errors[0] if first_errors else _("Invalid submission.")
             messages.error(request, error)
         return redirect("competition_detail", pk=competition_pk)
+
+
+class ToggleFavoriteView(LoginRequiredMixin, View):
+    """Toggle the signed-in user's favorite mark on a competition (issue #183).
+
+    Progressive enhancement: the star on the detail page posts here. A fetch() request (sending the
+    ``X-Requested-With`` header) gets JSON ``{"favorited": bool}`` back so the star can update in
+    place; a plain form submit (no JS) toggles and redirects to the detail page.
+    """
+
+    def post(self, request, pk):
+        from django.http import Http404
+
+        from registrations.views import can_manage as _can_manage
+
+        competition = get_object_or_404(Competition, pk=pk, status=Competition.Status.APPROVED, is_deleted=False)
+        if competition.is_hidden and not _can_manage(request.user, competition):
+            raise Http404
+        favorite, created = CompetitionFavorite.objects.get_or_create(user=request.user, competition=competition)
+        if not created:
+            favorite.delete()
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"favorited": created})
+        return redirect("competition_detail", pk=pk)
 
 
 class DeleteCompetitionCommentView(LoginRequiredMixin, View):

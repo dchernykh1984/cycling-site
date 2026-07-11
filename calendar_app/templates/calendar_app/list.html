@@ -37,6 +37,15 @@
       {% include "calendar_app/_event_type_filter.html" %}
       {% include "calendar_app/_direction_filter.html" %}
       {% include "calendar_app/_location_filter.html" %}
+      {% if request.user.is_authenticated %}
+      <div class="col-auto">
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" name="favorite" value="1" id="favorite-filter"
+                 {% if only_favorite %}checked{% endif %}>
+          <label class="form-check-label" for="favorite-filter">{% trans "Only favorites" %}</label>
+        </div>
+      </div>
+      {% endif %}
       <div class="col-sm-12 col-md-2 d-flex gap-2">
         <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary btn-sm flex-grow-1">{% trans "Reset" %}</a>
       </div>
@@ -70,6 +79,8 @@
           params.set('date_to', dtEl.value);
           sessionStorage.setItem('cal_date_to', dtEl.value);
         }
+        var favEl = form.querySelector('#favorite-filter');
+        if (favEl && favEl.checked) params.set('favorite', '1');
         var qs = params.toString();
         ['view-link-calendar', 'view-link-map'].forEach(function (id) {
           var a = document.getElementById(id);
@@ -108,6 +119,9 @@
       form.querySelectorAll('input[type="date"]').forEach(function (el) {
         el.addEventListener('change', function () { form.submit(); });
       });
+      // Auto-submit the favorites toggle too.
+      var favEl = form.querySelector('#favorite-filter');
+      if (favEl) favEl.addEventListener('change', function () { form.submit(); });
     })();
     </script>
   </div>
@@ -146,6 +160,7 @@
       {% for comp in competitions %}
       <tr>
         <td data-label="{% trans 'Title' %}">
+          {% if comp.pk in favorited_ids %}<span class="text-warning" title="{% trans 'In favorites' %}" aria-hidden="true">★</span> {% endif %}
           <a href="{% url 'competition_detail' comp.pk %}" class="text-decoration-none fw-semibold">
             {{ comp.title }}
           </a>

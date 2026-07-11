@@ -12,7 +12,7 @@ from django.db import connection, connections, transaction
 from django.test import Client, TestCase, TransactionTestCase, override_settings
 
 from accounts.models import User
-from calendar_app.models import Competition, Discipline, DisciplineCategory, EventType
+from calendar_app.models import Competition, CompetitionFavorite, Discipline, DisciplineCategory, EventType
 from knowledge.models import DraftSubmission, KnowledgeArticle
 from locations.models import (
     Location,
@@ -256,6 +256,19 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         resp = self.get("/api/v1/competitions/?status=pending_approval", user=admin)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 2)
+
+    def test_only_favorite_filters_to_callers_favorites(self):
+        favorited = _competition(title_ru="Fav")
+        _competition(title_ru="Other")
+        CompetitionFavorite.objects.create(user=self.reader, competition=favorited)
+        resp = self.get("/api/v1/competitions/?only_favorite=true", user=self.reader)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual([c["id"] for c in resp.json()], [favorited.pk])
+
+    def test_only_favorite_requires_authentication(self):
+        _competition()
+        resp = self.get("/api/v1/competitions/?only_favorite=true")  # anonymous
+        self.assertEqual(resp.status_code, 401)
 
     def test_filter_by_location_ids(self):
         city = _location()

@@ -39,6 +39,14 @@
         {% include "calendar_app/_event_type_filter.html" %}
         {% include "calendar_app/_direction_filter.html" %}
         {% include "calendar_app/_location_filter.html" %}
+        {% if request.user.is_authenticated %}
+        <div class="col-auto">
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" id="favorite-filter" {% if only_favorite %}checked{% endif %}>
+            <label class="form-check-label" for="favorite-filter">{% trans "Only favorites" %}</label>
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -77,6 +85,8 @@ document.addEventListener('DOMContentLoaded', function () {
     (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
       params.append('location', id);
     });
+    var favEl = document.getElementById('favorite-filter');
+    if (favEl && favEl.checked) params.set('favorite', '1');
   }
 
   // Keep the List/Map switcher links in sync with the current filters + date range.
@@ -131,6 +141,13 @@ document.addEventListener('DOMContentLoaded', function () {
         window.location.href = info.event.url;
       }
     },
+    eventDidMount: function (info) {
+      // Mark the user's favorites with a leading star (see CalendarEventsAPIView extendedProps).
+      if (info.event.extendedProps.favorite) {
+        var titleEl = info.el.querySelector('.fc-event-title');
+        if (titleEl) titleEl.insertAdjacentHTML('afterbegin', '<span aria-hidden="true">★ </span>');
+      }
+    },
   });
 
   calendar.render();
@@ -140,6 +157,9 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.refetchEvents();
     updateSwitcherLinks();
   };
+
+  var favEl = document.getElementById('favorite-filter');
+  if (favEl) favEl.addEventListener('change', window.onCalendarFilterChange);
 });
 </script>
 {% endblock %}

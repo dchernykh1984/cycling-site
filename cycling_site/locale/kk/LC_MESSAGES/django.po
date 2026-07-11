@@ -1871,3 +1871,20 @@ msgstr "Хронометраж токені қайта жасалды. Бұры�
 #: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
 msgid "Timing token deleted. Timing tools can no longer access this competition."
 msgstr "Хронометраж токені жойылды. Хронометраж құралдары бұл жарысқа енді қол жеткізе алмайды."
+
+
+#: calendar_app favorite events (issue #183)
+msgid "Only favorites"
+msgstr "Тек таңдаулылар"
+
+#: calendar_app favorite events (issue #183)
+msgid "Add to favorites"
+msgstr "Таңдаулыларға қосу"
+
+#: calendar_app favorite events (issue #183)
+msgid "Remove from favorites"
+msgstr "Таңдаулылардан алып тастау"
+
+#: calendar_app favorite events (issue #183)
+msgid "In favorites"
+msgstr "Таңдаулыларда"

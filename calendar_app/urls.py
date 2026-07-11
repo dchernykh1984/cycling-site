@@ -16,6 +16,7 @@ urlpatterns = [
     path("<int:pk>/edit/", views.EditCompetitionView.as_view(), name="competition_edit"),
     path("<int:pk>/delete/", views.CompetitionDeleteView.as_view(), name="competition_delete"),
     path("<int:pk>/hide/", views.CompetitionHideView.as_view(), name="competition_hide"),
+    path("<int:pk>/favorite/toggle/", views.ToggleFavoriteView.as_view(), name="competition_toggle_favorite"),
     path(
         "<int:pk>/token/regenerate/",
         views.RegenerateUploadTokenView.as_view(),

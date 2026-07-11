@@ -232,6 +232,7 @@ def list_competitions(
     direction_ids: list[int] = Query(default=[]),  # noqa: B008
     event_type_ids: list[int] = Query(default=[]),  # noqa: B008
     location_ids: list[int] = Query(default=[]),  # noqa: B008
+    only_favorite: bool = False,
 ):
     user = request.auth
     qs = Competition.objects.filter(is_deleted=False).prefetch_related("disciplines")
@@ -255,6 +256,13 @@ def list_competitions(
         qs = qs.filter(event_type_id__in=event_type_ids)
     if location_ids:
         qs = qs.filter(location_id__in=_descendant_location_ids(list(location_ids)))
+    # only_favorite restricts to the authenticated user's favorites (issue #183). There is no way
+    # to favorite via the API -- it is filter-only -- so an anonymous caller has no favorites and
+    # asking for them is a 401 rather than a silently empty list.
+    if only_favorite:
+        if not getattr(user, "is_authenticated", False):
+            raise HttpError(401, "Authentication is required to filter by favorites.")
+        qs = qs.filter(favorited_by__user=user)
     return list(qs)
 
 

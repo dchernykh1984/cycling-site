@@ -1,6 +1,7 @@
 import datetime
 import json
 
+from django.db import IntegrityError, transaction
 from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -8,7 +9,14 @@ from django.utils.translation import gettext
 from django.utils.translation import override as translation_override
 
 from accounts.models import User
-from calendar_app.models import Competition, CompetitionComment, Discipline, DisciplineCategory, EventType
+from calendar_app.models import (
+    Competition,
+    CompetitionComment,
+    CompetitionFavorite,
+    Discipline,
+    DisciplineCategory,
+    EventType,
+)
 from locations.models import Location
 
 
@@ -2441,3 +2449,83 @@ class UploadTokenManagementTests(TestCase):
         html2 = self.client.get(self.detail_url).content.decode()
         self.assertNotIn(self.regen_url, html2)
         self.assertNotIn(self.del_url, html2)
+
+
+class FavoriteTests(TestCase):
+    def setUp(self):
+        self.user = _make_user("fan@example.com", User.Role.PARTICIPANT)
+        self.comp = _make_competition("Fav Race", status=Competition.Status.APPROVED)
+        self.comp2 = _make_competition("Other Race", status=Competition.Status.APPROVED)
+        self.toggle_url = reverse("competition_toggle_favorite", args=[self.comp.pk])
+
+    def test_favorite_unique_per_user_and_competition(self):
+        CompetitionFavorite.objects.create(user=self.user, competition=self.comp)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            CompetitionFavorite.objects.create(user=self.user, competition=self.comp)
+
+    def test_toggle_requires_login(self):
+        response = self.client.post(self.toggle_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(CompetitionFavorite.objects.filter(competition=self.comp).exists())
+
+    def test_toggle_adds_then_removes(self):
+        self.client.force_login(self.user)
+        first = self.client.post(self.toggle_url, headers={"x-requested-with": "XMLHttpRequest"})
+        self.assertEqual(first.status_code, 200)
+        self.assertTrue(first.json()["favorited"])
+        self.assertTrue(CompetitionFavorite.objects.filter(user=self.user, competition=self.comp).exists())
+        second = self.client.post(self.toggle_url, headers={"x-requested-with": "XMLHttpRequest"})
+        self.assertFalse(second.json()["favorited"])
+        self.assertFalse(CompetitionFavorite.objects.filter(user=self.user, competition=self.comp).exists())
+
+    def test_toggle_without_ajax_redirects_to_detail(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.toggle_url)
+        self.assertRedirects(response, reverse("competition_detail", args=[self.comp.pk]))
+
+    def test_toggle_hidden_competition_is_404_for_non_manager(self):
+        hidden = _make_competition("Hidden Race", status=Competition.Status.APPROVED, is_hidden=True)
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("competition_toggle_favorite", args=[hidden.pk]),
+            headers={"x-requested-with": "XMLHttpRequest"},
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_detail_context_reflects_favorite_state(self):
+        self.client.force_login(self.user)
+        detail_url = reverse("competition_detail", args=[self.comp.pk])
+        self.assertFalse(self.client.get(detail_url).context["is_favorited"])
+        CompetitionFavorite.objects.create(user=self.user, competition=self.comp)
+        response = self.client.get(detail_url)
+        self.assertTrue(response.context["is_favorited"])
+        self.assertContains(response, 'id="favorite-form"')
+
+    def test_detail_has_no_star_for_anonymous(self):
+        response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
+        self.assertFalse(response.context["is_favorited"])
+        self.assertNotContains(response, 'id="favorite-form"')
+
+    def test_calendar_feed_flags_and_filters_favorites(self):
+        CompetitionFavorite.objects.create(user=self.user, competition=self.comp)
+        self.client.force_login(self.user)
+        events = {e["title"]: e for e in self.client.get(reverse("calendar_events_api")).json()}
+        self.assertTrue(events["Fav Race"]["extendedProps"]["favorite"])
+        self.assertFalse(events["Other Race"]["extendedProps"]["favorite"])
+        only = self.client.get(reverse("calendar_events_api"), {"favorite": "1"}).json()
+        self.assertEqual([e["title"] for e in only], ["Fav Race"])
+
+    def test_calendar_feed_favorite_filter_is_empty_for_anonymous(self):
+        response = self.client.get(reverse("calendar_events_api"), {"favorite": "1"})
+        self.assertEqual(response.json(), [])
+
+    def test_list_view_filters_favorites_and_exposes_ids(self):
+        CompetitionFavorite.objects.create(user=self.user, competition=self.comp)
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("calendar_list"),
+            {"favorite": "1", "date_from": "2026-01-01", "date_to": "2026-12-31"},
+        )
+        self.assertEqual([c.title for c in response.context["competitions"]], ["Fav Race"])
+        self.assertIn(self.comp.pk, response.context["favorited_ids"])
+        self.assertTrue(response.context["only_favorite"])
