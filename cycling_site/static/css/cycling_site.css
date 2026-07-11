@@ -430,3 +430,14 @@ main .home-body img[style*="float: right"],
 main .competition-description img[style*="float: right"] {
     margin: 0.25rem 0 0.5rem 1rem;
 }
+
+/* A left/right-floated image lets body text wrap beside it, but a list is a block that still
+   spans the full width *under* the float, so its number/bullet markers (drawn in the list's left
+   padding) render on top of the image. Give lists in rich bodies their own block formatting
+   context: the list box then sits beside the float instead of under it, and the markers clear the
+   image. (Article tables already establish a BFC via the overflow-x rule above.) */
+main .article-body ul, main .article-body ol,
+main .home-body ul, main .home-body ol,
+main .competition-description ul, main .competition-description ol {
+    display: flow-root;
+}
