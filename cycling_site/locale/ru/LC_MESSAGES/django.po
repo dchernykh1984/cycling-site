@@ -1832,18 +1832,18 @@ msgid "Timing token deleted. Timing tools can no longer access this competition.
 msgstr "Токен хронометража удалён. Инструменты хронометража больше не имеют доступа к этому соревнованию."
 
 
-#: calendar_app favorite events (issue #183)
+# Favorite events (issue #183)
 msgid "Only favorites"
 msgstr "Только избранные"
 
-#: calendar_app favorite events (issue #183)
+# Favorite events (issue #183)
 msgid "Add to favorites"
 msgstr "В избранное"
 
-#: calendar_app favorite events (issue #183)
+# Favorite events (issue #183)
 msgid "Remove from favorites"
 msgstr "Убрать из избранного"
 
-#: calendar_app favorite events (issue #183)
+# Favorite events (issue #183)
 msgid "In favorites"
 msgstr "В избранном"
