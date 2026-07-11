@@ -224,12 +224,16 @@ def _apply_favorite_filter(qs, request):
     return qs.filter(favorited_by__user=request.user)
 
 
-def _favorited_ids(request, qs) -> set:
-    """Ids in ``qs`` the current user has favorited (empty for anonymous), for the star markers."""
+def _favorited_ids(request, competitions) -> set:
+    """Ids among ``competitions`` the current user has favorited (empty for anonymous).
+
+    ``competitions`` may be a queryset or an already-fetched sequence of competitions -- the list
+    view passes the evaluated page rows so the page query is not re-run as an ``IN`` subquery.
+    """
     if not request.user.is_authenticated:
         return set()
     return set(
-        CompetitionFavorite.objects.filter(user=request.user, competition__in=qs).values_list(
+        CompetitionFavorite.objects.filter(user=request.user, competition__in=competitions).values_list(
             "competition_id", flat=True
         )
     )
@@ -356,7 +360,9 @@ class CompetitionListView(TemplateView):
         paginator = Paginator(qs, 20)
         page = paginator.get_page(self.request.GET.get("page", 1))
         context["competitions"] = page
-        context["favorited_ids"] = _favorited_ids(self.request, page.object_list)
+        # Pass the evaluated page rows (not the sliced queryset) so the star lookup reuses them
+        # instead of re-running the paginated query as an IN subquery.
+        context["favorited_ids"] = _favorited_ids(self.request, list(page))
         context["only_favorite"] = _only_favorite_requested(self.request)
         context["filter_form"] = form
         context["date_from"] = date_from
