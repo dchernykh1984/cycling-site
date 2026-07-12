@@ -645,6 +645,51 @@ class CompetitionLocationValidationTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 403)
 
 
+class CityFallbackVenueTest(TestCase, ApiTestMixin):
+    """POST /locations/{city_id}/fallback-venue/ returns a city's catch-all venue (organizer+)."""
+
+    def setUp(self):
+        self.organizer = _user("fv_org", role=User.Role.ORGANIZER)
+        self.participant = _user("fv_par", role=User.Role.PARTICIPANT)
+        self.city = _city()  # Country > Region > City (depth 3)
+
+    def _url(self, city_id):
+        return f"/api/v1/locations/{city_id}/fallback-venue/"
+
+    def test_organizer_gets_hidden_fallback_venue(self):
+        resp = self.post(self._url(self.city.pk), {}, user=self.organizer)
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+        self.assertEqual(body["depth"], 4)
+        self.assertEqual(body["parent_id"], self.city.pk)
+        self.assertTrue(body["is_hidden"])
+        self.assertFalse(body["is_deleted"])
+
+    def test_idempotent_returns_same_venue(self):
+        first = self.post(self._url(self.city.pk), {}, user=self.organizer).json()
+        second = self.post(self._url(self.city.pk), {}, user=self.organizer).json()
+        self.assertEqual(first["id"], second["id"])
+        self.city.refresh_from_db()
+        self.assertEqual(self.city.get_children().filter(is_hidden=True).count(), 1)
+
+    def test_non_city_depth_returns_404(self):
+        region = self.city.get_parent()  # depth 2
+        resp = self.post(self._url(region.pk), {}, user=self.organizer)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_nonexistent_city_returns_404(self):
+        resp = self.post(self._url(999999), {}, user=self.organizer)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_participant_forbidden(self):
+        resp = self.post(self._url(self.city.pk), {}, user=self.participant)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_requires_auth(self):
+        resp = self.post(self._url(self.city.pk), {})
+        self.assertEqual(resp.status_code, 401)
+
+
 class CompetitionUpdateTest(TestCase, ApiTestMixin):
     def setUp(self):
         self.owner = _user("owner", role=User.Role.ORGANIZER)
