@@ -180,6 +180,31 @@ def get_location(request, location_id: int):
 
 
 @router.post(
+    "/{city_id}/fallback-venue/",
+    response=LocationOut,
+    auth=auth,
+    summary="Get or create a city's catch-all venue (organizer+)",
+)
+def city_fallback_venue(request, city_id: int):
+    """Return the hidden system fallback venue for a depth-3 city, creating it on first use.
+
+    Lets an organizer (e.g. the events agent) attach a competition to a city when it cannot pin
+    down a concrete start venue, without cluttering the tree with a fresh venue on every run. The
+    venue is idempotent -- one per city -- and named in all three locales by the site.
+    """
+    if not _can_add_directly(request.auth):
+        raise HttpError(403, "ORGANIZER role or higher is required")
+    try:
+        city = Location.objects.get(pk=city_id, is_deleted=False, depth=3)
+    except Location.DoesNotExist:
+        raise HttpError(404, "City (depth-3 location) not found") from None
+    try:
+        return Location.get_or_create_other_location(city)
+    except LocationConflictError as exc:
+        raise HttpError(409, str(exc)) from None
+
+
+@router.post(
     "/",
     response={201: LocationOut},
     auth=auth,
