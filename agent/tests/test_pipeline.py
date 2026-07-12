@@ -68,6 +68,25 @@ def test_parse_candidates_extracts_location_fields():
     assert candidate.lng == 76.98  # parsed from a string too
 
 
+def test_parse_candidates_localized_title_description_venue():
+    raw = (
+        '[{"title": {"ru": "race-ru", "kk": "race-kk", "en": "race-en"}, "date_start": "2026-08-01",'
+        ' "description": {"ru": "desc-ru", "kk": "desc-kk", "en": "desc-en"},'
+        ' "city": "Almaty", "venue": {"ru": "venue-ru", "kk": "venue-kk", "en": "venue-en"}}]'
+    )
+    candidate = parse_candidates(raw)[0]
+    assert (candidate.title, candidate.title_kk, candidate.title_en) == ("race-ru", "race-kk", "race-en")
+    assert (candidate.description, candidate.description_en) == ("desc-ru", "desc-en")
+    assert (candidate.venue, candidate.venue_kk, candidate.venue_en) == ("venue-ru", "venue-kk", "venue-en")
+
+
+def test_parse_candidates_plain_string_title_is_ru_only():
+    candidate = parse_candidates('[{"title": "Race", "date_start": "2026-08-01"}]')[0]
+    assert candidate.title == "Race"
+    assert candidate.title_kk == ""
+    assert candidate.title_en == ""
+
+
 def test_parse_candidates_missing_location_fields_default_empty():
     candidate = parse_candidates('[{"title": "R", "date_start": "2026-08-01"}]')[0]
     assert candidate.city == ""

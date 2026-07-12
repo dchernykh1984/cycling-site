@@ -32,6 +32,14 @@ class Candidate:
     venue: str = ""  # the specific start venue / address, if the announcement gives one
     lat: float | None = None
     lng: float | None = None
+    # Kazakh / English translations (the ru value lives in the base field above); the site stores
+    # every event and venue name in all three locales.
+    title_kk: str = ""
+    title_en: str = ""
+    description_kk: str = ""
+    description_en: str = ""
+    venue_kk: str = ""
+    venue_en: str = ""
 
 
 @dataclass

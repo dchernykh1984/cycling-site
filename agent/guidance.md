@@ -22,6 +22,10 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
 - Anything you are not confident is a real event with a concrete date.
 
 ## How to fill a proposal
+- **All three locales (ru/kk/en).** The site stores every event and location in three languages.
+  Give the event **title**, the **description** and any **venue name** in all three: `ru` (Russian),
+  `kk` (Kazakh) and `en` (English). Translate faithfully; if you genuinely cannot translate a field,
+  repeat the Russian text there rather than leaving it empty.
 - **Announcement link (`source_url`):** link to the announcement on the **organizer's own site**,
   and prefer the **specific race/event page**, not the organizer's homepage. If you found the event
   on an aggregator / calendar (integrator), still link to the organizer's page -- aggregators

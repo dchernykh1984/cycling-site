@@ -40,6 +40,17 @@ def _as_int(value: object) -> int | None:
     return None
 
 
+def _localized(value: object) -> tuple[str, str, str]:
+    """(ru, kk, en) from a {"ru","kk","en"} dict, or a plain string treated as the ru value."""
+    if isinstance(value, dict):
+        return (
+            str(value.get("ru") or "").strip(),
+            str(value.get("kk") or "").strip(),
+            str(value.get("en") or "").strip(),
+        )
+    return str(value or "").strip(), "", ""
+
+
 def _as_float(value: object) -> float | None:
     if isinstance(value, bool):
         return None
@@ -76,9 +87,9 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
     for item in items if isinstance(items, list) else []:
         if not isinstance(item, dict):
             continue
-        title = str(item.get("title") or "").strip()
+        title_ru, title_kk, title_en = _localized(item.get("title"))
         date_start = str(item.get("date_start") or "").strip()
-        if not title or not date_start:
+        if not title_ru or not date_start:
             continue
         event_type_id = _as_int(item.get("event_type_id"))
         raw_disciplines = item.get("discipline_ids")
@@ -89,21 +100,29 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
             if event_type_id not in taxonomy.event_type_ids:
                 event_type_id = None
             discipline_ids = [d for d in discipline_ids if d in taxonomy.discipline_ids]
+        desc_ru, desc_kk, desc_en = _localized(item.get("description"))
+        venue_ru, venue_kk, venue_en = _localized(item.get("venue"))
         candidates.append(
             Candidate(
-                title=title[:255],
+                title=title_ru[:255],
                 date_start=date_start,
                 date_end=(str(item.get("date_end")).strip() or None) if item.get("date_end") else None,
-                description=str(item.get("description") or "").strip(),
+                description=desc_ru,
                 source_url=str(item.get("source_url") or source_url).strip(),
                 event_type_id=event_type_id,
                 discipline_ids=discipline_ids,
                 country=str(item.get("country") or "").strip(),
                 region=str(item.get("region") or "").strip(),
                 city=str(item.get("city") or "").strip(),
-                venue=str(item.get("venue") or "").strip(),
+                venue=venue_ru,
                 lat=_as_float(item.get("lat")),
                 lng=_as_float(item.get("lng")),
+                title_kk=title_kk[:255],
+                title_en=title_en[:255],
+                description_kk=desc_kk,
+                description_en=desc_en,
+                venue_kk=venue_kk,
+                venue_en=venue_en,
             )
         )
     return candidates
