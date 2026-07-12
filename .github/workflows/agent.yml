@@ -40,7 +40,7 @@ jobs:
           AGENT_API_TOKEN: ${{ secrets.AGENT_API_TOKEN }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-chat' }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
           MAX_EVENTS_PER_RUN: ${{ github.event.inputs.max_events || '10' }}
           AGENT_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: python -m agent.run
