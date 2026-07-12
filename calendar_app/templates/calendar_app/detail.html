@@ -126,7 +126,7 @@
     </div>
     {% endif %}
 
-    {% if competition.registration_enabled %}
+    {% if competition.registration_enabled and competition.status == 'approved' %}
     <div class="mt-4 pt-3 border-top">
       <h2 class="h5">{% trans "Registration" %}</h2>
       <p class="text-muted small">{% trans "Registered" %}: {{ competition.qualified_count }}</p>
@@ -250,6 +250,7 @@
     </div>
     {% endif %}
 
+    {% if competition.status == 'approved' %}
     <hr class="mt-4">
     <section id="comments">
       <h2 class="mb-4 h5">{% trans "Comments" %} ({{ comments|length }})</h2>
@@ -295,6 +296,7 @@
       <p class="text-muted mt-3">{% trans "Commenting is available to verified participants." %}</p>
       {% endif %}
     </section>
+    {% endif %}
 
   </div>
 </div>
