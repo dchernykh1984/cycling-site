@@ -63,6 +63,10 @@ select = [
 "**/tests/**/*.py" = ["S101", "S105", "S106", "S603", "S607"]
 "tests/e2e/**/*.py" = ["S101", "S105", "S106", "S603", "S607"]
 "**/tests.py" = ["S101", "S105", "S106"]
+# The agent only ever opens http(s) URLs from the source list / site API / LLM endpoint.
+"agent/fetch.py" = ["S310"]
+"agent/llm.py" = ["S310"]
+"agent/site_api.py" = ["S310"]
 "**/migrations/*.py" = ["N806", "RUF001", "RUF012", "E501"]
 "cycling_site/settings/*.py" = ["F403", "F405", "S105"]
 
@@ -85,6 +89,9 @@ omit = [
     "cycling_site/wsgi.py",
     "cycling_site/settings/prod.py",
     "tests/e2e/*",
+    # Standalone scheduled tool (talks to the site over HTTP, not the ORM). Its pure logic has its
+    # own tests under agent/tests/; the network/LLM adapters are not part of the site coverage gate.
+    "agent/*",
 ]
 
 [tool.pytest.ini_options]

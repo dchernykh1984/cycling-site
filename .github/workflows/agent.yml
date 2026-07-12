@@ -1,0 +1,46 @@
+name: events-agent
+
+# Discovers cycling events from the curated sources and proposes them to the site as pending
+# competitions for a human moderator. Scheduled runs only fire from the default branch (main);
+# use "Run workflow" (with dry_run) to test from a branch.
+on:
+  schedule:
+    - cron: "7 6 * * *" # daily ~06:07 UTC (off the hour to avoid the busiest cron minute)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Log candidates without posting them"
+        type: boolean
+        default: false
+      max_events:
+        description: "Max events to propose this run"
+        type: string
+        default: "10"
+
+concurrency:
+  group: events-agent
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install beautifulsoup4
+      - name: Run events agent
+        env:
+          SITE_BASE_URL: https://universalbicycle.team
+          AGENT_API_TOKEN: ${{ secrets.AGENT_API_TOKEN }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-chat' }}
+          MAX_EVENTS_PER_RUN: ${{ github.event.inputs.max_events || '10' }}
+          AGENT_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: python -m agent.run
