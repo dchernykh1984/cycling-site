@@ -11,6 +11,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 
@@ -478,12 +479,21 @@ class CompetitionDetailView(View):
         competition = get_object_or_404(
             Competition.objects.select_related("submitted_by").prefetch_related("disciplines__category"),
             pk=pk,
-            status=Competition.Status.APPROVED,
         )
-        is_manager = can_manage(request.user, competition)
-        if competition.is_deleted or (competition.is_hidden and not is_manager):
-            from django.http import Http404
+        from django.http import Http404
 
+        if competition.is_deleted:
+            raise Http404
+        is_manager = can_manage(request.user, competition)
+        can_moderate = _is_organizer_plus(request.user)
+        is_author = request.user.is_authenticated and request.user == competition.submitted_by
+        if competition.status != Competition.Status.APPROVED:
+            # A not-yet-approved competition is visible to moderators (any organizer+) and to its
+            # author (so they can track their submission and read a rejection reason); everyone
+            # else gets a 404. Approve/reject buttons stay moderator-only (see can_moderate below).
+            if not (can_moderate or is_author):
+                raise Http404
+        elif competition.is_hidden and not is_manager:
             raise Http404
         protocols = competition.protocols.all()
         # upload_token is a secret credential: only show it to the submitter or to users
@@ -518,6 +528,9 @@ class CompetitionDetailView(View):
             "user_can_delete_comment": is_manager,
             "is_favorited": request.user.is_authenticated
             and CompetitionFavorite.objects.filter(user=request.user, competition=competition).exists(),
+            # Approve/reject is offered only to moderators (organizer+) and only while pending.
+            "can_moderate": can_moderate and competition.status == Competition.Status.PENDING_APPROVAL,
+            "reject_form": RejectCompetitionForm(),
         }
         # Resolve the map pin: a venue with its own coordinates, else the nearest visible ancestor
         # (city -> region -> country). The hidden "other location" placeholder carries no coordinates,
@@ -1000,25 +1013,39 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
         return context
 
 
+def _safe_next(request, default_view: str) -> str:
+    """Return the POSTed ``next`` URL when it is a safe same-host path, else the ``default_view``.
+
+    Approve/reject can be triggered from the moderation queue or from a competition's own page, so
+    each form posts where to return to; an unsafe/foreign ``next`` falls back to the default.
+    """
+    nxt = request.POST.get("next", "")
+    if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+        return nxt
+    return reverse(default_view)
+
+
 class ApproveCompetitionView(OrganizerRequiredMixin, View):
     def post(self, request, pk):
         comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
         comp.approve(reviewer=request.user)
-        return redirect("calendar_moderate")
+        return redirect(_safe_next(request, "calendar_moderate"))
 
 
 class RejectCompetitionView(OrganizerRequiredMixin, View):
     def post(self, request, pk):
         comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
         form = RejectCompetitionForm(request.POST)
-        reason = ""
-        if form.is_valid():
-            reason = form.cleaned_data.get("rejection_reason", "")
+        if not form.is_valid():
+            # A rejection reason is required, so an empty one is refused rather than silently
+            # rejecting without an explanation the author would then see.
+            messages.error(request, _("Please provide a reason for rejection."))
+            return redirect(_safe_next(request, "calendar_moderate"))
         try:
-            comp.reject(reviewer=request.user, reason=reason)
+            comp.reject(reviewer=request.user, reason=form.cleaned_data["rejection_reason"])
         except ValueError:
             pass
-        return redirect("calendar_moderate")
+        return redirect(_safe_next(request, "calendar_moderate"))
 
 
 class AddCompetitionCommentView(ParticipantRequiredMixin, View):

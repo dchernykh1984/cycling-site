@@ -677,6 +677,24 @@ class ApproveCompetitionViewTests(TestCase):
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.status, Competition.Status.APPROVED)
 
+    def test_approve_redirects_to_moderation_by_default(self):
+        self.client.login(username="organizer@example.com", password="password123")
+        response = self.client.post(reverse("competition_approve", args=[self.comp.pk]))
+        self.assertRedirects(response, reverse("calendar_moderate"))
+
+    def test_approve_redirects_to_next_when_provided(self):
+        self.client.login(username="organizer@example.com", password="password123")
+        detail_url = reverse("competition_detail", args=[self.comp.pk])
+        response = self.client.post(reverse("competition_approve", args=[self.comp.pk]), {"next": detail_url})
+        self.assertRedirects(response, detail_url)
+
+    def test_approve_ignores_unsafe_next(self):
+        self.client.login(username="organizer@example.com", password="password123")
+        response = self.client.post(
+            reverse("competition_approve", args=[self.comp.pk]), {"next": "https://evil.example.com/x"}
+        )
+        self.assertRedirects(response, reverse("calendar_moderate"))
+
     def test_participant_cannot_approve(self):
         self.client.login(username="participant@example.com", password="password123")
         self.client.post(reverse("competition_approve", args=[self.comp.pk]))
@@ -705,11 +723,106 @@ class RejectCompetitionViewTests(TestCase):
         self.assertEqual(self.comp.status, Competition.Status.REJECTED)
         self.assertEqual(self.comp.rejection_reason, "Too similar to another event")
 
-    def test_organizer_can_reject_without_reason(self):
+    def test_organizer_cannot_reject_without_reason(self):
+        # The reason is required now (it is shown to the author), so an empty one leaves the
+        # competition pending rather than rejecting it silently.
         self.client.login(username="organizer@example.com", password="password123")
         self.client.post(reverse("competition_reject", args=[self.comp.pk]), {})
         self.comp.refresh_from_db()
-        self.assertEqual(self.comp.status, Competition.Status.REJECTED)
+        self.assertEqual(self.comp.status, Competition.Status.PENDING_APPROVAL)
+
+    def test_reject_redirects_to_next_when_provided(self):
+        self.client.login(username="organizer@example.com", password="password123")
+        detail_url = reverse("competition_detail", args=[self.comp.pk])
+        response = self.client.post(
+            reverse("competition_reject", args=[self.comp.pk]),
+            {"rejection_reason": "Duplicate", "next": detail_url},
+        )
+        self.assertRedirects(response, detail_url)
+
+
+class PendingCompetitionDetailTests(TestCase):
+    def setUp(self):
+        self.moderator = _make_user("mod@example.com", User.Role.ORGANIZER)  # organizer, not the author
+        self.author = _make_user("author@example.com", User.Role.PARTICIPANT)
+        self.other = _make_user("other@example.com", User.Role.PARTICIPANT)
+        self.pending = _make_competition(
+            "Pending Race", status=Competition.Status.PENDING_APPROVAL, submitted_by=self.author
+        )
+        self.rejected = _make_competition(
+            "Rejected Race",
+            status=Competition.Status.REJECTED,
+            submitted_by=self.author,
+            rejection_reason="Duplicate event",
+        )
+        self.url_pending = reverse("competition_detail", args=[self.pending.pk])
+        self.url_rejected = reverse("competition_detail", args=[self.rejected.pk])
+
+    def test_pending_visible_to_moderator_with_actions(self):
+        self.client.force_login(self.moderator)
+        resp = self.client.get(self.url_pending)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.context["can_moderate"])
+        self.assertContains(resp, reverse("competition_approve", args=[self.pending.pk]))
+
+    def test_pending_visible_to_author_without_actions(self):
+        self.client.force_login(self.author)
+        resp = self.client.get(self.url_pending)
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.context["can_moderate"])
+        self.assertNotContains(resp, reverse("competition_approve", args=[self.pending.pk]))
+
+    def test_pending_hidden_from_unrelated_user(self):
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(self.url_pending).status_code, 404)
+
+    def test_pending_hidden_from_anonymous(self):
+        self.assertEqual(self.client.get(self.url_pending).status_code, 404)
+
+    def test_rejected_shows_reason_to_author(self):
+        self.client.force_login(self.author)
+        resp = self.client.get(self.url_rejected)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Duplicate event")
+        self.assertFalse(resp.context["can_moderate"])  # rejected -> no approve/reject buttons
+
+    def test_rejected_visible_to_moderator(self):
+        self.client.force_login(self.moderator)
+        self.assertEqual(self.client.get(self.url_rejected).status_code, 200)
+
+    def test_rejected_hidden_from_unrelated_user(self):
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(self.url_rejected).status_code, 404)
+
+    def test_approved_stays_public_without_actions(self):
+        approved = _make_competition("Public Race", status=Competition.Status.APPROVED)
+        resp = self.client.get(reverse("competition_detail", args=[approved.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.context["can_moderate"])
+
+    def test_moderator_approves_from_detail_page(self):
+        self.client.force_login(self.moderator)
+        self.client.post(reverse("competition_approve", args=[self.pending.pk]), {"next": self.url_pending})
+        self.pending.refresh_from_db()
+        self.assertEqual(self.pending.status, Competition.Status.APPROVED)
+
+    def test_organizer_can_view_and_self_approve_own_pending(self):
+        # An organizer who proposed an event (e.g. via the API, which lands it as pending) is also
+        # a moderator, so they can open their own pending event and approve it themselves.
+        org_author = _make_user("selforg@example.com", User.Role.ORGANIZER)
+        comp = _make_competition("Self Pending", status=Competition.Status.PENDING_APPROVAL, submitted_by=org_author)
+        self.client.force_login(org_author)
+        resp = self.client.get(reverse("competition_detail", args=[comp.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.context["can_moderate"])
+        self.client.post(reverse("competition_approve", args=[comp.pk]))
+        comp.refresh_from_db()
+        self.assertEqual(comp.status, Competition.Status.APPROVED)
+
+    def test_moderation_queue_links_to_detail_page(self):
+        self.client.force_login(self.moderator)
+        html = self.client.get(reverse("calendar_moderate")).content.decode()
+        self.assertIn(f'href="{self.url_pending}"', html)
 
 
 class CompetitionIsRegistrationOpenTests(TestCase):

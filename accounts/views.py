@@ -72,6 +72,23 @@ class ProfileView(TemplateView):
                 .select_related("competition", "category")
                 .order_by("-registered_at")
             )
+            from django.db.models import Case, IntegerField, Value, When
+
+            from calendar_app.models import Competition
+
+            # Competitions this user submitted. Ones that still need attention (pending / rejected)
+            # come first, already-approved ones last; newest first within each group.
+            context["my_competitions"] = (
+                Competition.objects.filter(submitted_by=self.request.user, is_deleted=False)
+                .annotate(
+                    _approved_last=Case(
+                        When(status=Competition.Status.APPROVED, then=Value(1)),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )
+                )
+                .order_by("_approved_last", "-date_start")
+            )
         return context
 
 
