@@ -695,6 +695,23 @@ class ApproveCompetitionViewTests(TestCase):
         )
         self.assertRedirects(response, reverse("calendar_moderate"))
 
+    def test_approve_refuses_http_downgrade_next_on_secure_request(self):
+        # On an HTTPS request a same-host but plain-http next is a protocol downgrade and is refused.
+        self.client.login(username="organizer@example.com", password="password123")
+        detail = reverse("competition_detail", args=[self.comp.pk])
+        response = self.client.post(
+            reverse("competition_approve", args=[self.comp.pk]),
+            {"next": "http://testserver" + detail},
+            secure=True,
+        )
+        self.assertRedirects(response, reverse("calendar_moderate"), fetch_redirect_response=False)
+
+    def test_approve_honors_relative_next_on_secure_request(self):
+        self.client.login(username="organizer@example.com", password="password123")
+        detail = reverse("competition_detail", args=[self.comp.pk])
+        response = self.client.post(reverse("competition_approve", args=[self.comp.pk]), {"next": detail}, secure=True)
+        self.assertRedirects(response, detail, fetch_redirect_response=False)
+
     def test_participant_cannot_approve(self):
         self.client.login(username="participant@example.com", password="password123")
         self.client.post(reverse("competition_approve", args=[self.comp.pk]))
