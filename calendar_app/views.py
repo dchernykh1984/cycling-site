@@ -1020,7 +1020,9 @@ def _safe_next(request, default_view: str) -> str:
     each form posts where to return to; an unsafe/foreign ``next`` falls back to the default.
     """
     nxt = request.POST.get("next", "")
-    if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+    if nxt and url_has_allowed_host_and_scheme(
+        nxt, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
         return nxt
     return reverse(default_view)
 
