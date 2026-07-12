@@ -26,9 +26,16 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
   and prefer the **specific race/event page**, not the organizer's homepage. If you found the event
   on an aggregator / calendar (integrator), still link to the organizer's page -- aggregators
   usually copy events from there -- not the aggregator.
-- **Location:** state the event's city in the (Russian) description. If you cannot determine the
-  exact city, name the **nearest** one and add a note in Russian for the reviewer, e.g.
-  "Указан ближайший город -- просьба к ревьюеру уточнить локацию и навести порядок."
+- **Location -- prefer concrete places.** The site's locations are a tree: country -> region ->
+  city -> specific venue (the start point). Try hard to find the **real** country, region, city and
+  the **specific start venue / address** of the event, and put them in the (Russian) description.
+  Prefer concrete values over generic ones: do NOT settle for the placeholders "Другая страна" /
+  "Другой регион" / "Другой город" / "Другая локация" -- find the actual place whenever the
+  announcement gives it; use a generic placeholder only as a last resort, when there is genuinely
+  no more specific information.
+  If the event is in a city the site does not have yet, do not force a wrong one: name the real
+  city/start in the description and ask the reviewer (in Russian) to add the location, e.g.
+  "Город/старт: <город/место>. Просьба к ревьюеру завести локацию и уточнить точку старта."
 
 ## Hints
 - (add source-specific hints here, e.g. "on granfondo.com.kz the schedule is under /ru/calendar")
