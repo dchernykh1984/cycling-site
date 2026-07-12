@@ -22,7 +22,7 @@
 
     <div class="d-flex align-items-start gap-2 mb-2">
       <h1 class="mb-0">{{ competition.title }}</h1>
-      {% if user.is_authenticated %}
+      {% if user.is_authenticated and competition.status == 'approved' %}
       <form method="post" action="{% url 'competition_toggle_favorite' competition.pk %}"
             id="favorite-form" class="mt-1">
         {% csrf_token %}
