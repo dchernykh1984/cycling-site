@@ -15,9 +15,10 @@ from agent.models import KnownEvents, Source
 _SYSTEM = (
     "You extract real, upcoming cycling competitions from the given source text. "
     'Return ONLY a JSON array; each item: {"title": str, "date_start": "YYYY-MM-DD", '
-    '"date_end": "YYYY-MM-DD"|null, "description": str}. '
-    "Title and description in Russian. Include only concrete events with a real date. "
-    "If there are none, return []. Do not invent events."
+    '"date_end": "YYYY-MM-DD"|null, "description": str, "source_url": str}. '
+    "Title and description in Russian. source_url is the announcement URL on the organizer's own "
+    "site when known (not an aggregator). Follow the maintainer guidance below. Include only "
+    "concrete events with a real date. If there are none, return []. Do not invent events."
 )
 
 
