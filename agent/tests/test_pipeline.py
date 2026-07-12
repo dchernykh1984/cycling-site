@@ -1,6 +1,6 @@
 import datetime
 
-from agent.models import Candidate, KnownEvents, Source
+from agent.models import Candidate, KnownEvents, Source, Taxonomy
 from agent.pipeline import normalize_key, parse_candidates, run_pipeline
 
 TODAY = datetime.date(2026, 7, 1)
@@ -46,6 +46,21 @@ def test_parse_candidates_malformed_or_incomplete_is_dropped():
     assert parse_candidates("not json at all") == []
     assert parse_candidates('[{"title": "", "date_start": "2026-08-01"}]') == []
     assert parse_candidates('[{"title": "X"}]') == []  # no date
+
+
+def test_parse_candidates_extracts_type_and_disciplines():
+    raw = '[{"title": "R", "date_start": "2026-08-01", "event_type_id": 1, "discipline_ids": [9, 24]}]'
+    candidate = parse_candidates(raw)[0]
+    assert candidate.event_type_id == 1
+    assert candidate.discipline_ids == [9, 24]
+
+
+def test_parse_candidates_drops_taxonomy_ids_not_on_the_site():
+    taxonomy = Taxonomy(event_types=[{"id": 1, "name": "Race"}], disciplines=[{"id": 9, "name": "Road"}])
+    raw = '[{"title": "R", "date_start": "2026-08-01", "event_type_id": 99, "discipline_ids": [9, 77]}]'
+    candidate = parse_candidates(raw, taxonomy=taxonomy)[0]
+    assert candidate.event_type_id is None  # 99 is not a real event type -> dropped
+    assert candidate.discipline_ids == [9]  # 77 dropped, 9 kept
 
 
 def test_proposes_new_valid_events():

@@ -47,10 +47,11 @@ def main() -> int:
     guidance = _read(_GUIDANCE_FILE)
     parsed_sources = sources.parse_sources(_read(_SOURCES_FILE))
     known = client.known()
+    taxonomy = client.taxonomy()
 
     def extract(text: str, source: sources.Source) -> list:
-        raw = llm.extract_raw(text, source, guidance, known, config)
-        return pipeline.parse_candidates(raw, source.fetch_url or "")
+        raw = llm.extract_raw(text, source, guidance, known, taxonomy, config)
+        return pipeline.parse_candidates(raw, source.fetch_url or "", taxonomy)
 
     report = pipeline.run_pipeline(
         parsed_sources,

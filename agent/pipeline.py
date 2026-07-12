@@ -12,7 +12,7 @@ import json
 import re
 from collections.abc import Callable
 
-from agent.models import Candidate, KnownEvents, RunReport, Source
+from agent.models import Candidate, KnownEvents, RunReport, Source, Taxonomy
 
 # Callables the runner injects (real versions live in fetch.py / llm.py / site_api.py).
 FetchFn = Callable[[Source], str]
@@ -30,11 +30,23 @@ def normalize_key(title: str, date_start: str) -> str:
     return f"{norm}|{(date_start or '').strip()}"
 
 
-def parse_candidates(raw: str, source_url: str = "") -> list[Candidate]:
+def _as_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        return int(value.strip())
+    return None
+
+
+def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None = None) -> list[Candidate]:
     """Parse the LLM's reply into candidates, tolerating code fences and stray prose.
 
-    Expects a JSON array of objects with title/date_start (and optional date_end/description).
-    Anything malformed is skipped rather than raising, so one bad item never sinks a run.
+    Expects a JSON array of objects with title/date_start (and optional date_end/description/
+    source_url/event_type_id/discipline_ids). Anything malformed is skipped rather than raising, so
+    one bad item never sinks a run. When ``taxonomy`` is given, a hallucinated event type or
+    discipline id (not on the site) is dropped rather than sent and rejected.
     """
     text = (raw or "").strip()
     if text.startswith("```"):
@@ -55,6 +67,15 @@ def parse_candidates(raw: str, source_url: str = "") -> list[Candidate]:
         date_start = str(item.get("date_start") or "").strip()
         if not title or not date_start:
             continue
+        event_type_id = _as_int(item.get("event_type_id"))
+        raw_disciplines = item.get("discipline_ids")
+        if not isinstance(raw_disciplines, list):
+            raw_disciplines = []
+        discipline_ids = [d for d in (_as_int(x) for x in raw_disciplines) if d is not None]
+        if taxonomy is not None:
+            if event_type_id not in taxonomy.event_type_ids:
+                event_type_id = None
+            discipline_ids = [d for d in discipline_ids if d in taxonomy.discipline_ids]
         candidates.append(
             Candidate(
                 title=title[:255],
@@ -62,6 +83,8 @@ def parse_candidates(raw: str, source_url: str = "") -> list[Candidate]:
                 date_end=(str(item.get("date_end")).strip() or None) if item.get("date_end") else None,
                 description=str(item.get("description") or "").strip(),
                 source_url=str(item.get("source_url") or source_url).strip(),
+                event_type_id=event_type_id,
+                discipline_ids=discipline_ids,
             )
         )
     return candidates
