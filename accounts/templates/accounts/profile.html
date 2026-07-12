@@ -179,6 +179,43 @@
         <p class="text-muted small">{% trans "No registrations yet." %}</p>
         {% endif %}
 
+        <h2 class="h5 mb-3 mt-2">{% trans "Events I submitted" %}</h2>
+        {% if my_competitions %}
+        <div class="table-responsive mb-3">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>{% trans "Competition" %}</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Status" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comp in my_competitions %}
+                    <tr>
+                        <td><a href="{% url 'competition_detail' comp.pk %}">{{ comp.title }}</a></td>
+                        <td>{{ comp.date_start|date:"d.m.Y" }}</td>
+                        <td>
+                            {% if comp.status == 'rejected' %}
+                            <span class="badge bg-danger">{% trans "Rejected" %}</span>
+                            {% if comp.rejection_reason %}
+                            <div class="text-muted small mt-1">{{ comp.rejection_reason }}</div>
+                            {% endif %}
+                            {% elif comp.status == 'approved' %}
+                            <span class="badge bg-success">{% trans "Approved" %}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{% trans "Pending" %}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted small">{% trans "You have not submitted any events yet." %}</p>
+        {% endif %}
+
         <h2 class="h5 mb-3 mt-2">{% trans "My submissions" %}</h2>
         <div class="mb-3">
             <a href="{% url 'knowledge_submit' %}" class="btn btn-sm btn-outline-primary">

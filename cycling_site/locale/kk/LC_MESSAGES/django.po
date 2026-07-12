@@ -1888,3 +1888,36 @@ msgstr "Таңдаулылардан алып тастау"
 # Favorite events (issue #183)
 msgid "In favorites"
 msgstr "Таңдаулыларда"
+
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "Awaiting moderation."
+msgstr "Модерацияны күтуде."
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "This event is not shown in the public calendar yet."
+msgstr "Іс-шара әзірге ашық күнтізбеде көрсетілмейді."
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "This submission was rejected."
+msgstr "Өтінім қабылданбады."
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "Reason"
+msgstr "Себебі"
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "Rejection reason"
+msgstr "Қабылданбау себебі"
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "Please provide a reason for rejection."
+msgstr "Қабылданбау себебін көрсетіңіз."
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "Events I submitted"
+msgstr "Мен қосқан іс-шаралар"
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "You have not submitted any events yet."
+msgstr "Сіз әзірге бірде-бір іс-шара қоспадыңыз."

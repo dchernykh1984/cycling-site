@@ -249,6 +249,34 @@ class ProfileViewTests(TestCase):
         response = self.client.get(reverse("account_profile"))
         self.assertContains(response, self.user.email)
 
+    def test_profile_lists_own_submitted_events_needs_attention_first(self):
+        from calendar_app.models import Competition
+
+        approved = Competition.objects.create(
+            title_ru="Approved Ev",
+            submitted_by=self.user,
+            date_start=datetime.date(2026, 7, 1),
+            status=Competition.Status.APPROVED,
+        )
+        pending = Competition.objects.create(
+            title_ru="Pending Ev",
+            submitted_by=self.user,
+            date_start=datetime.date(2026, 7, 2),
+            status=Competition.Status.PENDING_APPROVAL,
+        )
+        other = make_user(username="other_submitter", role=User.Role.PARTICIPANT)
+        Competition.objects.create(
+            title_ru="Other Ev",
+            submitted_by=other,
+            date_start=datetime.date(2026, 7, 3),
+            status=Competition.Status.PENDING_APPROVAL,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("account_profile"))
+        ids = [c.pk for c in response.context["my_competitions"]]
+        self.assertEqual(ids, [pending.pk, approved.pk])  # non-approved first, approved last
+        self.assertContains(response, reverse("competition_detail", args=[pending.pk]))
+
     def test_profile_shows_unverified_warning_without_confirmed_email(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("account_profile"))

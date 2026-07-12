@@ -1847,3 +1847,36 @@ msgstr "Убрать из избранного"
 # Favorite events (issue #183)
 msgid "In favorites"
 msgstr "В избранном"
+
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "Awaiting moderation."
+msgstr "Ожидает модерации."
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "This event is not shown in the public calendar yet."
+msgstr "Событие пока не отображается в публичном календаре."
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "This submission was rejected."
+msgstr "Заявка отклонена."
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "Reason"
+msgstr "Причина"
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "Rejection reason"
+msgstr "Причина отказа"
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "Please provide a reason for rejection."
+msgstr "Пожалуйста, укажите причину отказа."
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "Events I submitted"
+msgstr "Добавленные мной события"
+
+# Pending/rejected competitions + profile (issue #180)
+msgid "You have not submitted any events yet."
+msgstr "Вы пока не добавили ни одного события."

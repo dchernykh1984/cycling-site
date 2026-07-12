@@ -231,8 +231,10 @@ class AddCompetitionCommentForm(forms.ModelForm):
 
 
 class RejectCompetitionForm(forms.Form):
+    # Required: the reason is shown to the author on their submission's page, so a rejection must
+    # always carry an explanation.
     rejection_reason = forms.CharField(
-        required=False,
+        required=True,
         widget=forms.Textarea(attrs={"rows": 3, "class": "form-control w-100"}),
     )
 
