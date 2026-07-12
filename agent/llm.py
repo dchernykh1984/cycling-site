@@ -12,18 +12,21 @@ import urllib.request
 from agent.config import Config
 from agent.models import KnownEvents, Source, Taxonomy
 
+_LOC = '{"ru": str, "kk": str, "en": str}'
 _SYSTEM = (
     "You extract real, upcoming cycling competitions from the given source text. "
-    'Return ONLY a JSON array; each item: {"title": str, "date_start": "YYYY-MM-DD", '
-    '"date_end": "YYYY-MM-DD"|null, "description": str, "source_url": str, '
+    'Return ONLY a JSON array; each item: {"title": ' + _LOC + ', "date_start": "YYYY-MM-DD", '
+    '"date_end": "YYYY-MM-DD"|null, "description": ' + _LOC + ', "source_url": str, '
     '"event_type_id": int|null, "discipline_ids": [int], '
-    '"country": str, "region": str, "city": str, "venue": str, "lat": float|null, "lng": float|null}. '
-    "Title and description in Russian. source_url is the announcement URL on the organizer's own "
-    "site when known (not an aggregator). Choose event_type_id and discipline_ids ONLY from the "
-    "provided lists of ids; if unsure use null / []. For location, fill country/region/city and the "
-    "specific start venue/address when the announcement gives them (lat/lng only if you are sure); "
-    'leave a field "" when unknown -- do not guess. Follow the maintainer guidance below. Include '
-    "only concrete events with a real date. If there are none, return []. Do not invent events."
+    '"country": str, "region": str, "city": str, "venue": ' + _LOC + ', "lat": float|null, "lng": float|null}. '
+    "title, description and venue MUST be given in all three locales -- ru (Russian), kk (Kazakh) "
+    "and en (English); translate faithfully, and if you cannot translate one, repeat the Russian "
+    "text in that field. source_url is the announcement URL on the organizer's own site when known "
+    "(not an aggregator). Choose event_type_id and discipline_ids ONLY from the provided lists of "
+    "ids; if unsure use null / []. For location, fill country/region/city and the specific start "
+    "venue/address when the announcement gives them (lat/lng only if you are sure); leave a field "
+    '"" (or empty translations) when unknown -- do not guess. Follow the maintainer guidance below. '
+    "Include only concrete events with a real date. If there are none, return []. Do not invent events."
 )
 
 

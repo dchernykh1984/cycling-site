@@ -71,9 +71,17 @@ class SiteApiClient:
         """The visible country -> region -> city -> venue hierarchy (hidden venues excluded)."""
         return self._get_list("/api/v1/locations/")
 
-    def propose_venue(self, city_id: int, name: str, lat: float | None = None, lng: float | None = None) -> int:
+    def propose_venue(
+        self,
+        city_id: int,
+        name_ru: str,
+        name_kk: str = "",
+        name_en: str = "",
+        lat: float | None = None,
+        lng: float | None = None,
+    ) -> int:
         """Create a start venue (depth 4) under a city and return its id. Approved for organizers."""
-        payload: dict = {"parent_id": city_id, "name": {"ru": name, "kk": name, "en": name}}
+        payload: dict = {"parent_id": city_id, "name": _loc(name_ru, name_kk, name_en)}
         if lat is not None:
             payload["lat"] = lat
         if lng is not None:
@@ -88,13 +96,13 @@ class SiteApiClient:
 
     def create(self, candidate: Candidate, location_id: int | None = None) -> None:
         payload: dict = {
-            "title": {"ru": candidate.title},
+            "title": _loc(candidate.title, candidate.title_kk, candidate.title_en),
             "date_start": candidate.date_start,
         }
         if candidate.date_end:
             payload["date_end"] = candidate.date_end
         if candidate.description:
-            payload["description"] = {"ru": candidate.description}
+            payload["description"] = _loc(candidate.description, candidate.description_kk, candidate.description_en)
         if candidate.source_url:
             payload["url_announcement"] = candidate.source_url
         if candidate.event_type_id is not None:
@@ -111,3 +119,8 @@ def _ru(title: object) -> str:
     if isinstance(title, dict):
         return str(title.get("ru") or title.get("en") or title.get("kk") or "")
     return str(title or "")
+
+
+def _loc(ru: str, kk: str = "", en: str = "") -> dict:
+    """A LocalizedStr payload with every locale filled -- empty ones fall back to the ru text."""
+    return {"ru": ru, "kk": kk or ru, "en": en or ru}

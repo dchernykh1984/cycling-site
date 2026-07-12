@@ -60,7 +60,9 @@ def main() -> int:
         if city_id is None:
             return None  # reviewer adds the location (the guidance tells the LLM to note it)
         if candidate.venue:
-            return client.propose_venue(city_id, candidate.venue, candidate.lat, candidate.lng)
+            return client.propose_venue(
+                city_id, candidate.venue, candidate.venue_kk, candidate.venue_en, candidate.lat, candidate.lng
+            )
         return client.fallback_venue(city_id)
 
     def create(candidate: Candidate) -> None:
