@@ -16,13 +16,16 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
 - **Official / elite federation races** (Kazakhstan or Kyrgyzstan cycling federation championships)
   -- UNLESS the announcement explicitly says it is for **masters / amateurs (любительские заезды)**.
   Elite federation races are not of interest to us.
-- Events that already happened.
+- **Do NOT add past events** -- only upcoming ones, never events that already happened.
+- Non-cycling posts, chat replies, group rules ("Правила группы") and vague personal chatter
+  (e.g. "завтра в 5:00 стартуем из-под дуба") -- only real announcements with a place and a date.
 - Anything you are not confident is a real event with a concrete date.
 
 ## How to fill a proposal
-- **Announcement link (`source_url`):** if you found the event on an aggregator / calendar
-  (integrator), link to the announcement on the **organizer's own site** -- aggregators usually
-  copy events from there -- not the aggregator page.
+- **Announcement link (`source_url`):** link to the announcement on the **organizer's own site**,
+  and prefer the **specific race/event page**, not the organizer's homepage. If you found the event
+  on an aggregator / calendar (integrator), still link to the organizer's page -- aggregators
+  usually copy events from there -- not the aggregator.
 - **Location:** state the event's city in the (Russian) description. If you cannot determine the
   exact city, name the **nearest** one and add a note in Russian for the reviewer, e.g.
   "Указан ближайший город -- просьба к ревьюеру уточнить локацию и навести порядок."
