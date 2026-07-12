@@ -785,6 +785,16 @@ class PendingCompetitionDetailTests(TestCase):
         self.client.force_login(self.moderator)
         self.assertNotContains(self.client.get(self.url_pending), 'id="favorite-form"')
 
+    def test_pending_page_hides_comments_and_registration(self):
+        # Commenting and registering both require an approved competition; those controls must not
+        # appear on a pending page where they would only 404.
+        self.pending.registration_enabled = True
+        self.pending.save(update_fields=["registration_enabled"])
+        self.client.force_login(self.moderator)
+        html = self.client.get(self.url_pending).content.decode()
+        self.assertNotIn('id="comments"', html)
+        self.assertNotIn(reverse("registrations:register", args=[self.pending.pk]), html)
+
     def test_rejected_shows_reason_to_author(self):
         self.client.force_login(self.author)
         resp = self.client.get(self.url_rejected)
