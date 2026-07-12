@@ -36,8 +36,8 @@ python -m agent.run
 ## Secrets / variables (GitHub -> Settings -> Secrets and variables -> Actions)
 - `AGENT_API_TOKEN` (secret) - API token of a dedicated **organizer** account (the "bot").
 - `LLM_API_KEY` (secret) - DeepSeek (or other) API key.
-- `LLM_BASE_URL` (secret or variable) - e.g. `https://api.deepseek.com`.
-- `LLM_MODEL` (variable, optional) - e.g. `deepseek-chat`.
+- `LLM_BASE_URL` (secret) - e.g. `https://api.deepseek.com`.
+- `LLM_MODEL` (secret, optional) - e.g. `deepseek-chat` (defaults to `deepseek-chat` if unset).
 
 Scheduled runs only fire from the default branch (`main`); use the workflow's manual
 **Run workflow** button (with `dry_run`) to test from a branch.
