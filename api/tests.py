@@ -420,6 +420,46 @@ class CompetitionListTest(TestCase, ApiTestMixin):
         self.assertEqual(len(resp.json()), 1)
 
 
+class CompetitionRejectionReasonApiTest(TestCase, ApiTestMixin):
+    """The API exposes rejection_reason so a client (e.g. an agent) can learn from refusals,
+    without leaking one user's reason to another (rejected competitions are owner/admin-only)."""
+
+    def setUp(self):
+        self.owner = _user("reason_owner", role=User.Role.ORGANIZER)
+        self.other = _user("reason_other", role=User.Role.ORGANIZER)
+        self.rejected = _competition(
+            status=Competition.Status.REJECTED,
+            submitted_by=self.owner,
+            rejection_reason="Too similar to another event",
+        )
+
+    def test_owner_sees_reason_in_list(self):
+        resp = self.get("/api/v1/competitions/?status=rejected", user=self.owner)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual([c["rejection_reason"] for c in resp.json()], ["Too similar to another event"])
+
+    def test_owner_sees_reason_in_detail(self):
+        resp = self.get(f"/api/v1/competitions/{self.rejected.pk}", user=self.owner)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["rejection_reason"], "Too similar to another event")
+
+    def test_other_user_cannot_list_or_open_rejected(self):
+        # No leak: another user neither sees it in their list nor can open its detail.
+        self.assertEqual(self.get("/api/v1/competitions/?status=rejected", user=self.other).json(), [])
+        self.assertEqual(self.get(f"/api/v1/competitions/{self.rejected.pk}", user=self.other).status_code, 404)
+
+    def test_admin_sees_reason(self):
+        admin = _user("reason_admin", role=User.Role.ADMIN)
+        resp = self.get("/api/v1/competitions/?status=rejected", user=admin)
+        self.assertIn("Too similar to another event", [c["rejection_reason"] for c in resp.json()])
+
+    def test_approved_competition_has_empty_reason(self):
+        approved = _competition(status=Competition.Status.APPROVED, submitted_by=self.owner)
+        resp = self.get(f"/api/v1/competitions/{approved.pk}", user=self.owner)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["rejection_reason"], "")
+
+
 class CompetitionDetailTest(TestCase, ApiTestMixin):
     def setUp(self):
         self.reader = _user("det_reader", role=User.Role.PARTICIPANT)

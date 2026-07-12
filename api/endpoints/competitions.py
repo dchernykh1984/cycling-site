@@ -64,6 +64,10 @@ class CompetitionOut(Schema):
     date_start: date
     date_end: date | None
     status: str
+    # Why a submission was rejected. Only non-empty for rejected competitions, which the list and
+    # detail endpoints already restrict to the submitter and admins -- so this never leaks another
+    # user's rejection reason. Lets an API client (e.g. an agent proposing events) learn from it.
+    rejection_reason: str = ""
     submitted_by_id: int | None
     url_route: str
     url_announcement: str
