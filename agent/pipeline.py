@@ -40,6 +40,19 @@ def _as_int(value: object) -> int | None:
     return None
 
 
+def _as_float(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.strip())
+        except ValueError:
+            return None
+    return None
+
+
 def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None = None) -> list[Candidate]:
     """Parse the LLM's reply into candidates, tolerating code fences and stray prose.
 
@@ -85,6 +98,12 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
                 source_url=str(item.get("source_url") or source_url).strip(),
                 event_type_id=event_type_id,
                 discipline_ids=discipline_ids,
+                country=str(item.get("country") or "").strip(),
+                region=str(item.get("region") or "").strip(),
+                city=str(item.get("city") or "").strip(),
+                venue=str(item.get("venue") or "").strip(),
+                lat=_as_float(item.get("lat")),
+                lng=_as_float(item.get("lng")),
             )
         )
     return candidates

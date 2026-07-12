@@ -25,6 +25,13 @@ class Candidate:
     source_url: str = ""
     event_type_id: int | None = None
     discipline_ids: list[int] = field(default_factory=list)
+    # Free-text location hints from the LLM, resolved to a site location_id at create time:
+    country: str = ""
+    region: str = ""
+    city: str = ""
+    venue: str = ""  # the specific start venue / address, if the announcement gives one
+    lat: float | None = None
+    lng: float | None = None
 
 
 @dataclass

@@ -16,10 +16,13 @@ _SYSTEM = (
     "You extract real, upcoming cycling competitions from the given source text. "
     'Return ONLY a JSON array; each item: {"title": str, "date_start": "YYYY-MM-DD", '
     '"date_end": "YYYY-MM-DD"|null, "description": str, "source_url": str, '
-    '"event_type_id": int|null, "discipline_ids": [int]}. '
+    '"event_type_id": int|null, "discipline_ids": [int], '
+    '"country": str, "region": str, "city": str, "venue": str, "lat": float|null, "lng": float|null}. '
     "Title and description in Russian. source_url is the announcement URL on the organizer's own "
     "site when known (not an aggregator). Choose event_type_id and discipline_ids ONLY from the "
-    "provided lists of ids; if unsure use null / []. Follow the maintainer guidance below. Include "
+    "provided lists of ids; if unsure use null / []. For location, fill country/region/city and the "
+    "specific start venue/address when the announcement gives them (lat/lng only if you are sure); "
+    'leave a field "" when unknown -- do not guess. Follow the maintainer guidance below. Include '
     "only concrete events with a real date. If there are none, return []. Do not invent events."
 )
 

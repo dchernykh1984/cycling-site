@@ -55,6 +55,25 @@ def test_parse_candidates_extracts_type_and_disciplines():
     assert candidate.discipline_ids == [9, 24]
 
 
+def test_parse_candidates_extracts_location_fields():
+    raw = (
+        '[{"title": "R", "date_start": "2026-08-01", "country": "Kazakhstan", "region": "Almaty region",'
+        ' "city": "Almaty", "venue": "Medeu", "lat": 43.16, "lng": "76.98"}]'
+    )
+    candidate = parse_candidates(raw)[0]
+    assert candidate.city == "Almaty"
+    assert candidate.venue == "Medeu"
+    assert candidate.country == "Kazakhstan"
+    assert candidate.lat == 43.16
+    assert candidate.lng == 76.98  # parsed from a string too
+
+
+def test_parse_candidates_missing_location_fields_default_empty():
+    candidate = parse_candidates('[{"title": "R", "date_start": "2026-08-01"}]')[0]
+    assert candidate.city == ""
+    assert candidate.lat is None
+
+
 def test_parse_candidates_drops_taxonomy_ids_not_on_the_site():
     taxonomy = Taxonomy(event_types=[{"id": 1, "name": "Race"}], disciplines=[{"id": 9, "name": "Road"}])
     raw = '[{"title": "R", "date_start": "2026-08-01", "event_type_id": 99, "discipline_ids": [9, 77]}]'
