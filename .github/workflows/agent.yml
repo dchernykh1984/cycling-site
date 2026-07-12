@@ -2,7 +2,8 @@ name: events-agent
 
 # Discovers cycling events from the curated sources and proposes them to the site as pending
 # competitions for a human moderator. Scheduled runs only fire from the default branch (main);
-# use "Run workflow" (with dry_run) to test from a branch.
+# use "Run workflow" (with dry_run) to test from a branch. Manual runs are restricted to the
+# repository owner so nobody else can spend the LLM/API budget.
 on:
   schedule:
     - cron: "7 6 * * *" # daily ~06:07 UTC (off the hour to avoid the busiest cron minute)
@@ -29,6 +30,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # Fail a manual run started by anyone other than the owner before any secret is used.
+      - name: Restrict manual runs to the repository owner
+        if: ${{ github.event_name == 'workflow_dispatch' && github.actor != github.repository_owner }}
+        run: |
+          echo "::error::Only ${{ github.repository_owner }} may run this workflow manually (actor: ${{ github.actor }})."
+          exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v6
         with:
@@ -36,7 +43,7 @@ jobs:
       - run: pip install beautifulsoup4
       - name: Run events agent
         env:
-          SITE_BASE_URL: https://universalbicycle.team
+          SITE_BASE_URL: ${{ secrets.SITE_BASE_URL || 'https://universalbicycle.team' }}
           AGENT_API_TOKEN: ${{ secrets.AGENT_API_TOKEN }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
