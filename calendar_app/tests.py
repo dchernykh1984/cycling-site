@@ -779,6 +779,12 @@ class PendingCompetitionDetailTests(TestCase):
     def test_pending_hidden_from_anonymous(self):
         self.assertEqual(self.client.get(self.url_pending).status_code, 404)
 
+    def test_pending_page_hides_favorite_star(self):
+        # Favoriting requires an approved competition, so the star must not appear on a pending
+        # page where it would only 404 when clicked.
+        self.client.force_login(self.moderator)
+        self.assertNotContains(self.client.get(self.url_pending), 'id="favorite-form"')
+
     def test_rejected_shows_reason_to_author(self):
         self.client.force_login(self.author)
         resp = self.client.get(self.url_rejected)
