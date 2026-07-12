@@ -6,9 +6,9 @@ import os
 import sys
 from pathlib import Path
 
-from agent import fetch, llm, pipeline, sources
+from agent import fetch, llm, locations, pipeline, sources
 from agent.config import ConfigError, from_env
-from agent.models import RunReport
+from agent.models import Candidate, RunReport
 from agent.site_api import SiteApiClient
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -48,17 +48,30 @@ def main() -> int:
     parsed_sources = sources.parse_sources(_read(_SOURCES_FILE))
     known = client.known()
     taxonomy = client.taxonomy()
+    cities = locations.flatten_cities(client.location_tree())
 
     def extract(text: str, source: sources.Source) -> list:
         raw = llm.extract_raw(text, source, guidance, known, taxonomy, config)
         return pipeline.parse_candidates(raw, source.fetch_url or "", taxonomy)
+
+    def resolve_location(candidate: Candidate) -> int | None:
+        """Concrete start venue when the city is known and named; else the city's catch-all; else none."""
+        city_id = locations.match_city(cities, candidate.city, candidate.region, candidate.country)
+        if city_id is None:
+            return None  # reviewer adds the location (the guidance tells the LLM to note it)
+        if candidate.venue:
+            return client.propose_venue(city_id, candidate.venue, candidate.lat, candidate.lng)
+        return client.fallback_venue(city_id)
+
+    def create(candidate: Candidate) -> None:
+        client.create(candidate, resolve_location(candidate))
 
     report = pipeline.run_pipeline(
         parsed_sources,
         known,
         fetch=fetch.fetch_source,
         extract=extract,
-        create=client.create,
+        create=create,
         max_events=config.max_events,
         dry_run=config.dry_run,
     )

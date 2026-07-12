@@ -67,7 +67,26 @@ class SiteApiClient:
             )
         return known
 
-    def create(self, candidate: Candidate) -> None:
+    def location_tree(self) -> list:
+        """The visible country -> region -> city -> venue hierarchy (hidden venues excluded)."""
+        return self._get_list("/api/v1/locations/")
+
+    def propose_venue(self, city_id: int, name: str, lat: float | None = None, lng: float | None = None) -> int:
+        """Create a start venue (depth 4) under a city and return its id. Approved for organizers."""
+        payload: dict = {"parent_id": city_id, "name": {"ru": name, "kk": name, "en": name}}
+        if lat is not None:
+            payload["lat"] = lat
+        if lng is not None:
+            payload["lng"] = lng
+        result = self._request("POST", "/api/v1/locations/", payload)
+        return int(result["id"]) if isinstance(result, dict) else 0
+
+    def fallback_venue(self, city_id: int) -> int:
+        """Get (or create) the city's hidden catch-all venue and return its id."""
+        result = self._request("POST", f"/api/v1/locations/{city_id}/fallback-venue/", {})
+        return int(result["id"]) if isinstance(result, dict) else 0
+
+    def create(self, candidate: Candidate, location_id: int | None = None) -> None:
         payload: dict = {
             "title": {"ru": candidate.title},
             "date_start": candidate.date_start,
@@ -82,6 +101,8 @@ class SiteApiClient:
             payload["event_type_id"] = candidate.event_type_id
         if candidate.discipline_ids:
             payload["discipline_ids"] = candidate.discipline_ids
+        if location_id is not None:
+            payload["location_id"] = location_id
         self._request("POST", "/api/v1/competitions/", payload)
 
 
