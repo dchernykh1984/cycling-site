@@ -23,6 +23,24 @@ class Candidate:
     date_end: str | None = None
     description: str = ""
     source_url: str = ""
+    event_type_id: int | None = None
+    discipline_ids: list[int] = field(default_factory=list)
+
+
+@dataclass
+class Taxonomy:
+    """The site's event types and disciplines, for the LLM to classify against and for validation."""
+
+    event_types: list[dict] = field(default_factory=list)  # [{"id", "name"}]
+    disciplines: list[dict] = field(default_factory=list)  # [{"id", "name", "category"}]
+
+    @property
+    def event_type_ids(self) -> set[int]:
+        return {item["id"] for item in self.event_types}
+
+    @property
+    def discipline_ids(self) -> set[int]:
+        return {item["id"] for item in self.disciplines}
 
 
 @dataclass
