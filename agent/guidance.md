@@ -21,6 +21,18 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
   (e.g. "завтра в 5:00 стартуем из-под дуба") -- only real announcements with a place and a date.
 - Anything you are not confident is a real event with a concrete date.
 
+## Avoid duplicates
+- **Never propose an event that is already on the site.** The prompt lists the events the site
+  already has (and the ones you proposed earlier in this same run). Skip an event when it is the
+  **same race** -- same series / organizer, around the same date and city -- even if its title is
+  worded differently, in another language, or with/without the year. When unsure, skip it.
+- **The same event often appears in several sources** (the organizer's site, an aggregator, a
+  Telegram post). Propose each real event **once**.
+- **One race = one event.** If a race offers several distances, formats or disciplines
+  (e.g. 30 / 60 / 100 km, or road + gravel), create a **single** competition that lists all of them
+  in its `discipline_ids` and description -- do NOT create a separate event per distance or
+  discipline.
+
 ## How to fill a proposal
 - **All three locales (ru/kk/en).** The site stores every event and location in three languages.
   Give the event **title**, the **description** and any **venue name** in all three: `ru` (Russian),

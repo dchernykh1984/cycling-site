@@ -54,7 +54,9 @@ class SiteApiClient:
         """Approved + own pending become dedup keys; own rejected carry their reasons to learn from."""
         known = KnownEvents()
         for comp in self._list("approved") + self._list("pending_approval"):
-            known.existing_keys.add(normalize_key(_ru(comp.get("title")), comp.get("date_start", "")))
+            title, date_start = _ru(comp.get("title")), comp.get("date_start", "")
+            known.existing_keys.add(normalize_key(title, date_start))
+            known.existing.append({"title": title, "date_start": date_start})
         for comp in self._list("rejected"):
             title, date_start = _ru(comp.get("title")), comp.get("date_start", "")
             known.rejected.append(
