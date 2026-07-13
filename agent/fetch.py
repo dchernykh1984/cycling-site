@@ -19,6 +19,14 @@ def _get(url: str, timeout: int = 20) -> str:
         return response.read().decode(charset, errors="replace")
 
 
+def fetch_url(url: str, timeout: int = 20) -> str:
+    """Readable text of an arbitrary web page, for enriching an event from its own page."""
+    soup = BeautifulSoup(_get(url, timeout), "html.parser")
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
+    return soup.get_text(" ", strip=True)[:_MAX_CHARS]
+
+
 def fetch_source(source: Source) -> str:
     """Return readable text for a website or public Telegram channel (via the t.me/s/ preview)."""
     if not source.fetch_url:

@@ -16,6 +16,11 @@ get added - the normal GUI/API flows for real users are unchanged.
 5. Drops anything already known or previously rejected, keeps only valid future events, and
    proposes at most `MAX_EVENTS_PER_RUN` (default **10**) via `POST /api/v1/competitions/`
    (organizer token -> status `pending_approval`).
+6. **Second pass (enrichment):** before posting, for each accepted event that links to its own
+   specific web page, the agent fetches that page and asks the LLM to refine the event (formatted
+   description, exact date, route/registration links, location). Any failure falls back to the
+   first-pass data. Toggle with `AGENT_ENRICH_DETAILS` (default on). It cannot run JavaScript, so
+   JS-only pages add little.
 
 The agent is **stateless**: the site itself is its memory (it re-derives "already there" and
 "rejected, don't repeat" from the API each run).
@@ -33,6 +38,7 @@ The agent is **stateless**: the site itself is its memory (it re-derives "alread
 SITE_BASE_URL=https://universalbicycle.team \
 AGENT_API_TOKEN=... LLM_API_KEY=... LLM_BASE_URL=https://api.deepseek.com \
 LLM_MODEL=deepseek-chat MAX_EVENTS_PER_RUN=10 AGENT_DRY_RUN=true \
+AGENT_ENRICH_DETAILS=true \
 python -m agent.run
 ```
 (only `beautifulsoup4` is needed beyond the standard library)

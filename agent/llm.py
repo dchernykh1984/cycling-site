@@ -10,7 +10,7 @@ import json
 import urllib.request
 
 from agent.config import Config
-from agent.models import KnownEvents, Source, Taxonomy
+from agent.models import Candidate, KnownEvents, Source, Taxonomy
 
 _LOC = '{"ru": str, "kk": str, "en": str}'
 _SYSTEM = (
@@ -52,14 +52,12 @@ def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxono
     )
 
 
-def extract_raw(
-    text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, config: Config
-) -> str:
+def _chat(system: str, user: str, config: Config) -> str:
     payload = {
         "model": config.llm_model,
         "messages": [
-            {"role": "system", "content": _SYSTEM},
-            {"role": "user", "content": _prompt(text, source, guidance, known, taxonomy)},
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
         ],
         "temperature": 0,
         "stream": False,
@@ -73,3 +71,64 @@ def extract_raw(
     with urllib.request.urlopen(request, timeout=120) as response:
         body = json.loads(response.read().decode())
     return body["choices"][0]["message"]["content"]
+
+
+def extract_raw(
+    text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, config: Config
+) -> str:
+    return _chat(_SYSTEM, _prompt(text, source, guidance, known, taxonomy), config)
+
+
+_ENRICH_SYSTEM = (
+    "You are given ONE cycling event we already extracted (as JSON) and the full text of that "
+    "event's own web page. Return ONLY a JSON array containing a SINGLE improved version of the "
+    "SAME event, using exactly the same schema as the extraction. Use the page to fill in and "
+    "correct the fields: a well-formatted HTML description (distances, categories/groups, schedule, "
+    "fees, who it is for) using only <p>/<br>/<ul>/<ol>/<li>/<strong>/<em>; date_start/date_end; "
+    "url_route (route / GPS-track link, e.g. Strava) and url_registration; event_type_id and "
+    "discipline_ids from the provided lists; and country/region/city/venue. Keep title, description "
+    "and venue in all three locales (ru/kk/en). Keep it the SAME event -- never turn it into a "
+    "different one, and do not invent facts the page does not state. If the page adds nothing, "
+    "return the event unchanged."
+)
+
+
+def _event_json(candidate: Candidate) -> str:
+    return json.dumps(
+        {
+            "title": {"ru": candidate.title, "kk": candidate.title_kk, "en": candidate.title_en},
+            "date_start": candidate.date_start,
+            "date_end": candidate.date_end,
+            "description": {
+                "ru": candidate.description,
+                "kk": candidate.description_kk,
+                "en": candidate.description_en,
+            },
+            "source_url": candidate.source_url,
+            "url_route": candidate.url_route,
+            "url_registration": candidate.url_registration,
+            "event_type_id": candidate.event_type_id,
+            "discipline_ids": candidate.discipline_ids,
+            "country": candidate.country,
+            "region": candidate.region,
+            "city": candidate.city,
+            "venue": {"ru": candidate.venue, "kk": candidate.venue_kk, "en": candidate.venue_en},
+            "lat": candidate.lat,
+            "lng": candidate.lng,
+        },
+        ensure_ascii=False,
+    )
+
+
+def enrich_raw(candidate: Candidate, page_text: str, guidance: str, taxonomy: Taxonomy, config: Config) -> str:
+    """Ask the model to refine one event using the full text of its own event page."""
+    event_types = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.event_types)
+    disciplines = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.disciplines)
+    user = (
+        f"Guidance from the maintainers:\n{guidance.strip() or '(none)'}\n\n"
+        f"Event types (id=name): {event_types or '(none)'}\n"
+        f"Disciplines (id=name): {disciplines or '(none)'}\n\n"
+        f"Current event (JSON):\n{_event_json(candidate)}\n\n"
+        f"Event page text:\n{page_text}"
+    )
+    return _chat(_ENRICH_SYSTEM, user, config)

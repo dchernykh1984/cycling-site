@@ -6,7 +6,7 @@ import os
 import sys
 from pathlib import Path
 
-from agent import fetch, llm, locations, pipeline, sources
+from agent import enrich, fetch, llm, locations, pipeline, sources
 from agent.config import ConfigError, from_env
 from agent.models import Candidate, RunReport
 from agent.site_api import SiteApiClient
@@ -65,6 +65,18 @@ def main() -> int:
             )
         return client.fallback_venue(city_id)
 
+    def enrich_candidate(candidate: Candidate) -> Candidate:
+        """Fetch the event's own page and let the LLM refine it; keep the original on any failure."""
+        if not config.enrich_details or not enrich.should_enrich(candidate):
+            return candidate
+        try:
+            page_text = fetch.fetch_url(candidate.source_url)
+            raw = llm.enrich_raw(candidate, page_text, guidance, taxonomy, config)
+            refined = pipeline.parse_candidates(raw, candidate.source_url, taxonomy)
+        except Exception:
+            return candidate  # network/LLM/parse failure -> use what we already have
+        return enrich.merge_candidate(candidate, refined[0]) if refined else candidate
+
     def create(candidate: Candidate) -> None:
         client.create(candidate, resolve_location(candidate))
         # Feed it back so later sources in this same run do not re-propose the same event.
@@ -79,6 +91,7 @@ def main() -> int:
         create=create,
         max_events=config.max_events,
         dry_run=config.dry_run,
+        enrich=enrich_candidate,
     )
     print(_summary(report))
     return 0
