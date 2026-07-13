@@ -169,6 +169,8 @@ Notes:
 - Moderate pending competitions (approve/reject); approving a competition
   auto-approves the location proposed with it.
 - Add an approved venue under a city via web/API without separate moderation.
+- Get (or lazily create) a city's shared **catch-all venue** via the API, to attach a
+  competition to a city when no exact start venue is known.
 - Manage entrants of their own competitions: approve/reject, mark paid, edit,
   delete, add manually (free registration) and export to CSV.
 - Delete comments on their own competitions.
