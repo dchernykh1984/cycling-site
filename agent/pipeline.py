@@ -12,6 +12,7 @@ import json
 import re
 from collections.abc import Callable
 
+from agent import dedup
 from agent.models import Candidate, KnownEvents, RunReport, Source, Taxonomy
 
 # Callables the runner injects (real versions live in fetch.py / llm.py / site_api.py).
@@ -163,18 +164,29 @@ def _source_candidates(source: Source, fetch: FetchFn, extract: ExtractFn, repor
 
 
 def _consider(
-    candidate: Candidate, seen: set[str], report: RunReport, today: datetime.date, *, create: CreateFn, dry_run: bool
+    candidate: Candidate,
+    seen: set[str],
+    known_titles: list[tuple[set[str], str]],
+    report: RunReport,
+    today: datetime.date,
+    *,
+    create: CreateFn,
+    dry_run: bool,
 ) -> None:
     """Dedup + validate one candidate; accept (and post, unless dry-run) or record why it was skipped."""
     key = normalize_key(candidate.title, candidate.date_start)
     if key in seen:
         report.skipped_candidates.append((candidate.title, "already known or rejected"))
         return
+    if dedup.is_duplicate(candidate.title, candidate.date_start, known_titles):
+        report.skipped_candidates.append((candidate.title, "near-duplicate of an existing event"))
+        return
     ok, reason = _is_valid(candidate, today)
     if not ok:
         report.skipped_candidates.append((candidate.title, reason))
         return
     seen.add(key)
+    known_titles.append((dedup.title_tokens(candidate.title), candidate.date_start))
     report.accepted.append(candidate)
     if not dry_run:
         try:
@@ -197,8 +209,12 @@ def run_pipeline(
     """Fetch each source, extract candidates, and propose new valid ones up to ``max_events``."""
     today = today or datetime.date.today()
     report = RunReport(dry_run=dry_run)
-    # Never re-propose something already on the site or previously rejected.
+    # Never re-propose something already on the site or previously rejected (exact match)...
     seen = set(known.existing_keys) | {r["key"] for r in known.rejected}
+    # ...and catch near-duplicates worded differently via title tokens + date (grown as we accept).
+    known_titles: list[tuple[set[str], str]] = [
+        (dedup.title_tokens(item["title"]), item.get("date_start", "")) for item in (*known.existing, *known.rejected)
+    ]
 
     for source in sources:
         if report.capped:
@@ -207,5 +223,5 @@ def run_pipeline(
             if len(report.accepted) >= max_events:
                 report.capped = True
                 break
-            _consider(candidate, seen, report, today, create=create, dry_run=dry_run)
+            _consider(candidate, seen, known_titles, report, today, create=create, dry_run=dry_run)
     return report

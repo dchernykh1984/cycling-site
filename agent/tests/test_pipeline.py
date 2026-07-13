@@ -127,6 +127,26 @@ def test_skips_known_and_previously_rejected():
     assert [c.title for c in report.accepted] == ["Race C"]
 
 
+def test_skips_fuzzy_duplicate_of_existing_event():
+    src = _src()
+    known = KnownEvents(existing=[{"title": "Apricot Marathon Gravel MTB 2026", "date_start": "2026-08-09"}])
+    cands = [Candidate("Apricot Marathon Gravel MTB Race 2026", "2026-08-09")]
+    report, created = _run([src], {src.fetch_url: cands}, known=known)
+    assert report.accepted == []
+    assert created == []
+    assert any("near-duplicate" in reason for _, reason in report.skipped_candidates)
+
+
+def test_skips_fuzzy_duplicate_found_across_sources_in_one_run():
+    src = _src()
+    cands = [
+        Candidate("Apricot Marathon Gravel MTB 2026", "2026-08-09"),
+        Candidate("Apricot Marathon Gravel MTB Race 2026", "2026-08-09"),  # same event, worded differently
+    ]
+    report, _ = _run([src], {src.fetch_url: cands})
+    assert [c.title for c in report.accepted] == ["Apricot Marathon Gravel MTB 2026"]
+
+
 def test_skips_past_and_bad_dates():
     src = _src()
     cands = [Candidate("Old", "2026-06-01"), Candidate("Bad", "not-a-date"), Candidate("New", "2026-08-01")]
