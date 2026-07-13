@@ -22,7 +22,8 @@ The agent is **stateless**: the site itself is its memory (it re-derives "alread
 
 ## Guardrails
 - Hard cap of `MAX_EVENTS_PER_RUN` proposals per run (agent-side; the site does not limit users).
-- Dedup against existing + past rejections.
+- Dedup against existing + past rejections: exact (title+date) plus fuzzy, so a near-duplicate of
+  an existing event -- same words, close date, worded differently -- is dropped too.
 - `AGENT_DRY_RUN=true` (or the workflow's `dry_run` input) logs candidates without posting.
 - A human moderator approves everything - nothing goes public automatically.
 
