@@ -38,10 +38,15 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
   Give the event **title**, the **description** and any **venue name** in all three: `ru` (Russian),
   `kk` (Kazakh) and `en` (English). Translate faithfully; if you genuinely cannot translate a field,
   repeat the Russian text there rather than leaving it empty.
-- **Announcement link (`source_url`):** link to the announcement on the **organizer's own site**,
-  and prefer the **specific race/event page**, not the organizer's homepage. If you found the event
-  on an aggregator / calendar (integrator), still link to the organizer's page -- aggregators
-  usually copy events from there -- not the aggregator.
+- **Announcement link (`source_url`):** the page of **THIS specific competition** on the
+  organizer's own website (e.g. `https://athletex.kz/competitions/<slug>`), not the site's homepage
+  and not a calendar / aggregator. If the announcement you found is a **Telegram or social-media
+  post**, look for the organizer's real event page and link that instead; use a Telegram / social
+  link only when the event genuinely has no web page, and even then link the specific post, never a
+  channel's main page.
+- **Description -- include the essentials.** Keep it short, but put the key facts in the text:
+  the distances / formats offered, the entry fee(s), the start date, time and place, the categories,
+  and the registration deadline when given. One line is too little; a wall of text is too much.
 - **Location -- prefer concrete places.** The site's locations are a tree: country -> region ->
   city -> specific venue (the start point). Try hard to find the **real** country, region, city and
   the **specific start venue / address** of the event, and put them in the (Russian) description.
