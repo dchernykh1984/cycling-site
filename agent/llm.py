@@ -31,6 +31,7 @@ _SYSTEM = (
 
 
 def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy) -> str:
+    existing = "\n".join(f"- {e['title']} ({e['date_start']})" for e in known.existing[:200])
     rejected = "\n".join(f"- {r['title']} ({r['date_start']}): {r['reason']}" for r in known.rejected[:40])
     event_types = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.event_types)
     disciplines = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.disciplines)
@@ -38,6 +39,8 @@ def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxono
         f"Guidance from the maintainers:\n{guidance.strip() or '(none)'}\n\n"
         f"Event types (id=name): {event_types or '(none)'}\n"
         f"Disciplines (id=name): {disciplines or '(none)'}\n\n"
+        f"Events already on the site or already proposed in this run -- do NOT propose any of these "
+        f"again, even if the wording, language or year differs:\n{existing or '(none)'}\n\n"
         f"Do NOT propose events similar to these previously rejected ones:\n{rejected or '(none)'}\n\n"
         f"Source: {source.fetch_url}\n"
         f"Source text:\n{text}"

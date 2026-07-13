@@ -67,6 +67,8 @@ def main() -> int:
 
     def create(candidate: Candidate) -> None:
         client.create(candidate, resolve_location(candidate))
+        # Feed it back so later sources in this same run do not re-propose the same event.
+        known.existing.append({"title": candidate.title, "date_start": candidate.date_start})
 
     report = pipeline.run_pipeline(
         parsed_sources,

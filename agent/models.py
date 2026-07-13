@@ -62,12 +62,15 @@ class Taxonomy:
 class KnownEvents:
     """What the site already knows, used to avoid re-proposing.
 
-    ``existing_keys`` covers approved + the agent's own pending events; ``rejected`` lists the
-    agent's past rejections (with reasons) so the run can both skip them and feed the reasons to
-    the LLM as "do not propose things like these".
+    ``existing_keys`` covers approved + the agent's own pending events (for the pipeline's exact
+    dedup); ``existing`` is the same events as readable title/date pairs, shown to the LLM so it can
+    also skip near-duplicates worded differently. ``rejected`` lists the agent's past rejections
+    (with reasons) so the run can both skip them and feed the reasons to the LLM as "do not propose
+    things like these".
     """
 
     existing_keys: set[str] = field(default_factory=set)
+    existing: list[dict] = field(default_factory=list)  # [{"title","date_start"}], shown to the LLM
     rejected: list[dict] = field(default_factory=list)  # [{"key","title","date_start","reason"}]
 
 

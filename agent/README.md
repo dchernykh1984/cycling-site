@@ -7,7 +7,9 @@ get added - the normal GUI/API flows for real users are unchanged.
 ## How it works (one run)
 1. Reads `events_sources.txt` (repo root, re-read every run) and `agent/guidance.md`.
 2. Asks the site API for what it already knows: approved + its own pending (to avoid duplicates)
-   and its own **rejected** events with reasons (to avoid re-proposing similar ones).
+   and its own **rejected** events with reasons (to avoid re-proposing similar ones). Both lists,
+   plus events accepted earlier in the same run, are shown to the LLM so it can skip near-duplicates
+   that the exact-match dedup would miss.
 3. Fetches each source - websites and **public** Telegram channels via the `t.me/s/<channel>`
    web preview. Private Telegram (`t.me/+invite`, `t.me/c/...`) is skipped and logged for now.
 4. An LLM (DeepSeek by default, any OpenAI-compatible endpoint) extracts event candidates.
