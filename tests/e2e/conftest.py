@@ -29,6 +29,20 @@ def default_language_cookie(page, live_server):
     page.context.add_cookies([{"name": "django_language", "value": "ru", "domain": host, "path": "/"}])
 
 
+@pytest.fixture(autouse=True)
+def _generous_ci_timeouts(page):
+    """Raise Playwright's default 30s navigation/action timeout.
+
+    Each browser job runs two xdist workers on a two-core CI runner, so two browser instances and
+    two threaded ``live_server``s compete for the same cores. Under that contention the slowest
+    engine (firefox) sometimes needs more than 30s for an otherwise-fine page load, which showed up
+    as spurious ``Page.goto: Timeout 30000ms exceeded`` failures on random pages. A genuinely broken
+    page still fails, just at the higher bound.
+    """
+    page.set_default_navigation_timeout(60_000)
+    page.set_default_timeout(60_000)
+
+
 def inject_session(page, live_server, user):
     # django_language=ru cookie is read by LocaleMiddleware so CI browsers with
     # Accept-Language: en-US see Russian content by default.
