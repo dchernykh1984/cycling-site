@@ -12,7 +12,12 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
 - Real, **upcoming** cycling competitions (road, MTB, gravel, cyclocross, gran fondo, etc.).
 
 ## What to skip
-- Training rides, club meetups and social rides without a fixed race date.
+- **Training rides, club rides, group rides and "дальняки" (long social rides)** -- even when they
+  have a fixed date and a GPX / Strava track. Tell-tale signs: a gathering "for coffee", coffee /
+  food stops along the route, a target pace or power (e.g. "2.0 W/kg в гору") instead of a
+  competitive format, a club posting its own regular ride, and no registration, timing, categories,
+  results or prizes. The calendar is for **competitions** (racing with results / standings), not
+  group rides. When a post looks like a social ride, skip it.
 - **Official / elite federation races** (Kazakhstan or Kyrgyzstan cycling federation championships)
   -- UNLESS the announcement explicitly says it is for **masters / amateurs (любительские заезды)**.
   Elite federation races are not of interest to us.
