@@ -18,6 +18,7 @@ class Config:
     llm_model: str
     max_events: int
     dry_run: bool
+    enrich_details: bool = True  # fetch each accepted event's own page and refine it (2nd pass)
 
 
 def _flag(value: str | None) -> bool:
@@ -42,4 +43,5 @@ def from_env(env: dict[str, str]) -> Config:
         llm_model=env.get("LLM_MODEL") or "deepseek-chat",
         max_events=max(max_events, 0),
         dry_run=_flag(env.get("AGENT_DRY_RUN")),
+        enrich_details=_flag(env.get("AGENT_ENRICH_DETAILS") or "true"),
     )

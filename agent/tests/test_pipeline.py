@@ -1,4 +1,5 @@
 import datetime
+from dataclasses import replace
 
 from agent.models import Candidate, KnownEvents, Source, Taxonomy
 from agent.pipeline import normalize_key, parse_candidates, run_pipeline
@@ -183,6 +184,41 @@ def test_cap_limits_total_proposals():
     assert len(report.accepted) == 2
     assert report.capped is True
     assert len(created) == 2
+
+
+def test_enrich_is_applied_to_accepted_candidates():
+    src = _src()
+    created = []
+    report = run_pipeline(
+        [src],
+        KnownEvents(),
+        fetch=lambda s: "t",
+        extract=lambda text, s: [Candidate("Race A", "2026-08-01")],
+        create=created.append,
+        max_events=10,
+        dry_run=False,
+        today=TODAY,
+        enrich=lambda c: replace(c, description="<p>enriched</p>"),
+    )
+    assert report.accepted[0].description == "<p>enriched</p>"
+    assert created[0].description == "<p>enriched</p>"
+
+
+def test_enrich_producing_an_invalid_date_is_skipped():
+    src = _src()
+    report = run_pipeline(
+        [src],
+        KnownEvents(),
+        fetch=lambda s: "t",
+        extract=lambda text, s: [Candidate("Race A", "2026-08-01")],
+        create=lambda c: None,
+        max_events=10,
+        dry_run=False,
+        today=TODAY,
+        enrich=lambda c: replace(c, date_start="2020-01-01"),  # enrichment moved it into the past
+    )
+    assert report.accepted == []
+    assert any("after enrich" in reason for _, reason in report.skipped_candidates)
 
 
 def test_dry_run_posts_nothing():

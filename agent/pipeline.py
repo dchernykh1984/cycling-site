@@ -18,7 +18,13 @@ from agent.models import Candidate, KnownEvents, RunReport, Source, Taxonomy
 # Callables the runner injects (real versions live in fetch.py / llm.py / site_api.py).
 FetchFn = Callable[[Source], str]
 ExtractFn = Callable[[str, Source], list[Candidate]]
+EnrichFn = Callable[[Candidate], Candidate]
 CreateFn = Callable[[Candidate], None]
+
+
+def _identity(candidate: Candidate) -> Candidate:
+    return candidate
+
 
 _WS = re.compile(r"\s+")
 _PUNCT = re.compile(r"[^\w\s]", re.UNICODE)
@@ -172,6 +178,7 @@ def _consider(
     report: RunReport,
     today: datetime.date,
     *,
+    enrich: EnrichFn,
     create: CreateFn,
     dry_run: bool,
 ) -> None:
@@ -188,7 +195,14 @@ def _consider(
     if not ok:
         report.skipped_candidates.append((candidate.title, reason))
         return
-    seen.add(key)
+    # Second pass: fetch the event's own page and refine it (a no-op / fallback for the fake in tests).
+    candidate = enrich(candidate)
+    ok, reason = _is_valid(candidate, today)
+    if not ok:
+        report.skipped_candidates.append((candidate.title, f"after enrich: {reason}"))
+        return
+    seen.add(normalize_key(candidate.title, candidate.date_start))
+    variants = [candidate.title, candidate.title_kk, candidate.title_en]
     known_titles.extend((dedup.title_tokens(v), candidate.date_start) for v in variants if v)
     report.accepted.append(candidate)
     if not dry_run:
@@ -208,6 +222,7 @@ def run_pipeline(
     max_events: int,
     dry_run: bool,
     today: datetime.date | None = None,
+    enrich: EnrichFn = _identity,
 ) -> RunReport:
     """Fetch each source, extract candidates, and propose new valid ones up to ``max_events``."""
     today = today or datetime.date.today()
@@ -229,5 +244,5 @@ def run_pipeline(
             if len(report.accepted) >= max_events:
                 report.capped = True
                 break
-            _consider(candidate, seen, known_titles, report, today, create=create, dry_run=dry_run)
+            _consider(candidate, seen, known_titles, report, today, enrich=enrich, create=create, dry_run=dry_run)
     return report
