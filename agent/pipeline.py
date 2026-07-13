@@ -110,6 +110,8 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
                 date_end=(str(item.get("date_end")).strip() or None) if item.get("date_end") else None,
                 description=desc_ru,
                 source_url=str(item.get("source_url") or source_url).strip(),
+                url_route=str(item.get("url_route") or "").strip(),
+                url_registration=str(item.get("url_registration") or "").strip(),
                 event_type_id=event_type_id,
                 discipline_ids=discipline_ids,
                 country=str(item.get("country") or "").strip(),
@@ -178,7 +180,8 @@ def _consider(
     if key in seen:
         report.skipped_candidates.append((candidate.title, "already known or rejected"))
         return
-    if dedup.is_duplicate(candidate.title, candidate.date_start, known_titles):
+    variants = [candidate.title, candidate.title_kk, candidate.title_en]
+    if dedup.matches_known(variants, candidate.date_start, known_titles):
         report.skipped_candidates.append((candidate.title, "near-duplicate of an existing event"))
         return
     ok, reason = _is_valid(candidate, today)
@@ -186,7 +189,7 @@ def _consider(
         report.skipped_candidates.append((candidate.title, reason))
         return
     seen.add(key)
-    known_titles.append((dedup.title_tokens(candidate.title), candidate.date_start))
+    known_titles.extend((dedup.title_tokens(v), candidate.date_start) for v in variants if v)
     report.accepted.append(candidate)
     if not dry_run:
         try:
@@ -212,8 +215,11 @@ def run_pipeline(
     # Never re-propose something already on the site or previously rejected (exact match)...
     seen = set(known.existing_keys) | {r["key"] for r in known.rejected}
     # ...and catch near-duplicates worded differently via title tokens + date (grown as we accept).
+    # One entry per localized title, so a ru proposal can match an en event already on the site.
     known_titles: list[tuple[set[str], str]] = [
-        (dedup.title_tokens(item["title"]), item.get("date_start", "")) for item in (*known.existing, *known.rejected)
+        (dedup.title_tokens(title), item.get("date_start", ""))
+        for item in (*known.existing, *known.rejected)
+        for title in (item.get("titles") or [item.get("title", "")])
     ]
 
     for source in sources:

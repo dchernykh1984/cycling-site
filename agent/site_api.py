@@ -56,13 +56,14 @@ class SiteApiClient:
         for comp in self._list("approved") + self._list("pending_approval"):
             title, date_start = _ru(comp.get("title")), comp.get("date_start", "")
             known.existing_keys.add(normalize_key(title, date_start))
-            known.existing.append({"title": title, "date_start": date_start})
+            known.existing.append({"title": title, "titles": _titles(comp.get("title")), "date_start": date_start})
         for comp in self._list("rejected"):
             title, date_start = _ru(comp.get("title")), comp.get("date_start", "")
             known.rejected.append(
                 {
                     "key": normalize_key(title, date_start),
                     "title": title,
+                    "titles": _titles(comp.get("title")),
                     "date_start": date_start,
                     "reason": comp.get("rejection_reason", ""),
                 }
@@ -107,6 +108,10 @@ class SiteApiClient:
             payload["description"] = _loc(candidate.description, candidate.description_kk, candidate.description_en)
         if candidate.source_url:
             payload["url_announcement"] = candidate.source_url
+        if candidate.url_route:
+            payload["url_route"] = candidate.url_route
+        if candidate.url_registration:
+            payload["url_registration"] = candidate.url_registration
         if candidate.event_type_id is not None:
             payload["event_type_id"] = candidate.event_type_id
         if candidate.discipline_ids:
@@ -126,3 +131,12 @@ def _ru(title: object) -> str:
 def _loc(ru: str, kk: str = "", en: str = "") -> dict:
     """A LocalizedStr payload with every locale filled -- empty ones fall back to the ru text."""
     return {"ru": ru, "kk": kk or ru, "en": en or ru}
+
+
+def _titles(title: object) -> list[str]:
+    """Every non-empty localized form of a title, for cross-language duplicate detection."""
+    if isinstance(title, dict):
+        values = (title.get("ru"), title.get("kk"), title.get("en"))
+        return [str(v).strip() for v in values if v and str(v).strip()]
+    text = str(title or "").strip()
+    return [text] if text else []
