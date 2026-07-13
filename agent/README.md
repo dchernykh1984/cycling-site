@@ -38,6 +38,8 @@ python -m agent.run
 - `LLM_API_KEY` (secret) - DeepSeek (or other) API key.
 - `LLM_BASE_URL` (secret) - e.g. `https://api.deepseek.com`.
 - `LLM_MODEL` (secret, optional) - e.g. `deepseek-chat` (defaults to `deepseek-chat` if unset).
+- `SITE_BASE_URL` (secret, optional) - the site to post to, e.g. `https://universalbicycle.team`
+  (defaults to the production URL if unset).
 
 Scheduled runs only fire from the default branch (`main`); use the workflow's manual
 **Run workflow** button (with `dry_run`) to test from a branch.
