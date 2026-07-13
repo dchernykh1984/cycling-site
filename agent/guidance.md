@@ -20,12 +20,19 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
 - Non-cycling posts, chat replies, group rules ("Правила группы") and vague personal chatter
   (e.g. "завтра в 5:00 стартуем из-под дуба") -- only real announcements with a place and a date.
 - Anything you are not confident is a real event with a concrete date.
+- **No confirmed city / only a draft page.** If the announcement does not name the city or place
+  where the event is held, or the organizer's page is just a draft/placeholder without real details,
+  skip it -- do not add it to the calendar.
+- **Date shown only in an image.** If the start date is only on a poster/picture (not as text you
+  can read), do NOT guess it -- skip the event rather than invent a date.
 
 ## Avoid duplicates
 - **Never propose an event that is already on the site.** The prompt lists the events the site
   already has (and the ones you proposed earlier in this same run). Skip an event when it is the
   **same race** -- same series / organizer, around the same date and city -- even if its title is
-  worded differently, in another language, or with/without the year. When unsure, skip it.
+  worded differently, in another language, or with/without the year. When unsure, skip it. The
+  existing list may show an event in a **different language** than the announcement (e.g. it is
+  stored in English while the post is in Russian) -- match by meaning, city and date, not exact words.
 - **The same event often appears in several sources** (the organizer's site, an aggregator, a
   Telegram post). Propose each real event **once**.
 - **One race = one event.** If a race offers several distances, formats or disciplines
@@ -44,9 +51,15 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
   post**, look for the organizer's real event page and link that instead; use a Telegram / social
   link only when the event genuinely has no web page, and even then link the specific post, never a
   channel's main page.
-- **Description -- include the essentials.** Keep it short, but put the key facts in the text:
-  the distances / formats offered, the entry fee(s), the start date, time and place, the categories,
-  and the registration deadline when given. One line is too little; a wall of text is too much.
+- **Put links in their own fields.** The route / GPS-track link (e.g. a Strava link) goes in
+  `url_route`, and the registration / signup link in `url_registration` -- do not bury them in the
+  description text; the site has dedicated fields and buttons for them.
+- **Description -- formatted HTML with the essentials.** Write it as **simple HTML**: short `<p>`
+  paragraphs and a `<ul>`/`<li>` list for the groups / distances / schedule -- not one unbroken wall
+  of text. Include the key facts: distances / formats, entry fee(s), start date, time and place,
+  categories, **who it is for** (e.g. a required level like "2 W/kg uphill"), the rough schedule and
+  the registration deadline when given. Use only `<p>`, `<br>`, `<ul>`/`<ol>`/`<li>`, `<strong>`,
+  `<em>` -- never scripts or styles. Keep it informative but not a multi-page essay.
 - **Location -- prefer concrete places.** The site's locations are a tree: country -> region ->
   city -> specific venue (the start point). Try hard to find the **real** country, region, city and
   the **specific start venue / address** of the event, and put them in the (Russian) description.
