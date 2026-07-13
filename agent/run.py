@@ -29,6 +29,8 @@ def _summary(report: RunReport) -> str:
     ]
     for candidate in report.accepted:
         lines.append(f"  + {candidate.date_start} {candidate.title}")
+    for title, reason in report.skipped_candidates:
+        lines.append(f"  - skipped: {title} ({reason})")
     for ref, reason in report.skipped_sources:
         lines.append(f"  ~ source skipped: {ref} ({reason})")
     for title, error in report.post_errors:
