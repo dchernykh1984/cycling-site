@@ -22,7 +22,9 @@ class Candidate:
     date_start: str  # ISO YYYY-MM-DD
     date_end: str | None = None
     description: str = ""
-    source_url: str = ""
+    source_url: str = ""  # link to the announcement (-> url_announcement)
+    url_route: str = ""  # link to the route / GPS track, e.g. a Strava segment (-> url_route)
+    url_registration: str = ""  # link to the registration / signup page (-> url_registration)
     event_type_id: int | None = None
     discipline_ids: list[int] = field(default_factory=list)
     # Free-text location hints from the LLM, resolved to a site location_id at create time:
@@ -70,8 +72,10 @@ class KnownEvents:
     """
 
     existing_keys: set[str] = field(default_factory=set)
-    existing: list[dict] = field(default_factory=list)  # [{"title","date_start"}], shown to the LLM
-    rejected: list[dict] = field(default_factory=list)  # [{"key","title","date_start","reason"}]
+    # [{"title","titles","date_start"}] -- "title" is shown to the LLM, "titles" (all locales) feeds
+    # the fuzzy cross-language dedup so a ru proposal can match an en event already on the site.
+    existing: list[dict] = field(default_factory=list)
+    rejected: list[dict] = field(default_factory=list)  # [{"key","title","titles","date_start","reason"}]
 
 
 @dataclass

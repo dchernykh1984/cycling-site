@@ -23,7 +23,8 @@ The agent is **stateless**: the site itself is its memory (it re-derives "alread
 ## Guardrails
 - Hard cap of `MAX_EVENTS_PER_RUN` proposals per run (agent-side; the site does not limit users).
 - Dedup against existing + past rejections: exact (title+date) plus fuzzy, so a near-duplicate of
-  an existing event -- same words, close date, worded differently -- is dropped too.
+  an existing event -- same words, close date, worded differently, or in **another language** (the
+  ru/kk/en titles are compared per-locale) -- is dropped too.
 - `AGENT_DRY_RUN=true` (or the workflow's `dry_run` input) logs candidates without posting.
 - A human moderator approves everything - nothing goes public automatically.
 
@@ -44,5 +45,6 @@ python -m agent.run
 - `SITE_BASE_URL` (secret, optional) - the site to post to, e.g. `https://universalbicycle.team`
   (defaults to the production URL if unset).
 
-Scheduled runs only fire from the default branch (`main`); use the workflow's manual
-**Run workflow** button (with `dry_run`) to test from a branch.
+The daily schedule is currently **paused** (commented out in the workflow) while proposal quality
+is being tuned -- run it manually with the **Run workflow** button (owner only). Scheduled runs,
+once re-enabled, only fire from the default branch (`main`).

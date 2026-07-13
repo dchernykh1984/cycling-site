@@ -87,6 +87,16 @@ def test_parse_candidates_plain_string_title_is_ru_only():
     assert candidate.title_en == ""
 
 
+def test_parse_candidates_extracts_route_and_registration_urls():
+    raw = (
+        '[{"title": "R", "date_start": "2026-08-01", "url_route": "https://strava.com/routes/1",'
+        ' "url_registration": "https://reg.example.kz"}]'
+    )
+    candidate = parse_candidates(raw)[0]
+    assert candidate.url_route == "https://strava.com/routes/1"
+    assert candidate.url_registration == "https://reg.example.kz"
+
+
 def test_parse_candidates_missing_location_fields_default_empty():
     candidate = parse_candidates('[{"title": "R", "date_start": "2026-08-01"}]')[0]
     assert candidate.city == ""
@@ -135,6 +145,18 @@ def test_skips_fuzzy_duplicate_of_existing_event():
     assert report.accepted == []
     assert created == []
     assert any("near-duplicate" in reason for _, reason in report.skipped_candidates)
+
+
+def test_skips_cross_language_duplicate_of_existing_event():
+    src = _src()
+    known = KnownEvents(
+        existing=[{"title": "Apricot Marathon Gravel MTB 2026", "date_start": "2026-08-09"}]  # stored in English
+    )
+    # Proposal is in Russian, but its en translation matches the existing English event.
+    cand = Candidate("Aprikot Marafon 2026", "2026-08-09", title_en="Apricot Marathon Gravel MTB Race 2026")
+    report, created = _run([src], {src.fetch_url: [cand]}, known=known)
+    assert report.accepted == []
+    assert created == []
 
 
 def test_skips_fuzzy_duplicate_found_across_sources_in_one_run():
