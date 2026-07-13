@@ -1,0 +1,35 @@
+{# Enhances `.js-date-filter` date inputs with flatpickr so the calendar popup starts the week on
+   the site's first day (Monday for ru/kk, Sunday for en), matching the main FullCalendar. On mobile
+   flatpickr falls back to the native picker; if flatpickr fails to load, the native input remains. #}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+{% if CURRENT_LANGUAGE != 'en' %}<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ru.js"></script>{% endif %}
+<style>
+  [data-bs-theme="dark"] .flatpickr-calendar { background: #2c3034; color: #dee2e6; box-shadow: 0 3px 13px rgba(0, 0, 0, .6); }
+  [data-bs-theme="dark"] .flatpickr-calendar.arrowTop::before, [data-bs-theme="dark"] .flatpickr-calendar.arrowTop::after { border-bottom-color: #2c3034; }
+  [data-bs-theme="dark"] .flatpickr-calendar.arrowBottom::before, [data-bs-theme="dark"] .flatpickr-calendar.arrowBottom::after { border-top-color: #2c3034; }
+  [data-bs-theme="dark"] .flatpickr-months .flatpickr-month, [data-bs-theme="dark"] .flatpickr-weekday { background: #2c3034; color: #adb5bd; }
+  [data-bs-theme="dark"] .flatpickr-months .flatpickr-prev-month svg, [data-bs-theme="dark"] .flatpickr-months .flatpickr-next-month svg { fill: #dee2e6; }
+  [data-bs-theme="dark"] .flatpickr-current-month input.cur-year, [data-bs-theme="dark"] .flatpickr-monthDropdown-months { background: #2c3034; color: #dee2e6; }
+  [data-bs-theme="dark"] .flatpickr-day { color: #dee2e6; }
+  [data-bs-theme="dark"] .flatpickr-day:hover, [data-bs-theme="dark"] .flatpickr-day.prevMonthDay:hover, [data-bs-theme="dark"] .flatpickr-day.nextMonthDay:hover { background: #495057; border-color: #495057; }
+  [data-bs-theme="dark"] .flatpickr-day.today { border-color: #6ea8fe; }
+  [data-bs-theme="dark"] .flatpickr-day.selected { background: #6ea8fe; border-color: #6ea8fe; color: #000; }
+  [data-bs-theme="dark"] .flatpickr-day.flatpickr-disabled, [data-bs-theme="dark"] .flatpickr-day.prevMonthDay, [data-bs-theme="dark"] .flatpickr-day.nextMonthDay { color: #6c757d; }
+</style>
+<script>
+  (function () {
+    if (!window.flatpickr) return;
+    // Keep the native picker on mobile (better touch UX; the OS controls its first day there);
+    // flatpickr only enhances desktop, where we can set the first day of week.
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) return;
+    var opts = { dateFormat: 'Y-m-d', allowInput: true };
+    {% if CURRENT_LANGUAGE != 'en' %}
+    opts.locale = (window.flatpickr.l10ns && flatpickr.l10ns.ru) ? flatpickr.l10ns.ru : { firstDayOfWeek: 1 };
+    {% endif %}
+    document.querySelectorAll('.js-date-filter').forEach(function (el) {
+      el.type = 'text';  // prevent the browser's own native picker from stacking on top of flatpickr
+      flatpickr(el, opts);
+    });
+  })();
+</script>
