@@ -51,6 +51,5 @@ python -m agent.run
 - `SITE_BASE_URL` (secret, optional) - the site to post to, e.g. `https://universalbicycle.team`
   (defaults to the production URL if unset).
 
-The daily schedule is currently **paused** (commented out in the workflow) while proposal quality
-is being tuned -- run it manually with the **Run workflow** button (owner only). Scheduled runs,
-once re-enabled, only fire from the default branch (`main`).
+Runs daily at **00:00 UTC (05:00 Almaty)**, and on demand via the **Run workflow** button (owner
+only). Scheduled runs only fire from the default branch (`main`).

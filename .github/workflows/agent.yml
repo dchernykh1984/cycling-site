@@ -5,10 +5,8 @@ name: events-agent
 # use "Run workflow" (with dry_run) to test from a branch. Manual runs are restricted to the
 # repository owner so nobody else can spend the LLM/API budget.
 on:
-  # Daily schedule is paused while the agent's proposal quality is being tuned; run it manually
-  # ("Run workflow") for now. Re-enable by uncommenting the cron below.
-  # schedule:
-  #   - cron: "7 6 * * *" # daily ~06:07 UTC (off the hour to avoid the busiest cron minute)
+  schedule:
+    - cron: "0 0 * * *" # daily at 00:00 UTC (05:00 Almaty)
   workflow_dispatch:
     inputs:
       dry_run:
