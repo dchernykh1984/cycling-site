@@ -242,8 +242,8 @@ class Competition(index.Indexed, models.Model):
             self.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
             CompetitionRejection.objects.create(competition=self, reason=reason, rejected_by=reviewer)
 
-    def resubmit(self, author) -> None:
-        """Author sends a rejected competition back for a fresh review; the reason history stays."""
+    def resubmit(self) -> None:
+        """Send a rejected competition back for a fresh review; the reason history stays intact."""
         if self.status != self.Status.REJECTED:
             raise ValueError(f"Cannot resubmit: competition is '{self.get_status_display()}', not rejected.")
         self.status = self.Status.PENDING_APPROVAL
