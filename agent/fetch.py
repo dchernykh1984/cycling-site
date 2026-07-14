@@ -140,7 +140,10 @@ def fetch_source(source: Source) -> str:
     else:
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
-        text = soup.get_text(" ", strip=True)
+        # Aggregators are dense race lists/tables: keep each row on its own line so the model can
+        # enumerate them one by one; ordinary pages read better as flowing space-joined prose.
+        separator = "\n" if source.kind == "aggregator" else " "
+        text = soup.get_text(separator, strip=True)
         anchors = soup.find_all("a", href=True)
     if source.kind == "aggregator":
         limit, max_chars = _AGGREGATOR_MAX_LINKS, _AGGREGATOR_MAX_CHARS
