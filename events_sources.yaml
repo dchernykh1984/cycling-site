@@ -20,8 +20,8 @@
 aggregators:
   - url: https://battistrada.com/en/cycling-calendar/china/
     hint: "International cycling calendar; each row links to a race -- use that race's own page as source_url."
-  - url: https://bike-events.ru/
-    hint: "Multi-organizer cycling calendar (RU); use each race's own organizer page as source_url."
+  - url: https://bike-events.ru/index.php?season=S2026
+    hint: "Multi-organizer cycling calendar (RU), races grouped by month; bump season=S<year> yearly; source_url must be each race's own organizer page."
 
 organizers:
   # Kazakhstan / Kyrgyzstan (highest priority per agent/guidance.md)
