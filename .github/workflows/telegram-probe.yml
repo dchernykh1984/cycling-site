@@ -1,0 +1,56 @@
+name: telegram-probe
+
+# One-off connectivity diagnostics for the events agent: is t.me reachable from a GitHub runner?
+# The agent reads public Telegram channels via the t.me/s/<channel> web preview; recently every
+# such fetch fails with "Name or service not known" (a DNS failure) while ordinary websites resolve
+# fine. This owner-only manual workflow prints DNS + HTTP + DNS-over-HTTPS results for Telegram and
+# control hosts so we can tell a local-resolver block apart from a real outage and pick a fix.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Restrict to the repository owner
+        if: ${{ github.actor != github.repository_owner }}
+        run: |
+          echo "::error::Only ${{ github.repository_owner }} may run this workflow."
+          exit 1
+
+      - name: Runner DNS configuration
+        run: |
+          echo "== /etc/resolv.conf =="; cat /etc/resolv.conf || true
+          echo "== /etc/hosts =="; cat /etc/hosts || true
+
+      - name: DNS + HTTP for Telegram vs control hosts
+        run: |
+          set +e
+          for host in t.me telegram.me telegram.dog telegram.org api.telegram.org core.telegram.org google.com redbikecup.ru; do
+            echo "======== $host ========"
+            echo "-- getent hosts (local resolver) --"; getent hosts "$host" || echo "getent: FAILED (exit $?)"
+            echo "-- curl --"; curl -sS -o /dev/null -w "http=%{http_code} ip=%{remote_ip} time=%{time_total}s\n" \
+              --max-time 15 -A "Mozilla/5.0 (compatible; UniversalBicycleTeam-EventsAgent/1.0)" "https://$host/" \
+              || echo "curl: FAILED (exit $?)"
+          done
+
+      - name: Resolve t.me via DNS-over-HTTPS (bypasses the local resolver)
+        run: |
+          set +e
+          echo "-- Cloudflare DoH (1.1.1.1) --"
+          curl -sS -H 'accept: application/dns-json' 'https://1.1.1.1/dns-query?name=t.me&type=A'; echo
+          echo "-- Google DoH (8.8.8.8) --"
+          curl -sS 'https://8.8.8.8/resolve?name=t.me&type=A'; echo
+
+      - name: Fetch a real channel preview (exactly what the agent does)
+        run: |
+          set +e
+          curl -sS -o /tmp/tme.html -w "t.me/s/roadcyclingkz -> http=%{http_code} ip=%{remote_ip} time=%{time_total}s size=%{size_download}\n" \
+            --max-time 20 -A "Mozilla/5.0 (compatible; UniversalBicycleTeam-EventsAgent/1.0)" \
+            "https://t.me/s/roadcyclingkz" || echo "FAILED (exit $?)"
+          echo "-- post blocks found in preview --"
+          grep -c "tgme_widget_message_text" /tmp/tme.html 2>/dev/null || echo "0 (no body fetched)"
