@@ -34,6 +34,11 @@ def test_private_telegram_marked_unfetchable():
     assert all(s.kind == "tg_private" and s.fetch_url is None for s in result)
 
 
+def test_channel_ref_from_preview_url_and_query_string():
+    result = parse_sources("telegram_public:\n  - https://t.me/s/kztime\n  - https://t.me/roadcyclingkz?si=1\n")
+    assert {s.fetch_url for s in result} == {"https://t.me/s/kztime", "https://t.me/s/roadcyclingkz"}
+
+
 def test_private_looking_link_in_public_section_is_treated_as_private():
     # Defensive: an invite/internal link mistakenly filed under telegram_public is still unreadable.
     result = parse_sources("telegram_public:\n  - https://t.me/+secretinvite\n")
