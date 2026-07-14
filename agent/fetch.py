@@ -7,6 +7,7 @@ them or miss the specific event page. ``extract_links`` (the pure part) has its 
 
 from __future__ import annotations
 
+import time
 import urllib.request
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlsplit, urlunsplit
@@ -21,6 +22,8 @@ _MAX_LINKS = 60
 _SKIP_PREFIXES = ("#", "javascript:", "mailto:", "tel:")
 # Telegram serves the same content on these alias domains; t.me has gone NXDOMAIN, so fall back.
 _TG_HOSTS = ("t.me", "telegram.dog", "telegram.me")
+_FETCH_RETRIES = 3  # runner DNS for the Telegram aliases is intermittently flaky; retry the list
+_RETRY_BACKOFF = 1.0  # seconds between retry passes
 
 
 def _get(url: str, timeout: int = 20) -> str:
@@ -39,15 +42,25 @@ def _fetch_urls(url: str) -> list[str]:
 
 
 def _get_with_fallback(url: str, timeout: int = 20) -> str:
-    """Fetch ``url``, retrying Telegram alias hosts on a DNS / connection failure (not on HTTP errors)."""
+    """Fetch ``url``, retrying Telegram alias hosts on a DNS / connection failure (not on HTTP errors).
+
+    When alias hosts exist (Telegram), the whole list is retried a few times, because the runner's
+    DNS for these domains is intermittently flaky and one channel can fail while another succeeds in
+    the same run. A single non-Telegram URL is tried once (no retry, so a dead site fails fast).
+    """
+    urls = _fetch_urls(url)
+    passes = _FETCH_RETRIES if len(urls) > 1 else 1
     last_exc: Exception | None = None
-    for candidate in _fetch_urls(url):
-        try:
-            return _get(candidate, timeout)
-        except HTTPError:
-            raise  # the server answered (e.g. 404) -- a real error, not a host problem
-        except (URLError, TimeoutError) as exc:
-            last_exc = exc  # DNS / connection failure -- try the next alias host
+    for attempt in range(passes):
+        for candidate in urls:
+            try:
+                return _get(candidate, timeout)
+            except HTTPError:
+                raise  # the server answered (e.g. 404) -- a real error, not a host problem
+            except (URLError, TimeoutError) as exc:
+                last_exc = exc  # DNS / connection failure -- try the next alias host
+        if attempt + 1 < passes:
+            time.sleep(_RETRY_BACKOFF)
     if last_exc is not None:
         raise last_exc
     raise RuntimeError(f"no URL to fetch for {url}")  # unreachable: _fetch_urls always yields >= 1

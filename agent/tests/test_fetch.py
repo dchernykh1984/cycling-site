@@ -1,3 +1,8 @@
+from urllib.error import HTTPError, URLError
+
+import pytest
+
+import agent.fetch as fetch
 from agent.fetch import _fetch_urls, extract_links
 
 
@@ -30,3 +35,64 @@ def test_extract_links_skips_non_http_and_dedups():
 
 def test_extract_links_empty_without_anchors():
     assert extract_links("<p>no links here</p>", "https://a.kz") == []
+
+
+def _no_sleep(monkeypatch):
+    monkeypatch.setattr(fetch.time, "sleep", lambda _s: None)
+
+
+def test_get_with_fallback_retries_telegram_until_an_alias_resolves(monkeypatch):
+    _no_sleep(monkeypatch)
+    calls = []
+
+    def fake_get(url, timeout=20):
+        calls.append(url)
+        if len(calls) < 4:  # fail the whole first pass (t.me, telegram.dog, telegram.me)
+            raise URLError("Name or service not known")
+        return "posts"
+
+    monkeypatch.setattr(fetch, "_get", fake_get)
+    assert fetch._get_with_fallback("https://t.me/s/kztime") == "posts"
+    assert len(calls) == 4  # retried past the first failed pass
+
+
+def test_get_with_fallback_gives_up_after_the_retry_budget(monkeypatch):
+    _no_sleep(monkeypatch)
+    calls = []
+
+    def fake_get(url, timeout=20):
+        calls.append(url)
+        raise URLError("dns")
+
+    monkeypatch.setattr(fetch, "_get", fake_get)
+    with pytest.raises(URLError):
+        fetch._get_with_fallback("https://t.me/s/kztime")
+    assert len(calls) == 9  # 3 alias hosts x 3 passes
+
+
+def test_get_with_fallback_does_not_retry_a_website(monkeypatch):
+    _no_sleep(monkeypatch)
+    calls = []
+
+    def fake_get(url, timeout=20):
+        calls.append(url)
+        raise URLError("down")
+
+    monkeypatch.setattr(fetch, "_get", fake_get)
+    with pytest.raises(URLError):
+        fetch._get_with_fallback("https://redbikecup.ru/x")
+    assert calls == ["https://redbikecup.ru/x"]  # a single attempt, no retry
+
+
+def test_get_with_fallback_does_not_retry_http_errors(monkeypatch):
+    _no_sleep(monkeypatch)
+    calls = []
+
+    def fake_get(url, timeout=20):
+        calls.append(url)
+        raise HTTPError(url, 404, "Not Found", None, None)
+
+    monkeypatch.setattr(fetch, "_get", fake_get)
+    with pytest.raises(HTTPError):
+        fetch._get_with_fallback("https://t.me/s/kztime")
+    assert len(calls) == 1  # 404 is a real answer -> no fallback, no retry
