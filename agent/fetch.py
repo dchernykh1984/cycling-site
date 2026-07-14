@@ -79,8 +79,10 @@ def _get_with_fallback(url: str, timeout: int = 20) -> str:
         for candidate in urls:
             try:
                 return _get(candidate, timeout)
-            except HTTPError:
-                raise  # the server answered (e.g. 404) -- a real error, not a host problem
+            except HTTPError as exc:
+                if exc.code not in (502, 503, 504):
+                    raise  # a definitive answer (e.g. 404 / 403) -- not worth retrying
+                last_exc = exc  # transient gateway / unavailable -- retry like a timeout
             except (URLError, TimeoutError) as exc:
                 last_exc = exc  # DNS / connection failure -- try the next alias host
         if attempt + 1 < passes:
