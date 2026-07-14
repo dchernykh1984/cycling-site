@@ -38,9 +38,9 @@ repos:
         language: pygrep
         entry: '[^\x00-\x7f]'
         types_or: [python, yaml, markdown, toml, shell, json]
-        # agent/guidance.md is a free-text steering file for the maintainer; it naturally holds
-        # Russian (the events' language), so it is exempt from the ASCII-only rule.
-        exclude: ^(uv\.lock|.*/migrations/.*|agent/guidance\.md)$
+        # agent/guidance.md and events_sources.yaml are free-text steering files for the maintainer;
+        # they naturally hold Russian (the events' language), so they are exempt from ASCII-only.
+        exclude: ^(uv\.lock|.*/migrations/.*|agent/guidance\.md|events_sources\.yaml)$
 
       - id: uv-export
         name: export requirements.txt from uv.lock

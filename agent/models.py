@@ -9,9 +9,10 @@ from dataclasses import dataclass, field
 class Source:
     """One place to look for events. ``fetch_url`` is None for sources we cannot read yet."""
 
-    kind: str  # "website" | "tg_public" | "tg_private"
-    ref: str  # the original line/URL from events_sources.txt (for logging)
+    kind: str  # "aggregator" | "organizer" | "tg_public" | "tg_private"
+    ref: str  # the original URL / handle from events_sources.yaml (for logging)
     fetch_url: str | None = None  # normalized URL the fetcher should GET
+    hint: str = ""  # optional per-source nudge from the YAML, passed to the model
 
 
 @dataclass

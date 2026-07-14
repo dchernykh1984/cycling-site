@@ -5,13 +5,15 @@ site as **pending** competitions for a human moderator to approve. It is one of 
 get added - the normal GUI/API flows for real users are unchanged.
 
 ## How it works (one run)
-1. Reads `events_sources.txt` (repo root, re-read every run) and `agent/guidance.md`.
+1. Reads `events_sources.yaml` (repo root, re-read every run) and `agent/guidance.md`.
 2. Asks the site API for what it already knows: approved + its own pending (to avoid duplicates)
    and its own **rejected** events with reasons (to avoid re-proposing similar ones). Both lists,
    plus events accepted earlier in the same run, are shown to the LLM so it can skip near-duplicates
    that the exact-match dedup would miss.
-3. Fetches each source - websites and **public** Telegram channels via the `t.me/s/<channel>`
-   web preview. Private Telegram (`t.me/+invite`, `t.me/c/...`) is skipped and logged for now.
+3. Fetches each source, handled by its type (see **Sources** below): organizer sites, event
+   **aggregators**/calendars (more of the page's links are surfaced so the model can follow each
+   race to its own page), and **public** Telegram channels via the `t.me/s/<channel>` web preview.
+   Private Telegram (`t.me/+invite`, `t.me/c/...`) is skipped and logged for now.
 4. An LLM (DeepSeek by default, any OpenAI-compatible endpoint) extracts event candidates.
 5. Drops anything already known or previously rejected, keeps only valid future events, and
    proposes at most `MAX_EVENTS_PER_RUN` (default **10**) via `POST /api/v1/competitions/`
@@ -24,6 +26,18 @@ get added - the normal GUI/API flows for real users are unchanged.
 
 The agent is **stateless**: the site itself is its memory (it re-derives "already there" and
 "rejected, don't repeat" from the API each run).
+
+## Sources (`events_sources.yaml`)
+The source list lives in `events_sources.yaml` at the repo root, grouped by type. Each entry is a
+bare string (URL or `@handle`) or a mapping with `url` plus optional `hint` (a free-text nudge for
+the model) and `enabled: false` (to pause a source). Types:
+- **aggregators** - calendars/platforms listing many organizers' races; the model is told to link
+  each race's own page as `source_url` (never the aggregator), and more of the page's links are
+  surfaced so it can find them.
+- **organizers** - a single organizer's own website, scanned for their upcoming races.
+- **telegram_public** - public channels read via the `t.me/s/<channel>` preview (no login).
+- **telegram_private** - invite/internal links (`t.me/+...`, `t.me/c/...`); kept for reference and
+  skipped, since they cannot be read without an account.
 
 ## Guardrails
 - Hard cap of `MAX_EVENTS_PER_RUN` proposals per run (agent-side; the site does not limit users).
