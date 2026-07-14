@@ -45,35 +45,32 @@ organizers:
   - https://sportmarafonfest.ru/
 
 telegram_public:
-  # Readable public broadcast channels (they expose a t.me/s/<channel> web feed).
+  # Public broadcast channels -- a t.me/s/<channel> web feed the account-less agent can read.
   - https://t.me/roadcyclingkz
   - https://t.me/mystartkz/903
   - "@athletex"
   - https://t.me/not_olympic
-  # Disabled: public but NOT readable by the agent -- these are groups/chats (members, not
-  # subscribers) or a personal account, so they have no t.me/s/ web feed (verified 2026-07-14 via
-  # telegram.me while t.me was down). Re-enable an entry if you have its broadcast channel's @handle.
+
+telegram_account:
+  # Public but with NO t.me/s/ web feed -- groups/chats (members, not subscribers) or a personal
+  # account. No invite is needed, but a logged-in Telegram account is, so the current (account-less)
+  # agent cannot read them and skips them. Verified 2026-07-14 via telegram.me.
   - url: "@almatyriders"
-    enabled: false
-    hint: "Telegram group (~351 members), no t.me/s/ feed -- not a broadcast channel."
+    hint: "Group (~351 members)."
   - url: "@roadbikealmaty"
-    enabled: false
-    hint: "700c Almaty club chat / group (~533 members), no t.me/s/ feed."
+    hint: "700c Almaty club chat (~533 members)."
   - url: "@almatyskiing"
-    enabled: false
-    hint: "Telegram group (~131 members), no t.me/s/ feed."
+    hint: "Group (~131 members)."
   - url: https://t.me/cyclingtourismalmaty
-    enabled: false
-    hint: "Telegram group (~60 members), no t.me/s/ feed."
+    hint: "Group (~60 members)."
   - url: https://t.me/talgar2026
-    enabled: false
-    hint: "Telegram group (~29 members), no t.me/s/ feed -- not a broadcast channel."
+    hint: "Group (~29 members)."
   - url: https://t.me/kztime
-    enabled: false
-    hint: "Personal account (@kztime), not a channel -- nothing for the agent to read."
-  # "RideBikes Казахстан" was listed without a handle -- add its @handle here to enable it.
+    hint: "Personal account (@kztime), not a channel."
+  # "RideBikes Казахстан" was listed without a handle -- add its @handle to a section above.
 
 telegram_private:
+  # Invite-only / internal links (t.me/+invite, t.me/c/<id>) -- need an invite AND an account.
   - https://t.me/+3mTEnASuHG40MTRi
   - https://t.me/+tOGgIdNmTygyZDEy
   - https://t.me/c/1949598843/1

@@ -156,8 +156,12 @@ def _is_valid(candidate: Candidate, today: datetime.date) -> tuple[bool, str]:
 
 def _source_candidates(source: Source, fetch: FetchFn, extract: ExtractFn, report: RunReport) -> list[Candidate]:
     """Fetch + extract one source's candidates; log and return [] on an unsupported source or error."""
-    if source.kind == "tg_private" or not source.fetch_url:
-        report.skipped_sources.append((source.ref, "private/unsupported source"))
+    if not source.fetch_url:
+        reason = {
+            "tg_account": "public group/account -- needs a Telegram account",
+            "tg_private": "private Telegram -- needs an invite",
+        }.get(source.kind, "unsupported source")
+        report.skipped_sources.append((source.ref, reason))
         return []
     try:
         text = fetch(source)
