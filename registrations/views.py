@@ -32,6 +32,15 @@ def can_manage(user, competition) -> bool:
     return False
 
 
+def can_manage_or_own(user, competition) -> bool:
+    """A manager, or the author of the competition (any role, any status).
+
+    Managers (via :func:`can_manage`) plus the submitter, so the person who proposed a competition
+    can edit / delete / resubmit their own -- even a participant on their own rejected event (#200).
+    """
+    return can_manage(user, competition) or (user.is_authenticated and user == competition.submitted_by)
+
+
 class RegisterForCompetitionView(ParticipantRequiredMixin, View):
     template_name = "registrations/register.html"
 

@@ -3455,3 +3455,33 @@ class LiveStatsApiTest(TestCase, ApiTestMixin):
         resp = self._upload(stats={})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(CompetitionLiveStats.objects.get(competition=self.comp).data, {})
+
+
+class CompetitionResubmitApiTest(TestCase, ApiTestMixin):
+    """POST /competitions/{id}/resubmit sends a rejected competition back for review (owner)."""
+
+    def setUp(self):
+        self.author = _user("resub_author", role=User.Role.PARTICIPANT)
+        self.stranger = _user("resub_stranger", role=User.Role.PARTICIPANT)
+        self.comp = _competition(status=Competition.Status.REJECTED, submitted_by=self.author)
+
+    def _url(self):
+        return f"/api/v1/competitions/{self.comp.pk}/resubmit"
+
+    def test_owner_resubmits_rejected_to_pending(self):
+        resp = self.post(self._url(), {}, user=self.author)
+        self.assertEqual(resp.status_code, 200)
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.status, Competition.Status.PENDING_APPROVAL)
+
+    def test_stranger_cannot_see_or_resubmit(self):
+        resp = self.post(self._url(), {}, user=self.stranger)
+        self.assertEqual(resp.status_code, 404)  # a rejected comp is invisible to a stranger
+
+    def test_resubmit_non_rejected_conflicts(self):
+        Competition.objects.filter(pk=self.comp.pk).update(status=Competition.Status.APPROVED)
+        resp = self.post(self._url(), {}, user=self.author)
+        self.assertEqual(resp.status_code, 409)
+
+    def test_requires_auth(self):
+        self.assertEqual(self.post(self._url(), {}).status_code, 401)

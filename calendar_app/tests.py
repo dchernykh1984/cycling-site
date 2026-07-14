@@ -73,6 +73,31 @@ class CompetitionModelTests(TestCase):
         with self.assertRaises(ValueError):
             self.comp.approve(reviewer=self.organizer)
 
+    def test_reject_records_history(self):
+        self.comp.reject(reviewer=self.organizer, reason="Fix the date")
+        rejection = self.comp.rejections.get()
+        self.assertEqual(rejection.reason, "Fix the date")
+        self.assertEqual(rejection.rejected_by, self.organizer)
+
+    def test_resubmit_returns_to_pending_and_keeps_history(self):
+        self.comp.reject(reviewer=self.organizer, reason="Fix the date")
+        self.comp.resubmit(author=self.comp.submitted_by)
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.status, Competition.Status.PENDING_APPROVAL)
+        self.assertEqual(self.comp.rejection_reason, "")  # latest cleared...
+        self.assertIsNone(self.comp.approved_by)
+        self.assertEqual(self.comp.rejections.count(), 1)  # ...but the history survives
+
+    def test_repeated_reject_resubmit_accumulates_history(self):
+        for reason in ("first", "second"):
+            self.comp.reject(reviewer=self.organizer, reason=reason)
+            self.comp.resubmit(author=self.comp.submitted_by)
+        self.assertEqual(list(self.comp.rejections.values_list("reason", flat=True)), ["second", "first"])
+
+    def test_resubmit_non_rejected_raises(self):
+        with self.assertRaises(ValueError):  # comp is pending, not rejected
+            self.comp.resubmit(author=self.organizer)
+
     def test_get_calendar_end_with_date_end(self):
         self.comp.date_end = datetime.date(2026, 7, 3)
         self.comp.save()
@@ -2686,3 +2711,42 @@ class FavoriteTests(TestCase):
         self.assertEqual([c.title for c in response.context["competitions"]], ["Fav Race"])
         self.assertIn(self.comp.pk, response.context["favorited_ids"])
         self.assertTrue(response.context["only_favorite"])
+
+
+class ResubmitCompetitionViewTests(TestCase):
+    """A participant author can resubmit / edit / delete their own rejected competition (#200)."""
+
+    def setUp(self):
+        self.author = _make_user("author@example.com", User.Role.PARTICIPANT)
+        self.stranger = _make_user("stranger@example.com", User.Role.PARTICIPANT)
+        self.comp = _make_competition(
+            status=Competition.Status.REJECTED, submitted_by=self.author, rejection_reason="Fix it"
+        )
+
+    def test_author_resubmits_rejected_to_pending(self):
+        self.client.force_login(self.author)
+        response = self.client.post(reverse("competition_resubmit", args=[self.comp.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.status, Competition.Status.PENDING_APPROVAL)
+
+    def test_participant_author_can_edit_and_delete_own(self):
+        self.client.force_login(self.author)
+        self.assertEqual(self.client.get(reverse("competition_edit", args=[self.comp.pk])).status_code, 200)
+        self.assertEqual(self.client.post(reverse("competition_delete", args=[self.comp.pk])).status_code, 302)
+        self.comp.refresh_from_db()
+        self.assertTrue(self.comp.is_deleted)
+
+    def test_stranger_cannot_resubmit(self):
+        self.client.force_login(self.stranger)
+        response = self.client.post(reverse("competition_resubmit", args=[self.comp.pk]))
+        self.assertEqual(response.status_code, 403)
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.status, Competition.Status.REJECTED)
+
+    def test_resubmit_non_rejected_leaves_status(self):
+        Competition.objects.filter(pk=self.comp.pk).update(status=Competition.Status.APPROVED)
+        self.client.force_login(self.author)
+        self.client.post(reverse("competition_resubmit", args=[self.comp.pk]))
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.status, Competition.Status.APPROVED)
