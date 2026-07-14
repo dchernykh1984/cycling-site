@@ -44,6 +44,17 @@ def test_extract_links_respects_limit():
     assert len(extract_links(html, "https://a.kz", limit=fetch._AGGREGATOR_MAX_LINKS)) == 200
 
 
+def test_fetch_source_surfaces_more_links_for_aggregators(monkeypatch):
+    from agent.models import Source
+
+    html = "<body>" + "".join(f'<a href="https://a.kz/{i}">e</a>' for i in range(300)) + "</body>"
+    monkeypatch.setattr(fetch, "_get_with_fallback", lambda url, *a, **k: html)
+    aggregator = fetch.fetch_source(Source("aggregator", "ref", "https://cal.kz/"))
+    organizer = fetch.fetch_source(Source("organizer", "ref", "https://cal.kz/"))
+    assert aggregator.count("https://a.kz/") == fetch._AGGREGATOR_MAX_LINKS  # 200 for a calendar
+    assert organizer.count("https://a.kz/") == fetch._MAX_LINKS  # 60 for a normal site
+
+
 def _no_sleep(monkeypatch):
     monkeypatch.setattr(fetch.time, "sleep", lambda _s: None)
 
