@@ -55,6 +55,17 @@ def test_fetch_source_surfaces_more_links_for_aggregators(monkeypatch):
     assert organizer.count("https://a.kz/") == fetch._MAX_LINKS  # 60 for a normal site
 
 
+def test_fetch_source_keeps_more_text_for_aggregators(monkeypatch):
+    from agent.models import Source
+
+    html = "<body><p>" + ("x " * 20000) + "</p></body>"  # ~40k chars of text, no links
+    monkeypatch.setattr(fetch, "_get_with_fallback", lambda url, *a, **k: html)
+    aggregator = fetch.fetch_source(Source("aggregator", "ref", "https://cal.kz/"))
+    organizer = fetch.fetch_source(Source("organizer", "ref", "https://cal.kz/"))
+    assert len(aggregator) > fetch._MAX_CHARS  # a calendar keeps the wider text budget
+    assert len(organizer) <= fetch._MAX_CHARS + 20  # a normal site stays tightly capped
+
+
 def _no_sleep(monkeypatch):
     monkeypatch.setattr(fetch.time, "sleep", lambda _s: None)
 
