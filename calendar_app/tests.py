@@ -1134,6 +1134,25 @@ class EditCompetitionViewTests(TestCase):
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.title_ru, "Updated Title")
 
+    def test_participant_author_edit_cannot_enable_registration(self):
+        # A participant may edit their own submission (#200), but registration stays organizer-only.
+        comp = _make_competition("Part Race", status=Competition.Status.REJECTED, submitted_by=self.participant)
+        self.client.login(username="edit_part@example.com", password="password123")
+        self.client.post(
+            reverse("competition_edit", args=[comp.pk]),
+            {
+                "title_ru": "Edited by participant",
+                "date_start": "2026-09-01",
+                "registration_mode": "self_only",
+                "birth_date_mode": "year",
+                "categories_json": "[]",
+                "registration_enabled": "1",  # must be ignored for a non-organizer
+            },
+        )
+        comp.refresh_from_db()
+        self.assertEqual(comp.title_ru, "Edited by participant")  # the author's edit is applied...
+        self.assertFalse(comp.registration_enabled)  # ...but they cannot enable registration
+
     def test_edit_updates_disciplines(self):
         cat = DisciplineCategory.objects.create(name_ru="Road", order=1)
         d1 = Discipline.objects.create(name_ru="Road Race", category=cat, order=1)
