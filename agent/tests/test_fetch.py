@@ -66,6 +66,17 @@ def test_fetch_source_keeps_more_text_for_aggregators(monkeypatch):
     assert len(organizer) <= fetch._MAX_CHARS + 20  # a normal site stays tightly capped
 
 
+def test_fetch_source_line_structures_aggregators_only(monkeypatch):
+    from agent.models import Source
+
+    html = "<table><tr><td>August</td></tr><tr><td>8</td><td>XCO Race</td></tr></table>"
+    monkeypatch.setattr(fetch, "_get_with_fallback", lambda url, *a, **k: html)
+    aggregator = fetch.fetch_source(Source("aggregator", "r", "https://cal.kz/")).split("Links on the page:")[0]
+    organizer = fetch.fetch_source(Source("organizer", "r", "https://cal.kz/")).split("Links on the page:")[0]
+    assert "\n" in aggregator  # a calendar keeps each cell/row on its own line
+    assert "\n" not in organizer  # a normal page stays space-joined
+
+
 def test_sniff_charset_reads_meta_when_header_missing():
     assert fetch._sniff_charset(b'<meta charset="windows-1251">') == "windows-1251"
     assert fetch._sniff_charset(b"\xef\xbb\xbf<html>") == "utf-8"  # a UTF-8 BOM wins
