@@ -131,3 +131,17 @@ def test_get_with_fallback_does_not_retry_http_errors(monkeypatch):
     with pytest.raises(HTTPError):
         fetch._get_with_fallback("https://t.me/s/kztime")
     assert len(calls) == 1  # 404 is a real answer -> no fallback, no retry
+
+
+def test_get_with_fallback_retries_a_transient_5xx(monkeypatch):
+    _no_sleep(monkeypatch)
+    calls = []
+
+    def fake_get(url, timeout=20):
+        calls.append(url)
+        raise HTTPError(url, 503, "Service Unavailable", None, None)
+
+    monkeypatch.setattr(fetch, "_get", fake_get)
+    with pytest.raises(HTTPError):
+        fetch._get_with_fallback("https://bitza-sport.ru/")
+    assert len(calls) == fetch._FETCH_RETRIES  # 503 is transient -> retried, not dropped
