@@ -8,7 +8,8 @@ them or miss the specific event page. ``extract_links`` (the pure part) has its 
 from __future__ import annotations
 
 import urllib.request
-from urllib.parse import urljoin, urlsplit
+from urllib.error import HTTPError, URLError
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from bs4 import BeautifulSoup
 
@@ -18,6 +19,8 @@ _UA = "Mozilla/5.0 (compatible; UniversalBicycleTeam-EventsAgent/1.0)"
 _MAX_CHARS = 12000  # keep LLM prompts bounded
 _MAX_LINKS = 60
 _SKIP_PREFIXES = ("#", "javascript:", "mailto:", "tel:")
+# Telegram serves the same content on these alias domains; t.me has gone NXDOMAIN, so fall back.
+_TG_HOSTS = ("t.me", "telegram.dog", "telegram.me")
 
 
 def _get(url: str, timeout: int = 20) -> str:
@@ -25,6 +28,29 @@ def _get(url: str, timeout: int = 20) -> str:
     with urllib.request.urlopen(request, timeout=timeout) as response:
         charset = response.headers.get_content_charset() or "utf-8"
         return response.read().decode(charset, errors="replace")
+
+
+def _fetch_urls(url: str) -> list[str]:
+    """The URL, plus Telegram alias fallbacks when it points at a t.me/telegram.dog/telegram.me host."""
+    parts = urlsplit(url)
+    if parts.netloc not in _TG_HOSTS:
+        return [url]
+    return [urlunsplit(parts._replace(netloc=host)) for host in _TG_HOSTS]
+
+
+def _get_with_fallback(url: str, timeout: int = 20) -> str:
+    """Fetch ``url``, retrying Telegram alias hosts on a DNS / connection failure (not on HTTP errors)."""
+    last_exc: Exception | None = None
+    for candidate in _fetch_urls(url):
+        try:
+            return _get(candidate, timeout)
+        except HTTPError:
+            raise  # the server answered (e.g. 404) -- a real error, not a host problem
+        except (URLError, TimeoutError) as exc:
+            last_exc = exc  # DNS / connection failure -- try the next alias host
+    if last_exc is not None:
+        raise last_exc
+    raise RuntimeError(f"no URL to fetch for {url}")  # unreachable: _fetch_urls always yields >= 1
 
 
 def _absolute_links(anchors, base_url: str) -> list[str]:
@@ -57,7 +83,7 @@ def _with_links(text: str, anchors, base_url: str) -> str:
 
 def fetch_url(url: str, timeout: int = 20) -> str:
     """Readable text of an arbitrary web page (plus its links), for enriching an event."""
-    soup = BeautifulSoup(_get(url, timeout), "html.parser")
+    soup = BeautifulSoup(_get_with_fallback(url, timeout), "html.parser")
     for tag in soup(["script", "style", "noscript"]):
         tag.decompose()
     return _with_links(soup.get_text(" ", strip=True), soup.find_all("a", href=True), url)
@@ -67,7 +93,7 @@ def fetch_source(source: Source) -> str:
     """Return readable text for a website or public Telegram channel (via the t.me/s/ preview)."""
     if not source.fetch_url:
         raise ValueError("source is not fetchable")
-    soup = BeautifulSoup(_get(source.fetch_url), "html.parser")
+    soup = BeautifulSoup(_get_with_fallback(source.fetch_url), "html.parser")
     if source.kind == "tg_public":
         posts = soup.select(".tgme_widget_message_text")
         text = "\n\n".join(post.get_text(" ", strip=True) for post in posts)
