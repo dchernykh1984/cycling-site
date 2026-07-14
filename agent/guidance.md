@@ -55,7 +55,10 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
   and not a calendar / aggregator. If the announcement you found is a **Telegram or social-media
   post**, look for the organizer's real event page and link that instead; use a Telegram / social
   link only when the event genuinely has no web page, and even then link the specific post, never a
-  channel's main page.
+  channel's main page. The fetched text lists the page's real links under **"Links on the page"** --
+  choose `source_url`, `url_route` and `url_registration` **only** from those real links, never type
+  a URL from memory or guess one. If none of the real links is a proper event page, leave the field
+  empty for the reviewer rather than inventing one.
 - **Put links in their own fields.** The route / GPS-track link (e.g. a Strava link) goes in
   `url_route`, and the registration / signup link in `url_registration` -- do not bury them in the
   description text; the site has dedicated fields and buttons for them.

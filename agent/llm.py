@@ -25,7 +25,10 @@ _SYSTEM = (
     "so the distances, categories/groups, schedule and fees are readable -- never <script>, <style> "
     "or <iframe>. Put the route / GPS-track link (e.g. a Strava link) in url_route and the "
     "registration/signup link in url_registration; source_url is the announcement page on the "
-    "organizer's own site (not an aggregator). date_start MUST come from the text -- if the date is "
+    'organizer\'s own site (not an aggregator). The source text ends with a "Links on the page" '
+    "list of the page's real URLs -- pick source_url, url_route and url_registration ONLY from those "
+    'real links (or leave ""); never invent or guess a URL, and prefer the most specific event page. '
+    "date_start MUST come from the text -- if the date is "
     "only shown in an image/poster you cannot read, do NOT guess it, omit the event instead. Choose "
     "event_type_id and discipline_ids ONLY from the provided lists of ids; if unsure use null / []. "
     "For location, fill country/region/city and the specific start venue/address when given (lat/lng "
@@ -86,7 +89,10 @@ _ENRICH_SYSTEM = (
     "correct the fields: a well-formatted HTML description (distances, categories/groups, schedule, "
     "fees, who it is for) using only <p>/<br>/<ul>/<ol>/<li>/<strong>/<em>; date_start/date_end; "
     "url_route (route / GPS-track link, e.g. Strava) and url_registration; event_type_id and "
-    "discipline_ids from the provided lists; and country/region/city/venue. Keep title, description "
+    "discipline_ids from the provided lists; and country/region/city/venue. The page text ends with "
+    'a "Links on the page" list -- take url_route, url_registration and a more specific source_url '
+    "ONLY from those real links, never invent one, and prefer the specific event page. Keep title, "
+    "description "
     "and venue in all three locales (ru/kk/en). Keep it the SAME event -- never turn it into a "
     "different one, and do not invent facts the page does not state. If the page adds nothing, "
     "return the event unchanged."
