@@ -44,9 +44,12 @@ def _tg_channel(ref: str) -> str | None:
     tme = _TME_PATH.search(ref)
     if tme:
         path = tme.group(1).strip("/")
+        if path.startswith("s/"):  # a pasted t.me/s/<channel> web-preview URL
+            path = path[2:]
         if path.startswith(("+", "c/")):
             return None  # private invite link or internal channel id -- not web-readable
-        return path.split("/", 1)[0] or None  # drop any /<post_id>
+        channel = path.split("/", 1)[0].split("?", 1)[0].split("#", 1)[0]  # drop /<post_id>, query, frag
+        return channel or None
     match = _HANDLE.fullmatch(ref)
     return match.group(1) if match else None
 
