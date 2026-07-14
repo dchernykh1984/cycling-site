@@ -20,7 +20,8 @@
 aggregators:
   - url: https://battistrada.com/en/cycling-calendar/china/
     hint: "International cycling calendar; each row links to a race -- use that race's own page as source_url."
-  - https://sportevents.kz/
+  - url: https://sport-events.ru/
+    hint: "Multi-organizer cycling calendar (RU); use each race's own organizer page as source_url."
 
 organizers:
   # Kazakhstan / Kyrgyzstan (highest priority per agent/guidance.md)
@@ -32,6 +33,7 @@ organizers:
   - https://almaty-marathon.kz/
   - https://velorace.lovable.app/
   - https://velomania.kz/
+  - https://sportevents.kz/
   # Russia (lower priority)
   - https://velogearance.ru/
   - https://redbikecup.ru/rbc/2026
