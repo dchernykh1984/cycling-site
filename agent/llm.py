@@ -38,11 +38,34 @@ _SYSTEM = (
 )
 
 
+# Per-type framing so the model treats each source deterministically (esp. aggregators, where
+# source_url must be the organizer's own page and not the calendar we found the race on).
+_KIND_GUIDANCE = {
+    "aggregator": (
+        "This page is an events AGGREGATOR / calendar listing many races from different organizers. "
+        "Extract each real upcoming competition and set its source_url to that race's OWN page on the "
+        "organizer's site (chosen from the 'Links on the page' list) -- never the aggregator's URL. "
+        "Prioritise the nearest upcoming events."
+    ),
+    "organizer": (
+        "This page belongs to a single event ORGANIZER; extract their real upcoming competitions and "
+        "set source_url to the specific event's page on this same site."
+    ),
+    "tg_public": (
+        "This is the recent post feed of a public TELEGRAM channel; extract real upcoming "
+        "competitions from the posts. Prefer the organizer's own event page for source_url when a "
+        "post links one; otherwise use the specific post link."
+    ),
+}
+
+
 def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy) -> str:
     existing = "\n".join(f"- {e['title']} ({e['date_start']})" for e in known.existing[:200])
     rejected = "\n".join(f"- {r['title']} ({r['date_start']}): {r['reason']}" for r in known.rejected[:40])
     event_types = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.event_types)
     disciplines = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.disciplines)
+    kind_note = _KIND_GUIDANCE.get(source.kind, "(generic web page)")
+    source_hint = f"Source-specific hint: {source.hint.strip()}\n" if source.hint.strip() else ""
     return (
         f"Guidance from the maintainers:\n{guidance.strip() or '(none)'}\n\n"
         f"Event types (id=name): {event_types or '(none)'}\n"
@@ -50,6 +73,8 @@ def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxono
         f"Events already on the site or already proposed in this run -- do NOT propose any of these "
         f"again, even if the wording, language or year differs:\n{existing or '(none)'}\n\n"
         f"Do NOT propose events similar to these previously rejected ones:\n{rejected or '(none)'}\n\n"
+        f"Source type ({source.kind}): {kind_note}\n"
+        f"{source_hint}"
         f"Source: {source.fetch_url}\n"
         f"Source text:\n{text}"
     )

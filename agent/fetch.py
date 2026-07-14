@@ -19,6 +19,9 @@ from agent.models import Source
 _UA = "Mozilla/5.0 (compatible; UniversalBicycleTeam-EventsAgent/1.0)"
 _MAX_CHARS = 12000  # keep LLM prompts bounded
 _MAX_LINKS = 60
+# Aggregator/calendar pages list many races, each linking to its own page; surface far more of those
+# links so the model can follow the nearest upcoming events instead of only the top of the page.
+_AGGREGATOR_MAX_LINKS = 200
 _SKIP_PREFIXES = ("#", "javascript:", "mailto:", "tel:")
 # Telegram serves the same content on these alias domains; t.me has gone NXDOMAIN, so fall back.
 _TG_HOSTS = ("t.me", "telegram.dog", "telegram.me")
@@ -66,7 +69,7 @@ def _get_with_fallback(url: str, timeout: int = 20) -> str:
     raise RuntimeError(f"no URL to fetch for {url}")  # unreachable: _fetch_urls always yields >= 1
 
 
-def _absolute_links(anchors, base_url: str) -> list[str]:
+def _absolute_links(anchors, base_url: str, limit: int = _MAX_LINKS) -> list[str]:
     """Deduped absolute http(s) URLs from ``<a href>`` anchors, resolved against ``base_url``."""
     seen: list[str] = []
     for anchor in anchors:
@@ -76,18 +79,18 @@ def _absolute_links(anchors, base_url: str) -> list[str]:
         url = urljoin(base_url, href)
         if urlsplit(url).scheme in ("http", "https") and url not in seen:
             seen.append(url)
-            if len(seen) >= _MAX_LINKS:
+            if len(seen) >= limit:
                 break
     return seen
 
 
-def extract_links(html: str, base_url: str) -> list[str]:
+def extract_links(html: str, base_url: str, limit: int = _MAX_LINKS) -> list[str]:
     """Absolute http(s) links found in ``html`` (pure; used by the fetchers, unit-tested)."""
-    return _absolute_links(BeautifulSoup(html, "html.parser").find_all("a", href=True), base_url)
+    return _absolute_links(BeautifulSoup(html, "html.parser").find_all("a", href=True), base_url, limit)
 
 
-def _with_links(text: str, anchors, base_url: str) -> str:
-    links = _absolute_links(anchors, base_url)
+def _with_links(text: str, anchors, base_url: str, limit: int = _MAX_LINKS) -> str:
+    links = _absolute_links(anchors, base_url, limit)
     body = text[:_MAX_CHARS]
     if links:
         body += "\n\nLinks on the page:\n" + "\n".join(links)
@@ -116,4 +119,5 @@ def fetch_source(source: Source) -> str:
             tag.decompose()
         text = soup.get_text(" ", strip=True)
         anchors = soup.find_all("a", href=True)
-    return _with_links(text, anchors, source.fetch_url)
+    limit = _AGGREGATOR_MAX_LINKS if source.kind == "aggregator" else _MAX_LINKS
+    return _with_links(text, anchors, source.fetch_url, limit)

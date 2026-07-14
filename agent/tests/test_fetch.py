@@ -37,6 +37,13 @@ def test_extract_links_empty_without_anchors():
     assert extract_links("<p>no links here</p>", "https://a.kz") == []
 
 
+def test_extract_links_respects_limit():
+    html = "".join(f'<a href="https://a.kz/{i}">e</a>' for i in range(300))
+    assert len(extract_links(html, "https://a.kz")) == fetch._MAX_LINKS  # default cap (60)
+    # Aggregators pass the wider cap so many races on a calendar page are surfaced, not just the top.
+    assert len(extract_links(html, "https://a.kz", limit=fetch._AGGREGATOR_MAX_LINKS)) == 200
+
+
 def _no_sleep(monkeypatch):
     monkeypatch.setattr(fetch.time, "sleep", lambda _s: None)
 
