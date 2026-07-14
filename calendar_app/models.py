@@ -3,7 +3,7 @@ import uuid
 from typing import ClassVar
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.functional import cached_property
 from wagtail.search import index
@@ -236,9 +236,11 @@ class Competition(index.Indexed, models.Model):
         self.approved_by = reviewer
         self.approved_at = timezone.now()
         self.rejection_reason = reason
-        self.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
-        # Keep every rejection reason as history, so it survives edits and resubmissions (#200).
-        CompetitionRejection.objects.create(competition=self, reason=reason, rejected_by=reviewer)
+        # Save the status change and its history row together so a failure can't leave one without
+        # the other. Every rejection reason is kept as history, surviving edits/resubmissions (#200).
+        with transaction.atomic():
+            self.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
+            CompetitionRejection.objects.create(competition=self, reason=reason, rejected_by=reviewer)
 
     def resubmit(self, author) -> None:
         """Author sends a rejected competition back for a fresh review; the reason history stays."""
