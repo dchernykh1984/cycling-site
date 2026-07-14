@@ -51,5 +51,5 @@ python -m agent.run
 - `SITE_BASE_URL` (secret, optional) - the site to post to, e.g. `https://universalbicycle.team`
   (defaults to the production URL if unset).
 
-Runs daily at **00:00 UTC (05:00 Almaty)**, and on demand via the **Run workflow** button (owner
+Runs daily at **00:43 UTC (05:43 Almaty)**, and on demand via the **Run workflow** button (owner
 only). Scheduled runs only fire from the default branch (`main`).
