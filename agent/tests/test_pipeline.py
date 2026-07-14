@@ -8,7 +8,7 @@ TODAY = datetime.date(2026, 7, 1)
 
 
 def _src(url="https://x.kz"):
-    return Source("website", url, url)
+    return Source("organizer", url, url)
 
 
 def _run(sources, by_source, *, known=None, max_events=10, dry_run=False):
@@ -231,7 +231,13 @@ def test_dry_run_posts_nothing():
 
 def test_private_source_skipped_and_logged():
     report, _ = _run([Source("tg_private", "t.me/+secret")], {})
-    assert report.skipped_sources
+    assert report.skipped_sources[0][1] == "private Telegram -- needs an invite"
+    assert not report.accepted
+
+
+def test_account_source_skipped_with_its_own_reason():
+    report, _ = _run([Source("tg_account", "@almatyriders")], {})
+    assert report.skipped_sources[0][1] == "public group/account -- needs a Telegram account"
     assert not report.accepted
 
 

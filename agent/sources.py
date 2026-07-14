@@ -1,10 +1,11 @@
 """Parse events_sources.yaml into fetchable Source objects.
 
 The file groups sources by type (``aggregators`` / ``organizers`` / ``telegram_public`` /
-``telegram_private``); each entry is a bare string (URL or @handle) or a mapping with ``url`` plus
-optional ``hint`` / ``enabled``. Public Telegram channels are read through the t.me/s/<channel> web
-preview (no account); private ones (t.me/+invite, t.me/c/...) cannot be read without an account and
-are marked so the run can skip and log them.
+``telegram_account`` / ``telegram_private``); each entry is a bare string (URL or @handle) or a
+mapping with ``url`` plus optional ``hint`` / ``enabled``. Public Telegram channels are read through
+the t.me/s/<channel> web preview (no account). ``telegram_account`` (public groups/chats or a user --
+no invite, but an account) and ``telegram_private`` (t.me/+invite, t.me/c/...) cannot be read without
+a logged-in account, so they are marked and the run skips and logs them.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ _SECTION_KIND = {
     "aggregators": "aggregator",
     "organizers": "organizer",
     "telegram_public": "tg_public",
+    "telegram_account": "tg_account",
     "telegram_private": "tg_private",
 }
 
@@ -56,11 +58,13 @@ def _tg_channel(ref: str) -> str | None:
 
 def _build_source(kind: str, ref: str, hint: str) -> Source | None:
     """Build one Source, or None when the ref carries no fetchable URL / channel."""
-    if kind in ("tg_public", "tg_private"):
+    if kind == "tg_public":
         channel = _tg_channel(ref)
-        if kind == "tg_private" or channel is None:
-            return Source("tg_private", ref, None, hint=hint)
-        return Source("tg_public", ref, f"https://t.me/s/{channel}", hint=hint)
+        if channel is not None:
+            return Source("tg_public", ref, f"https://t.me/s/{channel}", hint=hint)
+        return Source("tg_private", ref, None, hint=hint)  # an invite/internal link mis-filed as public
+    if kind in ("tg_account", "tg_private"):
+        return Source(kind, ref, None, hint=hint)  # public group / private chat: needs a logged-in account
     match = _URL.search(ref)
     return Source(kind, ref, match.group(0).rstrip(".,;"), hint=hint) if match else None
 

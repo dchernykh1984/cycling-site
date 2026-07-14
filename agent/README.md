@@ -13,7 +13,8 @@ get added - the normal GUI/API flows for real users are unchanged.
 3. Fetches each source, handled by its type (see **Sources** below): organizer sites, event
    **aggregators**/calendars (more of the page's links are surfaced so the model can follow each
    race to its own page), and **public** Telegram channels via the `t.me/s/<channel>` web preview.
-   Private Telegram (`t.me/+invite`, `t.me/c/...`) is skipped and logged for now.
+   Telegram that needs an account (public groups/users, and private `t.me/+invite` / `t.me/c/...`
+   chats) is skipped and logged for now.
 4. An LLM (DeepSeek by default, any OpenAI-compatible endpoint) extracts event candidates.
 5. Drops anything already known or previously rejected, keeps only valid future events, and
    proposes at most `MAX_EVENTS_PER_RUN` (default **10**) via `POST /api/v1/competitions/`
@@ -35,9 +36,11 @@ the model) and `enabled: false` (to pause a source). Types:
   each race's own page as `source_url` (never the aggregator), and more of the page's links are
   surfaced so it can find them.
 - **organizers** - a single organizer's own website, scanned for their upcoming races.
-- **telegram_public** - public channels read via the `t.me/s/<channel>` preview (no login).
-- **telegram_private** - invite/internal links (`t.me/+...`, `t.me/c/...`); kept for reference and
-  skipped, since they cannot be read without an account.
+- **telegram_public** - public broadcast channels read via the `t.me/s/<channel>` preview (no login).
+- **telegram_account** - public groups/chats or a user (no invite needed, but a Telegram account is);
+  they have no `t.me/s/` web feed, so the account-less agent skips them for now.
+- **telegram_private** - invite/internal links (`t.me/+...`, `t.me/c/...`); need both an invite and
+  an account, so they are kept for reference and skipped.
 
 ## Guardrails
 - Hard cap of `MAX_EVENTS_PER_RUN` proposals per run (agent-side; the site does not limit users).

@@ -34,6 +34,13 @@ def test_private_telegram_marked_unfetchable():
     assert all(s.kind == "tg_private" and s.fetch_url is None for s in result)
 
 
+def test_account_section_needs_account_and_is_distinct_from_private():
+    # Public groups/users: no invite, but unreadable without an account -> own kind, not fetchable.
+    result = parse_sources("telegram_account:\n  - '@almatyriders'\n  - https://t.me/talgar2026\n")
+    assert len(result) == 2
+    assert all(s.kind == "tg_account" and s.fetch_url is None for s in result)
+
+
 def test_channel_ref_from_preview_url_and_query_string():
     result = parse_sources("telegram_public:\n  - https://t.me/s/kztime\n  - https://t.me/roadcyclingkz?si=1\n")
     assert {s.fetch_url for s in result} == {"https://t.me/s/kztime", "https://t.me/s/roadcyclingkz"}
