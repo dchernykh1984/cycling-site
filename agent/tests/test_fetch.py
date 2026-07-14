@@ -1,4 +1,16 @@
-from agent.fetch import extract_links
+from agent.fetch import _fetch_urls, extract_links
+
+
+def test_fetch_urls_adds_telegram_alias_fallbacks():
+    assert _fetch_urls("https://t.me/s/roadcyclingkz") == [
+        "https://t.me/s/roadcyclingkz",
+        "https://telegram.dog/s/roadcyclingkz",
+        "https://telegram.me/s/roadcyclingkz",
+    ]
+
+
+def test_fetch_urls_leaves_non_telegram_urls_untouched():
+    assert _fetch_urls("https://redbikecup.ru/rbc/2026") == ["https://redbikecup.ru/rbc/2026"]
 
 
 def test_extract_links_resolves_relative_against_base():
