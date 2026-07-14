@@ -64,16 +64,18 @@
     {% elif competition.status == 'rejected' %}
     <div class="alert alert-danger py-2 mb-4">
       <strong>{% trans "This submission was rejected." %}</strong>
-      {% if competition.rejections.all %}
+      {% with rejections=competition.rejections.all %}
+      {% if rejections %}
       <div class="mt-1">{% trans "Rejection history" %}:</div>
       <ul class="mb-0 mt-1">
-        {% for r in competition.rejections.all %}
+        {% for r in rejections %}
         <li>{{ r.rejected_at|date:"d.m.Y H:i" }}{% if r.reason %} &mdash; {{ r.reason }}{% endif %}</li>
         {% endfor %}
       </ul>
       {% elif competition.rejection_reason %}
       <div class="mt-1">{% trans "Reason" %}: {{ competition.rejection_reason }}</div>
       {% endif %}
+      {% endwith %}
     </div>
     {% endif %}
     {% if competition.location_full_label %}
