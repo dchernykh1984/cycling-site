@@ -44,16 +44,32 @@ organizers:
   - https://bike-events.ru/
 
 telegram_public:
+  # Readable public broadcast channels (they expose a t.me/s/<channel> web feed).
   - https://t.me/roadcyclingkz
   - https://t.me/mystartkz/903
-  - "@almatyriders"
-  - "@roadbikealmaty"
-  - "@almatyskiing"
   - "@athletex"
-  - https://t.me/cyclingtourismalmaty
-  - https://t.me/talgar2026
   - https://t.me/not_olympic
-  - https://t.me/kztime
+  # Disabled: public but NOT readable by the agent -- these are groups/chats (members, not
+  # subscribers) or a personal account, so they have no t.me/s/ web feed (verified 2026-07-14 via
+  # telegram.me while t.me was down). Re-enable an entry if you have its broadcast channel's @handle.
+  - url: "@almatyriders"
+    enabled: false
+    hint: "Telegram group (~351 members), no t.me/s/ feed -- not a broadcast channel."
+  - url: "@roadbikealmaty"
+    enabled: false
+    hint: "700c Almaty club chat / group (~533 members), no t.me/s/ feed."
+  - url: "@almatyskiing"
+    enabled: false
+    hint: "Telegram group (~131 members), no t.me/s/ feed."
+  - url: https://t.me/cyclingtourismalmaty
+    enabled: false
+    hint: "Telegram group (~60 members), no t.me/s/ feed."
+  - url: https://t.me/talgar2026
+    enabled: false
+    hint: "Telegram group (~29 members), no t.me/s/ feed -- not a broadcast channel."
+  - url: https://t.me/kztime
+    enabled: false
+    hint: "Personal account (@kztime), not a channel -- nothing for the agent to read."
   # "RideBikes Казахстан" was listed without a handle -- add its @handle here to enable it.
 
 telegram_private:
