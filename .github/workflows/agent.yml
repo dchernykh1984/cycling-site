@@ -28,7 +28,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20 # a few sources may each retry with a 10s backoff on a night-time hiccup
     steps:
       # Fail a manual run started by anyone other than the owner before any secret is used.
       - name: Restrict manual runs to the repository owner

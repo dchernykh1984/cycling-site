@@ -102,21 +102,21 @@ def test_get_with_fallback_gives_up_after_the_retry_budget(monkeypatch):
     monkeypatch.setattr(fetch, "_get", fake_get)
     with pytest.raises(URLError):
         fetch._get_with_fallback("https://t.me/s/kztime")
-    assert len(calls) == 9  # 3 alias hosts x 3 passes
+    assert len(calls) == 3 * fetch._FETCH_RETRIES  # 3 alias hosts x N passes
 
 
-def test_get_with_fallback_does_not_retry_a_website(monkeypatch):
+def test_get_with_fallback_retries_a_website_on_timeout(monkeypatch):
     _no_sleep(monkeypatch)
     calls = []
 
     def fake_get(url, timeout=20):
         calls.append(url)
-        raise URLError("down")
+        raise TimeoutError("timed out")
 
     monkeypatch.setattr(fetch, "_get", fake_get)
-    with pytest.raises(URLError):
-        fetch._get_with_fallback("https://redbikecup.ru/x")
-    assert calls == ["https://redbikecup.ru/x"]  # a single attempt, no retry
+    with pytest.raises(TimeoutError):
+        fetch._get_with_fallback("https://bitza-sport.ru/")
+    assert calls == ["https://bitza-sport.ru/"] * fetch._FETCH_RETRIES  # one host, retried N passes
 
 
 def test_get_with_fallback_does_not_retry_http_errors(monkeypatch):
