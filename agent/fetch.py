@@ -20,8 +20,10 @@ _UA = "Mozilla/5.0 (compatible; UniversalBicycleTeam-EventsAgent/1.0)"
 _MAX_CHARS = 12000  # keep LLM prompts bounded
 _MAX_LINKS = 60
 # Aggregator/calendar pages list many races, each linking to its own page; surface far more of those
-# links so the model can follow the nearest upcoming events instead of only the top of the page.
+# links -- and proportionally more page text -- so the model sees the name/date next to each of the
+# nearest upcoming events instead of only the top of the page.
 _AGGREGATOR_MAX_LINKS = 200
+_AGGREGATOR_MAX_CHARS = 30000
 _SKIP_PREFIXES = ("#", "javascript:", "mailto:", "tel:")
 # Telegram serves the same content on these alias domains; t.me has gone NXDOMAIN, so fall back.
 _TG_HOSTS = ("t.me", "telegram.dog", "telegram.me")
@@ -89,9 +91,9 @@ def extract_links(html: str, base_url: str, limit: int = _MAX_LINKS) -> list[str
     return _absolute_links(BeautifulSoup(html, "html.parser").find_all("a", href=True), base_url, limit)
 
 
-def _with_links(text: str, anchors, base_url: str, limit: int = _MAX_LINKS) -> str:
+def _with_links(text: str, anchors, base_url: str, limit: int = _MAX_LINKS, max_chars: int = _MAX_CHARS) -> str:
     links = _absolute_links(anchors, base_url, limit)
-    body = text[:_MAX_CHARS]
+    body = text[:max_chars]
     if links:
         body += "\n\nLinks on the page:\n" + "\n".join(links)
     return body
@@ -119,5 +121,8 @@ def fetch_source(source: Source) -> str:
             tag.decompose()
         text = soup.get_text(" ", strip=True)
         anchors = soup.find_all("a", href=True)
-    limit = _AGGREGATOR_MAX_LINKS if source.kind == "aggregator" else _MAX_LINKS
-    return _with_links(text, anchors, source.fetch_url, limit)
+    if source.kind == "aggregator":
+        limit, max_chars = _AGGREGATOR_MAX_LINKS, _AGGREGATOR_MAX_CHARS
+    else:
+        limit, max_chars = _MAX_LINKS, _MAX_CHARS
+    return _with_links(text, anchors, source.fetch_url, limit, max_chars)
