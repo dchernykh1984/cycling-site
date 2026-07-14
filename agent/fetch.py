@@ -7,6 +7,7 @@ them or miss the specific event page. ``extract_links`` (the pure part) has its 
 
 from __future__ import annotations
 
+import re
 import time
 import urllib.request
 from urllib.error import HTTPError, URLError
@@ -31,11 +32,28 @@ _FETCH_RETRIES = 3  # runner DNS for the Telegram aliases is intermittently flak
 _RETRY_BACKOFF = 1.0  # seconds between retry passes
 
 
+# When the HTTP response omits a charset, fall back to the one the HTML declares (some RU calendars
+# serve windows-1251 and announce it only in a <meta> tag) rather than assuming UTF-8 and garbling.
+_META_CHARSET = re.compile(rb'charset=["\']?\s*([A-Za-z0-9_-]+)', re.IGNORECASE)
+
+
+def _sniff_charset(raw: bytes) -> str | None:
+    """The charset from the page's BOM or <meta>, used only when the HTTP header omits one."""
+    if raw.startswith(b"\xef\xbb\xbf"):
+        return "utf-8"
+    match = _META_CHARSET.search(raw[:2048])
+    return match.group(1).decode("ascii", "ignore") if match else None
+
+
 def _get(url: str, timeout: int = 20) -> str:
     request = urllib.request.Request(url, headers={"User-Agent": _UA})
     with urllib.request.urlopen(request, timeout=timeout) as response:
-        charset = response.headers.get_content_charset() or "utf-8"
-        return response.read().decode(charset, errors="replace")
+        raw = response.read()
+        charset = response.headers.get_content_charset()
+    try:
+        return raw.decode(charset or _sniff_charset(raw) or "utf-8", errors="replace")
+    except LookupError:  # an unknown / misspelled charset name in the header or meta
+        return raw.decode("utf-8", errors="replace")
 
 
 def _fetch_urls(url: str) -> list[str]:

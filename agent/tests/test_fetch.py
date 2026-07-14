@@ -66,6 +66,12 @@ def test_fetch_source_keeps_more_text_for_aggregators(monkeypatch):
     assert len(organizer) <= fetch._MAX_CHARS + 20  # a normal site stays tightly capped
 
 
+def test_sniff_charset_reads_meta_when_header_missing():
+    assert fetch._sniff_charset(b'<meta charset="windows-1251">') == "windows-1251"
+    assert fetch._sniff_charset(b"\xef\xbb\xbf<html>") == "utf-8"  # a UTF-8 BOM wins
+    assert fetch._sniff_charset(b"<html>no declared charset here</html>") is None
+
+
 def _no_sleep(monkeypatch):
     monkeypatch.setattr(fetch.time, "sleep", lambda _s: None)
 
