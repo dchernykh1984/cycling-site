@@ -606,7 +606,9 @@ def _apply_registration_settings(comp, reg_form, is_organizer_plus):
         comp.registration_mode_locked = True
 
 
-def _save_categories(comp, reg_form):  # noqa: C901
+def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
+    if not is_organizer_plus:  # categories are part of registration config -> organizer-only (#200)
+        return
     import datetime as dt
 
     from registrations.models import RegistrationCategory
@@ -759,7 +761,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                     comp.save()
                     comp.disciplines.set(cd.get("disciplines") or [])
                     if is_organizer and reg_form.is_valid():
-                        _save_categories(comp, reg_form)
+                        _save_categories(comp, reg_form, True)
             except LocationConflictError:
                 form.add_error("location", _("This location is not available."))
             else:
@@ -939,21 +941,22 @@ class EditCompetitionView(View):
                 f = cd.get(fname)
                 if f:
                     setattr(comp, fname, f)
-            _apply_registration_settings(comp, reg_form, True)
+            # Registration config (enable, categories, ...) stays organizer-only even when the author
+            # editing their own submission is a participant (#200) -- mirror the submit view.
+            is_org = _is_organizer_plus(request.user)
+            _apply_registration_settings(comp, reg_form, is_org)
             try:
                 # Resolve, lock and re-validate the location, then save in one transaction so a
                 # concurrent delete/level-change of the venue can't bind this competition to a
                 # removed node or a non-venue (review: competition-update vs delete).
                 with transaction.atomic():
-                    location = _resolve_competition_location(
-                        cd, request.user, approved=_is_organizer_plus(request.user)
-                    )
+                    location = _resolve_competition_location(cd, request.user, approved=is_org)
                     comp.location = lock_competition_location(
                         location, request.user, is_admin=_can_manage_any_competition(request.user)
                     )
                     comp.save()
                     comp.disciplines.set(cd.get("disciplines") or [])
-                    _save_categories(comp, reg_form)
+                    _save_categories(comp, reg_form, is_org)
             except LocationConflictError:
                 form.add_error("location", _("This location is not available."))
             else:
