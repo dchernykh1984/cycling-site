@@ -29,7 +29,10 @@ _SYSTEM = (
     "list of the page's real URLs -- pick source_url, url_route and url_registration ONLY from those "
     'real links (or leave ""); never invent or guess a URL, and prefer the most specific event page. '
     "date_start MUST come from the text -- if the date is "
-    "only shown in an image/poster you cannot read, do NOT guess it, omit the event instead. Choose "
+    "only shown in an image/poster you cannot read, do NOT guess it, omit the event instead. In a "
+    "calendar or list a date is often a month/section heading with a day number in each row below it "
+    "-- combine that heading with the row's day to form date_start (reading it this way is not "
+    "guessing). Choose "
     "event_type_id and discipline_ids ONLY from the provided lists of ids; if unsure use null / []. "
     "For location, fill country/region/city and the specific start venue/address when given (lat/lng "
     'only if you are sure); leave a field "" when unknown -- do not guess. Follow the maintainer '
@@ -42,10 +45,12 @@ _SYSTEM = (
 # source_url must be the organizer's own page and not the calendar we found the race on).
 _KIND_GUIDANCE = {
     "aggregator": (
-        "This page is an events AGGREGATOR / calendar listing many races from different organizers. "
-        "Extract each real upcoming competition and set its source_url to that race's OWN page on the "
-        "organizer's site (chosen from the 'Links on the page' list) -- never the aggregator's URL. "
-        "Prioritise the nearest upcoming events."
+        "This page is an events AGGREGATOR / calendar listing many races from different organizers -- "
+        "often a dense list or table with one race per line/row. Go through it row by row and extract "
+        "EVERY upcoming competition, even the ones on a single terse line; do not stop early or skip a "
+        "race because its row is brief. Set each race's source_url to its OWN page on the organizer's "
+        "site (chosen from the 'Links on the page' list) -- never the aggregator's URL. Prioritise the "
+        "nearest upcoming events."
     ),
     "organizer": (
         "This page belongs to a single event ORGANIZER; extract their real upcoming competitions and "

@@ -1,4 +1,4 @@
-from agent.llm import _KIND_GUIDANCE, _prompt
+from agent.llm import _KIND_GUIDANCE, _SYSTEM, _prompt
 from agent.models import KnownEvents, Source, Taxonomy
 
 
@@ -12,6 +12,13 @@ def test_prompt_includes_aggregator_framing_and_hint():
     assert "Source type (aggregator)" in out
     assert "AGGREGATOR" in out  # the aggregator-specific instruction
     assert "Source-specific hint: use each race's own page" in out
+
+
+def test_prompt_pushes_full_calendar_extraction():
+    # Aggregator framing tells the model to enumerate every row; the system prompt explains that a
+    # month heading + a row's day number is a real date (the fix for terse calendars like bike-events).
+    assert "row by row" in _prompt_for(Source("aggregator", "r", "https://cal.kz/"))
+    assert "heading" in _SYSTEM
 
 
 def test_prompt_organizer_and_public_channel_have_distinct_framing():
