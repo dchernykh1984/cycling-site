@@ -1880,3 +1880,22 @@ msgstr "Добавленные мной события"
 # Pending/rejected competitions + profile (issue #180)
 msgid "You have not submitted any events yet."
 msgstr "Вы пока не добавили ни одного события."
+
+# Reject -> edit -> resubmit flow (#200)
+msgid "Resubmit"
+msgstr "Переподать"
+
+msgid "Resubmit for review"
+msgstr "Отправить на повторное рассмотрение"
+
+msgid "Delete this competition?"
+msgstr "Удалить это соревнование?"
+
+msgid "Rejection history"
+msgstr "История отклонений"
+
+msgid "Only a rejected competition can be resubmitted."
+msgstr "На повторное рассмотрение можно отправить только отклонённое соревнование."
+
+msgid "Your competition was sent for review again."
+msgstr "Соревнование отправлено на повторное рассмотрение."

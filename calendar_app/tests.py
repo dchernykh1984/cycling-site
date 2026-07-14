@@ -78,6 +78,7 @@ class CompetitionModelTests(TestCase):
         rejection = self.comp.rejections.get()
         self.assertEqual(rejection.reason, "Fix the date")
         self.assertEqual(rejection.rejected_by, self.organizer)
+        self.assertIn(str(self.comp.pk), str(rejection))
 
     def test_resubmit_returns_to_pending_and_keeps_history(self):
         self.comp.reject(reviewer=self.organizer, reason="Fix the date")

@@ -1921,3 +1921,22 @@ msgstr "Мен қосқан іс-шаралар"
 # Pending/rejected competitions + profile (issue #180)
 msgid "You have not submitted any events yet."
 msgstr "Сіз әзірге бірде-бір іс-шара қоспадыңыз."
+
+# Reject -> edit -> resubmit flow (#200)
+msgid "Resubmit"
+msgstr "Қайта жіберу"
+
+msgid "Resubmit for review"
+msgstr "Қайта қарауға жіберу"
+
+msgid "Delete this competition?"
+msgstr "Бұл жарысты жою керек пе?"
+
+msgid "Rejection history"
+msgstr "Бас тарту тарихы"
+
+msgid "Only a rejected competition can be resubmitted."
+msgstr "Тек қабылданбаған жарысты қайта жіберуге болады."
+
+msgid "Your competition was sent for review again."
+msgstr "Жарыс қайта қарауға жіберілді."
