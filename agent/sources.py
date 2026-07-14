@@ -64,7 +64,9 @@ def _build_source(kind: str, ref: str, hint: str) -> Source | None:
 
 def parse_sources(text: str) -> list[Source]:
     """Return the de-duplicated sources declared in the events_sources.yaml text."""
-    data = yaml.safe_load(text) or {}
+    data = yaml.safe_load(text)
+    if not isinstance(data, dict):  # empty file or a malformed top level (list/scalar) -> no sources
+        return []
     sources: list[Source] = []
     seen: set[str] = set()
 

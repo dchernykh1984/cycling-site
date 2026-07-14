@@ -50,3 +50,9 @@ def test_duplicate_channel_across_forms_deduped():
 def test_empty_or_missing_sections_yield_no_sources():
     assert parse_sources("") == []
     assert parse_sources("aggregators:\norganizers: []\n") == []
+
+
+def test_malformed_top_level_yields_no_sources_without_crashing():
+    # A maintainer editing the YAML could leave a bare list / scalar at the top level.
+    assert parse_sources("- https://a.kz/\n- https://b.kz/\n") == []
+    assert parse_sources("just a string") == []
