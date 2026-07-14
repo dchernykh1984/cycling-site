@@ -72,6 +72,30 @@ def test_sniff_charset_reads_meta_when_header_missing():
     assert fetch._sniff_charset(b"<html>no declared charset here</html>") is None
 
 
+def test_get_decodes_via_meta_charset_when_header_missing(monkeypatch):
+    word = "\u0413\u043e\u043d\u043a\u0430"  # a Cyrillic word, escaped to keep the source ASCII
+    body = ('<meta charset="windows-1251"><p>' + word + "</p>").encode("cp1251")
+
+    class _Headers:
+        def get_content_charset(self):
+            return None  # server sent no charset -> _get must sniff the <meta>
+
+    class _Resp:
+        headers = _Headers()
+
+        def read(self):
+            return body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(fetch.urllib.request, "urlopen", lambda *a, **k: _Resp())
+    assert word in fetch._get("https://bike-events.ru/")  # windows-1251 bytes decoded correctly
+
+
 def _no_sleep(monkeypatch):
     monkeypatch.setattr(fetch.time, "sleep", lambda _s: None)
 
