@@ -1138,7 +1138,7 @@ class ResubmitCompetitionView(LoginRequiredMixin, View):
         if not can_manage_or_own(request.user, competition):
             raise PermissionDenied
         try:
-            competition.resubmit(request.user)
+            competition.resubmit()
         except ValueError:
             messages.error(request, _("Only a rejected competition can be resubmitted."))
         else:

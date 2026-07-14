@@ -365,7 +365,7 @@ def resubmit_competition(request, competition_id: int):
     _require_owner_or_admin(user, competition)
     if competition.status != Competition.Status.REJECTED:
         raise HttpError(409, "Only a rejected competition can be resubmitted for review")
-    competition.resubmit(user)
+    competition.resubmit()
     return _to_detail(competition, user)
 
 

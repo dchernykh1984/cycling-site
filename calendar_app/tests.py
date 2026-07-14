@@ -82,7 +82,7 @@ class CompetitionModelTests(TestCase):
 
     def test_resubmit_returns_to_pending_and_keeps_history(self):
         self.comp.reject(reviewer=self.organizer, reason="Fix the date")
-        self.comp.resubmit(author=self.comp.submitted_by)
+        self.comp.resubmit()
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.status, Competition.Status.PENDING_APPROVAL)
         self.assertEqual(self.comp.rejection_reason, "")  # latest cleared...
@@ -92,12 +92,12 @@ class CompetitionModelTests(TestCase):
     def test_repeated_reject_resubmit_accumulates_history(self):
         for reason in ("first", "second"):
             self.comp.reject(reviewer=self.organizer, reason=reason)
-            self.comp.resubmit(author=self.comp.submitted_by)
+            self.comp.resubmit()
         self.assertEqual(list(self.comp.rejections.values_list("reason", flat=True)), ["second", "first"])
 
     def test_resubmit_non_rejected_raises(self):
         with self.assertRaises(ValueError):  # comp is pending, not rejected
-            self.comp.resubmit(author=self.organizer)
+            self.comp.resubmit()
 
     def test_get_calendar_end_with_date_end(self):
         self.comp.date_end = datetime.date(2026, 7, 3)
