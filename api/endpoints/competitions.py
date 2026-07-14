@@ -352,6 +352,23 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
     return _to_detail(competition, user)
 
 
+@router.post(
+    "/{competition_id}/resubmit",
+    response=CompetitionOut,
+    auth=auth,
+    summary="Resubmit a rejected competition for review (owner)",
+)
+def resubmit_competition(request, competition_id: int):
+    user = request.auth
+    competition = _get_or_404(competition_id)
+    _require_visible_or_404(user, competition)
+    _require_owner_or_admin(user, competition)
+    if competition.status != Competition.Status.REJECTED:
+        raise HttpError(409, "Only a rejected competition can be resubmitted for review")
+    competition.resubmit(user)
+    return _to_detail(competition, user)
+
+
 @router.delete("/{competition_id}", response={204: None}, auth=auth, summary="Delete competition (soft)")
 def delete_competition(request, competition_id: int):
     user = request.auth

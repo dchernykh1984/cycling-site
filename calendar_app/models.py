@@ -237,6 +237,18 @@ class Competition(index.Indexed, models.Model):
         self.approved_at = timezone.now()
         self.rejection_reason = reason
         self.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
+        # Keep every rejection reason as history, so it survives edits and resubmissions (#200).
+        CompetitionRejection.objects.create(competition=self, reason=reason, rejected_by=reviewer)
+
+    def resubmit(self, author) -> None:
+        """Author sends a rejected competition back for a fresh review; the reason history stays."""
+        if self.status != self.Status.REJECTED:
+            raise ValueError(f"Cannot resubmit: competition is '{self.get_status_display()}', not rejected.")
+        self.status = self.Status.PENDING_APPROVAL
+        self.rejection_reason = ""  # the past reasons remain in self.rejections
+        self.approved_by = None
+        self.approved_at = None
+        self.save(update_fields=["status", "rejection_reason", "approved_by", "approved_at"])
 
     def is_registration_open(self) -> bool:
         if not self.registration_enabled:
@@ -332,6 +344,25 @@ class Competition(index.Indexed, models.Model):
     def city_label(self) -> str:
         node = self._location_nodes_by_depth.get(3)
         return node.name if node else ""
+
+
+class CompetitionRejection(models.Model):
+    """One moderation rejection of a competition, kept as history across resubmissions (#200)."""
+
+    objects: ClassVar[models.Manager["CompetitionRejection"]]
+
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="rejections")
+    reason = models.TextField(blank=True)
+    rejected_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    rejected_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering: ClassVar[list] = ["-rejected_at"]
+
+    def __str__(self) -> str:
+        return f"Rejection of competition {self.competition_id} at {self.rejected_at:%Y-%m-%d}"
 
 
 class CompetitionComment(models.Model):

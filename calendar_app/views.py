@@ -520,6 +520,9 @@ class CompetitionDetailView(View):
             "protocols": protocols,
             "show_upload_token": show_upload_token,
             "is_manager": is_manager,
+            # The author (any role) may edit/delete/resubmit their own submission (#200); Hide and
+            # the upload token stay manager-only via is_manager.
+            "can_edit": is_manager or is_author,
             "already_registered": already_registered,
             "site_base_url": getattr(settings, "SITE_BASE_URL", ""),
             "comments": comments,
@@ -778,9 +781,9 @@ class EditCompetitionView(View):
 
     def _get_competition_or_403(self, request, pk):
         comp = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        from registrations.views import can_manage
+        from registrations.views import can_manage_or_own
 
-        if not can_manage(request.user, comp):
+        if not can_manage_or_own(request.user, comp):
             raise PermissionDenied
         return comp
 
@@ -1112,14 +1115,32 @@ class DeleteCompetitionCommentView(LoginRequiredMixin, View):
 
 class CompetitionDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        from registrations.views import can_manage
+        from registrations.views import can_manage_or_own
 
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage(request.user, competition):
+        if not can_manage_or_own(request.user, competition):
             raise PermissionDenied
         competition.is_deleted = True
         competition.save(update_fields=["is_deleted"])
         return redirect("calendar_list")
+
+
+class ResubmitCompetitionView(LoginRequiredMixin, View):
+    """The author sends a rejected competition back for a fresh review (#200)."""
+
+    def post(self, request, pk):
+        from registrations.views import can_manage_or_own
+
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+        if not can_manage_or_own(request.user, competition):
+            raise PermissionDenied
+        try:
+            competition.resubmit(request.user)
+        except ValueError:
+            messages.error(request, _("Only a rejected competition can be resubmitted."))
+        else:
+            messages.success(request, _("Your competition was sent for review again."))
+        return redirect("competition_detail", pk=pk)
 
 
 class CompetitionHideView(LoginRequiredMixin, View):

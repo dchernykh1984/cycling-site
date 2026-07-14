@@ -188,6 +188,7 @@
                         <th>{% trans "Competition" %}</th>
                         <th>{% trans "Date" %}</th>
                         <th>{% trans "Status" %}</th>
+                        <th>{% trans "Actions" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -206,6 +207,21 @@
                             {% else %}
                             <span class="badge bg-warning text-dark">{% trans "Pending" %}</span>
                             {% endif %}
+                        </td>
+                        <td class="text-nowrap">
+                            <a href="{% url 'competition_edit' comp.pk %}"
+                               class="btn btn-outline-secondary btn-sm">{% trans "Edit" %}</a>
+                            {% if comp.status == 'rejected' %}
+                            <form method="post" action="{% url 'competition_resubmit' comp.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary btn-sm">{% trans "Resubmit" %}</button>
+                            </form>
+                            {% endif %}
+                            <form method="post" action="{% url 'competition_delete' comp.pk %}" class="d-inline"
+                                  onsubmit="return confirm('{% trans "Delete this competition?" %}')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">{% trans "Delete" %}</button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}
