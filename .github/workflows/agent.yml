@@ -6,7 +6,7 @@ name: events-agent
 # repository owner so nobody else can spend the LLM/API budget.
 on:
   schedule:
-    - cron: "0 0 * * *" # daily at 00:00 UTC (05:00 Almaty)
+    - cron: "43 0 * * *" # daily at 00:43 UTC (05:43 Almaty); off the round hour to avoid cron congestion
   workflow_dispatch:
     inputs:
       dry_run:
