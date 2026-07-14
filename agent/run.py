@@ -12,7 +12,7 @@ from agent.models import Candidate, RunReport
 from agent.site_api import SiteApiClient
 
 _ROOT = Path(__file__).resolve().parent.parent
-_SOURCES_FILE = _ROOT / "events_sources.txt"
+_SOURCES_FILE = _ROOT / "events_sources.yaml"
 _GUIDANCE_FILE = _ROOT / "agent" / "guidance.md"
 
 

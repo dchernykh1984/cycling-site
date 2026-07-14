@@ -40,7 +40,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-      - run: pip install beautifulsoup4
+      - run: pip install beautifulsoup4 pyyaml
       - name: Run events agent
         env:
           SITE_BASE_URL: ${{ secrets.SITE_BASE_URL || 'https://universalbicycle.team' }}

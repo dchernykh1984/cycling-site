@@ -42,6 +42,7 @@ pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementatio
 pydantic==2.13.4
 pydantic-core==2.46.4
 pyjwt==2.13.0
+pyyaml==6.0.3
 requests==2.34.2
 soupsieve==2.8.4
 sqlparse==0.5.5

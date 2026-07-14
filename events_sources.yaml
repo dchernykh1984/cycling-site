@@ -1,0 +1,62 @@
+# Sources the events agent scans, grouped by type so each is handled deterministically.
+# This file lives in the repo root and is re-read on every run -- edit it freely.
+#
+# Each entry is either a bare string, or a mapping for extra control:
+#   - https://example.kz/                      # simple form
+#   - url: https://example.kz/calendar/        # with options:
+#     hint: "races are listed under /calendar"  #   free-text nudge passed to the model
+#     enabled: false                            #   set false to pause this source
+#
+# Types (choose the section by what the URL is):
+#   aggregators       calendars/platforms listing many organizers' races. The agent extracts each
+#                     race's own page from the calendar and proposes it; source_url must be the
+#                     organizer's page, never the aggregator. More page links are surfaced here.
+#   organizers        a single organizer's own website -- scanned for their upcoming races.
+#   telegram_public   public Telegram channels, read via the t.me/s/<channel> web preview (no login).
+#                     Give the channel URL or an @handle.
+#   telegram_private  private channels/chats (t.me/+invite, t.me/c/<id>). They cannot be read without
+#                     an account, so they are kept here for reference and skipped at runtime.
+
+aggregators:
+  - url: https://battistrada.com/en/cycling-calendar/china/
+    hint: "International cycling calendar; each row links to a race -- use that race's own page as source_url."
+  - https://sportevents.kz/
+
+organizers:
+  # Kazakhstan / Kyrgyzstan (highest priority per agent/guidance.md)
+  - https://changan-race.kz/ru/
+  - https://athletex.kz/
+  - https://www.granfondo.com.kz/ru/
+  - https://cycling.kz/ru/
+  - https://velosport.kg/
+  - https://almaty-marathon.kz/
+  - https://velorace.lovable.app/
+  - https://velomania.kz/
+  # Russia (lower priority)
+  - https://velogearance.ru/
+  - https://redbikecup.ru/rbc/2026
+  - https://bitza-sport.ru/
+  - https://www.sk-romashkovo.ru/
+  - https://skisport.ru/
+  - https://forum.velomania.ru/
+  - https://www.granfondo.ru/
+  - https://sportmarafonfest.ru/
+  - https://bike-events.ru/
+
+telegram_public:
+  - https://t.me/roadcyclingkz
+  - https://t.me/mystartkz/903
+  - "@almatyriders"
+  - "@roadbikealmaty"
+  - "@almatyskiing"
+  - "@athletex"
+  - https://t.me/cyclingtourismalmaty
+  - https://t.me/talgar2026
+  - https://t.me/not_olympic
+  - https://t.me/kztime
+  # "RideBikes Казахстан" was listed without a handle -- add its @handle here to enable it.
+
+telegram_private:
+  - https://t.me/+3mTEnASuHG40MTRi
+  - https://t.me/+tOGgIdNmTygyZDEy
+  - https://t.me/c/1949598843/1
