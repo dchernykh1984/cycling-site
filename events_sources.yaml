@@ -20,7 +20,7 @@
 aggregators:
   - url: https://battistrada.com/en/cycling-calendar/china/
     hint: "International cycling calendar; each row links to a race -- use that race's own page as source_url."
-  - url: https://sport-events.ru/
+  - url: https://bike-events.ru/
     hint: "Multi-organizer cycling calendar (RU); use each race's own organizer page as source_url."
 
 organizers:
@@ -43,7 +43,6 @@ organizers:
   - https://forum.velomania.ru/
   - https://www.granfondo.ru/
   - https://sportmarafonfest.ru/
-  - https://bike-events.ru/
 
 telegram_public:
   # Readable public broadcast channels (they expose a t.me/s/<channel> web feed).
