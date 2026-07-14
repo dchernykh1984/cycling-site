@@ -2750,6 +2750,15 @@ class ResubmitCompetitionViewTests(TestCase):
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.status, Competition.Status.PENDING_APPROVAL)
 
+    def test_detail_page_shows_resubmit_button_and_history_to_author(self):
+        comp = _make_competition(status=Competition.Status.PENDING_APPROVAL, submitted_by=self.author)
+        reviewer = _make_user("resub_rev@example.com", User.Role.ORGANIZER)
+        comp.reject(reviewer=reviewer, reason="Fix the date")  # records a rejection history row
+        self.client.force_login(self.author)
+        html = self.client.get(reverse("competition_detail", args=[comp.pk])).content.decode()
+        self.assertIn(f"/{comp.pk}/resubmit/", html)  # the Resubmit-for-review form is shown
+        self.assertIn("Fix the date", html)  # the reason appears in the rejection history
+
     def test_participant_author_can_edit_and_delete_own(self):
         self.client.force_login(self.author)
         self.assertEqual(self.client.get(reverse("competition_edit", args=[self.comp.pk])).status_code, 200)
