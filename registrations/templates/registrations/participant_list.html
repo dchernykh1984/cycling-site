@@ -15,7 +15,9 @@
 </nav>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h3 mb-0">{% trans "Participants" %}: {{ competition.title }}</h1>
+  <h1 class="h3 mb-0">{% trans "Participants" %}: {{ competition.title }}
+    <span class="badge bg-secondary align-middle ms-1" title="{% trans 'Total qualified' %}">{{ qualified_count }}{% if max_participants %}/{{ max_participants }}{% endif %}</span>
+  </h1>
   {% if is_manager %}
   <div class="d-flex gap-2">
     {% if competition.registration_mode == "free" %}
@@ -32,9 +34,6 @@
 
 {% if is_manager %}
 <div class="row mb-3 g-2">
-  <div class="col-auto">
-    <span class="badge bg-secondary">{% trans "Total qualified" %}: {{ qualified_count }}{% if max_participants %}/{{ max_participants }}{% endif %}</span>
-  </div>
   {% for stat in category_stats %}
   <div class="col-auto">
     <a href="#cat-{{ stat.category.pk }}" class="badge text-decoration-none {% if stat.limit_reached %}bg-danger{% else %}bg-light text-dark border{% endif %}">

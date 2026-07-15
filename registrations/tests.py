@@ -674,6 +674,15 @@ class ParticipantListViewTests(TestCase):
         groups = resp.context["participant_groups"]
         self.assertEqual(groups[0]["rows"][0][0], 137)
 
+    def test_list_shows_total_count_and_limit_near_title(self):
+        self.comp.max_participants = 80
+        self.comp.save()
+        cat = make_category(self.comp, name="A", bib_from=1)
+        make_registration(self.comp, category=cat, last_name="One")
+        make_registration(self.comp, category=cat, last_name="Two")
+        resp = self.client.get(self.url)  # public view
+        self.assertContains(resp, "2/80")  # qualified_count / max_participants
+
     def test_list_shows_uncategorized_section(self):
         make_registration(self.comp, category=None, last_name="NoCat")
         self.client.force_login(self.organizer)
