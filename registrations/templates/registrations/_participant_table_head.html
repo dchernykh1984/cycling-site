@@ -1,0 +1,15 @@
+{% load i18n %}
+<thead>
+  <tr>
+    <th>#</th>
+    <th>{% trans "Name" %}</th>
+    {% if is_manager %}<th>{% trans "Gender" %}</th>{% endif %}
+    <th>{% trans "Birth" %}</th>
+    <th>{% trans "Team" %}</th>
+    <th>{% trans "City" %}</th>
+    {% if is_manager or competition.show_additional_info_field %}<th>{% trans "Info" %}</th>{% endif %}
+    {% if is_manager and competition.require_approval or competition.show_approval_status_col %}<th>{% trans "Approved" %}</th>{% endif %}
+    {% if is_manager and competition.require_payment or competition.show_payment_status_col %}<th>{% trans "Paid" %}</th>{% endif %}
+    {% if is_manager %}<th>{% trans "Rejected" %}</th><th>{% trans "Registered" %}</th><th class="reg-actions"><span class="visually-hidden">{% trans "Actions" %}</span></th>{% endif %}
+  </tr>
+</thead>

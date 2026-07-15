@@ -581,11 +581,97 @@ class RegistrationStravaFieldTests(TestCase):
         self.assertContains(resp, expected)
 
 
+class BuildParticipantGroupsTests(TestCase):
+    def setUp(self):
+        self.comp = make_competition(registration_enabled=True)
+
+    def test_groups_by_category_with_bib_numbering(self):
+        from registrations.views import build_participant_groups
+
+        cat_a = make_category(self.comp, name="A", bib_from=100, order=1)
+        cat_b = make_category(self.comp, name="B", bib_from=1, order=2)
+        a1 = make_registration(self.comp, category=cat_a, last_name="A1")
+        a2 = make_registration(self.comp, category=cat_a, last_name="A2")
+        b1 = make_registration(self.comp, category=cat_b, last_name="B1")
+        groups = build_participant_groups([a1, a2, b1], [cat_a, cat_b])
+        self.assertEqual([g["category"] for g in groups], [cat_a, cat_b])
+        self.assertEqual(groups[0]["rows"], [(100, a1), (101, a2)])
+        self.assertEqual(groups[0]["count"], 2)
+        self.assertEqual(groups[1]["rows"], [(1, b1)])
+
+    def test_bib_from_defaults_to_one(self):
+        from registrations.views import build_participant_groups
+
+        cat = make_category(self.comp, name="C")  # bib_from is None
+        reg = make_registration(self.comp, category=cat)
+        groups = build_participant_groups([reg], [cat])
+        self.assertEqual(groups[0]["rows"], [(1, reg)])
+
+    def test_uncategorized_group_last_numbered_from_one(self):
+        from registrations.views import build_participant_groups
+
+        cat = make_category(self.comp, name="A", bib_from=10, order=1)
+        cr = make_registration(self.comp, category=cat)
+        u1 = make_registration(self.comp, category=None, last_name="U1")
+        u2 = make_registration(self.comp, category=None, last_name="U2")
+        groups = build_participant_groups([cr, u1, u2], [cat])
+        self.assertIsNone(groups[-1]["category"])
+        self.assertEqual(groups[-1]["rows"], [(1, u1), (2, u2)])
+
+    def test_empty_categories_omitted(self):
+        from registrations.views import build_participant_groups
+
+        cat_a = make_category(self.comp, name="A", order=1)
+        cat_b = make_category(self.comp, name="B", order=2)  # no registrations
+        reg = make_registration(self.comp, category=cat_a)
+        groups = build_participant_groups([reg], [cat_a, cat_b])
+        self.assertEqual([g["category"] for g in groups], [cat_a])
+
+    def test_no_registrations_gives_no_groups(self):
+        from registrations.views import build_participant_groups
+
+        cat = make_category(self.comp, name="A")
+        self.assertEqual(build_participant_groups([], [cat]), [])
+
+
 class ParticipantListViewTests(TestCase):
     def setUp(self):
         self.organizer = make_user("org", role=User.Role.ORGANIZER)
         self.comp = make_competition(submitted_by=self.organizer, registration_enabled=True)
         self.url = reverse("registrations:participant_list", args=[self.comp.pk])
+
+    def test_list_renders_category_sections_with_bib_numbers(self):
+        cat = make_category(self.comp, name="Elite Men", bib_from=137)
+        make_registration(self.comp, category=cat, last_name="Petrov")
+        self.client.force_login(self.organizer)
+        resp = self.client.get(self.url)
+        self.assertContains(resp, "Elite Men")  # section heading
+        self.assertContains(resp, ">137<")  # bib number = bib_from
+        groups = resp.context["participant_groups"]
+        self.assertEqual(groups[0]["rows"][0][0], 137)
+
+    def test_list_shows_uncategorized_section(self):
+        make_registration(self.comp, category=None, last_name="NoCat")
+        self.client.force_login(self.organizer)
+        resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="en")
+        self.assertContains(resp, "No category")
+
+    def test_public_list_also_grouped(self):
+        cat = make_category(self.comp, name="Women", bib_from=50)
+        make_registration(self.comp, category=cat, last_name="Ivanova")
+        resp = self.client.get(self.url)  # anonymous
+        self.assertContains(resp, "Women")
+        self.assertContains(resp, ">50<")
+
+    def test_uncategorized_section_localized_to_ru(self):
+        from django.utils.translation import gettext
+
+        make_registration(self.comp, category=None)
+        resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="ru")
+        with translation.override("ru"):
+            expected = gettext("No category")
+        self.assertNotEqual(expected, "No category")  # the ru translation is loaded
+        self.assertContains(resp, expected)
 
     def test_anonymous_can_view_list(self):
         response = self.client.get(self.url)

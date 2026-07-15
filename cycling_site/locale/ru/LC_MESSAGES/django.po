@@ -1917,3 +1917,6 @@ msgstr "Подставляется в поле регистрации для с�
 
 msgid "Your profile has no Strava link. Add it in your profile so it fills in here automatically."
 msgstr "В вашем профиле нет ссылки на Strava. Добавьте её в профиле, чтобы она подставлялась здесь автоматически."
+
+msgid "No category"
+msgstr "Без категории"

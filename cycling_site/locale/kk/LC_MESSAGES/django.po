@@ -1958,3 +1958,6 @@ msgstr "Strava сілтемелерін жинайтын жарыстардың 
 
 msgid "Your profile has no Strava link. Add it in your profile so it fills in here automatically."
 msgstr "Профиліңізде Strava сілтемесі жоқ. Осы жерде автоматты түрде қойылуы үшін оны профиліңізге қосыңыз."
+
+msgid "No category"
+msgstr "Санатсыз"
