@@ -96,11 +96,14 @@
 </div>
 
 <div class="mb-2">
-  <div class="form-check">
-    <input class="form-check-input" type="checkbox" name="show_additional_info_field" id="show_addinfo"
-           {% if reg_form.show_additional_info_field.value != False %}checked{% endif %}>
-    <label class="form-check-label small" for="show_addinfo">{% trans "Show additional info field" %}</label>
-  </div>
+  <label class="form-label small" for="addinfo_mode">{% trans "Additional info field" %}</label>
+  {% with mode=reg_form.additional_info_mode.value %}
+  <select class="form-select form-select-sm" name="additional_info_mode" id="addinfo_mode" style="max-width: 320px;">
+    <option value="none" {% if mode == "none" %}selected{% endif %}>{% trans "Do not show" %}</option>
+    <option value="free" {% if mode == "free" or not mode %}selected{% endif %}>{% trans "Free-form input" %}</option>
+    <option value="strava" {% if mode == "strava" %}selected{% endif %}>{% trans "Strava link" %}</option>
+  </select>
+  {% endwith %}
 </div>
 
 <div class="mb-3">

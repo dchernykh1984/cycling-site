@@ -111,6 +111,24 @@ class CompetitionModelTests(TestCase):
         self.assertEqual(str(self.comp), "Test Race")
 
 
+class CompetitionAdditionalInfoModeTests(TestCase):
+    def test_default_mode_is_free_and_shows_field(self):
+        comp = _make_competition("AddInfoDefault")
+        self.assertEqual(comp.additional_info_mode, Competition.AdditionalInfoMode.FREE)
+        self.assertTrue(comp.show_additional_info_field)
+        self.assertFalse(comp.additional_info_is_strava)
+
+    def test_none_mode_hides_field(self):
+        comp = _make_competition("AddInfoNone", additional_info_mode=Competition.AdditionalInfoMode.NONE)
+        self.assertFalse(comp.show_additional_info_field)
+        self.assertFalse(comp.additional_info_is_strava)
+
+    def test_strava_mode_shows_field_and_is_strava(self):
+        comp = _make_competition("AddInfoStrava", additional_info_mode=Competition.AdditionalInfoMode.STRAVA)
+        self.assertTrue(comp.show_additional_info_field)
+        self.assertTrue(comp.additional_info_is_strava)
+
+
 class CalendarViewTests(TestCase):
     def test_calendar_returns_200(self):
         response = self.client.get(reverse("calendar"))
@@ -488,6 +506,37 @@ class SubmitCompetitionViewTests(TestCase):
         self.client.login(username="participant@example.com", password="password123")
         response = self.client.get(self._submit_url())
         self.assertEqual(response.status_code, 200)
+
+    def test_organizer_form_shows_additional_info_mode_dropdown(self):
+        self.client.login(username="organizer@example.com", password="password123")
+        response = self.client.get(self._submit_url())
+        self.assertContains(response, 'name="additional_info_mode"')
+
+    def test_organizer_sets_additional_info_mode_strava(self):
+        self.client.login(username="organizer@example.com", password="password123")
+        self.client.post(
+            self._submit_url(),
+            self._payload(
+                title_ru="StravaModeRace",
+                registration_enabled="on",
+                additional_info_mode="strava",
+            ),
+        )
+        comp = Competition.objects.get(title_ru="StravaModeRace")
+        self.assertTrue(comp.additional_info_is_strava)
+
+    def test_organizer_sets_additional_info_mode_none(self):
+        self.client.login(username="organizer@example.com", password="password123")
+        self.client.post(
+            self._submit_url(),
+            self._payload(
+                title_ru="NoInfoRace",
+                registration_enabled="on",
+                additional_info_mode="none",
+            ),
+        )
+        comp = Competition.objects.get(title_ru="NoInfoRace")
+        self.assertFalse(comp.show_additional_info_field)
 
     def test_file_route_accepts_zip(self):
         """Route/document uploads may be zip archives."""

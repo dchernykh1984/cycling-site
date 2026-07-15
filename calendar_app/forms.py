@@ -200,7 +200,11 @@ class RegistrationSettingsForm(forms.Form):
     show_unpaid_in_list = forms.BooleanField(required=False)
     show_approval_status_col = forms.BooleanField(required=False)
     show_payment_status_col = forms.BooleanField(required=False)
-    show_additional_info_field = forms.BooleanField(required=False)
+    additional_info_mode = forms.ChoiceField(
+        choices=Competition.AdditionalInfoMode.choices,
+        required=False,
+        initial=Competition.AdditionalInfoMode.FREE,
+    )
     relay_enabled = forms.BooleanField(required=False)
     relay_max_members = forms.IntegerField(
         required=False,

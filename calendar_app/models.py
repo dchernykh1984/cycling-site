@@ -173,7 +173,18 @@ class Competition(index.Indexed, models.Model):
     show_unpaid_in_list = models.BooleanField(default=False)
     show_approval_status_col = models.BooleanField(default=False)
     show_payment_status_col = models.BooleanField(default=False)
-    show_additional_info_field = models.BooleanField(default=True)
+
+    class AdditionalInfoMode(models.TextChoices):
+        NONE = "none", "Do not show"
+        FREE = "free", "Free-form input"
+        STRAVA = "strava", "Strava link"
+
+    additional_info_mode = models.CharField(
+        max_length=10,
+        choices=AdditionalInfoMode.choices,
+        default=AdditionalInfoMode.FREE,
+        blank=True,
+    )
 
     relay_enabled = models.BooleanField(default=False)
     relay_max_members = models.PositiveIntegerField(default=10)
@@ -279,6 +290,16 @@ class Competition(index.Indexed, models.Model):
         if self.max_participants is None:
             return False
         return self.qualified_count() >= self.max_participants
+
+    @property
+    def show_additional_info_field(self) -> bool:
+        """Whether the registration form shows the additional-info field at all."""
+        return self.additional_info_mode != self.AdditionalInfoMode.NONE
+
+    @property
+    def additional_info_is_strava(self) -> bool:
+        """Whether the additional-info field collects a Strava link (vs free text)."""
+        return self.additional_info_mode == self.AdditionalInfoMode.STRAVA
 
     @property
     def location_label(self) -> str:
