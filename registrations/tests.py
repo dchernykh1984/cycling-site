@@ -539,6 +539,17 @@ class RegistrationStravaFieldTests(TestCase):
         resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(resp, "Strava link")
 
+    def test_edit_form_label_follows_mode(self):
+        from registrations.forms import EditRegistrationForm
+
+        strava_comp = make_open_competition(additional_info_mode="strava")
+        free_comp = make_open_competition(additional_info_mode="free")
+        with translation.override("en"):
+            strava_form = EditRegistrationForm(competition=strava_comp)
+            free_form = EditRegistrationForm(competition=free_comp)
+            self.assertEqual(str(strava_form.fields["additional_info"].label), "Strava link")
+            self.assertEqual(str(free_form.fields["additional_info"].label), "Additional info")
+
     def test_failed_post_rerenders_strava_field_and_banner(self):
         comp = make_open_competition(additional_info_mode="strava")
         self.client.force_login(self.user)  # no strava_link on profile

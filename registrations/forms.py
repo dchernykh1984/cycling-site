@@ -121,3 +121,7 @@ class EditRegistrationForm(forms.ModelForm):
                 self.fields["category"].queryset = RegistrationCategory.objects.filter(
                     competition=competition, is_deleted=False
                 )
+                if "additional_info" in self.fields:
+                    self.fields["additional_info"].label = (
+                        _("Strava link") if competition.additional_info_is_strava else _("Additional info")
+                    )
