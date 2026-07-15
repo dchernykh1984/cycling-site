@@ -1302,6 +1302,25 @@ class EditCompetitionViewTests(TestCase):
         self.comp.refresh_from_db()
         self.assertFalse(self.comp.show_additional_info_field)
 
+    def test_edit_reflects_show_additional_info_in_list_toggle(self):
+        import re
+
+        self.comp.registration_enabled = True
+        self.client.login(username="edit_org@example.com", password="password123")
+
+        self.comp.show_additional_info_in_list = False
+        self.comp.save()
+        html = self.client.get(self.url).content.decode()
+        tag = re.search(r'<input[^>]*name="show_additional_info_in_list"[^>]*>', html)
+        self.assertIsNotNone(tag)
+        self.assertNotIn("checked", tag.group(0))  # off -> not pre-checked
+
+        self.comp.show_additional_info_in_list = True
+        self.comp.save()
+        html = self.client.get(self.url).content.decode()
+        tag = re.search(r'<input[^>]*name="show_additional_info_in_list"[^>]*>', html)
+        self.assertIn("checked", tag.group(0))  # on -> pre-checked
+
     def test_mode_not_changed_when_locked(self):
         self.comp.registration_mode = "self_only"
         self.comp.registration_mode_locked = True
