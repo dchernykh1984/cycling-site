@@ -116,8 +116,6 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 "competition": competition,
                 "form": form,
                 "profile_incomplete": profile_incomplete,
-                "additional_info_is_strava": competition.additional_info_is_strava,
-                "strava_prefill_missing": competition.additional_info_is_strava and not user.strava_link,
                 "is_free": is_free,
                 "relay_enabled": competition.relay_enabled,
                 "relay_max_members": competition.relay_max_members,

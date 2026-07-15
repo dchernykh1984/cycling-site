@@ -182,7 +182,7 @@
 </div>
 
 {% if "additional_info" in form.fields %}
-{% if strava_prefill_missing %}
+{% if competition.additional_info_is_strava and not request.user.strava_link %}
 <div class="alert alert-info py-2">
   {% trans "Your profile has no Strava link. Add it in your profile so it fills in here automatically." %}
   <a href="{% url 'account_profile_edit' %}" class="alert-link">{% trans "Edit profile" %}</a>
@@ -190,9 +190,9 @@
 {% endif %}
 <div class="mb-3">
   <label class="form-label">{{ form.additional_info.label }}</label>
-  <input type="{% if additional_info_is_strava %}url{% else %}text{% endif %}" name="additional_info"
+  <input type="{% if competition.additional_info_is_strava %}url{% else %}text{% endif %}" name="additional_info"
          value="{{ form.additional_info.value|default:'' }}" class="form-control" maxlength="100"
-         {% if additional_info_is_strava %}placeholder="https://www.strava.com/athletes/..."{% endif %}>
+         {% if competition.additional_info_is_strava %}placeholder="https://www.strava.com/athletes/..."{% endif %}>
 </div>
 {% endif %}
 

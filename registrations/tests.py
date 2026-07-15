@@ -539,6 +539,19 @@ class RegistrationStravaFieldTests(TestCase):
         resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(resp, "Strava link")
 
+    def test_failed_post_rerenders_strava_field_and_banner(self):
+        comp = make_open_competition(additional_info_mode="strava")
+        self.client.force_login(self.user)  # no strava_link on profile
+        # Missing the required last_name makes the form invalid and re-renders the page.
+        resp = self.client.post(
+            self._register_url(comp),
+            {"first_name": "A", "gender": "M", "birth_year": "1990"},
+            HTTP_ACCEPT_LANGUAGE="en",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Your profile has no Strava link")
+        self.assertContains(resp, 'type="url" name="additional_info"')
+
     def test_strava_label_localized_to_ru(self):
         from django.utils.translation import gettext
 
