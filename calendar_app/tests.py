@@ -1230,6 +1230,30 @@ class EditCompetitionViewTests(TestCase):
         resp = self.client.get(self.url)
         self.assertIn(d1.pk, resp.context["selected_disciplines"])
 
+    def test_edit_preselects_saved_additional_info_mode(self):
+        self.comp.additional_info_mode = "strava"
+        self.comp.save()
+        self.client.login(username="edit_org@example.com", password="password123")
+        resp = self.client.get(self.url)
+        self.assertContains(resp, '<option value="strava" selected>')
+
+    def test_edit_saves_additional_info_mode(self):
+        self.client.login(username="edit_org@example.com", password="password123")
+        self.client.post(
+            self.url,
+            {
+                "title_ru": "Editable Race",
+                "date_start": "2026-09-01",
+                "registration_enabled": "on",
+                "registration_mode": "self_only",
+                "birth_date_mode": "year",
+                "additional_info_mode": "none",
+                "categories_json": "[]",
+            },
+        )
+        self.comp.refresh_from_db()
+        self.assertFalse(self.comp.show_additional_info_field)
+
     def test_mode_not_changed_when_locked(self):
         self.comp.registration_mode = "self_only"
         self.comp.registration_mode_locked = True

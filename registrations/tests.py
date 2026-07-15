@@ -508,6 +508,12 @@ class RegistrationStravaFieldTests(TestCase):
         form = RegistrationForm(competition=comp)
         self.assertNotIn("additional_info", form.fields)
 
+    def test_none_mode_view_hides_additional_info_input(self):
+        comp = make_open_competition(additional_info_mode="none")
+        self.client.force_login(self.user)
+        resp = self.client.get(self._register_url(comp))
+        self.assertNotContains(resp, 'name="additional_info"')
+
     def test_strava_mode_prefills_additional_info_from_profile(self):
         import re
 
