@@ -600,6 +600,7 @@ def _apply_registration_settings(comp, reg_form, is_organizer_plus):
     comp.show_approval_status_col = cd.get("show_approval_status_col", False) if comp.require_approval else False
     comp.show_payment_status_col = cd.get("show_payment_status_col", False) if comp.require_payment else False
     comp.additional_info_mode = cd.get("additional_info_mode") or Competition.AdditionalInfoMode.FREE
+    comp.show_additional_info_in_list = cd.get("show_additional_info_in_list", True)
     comp.relay_enabled = cd.get("relay_enabled", False)
     comp.relay_max_members = cd.get("relay_max_members") or 10
     if reg_enabled and not comp.registration_mode_locked:
@@ -827,6 +828,7 @@ class EditCompetitionView(View):
                 "show_approval_status_col": comp.show_approval_status_col,
                 "show_payment_status_col": comp.show_payment_status_col,
                 "additional_info_mode": comp.additional_info_mode,
+                "show_additional_info_in_list": comp.show_additional_info_in_list,
                 "relay_enabled": comp.relay_enabled,
                 "relay_max_members": comp.relay_max_members,
             }

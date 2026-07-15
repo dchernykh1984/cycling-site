@@ -1961,3 +1961,6 @@ msgstr "Профиліңізде Strava сілтемесі жоқ. Осы жер
 
 msgid "No category"
 msgstr "Санатсыз"
+
+msgid "Show this info in the participant list"
+msgstr "Бұл ақпаратты тіркелгендер тізімінде көрсету"

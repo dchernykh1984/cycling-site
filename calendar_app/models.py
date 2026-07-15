@@ -185,6 +185,9 @@ class Competition(index.Indexed, models.Model):
         default=AdditionalInfoMode.FREE,
         blank=True,
     )
+    # Whether the additional-info column is shown in the public participant list. Managers
+    # always see it; this only hides it from everyone else (e.g. keep Strava links private).
+    show_additional_info_in_list = models.BooleanField(default=True)
 
     relay_enabled = models.BooleanField(default=False)
     relay_max_members = models.PositiveIntegerField(default=10)
@@ -300,6 +303,11 @@ class Competition(index.Indexed, models.Model):
     def additional_info_is_strava(self) -> bool:
         """Whether the additional-info field collects a Strava link (vs free text)."""
         return self.additional_info_mode == self.AdditionalInfoMode.STRAVA
+
+    @property
+    def additional_info_visible_publicly(self) -> bool:
+        """Whether the additional-info column shows to non-managers in the participant list."""
+        return self.show_additional_info_field and self.show_additional_info_in_list
 
     @property
     def location_label(self) -> str:
