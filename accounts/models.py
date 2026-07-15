@@ -43,6 +43,9 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     # Default team/city for race registrations, so the registrant doesn't retype them each time.
     team = models.CharField(max_length=100, blank=True, default="")
     city = models.CharField(max_length=100, blank=True, default="")
+    # Strava profile link, prefilled into the registration "additional info" field when a
+    # competition collects Strava links (used later to match riders to their segment efforts).
+    strava_link = models.URLField(max_length=200, blank=True, default="")
     # Timestamp of the last rate-limited outgoing mail action (confirmation email at
     # signup/resend and the contact-owners message). Shared cooldown across all of them.
     last_mail_action_at = models.DateTimeField(null=True, blank=True)

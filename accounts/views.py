@@ -33,7 +33,15 @@ logger = logging.getLogger(__name__)
 class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = User
-        fields: ClassVar[list[str]] = ["first_name", "last_name", "gender", "birth_date", "team", "city"]
+        fields: ClassVar[list[str]] = [
+            "first_name",
+            "last_name",
+            "gender",
+            "birth_date",
+            "team",
+            "city",
+            "strava_link",
+        ]
         widgets: ClassVar[dict] = {
             "birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "gender": forms.RadioSelect(choices=[("M", "M"), ("F", "F")]),
