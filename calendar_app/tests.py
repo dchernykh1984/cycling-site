@@ -512,6 +512,13 @@ class SubmitCompetitionViewTests(TestCase):
         response = self.client.get(self._submit_url())
         self.assertContains(response, 'name="additional_info_mode"')
 
+    def test_submit_form_defaults_additional_info_mode_to_free(self):
+        # Regression: the create page must default to "free" (the old checkbox-on default),
+        # so a new competition still shows the additional-info field.
+        self.client.login(username="organizer@example.com", password="password123")
+        response = self.client.get(self._submit_url())
+        self.assertContains(response, '<option value="free" selected>')
+
     def test_organizer_sets_additional_info_mode_strava(self):
         self.client.login(username="organizer@example.com", password="password123")
         self.client.post(
