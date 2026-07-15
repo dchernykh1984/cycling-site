@@ -1,6 +1,6 @@
 {% load i18n %}
 <tr {% if is_manager and reg.is_rejected %}class="table-danger"{% endif %}>
-  <td data-label="#">{{ number }}</td>
+  <td data-label="#">{{ number|default_if_none:"" }}</td>
   <td data-label="{% trans 'Name' %}">{% if reg.is_relay %}{{ reg.participant_names|safe }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %}</td>
   {% if is_manager %}<td data-label="{% trans 'Gender' %}">{{ reg.gender }}</td>{% endif %}
   <td data-label="{% trans 'Birth' %}">{% if reg.is_relay and reg.participant_birth_years %}{{ reg.participant_birth_years|safe }}{% elif is_manager and competition.birth_date_mode == "date" %}{{ reg.birth_date|date:"d.m.Y" }}{% else %}{{ reg.birth_date|date:"Y" }}{% endif %}</td>

@@ -306,40 +306,63 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
         )
 
 
-def build_participant_groups(registrations, categories):
+def counts_for_bib(reg, competition) -> bool:
+    """Whether a registration gets a start number: the same rule as ``qualified_count``.
+
+    Rejected riders never get one, and unapproved/unpaid ones don't while that is required,
+    so a rider's number is their position among the actual field -- the same in the public
+    and the manager view -- and rejected rows never shift anyone.
+    """
+    if reg.is_rejected:
+        return False
+    if competition.require_approval and not reg.is_approved:
+        return False
+    return not (competition.require_payment and not reg.is_paid)
+
+
+def _number_rows(rows, start, counts):
+    """Pair each row with its number: ``start`` upward for counting rows, ``None`` else."""
+    numbered = []
+    next_number = start
+    for reg in rows:
+        if counts(reg):
+            numbered.append((next_number, reg))
+            next_number += 1
+        else:
+            numbered.append((None, reg))
+    return numbered
+
+
+def build_participant_groups(registrations, categories, counts=None):
     """Group registrations into per-category sections with bib-range numbering.
 
-    ``categories`` is the ordered list of category objects to render as sections. Each
-    section's rows are ``(number, registration)`` where ``number`` is the category's
-    ``bib_from`` (default 1) plus the row's position, so the first registrant in a
-    category gets ``bib_from``. Registrations with no category form a trailing section
-    numbered from 1. Categories with no registrations are omitted.
+    ``categories`` is the ordered list of category objects to render as sections. A row's
+    number is the category's ``bib_from`` (default 1) plus its position among counting
+    rows in that category, so the first counting registrant gets ``bib_from``. ``counts``
+    (default: everyone) decides which rows get a number; non-counting rows get ``None`` and
+    do not advance the numbering. Registrations with no category form a trailing section
+    numbered from 1, and categories with no registrations are omitted.
     """
+    if counts is None:
+        counts = lambda reg: True  # noqa: E731
     buckets: dict[int | None, list] = defaultdict(list)
     for reg in registrations:
         buckets[reg.category_id].append(reg)
+
+    def _section(category, rows, start):
+        numbered = _number_rows(rows, start, counts)
+        shown = sum(1 for number, _ in numbered if number is not None)
+        return {"category": category, "count": shown, "rows": numbered}
+
     groups = []
     for category in categories:
         rows = buckets.get(category.pk)
-        if not rows:
-            continue
-        start = category.bib_from if category.bib_from is not None else 1
-        groups.append(
-            {
-                "category": category,
-                "count": len(rows),
-                "rows": [(start + i, reg) for i, reg in enumerate(rows)],
-            }
-        )
+        if rows:
+            start = category.bib_from if category.bib_from is not None else 1
+            groups.append(_section(category, rows, start))
     uncategorized = buckets.get(None)
     if uncategorized:
-        groups.append(
-            {
-                "category": None,
-                "count": len(uncategorized),
-                "rows": [(i + 1, reg) for i, reg in enumerate(uncategorized)],
-            }
-        )
+        groups.append(_section(None, uncategorized, 1))
     return groups
 
 
@@ -373,7 +396,9 @@ class ParticipantListView(TemplateView):
         )
         context["competition"] = competition
         context["registrations"] = registrations
-        context["participant_groups"] = build_participant_groups(registrations, section_categories)
+        context["participant_groups"] = build_participant_groups(
+            registrations, section_categories, counts=lambda reg: counts_for_bib(reg, competition)
+        )
         context["is_manager"] = is_manager
         context["categories"] = cats
         context["category_stats"] = [

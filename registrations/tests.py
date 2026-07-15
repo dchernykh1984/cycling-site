@@ -633,6 +633,30 @@ class BuildParticipantGroupsTests(TestCase):
         cat = make_category(self.comp, name="A")
         self.assertEqual(build_participant_groups([], [cat]), [])
 
+    def test_non_counting_rows_get_no_number_and_do_not_shift(self):
+        from registrations.views import build_participant_groups
+
+        cat = make_category(self.comp, name="A", bib_from=1)
+        r1 = make_registration(self.comp, category=cat, last_name="R1")
+        rej = make_registration(self.comp, category=cat, last_name="Rej", is_rejected=True)
+        r2 = make_registration(self.comp, category=cat, last_name="R2")
+        groups = build_participant_groups([r1, rej, r2], [cat], counts=lambda r: not r.is_rejected)
+        self.assertEqual(groups[0]["rows"], [(1, r1), (None, rej), (2, r2)])
+        self.assertEqual(groups[0]["count"], 2)
+
+    def test_counts_for_bib_respects_rejection_approval_payment(self):
+        from registrations.views import counts_for_bib
+
+        comp = make_competition(require_approval=True, require_payment=True)
+        ok = make_registration(comp, is_approved=True, is_paid=True)
+        unapproved = make_registration(comp, is_approved=False, is_paid=True)
+        unpaid = make_registration(comp, is_approved=True, is_paid=False)
+        rejected = make_registration(comp, is_approved=True, is_paid=True, is_rejected=True)
+        self.assertTrue(counts_for_bib(ok, comp))
+        self.assertFalse(counts_for_bib(unapproved, comp))
+        self.assertFalse(counts_for_bib(unpaid, comp))
+        self.assertFalse(counts_for_bib(rejected, comp))
+
 
 class ParticipantListViewTests(TestCase):
     def setUp(self):
@@ -662,6 +686,15 @@ class ParticipantListViewTests(TestCase):
         resp = self.client.get(self.url)  # anonymous
         self.assertContains(resp, "Women")
         self.assertContains(resp, ">50<")
+
+    def test_rejected_registration_gets_no_bib_and_does_not_shift(self):
+        cat = make_category(self.comp, name="A", bib_from=1)
+        make_registration(self.comp, category=cat, last_name="Rejected", is_rejected=True)
+        make_registration(self.comp, category=cat, last_name="Racer")
+        self.client.force_login(self.organizer)
+        rows = self.client.get(self.url).context["participant_groups"][0]["rows"]
+        self.assertIsNone(rows[0][0])  # the rejected row has no number
+        self.assertEqual(rows[1][0], 1)  # the real racer still starts at bib_from
 
     def test_uncategorized_section_localized_to_ru(self):
         from django.utils.translation import gettext
