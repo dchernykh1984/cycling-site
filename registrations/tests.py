@@ -3,7 +3,7 @@ import json
 
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from accounts.access import EMAIL_CONFIRMATION_REQUIRED_MESSAGE
 from accounts.models import User
@@ -476,6 +476,68 @@ class RegisterForCompetitionViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 403)
         self.assertEqual(CompetitionRegistration.objects.filter(competition=comp).count(), 1)
+
+
+class RegistrationStravaFieldTests(TestCase):
+    def setUp(self):
+        self.user = make_user("stravauser", gender="M", birth_date=datetime.date(1990, 1, 1))
+
+    def _register_url(self, comp):
+        return reverse("registrations:register", args=[comp.pk])
+
+    def test_free_mode_label_is_additional_info(self):
+        from registrations.forms import RegistrationForm
+
+        comp = make_open_competition(additional_info_mode="free")
+        with translation.override("en"):
+            form = RegistrationForm(competition=comp)
+            self.assertEqual(str(form.fields["additional_info"].label), "Additional info")
+
+    def test_strava_mode_label_is_strava_link(self):
+        from registrations.forms import RegistrationForm
+
+        comp = make_open_competition(additional_info_mode="strava")
+        with translation.override("en"):
+            form = RegistrationForm(competition=comp)
+            self.assertEqual(str(form.fields["additional_info"].label), "Strava link")
+
+    def test_none_mode_removes_field(self):
+        from registrations.forms import RegistrationForm
+
+        comp = make_open_competition(additional_info_mode="none")
+        form = RegistrationForm(competition=comp)
+        self.assertNotIn("additional_info", form.fields)
+
+    def test_strava_mode_prefills_additional_info_from_profile(self):
+        import re
+
+        self.user.strava_link = "https://www.strava.com/athletes/555"
+        self.user.save()
+        comp = make_open_competition(additional_info_mode="strava")
+        self.client.force_login(self.user)
+        html = self.client.get(self._register_url(comp)).content.decode()
+        m = re.search(r'name="additional_info"[^>]*value="([^"]*)"', html)
+        self.assertEqual(m.group(1), "https://www.strava.com/athletes/555")
+
+    def test_strava_mode_without_profile_link_shows_banner(self):
+        comp = make_open_competition(additional_info_mode="strava")
+        self.client.force_login(self.user)  # no strava_link on profile
+        resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="en")
+        self.assertContains(resp, "Your profile has no Strava link")
+
+    def test_strava_mode_with_profile_link_hides_banner(self):
+        self.user.strava_link = "https://www.strava.com/athletes/1"
+        self.user.save()
+        comp = make_open_competition(additional_info_mode="strava")
+        self.client.force_login(self.user)
+        resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="en")
+        self.assertNotContains(resp, "Your profile has no Strava link")
+
+    def test_strava_mode_renders_strava_label(self):
+        comp = make_open_competition(additional_info_mode="strava")
+        self.client.force_login(self.user)
+        resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="en")
+        self.assertContains(resp, "Strava link")
 
 
 class ParticipantListViewTests(TestCase):

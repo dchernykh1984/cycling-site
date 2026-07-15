@@ -4,6 +4,7 @@ from typing import ClassVar
 
 from django import forms
 from django.utils.html import escape
+from django.utils.translation import gettext_lazy as _
 
 from .models import CompetitionRegistration, RegistrationCategory
 
@@ -36,6 +37,10 @@ class RegistrationForm(forms.Form):
 
             if not competition.show_additional_info_field:
                 del self.fields["additional_info"]
+            elif "additional_info" in self.fields:
+                self.fields["additional_info"].label = (
+                    _("Strava link") if competition.additional_info_is_strava else _("Additional info")
+                )
 
             if competition.relay_enabled:
                 self.fields["first_name"].required = False
