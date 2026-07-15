@@ -705,6 +705,29 @@ class ParticipantListViewTests(TestCase):
         self.assertIsNone(rows[0][0])  # the rejected row has no number
         self.assertEqual(rows[1][0], 1)  # the real racer still starts at bib_from
 
+    def test_info_column_hidden_from_public_when_toggle_off(self):
+        self.comp.additional_info_mode = "strava"
+        self.comp.show_additional_info_in_list = False
+        self.comp.save()
+        cat = make_category(self.comp, name="A", bib_from=1)
+        make_registration(self.comp, category=cat, additional_info="https://www.strava.com/athletes/7")
+        # Public view: the additional-info value is not rendered at all.
+        resp = self.client.get(self.url)
+        self.assertNotContains(resp, "https://www.strava.com/athletes/7")
+        # Manager view: still visible.
+        self.client.force_login(self.organizer)
+        resp_mgr = self.client.get(self.url)
+        self.assertContains(resp_mgr, "https://www.strava.com/athletes/7")
+
+    def test_info_column_shown_to_public_when_toggle_on(self):
+        self.comp.additional_info_mode = "strava"
+        self.comp.show_additional_info_in_list = True
+        self.comp.save()
+        cat = make_category(self.comp, name="A", bib_from=1)
+        make_registration(self.comp, category=cat, additional_info="https://www.strava.com/athletes/8")
+        resp = self.client.get(self.url)  # public
+        self.assertContains(resp, "https://www.strava.com/athletes/8")
+
     def test_uncategorized_section_localized_to_ru(self):
         from django.utils.translation import gettext
 

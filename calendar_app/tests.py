@@ -128,6 +128,18 @@ class CompetitionAdditionalInfoModeTests(TestCase):
         self.assertTrue(comp.show_additional_info_field)
         self.assertTrue(comp.additional_info_is_strava)
 
+    def test_show_additional_info_in_list_defaults_true(self):
+        comp = _make_competition("AddInfoList")
+        self.assertTrue(comp.show_additional_info_in_list)
+
+    def test_additional_info_visible_publicly(self):
+        shown = _make_competition("Vis1", additional_info_mode="strava", show_additional_info_in_list=True)
+        hidden = _make_competition("Vis2", additional_info_mode="strava", show_additional_info_in_list=False)
+        none_mode = _make_competition("Vis3", additional_info_mode="none", show_additional_info_in_list=True)
+        self.assertTrue(shown.additional_info_visible_publicly)
+        self.assertFalse(hidden.additional_info_visible_publicly)  # collected but hidden from public
+        self.assertFalse(none_mode.additional_info_visible_publicly)  # nothing to show
+
 
 class CalendarViewTests(TestCase):
     def test_calendar_returns_200(self):
@@ -544,6 +556,35 @@ class SubmitCompetitionViewTests(TestCase):
         )
         comp = Competition.objects.get(title_ru="NoInfoRace")
         self.assertFalse(comp.show_additional_info_field)
+
+    def test_organizer_can_hide_additional_info_from_public_list(self):
+        self.client.login(username="organizer@example.com", password="password123")
+        # The checkbox is omitted -> unchecked -> hidden from the public list.
+        self.client.post(
+            self._submit_url(),
+            self._payload(
+                title_ru="HideInfoRace",
+                registration_enabled="on",
+                additional_info_mode="strava",
+            ),
+        )
+        comp = Competition.objects.get(title_ru="HideInfoRace")
+        self.assertFalse(comp.show_additional_info_in_list)
+        self.assertFalse(comp.additional_info_visible_publicly)
+
+    def test_organizer_shows_additional_info_in_list_when_checked(self):
+        self.client.login(username="organizer@example.com", password="password123")
+        self.client.post(
+            self._submit_url(),
+            self._payload(
+                title_ru="ShowInfoRace",
+                registration_enabled="on",
+                additional_info_mode="strava",
+                show_additional_info_in_list="on",
+            ),
+        )
+        comp = Competition.objects.get(title_ru="ShowInfoRace")
+        self.assertTrue(comp.show_additional_info_in_list)
 
     def test_file_route_accepts_zip(self):
         """Route/document uploads may be zip archives."""

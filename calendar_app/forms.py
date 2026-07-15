@@ -205,6 +205,7 @@ class RegistrationSettingsForm(forms.Form):
         required=False,
         initial=Competition.AdditionalInfoMode.FREE,
     )
+    show_additional_info_in_list = forms.BooleanField(required=False, initial=True)
     relay_enabled = forms.BooleanField(required=False)
     relay_max_members = forms.IntegerField(
         required=False,

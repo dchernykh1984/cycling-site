@@ -1920,3 +1920,6 @@ msgstr "В вашем профиле нет ссылки на Strava. Добав
 
 msgid "No category"
 msgstr "Без категории"
+
+msgid "Show this info in the participant list"
+msgstr "Показывать эту информацию в списке зарегистрированных"
