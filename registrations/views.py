@@ -1,10 +1,12 @@
 import csv
 import datetime
 import json
+from collections import defaultdict
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.html import escape
@@ -304,6 +306,43 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
         )
 
 
+def build_participant_groups(registrations, categories):
+    """Group registrations into per-category sections with bib-range numbering.
+
+    ``categories`` is the ordered list of category objects to render as sections. Each
+    section's rows are ``(number, registration)`` where ``number`` is the category's
+    ``bib_from`` (default 1) plus the row's position, so the first registrant in a
+    category gets ``bib_from``. Registrations with no category form a trailing section
+    numbered from 1. Categories with no registrations are omitted.
+    """
+    buckets: dict[int | None, list] = defaultdict(list)
+    for reg in registrations:
+        buckets[reg.category_id].append(reg)
+    groups = []
+    for category in categories:
+        rows = buckets.get(category.pk)
+        if not rows:
+            continue
+        start = category.bib_from if category.bib_from is not None else 1
+        groups.append(
+            {
+                "category": category,
+                "count": len(rows),
+                "rows": [(start + i, reg) for i, reg in enumerate(rows)],
+            }
+        )
+    uncategorized = buckets.get(None)
+    if uncategorized:
+        groups.append(
+            {
+                "category": None,
+                "count": len(uncategorized),
+                "rows": [(i + 1, reg) for i, reg in enumerate(uncategorized)],
+            }
+        )
+    return groups
+
+
 class ParticipantListView(TemplateView):
     template_name = "registrations/participant_list.html"
 
@@ -319,13 +358,22 @@ class ParticipantListView(TemplateView):
             raise Http404
 
         if is_manager:
-            registrations = competition.registrations.select_related("category", "team", "user")
+            registrations = list(competition.registrations.select_related("category", "team", "user"))
         else:
-            registrations = self._public_registrations(competition)
+            registrations = list(self._public_registrations(competition))
 
         cats = list(competition.registration_categories.filter(is_deleted=False))
+        # Sections cover active categories plus any (soft-deleted) category a shown
+        # registration still points to, so nobody's category silently disappears.
+        referenced_ids = {reg.category_id for reg in registrations if reg.category_id}
+        section_categories = list(
+            competition.registration_categories.filter(Q(is_deleted=False) | Q(pk__in=referenced_ids)).order_by(
+                "order", "pk"
+            )
+        )
         context["competition"] = competition
         context["registrations"] = registrations
+        context["participant_groups"] = build_participant_groups(registrations, section_categories)
         context["is_manager"] = is_manager
         context["categories"] = cats
         context["category_stats"] = [

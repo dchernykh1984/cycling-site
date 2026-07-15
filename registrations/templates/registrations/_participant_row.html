@@ -1,0 +1,56 @@
+{% load i18n %}
+<tr {% if is_manager and reg.is_rejected %}class="table-danger"{% endif %}>
+  <td data-label="#">{{ number }}</td>
+  <td data-label="{% trans 'Name' %}">{% if reg.is_relay %}{{ reg.participant_names|safe }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %}</td>
+  {% if is_manager %}<td data-label="{% trans 'Gender' %}">{{ reg.gender }}</td>{% endif %}
+  <td data-label="{% trans 'Birth' %}">{% if reg.is_relay and reg.participant_birth_years %}{{ reg.participant_birth_years|safe }}{% elif is_manager and competition.birth_date_mode == "date" %}{{ reg.birth_date|date:"d.m.Y" }}{% else %}{{ reg.birth_date|date:"Y" }}{% endif %}</td>
+  <td data-label="{% trans 'Team' %}">{{ reg.team.name|default:"" }}</td>
+  <td data-label="{% trans 'City' %}">{% if reg.is_relay and reg.participant_cities %}{{ reg.participant_cities|safe }}{% else %}{{ reg.city }}{% endif %}</td>
+  {% if is_manager or competition.show_additional_info_field %}<td data-label="{% trans 'Info' %}">{{ reg.additional_info }}</td>{% endif %}
+  {% if is_manager and competition.require_approval or competition.show_approval_status_col %}
+  <td data-label="{% trans 'Approved' %}">{% if reg.is_approved %}<span class="badge bg-success">{% trans "Yes" %}</span>{% else %}<span class="badge bg-warning text-dark">{% trans "No" %}</span>{% endif %}</td>
+  {% endif %}
+  {% if is_manager and competition.require_payment or competition.show_payment_status_col %}
+  <td data-label="{% trans 'Paid' %}">{% if reg.is_paid %}<span class="badge bg-success">{% trans "Yes" %}</span>{% else %}<span class="badge bg-secondary">{% trans "No" %}</span>{% endif %}</td>
+  {% endif %}
+  {% if is_manager %}
+  <td data-label="{% trans 'Rejected' %}">{% if reg.is_rejected %}<span class="badge bg-danger">{% trans "Yes" %}</span>{% if reg.rejection_note %}<div class="small text-muted">{{ reg.rejection_note }}</div>{% endif %}{% endif %}</td>
+  <td class="small text-muted" data-label="{% trans 'Registered' %}">{{ reg.registered_at|date:"d.m.Y" }}</td>
+  <td class="reg-actions">
+    <div class="d-flex gap-1 flex-wrap">
+      {% if competition.require_approval %}
+      {% if not reg.is_approved %}
+      <form method="post" action="{% url 'registrations:approve' competition.pk reg.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-xs btn-outline-success btn-sm py-0">{% trans "Approve" %}</button>
+      </form>
+      {% endif %}
+      {% if not reg.is_rejected %}
+      <button type="button" class="btn btn-xs btn-outline-danger btn-sm py-0"
+              data-bs-toggle="collapse" data-bs-target="#reject-{{ reg.pk }}">{% trans "Reject" %}</button>
+      {% endif %}
+      {% endif %}
+      {% if competition.require_payment and not reg.is_paid %}
+      <form method="post" action="{% url 'registrations:mark_paid' competition.pk reg.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-xs btn-outline-primary btn-sm py-0">{% trans "Mark paid" %}</button>
+      </form>
+      {% endif %}
+      <a href="{% url 'registrations:edit_registration' competition.pk reg.pk %}" class="btn btn-xs btn-outline-secondary btn-sm py-0">{% trans "Edit" %}</a>
+      <form method="post" action="{% url 'registrations:delete_registration' competition.pk reg.pk %}"
+            onsubmit="return confirm('{% trans "Delete?" %}')">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-xs btn-outline-danger btn-sm py-0">{% trans "Delete" %}</button>
+      </form>
+    </div>
+    <div class="collapse mt-1" id="reject-{{ reg.pk }}">
+      <form method="post" action="{% url 'registrations:reject' competition.pk reg.pk %}" class="d-flex gap-1">
+        {% csrf_token %}
+        <input type="text" name="rejection_note" class="form-control form-control-sm"
+               placeholder="{% trans 'Reason (optional)' %}">
+        <button type="submit" class="btn btn-danger btn-sm">{% trans "Confirm reject" %}</button>
+      </form>
+    </div>
+  </td>
+  {% endif %}
+</tr>
