@@ -539,6 +539,17 @@ class RegistrationStravaFieldTests(TestCase):
         resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(resp, "Strava link")
 
+    def test_strava_label_localized_to_ru(self):
+        from django.utils.translation import gettext
+
+        comp = make_open_competition(additional_info_mode="strava")
+        self.client.force_login(self.user)
+        resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="ru")
+        with translation.override("ru"):
+            expected = gettext("Strava link")
+        self.assertNotEqual(expected, "Strava link")  # the ru translation is actually loaded
+        self.assertContains(resp, expected)
+
 
 class ParticipantListViewTests(TestCase):
     def setUp(self):

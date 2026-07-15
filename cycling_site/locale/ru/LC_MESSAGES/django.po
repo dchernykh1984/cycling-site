@@ -1899,3 +1899,21 @@ msgstr "На повторное рассмотрение можно отправ
 
 msgid "Your competition was sent for review again."
 msgstr "Соревнование отправлено на повторное рассмотрение."
+
+msgid "Strava link"
+msgstr "Ссылка на Strava"
+
+msgid "Additional info field"
+msgstr "Поле дополнительной информации"
+
+msgid "Do not show"
+msgstr "Не показывать"
+
+msgid "Free-form input"
+msgstr "Произвольный ввод"
+
+msgid "Prefilled into the registration field for competitions that collect Strava links."
+msgstr "Подставляется в поле регистрации для соревнований, которые собирают ссылки на Strava."
+
+msgid "Your profile has no Strava link. Add it in your profile so it fills in here automatically."
+msgstr "В вашем профиле нет ссылки на Strava. Добавьте её в профиле, чтобы она подставлялась здесь автоматически."
