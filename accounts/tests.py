@@ -967,6 +967,33 @@ class ProfileEditViewTests(TestCase):
         self.assertEqual(self.user.team, "UBT")
         self.assertEqual(self.user.city, "Almaty")
 
+    def test_post_updates_strava_link(self):
+        self.client.force_login(self.user)
+        self.client.post(
+            reverse("account_profile_edit"),
+            {
+                "first_name": "Alice",
+                "last_name": "Smith",
+                "gender": "F",
+                "birth_date": "1995-03-10",
+                "strava_link": "https://www.strava.com/athletes/12345",
+            },
+        )
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.strava_link, "https://www.strava.com/athletes/12345")
+
+    def test_edit_form_shows_strava_link_field(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("account_profile_edit"))
+        self.assertContains(response, 'name="strava_link"')
+
+    def test_profile_shows_strava_link_when_set(self):
+        self.user.strava_link = "https://www.strava.com/athletes/99"
+        self.user.save()
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("account_profile"))
+        self.assertContains(response, "https://www.strava.com/athletes/99")
+
     def test_birth_date_prefilled_as_iso_under_ru_locale(self):
         # Regression: ru-locale L10N rendered the date in a localized form, which an
         # <input type=date> rejects, leaving it blank. It must be pre-filled as ISO YYYY-MM-DD.

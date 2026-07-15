@@ -66,7 +66,11 @@
                 <p class="mb-1"><strong>{% trans "Team" %}:</strong> {{ user.team }}</p>
                 {% endif %}
                 {% if user.city %}
-                <p class="mb-0"><strong>{% trans "City" %}:</strong> {{ user.city }}</p>
+                <p class="mb-1"><strong>{% trans "City" %}:</strong> {{ user.city }}</p>
+                {% endif %}
+                {% if user.strava_link %}
+                <p class="mb-0"><strong>{% trans "Strava link" %}:</strong>
+                    <a href="{{ user.strava_link }}" target="_blank" rel="noopener">{{ user.strava_link }}</a></p>
                 {% endif %}
             </div>
             <div class="card-footer">
