@@ -441,3 +441,54 @@ main .home-body ul, main .home-body ol,
 main .competition-description ul, main .competition-description ol {
     list-style-position: inside;
 }
+
+/* Social login buttons. Each provider keeps its own brand treatment so the "Connect with
+   Strava" button matches Strava's API brand guidelines (orange #FC4C02, 48px tall, logo +
+   fixed wording), and Google/GitHub carry their own marks. */
+.social-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 48px;
+    padding: 0 1.15rem;
+    border-radius: 0.375rem;
+    border: 1px solid transparent;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.social-btn:hover {
+    text-decoration: none;
+}
+.social-btn__icon {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+}
+.social-btn--strava {
+    background-color: #FC4C02;
+    color: #fff;
+}
+.social-btn--strava:hover {
+    background-color: #e34402;
+    color: #fff;
+}
+.social-btn--google {
+    background-color: #fff;
+    color: #3c4043;
+    border-color: #dadce0;
+}
+.social-btn--google:hover {
+    background-color: #f7f8f8;
+    color: #3c4043;
+}
+.social-btn--github {
+    background-color: #24292f;
+    color: #fff;
+}
+.social-btn--github:hover {
+    background-color: #1b1f24;
+    color: #fff;
+}
