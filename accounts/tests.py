@@ -543,6 +543,12 @@ class SocialLoginButtonTests(TestCase):
             self.assertContains(response, "social-btn--github")
             self.assertContains(response, "Continue with GitHub")
 
+    def test_buttons_stack_in_a_column(self):
+        # The buttons render inside the stacking container (full-width column) so labels of
+        # different lengths line up instead of wrapping unevenly across rows.
+        for response in self._pages():
+            self.assertContains(response, "social-btn-list")
+
 
 class SocialAccountAdapterTests(TestCase):
     def _make_sociallogin(self, verified=True, has_email=True):

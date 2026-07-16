@@ -444,7 +444,16 @@ main .competition-description ul, main .competition-description ol {
 
 /* Social login buttons. Each provider keeps its own brand treatment so the "Connect with
    Strava" button matches Strava's API brand guidelines (orange #FC4C02, 48px tall, logo +
-   fixed wording), and Google/GitHub carry their own marks. */
+   fixed wording), and Google/GitHub carry their own marks. The buttons stack full-width in a
+   column so differently-sized labels line up instead of wrapping unevenly. */
+.social-btn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.social-btn-list a {
+    width: 100%;
+}
 .social-btn {
     display: inline-flex;
     align-items: center;
