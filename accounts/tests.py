@@ -516,6 +516,34 @@ class RegistrationFlowTests(TestCase):
         self.assertEqual(user.role, User.Role.PARTICIPANT)
 
 
+class SocialLoginButtonTests(TestCase):
+    """The social-login buttons must use each provider's official brand treatment.
+
+    Strava's API brand guidelines require the "Connect with Strava" button (its fixed
+    wording plus the Strava logo) for the OAuth entry point -- which is also what the
+    Strava Developer Program review checks against the submitted screenshots. Google and
+    GitHub carry their own marks.
+    """
+
+    def _pages(self):
+        return [
+            self.client.get(reverse("account_login")),
+            self.client.get(reverse("account_signup")),
+        ]
+
+    def test_strava_uses_official_connect_button(self):
+        for response in self._pages():
+            self.assertContains(response, "social-btn--strava")
+            self.assertContains(response, "Connect with Strava")
+
+    def test_google_and_github_use_branded_buttons(self):
+        for response in self._pages():
+            self.assertContains(response, "social-btn--google")
+            self.assertContains(response, "Continue with Google")
+            self.assertContains(response, "social-btn--github")
+            self.assertContains(response, "Continue with GitHub")
+
+
 class SocialAccountAdapterTests(TestCase):
     def _make_sociallogin(self, verified=True, has_email=True):
         sociallogin = MagicMock()
