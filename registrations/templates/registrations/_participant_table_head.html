@@ -10,6 +10,6 @@
     {% if is_manager or competition.additional_info_visible_publicly %}<th>{% trans "Info" %}</th>{% endif %}
     {% if is_manager and competition.require_approval or competition.show_approval_status_col %}<th>{% trans "Approved" %}</th>{% endif %}
     {% if is_manager and competition.require_payment or competition.show_payment_status_col %}<th>{% trans "Paid" %}</th>{% endif %}
-    {% if is_manager %}<th>{% trans "Rejected" %}</th><th>{% trans "Registered" %}</th><th class="reg-actions"><span class="visually-hidden">{% trans "Actions" %}</span></th>{% endif %}
+    {% if is_manager %}<th>{% trans "Rejected" %}</th><th>{% trans "Registered" %}</th><th class="reg-actions"><span class="visually-hidden">{% trans "Actions" %}</span></th>{% elif show_owner_actions %}<th class="reg-actions"><span class="visually-hidden">{% trans "Actions" %}</span></th>{% endif %}
   </tr>
 </thead>

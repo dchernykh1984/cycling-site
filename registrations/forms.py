@@ -108,20 +108,28 @@ class EditRegistrationForm(forms.ModelForm):
     def clean_participant_cities(self):
         return self._sanitize_relay_field("participant_cities")
 
-    def __init__(self, *args, competition=None, service_fields_only=False, **kwargs):
+    def __init__(self, *args, competition=None, service_fields_only=False, participant_fields_only=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.competition = competition
+        # A registration owner editing their own entry may touch only their participant data --
+        # never the moderation flags (is_approved / is_paid), the organiser-controlled category,
+        # or relay composition. Dropping those fields here means a crafted POST cannot set them.
         if service_fields_only:
             keep = {"is_approved", "is_paid"}
+        elif participant_fields_only:
+            keep = {"first_name", "last_name", "birth_date", "gender", "city", "team_name", "additional_info"}
+        else:
+            keep = None
+        if keep is not None:
             for name in list(self.fields.keys()):
                 if name not in keep:
                     del self.fields[name]
-        else:
-            if competition:
+        if not service_fields_only and competition:
+            if "category" in self.fields:
                 self.fields["category"].queryset = RegistrationCategory.objects.filter(
                     competition=competition, is_deleted=False
                 )
-                if "additional_info" in self.fields:
-                    self.fields["additional_info"].label = (
-                        _("Strava link") if competition.additional_info_is_strava else _("Additional info")
-                    )
+            if "additional_info" in self.fields:
+                self.fields["additional_info"].label = (
+                    _("Strava link") if competition.additional_info_is_strava else _("Additional info")
+                )

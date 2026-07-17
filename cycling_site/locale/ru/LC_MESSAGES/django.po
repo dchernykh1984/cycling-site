@@ -1923,3 +1923,9 @@ msgstr "Без категории"
 
 msgid "Show this info in the participant list"
 msgstr "Показывать эту информацию в списке зарегистрированных"
+
+msgid "Cancel registration"
+msgstr "Отменить заявку"
+
+msgid "Cancel your registration?"
+msgstr "Отменить свою заявку?"
