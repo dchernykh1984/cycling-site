@@ -1464,6 +1464,29 @@ class AdditionalInfoRequiredTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(CompetitionRegistration.objects.filter(competition=comp).exists())
 
+    def test_manual_add_rejects_empty_when_required(self):
+        # The organiser-side "register on behalf of others" flow (free mode / manual add) uses the
+        # same RegistrationForm, so the required rule applies there too.
+        organizer = make_user("req_org", role=User.Role.ORGANIZER)
+        comp = make_open_competition(
+            submitted_by=organizer, registration_mode="free", additional_info_mode="free", additional_info_required=True
+        )
+        cat = make_category(comp)
+        self.client.force_login(organizer)
+        response = self.client.post(
+            reverse("registrations:manual_add", args=[comp.pk]),
+            {
+                "first_name": "M",
+                "last_name": "A",
+                "gender": "M",
+                "birth_year": 1990,
+                "category": cat.pk,
+                "additional_info": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(CompetitionRegistration.objects.filter(competition=comp).exists())
+
     # --- edit forms ---
     def test_participant_self_edit_requires_field_when_flag_set(self):
         from registrations.forms import EditRegistrationForm
