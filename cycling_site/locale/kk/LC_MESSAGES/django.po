@@ -1970,3 +1970,6 @@ msgstr "Тіркелуден бас тарту"
 
 msgid "Cancel your registration?"
 msgstr "Тіркелуіңізден бас тартасыз ба?"
+
+msgid "Require this field at registration"
+msgstr "Тіркелу кезінде бұл өрісті міндетті ету"

@@ -1929,3 +1929,6 @@ msgstr "Отменить заявку"
 
 msgid "Cancel your registration?"
 msgstr "Отменить свою заявку?"
+
+msgid "Require this field at registration"
+msgstr "Сделать это поле обязательным при регистрации"

@@ -188,6 +188,9 @@ class Competition(index.Indexed, models.Model):
     # Whether the additional-info column is shown in the public participant list. Managers
     # always see it; this only hides it from everyone else (e.g. keep Strava links private).
     show_additional_info_in_list = models.BooleanField(default=True)
+    # Whether filling the additional-info field is mandatory at registration. Only meaningful
+    # when the field is shown (mode != none); existing competitions default to optional.
+    additional_info_required = models.BooleanField(default=False)
 
     relay_enabled = models.BooleanField(default=False)
     relay_max_members = models.PositiveIntegerField(default=10)
