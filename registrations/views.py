@@ -9,6 +9,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.html import escape
 from django.views import View
 from django.views.generic import TemplateView
@@ -41,6 +42,32 @@ def can_manage_or_own(user, competition) -> bool:
     can edit / delete / resubmit their own -- even a participant on their own rejected event (#200).
     """
     return can_manage(user, competition) or (user.is_authenticated and user == competition.submitted_by)
+
+
+def _registration_window_open(competition) -> bool:
+    """Whether the registration window is still open by deadline (ignoring the participant
+    limit). Unlike :meth:`Competition.is_registration_open` this does not check the limit --
+    an owner editing an existing entry already holds a slot, so a full competition must not
+    lock them out."""
+    if not competition.registration_enabled or competition.status != Competition.Status.APPROVED:
+        return False
+    return not (competition.registration_deadline and competition.registration_deadline < timezone.now())
+
+
+def can_self_edit(user, competition, reg) -> bool:
+    """Whether ``user`` may edit/cancel ``reg`` as its owner (not as a manager).
+
+    Managers are handled separately and take precedence; this covers a plain participant
+    acting on their own entry while registration is open and the entry is not rejected.
+    Authorization is keyed on the stored ``reg.user`` only, never on request data.
+    """
+    return bool(
+        user.is_authenticated
+        and reg.user_id is not None
+        and reg.user_id == user.id
+        and not reg.is_rejected
+        and _registration_window_open(competition)
+    )
 
 
 class RegisterForCompetitionView(ParticipantRequiredMixin, View):
@@ -383,7 +410,7 @@ class ParticipantListView(TemplateView):
         if is_manager:
             registrations = list(competition.registrations.select_related("category", "team", "user"))
         else:
-            registrations = list(self._public_registrations(competition))
+            registrations = list(self._public_registrations(competition, user))
 
         cats = list(competition.registration_categories.filter(is_deleted=False))
         # Sections cover active categories plus any (soft-deleted) category a shown
@@ -400,6 +427,14 @@ class ParticipantListView(TemplateView):
             registrations, section_categories, counts=lambda reg: counts_for_bib(reg, competition)
         )
         context["is_manager"] = is_manager
+        # A signed-in participant (not a manager) gets Edit/Cancel controls on their own rows
+        # while registration is open. Compute once so the template can add an actions column.
+        context["show_owner_actions"] = (
+            not is_manager
+            and user.is_authenticated
+            and _registration_window_open(competition)
+            and any(reg.user_id == user.id for reg in registrations)
+        )
         context["categories"] = cats
         context["category_stats"] = [
             {
@@ -413,12 +448,17 @@ class ParticipantListView(TemplateView):
         context["max_participants"] = competition.max_participants
         return context
 
-    def _public_registrations(self, competition):
+    def _public_registrations(self, competition, user):
         qs = competition.registrations.filter(is_rejected=False)
+        visibility = Q()
         if competition.require_approval and not competition.show_unapproved_in_list:
-            qs = qs.filter(is_approved=True)
+            visibility &= Q(is_approved=True)
         if competition.require_payment and not competition.show_unpaid_in_list:
-            qs = qs.filter(is_paid=True)
+            visibility &= Q(is_paid=True)
+        if visibility:
+            # Hidden-until-qualified rules apply, but a signed-in owner must still see (and be
+            # able to edit) their own not-yet-qualified entry, so always include their own rows.
+            qs = qs.filter(visibility | Q(user=user)) if user.is_authenticated else qs.filter(visibility)
         return qs.select_related("category", "team")
 
 
@@ -463,30 +503,43 @@ class EditRegistrationView(LoginRequiredMixin, View):
 
     def _get_objects(self, pk, reg_pk, user):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage(user, competition):
-            raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
-        return competition, reg
+        # Manager rights take precedence: a manager (incl. the event owner) editing their own
+        # registration still gets the admin controls, not the restricted participant form.
+        if can_manage(user, competition):
+            mode = "manager"
+        elif can_self_edit(user, competition, reg):
+            mode = "owner"
+        else:
+            raise PermissionDenied
+        return competition, reg, mode
+
+    def _build_form(self, competition, reg, mode, data=None):
+        if mode == "owner":
+            return EditRegistrationForm(data, instance=reg, competition=competition, participant_fields_only=True)
+        service_only = competition.registration_mode == "self_only"
+        return EditRegistrationForm(data, instance=reg, competition=competition, service_fields_only=service_only)
 
     def get(self, request, pk, reg_pk):
-        competition, reg = self._get_objects(pk, reg_pk, request.user)
-        service_only = competition.registration_mode == "self_only"
-        form = EditRegistrationForm(instance=reg, competition=competition, service_fields_only=service_only)
-        if not service_only:
+        competition, reg, mode = self._get_objects(pk, reg_pk, request.user)
+        form = self._build_form(competition, reg, mode)
+        if "team_name" in form.fields:
             form.initial["team_name"] = reg.team.name if reg.team else ""
         return render(request, self.template_name, {"competition": competition, "registration": reg, "form": form})
 
     def post(self, request, pk, reg_pk):
-        competition, reg = self._get_objects(pk, reg_pk, request.user)
-        service_only = competition.registration_mode == "self_only"
-        form = EditRegistrationForm(
-            request.POST, instance=reg, competition=competition, service_fields_only=service_only
-        )
+        competition, reg, mode = self._get_objects(pk, reg_pk, request.user)
+        was_approved = reg.is_approved
+        form = self._build_form(competition, reg, mode, data=request.POST)
         if form.is_valid():
             obj = form.save(commit=False)
-            if not service_only:
+            if "team_name" in form.fields:
                 team_name = form.cleaned_data.get("team_name", "").strip()
                 obj.team = Team.get_or_restore(team_name) if team_name else None
+            # A participant editing an already-approved entry sends it back to moderation, so
+            # the organiser re-checks the changed data instead of it going through silently.
+            if mode == "owner" and competition.require_approval and was_approved and form.has_changed():
+                obj.is_approved = False
             obj.save()
             return redirect("registrations:participant_list", pk=pk)
         return render(request, self.template_name, {"competition": competition, "registration": reg, "form": form})
@@ -495,9 +548,11 @@ class EditRegistrationView(LoginRequiredMixin, View):
 class DeleteRegistrationView(LoginRequiredMixin, View):
     def post(self, request, pk, reg_pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage(request.user, competition):
-            raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
+        # Managers may delete any entry; a participant may cancel only their own, and only
+        # while registration is still open (:func:`can_self_edit`).
+        if not (can_manage(request.user, competition) or can_self_edit(request.user, competition, reg)):
+            raise PermissionDenied
         reg.delete()
         return redirect("registrations:participant_list", pk=pk)
 

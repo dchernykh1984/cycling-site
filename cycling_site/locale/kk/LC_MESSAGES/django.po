@@ -1964,3 +1964,9 @@ msgstr "Санатсыз"
 
 msgid "Show this info in the participant list"
 msgstr "Бұл ақпаратты тіркелгендер тізімінде көрсету"
+
+msgid "Cancel registration"
+msgstr "Тіркелуден бас тарту"
+
+msgid "Cancel your registration?"
+msgstr "Тіркелуіңізден бас тартасыз ба?"

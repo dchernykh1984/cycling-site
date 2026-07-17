@@ -1242,3 +1242,133 @@ class RelayCSVExportTests(TestCase):
         response = self.client.get(self.url)
         content = response.content.decode()
         self.assertIn("Ivanov Ivan; Petrov Vasya", content)
+
+
+class SelfEditRegistrationTests(TestCase):
+    """A participant may edit or cancel their OWN registration while registration is open;
+    managers keep their admin controls (which take precedence), and nobody can act on
+    someone else's entry -- not even with a crafted POST."""
+
+    def setUp(self):
+        self.organizer = make_user("selfedit_org", role=User.Role.ORGANIZER)
+        self.owner = make_user("reg_owner")
+        self.other = make_user("reg_other")
+        self.comp = make_open_competition(submitted_by=self.organizer, registration_mode="self_only")
+        self.reg = make_registration(self.comp, user=self.owner)
+
+    def _edit_url(self):
+        return reverse("registrations:edit_registration", args=[self.comp.pk, self.reg.pk])
+
+    def _delete_url(self):
+        return reverse("registrations:delete_registration", args=[self.comp.pk, self.reg.pk])
+
+    def _valid_data(self, **over):
+        data = {"first_name": "Changed", "last_name": "Rider", "birth_date": "1992-02-02", "gender": "M"}
+        data.update(over)
+        return data
+
+    # --- positive ---
+    def test_owner_edit_form_hides_service_and_category_fields(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(self._edit_url())
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('name="first_name"', content)
+        self.assertNotIn('name="is_approved"', content)
+        self.assertNotIn('name="is_paid"', content)
+        self.assertNotIn('name="category"', content)
+
+    def test_owner_can_update_own_data(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(self._edit_url(), self._valid_data(first_name="Renamed"))
+        self.assertEqual(response.status_code, 302)
+        self.reg.refresh_from_db()
+        self.assertEqual(self.reg.first_name, "Renamed")
+
+    def test_owner_cannot_self_approve_or_change_category_via_post(self):
+        cat = make_category(self.comp)
+        self.client.force_login(self.owner)
+        response = self.client.post(self._edit_url(), self._valid_data(is_approved="on", is_paid="on", category=cat.pk))
+        self.assertEqual(response.status_code, 302)
+        self.reg.refresh_from_db()
+        self.assertFalse(self.reg.is_approved)
+        self.assertFalse(self.reg.is_paid)
+        self.assertIsNone(self.reg.category_id)
+
+    def test_editing_approved_entry_resets_to_pending(self):
+        self.comp.require_approval = True
+        self.comp.save()
+        self.reg.is_approved = True
+        self.reg.save()
+        self.client.force_login(self.owner)
+        self.client.post(self._edit_url(), self._valid_data(first_name="Moved"))
+        self.reg.refresh_from_db()
+        self.assertFalse(self.reg.is_approved)
+
+    def test_owner_can_cancel_own_registration(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(self._delete_url())
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(CompetitionRegistration.objects.filter(pk=self.reg.pk).exists())
+
+    def test_owner_sees_edit_and_cancel_controls_in_list(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("registrations:participant_list", args=[self.comp.pk]))
+        content = response.content.decode()
+        self.assertIn(self._edit_url(), content)
+        self.assertIn(self._delete_url(), content)
+
+    def test_manager_owning_registration_keeps_admin_controls(self):
+        # A manager editing their own entry gets the admin form (service fields), not the
+        # restricted participant form -- admin rights take precedence.
+        mgr_reg = make_registration(self.comp, user=self.organizer)
+        self.client.force_login(self.organizer)
+        response = self.client.get(reverse("registrations:edit_registration", args=[self.comp.pk, mgr_reg.pk]))
+        self.assertIn('name="is_approved"', response.content.decode())
+
+    # --- negative ---
+    def test_other_user_cannot_get_edit(self):
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(self._edit_url()).status_code, 403)
+
+    def test_other_user_cannot_post_edit(self):
+        self.client.force_login(self.other)
+        response = self.client.post(self._edit_url(), self._valid_data(first_name="Hacked"))
+        self.assertEqual(response.status_code, 403)
+        self.reg.refresh_from_db()
+        self.assertNotEqual(self.reg.first_name, "Hacked")
+
+    def test_other_user_cannot_cancel(self):
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.post(self._delete_url()).status_code, 403)
+        self.assertTrue(CompetitionRegistration.objects.filter(pk=self.reg.pk).exists())
+
+    def test_anonymous_is_redirected_to_login(self):
+        self.assertEqual(self.client.get(self._edit_url()).status_code, 302)
+
+    def test_owner_cannot_edit_after_deadline(self):
+        self.comp.registration_deadline = timezone.now() - datetime.timedelta(hours=1)
+        self.comp.save()
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.get(self._edit_url()).status_code, 403)
+        response = self.client.post(self._edit_url(), self._valid_data(first_name="Late"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_owner_cannot_cancel_after_deadline(self):
+        self.comp.registration_deadline = timezone.now() - datetime.timedelta(hours=1)
+        self.comp.save()
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.post(self._delete_url()).status_code, 403)
+        self.assertTrue(CompetitionRegistration.objects.filter(pk=self.reg.pk).exists())
+
+    def test_owner_cannot_edit_rejected_registration(self):
+        self.reg.is_rejected = True
+        self.reg.save()
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.get(self._edit_url()).status_code, 403)
+
+    def test_ownerless_registration_not_self_editable(self):
+        orphan = make_registration(self.comp)  # user is None
+        self.client.force_login(self.other)
+        url = reverse("registrations:edit_registration", args=[self.comp.pk, orphan.pk])
+        self.assertEqual(self.client.get(url).status_code, 403)
