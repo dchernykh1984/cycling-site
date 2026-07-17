@@ -2928,3 +2928,10 @@ class RejectFormAsteriskTests(TestCase):
         self.client.force_login(moderator)
         resp = self.client.get(reverse("competition_detail", args=[comp.pk]), HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(resp, "Rejection reason *")
+
+    def test_moderation_queue_reject_form_marks_required_reason(self):
+        moderator = _make_user("mod_ast2@example.com", User.Role.ORGANIZER)
+        _make_competition("Pending For Asterisk", status=Competition.Status.PENDING_APPROVAL)
+        self.client.force_login(moderator)
+        resp = self.client.get(reverse("calendar_moderate"), HTTP_ACCEPT_LANGUAGE="en")
+        self.assertContains(resp, "Rejection reason *")
