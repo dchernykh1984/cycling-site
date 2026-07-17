@@ -1532,3 +1532,18 @@ class AdditionalInfoRequiredTests(TestCase):
         self.assertTrue(form.is_valid())
         _apply_registration_settings(comp, form, True)
         self.assertFalse(comp.additional_info_required)
+
+
+class RequiredFieldAsteriskTests(TestCase):
+    """Required fields are flagged with an asterisk on the registration-edit form, just as at
+    registration; optional fields are not."""
+
+    def test_edit_form_marks_required_and_not_optional_fields(self):
+        organizer = make_user("ast_org", role=User.Role.ORGANIZER)
+        comp = make_competition(submitted_by=organizer, registration_mode="free")
+        reg = make_registration(comp)
+        self.client.force_login(organizer)
+        url = reverse("registrations:edit_registration", args=[comp.pk, reg.pk])
+        content = self.client.get(url).content.decode()
+        self.assertIn("Gender *", content)  # required field is marked
+        self.assertNotIn("City *", content)  # optional field is not
