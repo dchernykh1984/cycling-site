@@ -269,14 +269,17 @@ class Competition(index.Indexed, models.Model):
         self.approved_at = None
         self.save(update_fields=["status", "rejection_reason", "approved_by", "approved_at"])
 
-    def is_registration_open(self) -> bool:
+    def is_registration_open(self, ignore_limit: bool = False) -> bool:
+        # ``ignore_limit`` lets callers ask only "is the window still open by deadline" -- e.g. a
+        # registration owner editing an existing entry already holds a slot, so a full competition
+        # must not lock them out.
         if not self.registration_enabled:
             return False
         if self.status != self.Status.APPROVED:
             return False
         if self.registration_deadline and self.registration_deadline < timezone.now():
             return False
-        return not self.is_limit_reached()
+        return True if ignore_limit else not self.is_limit_reached()
 
     def qualified_count(self, category=None) -> int:
         qs = self.registrations.filter(is_rejected=False)
