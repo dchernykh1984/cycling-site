@@ -138,10 +138,12 @@ class EditRegistrationForm(forms.ModelForm):
                 del self.fields[name]
 
     def _restrict_participant_fields(self, competition):
+        # Mirror the registration form: when the field is not collected (mode = none), a
+        # participant editing their own entry should not see or be able to set it either.
+        if not competition.show_additional_info_field and "additional_info" in self.fields:
+            del self.fields["additional_info"]
         if "additional_info" in self.fields:
-            self.fields["additional_info"].required = (
-                competition.additional_info_required and competition.show_additional_info_field
-            )
+            self.fields["additional_info"].required = competition.additional_info_required
         # In self-only mode a participant registers their own profile identity, so the same fields
         # that are read-only at registration stay locked when they self-edit. Django's `disabled`
         # is enforced server-side: a crafted POST cannot change these.

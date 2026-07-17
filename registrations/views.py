@@ -9,7 +9,6 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.utils.html import escape
 from django.views import View
 from django.views.generic import TemplateView
@@ -44,29 +43,20 @@ def can_manage_or_own(user, competition) -> bool:
     return can_manage(user, competition) or (user.is_authenticated and user == competition.submitted_by)
 
 
-def _registration_window_open(competition) -> bool:
-    """Whether the registration window is still open by deadline (ignoring the participant
-    limit). Unlike :meth:`Competition.is_registration_open` this does not check the limit --
-    an owner editing an existing entry already holds a slot, so a full competition must not
-    lock them out."""
-    if not competition.registration_enabled or competition.status != Competition.Status.APPROVED:
-        return False
-    return not (competition.registration_deadline and competition.registration_deadline < timezone.now())
-
-
 def can_self_edit(user, competition, reg) -> bool:
     """Whether ``user`` may edit/cancel ``reg`` as its owner (not as a manager).
 
     Managers are handled separately and take precedence; this covers a plain participant
-    acting on their own entry while registration is open and the entry is not rejected.
-    Authorization is keyed on the stored ``reg.user`` only, never on request data.
+    acting on their own entry while registration is open (by deadline -- the participant limit
+    is ignored since they already hold a slot) and the entry is not rejected. Authorization is
+    keyed on the stored ``reg.user`` only, never on request data.
     """
     return bool(
         user.is_authenticated
         and reg.user_id is not None
         and reg.user_id == user.id
         and not reg.is_rejected
-        and _registration_window_open(competition)
+        and competition.is_registration_open(ignore_limit=True)
     )
 
 
@@ -432,7 +422,7 @@ class ParticipantListView(TemplateView):
         context["show_owner_actions"] = (
             not is_manager
             and user.is_authenticated
-            and _registration_window_open(competition)
+            and competition.is_registration_open(ignore_limit=True)
             and any(reg.user_id == user.id for reg in registrations)
         )
         context["categories"] = cats

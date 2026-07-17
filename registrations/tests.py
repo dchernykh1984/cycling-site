@@ -1482,6 +1482,13 @@ class AdditionalInfoRequiredTests(TestCase):
         comp = make_open_competition(additional_info_mode="strava", additional_info_required=True)
         self.assertFalse(EditRegistrationForm(competition=comp).fields["additional_info"].required)
 
+    def test_none_mode_removes_additional_info_from_self_edit_form(self):
+        from registrations.forms import EditRegistrationForm
+
+        comp = make_open_competition(additional_info_mode="none")
+        form = EditRegistrationForm(competition=comp, participant_fields_only=True)
+        self.assertNotIn("additional_info", form.fields)
+
     # --- settings persistence ---
     def test_settings_persist_required_flag(self):
         from calendar_app.forms import RegistrationSettingsForm
