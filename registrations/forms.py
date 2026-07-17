@@ -41,6 +41,7 @@ class RegistrationForm(forms.Form):
                 self.fields["additional_info"].label = (
                     _("Strava link") if competition.additional_info_is_strava else _("Additional info")
                 )
+                self.fields["additional_info"].required = competition.additional_info_required
 
             if competition.relay_enabled:
                 self.fields["first_name"].required = False
@@ -115,16 +116,11 @@ class EditRegistrationForm(forms.ModelForm):
         # never the moderation flags (is_approved / is_paid), the organiser-controlled category,
         # or relay composition. Dropping those fields here means a crafted POST cannot set them.
         if service_fields_only:
-            keep = {"is_approved", "is_paid"}
-        elif participant_fields_only:
-            keep = {"first_name", "last_name", "birth_date", "gender", "city", "team_name", "additional_info"}
-        else:
-            keep = None
-        if keep is not None:
-            for name in list(self.fields.keys()):
-                if name not in keep:
-                    del self.fields[name]
-        if not service_fields_only and competition:
+            self._keep_only({"is_approved", "is_paid"})
+            return
+        if participant_fields_only:
+            self._keep_only({"first_name", "last_name", "birth_date", "gender", "city", "team_name", "additional_info"})
+        if competition:
             if "category" in self.fields:
                 self.fields["category"].queryset = RegistrationCategory.objects.filter(
                     competition=competition, is_deleted=False
@@ -133,3 +129,23 @@ class EditRegistrationForm(forms.ModelForm):
                 self.fields["additional_info"].label = (
                     _("Strava link") if competition.additional_info_is_strava else _("Additional info")
                 )
+            if participant_fields_only:
+                self._restrict_participant_fields(competition)
+
+    def _keep_only(self, keep):
+        for name in list(self.fields.keys()):
+            if name not in keep:
+                del self.fields[name]
+
+    def _restrict_participant_fields(self, competition):
+        if "additional_info" in self.fields:
+            self.fields["additional_info"].required = (
+                competition.additional_info_required and competition.show_additional_info_field
+            )
+        # In self-only mode a participant registers their own profile identity, so the same fields
+        # that are read-only at registration stay locked when they self-edit. Django's `disabled`
+        # is enforced server-side: a crafted POST cannot change these.
+        if competition.registration_mode == "self_only":
+            for name in ("first_name", "last_name", "birth_date", "gender"):
+                if name in self.fields:
+                    self.fields[name].disabled = True

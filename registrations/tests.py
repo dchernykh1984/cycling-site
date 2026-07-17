@@ -1263,7 +1263,9 @@ class SelfEditRegistrationTests(TestCase):
         return reverse("registrations:delete_registration", args=[self.comp.pk, self.reg.pk])
 
     def _valid_data(self, **over):
-        data = {"first_name": "Changed", "last_name": "Rider", "birth_date": "1992-02-02", "gender": "M"}
+        # Identity values match the stored registration (a no-op unless a test overrides them);
+        # ``city`` is the editable field that is free to change in either registration mode.
+        data = {"first_name": "Test", "last_name": "User", "birth_date": "1990-01-01", "gender": "M", "city": "Newtown"}
         data.update(over)
         return data
 
@@ -1273,17 +1275,17 @@ class SelfEditRegistrationTests(TestCase):
         response = self.client.get(self._edit_url())
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn('name="first_name"', content)
+        self.assertIn('name="city"', content)
         self.assertNotIn('name="is_approved"', content)
         self.assertNotIn('name="is_paid"', content)
         self.assertNotIn('name="category"', content)
 
-    def test_owner_can_update_own_data(self):
+    def test_owner_can_update_editable_fields(self):
         self.client.force_login(self.owner)
-        response = self.client.post(self._edit_url(), self._valid_data(first_name="Renamed"))
+        response = self.client.post(self._edit_url(), self._valid_data(city="Riverside"))
         self.assertEqual(response.status_code, 302)
         self.reg.refresh_from_db()
-        self.assertEqual(self.reg.first_name, "Renamed")
+        self.assertEqual(self.reg.city, "Riverside")
 
     def test_owner_cannot_self_approve_or_change_category_via_post(self):
         cat = make_category(self.comp)
@@ -1301,7 +1303,7 @@ class SelfEditRegistrationTests(TestCase):
         self.reg.is_approved = True
         self.reg.save()
         self.client.force_login(self.owner)
-        self.client.post(self._edit_url(), self._valid_data(first_name="Moved"))
+        self.client.post(self._edit_url(), self._valid_data(city="Movedtown"))
         self.reg.refresh_from_db()
         self.assertFalse(self.reg.is_approved)
 
@@ -1325,6 +1327,44 @@ class SelfEditRegistrationTests(TestCase):
         self.client.force_login(self.organizer)
         response = self.client.get(reverse("registrations:edit_registration", args=[self.comp.pk, mgr_reg.pk]))
         self.assertIn('name="is_approved"', response.content.decode())
+
+    def test_self_only_form_locks_identity_fields(self):
+        # self.comp is self_only: identity fields come from the profile and stay locked, matching
+        # the read-only registration policy; city/team/additional_info remain editable.
+        from registrations.forms import EditRegistrationForm
+
+        form = EditRegistrationForm(competition=self.comp, participant_fields_only=True)
+        self.assertTrue(form.fields["first_name"].disabled)
+        self.assertTrue(form.fields["birth_date"].disabled)
+        self.assertTrue(form.fields["gender"].disabled)
+        self.assertFalse(form.fields["city"].disabled)
+
+    def test_self_only_owner_cannot_change_identity_via_post(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(self._edit_url(), self._valid_data(first_name="Hacked", city="Elsewhere"))
+        self.assertEqual(response.status_code, 302)
+        self.reg.refresh_from_db()
+        self.assertEqual(self.reg.first_name, "Test")  # identity locked in self-only mode
+        self.assertEqual(self.reg.city, "Elsewhere")  # editable field still saved
+
+    def test_free_mode_form_allows_identity_edit(self):
+        from registrations.forms import EditRegistrationForm
+
+        free_comp = make_open_competition(registration_mode="free")
+        form = EditRegistrationForm(competition=free_comp, participant_fields_only=True)
+        self.assertFalse(form.fields["first_name"].disabled)
+
+    def test_free_mode_owner_can_change_identity(self):
+        # In free mode a participant may register on another's behalf, so identity is editable --
+        # and the same must hold when they edit that entry.
+        free_comp = make_open_competition(submitted_by=self.organizer, registration_mode="free")
+        free_reg = make_registration(free_comp, user=self.owner)
+        self.client.force_login(self.owner)
+        url = reverse("registrations:edit_registration", args=[free_comp.pk, free_reg.pk])
+        response = self.client.post(url, self._valid_data(first_name="Renamed"))
+        self.assertEqual(response.status_code, 302)
+        free_reg.refresh_from_db()
+        self.assertEqual(free_reg.first_name, "Renamed")
 
     # --- negative ---
     def test_other_user_cannot_get_edit(self):
@@ -1372,3 +1412,93 @@ class SelfEditRegistrationTests(TestCase):
         self.client.force_login(self.other)
         url = reverse("registrations:edit_registration", args=[self.comp.pk, orphan.pk])
         self.assertEqual(self.client.get(url).status_code, 403)
+
+
+class AdditionalInfoRequiredTests(TestCase):
+    """The additional-info field can be made mandatory at registration via a competition
+    setting; it defaults to optional and never forces managers editing an entry."""
+
+    def setUp(self):
+        self.user = make_user("req_user", gender="M", birth_date=datetime.date(1990, 1, 1))
+
+    def _register(self, comp, **extra):
+        cat = make_category(comp)
+        data = {"first_name": "Reg", "last_name": "Rider", "gender": "M", "birth_year": 1990, "category": cat.pk}
+        data.update(extra)
+        self.client.force_login(self.user)
+        return self.client.post(reverse("registrations:register", args=[comp.pk]), data)
+
+    # --- form flag ---
+    def test_form_field_required_when_flag_set(self):
+        from registrations.forms import RegistrationForm
+
+        # The required flag is honoured regardless of registration mode (self-only or free).
+        for mode in ("free", "self_only"):
+            comp = make_open_competition(
+                additional_info_mode="free", additional_info_required=True, registration_mode=mode
+            )
+            self.assertTrue(RegistrationForm(competition=comp).fields["additional_info"].required, mode)
+
+    def test_form_field_optional_when_flag_unset(self):
+        from registrations.forms import RegistrationForm
+
+        comp = make_open_competition(additional_info_mode="free", additional_info_required=False)
+        self.assertFalse(RegistrationForm(competition=comp).fields["additional_info"].required)
+
+    # --- registration flow ---
+    def test_register_rejects_empty_when_required(self):
+        comp = make_open_competition(additional_info_mode="free", additional_info_required=True)
+        response = self._register(comp, additional_info="")
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(CompetitionRegistration.objects.filter(competition=comp).exists())
+
+    def test_register_accepts_filled_when_required(self):
+        comp = make_open_competition(additional_info_mode="free", additional_info_required=True)
+        response = self._register(comp, additional_info="my info")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(CompetitionRegistration.objects.filter(competition=comp, additional_info="my info").exists())
+
+    def test_register_accepts_empty_when_not_required(self):
+        comp = make_open_competition(additional_info_mode="free", additional_info_required=False)
+        response = self._register(comp, additional_info="")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(CompetitionRegistration.objects.filter(competition=comp).exists())
+
+    # --- edit forms ---
+    def test_participant_self_edit_requires_field_when_flag_set(self):
+        from registrations.forms import EditRegistrationForm
+
+        # Required-ness is independent of registration mode (the field is editable in both).
+        for mode in ("free", "self_only"):
+            comp = make_open_competition(
+                additional_info_mode="strava", additional_info_required=True, registration_mode=mode
+            )
+            form = EditRegistrationForm(competition=comp, participant_fields_only=True)
+            self.assertTrue(form.fields["additional_info"].required, mode)
+
+    def test_manager_edit_field_stays_optional_when_required_flag_set(self):
+        from registrations.forms import EditRegistrationForm
+
+        comp = make_open_competition(additional_info_mode="strava", additional_info_required=True)
+        self.assertFalse(EditRegistrationForm(competition=comp).fields["additional_info"].required)
+
+    # --- settings persistence ---
+    def test_settings_persist_required_flag(self):
+        from calendar_app.forms import RegistrationSettingsForm
+        from calendar_app.views import _apply_registration_settings
+
+        comp = make_competition()
+        form = RegistrationSettingsForm(data={"additional_info_mode": "free", "additional_info_required": "on"})
+        self.assertTrue(form.is_valid())
+        _apply_registration_settings(comp, form, True)
+        self.assertTrue(comp.additional_info_required)
+
+    def test_settings_default_not_required(self):
+        from calendar_app.forms import RegistrationSettingsForm
+        from calendar_app.views import _apply_registration_settings
+
+        comp = make_competition()
+        form = RegistrationSettingsForm(data={"additional_info_mode": "free"})
+        self.assertTrue(form.is_valid())
+        _apply_registration_settings(comp, form, True)
+        self.assertFalse(comp.additional_info_required)
