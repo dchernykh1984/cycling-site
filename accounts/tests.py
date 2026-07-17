@@ -1214,6 +1214,12 @@ class ContactOwnersViewTests(TestCase):
         self.assertContains(resp, 'name="subject"')
         self.assertContains(resp, 'name="message"')
 
+    def test_form_marks_required_fields_with_asterisk(self):
+        self.client.force_login(make_user(username="contact_ast", role=User.Role.PARTICIPANT))
+        resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="en")
+        self.assertContains(resp, "Subject *")
+        self.assertContains(resp, "Message *")
+
     def test_post_sends_email_to_owner_mailbox(self):
         self.client.force_login(make_user(username="contact_sender", role=User.Role.PARTICIPANT))
         resp = self.client.post(self.url, {"subject": "Need help", "message": "Reach me at @mytg; my problem is X."})

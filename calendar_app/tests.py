@@ -2919,3 +2919,12 @@ class ResubmitCompetitionViewTests(TestCase):
         self.client.post(reverse("competition_resubmit", args=[self.comp.pk]))
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.status, Competition.Status.APPROVED)
+
+
+class RejectFormAsteriskTests(TestCase):
+    def test_detail_reject_form_marks_required_reason(self):
+        moderator = _make_user("mod_ast@example.com", User.Role.ADMIN)
+        comp = _make_competition(status=Competition.Status.PENDING_APPROVAL)
+        self.client.force_login(moderator)
+        resp = self.client.get(reverse("competition_detail", args=[comp.pk]), HTTP_ACCEPT_LANGUAGE="en")
+        self.assertContains(resp, "Rejection reason *")

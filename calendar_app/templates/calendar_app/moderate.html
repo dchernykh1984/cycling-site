@@ -60,7 +60,7 @@
       <form method="post" action="{% url 'competition_reject' comp.pk %}">
         {% csrf_token %}
         <div class="mb-2">
-          <label class="form-label small">{% trans "Rejection reason" %}</label>
+          <label class="form-label small">{% trans "Rejection reason" %}{% if reject_form.rejection_reason.field.required %} *{% endif %}</label>
           {{ reject_form.rejection_reason }}
         </div>
         <button type="submit" class="btn btn-danger btn-sm">{% trans "Confirm rejection" %}</button>
