@@ -215,3 +215,17 @@ def test_a_proposed_place_carries_every_locale_the_model_gave():
     assert client.locales == [("Karakol", "Qaraqol", "Karakol-en")]
     # Every spelling is indexed, so the next source naming it differently matches instead of adding.
     assert match_city(cities, "Qaraqol") == match_city(cities, "Karakol-en") == 101
+
+
+def test_geography_left_behind_by_a_failed_event_post_is_named():
+    """Pending nodes outliving their event must be traceable, not anonymous queue entries."""
+    client, tree = _FakeClient(), _tree()
+    cities, created = flatten_cities(tree), []
+    _resolve_location(
+        client,
+        tree,
+        cities,
+        _candidate(country="Kazakhstan", region="Zhetysu", city="Taldykorgan"),
+        created=created,
+    )
+    assert created == ["region 'Zhetysu' (#101)", "city 'Taldykorgan' (#102)"]

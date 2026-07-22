@@ -53,7 +53,7 @@ def _extract_candidates(
     return candidates
 
 
-def _propose_city(client, tree: list, cities: list, candidate: Candidate) -> int | None:
+def _propose_city(client, tree: list, cities: list, candidate: Candidate, created: list | None = None) -> int | None:
     """Propose the candidate's city, and its region when that is new too; None if not possible.
 
     Both land pending: the agent may use them straight away, everyone else sees them once a reviewer
@@ -81,8 +81,12 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate) -> int
             "id": region_id,
             "name": {"ru": candidate.region, "kk": candidate.region_kk, "en": candidate.region_en},
         }
+        if created is not None:
+            created.append(f"region {candidate.region!r} (#{region_id})")
         country.setdefault("children", []).append(region)
     city_id = client.propose_place(region["id"], candidate.city, candidate.city_kk, candidate.city_en)
+    if created is not None:
+        created.append(f"city {candidate.city!r} (#{city_id})")
     # Keep the flat index in step so a later candidate in the same run reuses the new city.
     cities.append(
         locations.city_record(city_id, (candidate.city, candidate.city_kk, candidate.city_en), region, country)
@@ -90,7 +94,9 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate) -> int
     return city_id
 
 
-def _resolve_location(client, tree: list, cities: list, candidate: Candidate) -> int | None:
+def _resolve_location(
+    client, tree: list, cities: list, candidate: Candidate, created: list | None = None
+) -> int | None:
     """Concrete start venue when the city is known and named; else the city's catch-all.
 
     A city the tree does not have yet is proposed rather than skipped, so the event is placed from
@@ -98,7 +104,7 @@ def _resolve_location(client, tree: list, cities: list, candidate: Candidate) ->
     """
     city_id = locations.match_city(cities, candidate.city, candidate.region, candidate.country)
     if city_id is None:
-        city_id = _propose_city(client, tree, cities, candidate)
+        city_id = _propose_city(client, tree, cities, candidate, created)
     if city_id is None:
         # Nothing to hang the event on: an unnamed or ambiguous city, or no country/region to
         # place it under. The event is still worth proposing -- the guidance asks the model to
@@ -129,9 +135,6 @@ def main() -> int:
     def extract(text: str, source: sources.Source) -> list:
         return _extract_candidates(text, source, guidance, known, taxonomy, config)
 
-    def resolve_location(candidate: Candidate) -> int | None:
-        return _resolve_location(client, tree, cities, candidate)
-
     def enrich_candidate(candidate: Candidate) -> Candidate:
         """Fetch the event's own page and let the LLM refine it; keep the original on any failure."""
         if not config.enrich_details or not enrich.should_enrich(candidate):
@@ -145,7 +148,17 @@ def main() -> int:
         return enrich.merge_candidate(candidate, refined[0]) if refined else candidate
 
     def create(candidate: Candidate) -> None:
-        client.create(candidate, resolve_location(candidate))
+        # The geography is posted before the competition, so a failing competition POST leaves it
+        # behind. Name what was created in the error the pipeline records, otherwise those pending
+        # nodes sit in the moderation queue with nothing explaining where they came from.
+        created: list[str] = []
+        try:
+            location_id = _resolve_location(client, tree, cities, candidate, created=created)
+            client.create(candidate, location_id)
+        except Exception as exc:
+            if created:
+                raise RuntimeError(f"{exc} (left behind: {', '.join(created)})") from exc
+            raise
         # Feed it back so later sources in this same run do not re-propose the same event.
         titles = [t for t in (candidate.title, candidate.title_kk, candidate.title_en) if t]
         known.existing.append({"title": candidate.title, "titles": titles, "date_start": candidate.date_start})
