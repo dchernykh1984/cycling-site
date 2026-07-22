@@ -858,6 +858,20 @@ class LocationsMapLocaleTests(TestCase):
                     self.assertNotEqual(gettext(message), message, f"{message!r} is untranslated for {lang}")
 
 
+class LocationLevelLabelTests(TestCase):
+    """A moderator reviewing a proposal has to see what level it is and what sits above it."""
+
+    def test_level_label_and_ancestors(self):
+        country, region, city = _make_tree()
+        venue = add_location_child(city, name="Start", name_ru="Start")
+        self.assertEqual(country.get_level_label(), "Country")
+        self.assertEqual(region.get_level_label(), "Region")
+        self.assertEqual(city.get_level_label(), "City")
+        self.assertEqual(venue.get_level_label(), "Venue")
+        self.assertEqual(country.ancestor_label, "")
+        self.assertEqual(venue.ancestor_label, "KZ, Region, City")
+
+
 class LocationProposalModelTests(TestCase):
     """Location approval workflow helpers (issue #111)."""
 

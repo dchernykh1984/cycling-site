@@ -246,6 +246,17 @@ class Location(MP_Node, index.Indexed):
             LocationFallback.objects.create(city=locked_city, location=fallback)
             return fallback
 
+    _LEVEL_LABELS: ClassVar[dict] = {1: "Country", 2: "Region", 3: "City", 4: "Venue"}
+
+    def get_level_label(self) -> str:
+        """The node's level as a word, for a moderator deciding what a proposal actually is."""
+        return gettext(self._LEVEL_LABELS.get(self.depth, "Location"))
+
+    @property
+    def ancestor_label(self) -> str:
+        """The chain above this node, so a proposed "Almaty" can be told apart from another one."""
+        return ", ".join(node.name for node in self.get_ancestors())
+
     def _approve_proposal(self) -> None:
         proposal = getattr(self, "proposal", None)
         if proposal is not None and proposal.status != LocationProposal.Status.APPROVED:

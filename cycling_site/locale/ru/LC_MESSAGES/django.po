@@ -1936,3 +1936,11 @@ msgstr "Сделать это поле обязательным при реги�
 #: locations/views.py
 msgid "This location cannot be rejected: approved locations or a published competition are inside it."
 msgstr "Эту локацию нельзя отклонить: внутри есть одобренные локации или опубликованное соревнование."
+
+#: calendar_app/templates/calendar_app/moderate.html
+msgid "Reject this venue? Competitions using it will fall back to the city's other location."
+msgstr "Отклонить эту локацию? Соревнования на ней перейдут на «Другую локацию» города."
+
+#: calendar_app/templates/calendar_app/moderate.html
+msgid "Reject this place? Everything nested inside it is removed too, and competitions there lose their location."
+msgstr "Отклонить это место? Всё вложенное в него тоже удалится, а соревнования там останутся без локации."

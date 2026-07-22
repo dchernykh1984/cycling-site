@@ -93,7 +93,13 @@
     <tbody>
       {% for loc in pending_locations %}
       <tr>
-        <td>{{ loc.name }}</td>
+        <td>
+          {{ loc.name }}
+          {# Depth and the chain above it: "Almaty" is a very different decision as a region than as
+             a venue, and the reject below does something different for each. #}
+          <span class="badge text-bg-light">{{ loc.get_level_label }}</span>
+          {% if loc.ancestor_label %}<div class="small text-muted">{{ loc.ancestor_label }}</div>{% endif %}
+        </td>
         <td class="small text-muted">{{ loc.proposal.submitted_by.email|default:"—" }}</td>
         <td class="text-end">
           <form method="post" action="{% url 'location_approve' loc.pk %}" class="d-inline">
@@ -101,7 +107,7 @@
             <button type="submit" class="btn btn-success btn-sm py-0 px-2">{% trans "Approve" %}</button>
           </form>
           <form method="post" action="{% url 'location_reject' loc.pk %}" class="d-inline"
-                onsubmit="return confirm('{% trans "Reject this location? Competitions using it will fall back to the city's other location." %}')">
+                onsubmit="return confirm('{% if loc.depth == 4 %}{% trans "Reject this venue? Competitions using it will fall back to the city's other location." %}{% else %}{% trans "Reject this place? Everything nested inside it is removed too, and competitions there lose their location." %}{% endif %}')">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">{% trans "Reject" %}</button>
           </form>
