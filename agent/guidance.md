@@ -89,6 +89,11 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
     province, county. A district, raion, rural settlement or park is NOT a region: that belongs in
     the venue, with its actual region above it. "Уфимский район" is not a region, "Республика
     Башкортостан" is.
+  - **A city that is a region in its own right repeats itself.** Federal cities and capitals that
+    the country administers separately are their own first-level unit, so give the same name twice:
+    Россия -> Москва -> Москва, Россия -> Санкт-Петербург -> Санкт-Петербург, Казахстан -> Астана ->
+    Астана, Казахстан -> Алматы -> Алматы, Казахстан -> Шымкент -> Шымкент. Naming the surrounding
+    oblast instead ("Московская область" for Москва) points at a different place.
   - **A city the site does not have yet is fine.** Name it and it goes for review, so the race is
     placed from the start. Never bend a race into a wrong neighbouring city to avoid this.
   - **Country and region are what make that possible.** A city is only submitted when both are
