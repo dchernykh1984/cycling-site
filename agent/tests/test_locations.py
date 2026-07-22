@@ -1,5 +1,4 @@
 from agent.locations import (
-    catch_all_region,
     city_record,
     flatten_cities,
     match_city,
@@ -109,7 +108,8 @@ def test_match_country_by_name_and_catch_all_fallback():
     assert match_country(tree, "Kyrgyzstan")["id"] == 6
     # A country the site does not carry lands under the catch-all: the agent never creates a root.
     assert match_country(tree, "Iceland")["id"] == 90
-    assert match_country(tree, "")["id"] == 90
+    # An unnamed country is a different case: guessing would file a real region under the catch-all.
+    assert match_country(tree, "") is None
 
 
 def test_match_country_without_catch_all_returns_none():
@@ -121,8 +121,6 @@ def test_match_region_and_catch_all():
     kazakhstan = match_country(tree, "Kazakhstan")
     assert match_region(kazakhstan, "astana-region")["id"] == 4
     assert match_region(kazakhstan, "no-such-region") is None  # unknown -> the caller proposes it
-    assert catch_all_region(kazakhstan)["id"] == 92
-    assert catch_all_region(match_country(tree, "Kyrgyzstan")) is None
 
 
 def test_city_record_is_matchable_right_away():

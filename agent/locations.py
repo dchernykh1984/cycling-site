@@ -86,7 +86,6 @@ def is_ambiguous_city(cities: list[dict], city: str, region: str = "", country: 
 
 # The tree's catch-all nodes, matched on their English name (this module must stay ASCII-only).
 _OTHER_COUNTRY = "other country"
-_OTHER_REGION = "other region"
 
 
 def _match_node(nodes: list[dict], name: str) -> dict | None:
@@ -106,22 +105,20 @@ def _catch_all(nodes: list[dict], marker: str) -> dict | None:
 
 
 def match_country(tree: list[dict], country: str) -> dict | None:
-    """The country node for this name, falling back to the tree's catch-all country.
+    """The country node for this name; a named but unknown country falls back to the catch-all.
 
     Countries are admin-only, so the agent never creates one: an event in a country the site does
-    not carry is filed under "Other country" and a human moves it later.
+    not carry is filed under "Other country" and a human moves it later. An *unnamed* country is a
+    different case and gets None -- guessing there would file a real region under the catch-all.
     """
+    if not normalize_name(country):
+        return None
     return _match_node(tree, country) or _catch_all(tree, _OTHER_COUNTRY)
 
 
 def match_region(country: dict, region: str) -> dict | None:
     """The region node under ``country`` matching this name, or None when it is absent/ambiguous."""
     return _match_node((country or {}).get("children") or [], region)
-
-
-def catch_all_region(country: dict) -> dict | None:
-    """The country's catch-all region, used when the announcement names no region at all."""
-    return _catch_all((country or {}).get("children") or [], _OTHER_REGION)
 
 
 def city_record(city_id: int, city: str, region: dict, country: dict) -> dict:

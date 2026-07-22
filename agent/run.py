@@ -63,16 +63,14 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate) -> int
     if not candidate.city or locations.is_ambiguous_city(cities, candidate.city, candidate.region, candidate.country):
         return None
     country = locations.match_country(tree, candidate.country)
-    if country is None:
+    if country is None or not candidate.region:
+        # Without a country we cannot place anything, and without a region there is nothing to hang
+        # the city on: the tree's catch-all regions are hidden, so the API never hands them to us.
         return None
     region = locations.match_region(country, candidate.region)
-    if region is None and candidate.region:
+    if region is None:
         region = {"id": client.propose_place(country["id"], candidate.region), "name": candidate.region}
         country.setdefault("children", []).append(region)
-    if region is None:  # the announcement names no region -- file the city under the catch-all one
-        region = locations.catch_all_region(country)
-    if region is None:
-        return None
     city_id = client.propose_place(region["id"], candidate.city)
     # Keep the flat index in step so a later candidate in the same run reuses the new city.
     cities.append(locations.city_record(city_id, candidate.city, region, country))

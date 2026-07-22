@@ -85,15 +85,24 @@ def test_unknown_region_is_proposed_before_the_city():
     assert client.places == [(1, "Zhetysu"), (101, "Taldykorgan")]
 
 
-def test_city_without_a_region_goes_under_the_catch_all_region():
-    client, _ = _resolve(_candidate(country="Kazakhstan", city="Esik"))
-    assert client.places == [(4, "Esik")]
+def test_city_without_a_named_region_is_not_proposed():
+    # The tree's catch-all regions are hidden, so the API never returns one to hang the city on.
+    client, location_id = _resolve(_candidate(country="Kazakhstan", city="Esik"))
+    assert location_id is None
+    assert client.places == []
+
+
+def test_city_without_a_named_country_is_not_proposed():
+    # Falling back to the catch-all country here would file a real region under "Other country".
+    client, location_id = _resolve(_candidate(region="Almaty-region", city="Esik"))
+    assert location_id is None
+    assert client.places == []
 
 
 def test_unknown_country_lands_under_the_catch_all_country():
     # Countries are admin-only, so the agent must never invent a root for one it does not know.
-    client, _ = _resolve(_candidate(country="Iceland", city="Reykjavik"))
-    assert client.places == [(6, "Reykjavik")]
+    client, _ = _resolve(_candidate(country="Iceland", region="Capital Region", city="Reykjavik"))
+    assert client.places == [(5, "Capital Region"), (101, "Reykjavik")]
 
 
 def test_candidate_without_a_city_gets_no_location():
