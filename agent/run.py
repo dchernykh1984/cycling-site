@@ -87,7 +87,10 @@ def _resolve_location(client, tree: list, cities: list, candidate: Candidate) ->
     if city_id is None:
         city_id = _propose_city(client, tree, cities, candidate)
     if city_id is None:
-        return None  # reviewer adds the location (the guidance tells the LLM to note it)
+        # Nothing to hang the event on: an unnamed or ambiguous city, or no country/region to
+        # place it under. The event is still worth proposing -- the guidance asks the model to
+        # repeat the place in the description, so a reviewer can set the location by hand.
+        return None
     if candidate.venue:
         return client.propose_venue(
             city_id, candidate.venue, candidate.venue_kk, candidate.venue_en, candidate.lat, candidate.lng
