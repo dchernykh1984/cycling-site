@@ -210,13 +210,22 @@ CENTROIDS = {
 }
 
 
+# Countries whose coordinates this branch set (0013 + 0015). Everything else on depth 1 predates
+# it and keeps whatever an admin chose.
+_SEEDED_COUNTRIES = frozenset(CENTROIDS) - {"Казахстан", "Кыргызстан", "Россия", "Китай"}
+
+
 def set_centroids(apps, schema_editor):
     from locations.models import Location
 
+    # 0015 is the only thing that put a capital's coordinates on a country node, and it did so only
+    # where there was nothing. A country that already had coordinates before this branch was tuned by
+    # hand -- leave it alone, exactly as the docstring promises.
+    seeded_by_0015 = set(_SEEDED_COUNTRIES)
     updated = []
     for country in Location.objects.filter(depth=1):
         coords = CENTROIDS.get(country.name_ru)
-        if coords is None:
+        if coords is None or country.name_ru not in seeded_by_0015:
             continue
         country.lat, country.lng = coords
         updated.append(country)
