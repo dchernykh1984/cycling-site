@@ -21,10 +21,15 @@ _TME_PATH = re.compile(r"t\.me/(\S+)", re.IGNORECASE)
 _URL = re.compile(r"https?://[^\s()]+", re.IGNORECASE)
 
 # events_sources.yaml section -> Source.kind
+# Sources are scanned in this order, and a run stops as soon as it has proposed its quota, so the
+# order is what actually enforces guidance.md's geography ladder. Organizers and the public Telegram
+# channels are the Kazakh and Kyrgyz ones; the aggregators are Russian and worldwide calendars with
+# dozens of rows each, and going through them first would spend every nightly slot before a single
+# local source was read. The account/private Telegram sections are unreadable and merely reported.
 _SECTION_KIND = {
-    "aggregators": "aggregator",
     "organizers": "organizer",
     "telegram_public": "tg_public",
+    "aggregators": "aggregator",
     "telegram_account": "tg_account",
     "telegram_private": "tg_private",
 }

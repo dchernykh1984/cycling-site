@@ -68,3 +68,30 @@ def test_malformed_top_level_yields_no_sources_without_crashing():
     # A maintainer editing the YAML could leave a bare list / scalar at the top level.
     assert parse_sources("- https://a.kz/\n- https://b.kz/\n") == []
     assert parse_sources("just a string") == []
+
+
+def test_local_sources_are_scanned_before_the_big_foreign_calendars():
+    """The run stops at its quota, so section order is what enforces the geography ladder.
+
+    The aggregators are Russian and worldwide calendars with dozens of upcoming rows; scanning them
+    first would spend every nightly slot before a Kazakh or Kyrgyz source was ever fetched.
+    """
+    yaml = """
+aggregators:
+  - https://begaem.com/blizhayshie-startyi-v-rossii
+organizers:
+  - https://changan-race.kz/ru/
+telegram_public:
+  - https://t.me/roadcyclingkz
+"""
+    kinds = [source.kind for source in parse_sources(yaml)]
+    assert kinds == ["organizer", "tg_public", "aggregator"]
+
+
+def test_real_sources_file_puts_every_local_source_first():
+    from pathlib import Path
+
+    sources = parse_sources(Path("events_sources.yaml").read_text())
+    first_aggregator = next(i for i, s in enumerate(sources) if s.kind == "aggregator")
+    local = [i for i, s in enumerate(sources) if s.kind in ("organizer", "tg_public")]
+    assert max(local) < first_aggregator
