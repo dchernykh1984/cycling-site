@@ -38,6 +38,10 @@ organizers:
   - https://velorace.lovable.app/
   - https://velomania.kz/
   - https://sportevents.kz/
+  - url: https://www.themountainraces.cc/
+    hint: "The Mountain Races -- Silk Road (Kyrgyzstan), Atlas (Morocco), Hellenic (Greece) and any
+      race they add later. The home page lists them all with a 'Next edition:' date, and each links
+      to its own page -- use that link as source_url. Skip an edition whose date reads 'TBC'."
   - url: https://www.randonneurs.kz/
     hint: "Brevet calendar of the Randonneurs Kazakhstan / Saryarqa clubs (Almaty, Astana, Karaganda,
       Shchuchinsk). Every start has its own /event/<slug> page naming the start venue -- use it as
