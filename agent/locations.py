@@ -73,8 +73,9 @@ def _hint_matches(hint: str, names: set[str]) -> bool:
 def city_matches(cities: list[dict], city: str, region: str = "", country: str = "") -> list[dict]:
     """Every city record matching the name, narrowed by region/country when that helps.
 
-    Region/country only disambiguate when several cities share the name -- they never override an
-    otherwise-unique match, so a slightly-off region name cannot break a good one.
+    Region and country narrow the list even when only one city carries the name: accepting a lone
+    namesake in another oblast files the race where it is not held. The comparison is deliberately
+    loose, and a city that is its own region is exempt from the region filter.
     """
     target = normalize_name(city)
     if not target:
@@ -84,9 +85,13 @@ def city_matches(cities: list[dict], city: str, region: str = "", country: str =
     # to be accepted silently, which files a race hundreds of kilometres from where it is held --
     # far worse than proposing a second city for a human to look at. The comparison is loose enough
     # to survive the wording sources actually use ("Almaty obl." vs "Almaty Region").
-    for hint, key in ((region, "region_names"), (country, "country_names")):
-        if hint:
-            matches = [c for c in matches if _hint_matches(hint, c[key])]
+    if country:
+        matches = [c for c in matches if _hint_matches(country, c["country_names"])]
+    if region:
+        # A city the tree models as its own region -- Astana, Shymkent, Moscow, Bishkek -- is named
+        # after the region holding it, and sources give the surrounding oblast instead. Filtering it
+        # out would propose a duplicate of a capital, so those are exempt.
+        matches = [c for c in matches if _hint_matches(region, c["region_names"]) or (c["names"] & c["region_names"])]
     return matches
 
 

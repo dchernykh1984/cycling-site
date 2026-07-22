@@ -153,3 +153,20 @@ def test_country_aliases_reach_the_real_country_not_the_catch_all():
     assert match_country(tree, "\u041a\u0438\u0440\u0433\u0438\u0437\u0438\u044f")["id"] == 6  # Kyrgyzstan
     assert match_country(tree, "\u0411\u0435\u043b\u043e\u0440\u0443\u0441\u0441\u0438\u044f")["id"] == 95
     assert match_country(tree, "Turkiye")["id"] == 90  # no Turkey in this tree -> catch-all
+
+
+def test_a_city_that_is_its_own_region_survives_an_oblast_hint():
+    """Astana is modelled as its own region; sources name the oblast around it.
+
+    Filtering it out would have the agent propose a duplicate of a capital city.
+    """
+    tree = _tree()
+    tree[0]["children"].append(
+        {
+            "id": 30,
+            "name": {"ru": "Capitalcity", "kk": "", "en": ""},
+            "children": [{"id": 31, "name": {"ru": "Capitalcity", "kk": "", "en": ""}, "children": []}],
+        }
+    )
+    cities = flatten_cities(tree)
+    assert match_city(cities, "Capitalcity", region="Surrounding-oblast") == 31
