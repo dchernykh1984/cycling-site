@@ -32,6 +32,10 @@ organizers:
   - https://velorace.lovable.app/
   - https://velomania.kz/
   - https://sportevents.kz/
+  - url: https://www.randonneurs.kz/
+    hint: "Brevet calendar of the Randonneurs Kazakhstan / Saryarqa clubs (Almaty, Astana, Karaganda,
+      Shchuchinsk). Every start has its own /event/<slug> page naming the start venue -- use it as
+      source_url."
   # Russia (lower priority)
   - https://velogearance.ru/
   - https://redbikecup.ru/rbc/2026
@@ -48,6 +52,7 @@ telegram_public:
   - https://t.me/mystartkz/903
   - "@athletex"
   - https://t.me/not_olympic
+  - https://t.me/randonneurs_kz
 
 telegram_account:
   # Public but with NO t.me/s/ web feed -- groups/chats (members, not subscribers) or a personal
