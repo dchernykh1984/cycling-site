@@ -978,6 +978,24 @@ class ModeratorReachesPendingNodesTests(TestCase):
         self.assertNotIn(pending.pk, [loc.pk for loc in selectable_parent_locations(organizer)])
 
 
+class ReRootSortOrderTests(TestCase):
+    """Re-rooting must rank the node among countries, not among every node at its old depth."""
+
+    def test_a_re_rooted_region_sorts_with_the_countries(self):
+        from locations.models import add_location_child, move_location
+
+        country = add_location_child(None, name="ZZ-Country", name_ru="ZZ-Country")
+        for i in range(6):
+            add_location_child(country, name=f"R{i}", name_ru=f"R{i}")
+        moved = add_location_child(country, name="ToBeCountry", name_ru="ToBeCountry")
+
+        move_location(moved, None)
+        moved.refresh_from_db()
+        roots = Location.objects.filter(depth=1, is_deleted=False).exclude(pk=moved.pk)
+        self.assertEqual(moved.depth, 1)
+        self.assertLessEqual(moved.sort_order, max(r.sort_order for r in roots if r.sort_order < 9999) + 1)
+
+
 class ManagerBuildingUnderAProposalTests(TestCase):
     """A manager may reach a pending node, but a child created there stays pending too."""
 

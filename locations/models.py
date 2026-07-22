@@ -660,8 +660,11 @@ def move_location(location, new_parent) -> None:
                 _safe_move(locked, root, pos="sorted-sibling")
         else:
             _safe_move(locked, locked_target, pos="sorted-child")
-        siblings = Location.objects.filter(depth=locked.depth if locked_target is None else locked_target.depth + 1)
-        siblings = siblings.exclude(pk=locked.pk)
+        # treebeard's move() leaves the in-memory node stale, so read the new depth from the target
+        # rather than from ``locked``: re-rooting used to compare against every node at the node's
+        # *old* depth, which handed the new country the global maximum and sorted it past them all.
+        new_depth = 1 if locked_target is None else locked_target.depth + 1
+        siblings = Location.objects.filter(depth=new_depth).exclude(pk=locked.pk)
         if locked_target is not None:
             siblings = siblings.filter(path__range=Location._get_children_path_interval(locked_target.path))
         Location.objects.filter(pk=locked.pk).update(sort_order=next_sort_order(list(siblings)))
