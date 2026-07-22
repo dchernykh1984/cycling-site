@@ -60,7 +60,7 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate) -> int
     approves. Countries are admin-only, so an event in a country the site does not carry goes under
     the tree's catch-all country instead of inventing a root.
     """
-    if not candidate.city:
+    if not candidate.city or locations.is_ambiguous_city(cities, candidate.city, candidate.region, candidate.country):
         return None
     country = locations.match_country(tree, candidate.country)
     if country is None:

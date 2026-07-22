@@ -50,25 +50,38 @@ def flatten_cities(tree: list[dict]) -> list[dict]:
     return cities
 
 
-def match_city(cities: list[dict], city: str, region: str = "", country: str = "") -> int | None:
-    """Return the id of the single city that matches, or None when it is absent or ambiguous.
+def city_matches(cities: list[dict], city: str, region: str = "", country: str = "") -> list[dict]:
+    """Every city record matching the name, narrowed by region/country when that helps.
 
-    Region/country are used only to disambiguate when several cities share the name -- never to
-    override an otherwise-unique match, so a slightly-off region name cannot break a good match.
+    Region/country only disambiguate when several cities share the name -- they never override an
+    otherwise-unique match, so a slightly-off region name cannot break a good one.
     """
     target = normalize_name(city)
     if not target:
-        return None
+        return []
     matches = [c for c in cities if target in c["names"]]
-    if len(matches) > 1 and region:
-        narrowed = [c for c in matches if normalize_name(region) in c["region_names"]]
-        if narrowed:
-            matches = narrowed
-    if len(matches) > 1 and country:
-        narrowed = [c for c in matches if normalize_name(country) in c["country_names"]]
-        if narrowed:
-            matches = narrowed
+    for hint, key in ((region, "region_names"), (country, "country_names")):
+        if len(matches) > 1 and hint:
+            narrowed = [c for c in matches if normalize_name(hint) in c[key]]
+            if narrowed:
+                matches = narrowed
+    return matches
+
+
+def match_city(cities: list[dict], city: str, region: str = "", country: str = "") -> int | None:
+    """The id of the single city that matches, or None when it is absent or ambiguous."""
+    matches = city_matches(cities, city, region, country)
     return matches[0]["id"] if len(matches) == 1 else None
+
+
+def is_ambiguous_city(cities: list[dict], city: str, region: str = "", country: str = "") -> bool:
+    """Whether the name matches several cities -- a case to leave alone rather than add another.
+
+    ``match_city`` answers None both for "the site does not have it" and for "the site has several",
+    and only the first of those is a reason to propose a new city. Proposing on the ambiguous one
+    would add a third namesake, which then makes the next candidate ambiguous too.
+    """
+    return len(city_matches(cities, city, region, country)) > 1
 
 
 # The tree's catch-all nodes, matched on their English name (this module must stay ASCII-only).

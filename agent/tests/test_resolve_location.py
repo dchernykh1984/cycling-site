@@ -111,3 +111,31 @@ def test_second_candidate_in_the_run_reuses_the_city_just_proposed():
     _resolve_location(client, tree, cities, second)
     assert client.places == [(2, "Talgar")]  # proposed once, then reused from the in-memory index
     assert client.venues == [(101, "Start")]
+
+
+def _tree_with_twin_cities():
+    tree = _tree()
+    tree[0]["children"].append(
+        {
+            "id": 7,
+            "name": {"ru": "Astana-region", "kk": "", "en": ""},
+            "children": [{"id": 8, "name": {"ru": "Esil", "kk": "", "en": ""}, "children": []}],
+        }
+    )
+    tree[0]["children"][0]["children"].append({"id": 9, "name": {"ru": "Esil", "kk": "", "en": ""}, "children": []})
+    return tree
+
+
+def test_ambiguous_city_is_left_alone_instead_of_proposed():
+    # Two cities share the name, so "no single match" means "pick one", not "add another".
+    client, location_id = _resolve(_candidate(country="Kazakhstan", city="Esil"), tree=_tree_with_twin_cities())
+    assert location_id is None
+    assert client.places == []
+
+
+def test_ambiguous_city_does_not_multiply_across_candidates():
+    client, tree = _FakeClient(), _tree_with_twin_cities()
+    cities = flatten_cities(tree)
+    for _ in range(3):
+        _resolve_location(client, tree, cities, _candidate(country="Kazakhstan", city="Esil"))
+    assert client.places == []  # a third namesake would make every later candidate ambiguous too
