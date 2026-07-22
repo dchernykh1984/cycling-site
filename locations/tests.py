@@ -862,14 +862,23 @@ class LocationLevelLabelTests(TestCase):
     """A moderator reviewing a proposal has to see what level it is and what sits above it."""
 
     def test_level_label_and_ancestors(self):
+        from django.utils import translation
+
         country, region, city = _make_tree()
         venue = add_location_child(city, name="Start", name_ru="Start")
-        self.assertEqual(country.get_level_label(), "Country")
-        self.assertEqual(region.get_level_label(), "Region")
-        self.assertEqual(city.get_level_label(), "City")
-        self.assertEqual(venue.get_level_label(), "Venue")
+        with translation.override("en"):
+            labels = [node.get_level_label() for node in (country, region, city, venue)]
+        self.assertEqual(labels, ["Country", "Region", "City", "Venue"])
         self.assertEqual(country.ancestor_label, "")
         self.assertEqual(venue.ancestor_label, "KZ, Region, City")
+
+    def test_level_label_is_translated(self):
+        from django.utils import translation
+
+        country, _, _ = _make_tree()
+        for lang in ("ru", "kk"):
+            with translation.override(lang):
+                self.assertNotEqual(country.get_level_label(), "Country", f"untranslated for {lang}")
 
 
 class LocationProposalModelTests(TestCase):
