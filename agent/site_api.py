@@ -92,6 +92,17 @@ class SiteApiClient:
         result = self._request("POST", "/api/v1/locations/", payload)
         return int(result["id"]) if isinstance(result, dict) else 0
 
+    def propose_place(self, parent_id: int, name: str) -> int:
+        """Propose a region or city under ``parent_id`` and return its id.
+
+        Unlike a venue this always lands pending: the site reviews geography before publishing it.
+        The one name is stored in all three locales -- a reviewer renames it when approving, which
+        beats asking the model to translate a place name it may not know.
+        """
+        payload = {"parent_id": parent_id, "name": _loc(name, name, name)}
+        result = self._request("POST", "/api/v1/locations/", payload)
+        return int(result["id"]) if isinstance(result, dict) else 0
+
     def fallback_venue(self, city_id: int) -> int:
         """Get (or create) the city's hidden catch-all venue and return its id."""
         result = self._request("POST", f"/api/v1/locations/{city_id}/fallback-venue/", {})

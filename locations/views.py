@@ -14,13 +14,14 @@ from django.views.generic import View
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 
-_ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 _ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
 _PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
 
 
 def _can_manage_locations(user) -> bool:
-    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
+    from locations.models import can_manage_locations
+
+    return can_manage_locations(user)
 
 
 def _can_add_location_directly(user) -> bool:
@@ -197,7 +198,7 @@ class LocationApproveView(LoginRequiredMixin, View):
         location = get_object_or_404(
             Location, pk=pk, is_deleted=False, proposal__status=LocationProposal.Status.PENDING_APPROVAL
         )
-        location.approve_with_competition()
+        location.approve_with_competition(request.user)
         safe_path = urlparse(request.META.get("HTTP_REFERER", "")).path or "/"
         return redirect(safe_path)
 

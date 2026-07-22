@@ -69,3 +69,53 @@ def match_city(cities: list[dict], city: str, region: str = "", country: str = "
         if narrowed:
             matches = narrowed
     return matches[0]["id"] if len(matches) == 1 else None
+
+
+# The tree's catch-all nodes, matched on their English name (this module must stay ASCII-only).
+_OTHER_COUNTRY = "other country"
+_OTHER_REGION = "other region"
+
+
+def _match_node(nodes: list[dict], name: str) -> dict | None:
+    """The single node of ``nodes`` whose name matches in any locale, or None if absent/ambiguous."""
+    target = normalize_name(name)
+    if not target:
+        return None
+    matches = [n for n in nodes or [] if target in _names(n)]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _catch_all(nodes: list[dict], marker: str) -> dict | None:
+    for node in nodes or []:
+        if marker in _names(node):
+            return node
+    return None
+
+
+def match_country(tree: list[dict], country: str) -> dict | None:
+    """The country node for this name, falling back to the tree's catch-all country.
+
+    Countries are admin-only, so the agent never creates one: an event in a country the site does
+    not carry is filed under "Other country" and a human moves it later.
+    """
+    return _match_node(tree, country) or _catch_all(tree, _OTHER_COUNTRY)
+
+
+def match_region(country: dict, region: str) -> dict | None:
+    """The region node under ``country`` matching this name, or None when it is absent/ambiguous."""
+    return _match_node((country or {}).get("children") or [], region)
+
+
+def catch_all_region(country: dict) -> dict | None:
+    """The country's catch-all region, used when the announcement names no region at all."""
+    return _catch_all((country or {}).get("children") or [], _OTHER_REGION)
+
+
+def city_record(city_id: int, city: str, region: dict, country: dict) -> dict:
+    """A freshly proposed city as a `flatten_cities` record, so the same run can reuse it."""
+    return {
+        "id": city_id,
+        "names": {normalize_name(city)},
+        "region_names": _names(region or {}),
+        "country_names": _names(country or {}),
+    }

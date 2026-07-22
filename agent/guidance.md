@@ -85,9 +85,13 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
   "Другой регион" / "Другой город" / "Другая локация" -- find the actual place whenever the
   announcement gives it; use a generic placeholder only as a last resort, when there is genuinely
   no more specific information.
-  If the event is in a city the site does not have yet, do not force a wrong one: name the real
-  city/start in the description and ask the reviewer (in Russian) to add the location, e.g.
-  "Город/старт: <город/место>. Просьба к ревьюеру завести локацию и уточнить точку старта."
+  **A city the site does not have yet is fine** -- name the real region and city anyway and they are
+  submitted for review, so the event is placed from the start. Never bend a race into a wrong
+  neighbouring city to avoid this, and never invent a region you are not sure of: leave the region
+  empty instead and only the city is proposed.
+  Countries are the exception: they are not created from announcements. If the event's country is
+  not on the site, the race is filed under "Другая страна" -- so still name the country, and add it
+  to the (Russian) description together with the city, e.g. "Страна/город: <страна>, <город>".
 
 ## Hints
 - (add source-specific hints here, e.g. "on granfondo.com.kz the schedule is under /ru/calendar")

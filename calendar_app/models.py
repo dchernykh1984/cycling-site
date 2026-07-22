@@ -244,7 +244,7 @@ class Competition(index.Indexed, models.Model):
         # Approving a competition auto-approves its proposed location (issue #111).
         location = self.location
         if location is not None:
-            location.approve_with_competition()
+            location.approve_with_competition(reviewer)
 
     def reject(self, reviewer, reason: str = "") -> None:
         if self.status not in (self.Status.PENDING_APPROVAL, self.Status.DRAFT):

@@ -1,6 +1,7 @@
 import threading
 from typing import ClassVar
 
+from django.apps import apps
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.db import connection, models, transaction
@@ -99,6 +100,21 @@ def add_location_child(parent, **kwargs):
         return obj
 
 
+def can_manage_locations(user) -> bool:
+    """Whether ``user`` may bless geography (approve/reject a location proposal): ADMIN+ only.
+
+    Competitions are moderated a rung lower, by ORGANIZER+, so this is what keeps approving an event
+    from quietly approving the region and city proposed with it. ``locations.views`` mirrors it.
+    """
+    from accounts.models import User
+
+    if not getattr(user, "is_authenticated", False):
+        return False
+    return bool(getattr(user, "is_superuser", False)) or user.get_role_rank() >= User.ROLE_HIERARCHY.index(
+        User.Role.ADMIN
+    )
+
+
 class Location(MP_Node, index.Indexed):
     name = models.CharField(max_length=255)
     lat = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
@@ -193,20 +209,41 @@ class Location(MP_Node, index.Indexed):
             LocationFallback.objects.create(city=locked_city, location=fallback)
             return fallback
 
-    def approve_with_competition(self) -> None:
-        """Auto-approve a pending location when its competition is approved."""
+    def _approve_proposal(self) -> None:
         proposal = getattr(self, "proposal", None)
         if proposal is not None and proposal.status != LocationProposal.Status.APPROVED:
             proposal.status = LocationProposal.Status.APPROVED
             proposal.save(update_fields=["status"])
 
+    def approve_with_competition(self, reviewer=None) -> None:
+        """Auto-approve this pending location when its competition is approved.
+
+        A venue can be proposed together with the city (and region) holding it, and leaving those
+        pending would keep the approved competition's branch out of everyone else's location filter.
+        So the pending ancestors are approved too -- but only for a reviewer who may bless geography
+        (ADMIN+). An organizer moderating an event may approve the venue, which is a level they can
+        create outright anyway; the region and city stay in the admin's queue instead of being waved
+        through by someone the API would not let create them.
+        """
+        self._approve_proposal()
+        if not can_manage_locations(reviewer):
+            return
+        for ancestor in self.get_ancestors():
+            ancestor._approve_proposal()
+
     def reject_and_reset_competitions(self) -> None:
-        """Atomically reject a pending venue, move its competitions to the city fallback and delete it."""
+        """Atomically reject a pending location and deal with the competitions that used it.
+
+        A rejected venue hands its competitions to its city's catch-all venue, so they stay on the
+        map. A rejected region or city has no such stand-in -- the branch itself is what the reviewer
+        refused -- so the whole subtree goes and the competitions inside it lose their location for a
+        human to set.
+        """
         with transaction.atomic():
             _lock_tree_mutation_namespace()
             parent = self.get_parent()
             if parent is None:
-                raise LocationConflictError("Proposed venue no longer has a parent")
+                raise LocationConflictError("Proposed location no longer has a parent")
 
             rows = {
                 row.pk: row
@@ -223,6 +260,13 @@ class Location(MP_Node, index.Indexed):
             )
             if proposal is None:
                 raise LocationConflictError("Location proposal is no longer pending")
+
+            if locked.depth < 4:
+                subtree = Location.objects.filter(path__startswith=locked.path, is_deleted=False)
+                competition_cls = apps.get_model("calendar_app", "Competition")
+                competition_cls.objects.filter(location__in=subtree).update(location=None)
+                subtree.update(is_deleted=True)
+                return
 
             fallback = self.get_or_create_other_location(locked_parent)
             locked.competitions.update(location=fallback)
