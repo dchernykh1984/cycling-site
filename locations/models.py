@@ -656,10 +656,15 @@ def selectable_parent_locations(user=None):
     """Depth 1-3 nodes a user may pick as a parent in the location form: not deleted and either
     public (no proposal or an approved one) or the user's own pending proposal. Excludes other
     users' pending proposals so nobody can build under -- or even see -- a foreign pending node."""
+    qs = Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3])
+    if can_manage_locations(user):
+        # A moderator has to reach the very nodes they are reviewing: without this they cannot fix a
+        # misspelt proposed city, nor add anything inside it, and the queue becomes a dead end.
+        return qs.order_by("sort_order", "path")
     visible = models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
     if user is not None and getattr(user, "is_authenticated", False):
         visible |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
-    return Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3]).filter(visible).order_by("sort_order", "path")
+    return qs.filter(visible).order_by("sort_order", "path")
 
 
 def location_filter_rank(row) -> int:
