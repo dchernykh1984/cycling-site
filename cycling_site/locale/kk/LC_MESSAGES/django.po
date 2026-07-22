@@ -1977,3 +1977,11 @@ msgstr "Тіркелу кезінде бұл өрісті міндетті ет�
 #: locations/views.py
 msgid "This location cannot be rejected: approved locations or a published competition are inside it."
 msgstr "Бұл орынды қабылдамауға болмайды: ішінде мақұлданған орындар немесе жарияланған жарыс бар."
+
+#: calendar_app/templates/calendar_app/moderate.html
+msgid "Reject this venue? Competitions using it will fall back to the city's other location."
+msgstr "Бұл орынды қабылдамау керек пе? Ондағы жарыстар қаланың «Басқа орнына» ауысады."
+
+#: calendar_app/templates/calendar_app/moderate.html
+msgid "Reject this place? Everything nested inside it is removed too, and competitions there lose their location."
+msgstr "Бұл орынды қабылдамау керек пе? Ішіндегінің бәрі де жойылады, ондағы жарыстар орынсыз қалады."
