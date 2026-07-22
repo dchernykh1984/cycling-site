@@ -171,9 +171,10 @@ Notes:
   alongside stay pending -- blessing geography is an Admin right, so approving an
   event is not a way around it.
 - Add an approved venue under a city via web/API without separate moderation.
-- **Propose** a region or a city via web/API. Unlike a venue these never land
-  approved, whatever the author's role: they are visible only to their proposer
-  until an Admin approves them. Countries stay Admin-only.
+- **Propose** a region or a city via web/API. An Organizer's region or city is
+  always a proposal -- visible only to them until an Admin approves it (an Admin
+  creating one gets it approved outright). Countries stay Admin-only. A venue
+  added under a location that is still pending stays pending with it.
 - Get (or lazily create) a city's shared **catch-all venue** via the API, to attach a
   competition to a city when no exact start venue is known.
 - Manage entrants of their own competitions: approve/reject, mark paid, edit,
