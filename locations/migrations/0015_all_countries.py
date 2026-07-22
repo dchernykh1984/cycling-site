@@ -541,7 +541,13 @@ def add_countries(apps, schema_editor):
         region = _child(country, (region_ru, region_ru, region_en), 1, coords=coords)
         _add_city(region, (capital_ru, capital_ru, capital_en), 1, coords=coords)
         _add_city(region, _OTHER_CITY, 9999, hidden=True)
-        _child(country, _OTHER_REGION, 9999, hidden=True)
+        _add_city(_child(country, _OTHER_REGION, 9999, hidden=True), _OTHER_CITY, 9999, hidden=True)
+
+    # The catch-alls seeded long ago (0004/0006/0007) were left visible; production hid them by hand,
+    # so a fresh database would otherwise offer "Другой город" as an ordinary pickable city.
+    Location.objects.filter(depth__in=[2, 3], is_hidden=False, name_ru__in=("Другой регион", "Другой город")).update(
+        is_hidden=True
+    )
 
 
 class Migration(migrations.Migration):

@@ -348,7 +348,7 @@ def _add_country(names, regions, sort_order):
     from locations.models import Location, add_location_child
 
     ru, kk, en = names
-    country = _restored(Location.objects.filter(depth=1, name_ru=ru).first())
+    country = _restored(Location.objects.filter(depth=1, name_ru=ru).order_by("is_deleted", "path").first())
     if country is None:
         country = add_location_child(None, name=ru, name_ru=ru, name_kk=kk, name_en=en, sort_order=sort_order)
     for region_order, (region_names, cities) in enumerate(regions, start=1):
