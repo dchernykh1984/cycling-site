@@ -34,3 +34,18 @@ def test_prompt_without_hint_omits_the_hint_line():
 
 def test_kind_guidance_covers_exactly_the_fetchable_kinds():
     assert set(_KIND_GUIDANCE) == {"aggregator", "organizer", "tg_public"}
+
+
+def test_system_prompts_do_not_narrow_the_brief_to_cycling():
+    """guidance.md widened the brief to running, triathlon and skiing; the system turn must agree.
+
+    The guidance and the per-source hints ride in the user turn. A system prompt asking for cycling
+    only contradicts them -- with a running calendar as the source, that conflict resolves to an
+    empty extraction.
+    """
+    from agent.llm import _ENRICH_SYSTEM, _SYSTEM
+
+    for prompt in (_SYSTEM, _ENRICH_SYSTEM):
+        assert "cycling competitions from" not in prompt
+        assert "ONE cycling event" not in prompt
+    assert "running" in _SYSTEM and "triathlon" in _SYSTEM
