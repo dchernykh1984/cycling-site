@@ -190,11 +190,16 @@ def match_country(tree: list[dict], country: str) -> dict | None:
     target = normalize_name(country)
     if not target:
         return None
-    return (
-        _match_node(tree, country)
-        or _match_node(tree, _COUNTRY_ALIASES.get(target, ""))
-        or _catch_all(tree, _OTHER_COUNTRY)
-    )
+    exact = _match_node(tree, country) or _match_node(tree, _COUNTRY_ALIASES.get(target, ""))
+    if exact is not None:
+        return exact
+    # An official long form or an abbreviation ("Republic of ...", "RF") that the alias table
+    # does not list. The catch-all is for countries the site genuinely does not carry; sending
+    # one it does have there files a real region under it, permanently.
+    fuzzy = [node for node in tree or [] if _hint_matches(target, _names(node))]
+    if len(fuzzy) == 1:
+        return fuzzy[0]
+    return _catch_all(tree, _OTHER_COUNTRY)
 
 
 def match_region(country: dict, region: str) -> dict | None:
