@@ -292,12 +292,29 @@ def _restored(node):
     return node
 
 
+def _siblings(parent):
+    """The parent's children by path range rather than ``get_children()``.
+
+    treebeard short-circuits ``get_children()`` to an empty queryset whenever ``numchild`` is 0, so
+    a counter that has drifted would make an existing child invisible here and this seed would add a
+    second one. ``add_location_child`` avoids the same trap the same way.
+    """
+    from locations.models import Location
+
+    return Location.objects.filter(
+        depth=parent.depth + 1, path__range=Location._get_children_path_interval(parent.path)
+    )
+
+
 def _child(parent, names, sort_order, *, hidden=False):
     """Return the parent's child with this Russian name, creating it when absent."""
     from locations.models import add_location_child
 
     ru, kk, en = names
-    existing = _restored(parent.get_children().filter(name_ru=ru).first())
+    # A live namesake wins over a soft-deleted one: rejecting a proposed city leaves the row behind,
+    # so "proposed, rejected, added again" is a normal state and resurrecting the dead one would
+    # leave two live cities with the same name.
+    existing = _restored(_siblings(parent).filter(name_ru=ru).order_by("is_deleted", "path").first())
     if existing is not None:
         return existing
     return add_location_child(
@@ -319,7 +336,7 @@ def _add_city(region, names, sort_order):
 def _add_region(country, names, sort_order, cities):
     """Add (or reuse) the region and append the cities after whatever it already holds."""
     region = _child(country, names, sort_order)
-    start = region.get_children().filter(is_deleted=False).exclude(sort_order=9999).count() + 1
+    start = _siblings(region).filter(is_deleted=False).exclude(sort_order=9999).count() + 1
     for order, city_names in enumerate(cities, start=start):
         _add_city(region, city_names, order)
     _add_city(region, _OTHER_CITY, 9999)
@@ -345,7 +362,12 @@ def add_locations(apps, schema_editor):
     for country_order, (country_names, regions) in enumerate(WORLD, start=10):
         _add_country(country_names, regions, country_order)
 
-    russia = Location.objects.get(depth=1, name_ru="Россия", is_deleted=False)
+    # Every other lookup here tolerates a missing node; this one must too. An admin may rename the
+    # root, and a database where the earlier seed never ran has none at all -- neither is a reason
+    # to fail the deploy, since the countries above were already added.
+    russia = Location.objects.filter(depth=1, name_ru="Россия", is_deleted=False).order_by("path").first()
+    if russia is None:
+        return
     for region_order, (region_names, cities) in enumerate(RUSSIA, start=100):
         _add_region(russia, region_names, region_order, cities)
 
