@@ -65,7 +65,9 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate, create
     # The model is told to give a real place and a first-level region, but nothing stops it echoing
     # the site's own placeholder or handing back a district; either one would become a permanent
     # node here, so refuse and let a reviewer place the event instead.
-    if locations.is_placeholder_name(candidate.city) or locations.is_placeholder_name(candidate.region):
+    if locations.is_placeholder_name(
+        candidate.city, candidate.city_kk, candidate.city_en, candidate.region, candidate.region_kk, candidate.region_en
+    ):
         return None
     country = locations.match_country(tree, candidate.country)
     if country is None or not candidate.region:

@@ -229,3 +229,17 @@ def test_geography_left_behind_by_a_failed_event_post_is_named():
         created=created,
     )
     assert created == ["region 'Zhetysu' (#101)", "city 'Taldykorgan' (#102)"]
+
+
+def test_a_placeholder_in_any_locale_blocks_the_proposal():
+    """The name is posted in all three locales, so a clean Russian answer is not enough."""
+    client, location_id = _resolve(
+        _candidate(
+            country="Kazakhstan",
+            region="Almaty-region",
+            city="Kobona",
+            city_kk="\u0411\u0430\u0441\u049b\u0430 \u049b\u0430\u043b\u0430",  # "Basqa qala"
+        )
+    )
+    assert location_id is None
+    assert client.places == []
