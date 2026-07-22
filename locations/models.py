@@ -56,6 +56,10 @@ def _lock_tree_mutation_namespace():
 # location") are pinned to the end of their list with this sort_order; real nodes stay below it.
 CATCH_ALL_SORT_ORDER = 9999
 
+# Ranks a node above every sibling (including a catch-all) while it is being moved, so
+# treebeard's sorted move appends instead of shifting the siblings' paths.
+_MOVE_SORT_ORDER = 30000
+
 
 def next_sort_order(siblings) -> int:
     """The sort_order a new sibling gets: after every real one, still ahead of the catch-all.
@@ -612,6 +616,15 @@ def move_location(location, new_parent) -> None:
             return
         if locked.is_system_fallback:
             raise LocationConflictError("System fallback locations cannot be moved")
+        # treebeard only allows a *sorted* move while node_order_by is set, and a sorted insert
+        # assumes a sibling's path order matches its sort order. The seeds deliberately break that
+        # (a capital carries sort_order 1 at an appended path), and inserting in the middle then
+        # shifts later siblings straight into the unique path index -- a 500 on an ordinary edit.
+        # Ranking the node above every sibling for the duration makes the sorted move land at the
+        # end, which shifts nothing; its real place in the listing is restored right after, by an
+        # UPDATE that touches sort_order only and leaves every path alone.
+        Location.objects.filter(pk=locked.pk).update(sort_order=_MOVE_SORT_ORDER)
+        locked.sort_order = _MOVE_SORT_ORDER
         if locked_target is None:
             # Become a root by joining an existing root as a sorted sibling.
             root = Location.objects.filter(is_deleted=False, depth=1).exclude(pk=locked.pk).order_by("path").first()
@@ -619,6 +632,11 @@ def move_location(location, new_parent) -> None:
                 _safe_move(locked, root, pos="sorted-sibling")
         else:
             _safe_move(locked, locked_target, pos="sorted-child")
+        siblings = Location.objects.filter(depth=locked.depth if locked_target is None else locked_target.depth + 1)
+        siblings = siblings.exclude(pk=locked.pk)
+        if locked_target is not None:
+            siblings = siblings.filter(path__range=Location._get_children_path_interval(locked_target.path))
+        Location.objects.filter(pk=locked.pk).update(sort_order=next_sort_order(list(siblings)))
 
 
 def _build_map_locations(all_locs, candidates=None) -> list:

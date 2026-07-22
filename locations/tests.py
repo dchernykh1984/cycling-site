@@ -941,6 +941,27 @@ class VenueUnderPendingCityTests(TestCase):
         self.assertFalse(venue.is_pending)
 
 
+class MoveIntoASeededParentTests(TestCase):
+    """Moving a node must not fall over the sort/path mismatch the seeds deliberately create."""
+
+    def test_move_into_a_parent_whose_children_are_not_in_path_order(self):
+        from locations.models import add_location_child, move_location
+
+        country = add_location_child(None, name="ZZ-Country", name_ru="ZZ-Country")
+        # Mirrors a seeded country: the capital carries sort_order 1 at the *last* path.
+        add_location_child(country, name="Plain", name_ru="Plain", sort_order=101)
+        add_location_child(country, name="Catchall", name_ru="Catchall", sort_order=9999)
+        add_location_child(country, name="Capital", name_ru="Capital", sort_order=1)
+
+        other = add_location_child(None, name="ZZ-Other", name_ru="ZZ-Other")
+        moved = add_location_child(other, name="Moved", name_ru="Moved")
+        move_location(moved, country)  # used to raise IntegrityError -> HTTP 500
+
+        moved.refresh_from_db()
+        self.assertEqual(moved.get_parent().pk, country.pk)
+        self.assertLess(moved.sort_order, 9999)  # lands after the real siblings, before the catch-all
+
+
 class ModeratorReachesPendingNodesTests(TestCase):
     """A moderator must be able to pick a foreign pending node as a parent, or the queue dead-ends."""
 
