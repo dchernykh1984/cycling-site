@@ -138,7 +138,12 @@ class LocationCreateView(ParticipantRequiredMixin, View):
 
     def post(self, request):
         from locations.forms import LocationForm
-        from locations.models import LocationConflictError, LocationProposal, add_location_child
+        from locations.models import (
+            LocationConflictError,
+            LocationProposal,
+            add_location_child,
+            chain_is_approved,
+        )
 
         form = LocationForm(
             request.POST,
@@ -162,7 +167,7 @@ class LocationCreateView(ParticipantRequiredMixin, View):
                 if new_depth in (2, 3) and not _can_add_location_directly(request.user):
                     raise PermissionDenied
             can_direct = _can_manage_locations(request.user) or (
-                _can_add_location_directly(request.user) and new_depth == 4
+                _can_add_location_directly(request.user) and new_depth == 4 and chain_is_approved(parent)
             )
             try:
                 # add_location_child locks the parent and the proposal shares the transaction, so a

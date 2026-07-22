@@ -136,6 +136,18 @@ def location_visible_to(location, user) -> bool:
     return bool(getattr(user, "is_authenticated", False)) and proposal.submitted_by_id == getattr(user, "pk", None)
 
 
+def chain_is_approved(parent) -> bool:
+    """Whether ``parent`` and everything above it is public, so a child may land approved.
+
+    A venue is the one level an organizer adds without review -- but only inside geography a
+    moderator has blessed. Approving it under their own pending city would publish that city's name
+    through the competition attached to it, and would then block the city's rejection for good.
+    """
+    if parent is None:
+        return True
+    return not any(node.is_pending for node in [parent, *parent.get_ancestors()])
+
+
 def can_manage_locations(user) -> bool:
     """Whether ``user`` may bless geography (approve/reject a location proposal): ADMIN+ only.
 

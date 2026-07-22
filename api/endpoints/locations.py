@@ -14,6 +14,7 @@ from locations.models import (
     LocationConflictError,
     LocationProposal,
     add_location_child,
+    chain_is_approved,
     soft_delete_location,
 )
 
@@ -251,7 +252,7 @@ def create_location(request, payload: LocationIn):
             raise HttpError(403, "Creating a country is admin-only")
         if new_depth in (2, 3) and not _can_add_directly(user):
             raise HttpError(403, "ORGANIZER role or higher is required to propose a region or city")
-    approved = is_admin(user) or (_can_add_directly(user) and new_depth == 4)
+    approved = is_admin(user) or (_can_add_directly(user) and new_depth == 4 and chain_is_approved(parent))
 
     # add_location_child locks the parent (or the root namespace) and the proposal shares the
     # transaction, so a concurrent delete can't orphan the node and two roots can't collide on path.

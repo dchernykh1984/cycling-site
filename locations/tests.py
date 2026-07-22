@@ -301,6 +301,13 @@ class LocationCreateViewTests(TestCase):
         self.assertEqual(proposed.depth, 3)
         self.assertTrue(proposed.is_pending)
 
+    def test_organizer_venue_under_own_pending_city_stays_pending(self):
+        organizer = _make_user("org-ui-chain@x.com", User.Role.ORGANIZER)
+        self._post_child(organizer, self.region, "Pending City")
+        pending_city = Location.objects.get(name_ru="Pending City")
+        self._post_child(organizer, pending_city, "Venue In Pending")
+        self.assertTrue(Location.objects.get(name_ru="Venue In Pending").is_pending)
+
     def test_organizer_venue_still_lands_approved(self):
         organizer = _make_user("org-ui-venue@x.com", User.Role.ORGANIZER)
         self._post_child(organizer, self.city, "Direct Venue")
