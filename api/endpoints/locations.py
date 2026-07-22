@@ -146,11 +146,16 @@ def list_locations(request, include_hidden: bool = False):
     roots: list[Location] = []
     for loc in all_locs:
         parent_path = loc.path[:-step] if len(loc.path) > step else None
-        parent = path_to_loc.get(parent_path) if parent_path else None
+        if parent_path is None:
+            roots.append(loc)
+            continue
+        parent = path_to_loc.get(parent_path)
         if parent is not None:
             children_map[parent.pk].append(loc)
-        else:
-            roots.append(loc)
+        # A node whose parent is filtered out (someone else's pending region or city, or a hidden
+        # one) is dropped rather than promoted: it is only reachable through that parent, and
+        # listing it beside the countries would both misrepresent the tree and expose a branch the
+        # caller is not allowed to see.
 
     def build_node(loc: Location) -> LocationNodeOut:
         kids = children_map[loc.pk]
