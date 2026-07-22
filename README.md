@@ -167,8 +167,13 @@ Notes:
   related fields for their own competitions.
 - Edit, hide and soft-delete their own competitions, and see their upload tokens.
 - Moderate pending competitions (approve/reject); approving a competition
-  auto-approves the location proposed with it.
+  auto-approves the venue proposed with it. The region and city proposed
+  alongside stay pending -- blessing geography is an Admin right, so approving an
+  event is not a way around it.
 - Add an approved venue under a city via web/API without separate moderation.
+- **Propose** a region or a city via web/API. Unlike a venue these never land
+  approved, whatever the author's role: they are visible only to their proposer
+  until an Admin approves them. Countries stay Admin-only.
 - Get (or lazily create) a city's shared **catch-all venue** via the API, to attach a
   competition to a city when no exact start venue is known.
 - Manage entrants of their own competitions: approve/reject, mark paid, edit,
