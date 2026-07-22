@@ -22,6 +22,10 @@ class LocationConflictError(Exception):
     soft-deleted, or a child/competition appeared) -- callers turn this into a user-facing error."""
 
 
+class LocationPendingError(Exception):
+    """An action was refused because the location it targets is still awaiting review."""
+
+
 class LocationInUseError(LocationConflictError):
     """Rejecting a proposed region/city was refused: approved work already sits inside its subtree,
     so clearing the branch would destroy something a moderator or an organizer had blessed."""

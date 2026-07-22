@@ -1985,3 +1985,7 @@ msgstr "Бұл орынды қабылдамау керек пе? Ондағы �
 #: calendar_app/templates/calendar_app/moderate.html
 msgid "Reject this place? Everything nested inside it is removed too, and competitions there lose their location."
 msgstr "Бұл орынды қабылдамау керек пе? Ішіндегінің бәрі де жойылады, ондағы жарыстар орынсыз қалады."
+
+#: calendar_app/views.py
+msgid "This event's location is still awaiting review; an administrator must approve it first."
+msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."

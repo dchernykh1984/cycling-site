@@ -941,6 +941,49 @@ class VenueUnderPendingCityTests(TestCase):
         self.assertFalse(venue.is_pending)
 
 
+class ApprovalBlockedByPendingGeographyTests(TestCase):
+    """An organizer must not publish an event onto geography nobody has reviewed."""
+
+    def setUp(self):
+        self.proposer = _make_user("geo-proposer@x.com", User.Role.ORGANIZER)
+        self.country, self.region, self.city = _make_tree()
+
+    def test_organizer_cannot_approve_an_event_on_a_pending_branch(self):
+        from calendar_app.models import Competition
+        from locations.models import LocationPendingError
+
+        organizer = _make_user("geo-approver@x.com", User.Role.ORGANIZER)
+        pending_city = _propose_place(self.region, "Pending City", self.proposer)
+        venue = Location.propose_venue(pending_city, "Venue", submitted_by=self.proposer)
+        comp = Competition.objects.create(
+            title_ru="C",
+            date_start=datetime.date(2026, 7, 1),
+            location=venue,
+            status=Competition.Status.PENDING_APPROVAL,
+        )
+        with self.assertRaises(LocationPendingError):
+            comp.approve(reviewer=organizer)
+        comp.refresh_from_db()
+        self.assertEqual(comp.status, Competition.Status.PENDING_APPROVAL)
+        # The branch stays rejectable, which is the whole point.
+        pending_city.reject_and_reset_competitions()
+
+    def test_admin_may_approve_and_the_branch_rises_with_it(self):
+        from calendar_app.models import Competition
+
+        admin = _make_user("geo-admin@x.com", User.Role.ADMIN)
+        pending_city = _propose_place(self.region, "Pending City", self.proposer)
+        venue = Location.propose_venue(pending_city, "Venue", submitted_by=self.proposer)
+        comp = Competition.objects.create(
+            title_ru="C",
+            date_start=datetime.date(2026, 7, 1),
+            location=venue,
+            status=Competition.Status.PENDING_APPROVAL,
+        )
+        comp.approve(reviewer=admin)
+        self.assertFalse(Location.objects.get(pk=pending_city.pk).is_pending)
+
+
 class LocationLevelLabelTests(TestCase):
     """A moderator reviewing a proposal has to see what level it is and what sits above it."""
 
