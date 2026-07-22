@@ -1586,6 +1586,22 @@ class LocationCreateTest(TestCase, ApiTestMixin):
         roots = self.client.get("/api/v1/locations/").json()
         self.assertNotIn("DeepVenue", [node["name"]["ru"] for node in roots])
 
+    def test_fallback_venue_in_a_pending_city_is_pending_too(self):
+        """The agent proposes a city and then asks for its catch-all venue on every run.
+
+        Created bare the venue would be public inside a city nobody else can see, and the branch
+        would then hold approved work, which blocks the city's rejection.
+        """
+        from locations.models import LocationProposal, add_location_child
+
+        country = _location()
+        own_city = add_location_child(add_location_child(country, name="R", name_ru="R"), name="Mine", name_ru="Mine")
+        LocationProposal.objects.create(location=own_city, submitted_by=self.organizer)
+
+        resp = self.post(f"/api/v1/locations/{own_city.pk}/fallback-venue/", {}, user=self.organizer)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(Location.objects.get(pk=resp.json()["id"]).is_pending)
+
     def test_venue_under_own_pending_city_stays_pending(self):
         """A venue is only public when the geography above it is.
 
