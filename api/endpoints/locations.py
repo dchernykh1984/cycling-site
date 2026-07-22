@@ -207,9 +207,17 @@ def city_fallback_venue(request, city_id: int):
     if not _proposal_visible(city, request.auth):
         raise HttpError(404, "City (depth-3 location) not found")
     try:
-        return Location.get_or_create_other_location(city)
+        venue = Location.get_or_create_other_location(city)
     except LocationConflictError as exc:
         raise HttpError(409, str(exc)) from None
+    # The catch-all is created without a proposal, which would make it public inside a city that is
+    # not. That is the agent's normal path -- propose a city, then ask for its catch-all venue -- so
+    # the venue inherits the city's pending state and rises with it when the city is approved.
+    if city.is_pending and not venue.is_pending:
+        LocationProposal.objects.get_or_create(
+            location=venue, defaults={"submitted_by": getattr(city.proposal, "submitted_by", None)}
+        )
+    return venue
 
 
 @router.post(
