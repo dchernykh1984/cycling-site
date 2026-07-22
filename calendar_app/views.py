@@ -1044,8 +1044,16 @@ def _safe_next(request, default_view: str) -> str:
 
 class ApproveCompetitionView(OrganizerRequiredMixin, View):
     def post(self, request, pk):
+        from locations.models import LocationPendingError
+
         comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
-        comp.approve(reviewer=request.user)
+        try:
+            comp.approve(reviewer=request.user)
+        except LocationPendingError:
+            messages.error(
+                request,
+                _("This event's location is still awaiting review; an administrator must approve it first."),
+            )
         return redirect(_safe_next(request, "calendar_moderate"))
 
 

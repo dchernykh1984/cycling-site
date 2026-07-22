@@ -1944,3 +1944,7 @@ msgstr "Отклонить эту локацию? Соревнования на 
 #: calendar_app/templates/calendar_app/moderate.html
 msgid "Reject this place? Everything nested inside it is removed too, and competitions there lose their location."
 msgstr "Отклонить это место? Всё вложенное в него тоже удалится, а соревнования там останутся без локации."
+
+#: calendar_app/views.py
+msgid "This event's location is still awaiting review; an administrator must approve it first."
+msgstr "Локация этого события ещё на рассмотрении: сначала её должен одобрить администратор."
