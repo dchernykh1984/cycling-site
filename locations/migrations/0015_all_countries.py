@@ -69,7 +69,7 @@ COUNTRIES = [
     ("Босния и Герцеговина", "Bosnia and Herzegovina", "Сараево", "Sarajevo", "Сараево", "Sarajevo"),
     ("Ватикан", "Vatican City", "Ватикан", "Vatican City", "Ватикан", "Vatican City"),
     ("Греция", "Greece", "Аттика", "Attica", "Афины", "Athens"),
-    ("Ирландия", "Ireland", "Ленстер", "Leinster", "Дублин", "Dublin"),
+    ("Ирландия", "Ireland", "Графство Дублин", "County Dublin", "Дублин", "Dublin"),
     ("Латвия", "Latvia", "Рига", "Riga", "Рига", "Riga"),
     ("Лихтенштейн", "Liechtenstein", "Вадуц", "Vaduz", "Вадуц", "Vaduz"),
     ("Люксембург", "Luxembourg", "Люксембург", "Luxembourg", "Люксембург", "Luxembourg"),
@@ -81,7 +81,7 @@ COUNTRIES = [
     ("Румыния", "Romania", "Бухарест", "Bucharest", "Бухарест", "Bucharest"),
     ("Сан-Марино", "San Marino", "Сан-Марино", "San Marino", "Сан-Марино", "San Marino"),
     ("Сербия", "Serbia", "Белград", "Belgrade", "Белград", "Belgrade"),
-    ("Словения", "Slovenia", "Люблянский регион", "Central Slovenia", "Любляна", "Ljubljana"),
+    ("Словения", "Slovenia", "Любляна", "Ljubljana", "Любляна", "Ljubljana"),
     ("Украина", "Ukraine", "Киев", "Kyiv", "Киев", "Kyiv"),
     ("Франция", "France", "Иль-де-Франс", "Ile-de-France", "Париж", "Paris"),
     ("Хорватия", "Croatia", "Загреб", "Zagreb", "Загреб", "Zagreb"),
@@ -126,14 +126,21 @@ COUNTRIES = [
     ("Таиланд", "Thailand", "Бангкок", "Bangkok", "Бангкок", "Bangkok"),
     ("Туркмения", "Turkmenistan", "Ашхабад", "Ashgabat", "Ашхабад", "Ashgabat"),
     ("Филиппины", "Philippines", "Столичный регион", "Metro Manila", "Манила", "Manila"),
-    ("Шри-Ланка", "Sri Lanka", "Западная провинция", "Western Province", "Коломбо", "Colombo"),
+    (
+        "Шри-Ланка",
+        "Sri Lanka",
+        "Западная провинция",
+        "Western Province",
+        "Шри-Джаяварденепура-Котте",
+        "Sri Jayawardenepura Kotte",
+    ),
     ("Япония", "Japan", "Токио", "Tokyo", "Токио", "Tokyo"),
     # -- Africa ------------------------------------------------------------
     ("Алжир", "Algeria", "Алжир", "Algiers", "Алжир", "Algiers"),
     ("Ангола", "Angola", "Луанда", "Luanda", "Луанда", "Luanda"),
     ("Бенин", "Benin", "Уэме", "Oueme", "Порто-Ново", "Porto-Novo"),
     ("Ботсвана", "Botswana", "Габороне", "Gaborone", "Габороне", "Gaborone"),
-    ("Буркина-Фасо", "Burkina Faso", "Кадиого", "Kadiogo", "Уагадугу", "Ouagadougou"),
+    ("Буркина-Фасо", "Burkina Faso", "Центральная область", "Centre Region", "Уагадугу", "Ouagadougou"),
     ("Бурунди", "Burundi", "Гитега", "Gitega", "Гитега", "Gitega"),
     ("Габон", "Gabon", "Эстуарий", "Estuaire", "Либревиль", "Libreville"),
     ("Гамбия", "Gambia", "Банжул", "Banjul", "Банжул", "Banjul"),
@@ -235,10 +242,10 @@ COUNTRIES = [
     ("Уругвай", "Uruguay", "Монтевидео", "Montevideo", "Монтевидео", "Montevideo"),
     ("Чили", "Chile", "Столичная область", "Santiago Metropolitan", "Сантьяго", "Santiago"),
     ("Эквадор", "Ecuador", "Пичинча", "Pichincha", "Кито", "Quito"),
-    ("Ямайка", "Jamaica", "Суррей", "Surrey", "Кингстон", "Kingston"),
+    ("Ямайка", "Jamaica", "Кингстон", "Kingston Parish", "Кингстон", "Kingston"),
     # -- Oceania -----------------------------------------------------------
     ("Вануату", "Vanuatu", "Шефа", "Shefa", "Порт-Вила", "Port Vila"),
-    ("Кирибати", "Kiribati", "Тарава", "Tarawa", "Южная Тарава", "South Tarawa"),
+    ("Кирибати", "Kiribati", "Острова Гилберта", "Gilbert Islands", "Южная Тарава", "South Tarawa"),
     ("Маршалловы Острова", "Marshall Islands", "Маджуро", "Majuro", "Маджуро", "Majuro"),
     ("Микронезия", "Micronesia", "Понпеи", "Pohnpei", "Паликир", "Palikir"),
     ("Науру", "Nauru", "Ярен", "Yaren", "Ярен", "Yaren"),
@@ -253,7 +260,7 @@ COUNTRIES = [
         "Port Moresby",
     ),
     ("Самоа", "Samoa", "Туамасага", "Tuamasaga", "Апиа", "Apia"),
-    ("Соломоновы Острова", "Solomon Islands", "Гуадалканал", "Guadalcanal", "Хониара", "Honiara"),
+    ("Соломоновы Острова", "Solomon Islands", "Столичная территория", "Capital Territory", "Хониара", "Honiara"),
     ("Тонга", "Tonga", "Тонгатапу", "Tongatapu", "Нукуалофа", "Nuku'alofa"),
     ("Тувалу", "Tuvalu", "Фунафути", "Funafuti", "Фунафути", "Funafuti"),
     ("Фиджи", "Fiji", "Центральный округ", "Central Division", "Сува", "Suva"),
@@ -395,7 +402,7 @@ CAPITAL_COORDS = {
     "Таиланд": (13.76, 100.5),
     "Туркмения": (37.96, 58.33),
     "Филиппины": (14.6, 120.98),
-    "Шри-Ланка": (6.93, 79.86),
+    "Шри-Ланка": (6.90, 79.89),
     "Япония": (35.68, 139.69),
     "Алжир": (36.75, 3.06),
     "Ангола": (-8.84, 13.23),
@@ -553,13 +560,26 @@ def _child(parent, names, sort_order, *, hidden=False, coords=None):
     )
 
 
-def _add_city(region, names, sort_order, *, hidden=False, coords=None):
+def _ensure_fallback(city):
+    """Register the city's hidden catch-all venue, adopting one it already has under that name.
+
+    A city may already carry a visible, unregistered "Другая локация" from an older hand edit;
+    adopting it avoids standing a second one next to it.
+    """
     from locations.models import LocationFallback
 
+    if LocationFallback.objects.filter(city=city).exists():
+        return
+    venue = _child(city, _OTHER_VENUE, 9999, hidden=True)
+    if not venue.is_hidden:
+        venue.is_hidden = True
+        venue.save(update_fields=["is_hidden"])
+    LocationFallback.objects.get_or_create(city=city, defaults={"location": venue})
+
+
+def _add_city(region, names, sort_order, *, hidden=False, coords=None):
     city = _child(region, names, sort_order, hidden=hidden, coords=coords)
-    if not LocationFallback.objects.filter(city=city).exists():
-        venue = _child(city, _OTHER_VENUE, 9999, hidden=True)
-        LocationFallback.objects.get_or_create(city=city, defaults={"location": venue})
+    _ensure_fallback(city)
     return city
 
 
@@ -599,6 +619,17 @@ def add_countries(apps, schema_editor):
     Location.objects.filter(depth__in=[2, 3], is_hidden=False, name_ru__in=("Другой регион", "Другой город")).update(
         is_hidden=True
     )
+
+    # The seeds only ever built catch-alls for branches they touched, so a database that grew by
+    # hand still has cities with no fallback venue and regions with no "Другой город" -- the very
+    # invariants the rest of this code assumes. Close them everywhere, once.
+    for region in Location.objects.filter(depth=2, is_deleted=False):
+        if not Location.objects.filter(
+            depth=3, name_ru=_OTHER_CITY[0], is_deleted=False, path__startswith=region.path
+        ).exists():
+            _add_city(region, _OTHER_CITY, 9999, hidden=True)
+    for city in Location.objects.filter(depth=3, is_deleted=False):
+        _ensure_fallback(city)
 
     # Give the cities 0013 seeded their own coordinates, and their region the same, so each shows as
     # its own marker instead of resolving to the country centroid.
