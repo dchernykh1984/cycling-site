@@ -1177,6 +1177,23 @@ class LocationsMapPageManageListTests(TestCase):
         self.admin = _make_user("map_admin@x.com", User.Role.ADMIN)
         self.participant = _make_user("map_part2@x.com", User.Role.PARTICIPANT)
 
+    def test_manager_list_reads_as_a_hierarchy_not_by_sort_order(self):
+        """The table pages through the whole tree, so it must stay in tree order.
+
+        sort_order ranks siblings; applying it across depths interleaves branches and would list a
+        country's capital above the country itself.
+        """
+        country = add_location_child(None, name="ZZ-Country", name_ru="ZZ-Country", sort_order=900)
+        region = add_location_child(country, name="ZZ-Region", name_ru="ZZ-Region", sort_order=1)
+        add_location_child(region, name="ZZ-City", name_ru="ZZ-City", sort_order=1)
+        self.client.force_login(self.admin)
+
+        names = [
+            loc.name_ru for loc in self.client.get(self.map_page.url).context["locations_page"].paginator.object_list
+        ]
+        self.assertLess(names.index("ZZ-Country"), names.index("ZZ-Region"))
+        self.assertLess(names.index("ZZ-Region"), names.index("ZZ-City"))
+
     def test_manager_list_is_paginated(self):
         for i in range(25):
             Location.add_root(name=f"C{i:02d}", name_ru=f"C{i:02d}", name_en=f"C{i:02d}")

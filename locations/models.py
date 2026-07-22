@@ -721,11 +721,13 @@ class LocationsMapPage(AsciiSlugMixin, Page):
         if can_manage:
             # Managers get a paginated, filterable list (same UX as the calendar list) instead
             # of the full location dump. The cascade filter narrows by selected node + descendants.
-            qs = (
-                Location.objects.filter(is_deleted=False)
-                .select_related("fallback_identity")
-                .order_by("sort_order", "path")
-            )
+            # Path order, not sort_order: this table is a flat page through the whole tree, so it
+            # has to read as a hierarchy (a country, then its regions, then their cities). sort_order
+            # only ranks siblings, and sorting the whole tree by it interleaves depths and branches --
+            # every country's capital would float to the top, ahead of the countries themselves. The
+            # cascade dropdowns are different: they are filtered to one parent, where sort_order is
+            # exactly the right answer.
+            qs = Location.objects.filter(is_deleted=False).select_related("fallback_identity").order_by("path")
             if filter_pks is not None:
                 qs = qs.filter(pk__in=filter_pks)
             paginator = Paginator(qs, 20)
