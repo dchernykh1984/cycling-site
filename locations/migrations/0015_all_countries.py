@@ -261,6 +261,48 @@ COUNTRIES = [
 
 # Capital coordinates, used for the country, its capital's region and the capital itself: the
 # map only plots nodes that have them, and the cascade sinks the ones that do not.
+# Cities 0013 seeded because a race was held there. They were created without coordinates, so the
+# map resolved each to the nearest ancestor that had some -- collapsing every race in a country
+# onto one pin at its centroid.
+CITY_COORDS = {
+    "Стамбул": (41.01, 28.98),
+    "Шерефликочхисар": (38.94, 33.54),
+    "Айдер": (40.95, 41.1),
+    "Бурса": (40.19, 29.06),
+    "Усти-над-Лабем": (50.66, 14.04),
+    "Либерец": (50.77, 15.06),
+    "Кёльн": (50.94, 6.96),
+    "Мюнхен": (48.14, 11.58),
+    "Кардифф": (51.48, -3.18),
+    "Лозанна": (46.52, 6.63),
+    "Флоренция": (43.77, 11.26),
+    "Валенсия": (39.47, -0.38),
+    "Барселона": (41.39, 2.17),
+    "Ларнака": (34.92, 33.62),
+    "Шарм-эш-Шейх": (27.92, 34.33),
+    "Луксор": (25.69, 32.64),
+    "Кейптаун": (-33.92, 18.42),
+    "Чикаго": (41.88, -87.63),
+    "Нью-Йорк": (40.71, -74.01),
+    "Сан-Паулу": (-23.55, -46.63),
+    "Сидней": (-33.87, 151.21),
+    "Дилижан": (40.74, 44.86),
+    "Самарканд": (39.65, 66.96),
+    "Скопье": (41.996, 21.43),
+    "Рейкьявик": (64.15, -21.94),
+    "Хельсинки": (60.17, 24.94),
+    "Вильнюс": (54.69, 25.28),
+    "Варшава": (52.23, 21.01),
+    "Прага": (50.08, 14.44),
+    "Будапешт": (47.5, 19.04),
+    "Берлин": (52.52, 13.4),
+    "Амстердам": (52.37, 4.9),
+    "Копенгаген": (55.68, 12.57),
+    "Минск": (53.9, 27.57),
+    "Тбилиси": (41.72, 44.79),
+    "Ташкент": (41.31, 69.24),
+}
+
 CAPITAL_COORDS = {
     # The countries seeded by 0013 were created without coordinates; filled in here too.
     "Беларусь": (53.9, 27.57),
@@ -557,6 +599,14 @@ def add_countries(apps, schema_editor):
     Location.objects.filter(depth__in=[2, 3], is_hidden=False, name_ru__in=("Другой регион", "Другой город")).update(
         is_hidden=True
     )
+
+    # Give the cities 0013 seeded their own coordinates, and their region the same, so each shows as
+    # its own marker instead of resolving to the country centroid.
+    for city in Location.objects.filter(depth=3, is_deleted=False, lat__isnull=True, name_ru__in=CITY_COORDS):
+        lat, lng = CITY_COORDS[city.name_ru]
+        Location.objects.filter(pk=city.pk, lat__isnull=True).update(lat=lat, lng=lng)
+        parent_path = city.path[: -Location.steplen]
+        Location.objects.filter(path=parent_path, depth=2, lat__isnull=True).update(lat=lat, lng=lng)
 
 
 class Migration(migrations.Migration):
