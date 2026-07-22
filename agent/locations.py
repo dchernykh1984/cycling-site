@@ -156,6 +156,7 @@ def _catch_all(nodes: list[dict], marker: str) -> dict | None:
 _PLACEHOLDER_WORDS = (
     "\u0434\u0440\u0443\u0433\u0430\u044f",  # "drugaya" (other, f.)
     "\u0434\u0440\u0443\u0433\u043e\u0439",  # "drugoy" (other, m.)
+    "\u0431\u0430\u0441\u049b\u0430",  # "basqa" (other, Kazakh)
     "other country",
     "other region",
     "other city",
@@ -168,10 +169,13 @@ _DISTRICT_WORDS = (
 )
 
 
-def is_placeholder_name(value: str) -> bool:
-    """Whether the model answered with one of the site's own catch-all names instead of a place."""
-    target = normalize_name(value)
-    return any(word in target for word in _PLACEHOLDER_WORDS)
+def is_placeholder_name(*values: str) -> bool:
+    """Whether any spelling given is one of the site's own catch-all names instead of a place.
+
+    Every locale has to be checked: the name is posted in all three, so a Russian answer that looks
+    fine alongside a Kazakh "basqa aimaq" would still create a namesake of the site's catch-all.
+    """
+    return any(word in normalize_name(value) for value in values if value for word in _PLACEHOLDER_WORDS)
 
 
 def looks_like_district(value: str) -> bool:
