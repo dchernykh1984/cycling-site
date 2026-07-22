@@ -86,6 +86,8 @@ def _resolve_competition_location(cd, user, *, approved):
     Organizer+ submitters get an approved venue directly; everyone else proposes a
     pending venue they can use immediately (issue #111).
     """
+    from locations.models import chain_is_approved
+
     new_name = (cd.get("new_venue_name") or "").strip()
     city = cd.get("new_venue_city")
     if new_name and city is not None:
@@ -95,7 +97,10 @@ def _resolve_competition_location(cd, user, *, approved):
             cd.get("new_venue_lat"),
             cd.get("new_venue_lng"),
             submitted_by=user,
-            approved=approved,
+            # A venue is only public where the geography above it is. The submitter may pick their
+            # own pending city here, and publishing a venue inside it would leak that city through
+            # the competition and leave the branch holding approved work, which blocks its rejection.
+            approved=approved and chain_is_approved(city),
         )
     return cd.get("location")
 

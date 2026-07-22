@@ -916,6 +916,31 @@ class LocationsMapLocaleTests(TestCase):
                     self.assertNotEqual(gettext(message), message, f"{message!r} is untranslated for {lang}")
 
 
+class VenueUnderPendingCityTests(TestCase):
+    """A venue proposed through the competition form must not outrank the city holding it."""
+
+    def setUp(self):
+        self.user = _make_user("submitter@x.com", User.Role.ORGANIZER)
+        self.country, self.region, self.city = _make_tree()
+
+    def test_competition_form_venue_stays_pending_under_a_pending_city(self):
+        from calendar_app.views import _resolve_competition_location
+
+        pending_city = _propose_place(self.region, "Pending City", self.user)
+        venue = _resolve_competition_location(
+            {"new_venue_name": "Start", "new_venue_city": pending_city}, self.user, approved=True
+        )
+        self.assertTrue(venue.is_pending)
+
+    def test_competition_form_venue_is_approved_under_a_public_city(self):
+        from calendar_app.views import _resolve_competition_location
+
+        venue = _resolve_competition_location(
+            {"new_venue_name": "Start", "new_venue_city": self.city}, self.user, approved=True
+        )
+        self.assertFalse(venue.is_pending)
+
+
 class LocationLevelLabelTests(TestCase):
     """A moderator reviewing a proposal has to see what level it is and what sits above it."""
 
