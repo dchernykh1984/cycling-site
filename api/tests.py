@@ -1567,6 +1567,25 @@ class LocationCreateTest(TestCase, ApiTestMixin):
         resp = self.post(f"/api/v1/locations/{hidden_city.pk}/fallback-venue/", {}, user=self.organizer)
         self.assertEqual(resp.status_code, 404)
 
+    def test_node_under_an_invisible_parent_is_not_promoted_to_a_root(self):
+        """A branch hidden behind someone else's pending node must not surface as a country.
+
+        The tree is rebuilt from paths, so a child whose parent was filtered out has to be dropped,
+        not appended to the roots.
+        """
+        from locations.models import LocationProposal, add_location_child
+
+        other = _user("tree-proposer", role=User.Role.ORGANIZER)
+        country = _location()
+        hidden_city = add_location_child(
+            add_location_child(country, name="R", name_ru="R"), name="HiddenCity", name_ru="HiddenCity"
+        )
+        LocationProposal.objects.create(location=hidden_city, submitted_by=other)
+        add_location_child(hidden_city, name="DeepVenue", name_ru="DeepVenue")
+
+        roots = self.client.get("/api/v1/locations/").json()
+        self.assertNotIn("DeepVenue", [node["name"]["ru"] for node in roots])
+
     def test_venue_under_own_pending_city_stays_pending(self):
         """A venue is only public when the geography above it is.
 
