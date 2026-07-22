@@ -20,6 +20,12 @@
 aggregators:
   - url: https://bike-events.ru/index.php?season=S2026
     hint: "Multi-organizer cycling calendar (RU), races grouped by month; bump season=S<year> yearly; source_url must be each race's own organizer page."
+  - url: https://begaem.com/blizhayshie-startyi-v-rossii
+    hint: "Running calendar for Russia, grouped by month: date, name, region + city, distances, and a
+      link to the event's own site -- use that link as source_url. Running only, no cycling."
+  - url: https://begaem.com/blizhayshie-startyi-za-rubezhom
+    hint: "Same calendar for the rest of the world (the row reads 'Country, City'). Lowest geographic
+      priority -- propose these only once the closer regions are covered."
 
 organizers:
   # Kazakhstan / Kyrgyzstan (highest priority per agent/guidance.md)
