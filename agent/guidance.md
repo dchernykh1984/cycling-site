@@ -37,9 +37,11 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
 - Off-topic posts, chat replies, group rules ("Правила группы") and vague personal chatter
   (e.g. "завтра в 5:00 стартуем из-под дуба") -- only real announcements with a place and a date.
 - Anything you are not confident is a real event with a concrete date.
-- **No confirmed city / only a draft page.** If the announcement does not name the city or place
-  where the event is held, or the organizer's page is just a draft/placeholder without real details,
-  skip it -- do not add it to the calendar.
+- **No place at all / only a draft page.** Skip an announcement that never says where the event is
+  held, and one whose organizer page is just a draft or placeholder without real details. This is
+  about the event being too vague to be real -- it is not about whether the site already has the
+  city. A race with a named place still counts even when you cannot pin the region: propose it and
+  put the place in the description (see "Location" below).
 - **Date shown only in an image.** If the start date is only on a poster/picture (not as text you
   can read), do NOT guess it -- skip the event rather than invent a date.
 
@@ -92,7 +94,9 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
   - **Country and region are what make that possible.** A city is only submitted when both are
     named, so fill them in whenever the announcement or the event's page allows it. If you honestly
     cannot tell, leave them empty: the race is then filed without a location and a reviewer places
-    it, which is much cheaper to fix than a city hung under the wrong region.
+    it, which is much cheaper to fix than a city hung under the wrong region. In that case **always
+    repeat the place in the (Russian) description** -- e.g. "Место старта: <город/место>" -- since
+    that line is all the reviewer has to go on.
   - **Never answer with a placeholder.** "Другая страна" / "Другой регион" / "Другой город" /
     "Другая локация" are not place names -- writing one creates a location called that. Leave the
     field empty instead.
