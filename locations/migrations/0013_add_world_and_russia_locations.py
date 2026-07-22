@@ -283,12 +283,25 @@ RUSSIA = [
 ]
 
 
-def _restored(node):
-    """Reuse a node that was soft-deleted earlier: deletion keeps the row (and its materialized
-    path), so adding a second node with the same name would collide on the path's unique index."""
-    if node is not None and node.is_deleted:
+def _restored(node, names=None):
+    """Reuse a node matched by its Russian name, healing what it is missing.
+
+    Deletion keeps the row (and its materialized path), so adding a second node with the same name
+    would collide on the path's unique index. A node created before this seed may also carry empty
+    kk/en names, and modeltranslation would then quietly serve Russian on the other two locales.
+    """
+    if node is None:
+        return None
+    fields = []
+    if node.is_deleted:
         node.is_deleted = False
-        node.save(update_fields=["is_deleted"])
+        fields.append("is_deleted")
+    for attr, value in zip(("name_kk", "name_en"), names or (None, None), strict=False):
+        if value and not getattr(node, attr, None):
+            setattr(node, attr, value)
+            fields.append(attr)
+    if fields:
+        node.save(update_fields=fields)
     return node
 
 
@@ -314,7 +327,7 @@ def _child(parent, names, sort_order, *, hidden=False):
     # A live namesake wins over a soft-deleted one: rejecting a proposed city leaves the row behind,
     # so "proposed, rejected, added again" is a normal state and resurrecting the dead one would
     # leave two live cities with the same name.
-    existing = _restored(_siblings(parent).filter(name_ru=ru).order_by("is_deleted", "path").first())
+    existing = _restored(_siblings(parent).filter(name_ru=ru).order_by("is_deleted", "path").first(), (kk, en))
     if existing is not None:
         return existing
     return add_location_child(
@@ -348,7 +361,7 @@ def _add_country(names, regions, sort_order):
     from locations.models import Location, add_location_child
 
     ru, kk, en = names
-    country = _restored(Location.objects.filter(depth=1, name_ru=ru).order_by("is_deleted", "path").first())
+    country = _restored(Location.objects.filter(depth=1, name_ru=ru).order_by("is_deleted", "path").first(), (kk, en))
     if country is None:
         country = add_location_child(None, name=ru, name_ru=ru, name_kk=kk, name_en=en, sort_order=sort_order)
     for region_order, (region_names, cities) in enumerate(regions, start=1):
