@@ -215,18 +215,36 @@ CENTROIDS = {
 _SEEDED_COUNTRIES = frozenset(CENTROIDS) - {"Казахстан", "Кыргызстан", "Россия", "Китай"}
 
 
+def _capital_coords() -> dict:
+    """What 0015 wrote on a country node, so this migration can tell its own value from a hand-set
+    one. Imported by name because the module cannot be spelled as an identifier."""
+    import importlib
+
+    return importlib.import_module("locations.migrations.0015_all_countries").CAPITAL_COORDS
+
+
 def set_centroids(apps, schema_editor):
     from locations.models import Location
 
     # 0015 is the only thing that put a capital's coordinates on a country node, and it did so only
     # where there was nothing. A country that already had coordinates before this branch was tuned by
     # hand -- leave it alone, exactly as the docstring promises.
+    _CAPITAL_COORDS = _capital_coords()
     seeded_by_0015 = set(_SEEDED_COUNTRIES)
     updated = []
     for country in Location.objects.filter(depth=1):
         coords = CENTROIDS.get(country.name_ru)
         if coords is None or country.name_ru not in seeded_by_0015:
             continue
+        # Only replace the capital's coordinates 0015 wrote. Anything else on the row is a value
+        # somebody chose, and the docstring promises to leave it be.
+        written = _CAPITAL_COORDS.get(country.name_ru)
+        if country.lat is not None and written is not None:
+            if (round(float(country.lat), 4), round(float(country.lng), 4)) != (
+                round(written[0], 4),
+                round(written[1], 4),
+            ):
+                continue
         country.lat, country.lng = coords
         updated.append(country)
     Location.objects.bulk_update(updated, ["lat", "lng"], batch_size=500)

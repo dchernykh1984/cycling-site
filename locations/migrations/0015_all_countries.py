@@ -561,19 +561,30 @@ def _child(parent, names, sort_order, *, hidden=False, coords=None):
 
 
 def _ensure_fallback(city):
-    """Register the city's hidden catch-all venue, adopting one it already has under that name.
+    """Register the city's hidden catch-all venue, adopting an unused namesake if one exists.
 
-    A city may already carry a visible, unregistered "Другая локация" from an older hand edit;
-    adopting it avoids standing a second one next to it.
+    A city may already carry a visible "Другая локация" left by a hand edit, and adopting that is
+    tidier than standing a second one beside it -- but only when it is genuinely a placeholder. One
+    that carries coordinates or holds competitions is a real start point somebody named badly;
+    hiding it would take it out of the pickers and freeze it (a system fallback may not be moved,
+    unhidden or deleted), so that one is left alone and a fresh catch-all is created next to it.
     """
-    from locations.models import LocationFallback
+    from locations.models import LocationFallback, add_location_child
 
     if LocationFallback.objects.filter(city=city).exists():
         return
-    venue = _child(city, _OTHER_VENUE, 9999, hidden=True)
-    if not venue.is_hidden:
-        venue.is_hidden = True
-        venue.save(update_fields=["is_hidden"])
+    ru, kk, en = _OTHER_VENUE
+    candidate = _siblings(city).filter(name_ru=ru, is_deleted=False).order_by("path").first()
+    in_use = candidate is not None and (
+        candidate.lat is not None or candidate.lng is not None or candidate.competitions.exists()
+    )
+    if candidate is None or in_use:
+        venue = add_location_child(city, name=ru, name_ru=ru, name_kk=kk, name_en=en, sort_order=9999, is_hidden=True)
+    else:
+        venue = candidate
+        if not venue.is_hidden:
+            venue.is_hidden = True
+            venue.save(update_fields=["is_hidden"])
     LocationFallback.objects.get_or_create(city=city, defaults={"location": venue})
 
 
