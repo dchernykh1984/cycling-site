@@ -144,6 +144,37 @@ def _catch_all(nodes: list[dict], marker: str) -> dict | None:
     return None
 
 
+# Names the tree must never receive from an announcement. The placeholders are the site's own
+# catch-alls -- creating a namesake shadows the hidden system node. The district words mark a level
+# below the region: "Kirovsky district" is not an oblast, and filing one as a region buries the real
+# one. Escaped because this module must stay ASCII-only.
+_PLACEHOLDER_WORDS = (
+    "\u0434\u0440\u0443\u0433\u0430\u044f",  # "drugaya" (other, f.)
+    "\u0434\u0440\u0443\u0433\u043e\u0439",  # "drugoy" (other, m.)
+    "other country",
+    "other region",
+    "other city",
+    "other location",
+)
+_DISTRICT_WORDS = (
+    "\u0440\u0430\u0439\u043e\u043d",  # "rayon"
+    "\u0443\u0435\u0437\u0434",  # "uezd"
+    "district",
+)
+
+
+def is_placeholder_name(value: str) -> bool:
+    """Whether the model answered with one of the site's own catch-all names instead of a place."""
+    target = normalize_name(value)
+    return any(word in target for word in _PLACEHOLDER_WORDS)
+
+
+def looks_like_district(value: str) -> bool:
+    """Whether the name is a sub-region unit, which must not be created as a depth-2 region."""
+    target = normalize_name(value)
+    return any(word in target for word in _DISTRICT_WORDS)
+
+
 def match_country(tree: list[dict], country: str) -> dict | None:
     """The country node for this name; a named but unknown country falls back to the catch-all.
 
