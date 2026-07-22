@@ -85,7 +85,7 @@ telegram_public:
   - https://t.me/roadcyclingkz
 """
     kinds = [source.kind for source in parse_sources(yaml)]
-    assert kinds == ["organizer", "tg_public", "aggregator"]
+    assert kinds == ["tg_public", "organizer", "aggregator"]
 
 
 def test_real_sources_file_puts_every_local_source_first():

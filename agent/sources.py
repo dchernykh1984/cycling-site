@@ -22,13 +22,15 @@ _URL = re.compile(r"https?://[^\s()]+", re.IGNORECASE)
 
 # events_sources.yaml section -> Source.kind
 # Sources are scanned in this order, and a run stops as soon as it has proposed its quota, so the
-# order is what actually enforces guidance.md's geography ladder. Organizers and the public Telegram
-# channels are the Kazakh and Kyrgyz ones; the aggregators are Russian and worldwide calendars with
-# dozens of rows each, and going through them first would spend every nightly slot before a single
-# local source was read. The account/private Telegram sections are unreadable and merely reported.
+# order is a coarse first pass at guidance.md's geography ladder -- it cannot express the ladder on
+# its own, because the organizers section holds Kazakh, Kyrgyz *and* Russian sites in one list.
+# The public Telegram channels go first: all four are Kazakh, they are small, and they carry the
+# local starts nothing else announces. The aggregators go last -- Russian and worldwide calendars
+# with dozens of rows each, which would otherwise spend every nightly slot before a single local
+# source was read. The account/private Telegram sections are unreadable and merely reported.
 _SECTION_KIND = {
-    "organizers": "organizer",
     "telegram_public": "tg_public",
+    "organizers": "organizer",
     "aggregators": "aggregator",
     "telegram_account": "tg_account",
     "telegram_private": "tg_private",
