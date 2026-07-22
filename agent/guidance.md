@@ -18,8 +18,8 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
   - **running** -- marathons, half marathons, trail and mountain running, ultras;
   - **triathlon** and its relatives (duathlon, aquathlon, swimrun);
   - **cross-country skiing** -- races and ski marathons.
-  Anywhere in the world: the site filters events by country, so a good race far away is still
-  worth having. Just respect the two ladders above when the run's budget is limited.
+  Anywhere in the world -- a good race far away is still worth having; just respect the two ladders
+  above, because a run has a limited budget and the closer, cycling ones should fill it first.
 
 ## What to skip
 - **Training rides, club rides, group rides and "дальняки" (long social rides)** -- even when they
@@ -31,6 +31,8 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
 - **Official / elite federation races** (a national federation's championships, in cycling or in any
   other sport, including youth and junior ones) -- UNLESS the announcement explicitly says it is for
   **masters / amateurs (любительские заезды)**. Elite federation races are not of interest to us.
+  This is about who the *event* is for, not about who happens to be racing in it: an open mass start
+  that anyone can enter stays in scope even when a national championship is contested inside it.
 - **Do NOT add past events** -- only upcoming ones, never events that already happened.
 - Off-topic posts, chat replies, group rules ("Правила группы") and vague personal chatter
   (e.g. "завтра в 5:00 стартуем из-под дуба") -- only real announcements with a place and a date.
@@ -78,20 +80,28 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
   categories, **who it is for** (e.g. a required level like "2 W/kg uphill"), the rough schedule and
   the registration deadline when given. Use only `<p>`, `<br>`, `<ul>`/`<ol>`/`<li>`, `<strong>`,
   `<em>` -- never scripts or styles. Keep it informative but not a multi-page essay.
-- **Location -- prefer concrete places.** The site's locations are a tree: country -> region ->
-  city -> specific venue (the start point). Try hard to find the **real** country, region, city and
-  the **specific start venue / address** of the event, and put them in the (Russian) description.
-  Prefer concrete values over generic ones: do NOT settle for the placeholders "Другая страна" /
-  "Другой регион" / "Другой город" / "Другая локация" -- find the actual place whenever the
-  announcement gives it; use a generic placeholder only as a last resort, when there is genuinely
-  no more specific information.
-  **A city the site does not have yet is fine** -- name the real region and city anyway and they are
-  submitted for review, so the event is placed from the start. Never bend a race into a wrong
-  neighbouring city to avoid this, and never invent a region you are not sure of: leave the region
-  empty instead and only the city is proposed.
-  Countries are the exception: they are not created from announcements. If the event's country is
-  not on the site, the race is filed under "Другая страна" -- so still name the country, and add it
-  to the (Russian) description together with the city, e.g. "Страна/город: <страна>, <город>".
+- **Location -- name the real place.** The site's locations are a tree: country -> region -> city ->
+  specific venue (the start point). Give the **real** country, region, city and the **specific start
+  venue / address**, and repeat them in the (Russian) description.
+  - **region** means the first-level division of the country -- oblast, krai, republic, state,
+    province, county. A district, raion, rural settlement or park is NOT a region: that belongs in
+    the venue, with its actual region above it. "Уфимский район" is not a region, "Республика
+    Башкортостан" is.
+  - **A city the site does not have yet is fine.** Name it and it goes for review, so the race is
+    placed from the start. Never bend a race into a wrong neighbouring city to avoid this.
+  - **Country and region are what make that possible.** A city is only submitted when both are
+    named, so fill them in whenever the announcement or the event's page allows it. If you honestly
+    cannot tell, leave them empty: the race is then filed without a location and a reviewer places
+    it, which is much cheaper to fix than a city hung under the wrong region.
+  - **Never answer with a placeholder.** "Другая страна" / "Другой регион" / "Другой город" /
+    "Другая локация" are not place names -- writing one creates a location called that. Leave the
+    field empty instead.
+  - **Use the current, official spelling** the site is likely to hold: "Алматы" (not "Алма-Ата"),
+    "Астана" (not "Нур-Султан"), "Талгар" (not "г. Талгар"). A variant spelling does not match what
+    is already there and creates a duplicate city.
+  - Countries are never created from an announcement. A race in a country the site does not carry is
+    filed under the catch-all country, so still name the country properly -- a human moves it later.
+
 
 ## Hints
 - (add source-specific hints here, e.g. "on granfondo.com.kz the schedule is under /ru/calendar")
