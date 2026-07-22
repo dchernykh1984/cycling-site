@@ -553,7 +553,7 @@ def selectable_parent_locations(user=None):
     visible = models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
     if user is not None and getattr(user, "is_authenticated", False):
         visible |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
-    return Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3]).filter(visible).order_by("path")
+    return Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3]).filter(visible).order_by("sort_order", "path")
 
 
 def location_filter_rank(row) -> int:
@@ -587,7 +587,9 @@ def locations_filter_data(user=None, include_all=False) -> list:
             visible |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
         qs = qs.filter(visible)
     rows = list(
-        qs.order_by("path").values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden", "lat", "lng")
+        qs.order_by("sort_order", "path").values(
+            "pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden", "lat", "lng"
+        )
     )
     for row in rows:
         row["lat"] = float(row["lat"]) if row["lat"] is not None else None
@@ -655,7 +657,11 @@ class LocationsMapPage(AsciiSlugMixin, Page):
         if can_manage:
             # Managers get a paginated, filterable list (same UX as the calendar list) instead
             # of the full location dump. The cascade filter narrows by selected node + descendants.
-            qs = Location.objects.filter(is_deleted=False).select_related("fallback_identity").order_by("path")
+            qs = (
+                Location.objects.filter(is_deleted=False)
+                .select_related("fallback_identity")
+                .order_by("sort_order", "path")
+            )
             if filter_pks is not None:
                 qs = qs.filter(pk__in=filter_pks)
             paginator = Paginator(qs, 20)

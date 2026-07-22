@@ -60,7 +60,7 @@ def _get_locations_data(user=None) -> list:
     rows = list(
         Location.objects.filter(is_deleted=False)
         .filter(visible)
-        .order_by("path")
+        .order_by("sort_order", "path")
         .values("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden", "lat", "lng")
     )
     # Coordinates let the form render existing venues as map markers (issue #118).

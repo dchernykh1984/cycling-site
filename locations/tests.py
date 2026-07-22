@@ -204,6 +204,25 @@ def _make_user(username, role, is_superuser=False):
     )
 
 
+class LocationOrderingTests(TestCase):
+    """sort_order, not creation order, decides how locations are listed."""
+
+    def test_sort_order_decides_the_listing_and_ties_fall_back_to_creation_order(self):
+        from locations.models import add_location_child, selectable_parent_locations
+
+        def position(name):
+            return [loc.name_ru for loc in selectable_parent_locations()].index(name)
+
+        add_location_child(None, name="ZZ-A", name_ru="ZZ-A", sort_order=500)
+        second = add_location_child(None, name="ZZ-B", name_ru="ZZ-B", sort_order=500)
+        # Equal sort_order: the one added first leads, because nodes are appended to the tree.
+        self.assertLess(position("ZZ-A"), position("ZZ-B"))
+
+        Location.objects.filter(pk=second.pk).update(sort_order=499)
+        # A lower sort_order now wins even though the node still holds the later path.
+        self.assertLess(position("ZZ-B"), position("ZZ-A"))
+
+
 def _propose_place(parent, name, submitted_by):
     """A pending region/city (depth 2-3), the way the API creates one for the events agent."""
     from locations.models import LocationProposal, add_location_child
