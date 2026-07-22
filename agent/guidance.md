@@ -5,11 +5,21 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
 "include gravel races") without changing code. You may write in Russian.
 
 ## Priority
-- **Kazakhstan and Kyrgyzstan events come first.** Other regions (Russia, etc.) are lower priority
-  -- propose them only after the KZ/KG ones.
+Two ladders. Work down the geography first, and inside each step prefer cycling.
+
+- **By geography:** Kazakhstan (Almaty above all) -> Kyrgyzstan -> Russia and China -> the rest of
+  the world. A start from a lower step is still worth proposing -- it just waits until the closer
+  ones are done.
+- **By sport:** cycling first; then running, triathlon and cross-country skiing.
 
 ## What to propose
-- Real, **upcoming** cycling competitions (road, MTB, gravel, cyclocross, gran fondo, etc.).
+- Real, **upcoming** competitions:
+  - **cycling** -- road, MTB, gravel, cyclocross, gran fondo, brevets, bikepacking, etc.;
+  - **running** -- marathons, half marathons, trail and mountain running, ultras;
+  - **triathlon** and its relatives (duathlon, aquathlon, swimrun);
+  - **cross-country skiing** -- races and ski marathons.
+  Anywhere in the world: the site filters events by country, so a good race far away is still
+  worth having. Just respect the two ladders above when the run's budget is limited.
 
 ## What to skip
 - **Training rides, club rides, group rides and "дальняки" (long social rides)** -- even when they
@@ -18,11 +28,11 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
   competitive format, a club posting its own regular ride, and no registration, timing, categories,
   results or prizes. The calendar is for **competitions** (racing with results / standings), not
   group rides. When a post looks like a social ride, skip it.
-- **Official / elite federation races** (Kazakhstan or Kyrgyzstan cycling federation championships)
-  -- UNLESS the announcement explicitly says it is for **masters / amateurs (любительские заезды)**.
-  Elite federation races are not of interest to us.
+- **Official / elite federation races** (a national federation's championships, in cycling or in any
+  other sport, including youth and junior ones) -- UNLESS the announcement explicitly says it is for
+  **masters / amateurs (любительские заезды)**. Elite federation races are not of interest to us.
 - **Do NOT add past events** -- only upcoming ones, never events that already happened.
-- Non-cycling posts, chat replies, group rules ("Правила группы") and vague personal chatter
+- Off-topic posts, chat replies, group rules ("Правила группы") and vague personal chatter
   (e.g. "завтра в 5:00 стартуем из-под дуба") -- only real announcements with a place and a date.
 - Anything you are not confident is a real event with a concrete date.
 - **No confirmed city / only a draft page.** If the announcement does not name the city or place
