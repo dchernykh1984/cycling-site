@@ -205,7 +205,7 @@ class LocationApproveView(LoginRequiredMixin, View):
 
 class LocationRejectView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        from locations.models import Location, LocationConflictError, LocationProposal
+        from locations.models import Location, LocationConflictError, LocationInUseError, LocationProposal
 
         if not _can_manage_locations(request.user):
             raise PermissionDenied
@@ -216,6 +216,11 @@ class LocationRejectView(LoginRequiredMixin, View):
         )
         try:
             location.reject_and_reset_competitions()
+        except LocationInUseError:
+            messages.error(
+                request,
+                _("This location cannot be rejected: approved locations or a published competition are inside it."),
+            )
         except LocationConflictError:
             messages.error(request, _("This location proposal is no longer pending."))
         safe_path = urlparse(request.META.get("HTTP_REFERER", "")).path or "/"

@@ -22,6 +22,11 @@ class LocationConflictError(Exception):
     soft-deleted, or a child/competition appeared) -- callers turn this into a user-facing error."""
 
 
+class LocationInUseError(LocationConflictError):
+    """Rejecting a proposed region/city was refused: approved work already sits inside its subtree,
+    so clearing the branch would destroy something a moderator or an organizer had blessed."""
+
+
 # Arbitrary fixed key for the transaction-scoped advisory lock that serializes every structural
 # mutation of the materialized-path tree. Row locks still protect competition/location contracts;
 # this namespace lock additionally prevents a subtree bulk move from racing a descendant insert.
@@ -249,6 +254,36 @@ class Location(MP_Node, index.Indexed):
         for ancestor in self.get_ancestors():
             ancestor._approve_proposal()
 
+    def _reject_proposed_place(self) -> None:
+        """Clear a rejected region/city, refusing when anything approved lives inside it.
+
+        Runs inside the caller's transaction and tree lock. The subtree rows are locked *before* any
+        competition is touched, which is the order every competition write already takes (its
+        location row, then the competition). That ordering is what stops a concurrent submission
+        from binding to a node that is about to disappear, and stops the two paths deadlocking.
+
+        Unlike a venue there is no stand-in to hand the competitions to, so they lose their location
+        and a human re-places them -- but only ones that are still drafts or awaiting review. A
+        published competition, or a descendant a moderator has already approved, means the branch is
+        no longer just a proposal, and the rejection is refused instead of destroying it.
+        """
+        competition_cls = apps.get_model("calendar_app", "Competition")
+        subtree = list(
+            Location.objects.select_for_update().filter(path__startswith=self.path, is_deleted=False).order_by("path")
+        )
+        for node in subtree:
+            if not node.is_pending and not node.is_system_fallback:
+                raise LocationInUseError("Location proposal holds an approved location")
+        pks = [node.pk for node in subtree]
+        live = competition_cls.objects.filter(is_deleted=False, location_id__in=pks)
+        if live.exclude(status__in=(competition_cls.Status.DRAFT, competition_cls.Status.PENDING_APPROVAL)).exists():
+            raise LocationInUseError("Location proposal is used by a published competition")
+
+        live.update(location=None)
+        # The catch-all venues in the subtree go with it, so their identity rows must not outlive it.
+        LocationFallback.objects.filter(models.Q(city_id__in=pks) | models.Q(location_id__in=pks)).delete()
+        Location.objects.filter(pk__in=pks).update(is_deleted=True)
+
     def reject_and_reset_competitions(self) -> None:
         """Atomically reject a pending location and deal with the competitions that used it.
 
@@ -280,10 +315,7 @@ class Location(MP_Node, index.Indexed):
                 raise LocationConflictError("Location proposal is no longer pending")
 
             if locked.depth < 4:
-                subtree = Location.objects.filter(path__startswith=locked.path, is_deleted=False)
-                competition_cls = apps.get_model("calendar_app", "Competition")
-                competition_cls.objects.filter(location__in=subtree).update(location=None)
-                subtree.update(is_deleted=True)
+                locked._reject_proposed_place()
                 return
 
             fallback = self.get_or_create_other_location(locked_parent)
