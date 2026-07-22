@@ -109,6 +109,9 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
             discipline_ids = [d for d in discipline_ids if d in taxonomy.discipline_ids]
         desc_ru, desc_kk, desc_en = _localized(item.get("description"))
         venue_ru, venue_kk, venue_en = _localized(item.get("venue"))
+        # Region/city arrive localized too now; older/looser answers may still be a bare string.
+        region_ru, region_kk, region_en = _localized(item.get("region"))
+        city_ru, city_kk, city_en = _localized(item.get("city"))
         candidates.append(
             Candidate(
                 title=title_ru[:255],
@@ -121,8 +124,8 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
                 event_type_id=event_type_id,
                 discipline_ids=discipline_ids,
                 country=str(item.get("country") or "").strip(),
-                region=str(item.get("region") or "").strip(),
-                city=str(item.get("city") or "").strip(),
+                region=region_ru,
+                city=city_ru,
                 venue=venue_ru,
                 lat=_as_float(item.get("lat")),
                 lng=_as_float(item.get("lng")),
@@ -132,6 +135,10 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
                 description_en=desc_en,
                 venue_kk=venue_kk,
                 venue_en=venue_en,
+                region_kk=region_kk,
+                region_en=region_en,
+                city_kk=city_kk,
+                city_en=city_en,
             )
         )
     return candidates

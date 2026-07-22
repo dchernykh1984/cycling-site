@@ -1,6 +1,6 @@
 """Placing a candidate: reuse a known city, or propose the missing geography for review."""
 
-from agent.locations import flatten_cities
+from agent.locations import flatten_cities, match_city
 from agent.models import Candidate
 from agent.run import _resolve_location
 
@@ -34,11 +34,13 @@ class _FakeClient:
         self.places: list[tuple[int, str]] = []
         self.venues: list[tuple[int, str]] = []
         self.fallbacks: list[int] = []
+        self.locales: list[tuple] = []
         self._next_id = 100
 
-    def propose_place(self, parent_id, name):
+    def propose_place(self, parent_id, name, name_kk="", name_en=""):
         self._next_id += 1
         self.places.append((parent_id, name))
+        self.locales.append((name, name_kk, name_en))
         return self._next_id
 
     def propose_venue(self, city_id, name, name_kk="", name_en="", lat=None, lng=None):
@@ -192,3 +194,24 @@ def test_a_district_is_not_created_as_a_region():
     )
     assert location_id is None
     assert client.places == []
+
+
+def test_a_proposed_place_carries_every_locale_the_model_gave():
+    """A place created in one language only would be proposed again by a source in another."""
+    client, tree = _FakeClient(), _tree()
+    cities = flatten_cities(tree)
+    _resolve_location(
+        client,
+        tree,
+        cities,
+        _candidate(
+            country="Kazakhstan",
+            region="Almaty-region",
+            city="Karakol",
+            city_kk="Qaraqol",
+            city_en="Karakol-en",
+        ),
+    )
+    assert client.locales == [("Karakol", "Qaraqol", "Karakol-en")]
+    # Every spelling is indexed, so the next source naming it differently matches instead of adding.
+    assert match_city(cities, "Qaraqol") == match_city(cities, "Karakol-en") == 101

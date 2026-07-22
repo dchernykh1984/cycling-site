@@ -76,11 +76,17 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate) -> int
     if region is None:
         if locations.looks_like_district(candidate.region):
             return None
-        region = {"id": client.propose_place(country["id"], candidate.region), "name": candidate.region}
+        region_id = client.propose_place(country["id"], candidate.region, candidate.region_kk, candidate.region_en)
+        region = {
+            "id": region_id,
+            "name": {"ru": candidate.region, "kk": candidate.region_kk, "en": candidate.region_en},
+        }
         country.setdefault("children", []).append(region)
-    city_id = client.propose_place(region["id"], candidate.city)
+    city_id = client.propose_place(region["id"], candidate.city, candidate.city_kk, candidate.city_en)
     # Keep the flat index in step so a later candidate in the same run reuses the new city.
-    cities.append(locations.city_record(city_id, candidate.city, region, country))
+    cities.append(
+        locations.city_record(city_id, (candidate.city, candidate.city_kk, candidate.city_en), region, country)
+    )
     return city_id
 
 
