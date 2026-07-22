@@ -170,3 +170,13 @@ def test_a_city_that_is_its_own_region_survives_an_oblast_hint():
     )
     cities = flatten_cities(tree)
     assert match_city(cities, "Capitalcity", region="Surrounding-oblast") == 31
+
+
+def test_a_country_named_in_its_long_form_still_finds_the_real_node():
+    """ "Republic of Kazakhstan" is the country the tree has, not one it lacks.
+
+    Sending it to the catch-all would file a real oblast under "Other country" for good.
+    """
+    tree = _tree_with_catch_alls()
+    assert match_country(tree, "Kazakhstan-ru official")["id"] == 1
+    assert match_country(tree, "Atlantis")["id"] == 90  # genuinely unknown -> catch-all
