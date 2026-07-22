@@ -277,6 +277,47 @@ class LocationCreateViewTests(TestCase):
         self.url = reverse("location_add")
         self.country, self.region, self.city = _make_tree()
 
+    def _post_child(self, user, parent, name):
+        self.client.force_login(user)
+        return self.client.post(self.url, {"name_ru": name, "parent": parent.pk if parent else ""})
+
+    def test_organizer_proposes_a_region_through_the_form(self):
+        """The web form must offer an organizer the same thing the API does.
+
+        The events agent proposes regions and cities through the API under the organizer role; a
+        human with that role would otherwise be locked out of the very workflow built for it.
+        """
+        organizer = _make_user("org-ui@x.com", User.Role.ORGANIZER)
+        self._post_child(organizer, self.country, "Proposed Region")
+        proposed = Location.objects.get(name_ru="Proposed Region")
+        self.assertEqual(proposed.depth, 2)
+        self.assertTrue(proposed.is_pending)
+        self.assertEqual(proposed.proposal.submitted_by, organizer)
+
+    def test_organizer_proposes_a_city_through_the_form(self):
+        organizer = _make_user("org-ui-city@x.com", User.Role.ORGANIZER)
+        self._post_child(organizer, self.region, "Proposed City")
+        proposed = Location.objects.get(name_ru="Proposed City")
+        self.assertEqual(proposed.depth, 3)
+        self.assertTrue(proposed.is_pending)
+
+    def test_organizer_venue_still_lands_approved(self):
+        organizer = _make_user("org-ui-venue@x.com", User.Role.ORGANIZER)
+        self._post_child(organizer, self.city, "Direct Venue")
+        venue = Location.objects.get(name_ru="Direct Venue")
+        self.assertEqual(venue.depth, 4)
+        self.assertFalse(venue.is_pending)
+
+    def test_admin_region_still_lands_approved(self):
+        self._post_child(self.admin, self.country, "Admin Region")
+        self.assertFalse(Location.objects.get(name_ru="Admin Region").is_pending)
+
+    def test_participant_cannot_propose_a_region_through_the_form(self):
+        # The form stops them with a field error; the view's 403 stays as defense against a forged POST.
+        resp = self._post_child(self.participant, self.country, "Nope Region")
+        self.assertIn("parent", resp.context["form"].errors)
+        self.assertFalse(Location.objects.filter(name_ru="Nope Region").exists())
+
     def test_anonymous_redirects_to_login(self):
         resp = self.client.get(self.url)
         self.assertRedirects(resp, f"/accounts/login/?next={self.url}", fetch_redirect_response=False)
@@ -339,16 +380,22 @@ class LocationCreateViewTests(TestCase):
         self.assertIn("parent", resp.context["form"].errors)
         self.assertFalse(Location.objects.filter(name_ru="NewCountry").exists())
 
-    def test_organizer_cannot_create_structural_node(self):
-        # Structural nodes (country/region/city) are admin-only; organizer gets a field error per level.
+    def test_organizer_cannot_create_a_country(self):
+        # A country is the one level an organizer may not touch: regions and cities they propose.
         organizer = _make_user("org_struct@x.com", User.Role.ORGANIZER)
         self.client.force_login(organizer)
-        cases = {
-            "OrgCountry": "",  # depth-1 country
-            "OrgRegion": str(self.country.pk),  # depth-2 region
-            "OrgCity": str(self.region.pk),  # depth-3 city
-        }
-        for name, parent in cases.items():
+        resp = self.client.post(self.url, {"name_ru": "OrgCountry", "name_kk": "", "name_en": "", "parent": ""})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("parent", resp.context["form"].errors)
+        self.assertFalse(Location.objects.filter(name_ru="OrgCountry").exists())
+
+    def test_participant_cannot_create_a_structural_node(self):
+        self.client.force_login(self.participant)
+        for name, parent in {
+            "PartCountry": "",
+            "PartRegion": str(self.country.pk),
+            "PartCity": str(self.region.pk),
+        }.items():
             with self.subTest(name=name):
                 resp = self.client.post(self.url, {"name_ru": name, "name_kk": "", "name_en": "", "parent": parent})
                 self.assertEqual(resp.status_code, 200)

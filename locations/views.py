@@ -118,7 +118,11 @@ class LocationCreateView(ParticipantRequiredMixin, View):
     def get(self, request):
         from locations.forms import LocationForm
 
-        form = LocationForm(user=request.user, can_manage=_can_manage_locations(request.user))
+        form = LocationForm(
+            user=request.user,
+            can_manage=_can_manage_locations(request.user),
+            can_propose_place=_can_add_location_directly(request.user),
+        )
         return render(
             request,
             "locations/location_form.html",
@@ -136,7 +140,12 @@ class LocationCreateView(ParticipantRequiredMixin, View):
         from locations.forms import LocationForm
         from locations.models import LocationConflictError, LocationProposal, add_location_child
 
-        form = LocationForm(request.POST, user=request.user, can_manage=_can_manage_locations(request.user))
+        form = LocationForm(
+            request.POST,
+            user=request.user,
+            can_manage=_can_manage_locations(request.user),
+            can_propose_place=_can_add_location_directly(request.user),
+        )
         if form.is_valid():
             cd = form.cleaned_data
             name = cd["name_ru"] or cd.get("name_kk") or cd.get("name_en") or ""
@@ -144,12 +153,17 @@ class LocationCreateView(ParticipantRequiredMixin, View):
             # The new location's level is always parent.depth + 1 (depth 1 for a country).
             parent = cd.get("parent")
             new_depth = parent.depth + 1 if parent is not None else 1
-            can_direct = _can_add_location_directly(request.user)
-            # Structural nodes (country/region/city) are admin-only, matching the API and the role
-            # contract; organizer+ may only add a depth-4 venue under a city, and everyone else
-            # proposes such a venue. The proposal/approve/reject workflow stays venue-only.
-            if new_depth != 4 and not _can_manage_locations(request.user):
-                raise PermissionDenied
+            # Same rule as the API: a country is admin-only; a region or a city may be *proposed*
+            # by an organizer but never lands approved, whatever the author's role; a venue keeps
+            # the older rule (organizer+ adds it approved, everyone else proposes it).
+            if not _can_manage_locations(request.user):
+                if new_depth == 1:
+                    raise PermissionDenied
+                if new_depth in (2, 3) and not _can_add_location_directly(request.user):
+                    raise PermissionDenied
+            can_direct = _can_manage_locations(request.user) or (
+                _can_add_location_directly(request.user) and new_depth == 4
+            )
             try:
                 # add_location_child locks the parent and the proposal shares the transaction, so a
                 # concurrent delete of the parent can't leave the new node orphaned.
@@ -165,8 +179,7 @@ class LocationCreateView(ParticipantRequiredMixin, View):
                         # Only managers may create hidden fallback venues.
                         is_hidden=cd.get("is_hidden", False) if _can_manage_locations(request.user) else False,
                     )
-                    # A proposal only ever attaches to a venue a non-privileged user proposed; it
-                    # hides the venue from others until approved.
+                    # An unapproved location is a proposal: usable by its author, pending review.
                     if not can_direct:
                         LocationProposal.objects.create(location=new_location, submitted_by=request.user)
             except LocationConflictError:
