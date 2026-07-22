@@ -27,6 +27,10 @@ RU_LEADERS = ["Москва", "Санкт-Петербург", "Московск
 # country -> (region, city) of its capital, as (ru, kk, en) triples. Entries that already exist are
 # reused by name; the rest are created here, so every seeded country has its capital.
 CAPITALS = {
+    # Kazakhstan and Russia have their own leader lists above; the other two close countries are
+    # ordered by capital like everyone else, and both already carry theirs as a depth-2 node.
+    "Кыргызстан": (("Бишкек", "Бішкек", "Bishkek"), ("Бишкек", "Бішкек", "Bishkek")),
+    "Китай": (("Пекин", "Пекин", "Beijing"), ("Пекин", "Пекин", "Beijing")),
     "Беларусь": (("Минск", "Минск", "Minsk"), ("Минск", "Минск", "Minsk")),
     "Грузия": (("Тбилиси", "Тбилиси", "Tbilisi"), ("Тбилиси", "Тбилиси", "Tbilisi")),
     "Армения": (("Ереван", "Ереван", "Yerevan"), ("Ереван", "Ереван", "Yerevan")),
@@ -75,18 +79,32 @@ CAPITALS = {
 }
 
 
-def _child(parent, names):
-    """The parent's child with this Russian name, created (appended) when absent."""
+def _siblings(parent):
+    """The parent's children by path range: ``get_children()`` returns nothing on a drifted
+    ``numchild``, which would make an existing child invisible and add a second one."""
+    from locations.models import Location
+
+    return Location.objects.filter(
+        depth=parent.depth + 1, path__range=Location._get_children_path_interval(parent.path)
+    )
+
+
+def _child(parent, names, *, hidden=False):
+    """The parent's child with this Russian name, created (appended) when absent.
+
+    A live namesake wins over a soft-deleted one, so a place that was proposed, rejected and later
+    added again is reused rather than resurrected alongside its living twin.
+    """
     from locations.models import add_location_child
 
     ru, kk, en = names
-    existing = parent.get_children().filter(name_ru=ru).first()
+    existing = _siblings(parent).filter(name_ru=ru).order_by("is_deleted", "path").first()
     if existing is not None:
         if existing.is_deleted:
             existing.is_deleted = False
             existing.save(update_fields=["is_deleted"])
         return existing
-    return add_location_child(parent, name=ru, name_ru=ru, name_kk=kk, name_en=en, sort_order=0)
+    return add_location_child(parent, name=ru, name_ru=ru, name_kk=kk, name_en=en, sort_order=0, is_hidden=hidden)
 
 
 def _ensure_capitals():
@@ -98,9 +116,7 @@ def _ensure_capitals():
             continue
         city = _child(_child(country, region_names), city_names)
         if not LocationFallback.objects.filter(city=city).exists():
-            venue = _child(city, _OTHER_VENUE)
-            venue.is_hidden = True
-            venue.save(update_fields=["is_hidden"])
+            venue = _child(city, _OTHER_VENUE, hidden=True)
             LocationFallback.objects.get_or_create(city=city, defaults={"location": venue})
 
 
@@ -134,7 +150,11 @@ def _leaders_for(node) -> list:
         capital = CAPITALS.get(node.name_ru)
         return [capital[0][0]] if capital else []
     if node.depth == 2:
-        parent = node.get_parent()
+        # Derive the parent from the path: treebeard's get_parent() raises on an orphaned node
+        # (a hard-deleted country left behind by manual cleanup) rather than returning None.
+        from locations.models import Location
+
+        parent = Location.objects.filter(path=node.path[: -Location.steplen], depth=1).first()
         capital = CAPITALS.get(parent.name_ru) if parent is not None else None
         if capital and node.name_ru == capital[0][0]:
             return [capital[1][0]]
