@@ -316,7 +316,11 @@ class Location(MP_Node, index.Indexed):
             if not node.is_pending and not node.is_system_fallback:
                 raise LocationInUseError("Location proposal holds an approved location")
         pks = [node.pk for node in subtree]
-        live = competition_cls.objects.filter(is_deleted=False, location_id__in=pks)
+        # Lock the competitions before reading their status. Approving a competition only takes a
+        # row lock when it writes, so without this the check and the update below straddle a window
+        # in which a moderator can publish one -- and the update would then blank the location of a
+        # competition this method promises to refuse.
+        live = list(competition_cls.objects.select_for_update().filter(is_deleted=False, location_id__in=pks))
         # A rejected competition is exactly what a moderator clears before rejecting the geography
         # invented for it, so it must not stand in the way.
         still_wanted = (
@@ -324,10 +328,10 @@ class Location(MP_Node, index.Indexed):
             competition_cls.Status.PENDING_APPROVAL,
             competition_cls.Status.REJECTED,
         )
-        if live.exclude(status__in=still_wanted).exists():
+        if any(competition.status not in still_wanted for competition in live):
             raise LocationInUseError("Location proposal is used by a published competition")
 
-        live.update(location=None)
+        competition_cls.objects.filter(pk__in=[competition.pk for competition in live]).update(location=None)
         # The catch-all venues in the subtree go with it, so their identity rows must not outlive it.
         LocationFallback.objects.filter(models.Q(city_id__in=pks) | models.Q(location_id__in=pks)).delete()
         Location.objects.filter(pk__in=pks).update(is_deleted=True)

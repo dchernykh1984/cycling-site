@@ -1564,6 +1564,34 @@ class ConcurrentLocationMutationTests(TransactionTestCase):
         for competition in Competition.objects.select_related("location"):
             self.assertFalse(competition.location.is_deleted)
 
+    def test_rejecting_a_proposed_city_serializes_with_competition_approval(self):
+        """The published-competition guard must hold under a concurrent approval.
+
+        Approving a competition only takes a row lock when it writes, so the reject has to lock the
+        competitions before reading their status -- otherwise it can blank the location of one that
+        became published in between, which is exactly what it promises to refuse.
+        """
+        from calendar_app.models import Competition
+
+        proposer = _make_user("reject-approve@example.com", User.Role.PARTICIPANT)
+        reviewer = _make_user("reject-approver@example.com", User.Role.ADMIN)
+        pending_city = _propose_place(self.region, "RaceyCity", proposer)
+        venue = Location.propose_venue(pending_city, "RaceyVenue", submitted_by=proposer)
+        competition = Competition.objects.create(
+            title_ru="Race",
+            date_start=datetime.date(2026, 7, 1),
+            location=venue,
+            submitted_by=proposer,
+            status=Competition.Status.PENDING_APPROVAL,
+        )
+
+        self._run(pending_city.reject_and_reset_competitions, lambda: competition.approve(reviewer=reviewer))
+        competition.refresh_from_db()
+        # Either the reject won (location cleared while still pending) or the approval won (the
+        # competition is published and keeps its venue) -- never published with no location.
+        if competition.status == Competition.Status.APPROVED:
+            self.assertIsNotNone(competition.location_id)
+
     def test_rejecting_a_proposed_city_serializes_with_competition_binding(self):
         """The depth<4 branch must lock its subtree before touching competitions.
 
