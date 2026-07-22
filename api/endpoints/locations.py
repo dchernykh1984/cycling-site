@@ -208,13 +208,13 @@ def city_fallback_venue(request, city_id: int):
     "/",
     response={201: LocationOut},
     auth=auth,
-    summary="Create location (organizer+ approved; participant proposes; pending until reviewed)",
+    summary="Create location (venues: organizer+ approved, participant proposes; regions and cities "
+    "are always proposed by organizer+; countries are admin-only)",
 )
 def create_location(request, payload: LocationIn):
     user = request.auth
     if _role_rank(user) < _PARTICIPANT_RANK and not getattr(user, "is_superuser", False):
         raise HttpError(403, "PARTICIPANT role or higher is required")
-    approved = _can_add_directly(user)
 
     kwargs = dict(
         name=payload.name.ru or payload.name.kk or payload.name.en,
@@ -234,17 +234,24 @@ def create_location(request, payload: LocationIn):
         except Location.DoesNotExist:
             raise HttpError(404, "Parent location not found") from None
 
-    # Non-admins may only create a venue (depth 4) under a city (depth 3); building the
-    # geographic hierarchy (root/region/city) is admin-only (review #2).
-    if not is_admin(user) and (parent is None or parent.depth != 3):
-        raise HttpError(403, "A city (depth-3) parent_id is required to create a venue")
+    # Countries stay admin-only: they are a small closed set, and a duplicate root (say "Kirgiziya"
+    # beside "Kyrgyzstan") drags a whole subtree with it. Regions and cities may be *proposed* by an
+    # organizer -- the events agent needs them to place a race in a town the tree does not have yet
+    # -- but never land approved, whatever the author's role. Venues keep the earlier rule.
+    new_depth = 1 if parent is None else parent.depth + 1
+    if not is_admin(user):
+        if new_depth == 1:
+            raise HttpError(403, "Creating a country is admin-only")
+        if new_depth in (2, 3) and not _can_add_directly(user):
+            raise HttpError(403, "ORGANIZER role or higher is required to propose a region or city")
+    approved = is_admin(user) or (_can_add_directly(user) and new_depth == 4)
 
     # add_location_child locks the parent (or the root namespace) and the proposal shares the
     # transaction, so a concurrent delete can't orphan the node and two roots can't collide on path.
     try:
         with transaction.atomic():
             location = add_location_child(parent, **kwargs)
-            # Below organizer the location is a proposal: usable by the author, pending review.
+            # An unapproved location is a proposal: usable by its author, pending review.
             if not approved:
                 LocationProposal.objects.create(location=location, submitted_by=user)
     except LocationConflictError:

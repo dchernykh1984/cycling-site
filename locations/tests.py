@@ -204,6 +204,15 @@ def _make_user(username, role, is_superuser=False):
     )
 
 
+def _propose_place(parent, name, submitted_by):
+    """A pending region/city (depth 2-3), the way the API creates one for the events agent."""
+    from locations.models import LocationProposal, add_location_child
+
+    place = add_location_child(parent, name=name, name_ru=name, name_kk=name, name_en=name)
+    LocationProposal.objects.create(location=place, submitted_by=submitted_by)
+    return place
+
+
 def _make_tree():
     """Minimal 4-level tree: KZ -> Region -> City -> (returned as dict)."""
     country = Location.add_root(name="KZ", name_ru="KZ", name_en="KZ")
@@ -849,6 +858,44 @@ class LocationProposalModelTests(TestCase):
         self.assertNotEqual(fallback.pk, hidden.pk)
         self.assertTrue(fallback.is_system_fallback)
         self.assertEqual(fallback.fallback_identity.city_id, self.city.pk)
+
+    def test_admin_approval_also_approves_pending_ancestors(self):
+        from locations.models import LocationProposal
+
+        admin = _make_user("adm-loc@x.com", User.Role.ADMIN)
+        pending_city = _propose_place(self.region, "Pending City", self.user)
+        venue = Location.propose_venue(pending_city, "Venue", submitted_by=self.user)
+        venue.approve_with_competition(admin)
+        pending_city.proposal.refresh_from_db()
+        self.assertEqual(pending_city.proposal.status, LocationProposal.Status.APPROVED)
+
+    def test_organizer_approval_leaves_the_geography_pending(self):
+        # Competitions are moderated by ORGANIZER+, locations only by ADMIN+. Approving an event
+        # must not become a back door for blessing the region and city proposed alongside it.
+        from locations.models import LocationProposal
+
+        organizer = _make_user("org-loc@x.com", User.Role.ORGANIZER)
+        pending_city = _propose_place(self.region, "Pending City", self.user)
+        venue = Location.propose_venue(pending_city, "Venue", submitted_by=self.user)
+        venue.approve_with_competition(organizer)
+        venue.proposal.refresh_from_db()
+        pending_city.proposal.refresh_from_db()
+        self.assertEqual(venue.proposal.status, LocationProposal.Status.APPROVED)
+        self.assertEqual(pending_city.proposal.status, LocationProposal.Status.PENDING_APPROVAL)
+
+    def test_rejecting_a_proposed_city_drops_the_branch_and_unbinds_competitions(self):
+        from calendar_app.models import Competition
+
+        pending_city = _propose_place(self.region, "Pending City", self.user)
+        venue = Location.propose_venue(pending_city, "Venue", submitted_by=self.user)
+        comp = Competition.objects.create(title_ru="C", date_start=datetime.date(2026, 7, 1), location=venue)
+        pending_city.reject_and_reset_competitions()
+        pending_city.refresh_from_db()
+        venue.refresh_from_db()
+        comp.refresh_from_db()
+        self.assertTrue(pending_city.is_deleted)
+        self.assertTrue(venue.is_deleted)  # the whole branch goes, not just the node
+        self.assertIsNone(comp.location)  # no stand-in exists, so a human re-places the event
 
     def test_reject_resets_competitions_to_other_location(self):
         from calendar_app.models import Competition

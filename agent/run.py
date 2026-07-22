@@ -53,6 +53,50 @@ def _extract_candidates(
     return candidates
 
 
+def _propose_city(client, tree: list, cities: list, candidate: Candidate) -> int | None:
+    """Propose the candidate's city, and its region when that is new too; None if not possible.
+
+    Both land pending: the agent may use them straight away, everyone else sees them once a reviewer
+    approves. Countries are admin-only, so an event in a country the site does not carry goes under
+    the tree's catch-all country instead of inventing a root.
+    """
+    if not candidate.city:
+        return None
+    country = locations.match_country(tree, candidate.country)
+    if country is None:
+        return None
+    region = locations.match_region(country, candidate.region)
+    if region is None and candidate.region:
+        region = {"id": client.propose_place(country["id"], candidate.region), "name": candidate.region}
+        country.setdefault("children", []).append(region)
+    if region is None:  # the announcement names no region -- file the city under the catch-all one
+        region = locations.catch_all_region(country)
+    if region is None:
+        return None
+    city_id = client.propose_place(region["id"], candidate.city)
+    # Keep the flat index in step so a later candidate in the same run reuses the new city.
+    cities.append(locations.city_record(city_id, candidate.city, region, country))
+    return city_id
+
+
+def _resolve_location(client, tree: list, cities: list, candidate: Candidate) -> int | None:
+    """Concrete start venue when the city is known and named; else the city's catch-all.
+
+    A city the tree does not have yet is proposed rather than skipped, so the event is placed from
+    the start and the reviewer only has to confirm the geography.
+    """
+    city_id = locations.match_city(cities, candidate.city, candidate.region, candidate.country)
+    if city_id is None:
+        city_id = _propose_city(client, tree, cities, candidate)
+    if city_id is None:
+        return None  # reviewer adds the location (the guidance tells the LLM to note it)
+    if candidate.venue:
+        return client.propose_venue(
+            city_id, candidate.venue, candidate.venue_kk, candidate.venue_en, candidate.lat, candidate.lng
+        )
+    return client.fallback_venue(city_id)
+
+
 def main() -> int:
     try:
         config = from_env(dict(os.environ))
@@ -65,21 +109,14 @@ def main() -> int:
     parsed_sources = sources.parse_sources(_read(_SOURCES_FILE))
     known = client.known()
     taxonomy = client.taxonomy()
-    cities = locations.flatten_cities(client.location_tree())
+    tree = client.location_tree()
+    cities = locations.flatten_cities(tree)
 
     def extract(text: str, source: sources.Source) -> list:
         return _extract_candidates(text, source, guidance, known, taxonomy, config)
 
     def resolve_location(candidate: Candidate) -> int | None:
-        """Concrete start venue when the city is known and named; else the city's catch-all; else none."""
-        city_id = locations.match_city(cities, candidate.city, candidate.region, candidate.country)
-        if city_id is None:
-            return None  # reviewer adds the location (the guidance tells the LLM to note it)
-        if candidate.venue:
-            return client.propose_venue(
-                city_id, candidate.venue, candidate.venue_kk, candidate.venue_en, candidate.lat, candidate.lng
-            )
-        return client.fallback_venue(city_id)
+        return _resolve_location(client, tree, cities, candidate)
 
     def enrich_candidate(candidate: Candidate) -> Candidate:
         """Fetch the event's own page and let the LLM refine it; keep the original on any failure."""

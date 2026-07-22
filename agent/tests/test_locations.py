@@ -1,4 +1,12 @@
-from agent.locations import flatten_cities, match_city, normalize_name
+from agent.locations import (
+    catch_all_region,
+    city_record,
+    flatten_cities,
+    match_city,
+    match_country,
+    match_region,
+    normalize_name,
+)
 
 
 def _tree():
@@ -81,3 +89,46 @@ def test_match_city_unknown_or_empty_returns_none():
     assert match_city(cities, "Paris") is None
     assert match_city(cities, "") is None
     assert match_city([], "dup-city") is None
+
+
+def _tree_with_catch_alls():
+    tree = _tree()
+    tree.append(
+        {
+            "id": 90,
+            "name": {"ru": "other-country-ru", "kk": "", "en": "Other country"},
+            "children": [{"id": 91, "name": {"ru": "x", "kk": "", "en": "Other region"}, "children": []}],
+        }
+    )
+    tree[0]["children"].append({"id": 92, "name": {"ru": "y", "kk": "", "en": "Other region"}, "children": []})
+    return tree
+
+
+def test_match_country_by_name_and_catch_all_fallback():
+    tree = _tree_with_catch_alls()
+    assert match_country(tree, "Kyrgyzstan")["id"] == 6
+    # A country the site does not carry lands under the catch-all: the agent never creates a root.
+    assert match_country(tree, "Iceland")["id"] == 90
+    assert match_country(tree, "")["id"] == 90
+
+
+def test_match_country_without_catch_all_returns_none():
+    assert match_country(_tree(), "Iceland") is None
+
+
+def test_match_region_and_catch_all():
+    tree = _tree_with_catch_alls()
+    kazakhstan = match_country(tree, "Kazakhstan")
+    assert match_region(kazakhstan, "astana-region")["id"] == 4
+    assert match_region(kazakhstan, "no-such-region") is None  # unknown -> the caller proposes it
+    assert catch_all_region(kazakhstan)["id"] == 92
+    assert catch_all_region(match_country(tree, "Kyrgyzstan")) is None
+
+
+def test_city_record_is_matchable_right_away():
+    tree = _tree_with_catch_alls()
+    country = match_country(tree, "Kazakhstan")
+    region = match_region(country, "astana-region")
+    cities = flatten_cities(tree)
+    cities.append(city_record(77, "Kobona", region, country))
+    assert match_city(cities, "kobona") == 77

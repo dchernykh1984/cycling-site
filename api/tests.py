@@ -1495,12 +1495,51 @@ class LocationCreateTest(TestCase, ApiTestMixin):
         resp = self.post("/api/v1/locations/", {"name": {"ru": "X", "kk": "", "en": ""}}, user=self.organizer)
         self.assertEqual(resp.status_code, 403)
 
-    def test_organizer_under_non_city_parent_forbidden(self):
+    def test_organizer_proposes_region_under_country(self):
+        # The events agent needs a region for a race in a part of the world the tree lacks; it lands
+        # pending, so an organizer can use it at once but nobody else sees it until it is approved.
         country = _location()  # depth 1
         resp = self.post(
             "/api/v1/locations/",
-            {"name": {"ru": "X", "kk": "", "en": ""}, "parent_id": country.pk},
+            {"name": {"ru": "New Region", "kk": "", "en": ""}, "parent_id": country.pk},
             user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 201)
+        loc = Location.objects.get(pk=resp.json()["id"])
+        self.assertEqual(loc.depth, 2)
+        self.assertTrue(loc.is_pending)
+
+    def test_organizer_proposes_city_under_region(self):
+        country = _location()
+        region = country.add_child(name="Region", name_ru="Region")
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "New City", "kk": "", "en": ""}, "parent_id": region.pk},
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 201)
+        loc = Location.objects.get(pk=resp.json()["id"])
+        self.assertEqual(loc.depth, 3)
+        self.assertTrue(loc.is_pending)
+
+    def test_admin_creates_region_approved(self):
+        country = _location()
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "Admin Region", "kk": "", "en": ""}, "parent_id": country.pk},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertFalse(Location.objects.get(pk=resp.json()["id"]).is_pending)
+
+    def test_participant_cannot_propose_region(self):
+        # Geography is organizer+ territory: a participant may still propose a venue, nothing above.
+        participant = _user("part", role=User.Role.PARTICIPANT)
+        country = _location()
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "X", "kk": "", "en": ""}, "parent_id": country.pk},
+            user=participant,
         )
         self.assertEqual(resp.status_code, 403)
 
