@@ -198,6 +198,8 @@ def city_fallback_venue(request, city_id: int):
         city = Location.objects.get(pk=city_id, is_deleted=False, depth=3)
     except Location.DoesNotExist:
         raise HttpError(404, "City (depth-3 location) not found") from None
+    if not _proposal_visible(city, request.auth):
+        raise HttpError(404, "City (depth-3 location) not found")
     try:
         return Location.get_or_create_other_location(city)
     except LocationConflictError as exc:
@@ -233,6 +235,11 @@ def create_location(request, payload: LocationIn):
             parent = Location.objects.get(pk=payload.parent_id, is_deleted=False)
         except Location.DoesNotExist:
             raise HttpError(404, "Parent location not found") from None
+        # Another user's pending proposal is invisible here, so it must not be buildable under
+        # either -- otherwise a public node appears inside a node nobody else can see, and the
+        # endpoint doubles as an oracle for whether that proposal exists. 404, not 403, for both.
+        if not _proposal_visible(parent, user):
+            raise HttpError(404, "Parent location not found")
 
     # Countries stay admin-only: they are a small closed set, and a duplicate root (say "Kirgiziya"
     # beside "Kyrgyzstan") drags a whole subtree with it. Regions and cities may be *proposed* by an

@@ -1543,6 +1543,46 @@ class LocationCreateTest(TestCase, ApiTestMixin):
         )
         self.assertEqual(resp.status_code, 403)
 
+    def test_cannot_build_under_another_users_pending_proposal(self):
+        """A pending node is invisible to everyone but its proposer, so nothing may hang off it.
+
+        Answering 404 rather than 403 also stops the endpoint from confirming that the hidden
+        proposal exists.
+        """
+        from locations.models import LocationProposal, add_location_child
+
+        other = _user("other-proposer", role=User.Role.ORGANIZER)
+        country = _location()
+        hidden_city = add_location_child(
+            add_location_child(country, name="R", name_ru="R"), name="Hidden", name_ru="Hidden"
+        )
+        LocationProposal.objects.create(location=hidden_city, submitted_by=other)
+
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "Venue", "kk": "", "en": ""}, "parent_id": hidden_city.pk},
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 404)
+        resp = self.post(f"/api/v1/locations/{hidden_city.pk}/fallback-venue/", {}, user=self.organizer)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_proposer_can_still_build_under_their_own_pending_city(self):
+        from locations.models import LocationProposal, add_location_child
+
+        country = _location()
+        own_city = add_location_child(add_location_child(country, name="R", name_ru="R"), name="Mine", name_ru="Mine")
+        LocationProposal.objects.create(location=own_city, submitted_by=self.organizer)
+
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "Venue", "kk": "", "en": ""}, "parent_id": own_city.pk},
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 201)
+        resp = self.post(f"/api/v1/locations/{own_city.pk}/fallback-venue/", {}, user=self.organizer)
+        self.assertEqual(resp.status_code, 200)
+
     def test_create_with_parent(self):
         parent = _location()
         resp = self.post(
