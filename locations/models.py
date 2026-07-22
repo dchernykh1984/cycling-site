@@ -277,6 +277,18 @@ class Location(MP_Node, index.Indexed):
         """The chain above this node, so a proposed "Almaty" can be told apart from another one."""
         return ", ".join(node.name for node in self.get_ancestors())
 
+    def _approve_system_fallback(self) -> None:
+        """Approve the city's catch-all venue alongside the city itself.
+
+        The catch-all is created pending when its city is, and it is shared by everyone, so leaving
+        it pending would make a public city's shared venue one user's private property.
+        """
+        try:
+            mapping = self.fallback_mapping
+        except LocationFallback.DoesNotExist:
+            return
+        mapping.location._approve_proposal()
+
     def _approve_proposal(self) -> None:
         proposal = getattr(self, "proposal", None)
         if proposal is not None and proposal.status != LocationProposal.Status.APPROVED:
@@ -296,6 +308,7 @@ class Location(MP_Node, index.Indexed):
         if can_manage_locations(reviewer):
             for node in [self, *self.get_ancestors()]:
                 node._approve_proposal()
+                node._approve_system_fallback()
             return
         # An organizer may bless the venue only where the geography above it is already public.
         # Approving it under a pending city would publish that city through the competition and
@@ -387,6 +400,11 @@ class Location(MP_Node, index.Indexed):
             if locked.depth < 4:
                 locked._reject_proposed_place()
                 return
+            if locked.is_system_fallback:
+                # A city's catch-all is not a proposal to judge on its own: it exists for as long as
+                # its city does, and handing its competitions to "the city's catch-all" would hand
+                # them back to itself before soft-deleting it out from under them.
+                raise LocationInUseError("A city's catch-all venue is rejected with its city")
 
             fallback = self.get_or_create_other_location(locked_parent)
             locked.competitions.update(location=fallback)
