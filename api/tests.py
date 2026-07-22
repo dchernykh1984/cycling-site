@@ -1567,6 +1567,26 @@ class LocationCreateTest(TestCase, ApiTestMixin):
         resp = self.post(f"/api/v1/locations/{hidden_city.pk}/fallback-venue/", {}, user=self.organizer)
         self.assertEqual(resp.status_code, 404)
 
+    def test_venue_under_own_pending_city_stays_pending(self):
+        """A venue is only public when the geography above it is.
+
+        Otherwise an organizer could publish a venue inside their own unreviewed city, which leaks
+        that city's name through any competition attached to it and blocks its rejection for good.
+        """
+        from locations.models import LocationProposal, add_location_child
+
+        country = _location()
+        own_city = add_location_child(add_location_child(country, name="R", name_ru="R"), name="Mine", name_ru="Mine")
+        LocationProposal.objects.create(location=own_city, submitted_by=self.organizer)
+
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "Venue", "kk": "", "en": ""}, "parent_id": own_city.pk},
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertTrue(Location.objects.get(pk=resp.json()["id"]).is_pending)
+
     def test_proposer_can_still_build_under_their_own_pending_city(self):
         from locations.models import LocationProposal, add_location_child
 
