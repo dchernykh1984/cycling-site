@@ -245,7 +245,7 @@ def create_location(request, payload: LocationIn):
     # Countries stay admin-only: they are a small closed set, and a duplicate root (say "Kirgiziya"
     # beside "Kyrgyzstan") drags a whole subtree with it. Regions and cities may be *proposed* by an
     # organizer -- the events agent needs them to place a race in a town the tree does not have yet
-    # -- but never land approved, whatever the author's role. Venues keep the earlier rule.
+    # -- and then wait for a moderator, unless the author is an admin. Venues keep the earlier rule.
     new_depth = 1 if parent is None else parent.depth + 1
     if not is_admin(user):
         if new_depth == 1:

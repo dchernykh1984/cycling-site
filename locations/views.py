@@ -159,7 +159,7 @@ class LocationCreateView(ParticipantRequiredMixin, View):
             parent = cd.get("parent")
             new_depth = parent.depth + 1 if parent is not None else 1
             # Same rule as the API: a country is admin-only; a region or a city may be *proposed*
-            # by an organizer but never lands approved, whatever the author's role; a venue keeps
+            # by an organizer and then waits for a moderator (an admin's lands approved); a venue keeps
             # the older rule (organizer+ adds it approved, everyone else proposes it).
             if not _can_manage_locations(request.user):
                 if new_depth == 1:
