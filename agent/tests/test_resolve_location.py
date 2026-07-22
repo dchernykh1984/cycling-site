@@ -160,3 +160,35 @@ def test_namesake_city_in_another_region_is_proposed_not_reused():
     _resolve_location(client, tree, cities, first)
     _resolve_location(client, tree, cities, second)
     assert client.places == [(2, "Troitsk"), (7, "Troitsk")]
+
+
+def test_placeholder_names_are_never_created():
+    """The model may echo the site's own catch-all; creating a namesake shadows the system node."""
+    for kwargs in (
+        {
+            "country": "Kazakhstan",
+            "region": "Almaty-region",
+            "city": "\u0414\u0440\u0443\u0433\u043e\u0439 \u0433\u043e\u0440\u043e\u0434",
+        },
+        {
+            "country": "Kazakhstan",
+            "region": "\u0414\u0440\u0443\u0433\u043e\u0439 \u0440\u0435\u0433\u0438\u043e\u043d",
+            "city": "Esik",
+        },
+    ):
+        client, location_id = _resolve(_candidate(**kwargs))
+        assert location_id is None
+        assert client.places == []
+
+
+def test_a_district_is_not_created_as_a_region():
+    # "Kirovsky district" is a level below the region; filing it as one buries the real oblast.
+    client, location_id = _resolve(
+        _candidate(
+            country="Kazakhstan",
+            region="\u041a\u0438\u0440\u043e\u0432\u0441\u043a\u0438\u0439 \u0440\u0430\u0439\u043e\u043d",
+            city="Kobona",
+        )
+    )
+    assert location_id is None
+    assert client.places == []

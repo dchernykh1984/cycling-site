@@ -62,6 +62,11 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate) -> int
     """
     if not candidate.city or locations.is_ambiguous_city(cities, candidate.city, candidate.region, candidate.country):
         return None
+    # The model is told to give a real place and a first-level region, but nothing stops it echoing
+    # the site's own placeholder or handing back a district; either one would become a permanent
+    # node here, so refuse and let a reviewer place the event instead.
+    if locations.is_placeholder_name(candidate.city) or locations.is_placeholder_name(candidate.region):
+        return None
     country = locations.match_country(tree, candidate.country)
     if country is None or not candidate.region:
         # Without a country we cannot place anything, and without a region there is nothing to hang
@@ -69,6 +74,8 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate) -> int
         return None
     region = locations.match_region(country, candidate.region)
     if region is None:
+        if locations.looks_like_district(candidate.region):
+            return None
         region = {"id": client.propose_place(country["id"], candidate.region), "name": candidate.region}
         country.setdefault("children", []).append(region)
     city_id = client.propose_place(region["id"], candidate.city)
