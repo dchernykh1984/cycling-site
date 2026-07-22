@@ -156,9 +156,13 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     def _validate_location(self, cleaned_data) -> None:
         """Guard against forged POSTs (issue #111): a new venue must hang off a city, and a
         chosen location must be one this user may use (not someone else's pending proposal)."""
+        from locations.models import location_visible_to
+
         city = cleaned_data.get("new_venue_city")
         new_name = (cleaned_data.get("new_venue_name") or "").strip()
-        if city is not None and city.depth != 3:
+        if city is not None and (city.depth != 3 or not location_visible_to(city, self.user)):
+            # Same rule as for `location` below: a city that is someone else's pending proposal is
+            # not a city this user may build under, however the POST reached us.
             self.add_error("new_venue_city", _("Please choose a city for the new venue."))
         # If a new venue is being proposed it is used instead of `location`, so skip that check.
         if new_name and city is not None:

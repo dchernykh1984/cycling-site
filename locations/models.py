@@ -122,6 +122,20 @@ def add_location_child(parent, **kwargs):
         return obj
 
 
+def location_visible_to(location, user) -> bool:
+    """Whether ``user`` may see (and therefore build under) ``location``.
+
+    A pending proposal belongs to its proposer until a moderator approves it: everyone else must not
+    see it, must not be able to attach anything to it, and must not be able to probe for it.
+    """
+    proposal = getattr(location, "proposal", None)
+    if proposal is None or proposal.status != LocationProposal.Status.PENDING_APPROVAL:
+        return True
+    if can_manage_locations(user):
+        return True
+    return bool(getattr(user, "is_authenticated", False)) and proposal.submitted_by_id == getattr(user, "pk", None)
+
+
 def can_manage_locations(user) -> bool:
     """Whether ``user`` may bless geography (approve/reject a location proposal): ADMIN+ only.
 
