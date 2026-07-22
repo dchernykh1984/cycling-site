@@ -850,6 +850,7 @@ class LocationsMapLocaleTests(TestCase):
             "System fallback locations cannot be moved.",
             "System fallback locations must remain hidden.",
             "This location proposal is no longer pending.",
+            "This location cannot be rejected: approved locations or a published competition are inside it.",
         )
         for lang in ("ru", "kk"):
             with translation.override(lang):
@@ -927,6 +928,40 @@ class LocationProposalModelTests(TestCase):
         pending_city.proposal.refresh_from_db()
         self.assertEqual(venue.proposal.status, LocationProposal.Status.APPROVED)
         self.assertEqual(pending_city.proposal.status, LocationProposal.Status.PENDING_APPROVAL)
+
+    def test_rejecting_a_proposed_city_refuses_when_a_published_competition_is_inside(self):
+        from calendar_app.models import Competition
+        from locations.models import LocationInUseError
+
+        pending_city = _propose_place(self.region, "Pending City", self.user)
+        venue = Location.propose_venue(pending_city, "Venue", submitted_by=self.user)
+        comp = Competition.objects.create(
+            title_ru="C", date_start=datetime.date(2026, 7, 1), location=venue, status=Competition.Status.APPROVED
+        )
+        with self.assertRaises(LocationInUseError):
+            pending_city.reject_and_reset_competitions()
+        pending_city.refresh_from_db()
+        comp.refresh_from_db()
+        self.assertFalse(pending_city.is_deleted)  # the branch survives rather than taking the event with it
+        self.assertEqual(comp.location_id, venue.pk)
+
+    def test_rejecting_a_proposed_city_refuses_when_it_holds_an_approved_location(self):
+        from locations.models import LocationInUseError
+
+        pending_city = _propose_place(self.region, "Pending City", self.user)
+        approved_venue = Location.propose_venue(pending_city, "Venue", submitted_by=self.user, approved=True)
+        with self.assertRaises(LocationInUseError):
+            pending_city.reject_and_reset_competitions()
+        approved_venue.refresh_from_db()
+        self.assertFalse(approved_venue.is_deleted)
+
+    def test_rejecting_a_proposed_city_clears_its_fallback_mappings(self):
+        pending_city = _propose_place(self.region, "Pending City", self.user)
+        fallback = Location.get_or_create_other_location(pending_city)
+        pending_city.reject_and_reset_competitions()
+        fallback.refresh_from_db()
+        self.assertTrue(fallback.is_deleted)
+        self.assertFalse(LocationFallback.objects.filter(city=pending_city).exists())
 
     def test_rejecting_a_proposed_city_drops_the_branch_and_unbinds_competitions(self):
         from calendar_app.models import Competition
@@ -1402,6 +1437,34 @@ class ConcurrentLocationMutationTests(TransactionTestCase):
         self._run(venue.reject_and_reset_competitions, bind_competition)
         for competition in Competition.objects.select_related("location"):
             self.assertFalse(competition.location.is_deleted)
+
+    def test_rejecting_a_proposed_city_serializes_with_competition_binding(self):
+        """The depth<4 branch must lock its subtree before touching competitions.
+
+        A competition write locks its venue row and then writes the competition. If the rejection
+        cleared competitions first and only afterwards marked the branch deleted, a submission
+        landing in between would survive pointing at a location that no longer exists -- and the two
+        paths taking their locks in opposite orders is also what deadlocks them.
+        """
+        from calendar_app.models import Competition
+
+        proposer = _make_user("reject-city-race@example.com", User.Role.PARTICIPANT)
+        pending_city = _propose_place(self.region, "PendingRaceCity", proposer)
+        venue = Location.propose_venue(pending_city, "PendingRaceVenue", submitted_by=proposer)
+
+        def bind_competition():
+            with transaction.atomic():
+                locked = lock_competition_location(venue, proposer)
+                Competition.objects.create(
+                    title_ru="Race",
+                    date_start=datetime.date(2026, 7, 1),
+                    location=locked,
+                    submitted_by=proposer,
+                )
+
+        self._run(pending_city.reject_and_reset_competitions, bind_competition)
+        for competition in Competition.objects.select_related("location"):
+            self.assertTrue(competition.location is None or not competition.location.is_deleted)
 
     def test_concurrent_rejects_share_one_city_fallback(self):
         proposer = _make_user("double-reject@example.com", User.Role.PARTICIPANT)

@@ -1932,3 +1932,7 @@ msgstr "Отменить свою заявку?"
 
 msgid "Require this field at registration"
 msgstr "Сделать это поле обязательным при регистрации"
+
+#: locations/views.py
+msgid "This location cannot be rejected: approved locations or a published competition are inside it."
+msgstr "Эту локацию нельзя отклонить: внутри есть одобренные локации или опубликованное соревнование."

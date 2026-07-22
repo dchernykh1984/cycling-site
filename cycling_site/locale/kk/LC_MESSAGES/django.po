@@ -1973,3 +1973,7 @@ msgstr "Тіркелуіңізден бас тартасыз ба?"
 
 msgid "Require this field at registration"
 msgstr "Тіркелу кезінде бұл өрісті міндетті ету"
+
+#: locations/views.py
+msgid "This location cannot be rejected: approved locations or a published competition are inside it."
+msgstr "Бұл орынды қабылдамауға болмайды: ішінде мақұлданған орындар немесе жарияланған жарыс бар."
