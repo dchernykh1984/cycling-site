@@ -26,6 +26,40 @@ _OTHER_VENUE = ("Другая локация", "Басқа орын", "Other loc
 # first-level administrative division; for the many countries whose capital *is* its own first-level
 # unit (capital district, governorate or city-state) the two names coincide.
 COUNTRIES = [
+    # -- Already seeded by 0013; listed so their coordinates get filled in too ----------------
+    ("Беларусь", "Belarus", "Минск", "Minsk", "Минск", "Minsk"),
+    ("Грузия", "Georgia", "Тбилиси", "Tbilisi", "Тбилиси", "Tbilisi"),
+    ("Армения", "Armenia", "Ереван", "Yerevan", "Ереван", "Yerevan"),
+    ("Узбекистан", "Uzbekistan", "Ташкент", "Tashkent", "Ташкент", "Tashkent"),
+    ("Турция", "Turkey", "Анкара", "Ankara", "Анкара", "Ankara"),
+    ("Литва", "Lithuania", "Вильнюсский уезд", "Vilnius County", "Вильнюс", "Vilnius"),
+    ("Польша", "Poland", "Мазовецкое воеводство", "Masovian Voivodeship", "Варшава", "Warsaw"),
+    ("Чехия", "Czech Republic", "Прага", "Prague", "Прага", "Prague"),
+    ("Словакия", "Slovakia", "Братиславский край", "Bratislava Region", "Братислава", "Bratislava"),
+    ("Венгрия", "Hungary", "Будапешт", "Budapest", "Будапешт", "Budapest"),
+    ("Германия", "Germany", "Берлин", "Berlin", "Берлин", "Berlin"),
+    ("Нидерланды", "Netherlands", "Северная Голландия", "North Holland", "Амстердам", "Amsterdam"),
+    ("Дания", "Denmark", "Столичная область", "Capital Region", "Копенгаген", "Copenhagen"),
+    ("Финляндия", "Finland", "Уусимаа", "Uusimaa", "Хельсинки", "Helsinki"),
+    ("Исландия", "Iceland", "Столичный регион", "Capital Region", "Рейкьявик", "Reykjavik"),
+    ("Великобритания", "United Kingdom", "Англия", "England", "Лондон", "London"),
+    ("Швейцария", "Switzerland", "Берн", "Bern", "Берн", "Bern"),
+    ("Италия", "Italy", "Лацио", "Lazio", "Рим", "Rome"),
+    ("Испания", "Spain", "Мадрид", "Community of Madrid", "Мадрид", "Madrid"),
+    ("Северная Македония", "North Macedonia", "Скопье", "Skopje", "Скопье", "Skopje"),
+    ("Кипр", "Cyprus", "Никосия", "Nicosia", "Никосия", "Nicosia"),
+    ("Египет", "Egypt", "Каир", "Cairo", "Каир", "Cairo"),
+    ("ЮАР", "South Africa", "Гаутенг", "Gauteng", "Претория", "Pretoria"),
+    ("США", "United States", "Округ Колумбия", "District of Columbia", "Вашингтон", "Washington"),
+    ("Бразилия", "Brazil", "Федеральный округ", "Federal District", "Бразилиа", "Brasilia"),
+    (
+        "Австралия",
+        "Australia",
+        "Австралийская столичная территория",
+        "Australian Capital Territory",
+        "Канберра",
+        "Canberra",
+    ),
     # -- Europe ------------------------------------------------------------
     ("Австрия", "Austria", "Вена", "Vienna", "Вена", "Vienna"),
     ("Албания", "Albania", "Тирана", "Tirana", "Тирана", "Tirana"),
@@ -225,6 +259,202 @@ COUNTRIES = [
     ("Фиджи", "Fiji", "Центральный округ", "Central Division", "Сува", "Suva"),
 ]
 
+# Capital coordinates, used for the country, its capital's region and the capital itself: the
+# map only plots nodes that have them, and the cascade sinks the ones that do not.
+CAPITAL_COORDS = {
+    # The countries seeded by 0013 were created without coordinates; filled in here too.
+    "Беларусь": (53.9, 27.57),
+    "Грузия": (41.72, 44.79),
+    "Армения": (40.18, 44.51),
+    "Узбекистан": (41.31, 69.24),
+    "Турция": (39.93, 32.86),
+    "Литва": (54.69, 25.28),
+    "Польша": (52.23, 21.01),
+    "Чехия": (50.08, 14.44),
+    "Словакия": (48.15, 17.11),
+    "Венгрия": (47.5, 19.04),
+    "Германия": (52.52, 13.4),
+    "Нидерланды": (52.37, 4.9),
+    "Дания": (55.68, 12.57),
+    "Финляндия": (60.17, 24.94),
+    "Исландия": (64.15, -21.94),
+    "Великобритания": (51.51, -0.13),
+    "Швейцария": (46.95, 7.45),
+    "Италия": (41.9, 12.5),
+    "Испания": (40.42, -3.7),
+    "Северная Македония": (41.99, 21.43),
+    "Кипр": (35.19, 33.38),
+    "Египет": (30.04, 31.24),
+    "ЮАР": (-25.75, 28.19),
+    "США": (38.9, -77.04),
+    "Бразилия": (-15.79, -47.88),
+    "Австралия": (-35.28, 149.13),
+    "Австрия": (48.21, 16.37),
+    "Албания": (41.33, 19.82),
+    "Андорра": (42.51, 1.52),
+    "Бельгия": (50.85, 4.35),
+    "Болгария": (42.7, 23.32),
+    "Босния и Герцеговина": (43.86, 18.41),
+    "Ватикан": (41.9, 12.45),
+    "Греция": (37.98, 23.73),
+    "Ирландия": (53.35, -6.26),
+    "Латвия": (56.95, 24.11),
+    "Лихтенштейн": (47.14, 9.52),
+    "Люксембург": (49.61, 6.13),
+    "Мальта": (35.9, 14.51),
+    "Молдавия": (47.01, 28.86),
+    "Монако": (43.73, 7.42),
+    "Норвегия": (59.91, 10.75),
+    "Португалия": (38.72, -9.14),
+    "Румыния": (44.43, 26.1),
+    "Сан-Марино": (43.94, 12.45),
+    "Сербия": (44.79, 20.45),
+    "Словения": (46.06, 14.51),
+    "Украина": (50.45, 30.52),
+    "Франция": (48.86, 2.35),
+    "Хорватия": (45.81, 15.98),
+    "Черногория": (42.44, 19.26),
+    "Швеция": (59.33, 18.07),
+    "Эстония": (59.44, 24.75),
+    "Азербайджан": (40.41, 49.87),
+    "Афганистан": (34.53, 69.17),
+    "Бангладеш": (23.81, 90.41),
+    "Бахрейн": (26.23, 50.59),
+    "Бруней": (4.9, 114.94),
+    "Бутан": (27.47, 89.64),
+    "Восточный Тимор": (-8.56, 125.56),
+    "Вьетнам": (21.03, 105.85),
+    "Израиль": (31.77, 35.21),
+    "Индия": (28.61, 77.21),
+    "Индонезия": (-6.21, 106.85),
+    "Иордания": (31.95, 35.93),
+    "Ирак": (33.31, 44.36),
+    "Иран": (35.69, 51.39),
+    "Йемен": (15.37, 44.19),
+    "Камбоджа": (11.56, 104.92),
+    "Катар": (25.29, 51.53),
+    "КНДР": (39.04, 125.76),
+    "Республика Корея": (37.57, 126.98),
+    "Кувейт": (29.38, 47.99),
+    "Лаос": (17.97, 102.63),
+    "Ливан": (33.89, 35.5),
+    "Малайзия": (3.14, 101.69),
+    "Мальдивы": (4.18, 73.51),
+    "Монголия": (47.89, 106.91),
+    "Мьянма": (19.75, 96.1),
+    "Непал": (27.72, 85.32),
+    "ОАЭ": (24.45, 54.38),
+    "Оман": (23.59, 58.41),
+    "Пакистан": (33.68, 73.05),
+    "Саудовская Аравия": (24.71, 46.68),
+    "Сингапур": (1.35, 103.82),
+    "Сирия": (33.51, 36.28),
+    "Таджикистан": (38.56, 68.79),
+    "Таиланд": (13.76, 100.5),
+    "Туркмения": (37.96, 58.33),
+    "Филиппины": (14.6, 120.98),
+    "Шри-Ланка": (6.93, 79.86),
+    "Япония": (35.68, 139.69),
+    "Алжир": (36.75, 3.06),
+    "Ангола": (-8.84, 13.23),
+    "Бенин": (6.5, 2.62),
+    "Ботсвана": (-24.63, 25.92),
+    "Буркина-Фасо": (12.37, -1.52),
+    "Бурунди": (-3.43, 29.93),
+    "Габон": (0.42, 9.47),
+    "Гамбия": (13.45, -16.58),
+    "Гана": (5.6, -0.19),
+    "Гвинея": (9.64, -13.58),
+    "Гвинея-Бисау": (11.86, -15.6),
+    "Джибути": (11.59, 43.15),
+    "Замбия": (-15.39, 28.32),
+    "Зимбабве": (-17.83, 31.05),
+    "Кабо-Верде": (14.93, -23.51),
+    "Камерун": (3.85, 11.5),
+    "Кения": (-1.29, 36.82),
+    "Коморы": (-11.7, 43.26),
+    "Республика Конго": (-4.26, 15.28),
+    "ДР Конго": (-4.44, 15.27),
+    "Кот-д'Ивуар": (6.83, -5.29),
+    "Лесото": (-29.31, 27.48),
+    "Либерия": (6.3, -10.8),
+    "Ливия": (32.89, 13.19),
+    "Маврикий": (-20.16, 57.5),
+    "Мавритания": (18.08, -15.98),
+    "Мадагаскар": (-18.88, 47.51),
+    "Малави": (-13.96, 33.79),
+    "Мали": (12.64, -8.0),
+    "Марокко": (34.02, -6.84),
+    "Мозамбик": (-25.97, 32.58),
+    "Намибия": (-22.56, 17.08),
+    "Нигер": (13.51, 2.11),
+    "Нигерия": (9.06, 7.49),
+    "Руанда": (-1.94, 30.06),
+    "Сан-Томе и Принсипи": (0.34, 6.73),
+    "Сейшелы": (-4.62, 55.45),
+    "Сенегал": (14.72, -17.47),
+    "Сомали": (2.05, 45.32),
+    "Судан": (15.5, 32.56),
+    "Южный Судан": (4.85, 31.58),
+    "Сьерра-Леоне": (8.48, -13.23),
+    "Танзания": (-6.16, 35.75),
+    "Того": (6.13, 1.22),
+    "Тунис": (36.81, 10.18),
+    "Уганда": (0.35, 32.58),
+    "ЦАР": (4.39, 18.56),
+    "Чад": (12.13, 15.06),
+    "Экваториальная Гвинея": (3.75, 8.78),
+    "Эритрея": (15.34, 38.93),
+    "Эсватини": (-26.32, 31.14),
+    "Эфиопия": (9.01, 38.76),
+    "Антигуа и Барбуда": (17.12, -61.85),
+    "Аргентина": (-34.6, -58.38),
+    "Багамы": (25.06, -77.34),
+    "Барбадос": (13.1, -59.61),
+    "Белиз": (17.25, -88.77),
+    "Боливия": (-19.03, -65.26),
+    "Венесуэла": (10.48, -66.9),
+    "Гаити": (18.59, -72.31),
+    "Гайана": (6.8, -58.16),
+    "Гватемала": (14.63, -90.51),
+    "Гондурас": (14.07, -87.19),
+    "Гренада": (12.06, -61.75),
+    "Доминика": (15.3, -61.39),
+    "Доминиканская Республика": (18.49, -69.93),
+    "Канада": (45.42, -75.7),
+    "Колумбия": (4.71, -74.07),
+    "Коста-Рика": (9.93, -84.08),
+    "Куба": (23.11, -82.37),
+    "Мексика": (19.43, -99.13),
+    "Никарагуа": (12.11, -86.24),
+    "Панама": (8.98, -79.52),
+    "Парагвай": (-25.28, -57.64),
+    "Перу": (-12.05, -77.04),
+    "Сальвадор": (13.69, -89.19),
+    "Сент-Винсент и Гренадины": (13.16, -61.22),
+    "Сент-Китс и Невис": (17.3, -62.72),
+    "Сент-Люсия": (14.01, -60.99),
+    "Суринам": (5.85, -55.2),
+    "Тринидад и Тобаго": (10.65, -61.51),
+    "Уругвай": (-34.9, -56.16),
+    "Чили": (-33.45, -70.67),
+    "Эквадор": (-0.18, -78.47),
+    "Ямайка": (17.97, -76.79),
+    "Вануату": (-17.73, 168.32),
+    "Кирибати": (1.33, 172.98),
+    "Маршалловы Острова": (7.09, 171.38),
+    "Микронезия": (6.92, 158.16),
+    "Науру": (-0.55, 166.92),
+    "Новая Зеландия": (-41.29, 174.78),
+    "Палау": (7.5, 134.62),
+    "Папуа — Новая Гвинея": (-9.44, 147.18),
+    "Самоа": (-13.83, -171.77),
+    "Соломоновы Острова": (-9.43, 159.95),
+    "Тонга": (-21.14, -175.2),
+    "Тувалу": (-8.52, 179.19),
+    "Фиджи": (-18.14, 178.44),
+}
+
 
 def _siblings(parent):
     """The parent's children by path range: ``get_children()`` returns nothing on a drifted
@@ -236,26 +466,46 @@ def _siblings(parent):
     )
 
 
-def _child(parent, names, sort_order, *, hidden=False):
+def _refresh(node, coords):
+    """Undelete a node and fill in coordinates it is missing, without overwriting a real value."""
+    fields = []
+    if node.is_deleted:
+        node.is_deleted = False
+        fields.append("is_deleted")
+    if coords and node.lat is None and node.lng is None:
+        node.lat, node.lng = coords
+        fields += ["lat", "lng"]
+    if fields:
+        node.save(update_fields=fields)
+    return node
+
+
+def _child(parent, names, sort_order, *, hidden=False, coords=None):
     """The parent's child with this Russian name, appended when absent, live namesakes preferred."""
     from locations.models import add_location_child
 
     ru, kk, en = names
     existing = _siblings(parent).filter(name_ru=ru).order_by("is_deleted", "path").first()
     if existing is not None:
-        if existing.is_deleted:
-            existing.is_deleted = False
-            existing.save(update_fields=["is_deleted"])
-        return existing
+        return _refresh(existing, coords)
+    lat, lng = coords or (None, None)
     return add_location_child(
-        parent, name=ru, name_ru=ru, name_kk=kk, name_en=en, sort_order=sort_order, is_hidden=hidden
+        parent,
+        name=ru,
+        name_ru=ru,
+        name_kk=kk,
+        name_en=en,
+        sort_order=sort_order,
+        is_hidden=hidden,
+        lat=lat,
+        lng=lng,
     )
 
 
-def _add_city(region, names, sort_order, *, hidden=False):
+def _add_city(region, names, sort_order, *, hidden=False, coords=None):
     from locations.models import LocationFallback
 
-    city = _child(region, names, sort_order, hidden=hidden)
+    city = _child(region, names, sort_order, hidden=hidden, coords=coords)
     if not LocationFallback.objects.filter(city=city).exists():
         venue = _child(city, _OTHER_VENUE, 9999, hidden=True)
         LocationFallback.objects.get_or_create(city=city, defaults={"location": venue})
@@ -270,18 +520,26 @@ def add_countries(apps, schema_editor):
     order = max(used) + 1 if used else 1
 
     for country_ru, country_en, region_ru, region_en, capital_ru, capital_en in COUNTRIES:
+        coords = CAPITAL_COORDS.get(country_ru)
+        lat, lng = coords or (None, None)
         country = Location.objects.filter(depth=1, name_ru=country_ru).order_by("is_deleted", "path").first()
         if country is None:
             country = add_location_child(
-                None, name=country_ru, name_ru=country_ru, name_kk=country_ru, name_en=country_en, sort_order=order
+                None,
+                name=country_ru,
+                name_ru=country_ru,
+                name_kk=country_ru,
+                name_en=country_en,
+                sort_order=order,
+                lat=lat,
+                lng=lng,
             )
             order += 1
-        elif country.is_deleted:
-            country.is_deleted = False
-            country.save(update_fields=["is_deleted"])
+        else:
+            _refresh(country, coords)
 
-        region = _child(country, (region_ru, region_ru, region_en), 1)
-        _add_city(region, (capital_ru, capital_ru, capital_en), 1)
+        region = _child(country, (region_ru, region_ru, region_en), 1, coords=coords)
+        _add_city(region, (capital_ru, capital_ru, capital_en), 1, coords=coords)
         _add_city(region, _OTHER_CITY, 9999, hidden=True)
         _child(country, _OTHER_REGION, 9999, hidden=True)
 
