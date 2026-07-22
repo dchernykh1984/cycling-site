@@ -130,3 +130,16 @@ def test_city_record_is_matchable_right_away():
     cities = flatten_cities(tree)
     cities.append(city_record(77, "Kobona", region, country))
     assert match_city(cities, "kobona") == 77
+
+
+def test_country_aliases_reach_the_real_country_not_the_catch_all():
+    """Russian sources write "Kirgiziya"/"Belorussiya"; the tree holds the official names.
+
+    Without the alias the country looks unknown, so the race is filed under the catch-all and every
+    town from that source is proposed under the wrong root.
+    """
+    tree = _tree_with_catch_alls()
+    tree.append({"id": 95, "name": {"ru": "Belarus-ru", "kk": "", "en": "Belarus"}, "children": []})
+    assert match_country(tree, "\u041a\u0438\u0440\u0433\u0438\u0437\u0438\u044f")["id"] == 6  # Kyrgyzstan
+    assert match_country(tree, "\u0411\u0435\u043b\u043e\u0440\u0443\u0441\u0441\u0438\u044f")["id"] == 95
+    assert match_country(tree, "Turkiye")["id"] == 90  # no Turkey in this tree -> catch-all

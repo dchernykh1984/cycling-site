@@ -87,6 +87,24 @@ def is_ambiguous_city(cities: list[dict], city: str, region: str = "", country: 
 # The tree's catch-all nodes, matched on their English name (this module must stay ASCII-only).
 _OTHER_COUNTRY = "other country"
 
+# Russian sources use names the tree does not carry -- "Kirgiziya" for Kyrgyzstan, "Belorussiya"
+# for Belarus. Without this the country looks unknown, the race is filed under the catch-all and
+# every town from that source is proposed in the wrong place, run after run. Keys and values are
+# normalized names; the value is matched against the tree in any locale. Escaped rather than
+# written out because this module must stay ASCII-only.
+_COUNTRY_ALIASES = {
+    "\u043a\u0438\u0440\u0433\u0438\u0437\u0438\u044f": "kyrgyzstan",
+    "\u0431\u0435\u043b\u043e\u0440\u0443\u0441\u0441\u0438\u044f": "belarus",
+    "\u043c\u043e\u043b\u0434\u043e\u0432\u0430": "moldova",
+    "\u0433\u043e\u043b\u043b\u0430\u043d\u0434\u0438\u044f": "netherlands",
+    "\u0441\u043e\u0435\u0434\u0438\u043d\u0435\u043d\u043d\u044b\u0435 "
+    "\u0448\u0442\u0430\u0442\u044b": "united states",
+    "\u0447\u0435\u0448\u0441\u043a\u0430\u044f "
+    "\u0440\u0435\u0441\u043f\u0443\u0431\u043b\u0438\u043a\u0430": "czech republic",
+    "turkiye": "turkey",
+    "kyrgyz republic": "kyrgyzstan",
+}
+
 
 def _match_node(nodes: list[dict], name: str) -> dict | None:
     """The single node of ``nodes`` whose name matches in any locale, or None if absent/ambiguous."""
@@ -111,9 +129,14 @@ def match_country(tree: list[dict], country: str) -> dict | None:
     not carry is filed under "Other country" and a human moves it later. An *unnamed* country is a
     different case and gets None -- guessing there would file a real region under the catch-all.
     """
-    if not normalize_name(country):
+    target = normalize_name(country)
+    if not target:
         return None
-    return _match_node(tree, country) or _catch_all(tree, _OTHER_COUNTRY)
+    return (
+        _match_node(tree, country)
+        or _match_node(tree, _COUNTRY_ALIASES.get(target, ""))
+        or _catch_all(tree, _OTHER_COUNTRY)
+    )
 
 
 def match_region(country: dict, region: str) -> dict | None:
