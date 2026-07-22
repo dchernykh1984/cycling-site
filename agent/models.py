@@ -43,6 +43,12 @@ class Candidate:
     description_en: str = ""
     venue_kk: str = ""
     venue_en: str = ""
+    # A region/city the site does not have yet is created from these, so one spelling per locale
+    # keeps the same place from arriving twice when the next source names it in another language.
+    region_kk: str = ""
+    region_en: str = ""
+    city_kk: str = ""
+    city_en: str = ""
 
 
 @dataclass

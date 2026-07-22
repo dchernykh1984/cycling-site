@@ -92,14 +92,15 @@ class SiteApiClient:
         result = self._request("POST", "/api/v1/locations/", payload)
         return int(result["id"]) if isinstance(result, dict) else 0
 
-    def propose_place(self, parent_id: int, name: str) -> int:
+    def propose_place(self, parent_id: int, name: str, name_kk: str = "", name_en: str = "") -> int:
         """Propose a region or city under ``parent_id`` and return its id.
 
         Unlike a venue this always lands pending: the site reviews geography before publishing it.
-        The one name is stored in all three locales -- a reviewer renames it when approving, which
-        beats asking the model to translate a place name it may not know.
+        The name is stored in every locale the model gave, falling back to the Russian one, so the
+        same place arriving later from a source in another language matches instead of being
+        proposed a second time.
         """
-        payload = {"parent_id": parent_id, "name": _loc(name, name, name)}
+        payload = {"parent_id": parent_id, "name": _loc(name, name_kk or name, name_en or name)}
         result = self._request("POST", "/api/v1/locations/", payload)
         if not isinstance(result, dict) or not result.get("id"):
             # Falling back to id 0 would poison the run: the caller caches the node, and every later

@@ -20,8 +20,15 @@ _SYSTEM = (
     'Return ONLY a JSON array; each item: {"title": ' + _LOC + ', "date_start": "YYYY-MM-DD", '
     '"date_end": "YYYY-MM-DD"|null, "description": ' + _LOC + ', "source_url": str, '
     '"url_route": str, "url_registration": str, "event_type_id": int|null, "discipline_ids": [int], '
-    '"country": str, "region": str, "city": str, "venue": ' + _LOC + ', "lat": float|null, "lng": float|null}. '
-    "title, description and venue MUST be given in all three locales -- ru (Russian), kk (Kazakh) "
+    '"country": str, "region": '
+    + _LOC
+    + ', "city": '
+    + _LOC
+    + ', "venue": '
+    + _LOC
+    + ', "lat": float|null, "lng": float|null}. '
+    "title, description, region, city and venue MUST be given in all three locales -- ru (Russian), "
+    "kk (Kazakh) "
     "and en (English); translate faithfully, and if you cannot translate one, repeat the Russian "
     "text in that field. Write each description as simple HTML (<p>, <br>, <ul>/<ol>/<li>, <strong>) "
     "so the distances, categories/groups, schedule and fees are readable -- never <script>, <style> "

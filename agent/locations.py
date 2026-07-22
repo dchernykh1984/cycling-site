@@ -197,11 +197,16 @@ def match_region(country: dict, region: str) -> dict | None:
     return _match_node((country or {}).get("children") or [], region)
 
 
-def city_record(city_id: int, city: str, region: dict, country: dict) -> dict:
-    """A freshly proposed city as a `flatten_cities` record, so the same run can reuse it."""
+def city_record(city_id: int, city, region: dict, country: dict) -> dict:
+    """A freshly proposed city as a `flatten_cities` record, so the same run can reuse it.
+
+    ``city`` may be one name or the (ru, kk, en) triple that was posted; indexing every spelling is
+    what lets the next source name the same town in another language and still match.
+    """
+    names = city if isinstance(city, (tuple, list)) else (city,)
     return {
         "id": city_id,
-        "names": {normalize_name(city)},
+        "names": {normalize_name(name) for name in names if name},
         "region_names": _names(region or {}),
         "country_names": _names(country or {}),
     }
