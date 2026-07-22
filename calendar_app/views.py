@@ -21,6 +21,7 @@ from locations.models import (
     Location,
     LocationConflictError,
     LocationProposal,
+    chain_is_approved,
     lock_competition_location,
     map_display_node,
     sort_locations_for_filter,
@@ -80,14 +81,28 @@ def _is_organizer_plus(user) -> bool:
     return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ORGANIZER_RANK)
 
 
+def _unpublish_if_geography_is_pending(comp, user) -> None:
+    """Send a published event back for review when it is re-pointed at unreviewed geography.
+
+    Publishing a branch by editing an event into it is the same leak as approving the event there,
+    and it leaves the branch holding approved work, which is what blocks its rejection.
+    """
+    if (
+        comp.status == Competition.Status.APPROVED
+        and not _can_manage_any_competition(user)
+        and not chain_is_approved(comp.location)
+    ):
+        comp.status = Competition.Status.PENDING_APPROVAL
+        comp.approved_by = None
+        comp.approved_at = None
+
+
 def _resolve_competition_location(cd, user, *, approved):
     """Location for a competition: a freshly proposed venue if the form asked for one.
 
     Organizer+ submitters get an approved venue directly; everyone else proposes a
     pending venue they can use immediately (issue #111).
     """
-    from locations.models import chain_is_approved
-
     new_name = (cd.get("new_venue_name") or "").strip()
     city = cd.get("new_venue_city")
     if new_name and city is not None:
@@ -757,7 +772,11 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         f = cd.get(fname)
                         if f:
                             setattr(comp, fname, f)
-                    if is_organizer:
+                    # An organizer's own submission is published straight away -- but not onto
+                    # geography still awaiting review: that would put the pending city's name on a
+                    # public page and leave the branch holding an approved event, which is what
+                    # makes it impossible to reject afterwards.
+                    if is_organizer and chain_is_approved(comp.location):
                         comp.status = Competition.Status.APPROVED
                         comp.approved_by = request.user
                         comp.approved_at = timezone.now()
@@ -963,6 +982,7 @@ class EditCompetitionView(View):
                     comp.location = lock_competition_location(
                         location, request.user, is_admin=_can_manage_any_competition(request.user)
                     )
+                    _unpublish_if_geography_is_pending(comp, request.user)
                     comp.save()
                     comp.disciplines.set(cd.get("disciplines") or [])
                     _save_categories(comp, reg_form, is_org)

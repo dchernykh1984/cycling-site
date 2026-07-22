@@ -978,6 +978,44 @@ class ModeratorReachesPendingNodesTests(TestCase):
         self.assertNotIn(pending.pk, [loc.pk for loc in selectable_parent_locations(organizer)])
 
 
+class OrganizerSelfPublishTests(TestCase):
+    """An organizer's own submission publishes itself, bypassing Competition.approve()."""
+
+    def setUp(self):
+        self.organizer = _make_user("selfpub@x.com", User.Role.ORGANIZER)
+        self.country, self.region, self.city = _make_tree()
+
+    def _submit(self, city, name):
+        from django.urls import reverse
+
+        self.client.force_login(self.organizer)
+        return self.client.post(
+            reverse("calendar_submit"),
+            {
+                "title_ru": name,
+                "date_start": "2026-09-01",
+                "new_venue_city": str(city.pk),
+                "new_venue_name": f"{name} start",
+            },
+        )
+
+    def test_submission_onto_a_pending_city_is_not_published(self):
+        from calendar_app.models import Competition
+
+        pending_city = _propose_place(self.region, "Secretville", self.organizer)
+        self._submit(pending_city, "Hidden Race")
+        comp = Competition.objects.get(title_ru="Hidden Race")
+        self.assertEqual(comp.status, Competition.Status.PENDING_APPROVAL)
+        # And the branch stays rejectable, which the published state would have prevented.
+        pending_city.reject_and_reset_competitions()
+
+    def test_submission_onto_a_public_city_is_published_as_before(self):
+        from calendar_app.models import Competition
+
+        self._submit(self.city, "Open Race")
+        self.assertEqual(Competition.objects.get(title_ru="Open Race").status, Competition.Status.APPROVED)
+
+
 class ApprovalBlockedByPendingGeographyTests(TestCase):
     """An organizer must not publish an event onto geography nobody has reviewed."""
 
