@@ -1007,8 +1007,36 @@ class LocationProposalModelTests(TestCase):
         venue.approve_with_competition(organizer)
         venue.proposal.refresh_from_db()
         pending_city.proposal.refresh_from_db()
-        self.assertEqual(venue.proposal.status, LocationProposal.Status.APPROVED)
+        # Neither is blessed: the venue sits under geography the organizer may not approve, and
+        # publishing it there would make the city unrejectable.
+        self.assertEqual(venue.proposal.status, LocationProposal.Status.PENDING_APPROVAL)
         self.assertEqual(pending_city.proposal.status, LocationProposal.Status.PENDING_APPROVAL)
+
+    def test_organizer_approval_leaves_the_venue_pending_under_pending_geography(self):
+        """Approving the event must not publish a venue whose city is still a proposal.
+
+        It would leak the city's name through the competition and leave the branch holding approved
+        work, which then makes the city impossible to reject.
+        """
+        organizer = _make_user("org-chain@x.com", User.Role.ORGANIZER)
+        pending_city = _propose_place(self.region, "Pending City", self.user)
+        venue = Location.propose_venue(pending_city, "Venue", submitted_by=self.user)
+        venue.approve_with_competition(organizer)
+        self.assertTrue(Location.objects.get(pk=venue.pk).is_pending)
+        pending_city.reject_and_reset_competitions()  # still rejectable
+        self.assertTrue(Location.objects.get(pk=pending_city.pk).is_deleted)
+
+    def test_rejecting_a_proposed_city_ignores_a_rejected_competition(self):
+        from calendar_app.models import Competition
+
+        pending_city = _propose_place(self.region, "Pending City", self.user)
+        venue = Location.propose_venue(pending_city, "Venue", submitted_by=self.user)
+        comp = Competition.objects.create(
+            title_ru="C", date_start=datetime.date(2026, 7, 1), location=venue, status=Competition.Status.REJECTED
+        )
+        pending_city.reject_and_reset_competitions()
+        comp.refresh_from_db()
+        self.assertIsNone(comp.location)
 
     def test_rejecting_a_proposed_city_refuses_when_a_published_competition_is_inside(self):
         from calendar_app.models import Competition

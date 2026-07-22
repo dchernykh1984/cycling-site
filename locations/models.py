@@ -285,11 +285,15 @@ class Location(MP_Node, index.Indexed):
         create outright anyway; the region and city stay in the admin's queue instead of being waved
         through by someone the API would not let create them.
         """
-        self._approve_proposal()
-        if not can_manage_locations(reviewer):
+        if can_manage_locations(reviewer):
+            for node in [self, *self.get_ancestors()]:
+                node._approve_proposal()
             return
-        for ancestor in self.get_ancestors():
-            ancestor._approve_proposal()
+        # An organizer may bless the venue only where the geography above it is already public.
+        # Approving it under a pending city would publish that city through the competition and
+        # then block the city's rejection for good, since the branch would hold approved work.
+        if chain_is_approved(self.get_parent()):
+            self._approve_proposal()
 
     def _reject_proposed_place(self) -> None:
         """Clear a rejected region/city, refusing when anything approved lives inside it.
@@ -313,7 +317,14 @@ class Location(MP_Node, index.Indexed):
                 raise LocationInUseError("Location proposal holds an approved location")
         pks = [node.pk for node in subtree]
         live = competition_cls.objects.filter(is_deleted=False, location_id__in=pks)
-        if live.exclude(status__in=(competition_cls.Status.DRAFT, competition_cls.Status.PENDING_APPROVAL)).exists():
+        # A rejected competition is exactly what a moderator clears before rejecting the geography
+        # invented for it, so it must not stand in the way.
+        still_wanted = (
+            competition_cls.Status.DRAFT,
+            competition_cls.Status.PENDING_APPROVAL,
+            competition_cls.Status.REJECTED,
+        )
+        if live.exclude(status__in=still_wanted).exists():
             raise LocationInUseError("Location proposal is used by a published competition")
 
         live.update(location=None)
