@@ -101,7 +101,11 @@ class SiteApiClient:
         """
         payload = {"parent_id": parent_id, "name": _loc(name, name, name)}
         result = self._request("POST", "/api/v1/locations/", payload)
-        return int(result["id"]) if isinstance(result, dict) else 0
+        if not isinstance(result, dict) or not result.get("id"):
+            # Falling back to id 0 would poison the run: the caller caches the node, and every later
+            # candidate would then hang its city off a parent that does not exist.
+            raise RuntimeError(f"Location proposal for {name!r} returned no id: {result!r}")
+        return int(result["id"])
 
     def fallback_venue(self, city_id: int) -> int:
         """Get (or create) the city's hidden catch-all venue and return its id."""
