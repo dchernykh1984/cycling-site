@@ -46,10 +46,14 @@ class LocationModelTests(TestCase):
         self.assertIn("Test Location", str(loc))
 
     def test_locations_without_coordinates_excluded_from_map(self):
+        # The seeds fill the tree with coordinate-bearing countries, so assert on these two nodes
+        # rather than on the whole table.
         Location.add_root(name_ru="No Coords", name_en="No Coords")
         Location.add_root(name_ru="With Coords", name_en="With Coords", lat="43.0", lng="76.0")
-        with_coords = Location.objects.filter(lat__isnull=False, lng__isnull=False)
-        self.assertEqual(with_coords.count(), 1)
+        with_coords = Location.objects.filter(
+            lat__isnull=False, lng__isnull=False, name_ru__in=["No Coords", "With Coords"]
+        )
+        self.assertEqual([loc.name_ru for loc in with_coords], ["With Coords"])
         self.assertEqual(with_coords.first().name_ru, "With Coords")
 
 
