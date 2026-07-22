@@ -320,8 +320,18 @@ class Location(MP_Node, index.Indexed):
         subtree = list(
             Location.objects.select_for_update().filter(path__startswith=self.path, is_deleted=False).order_by("path")
         )
+        # Lock the descendants' proposals as well, and judge on what the lock returns rather than on
+        # the status loaded with the node: approving one writes only the proposal row, so an unlocked
+        # read lets a concurrent approval slip between this check and the delete below, destroying a
+        # branch this method promised to spare.
+        pending = {
+            proposal.location_id
+            for proposal in LocationProposal.objects.select_for_update()
+            .filter(location__in=subtree, status=LocationProposal.Status.PENDING_APPROVAL)
+            .order_by("pk")
+        }
         for node in subtree:
-            if not node.is_pending and not node.is_system_fallback:
+            if node.pk not in pending and not node.is_system_fallback:
                 raise LocationInUseError("Location proposal holds an approved location")
         pks = [node.pk for node in subtree]
         # Lock the competitions before reading their status. Approving a competition only takes a
