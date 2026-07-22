@@ -17,6 +17,7 @@ countries only carried the town a race happened to be in.
 from django.db import migrations
 
 _CATCH_ALL = {"Другая страна", "Другой регион", "Другой город", "Другая локация"}
+_OTHER_CITY = ("Другой город", "Басқа қала", "Other city")
 _OTHER_VENUE = ("Другая локация", "Басқа орын", "Other location")
 
 # The four closest countries lead the list; everything else keeps its existing relative order.
@@ -107,17 +108,28 @@ def _child(parent, names, *, hidden=False):
     return add_location_child(parent, name=ru, name_ru=ru, name_kk=kk, name_en=en, sort_order=0, is_hidden=hidden)
 
 
+def _ensure_fallback_venue(city):
+    """Give the city the hidden catch-all venue plus the mapping every other city in the tree has."""
+    from locations.models import LocationFallback
+
+    if LocationFallback.objects.filter(city=city).exists():
+        return
+    venue = _child(city, _OTHER_VENUE, hidden=True)
+    LocationFallback.objects.get_or_create(city=city, defaults={"location": venue})
+
+
 def _ensure_capitals():
-    from locations.models import Location, LocationFallback
+    from locations.models import Location
 
     for country_ru, (region_names, city_names) in CAPITALS.items():
         country = Location.objects.filter(depth=1, name_ru=country_ru, is_deleted=False).first()
         if country is None:  # the country seed did not run (a database predating 0013)
             continue
-        city = _child(_child(country, region_names), city_names)
-        if not LocationFallback.objects.filter(city=city).exists():
-            venue = _child(city, _OTHER_VENUE, hidden=True)
-            LocationFallback.objects.get_or_create(city=city, defaults={"location": venue})
+        region = _child(country, region_names)
+        # Every other region in the tree ends with a catch-all city; a freshly created one must too,
+        # or there is no way to file a race in another town of that region without proposing one.
+        for city in (_child(region, city_names), _child(region, _OTHER_CITY, hidden=True)):
+            _ensure_fallback_venue(city)
 
 
 def _renumber(children, leaders=()):

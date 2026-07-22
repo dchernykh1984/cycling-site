@@ -322,24 +322,26 @@ def _child(parent, names, sort_order, *, hidden=False):
     )
 
 
-def _add_city(region, names, sort_order):
+def _add_city(region, names, sort_order, *, hidden=False):
     """Add the city plus its hidden catch-all venue and the fallback mapping that names it."""
     from locations.models import LocationFallback
 
-    city = _child(region, names, sort_order)
+    city = _child(region, names, sort_order, hidden=hidden)
     if not LocationFallback.objects.filter(city=city).exists():
         venue = _child(city, _OTHER_VENUE, 9999, hidden=True)
         LocationFallback.objects.get_or_create(city=city, defaults={"location": venue})
     return city
 
 
-def _add_region(country, names, sort_order, cities):
+def _add_region(country, names, sort_order, cities, *, hidden=False):
     """Add (or reuse) the region and append the cities after whatever it already holds."""
-    region = _child(country, names, sort_order)
+    region = _child(country, names, sort_order, hidden=hidden)
     start = _siblings(region).filter(is_deleted=False).exclude(sort_order=9999).count() + 1
     for order, city_names in enumerate(cities, start=start):
         _add_city(region, city_names, order)
-    _add_city(region, _OTHER_CITY, 9999)
+    # The catch-alls are placeholders for a human to pick, not places: production keeps every one of
+    # them hidden so they stay out of the pickers, and the ones seeded here must match.
+    _add_city(region, _OTHER_CITY, 9999, hidden=True)
 
 
 def _add_country(names, regions, sort_order):
@@ -353,7 +355,7 @@ def _add_country(names, regions, sort_order):
         _add_region(country, region_names, region_order, cities)
     # Mirror the structure Russia already has, so a reviewer can still place an event in the
     # country when its region is not one of the seeded ones.
-    _add_region(country, _OTHER_REGION, 9999, [])
+    _add_region(country, _OTHER_REGION, 9999, [], hidden=True)
 
 
 def add_locations(apps, schema_editor):
