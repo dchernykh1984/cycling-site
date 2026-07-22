@@ -207,6 +207,32 @@ def _make_user(username, role, is_superuser=False):
 class LocationOrderingTests(TestCase):
     """sort_order, not creation order, decides how locations are listed."""
 
+    def test_new_node_lands_after_the_real_ones_and_before_the_catch_all(self):
+        from locations.models import CATCH_ALL_SORT_ORDER, add_location_child, selectable_parent_locations
+
+        country = add_location_child(None, name="Country", name_ru="Country")
+        add_location_child(country, name="First", name_ru="First")
+        # Stands for the localized catch-all, which is pinned by its sort_order alone.
+        catch_all = add_location_child(
+            country, name="Other region", name_ru="Other region", sort_order=CATCH_ALL_SORT_ORDER
+        )
+        second = add_location_child(country, name="Second", name_ru="Second")
+
+        self.assertLess(second.sort_order, catch_all.sort_order)
+        names = [
+            loc.name_ru for loc in selectable_parent_locations() if loc.depth == 2 and loc.path.startswith(country.path)
+        ]
+        self.assertEqual(names, ["First", "Second", "Other region"])
+
+    def test_catch_all_venue_is_last_in_its_city(self):
+        from locations.models import CATCH_ALL_SORT_ORDER, add_location_child
+
+        _, _, city = _make_tree()
+        venue = add_location_child(city, name="Real venue", name_ru="Real venue")
+        fallback = Location.get_or_create_other_location(city)
+        self.assertEqual(fallback.sort_order, CATCH_ALL_SORT_ORDER)
+        self.assertLess(venue.sort_order, fallback.sort_order)
+
     def test_sort_order_decides_the_listing_and_ties_fall_back_to_creation_order(self):
         from locations.models import add_location_child, selectable_parent_locations
 

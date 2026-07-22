@@ -43,6 +43,22 @@ def _lock_tree_mutation_namespace():
             cursor.execute("SELECT pg_advisory_xact_lock(%s)", [_TREE_MUTATION_LOCK])
 
 
+# The catch-all nodes at every level ("Other country" / "Other region" / "Other city" / "Other
+# location") are pinned to the end of their list with this sort_order; real nodes stay below it.
+CATCH_ALL_SORT_ORDER = 9999
+
+
+def next_sort_order(siblings) -> int:
+    """The sort_order a new sibling gets: after every real one, still ahead of the catch-all.
+
+    Lists are ordered by sort_order, and the field defaults to 0, so a node added without one would
+    jump to the top of its level. Numbering it past the last real sibling appends it where a reader
+    expects a new entry, and the catch-all stays last because it sits at ``CATCH_ALL_SORT_ORDER``.
+    """
+    used = [node.sort_order for node in siblings if node.sort_order < CATCH_ALL_SORT_ORDER]
+    return min(max(used) + 1, CATCH_ALL_SORT_ORDER - 1) if used else 1
+
+
 def add_location_child(parent, **kwargs):
     """Append a child under ``parent`` at the next free path, sidestepping treebeard's
     sorted ``add_child``.  When ``parent`` is ``None`` the node is appended as a new root
@@ -88,6 +104,7 @@ def add_location_child(parent, **kwargs):
             newpath = cls._get_path(locked.path, depth, 1)
         else:
             newpath = cls._get_path(None, 1, 1)
+        kwargs.setdefault("sort_order", next_sort_order(siblings))
         obj = cls(path=newpath, depth=depth, numchild=0, **kwargs)
         obj.save()
         if parent is not None:
@@ -205,6 +222,7 @@ class Location(MP_Node, index.Indexed):
                 name_kk=names["kk"],
                 name_en=names["en"],
                 is_hidden=True,
+                sort_order=CATCH_ALL_SORT_ORDER,  # the catch-all venue stays last in its city
             )
             LocationFallback.objects.create(city=locked_city, location=fallback)
             return fallback
