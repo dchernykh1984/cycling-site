@@ -181,7 +181,7 @@ def apply_order(apps, schema_editor):
     roots = list(Location.objects.filter(depth=1, is_deleted=False).order_by("path"))
     updated = _renumber(roots, ROOT_LEADERS)
     for node in Location.objects.filter(depth__in=[1, 2, 3], is_deleted=False).order_by("path"):
-        children = list(node.get_children().filter(is_deleted=False).order_by("path"))
+        children = list(_siblings(node).filter(is_deleted=False).order_by("path"))
         updated.extend(_renumber(children, _leaders_for(node)))
     Location.objects.bulk_update(updated, ["sort_order"], batch_size=500)
 
