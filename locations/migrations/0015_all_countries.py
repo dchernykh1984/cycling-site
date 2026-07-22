@@ -466,8 +466,13 @@ def _siblings(parent):
     )
 
 
-def _refresh(node, coords):
-    """Undelete a node and fill in coordinates it is missing, without overwriting a real value."""
+def _refresh(node, coords, names=None):
+    """Undelete a node and fill in what it is missing, without overwriting a real value.
+
+    A node matched by its Russian name may have been created without the other two locales -- the
+    resurrected "Узбекистан" root is one -- and modeltranslation then falls back to Russian, so the
+    English site quietly shows Russian text and the English search index holds an empty string.
+    """
     fields = []
     if node.is_deleted:
         node.is_deleted = False
@@ -475,6 +480,10 @@ def _refresh(node, coords):
     if coords and node.lat is None and node.lng is None:
         node.lat, node.lng = coords
         fields += ["lat", "lng"]
+    for attr, value in zip(("name_kk", "name_en"), (names or (None, None)), strict=False):
+        if value and not getattr(node, attr, None):
+            setattr(node, attr, value)
+            fields.append(attr)
     if fields:
         node.save(update_fields=fields)
     return node
@@ -487,7 +496,7 @@ def _child(parent, names, sort_order, *, hidden=False, coords=None):
     ru, kk, en = names
     existing = _siblings(parent).filter(name_ru=ru).order_by("is_deleted", "path").first()
     if existing is not None:
-        return _refresh(existing, coords)
+        return _refresh(existing, coords, (kk, en))
     lat, lng = coords or (None, None)
     return add_location_child(
         parent,
@@ -536,7 +545,7 @@ def add_countries(apps, schema_editor):
             )
             order += 1
         else:
-            _refresh(country, coords)
+            _refresh(country, coords, (country_ru, country_en))
 
         region = _child(country, (region_ru, region_ru, region_en), 1, coords=coords)
         _add_city(region, (capital_ru, capital_ru, capital_en), 1, coords=coords)
