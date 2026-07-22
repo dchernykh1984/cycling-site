@@ -77,10 +77,20 @@ def test_match_city_country_disambiguates():
     assert match_city(cities, "dup-city", country="Kyrgyzstan") == 8
 
 
-def test_match_city_hint_never_overrides_unique_match():
+def test_match_city_rejects_a_unique_namesake_in_another_region():
+    """A namesake in the wrong region is worse than no match: the race would be filed there.
+
+    Proposing a second city instead puts the decision in front of a human.
+    """
     cities = flatten_cities(_tree())
-    # Astana is unique, so a wrong region hint must not break the match.
-    assert match_city(cities, "Astana", region="no-such-region") == 5
+    assert match_city(cities, "Astana", region="no-such-region") is None
+    assert match_city(cities, "Astana", region="astana-region") == 5
+
+
+def test_match_city_tolerates_how_sources_abbreviate_a_region():
+    cities = flatten_cities(_tree())
+    # "almaty-reg" vs the tree's "almaty-region": same opening, so still the same place.
+    assert match_city(cities, "uniquely-almaty", region="almaty-reg") == 3
 
 
 def test_match_city_unknown_or_empty_returns_none():

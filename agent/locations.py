@@ -50,6 +50,26 @@ def flatten_cities(tree: list[dict]) -> list[dict]:
     return cities
 
 
+def _hint_matches(hint: str, names: set[str]) -> bool:
+    """Whether a free-text region/country hint plausibly names one of ``names``.
+
+    Sources abbreviate ("Almaty obl.") and translate, so an exact comparison would reject good
+    matches; a shared five-character opening or one name containing the other keeps those while
+    still telling Chelyabinsk Oblast apart from Moscow Oblast.
+    """
+    target = normalize_name(hint)
+    if not target:
+        return True
+    for name in names:
+        if not name:
+            continue
+        if target == name or target in name or name in target:
+            return True
+        if len(target) >= 5 and len(name) >= 5 and target[:5] == name[:5]:
+            return True
+    return False
+
+
 def city_matches(cities: list[dict], city: str, region: str = "", country: str = "") -> list[dict]:
     """Every city record matching the name, narrowed by region/country when that helps.
 
@@ -60,11 +80,13 @@ def city_matches(cities: list[dict], city: str, region: str = "", country: str =
     if not target:
         return []
     matches = [c for c in cities if target in c["names"]]
+    # Region and country are filters, not tie-breakers. A unique namesake in the wrong oblast used
+    # to be accepted silently, which files a race hundreds of kilometres from where it is held --
+    # far worse than proposing a second city for a human to look at. The comparison is loose enough
+    # to survive the wording sources actually use ("Almaty obl." vs "Almaty Region").
     for hint, key in ((region, "region_names"), (country, "country_names")):
-        if len(matches) > 1 and hint:
-            narrowed = [c for c in matches if normalize_name(hint) in c[key]]
-            if narrowed:
-                matches = narrowed
+        if hint:
+            matches = [c for c in matches if _hint_matches(hint, c[key])]
     return matches
 
 

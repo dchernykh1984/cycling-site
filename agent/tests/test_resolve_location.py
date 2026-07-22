@@ -148,3 +148,15 @@ def test_ambiguous_city_does_not_multiply_across_candidates():
     for _ in range(3):
         _resolve_location(client, tree, cities, _candidate(country="Kazakhstan", city="Esil"))
     assert client.places == []  # a third namesake would make every later candidate ambiguous too
+
+
+def test_namesake_city_in_another_region_is_proposed_not_reused():
+    """Two towns share a name in different regions; the second must not inherit the first's id."""
+    client, tree = _FakeClient(), _tree()
+    cities = flatten_cities(tree)
+    first = _candidate(country="Kazakhstan", region="Almaty-region", city="Troitsk")
+    second = _candidate(country="Kazakhstan", region="Astana-region", city="Troitsk")
+    tree[0]["children"].append({"id": 7, "name": {"ru": "Astana-region", "kk": "", "en": ""}, "children": []})
+    _resolve_location(client, tree, cities, first)
+    _resolve_location(client, tree, cities, second)
+    assert client.places == [(2, "Troitsk"), (7, "Troitsk")]
