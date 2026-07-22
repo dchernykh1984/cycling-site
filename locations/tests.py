@@ -978,6 +978,37 @@ class ModeratorReachesPendingNodesTests(TestCase):
         self.assertNotIn(pending.pk, [loc.pk for loc in selectable_parent_locations(organizer)])
 
 
+class CatchAllVenueLifecycleTests(TestCase):
+    """A city's catch-all rides with the city; it is not a proposal to judge on its own."""
+
+    def setUp(self):
+        self.proposer = _make_user("catchall@x.com", User.Role.ORGANIZER)
+        self.admin = _make_user("catchall-admin@x.com", User.Role.ADMIN)
+        self.country, self.region, self.city = _make_tree()
+
+    def _pending_city_with_fallback(self):
+        from locations.models import LocationProposal
+
+        city = _propose_place(self.region, "Pending City", self.proposer)
+        venue = Location.get_or_create_other_location(city)
+        LocationProposal.objects.create(location=venue, submitted_by=self.proposer)
+        return city, venue
+
+    def test_approving_the_city_approves_its_catch_all(self):
+        city, venue = self._pending_city_with_fallback()
+        Location.propose_venue(city, "Real", submitted_by=self.proposer).approve_with_competition(self.admin)
+        venue.proposal.refresh_from_db()
+        self.assertFalse(Location.objects.get(pk=venue.pk).is_pending)
+
+    def test_the_catch_all_cannot_be_rejected_on_its_own(self):
+        from locations.models import LocationInUseError
+
+        _, venue = self._pending_city_with_fallback()
+        with self.assertRaises(LocationInUseError):
+            venue.reject_and_reset_competitions()
+        self.assertFalse(Location.objects.get(pk=venue.pk).is_deleted)
+
+
 class OrganizerSelfPublishTests(TestCase):
     """An organizer's own submission publishes itself, bypassing Competition.approve()."""
 
