@@ -166,8 +166,10 @@ class LocationCreateView(ParticipantRequiredMixin, View):
                     raise PermissionDenied
                 if new_depth in (2, 3) and not _can_add_location_directly(request.user):
                     raise PermissionDenied
-            can_direct = _can_manage_locations(request.user) or (
-                _can_add_location_directly(request.user) and new_depth == 4 and chain_is_approved(parent)
+            # Even a manager does not get a public node inside a branch still under review: it
+            # would make the branch impossible to reject and leave the queue entry a dead end.
+            can_direct = chain_is_approved(parent) and (
+                _can_manage_locations(request.user) or (_can_add_location_directly(request.user) and new_depth == 4)
             )
             try:
                 # add_location_child locks the parent and the proposal shares the transaction, so a

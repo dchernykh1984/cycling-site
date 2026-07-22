@@ -978,6 +978,25 @@ class ModeratorReachesPendingNodesTests(TestCase):
         self.assertNotIn(pending.pk, [loc.pk for loc in selectable_parent_locations(organizer)])
 
 
+class ManagerBuildingUnderAProposalTests(TestCase):
+    """A manager may reach a pending node, but a child created there stays pending too."""
+
+    def test_admin_child_of_a_pending_region_is_not_public(self):
+        from django.urls import reverse
+
+        proposer = _make_user("build-proposer@x.com", User.Role.ORGANIZER)
+        admin = _make_user("build-admin@x.com", User.Role.ADMIN)
+        _, region, _ = _make_tree()
+        pending_region = _propose_place(region.get_parent(), "Pending Region", proposer)
+
+        self.client.force_login(admin)
+        self.client.post(reverse("location_add"), {"name_ru": "NewCity", "parent": pending_region.pk})
+        created = Location.objects.get(name_ru="NewCity")
+        self.assertTrue(created.is_pending)
+        # The queue entry stays actionable, which a public child would have prevented.
+        pending_region.reject_and_reset_competitions()
+
+
 class CatchAllVenueLifecycleTests(TestCase):
     """A city's catch-all rides with the city; it is not a proposal to judge on its own."""
 

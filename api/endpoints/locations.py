@@ -265,7 +265,9 @@ def create_location(request, payload: LocationIn):
             raise HttpError(403, "Creating a country is admin-only")
         if new_depth in (2, 3) and not _can_add_directly(user):
             raise HttpError(403, "ORGANIZER role or higher is required to propose a region or city")
-    approved = is_admin(user) or (_can_add_directly(user) and new_depth == 4 and chain_is_approved(parent))
+    # Even an admin does not get a public node inside a branch still under review -- that is
+    # what makes the branch impossible to reject afterwards.
+    approved = chain_is_approved(parent) and (is_admin(user) or (_can_add_directly(user) and new_depth == 4))
 
     # add_location_child locks the parent (or the root namespace) and the proposal shares the
     # transaction, so a concurrent delete can't orphan the node and two roots can't collide on path.
