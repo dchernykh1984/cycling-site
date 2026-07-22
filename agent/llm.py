@@ -14,7 +14,9 @@ from agent.models import Candidate, KnownEvents, Source, Taxonomy
 
 _LOC = '{"ru": str, "kk": str, "en": str}'
 _SYSTEM = (
-    "You extract real, upcoming cycling competitions from the given source text. "
+    "You extract real, upcoming sporting competitions from the given source text -- cycling "
+    "first, and also running, triathlon and cross-country skiing. The instructions below say "
+    "which ones matter and in what order; follow them rather than assuming a single sport. "
     'Return ONLY a JSON array; each item: {"title": ' + _LOC + ', "date_start": "YYYY-MM-DD", '
     '"date_end": "YYYY-MM-DD"|null, "description": ' + _LOC + ', "source_url": str, '
     '"url_route": str, "url_registration": str, "event_type_id": int|null, "discipline_ids": [int], '
@@ -113,7 +115,7 @@ def extract_raw(
 
 
 _ENRICH_SYSTEM = (
-    "You are given ONE cycling event we already extracted (as JSON) and the full text of that "
+    "You are given ONE sporting event we already extracted (as JSON) and the full text of that "
     "event's own web page. Return ONLY a JSON array containing a SINGLE improved version of the "
     "SAME event, using exactly the same schema as the extraction. Use the page to fill in and "
     "correct the fields: a well-formatted HTML description (distances, categories/groups, schedule, "
