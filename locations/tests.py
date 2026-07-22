@@ -941,6 +941,22 @@ class VenueUnderPendingCityTests(TestCase):
         self.assertFalse(venue.is_pending)
 
 
+class ModeratorReachesPendingNodesTests(TestCase):
+    """A moderator must be able to pick a foreign pending node as a parent, or the queue dead-ends."""
+
+    def test_admin_sees_a_foreign_pending_node_as_a_selectable_parent(self):
+        from locations.models import selectable_parent_locations
+
+        proposer = _make_user("foreign-proposer@x.com", User.Role.ORGANIZER)
+        admin = _make_user("queue-admin@x.com", User.Role.ADMIN)
+        organizer = _make_user("other-org@x.com", User.Role.ORGANIZER)
+        _, region, _ = _make_tree()
+        pending = _propose_place(region, "Pendign Citty", proposer)
+
+        self.assertIn(pending.pk, [loc.pk for loc in selectable_parent_locations(admin)])
+        self.assertNotIn(pending.pk, [loc.pk for loc in selectable_parent_locations(organizer)])
+
+
 class ApprovalBlockedByPendingGeographyTests(TestCase):
     """An organizer must not publish an event onto geography nobody has reviewed."""
 
