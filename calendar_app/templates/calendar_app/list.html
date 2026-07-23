@@ -47,7 +47,9 @@
       </div>
       {% endif %}
       <div class="col-sm-12 col-md-2 d-flex gap-2">
-        <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary btn-sm flex-grow-1">{% trans "Reset" %}</a>
+        {# ?reset=1 makes the request non-empty so the saved-preference default redirect is skipped -- #}
+        {# Reset must reach the unfiltered view, not bounce back to the user's defaults (issue #229). #}
+        <a href="{% url 'calendar_list' %}?reset=1" class="btn btn-outline-secondary btn-sm flex-grow-1">{% trans "Reset" %}</a>
       </div>
     </form>
     <script>
