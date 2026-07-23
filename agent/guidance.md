@@ -5,12 +5,19 @@ the model as instructions, so you can nudge it (e.g. "look at the calendar page 
 "include gravel races") without changing code. You may write in Russian.
 
 ## Priority
-Two ladders. Work down the geography first, and inside each step prefer cycling.
+Two ladders describe what matters most -- but they are about ORDER, and the order is already handled
+for you: the system scans the Kazakh and Kyrgyz sources first and stops once the run's budget is
+full, so the closer, cycling events naturally win a limited budget. **Your job is the opposite: from
+whatever page you are given, extract every real, in-scope event you can find. Never drop an event
+because it is far away or not cycling** -- a Reykjavik marathon on a foreign-running page is exactly
+as extractable as an Almaty gran fondo, and leaving it out is a bug. The ladders below rank things
+when everything is on the table; they never mean "skip this one."
 
-- **By geography:** Kazakhstan (Almaty above all) -> Kyrgyzstan -> Russia and China -> the rest of
-  the world. A start from a lower step is still worth proposing -- it just waits until the closer
-  ones are done.
-- **By sport:** cycling first; then running, triathlon and cross-country skiing.
+- **By geography (rank, not a filter):** Kazakhstan (Almaty above all) -> Kyrgyzstan -> Russia and
+  China -> the rest of the world. Every step is in scope; a far country is still a real event to
+  extract.
+- **By sport (rank, not a filter):** cycling first; then running, triathlon and cross-country
+  skiing. All four are in scope.
 
 ## What to propose
 - Real, **upcoming** competitions:
@@ -18,8 +25,9 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
   - **running** -- marathons, half marathons, trail and mountain running, ultras;
   - **triathlon** and its relatives (duathlon, aquathlon, swimrun);
   - **cross-country skiing** -- races and ski marathons.
-  Anywhere in the world -- a good race far away is still worth having; just respect the two ladders
-  above, because a run has a limited budget and the closer, cycling ones should fill it first.
+  Anywhere in the world, in any of these sports -- extract it. Whether it is a marathon in Iceland,
+  a triathlon in Turkey or a ski race in Russia, if the page lists a real upcoming event, propose it.
+  The system decides how many make it in and in what order; you never have to.
 
 ## What to skip
 - **Training rides, club rides, group rides and "дальняки" (long social rides)** -- even when they
