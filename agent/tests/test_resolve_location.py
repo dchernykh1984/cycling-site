@@ -101,10 +101,12 @@ def test_city_without_a_named_country_is_not_proposed():
     assert client.places == []
 
 
-def test_unknown_country_lands_under_the_catch_all_country():
-    # Countries are admin-only, so the agent must never invent a root for one it does not know.
-    client, _ = _resolve(_candidate(country="Iceland", region="Capital Region", city="Reykjavik"))
-    assert client.places == [(5, "Capital Region"), (101, "Reykjavik")]
+def test_unknown_country_leaves_the_event_unplaced():
+    # A country the site does not carry resolves to the "Other country" bucket. Hanging a real
+    # region under that bucket is meaningless, so nothing is proposed -- a human adds the country.
+    client, location_id = _resolve(_candidate(country="Atlantis", region="Capital Region", city="Reykjavik"))
+    assert location_id is None
+    assert client.places == []
 
 
 def test_candidate_without_a_city_gets_no_location():
