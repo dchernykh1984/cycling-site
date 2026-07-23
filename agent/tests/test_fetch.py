@@ -1,3 +1,4 @@
+import socket
 from urllib.error import HTTPError, URLError
 
 import pytest
@@ -180,3 +181,39 @@ def test_get_with_fallback_retries_a_transient_5xx(monkeypatch):
     with pytest.raises(HTTPError):
         fetch._get_with_fallback("https://bitza-sport.ru/")
     assert len(calls) == fetch._FETCH_RETRIES  # 503 is transient -> retried, not dropped
+
+
+def _addrinfo(ip, port):
+    return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, port))]
+
+
+def test_guarded_create_connection_refuses_a_rebound_private_ip(monkeypatch):
+    """The track fetch must connect to the very IPs it validated -- a resolved private one is refused."""
+    monkeypatch.setattr(fetch.socket, "getaddrinfo", lambda *a, **k: _addrinfo("169.254.169.254", 80))
+
+    def no_socket(*a, **k):
+        raise AssertionError("must not open a socket to a blocked address")
+
+    monkeypatch.setattr(fetch.socket, "socket", no_socket)
+    with pytest.raises(OSError, match="non-public"):
+        fetch._guarded_create_connection(("rebind.evil.test", 80))
+
+
+def test_guarded_create_connection_dials_the_validated_ip_not_the_hostname(monkeypatch):
+    """It connects to the address it resolved and checked, never re-resolving the name."""
+    monkeypatch.setattr(fetch.socket, "getaddrinfo", lambda *a, **k: _addrinfo("93.184.216.34", 443))
+    dialed = {}
+
+    class _Sock:
+        def settimeout(self, t):
+            pass
+
+        def connect(self, sockaddr):
+            dialed["to"] = sockaddr
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(fetch.socket, "socket", lambda *a, **k: _Sock())
+    fetch._guarded_create_connection(("example.test", 443))
+    assert dialed["to"] == ("93.184.216.34", 443)

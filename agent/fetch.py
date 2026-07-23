@@ -7,7 +7,10 @@ them or miss the specific event page. ``extract_links`` (the pure part) has its 
 
 from __future__ import annotations
 
+import http.client
+import ipaddress
 import re
+import socket
 import time
 import urllib.request
 from urllib.error import HTTPError, URLError
@@ -15,6 +18,7 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from bs4 import BeautifulSoup
 
+from agent.geo import is_blocked_ip
 from agent.models import Source
 
 _UA = "Mozilla/5.0 (compatible; UniversalBicycleTeam-EventsAgent/1.0)"
@@ -125,11 +129,11 @@ _TRACK_MAX_BYTES = 20 * 1024 * 1024  # a GPS track is a few MB; cap the read so 
 
 
 class _NoUnsafeRedirect(urllib.request.HTTPRedirectHandler):
-    """Re-validate every redirect target before following it.
+    """Reject a redirect to a non-http(s) scheme before following it.
 
-    The SSRF gate checks the URL we were given, but a public decoy can answer 302 -> an internal or
-    cloud-metadata address, and the default opener would follow it. Re-running the same public-host
-    check on each hop closes that; an unsafe hop raises instead of being fetched.
+    A public decoy can answer 302 -> file:///etc/passwd or ftp://..., and the default opener carries
+    FileHandler/FTPHandler that would serve it. The per-connection guard below already refuses any
+    hop that resolves to a private address, so this only has to keep the scheme http(s).
     """
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -140,7 +144,61 @@ class _NoUnsafeRedirect(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-_TRACK_OPENER = urllib.request.build_opener(_NoUnsafeRedirect())
+def _guarded_create_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
+    """Resolve ``address`` once, refuse it if any resolved IP is not public, then connect to it.
+
+    The URL gate resolves the host to decide whether to fetch, but the socket layer would resolve it
+    a *second* time to connect -- a host whose DNS returns a public address on the first lookup and a
+    private one on the second (TTL 0) slips a private target past the gate. Validating the very IPs
+    this connection then dials, in one resolution, closes that rebinding window; because every
+    redirect hop opens a fresh connection, each hop is guarded too.
+    """
+    host, port = address
+    infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+    for *_, sockaddr in infos:
+        if is_blocked_ip(ipaddress.ip_address(sockaddr[0])):
+            raise OSError(f"refusing to connect to non-public address {sockaddr[0]}")
+    last: OSError | None = None
+    for family, socktype, proto, _canon, sockaddr in infos:
+        sock = None
+        try:
+            sock = socket.socket(family, socktype, proto)
+            if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+                sock.settimeout(timeout)
+            if source_address:
+                sock.bind(source_address)
+            sock.connect(sockaddr)  # a literal from getaddrinfo -- no second DNS lookup
+            return sock
+        except OSError as exc:
+            last = exc
+            if sock is not None:
+                sock.close()
+    raise last if last is not None else OSError(f"could not resolve {host}")
+
+
+class _GuardedHTTPConnection(http.client.HTTPConnection):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._create_connection = _guarded_create_connection
+
+
+class _GuardedHTTPSConnection(http.client.HTTPSConnection):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._create_connection = _guarded_create_connection
+
+
+class _GuardedHTTPHandler(urllib.request.HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(_GuardedHTTPConnection, req)
+
+
+class _GuardedHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(_GuardedHTTPSConnection, req, context=self._context, check_hostname=self._check_hostname)
+
+
+_TRACK_OPENER = urllib.request.build_opener(_NoUnsafeRedirect(), _GuardedHTTPHandler(), _GuardedHTTPSHandler())
 
 
 def fetch_track(url: str, timeout: int = 20) -> str:
