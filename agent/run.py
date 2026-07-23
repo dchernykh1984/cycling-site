@@ -60,7 +60,12 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate, create
     approves. Countries are admin-only, so an event in a country the site does not carry goes under
     the tree's catch-all country instead of inventing a root.
     """
-    if not candidate.city or locations.is_ambiguous_city(cities, candidate.city, candidate.region, candidate.country):
+    # A name that is only punctuation ("-", "()") survives the "not empty" test but normalizes to
+    # nothing, so every guard below would pass it through and post it verbatim as a place. Treat a
+    # region or city with no real content as absent.
+    if not locations.has_real_name(candidate.city) or not locations.has_real_name(candidate.region):
+        return None
+    if locations.is_ambiguous_city(cities, candidate.city, candidate.region, candidate.country):
         return None
     # The model is told to give a real place and a first-level region, but nothing stops it echoing
     # the site's own placeholder or handing back a district; either one would become a permanent
@@ -70,9 +75,9 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate, create
     ):
         return None
     country = locations.match_country(tree, candidate.country)
-    if country is None or not candidate.region:
-        # Without a country we cannot place anything, and without a region there is nothing to hang
-        # the city on: the tree's catch-all regions are hidden, so the API never hands them to us.
+    if country is None:
+        # Without a country we cannot place anything. (A missing or content-free region was already
+        # refused above -- the tree's catch-all regions are hidden, so the API never hands us one.)
         return None
     region = locations.match_region(country, candidate.region)
     if region is None:

@@ -178,6 +178,15 @@ _DISTRICT_WORDS = (
 )
 
 
+def has_real_name(value: str) -> bool:
+    """Whether ``value`` carries an actual name once punctuation and spacing are stripped.
+
+    A model may fill a required field with "-" or "()"; that is non-empty but normalizes to nothing,
+    so it must count as absent rather than become a location literally called that.
+    """
+    return bool(normalize_name(value))
+
+
 def is_placeholder_name(*values: str) -> bool:
     """Whether any spelling given is one of the site's own catch-all names instead of a place.
 
