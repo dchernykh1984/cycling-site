@@ -88,3 +88,20 @@ def test_gpx_start_is_the_track_not_a_waypoint():
 def test_gpx_route_points_are_used_when_there_is_no_track():
     gpx = '<gpx><rte><rtept lat="49.80972" lon="73.08371"></rtept></rte></gpx>'
     assert parse_start(gpx) == (49.80972, 73.08371)
+
+
+def test_kml_start_is_the_line_not_a_point_placemark():
+    """A KML overview/finish <Point> before the route <LineString> must not be taken as the start."""
+    kml = (
+        "<kml>"
+        "<Placemark><Point><coordinates>76.889709,43.238949,0</coordinates></Point></Placemark>"
+        "<Placemark><LineString><coordinates>73.08371,49.80972,0 73.2,49.9,0</coordinates></LineString></Placemark>"
+        "</kml>"
+    )
+    assert parse_start(kml) == (49.80972, 73.08371)
+
+
+def test_kml_without_a_linestring_yields_nothing():
+    assert (
+        parse_start("<kml><Placemark><Point><coordinates>73.0,49.0,0</coordinates></Point></Placemark></kml>") is None
+    )

@@ -24,7 +24,13 @@ _GPX_TRKPT = re.compile(
     r"<(?:trkpt|rtept)\b[^>]*\blat=\"(-?\d+(?:\.\d+)?)\"[^>]*\blon=\"(-?\d+(?:\.\d+)?)\"",
     re.IGNORECASE,
 )
-_KML_POINT = re.compile(r"<coordinates>\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)")
+# The first coordinate of the route line. A KML file often carries standalone <Point> placemarks
+# (an overview pin, the finish, controls) before the <LineString> route, so taking the first
+# <coordinates> anywhere would grab a POI; anchor on the LineString's coordinates instead.
+_KML_LINE = re.compile(
+    r"<LineString\b.*?<coordinates>\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 def track_url(links: list[str]) -> str | None:
@@ -60,7 +66,7 @@ def parse_start(track: str) -> tuple[float, float] | None:
     if gpx:
         lat, lng = float(gpx.group(1)), float(gpx.group(2))
     else:
-        kml = _KML_POINT.search(track)
+        kml = _KML_LINE.search(track)
         if not kml:
             return None
         lng, lat = float(kml.group(1)), float(kml.group(2))  # KML order is lon,lat
