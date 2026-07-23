@@ -180,3 +180,13 @@ def test_a_country_named_in_its_long_form_still_finds_the_real_node():
     tree = _tree_with_catch_alls()
     assert match_country(tree, "Kazakhstan-ru official")["id"] == 1
     assert match_country(tree, "Atlantis")["id"] == 90  # genuinely unknown -> catch-all
+
+
+def test_a_country_sharing_a_prefix_is_not_confused_with_another():
+    """ "North Korea" must not resolve to "North Macedonia" on a shared 5-char prefix."""
+    tree = [
+        {"id": 1, "name": {"ru": "Severnaya Makedoniya", "kk": "", "en": "North Macedonia"}, "children": []},
+        {"id": 2, "name": {"ru": "x", "kk": "", "en": "Other country"}, "children": []},
+    ]
+    assert match_country(tree, "Severnaya Koreya")["id"] == 2  # unknown -> catch-all, not id 1
+    assert match_country(tree, "North Macedonia Republic")["id"] == 1  # genuine long form still works
