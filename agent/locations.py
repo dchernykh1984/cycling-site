@@ -240,10 +240,13 @@ def match_country(tree: list[dict], country: str) -> dict | None:
 
 # Generic administrative words dropped before comparing region names, so "region Marrakesh-Safi"
 # matches "Marrakesh-Safi". They are removed as whole tokens only, which is why "Nenets" never
-# collapses into "Yamalo-Nenets" -- the distinguishing word "Yamalo" is not one of these.
+# collapses into "Yamalo-Nenets" -- the distinguishing word "Yamalo" is not one of these. The
+# federal-subject TYPE words (krai, republic, okrug) are deliberately NOT here: "Altai Krai" and
+# "Altai Republic" are two different regions with different capitals, and stripping the type would
+# leave both as "altai" and silently file one under the other.
 _REGION_WORDS = frozenset(
-    "oblast oblasti region regioni krai kray republic republiki respublika province provincia "
-    "county area territory district voivodeship land state autonomous okrug".split()
+    "oblast oblasti region regioni province provincia county area territory district "
+    "voivodeship land state autonomous".split()
 )
 
 

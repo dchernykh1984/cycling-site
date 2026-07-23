@@ -216,6 +216,19 @@ def test_match_region_tolerates_a_differently_worded_spelling():
     assert match_region(country, "Tanger-Tetouan-Al Hoceima") is None  # genuinely new -> propose it
 
 
+def test_match_region_keeps_krai_and_republic_distinct():
+    """ "Altai Krai" and "Altai Republic" share a core but are different federal subjects."""
+    country = {
+        "id": 1,
+        "name": {"ru": "Russia", "kk": "", "en": "Russia"},
+        "children": [
+            {"id": 2, "name": {"ru": "", "kk": "", "en": "Altai Krai"}, "children": []},
+        ],
+    }
+    assert match_region(country, "Altai Republic") is None  # a different subject -> propose it
+    assert match_region(country, "Altai Krai")["id"] == 2  # the one that is stored, reworded
+
+
 def test_match_region_keeps_two_regions_where_one_name_nests_in_the_other():
     """ "Nenets AO" must not collapse into "Yamalo-Nenets AO" -- they are 2000 km apart."""
     country = {
