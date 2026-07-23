@@ -34,6 +34,10 @@ _GX_COORD = re.compile(r"<gx:coord>\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)", re
 # take not the first line but the longest -- the route has far more points than any decoration.
 _KML_LINE_COORDS = re.compile(r"<LineString\b.*?<coordinates>\s*(.*?)\s*</coordinates>", re.IGNORECASE | re.DOTALL)
 _KML_FIRST_LNG_LAT = re.compile(r"(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)")
+# A commented-out or CDATA-wrapped <trkpt>/<coordinates> is not real markup: it is text a decoy could
+# place above the true track to steal the start. Drop both before scanning so only live points count.
+_XML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
+_XML_CDATA = re.compile(r"<!\[CDATA\[.*?\]\]>", re.DOTALL)
 
 
 def track_url(links: list[str]) -> str | None:
@@ -67,6 +71,7 @@ def parse_start(track: str) -> tuple[float, float] | None:
     Coordinates outside the valid range are rejected -- a malformed or truncated file must not put a
     venue in the ocean.
     """
+    track = _XML_CDATA.sub(" ", _XML_COMMENT.sub(" ", track))
     point = _gpx_start(track) or _kml_start(track)
     if point is None:
         return None
