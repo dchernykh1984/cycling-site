@@ -223,8 +223,22 @@ def _capital_coords() -> dict:
     return importlib.import_module("locations.migrations.0015_all_countries").CAPITAL_COORDS
 
 
+# The four home countries are absent from _SEEDED_COUNTRIES so their hand-set production coordinates
+# are never touched -- but a fresh database has none, which would leave the whole home region (and
+# every descendant that inherits its map pin) unplottable. Seed a centroid there, and only there.
+_HOME_CENTROIDS = {
+    "Казахстан": (48.02, 66.92),
+    "Кыргызстан": (41.20, 74.77),
+    "Россия": (61.52, 105.32),
+    "Китай": (35.86, 104.20),
+}
+
+
 def set_centroids(apps, schema_editor):
     from locations.models import Location
+
+    for name, (lat, lng) in _HOME_CENTROIDS.items():
+        Location.objects.filter(depth=1, name_ru=name, lat__isnull=True).update(lat=lat, lng=lng)
 
     # 0015 is the only thing that put a capital's coordinates on a country node, and it did so only
     # where there was nothing. A country that already had coordinates before this branch was tuned by
