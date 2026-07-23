@@ -70,3 +70,21 @@ def test_start_coordinate_swallows_a_fetch_error():
 
 def test_start_coordinate_none_without_a_track():
     assert start_coordinate(["https://example.test/x"], lambda url: "") is None
+
+
+def test_gpx_start_is_the_track_not_a_waypoint():
+    """GPX lists waypoints (finish/controls) before the track; the start is the first trkpt."""
+    gpx = (
+        "<gpx>"
+        '<wpt lat="43.238949" lon="76.889709"><name>Finish</name></wpt>'
+        "<trk><trkseg>"
+        '<trkpt lat="49.80972" lon="73.08371"></trkpt>'
+        '<trkpt lat="49.9" lon="73.2"></trkpt>'
+        "</trkseg></trk></gpx>"
+    )
+    assert parse_start(gpx) == (49.80972, 73.08371)
+
+
+def test_gpx_route_points_are_used_when_there_is_no_track():
+    gpx = '<gpx><rte><rtept lat="49.80972" lon="73.08371"></rtept></rte></gpx>'
+    assert parse_start(gpx) == (49.80972, 73.08371)

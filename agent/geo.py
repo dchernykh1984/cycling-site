@@ -17,9 +17,11 @@ _TRACK_FILE = re.compile(r"https?://[^\s\"'<>]+\.(?:gpx|kml)(?:\?[^\s\"'<>]*)?",
 _EDUHA_LOAD = re.compile(r"route\.eduha\.info/[^\s\"'<>]*[?&]load=([^\s\"'<>&]+)", re.IGNORECASE)
 _RWGPS_ROUTE = re.compile(r"https?://(?:www\.)?ridewithgps\.com/routes/(\d+)", re.IGNORECASE)
 
-# First point of a track. GPX carries lat then lon as attributes; KML carries lon,lat[,alt] as text.
-_GPX_POINT = re.compile(
-    r"<(?:trkpt|rtept|wpt)\b[^>]*\blat=\"(-?\d+(?:\.\d+)?)\"[^>]*\blon=\"(-?\d+(?:\.\d+)?)\"",
+# Start of the route line, not a point of interest. A GPX track point (trkpt) or route point (rtept)
+# is the recorded/planned line; a waypoint (wpt) is a control/finish/POI and, per the GPX schema,
+# is listed BEFORE the track -- so matching wpt would take a POI hundreds of km from the start.
+_GPX_TRKPT = re.compile(
+    r"<(?:trkpt|rtept)\b[^>]*\blat=\"(-?\d+(?:\.\d+)?)\"[^>]*\blon=\"(-?\d+(?:\.\d+)?)\"",
     re.IGNORECASE,
 )
 _KML_POINT = re.compile(r"<coordinates>\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)")
@@ -54,7 +56,7 @@ def parse_start(track: str) -> tuple[float, float] | None:
     Coordinates outside the valid range are rejected -- a malformed or truncated file must not put a
     venue in the ocean.
     """
-    gpx = _GPX_POINT.search(track)
+    gpx = _GPX_TRKPT.search(track)
     if gpx:
         lat, lng = float(gpx.group(1)), float(gpx.group(2))
     else:
