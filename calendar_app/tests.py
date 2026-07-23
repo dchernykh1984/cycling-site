@@ -633,6 +633,41 @@ class ModerationViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(self.comp, response.context["competitions"])
 
+    def test_event_on_pending_geography_hidden_from_organizer_shown_to_admin(self):
+        from locations.models import Location, LocationProposal, add_location_child
+
+        country = Location.add_root(name="KZ", name_ru="KZ")
+        region = add_location_child(country, name="R", name_ru="R")
+        pending_city = add_location_child(region, name="Pend", name_ru="Pend")
+        LocationProposal.objects.create(location=pending_city, submitted_by=self.organizer)
+        venue = add_location_child(pending_city, name="V", name_ru="V")
+        LocationProposal.objects.create(location=venue, submitted_by=self.organizer)
+        on_pending = _make_competition("OnPending", status=Competition.Status.PENDING_APPROVAL, location=venue)
+
+        self.client.login(username="organizer@example.com", password="password123")
+        organizer_view = self.client.get(reverse("calendar_moderate"))
+        # The organizer cannot bless the geography, so the event they could only bounce off
+        # LocationPendingError is kept out of their queue; the location-less one still shows.
+        self.assertNotIn(on_pending, organizer_view.context["competitions"])
+        self.assertIn(self.comp, organizer_view.context["competitions"])
+
+        _make_user("mod-admin@example.com", User.Role.ADMIN)
+        self.client.login(username="mod-admin@example.com", password="password123")
+        admin_view = self.client.get(reverse("calendar_moderate"))
+        self.assertIn(on_pending, admin_view.context["competitions"])
+
+    def test_event_on_approved_geography_still_shown_to_organizer(self):
+        from locations.models import Location, add_location_child
+
+        country = Location.add_root(name="KZ2", name_ru="KZ2")
+        region = add_location_child(country, name="R2", name_ru="R2")
+        city = add_location_child(region, name="C2", name_ru="C2")
+        venue = add_location_child(city, name="V2", name_ru="V2")  # whole chain approved
+        on_approved = _make_competition("OnApproved", status=Competition.Status.PENDING_APPROVAL, location=venue)
+        self.client.login(username="organizer@example.com", password="password123")
+        response = self.client.get(reverse("calendar_moderate"))
+        self.assertIn(on_approved, response.context["competitions"])
+
     def test_participant_gets_403(self):
         self.client.login(username="participant@example.com", password="password123")
         response = self.client.get(reverse("calendar_moderate"))
