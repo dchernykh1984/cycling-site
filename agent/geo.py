@@ -119,13 +119,24 @@ def _kml_start(track: str) -> tuple[float, float] | None:
     return None
 
 
+def is_blocked_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Whether an address must never be connected to -- loopback, private, link-local, reserved.
+
+    The single definition of "not a public host", shared by the URL gate here and the fetch's
+    per-connection guard so the two can never drift apart (a link-local address is how a link reaches
+    a cloud-metadata endpoint; private/loopback reach internal services).
+    """
+    return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast
+
+
 def is_fetchable_track_url(url: str) -> bool:
     """Whether ``url`` is safe to download: http(s) to a host that resolves only to public IPs.
 
     The track URL comes from a page that may be hostile (an aggregator can link anything), so this
     is the SSRF gate: no file:// or other schemes, and no host that resolves to a loopback, private,
-    link-local or otherwise reserved address -- which is how a link would reach a cloud metadata
-    endpoint or an internal service.
+    link-local or otherwise reserved address. It is a first check on the name; the fetch re-validates
+    the actual IP it connects to, so a host that rebinds to a private address after this passes is
+    still refused at connect time.
     """
     parts = urllib.parse.urlsplit(url)
     if parts.scheme not in ("http", "https") or not parts.hostname:
@@ -134,11 +145,7 @@ def is_fetchable_track_url(url: str) -> bool:
         infos = socket.getaddrinfo(parts.hostname, parts.port or 443, proto=socket.IPPROTO_TCP)
     except OSError:
         return False
-    for *_, sockaddr in infos:
-        ip = ipaddress.ip_address(sockaddr[0])
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
-            return False
-    return True
+    return not any(is_blocked_ip(ipaddress.ip_address(sockaddr[0])) for *_, sockaddr in infos)
 
 
 def start_coordinate(links: list[str], fetch: Callable[[str], str]) -> tuple[float, float] | None:
