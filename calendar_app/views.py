@@ -284,7 +284,16 @@ def _user_filter_default_params(user) -> list:
     """
     if not getattr(user, "is_authenticated", False):
         return []
-    pairs = [("discipline_category", pk) for pk in user.preferred_directions.values_list("pk", flat=True)]
+    # Drop a direction that already has one of its disciplines chosen, exactly as the filter widget
+    # collapses it (see _direction_filter.html applyDirectionParams). Emitting both would make the
+    # list (which OR-combines discipline_category and discipline) and the calendar (whose widget
+    # keeps only the drilled-into discipline) disagree for the very same saved preferences.
+    covered = set(user.preferred_disciplines.values_list("category_id", flat=True))
+    pairs = [
+        ("discipline_category", pk)
+        for pk in user.preferred_directions.values_list("pk", flat=True)
+        if pk not in covered
+    ]
     pairs += [("discipline", pk) for pk in user.preferred_disciplines.values_list("pk", flat=True)]
     pairs += [("location", pk) for pk in user.preferred_locations.values_list("pk", flat=True)]
     return pairs
