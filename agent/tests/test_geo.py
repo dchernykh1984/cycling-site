@@ -165,3 +165,15 @@ def test_kml_takes_the_longest_linestring_as_the_route():
         "</kml>"
     )
     assert parse_start(kml) == (49.80972, 73.08371)
+
+
+def test_gpx_attribute_order_and_namespace_do_not_matter():
+    """lon-before-lat and a namespace prefix are valid GPX and must still parse."""
+    assert parse_start('<gpx><trkpt lon="73.08371" lat="49.80972"></trkpt></gpx>') == (49.80972, 73.08371)
+    assert parse_start('<gpx:gpx><gpx:trkpt lat="49.80972" lon="73.08371"/></gpx:gpx>') == (49.80972, 73.08371)
+
+
+def test_kml_gx_track_export_is_read():
+    """A Google/Strava <gx:Track> stores the path in <gx:coord> as 'lon lat alt', no LineString."""
+    kml = "<kml><gx:Track><gx:coord>73.08371 49.80972 0</gx:coord><gx:coord>73.2 49.9 0</gx:coord></gx:Track></kml>"
+    assert parse_start(kml) == (49.80972, 73.08371)

@@ -21,11 +21,14 @@ _RWGPS_ROUTE = re.compile(r"https?://(?:www\.)?ridewithgps\.com/routes/(\d+)", r
 
 # Start of the route line, not a point of interest. A GPX track point (trkpt) or route point (rtept)
 # is the recorded/planned line; a waypoint (wpt) is a control/finish/POI and, per the GPX schema,
-# is listed BEFORE the track -- so matching wpt would take a POI hundreds of km from the start.
-_GPX_TRKPT = re.compile(
-    r"<(?:trkpt|rtept)\b[^>]*\blat=\"(-?\d+(?:\.\d+)?)\"[^>]*\blon=\"(-?\d+(?:\.\d+)?)\"",
-    re.IGNORECASE,
-)
+# is listed BEFORE the track -- so matching wpt would take a POI hundreds of km from the start. A
+# namespace prefix (<gpx:trkpt>) is allowed, and lat/lon are read separately because XML attribute
+# order is not significant.
+_GPX_TRKPT = re.compile(r"<(?:\w+:)?(?:trkpt|rtept)\b([^>]*)>", re.IGNORECASE)
+_ATTR_LAT = re.compile(r"\blat=\"(-?\d+(?:\.\d+)?)\"", re.IGNORECASE)
+_ATTR_LON = re.compile(r"\blon=\"(-?\d+(?:\.\d+)?)\"", re.IGNORECASE)
+# A Google/Strava <gx:Track> stores the path as space-separated "lon lat [alt]" in <gx:coord>.
+_GX_COORD = re.compile(r"<gx:coord>\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)", re.IGNORECASE)
 # The <coordinates> body of every LineString. A KML often carries standalone <Point> placemarks (an
 # overview pin, the finish, controls) and decorative or bounding-box lines besides the route, so we
 # take not the first line but the longest -- the route has far more points than any decoration.
@@ -64,16 +67,22 @@ def parse_start(track: str) -> tuple[float, float] | None:
     Coordinates outside the valid range are rejected -- a malformed or truncated file must not put a
     venue in the ocean.
     """
-    gpx = _GPX_TRKPT.search(track)
-    if gpx:
-        lat, lng = float(gpx.group(1)), float(gpx.group(2))
-    else:
-        point = _kml_start(track)
-        if point is None:
-            return None
-        lat, lng = point
+    point = _gpx_start(track) or _kml_start(track)
+    if point is None:
+        return None
+    lat, lng = point
     if -90 <= lat <= 90 and -180 <= lng <= 180 and (lat, lng) != (0.0, 0.0):
         return lat, lng
+    return None
+
+
+def _gpx_start(track: str) -> tuple[float, float] | None:
+    """The first (lat, lng) of a GPX track/route point, reading lat and lon in either order."""
+    for match in _GPX_TRKPT.finditer(track):
+        attrs = match.group(1)
+        lat, lon = _ATTR_LAT.search(attrs), _ATTR_LON.search(attrs)
+        if lat and lon:
+            return float(lat.group(1)), float(lon.group(1))
     return None
 
 
@@ -88,12 +97,15 @@ def _kml_start(track: str) -> tuple[float, float] | None:
         points = body.split()
         if len(points) > most:
             most, longest = len(points), body
-    if longest is None:
-        return None
-    first = _KML_FIRST_LNG_LAT.search(longest)
-    if first is None:
-        return None
-    return float(first.group(2)), float(first.group(1))  # stored lon,lat -> return lat,lng
+    if longest is not None:
+        first = _KML_FIRST_LNG_LAT.search(longest)
+        if first is not None:
+            return float(first.group(2)), float(first.group(1))  # stored lon,lat -> return lat,lng
+    # A <gx:Track> (Google/Strava GPS export) has no LineString; its first <gx:coord> is the start.
+    coord = _GX_COORD.search(track)
+    if coord is not None:
+        return float(coord.group(2)), float(coord.group(1))  # "lon lat" -> lat,lng
+    return None
 
 
 def is_fetchable_track_url(url: str) -> bool:
