@@ -87,10 +87,15 @@ def _unpublish_if_geography_is_pending(comp, user) -> None:
     Publishing a branch by editing an event into it is the same leak as approving the event there,
     and it leaves the branch holding approved work, which is what blocks its rejection.
     """
+    # Only the geography *above* the venue matters, as in Competition.approve and the API PATCH: a
+    # freshly proposed start-point venue under an approved city is the intended flow and stays
+    # published. Checking the venue too would needlessly un-publish that.
+    parent = comp.location.get_parent() if comp.location is not None else None
     if (
         comp.status == Competition.Status.APPROVED
         and not _can_manage_any_competition(user)
-        and not chain_is_approved(comp.location)
+        and comp.location is not None
+        and not chain_is_approved(parent)
     ):
         comp.status = Competition.Status.PENDING_APPROVAL
         comp.approved_by = None
@@ -776,7 +781,11 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                     # geography still awaiting review: that would put the pending city's name on a
                     # public page and leave the branch holding an approved event, which is what
                     # makes it impossible to reject afterwards.
-                    if is_organizer and chain_is_approved(comp.location):
+                    # Only ancestors matter, as everywhere else: an organizer's own start-point
+                    # venue under an approved city is fine and stays published.
+                    if is_organizer and chain_is_approved(
+                        comp.location.get_parent() if comp.location is not None else None
+                    ):
                         comp.status = Competition.Status.APPROVED
                         comp.approved_by = request.user
                         comp.approved_at = timezone.now()
