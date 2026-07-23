@@ -21,15 +21,25 @@ aggregators:
   - url: https://bike-events.ru/index.php?season=S2026
     hint: "Multi-organizer cycling calendar (RU), races grouped by month; bump season=S<year> yearly; source_url must be each race's own organizer page."
   - url: https://begaem.com/blizhayshie-startyi-v-rossii
-    hint: "Running calendar for Russia, grouped by month. Each row is date, place, distances and a
-      link to the event's own site -- use that link as source_url. The place column varies: a bare
-      city, a region and a city, or a region plus a district and a venue. Read it accordingly and
-      never pass a district as the region. These are running events, which ARE in scope for this site -- extract every one, just as you would a cycling calendar."
+    hint: "Running calendar for Russia, grouped by month. Each row is a full date, the event name,
+      the place, the distances and a link to the event's own site -- use that link as source_url.
+      The place column varies: a bare city, a region and a city, or a region plus a district and a
+      venue; read it accordingly and never pass a district as the region. These running events ARE
+      in scope: extract EVERY dated row. Returning an empty array for this source is a mistake --
+      there are dozens of concrete, dated races here, and a marathon is a competition just like a
+      gran fondo. Worked example: the row 'сентябрь 2026 | 20.09.2026 | Московский марафон | Москва
+      | 42,2 км / 10 км' is ONE event with date_start '2026-09-20', country Россия/Russia, city
+      Москва/Moscow, a running discipline, and source_url set to the marathon's own site taken from
+      the links list."
   - url: https://begaem.com/blizhayshie-startyi-za-rubezhom
-    hint: "Same calendar for the rest of the world; the row reads 'Country, City' and mixes Russian
-      and English spellings on one page. Every one of these foreign running events is in scope --
-      extract them all, a marathon in Iceland or Japan counts exactly like a race at home. Give the
-      country, region and city in all three locales so the same town is not proposed twice."
+    hint: "Same calendar for the rest of the world; each row reads 'Country, City' and mixes Russian
+      and English spellings on one page. Every foreign running event here is in scope -- a marathon
+      in Iceland or Japan counts exactly like a race at home. Extract EVERY dated row; returning an
+      empty array for this source is a mistake, there are dozens of them. Give country/region/city
+      in all three locales so the same town is not proposed twice. Worked example: the row 'август
+      2026 | 22.08.2026 | Reykjavik Marathon | Iceland, Reykjavik | 42,2 км / 21,1 км / 10 км' is
+      ONE event with date_start '2026-08-22', country Iceland (ru Исландия), city Reykjavik (ru
+      Рейкьявик), a running discipline, and source_url taken from the event's official-site link."
 
 organizers:
   # Kazakhstan / Kyrgyzstan (highest priority per agent/guidance.md)
