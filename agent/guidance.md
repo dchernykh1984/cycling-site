@@ -73,9 +73,11 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
   choose `source_url`, `url_route` and `url_registration` **only** from those real links, never type
   a URL from memory or guess one. If none of the real links is a proper event page, leave the field
   empty for the reviewer rather than inventing one.
-- **Put links in their own fields.** The route / GPS-track link (e.g. a Strava link) goes in
-  `url_route`, and the registration / signup link in `url_registration` -- do not bury them in the
-  description text; the site has dedicated fields and buttons for them.
+- **Put links in their own fields.** The route / GPS-track link -- a Strava or RideWithGPS route, a
+  `.gpx`/`.kml` file, or a route.eduha track-editor link -- goes in `url_route`, and the registration
+  / signup link in `url_registration`; do not bury them in the description. The route link matters
+  beyond display: the start line of that track is read as the venue's map coordinate, so always
+  capture it when the page has one.
 - **Description -- formatted HTML with the essentials.** Write it as **simple HTML**: short `<p>`
   paragraphs and a `<ul>`/`<li>` list for the groups / distances / schedule -- not one unbroken wall
   of text. Include the key facts: distances / formats, entry fee(s), start date, time and place,
@@ -96,12 +98,16 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
     oblast instead ("Московская область" for Москва) points at a different place.
   - **A city the site does not have yet is fine.** Name it and it goes for review, so the race is
     placed from the start. Never bend a race into a wrong neighbouring city to avoid this.
-  - **Country and region are what make that possible.** A city is only submitted when both are
-    named, so fill them in whenever the announcement or the event's page allows it. If you honestly
-    cannot tell, leave them empty: the race is then filed without a location and a reviewer places
-    it, which is much cheaper to fix than a city hung under the wrong region. In that case **always
-    repeat the place in the (Russian) description** -- e.g. "Место старта: <город/место>" -- since
-    that line is all the reviewer has to go on.
+  - **A city is only placed together with its region, so always name both.** The site cannot file a
+    city without the first-level region above it. The announcement often names only the city (or only
+    the start place) -- give the region anyway: a city's region is geographic fact you know, not a
+    guess. Узуд (Ouzoud) is in Марокко -> Бени-Меллаль-Хенифра; Марракеш is in Марокко -> Марракеш-
+    Сафи; a town near a capital sits in that capital's oblast. Fill in country, region and city
+    whenever you can name the town at all, even if the page only prints the town.
+  - **Only leave the place empty when the town itself is genuinely unknown** -- not merely because the
+    announcement did not spell out the region. When you do leave it empty, **repeat the start place in
+    the (Russian) description** -- e.g. "Место старта: <город/место>" -- since that line is all the
+    reviewer has to place it by.
   - **Never answer with a placeholder.** "Другая страна" / "Другой регион" / "Другой город" /
     "Другая локация" are not place names -- writing one creates a location called that. Leave the
     field empty instead.
