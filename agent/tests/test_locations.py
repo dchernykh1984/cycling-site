@@ -211,6 +211,19 @@ def test_match_region_tolerates_a_differently_worded_spelling():
             {"id": 3, "name": {"ru": "Rabat-Sale-Kenitra", "kk": "", "en": "Rabat"}, "children": []},
         ],
     }
-    assert match_region(country, "Marrakesh-Safi")["id"] == 2  # loose contains-match reuses the node
-    assert match_region(country, "marrakesh safi")["id"] == 2
+    assert match_region(country, "Marrakesh-Safi")["id"] == 2  # generic-word strip reuses the node
+    assert match_region(country, "marrakesh safi region")["id"] == 2
     assert match_region(country, "Tanger-Tetouan-Al Hoceima") is None  # genuinely new -> propose it
+
+
+def test_match_region_keeps_two_regions_where_one_name_nests_in_the_other():
+    """ "Nenets AO" must not collapse into "Yamalo-Nenets AO" -- they are 2000 km apart."""
+    country = {
+        "id": 1,
+        "name": {"ru": "Russia", "kk": "", "en": "Russia"},
+        "children": [
+            {"id": 2, "name": {"ru": "", "kk": "", "en": "Yamalo-Nenets autonomous okrug"}, "children": []},
+        ],
+    }
+    assert match_region(country, "Nenets autonomous okrug") is None  # distinct region -> propose it
+    assert match_region(country, "Yamalo-Nenets okrug")["id"] == 2  # the same one, reworded
