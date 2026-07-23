@@ -1,4 +1,5 @@
 import socket
+import urllib.request
 from urllib.error import HTTPError, URLError
 
 import pytest
@@ -197,6 +198,21 @@ def test_guarded_create_connection_refuses_a_rebound_private_ip(monkeypatch):
     monkeypatch.setattr(fetch.socket, "socket", no_socket)
     with pytest.raises(OSError, match="non-public"):
         fetch._guarded_create_connection(("rebind.evil.test", 80))
+
+
+def test_track_opener_ignores_a_configured_proxy(monkeypatch):
+    """A configured HTTP(S)_PROXY must not route the track fetch through an unchecked proxy.
+
+    Built with the same env set, a plain build_opener would register a ProxyHandler carrying the
+    env's proxies; the track opener must have no active proxy handler so the IP guard stays the only
+    arbiter of where the socket connects.
+    """
+    monkeypatch.setenv("HTTP_PROXY", "http://192.168.0.1:3128")
+    monkeypatch.setenv("HTTPS_PROXY", "http://192.168.0.1:3128")
+    active = [
+        h for h in fetch._build_track_opener().handlers if isinstance(h, urllib.request.ProxyHandler) and h.proxies
+    ]
+    assert not active  # no proxy applied even though the environment sets one
 
 
 def test_guarded_create_connection_dials_the_validated_ip_not_the_hostname(monkeypatch):
