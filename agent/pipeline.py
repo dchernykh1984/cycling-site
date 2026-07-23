@@ -95,6 +95,11 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
         if not isinstance(item, dict):
             continue
         title_ru, title_kk, title_en = _localized(item.get("title"))
+        # A foreign race often comes back titled only in English (e.g. "Reykjavik Marathon") with an
+        # empty ru field. title_ru gates the drop below and is the display fallback for the other
+        # locales, so backfill it from en/kk rather than silently losing a real event for want of a
+        # Russian name; en and kk keep whatever the model gave.
+        title_ru = title_ru or title_en or title_kk
         date_start = str(item.get("date_start") or "").strip()
         if not title_ru or not date_start:
             continue
