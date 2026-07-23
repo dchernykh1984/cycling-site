@@ -88,6 +88,15 @@ def test_parse_candidates_plain_string_title_is_ru_only():
     assert candidate.title_en == ""
 
 
+def test_parse_candidates_keeps_an_english_only_title_by_backfilling_ru():
+    """A foreign race titled only in English must not be dropped for an empty ru field."""
+    candidate = parse_candidates(
+        '[{"title": {"ru": "", "kk": "", "en": "Reykjavik Marathon"}, "date_start": "2026-08-22"}]'
+    )[0]
+    assert candidate.title == "Reykjavik Marathon"  # ru backfilled from en
+    assert candidate.title_en == "Reykjavik Marathon"
+
+
 def test_parse_candidates_extracts_route_and_registration_urls():
     raw = (
         '[{"title": "R", "date_start": "2026-08-01", "url_route": "https://strava.com/routes/1",'
