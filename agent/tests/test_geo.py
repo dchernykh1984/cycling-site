@@ -133,3 +133,22 @@ def test_start_coordinate_refuses_an_unsafe_url_without_fetching():
 
 def test_track_url_rejects_trailing_junk_after_the_extension():
     assert track_url(["https://route.eduha.info/?load=https%3A%2F%2Fevil.test%2Fa.gpxINJECTED"]) is None
+
+
+def test_redirect_to_a_private_host_is_refused():
+    """A public decoy that 302s to a metadata/internal address must not be followed."""
+    import urllib.error
+
+    from agent.fetch import _NoUnsafeRedirect
+
+    handler = _NoUnsafeRedirect()
+
+    class _Req:
+        def get_full_url(self):
+            return "https://decoy.public/route.gpx"
+
+    try:
+        handler.redirect_request(_Req(), None, 302, "Found", {}, "http://169.254.169.254/x.gpx")
+        raise AssertionError("redirect to a private host should have raised")
+    except urllib.error.URLError:
+        pass
