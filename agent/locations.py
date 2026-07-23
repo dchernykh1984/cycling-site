@@ -97,10 +97,16 @@ def city_matches(cities: list[dict], city: str, region: str = "", country: str =
     if country:
         matches = [c for c in matches if _hint_matches(country, c["country_names"])]
     if region:
-        # A city the tree models as its own region -- Astana, Shymkent, Moscow, Bishkek -- is named
-        # after the region holding it, and sources give the surrounding oblast instead. Filtering it
-        # out would propose a duplicate of a capital, so those are exempt.
-        matches = [c for c in matches if _hint_matches(region, c["region_names"]) or (c["names"] & c["region_names"])]
+        strict = [c for c in matches if _hint_matches(region, c["region_names"])]
+        if strict:
+            # The hint names a region one candidate sits in -- take those and drop the rest, even a
+            # namesake that happens to be its own region.
+            matches = strict
+        else:
+            # No candidate's region matches the hint. A city the tree models as its own region --
+            # Astana, Shymkent, Moscow, Bishkek -- is named after the region holding it, and sources
+            # give the surrounding oblast instead; keep those rather than propose a duplicate capital.
+            matches = [c for c in matches if c["names"] & c["region_names"]]
     return matches
 
 
