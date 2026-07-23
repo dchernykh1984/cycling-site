@@ -188,6 +188,23 @@ def _addrinfo(ip, port):
     return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, port))]
 
 
+def test_fetch_track_over_https_reaches_the_guarded_connection(monkeypatch):
+    """Regression: the HTTPS handler must not touch a missing _check_hostname attr on Python 3.12+.
+
+    Before the fix, opening any https track raised AttributeError inside https_open -- swallowed by
+    start_coordinate, so no coordinate was ever read. Here the fetch must get all the way to the
+    guarded connection (our marker), proving handler setup no longer raises.
+    """
+    marker = RuntimeError("reached the guarded connection")
+
+    def boom(*args, **kwargs):
+        raise marker
+
+    monkeypatch.setattr(fetch, "_guarded_create_connection", boom)
+    with pytest.raises(RuntimeError, match="reached the guarded connection"):
+        fetch.fetch_track("https://93.184.216.34/route.gpx")
+
+
 def test_guarded_create_connection_refuses_a_rebound_private_ip(monkeypatch):
     """The track fetch must connect to the very IPs it validated -- a resolved private one is refused."""
     monkeypatch.setattr(fetch.socket, "getaddrinfo", lambda *a, **k: _addrinfo("169.254.169.254", 80))

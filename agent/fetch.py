@@ -195,7 +195,11 @@ class _GuardedHTTPHandler(urllib.request.HTTPHandler):
 
 class _GuardedHTTPSHandler(urllib.request.HTTPSHandler):
     def https_open(self, req):
-        return self.do_open(_GuardedHTTPSConnection, req, context=self._context, check_hostname=self._check_hostname)
+        # Mirror the stdlib HTTPSHandler.https_open exactly (it passes only ``context``): on
+        # Python 3.12+ HTTPSHandler no longer keeps a ``_check_hostname`` attribute, so referencing
+        # it raised AttributeError on every HTTPS fetch -- swallowed by start_coordinate, which is
+        # why no track was ever read. check_hostname lives on the SSL context already.
+        return self.do_open(_GuardedHTTPSConnection, req, context=self._context)
 
 
 def _build_track_opener() -> urllib.request.OpenerDirector:
