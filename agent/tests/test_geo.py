@@ -56,16 +56,16 @@ def test_start_coordinate_fetches_the_linked_track():
         calls.append(url)
         return _KML
 
-    coord = start_coordinate(["https://r2.randonneurs.kz/2026/brm.kml"], fake_fetch)
+    coord = start_coordinate(["https://8.8.8.8/2026/brm.kml"], fake_fetch)
     assert coord == (49.80972, 73.08371)
-    assert calls == ["https://r2.randonneurs.kz/2026/brm.kml"]
+    assert calls == ["https://8.8.8.8/2026/brm.kml"]
 
 
 def test_start_coordinate_swallows_a_fetch_error():
     def boom(url):
         raise OSError("network down")
 
-    assert start_coordinate(["https://r2.randonneurs.kz/2026/brm.kml"], boom) is None
+    assert start_coordinate(["https://8.8.8.8/2026/brm.kml"], boom) is None
 
 
 def test_start_coordinate_none_without_a_track():
@@ -105,3 +105,31 @@ def test_kml_without_a_linestring_yields_nothing():
     assert (
         parse_start("<kml><Placemark><Point><coordinates>73.0,49.0,0</coordinates></Point></Placemark></kml>") is None
     )
+
+
+def test_ssrf_gate_rejects_private_and_metadata_hosts():
+    from agent.geo import is_fetchable_track_url
+
+    # A public host is allowed; loopback / link-local (cloud metadata) / private are refused, as is
+    # a non-http scheme.
+    assert is_fetchable_track_url("http://127.0.0.1/x.gpx") is False
+    assert is_fetchable_track_url("http://169.254.169.254/latest/meta-data/x.gpx") is False
+    assert is_fetchable_track_url("http://10.0.0.5/x.gpx") is False
+    assert is_fetchable_track_url("file:///etc/passwd") is False
+    assert is_fetchable_track_url("ftp://example.test/x.gpx") is False
+
+
+def test_start_coordinate_refuses_an_unsafe_url_without_fetching():
+    calls: list[str] = []
+
+    def spy(url):
+        calls.append(url)
+        return "<gpx><trkpt lat='1' lon='2'></trkpt></gpx>"
+
+    link = "https://route.eduha.info/?load=http%3A%2F%2F169.254.169.254%2Fx.gpx"
+    assert start_coordinate([link], spy) is None
+    assert calls == []  # the SSRF gate blocks it before any fetch
+
+
+def test_track_url_rejects_trailing_junk_after_the_extension():
+    assert track_url(["https://route.eduha.info/?load=https%3A%2F%2Fevil.test%2Fa.gpxINJECTED"]) is None

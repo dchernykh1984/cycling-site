@@ -8,7 +8,9 @@ parsing is pure and unit-tested; the one network call is injected so it can be e
 
 from __future__ import annotations
 
+import ipaddress
 import re
+import socket
 import urllib.parse
 from collections.abc import Callable
 
@@ -46,7 +48,9 @@ def track_url(links: list[str]) -> str | None:
         loaded = _EDUHA_LOAD.search(link)
         if loaded:
             inner = urllib.parse.unquote(loaded.group(1))
-            if _TRACK_FILE.match(inner):
+            # fullmatch, like the direct-file branch: .match would let "a.gpxJUNK" through and we
+            # would fetch that verbatim.
+            if _TRACK_FILE.fullmatch(inner):
                 return inner
         rwgps = _RWGPS_ROUTE.match(link)
         if rwgps:
@@ -75,14 +79,37 @@ def parse_start(track: str) -> tuple[float, float] | None:
     return None
 
 
+def is_fetchable_track_url(url: str) -> bool:
+    """Whether ``url`` is safe to download: http(s) to a host that resolves only to public IPs.
+
+    The track URL comes from a page that may be hostile (an aggregator can link anything), so this
+    is the SSRF gate: no file:// or other schemes, and no host that resolves to a loopback, private,
+    link-local or otherwise reserved address -- which is how a link would reach a cloud metadata
+    endpoint or an internal service.
+    """
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        return False
+    try:
+        infos = socket.getaddrinfo(parts.hostname, parts.port or 443, proto=socket.IPPROTO_TCP)
+    except OSError:
+        return False
+    for *_, sockaddr in infos:
+        ip = ipaddress.ip_address(sockaddr[0])
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            return False
+    return True
+
+
 def start_coordinate(links: list[str], fetch: Callable[[str], str]) -> tuple[float, float] | None:
     """Fetch the track a page links to and return its start point, or None on any failure.
 
     ``fetch`` takes a URL and returns the track text; every error is swallowed so a missing or broken
-    track never interrupts the run -- the venue simply keeps whatever coordinate it already had.
+    track never interrupts the run -- the venue simply keeps whatever coordinate it already had. The
+    URL is refused unless it resolves to a public host (see ``is_fetchable_track_url``).
     """
     url = track_url(links)
-    if url is None:
+    if url is None or not is_fetchable_track_url(url):
         return None
     try:
         return parse_start(fetch(url))

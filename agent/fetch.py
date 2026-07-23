@@ -120,9 +120,24 @@ def _with_links(text: str, anchors, base_url: str, limit: int = _MAX_LINKS, max_
     return body
 
 
+_TRACK_MAX_BYTES = 20 * 1024 * 1024  # a GPS track is a few MB; cap the read so a hostile URL can't
+# stream unbounded data into memory.
+
+
 def fetch_track(url: str, timeout: int = 20) -> str:
-    """Raw text of a linked GPS-track file (GPX/KML) -- no HTML stripping, for coordinate parsing."""
-    return _get_with_fallback(url, timeout)
+    """Raw text of a linked GPS-track file (GPX/KML) -- no HTML stripping, for coordinate parsing.
+
+    Reads at most ``_TRACK_MAX_BYTES``: the start point is near the top of the file, and the cap
+    stops a URL that resolves to something huge from exhausting memory.
+    """
+    request = urllib.request.Request(url, headers={"User-Agent": _UA})
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        raw = response.read(_TRACK_MAX_BYTES)
+        charset = response.headers.get_content_charset()
+    try:
+        return raw.decode(charset or _sniff_charset(raw) or "utf-8", errors="replace")
+    except LookupError:
+        return raw.decode("utf-8", errors="replace")
 
 
 def fetch_url(url: str, timeout: int = 20) -> str:
