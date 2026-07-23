@@ -353,14 +353,19 @@ class Location(MP_Node, index.Indexed):
         # competition this method promises to refuse.
         live = list(competition_cls.objects.select_for_update().filter(is_deleted=False, location_id__in=pks))
         # A rejected competition is exactly what a moderator clears before rejecting the geography
-        # invented for it, so it must not stand in the way.
-        still_wanted = (
+        # invented for it, so it must not stand in the way. Anything else with real content -- a
+        # published event, or one carrying registrations even after being demoted back to pending --
+        # is not disposable: refuse rather than silently blank its location.
+        disposable = (
             competition_cls.Status.DRAFT,
             competition_cls.Status.PENDING_APPROVAL,
             competition_cls.Status.REJECTED,
         )
-        if any(competition.status not in still_wanted for competition in live):
-            raise LocationInUseError("Location proposal is used by a published competition")
+        for competition in live:
+            if competition.status not in disposable:
+                raise LocationInUseError("Location proposal is used by a published competition")
+            if competition.registrations.exists():
+                raise LocationInUseError("Location proposal is used by a competition with registrations")
 
         competition_cls.objects.filter(pk__in=[competition.pk for competition in live]).update(location=None)
         # The catch-all venues in the subtree go with it, so their identity rows must not outlive it.

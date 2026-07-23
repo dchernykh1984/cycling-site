@@ -1264,6 +1264,37 @@ class LocationProposalModelTests(TestCase):
         pending_city.reject_and_reset_competitions()  # still rejectable
         self.assertTrue(Location.objects.get(pk=pending_city.pk).is_deleted)
 
+    def test_rejecting_a_proposed_city_refuses_a_competition_with_registrations(self):
+        """A demoted-but-registered event must not have its location silently blanked.
+
+        Editing a published event onto a self-proposed pending city demotes it to pending, but its
+        registrations survive; the reject path must not treat it as disposable just because the
+        status now reads pending.
+        """
+        from calendar_app.models import Competition
+        from locations.models import LocationInUseError
+        from registrations.models import CompetitionRegistration
+
+        pending_city = _propose_place(self.region, "Pending City", self.user)
+        venue = Location.propose_venue(pending_city, "Venue", submitted_by=self.user)
+        comp = Competition.objects.create(
+            title_ru="C",
+            date_start=datetime.date(2026, 7, 1),
+            location=venue,
+            status=Competition.Status.PENDING_APPROVAL,
+        )
+        CompetitionRegistration.objects.create(
+            competition=comp,
+            first_name="A",
+            last_name="B",
+            birth_date=datetime.date(1990, 1, 1),
+            gender="M",
+        )
+        with self.assertRaises(LocationInUseError):
+            pending_city.reject_and_reset_competitions()
+        comp.refresh_from_db()
+        self.assertEqual(comp.location_id, venue.pk)
+
     def test_rejecting_a_proposed_city_ignores_a_rejected_competition(self):
         from calendar_app.models import Competition
 
