@@ -111,9 +111,10 @@ Two ladders. Work down the geography first, and inside each step prefer cycling.
   - **Never answer with a placeholder.** "Другая страна" / "Другой регион" / "Другой город" /
     "Другая локация" are not place names -- writing one creates a location called that. Leave the
     field empty instead.
-  - **Use the current, official spelling** the site is likely to hold: "Алматы" (not "Алма-Ата"),
-    "Астана" (not "Нур-Султан"), "Талгар" (not "г. Талгар"). A variant spelling does not match what
-    is already there and creates a duplicate city.
+  - **Use the current, official spelling** the site is likely to hold, for the region as well as the
+    city: "Алматы" (not "Алма-Ата"), "Астана" (not "Нур-Султан"), "Талгар" (not "г. Талгар"). Give a
+    real, current first-level region -- do not invent one -- and name it plainly (e.g. "Алматинская
+    область"), since a variant spelling risks a duplicate of a region already on the site.
   - Countries are never created from an announcement. A race in a country the site does not carry is
     filed under the catch-all country, so still name the country properly -- a human moves it later.
 
