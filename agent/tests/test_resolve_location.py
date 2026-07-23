@@ -264,7 +264,7 @@ def test_enrich_fills_a_venue_coordinate_from_the_linked_track():
     page = "some text\n\nLinks on the page:\nhttps://8.8.8.8/2026/brm.kml"
     import agent.run as run
 
-    kml = "<kml><coordinates>73.08371,49.80972,0</coordinates></kml>"
+    kml = "<kml><Placemark><LineString><coordinates>73.08371,49.80972,0</coordinates></LineString></Placemark></kml>"
     orig = run.fetch.fetch_track
 
     def _fake_track(url):
