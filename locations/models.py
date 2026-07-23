@@ -634,6 +634,11 @@ def move_location(location, new_parent) -> None:
         new_depth = (locked_target.depth + 1) if locked_target is not None else 1
         if new_depth > 4:
             raise LocationConflictError("Resulting depth exceeds the four-level tree")
+        # An approved node must not slide under a branch still awaiting review: the branch would
+        # then hold public work and could never be rejected, and list_locations would drop the
+        # approved node along with its invisible parent. This mirrors every create path's rule.
+        if not locked.is_pending and locked_target is not None and not chain_is_approved(locked_target):
+            raise LocationConflictError("Cannot move an approved location under a pending one")
         if new_depth != locked.depth and location_subtree_is_nonempty(locked):
             raise LocationConflictError("Subtree changed under the node")
 
