@@ -81,6 +81,7 @@ def _add_start_coordinate(candidate: Candidate, page_text: str) -> Candidate:
     coord = geo.start_coordinate(links, fetch.fetch_track)
     if coord is None:
         return candidate
+    print(f"  * start coordinate {coord} for {candidate.title!r} (venue {candidate.venue!r})", flush=True)
     return replace(candidate, lat=coord[0], lng=coord[1])
 
 
