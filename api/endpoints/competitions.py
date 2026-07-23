@@ -195,6 +195,28 @@ def _set_disciplines(competition: Competition, discipline_ids: list[int] | None)
     competition.disciplines.set(disciplines)
 
 
+def _demote_for_pending_geography(competition: Competition, user) -> bool:
+    """Send a published competition back for review when its location is still a proposal.
+
+    Returns whether it changed anything. An admin (who may approve the geography) is exempt; the
+    venue itself is fine -- only pending *ancestors* matter, since an organizer may add a venue.
+    """
+    from locations.models import chain_is_approved
+
+    location = competition.location
+    if (
+        competition.status == Competition.Status.APPROVED
+        and not is_admin(user)
+        and location is not None
+        and not chain_is_approved(location.get_parent())
+    ):
+        competition.status = Competition.Status.PENDING_APPROVAL
+        competition.approved_by = None
+        competition.approved_at = None
+        return True
+    return False
+
+
 def _apply_patch_fields(competition: Competition, data: dict, user) -> list[str]:
     """Apply scalar/localized/location fields from a PATCH payload; return the changed columns.
 
@@ -211,6 +233,11 @@ def _apply_patch_fields(competition: Competition, data: dict, user) -> list[str]
         elif field == "location_id":
             competition.location_id = _lock_location_for_competition(value, user)
             update_fields.append("location_id")
+            # Re-pointing a published event at geography still under review publishes that branch,
+            # and then it can never be rejected. Mirror the web edit: send such an event back for
+            # review unless the caller may bless geography anyway.
+            if _demote_for_pending_geography(competition, user):
+                update_fields += ["status", "approved_by", "approved_at"]
         else:
             setattr(competition, field, value)
             update_fields.append(field)

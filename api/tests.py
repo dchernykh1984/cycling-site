@@ -697,6 +697,26 @@ class CompetitionUpdateTest(TestCase, ApiTestMixin):
         self.stranger = _user("stranger", role=User.Role.ORGANIZER)
         self.comp = _competition(submitted_by=self.owner)
 
+    def test_patch_onto_pending_geography_demotes_a_published_event(self):
+        """The API must mirror the web edit: re-pointing a published event at a proposal un-publishes it."""
+        from locations.models import LocationProposal, add_location_child
+
+        organizer = _user("patch-org", role=User.Role.ORGANIZER)
+        country = _location()
+        region = add_location_child(country, name="R", name_ru="R")
+        pending_city = add_location_child(region, name="Pend", name_ru="Pend")
+        LocationProposal.objects.create(location=pending_city, submitted_by=organizer)
+        venue = add_location_child(pending_city, name="V", name_ru="V")
+        LocationProposal.objects.create(location=venue, submitted_by=organizer)
+
+        comp = Competition.objects.create(
+            title_ru="C", date_start="2026-09-01", submitted_by=organizer, status=Competition.Status.APPROVED
+        )
+        resp = self.patch(f"/api/v1/competitions/{comp.pk}", {"location_id": venue.pk}, user=organizer)
+        self.assertEqual(resp.status_code, 200)
+        comp.refresh_from_db()
+        self.assertEqual(comp.status, Competition.Status.PENDING_APPROVAL)
+
     def test_owner_can_update(self):
         resp = self.patch(
             f"/api/v1/competitions/{self.comp.pk}",
