@@ -3012,3 +3012,16 @@ class DefaultFilterRedirectTests(TestCase):
             resp = self.client.get(reverse(name))
             self.assertEqual(resp.status_code, 302, name)
             self.assertIn(f"discipline_category={self.cat.pk}", resp.url)
+
+    def test_a_covered_direction_is_not_emitted_alongside_its_discipline(self):
+        # If a discipline under a direction is also preferred, the direction is dropped -- otherwise
+        # the list (OR of category+discipline) and the calendar (widget keeps only the discipline)
+        # would show different result sets for the same saved preferences.
+        disc = Discipline.objects.create(name_ru="ITT", category=self.cat)
+        self.user.preferred_directions.add(self.cat)
+        self.user.preferred_disciplines.add(disc)
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("calendar"))
+        self.assertEqual(resp.status_code, 302)
+        self.assertNotIn("discipline_category=", resp.url)
+        self.assertIn(f"discipline={disc.pk}", resp.url)
