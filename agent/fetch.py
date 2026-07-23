@@ -198,7 +198,24 @@ class _GuardedHTTPSHandler(urllib.request.HTTPSHandler):
         return self.do_open(_GuardedHTTPSConnection, req, context=self._context, check_hostname=self._check_hostname)
 
 
-_TRACK_OPENER = urllib.request.build_opener(_NoUnsafeRedirect(), _GuardedHTTPHandler(), _GuardedHTTPSHandler())
+def _build_track_opener() -> urllib.request.OpenerDirector:
+    """An opener that connects directly through the guarded handlers, never through a proxy.
+
+    The empty ``ProxyHandler({})`` pins it to direct connections: it makes build_opener drop its
+    default proxy handler, so with HTTP(S)_PROXY set the socket would otherwise dial the proxy --
+    whose IP is the only one ``_guarded_create_connection`` then sees, letting the real (possibly
+    internal) target go unchecked. The agent fetches public track files directly, so this costs
+    nothing. (An empty ProxyHandler registers no ``*_open`` method, so no proxy handler remains.)
+    """
+    return urllib.request.build_opener(
+        _NoUnsafeRedirect(),
+        urllib.request.ProxyHandler({}),
+        _GuardedHTTPHandler(),
+        _GuardedHTTPSHandler(),
+    )
+
+
+_TRACK_OPENER = _build_track_opener()
 
 
 def fetch_track(url: str, timeout: int = 20) -> str:
