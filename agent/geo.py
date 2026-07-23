@@ -26,13 +26,11 @@ _GPX_TRKPT = re.compile(
     r"<(?:trkpt|rtept)\b[^>]*\blat=\"(-?\d+(?:\.\d+)?)\"[^>]*\blon=\"(-?\d+(?:\.\d+)?)\"",
     re.IGNORECASE,
 )
-# The first coordinate of the route line. A KML file often carries standalone <Point> placemarks
-# (an overview pin, the finish, controls) before the <LineString> route, so taking the first
-# <coordinates> anywhere would grab a POI; anchor on the LineString's coordinates instead.
-_KML_LINE = re.compile(
-    r"<LineString\b.*?<coordinates>\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)",
-    re.IGNORECASE | re.DOTALL,
-)
+# The <coordinates> body of every LineString. A KML often carries standalone <Point> placemarks (an
+# overview pin, the finish, controls) and decorative or bounding-box lines besides the route, so we
+# take not the first line but the longest -- the route has far more points than any decoration.
+_KML_LINE_COORDS = re.compile(r"<LineString\b.*?<coordinates>\s*(.*?)\s*</coordinates>", re.IGNORECASE | re.DOTALL)
+_KML_FIRST_LNG_LAT = re.compile(r"(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)")
 
 
 def track_url(links: list[str]) -> str | None:
@@ -70,13 +68,32 @@ def parse_start(track: str) -> tuple[float, float] | None:
     if gpx:
         lat, lng = float(gpx.group(1)), float(gpx.group(2))
     else:
-        kml = _KML_LINE.search(track)
-        if not kml:
+        point = _kml_start(track)
+        if point is None:
             return None
-        lng, lat = float(kml.group(1)), float(kml.group(2))  # KML order is lon,lat
+        lat, lng = point
     if -90 <= lat <= 90 and -180 <= lng <= 180 and (lat, lng) != (0.0, 0.0):
         return lat, lng
     return None
+
+
+def _kml_start(track: str) -> tuple[float, float] | None:
+    """The first (lat, lng) of the longest LineString in a KML file, or None.
+
+    The longest coordinate list is the route; shorter ones are decorations, bounding boxes or
+    finish/overview markers that must not be mistaken for the start. KML orders each pair lon,lat.
+    """
+    longest, most = None, -1
+    for body in _KML_LINE_COORDS.findall(track):
+        points = body.split()
+        if len(points) > most:
+            most, longest = len(points), body
+    if longest is None:
+        return None
+    first = _KML_FIRST_LNG_LAT.search(longest)
+    if first is None:
+        return None
+    return float(first.group(2)), float(first.group(1))  # stored lon,lat -> return lat,lng
 
 
 def is_fetchable_track_url(url: str) -> bool:

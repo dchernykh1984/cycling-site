@@ -152,3 +152,16 @@ def test_redirect_to_a_private_host_is_refused():
         raise AssertionError("redirect to a private host should have raised")
     except urllib.error.URLError:
         pass
+
+
+def test_kml_takes_the_longest_linestring_as_the_route():
+    """A short decorative/overview LineString before the route must not be taken as the start."""
+    kml = (
+        "<kml>"
+        "<Placemark><LineString><coordinates>10.0,80.0,0 11.0,81.0,0</coordinates></LineString></Placemark>"
+        "<Placemark><LineString><coordinates>"
+        "73.08371,49.80972,0 73.1,49.85,0 73.2,49.9,0 73.3,49.95,0"
+        "</coordinates></LineString></Placemark>"
+        "</kml>"
+    )
+    assert parse_start(kml) == (49.80972, 73.08371)
