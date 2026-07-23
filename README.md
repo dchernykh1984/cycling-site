@@ -161,15 +161,21 @@ Notes:
 ### Organizer (`organizer`)
 
 - Everything a Participant can do.
-- Create competitions through the web form as **approved** immediately, or
-  through the API as **pending approval**.
+- Create competitions through the web form as **approved** immediately -- unless
+  the event sits on a location still under review (a region or city proposed but
+  not yet blessed), in which case it stays pending until an Admin approves the
+  geography. Through the API a created competition is **pending approval**.
 - Configure registration, categories, limits, payment, approval, relay and
   related fields for their own competitions.
 - Edit, hide and soft-delete their own competitions, and see their upload tokens.
 - Moderate pending competitions (approve/reject); approving a competition
   auto-approves the venue proposed with it. The region and city proposed
   alongside stay pending -- blessing geography is an Admin right, so approving an
-  event is not a way around it.
+  event is not a way around it. An event whose region or city is still under
+  review therefore **cannot** be approved by an Organizer (the attempt is
+  refused, "the location is still awaiting review"), and such events are hidden
+  from the Organizer's moderation queue -- only an Admin, who can also approve the
+  geography, sees and clears them.
 - Add an approved venue under a city via web/API without separate moderation.
 - **Propose** a region or a city via web/API. An Organizer's region or city is
   always a proposal -- visible only to them until an Admin approves it (an Admin
