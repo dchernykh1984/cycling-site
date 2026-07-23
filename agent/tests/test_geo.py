@@ -167,6 +167,20 @@ def test_kml_takes_the_longest_linestring_as_the_route():
     assert parse_start(kml) == (49.80972, 73.08371)
 
 
+def test_parse_start_ignores_a_commented_or_cdata_decoy_point():
+    """A <trkpt> hidden in a comment or CDATA is text, not the route; the real first point wins."""
+    commented = (
+        '<gpx><!-- <trkpt lat="10.0" lon="20.0"></trkpt> -->'
+        '<trk><trkseg><trkpt lat="49.80972" lon="73.08371"/></trkseg></trk></gpx>'
+    )
+    assert parse_start(commented) == (49.80972, 73.08371)
+    cdata = (
+        '<gpx><trk><name><![CDATA[<trkpt lat="10.0" lon="20.0"></trkpt>]]></name>'
+        '<trkseg><trkpt lat="49.80972" lon="73.08371"/></trkseg></trk></gpx>'
+    )
+    assert parse_start(cdata) == (49.80972, 73.08371)
+
+
 def test_gpx_attribute_order_and_namespace_do_not_matter():
     """lon-before-lat and a namespace prefix are valid GPX and must still parse."""
     assert parse_start('<gpx><trkpt lon="73.08371" lat="49.80972"></trkpt></gpx>') == (49.80972, 73.08371)
