@@ -291,6 +291,23 @@ class ProfilePreferenceTests(TestCase):
         self.assertEqual(self.user.preferred_directions.count(), 0)
         self.assertEqual(self.user.preferred_locations.count(), 0)
 
+    def test_invalid_post_keeps_the_in_progress_picker_selection(self):
+        # A bad value in an unrelated field must not throw away the preferences the user just picked.
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("account_profile_edit"),
+            self._base_post(
+                strava_link="https://strava.example/" + "a" * 120,  # exceeds max_length -> form invalid
+                preferred_directions=[self.cat.pk],
+                preferred_locations=[self.city.pk],
+            ),
+        )
+        self.assertEqual(response.status_code, 200)  # re-rendered, not redirected/saved
+        self.assertContains(response, f'name="preferred_directions" value="{self.cat.pk}"')
+        self.assertContains(response, f'name="preferred_locations" value="{self.city.pk}"')
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.preferred_directions.count(), 0)
+
     def test_profile_page_shows_saved_preferences(self):
         self.user.preferred_directions.add(self.cat)
         self.user.preferred_disciplines.add(self.disc)
