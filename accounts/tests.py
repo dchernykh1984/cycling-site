@@ -230,6 +230,78 @@ class AccountAdapterTests(TestCase):
         self.assertTrue(User.objects.filter(username="adaptertest").exists())
 
 
+class ProfilePreferenceTests(TestCase):
+    """Saved calendar-filter preferences on the profile (issue #229)."""
+
+    def setUp(self):
+        from calendar_app.models import Discipline, DisciplineCategory
+        from locations.models import Location
+
+        self.user = make_user(username="prefs", role=User.Role.PARTICIPANT)
+        self.cat = DisciplineCategory.objects.create(name="RoadCat", name_ru="RoadCat", name_en="RoadCat")
+        self.disc = Discipline.objects.create(name="IttDisc", name_ru="IttDisc", name_en="IttDisc", category=self.cat)
+        self.country = Location.add_root(name="KzCountry", name_ru="KzCountry", name_en="KzCountry")
+        self.city = self.country.add_child(name="AlmatyCity", name_ru="AlmatyCity", name_en="AlmatyCity")
+
+    def _base_post(self, **extra):
+        data = {
+            "first_name": "",
+            "last_name": "",
+            "gender": "",
+            "birth_date": "",
+            "team": "",
+            "city": "",
+            "strava_link": "",
+        }
+        data.update(extra)
+        return data
+
+    def test_edit_page_renders_the_pickers(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("account_profile_edit"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "pref-categories-data")
+        self.assertContains(response, "pref-locations-data")
+
+    def test_post_saves_all_three_preference_sets(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("account_profile_edit"),
+            self._base_post(
+                preferred_directions=[self.cat.pk],
+                preferred_disciplines=[self.disc.pk],
+                preferred_locations=[self.city.pk],
+            ),
+        )
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertEqual(list(self.user.preferred_directions.values_list("pk", flat=True)), [self.cat.pk])
+        self.assertEqual(list(self.user.preferred_disciplines.values_list("pk", flat=True)), [self.disc.pk])
+        self.assertEqual(list(self.user.preferred_locations.values_list("pk", flat=True)), [self.city.pk])
+        # The free-text city is unrelated and must stay untouched by the new fields.
+        self.assertEqual(self.user.city, "")
+
+    def test_post_without_the_fields_clears_them(self):
+        self.user.preferred_directions.add(self.cat)
+        self.user.preferred_locations.add(self.city)
+        self.client.force_login(self.user)
+        response = self.client.post(reverse("account_profile_edit"), self._base_post())
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.preferred_directions.count(), 0)
+        self.assertEqual(self.user.preferred_locations.count(), 0)
+
+    def test_profile_page_shows_saved_preferences(self):
+        self.user.preferred_directions.add(self.cat)
+        self.user.preferred_disciplines.add(self.disc)
+        self.user.preferred_locations.add(self.city)
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("account_profile"))
+        self.assertContains(response, "RoadCat")
+        self.assertContains(response, "IttDisc")
+        self.assertContains(response, "AlmatyCity")
+
+
 class ProfileViewTests(TestCase):
     def setUp(self):
         self.user = make_user(username="viewer", role=User.Role.PARTICIPANT)

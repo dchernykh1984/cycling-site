@@ -41,10 +41,19 @@ class ProfileEditForm(forms.ModelForm):
             "team",
             "city",
             "strava_link",
+            # Saved calendar-filter preferences (issue #229). The cascade pickers in the template
+            # post the chosen ids as hidden inputs of these names; the widgets are not rendered by
+            # Django (MultipleHiddenInput just declares them optional so an empty pick clears them).
+            "preferred_directions",
+            "preferred_disciplines",
+            "preferred_locations",
         ]
         widgets: ClassVar[dict] = {
             "birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "gender": forms.RadioSelect(choices=[("M", "M"), ("F", "F")]),
+            "preferred_directions": forms.MultipleHiddenInput,
+            "preferred_disciplines": forms.MultipleHiddenInput,
+            "preferred_locations": forms.MultipleHiddenInput,
         }
 
 
@@ -103,11 +112,25 @@ class ProfileView(TemplateView):
 class ProfileEditView(LoginRequiredMixin, View):
     template_name = "accounts/profile_edit.html"
 
+    def _picker_context(self, user) -> dict:
+        """Data the cascade preference pickers need: the same option sets the calendar filter uses,
+        plus this user's currently-saved ids so the pickers open pre-checked (issue #229)."""
+        from calendar_app.views import _categories_for_locale, _disciplines_for_locale, _get_locations_data
+
+        return {
+            "categories_json": _categories_for_locale(),
+            "disciplines_json": _disciplines_for_locale(),
+            "locations_data": _get_locations_data(),
+            "pref_direction_ids": list(user.preferred_directions.values_list("pk", flat=True)),
+            "pref_discipline_ids": list(user.preferred_disciplines.values_list("pk", flat=True)),
+            "pref_location_ids": list(user.preferred_locations.values_list("pk", flat=True)),
+        }
+
     def get(self, request):
         from django.shortcuts import render
 
         form = ProfileEditForm(instance=request.user)
-        return render(request, self.template_name, {"form": form})
+        return render(request, self.template_name, {"form": form, **self._picker_context(request.user)})
 
     def post(self, request):
         from django.shortcuts import render
@@ -116,7 +139,7 @@ class ProfileEditView(LoginRequiredMixin, View):
         if form.is_valid():
             form.save()
             return redirect("account_profile")
-        return render(request, self.template_name, {"form": form})
+        return render(request, self.template_name, {"form": form, **self._picker_context(request.user)})
 
 
 class ResendEmailConfirmationView(LoginRequiredMixin, View):

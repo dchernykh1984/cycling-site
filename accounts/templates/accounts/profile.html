@@ -69,9 +69,21 @@
                 <p class="mb-1"><strong>{% trans "City" %}:</strong> {{ user.city }}</p>
                 {% endif %}
                 {% if user.strava_link %}
-                <p class="mb-0"><strong>{% trans "Strava link" %}:</strong>
+                <p class="mb-1"><strong>{% trans "Strava link" %}:</strong>
                     <a href="{{ user.strava_link }}" target="_blank" rel="noopener">{{ user.strava_link }}</a></p>
                 {% endif %}
+                {% with dirs=user.preferred_directions.all discs=user.preferred_disciplines.all %}
+                {% if dirs or discs %}
+                <p class="mb-1"><strong>{% trans "Preferred directions and disciplines" %}:</strong>
+                    {% for d in dirs %}{{ d.name }}{% if not forloop.last or discs %}, {% endif %}{% endfor %}{% for d in discs %}{{ d.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+                {% endif %}
+                {% endwith %}
+                {% with locs=user.preferred_locations.all %}
+                {% if locs %}
+                <p class="mb-0"><strong>{% trans "Preferred locations" %}:</strong>
+                    {% for l in locs %}{{ l.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+                {% endif %}
+                {% endwith %}
             </div>
             <div class="card-footer">
                 <a href="{% url 'account_profile_edit' %}" class="btn btn-sm btn-outline-primary">{% trans "Edit profile" %}</a>

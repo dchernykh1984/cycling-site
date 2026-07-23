@@ -47,6 +47,17 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     # competition collects Strava links (used later to match riders to their segment efforts).
     # Capped at the additional_info field's length so the prefilled value always fits.
     strava_link = models.URLField(max_length=100, blank=True, default="")
+    # Saved calendar-filter preferences: exactly the same three filter dimensions the calendar uses,
+    # so an opened calendar/list/map defaults to what this user cares about (issue #229). Left empty
+    # for everyone by default -- the user opts in from their profile; the free-text ``city`` above is
+    # unrelated and untouched. Directions are DisciplineCategory, disciplines their children.
+    preferred_directions = models.ManyToManyField(
+        "calendar_app.DisciplineCategory", blank=True, related_name="preferring_users"
+    )
+    preferred_disciplines = models.ManyToManyField(
+        "calendar_app.Discipline", blank=True, related_name="preferring_users"
+    )
+    preferred_locations = models.ManyToManyField("locations.Location", blank=True, related_name="preferring_users")
     # Timestamp of the last rate-limited outgoing mail action (confirmation email at
     # signup/resend and the contact-owners message). Shared cooldown across all of them.
     last_mail_action_at = models.DateTimeField(null=True, blank=True)

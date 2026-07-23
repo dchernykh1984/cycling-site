@@ -1,0 +1,155 @@
+{% load i18n %}
+{% comment %}
+Saved calendar-filter preferences for the profile (issue #229). Reuses the calendar's
+window.MultiSelectCascade factory so the search + checkbox UX matches the filter exactly:
+one direction->discipline cascade and one country->region->city->location cascade. The
+chosen ids are written into hidden inputs (preferred_directions / preferred_disciplines /
+preferred_locations) that post with the surrounding profile form. Server-rendered initial
+inputs keep the saved values if JavaScript is off; the JS replaces them on load/change.
+{% endcomment %}
+
+<div class="mb-3">
+  <label class="form-label">{% trans "Preferred directions and disciplines" %}</label>
+  <div class="row g-2">
+    <div class="col-sm-6">
+      <div class="dropdown">
+        <button class="form-select form-select-sm text-start" type="button" id="pd-btn-1"
+                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+          <span class="mf-text text-muted">{% trans "All" %}</span>
+        </button>
+        <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="pd-menu-1"></ul>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="dropdown">
+        <button class="form-select form-select-sm text-start" type="button" id="pd-btn-2"
+                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" disabled>
+          <span class="mf-text text-muted">{% trans "All" %}</span>
+        </button>
+        <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="pd-menu-2"></ul>
+      </div>
+    </div>
+  </div>
+  <div class="form-text">{% trans "Prefilled into the calendar filter when you open it." %}</div>
+  <div id="pref-dir-inputs">{% for id in pref_direction_ids %}<input type="hidden" name="preferred_directions" value="{{ id }}">{% endfor %}</div>
+  <div id="pref-disc-inputs">{% for id in pref_discipline_ids %}<input type="hidden" name="preferred_disciplines" value="{{ id }}">{% endfor %}</div>
+</div>
+
+<div class="mb-3">
+  <label class="form-label">{% trans "Preferred locations" %}</label>
+  <div class="row g-2">
+    {% for lvl in "1234" %}
+    <div class="col-sm-6 col-lg-3">
+      <div class="dropdown">
+        <button class="form-select form-select-sm text-start" type="button" id="pl-btn-{{ lvl }}"
+                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"{% if not forloop.first %} disabled{% endif %}>
+          <span class="mf-text text-muted">{% trans "All" %}</span>
+        </button>
+        <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="pl-menu-{{ lvl }}"></ul>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="form-text">{% trans "Prefilled into the calendar filter when you open it." %}</div>
+  <div id="pref-loc-inputs">{% for id in pref_location_ids %}<input type="hidden" name="preferred_locations" value="{{ id }}">{% endfor %}</div>
+</div>
+
+{{ categories_json|json_script:"pref-categories-data" }}
+{{ disciplines_json|json_script:"pref-disciplines-data" }}
+{{ locations_data|json_script:"pref-locations-data" }}
+{{ pref_direction_ids|json_script:"pref-direction-ids" }}
+{{ pref_discipline_ids|json_script:"pref-discipline-ids" }}
+{{ pref_location_ids|json_script:"pref-location-ids" }}
+
+{% include "calendar_app/_filter_multiselect_js.html" %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.MultiSelectCascade) return;
+  var LABELS = { all: '{% trans "All" %}', selected: '{% trans "selected" %}', search: '{% trans "Search..." %}' };
+  function j(id) { var el = document.getElementById(id); return el ? JSON.parse(el.textContent) : []; }
+  function syncInputs(containerId, name, ids) {
+    var c = document.getElementById(containerId);
+    c.innerHTML = '';
+    ids.forEach(function (id) {
+      var i = document.createElement('input');
+      i.type = 'hidden'; i.name = name; i.value = id;
+      c.appendChild(i);
+    });
+  }
+
+  // Direction -> discipline (mirrors _direction_filter.html), sourced from saved prefs.
+  var categories = j('pref-categories-data');
+  var disciplines = j('pref-disciplines-data');
+  var prefDir = j('pref-direction-ids').map(String);
+  var prefDisc = j('pref-discipline-ids').map(String);
+  function discById(pk) { return disciplines.find(function (d) { return String(d.pk) === String(pk); }); }
+  function dirNodesUnder(depth, parentPks) {
+    if (depth === 1) return categories.map(function (c) { return { pk: c.pk, name: c.name }; });
+    var set = {}; parentPks.forEach(function (p) { set[String(p)] = 1; });
+    return disciplines.filter(function (d) { return set[String(d.category_id)]; })
+                      .map(function (d) { return { pk: d.pk, name: d.name }; });
+  }
+  function dirRestore() {
+    var chains = [];
+    prefDir.forEach(function (catId) { chains.push([{ depth: 1, pk: catId }]); });
+    prefDisc.forEach(function (discId) {
+      var d = discById(discId);
+      if (d) chains.push([{ depth: 1, pk: d.category_id }, { depth: 2, pk: discId }]);
+    });
+    return chains;
+  }
+  var dir = window.MultiSelectCascade({
+    levels: [
+      { btn: document.getElementById('pd-btn-1'), menu: document.getElementById('pd-menu-1') },
+      { btn: document.getElementById('pd-btn-2'), menu: document.getElementById('pd-menu-2') }
+    ],
+    nodesUnder: dirNodesUnder, restoreChains: dirRestore, searchable: true, labels: LABELS, onChange: syncDir
+  });
+  function syncDir() {
+    // Match the filter's emit: chosen disciplines, plus directions with no discipline drilled into.
+    var discPks = dir.levelPks(2);
+    var covered = {};
+    discPks.forEach(function (id) { var d = discById(id); if (d) covered[String(d.category_id)] = 1; });
+    var dirOnly = dir.levelPks(1).filter(function (id) { return !covered[String(id)]; });
+    syncInputs('pref-dir-inputs', 'preferred_directions', dirOnly);
+    syncInputs('pref-disc-inputs', 'preferred_disciplines', discPks);
+  }
+  syncDir();
+
+  // Country -> region -> city -> location (mirrors _location_filter.html).
+  var allLocations = j('pref-locations-data');
+  var prefLoc = j('pref-location-ids').map(String);
+  var lang = (document.documentElement.lang || 'ru').split('-')[0];
+  var nameField = (['ru', 'kk', 'en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
+  function nm(l) { return l[nameField] || l.name_ru || ''; }
+  function byPk(pk) { return allLocations.find(function (l) { return String(l.pk) === String(pk); }); }
+  function locNodesUnder(d, parentPks) {
+    var parents = parentPks.map(byPk).filter(Boolean);
+    return allLocations.filter(function (l) {
+      if (l.depth !== d) return false;
+      if (d === 1) return true;
+      return parents.some(function (p) { return l.path.indexOf(p.path) === 0; });
+    }).map(function (l) { return { pk: l.pk, name: nm(l) }; });
+  }
+  function locRestore() {
+    return prefLoc.map(byPk).filter(Boolean).map(function (target) {
+      var stepLen = target.path.length / target.depth;
+      var chain = [];
+      for (var k = 1; k <= target.depth; k++) {
+        var ap = target.path.slice(0, stepLen * k);
+        var anc = allLocations.find(function (l) { return l.depth === k && l.path === ap; });
+        if (anc) chain.push({ depth: k, pk: anc.pk });
+      }
+      return chain;
+    });
+  }
+  var loc = window.MultiSelectCascade({
+    levels: [1, 2, 3, 4].map(function (d) {
+      return { btn: document.getElementById('pl-btn-' + d), menu: document.getElementById('pl-menu-' + d) };
+    }),
+    nodesUnder: locNodesUnder, restoreChains: locRestore, searchable: true, labels: LABELS, onChange: syncLoc
+  });
+  function syncLoc() { syncInputs('pref-loc-inputs', 'preferred_locations', loc.effectivePks()); }
+  syncLoc();
+});
+</script>
