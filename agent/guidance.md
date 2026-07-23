@@ -123,8 +123,10 @@ when everything is on the table; they never mean "skip this one."
     city: "Алматы" (not "Алма-Ата"), "Астана" (not "Нур-Султан"), "Талгар" (not "г. Талгар"). Give a
     real, current first-level region -- do not invent one -- and name it plainly (e.g. "Алматинская
     область"), since a variant spelling risks a duplicate of a region already on the site.
-  - Countries are never created from an announcement. A race in a country the site does not carry is
-    filed under the catch-all country, so still name the country properly -- a human moves it later.
+  - Countries are never created from an announcement, and almost every country is already on the
+    site, so name the country properly and the race will place under it. In the rare case the site
+    does not carry that country, the race is left without a location for a reviewer to add the
+    country and place it -- so also put the start place in the (Russian) description as a fallback.
 
 
 ## Hints
