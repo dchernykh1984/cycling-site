@@ -112,25 +112,36 @@ class ProfileView(TemplateView):
 class ProfileEditView(LoginRequiredMixin, View):
     template_name = "accounts/profile_edit.html"
 
-    def _picker_context(self, user) -> dict:
+    def _picker_context(self, form) -> dict:
         """Data the cascade preference pickers need: the same option sets the calendar filter uses,
-        plus this user's currently-saved ids so the pickers open pre-checked (issue #229)."""
+        plus the pre-checked ids taken from the FORM (issue #229). Reading from the bound form (not
+        the DB) keeps the user's in-progress selection when an unrelated field fails validation and
+        the page is re-rendered, exactly as the plain text fields do."""
         from calendar_app.views import _categories_for_locale, _disciplines_for_locale, _get_locations_data
+
+        def ids(field_name):
+            out = []
+            for value in form[field_name].value() or []:
+                try:
+                    out.append(int(getattr(value, "pk", value)))
+                except (TypeError, ValueError):
+                    continue
+            return out
 
         return {
             "categories_json": _categories_for_locale(),
             "disciplines_json": _disciplines_for_locale(),
             "locations_data": _get_locations_data(),
-            "pref_direction_ids": list(user.preferred_directions.values_list("pk", flat=True)),
-            "pref_discipline_ids": list(user.preferred_disciplines.values_list("pk", flat=True)),
-            "pref_location_ids": list(user.preferred_locations.values_list("pk", flat=True)),
+            "pref_direction_ids": ids("preferred_directions"),
+            "pref_discipline_ids": ids("preferred_disciplines"),
+            "pref_location_ids": ids("preferred_locations"),
         }
 
     def get(self, request):
         from django.shortcuts import render
 
         form = ProfileEditForm(instance=request.user)
-        return render(request, self.template_name, {"form": form, **self._picker_context(request.user)})
+        return render(request, self.template_name, {"form": form, **self._picker_context(form)})
 
     def post(self, request):
         from django.shortcuts import render
@@ -139,7 +150,7 @@ class ProfileEditView(LoginRequiredMixin, View):
         if form.is_valid():
             form.save()
             return redirect("account_profile")
-        return render(request, self.template_name, {"form": form, **self._picker_context(request.user)})
+        return render(request, self.template_name, {"form": form, **self._picker_context(form)})
 
 
 class ResendEmailConfirmationView(LoginRequiredMixin, View):
