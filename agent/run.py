@@ -6,7 +6,7 @@ import os
 import sys
 from pathlib import Path
 
-from agent import chunk, enrich, fetch, llm, locations, pipeline, sources
+from agent import chunk, enrich, fetch, geo, llm, locations, pipeline, sources
 from agent.config import Config, ConfigError, from_env
 from agent.models import Candidate, KnownEvents, RunReport, Taxonomy
 from agent.site_api import SiteApiClient
@@ -51,6 +51,24 @@ def _extract_candidates(
         raw = llm.extract_raw(piece, source, guidance, known, taxonomy, config)
         candidates.extend(pipeline.parse_candidates(raw, source.fetch_url or "", taxonomy))
     return candidates
+
+
+def _add_start_coordinate(candidate: Candidate, page_text: str) -> Candidate:
+    """Give a venue its real start point from the track the page links to, if it has no coordinate.
+
+    Announcement pages seldom print lat/lng, but they link the route (a .gpx/.kml, a route.eduha
+    track, a RideWithGPS route); its first point is the start line. Only fills a coordinate the model
+    did not already provide, and only when a venue is being proposed.
+    """
+    from dataclasses import replace
+
+    if not candidate.venue or candidate.lat is not None or candidate.lng is not None:
+        return candidate
+    links = page_text.partition("Links on the page:")[2].split()
+    coord = geo.start_coordinate(links, fetch.fetch_track)
+    if coord is None:
+        return candidate
+    return replace(candidate, lat=coord[0], lng=coord[1])
 
 
 def _propose_city(client, tree: list, cities: list, candidate: Candidate, created: list | None = None) -> int | None:
@@ -152,7 +170,8 @@ def main() -> int:
             refined = pipeline.parse_candidates(raw, candidate.source_url, taxonomy)
         except Exception:
             return candidate  # network/LLM/parse failure -> use what we already have
-        return enrich.merge_candidate(candidate, refined[0]) if refined else candidate
+        merged = enrich.merge_candidate(candidate, refined[0]) if refined else candidate
+        return _add_start_coordinate(merged, page_text)
 
     def create(candidate: Candidate) -> None:
         # The geography is posted before the competition, so a failing competition POST leaves it
