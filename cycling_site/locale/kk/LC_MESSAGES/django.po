@@ -2,10 +2,25 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 14:32+0000\n"
+"POT-Creation-Date: 2026-07-23 20:19+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: accounts/access.py:9
+msgid ""
+"Please confirm your email address to activate your account. Until your email "
+"is confirmed, you can view the site but cannot submit, register, comment, "
+"contact site owners, or use API features."
+msgstr ""
+"Аккаунтыңызды белсендіру үшін e-mail мекенжайыңызды растаңыз. E-mail "
+"расталғанға дейін сайтты қарай аласыз, бірақ материалдар жібере алмайсыз, "
+"старттарға тіркеле алмайсыз, пікір қалдыра алмайсыз, сайт иелеріне жаза "
+"алмайсыз немесе API пайдалана алмайсыз."
+
+#: accounts/models.py:92
+msgid "Participant"
+msgstr "Қатысушы"
 
 #: accounts/templates/account/signup.html:4
 msgid "Signup"
@@ -33,178 +48,358 @@ msgstr ""
 msgid "Sign up using a passkey"
 msgstr "Passkey арқылы тіркелу"
 
+#: accounts/templates/accounts/_preference_pickers.html:12
+#: accounts/templates/accounts/profile.html:77
+msgid "Preferred directions and disciplines"
+msgstr "Таңдаулы бағыттар мен пәндер"
+
+#: accounts/templates/accounts/_preference_pickers.html:18
+#: accounts/templates/accounts/_preference_pickers.html:27
+#: accounts/templates/accounts/_preference_pickers.html:46
+#: accounts/templates/accounts/_preference_pickers.html:68
+#: calendar_app/templates/calendar_app/_direction_filter.html:15
+#: calendar_app/templates/calendar_app/_direction_filter.html:25
+#: calendar_app/templates/calendar_app/_direction_filter.html:75
+#: calendar_app/templates/calendar_app/_disciplines_field.html:22
+#: calendar_app/templates/calendar_app/_disciplines_field.html:32
+#: calendar_app/templates/calendar_app/_disciplines_field.html:81
+#: calendar_app/templates/calendar_app/_event_type_filter.html:12
+#: calendar_app/templates/calendar_app/_event_type_filter.html:37
+#: calendar_app/templates/calendar_app/_location_filter.html:13
+#: calendar_app/templates/calendar_app/_location_filter.html:23
+#: calendar_app/templates/calendar_app/_location_filter.html:33
+#: calendar_app/templates/calendar_app/_location_filter.html:43
+#: calendar_app/templates/calendar_app/_location_filter.html:92
+msgid "All"
+msgstr "Барлығы"
+
+#: accounts/templates/accounts/_preference_pickers.html:33
+#: accounts/templates/accounts/_preference_pickers.html:53
+msgid "Prefilled into the calendar filter when you open it."
+msgstr "Күнтізбені ашқанда сүзгіге қойылады."
+
+#: accounts/templates/accounts/_preference_pickers.html:39
+#: accounts/templates/accounts/profile.html:83
+msgid "Preferred locations"
+msgstr "Таңдаулы локациялар"
+
+#: accounts/templates/accounts/_preference_pickers.html:68
+#: calendar_app/templates/calendar_app/_direction_filter.html:75
+#: calendar_app/templates/calendar_app/_disciplines_field.html:81
+#: calendar_app/templates/calendar_app/_event_type_filter.html:37
+#: calendar_app/templates/calendar_app/_location_filter.html:92
+msgid "selected"
+msgstr "таңдалды"
+
+#: accounts/templates/accounts/_preference_pickers.html:68
+#: calendar_app/templates/calendar_app/_direction_filter.html:75
+#: calendar_app/templates/calendar_app/_disciplines_field.html:81
+#: calendar_app/templates/calendar_app/_event_type_filter.html:37
+#: calendar_app/templates/calendar_app/_location_filter.html:92
+#: search/templates/search/search.html:14
+msgid "Search..."
+msgstr "Iздеу..."
+
+# issue #122 - contact site owners
+#: accounts/templates/accounts/contact_owners.html:4
+#: accounts/templates/accounts/contact_owners.html:9
+#: accounts/templates/accounts/profile.html:95
+#: accounts/templates/accounts/profile.html:103
+#: accounts/templates/accounts/profile.html:104 accounts/tests.py:1406
+msgid "Contact site owners"
+msgstr "Сайт иелерімен байланыс"
+
+#: accounts/templates/accounts/contact_owners.html:10
+msgid ""
+"Send a message to the people who run the site. We will reply to the contact "
+"you leave in your message."
+msgstr ""
+"Сайтты басқаратын адамдарға хабарлама жіберіңіз. Хабарламада қалдырған "
+"байланысыңызға жауап береміз."
+
+#: accounts/templates/accounts/contact_owners.html:32
+msgid "Send message"
+msgstr "Хабарлама жіберу"
+
+#: accounts/templates/accounts/contact_owners.html:33
+#: accounts/templates/accounts/profile_edit.html:72
+#: calendar_app/templates/calendar_app/edit.html:171
+#: calendar_app/templates/calendar_app/submit.html:154
+#: home/templates/home/home_edit.html:117
+#: knowledge/templates/knowledge/add_article.html:51
+#: knowledge/templates/knowledge/admin/approve_confirm.html:21
+#: knowledge/templates/knowledge/admin/reject_form.html:22
+#: knowledge/templates/knowledge/edit_article.html:50
+#: knowledge/templates/knowledge/submit.html:48
+#: locations/templates/locations/location_form.html:145
+#: news/templates/news/article_form.html:140
+#: news/templates/news/article_form.html:142 news/templates/news/submit.html:37
+#: registrations/templates/registrations/edit_registration.html:29
+#: registrations/templates/registrations/manual_add.html:89
+#: registrations/templates/registrations/register.html:209
+msgid "Cancel"
+msgstr "Болдырмау"
+
 #: accounts/templates/accounts/profile.html:4
 #: accounts/templates/accounts/profile.html:9
-#: cycling_site/templates/base.html:111
+#: cycling_site/templates/base.html:114
 msgid "Profile"
 msgstr "Профиль"
 
-#: accounts/templates/accounts/profile.html:12
+#: accounts/templates/accounts/profile.html:21
+#: accounts/templates/accounts/profile.html:22
+msgid "Resend confirmation email"
+msgstr "Растау хатын кайта жiберу"
+
+#: accounts/templates/accounts/profile.html:54
 msgid "Email"
 msgstr "Email"
 
-#: accounts/templates/accounts/profile.html:13
+#: accounts/templates/accounts/profile.html:55
 msgid "Role"
 msgstr "Рол"
 
-#: accounts/templates/accounts/profile.html:15
-#: calendar_app/templates/calendar_app/_registration_fields.html:237
-#: locations/templates/locations/locations_map_page.html:40
-#: registrations/templates/registrations/participant_list.html:54
+#: accounts/templates/accounts/profile.html:57
+#: calendar_app/templates/calendar_app/_registration_fields.html:251
+#: calendar_app/templates/calendar_app/moderate.html:88
+#: locations/templates/locations/locations_map_page.html:76
+#: registrations/templates/registrations/_participant_row.html:4
+#: registrations/templates/registrations/_participant_table_head.html:5
 msgid "Name"
 msgstr "Аты"
 
-#: accounts/templates/accounts/profile.html:18
+#: accounts/templates/accounts/profile.html:60
 #: accounts/templates/accounts/profile_edit.html:25
-#: registrations/templates/registrations/participant_list.html:55
+#: registrations/templates/registrations/_participant_row.html:5
+#: registrations/templates/registrations/_participant_table_head.html:6
 #: registrations/templates/registrations/register.html:114
 msgid "Gender"
 msgstr "Жынысы"
 
-#: accounts/templates/accounts/profile.html:21
+#: accounts/templates/accounts/profile.html:63
 #: accounts/templates/accounts/profile_edit.html:41
 #: registrations/templates/registrations/register.html:148
 msgid "Date of birth"
 msgstr "Туған күні"
 
-#: accounts/templates/accounts/profile.html:25
+#: accounts/templates/accounts/profile.html:66
+#: accounts/templates/accounts/profile_edit.html:47
+#: registrations/templates/registrations/_participant_row.html:7
+#: registrations/templates/registrations/_participant_table_head.html:8
+#: registrations/templates/registrations/register.html:179
+msgid "Team"
+msgstr "Команда"
+
+#: accounts/templates/accounts/profile.html:69
+#: accounts/templates/accounts/profile_edit.html:54
+#: calendar_app/templates/calendar_app/_location_cascade.html:21
+#: calendar_app/templates/calendar_app/_location_filter.html:29
+#: calendar_app/templates/calendar_app/list.html:154
+#: calendar_app/templates/calendar_app/list.html:180
+#: locations/templates/locations/location_form.html:106
+#: registrations/templates/registrations/_participant_row.html:8
+#: registrations/templates/registrations/_participant_table_head.html:9
+#: registrations/templates/registrations/manual_add.html:28
+#: registrations/templates/registrations/manual_add.html:44
+#: registrations/templates/registrations/manual_add.html:64
+#: registrations/templates/registrations/manual_add.html:100
+#: registrations/templates/registrations/register.html:41
+#: registrations/templates/registrations/register.html:57
+#: registrations/templates/registrations/register.html:77
+#: registrations/templates/registrations/register.html:172
+#: registrations/templates/registrations/register.html:220
+msgid "City"
+msgstr "Қала"
+
+#: accounts/templates/accounts/profile.html:72
+#: accounts/templates/accounts/profile_edit.html:61
+#: calendar_app/templates/calendar_app/_registration_fields.html:104
+#: registrations/forms.py:42 registrations/forms.py:130
+#: registrations/tests.py:579
+msgid "Strava link"
+msgstr "Strava сілтемесі"
+
+#: accounts/templates/accounts/profile.html:89
 #: accounts/templates/accounts/profile_edit.html:4
 #: accounts/templates/accounts/profile_edit.html:9
 #: registrations/templates/registrations/register.html:28
+#: registrations/templates/registrations/register.html:188
 msgid "Edit profile"
 msgstr "Профильді өңдеу"
 
-#: accounts/access.py:9
-#: accounts/templates/accounts/profile.html:12
+#: accounts/templates/accounts/profile.html:97
 msgid ""
-"Please confirm your email address to activate your account. Until your email "
-"is confirmed, you can view the site but cannot submit, register, comment, "
-"contact site owners, or use API features."
+"Have a question or a request? Send a message to the people who run the site."
 msgstr ""
-"Аккаунтыңызды белсендіру үшін e-mail мекенжайыңызды растаңыз. E-mail "
-"расталғанға дейін сайтты қарай аласыз, бірақ материалдар жібере алмайсыз, "
-"старттарға тіркеле алмайсыз, пікір қалдыра алмайсыз, сайт иелеріне жаза "
-"алмайсыз немесе API пайдалана алмайсыз."
+"Сұрағыңыз немесе өтінішіңіз бар ма? Сайтты басқаратын адамдарға жазыңыз."
 
-#: accounts/templates/accounts/profile.html:40
-#: accounts/templates/accounts/profile.html:41
-msgid "Resend confirmation email"
-msgstr "Растау хатын кайта жiберу"
-
-#: accounts/templates/accounts/profile.html:72
+#: accounts/templates/accounts/profile.html:140
 msgid "Appearance"
 msgstr "Корiнiс"
 
-#: accounts/templates/accounts/profile.html:74
+#: accounts/templates/accounts/profile.html:142
 msgid "Theme"
 msgstr "Такырып"
 
-#: accounts/templates/accounts/profile.html:82
+#: accounts/templates/accounts/profile.html:150
+msgid "My registrations"
+msgstr "Менің тіркелулерім"
+
+#: accounts/templates/accounts/profile.html:156
+#: accounts/templates/accounts/profile.html:204
+msgid "Competition"
+msgstr "Жарыс"
+
+#: accounts/templates/accounts/profile.html:157 knowledge/models.py:250
+#: knowledge/templates/knowledge/add_article.html:30
+#: knowledge/templates/knowledge/edit_article.html:29
+#: knowledge/templates/knowledge/submission_detail.html:31
+#: knowledge/templates/knowledge/submit.html:33
+#: registrations/templates/registrations/register.html:157
+msgid "Category"
+msgstr "Санат"
+
+#: accounts/templates/accounts/profile.html:158
+#: accounts/templates/accounts/profile.html:205
+#: accounts/templates/accounts/profile.html:265
+msgid "Date"
+msgstr "Күні"
+
+#: accounts/templates/accounts/profile.html:159
+#: accounts/templates/accounts/profile.html:206
+#: accounts/templates/accounts/profile.html:266
+#: locations/templates/locations/locations_map_page.html:77
+msgid "Status"
+msgstr "Күйі"
+
+#: accounts/templates/accounts/profile.html:170
+#: accounts/templates/accounts/profile.html:217
+#: registrations/templates/registrations/_participant_row.html:17
+#: registrations/templates/registrations/_participant_table_head.html:13
+msgid "Rejected"
+msgstr "Қабылданбады"
+
+#: accounts/templates/accounts/profile.html:176
+#: accounts/templates/accounts/profile.html:222
+#: registrations/templates/registrations/_participant_row.html:11
+#: registrations/templates/registrations/_participant_table_head.html:11
+msgid "Approved"
+msgstr "Бекітілді"
+
+#: accounts/templates/accounts/profile.html:178
+#: accounts/templates/accounts/profile.html:224
+#: news/templates/news/news_page.html:75
+msgid "Pending"
+msgstr "Қарастырылуда"
+
+#: accounts/templates/accounts/profile.html:182
+#: registrations/templates/registrations/_participant_row.html:14
+#: registrations/templates/registrations/_participant_table_head.html:12
+msgid "Paid"
+msgstr "Төленді"
+
+#: accounts/templates/accounts/profile.html:184
+msgid "Not paid"
+msgstr "Төленбеді"
+
+#: accounts/templates/accounts/profile.html:195
+msgid "No registrations yet."
+msgstr "Тіркелулер жоқ."
+
+# Pending/rejected competitions + profile (issue #180)
+#: accounts/templates/accounts/profile.html:198
+msgid "Events I submitted"
+msgstr "Мен қосқан іс-шаралар"
+
+#: accounts/templates/accounts/profile.html:207
+#: locations/templates/locations/locations_map_page.html:78
+#: registrations/templates/registrations/_participant_table_head.html:13
+msgid "Actions"
+msgstr "Әрекеттер"
+
+#: accounts/templates/accounts/profile.html:229
+#: calendar_app/templates/calendar_app/edit.html:14
+#: locations/templates/locations/locations_map_page.html:90
+#: locations/templates/locations/locations_map_page.html:157
+#: registrations/templates/registrations/_participant_row.html:39
+#: registrations/templates/registrations/_participant_row.html:59
+msgid "Edit"
+msgstr "Өңдеу"
+
+# Reject -> edit -> resubmit flow (#200)
+#: accounts/templates/accounts/profile.html:233
+msgid "Resubmit"
+msgstr "Қайта жіберу"
+
+#: accounts/templates/accounts/profile.html:237
+msgid "Delete this competition?"
+msgstr "Бұл жарысты жою керек пе?"
+
+#: accounts/templates/accounts/profile.html:239
+#: calendar_app/templates/calendar_app/detail.html:265
+#: calendar_app/templates/calendar_app/detail.html:286
+#: knowledge/templates/knowledge/knowledge_article_detail.html:52
+#: knowledge/templates/knowledge/knowledge_article_detail.html:72
+#: locations/templates/locations/locations_map_page.html:103
+#: news/templates/news/article_detail.html:57
+#: news/templates/news/article_detail.html:77
+#: news/templates/news/news_page.html:82
+#: registrations/templates/registrations/_participant_row.html:43
+msgid "Delete"
+msgstr "Жою"
+
+# Pending/rejected competitions + profile (issue #180)
+#: accounts/templates/accounts/profile.html:248
+msgid "You have not submitted any events yet."
+msgstr "Сіз әзірге бірде-бір іс-шара қоспадыңыз."
+
+#: accounts/templates/accounts/profile.html:251
 msgid "My submissions"
 msgstr "Менiн материалдарым"
 
-#: accounts/templates/accounts/profile.html:86
+#: accounts/templates/accounts/profile.html:254
 #: knowledge/templates/knowledge/knowledge_index_page.html:21
 #: knowledge/templates/knowledge/submit.html:4
 #: knowledge/templates/knowledge/submit.html:9
 msgid "Submit article"
 msgstr "Мақала жіберу"
 
-#: accounts/templates/accounts/profile.html:95
+#: accounts/templates/accounts/profile.html:262
 #: calendar_app/templates/calendar_app/edit.html:37
-#: calendar_app/templates/calendar_app/edit.html:49
-#: calendar_app/templates/calendar_app/edit.html:61
-#: calendar_app/templates/calendar_app/list.html:146
+#: calendar_app/templates/calendar_app/edit.html:50
+#: calendar_app/templates/calendar_app/edit.html:63
+#: calendar_app/templates/calendar_app/list.html:147
+#: calendar_app/templates/calendar_app/list.html:162
 #: calendar_app/templates/calendar_app/submit.html:29
-#: calendar_app/templates/calendar_app/submit.html:41
-#: calendar_app/templates/calendar_app/submit.html:53 knowledge/models.py:286
-#: knowledge/tests.py:757 knowledge/tests.py:772 news/forms.py:29
-#: news/forms.py:34 news/forms.py:40
+#: calendar_app/templates/calendar_app/submit.html:42
+#: calendar_app/templates/calendar_app/submit.html:55 knowledge/models.py:248
+#: knowledge/templates/knowledge/add_article.html:18
+#: knowledge/templates/knowledge/edit_article.html:17
+#: knowledge/templates/knowledge/submit.html:21 news/forms.py:39
+#: news/forms.py:44 news/forms.py:50
 msgid "Title"
 msgstr "Атауы"
 
-#: accounts/templates/accounts/profile.html:96
-#: calendar_app/templates/calendar_app/detail.html:34
-#: calendar_app/templates/calendar_app/list.html:148
+#: accounts/templates/accounts/profile.html:263
+#: calendar_app/templates/calendar_app/detail.html:50
+#: calendar_app/templates/calendar_app/list.html:149
+#: calendar_app/templates/calendar_app/list.html:175
 msgid "Type"
 msgstr "Түрі"
 
-#: accounts/templates/accounts/profile.html:97
+#: accounts/templates/accounts/profile.html:264
 msgid "Language"
 msgstr "Тіл"
 
-#: accounts/templates/accounts/profile.html:98
-#: accounts/templates/accounts/profile.html:137
-msgid "Date"
-msgstr "Күні"
-
-#: accounts/templates/accounts/profile.html:99
-#: accounts/templates/accounts/profile.html:138
-#: locations/templates/locations/locations_map_page.html:41
-msgid "Status"
-msgstr "Күйі"
-
-#: accounts/templates/accounts/profile.html:127
+#: accounts/templates/accounts/profile.html:294
 msgid "No submissions yet."
 msgstr "Материалдар жоқ."
 
-#: accounts/templates/accounts/profile.html:129
-msgid "My registrations"
-msgstr "Менің тіркелулерім"
-
-#: accounts/templates/accounts/profile.html:135
-msgid "Competition"
-msgstr "Жарыс"
-
-#: accounts/templates/accounts/profile.html:136 knowledge/models.py:288
-#: knowledge/templates/knowledge/submission_detail.html:31
-#: knowledge/tests.py:759 knowledge/tests.py:774
-#: registrations/templates/registrations/participant_list.html:57
-#: registrations/templates/registrations/register.html:157
-msgid "Category"
-msgstr "Санат"
-
-#: knowledge/forms.py
-msgid "Tags"
-msgstr "Тегтер"
-
-#: knowledge/forms.py
-msgid "comma,separated,tags"
-msgstr "үтірмен,бөлінген,тегтер"
-
-#: accounts/templates/accounts/profile.html:149
-#: registrations/templates/registrations/participant_list.html:63
-msgid "Rejected"
-msgstr "Қабылданбады"
-
-#: accounts/templates/accounts/profile.html:155
-#: registrations/templates/registrations/participant_list.html:61
-msgid "Approved"
-msgstr "Бекітілді"
-
-#: accounts/templates/accounts/profile.html:157
-#: news/templates/news/news_page.html:75
-msgid "Pending"
-msgstr "Қарастырылуда"
-
-#: accounts/templates/accounts/profile.html:161
-#: registrations/templates/registrations/participant_list.html:62
-msgid "Paid"
-msgstr "Төленді"
-
-#: accounts/templates/accounts/profile.html:163
-msgid "Not paid"
-msgstr "Төленбеді"
-
-#: accounts/templates/accounts/profile.html:174
-msgid "No registrations yet."
-msgstr "Тіркелулер жоқ."
-
-#: accounts/templates/accounts/profile.html:179
+#: accounts/templates/accounts/profile.html:298
 msgid "API access"
 msgstr "API кiруi"
 
-#: accounts/templates/accounts/profile.html:182
+#: accounts/templates/accounts/profile.html:301
 msgid ""
 "Use this token to authenticate API requests: <code>Authorization: Bearer "
 "&lt;token&gt;</code>"
@@ -212,29 +407,32 @@ msgstr ""
 "API сурауларын растау ушiн осы токендi пайдаланыныз: <code>Authorization: "
 "Bearer &lt;token&gt;</code>"
 
-#: accounts/templates/accounts/profile.html:187
-#: calendar_app/templates/calendar_app/detail.html:118
+#: accounts/templates/accounts/profile.html:306
+#: calendar_app/templates/calendar_app/detail.html:182
 msgid "Copy"
 msgstr "Көшіру"
 
-#: accounts/templates/accounts/profile.html:190
+#: accounts/templates/accounts/profile.html:309
+#: calendar_app/templates/calendar_app/detail.html:208
 msgid "No token yet. Generate one below."
 msgstr "Токен алi жок. Томенде жасаныз."
 
-#: accounts/templates/accounts/profile.html:195
+#: accounts/templates/accounts/profile.html:314
+#: calendar_app/templates/calendar_app/detail.html:187
 msgid "Regenerate token"
 msgstr "Токендi жаналау"
 
-#: accounts/templates/accounts/profile.html:195
+#: accounts/templates/accounts/profile.html:314
+#: calendar_app/templates/calendar_app/detail.html:211
 msgid "Generate token"
 msgstr "Токен жасау"
 
-#: accounts/templates/accounts/profile.html:198
+#: accounts/templates/accounts/profile.html:317
 msgid "API docs (Swagger)"
 msgstr "API кужаттамасы (Swagger)"
 
-#: accounts/templates/accounts/profile.html:204
-#: cycling_site/templates/base.html:122
+#: accounts/templates/accounts/profile.html:323
+#: cycling_site/templates/base.html:125
 msgid "Log out"
 msgstr "Шыгу"
 
@@ -258,139 +456,224 @@ msgstr "Еркек"
 msgid "Female"
 msgstr "Әйел"
 
-#: accounts/templates/accounts/profile_edit.html:46
-#: calendar_app/templates/calendar_app/edit.html:205
-#: locations/templates/locations/location_form.html:133
+#: accounts/templates/accounts/profile_edit.html:51
+#: accounts/templates/accounts/profile_edit.html:58
+msgid "Prefilled when you register for a competition."
+msgstr "Жарысқа тіркелу кезінде автоматты түрде толтырылады."
+
+#: accounts/templates/accounts/profile_edit.html:66
+msgid ""
+"Prefilled into the registration field for competitions that collect Strava "
+"links."
+msgstr ""
+"Strava сілтемелерін жинайтын жарыстардың тіркеу өрісіне алдын ала қойылады."
+
+#: accounts/templates/accounts/profile_edit.html:69
+msgid "Calendar defaults"
+msgstr "Күнтізбенің әдепкі параметрлері"
+
+#: accounts/templates/accounts/profile_edit.html:71
+#: calendar_app/templates/calendar_app/edit.html:170
+#: knowledge/templates/knowledge/edit_article.html:49
+#: locations/templates/locations/location_form.html:143
 #: registrations/templates/registrations/edit_registration.html:28
 msgid "Save"
 msgstr "Сақтау"
 
-#: accounts/templates/accounts/profile_edit.html:47
-#: calendar_app/templates/calendar_app/edit.html:206
-#: calendar_app/templates/calendar_app/submit.html:189
-#: home/templates/home/home_edit.html:112
-#: knowledge/templates/knowledge/add_article.html:53
-#: knowledge/templates/knowledge/admin/approve_confirm.html:21
-#: knowledge/templates/knowledge/admin/reject_form.html:22
-#: knowledge/templates/knowledge/submit.html:51
-#: locations/templates/locations/location_form.html:135
-#: news/templates/news/article_form.html:135
-#: news/templates/news/article_form.html:137 news/templates/news/submit.html:26
-#: registrations/templates/registrations/edit_registration.html:29
-#: registrations/templates/registrations/manual_add.html:89
-#: registrations/templates/registrations/register.html:200
-msgid "Cancel"
-msgstr "Болдырмау"
+#: accounts/views.py:195
+msgid "Subject"
+msgstr "Тақырып"
 
-#: calendar_app/forms.py:31
-#: calendar_app/templates/calendar_app/calendar.html:39
-#: calendar_app/templates/calendar_app/list.html:37
+#: accounts/views.py:200
+msgid "Message"
+msgstr "Хабарлама"
+
+#: accounts/views.py:202
+msgid ""
+"Please tell us how to reach you (e.g. email or messenger) and describe your "
+"question or problem in detail."
+msgstr ""
+"Өзіңізбен қалай байланысуға болатынын (мысалы, email немесе мессенджер) "
+"көрсетіп, сұрағыңыз бен мәселеңізді толық сипаттаңыз."
+
+#: accounts/views.py:239
+msgid "Please wait a few minutes before sending another message."
+msgstr "Келесі хабарламаны жіберер алдында бірнеше минут күте тұрыңыз."
+
+#: accounts/views.py:269
+msgid ""
+"Sorry, we could not send your message right now. Please try again later."
+msgstr ""
+"Кешіріңіз, қазір хабарламаңызды жіберу мүмкін болмады. Кейінірек қайталап "
+"көріңіз."
+
+#: accounts/views.py:271
+msgid "Your message has been sent to the site owners."
+msgstr "Хабарламаңыз сайт иелеріне жіберілді."
+
+#: api/endpoints/content.py:136
+#, python-format
+msgid "Body is too large (max %(limit)d characters)."
+msgstr "Мәтін тым үлкен (ең көбі %(limit)d таңба)."
+
+#: api/endpoints/content.py:156
+msgid "At least one title translation is required."
+msgstr "Кемінде бір тілде тақырып қажет."
+
+#: api/endpoints/content.py:157 api/endpoints/content.py:168
+#: api/endpoints/content.py:184 api/tests.py:1184
+#, python-format
+msgid "Title is too long (max %(limit)d characters)."
+msgstr "Тақырып тым ұзын (ең көбі %(limit)d таңба)."
+
+#: api/endpoints/content.py:162 api/endpoints/content.py:180
+msgid "Unknown locale."
+msgstr ""
+
+#: api/endpoints/content.py:164 api/endpoints/content.py:182
+msgid "A title is required."
+msgstr "Тақырып қажет."
+
+#: api/endpoints/content.py:169 api/endpoints/content.py:185
+#, python-format
+msgid "Category is too long (max %(limit)d characters)."
+msgstr "Санат тым ұзын (ең көбі %(limit)d таңба)."
+
+#: api/endpoints/content.py:337 api/endpoints/content.py:358
+#, python-format
+msgid "Intro is too long (max %(limit)d characters)."
+msgstr "Кіріспе тым ұзын (ең көбі %(limit)d таңба)."
+
+#: calendar_app/forms.py:39
+#: calendar_app/templates/calendar_app/_event_type_filter.html:8
 msgid "Event type"
 msgstr "Іс-шара түрі"
 
-#: calendar_app/forms.py:39
-#: calendar_app/templates/calendar_app/calendar.html:48
-#: calendar_app/templates/calendar_app/edit.html:92
-#: calendar_app/templates/calendar_app/list.html:41
-#: calendar_app/templates/calendar_app/list.html:149
-#: calendar_app/templates/calendar_app/submit.html:86
-msgid "Direction"
-msgstr "Бағыт"
+#: calendar_app/forms.py:47
+#: calendar_app/templates/calendar_app/_disciplines_field.html:14
+#: calendar_app/templates/calendar_app/detail.html:56
+#: calendar_app/templates/calendar_app/list.html:151
+#: calendar_app/templates/calendar_app/list.html:177
+msgid "Disciplines"
+msgstr "Пәндер"
 
-#: calendar_app/templates/calendar_app/list.html:134
-msgid "Directions"
-msgstr "Бағыттар"
-
-#: calendar_app/forms.py:55
+#: calendar_app/forms.py:82
 msgid "Date start"
 msgstr "Басталу күні"
 
-#: calendar_app/forms.py:60
+#: calendar_app/forms.py:87
 msgid "Date end"
 msgstr "Аяқталу күні"
 
-#: calendar_app/forms.py:82
+#: calendar_app/forms.py:109
 msgid "File size must not exceed 10 MB."
 msgstr "Файл өлшемі 10 МБ-тан аспауы керек."
 
-#: calendar_app/forms.py:86
+#: calendar_app/forms.py:113
 #, python-format
 msgid "Unsupported file type. Allowed: %(allowed)s."
 msgstr "Қолданылмайтын файл түрі. Рұқсат етілген: %(allowed)s."
 
-#: calendar_app/forms.py:120
+#: calendar_app/forms.py:123
 msgid "Description is too large. Use fewer or smaller inline images."
 msgstr "Сипаттама тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
 
-#: knowledge/forms.py
-msgid "The article is too large. Use fewer or smaller inline images."
-msgstr "Мақала тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
-
-#: cycling_site/richtext.py
-msgid "The text is too large. Use fewer or smaller inline images."
-msgstr "Мәтін тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
-
-#: calendar_app/forms.py:106 calendar_app/tests.py:386
+#: calendar_app/forms.py:153 calendar_app/tests.py:514
 msgid "End date cannot be before start date."
 msgstr "Аяқталу күні басталу күнінен бұрын болмауы керек."
 
-#: calendar_app/templates/calendar_app/_location_cascade.html:3
-#: calendar_app/templates/calendar_app/_location_filter.html:40
-#: calendar_app/templates/calendar_app/detail.html:42
-#: calendar_app/templates/calendar_app/list.html:154
-#: locations/templates/locations/location_form.html:82
+#: calendar_app/forms.py:166
+msgid "Please choose a city for the new venue."
+msgstr ""
+
+#: calendar_app/forms.py:176 calendar_app/views.py:832
+#: calendar_app/views.py:1030
+msgid "This location is not available."
+msgstr "Бұл локация қолжетімді емес."
+
+#: calendar_app/forms.py:235 calendar_app/tests.py:1513 knowledge/forms.py:44
+#: knowledge/tests.py:909 news/forms.py:113 news/forms.py:126 news/tests.py:689
+msgid "Write a comment..."
+msgstr "Пікір жазыңыз..."
+
+#: calendar_app/templates/calendar_app/_direction_filter.html:11
+#: calendar_app/templates/calendar_app/_disciplines_field.html:18
+msgid "Direction"
+msgstr "Бағыт"
+
+#: calendar_app/templates/calendar_app/_direction_filter.html:21
+#: calendar_app/templates/calendar_app/_disciplines_field.html:28
+msgid "Discipline"
+msgstr "Пән"
+
+#: calendar_app/templates/calendar_app/_disciplines_field.html:15
+msgid "Choose one or more disciplines — a competition can belong to several."
+msgstr "Бір немесе бірнеше пәнді таңдаңыз — жарыс бірнешеуіне жатуы мүмкін."
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:6
+#: calendar_app/templates/calendar_app/_location_filter.html:39
+#: calendar_app/templates/calendar_app/detail.html:83
+#: calendar_app/templates/calendar_app/list.html:155
+#: calendar_app/templates/calendar_app/list.html:181
 msgid "Location"
 msgstr "Орын"
 
-#: calendar_app/templates/calendar_app/_location_cascade.html:6
-#: calendar_app/templates/calendar_app/_location_filter.html:10
-#: calendar_app/templates/calendar_app/list.html:151
-#: locations/templates/locations/location_form.html:87
+#: calendar_app/templates/calendar_app/_location_cascade.html:9
+#: calendar_app/templates/calendar_app/_location_filter.html:9
+#: calendar_app/templates/calendar_app/list.html:152
+#: calendar_app/templates/calendar_app/list.html:178
+#: locations/templates/locations/location_form.html:93
 msgid "Country"
 msgstr "Ел"
 
-#: calendar_app/templates/calendar_app/_location_cascade.html:12
-#: calendar_app/templates/calendar_app/_location_filter.html:20
-#: calendar_app/templates/calendar_app/list.html:152
-#: locations/templates/locations/location_form.html:93
+#: calendar_app/templates/calendar_app/_location_cascade.html:15
+#: calendar_app/templates/calendar_app/_location_filter.html:19
+#: calendar_app/templates/calendar_app/list.html:153
+#: calendar_app/templates/calendar_app/list.html:179
+#: locations/templates/locations/location_form.html:100
 msgid "Region"
 msgstr "Өлке"
 
-#: calendar_app/templates/calendar_app/_location_cascade.html:18
-#: calendar_app/templates/calendar_app/_location_filter.html:30
-#: calendar_app/templates/calendar_app/list.html:153 locations/forms.py:14
-#: locations/templates/locations/location_form.html:99
-#: registrations/templates/registrations/manual_add.html:28
-#: registrations/templates/registrations/manual_add.html:44
-#: registrations/templates/registrations/manual_add.html:64
-#: registrations/templates/registrations/manual_add.html:100
-#: registrations/templates/registrations/participant_list.html:59
-#: registrations/templates/registrations/register.html:41
-#: registrations/templates/registrations/register.html:57
-#: registrations/templates/registrations/register.html:77
-#: registrations/templates/registrations/register.html:172
-#: registrations/templates/registrations/register.html:211
-msgid "City"
-msgstr "Қала"
-
-#: calendar_app/templates/calendar_app/_location_cascade.html:24
+#: calendar_app/templates/calendar_app/_location_cascade.html:27
 msgid "Venue"
 msgstr "Орын"
 
-#: calendar_app/templates/calendar_app/_location_filter.html:14
-#: calendar_app/templates/calendar_app/_location_filter.html:24
-#: calendar_app/templates/calendar_app/_location_filter.html:34
-#: calendar_app/templates/calendar_app/_location_filter.html:44
-#: calendar_app/templates/calendar_app/_location_filter.html:57
-#: calendar_app/templates/calendar_app/calendar.html:41
-#: calendar_app/templates/calendar_app/calendar.html:50
-#: calendar_app/templates/calendar_app/calendar.html:59
-msgid "All"
-msgstr "Барлығы"
+#: calendar_app/templates/calendar_app/_location_cascade.html:39
+msgid ""
+"Markers are existing locations - click one to select it instead of creating "
+"a duplicate."
+msgstr ""
+"Маркерлер — бұрыннан бар локациялар; қайталаманы жасаудың орнына маркерді "
+"басып таңдаңыз."
 
-#: calendar_app/templates/calendar_app/_location_filter.html:58
-msgid "selected"
-msgstr "таңдалды"
+#: calendar_app/templates/calendar_app/_location_cascade.html:43
+msgid "Propose a new venue"
+msgstr "Жаңа орын ұсыну"
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:49
+msgid "New venue name"
+msgstr "Жаңа орын атауы"
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:53
+#: calendar_app/templates/calendar_app/detail.html:88 locations/forms.py:19
+#: locations/templates/locations/location_form.html:115
+msgid "Latitude"
+msgstr "Кеңдік"
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:57
+#: calendar_app/templates/calendar_app/detail.html:88 locations/forms.py:20
+#: locations/templates/locations/location_form.html:122
+msgid "Longitude"
+msgstr "Ұзындық"
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:61
+msgid "Click the map to set the venue point, or drag the marker."
+msgstr "Нүктені белгілеу үшін картаны басыңыз немесе маркерді сүйреңіз."
+
+#: calendar_app/templates/calendar_app/_location_cascade.html:62
+msgid ""
+"Your proposed venue is usable right away and will be reviewed by a moderator."
+msgstr "Ұсынылған орынды бірден қолдануға болады, оны модератор тексереді."
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:3
 msgid "Registration mode"
@@ -441,98 +724,137 @@ msgstr "Бірнеше тіркелуге рұқсат"
 msgid "Registration deadline"
 msgstr "Тіркелу мерзімі"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:91
+#: calendar_app/templates/calendar_app/_registration_fields.html:89
+msgid "Times are in Astana time (UTC+5)."
+msgstr "Уақыт Астана уақытымен көрсетіледі (UTC+5)."
+
+#: calendar_app/templates/calendar_app/_registration_fields.html:92
 msgid "Total participant limit"
 msgstr "Тіркеулердің ең көп саны"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:260
-msgid "Max participants"
-msgstr "Қатысушылар саны"
+#: calendar_app/templates/calendar_app/_registration_fields.html:99
+msgid "Additional info field"
+msgstr "Қосымша ақпарат өрісі"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:101
-msgid "Show additional info field"
-msgstr "Қосымша ақпарат өрісін көрсету"
+#: calendar_app/templates/calendar_app/_registration_fields.html:102
+msgid "Do not show"
+msgstr "Көрсетілмесін"
+
+#: calendar_app/templates/calendar_app/_registration_fields.html:103
+msgid "Free-form input"
+msgstr "Еркін енгізу"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:110
+msgid "Show this info in the participant list"
+msgstr "Бұл ақпаратты тіркелгендер тізімінде көрсету"
+
+#: calendar_app/templates/calendar_app/_registration_fields.html:115
+msgid "Require this field at registration"
+msgstr "Тіркелу кезінде бұл өрісті міндетті ету"
+
+#: calendar_app/templates/calendar_app/_registration_fields.html:124
 msgid "Allow relay / team registration"
 msgstr "Эстафета / командық тіркелуге рұқсат"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:114
+#: calendar_app/templates/calendar_app/_registration_fields.html:128
 msgid "Max members per team"
 msgstr "Командадағы макс. қатысушы"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:134
+#: calendar_app/templates/calendar_app/_registration_fields.html:148
 msgid "Display settings"
 msgstr "Көрсету баптаулары"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:149
+#: calendar_app/templates/calendar_app/_registration_fields.html:163
 msgid "Show unapproved in list"
 msgstr "Расталмағандарды тізімде көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:156
+#: calendar_app/templates/calendar_app/_registration_fields.html:170
 msgid "Show unpaid in list"
 msgstr "Төлем жасамағандарды тізімде көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:163
+#: calendar_app/templates/calendar_app/_registration_fields.html:177
 msgid "Show approval column"
 msgstr "Растау бағанын көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:170
+#: calendar_app/templates/calendar_app/_registration_fields.html:184
 msgid "Show payment column"
 msgstr "Төлем бағанын көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:210
+#: calendar_app/templates/calendar_app/_registration_fields.html:224
 msgid "Categories"
 msgstr "Санаттар"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:212
+#: calendar_app/templates/calendar_app/_registration_fields.html:226
 msgid "Add category"
 msgstr "Санат қосу"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:246
+#: calendar_app/templates/calendar_app/_registration_fields.html:260
 msgid "From year"
 msgstr "Жылдан бастап"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:246
+#: calendar_app/templates/calendar_app/_registration_fields.html:260
 msgid "From date"
 msgstr "Күнінен бастап"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:249
+#: calendar_app/templates/calendar_app/_registration_fields.html:263
 msgid "To year"
 msgstr "Жылға дейін"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:249
+#: calendar_app/templates/calendar_app/_registration_fields.html:263
 msgid "To date"
 msgstr "Күніне дейін"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:254
+#: calendar_app/templates/calendar_app/_registration_fields.html:268
 msgid "Laps"
 msgstr "Айналым"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:256
+#: calendar_app/templates/calendar_app/_registration_fields.html:270
 msgid "Bib from"
 msgstr "Нөмір бастап"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:258
+#: calendar_app/templates/calendar_app/_registration_fields.html:272
 msgid "Bib to"
 msgstr "Нөмір дейін"
 
+#: calendar_app/templates/calendar_app/_registration_fields.html:274
+msgid "Max participants"
+msgstr "Қатысушылар саны"
+
+#: calendar_app/templates/calendar_app/_view_switcher.html:8
+msgid "View"
+msgstr "Көрініс"
+
+#: calendar_app/templates/calendar_app/_view_switcher.html:11
 #: calendar_app/templates/calendar_app/calendar.html:4
 #: calendar_app/templates/calendar_app/calendar.html:16
-#: cycling_site/templates/base.html:63
+#: calendar_app/templates/calendar_app/map.html:4
+#: calendar_app/templates/calendar_app/map.html:16
+#: cycling_site/templates/base.html:66
 msgid "Calendar"
 msgstr "Кунтiзбе"
 
+#: calendar_app/templates/calendar_app/_view_switcher.html:14
+msgid "List"
+msgstr "Тізім"
+
+#: calendar_app/templates/calendar_app/_view_switcher.html:17
+#: cycling_site/templates/_map_layers.html:22
+#: cycling_site/templates/base.html:71
+#: locations/templates/locations/location_form.html:13
+#: locations/templates/locations/locations_map_page.html:4
+#: locations/templates/locations/locations_map_page.html:14
+#: locations/tests.py:900
+msgid "Map"
+msgstr "Карта"
+
 #: calendar_app/templates/calendar_app/calendar.html:21
+#: calendar_app/templates/calendar_app/map.html:21
 msgid "Filters"
 msgstr "Сүзгілер"
 
-#: calendar_app/templates/calendar_app/calendar.html:23
-msgid "List view"
-msgstr "Тізім"
-
 #: calendar_app/templates/calendar_app/calendar.html:25
 #: calendar_app/templates/calendar_app/list.html:14
+#: calendar_app/templates/calendar_app/map.html:25
 #: calendar_app/templates/calendar_app/submit.html:4
 #: calendar_app/templates/calendar_app/submit.html:10
 msgid "Submit competition"
@@ -540,73 +862,63 @@ msgstr "Жарыс қосу"
 
 #: calendar_app/templates/calendar_app/calendar.html:27
 #: calendar_app/templates/calendar_app/list.html:16
+#: calendar_app/templates/calendar_app/map.html:27
 #: calendar_app/templates/calendar_app/moderate.html:4
 msgid "Moderation"
 msgstr "Модерация"
 
-#: calendar_app/templates/calendar_app/calendar.html:57
-#: calendar_app/templates/calendar_app/detail.html:37
-#: calendar_app/templates/calendar_app/edit.html:101
-#: calendar_app/templates/calendar_app/list.html:50
-#: calendar_app/templates/calendar_app/list.html:150
-#: calendar_app/templates/calendar_app/submit.html:95
-msgid "Discipline"
-msgstr "Пән"
+# Favorite events (issue #183)
+#: calendar_app/templates/calendar_app/calendar.html:46
+#: calendar_app/templates/calendar_app/list.html:45
+#: calendar_app/templates/calendar_app/map.html:55
+msgid "Only favorites"
+msgstr "Тек таңдаулылар"
 
-#: calendar_app/forms.py:47
-#: calendar_app/templates/calendar_app/_disciplines_field.html:9
-msgid "Disciplines"
-msgstr "Пәндер"
-
-#: calendar_app/templates/calendar_app/_disciplines_field.html:10
-msgid "Choose one or more disciplines — a competition can belong to several."
-msgstr "Бір немесе бірнеше пәнді таңдаңыз — жарыс бірнешеуіне жатуы мүмкін."
-
-#: calendar_app/templates/calendar_app/calendar.html:82
+#: calendar_app/templates/calendar_app/calendar.html:66
 msgid "January"
 msgstr "Қаңтар"
 
-#: calendar_app/templates/calendar_app/calendar.html:82
+#: calendar_app/templates/calendar_app/calendar.html:66
 msgid "February"
 msgstr "Ақпан"
 
-#: calendar_app/templates/calendar_app/calendar.html:82
+#: calendar_app/templates/calendar_app/calendar.html:66
 msgid "March"
 msgstr "Наурыз"
 
-#: calendar_app/templates/calendar_app/calendar.html:83
+#: calendar_app/templates/calendar_app/calendar.html:67
 msgid "April"
 msgstr "Сәуір"
 
-#: calendar_app/templates/calendar_app/calendar.html:83
+#: calendar_app/templates/calendar_app/calendar.html:67
 msgid "May"
 msgstr "Мамыр"
 
-#: calendar_app/templates/calendar_app/calendar.html:83
+#: calendar_app/templates/calendar_app/calendar.html:67
 msgid "June"
 msgstr "Маусым"
 
-#: calendar_app/templates/calendar_app/calendar.html:84
+#: calendar_app/templates/calendar_app/calendar.html:68
 msgid "July"
 msgstr "Шілде"
 
-#: calendar_app/templates/calendar_app/calendar.html:84
+#: calendar_app/templates/calendar_app/calendar.html:68
 msgid "August"
 msgstr "Тамыз"
 
-#: calendar_app/templates/calendar_app/calendar.html:84
+#: calendar_app/templates/calendar_app/calendar.html:68
 msgid "September"
 msgstr "Қыркүйек"
 
-#: calendar_app/templates/calendar_app/calendar.html:85
+#: calendar_app/templates/calendar_app/calendar.html:69
 msgid "October"
 msgstr "Қазан"
 
-#: calendar_app/templates/calendar_app/calendar.html:85
+#: calendar_app/templates/calendar_app/calendar.html:69
 msgid "November"
 msgstr "Қараша"
 
-#: calendar_app/templates/calendar_app/calendar.html:85
+#: calendar_app/templates/calendar_app/calendar.html:69
 msgid "December"
 msgstr "Желтоқсан"
 
@@ -617,303 +929,382 @@ msgstr "Желтоқсан"
 msgid "Competitions"
 msgstr "Жарыстар"
 
-#: search/templates/search/search.html:39
-msgid "Knowledge base"
-msgstr "Білім қоры"
+# Favorite events (issue #183)
+#: calendar_app/templates/calendar_app/detail.html:32
+#: calendar_app/templates/calendar_app/detail.html:34
+msgid "Add to favorites"
+msgstr "Таңдаулыларға қосу"
 
-#: calendar_app/templates/calendar_app/detail.html:27
-#: calendar_app/templates/calendar_app/list.html:147
+# Favorite events (issue #183)
+#: calendar_app/templates/calendar_app/detail.html:33
+#: calendar_app/templates/calendar_app/detail.html:34
+msgid "Remove from favorites"
+msgstr "Таңдаулылардан алып тастау"
+
+#: calendar_app/templates/calendar_app/detail.html:43
+#: calendar_app/templates/calendar_app/list.html:148
+#: calendar_app/templates/calendar_app/list.html:169
 msgid "Dates"
 msgstr "Күндер"
 
-#: calendar_app/templates/calendar_app/detail.html:47 locations/forms.py:18
-#: locations/templates/locations/location_form.html:109
-msgid "Latitude"
-msgstr "Кеңдік"
+#: calendar_app/templates/calendar_app/detail.html:53
+#: calendar_app/templates/calendar_app/list.html:150
+#: calendar_app/templates/calendar_app/list.html:176
+msgid "Directions"
+msgstr "Бағыттар"
 
-#: calendar_app/templates/calendar_app/detail.html:47 locations/forms.py:19
-#: locations/templates/locations/location_form.html:116
-msgid "Longitude"
-msgstr "Ұзындық"
+# Pending/rejected competitions + profile (issue #180)
+#: calendar_app/templates/calendar_app/detail.html:61
+msgid "Awaiting moderation."
+msgstr "Модерацияны күтуде."
 
-#: calendar_app/templates/calendar_app/detail.html:63
+# Pending/rejected competitions + profile (issue #180)
+#: calendar_app/templates/calendar_app/detail.html:62
+msgid "This event is not shown in the public calendar yet."
+msgstr "Іс-шара әзірге ашық күнтізбеде көрсетілмейді."
+
+# Pending/rejected competitions + profile (issue #180)
 #: calendar_app/templates/calendar_app/detail.html:66
-#: calendar_app/templates/calendar_app/edit.html:138
-#: calendar_app/templates/calendar_app/moderate.html:36
-#: calendar_app/templates/calendar_app/submit.html:131
+msgid "This submission was rejected."
+msgstr "Өтінім қабылданбады."
+
+#: calendar_app/templates/calendar_app/detail.html:69
+msgid "Rejection history"
+msgstr "Бас тарту тарихы"
+
+# Pending/rejected competitions + profile (issue #180)
+#: calendar_app/templates/calendar_app/detail.html:76
+msgid "Reason"
+msgstr "Себебі"
+
+#: calendar_app/templates/calendar_app/detail.html:105
+#: calendar_app/templates/calendar_app/detail.html:108
+#: calendar_app/templates/calendar_app/edit.html:103
+#: calendar_app/templates/calendar_app/moderate.html:38
+#: calendar_app/templates/calendar_app/submit.html:96
 msgid "Announcement"
 msgstr "Хабарлама"
 
-#: calendar_app/templates/calendar_app/detail.html:70
-#: calendar_app/templates/calendar_app/detail.html:209
-#: calendar_app/templates/calendar_app/list.html:188
-#: cycling_site/templates/base.html:129
+#: calendar_app/templates/calendar_app/detail.html:112
+#: calendar_app/templates/calendar_app/detail.html:145
+#: calendar_app/templates/calendar_app/list.html:190
+#: cycling_site/templates/base.html:132
 #: registrations/templates/registrations/register.html:4
 #: registrations/templates/registrations/register.html:13
-#: registrations/templates/registrations/register.html:198
+#: registrations/templates/registrations/register.html:207
 msgid "Register"
 msgstr "Тiркелу"
 
-#: calendar_app/templates/calendar_app/detail.html:74
-#: calendar_app/templates/calendar_app/detail.html:77
-#: calendar_app/templates/calendar_app/edit.html:156
-#: calendar_app/templates/calendar_app/submit.html:146
+#: calendar_app/templates/calendar_app/detail.html:116
+#: calendar_app/templates/calendar_app/detail.html:119
+#: calendar_app/templates/calendar_app/edit.html:115
+#: calendar_app/templates/calendar_app/submit.html:105
 msgid "Route"
 msgstr "Маршрут"
 
-#: calendar_app/templates/calendar_app/detail.html:81
-#: calendar_app/templates/calendar_app/detail.html:84
-#: calendar_app/templates/calendar_app/edit.html:168
-#: calendar_app/templates/calendar_app/submit.html:155
+#: calendar_app/templates/calendar_app/detail.html:123
+#: calendar_app/templates/calendar_app/detail.html:126
+#: calendar_app/templates/calendar_app/edit.html:127
+#: calendar_app/templates/calendar_app/submit.html:114
 msgid "Regulations"
 msgstr "Ереже"
 
-#: calendar_app/templates/calendar_app/detail.html:88
-#: calendar_app/templates/calendar_app/detail.html:91
-#: calendar_app/templates/calendar_app/edit.html:180
-#: calendar_app/templates/calendar_app/submit.html:164
+#: calendar_app/templates/calendar_app/detail.html:130
+#: calendar_app/templates/calendar_app/detail.html:133
 msgid "Results"
 msgstr "Нәтижелер"
 
-#: calendar_app/templates/calendar_app/detail.html:98
+#: calendar_app/templates/calendar_app/detail.html:140
+#: calendar_app/templates/calendar_app/moderate.html:42
+#: registrations/templates/registrations/register.html:17
+msgid "Registration"
+msgstr "Тіркелу"
+
+#: calendar_app/templates/calendar_app/detail.html:141
+#: registrations/templates/registrations/_participant_row.html:18
+#: registrations/templates/registrations/_participant_table_head.html:13
+msgid "Registered"
+msgstr "Тіркелді"
+
+#: calendar_app/templates/calendar_app/detail.html:148
+msgid "You are registered"
+msgstr "Сіз тіркелдіңіз"
+
+#: calendar_app/templates/calendar_app/detail.html:151
+msgid "Registration closed"
+msgstr "Тіркелу жабық"
+
+#: calendar_app/templates/calendar_app/detail.html:154
+msgid "Participant list"
+msgstr "Қатысушылар тізімі"
+
+#: calendar_app/templates/calendar_app/detail.html:161
 msgid "Protocols"
 msgstr "Хаттамалар"
 
-#: calendar_app/templates/calendar_app/detail.html:102
+#: calendar_app/templates/calendar_app/detail.html:165
 #: protocols/templates/protocols/detail.html:16
 #: protocols/templates/protocols/detail.html:23
 msgid "Absolute results"
 msgstr "Жалпы нәтижелер"
 
-#: calendar_app/templates/calendar_app/detail.html:102
+#: calendar_app/templates/calendar_app/detail.html:165
 #: protocols/templates/protocols/detail.html:16
 #: protocols/templates/protocols/detail.html:23
 msgid "Group results"
 msgstr "Топтық нәтижелер"
 
-#: calendar_app/templates/calendar_app/detail.html:104
+#: calendar_app/templates/calendar_app/detail.html:167
 msgid "Live"
 msgstr "Тікелей эфир"
 
-#: calendar_app/templates/calendar_app/detail.html:113
+#: calendar_app/templates/calendar_app/detail.html:176
 msgid "Timing system token"
 msgstr "Хронометраж жүйесінің токені"
 
-#: calendar_app/templates/calendar_app/detail.html:122
+#: calendar_app/templates/calendar_app/detail.html:185
+msgid ""
+"Regenerate the timing token? The current token will stop working immediately."
+msgstr ""
+"Хронометраж токенін қайта жасау керек пе? Ағымдағы токен бірден жұмысын "
+"тоқтатады."
+
+#: calendar_app/templates/calendar_app/detail.html:190
+msgid ""
+"Delete the timing token? Timing tools will lose access until you generate a "
+"new one."
+msgstr ""
+"Хронометраж токенін жою керек пе? Жаңасын жасағанша хронометраж құралдары "
+"қолжетімсіз болады."
+
+#: calendar_app/templates/calendar_app/detail.html:192
+msgid "Delete token"
+msgstr "Токенді жою"
+
+#: calendar_app/templates/calendar_app/detail.html:196
+msgid ""
+"If this token leaks, anyone could later alter or delete the results — "
+"regenerate or delete it."
+msgstr ""
+"Егер токен таралып кетсе, біреу кейін нәтижелерді өзгертуі немесе жоюы "
+"мүмкін — оны қайта жасаңыз немесе жойыңыз."
+
+#: calendar_app/templates/calendar_app/detail.html:199
 msgid "Access token for the offline timing system:"
 msgstr "Офлайн хронометраж жүйесіне кіру токені:"
 
-#: calendar_app/templates/calendar_app/detail.html:134
+#: calendar_app/templates/calendar_app/detail.html:218
 msgid "This competition is hidden from public view."
 msgstr "Бұл жарыс жалпы көрінімнен жасырылған."
 
-#: calendar_app/templates/calendar_app/detail.html:140
+#: calendar_app/templates/calendar_app/detail.html:226
+#: calendar_app/templates/calendar_app/moderate.html:49
+#: calendar_app/templates/calendar_app/moderate.html:107
+#: knowledge/templates/knowledge/knowledge_index_page.html:41
+#: knowledge/templates/knowledge/submission_detail.html:54
+#: news/templates/news/news_list.html:30
+#: news/templates/news/submission_detail.html:49
+#: registrations/templates/registrations/_participant_row.html:25
+msgid "Approve"
+msgstr "Бекіту"
+
+#: calendar_app/templates/calendar_app/detail.html:229
+#: calendar_app/templates/calendar_app/moderate.html:55
+#: calendar_app/templates/calendar_app/moderate.html:112
+#: knowledge/templates/knowledge/admin/reject_form.html:21
+#: knowledge/templates/knowledge/knowledge_index_page.html:45
+#: knowledge/templates/knowledge/submission_detail.html:61
+#: news/templates/news/news_list.html:34
+#: news/templates/news/submission_detail.html:56
+#: registrations/templates/registrations/_participant_row.html:30
+msgid "Reject"
+msgstr "Қабылдамау"
+
+# Pending/rejected competitions + profile (issue #180)
+#: calendar_app/templates/calendar_app/detail.html:236
+#: calendar_app/templates/calendar_app/moderate.html:63
+msgid "Rejection reason"
+msgstr "Қабылданбау себебі"
+
+#: calendar_app/templates/calendar_app/detail.html:238
+#: calendar_app/templates/calendar_app/moderate.html:66
+msgid "Confirm rejection"
+msgstr "Қабылдамауды растау"
+
+#: calendar_app/templates/calendar_app/detail.html:246
 #: calendar_app/templates/calendar_app/edit.html:4
 #: calendar_app/templates/calendar_app/edit.html:18
 msgid "Edit competition"
 msgstr "Жарысты өңдеу"
 
-#: calendar_app/templates/calendar_app/detail.html:145
-#: knowledge/templates/knowledge/knowledge_article_page.html:76
-#: locations/templates/locations/locations_map_page.html:57
+#: calendar_app/templates/calendar_app/detail.html:251
+msgid "Resubmit for review"
+msgstr "Қайта қарауға жіберу"
+
+#: calendar_app/templates/calendar_app/detail.html:258
+#: knowledge/templates/knowledge/knowledge_article_detail.html:46
+#: locations/templates/locations/locations_map_page.html:96
 #: news/templates/news/article_detail.html:51
 msgid "Unhide"
 msgstr "Көрсету"
 
-#: calendar_app/templates/calendar_app/detail.html:145
-#: knowledge/templates/knowledge/knowledge_article_page.html:76
-#: locations/templates/locations/locations_map_page.html:57
+#: calendar_app/templates/calendar_app/detail.html:258
+#: knowledge/templates/knowledge/knowledge_article_detail.html:46
+#: locations/templates/locations/locations_map_page.html:96
 #: news/templates/news/article_detail.html:51
 msgid "Hide"
 msgstr "Жасыру"
 
-#: calendar_app/templates/calendar_app/detail.html:149
+#: calendar_app/templates/calendar_app/detail.html:263
 msgid "Are you sure you want to delete this competition?"
 msgstr "Бұл жарысты жойғыңыз келетінін растайсыз ба?"
 
-#: calendar_app/templates/calendar_app/detail.html:151
-#: calendar_app/templates/calendar_app/detail.html:171
-#: knowledge/templates/knowledge/knowledge_article_page.html:82
-#: locations/templates/locations/locations_map_page.html:63
-#: news/templates/news/article_detail.html:57
-#: news/templates/news/news_page.html:82
-#: registrations/templates/registrations/participant_list.html:110
-msgid "Delete"
-msgstr "Жою"
-
-#: calendar_app/templates/calendar_app/detail.html:158
+#: calendar_app/templates/calendar_app/detail.html:273
+#: knowledge/templates/knowledge/knowledge_article_detail.html:59
+#: news/templates/news/article_detail.html:64
 #: news/templates/news/news_page.html:65
 msgid "Comments"
 msgstr "Пікірлер"
 
-#: calendar_app/templates/calendar_app/detail.html:179
+#: calendar_app/templates/calendar_app/detail.html:294
+#: knowledge/templates/knowledge/knowledge_article_detail.html:80
+#: news/templates/news/article_detail.html:85
 #: news/templates/news/news_page.html:91
 msgid "No comments yet. Be the first!"
 msgstr "Пікірлер жоқ. Бірінші болыңыз!"
 
-#: calendar_app/templates/calendar_app/detail.html:185
+#: calendar_app/templates/calendar_app/detail.html:300
+#: knowledge/templates/knowledge/knowledge_article_detail.html:86
+#: news/templates/news/article_detail.html:91
 #: news/templates/news/news_page.html:97
 msgid "Add a comment"
 msgstr "Пікір қосу"
 
-#: calendar_app/templates/calendar_app/detail.html:189
+#: calendar_app/templates/calendar_app/detail.html:304
+#: knowledge/templates/knowledge/knowledge_article_detail.html:90
+#: news/templates/news/article_detail.html:95
 #: news/templates/news/news_page.html:104
 msgid "Submit comment"
 msgstr "Пікірді жіберу"
 
-#: calendar_app/templates/calendar_app/detail.html:195
-#: cycling_site/templates/base.html:128 news/templates/news/news_page.html:111
+#: calendar_app/templates/calendar_app/detail.html:310
+#: cycling_site/templates/base.html:131
+#: knowledge/templates/knowledge/knowledge_article_detail.html:96
+#: news/templates/news/article_detail.html:101
+#: news/templates/news/news_page.html:111
 msgid "Log in"
 msgstr "Кiру"
 
-#: calendar_app/templates/calendar_app/detail.html:195
+#: calendar_app/templates/calendar_app/detail.html:310
+#: knowledge/templates/knowledge/knowledge_article_detail.html:96
+#: news/templates/news/article_detail.html:101
 #: news/templates/news/news_page.html:112
 msgid "to leave a comment."
 msgstr "пікір қалдыру үшін."
 
-#: calendar_app/templates/calendar_app/detail.html:198
+#: calendar_app/templates/calendar_app/detail.html:313
+#: knowledge/templates/knowledge/knowledge_article_detail.html:99
+#: news/templates/news/article_detail.html:104
 msgid "Commenting is available to verified participants."
 msgstr "Пікір жазу тек расталған қатысушыларға қолжетімді."
 
-#: calendar_app/templates/calendar_app/detail.html:204
-#: calendar_app/templates/calendar_app/moderate.html:40
-#: registrations/templates/registrations/register.html:17
-msgid "Registration"
-msgstr "Тіркелу"
-
-#: calendar_app/templates/calendar_app/detail.html:205
-#: registrations/templates/registrations/participant_list.html:63
-msgid "Registered"
-msgstr "Тіркелді"
-
-#: calendar_app/templates/calendar_app/detail.html:212
-msgid "You are registered"
-msgstr "Сіз тіркелдіңіз"
-
-#: calendar_app/templates/calendar_app/detail.html:215
-msgid "Registration closed"
-msgstr "Тіркелу жабық"
-
-#: calendar_app/templates/calendar_app/detail.html:218
-msgid "Participant list"
-msgstr "Қатысушылар тізімі"
-
-#: calendar_app/templates/calendar_app/edit.html:14
-#: locations/templates/locations/locations_map_page.html:53
-#: registrations/templates/registrations/participant_list.html:106
-msgid "Edit"
-msgstr "Өңдеу"
-
 #: calendar_app/templates/calendar_app/edit.html:42
-#: calendar_app/templates/calendar_app/edit.html:54
-#: calendar_app/templates/calendar_app/edit.html:66
+#: calendar_app/templates/calendar_app/edit.html:55
+#: calendar_app/templates/calendar_app/edit.html:68
 #: calendar_app/templates/calendar_app/submit.html:34
-#: calendar_app/templates/calendar_app/submit.html:46
-#: calendar_app/templates/calendar_app/submit.html:58
+#: calendar_app/templates/calendar_app/submit.html:47
+#: calendar_app/templates/calendar_app/submit.html:60
 msgid "Description"
 msgstr "Сипаттама"
 
-#: calendar_app/templates/calendar_app/edit.html:135
-#: calendar_app/templates/calendar_app/submit.html:128
+#: calendar_app/templates/calendar_app/edit.html:100
+#: calendar_app/templates/calendar_app/submit.html:93
 msgid "Documents"
 msgstr "Құжаттар"
 
-#: calendar_app/templates/calendar_app/edit.html:141
-#: calendar_app/templates/calendar_app/edit.html:159
-#: calendar_app/templates/calendar_app/edit.html:171
-#: calendar_app/templates/calendar_app/edit.html:183
-#: calendar_app/templates/calendar_app/submit.html:134
-#: calendar_app/templates/calendar_app/submit.html:149
-#: calendar_app/templates/calendar_app/submit.html:158
-#: calendar_app/templates/calendar_app/submit.html:167
+#: calendar_app/templates/calendar_app/edit.html:106
+#: calendar_app/templates/calendar_app/edit.html:118
+#: calendar_app/templates/calendar_app/edit.html:130
+#: calendar_app/templates/calendar_app/edit.html:142
+#: calendar_app/templates/calendar_app/submit.html:99
+#: calendar_app/templates/calendar_app/submit.html:108
+#: calendar_app/templates/calendar_app/submit.html:117
+#: calendar_app/templates/calendar_app/submit.html:126
 msgid "or upload file"
 msgstr "немесе файл жүктеу"
 
-#: calendar_app/templates/calendar_app/edit.html:143
-#: calendar_app/templates/calendar_app/edit.html:161
-#: calendar_app/templates/calendar_app/edit.html:173
-#: calendar_app/templates/calendar_app/edit.html:185
+#: calendar_app/templates/calendar_app/edit.html:108
+#: calendar_app/templates/calendar_app/edit.html:120
+#: calendar_app/templates/calendar_app/edit.html:132
+#: calendar_app/templates/calendar_app/edit.html:144
 msgid "Current file"
 msgstr "Ағымдағы файл"
 
-#: calendar_app/templates/calendar_app/edit.html:143
-#: calendar_app/templates/calendar_app/edit.html:161
-#: calendar_app/templates/calendar_app/edit.html:173
-#: calendar_app/templates/calendar_app/edit.html:185
+#: calendar_app/templates/calendar_app/edit.html:108
+#: calendar_app/templates/calendar_app/edit.html:120
+#: calendar_app/templates/calendar_app/edit.html:132
+#: calendar_app/templates/calendar_app/edit.html:144
 msgid "Download"
 msgstr "Жүктеп алу"
-
-#: calendar_app/templates/calendar_app/edit.html:161
-#: calendar_app/templates/calendar_app/submit.html:143
-msgid "Set up registration on our site"
-msgstr "Біздің сайтта тіркеуді баптау"
-
-#: calendar_app/templates/calendar_app/edit.html:115
-#: calendar_app/templates/calendar_app/submit.html:137
-msgid "External registration link"
-msgstr "Сыртқы тіркеуге сілтеме"
 
 #: calendar_app/templates/calendar_app/edit.html:139
 #: calendar_app/templates/calendar_app/submit.html:123
 msgid "External results link"
 msgstr "Нәтижелерге сыртқы сілтеме"
 
+#: calendar_app/templates/calendar_app/edit.html:151
+#: calendar_app/templates/calendar_app/submit.html:132
+msgid "External registration link"
+msgstr "Сыртқы тіркеуге сілтеме"
+
+#: calendar_app/templates/calendar_app/edit.html:161
+#: calendar_app/templates/calendar_app/submit.html:143
+msgid "Set up registration on our site"
+msgstr "Біздің сайтта тіркеуді баптау"
+
 #: calendar_app/templates/calendar_app/list.html:4
 msgid "Competition list"
 msgstr "Жарыстар тізімі"
 
-#: calendar_app/templates/calendar_app/list.html:12
-msgid "Calendar view"
-msgstr "Күнтізбе көрінісі"
-
 #: calendar_app/templates/calendar_app/list.html:27
+#: calendar_app/templates/calendar_app/map.html:40
 msgid "Date from"
 msgstr "Күнінен бастап"
 
 #: calendar_app/templates/calendar_app/list.html:32
+#: calendar_app/templates/calendar_app/map.html:45
 msgid "Date to"
 msgstr "Күніне дейін"
 
-#: calendar_app/templates/calendar_app/list.html:60
+#: calendar_app/templates/calendar_app/list.html:50
+#: locations/templates/locations/locations_map_page.html:34
 msgid "Reset"
 msgstr "Тазалау"
 
-#: calendar_app/templates/calendar_app/list.html:155
+#: calendar_app/templates/calendar_app/list.html:156
+#: calendar_app/templates/calendar_app/list.html:182
 msgid "Links"
 msgstr "Сілтемелер"
 
-#: calendar_app/templates/calendar_app/list.html:165 locations/forms.py:20
-#: locations/templates/locations/location_form.html:128
-#: locations/templates/locations/locations_map_page.html:50
-#: news/templates/news/news_list.html:29
+# Favorite events (issue #183)
+#: calendar_app/templates/calendar_app/list.html:163
+msgid "In favorites"
+msgstr "Таңдаулыларда"
+
+#: calendar_app/templates/calendar_app/list.html:167 locations/forms.py:21
+#: locations/templates/locations/location_form.html:136
+#: locations/templates/locations/locations_map_page.html:86
+#: news/templates/news/news_list.html:56
 msgid "Hidden"
 msgstr "Жасырылған"
 
-#: calendar_app/templates/calendar_app/list.html:184
-#: registrations/templates/registrations/participant_list.html:60
+#: calendar_app/templates/calendar_app/list.html:186
+#: registrations/templates/registrations/_participant_row.html:9
+#: registrations/templates/registrations/_participant_table_head.html:10
 msgid "Info"
 msgstr "Ақпарат"
 
-#: calendar_app/templates/calendar_app/list.html:199
-#: knowledge/templates/knowledge/knowledge_index_page.html:69
-#: news/templates/news/news_index_page.html:49
-#: news/templates/news/news_list.html:51
-msgid "Pagination"
-msgstr "Беттер"
-
-#: calendar_app/templates/calendar_app/list.html:204
-#: news/templates/news/news_index_page.html:54
-#: news/templates/news/news_list.html:55 search/templates/search/search.html:65
-msgid "Previous"
-msgstr "Артка"
-
-#: calendar_app/templates/calendar_app/list.html:214
-#: news/templates/news/news_index_page.html:66
-#: news/templates/news/news_list.html:63 search/templates/search/search.html:69
-msgid "Next"
-msgstr "Алга"
-
-#: calendar_app/templates/calendar_app/list.html:223
+#: calendar_app/templates/calendar_app/list.html:203
 msgid "No competitions found for the selected period."
 msgstr "Таңдалған кезең үшін жарыстар табылмады."
 
@@ -922,59 +1313,107 @@ msgid "Competition moderation"
 msgstr "Жарыстарды модерациялау"
 
 #: calendar_app/templates/calendar_app/moderate.html:11
+#: calendar_app/templates/calendar_app/moderate.html:80
 msgid "pending"
 msgstr "қарастырылуда"
 
-#: calendar_app/templates/calendar_app/moderate.html:28
+#: calendar_app/templates/calendar_app/moderate.html:30
+#: calendar_app/templates/calendar_app/moderate.html:89
 msgid "Submitted by"
 msgstr "Қосқан"
 
-#: calendar_app/templates/calendar_app/moderate.html:47
-#: knowledge/templates/knowledge/submission_detail.html:54
-#: registrations/templates/registrations/participant_list.html:92
-msgid "Approve"
-msgstr "Бекіту"
-
-#: calendar_app/templates/calendar_app/moderate.html:53
-#: knowledge/templates/knowledge/admin/reject_form.html:21
-#: knowledge/templates/knowledge/submission_detail.html:61
-#: registrations/templates/registrations/participant_list.html:97
-msgid "Reject"
-msgstr "Қабылдамау"
-
-#: calendar_app/templates/calendar_app/moderate.html:61
-#: knowledge/templates/knowledge/submission_detail.html:60
-msgid "Rejection reason (optional)"
-msgstr "Қабылдамау себебі (міндетті емес)"
-
-#: calendar_app/templates/calendar_app/moderate.html:64
-msgid "Confirm rejection"
-msgstr "Қабылдамауды растау"
-
-#: calendar_app/templates/calendar_app/moderate.html:71
+#: calendar_app/templates/calendar_app/moderate.html:73
 msgid "No competitions pending approval."
 msgstr "Бекітуді күтетін жарыстар жоқ."
 
-#: calendar_app/templates/calendar_app/submit.html:188
-#: knowledge/templates/knowledge/submit.html:50
+#: calendar_app/templates/calendar_app/moderate.html:79
+msgid "Proposed locations"
+msgstr "Ұсынылған орындар"
+
+#: calendar_app/templates/calendar_app/moderate.html:110
+msgid ""
+"Reject this venue? Competitions using it will fall back to the city's other "
+"location."
+msgstr ""
+"Бұл орынды қабылдамау керек пе? Ондағы жарыстар қаланың «Басқа орнына» "
+"ауысады."
+
+#: calendar_app/templates/calendar_app/moderate.html:110
+msgid ""
+"Reject this place? Everything nested inside it is removed too, and "
+"competitions there lose their location."
+msgstr ""
+"Бұл орынды қабылдамау керек пе? Ішіндегінің бәрі де жойылады, ондағы "
+"жарыстар орынсыз қалады."
+
+#: calendar_app/templates/calendar_app/moderate.html:121
+msgid "No locations pending approval."
+msgstr "Бекітуді күтіп тұрған орындар жоқ."
+
+#: calendar_app/templates/calendar_app/submit.html:153
+#: knowledge/templates/knowledge/submit.html:47
 msgid "Submit"
 msgstr "Жіберу"
 
-#: calendar_app/views.py:278
+#: calendar_app/tests.py:620 cycling_site/forms.py:18 news/tests.py:579
+#, python-format
+msgid "Ensure this value has at most %(limit_value)d characters."
+msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."
+
+#: calendar_app/views.py:607
 msgid "N"
 msgstr "с.е."
 
-#: calendar_app/views.py:278
+#: calendar_app/views.py:607
 msgid "S"
 msgstr "о.е."
 
-#: calendar_app/views.py:279
+#: calendar_app/views.py:608
 msgid "E"
 msgstr "ш.б."
 
-#: calendar_app/views.py:279
+#: calendar_app/views.py:608
 msgid "W"
 msgstr "б.б."
+
+#: calendar_app/views.py:1125
+msgid ""
+"This event's location is still awaiting review; an administrator must "
+"approve it first."
+msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."
+
+# Pending/rejected competitions + profile (issue #180)
+#: calendar_app/views.py:1137
+msgid "Please provide a reason for rejection."
+msgstr "Қабылданбау себебін көрсетіңіз."
+
+#: calendar_app/views.py:1165 knowledge/views.py:164 news/views.py:232
+msgid "Invalid submission."
+msgstr "Жарамсыз жіберу."
+
+#: calendar_app/views.py:1230
+msgid "Only a rejected competition can be resubmitted."
+msgstr "Тек қабылданбаған жарысты қайта жіберуге болады."
+
+#: calendar_app/views.py:1232
+msgid "Your competition was sent for review again."
+msgstr "Жарыс қайта қарауға жіберілді."
+
+#: calendar_app/views.py:1255
+msgid "Timing token regenerated. The previous token no longer works."
+msgstr "Хронометраж токені қайта жасалды. Бұрынғы токен енді жұмыс істемейді."
+
+#: calendar_app/views.py:1266
+msgid ""
+"Timing token deleted. Timing tools can no longer access this competition."
+msgstr ""
+"Хронометраж токені жойылды. Хронометраж құралдары бұл жарысқа енді қол "
+"жеткізе алмайды."
+
+#: cycling_site/richtext.py:24
+#: cycling_site/templates/includes/rich_text_editor.html:44
+msgid "The text is too large. Use fewer or smaller inline images."
+msgstr "Мәтін тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
 
 #: cycling_site/templates/404.html:4 cycling_site/templates/404.html:12
 msgid "Page not found"
@@ -997,66 +1436,114 @@ msgid "Sorry, there seems to be an error. Please try again soon."
 msgstr "Қате орын алды. Кейінірек қайталап көріңіз."
 
 #: cycling_site/templates/_map_layers.html:22
-#: cycling_site/templates/base.html:68
-#: locations/templates/locations/location_form.html:13
-#: locations/templates/locations/locations_map_page.html:4
-#: locations/templates/locations/locations_map_page.html:14
-#: locations/tests.py:367
-msgid "Map"
-msgstr "Карта"
-
-#: cycling_site/templates/_map_layers.html:22
 msgid "Satellite"
 msgstr "Жер серiгi"
+
+#: cycling_site/templates/_moderation_banner.html:3
+msgid "Items awaiting your moderation"
+msgstr "Сіздің модерациялауыңызды күтіп тұрған элементтер"
+
+#: cycling_site/templates/_moderation_banner.html:4
+msgid "Awaiting your moderation"
+msgstr "Модерациялауыңызды күтуде"
+
+#: cycling_site/templates/_moderation_banner.html:9
+msgid "Events awaiting approval"
+msgstr "Бекітуді күтіп тұрған іс-шаралар"
+
+#: cycling_site/templates/_moderation_banner.html:10
+msgid "Locations awaiting approval"
+msgstr "Бекітуді күтіп тұрған локациялар"
+
+#: cycling_site/templates/_moderation_banner.html:11
+msgid "Article submissions awaiting review"
+msgstr "Тексеруді күтіп тұрған мақала өтінімдері"
+
+#: cycling_site/templates/_moderation_banner.html:12
+msgid "News submissions awaiting review"
+msgstr "Тексеруді күтіп тұрған жаңалық өтінімдері"
+
+#: cycling_site/templates/_moderation_banner.html:13
+#, python-format
+msgid "Registrations awaiting approval for \"%(title)s\""
+msgstr "«%(title)s» үшін бекітуді күтіп тұрған тіркелулер"
+
+#: cycling_site/templates/_moderation_banner.html:16
+msgid "Review"
+msgstr "Қарау"
+
+#: cycling_site/templates/_pagination.html:10
+#: knowledge/templates/knowledge/knowledge_index_page.html:78
+#: news/templates/news/news_index_page.html:49
+#: news/templates/news/news_list.html:78
+msgid "Pagination"
+msgstr "Беттер"
+
+#: cycling_site/templates/_pagination.html:15
+#: news/templates/news/news_index_page.html:54
+#: news/templates/news/news_list.html:82 search/templates/search/search.html:89
+msgid "Previous"
+msgstr "Артка"
+
+#: cycling_site/templates/_pagination.html:25
+msgid "Go to page"
+msgstr "Бетке өту"
+
+#: cycling_site/templates/_pagination.html:32
+#: news/templates/news/news_index_page.html:66
+#: news/templates/news/news_list.html:90 search/templates/search/search.html:93
+msgid "Next"
+msgstr "Алга"
 
 #: cycling_site/templates/base.html:20 cycling_site/templates/base.html:31
 msgid "Cycling events, news and knowledge base"
 msgstr "Велосипед шаралары, жаңалықтар және білім базасы"
 
-#: cycling_site/templates/base.html:51
+#: cycling_site/templates/base.html:54
 msgid "Cycling"
 msgstr "Велоспорт"
 
-#: cycling_site/templates/base.html:54
+#: cycling_site/templates/base.html:57
 msgid "Toggle navigation"
 msgstr "Мәзір"
 
-#: cycling_site/templates/base.html:60
+#: cycling_site/templates/base.html:63
 #: news/templates/news/article_detail.html:12
 #: news/templates/news/news_list.html:4 news/templates/news/news_list.html:9
+#: search/templates/search/search.html:51
 msgid "News"
 msgstr "Жаналыктар"
 
-#: cycling_site/templates/base.html:73
+#: cycling_site/templates/base.html:76
 msgid "Knowledge Base"
 msgstr "Бiлiм кiтапханасы"
 
-#: cycling_site/templates/base.html:78
+#: cycling_site/templates/base.html:81
 msgid "About"
 msgstr "Бiз туралы"
 
-#: cycling_site/templates/base.html:82 search/templates/search/search.html:4
+#: cycling_site/templates/base.html:85 search/templates/search/search.html:4
 #: search/templates/search/search.html:9 search/templates/search/search.html:16
 msgid "Search"
 msgstr "Iздеу"
 
-#: cycling_site/templates/base.html:87
+#: cycling_site/templates/base.html:90
 msgid "Switch theme"
 msgstr "Такырыпты ауыстыру"
 
-#: cycling_site/templates/base.html:115
+#: cycling_site/templates/base.html:118
 msgid "Admin"
 msgstr "Акiмшi"
 
-#: cycling_site/templates/base.html:141
+#: cycling_site/templates/base.html:145
 msgid "Close"
 msgstr "Жабу"
 
-#: cycling_site/templates/base.html:151
+#: cycling_site/templates/base.html:155
 msgid "Cycling events"
 msgstr "Велоспорт жарыстары"
 
-#: cycling_site/templates/base.html:154
+#: cycling_site/templates/base.html:158
 #, python-format
 msgid ""
 "Found a bug or have a suggestion? <a href=\"%(url)s\" target=\"_blank\" "
@@ -1065,61 +1552,61 @@ msgstr ""
 "Қате таптыңыз ба немесе ұсыныс бар ма? <a href=\"%(url)s\" target=\"_blank\" "
 "rel=\"noopener\">GitHub-та тапсырма жасаңыз</a>."
 
-#: home/forms.py:35
+#: home/forms.py:37
 msgid "Navbar title (RU)"
 msgstr "Тақырыптағы атау (RU)"
 
-#: home/forms.py:36
+#: home/forms.py:38
 msgid "Navbar title (KK)"
 msgstr "Тақырыптағы атау (KK)"
 
-#: home/forms.py:37
+#: home/forms.py:39
 msgid "Navbar title (EN)"
 msgstr "Тақырыптағы атау (EN)"
 
-#: home/forms.py:38
+#: home/forms.py:40
 msgid "Tab title (RU)"
 msgstr "Қойынды атауы (RU)"
 
-#: home/forms.py:39
+#: home/forms.py:41
 msgid "Tab title (KK)"
 msgstr "Қойынды атауы (KK)"
 
-#: home/forms.py:40
+#: home/forms.py:42
 msgid "Tab title (EN)"
 msgstr "Қойынды атауы (EN)"
 
-#: home/templates/home/home_edit.html:4 home/templates/home/home_edit.html:17
+#: home/templates/home/home_edit.html:4 home/templates/home/home_edit.html:15
 msgid "Edit home page"
 msgstr "Басты бетті өңдеу"
 
-#: home/templates/home/home_edit.html:47 home/templates/home/home_edit.html:70
-#: home/templates/home/home_edit.html:91
+#: home/templates/home/home_edit.html:45 home/templates/home/home_edit.html:69
+#: home/templates/home/home_edit.html:93
 msgid "Navbar title"
 msgstr "Тақырыптағы атау"
 
-#: home/templates/home/home_edit.html:54 home/templates/home/home_edit.html:76
-#: home/templates/home/home_edit.html:97
+#: home/templates/home/home_edit.html:52 home/templates/home/home_edit.html:76
+#: home/templates/home/home_edit.html:100
 msgid "Tab title"
 msgstr "Қойынды атауы"
 
-#: home/templates/home/home_edit.html:60
-#: news/templates/news/article_form.html:65
+#: home/templates/home/home_edit.html:58
+#: news/templates/news/article_form.html:63
 msgid "Body (RU)"
 msgstr "Мазмұны (RU)"
 
-#: home/templates/home/home_edit.html:81
-#: news/templates/news/article_form.html:82
+#: home/templates/home/home_edit.html:82
+#: news/templates/news/article_form.html:83
 msgid "Body (KK)"
 msgstr "Мазмұны (KK)"
 
-#: home/templates/home/home_edit.html:102
-#: news/templates/news/article_form.html:99
+#: home/templates/home/home_edit.html:106
+#: news/templates/news/article_form.html:103
 msgid "Body (EN)"
 msgstr "Мазмұны (EN)"
 
-#: home/templates/home/home_edit.html:111
-#: news/templates/news/article_form.html:132
+#: home/templates/home/home_edit.html:116
+#: news/templates/news/article_form.html:137
 msgid "Save changes"
 msgstr "Өзгерістерді сақтау"
 
@@ -1172,13 +1659,41 @@ msgstr "Әкімші интерфейсі"
 msgid "Create your superuser first!"
 msgstr "Алдымен суперпайдаланушы жасаңыз!"
 
-#: knowledge/forms.py:10 knowledge/models.py:285
+#: knowledge/forms.py:20 knowledge/forms.py:54 knowledge/models.py:247
+#: knowledge/templates/knowledge/add_article.html:25
+#: knowledge/templates/knowledge/edit_article.html:24
 #: knowledge/templates/knowledge/submission_detail.html:27
-#: knowledge/tests.py:756 knowledge/tests.py:771
+#: knowledge/templates/knowledge/submit.html:28 news/forms.py:15
+#: news/templates/news/submission_detail.html:27
 msgid "Locale"
 msgstr "Тіл"
 
-#: knowledge/models.py:213
+#: knowledge/forms.py:22 knowledge/forms.py:56 knowledge/models.py:249
+#: knowledge/templates/knowledge/add_article.html:43
+#: knowledge/templates/knowledge/edit_article.html:42
+#: knowledge/templates/knowledge/submit.html:40 news/forms.py:19
+#: news/forms.py:71 news/forms.py:72 news/forms.py:73
+#: news/templates/news/submit.html:30
+msgid "Body"
+msgstr "Мәтін"
+
+#: knowledge/forms.py:69
+msgid "comma,separated,tags"
+msgstr "үтірмен,бөлінген,тегтер"
+
+#: knowledge/models.py:44 knowledge/models.py:244
+msgid "Russian"
+msgstr "Орыс тілі"
+
+#: knowledge/models.py:44 knowledge/models.py:244
+msgid "Kazakh"
+msgstr "Қазақ тілі"
+
+#: knowledge/models.py:44 knowledge/models.py:244
+msgid "English"
+msgstr "Ағылшын тілі"
+
+#: knowledge/models.py:218
 msgid ""
 "This article isn't available in your selected language, so it's shown in its "
 "original language."
@@ -1186,35 +1701,23 @@ msgstr ""
 "Бұл мақала сіз таңдаған тілде қолжетімсіз, сондықтан түпнұсқа тілінде "
 "көрсетілген."
 
-#: knowledge/models.py:215 knowledge/tests.py:808
+#: knowledge/models.py:220 knowledge/tests.py:243
 msgid "Search for a similar article in your language"
 msgstr "Өз тіліңізде ұқсас мақаланы іздеу"
 
-#: knowledge/models.py:282 knowledge/tests.py:764 knowledge/tests.py:779
-msgid "Russian"
-msgstr "Орыс тілі"
-
-#: knowledge/models.py:282 knowledge/tests.py:765 knowledge/tests.py:780
-msgid "Kazakh"
-msgstr "Қазақ тілі"
-
-#: knowledge/models.py:282 knowledge/tests.py:766 knowledge/tests.py:781
-msgid "English"
-msgstr "Ағылшын тілі"
-
-#: knowledge/models.py:287 knowledge/tests.py:758 knowledge/tests.py:773
-#: news/forms.py:61 news/forms.py:62 news/forms.py:63
-msgid "Body"
-msgstr "Мәтін"
-
 #: knowledge/templates/knowledge/add_article.html:4
-#: knowledge/templates/knowledge/add_article.html:9
+#: knowledge/templates/knowledge/add_article.html:10
 #: knowledge/templates/knowledge/knowledge_index_page.html:17
 msgid "Add article"
 msgstr "Мақала қосу"
 
-#: knowledge/templates/knowledge/add_article.html:52
-#: news/templates/news/article_form.html:132
+#: knowledge/templates/knowledge/add_article.html:37
+#: knowledge/templates/knowledge/edit_article.html:36
+msgid "Tags"
+msgstr "Тегтер"
+
+#: knowledge/templates/knowledge/add_article.html:50
+#: news/templates/news/article_form.html:137
 msgid "Publish"
 msgstr "Жариялау"
 
@@ -1251,89 +1754,114 @@ msgstr "Материалды қабылдамау"
 msgid "Reviewer note (shown to author, optional)"
 msgstr "Рецензент ескертпесі (авторға көрсетіледі, міндетті емес)"
 
-#: knowledge/templates/knowledge/knowledge_article_page.html:65
+#: knowledge/templates/knowledge/edit_article.html:4
+#: knowledge/templates/knowledge/edit_article.html:9
+#: knowledge/templates/knowledge/knowledge_article_detail.html:41
+#: news/templates/news/article_detail.html:46
+#: news/templates/news/article_form.html:4
+#: news/templates/news/article_form.html:16
+msgid "Edit article"
+msgstr "Мақаланы өңдеу"
+
+#: knowledge/templates/knowledge/knowledge_article_detail.html:35
 #: news/templates/news/article_detail.html:40
 msgid "This article is hidden from public view."
 msgstr "Бұл мақала жалпы көрінімнен жасырылған."
 
-#: knowledge/templates/knowledge/knowledge_article_page.html:71
-#: news/templates/news/article_detail.html:46
-#: news/templates/news/article_form.html:4
-#: news/templates/news/article_form.html:18
-msgid "Edit article"
-msgstr "Мақаланы өңдеу"
-
-#: knowledge/templates/knowledge/knowledge_article_page.html:80
+#: knowledge/templates/knowledge/knowledge_article_detail.html:50
 #: news/templates/news/article_detail.html:55
 msgid "Are you sure you want to delete this article?"
 msgstr "Бұл мақаланы жойғыңыз келетінін растайсыз ба?"
 
 #: knowledge/templates/knowledge/knowledge_index_page.html:29
+#: news/templates/news/news_list.html:18
 msgid "Pending submissions"
 msgstr "Қарастырудағы материалдар"
 
-#: knowledge/templates/knowledge/knowledge_index_page.html:89
+#: knowledge/templates/knowledge/knowledge_index_page.html:98
 msgid "No articles yet."
 msgstr "Мақалалар жоқ."
 
-#: knowledge/templates/knowledge/location_article_page.html:71
-msgid "GPX Track"
-msgstr "GPX жол"
-
-#: knowledge/templates/knowledge/location_article_page.html:73
-msgid "Download GPX"
-msgstr "GPX жүктеу"
-
-#: knowledge/templates/knowledge/location_article_page.html:80
-msgid "Photos"
-msgstr "Суреттер"
-
-#: knowledge/templates/knowledge/location_article_page.html:95
-msgid "External Links"
-msgstr "Сыртқы сілтемелер"
-
 #: knowledge/templates/knowledge/submission_detail.html:18
+#: news/templates/news/submission_detail.html:18
 msgid "Submission type"
 msgstr "Материал түрі"
 
 #: knowledge/templates/knowledge/submission_detail.html:21
-#: knowledge/tests.py:732 knowledge/tests.py:737
+#: news/templates/news/submission_detail.html:21
 msgid "Author"
 msgstr "Автор"
 
 #: knowledge/templates/knowledge/submission_detail.html:24
-#: knowledge/tests.py:722 knowledge/tests.py:727
+#: news/templates/news/submission_detail.html:24
 msgid "Submitted"
 msgstr "Қосқан"
 
 #: knowledge/templates/knowledge/submission_detail.html:36
+#: news/templates/news/submission_detail.html:31
 msgid "Reviewed by"
 msgstr "Тексерді"
 
 #: knowledge/templates/knowledge/submission_detail.html:41
+#: news/templates/news/submission_detail.html:36
 msgid "Reviewer note"
 msgstr "Рецензент ескертуі"
+
+#: knowledge/templates/knowledge/submission_detail.html:60
+#: news/templates/news/submission_detail.html:55
+msgid "Rejection reason (optional)"
+msgstr "Қабылдамау себебі (міндетті емес)"
 
 #: knowledge/templates/knowledge/submit.html:11
 msgid ""
 "Your submission will be reviewed by the editorial team before publishing."
 msgstr "Жіберілгеніңіз жарияланбас бұрын редакция тексереді."
 
-#: knowledge/views.py:122
+#: knowledge/views.py:115
 msgid "Article published successfully."
 msgstr "Мақала жарияланды."
 
-#: locations/forms.py:8 locations/templates/locations/location_form.html:53
+#: locations/forms.py:8 locations/templates/locations/location_form.html:55
 msgid "Name (RU)"
 msgstr "Атауы (RU)"
 
-#: locations/forms.py:9 locations/templates/locations/location_form.html:62
+#: locations/forms.py:9 locations/templates/locations/location_form.html:64
 msgid "Name (KK)"
 msgstr "Атауы (KK)"
 
-#: locations/forms.py:10 locations/templates/locations/location_form.html:71
+#: locations/forms.py:10 locations/templates/locations/location_form.html:73
 msgid "Name (EN)"
 msgstr "Атауы (EN)"
+
+#: locations/forms.py:16 locations/templates/locations/location_form.html:83
+msgid "Parent location"
+msgstr "Аталық локация"
+
+#: locations/forms.py:47
+msgid ""
+"Select a country, region and city: a venue is added inside the chosen city."
+msgstr ""
+"Ел, өңір және қаланы таңдаңыз: локация таңдалған қаланың ішіне қосылады."
+
+#: locations/forms.py:55
+msgid "System fallback locations cannot be moved."
+msgstr "Жүйелік резервтік локацияларды жылжытуға болмайды."
+
+#: locations/forms.py:59
+msgid "A location cannot be placed inside itself."
+msgstr "Локацияны өз ішіне орналастыруға болмайды."
+
+#: locations/forms.py:67 locations/views.py:332
+msgid ""
+"This location has nested locations or competitions, so its level cannot be "
+"changed."
+msgstr ""
+"Бұл локацияда кірістірілген локациялар немесе жарыстар бар, сондықтан оның "
+"деңгейін өзгерту мүмкін емес."
+
+#: locations/forms.py:74 locations/views.py:108
+msgid "System fallback locations must remain hidden."
+msgstr "Жүйелік резервтік локациялар жасырын күйде қалуы керек."
 
 #: locations/templates/locations/location_form.html:4
 #: locations/templates/locations/location_form.html:15
@@ -1344,65 +1872,111 @@ msgstr "Орынды өңдеу"
 #: locations/templates/locations/location_form.html:4
 #: locations/templates/locations/location_form.html:15
 #: locations/templates/locations/location_form.html:21
-#: locations/templates/locations/location_form.html:133
+#: locations/templates/locations/location_form.html:143
 #: locations/templates/locations/locations_map_page.html:21
 msgid "Add location"
 msgstr "Орын қосу"
 
-#: locations/templates/locations/location_form.html:123
+#: locations/templates/locations/location_form.html:86
+msgid ""
+"The deepest selected level is the parent. Leave Country empty to create a "
+"country, Region empty to create a region, City empty to create a city."
+msgstr ""
+"Ең терең таңдалған деңгей аталық болады. Ел құру үшін «Ел» өрісін, өңір құру "
+"үшін «Өңір» өрісін, қала құру үшін «Қала» өрісін бос қалдырыңыз."
+
+#: locations/templates/locations/location_form.html:88
+msgid ""
+"Select the country, region and city; the new location is added as a venue "
+"inside the chosen city."
+msgstr ""
+"Ел, өңір және қаланы таңдаңыз; жаңа локация таңдалған қаланың ішіне алаң "
+"ретінде қосылады."
+
+#: locations/templates/locations/location_form.html:129
 msgid "Click the map to set coordinates, or enter them manually."
 msgstr "Координаттарды таңдау үшін картаны нұқыңыз немесе қолмен енгізіңіз."
 
-#: locations/templates/locations/locations_map_page.html:36
+#: locations/templates/locations/locations_map_page.html:70
 msgid "Manage locations"
 msgstr "Орындарды басқару"
 
-#: locations/templates/locations/locations_map_page.html:61
+#: locations/templates/locations/locations_map_page.html:100
 msgid "Are you sure you want to delete this location?"
 msgstr "Бұл орынды жойғыңыз келетінін растайсыз ба?"
 
-#: locations/templates/locations/locations_map_page.html:97
+#: locations/templates/locations/locations_map_page.html:115
+msgid "No locations found."
+msgstr "Локациялар табылмады."
+
+#: locations/templates/locations/locations_map_page.html:152
 msgid "Read article"
 msgstr "Мақаланы оқу"
 
-#: locations/views.py:122
+#: locations/views.py:96
+msgid ""
+"Cannot delete a location that still has nested locations or competitions."
+msgstr ""
+"Кірістірілген локациялары немесе жарыстары бар локацияны жою мүмкін емес."
+
+#: locations/views.py:193
+msgid "The selected parent location is no longer available."
+msgstr "Таңдалған аталық локация енді қолжетімді емес."
+
+#: locations/views.py:195
 msgid "Location added."
 msgstr "Орын қосылды."
 
-#: locations/views.py:203
+#: locations/views.py:195
+msgid "Location proposed for review."
+msgstr "Орын қарауға ұсынылды."
+
+#: locations/views.py:242
+msgid ""
+"This location cannot be rejected: approved locations or a published "
+"competition are inside it."
+msgstr ""
+"Бұл орынды қабылдамауға болмайды: ішінде мақұлданған орындар немесе "
+"жарияланған жарыс бар."
+
+#: locations/views.py:245
+msgid "This location proposal is no longer pending."
+msgstr "Бұл локация ұсынысы енді модерацияны күтпейді."
+
+#: locations/views.py:335
 msgid "Location saved."
 msgstr "Орын сақталды."
 
-#: news/forms.py:46 news/forms.py:52 news/forms.py:58
+#: news/forms.py:56 news/forms.py:62 news/forms.py:68
 msgid "Short description"
 msgstr "Қысқаша сипаттама"
 
 #: news/templates/news/article_form.html:4
-#: news/templates/news/article_form.html:18
+#: news/templates/news/article_form.html:16
 #: news/templates/news/news_list.html:11
 msgid "Add news"
 msgstr "Жаңалық қосу"
 
-#: news/templates/news/article_form.html:111
+#: news/templates/news/article_form.html:116
 msgid "Published at"
 msgstr "Жарияланған күні"
 
-#: news/templates/news/article_form.html:118
+#: news/templates/news/article_form.html:123
 msgid "Cover image"
 msgstr "Мұқаба суреті"
 
 #: news/templates/news/news_index_page.html:43
-#: news/templates/news/news_list.html:45
+#: news/templates/news/news_list.html:72
 msgid "No news yet."
 msgstr "Жаңалықтар жоқ."
 
 #: news/templates/news/news_index_page.html:60
-#: news/templates/news/news_list.html:59
+#: news/templates/news/news_list.html:86
 msgid "Page"
 msgstr "Бет"
 
 #: news/templates/news/news_index_page.html:60
-#: news/templates/news/news_list.html:59
+#: news/templates/news/news_list.html:86
 msgid "of"
 msgstr "ішінен"
 
@@ -1410,9 +1984,13 @@ msgstr "ішінен"
 msgid "Submit news"
 msgstr "Жаңалық қосу"
 
-#: news/templates/news/submit.html:25
+#: news/templates/news/submit.html:36
 msgid "Submit for review"
 msgstr "Тексеруге жіберу"
+
+#: news/views.py:176
+msgid "News published successfully."
+msgstr "Жаңалық сәтті жарияланды."
 
 #: protocols/templates/protocols/detail.html:4
 #: protocols/templates/protocols/detail.html:42
@@ -1436,6 +2014,50 @@ msgstr "Толық экран"
 msgid "Update history"
 msgstr "Жаңарту тарихы"
 
+#: registrations/forms.py:42 registrations/forms.py:130
+msgid "Additional info"
+msgstr "Қосымша ақпарат"
+
+#: registrations/templates/registrations/_participant_row.html:6
+#: registrations/templates/registrations/_participant_table_head.html:7
+msgid "Birth"
+msgstr "Туған жылы"
+
+#: registrations/templates/registrations/_participant_row.html:11
+#: registrations/templates/registrations/_participant_row.html:14
+#: registrations/templates/registrations/_participant_row.html:17
+msgid "Yes"
+msgstr "Иә"
+
+#: registrations/templates/registrations/_participant_row.html:11
+#: registrations/templates/registrations/_participant_row.html:14
+msgid "No"
+msgstr "Жоқ"
+
+#: registrations/templates/registrations/_participant_row.html:36
+msgid "Mark paid"
+msgstr "Төленді деп белгілеу"
+
+#: registrations/templates/registrations/_participant_row.html:41
+msgid "Delete?"
+msgstr "Жою?"
+
+#: registrations/templates/registrations/_participant_row.html:50
+msgid "Reason (optional)"
+msgstr "Себебі (міндетті емес)"
+
+#: registrations/templates/registrations/_participant_row.html:51
+msgid "Confirm reject"
+msgstr "Бас тартуды растау"
+
+#: registrations/templates/registrations/_participant_row.html:61
+msgid "Cancel your registration?"
+msgstr "Тіркелуіңізден бас тартасыз ба?"
+
+#: registrations/templates/registrations/_participant_row.html:63
+msgid "Cancel registration"
+msgstr "Тіркелуден бас тарту"
+
 #: registrations/templates/registrations/edit_registration.html:4
 #: registrations/templates/registrations/edit_registration.html:13
 #: registrations/templates/registrations/edit_registration.html:17
@@ -1456,7 +2078,7 @@ msgid "Manual add participant"
 msgstr "Қатысушыны қолмен қосу"
 
 #: registrations/templates/registrations/manual_add.html:13
-#: registrations/templates/registrations/participant_list.html:23
+#: registrations/templates/registrations/participant_list.html:25
 msgid "Manual add"
 msgstr "Қолмен қосу"
 
@@ -1472,7 +2094,7 @@ msgstr "Команда мүшелері"
 #: registrations/templates/registrations/register.html:39
 #: registrations/templates/registrations/register.html:49
 #: registrations/templates/registrations/register.html:69
-#: registrations/templates/registrations/register.html:209
+#: registrations/templates/registrations/register.html:218
 msgid "Full name"
 msgstr "Аты-жөні"
 
@@ -1483,7 +2105,7 @@ msgstr "Аты-жөні"
 #: registrations/templates/registrations/register.html:40
 #: registrations/templates/registrations/register.html:53
 #: registrations/templates/registrations/register.html:73
-#: registrations/templates/registrations/register.html:210
+#: registrations/templates/registrations/register.html:219
 msgid "Year"
 msgstr "Жыл"
 
@@ -1501,55 +2123,20 @@ msgstr "Максимум"
 msgid "Add"
 msgstr "Қосу"
 
-#: registrations/templates/registrations/participant_list.html:27
-msgid "Export CSV"
-msgstr "CSV экспорты"
-
-#: registrations/templates/registrations/participant_list.html:36
+#: registrations/templates/registrations/participant_list.html:19
 msgid "Total qualified"
 msgstr "Барлығы өтті"
 
-#: registrations/templates/registrations/participant_list.html:56
-msgid "Birth"
-msgstr "Туған жылы"
+#: registrations/templates/registrations/participant_list.html:29
+msgid "Export CSV"
+msgstr "CSV экспорты"
 
-#: registrations/templates/registrations/participant_list.html:58
-#: registrations/templates/registrations/register.html:179
-msgid "Team"
-msgstr "Команда"
+#: registrations/templates/registrations/participant_list.html:50
+#: registrations/tests.py:737
+msgid "No category"
+msgstr "Санатсыз"
 
-#: registrations/templates/registrations/participant_list.html:63
-msgid "Actions"
-msgstr "Әрекеттер"
-
-#: registrations/templates/registrations/participant_list.html:78
-#: registrations/templates/registrations/participant_list.html:81
-#: registrations/templates/registrations/participant_list.html:84
-msgid "Yes"
-msgstr "Иә"
-
-#: registrations/templates/registrations/participant_list.html:78
-#: registrations/templates/registrations/participant_list.html:81
-msgid "No"
-msgstr "Жоқ"
-
-#: registrations/templates/registrations/participant_list.html:103
-msgid "Mark paid"
-msgstr "Төленді деп белгілеу"
-
-#: registrations/templates/registrations/participant_list.html:108
-msgid "Delete?"
-msgstr "Жою?"
-
-#: registrations/templates/registrations/participant_list.html:117
-msgid "Reason (optional)"
-msgstr "Себебі (міндетті емес)"
-
-#: registrations/templates/registrations/participant_list.html:118
-msgid "Confirm reject"
-msgstr "Бас тартуды растау"
-
-#: registrations/templates/registrations/participant_list.html:129
+#: registrations/templates/registrations/participant_list.html:65
 msgid "No participants yet."
 msgstr "Қатысушылар жоқ."
 
@@ -1573,419 +2160,26 @@ msgstr "туған күні"
 msgid "select"
 msgstr "таңдау"
 
-#: registrations/templates/registrations/register.html:186
-msgid "Additional info"
-msgstr "Қосымша ақпарат"
-
-#: search/templates/search/search.html:14
-msgid "Search..."
-msgstr "Iздеу..."
+#: registrations/templates/registrations/register.html:187
+msgid ""
+"Your profile has no Strava link. Add it in your profile so it fills in here "
+"automatically."
+msgstr ""
+"Профиліңізде Strava сілтемесі жоқ. Осы жерде автоматты түрде қойылуы үшін "
+"оны профиліңізге қосыңыз."
 
 #: search/templates/search/search.html:39
+msgid "Knowledge base"
+msgstr "Білім қоры"
+
+#: search/templates/search/search.html:63
 msgid "Locations"
 msgstr "Орындар"
 
-#: search/templates/search/search.html:50
+#: search/templates/search/search.html:74
 msgid "Pages"
 msgstr "Беттер"
 
-#: search/templates/search/search.html:74
+#: search/templates/search/search.html:98
 msgid "No results found"
 msgstr "Ештенiе табылмады"
-
-#~ msgid "Coordinates"
-#~ msgstr "Координаттар"
-
-#~ msgid "Labels"
-#~ msgstr "Белгiлер"
-
-# allauth social account
-#~ msgid "Or use a third-party"
-#~ msgstr "Немесе үшінші тарапты пайдалану"
-
-# Django password validators (django.contrib.auth)
-#~ msgid ""
-#~ "Your password can’t be too similar to your other personal information."
-#~ msgstr "Құпия сөзіңіз жеке ақпаратыңызға тым ұқсас болмауы керек."
-
-#, python-format
-#~ msgid "Your password must contain at least %(min_length)d character."
-#~ msgid_plural ""
-#~ "Your password must contain at least %(min_length)d characters."
-#~ msgstr[0] "Құпия сөзіңіз кемінде %(min_length)d таңбадан тұруы керек."
-#~ msgstr[1] "Құпия сөзіңіз кемінде %(min_length)d таңбадан тұруы керек."
-
-#~ msgid "Your password can’t be a commonly used password."
-#~ msgstr "Құпия сөзіңіз кең тараған болмауы керек."
-
-#~ msgid "Your password can’t be entirely numeric."
-#~ msgstr "Құпия сөзіңіз тек сандардан тұрмауы керек."
-
-# allauth email verification page
-#~ msgid "Verify Your Email Address"
-#~ msgstr "Электрондық пошта мекенжайыңызды растаңыз"
-
-#~ msgid ""
-#~ "We have sent an email to you for verification. Follow the link provided "
-#~ "to finalize the signup process. If you do not see the verification email "
-#~ "in your main inbox, check your spam folder. Please contact us if you do "
-#~ "not receive the verification email within a few minutes."
-#~ msgstr ""
-#~ "Растау үшін сізге электрондық хат жібердік. Тіркелу процесін аяқтау үшін "
-#~ "берілген сілтемеге өтіңіз. Растау хатын негізгі кіріс жәшігіңізден "
-#~ "көрмесеңіз, спам қалтасын тексеріңіз. Бірнеше минут ішінде растау хатын "
-#~ "алмасаңыз, бізге хабарласыңыз."
-
-#, python-format
-#~ msgid "Confirmation email sent to %(email)s."
-#~ msgstr "%(email)s мекенжайына растау хаты жіберілді."
-
-msgid "List"
-msgstr "Тізім"
-
-msgid "View"
-msgstr "Көрініс"
-
-msgid "Other location"
-msgstr "Басқа орын"
-
-msgid "Location proposed for review."
-msgstr "Орын қарауға ұсынылды."
-
-msgid "Propose a new venue"
-msgstr "Жаңа орын ұсыну"
-
-msgid "New venue name"
-msgstr "Жаңа орын атауы"
-
-msgid "Your proposed venue is usable right away and will be reviewed by a moderator."
-msgstr "Ұсынылған орынды бірден қолдануға болады, оны модератор тексереді."
-
-msgid "Proposed locations"
-msgstr "Ұсынылған орындар"
-
-msgid "No locations pending approval."
-msgstr "Бекітуді күтіп тұрған орындар жоқ."
-
-msgid "Reject this location? Competitions using it will fall back to the city's other location."
-msgstr "Бұл орынды қабылдамау керек пе? Оны қолданатын жарыстар қаланың «басқа орнына» ауысады."
-
-msgid "Click the map to set the venue point, or drag the marker."
-msgstr "Нүктені белгілеу үшін картаны басыңыз немесе маркерді сүйреңіз."
-
-# issue #122 - contact site owners
-
-msgid "Contact site owners"
-msgstr "Сайт иелерімен байланыс"
-
-msgid "Send a message to the people who run the site. We will reply to the contact you leave in your message."
-msgstr "Сайтты басқаратын адамдарға хабарлама жіберіңіз. Хабарламада қалдырған байланысыңызға жауап береміз."
-
-msgid "Send message"
-msgstr "Хабарлама жіберу"
-
-msgid "Subject"
-msgstr "Тақырып"
-
-msgid "Message"
-msgstr "Хабарлама"
-
-msgid "Please tell us how to reach you (e.g. email or messenger) and describe your question or problem in detail."
-msgstr "Өзіңізбен қалай байланысуға болатынын (мысалы, email немесе мессенджер) көрсетіп, сұрағыңыз бен мәселеңізді толық сипаттаңыз."
-
-msgid "Have a question or a request? Send a message to the people who run the site."
-msgstr "Сұрағыңыз немесе өтінішіңіз бар ма? Сайтты басқаратын адамдарға жазыңыз."
-
-msgid "Your message has been sent to the site owners."
-msgstr "Хабарламаңыз сайт иелеріне жіберілді."
-
-msgid "Sorry, we could not send your message right now. Please try again later."
-msgstr "Кешіріңіз, қазір хабарламаңызды жіберу мүмкін болмады. Кейінірек қайталап көріңіз."
-
-msgid "Please wait a few minutes before sending another message."
-msgstr "Келесі хабарламаны жіберер алдында бірнеше минут күте тұрыңыз."
-
-#: api/endpoints/content.py
-#, python-format
-msgid "Body is too large (max %(limit)d characters)."
-msgstr "Мәтін тым үлкен (ең көбі %(limit)d таңба)."
-
-#: api/endpoints/content.py
-msgid "At least one title translation is required."
-msgstr "Кемінде бір тілде тақырып қажет."
-
-#: api/endpoints/content.py
-#, python-format
-msgid "Title is too long (max %(limit)d characters)."
-msgstr "Тақырып тым ұзын (ең көбі %(limit)d таңба)."
-
-#: api/endpoints/content.py
-#, python-format
-msgid "Intro is too long (max %(limit)d characters)."
-msgstr "Кіріспе тым ұзын (ең көбі %(limit)d таңба)."
-
-#: cycling_site/forms.py
-#, python-format
-msgid "Ensure this value has at most %(limit_value)d characters."
-msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."
-
-#: accounts/models.py
-msgid "Participant"
-msgstr "Қатысушы"
-
-#: news/forms.py knowledge/forms.py calendar_app/forms.py
-msgid "Write a comment..."
-msgstr "Пікір жазыңыз..."
-
-#: news/views.py knowledge/views.py calendar_app/views.py
-msgid "Invalid submission."
-msgstr "Жарамсыз жіберу."
-
-#: locations/forms.py locations/templates/locations/location_form.html
-msgid "Parent location"
-msgstr "Аталық локация"
-
-#: locations/templates/locations/location_form.html
-msgid ""
-"The deepest selected level is the parent. Leave Country empty to create a "
-"country, Region empty to create a region, City empty to create a city."
-msgstr ""
-"Ең терең таңдалған деңгей аталық болады. Ел құру үшін «Ел» өрісін, өңір құру "
-"үшін «Өңір» өрісін, қала құру үшін «Қала» өрісін бос қалдырыңыз."
-
-#: locations/templates/locations/locations_map_page.html
-msgid "No locations found."
-msgstr "Локациялар табылмады."
-
-#: cycling_site/templates/_pagination.html
-msgid "Go to page"
-msgstr "Бетке өту"
-
-#: locations/forms.py
-msgid "A location cannot be placed inside itself."
-msgstr "Локацияны өз ішіне орналастыруға болмайды."
-
-#: locations/forms.py
-msgid "This location has nested locations or competitions, so its level cannot be changed."
-msgstr "Бұл локацияда кірістірілген локациялар немесе жарыстар бар, сондықтан оның деңгейін өзгерту мүмкін емес."
-
-#: locations/forms.py
-msgid "Select a country, region and city: a venue is added inside the chosen city."
-msgstr "Ел, өңір және қаланы таңдаңыз: локация таңдалған қаланың ішіне қосылады."
-
-#: locations/templates/locations/location_form.html
-msgid "Select the country, region and city; the new location is added as a venue inside the chosen city."
-msgstr "Ел, өңір және қаланы таңдаңыз; жаңа локация таңдалған қаланың ішіне алаң ретінде қосылады."
-
-#: locations/views.py
-msgid "Cannot delete a location that still has nested locations or competitions."
-msgstr "Кірістірілген локациялары немесе жарыстары бар локацияны жою мүмкін емес."
-
-#: locations/views.py
-msgid "The selected parent location is no longer available."
-msgstr "Таңдалған аталық локация енді қолжетімді емес."
-
-#: calendar_app/views.py
-msgid "This location is not available."
-msgstr "Бұл локация қолжетімді емес."
-
-#: locations/forms.py
-msgid "System fallback locations cannot be moved."
-msgstr "Жүйелік резервтік локацияларды жылжытуға болмайды."
-
-#: locations/forms.py locations/views.py
-msgid "System fallback locations must remain hidden."
-msgstr "Жүйелік резервтік локациялар жасырын күйде қалуы керек."
-
-#: locations/views.py
-msgid "This location proposal is no longer pending."
-msgstr "Бұл локация ұсынысы енді модерацияны күтпейді."
-
-#: cycling_site/templates/_moderation_banner.html
-msgid "Items awaiting your moderation"
-msgstr "Сіздің модерациялауыңызды күтіп тұрған элементтер"
-
-#: cycling_site/templates/_moderation_banner.html
-msgid "Awaiting your moderation"
-msgstr "Модерациялауыңызды күтуде"
-
-#: cycling_site/templates/_moderation_banner.html
-msgid "Events awaiting approval"
-msgstr "Бекітуді күтіп тұрған іс-шаралар"
-
-#: cycling_site/templates/_moderation_banner.html
-msgid "Locations awaiting approval"
-msgstr "Бекітуді күтіп тұрған локациялар"
-
-#: cycling_site/templates/_moderation_banner.html
-msgid "Article submissions awaiting review"
-msgstr "Тексеруді күтіп тұрған мақала өтінімдері"
-
-#: cycling_site/templates/_moderation_banner.html
-msgid "News submissions awaiting review"
-msgstr "Тексеруді күтіп тұрған жаңалық өтінімдері"
-
-#: cycling_site/templates/_moderation_banner.html
-msgid "Registrations awaiting approval for \"%(title)s\""
-msgstr "«%(title)s» үшін бекітуді күтіп тұрған тіркелулер"
-
-#: cycling_site/templates/_moderation_banner.html
-msgid "Review"
-msgstr "Қарау"
-
-#: cycling_site/templates/_moderation_banner.html
-msgid "News published successfully."
-msgstr "Жаңалық сәтті жарияланды."
-
-msgid "Markers are existing locations - click one to select it instead of creating a duplicate."
-msgstr "Маркерлер — бұрыннан бар локациялар; қайталаманы жасаудың орнына маркерді басып таңдаңыз."
-
-#: accounts/templates/accounts/profile_edit.html
-msgid "Prefilled when you register for a competition."
-msgstr "Жарысқа тіркелу кезінде автоматты түрде толтырылады."
-
-#: calendar_app/templates/calendar_app/_registration_fields.html
-msgid "Times are in Astana time (UTC+5)."
-msgstr "Уақыт Астана уақытымен көрсетіледі (UTC+5)."
-
-#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
-msgid "Delete token"
-msgstr "Токенді жою"
-
-#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
-msgid "If this token leaks, anyone could later alter or delete the results — regenerate or delete it."
-msgstr "Егер токен таралып кетсе, біреу кейін нәтижелерді өзгертуі немесе жоюы мүмкін — оны қайта жасаңыз немесе жойыңыз."
-
-#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
-msgid "Regenerate the timing token? The current token will stop working immediately."
-msgstr "Хронометраж токенін қайта жасау керек пе? Ағымдағы токен бірден жұмысын тоқтатады."
-
-#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
-msgid "Delete the timing token? Timing tools will lose access until you generate a new one."
-msgstr "Хронометраж токенін жою керек пе? Жаңасын жасағанша хронометраж құралдары қолжетімсіз болады."
-
-#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
-msgid "Timing token regenerated. The previous token no longer works."
-msgstr "Хронометраж токені қайта жасалды. Бұрынғы токен енді жұмыс істемейді."
-
-#: calendar_app/templates/calendar_app/detail.html calendar_app/views.py
-msgid "Timing token deleted. Timing tools can no longer access this competition."
-msgstr "Хронометраж токені жойылды. Хронометраж құралдары бұл жарысқа енді қол жеткізе алмайды."
-
-
-# Favorite events (issue #183)
-msgid "Only favorites"
-msgstr "Тек таңдаулылар"
-
-# Favorite events (issue #183)
-msgid "Add to favorites"
-msgstr "Таңдаулыларға қосу"
-
-# Favorite events (issue #183)
-msgid "Remove from favorites"
-msgstr "Таңдаулылардан алып тастау"
-
-# Favorite events (issue #183)
-msgid "In favorites"
-msgstr "Таңдаулыларда"
-
-
-# Pending/rejected competitions + profile (issue #180)
-msgid "Awaiting moderation."
-msgstr "Модерацияны күтуде."
-
-# Pending/rejected competitions + profile (issue #180)
-msgid "This event is not shown in the public calendar yet."
-msgstr "Іс-шара әзірге ашық күнтізбеде көрсетілмейді."
-
-# Pending/rejected competitions + profile (issue #180)
-msgid "This submission was rejected."
-msgstr "Өтінім қабылданбады."
-
-# Pending/rejected competitions + profile (issue #180)
-msgid "Reason"
-msgstr "Себебі"
-
-# Pending/rejected competitions + profile (issue #180)
-msgid "Rejection reason"
-msgstr "Қабылданбау себебі"
-
-# Pending/rejected competitions + profile (issue #180)
-msgid "Please provide a reason for rejection."
-msgstr "Қабылданбау себебін көрсетіңіз."
-
-# Pending/rejected competitions + profile (issue #180)
-msgid "Events I submitted"
-msgstr "Мен қосқан іс-шаралар"
-
-# Pending/rejected competitions + profile (issue #180)
-msgid "You have not submitted any events yet."
-msgstr "Сіз әзірге бірде-бір іс-шара қоспадыңыз."
-
-# Reject -> edit -> resubmit flow (#200)
-msgid "Resubmit"
-msgstr "Қайта жіберу"
-
-msgid "Resubmit for review"
-msgstr "Қайта қарауға жіберу"
-
-msgid "Delete this competition?"
-msgstr "Бұл жарысты жою керек пе?"
-
-msgid "Rejection history"
-msgstr "Бас тарту тарихы"
-
-msgid "Only a rejected competition can be resubmitted."
-msgstr "Тек қабылданбаған жарысты қайта жіберуге болады."
-
-msgid "Your competition was sent for review again."
-msgstr "Жарыс қайта қарауға жіберілді."
-
-msgid "Strava link"
-msgstr "Strava сілтемесі"
-
-msgid "Additional info field"
-msgstr "Қосымша ақпарат өрісі"
-
-msgid "Do not show"
-msgstr "Көрсетілмесін"
-
-msgid "Free-form input"
-msgstr "Еркін енгізу"
-
-msgid "Prefilled into the registration field for competitions that collect Strava links."
-msgstr "Strava сілтемелерін жинайтын жарыстардың тіркеу өрісіне алдын ала қойылады."
-
-msgid "Your profile has no Strava link. Add it in your profile so it fills in here automatically."
-msgstr "Профиліңізде Strava сілтемесі жоқ. Осы жерде автоматты түрде қойылуы үшін оны профиліңізге қосыңыз."
-
-msgid "No category"
-msgstr "Санатсыз"
-
-msgid "Show this info in the participant list"
-msgstr "Бұл ақпаратты тіркелгендер тізімінде көрсету"
-
-msgid "Cancel registration"
-msgstr "Тіркелуден бас тарту"
-
-msgid "Cancel your registration?"
-msgstr "Тіркелуіңізден бас тартасыз ба?"
-
-msgid "Require this field at registration"
-msgstr "Тіркелу кезінде бұл өрісті міндетті ету"
-
-#: locations/views.py
-msgid "This location cannot be rejected: approved locations or a published competition are inside it."
-msgstr "Бұл орынды қабылдамауға болмайды: ішінде мақұлданған орындар немесе жарияланған жарыс бар."
-
-#: calendar_app/templates/calendar_app/moderate.html
-msgid "Reject this venue? Competitions using it will fall back to the city's other location."
-msgstr "Бұл орынды қабылдамау керек пе? Ондағы жарыстар қаланың «Басқа орнына» ауысады."
-
-#: calendar_app/templates/calendar_app/moderate.html
-msgid "Reject this place? Everything nested inside it is removed too, and competitions there lose their location."
-msgstr "Бұл орынды қабылдамау керек пе? Ішіндегінің бәрі де жойылады, ондағы жарыстар орынсыз қалады."
-
-#: calendar_app/views.py
-msgid "This event's location is still awaiting review; an administrator must approve it first."
-msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."

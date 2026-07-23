@@ -65,6 +65,9 @@
                        placeholder="https://www.strava.com/athletes/...">
                 <div class="form-text">{% trans "Prefilled into the registration field for competitions that collect Strava links." %}</div>
             </div>
+            <hr>
+            <h2 class="h5 mb-3">{% trans "Calendar defaults" %}</h2>
+            {% include "accounts/_preference_pickers.html" %}
             <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
             <a href="{% url 'account_profile' %}" class="btn btn-outline-secondary ms-2">{% trans "Cancel" %}</a>
         </form>
