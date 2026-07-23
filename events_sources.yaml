@@ -27,19 +27,24 @@ aggregators:
       venue; read it accordingly and never pass a district as the region. These running events ARE
       in scope: extract EVERY dated row. Returning an empty array for this source is a mistake --
       there are dozens of concrete, dated races here, and a marathon is a competition just like a
-      gran fondo. Worked example: the row 'сентябрь 2026 | 20.09.2026 | Московский марафон | Москва
-      | 42,2 км / 10 км' is ONE event with date_start '2026-09-20', country Россия/Russia, city
-      Москва/Moscow, a running discipline, and source_url set to the marathon's own site taken from
-      the links list."
+      gran fondo. Always give the region as well as the city -- an event with no region cannot be
+      placed; when the city is itself a federal city/region (Москва, Санкт-Петербург), repeat its
+      name as the region. Worked example: the row 'сентябрь 2026 | 20.09.2026 | Московский марафон |
+      Москва | 42,2 км / 10 км' is ONE event with date_start '2026-09-20', country Россия/Russia,
+      region Москва/Moscow, city Москва/Moscow, a running discipline, and source_url set to the
+      marathon's own site taken from the links list."
   - url: https://begaem.com/blizhayshie-startyi-za-rubezhom
     hint: "Same calendar for the rest of the world; each row reads 'Country, City' and mixes Russian
       and English spellings on one page. Every foreign running event here is in scope -- a marathon
       in Iceland or Japan counts exactly like a race at home. Extract EVERY dated row; returning an
-      empty array for this source is a mistake, there are dozens of them. Give country/region/city
-      in all three locales so the same town is not proposed twice. Worked example: the row 'август
+      empty array for this source is a mistake, there are dozens of them. Always give the region as
+      well as the country and city (in all three locales) so the event can be placed and the same
+      town is not proposed twice; infer the region the city sits in, and when the city is its own
+      region (a capital city-region) repeat its name as the region. Worked example: the row 'август
       2026 | 22.08.2026 | Reykjavik Marathon | Iceland, Reykjavik | 42,2 км / 21,1 км / 10 км' is
-      ONE event with date_start '2026-08-22', country Iceland (ru Исландия), city Reykjavik (ru
-      Рейкьявик), a running discipline, and source_url taken from the event's official-site link."
+      ONE event with date_start '2026-08-22', country Iceland (ru Исландия), region Capital
+      Region/Хёвюдборгарсвайдид (or Reykjavik if unsure), city Reykjavik (ru Рейкьявик), a running
+      discipline, and source_url taken from the event's official-site link."
 
 organizers:
   # Kazakhstan / Kyrgyzstan (highest priority per agent/guidance.md)
