@@ -190,3 +190,12 @@ def test_a_country_sharing_a_prefix_is_not_confused_with_another():
     ]
     assert match_country(tree, "Severnaya Koreya")["id"] == 2  # unknown -> catch-all, not id 1
     assert match_country(tree, "North Macedonia Republic")["id"] == 1  # genuine long form still works
+
+
+def test_region_hint_disambiguates_two_same_named_cities_one_of_which_is_its_own_region():
+    """York-the-county and York-in-Lancashire: a correct region hint must pick the right one."""
+    cities = [
+        {"id": 10, "names": {"york"}, "region_names": {"york"}, "country_names": {"uk"}},
+        {"id": 11, "names": {"york"}, "region_names": {"lancashire"}, "country_names": {"uk"}},
+    ]
+    assert match_city(cities, "York", region="Lancashire") == 11  # not None, not the self-region one
