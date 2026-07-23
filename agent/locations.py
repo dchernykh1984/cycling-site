@@ -50,6 +50,15 @@ def flatten_cities(tree: list[dict]) -> list[dict]:
     return cities
 
 
+def _name_contains(target: str, names: set[str]) -> bool:
+    """Whether the target and one of ``names`` contain each other whole (no prefix shortcut).
+
+    "Republic of Kazakhstan" contains "Kazakhstan", and "RF" is contained by nothing, so only a
+    genuine long/short form matches -- never two different countries that merely start the same.
+    """
+    return any(name and (target in name or name in target) for name in names)
+
+
 def _hint_matches(hint: str, names: set[str]) -> bool:
     """Whether a free-text region/country hint plausibly names one of ``names``.
 
@@ -197,10 +206,11 @@ def match_country(tree: list[dict], country: str) -> dict | None:
     exact = _match_node(tree, country) or _match_node(tree, _COUNTRY_ALIASES.get(target, ""))
     if exact is not None:
         return exact
-    # An official long form or an abbreviation ("Republic of ...", "RF") that the alias table
-    # does not list. The catch-all is for countries the site genuinely does not carry; sending
-    # one it does have there files a real region under it, permanently.
-    fuzzy = [node for node in tree or [] if _hint_matches(target, _names(node))]
+    # An official long form or an abbreviation ("Republic of ...", "RF") that the alias table does
+    # not list. Only whole-name containment counts here, not the loose prefix rule region hints use:
+    # a 5-char prefix would read "North Korea" as "North Macedonia" and file a real region
+    # under the wrong country. The catch-all is for countries the site genuinely does not carry.
+    fuzzy = [node for node in tree or [] if _name_contains(target, _names(node))]
     if len(fuzzy) == 1:
         return fuzzy[0]
     return _catch_all(tree, _OTHER_COUNTRY)
