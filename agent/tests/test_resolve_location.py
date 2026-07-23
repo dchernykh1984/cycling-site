@@ -282,3 +282,24 @@ def test_enrich_fills_a_venue_coordinate_from_the_linked_track():
         assert (keeps.lat, keeps.lng) == (1.0, 2.0)
     finally:
         run.fetch.fetch_track = orig
+
+
+def test_enrich_uses_the_models_url_route_when_the_page_lists_no_track():
+    """The route the model picked out (url_route) must be tried even if the page text lists no link."""
+    import agent.run as run
+
+    seen: list = []
+
+    def _fake_start(links, fetch):
+        seen.extend(links)
+        return (49.80972, 73.08371)
+
+    orig = run.geo.start_coordinate
+    run.geo.start_coordinate = _fake_start
+    try:
+        cand = _candidate(city="Karaganda", venue="Palace", url_route="https://8.8.8.8/2026/brm.gpx")
+        out = run._add_start_coordinate(cand, "text with no links block")
+        assert (out.lat, out.lng) == (49.80972, 73.08371)
+        assert seen[0] == "https://8.8.8.8/2026/brm.gpx"  # url_route is tried first
+    finally:
+        run.geo.start_coordinate = orig
