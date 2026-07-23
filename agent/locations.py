@@ -19,14 +19,16 @@ def normalize_name(value: str) -> str:
     return _WS.sub(" ", norm).strip()
 
 
+def _localized_values(node: dict) -> list[str]:
+    """A tree node's raw name strings across all locales (accepts a LocalizedStr dict or a string)."""
+    name = node.get("name")
+    values = [name.get("ru"), name.get("kk"), name.get("en")] if isinstance(name, dict) else [name]
+    return [v for v in values if v]
+
+
 def _names(node: dict) -> set[str]:
     """Normalized name of a tree node across all locales (accepts a LocalizedStr dict or a string)."""
-    name = node.get("name")
-    if isinstance(name, dict):
-        values = [name.get("ru"), name.get("kk"), name.get("en")]
-    else:
-        values = [name]
-    return {normalize_name(v) for v in values if v}
+    return {normalize_name(v) for v in _localized_values(node)}
 
 
 def flatten_cities(tree: list[dict]) -> list[dict]:
@@ -236,24 +238,38 @@ def match_country(tree: list[dict], country: str) -> dict | None:
     return _catch_all(tree, _OTHER_COUNTRY)
 
 
+# Generic administrative words dropped before comparing region names, so "region Marrakesh-Safi"
+# matches "Marrakesh-Safi". They are removed as whole tokens only, which is why "Nenets" never
+# collapses into "Yamalo-Nenets" -- the distinguishing word "Yamalo" is not one of these.
+_REGION_WORDS = frozenset(
+    "oblast oblasti region regioni krai kray republic republiki respublika province provincia "
+    "county area territory district voivodeship land state autonomous okrug".split()
+)
+
+
+def _region_core(name: str) -> str:
+    """A region name with its generic administrative words stripped, for a spelling-tolerant compare."""
+    return " ".join(w for w in normalize_name(name).split() if w not in _REGION_WORDS)
+
+
 def match_region(country: dict, region: str) -> dict | None:
     """The region node under ``country`` matching this name, or None when it is absent/ambiguous.
 
-    Region names come from the model's own knowledge, not copied off the page, so the spelling can
-    differ from the site's stored node ("Marrakesh-Safi" vs "region Marrakesh-Safi"). An exact match
-    wins; otherwise a single node whose name contains -- or is contained by -- the given one is
-    accepted, so a differently-worded but clearly-the-same region is reused instead of duplicated.
-    Ambiguity (several loose matches) falls through to None, and the caller proposes a new region.
+    Region names come from the model's own knowledge, not copied off the page, so the wording can
+    differ from the stored node ("Marrakesh-Safi" vs "region Marrakesh-Safi"). An exact match wins;
+    otherwise the generic administrative words are stripped from both sides and the remainder is
+    compared exactly, so a reworded region is reused -- but two genuinely different regions where one
+    name nests in the other (Nenets vs Yamalo-Nenets) stay distinct. Ambiguity falls through to None.
     """
     children = (country or {}).get("children") or []
     exact = _match_node(children, region)
     if exact is not None:
         return exact
-    target = normalize_name(region)
-    if not target:
+    core = _region_core(region)
+    if not core:
         return None
-    loose = [node for node in children if _name_contains(target, _names(node))]
-    return loose[0] if len(loose) == 1 else None
+    same = [node for node in children if any(_region_core(v) == core for v in _localized_values(node))]
+    return same[0] if len(same) == 1 else None
 
 
 def city_record(city_id: int, city, region: dict, country: dict) -> dict:
