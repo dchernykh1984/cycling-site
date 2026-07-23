@@ -1,5 +1,7 @@
 """Pulling a start coordinate out of a linked GPS track."""
 
+import time
+
 from agent.geo import parse_start, start_coordinate, track_url
 
 _GPX = (
@@ -195,6 +197,18 @@ def test_kml_empty_linestring_does_not_borrow_a_polygon_boundary():
         "</kml>"
     )
     assert parse_start(kml) == (49.80972, 73.08371)
+
+
+def test_parse_start_stays_linear_on_a_hostile_body():
+    """A 2 MB blob of unterminated tags must parse in well under a second, not hang the run.
+
+    The threshold is generous (the old quadratic patterns took minutes on this input, the linear scan
+    takes milliseconds), so it flags a regression to O(n^2) without being flaky on a slow CI runner.
+    """
+    for blob in ("<LineString" * 200000, "<!--" * 400000, "<trkpt" * 400000):
+        started = time.perf_counter()
+        assert parse_start(blob) is None
+        assert time.perf_counter() - started < 5.0
 
 
 def test_gpx_attribute_order_and_namespace_do_not_matter():

@@ -22,28 +22,70 @@ _RWGPS_ROUTE = re.compile(r"https?://(?:www\.)?ridewithgps\.com/routes/(\d+)", r
 # Start of the route line, not a point of interest. A GPX track point (trkpt) or route point (rtept)
 # is the recorded/planned line; a waypoint (wpt) is a control/finish/POI and, per the GPX schema,
 # is listed BEFORE the track -- so matching wpt would take a POI hundreds of km from the start. A
-# namespace prefix (<gpx:trkpt>) is allowed, and lat/lon are read separately because XML attribute
-# order is not significant.
-_GPX_TRKPT = re.compile(r"<(?:\w+:)?(?:trkpt|rtept)\b([^>]*)>", re.IGNORECASE)
+# namespace prefix (<gpx:trkpt>) is allowed. Only the tag NAME is matched here (no ".*>" for the
+# attributes): the tag's end is found with str.find so a 20 MB file of unterminated "<trkpt" tags
+# cannot drive the regex quadratic. lat/lon are read separately, XML attribute order not being fixed.
+_GPX_TRKPT = re.compile(r"<(?:\w+:)?(?:trkpt|rtept)\b", re.IGNORECASE)
 _ATTR_LAT = re.compile(r"\blat=\"(-?\d+(?:\.\d+)?)\"", re.IGNORECASE)
 _ATTR_LON = re.compile(r"\blon=\"(-?\d+(?:\.\d+)?)\"", re.IGNORECASE)
 # A Google/Strava <gx:Track> stores the path as space-separated "lon lat [alt]" in <gx:coord>.
 _GX_COORD = re.compile(r"<gx:coord>\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)", re.IGNORECASE)
-# The <coordinates> body of every LineString. A KML often carries standalone <Point> placemarks (an
-# overview pin, the finish, controls) and decorative or bounding-box lines besides the route, so we
-# take not the first line but the longest -- the route has far more points than any decoration.
-# The gap before <coordinates> must stay inside this LineString: a tempered `(?!</LineString>)`
-# stops an empty <LineString> from reaching across its own close into a following <Polygon>'s
-# boundary <coordinates>, whose long corner ring would otherwise win the "longest" comparison.
-_KML_LINE_COORDS = re.compile(
-    r"<LineString\b(?:(?!</LineString>).)*?<coordinates>\s*(.*?)\s*</coordinates>",
-    re.IGNORECASE | re.DOTALL,
-)
 _KML_FIRST_LNG_LAT = re.compile(r"(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)")
-# A commented-out or CDATA-wrapped <trkpt>/<coordinates> is not real markup: it is text a decoy could
-# place above the true track to steal the start. Drop both before scanning so only live points count.
-_XML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
-_XML_CDATA = re.compile(r"<!\[CDATA\[.*?\]\]>", re.DOTALL)
+
+
+def _drop_spans(text: str, opener: str, closer: str) -> str:
+    """Replace every ``opener``..``closer`` span (and an unterminated trailing opener) with a space.
+
+    A linear str.find scan on purpose: the regex `<!--.*?-->` is O(n^2) when a body carries many
+    openers with no closer, which a hostile 20 MB track file could use to hang the nightly run.
+    """
+    if opener not in text:
+        return text
+    out: list[str] = []
+    i = 0
+    while True:
+        start = text.find(opener, i)
+        if start == -1:
+            out.append(text[i:])
+            return "".join(out)
+        out.append(text[i:start])
+        end = text.find(closer, start + len(opener))
+        if end == -1:
+            return "".join(out)  # unterminated -- the remainder is not valid markup, drop it
+        out.append(" ")
+        i = end + len(closer)
+
+
+def _strip_markup_noise(track: str) -> str:
+    """Drop XML comments and CDATA: a <trkpt>/<coordinates> hidden in either is text, not a real point."""
+    return _drop_spans(_drop_spans(track, "<!--", "-->"), "<![CDATA[", "]]>")
+
+
+def _kml_linestring_bodies(track: str) -> list[str]:
+    """The <coordinates> body of each <LineString>, found with a linear str.find scan.
+
+    A KML often carries standalone <Point> placemarks and decorative or bounding-box lines besides
+    the route, so the caller takes the longest of these. Each body is read only from within its own
+    <LineString>..</LineString>, so an empty line cannot borrow a following <Polygon>'s boundary ring,
+    and the scan is O(n) rather than the O(n^2) a `<LineString>.*?<coordinates>` regex would be.
+    """
+    low = track.lower()
+    bodies: list[str] = []
+    i = 0
+    while True:
+        ls = low.find("<linestring", i)
+        if ls == -1:
+            return bodies
+        close = low.find("</linestring>", ls)
+        seg_end = close if close != -1 else len(low)
+        co = low.find("<coordinates", ls)
+        if co != -1 and co < seg_end:
+            co_gt = low.find(">", co)
+            if co_gt != -1 and co_gt < seg_end:
+                ce = low.find("</coordinates>", co_gt)
+                if ce != -1 and ce <= seg_end:
+                    bodies.append(track[co_gt + 1 : ce].strip())
+        i = seg_end + len("</linestring>") if close != -1 else len(low)
 
 
 def track_url(links: list[str]) -> str | None:
@@ -77,7 +119,7 @@ def parse_start(track: str) -> tuple[float, float] | None:
     Coordinates outside the valid range are rejected -- a malformed or truncated file must not put a
     venue in the ocean.
     """
-    track = _XML_CDATA.sub(" ", _XML_COMMENT.sub(" ", track))
+    track = _strip_markup_noise(track)
     point = _gpx_start(track) or _kml_start(track)
     if point is None:
         return None
@@ -88,9 +130,16 @@ def parse_start(track: str) -> tuple[float, float] | None:
 
 
 def _gpx_start(track: str) -> tuple[float, float] | None:
-    """The first (lat, lng) of a GPX track/route point, reading lat and lon in either order."""
+    """The first (lat, lng) of a GPX track/route point, reading lat and lon in either order.
+
+    The tag's attributes are read from the match end up to the closing ``>`` found with str.find, so
+    the work stays linear even on a file of unterminated tags.
+    """
     for match in _GPX_TRKPT.finditer(track):
-        attrs = match.group(1)
+        gt = track.find(">", match.end())
+        if gt == -1:
+            return None  # a truncated tag: no complete point follows it either
+        attrs = track[match.end() : gt]
         lat, lon = _ATTR_LAT.search(attrs), _ATTR_LON.search(attrs)
         if lat and lon:
             return float(lat.group(1)), float(lon.group(1))
@@ -104,7 +153,7 @@ def _kml_start(track: str) -> tuple[float, float] | None:
     finish/overview markers that must not be mistaken for the start. KML orders each pair lon,lat.
     """
     longest, most = None, -1
-    for body in _KML_LINE_COORDS.findall(track):
+    for body in _kml_linestring_bodies(track):
         points = body.split()
         if len(points) > most:
             most, longest = len(points), body
