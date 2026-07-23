@@ -642,8 +642,21 @@ def move_location(location, new_parent) -> None:
         # An approved node must not slide under a branch still awaiting review: the branch would
         # then hold public work and could never be rejected, and list_locations would drop the
         # approved node along with its invisible parent. This mirrors every create path's rule.
-        if not locked.is_pending and locked_target is not None and not chain_is_approved(locked_target):
-            raise LocationConflictError("Cannot move an approved location under a pending one")
+        # Judge on proposal rows locked under the tree lock, not on the status the node was loaded
+        # with -- a concurrent approve writes only the proposal row and would otherwise slip through.
+        if locked_target is not None:
+            chain = [locked, locked_target, *locked_target.get_ancestors()]
+            still_pending = set(
+                LocationProposal.objects.select_for_update()
+                .filter(location__in=chain, status=LocationProposal.Status.PENDING_APPROVAL)
+                .values_list("location_id", flat=True)
+            )
+            moving_approved = locked.pk not in still_pending
+            target_chain_pending = any(
+                node.pk in still_pending for node in [locked_target, *locked_target.get_ancestors()]
+            )
+            if moving_approved and target_chain_pending:
+                raise LocationConflictError("Cannot move an approved location under a pending one")
         if new_depth != locked.depth and location_subtree_is_nonempty(locked):
             raise LocationConflictError("Subtree changed under the node")
 
