@@ -11,6 +11,7 @@ from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline
 from locations.models import (
     Location,
     LocationConflictError,
+    chain_is_approved,
     competition_location_block_reason,
     lock_competition_location,
 )
@@ -201,8 +202,6 @@ def _demote_for_pending_geography(competition: Competition, user) -> bool:
     Returns whether it changed anything. An admin (who may approve the geography) is exempt; the
     venue itself is fine -- only pending *ancestors* matter, since an organizer may add a venue.
     """
-    from locations.models import chain_is_approved
-
     location = competition.location
     if (
         competition.status == Competition.Status.APPROVED
@@ -336,8 +335,18 @@ def create_competition(request, payload: CompetitionIn):
         # delete/level-change can't bind the competition to a removed or non-venue node.
         with transaction.atomic():
             competition.location_id = _lock_location_for_competition(payload.location_id, user)
+            # An admin's competition is created approved -- but not onto geography still under
+            # review: that would publish the branch and, if it is another user's proposal, hold it
+            # hostage (its rejection is blocked while approved work sits inside). Publish only where
+            # the geography above the venue is already public; otherwise leave it pending.
+            if competition.status == Competition.Status.APPROVED and not chain_is_approved(
+                competition.location.get_parent() if competition.location else None
+            ):
+                competition.status = Competition.Status.PENDING_APPROVAL
             competition.save()
             _set_disciplines(competition, payload.discipline_ids)
+            if competition.status == Competition.Status.APPROVED and competition.location is not None:
+                competition.location.approve_with_competition(user)
     except LocationConflictError:
         raise HttpError(409, "Location is no longer usable for a competition") from None
     return Status(201, _to_detail(competition, user))

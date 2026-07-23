@@ -548,6 +548,30 @@ class CompetitionCreateTest(TestCase, ApiTestMixin):
         defaults.update(kwargs)
         return defaults
 
+    def test_admin_create_onto_pending_geography_stays_pending(self):
+        """An admin's competition publishes only where the geography above the venue is public."""
+        from locations.models import LocationProposal, add_location_child
+
+        admin = _user("create-admin", role=User.Role.ADMIN)
+        organizer = _user("create-org", role=User.Role.ORGANIZER)
+        country = _location()
+        region = add_location_child(country, name="R", name_ru="R")
+        pending_city = add_location_child(region, name="Pend", name_ru="Pend")
+        LocationProposal.objects.create(location=pending_city, submitted_by=organizer)
+        venue = add_location_child(pending_city, name="V", name_ru="V")
+        LocationProposal.objects.create(location=venue, submitted_by=organizer)
+
+        resp = self.post(
+            "/api/v1/competitions/",
+            {"title": {"ru": "C", "kk": "", "en": ""}, "date_start": "2026-09-01", "location_id": venue.pk},
+            user=admin,
+        )
+        self.assertEqual(resp.status_code, 201)
+        comp = Competition.objects.get(pk=resp.json()["id"])
+        self.assertEqual(comp.status, Competition.Status.PENDING_APPROVAL)
+        # The organizer's proposal is not held hostage.
+        pending_city.reject_and_reset_competitions()
+
     def test_organizer_creates_pending(self):
         resp = self.post("/api/v1/competitions/", self._payload(), user=self.organizer)
         self.assertEqual(resp.status_code, 201)
