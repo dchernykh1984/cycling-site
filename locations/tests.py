@@ -978,6 +978,33 @@ class ModeratorReachesPendingNodesTests(TestCase):
         self.assertNotIn(pending.pk, [loc.pk for loc in selectable_parent_locations(organizer)])
 
 
+class MoveUnderPendingBranchTests(TestCase):
+    """An approved node must not be re-parented under a branch still awaiting review."""
+
+    def test_move_approved_under_pending_is_refused(self):
+        from locations.models import LocationConflictError, add_location_child, move_location
+
+        proposer = _make_user("move-proposer@x.com", User.Role.ORGANIZER)
+        country, region, _ = _make_tree()
+        approved_city = add_location_child(region, name="Approved", name_ru="Approved")
+        pending_region = _propose_place(country, "Pending Region", proposer)
+
+        with self.assertRaises(LocationConflictError):
+            move_location(approved_city, pending_region)
+        # The pending branch stays rejectable, which a smuggled-in approved child would have blocked.
+        pending_region.reject_and_reset_competitions()
+
+    def test_move_pending_under_pending_is_allowed(self):
+        from locations.models import move_location
+
+        proposer = _make_user("move-proposer2@x.com", User.Role.ORGANIZER)
+        country, region, _ = _make_tree()
+        pending_city = _propose_place(region, "Pending City", proposer)
+        pending_region = _propose_place(country, "Pending Region", proposer)
+        move_location(pending_city, pending_region)  # both pending -> fine
+        self.assertEqual(Location.objects.get(pk=pending_city.pk).get_parent().pk, pending_region.pk)
+
+
 class ReRootSortOrderTests(TestCase):
     """Re-rooting must rank the node among countries, not among every node at its old depth."""
 
