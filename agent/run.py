@@ -51,7 +51,12 @@ def _extract_candidates(
     candidates: list = []
     for piece in pieces:
         raw = llm.extract_raw(piece, source, guidance, known, taxonomy, config)
-        candidates.extend(pipeline.parse_candidates(raw, source.fetch_url or "", taxonomy))
+        parsed = pipeline.parse_candidates(raw, source.fetch_url or "", taxonomy)
+        # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
+        # declining -- surface the raw reply so the two are told apart without another run.
+        if not parsed and raw.strip() not in ("", "[]"):
+            print(f"  . {source.ref}: {len(raw)}-char reply parsed to 0: {' '.join(raw.split())[:400]}", flush=True)
+        candidates.extend(parsed)
     return candidates
 
 
