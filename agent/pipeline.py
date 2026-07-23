@@ -176,10 +176,12 @@ def _source_candidates(source: Source, fetch: FetchFn, extract: ExtractFn, repor
         report.skipped_sources.append((source.ref, f"fetch failed: {exc}"))
         return []
     try:
-        return extract(text, source)
+        candidates = extract(text, source)
     except Exception as exc:
         report.skipped_sources.append((source.ref, f"extract failed: {exc}"))
         return []
+    report.extracted.append((source.ref, len(candidates)))
+    return candidates
 
 
 def _consider(

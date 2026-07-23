@@ -38,6 +38,8 @@ def _summary(report: RunReport) -> str:
         lines.append(f"  ~ source skipped: {ref} ({reason})")
     for title, error in report.post_errors:
         lines.append(f"  ! post failed: {title} ({error})")
+    for ref, count in report.extracted:
+        lines.append(f"  = extracted {count} from {ref}")
     return "\n".join(lines)
 
 

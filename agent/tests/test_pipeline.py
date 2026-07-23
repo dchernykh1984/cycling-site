@@ -279,3 +279,23 @@ def test_post_error_is_recorded_not_raised():
     )
     assert report.accepted
     assert report.post_errors
+
+
+def test_report_records_the_per_source_extraction_count():
+    """The run must log how many candidates each source's extraction returned, to locate a source
+    that silently yields nothing."""
+    from agent.models import KnownEvents
+    from agent.pipeline import run_pipeline
+
+    src = Source("aggregator", "cal", "https://cal.test/")
+
+    def fetch(source):
+        return "text"
+
+    def extract(text, source):
+        return [Candidate(title="A", date_start="2026-09-01"), Candidate(title="B", date_start="2026-09-02")]
+
+    report = run_pipeline(
+        [src], KnownEvents(), fetch=fetch, extract=extract, create=lambda c: None, max_events=10, dry_run=True
+    )
+    assert report.extracted == [("cal", 2)]
