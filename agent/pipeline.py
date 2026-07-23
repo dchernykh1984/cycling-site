@@ -71,27 +71,49 @@ def _as_float(value: object) -> float | None:
     return None
 
 
+def _load_array_prefix(text: str, start: int) -> list:
+    """Every complete JSON object in the array opening at ``start``, tolerating a truncated tail.
+
+    The model caps its reply at its output-token limit, so a long list (a dense calendar) comes back
+    cut off mid-object with no closing ``]``. json.loads of the whole thing would reject it and lose
+    every event; decoding object by object salvages all the ones that serialized and stops at the
+    broken tail. A well-formed reply decodes exactly as before.
+    """
+    decoder = json.JSONDecoder()
+    items: list = []
+    i, n = start + 1, len(text)
+    while i < n:
+        while i < n and text[i] in " \t\r\n,":
+            i += 1
+        if i >= n or text[i] == "]":
+            break
+        try:
+            obj, i = decoder.raw_decode(text, i)
+        except ValueError:
+            break  # a truncated or malformed tail object -- keep whatever parsed cleanly before it
+        items.append(obj)
+    return items
+
+
 def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None = None) -> list[Candidate]:
-    """Parse the LLM's reply into candidates, tolerating code fences and stray prose.
+    """Parse the LLM's reply into candidates, tolerating code fences, stray prose and truncation.
 
     Expects a JSON array of objects with title/date_start (and optional date_end/description/
     source_url/event_type_id/discipline_ids). Anything malformed is skipped rather than raising, so
-    one bad item never sinks a run. When ``taxonomy`` is given, a hallucinated event type or
-    discipline id (not on the site) is dropped rather than sent and rejected.
+    one bad item never sinks a run, and a reply cut off at the token limit still yields the events
+    that came through whole. When ``taxonomy`` is given, a hallucinated event type or discipline id
+    (not on the site) is dropped rather than sent and rejected.
     """
     text = (raw or "").strip()
     if text.startswith("```"):
         text = text.strip("`")
         text = text.split("\n", 1)[1] if "\n" in text else text
-    start, end = text.find("["), text.rfind("]")
-    if start == -1 or end == -1 or end < start:
+    start = text.find("[")
+    if start == -1:
         return []
-    try:
-        items = json.loads(text[start : end + 1])
-    except (ValueError, TypeError):
-        return []
+    items = _load_array_prefix(text, start)
     candidates: list[Candidate] = []
-    for item in items if isinstance(items, list) else []:
+    for item in items:
         if not isinstance(item, dict):
             continue
         title_ru, title_kk, title_en = _localized(item.get("title"))

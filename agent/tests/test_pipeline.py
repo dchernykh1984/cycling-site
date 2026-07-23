@@ -97,6 +97,17 @@ def test_parse_candidates_keeps_an_english_only_title_by_backfilling_ru():
     assert candidate.title_en == "Reykjavik Marathon"
 
 
+def test_parse_candidates_salvages_a_reply_truncated_at_the_token_limit():
+    """A dense calendar reply cut off mid-object must still yield the events that came through whole."""
+    raw = (
+        '```json\n[{"title": "Race A", "date_start": "2026-08-01"}, '
+        '{"title": "Race B", "date_start": "2026-08-02"}, '
+        '{"title": "Race C", "date_start": "2026-08-03", "description": {"ru": "cut off he'  # truncated tail
+    )
+    titles = [c.title for c in parse_candidates(raw)]
+    assert titles == ["Race A", "Race B"]  # the two complete objects survive; the broken tail is dropped
+
+
 def test_parse_candidates_extracts_route_and_registration_urls():
     raw = (
         '[{"title": "R", "date_start": "2026-08-01", "url_route": "https://strava.com/routes/1",'
