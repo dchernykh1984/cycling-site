@@ -15,8 +15,11 @@ _ROOT = Path(__file__).resolve().parent.parent
 _SOURCES_FILE = _ROOT / "events_sources.yaml"
 _GUIDANCE_FILE = _ROOT / "agent" / "guidance.md"
 # Aggregator calendars are extracted in line-aligned chunks so the model enumerates every terse row
-# instead of dropping some from one long prompt; other sources stay a single pass.
-_AGGREGATOR_CHUNK_CHARS = 6000
+# instead of dropping some from one long prompt; other sources stay a single pass. The chunk is kept
+# small because each event expands to a verbose JSON object (title, description, venue etc. in three
+# locales): a dense calendar of ~30 rows overflows the model's output-token limit and the reply comes
+# back truncated, so a smaller input chunk keeps the whole reply within budget.
+_AGGREGATOR_CHUNK_CHARS = 3000
 
 
 def _read(path: Path) -> str:
