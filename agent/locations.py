@@ -237,8 +237,23 @@ def match_country(tree: list[dict], country: str) -> dict | None:
 
 
 def match_region(country: dict, region: str) -> dict | None:
-    """The region node under ``country`` matching this name, or None when it is absent/ambiguous."""
-    return _match_node((country or {}).get("children") or [], region)
+    """The region node under ``country`` matching this name, or None when it is absent/ambiguous.
+
+    Region names come from the model's own knowledge, not copied off the page, so the spelling can
+    differ from the site's stored node ("Marrakesh-Safi" vs "region Marrakesh-Safi"). An exact match
+    wins; otherwise a single node whose name contains -- or is contained by -- the given one is
+    accepted, so a differently-worded but clearly-the-same region is reused instead of duplicated.
+    Ambiguity (several loose matches) falls through to None, and the caller proposes a new region.
+    """
+    children = (country or {}).get("children") or []
+    exact = _match_node(children, region)
+    if exact is not None:
+        return exact
+    target = normalize_name(region)
+    if not target:
+        return None
+    loose = [node for node in children if _name_contains(target, _names(node))]
+    return loose[0] if len(loose) == 1 else None
 
 
 def city_record(city_id: int, city, region: dict, country: dict) -> dict:

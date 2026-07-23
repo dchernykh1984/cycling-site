@@ -199,3 +199,18 @@ def test_region_hint_disambiguates_two_same_named_cities_one_of_which_is_its_own
         {"id": 11, "names": {"york"}, "region_names": {"lancashire"}, "country_names": {"uk"}},
     ]
     assert match_city(cities, "York", region="Lancashire") == 11  # not None, not the self-region one
+
+
+def test_match_region_tolerates_a_differently_worded_spelling():
+    """A region named from the model's knowledge should reuse a stored node spelled a bit differently."""
+    country = {
+        "id": 1,
+        "name": {"ru": "Morocco", "kk": "", "en": "Morocco"},
+        "children": [
+            {"id": 2, "name": {"ru": "region Marrakesh-Safi", "kk": "", "en": "Marrakesh-Safi"}, "children": []},
+            {"id": 3, "name": {"ru": "Rabat-Sale-Kenitra", "kk": "", "en": "Rabat"}, "children": []},
+        ],
+    }
+    assert match_region(country, "Marrakesh-Safi")["id"] == 2  # loose contains-match reuses the node
+    assert match_region(country, "marrakesh safi")["id"] == 2
+    assert match_region(country, "Tanger-Tetouan-Al Hoceima") is None  # genuinely new -> propose it
