@@ -124,14 +124,34 @@ _TRACK_MAX_BYTES = 20 * 1024 * 1024  # a GPS track is a few MB; cap the read so 
 # stream unbounded data into memory.
 
 
+class _NoUnsafeRedirect(urllib.request.HTTPRedirectHandler):
+    """Re-validate every redirect target before following it.
+
+    The SSRF gate checks the URL we were given, but a public decoy can answer 302 -> an internal or
+    cloud-metadata address, and the default opener would follow it. Re-running the same public-host
+    check on each hop closes that; an unsafe hop raises instead of being fetched.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        from agent.geo import is_fetchable_track_url
+
+        if not is_fetchable_track_url(newurl):
+            raise URLError(f"unsafe redirect to {newurl}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_TRACK_OPENER = urllib.request.build_opener(_NoUnsafeRedirect())
+
+
 def fetch_track(url: str, timeout: int = 20) -> str:
     """Raw text of a linked GPS-track file (GPX/KML) -- no HTML stripping, for coordinate parsing.
 
     Reads at most ``_TRACK_MAX_BYTES``: the start point is near the top of the file, and the cap
-    stops a URL that resolves to something huge from exhausting memory.
+    stops a URL that resolves to something huge from exhausting memory. Redirects are followed only
+    to hosts that pass the same public-IP check as the original URL.
     """
     request = urllib.request.Request(url, headers={"User-Agent": _UA})
-    with urllib.request.urlopen(request, timeout=timeout) as response:
+    with _TRACK_OPENER.open(request, timeout=timeout) as response:
         raw = response.read(_TRACK_MAX_BYTES)
         charset = response.headers.get_content_charset()
     try:
