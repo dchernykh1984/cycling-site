@@ -181,6 +181,22 @@ def test_parse_start_ignores_a_commented_or_cdata_decoy_point():
     assert parse_start(cdata) == (49.80972, 73.08371)
 
 
+def test_kml_empty_linestring_does_not_borrow_a_polygon_boundary():
+    """An empty <LineString> must not reach into a following <Polygon> ring for its coordinates."""
+    kml = (
+        "<kml>"
+        "<Placemark><LineString></LineString></Placemark>"
+        "<Placemark><Polygon><outerBoundaryIs><LinearRing><coordinates>"
+        "30.0,60.0,0 31.0,61.0,0 32.0,62.0,0 33.0,63.0,0 34.0,64.0,0 35.0,65.0,0"
+        "</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>"
+        "<Placemark><LineString><coordinates>"
+        "73.08371,49.80972,0 73.1,49.85,0 73.2,49.9,0"
+        "</coordinates></LineString></Placemark>"
+        "</kml>"
+    )
+    assert parse_start(kml) == (49.80972, 73.08371)
+
+
 def test_gpx_attribute_order_and_namespace_do_not_matter():
     """lon-before-lat and a namespace prefix are valid GPX and must still parse."""
     assert parse_start('<gpx><trkpt lon="73.08371" lat="49.80972"></trkpt></gpx>') == (49.80972, 73.08371)

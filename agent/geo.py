@@ -32,7 +32,13 @@ _GX_COORD = re.compile(r"<gx:coord>\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)", re
 # The <coordinates> body of every LineString. A KML often carries standalone <Point> placemarks (an
 # overview pin, the finish, controls) and decorative or bounding-box lines besides the route, so we
 # take not the first line but the longest -- the route has far more points than any decoration.
-_KML_LINE_COORDS = re.compile(r"<LineString\b.*?<coordinates>\s*(.*?)\s*</coordinates>", re.IGNORECASE | re.DOTALL)
+# The gap before <coordinates> must stay inside this LineString: a tempered `(?!</LineString>)`
+# stops an empty <LineString> from reaching across its own close into a following <Polygon>'s
+# boundary <coordinates>, whose long corner ring would otherwise win the "longest" comparison.
+_KML_LINE_COORDS = re.compile(
+    r"<LineString\b(?:(?!</LineString>).)*?<coordinates>\s*(.*?)\s*</coordinates>",
+    re.IGNORECASE | re.DOTALL,
+)
 _KML_FIRST_LNG_LAT = re.compile(r"(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)")
 # A commented-out or CDATA-wrapped <trkpt>/<coordinates> is not real markup: it is text a decoy could
 # place above the true track to steal the start. Drop both before scanning so only live points count.
