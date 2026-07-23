@@ -24,11 +24,12 @@ aggregators:
     hint: "Running calendar for Russia, grouped by month. Each row is date, place, distances and a
       link to the event's own site -- use that link as source_url. The place column varies: a bare
       city, a region and a city, or a region plus a district and a venue. Read it accordingly and
-      never pass a district as the region. Running only, no cycling."
+      never pass a district as the region. These are running events, which ARE in scope for this site -- extract every one, just as you would a cycling calendar."
   - url: https://begaem.com/blizhayshie-startyi-za-rubezhom
     hint: "Same calendar for the rest of the world; the row reads 'Country, City' and mixes Russian
-      and English spellings on one page. Give the country, region and city in all three locales so
-      the same town is not proposed twice from two sources."
+      and English spellings on one page. Every one of these foreign running events is in scope --
+      extract them all, a marathon in Iceland or Japan counts exactly like a race at home. Give the
+      country, region and city in all three locales so the same town is not proposed twice."
 
 organizers:
   # Kazakhstan / Kyrgyzstan (highest priority per agent/guidance.md)

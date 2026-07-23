@@ -57,9 +57,11 @@ _KIND_GUIDANCE = {
         "This page is an events AGGREGATOR / calendar listing many races from different organizers -- "
         "often a dense list or table with one race per line/row. Go through it row by row and extract "
         "EVERY upcoming competition, even the ones on a single terse line; do not stop early or skip a "
-        "race because its row is brief. Set each race's source_url to its OWN page on the organizer's "
-        "site (chosen from the 'Links on the page' list) -- never the aggregator's URL. Prioritise the "
-        "nearest upcoming events."
+        "race because its row is brief. A calendar of RUNNING events, or of events in far-away "
+        "countries, is IN SCOPE just like a cycling one -- running, triathlon and skiing all count, "
+        "and a foreign location is never a reason to skip a real event; extract them all the same. "
+        "Set each race's source_url to its OWN page on the organizer's site (chosen from the 'Links "
+        "on the page' list) -- never the aggregator's URL."
     ),
     "organizer": (
         "This page belongs to a single event ORGANIZER; extract their real upcoming competitions and "
