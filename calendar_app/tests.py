@@ -3021,6 +3021,21 @@ class DefaultFilterRedirectTests(TestCase):
         resp = self.client.get(reverse("calendar_list"), {"reset": "1"})
         self.assertEqual(resp.status_code, 200)
 
+    def test_same_name_disciplines_across_categories_round_trip_consistently(self):
+        # "ITT" exists under two directions; the widget merges them into one checkbox. The redirect
+        # must emit the whole merged group and cover both categories, so list and calendar agree.
+        cat2 = DisciplineCategory.objects.create(name_ru="MTB")
+        road_itt = Discipline.objects.create(name_ru="ITT", category=self.cat)
+        mtb_itt = Discipline.objects.create(name_ru="ITT", category=cat2)
+        self.user.preferred_directions.add(cat2)  # whole MTB direction
+        self.user.preferred_disciplines.add(road_itt)  # only one of the merged pair
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("calendar"))
+        self.assertEqual(resp.status_code, 302)
+        self.assertNotIn("discipline_category=", resp.url)  # MTB covered by the merged ITT group
+        self.assertIn(f"discipline={road_itt.pk}", resp.url)
+        self.assertIn(f"discipline={mtb_itt.pk}", resp.url)
+
     def test_a_covered_direction_is_not_emitted_alongside_its_discipline(self):
         # If a discipline under a direction is also preferred, the direction is dropped -- otherwise
         # the list (OR of category+discipline) and the calendar (widget keeps only the discipline)
