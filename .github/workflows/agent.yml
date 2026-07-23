@@ -28,7 +28,8 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 20 # a few sources may each retry with a 10s backoff on a night-time hiccup
+    timeout-minutes: 40 # sources may retry with a 10s backoff, and each placed event now downloads a
+    # GPS track for its start coordinate -- a large manual run (max_events=100) needs the headroom
     steps:
       # Fail a manual run started by anyone other than the owner before any secret is used.
       - name: Restrict manual runs to the repository owner
