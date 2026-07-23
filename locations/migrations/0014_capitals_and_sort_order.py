@@ -176,6 +176,13 @@ def _leaders_for(node) -> list:
 def apply_order(apps, schema_editor):
     from locations.models import Location
 
+    # 0015 seeds ~160 more countries and gives their capitals the leader rank. This migration only
+    # knows the ~30 that predate it, so a second pass (Django never does one, but a manual re-run
+    # might) would demote every later capital back to an ordinary position. Skip when the tree has
+    # already grown past what this migration seeds.
+    if Location.objects.filter(depth=1, is_deleted=False).count() > len(CAPITALS) + len(ROOT_LEADERS) + 5:
+        return
+
     _ensure_capitals()
 
     roots = list(Location.objects.filter(depth=1, is_deleted=False).order_by("path"))
