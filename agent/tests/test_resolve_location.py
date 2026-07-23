@@ -254,3 +254,29 @@ def test_a_punctuation_only_region_or_city_is_refused():
         client, location_id = _resolve(_candidate(**kwargs))
         assert location_id is None
         assert client.places == []
+
+
+def test_enrich_fills_a_venue_coordinate_from_the_linked_track():
+    """A venue with no coordinate gets the track's start point; the model's own coord is left alone."""
+
+    from agent.run import _add_start_coordinate
+
+    page = "some text\n\nLinks on the page:\nhttps://r2.randonneurs.kz/2026/brm.kml"
+    import agent.run as run
+
+    kml = "<kml><coordinates>73.08371,49.80972,0</coordinates></kml>"
+    orig = run.fetch.fetch_track
+
+    def _fake_track(url):
+        return kml
+
+    run.fetch.fetch_track = _fake_track
+    try:
+        withco = _add_start_coordinate(_candidate(city="Karaganda", venue="Palace"), page)
+        assert (withco.lat, withco.lng) == (49.80972, 73.08371)
+        # An event with no venue, or one that already has a coordinate, is untouched.
+        assert _add_start_coordinate(_candidate(city="Karaganda"), page).lat is None
+        keeps = _add_start_coordinate(_candidate(city="K", venue="V", lat=1.0, lng=2.0), page)
+        assert (keeps.lat, keeps.lng) == (1.0, 2.0)
+    finally:
+        run.fetch.fetch_track = orig

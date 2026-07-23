@@ -120,6 +120,11 @@ def _with_links(text: str, anchors, base_url: str, limit: int = _MAX_LINKS, max_
     return body
 
 
+def fetch_track(url: str, timeout: int = 20) -> str:
+    """Raw text of a linked GPS-track file (GPX/KML) -- no HTML stripping, for coordinate parsing."""
+    return _get_with_fallback(url, timeout)
+
+
 def fetch_url(url: str, timeout: int = 20) -> str:
     """Readable text of an arbitrary web page (plus its links), for enriching an event."""
     soup = BeautifulSoup(_get_with_fallback(url, timeout), "html.parser")
