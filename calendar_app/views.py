@@ -1041,12 +1041,22 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["competitions"] = (
+        competitions = list(
             Competition.objects.filter(status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
             .select_related("submitted_by", "event_type", "location")
             .prefetch_related("disciplines__category")
             .order_by("date_start")
         )
+        # An event on geography still under review can only be approved by someone who may also bless
+        # that geography (ADMIN+); an organizer would just hit LocationPendingError. Don't show them
+        # what they cannot act on -- leave those to the admins, who also see the pending locations.
+        if not _can_manage_any_competition(self.request.user):
+            competitions = [
+                comp
+                for comp in competitions
+                if comp.location_id is None or chain_is_approved(comp.location.get_parent())
+            ]
+        context["competitions"] = competitions
         context["reject_form"] = RejectCompetitionForm()
         if _can_manage_any_competition(self.request.user):
             context["pending_locations"] = (
