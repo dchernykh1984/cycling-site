@@ -2970,3 +2970,45 @@ class RejectFormAsteriskTests(TestCase):
         self.client.force_login(moderator)
         resp = self.client.get(reverse("calendar_moderate"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(resp, "Rejection reason *")
+
+
+class DefaultFilterRedirectTests(TestCase):
+    """Opening the calendar/list/map fresh applies the user's saved preferences (issue #229)."""
+
+    def setUp(self):
+        self.user = _make_user("prefs@example.com", User.Role.PARTICIPANT)
+        self.cat = DisciplineCategory.objects.create(name_ru="Road Cycling")
+        self.country = Location.add_root(name="KZ", name_ru="KZ")
+
+    def test_anonymous_visitor_is_not_redirected(self):
+        resp = self.client.get(reverse("calendar"))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_authenticated_without_preferences_is_not_redirected(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("calendar"))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_fresh_visit_redirects_with_saved_preference_params(self):
+        self.user.preferred_directions.add(self.cat)
+        self.user.preferred_locations.add(self.country)
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("calendar"))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn(f"discipline_category={self.cat.pk}", resp.url)
+        self.assertIn(f"location={self.country.pk}", resp.url)
+
+    def test_an_explicit_query_string_is_left_untouched(self):
+        self.user.preferred_directions.add(self.cat)
+        self.client.force_login(self.user)
+        # Any param present (even the cleared filter's date range) means the visit is not fresh.
+        resp = self.client.get(reverse("calendar"), {"location": str(self.country.pk)})
+        self.assertEqual(resp.status_code, 200)
+
+    def test_list_and_map_redirect_too(self):
+        self.user.preferred_directions.add(self.cat)
+        self.client.force_login(self.user)
+        for name in ("calendar_list", "calendar_map"):
+            resp = self.client.get(reverse(name))
+            self.assertEqual(resp.status_code, 302, name)
+            self.assertIn(f"discipline_category={self.cat.pk}", resp.url)

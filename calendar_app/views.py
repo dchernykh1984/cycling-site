@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 
@@ -276,7 +276,38 @@ class OrganizerRequiredMixin(LoginRequiredMixin):
         return super().dispatch(request, *args, **kwargs)
 
 
-class CalendarView(TemplateView):
+def _user_filter_default_params(user) -> list:
+    """(param, id) pairs reproducing the user's saved calendar-filter preferences (issue #229).
+
+    Directions go as ``discipline_category`` and disciplines as ``discipline`` -- the same names the
+    filter widgets restore from -- so the redirect below reconstructs exactly the saved selection.
+    """
+    if not getattr(user, "is_authenticated", False):
+        return []
+    pairs = [("discipline_category", pk) for pk in user.preferred_directions.values_list("pk", flat=True)]
+    pairs += [("discipline", pk) for pk in user.preferred_disciplines.values_list("pk", flat=True)]
+    pairs += [("location", pk) for pk in user.preferred_locations.values_list("pk", flat=True)]
+    return pairs
+
+
+class DefaultFilterRedirectMixin:
+    """Open a filter page (calendar/list/map) with the user's saved preferences pre-applied.
+
+    Fires only on a fresh visit -- a request with no query string at all. Once any param is present
+    (including after the user clears the filter, which still submits the date range), the page is
+    left exactly as asked, so the default is a starting point the user can always override or empty.
+    Anonymous users and users without saved preferences are unaffected (issue #229).
+    """
+
+    def get(self, request, *args, **kwargs):
+        if not request.GET:
+            pairs = _user_filter_default_params(request.user)
+            if pairs:
+                return redirect(f"{request.path}?{urlencode(pairs)}")
+        return super().get(request, *args, **kwargs)
+
+
+class CalendarView(DefaultFilterRedirectMixin, TemplateView):
     template_name = "calendar_app/calendar.html"
 
     def get_context_data(self, **kwargs):
@@ -349,7 +380,7 @@ class CalendarEventsAPIView(View):
         return JsonResponse(events, safe=False)
 
 
-class CompetitionListView(TemplateView):
+class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
     template_name = "calendar_app/list.html"
 
     def get_context_data(self, **kwargs):
@@ -405,7 +436,7 @@ class CompetitionListView(TemplateView):
         return context
 
 
-class CalendarMapView(TemplateView):
+class CalendarMapView(DefaultFilterRedirectMixin, TemplateView):
     template_name = "calendar_app/map.html"
 
     def get_context_data(self, **kwargs):
