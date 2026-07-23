@@ -243,3 +243,14 @@ def test_a_placeholder_in_any_locale_blocks_the_proposal():
     )
     assert location_id is None
     assert client.places == []
+
+
+def test_a_punctuation_only_region_or_city_is_refused():
+    """ "-" and "()" are non-empty but normalize to nothing; they must not become locations."""
+    for kwargs in (
+        {"country": "Kazakhstan", "region": "-", "city": "Almaty-town"},
+        {"country": "Kazakhstan", "region": "Almaty-region", "city": "()"},
+    ):
+        client, location_id = _resolve(_candidate(**kwargs))
+        assert location_id is None
+        assert client.places == []
