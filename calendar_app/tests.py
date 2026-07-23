@@ -3013,6 +3013,14 @@ class DefaultFilterRedirectTests(TestCase):
             self.assertEqual(resp.status_code, 302, name)
             self.assertIn(f"discipline_category={self.cat.pk}", resp.url)
 
+    def test_reset_marker_escapes_the_default_redirect(self):
+        # The list "Reset" link carries ?reset=1 so a user with saved prefs can reach the
+        # unfiltered view instead of bouncing straight back to their defaults.
+        self.user.preferred_directions.add(self.cat)
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("calendar_list"), {"reset": "1"})
+        self.assertEqual(resp.status_code, 200)
+
     def test_a_covered_direction_is_not_emitted_alongside_its_discipline(self):
         # If a discipline under a direction is also preferred, the direction is dropped -- otherwise
         # the list (OR of category+discipline) and the calendar (widget keeps only the discipline)
