@@ -93,9 +93,11 @@ def _propose_city(client, tree: list, cities: list, candidate: Candidate, create
     ):
         return None
     country = locations.match_country(tree, candidate.country)
-    if country is None:
-        # Without a country we cannot place anything. (A missing or content-free region was already
-        # refused above -- the tree's catch-all regions are hidden, so the API never hands us one.)
+    if country is None or locations.is_catch_all_country(country):
+        # Without a country we cannot place anything. And when the name resolved to the tree's
+        # "Other country" bucket, the site simply does not carry that country -- hanging a real
+        # region under that bucket is structurally meaningless, so leave the event unplaced for a
+        # human to add the country and place it. (A content-free region was already refused above.)
         return None
     region = locations.match_region(country, candidate.region)
     if region is None:

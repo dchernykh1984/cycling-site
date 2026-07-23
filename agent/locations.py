@@ -208,6 +208,11 @@ def looks_like_district(value: str) -> bool:
     return any(word in target for word in _DISTRICT_WORDS)
 
 
+def is_catch_all_country(country: dict) -> bool:
+    """Whether ``country`` is the tree's "Other country" bucket rather than a real country."""
+    return country is not None and _OTHER_COUNTRY in _names(country)
+
+
 def match_country(tree: list[dict], country: str) -> dict | None:
     """The country node for this name; a named but unknown country falls back to the catch-all.
 
