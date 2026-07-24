@@ -3196,11 +3196,16 @@ class ReportModerationQueueTests(TestCase):
         self.client.login(username=self.admin.email, password="password123")
         response = self.client.get(reverse("calendar_moderate"))
         self.assertIn(self.comp, list(response.context["reported_competitions"]))
+        dismiss_url = reverse("competition_dismiss_reports", args=[self.comp.pk])
+        self.assertContains(response, dismiss_url)
 
     def test_reported_section_hidden_from_organizer(self):
         self.client.login(username=self.organizer.email, password="password123")
         response = self.client.get(reverse("calendar_moderate"))
         self.assertIsNone(response.context.get("reported_competitions"))
+        # The section must not render even though the context var is simply absent (issue #233).
+        dismiss_url = reverse("competition_dismiss_reports", args=[self.comp.pk])
+        self.assertNotContains(response, dismiss_url)
 
     def test_resolved_report_leaves_the_queue(self):
         CompetitionReport.objects.filter(competition=self.comp).update(resolved=True)
