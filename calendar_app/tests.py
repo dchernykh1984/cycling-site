@@ -13,6 +13,7 @@ from calendar_app.models import (
     Competition,
     CompetitionComment,
     CompetitionFavorite,
+    CompetitionReport,
     Discipline,
     DisciplineCategory,
     EventType,
@@ -3048,3 +3049,209 @@ class DefaultFilterRedirectTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertNotIn("discipline_category=", resp.url)
         self.assertIn(f"discipline={disc.pk}", resp.url)
+
+
+class ReportCompetitionViewTests(TestCase):
+    """A confirmed user can flag a public event; it surfaces for admins without being hidden (#233)."""
+
+    def setUp(self):
+        self.participant = _make_user("participant@example.com", User.Role.PARTICIPANT)
+        self.other = _make_user("other@example.com", User.Role.PARTICIPANT)
+        self.organizer = _make_user("organizer@example.com", User.Role.ORGANIZER)
+        self.admin = _make_user("admin@example.com", User.Role.ADMIN)
+        self.comp = _make_competition("Reportable", status=Competition.Status.APPROVED)
+        self.report_url = reverse("competition_report", args=[self.comp.pk])
+        self.detail_url = reverse("competition_detail", args=[self.comp.pk])
+
+    def _report(self, user, reason=""):
+        self.client.login(username=user.email, password="password123")
+        return self.client.post(self.report_url, {"reason": reason})
+
+    def test_participant_can_report_with_reason(self):
+        response = self._report(self.participant, reason="Wrong date")
+        self.assertRedirects(response, self.detail_url)
+        report = CompetitionReport.objects.get()
+        self.assertEqual(report.competition, self.comp)
+        self.assertEqual(report.reported_by, self.participant)
+        self.assertEqual(report.reason, "Wrong date")
+        self.assertFalse(report.resolved)
+
+    def test_reason_is_optional(self):
+        response = self._report(self.participant)
+        self.assertRedirects(response, self.detail_url)
+        self.assertEqual(CompetitionReport.objects.count(), 1)
+        self.assertEqual(CompetitionReport.objects.get().reason, "")
+
+    def test_unauthenticated_user_redirected_and_no_report(self):
+        response = self.client.post(self.report_url, {"reason": "x"})
+        self.assertIn(response.status_code, (302, 403))
+        self.assertEqual(CompetitionReport.objects.count(), 0)
+
+    def test_guest_role_redirected_to_profile(self):
+        guest = _make_user("guest@example.com", User.Role.GUEST)
+        response = self._report(guest, reason="x")
+        self.assertRedirects(response, reverse("account_profile"))
+        self.assertEqual(CompetitionReport.objects.count(), 0)
+
+    def test_duplicate_open_report_is_ignored(self):
+        self._report(self.participant, reason="first")
+        response = self._report(self.participant, reason="second")
+        self.assertRedirects(response, self.detail_url)
+        # Still one open report, and its reason is the first one (the second was not created).
+        self.assertEqual(CompetitionReport.objects.filter(reported_by=self.participant).count(), 1)
+        self.assertEqual(CompetitionReport.objects.get(reported_by=self.participant).reason, "first")
+
+    def test_two_different_users_each_get_a_report(self):
+        self._report(self.participant, reason="a")
+        self._report(self.other, reason="b")
+        self.assertEqual(CompetitionReport.objects.filter(competition=self.comp, resolved=False).count(), 2)
+
+    def test_reporting_again_after_dismissal_is_allowed(self):
+        self._report(self.participant, reason="first")
+        CompetitionReport.objects.filter(competition=self.comp).update(resolved=True)
+        response = self._report(self.participant, reason="again")
+        self.assertRedirects(response, self.detail_url)
+        self.assertEqual(CompetitionReport.objects.filter(competition=self.comp, resolved=False).count(), 1)
+
+    def test_cannot_report_pending_event(self):
+        pending = _make_competition("Pending", status=Competition.Status.PENDING_APPROVAL)
+        self.client.login(username=self.participant.email, password="password123")
+        response = self.client.post(reverse("competition_report", args=[pending.pk]), {"reason": "x"})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(CompetitionReport.objects.count(), 0)
+
+    def test_cannot_report_hidden_event(self):
+        hidden = _make_competition("Hidden", status=Competition.Status.APPROVED, is_hidden=True)
+        self.client.login(username=self.participant.email, password="password123")
+        response = self.client.post(reverse("competition_report", args=[hidden.pk]), {"reason": "x"})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(CompetitionReport.objects.count(), 0)
+
+    def test_reported_event_stays_publicly_visible(self):
+        self._report(self.participant, reason="x")
+        self.client.logout()
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_open_report_unique_constraint(self):
+        CompetitionReport.objects.create(competition=self.comp, reported_by=self.participant)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            CompetitionReport.objects.create(competition=self.comp, reported_by=self.participant)
+
+
+class DismissReportsViewTests(TestCase):
+    def setUp(self):
+        self.participant = _make_user("participant@example.com", User.Role.PARTICIPANT)
+        self.organizer = _make_user("organizer@example.com", User.Role.ORGANIZER)
+        self.admin = _make_user("admin@example.com", User.Role.ADMIN)
+        self.comp = _make_competition("Reported", status=Competition.Status.APPROVED)
+        self.report = CompetitionReport.objects.create(
+            competition=self.comp, reported_by=self.participant, reason="check me"
+        )
+        self.dismiss_url = reverse("competition_dismiss_reports", args=[self.comp.pk])
+
+    def test_admin_dismisses_all_open_reports(self):
+        CompetitionReport.objects.create(competition=self.comp, reported_by=self.organizer, reason="also")
+        self.client.login(username=self.admin.email, password="password123")
+        response = self.client.post(self.dismiss_url)
+        self.assertRedirects(response, reverse("calendar_moderate"))
+        self.assertEqual(CompetitionReport.objects.filter(competition=self.comp, resolved=False).count(), 0)
+        self.report.refresh_from_db()
+        self.assertTrue(self.report.resolved)
+        self.assertEqual(self.report.resolved_by, self.admin)
+        self.assertIsNotNone(self.report.resolved_at)
+
+    def test_organizer_cannot_dismiss(self):
+        self.client.login(username=self.organizer.email, password="password123")
+        response = self.client.post(self.dismiss_url)
+        self.assertEqual(response.status_code, 403)
+        self.report.refresh_from_db()
+        self.assertFalse(self.report.resolved)
+
+    def test_participant_cannot_dismiss(self):
+        self.client.login(username=self.participant.email, password="password123")
+        response = self.client.post(self.dismiss_url)
+        self.assertEqual(response.status_code, 403)
+        self.report.refresh_from_db()
+        self.assertFalse(self.report.resolved)
+
+    def test_dismiss_honours_safe_next(self):
+        self.client.login(username=self.admin.email, password="password123")
+        response = self.client.post(self.dismiss_url, {"next": self.detail_path()})
+        self.assertRedirects(response, self.detail_path())
+
+    def detail_path(self):
+        return reverse("competition_detail", args=[self.comp.pk])
+
+
+class ReportModerationQueueTests(TestCase):
+    def setUp(self):
+        self.participant = _make_user("participant@example.com", User.Role.PARTICIPANT)
+        self.organizer = _make_user("organizer@example.com", User.Role.ORGANIZER)
+        self.admin = _make_user("admin@example.com", User.Role.ADMIN)
+        self.comp = _make_competition("Reported", status=Competition.Status.APPROVED)
+        CompetitionReport.objects.create(competition=self.comp, reported_by=self.participant, reason="r")
+
+    def test_admin_sees_reported_event_in_queue(self):
+        self.client.login(username=self.admin.email, password="password123")
+        response = self.client.get(reverse("calendar_moderate"))
+        self.assertIn(self.comp, list(response.context["reported_competitions"]))
+
+    def test_reported_section_hidden_from_organizer(self):
+        self.client.login(username=self.organizer.email, password="password123")
+        response = self.client.get(reverse("calendar_moderate"))
+        self.assertIsNone(response.context.get("reported_competitions"))
+
+    def test_resolved_report_leaves_the_queue(self):
+        CompetitionReport.objects.filter(competition=self.comp).update(resolved=True)
+        self.client.login(username=self.admin.email, password="password123")
+        response = self.client.get(reverse("calendar_moderate"))
+        self.assertNotIn(self.comp, list(response.context["reported_competitions"]))
+
+    def test_event_with_two_reports_appears_once(self):
+        CompetitionReport.objects.create(competition=self.comp, reported_by=self.organizer, reason="r2")
+        self.client.login(username=self.admin.email, password="password123")
+        response = self.client.get(reverse("calendar_moderate"))
+        reported = list(response.context["reported_competitions"])
+        self.assertEqual(reported.count(self.comp), 1)
+
+
+class ReportDetailContextTests(TestCase):
+    def setUp(self):
+        self.participant = _make_user("participant@example.com", User.Role.PARTICIPANT)
+        self.admin = _make_user("admin@example.com", User.Role.ADMIN)
+        self.comp = _make_competition("Reportable", status=Competition.Status.APPROVED)
+        self.detail_url = reverse("competition_detail", args=[self.comp.pk])
+
+    def test_participant_sees_report_button(self):
+        self.client.login(username=self.participant.email, password="password123")
+        response = self.client.get(self.detail_url)
+        self.assertTrue(response.context["can_report"])
+        self.assertIsNotNone(response.context["report_form"])
+        self.assertFalse(response.context["already_reported"])
+
+    def test_guest_cannot_report(self):
+        guest = _make_user("guest@example.com", User.Role.GUEST)
+        self.client.login(username=guest.email, password="password123")
+        response = self.client.get(self.detail_url)
+        self.assertFalse(response.context["can_report"])
+
+    def test_already_reported_flag_after_reporting(self):
+        CompetitionReport.objects.create(competition=self.comp, reported_by=self.participant)
+        self.client.login(username=self.participant.email, password="password123")
+        response = self.client.get(self.detail_url)
+        self.assertTrue(response.context["already_reported"])
+
+    def test_admin_sees_open_reports_and_can_dismiss(self):
+        CompetitionReport.objects.create(competition=self.comp, reported_by=self.participant, reason="why")
+        self.client.login(username=self.admin.email, password="password123")
+        response = self.client.get(self.detail_url)
+        self.assertEqual(len(response.context["open_reports"]), 1)
+        self.assertTrue(response.context["can_dismiss_reports"])
+
+    def test_participant_does_not_see_open_reports(self):
+        CompetitionReport.objects.create(competition=self.comp, reported_by=self.participant, reason="why")
+        self.client.login(username=self.participant.email, password="password123")
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.context["open_reports"], [])
+        self.assertFalse(response.context["can_dismiss_reports"])
