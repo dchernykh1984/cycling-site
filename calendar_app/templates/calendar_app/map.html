@@ -98,6 +98,13 @@ document.addEventListener('DOMContentLoaded', function () {
   function updateSwitcherLinks() {
     var params = new URLSearchParams();
     appendFilters(params, 'discipline_category');
+    // The map has no location filter of its own (it is the location view), so appendFilters never
+    // adds a `location`. But a location filter chosen on the list/calendar arrives in our URL and
+    // must survive a round-trip through the map: carry those `location` params into the links back
+    // to the list/calendar, or switching to the map and back would silently drop the filter.
+    new URLSearchParams(window.location.search).getAll('location').forEach(function (v) {
+      params.append('location', v);
+    });
     var qs = params.toString();
     ['view-link-calendar', 'view-link-list'].forEach(function (id) {
       var a = document.getElementById(id);
