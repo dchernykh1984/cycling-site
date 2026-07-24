@@ -73,8 +73,8 @@
 <div class="alert alert-success">{% trans "No competitions pending approval." %}</div>
 {% endif %}
 
-{# Reported events (issue #233): already-public events a user flagged. No "approve" -- an admin edits,
-   deletes, comments, or dismisses the report. Only admins+ get this section. #}
+{% comment %}Reported events (issue #233): already-public events a user flagged. No "approve" -- an
+admin edits, deletes, comments, or dismisses the report. Only admins+ get this section.{% endcomment %}
 {% if reported_competitions is not None %}
 <div class="row mt-5 mb-3">
   <div class="col-12 d-flex justify-content-between align-items-center">
@@ -144,8 +144,8 @@
       <tr>
         <td>
           {{ loc.name }}
-          {# Depth and the chain above it: "Almaty" is a very different decision as a region than as
-             a venue, and the reject below does something different for each. #}
+          {% comment %}Depth and the chain above it: "Almaty" is a very different decision as a region
+          than as a venue, and the reject below does something different for each.{% endcomment %}
           <span class="badge text-bg-light">{{ loc.get_level_label }}</span>
           {% if loc.ancestor_label %}<div class="small text-muted">{{ loc.ancestor_label }}</div>{% endif %}
         </td>

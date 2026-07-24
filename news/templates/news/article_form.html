@@ -149,8 +149,8 @@
 {% endblock %}
 
 {% block extra_js %}
-{# json_script encodes HTML as safe JSON — JSON.parse gives back the raw HTML string
-   without any Django auto-escaping or browser rawtext-entity ambiguity. #}
+{% comment %}json_script encodes HTML as safe JSON -- JSON.parse gives back the raw HTML string
+without any Django auto-escaping or browser rawtext-entity ambiguity.{% endcomment %}
 {{ form.body_ru.value|default:""|json_script:"init-body-ru" }}
 {{ form.body_kk.value|default:""|json_script:"init-body-kk" }}
 {{ form.body_en.value|default:""|json_script:"init-body-en" }}
