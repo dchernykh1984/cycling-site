@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -32,12 +32,14 @@ from .forms import (
     CompetitionFilterForm,
     RegistrationSettingsForm,
     RejectCompetitionForm,
+    ReportCompetitionForm,
     SubmitCompetitionForm,
 )
 from .models import (
     Competition,
     CompetitionComment,
     CompetitionFavorite,
+    CompetitionReport,
     Discipline,
     DisciplineCategory,
     EventType,
@@ -45,6 +47,12 @@ from .models import (
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 _ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
+_PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
+
+
+def _can_report(user) -> bool:
+    """A confirmed user (email-verified, role >= participant) may report an event (issue #233)."""
+    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _PARTICIPANT_RANK)
 
 
 def _get_locations_data(user=None) -> list:
@@ -590,6 +598,23 @@ class CompetitionDetailView(View):
             request.user.is_superuser
             or request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
         )
+        # Reporting (issue #233): a confirmed user can flag a public event as inaccurate. Only
+        # offered on approved, non-hidden events (the only ones the wider public can see).
+        is_public = competition.status == Competition.Status.APPROVED and not competition.is_hidden
+        can_report = is_public and _can_report(request.user)
+        already_reported = (
+            request.user.is_authenticated
+            and CompetitionReport.objects.filter(
+                competition=competition, reported_by=request.user, resolved=False
+            ).exists()
+        )
+        # Only admins+ act on reports (dismiss / edit / delete); show them the open reports so they
+        # know what was flagged. Organizers who merely own the event are not report moderators here.
+        open_reports = (
+            list(competition.reports.filter(resolved=False).select_related("reported_by"))
+            if _can_manage_any_competition(request.user)
+            else []
+        )
         ctx: dict = {
             "competition": competition,
             "protocols": protocols,
@@ -609,6 +634,11 @@ class CompetitionDetailView(View):
             # Approve/reject is offered only to moderators (organizer+) and only while pending.
             "can_moderate": can_moderate and competition.status == Competition.Status.PENDING_APPROVAL,
             "reject_form": RejectCompetitionForm(),
+            "can_report": can_report,
+            "already_reported": already_reported,
+            "report_form": ReportCompetitionForm() if can_report else None,
+            "open_reports": open_reports,
+            "can_dismiss_reports": bool(open_reports),
         }
         # Resolve the map pin: a venue with its own coordinates, else the nearest visible ancestor
         # (city -> region -> country). The hidden "other location" placeholder carries no coordinates,
@@ -1114,6 +1144,25 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
                 .select_related("proposal__submitted_by")
                 .order_by("path")
             )
+            # Reported events (issue #233): already-public events a user flagged. They have no
+            # "approve" step -- an admin edits, deletes, comments, or dismisses the report. Only
+            # admins+ handle these, mirroring the proposed-locations queue above.
+            context["reported_competitions"] = (
+                Competition.objects.filter(
+                    status=Competition.Status.APPROVED, is_deleted=False, reports__resolved=False
+                )
+                .distinct()
+                .select_related("event_type", "location")
+                .prefetch_related(
+                    "disciplines__category",
+                    Prefetch(
+                        "reports",
+                        queryset=CompetitionReport.objects.filter(resolved=False).select_related("reported_by"),
+                        to_attr="open_reports",
+                    ),
+                )
+                .order_by("date_start")
+            )
         return context
 
 
@@ -1184,6 +1233,57 @@ class AddCompetitionCommentView(ParticipantRequiredMixin, View):
             error = first_errors[0] if first_errors else _("Invalid submission.")
             messages.error(request, error)
         return redirect("competition_detail", pk=competition_pk)
+
+
+class ReportCompetitionView(ParticipantRequiredMixin, View):
+    """A confirmed user flags a public event as inaccurate (issue #233).
+
+    The event stays visible to everyone; the report surfaces it in the moderation queue for admins to
+    edit, delete, comment, or dismiss. One open report per user -- a duplicate is answered with a
+    friendly message rather than a second row (the DB constraint is the backstop for a race).
+    """
+
+    def post(self, request, pk):
+        competition = get_object_or_404(
+            Competition, pk=pk, status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False
+        )
+        form = ReportCompetitionForm(request.POST)
+        if not form.is_valid():
+            first_errors = next(iter(form.errors.values()), [])
+            messages.error(request, first_errors[0] if first_errors else _("Invalid submission."))
+            return redirect("competition_detail", pk=pk)
+        already = CompetitionReport.objects.filter(
+            competition=competition, reported_by=request.user, resolved=False
+        ).exists()
+        if already:
+            messages.info(request, _("You have already reported this event; a moderator will review it."))
+        else:
+            CompetitionReport.objects.create(
+                competition=competition,
+                reported_by=request.user,
+                reason=form.cleaned_data["reason"],
+            )
+            messages.success(request, _("Thank you. Your report has been sent to the moderators."))
+        return redirect("competition_detail", pk=pk)
+
+
+class DismissReportsView(OrganizerRequiredMixin, View):
+    """Dismiss ("mark as fine") every open report on an event -- admins+ only (issue #233).
+
+    Clears the event from the moderation queue. Editing or deleting the event stay separate manual
+    actions available on the event's own page; dismissing just says "nothing to fix here".
+    """
+
+    def post(self, request, pk):
+        if not _can_manage_any_competition(request.user):
+            raise PermissionDenied
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+        updated = competition.reports.filter(resolved=False).update(
+            resolved=True, resolved_at=timezone.now(), resolved_by=request.user
+        )
+        if updated:
+            messages.success(request, _("Report dismissed; the event was cleared from the moderation queue."))
+        return redirect(_safe_next(request, "calendar_moderate"))
 
 
 class ToggleFavoriteView(LoginRequiredMixin, View):

@@ -249,6 +249,22 @@ class RejectCompetitionForm(forms.Form):
     )
 
 
+class ReportCompetitionForm(forms.Form):
+    # The reason is optional (issue #233): a confirmed user can flag an event with just a click, but
+    # a short note helps the admin see what to check. Capped at the model's reason length.
+    reason = forms.CharField(
+        required=False,
+        max_length=1000,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "class": "form-control w-100",
+                "placeholder": _("Optional: what looks wrong?"),
+            }
+        ),
+    )
+
+
 class CompetitionFilterForm(forms.Form):
     # event_type / direction / discipline are multi-select dropdowns (issue #108)
     # handled directly in the view via request.GET.getlist(); only the date range

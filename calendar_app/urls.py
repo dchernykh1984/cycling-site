@@ -18,6 +18,8 @@ urlpatterns = [
     path("<int:pk>/resubmit/", views.ResubmitCompetitionView.as_view(), name="competition_resubmit"),
     path("<int:pk>/hide/", views.CompetitionHideView.as_view(), name="competition_hide"),
     path("<int:pk>/favorite/toggle/", views.ToggleFavoriteView.as_view(), name="competition_toggle_favorite"),
+    path("<int:pk>/report/", views.ReportCompetitionView.as_view(), name="competition_report"),
+    path("<int:pk>/report/dismiss/", views.DismissReportsView.as_view(), name="competition_dismiss_reports"),
     path(
         "<int:pk>/token/regenerate/",
         views.RegenerateUploadTokenView.as_view(),

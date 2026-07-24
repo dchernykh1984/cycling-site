@@ -78,6 +78,30 @@
       {% endwith %}
     </div>
     {% endif %}
+    {# Reported event (issue #233): admins+ see who flagged it and why, and can dismiss the report.
+       The event itself stays public -- reporting never hides it. #}
+    {% if open_reports %}
+    <div class="alert alert-warning py-2 mb-4">
+      <strong>{% trans "This event has been reported." %}</strong>
+      {% trans "It stays visible to everyone; review it and edit, delete, comment, or dismiss the report." %}
+      <ul class="mb-2 mt-2 small">
+        {% for report in open_reports %}
+        <li>
+          <span class="text-muted">{{ report.created_at|date:"d.m.Y H:i" }}</span>
+          {% if report.reported_by %}&mdash; {{ report.reported_by.public_display_name }}{% endif %}
+          {% if report.reason %}: {{ report.reason }}{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% if can_dismiss_reports %}
+      <form method="post" action="{% url 'competition_dismiss_reports' competition.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">{% trans "Dismiss report" %}</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
     {% if competition.location_full_label %}
     <div class="mb-2 text-muted small">
       <strong>{% trans "Location" %}:</strong> {{ competition.location_full_label }}
@@ -96,6 +120,27 @@
     {% if competition.description %}
     {# Description is sanitized rich HTML on save (forms + API), so render as-is. #}
     <div class="mb-4 competition-description">{{ competition.description|safe }}</div>
+    {% endif %}
+
+    {# Report control (issue #233): a confirmed user flags an inaccurate event with an optional note.
+       Once reported, the button is replaced by a note until a moderator resolves it. #}
+    {% if can_report and not already_reported %}
+    <div class="mb-4">
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse"
+              data-bs-target="#report-box" aria-expanded="false">
+        {% trans "Report a problem" %}
+      </button>
+      <div class="collapse mt-2" id="report-box">
+        <form method="post" action="{% url 'competition_report' competition.pk %}" style="max-width: 32rem;">
+          {% csrf_token %}
+          <label class="form-label small">{% trans "Tell the moderators what looks wrong (optional)" %}</label>
+          {{ report_form.reason }}
+          <button type="submit" class="btn btn-danger btn-sm mt-2">{% trans "Send report" %}</button>
+        </form>
+      </div>
+    </div>
+    {% elif already_reported %}
+    <div class="mb-4 text-muted small">{% trans "You have reported this event; a moderator will review it." %}</div>
     {% endif %}
 
     {% if competition.url_announcement or competition.file_announcement or competition.url_registration or competition.url_route or competition.file_route or competition.url_regulations or competition.file_regulations or competition.url_results or competition.file_results %}
