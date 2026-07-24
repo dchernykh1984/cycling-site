@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -1255,14 +1255,21 @@ class ReportCompetitionView(ParticipantRequiredMixin, View):
         already = CompetitionReport.objects.filter(
             competition=competition, reported_by=request.user, resolved=False
         ).exists()
+        if not already:
+            try:
+                # atomic() so a lost race (the partial-unique constraint firing) is a contained
+                # savepoint rollback, not a broken request transaction / 500.
+                with transaction.atomic():
+                    CompetitionReport.objects.create(
+                        competition=competition,
+                        reported_by=request.user,
+                        reason=form.cleaned_data["reason"],
+                    )
+            except IntegrityError:
+                already = True  # a concurrent request already filed this user's open report
         if already:
             messages.info(request, _("You have already reported this event; a moderator will review it."))
         else:
-            CompetitionReport.objects.create(
-                competition=competition,
-                reported_by=request.user,
-                reason=form.cleaned_data["reason"],
-            )
             messages.success(request, _("Thank you. Your report has been sent to the moderators."))
         return redirect("competition_detail", pk=pk)
 
