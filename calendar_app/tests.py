@@ -3260,3 +3260,42 @@ class ReportDetailContextTests(TestCase):
         response = self.client.get(self.detail_url)
         self.assertEqual(response.context["open_reports"], [])
         self.assertFalse(response.context["can_dismiss_reports"])
+
+
+class TemplateCommentLeakTests(TestCase):
+    """Regression: developer template comments must never render as literal text.
+
+    The #233 detail-page comments were written as multi-line ``{# ... #}``, which Django does not
+    recognise as comments (its tokenizer is single-line), so the notes leaked onto every event page.
+    These assertions render the affected pages in each relevant role and fail if a raw comment
+    delimiter -- or the tell-tale "issue #233" note -- reaches the output.
+    """
+
+    def setUp(self):
+        self.participant = _make_user("participant@example.com", User.Role.PARTICIPANT)
+        self.admin = _make_user("admin@example.com", User.Role.ADMIN)
+        self.comp = _make_competition("Leak Check", status=Competition.Status.APPROVED)
+
+    def _assert_no_comment_leak(self, response):
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "{#")
+        self.assertNotContains(response, "#}")
+        self.assertNotContains(response, "issue #233")
+
+    def test_detail_page_anonymous_has_no_comment_leak(self):
+        self._assert_no_comment_leak(self.client.get(reverse("competition_detail", args=[self.comp.pk])))
+
+    def test_detail_page_participant_has_no_comment_leak(self):
+        self.client.login(username=self.participant.email, password="password123")
+        self._assert_no_comment_leak(self.client.get(reverse("competition_detail", args=[self.comp.pk])))
+
+    def test_detail_page_admin_with_report_has_no_comment_leak(self):
+        # Renders the open-report banner branch too, which carried one of the leaked comments.
+        CompetitionReport.objects.create(competition=self.comp, reported_by=self.participant, reason="x")
+        self.client.login(username=self.admin.email, password="password123")
+        self._assert_no_comment_leak(self.client.get(reverse("competition_detail", args=[self.comp.pk])))
+
+    def test_moderation_page_has_no_comment_leak(self):
+        CompetitionReport.objects.create(competition=self.comp, reported_by=self.participant, reason="x")
+        self.client.login(username=self.admin.email, password="password123")
+        self._assert_no_comment_leak(self.client.get(reverse("calendar_moderate")))
