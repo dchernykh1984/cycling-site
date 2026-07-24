@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.db import models
 from django.forms import Textarea
 
-from .models import Competition, CompetitionComment, CompetitionFavorite
+from .models import Competition, CompetitionComment, CompetitionFavorite, CompetitionReport
 
 
 @admin.register(Competition)
@@ -33,3 +33,11 @@ class CompetitionFavoriteAdmin(admin.ModelAdmin):
     list_display = ("user", "competition", "created_at")
     readonly_fields = ("created_at",)
     search_fields = ("user__email", "competition__title_ru", "competition__title_en")
+
+
+@admin.register(CompetitionReport)
+class CompetitionReportAdmin(admin.ModelAdmin):
+    list_display = ("competition", "reported_by", "created_at", "resolved", "resolved_by")
+    list_filter = ("resolved",)
+    readonly_fields = ("created_at",)
+    search_fields = ("reason", "reported_by__email", "competition__title_ru", "competition__title_en")

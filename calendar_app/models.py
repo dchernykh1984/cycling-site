@@ -459,3 +459,55 @@ class CompetitionFavorite(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user} favorites {self.competition}"
+
+
+class CompetitionReport(models.Model):
+    """A user-submitted report ("this event looks wrong") on a public competition (issue #233).
+
+    Most events are added in bulk by the import agent, so any confirmed participant can flag one they
+    believe is inaccurate. A reported event keeps showing to everyone, but also surfaces in the
+    moderation queue (like an event on an unapproved location) so an admin can edit, delete, comment,
+    or dismiss the report -- there is no "approve" step, the event is already public. ``reported_by``
+    is nullable so deleting the reporter's account leaves the report (and its reason) for the admin.
+    """
+
+    objects: ClassVar[models.Manager["CompetitionReport"]]
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="reports")
+    reported_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    reason = models.CharField(max_length=1000, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    # Resolved == the report was dismissed by an admin ("mark as fine"); it then drops out of the
+    # moderation queue. Deleting or editing the event is a separate manual action the admin also has.
+    resolved = models.BooleanField(default=False, db_index=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering: ClassVar[list] = ["created_at"]
+        verbose_name = "Competition report"
+        constraints: ClassVar[list] = [
+            # One open report per user per event: a reporter cannot pile up duplicate open reports on
+            # the same event. Deleted reporters (NULL) are distinct in Postgres, so their stale
+            # reports never block a new one.
+            models.UniqueConstraint(
+                fields=["competition", "reported_by"],
+                condition=models.Q(resolved=False),
+                name="uniq_open_report_per_user",
+            ),
+        ]
+        indexes: ClassVar[list] = [models.Index(fields=["competition", "resolved"])]
+
+    def __str__(self) -> str:
+        return f"Report on {self.competition} by {self.reported_by}"

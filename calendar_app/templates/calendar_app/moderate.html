@@ -73,6 +73,55 @@
 <div class="alert alert-success">{% trans "No competitions pending approval." %}</div>
 {% endif %}
 
+{# Reported events (issue #233): already-public events a user flagged. No "approve" -- an admin edits,
+   deletes, comments, or dismisses the report. Only admins+ get this section. #}
+{% if reported_competitions is not None %}
+<div class="row mt-5 mb-3">
+  <div class="col-12 d-flex justify-content-between align-items-center">
+    <h2 class="h4 mb-0">{% trans "Reported events" %}</h2>
+    <span class="badge bg-warning text-dark fs-6">{{ reported_competitions|length }} {% trans "pending" %}</span>
+  </div>
+</div>
+{% if reported_competitions %}
+{% for comp in reported_competitions %}
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h3 class="card-title h5 mb-1">
+          <a href="{% url 'competition_detail' comp.pk %}">{{ comp.title }}</a>
+        </h3>
+        <div class="text-muted small d-flex flex-wrap gap-2">
+          <span>{{ comp.date_start|date:"d.m.Y" }}{% if comp.date_end and comp.date_end != comp.date_start %} — {{ comp.date_end|date:"d.m.Y" }}{% endif %}</span>
+          {% if comp.event_type %}<span>{{ comp.event_type.name }}</span>{% endif %}
+          {% if comp.location %}<span>{{ comp.location.name }}</span>{% endif %}
+        </div>
+        <ul class="mb-0 mt-2 small">
+          {% for report in comp.open_reports %}
+          <li>
+            <span class="text-muted">{{ report.created_at|date:"d.m.Y H:i" }}</span>
+            {% if report.reported_by %}&mdash; {{ report.reported_by.public_display_name }}{% endif %}
+            {% if report.reason %}: {{ report.reason }}{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="d-flex gap-2 flex-shrink-0">
+        <a href="{% url 'competition_edit' comp.pk %}" class="btn btn-outline-secondary btn-sm">{% trans "Edit" %}</a>
+        <form method="post" action="{% url 'competition_dismiss_reports' comp.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-sm">{% trans "Dismiss report" %}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="alert alert-success">{% trans "No reported events." %}</div>
+{% endif %}
+{% endif %}
+
 {% if pending_locations is not None %}
 <div class="row mt-5 mb-3">
   <div class="col-12 d-flex justify-content-between align-items-center">
