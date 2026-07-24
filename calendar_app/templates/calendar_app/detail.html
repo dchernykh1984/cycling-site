@@ -78,8 +78,8 @@
       {% endwith %}
     </div>
     {% endif %}
-    {# Reported event (issue #233): admins+ see who flagged it and why, and can dismiss the report.
-       The event itself stays public -- reporting never hides it. #}
+    {% comment %}Reported event (issue #233): admins+ see who flagged it and why, and can dismiss the
+    report. The event itself stays public -- reporting never hides it.{% endcomment %}
     {% if open_reports %}
     <div class="alert alert-warning py-2 mb-4">
       <strong>{% trans "This event has been reported." %}</strong>
@@ -122,8 +122,8 @@
     <div class="mb-4 competition-description">{{ competition.description|safe }}</div>
     {% endif %}
 
-    {# Report control (issue #233): a confirmed user flags an inaccurate event with an optional note.
-       Once reported, the button is replaced by a note until a moderator resolves it. #}
+    {% comment %}Report control (issue #233): a confirmed user flags an inaccurate event with an
+    optional note. Once reported, the button is replaced by a note until a moderator resolves it.{% endcomment %}
     {% if can_report and not already_reported %}
     <div class="mb-4">
       <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse"

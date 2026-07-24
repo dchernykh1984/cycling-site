@@ -1,6 +1,7 @@
-{# Enhances `.js-date-filter` date inputs with flatpickr so the calendar popup starts the week on
-   the site's first day (Monday for ru/kk, Sunday for en), matching the main FullCalendar. On mobile
-   flatpickr falls back to the native picker; if flatpickr fails to load, the native input remains. #}
+{% comment %}Enhances `.js-date-filter` date inputs with flatpickr so the calendar popup starts the
+week on the site's first day (Monday for ru/kk, Sunday for en), matching the main FullCalendar. On
+mobile flatpickr falls back to the native picker; if flatpickr fails to load, the native input
+remains.{% endcomment %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
 {% if CURRENT_LANGUAGE != 'en' %}<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ru.js"></script>{% endif %}
