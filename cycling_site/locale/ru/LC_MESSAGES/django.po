@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-25 10:53+0500\n"
+"POT-Creation-Date: 2026-07-25 11:09+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -18,7 +18,13 @@ msgstr ""
 "регистрироваться на старты, комментировать, писать владельцам сайта или "
 "пользоваться API."
 
-#: accounts/models.py:90
+#: accounts/adapters.py:62
+msgid ""
+"Add an email address and a password first, otherwise you would have no way "
+"to sign in."
+msgstr "Сначала добавьте адрес электронной почты и пароль, иначе вам будет нечем войти."
+
+#: accounts/models.py:103
 msgid "Participant"
 msgstr "Участник"
 
@@ -105,7 +111,7 @@ msgstr "Поиск..."
 #: accounts/templates/accounts/contact_owners.html:9
 #: accounts/templates/accounts/profile.html:155
 #: accounts/templates/accounts/profile.html:163
-#: accounts/templates/accounts/profile.html:164 accounts/tests.py:1432
+#: accounts/templates/accounts/profile.html:164 accounts/tests.py:1433
 msgid "Contact site owners"
 msgstr "Связь с владельцами сайта"
 
@@ -235,7 +241,9 @@ msgstr "Способы входа"
 msgid ""
 "You can use any of these to sign in to this account. Connect several so that "
 "losing one does not lock you out."
-msgstr "Любым из них можно войти в этот аккаунт. Подключите несколько, чтобы потеря одного не закрыла вам доступ."
+msgstr ""
+"Любым из них можно войти в этот аккаунт. Подключите несколько, чтобы потеря "
+"одного не закрыла вам доступ."
 
 #: accounts/templates/accounts/profile.html:107
 msgid "Email and password"
@@ -243,7 +251,8 @@ msgstr "Email и пароль"
 
 #: accounts/templates/accounts/profile.html:110
 msgid "No email address, so signing in with a password is not possible yet."
-msgstr "Адрес электронной почты не указан, поэтому вход по паролю пока невозможен."
+msgstr ""
+"Адрес электронной почты не указан, поэтому вход по паролю пока невозможен."
 
 #: accounts/templates/accounts/profile.html:113
 msgid "Password not set."

@@ -8,6 +8,7 @@ from allauth.account.signals import email_confirmed
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core import mail
+from django.core.exceptions import ValidationError
 from django.db import connection
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
@@ -1891,3 +1892,82 @@ class SigninMethodsCardTests(TestCase):
         EmailAddress.objects.filter(user=self.user).delete()
         resp = self.client.get(reverse("account_profile"))
         self.assertContains(resp, reverse("account_email"))
+
+
+class DisconnectLockoutGuardTests(TestCase):
+    """Unlinking the last provider must never leave a member unable to sign in (issue #237).
+
+    allauth's own check only asks whether a usable password exists. Sign-in here is by email
+    address, so an account that set a password but never added an address would still be locked
+    out; ``SocialAccountAdapter.validate_disconnect`` closes that gap.
+    """
+
+    def _accounts_for(self, user):
+        from allauth.socialaccount.models import SocialAccount
+
+        return SocialAccount.objects.filter(user=user)
+
+    def _connect(self, user, provider, uid="1"):
+        from allauth.socialaccount.models import SocialAccount
+
+        return SocialAccount.objects.create(user=user, provider=provider, uid=uid)
+
+    def _validate(self, user, account):
+        SocialAccountAdapter().validate_disconnect(account, self._accounts_for(user))
+
+    def test_password_and_email_allow_unlinking_the_last_provider(self):
+        user = make_user(username="dc_full")
+        account = self._connect(user, "strava")
+        self._validate(user, account)  # must not raise
+
+    def test_another_provider_allows_unlinking(self):
+        user = make_user(username="dc_two")
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+        account = self._connect(user, "strava")
+        self._connect(user, "google", uid="2")
+        self._validate(user, account)  # must not raise
+
+    def test_password_without_an_email_is_refused(self):
+        # The gap allauth misses: a password is useless when sign-in is by email and there is none.
+        user = make_user(username="dc_no_email")
+        user.email = ""
+        user.save(update_fields=["email"])
+        EmailAddress.objects.filter(user=user).delete()
+        account = self._connect(user, "strava")
+        with self.assertRaises(ValidationError):
+            self._validate(user, account)
+
+    def test_no_password_at_all_is_refused(self):
+        user = make_user(username="dc_no_pw")
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+        account = self._connect(user, "strava")
+        with self.assertRaises(ValidationError):
+            self._validate(user, account)
+
+
+class CanSignInWithPasswordTests(TestCase):
+    def test_requires_both_an_email_and_a_password(self):
+        user = make_user(username="both")
+        self.assertTrue(user.can_sign_in_with_password())
+
+    def test_password_without_email_is_not_enough(self):
+        user = make_user(username="pw_only")
+        user.email = ""
+        user.save(update_fields=["email"])
+        EmailAddress.objects.filter(user=user).delete()
+        self.assertFalse(user.can_sign_in_with_password())
+
+    def test_email_without_password_is_not_enough(self):
+        user = make_user(username="email_only")
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+        self.assertFalse(user.can_sign_in_with_password())
+
+    def test_an_allauth_email_record_counts_as_an_address(self):
+        user = make_user(username="allauth_email")
+        user.email = ""
+        user.save(update_fields=["email"])
+        EmailAddress.objects.create(user=user, email="kept@example.com", verified=False, primary=True)
+        self.assertTrue(user.can_sign_in_with_password())

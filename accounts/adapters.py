@@ -1,6 +1,8 @@
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 class AccountAdapter(DefaultAccountAdapter):
@@ -47,6 +49,18 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         if sociallogin.account.provider == "strava" and not user.strava_link:
             user.strava_link = strava_profile_url(sociallogin.account)
         return user
+
+    def validate_disconnect(self, account, accounts):
+        # allauth already refuses to unlink the last provider when the account has no usable
+        # password -- but it does not check for an email address, and sign-in here is by email.
+        # Without this, a member who signed up through Strava, then set a password, could unlink
+        # Strava and be left with a password but no address to sign in with, i.e. locked out.
+        super().validate_disconnect(account, accounts)
+        others_remain = any(other.pk != account.pk for other in accounts)
+        if not others_remain and not account.user.can_sign_in_with_password():
+            raise ValidationError(
+                _("Add an email address and a password first, otherwise you would have no way to sign in.")
+            )
 
     def pre_social_login(self, request, sociallogin):
         # save_user() is only called for new signups; upgrade existing guests here
