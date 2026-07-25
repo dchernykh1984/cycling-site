@@ -17,6 +17,7 @@ from accounts.access import EMAIL_CONFIRMATION_REQUIRED_MESSAGE
 from accounts.adapters import AccountAdapter, SocialAccountAdapter
 from accounts.models import User
 from accounts.signals import ROLE_GROUP_MAP, _sync_user_group
+from accounts.views import signin_methods
 from accounts.wagtail_hooks import _RoleEnforcedMixin
 
 
@@ -1771,3 +1772,122 @@ class StravaOAuthScopeTests(TestCase):
         # If a future allauth release stops defaulting to activity:read, this override (and its
         # comment in settings) can be revisited -- this test is what will tell us.
         self.assertIn("activity:read", ",".join(self._provider().get_default_scope()))
+
+
+class SigninMethodsTests(TestCase):
+    """The profile's "Sign-in methods" card (issue #237).
+
+    allauth already lets one account carry an email/password login plus any number of linked
+    providers; these cover the state we compute for that card and the safety rule that a member
+    must never be offered a way to remove their last remaining way in.
+    """
+
+    def _connect(self, user, provider, uid="1"):
+        from allauth.socialaccount.models import SocialAccount
+
+        return SocialAccount.objects.create(user=user, provider=provider, uid=uid)
+
+    def _strip_email(self, user):
+        """Leave the account with no address at all, as a Strava-only signup can be."""
+        user.email = ""
+        user.save(update_fields=["email"])
+        EmailAddress.objects.filter(user=user).delete()
+
+    def _strip_password(self, user):
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+
+    def test_email_and_password_account_is_ready(self):
+        user = make_user(username="pw_user")
+        state = signin_methods(user)
+        self.assertTrue(state["has_email"])
+        self.assertTrue(state["has_password"])
+        self.assertTrue(state["password_ready"])
+        self.assertEqual(state["method_count"], 1)
+
+    def test_password_without_email_is_not_a_usable_method(self):
+        # Sign-in is by email, so a password alone (a Strava-only signup) cannot be used.
+        user = make_user(username="no_email")
+        self._strip_email(user)
+        state = signin_methods(user)
+        self.assertFalse(state["has_email"])
+        self.assertFalse(state["password_ready"])
+        self.assertEqual(state["method_count"], 0)
+
+    def test_social_only_account_counts_the_provider(self):
+        user = make_user(username="social_only")
+        self._strip_email(user)
+        self._strip_password(user)
+        self._connect(user, "strava")
+        state = signin_methods(user)
+        self.assertFalse(state["has_password"])
+        self.assertEqual(state["method_count"], 1)
+        self.assertFalse(state["can_disconnect"])
+
+    def test_all_three_providers_can_be_connected_at_once(self):
+        user = make_user(username="all_three")
+        for i, provider in enumerate(("google", "github", "strava")):
+            self._connect(user, provider, uid=str(i))
+        state = signin_methods(user)
+        self.assertTrue(all(p["connected"] for p in state["providers"]))
+        # three providers plus the email/password login
+        self.assertEqual(state["method_count"], 4)
+        self.assertTrue(state["can_disconnect"])
+
+    def test_providers_are_listed_even_when_not_connected(self):
+        user = make_user(username="none_connected")
+        state = signin_methods(user)
+        self.assertEqual([p["id"] for p in state["providers"]], ["google", "github", "strava"])
+        self.assertFalse(any(p["connected"] for p in state["providers"]))
+
+    def test_last_remaining_method_cannot_be_disconnected(self):
+        user = make_user(username="only_google")
+        self._strip_email(user)
+        self._strip_password(user)
+        self._connect(user, "google")
+        self.assertFalse(signin_methods(user)["can_disconnect"])
+        # Adding a second way in unlocks disconnecting the first.
+        self._connect(user, "strava", uid="2")
+        self.assertTrue(signin_methods(user)["can_disconnect"])
+
+
+class SigninMethodsCardTests(TestCase):
+    """The card renders on the profile page and points at the allauth pages that do the work."""
+
+    def setUp(self):
+        self.user = make_user(username="card_user")
+        self.client.force_login(self.user)
+
+    def test_card_is_shown_on_the_profile(self):
+        resp = self.client.get(reverse("account_profile"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="signin-methods"')
+
+    def test_card_lists_every_provider(self):
+        resp = self.client.get(reverse("account_profile"))
+        for name in ("Google", "GitHub", "Strava"):
+            self.assertContains(resp, name)
+
+    def test_card_links_to_the_connections_page(self):
+        resp = self.client.get(reverse("account_profile"))
+        self.assertContains(resp, reverse("socialaccount_connections"))
+
+    def test_account_with_a_password_is_offered_the_change_page(self):
+        resp = self.client.get(reverse("account_profile"))
+        self.assertContains(resp, reverse("account_change_password"))
+
+    def test_account_without_a_password_is_offered_the_set_page(self):
+        self.user.set_unusable_password()
+        self.user.save(update_fields=["password"])
+        # Changing the password rotates the session auth hash, so sign back in before asking
+        # for the page (a real social-only member is signed in through their provider).
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("account_profile"))
+        self.assertContains(resp, reverse("account_set_password"))
+
+    def test_account_without_an_email_is_asked_to_add_one_first(self):
+        self.user.email = ""
+        self.user.save(update_fields=["email"])
+        EmailAddress.objects.filter(user=self.user).delete()
+        resp = self.client.get(reverse("account_profile"))
+        self.assertContains(resp, reverse("account_email"))
