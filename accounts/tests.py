@@ -1743,3 +1743,31 @@ class StravaProfileLinkTests(TestCase):
         account = MagicMock()
         account.uid = "1613761"
         self.assertEqual(strava_profile_url(account), "https://www.strava.com/athletes/1613761")
+
+
+class StravaOAuthScopeTests(TestCase):
+    """The site signs people in and nothing more, so it must never ask Strava for activity access.
+
+    allauth's Strava provider defaults to "read,activity:read". Asking for activity access would
+    show members a consent screen requesting their training data that we never read, and would
+    contradict how this API application is registered with Strava (authentication only), so the
+    scope is pinned in settings and guarded here.
+    """
+
+    def _provider(self):
+        from allauth.socialaccount.adapter import get_adapter
+
+        return get_adapter().get_provider(RequestFactory().get("/"), "strava")
+
+    def test_effective_scope_is_read_only(self):
+        self.assertEqual(self._provider().get_scope(), ["read"])
+
+    def test_no_activity_or_write_scope_is_requested(self):
+        requested = ",".join(self._provider().get_scope())
+        self.assertNotIn("activity", requested)
+        self.assertNotIn("write", requested)
+
+    def test_the_provider_default_is_the_one_being_overridden(self):
+        # If a future allauth release stops defaulting to activity:read, this override (and its
+        # comment in settings) can be revisited -- this test is what will tell us.
+        self.assertIn("activity:read", ",".join(self._provider().get_default_scope()))

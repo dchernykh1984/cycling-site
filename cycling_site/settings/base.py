@@ -133,6 +133,11 @@ SOCIALACCOUNT_PROVIDERS = {
     },
     "strava": {
         "EMAIL_AUTHENTICATION": False,
+        # We authenticate only: the athlete id and name we need arrive with the token exchange.
+        # allauth's Strava provider otherwise defaults to "read,activity:read", which would ask
+        # members for access to their activities that we neither read nor want, and would
+        # contradict how this API application is registered with Strava (sign-in only).
+        "SCOPE": ["read"],
         "APP": {
             "client_id": env("STRAVA_CLIENT_ID", default=""),
             "secret": env("STRAVA_CLIENT_SECRET", default=""),
