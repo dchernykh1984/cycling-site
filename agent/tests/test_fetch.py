@@ -250,3 +250,62 @@ def test_guarded_create_connection_dials_the_validated_ip_not_the_hostname(monke
     monkeypatch.setattr(fetch.socket, "socket", lambda *a, **k: _Sock())
     fetch._guarded_create_connection(("example.test", 443))
     assert dialed["to"] == ("93.184.216.34", 443)
+
+
+def _labelled(html: str, base: str = "https://bike-events.ru/index.php", **kw):
+    from bs4 import BeautifulSoup
+
+    from agent.fetch import _labelled_links
+
+    return _labelled_links(BeautifulSoup(html, "html.parser").find_all("a", href=True), base, **kw)
+
+
+def test_labelled_links_carry_the_anchor_text():
+    # Without the name, a bare list of race.php?race=N URLs tells the model nothing about which
+    # race each link belongs to, so it cannot give an event its own announcement page.
+    html = '<a href="race.php?race=2611">Krasnogorsk Bike Marathon</a>'
+    assert _labelled(html) == ["Krasnogorsk Bike Marathon - https://bike-events.ru/race.php?race=2611"]
+
+
+def test_labelled_links_prefer_the_named_anchor_over_the_logo_one():
+    # A calendar links each race twice: once around its logo (no text) and once around its name.
+    html = '<a href="race.php?race=2604"><img src="logo.png"></a><a href="race.php?race=2604">Dark Race</a>'
+    assert _labelled(html) == ["Dark Race - https://bike-events.ru/race.php?race=2604"]
+
+
+def test_labelled_links_fall_back_to_the_image_title_then_alt():
+    html = '<a href="race.php?race=1"><img src="l.png" title="Bitsa Marathon"></a>'
+    assert _labelled(html) == ["Bitsa Marathon - https://bike-events.ru/race.php?race=1"]
+    html = '<a href="race.php?race=2"><img src="l.png" alt="Time Trial"></a>'
+    assert _labelled(html) == ["Time Trial - https://bike-events.ru/race.php?race=2"]
+
+
+def test_labelled_links_keep_a_bare_url_when_nothing_names_it():
+    assert _labelled('<a href="race.php?race=3"><img src="l.png"></a>') == ["https://bike-events.ru/race.php?race=3"]
+
+
+def test_labelled_links_squeeze_and_cap_the_label():
+    from agent import fetch
+
+    html = f'<a href="/x">{"  spaced\n name  " + "y" * 200}</a>'
+    label = _labelled(html)[0].split(" - ")[0]
+    assert "\n" not in label
+    assert "  " not in label
+    assert len(label) <= fetch._MAX_LINK_LABEL
+
+
+def test_labelled_links_dedup_by_url_and_respect_the_limit():
+    html = "".join(f'<a href="/r{i}">race {i}</a>' for i in range(5)) + '<a href="/r0">again</a>'
+    assert len(_labelled(html)) == 5  # /r0 counted once
+    assert len(_labelled(html, limit=3)) == 3
+
+
+def test_with_links_shows_the_labelled_list_to_the_model():
+    from bs4 import BeautifulSoup
+
+    from agent.fetch import _with_links
+
+    html = '<html><body><p>calendar</p><a href="race.php?race=2611">Krasnogorsk Bike Marathon</a></body></html>'
+    soup = BeautifulSoup(html, "html.parser")
+    body = _with_links(soup.get_text(" ", strip=True), soup.find_all("a", href=True), "https://bike-events.ru/i.php")
+    assert "Krasnogorsk Bike Marathon - https://bike-events.ru/race.php?race=2611" in body

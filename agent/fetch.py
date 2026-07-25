@@ -24,6 +24,7 @@ from agent.models import Source
 _UA = "Mozilla/5.0 (compatible; UniversalBicycleTeam-EventsAgent/1.0)"
 _MAX_CHARS = 12000  # keep LLM prompts bounded
 _MAX_LINKS = 60
+_MAX_LINK_LABEL = 80  # anchor text is a race name, not prose -- enough to identify it, no more
 # Aggregator/calendar pages list many races, each linking to its own page; surface far more of those
 # links -- and proportionally more page text -- so the model sees the name/date next to each of the
 # nearest upcoming events instead of only the top of the page.
@@ -116,8 +117,54 @@ def extract_links(html: str, base_url: str, limit: int = _MAX_LINKS) -> list[str
     return _absolute_links(BeautifulSoup(html, "html.parser").find_all("a", href=True), base_url, limit)
 
 
+def _labelled_links(anchors, base_url: str, limit: int = _MAX_LINKS) -> list[str]:
+    """``"<anchor text> - <url>"`` per link, so a race can be matched to its own page.
+
+    A calendar lists every race as a link whose text is the race's name, but a bare list of URLs
+    (``.../race.php?race=2608``) says nothing about which race each one belongs to -- the model
+    cannot pick an event's own page from it and leaves the link empty. Carrying the anchor text is
+    what makes that choice possible. Text is squeezed onto one line and capped so a long or
+    image-only anchor cannot crowd out the list.
+    """
+    order: list[str] = []
+    labels: dict[str, str] = {}
+    for anchor in anchors:
+        href = (anchor.get("href") or "").strip()
+        if not href or href.startswith(_SKIP_PREFIXES):
+            continue
+        url = urljoin(base_url, href)
+        if urlsplit(url).scheme not in ("http", "https"):
+            continue
+        if url not in labels:
+            if len(order) >= limit:
+                continue
+            order.append(url)
+            labels[url] = ""
+        # A calendar routinely links the same race twice -- once around its logo (no text) and once
+        # around its name -- so keep looking until a labelled one turns up rather than taking the
+        # first. The image's title/alt carries the name too, and serves when only the logo links.
+        if not labels[url]:
+            labels[url] = _anchor_label(anchor)
+    return [f"{labels[url]} - {url}" if labels[url] else url for url in order]
+
+
+def _anchor_label(anchor) -> str:
+    """The race name an anchor stands for: its own text, else its title, else its image's."""
+    for raw in (anchor.get_text(" ", strip=True), anchor.get("title"), *_image_labels(anchor)):
+        label = " ".join((raw or "").split())
+        if label:
+            return label[:_MAX_LINK_LABEL]
+    return ""
+
+
+def _image_labels(anchor):
+    for image in anchor.find_all("img"):
+        yield image.get("title")
+        yield image.get("alt")
+
+
 def _with_links(text: str, anchors, base_url: str, limit: int = _MAX_LINKS, max_chars: int = _MAX_CHARS) -> str:
-    links = _absolute_links(anchors, base_url, limit)
+    links = _labelled_links(anchors, base_url, limit)
     body = text[:max_chars]
     if links:
         body += "\n\nLinks on the page:\n" + "\n".join(links)
