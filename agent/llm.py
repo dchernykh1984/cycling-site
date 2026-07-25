@@ -35,8 +35,10 @@ _SYSTEM = (
     "or <iframe>. Put the route / GPS-track link (e.g. a Strava link) in url_route and the "
     "registration/signup link in url_registration; source_url is the announcement page on the "
     'organizer\'s own site (not an aggregator). The source text ends with a "Links on the page" '
-    "list of the page's real URLs -- pick source_url, url_route and url_registration ONLY from those "
-    'real links (or leave ""); never invent or guess a URL, and prefer the most specific event page. '
+    'list of the page\'s real links, each written as "name - url" where the name is the text the '
+    "link is shown under -- use that name to tell which race a link belongs to and give each event "
+    "the link that names it. Pick source_url, url_route and url_registration ONLY from those real "
+    'links (or leave ""); never invent or guess a URL, and prefer the most specific event page. '
     "date_start MUST come from the text -- if the date is "
     "only shown in an image/poster you cannot read, do NOT guess it, omit the event instead. In a "
     "calendar or list a date is often a month/section heading with a day number in each row below it "
