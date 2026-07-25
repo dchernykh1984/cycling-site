@@ -319,3 +319,48 @@ def test_report_records_the_per_source_extraction_count():
         [src], KnownEvents(), fetch=fetch, extract=extract, create=lambda c: None, max_events=10, dry_run=True
     )
     assert report.extracted == [("cal", 2)]
+
+
+def _extract_with(kind: str, reply: str):
+    """Run agent.run._extract_candidates against a stubbed model reply and return the candidates."""
+    from unittest.mock import patch
+
+    from agent import run, sources
+    from agent.config import Config
+    from agent.models import KnownEvents, Taxonomy
+
+    source = sources.Source(kind=kind, ref="cal", fetch_url="https://bike-events.ru/index.php?season=S2026")
+    config = Config(
+        site_base_url="https://site.test",
+        api_token="t",
+        llm_api_key="k",
+        llm_base_url="https://llm.test",
+        llm_model="m",
+        max_events=10,
+        dry_run=True,
+    )
+    with patch("agent.llm.extract_raw", return_value=reply):
+        return run._extract_candidates("page text", source, "", KnownEvents(), Taxonomy(), config)
+
+
+_ONE_EVENT_NO_LINK = '[{"title": "Dark Race", "date_start": "2026-09-26"}]'
+
+
+def test_aggregator_listing_url_is_not_used_as_an_events_announcement():
+    # Following a calendar's own listing URL lands the reader on dozens of races with no way to
+    # tell which one was meant, so an unlinked race is better left without a link.
+    (candidate,) = _extract_with("aggregator", _ONE_EVENT_NO_LINK)
+    assert candidate.source_url == ""
+
+
+def test_an_organizers_own_page_still_backs_its_events():
+    # On the organizer's own site the fetched page *is* the announcement, so it stays the fallback.
+    (candidate,) = _extract_with("organizer", _ONE_EVENT_NO_LINK)
+    assert candidate.source_url == "https://bike-events.ru/index.php?season=S2026"
+
+
+def test_a_link_the_model_found_always_wins():
+    reply = '[{"title": "Dark Race", "date_start": "2026-09-26", "source_url": "https://velogearance.ru/tg26/"}]'
+    for kind in ("aggregator", "organizer"):
+        (candidate,) = _extract_with(kind, reply)
+        assert candidate.source_url == "https://velogearance.ru/tg26/"

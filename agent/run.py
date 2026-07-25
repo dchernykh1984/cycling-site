@@ -54,7 +54,11 @@ def _extract_candidates(
     candidates: list = []
     for piece in pieces:
         raw = llm.extract_raw(piece, source, guidance, known, taxonomy, config)
-        parsed = pipeline.parse_candidates(raw, source.fetch_url or "", taxonomy)
+        # A calendar's own listing URL announces no single race, so it must not stand in when the
+        # model found no link: a reader following it lands on a list of dozens and cannot tell
+        # which entry was meant. Leave it empty instead and let the enrichment pass fill it in.
+        fallback_url = "" if source.kind == "aggregator" else (source.fetch_url or "")
+        parsed = pipeline.parse_candidates(raw, fallback_url, taxonomy)
         # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
         # declining -- surface the raw reply so the two are told apart without another run.
         if not parsed and raw.strip() not in ("", "[]"):
