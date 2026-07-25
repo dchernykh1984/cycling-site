@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-24 11:08+0500\n"
+"POT-Creation-Date: 2026-07-25 09:59+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -161,7 +161,7 @@ msgstr "Роль"
 
 #: accounts/templates/accounts/profile.html:57
 #: calendar_app/templates/calendar_app/_registration_fields.html:251
-#: calendar_app/templates/calendar_app/moderate.html:137
+#: calendar_app/templates/calendar_app/moderate.html:138
 #: locations/templates/locations/locations_map_page.html:76
 #: registrations/templates/registrations/_participant_row.html:4
 #: registrations/templates/registrations/_participant_table_head.html:5
@@ -318,7 +318,7 @@ msgstr "Действия"
 
 #: accounts/templates/accounts/profile.html:229
 #: calendar_app/templates/calendar_app/edit.html:14
-#: calendar_app/templates/calendar_app/moderate.html:110
+#: calendar_app/templates/calendar_app/moderate.html:111
 #: locations/templates/locations/locations_map_page.html:90
 #: locations/templates/locations/locations_map_page.html:157
 #: registrations/templates/registrations/_participant_row.html:39
@@ -336,8 +336,8 @@ msgid "Delete this competition?"
 msgstr "Удалить это соревнование?"
 
 #: accounts/templates/accounts/profile.html:239
-#: calendar_app/templates/calendar_app/detail.html:310
-#: calendar_app/templates/calendar_app/detail.html:331
+#: calendar_app/templates/calendar_app/detail.html:312
+#: calendar_app/templates/calendar_app/detail.html:333
 #: knowledge/templates/knowledge/knowledge_article_detail.html:52
 #: knowledge/templates/knowledge/knowledge_article_detail.html:72
 #: locations/templates/locations/locations_map_page.html:103
@@ -408,22 +408,22 @@ msgstr ""
 "Bearer &lt;token&gt;</code>"
 
 #: accounts/templates/accounts/profile.html:306
-#: calendar_app/templates/calendar_app/detail.html:227
+#: calendar_app/templates/calendar_app/detail.html:229
 msgid "Copy"
 msgstr "Копировать"
 
 #: accounts/templates/accounts/profile.html:309
-#: calendar_app/templates/calendar_app/detail.html:253
+#: calendar_app/templates/calendar_app/detail.html:255
 msgid "No token yet. Generate one below."
 msgstr "Токен ещё не создан. Сгенерируйте его ниже."
 
 #: accounts/templates/accounts/profile.html:314
-#: calendar_app/templates/calendar_app/detail.html:232
+#: calendar_app/templates/calendar_app/detail.html:234
 msgid "Regenerate token"
 msgstr "Пересоздать токен"
 
 #: accounts/templates/accounts/profile.html:314
-#: calendar_app/templates/calendar_app/detail.html:256
+#: calendar_app/templates/calendar_app/detail.html:258
 msgid "Generate token"
 msgstr "Создать токен"
 
@@ -622,7 +622,7 @@ msgstr ""
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:6
 #: calendar_app/templates/calendar_app/_location_filter.html:39
-#: calendar_app/templates/calendar_app/detail.html:107
+#: calendar_app/templates/calendar_app/detail.html:108
 #: calendar_app/templates/calendar_app/list.html:157
 #: calendar_app/templates/calendar_app/list.html:183
 msgid "Location"
@@ -665,13 +665,13 @@ msgid "New venue name"
 msgstr "Название новой локации"
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:53
-#: calendar_app/templates/calendar_app/detail.html:112 locations/forms.py:19
+#: calendar_app/templates/calendar_app/detail.html:113 locations/forms.py:19
 #: locations/templates/locations/location_form.html:115
 msgid "Latitude"
 msgstr "Широта"
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:57
-#: calendar_app/templates/calendar_app/detail.html:112 locations/forms.py:20
+#: calendar_app/templates/calendar_app/detail.html:113 locations/forms.py:20
 #: locations/templates/locations/location_form.html:122
 msgid "Longitude"
 msgstr "Долгота"
@@ -987,47 +987,49 @@ msgstr "История отклонений"
 msgid "Reason"
 msgstr "Причина"
 
-#: calendar_app/templates/calendar_app/detail.html:85
+#: calendar_app/templates/calendar_app/detail.html:86
 msgid "This event has been reported."
 msgstr "На это событие поступила жалоба."
 
-#: calendar_app/templates/calendar_app/detail.html:86
+#: calendar_app/templates/calendar_app/detail.html:87
 msgid ""
 "It stays visible to everyone; review it and edit, delete, comment, or "
 "dismiss the report."
-msgstr "Оно остаётся видимым для всех; проверьте его и отредактируйте, удалите, прокомментируйте или снимите жалобу."
+msgstr ""
+"Оно остаётся видимым для всех; проверьте его и отредактируйте, удалите, "
+"прокомментируйте или снимите жалобу."
 
-#: calendar_app/templates/calendar_app/detail.html:100
-#: calendar_app/templates/calendar_app/moderate.html:113
+#: calendar_app/templates/calendar_app/detail.html:101
+#: calendar_app/templates/calendar_app/moderate.html:114
 msgid "Dismiss report"
 msgstr "Снять жалобу"
 
-#: calendar_app/templates/calendar_app/detail.html:131
+#: calendar_app/templates/calendar_app/detail.html:133
 msgid "Report a problem"
 msgstr "Пожаловаться"
 
-#: calendar_app/templates/calendar_app/detail.html:136
+#: calendar_app/templates/calendar_app/detail.html:138
 msgid "Tell the moderators what looks wrong (optional)"
 msgstr "Расскажите модераторам, что не так (необязательно)"
 
-#: calendar_app/templates/calendar_app/detail.html:138
+#: calendar_app/templates/calendar_app/detail.html:140
 msgid "Send report"
 msgstr "Отправить жалобу"
 
-#: calendar_app/templates/calendar_app/detail.html:143
+#: calendar_app/templates/calendar_app/detail.html:145
 msgid "You have reported this event; a moderator will review it."
 msgstr "Вы пожаловались на это событие; модератор его проверит."
 
-#: calendar_app/templates/calendar_app/detail.html:150
-#: calendar_app/templates/calendar_app/detail.html:153
+#: calendar_app/templates/calendar_app/detail.html:152
+#: calendar_app/templates/calendar_app/detail.html:155
 #: calendar_app/templates/calendar_app/edit.html:103
 #: calendar_app/templates/calendar_app/moderate.html:38
 #: calendar_app/templates/calendar_app/submit.html:96
 msgid "Announcement"
 msgstr "Объявление"
 
-#: calendar_app/templates/calendar_app/detail.html:157
-#: calendar_app/templates/calendar_app/detail.html:190
+#: calendar_app/templates/calendar_app/detail.html:159
+#: calendar_app/templates/calendar_app/detail.html:192
 #: calendar_app/templates/calendar_app/list.html:192
 #: cycling_site/templates/base.html:132
 #: registrations/templates/registrations/register.html:4
@@ -1036,80 +1038,80 @@ msgstr "Объявление"
 msgid "Register"
 msgstr "Регистрация"
 
-#: calendar_app/templates/calendar_app/detail.html:161
-#: calendar_app/templates/calendar_app/detail.html:164
+#: calendar_app/templates/calendar_app/detail.html:163
+#: calendar_app/templates/calendar_app/detail.html:166
 #: calendar_app/templates/calendar_app/edit.html:115
 #: calendar_app/templates/calendar_app/submit.html:105
 msgid "Route"
 msgstr "Маршрут"
 
-#: calendar_app/templates/calendar_app/detail.html:168
-#: calendar_app/templates/calendar_app/detail.html:171
+#: calendar_app/templates/calendar_app/detail.html:170
+#: calendar_app/templates/calendar_app/detail.html:173
 #: calendar_app/templates/calendar_app/edit.html:127
 #: calendar_app/templates/calendar_app/submit.html:114
 msgid "Regulations"
 msgstr "Регламент"
 
-#: calendar_app/templates/calendar_app/detail.html:175
-#: calendar_app/templates/calendar_app/detail.html:178
+#: calendar_app/templates/calendar_app/detail.html:177
+#: calendar_app/templates/calendar_app/detail.html:180
 msgid "Results"
 msgstr "Результаты"
 
-#: calendar_app/templates/calendar_app/detail.html:185
+#: calendar_app/templates/calendar_app/detail.html:187
 #: calendar_app/templates/calendar_app/moderate.html:42
 #: registrations/templates/registrations/register.html:17
 msgid "Registration"
 msgstr "Регистрация"
 
-#: calendar_app/templates/calendar_app/detail.html:186
+#: calendar_app/templates/calendar_app/detail.html:188
 #: registrations/templates/registrations/_participant_row.html:18
 #: registrations/templates/registrations/_participant_table_head.html:13
 msgid "Registered"
 msgstr "Зарегистрировано"
 
-#: calendar_app/templates/calendar_app/detail.html:193
+#: calendar_app/templates/calendar_app/detail.html:195
 msgid "You are registered"
 msgstr "Вы зарегистрированы"
 
-#: calendar_app/templates/calendar_app/detail.html:196
+#: calendar_app/templates/calendar_app/detail.html:198
 msgid "Registration closed"
 msgstr "Регистрация закрыта"
 
-#: calendar_app/templates/calendar_app/detail.html:199
+#: calendar_app/templates/calendar_app/detail.html:201
 msgid "Participant list"
 msgstr "Список участников"
 
-#: calendar_app/templates/calendar_app/detail.html:206
+#: calendar_app/templates/calendar_app/detail.html:208
 msgid "Protocols"
 msgstr "Протоколы"
 
-#: calendar_app/templates/calendar_app/detail.html:210
+#: calendar_app/templates/calendar_app/detail.html:212
 #: protocols/templates/protocols/detail.html:16
 #: protocols/templates/protocols/detail.html:23
 msgid "Absolute results"
 msgstr "Абсолютные результаты"
 
-#: calendar_app/templates/calendar_app/detail.html:210
+#: calendar_app/templates/calendar_app/detail.html:212
 #: protocols/templates/protocols/detail.html:16
 #: protocols/templates/protocols/detail.html:23
 msgid "Group results"
 msgstr "Результаты по группам"
 
-#: calendar_app/templates/calendar_app/detail.html:212
+#: calendar_app/templates/calendar_app/detail.html:214
 msgid "Live"
 msgstr "Прямой эфир"
 
-#: calendar_app/templates/calendar_app/detail.html:221
+#: calendar_app/templates/calendar_app/detail.html:223
 msgid "Timing system token"
 msgstr "Токен системы хронометража"
 
-#: calendar_app/templates/calendar_app/detail.html:230
+#: calendar_app/templates/calendar_app/detail.html:232
 msgid ""
 "Regenerate the timing token? The current token will stop working immediately."
 msgstr ""
 "Пересоздать токен хронометража? Текущий токен сразу перестанет работать."
 
-#: calendar_app/templates/calendar_app/detail.html:235
+#: calendar_app/templates/calendar_app/detail.html:237
 msgid ""
 "Delete the timing token? Timing tools will lose access until you generate a "
 "new one."
@@ -1117,11 +1119,11 @@ msgstr ""
 "Удалить токен хронометража? Инструменты хронометража потеряют доступ, пока "
 "вы не создадите новый."
 
-#: calendar_app/templates/calendar_app/detail.html:237
+#: calendar_app/templates/calendar_app/detail.html:239
 msgid "Delete token"
 msgstr "Удалить токен"
 
-#: calendar_app/templates/calendar_app/detail.html:241
+#: calendar_app/templates/calendar_app/detail.html:243
 msgid ""
 "If this token leaks, anyone could later alter or delete the results — "
 "regenerate or delete it."
@@ -1129,17 +1131,17 @@ msgstr ""
 "Если токен утечёт, кто-то сможет позже изменить или удалить результаты — "
 "пересоздайте или удалите его."
 
-#: calendar_app/templates/calendar_app/detail.html:244
+#: calendar_app/templates/calendar_app/detail.html:246
 msgid "Access token for the offline timing system:"
 msgstr "Токен доступа для офлайн-системы хронометража:"
 
-#: calendar_app/templates/calendar_app/detail.html:263
+#: calendar_app/templates/calendar_app/detail.html:265
 msgid "This competition is hidden from public view."
 msgstr "Это соревнование скрыто от публичного просмотра."
 
-#: calendar_app/templates/calendar_app/detail.html:271
+#: calendar_app/templates/calendar_app/detail.html:273
 #: calendar_app/templates/calendar_app/moderate.html:49
-#: calendar_app/templates/calendar_app/moderate.html:156
+#: calendar_app/templates/calendar_app/moderate.html:158
 #: knowledge/templates/knowledge/knowledge_index_page.html:41
 #: knowledge/templates/knowledge/submission_detail.html:54
 #: news/templates/news/news_list.html:30
@@ -1148,9 +1150,9 @@ msgstr "Это соревнование скрыто от публичного �
 msgid "Approve"
 msgstr "Одобрить"
 
-#: calendar_app/templates/calendar_app/detail.html:274
+#: calendar_app/templates/calendar_app/detail.html:276
 #: calendar_app/templates/calendar_app/moderate.html:55
-#: calendar_app/templates/calendar_app/moderate.html:161
+#: calendar_app/templates/calendar_app/moderate.html:163
 #: knowledge/templates/knowledge/admin/reject_form.html:21
 #: knowledge/templates/knowledge/knowledge_index_page.html:45
 #: knowledge/templates/knowledge/submission_detail.html:61
@@ -1161,73 +1163,73 @@ msgid "Reject"
 msgstr "Отклонить"
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/templates/calendar_app/detail.html:281
+#: calendar_app/templates/calendar_app/detail.html:283
 #: calendar_app/templates/calendar_app/moderate.html:63
 msgid "Rejection reason"
 msgstr "Причина отказа"
 
-#: calendar_app/templates/calendar_app/detail.html:283
+#: calendar_app/templates/calendar_app/detail.html:285
 #: calendar_app/templates/calendar_app/moderate.html:66
 msgid "Confirm rejection"
 msgstr "Подтвердить отклонение"
 
-#: calendar_app/templates/calendar_app/detail.html:291
+#: calendar_app/templates/calendar_app/detail.html:293
 #: calendar_app/templates/calendar_app/edit.html:4
 #: calendar_app/templates/calendar_app/edit.html:18
 msgid "Edit competition"
 msgstr "Редактировать соревнование"
 
-#: calendar_app/templates/calendar_app/detail.html:296
+#: calendar_app/templates/calendar_app/detail.html:298
 msgid "Resubmit for review"
 msgstr "Отправить на повторное рассмотрение"
 
-#: calendar_app/templates/calendar_app/detail.html:303
+#: calendar_app/templates/calendar_app/detail.html:305
 #: knowledge/templates/knowledge/knowledge_article_detail.html:46
 #: locations/templates/locations/locations_map_page.html:96
 #: news/templates/news/article_detail.html:51
 msgid "Unhide"
 msgstr "Показать"
 
-#: calendar_app/templates/calendar_app/detail.html:303
+#: calendar_app/templates/calendar_app/detail.html:305
 #: knowledge/templates/knowledge/knowledge_article_detail.html:46
 #: locations/templates/locations/locations_map_page.html:96
 #: news/templates/news/article_detail.html:51
 msgid "Hide"
 msgstr "Скрыть"
 
-#: calendar_app/templates/calendar_app/detail.html:308
+#: calendar_app/templates/calendar_app/detail.html:310
 msgid "Are you sure you want to delete this competition?"
 msgstr "Вы уверены, что хотите удалить это соревнование?"
 
-#: calendar_app/templates/calendar_app/detail.html:318
+#: calendar_app/templates/calendar_app/detail.html:320
 #: knowledge/templates/knowledge/knowledge_article_detail.html:59
 #: news/templates/news/article_detail.html:64
 #: news/templates/news/news_page.html:65
 msgid "Comments"
 msgstr "Комментарии"
 
-#: calendar_app/templates/calendar_app/detail.html:339
+#: calendar_app/templates/calendar_app/detail.html:341
 #: knowledge/templates/knowledge/knowledge_article_detail.html:80
 #: news/templates/news/article_detail.html:85
 #: news/templates/news/news_page.html:91
 msgid "No comments yet. Be the first!"
 msgstr "Комментариев пока нет. Будьте первым!"
 
-#: calendar_app/templates/calendar_app/detail.html:345
+#: calendar_app/templates/calendar_app/detail.html:347
 #: knowledge/templates/knowledge/knowledge_article_detail.html:86
 #: news/templates/news/article_detail.html:91
 #: news/templates/news/news_page.html:97
 msgid "Add a comment"
 msgstr "Добавить комментарий"
 
-#: calendar_app/templates/calendar_app/detail.html:349
+#: calendar_app/templates/calendar_app/detail.html:351
 #: knowledge/templates/knowledge/knowledge_article_detail.html:90
 #: news/templates/news/article_detail.html:95
 #: news/templates/news/news_page.html:104
 msgid "Submit comment"
 msgstr "Отправить комментарий"
 
-#: calendar_app/templates/calendar_app/detail.html:355
+#: calendar_app/templates/calendar_app/detail.html:357
 #: cycling_site/templates/base.html:131
 #: knowledge/templates/knowledge/knowledge_article_detail.html:96
 #: news/templates/news/article_detail.html:101
@@ -1235,14 +1237,14 @@ msgstr "Отправить комментарий"
 msgid "Log in"
 msgstr "Войти"
 
-#: calendar_app/templates/calendar_app/detail.html:355
+#: calendar_app/templates/calendar_app/detail.html:357
 #: knowledge/templates/knowledge/knowledge_article_detail.html:96
 #: news/templates/news/article_detail.html:101
 #: news/templates/news/news_page.html:112
 msgid "to leave a comment."
 msgstr "чтобы оставить комментарий."
 
-#: calendar_app/templates/calendar_app/detail.html:358
+#: calendar_app/templates/calendar_app/detail.html:360
 #: knowledge/templates/knowledge/knowledge_article_detail.html:99
 #: news/templates/news/article_detail.html:104
 msgid "Commenting is available to verified participants."
@@ -1353,13 +1355,13 @@ msgid "Competition moderation"
 msgstr "Модерация соревнований"
 
 #: calendar_app/templates/calendar_app/moderate.html:11
-#: calendar_app/templates/calendar_app/moderate.html:82
-#: calendar_app/templates/calendar_app/moderate.html:129
+#: calendar_app/templates/calendar_app/moderate.html:83
+#: calendar_app/templates/calendar_app/moderate.html:130
 msgid "pending"
 msgstr "на рассмотрении"
 
 #: calendar_app/templates/calendar_app/moderate.html:30
-#: calendar_app/templates/calendar_app/moderate.html:138
+#: calendar_app/templates/calendar_app/moderate.html:139
 msgid "Submitted by"
 msgstr "Добавлено"
 
@@ -1367,19 +1369,19 @@ msgstr "Добавлено"
 msgid "No competitions pending approval."
 msgstr "Нет соревнований на рассмотрении."
 
-#: calendar_app/templates/calendar_app/moderate.html:81
+#: calendar_app/templates/calendar_app/moderate.html:82
 msgid "Reported events"
 msgstr "Жалобы на события"
 
-#: calendar_app/templates/calendar_app/moderate.html:121
+#: calendar_app/templates/calendar_app/moderate.html:122
 msgid "No reported events."
 msgstr "Нет событий с жалобами."
 
-#: calendar_app/templates/calendar_app/moderate.html:128
+#: calendar_app/templates/calendar_app/moderate.html:129
 msgid "Proposed locations"
 msgstr "Предложенные локации"
 
-#: calendar_app/templates/calendar_app/moderate.html:159
+#: calendar_app/templates/calendar_app/moderate.html:161
 msgid ""
 "Reject this venue? Competitions using it will fall back to the city's other "
 "location."
@@ -1387,7 +1389,7 @@ msgstr ""
 "Отклонить эту локацию? Соревнования на ней перейдут на «Другую локацию» "
 "города."
 
-#: calendar_app/templates/calendar_app/moderate.html:159
+#: calendar_app/templates/calendar_app/moderate.html:161
 msgid ""
 "Reject this place? Everything nested inside it is removed too, and "
 "competitions there lose their location."
@@ -1395,7 +1397,7 @@ msgstr ""
 "Отклонить это место? Всё вложенное в него тоже удалится, а соревнования там "
 "останутся без локации."
 
-#: calendar_app/templates/calendar_app/moderate.html:170
+#: calendar_app/templates/calendar_app/moderate.html:172
 msgid "No locations pending approval."
 msgstr "Нет локаций, ожидающих одобрения."
 
@@ -1443,32 +1445,32 @@ msgstr "Пожалуйста, укажите причину отказа."
 msgid "Invalid submission."
 msgstr "Некорректная отправка."
 
-#: calendar_app/views.py:1259
+#: calendar_app/views.py:1271
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Вы уже пожаловались на это событие; модератор его проверит."
 
-#: calendar_app/views.py:1266
+#: calendar_app/views.py:1273
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Спасибо. Ваша жалоба отправлена модераторам."
 
-#: calendar_app/views.py:1285
+#: calendar_app/views.py:1292
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Жалоба снята; событие убрано из очереди модерации."
 
-#: calendar_app/views.py:1349
+#: calendar_app/views.py:1356
 msgid "Only a rejected competition can be resubmitted."
 msgstr ""
 "На повторное рассмотрение можно отправить только отклонённое соревнование."
 
-#: calendar_app/views.py:1351
+#: calendar_app/views.py:1358
 msgid "Your competition was sent for review again."
 msgstr "Соревнование отправлено на повторное рассмотрение."
 
-#: calendar_app/views.py:1374
+#: calendar_app/views.py:1381
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Токен хронометража пересоздан. Прежний токен больше не работает."
 
-#: calendar_app/views.py:1385
+#: calendar_app/views.py:1392
 msgid ""
 "Timing token deleted. Timing tools can no longer access this competition."
 msgstr ""
@@ -1619,6 +1621,16 @@ msgstr ""
 "Нашли баг или есть предложение? <a href=\"%(url)s\" target=\"_blank\" "
 "rel=\"noopener\">Создайте задачу на GitHub</a>."
 
+#: cycling_site/templates/base.html:161 home/templates/home/privacy_page.html:4
+#: home/templates/home/privacy_page.html:9
+msgid "Privacy Policy"
+msgstr "Политика конфиденциальности"
+
+#: cycling_site/templates/base.html:162 home/templates/home/terms_page.html:4
+#: home/templates/home/terms_page.html:9
+msgid "Terms of Use"
+msgstr "Условия использования"
+
 #: home/forms.py:37
 msgid "Navbar title (RU)"
 msgstr "Название в шапке (RU)"
@@ -1680,6 +1692,264 @@ msgstr "Сохранить изменения"
 #: home/templates/home/home_page.html:9
 msgid "Edit page"
 msgstr "Редактировать страницу"
+
+#: home/templates/home/privacy_page.html:10
+#: home/templates/home/terms_page.html:10
+#, fuzzy
+#| msgid "Last name"
+msgid "Last updated"
+msgstr "Фамилия"
+
+#: home/templates/home/privacy_page.html:12
+msgid ""
+"This policy explains what personal data the Universal Bicycle Team website "
+"collects, why we collect it, and how you can have it removed. The site is a "
+"free, non-commercial project for the amateur cycling and running community."
+msgstr "Эта политика объясняет, какие персональные данные собирает сайт Universal Bicycle Team, зачем мы их собираем и как их удалить. Сайт — бесплатный некоммерческий проект для любительского сообщества велосипедистов и бегунов."
+
+#: home/templates/home/privacy_page.html:14
+msgid "What we collect"
+msgstr "Какие данные мы собираем"
+
+#: home/templates/home/privacy_page.html:15
+msgid ""
+"<strong>Account data.</strong> When you register we store your email address "
+"and a cryptographic hash of your password (never the password itself). You "
+"may optionally add your name, date of birth, gender, city, team, a link to "
+"your Strava profile, and your preferred sports and locations, so that forms "
+"are pre-filled for you."
+msgstr "<strong>Данные аккаунта.</strong> При регистрации мы сохраняем ваш адрес электронной почты и криптографический хэш пароля (сам пароль не хранится никогда). По желанию вы можете добавить имя, дату рождения, пол, город, команду, ссылку на профиль в Strava, а также предпочитаемые виды спорта и локации — чтобы формы заполнялись автоматически."
+
+#: home/templates/home/privacy_page.html:16
+msgid ""
+"<strong>Sign-in through Google, GitHub or Strava.</strong> If you use one of "
+"these buttons, we receive only your identifier with that service and your "
+"name, which we use to create or sign in to your account. From Strava we "
+"receive your athlete identifier and name only: we do not request access to "
+"your activities, routes, segments or any training data, and we never see "
+"them."
+msgstr "<strong>Вход через Google, GitHub или Strava.</strong> Если вы пользуетесь одной из этих кнопок, мы получаем только ваш идентификатор в этом сервисе и имя — их мы используем, чтобы создать аккаунт или войти в него. Из Strava мы получаем только идентификатор спортсмена и имя: мы не запрашиваем доступ к вашим тренировкам, маршрутам, сегментам и любым тренировочным данным и никогда их не видим."
+
+#: home/templates/home/privacy_page.html:17
+msgid ""
+"<strong>Race registration data.</strong> When you register for an event we "
+"store the details the organizer requires: name, date of birth, gender, city, "
+"team, category, and an optional free-text field (some organizers use it for "
+"a link to your Strava profile)."
+msgstr "<strong>Данные регистрации на старт.</strong> При регистрации на мероприятие мы сохраняем сведения, которые требует организатор: имя, дату рождения, пол, город, команду, категорию и необязательное текстовое поле (некоторые организаторы используют его для ссылки на профиль в Strava)."
+
+#: home/templates/home/privacy_page.html:18
+msgid ""
+"<strong>Content you publish.</strong> Events, comments, reports about "
+"inaccurate events, and files uploaded by organizers such as regulations, "
+"route files and result protocols."
+msgstr "<strong>Публикуемый вами контент.</strong> Мероприятия, комментарии, жалобы на неточные мероприятия, а также файлы, загруженные организаторами: положения, треки маршрутов и протоколы результатов."
+
+#: home/templates/home/privacy_page.html:19
+msgid ""
+"<strong>Technical data.</strong> A session cookie that keeps you signed in, "
+"cookies remembering your chosen language and colour theme, and ordinary "
+"server logs. We do not use advertising or analytics trackers, and there is "
+"no third-party tracking code on the site."
+msgstr "<strong>Технические данные.</strong> Сессионная cookie, которая держит вас в системе, cookie с выбранным языком и темой оформления, а также обычные журналы сервера. Мы не используем рекламные и аналитические трекеры, стороннего кода слежения на сайте нет."
+
+#: home/templates/home/privacy_page.html:21
+msgid "Why we use it"
+msgstr "Зачем мы их используем"
+
+#: home/templates/home/privacy_page.html:22
+msgid ""
+"To run your account, to let you register for events and to pass the "
+"registration details to that event's organizer, to publish the race "
+"calendar, start lists and results, to moderate submissions, and to send you "
+"service messages such as email confirmation and password reset."
+msgstr "Чтобы вести ваш аккаунт, дать вам возможность регистрироваться на мероприятия и передавать данные регистрации организатору этого мероприятия, публиковать календарь стартов, стартовые протоколы и результаты, модерировать заявки и отправлять служебные письма — подтверждение почты и восстановление пароля."
+
+#: home/templates/home/privacy_page.html:24
+msgid "What is visible to others"
+msgstr "Что видно другим"
+
+#: home/templates/home/privacy_page.html:25
+msgid ""
+"Sport results are public by nature. Start lists and result protocols show "
+"participants' names and the details the organizer chose to publish, such as "
+"city, team and category. The organizer of an event can see the registration "
+"data of the people registered for it. Your email address is never shown "
+"publicly. Comments you leave are public and are shown with your name."
+msgstr "Спортивные результаты публичны по своей природе. В стартовых и итоговых протоколах отображаются имена участников и те сведения, которые организатор решил опубликовать: город, команда, категория. Организатор мероприятия видит данные регистрации тех, кто на него записался. Ваш адрес электронной почты никогда не публикуется. Оставленные вами комментарии публичны и показываются с вашим именем."
+
+#: home/templates/home/privacy_page.html:27
+msgid "What we never do"
+msgstr "Чего мы не делаем никогда"
+
+#: home/templates/home/privacy_page.html:28
+msgid ""
+"We do not sell, rent or trade your data. We do not use it for advertising "
+"and we do not use it to train machine-learning or AI models. We do not share "
+"it with anyone except the service providers listed below and the organizer "
+"of an event you personally registered for."
+msgstr "Мы не продаём, не сдаём в аренду и не обмениваем ваши данные. Мы не используем их для рекламы и не используем для обучения моделей машинного обучения и искусственного интеллекта. Мы не передаём их никому, кроме перечисленных ниже поставщиков услуг и организатора того мероприятия, на которое вы сами зарегистрировались."
+
+#: home/templates/home/privacy_page.html:30
+msgid "Service providers"
+msgstr "Поставщики услуг"
+
+#: home/templates/home/privacy_page.html:31
+msgid ""
+"The site runs on a commercial hosting platform and uses an email provider to "
+"deliver service messages; both process data solely on our behalf. Map tiles "
+"are loaded from OpenStreetMap, and some interface libraries are loaded from "
+"public content delivery networks, which means those services see your IP "
+"address as part of serving the request."
+msgstr "Сайт работает на коммерческой хостинг-платформе и использует почтовый сервис для доставки служебных писем; оба обрабатывают данные исключительно по нашему поручению. Тайлы карт загружаются из OpenStreetMap, а часть интерфейсных библиотек — из публичных сетей доставки контента, поэтому эти сервисы видят ваш IP-адрес при обработке запроса."
+
+#: home/templates/home/privacy_page.html:33
+msgid "Storage and deletion"
+msgstr "Хранение и удаление"
+
+#: home/templates/home/privacy_page.html:34
+msgid ""
+"We keep your data while your account exists. You can edit or clear most of "
+"it yourself in your profile at any time, and you can disconnect a linked "
+"Google, GitHub or Strava account from that service's settings. If you ask us "
+"to delete your account, we remove your personal data, including any "
+"identifier and name received from Strava. Published results of past events "
+"may be kept for historical accuracy in the same way they appear in ordinary "
+"sport protocols."
+msgstr "Мы храним ваши данные, пока существует ваш аккаунт. Большую их часть вы в любой момент можете изменить или очистить сами в профиле, а привязанный аккаунт Google, GitHub или Strava — отключить в настройках соответствующего сервиса. Если вы попросите удалить аккаунт, мы удалим ваши персональные данные, включая идентификатор и имя, полученные из Strava. Опубликованные результаты прошедших мероприятий могут сохраняться для исторической точности — так же, как они существуют в обычных спортивных протоколах."
+
+#: home/templates/home/privacy_page.html:36
+msgid "Your rights"
+msgstr "Ваши права"
+
+#: home/templates/home/privacy_page.html:37
+msgid ""
+"You can ask us what data we hold about you, ask for it to be corrected, or "
+"ask for it to be deleted. Write to us and we will respond."
+msgstr "Вы можете запросить, какие данные о вас у нас хранятся, потребовать их исправления или удаления. Напишите нам, и мы ответим."
+
+#: home/templates/home/privacy_page.html:39
+#: home/templates/home/terms_page.html:38
+msgid "Contact"
+msgstr "Контакты"
+
+#: home/templates/home/privacy_page.html:42
+#: home/templates/home/terms_page.html:41
+#, python-format
+msgid ""
+"Use the <a href=\"%(contact_url)s\">contact form</a> to reach the people who "
+"run this site."
+msgstr "Свяжитесь с теми, кто ведёт этот сайт, через <a href=\"%(contact_url)s\">форму обратной связи</a>."
+
+#: home/templates/home/privacy_page.html:45
+#: home/templates/home/terms_page.html:44
+#, fuzzy
+#| msgid "Save changes"
+msgid "Changes"
+msgstr "Сохранить изменения"
+
+#: home/templates/home/privacy_page.html:46
+msgid "If this policy changes we will update the date at the top of this page."
+msgstr "Если политика изменится, мы обновим дату вверху этой страницы."
+
+#: home/templates/home/terms_page.html:12
+msgid ""
+"Universal Bicycle Team is a free, non-commercial website for the amateur "
+"cycling and running community. It publishes a calendar of amateur events and "
+"lets athletes register for them. By using the site you accept these terms."
+msgstr "Universal Bicycle Team — бесплатный некоммерческий сайт для любительского сообщества велосипедистов и бегунов. Он публикует календарь любительских мероприятий и позволяет спортсменам на них регистрироваться. Пользуясь сайтом, вы принимаете эти условия."
+
+#: home/templates/home/terms_page.html:14
+msgid "Your account"
+msgstr "Ваш аккаунт"
+
+#: home/templates/home/terms_page.html:15
+msgid ""
+"Please give accurate details when you register, and keep your password to "
+"yourself: anything done from your account is treated as done by you. Tell us "
+"if you believe someone else has access to it. Some actions, such as "
+"submitting events or leaving comments, require a confirmed email address."
+msgstr "Пожалуйста, указывайте достоверные данные при регистрации и никому не сообщайте свой пароль: всё, что сделано из вашего аккаунта, считается сделанным вами. Сообщите нам, если считаете, что доступ к нему получил кто-то ещё. Часть действий — например, добавление мероприятий и комментарии — требует подтверждённого адреса электронной почты."
+
+#: home/templates/home/terms_page.html:17
+msgid "Events and content you publish"
+msgstr "Мероприятия и контент, который вы публикуете"
+
+#: home/templates/home/terms_page.html:18
+msgid ""
+"Organizers and participants may submit events, comments and files. Submit "
+"only information you have the right to publish, and make it accurate: dates, "
+"locations, distances and links. Submitted events are reviewed before they "
+"appear in the public calendar, and we may edit, decline or remove anything "
+"that is inaccurate, misleading, unlawful, offensive or spam. You keep the "
+"rights to what you publish and give us permission to display it on the site."
+msgstr "Организаторы и участники могут добавлять мероприятия, комментарии и файлы. Публикуйте только те сведения, на которые у вас есть право, и следите за их точностью: даты, места, дистанции и ссылки. Добавленные мероприятия проходят проверку перед публикацией в общем календаре, и мы вправе отредактировать, отклонить или удалить всё, что неточно, вводит в заблуждение, незаконно, оскорбительно или является спамом. Права на опубликованное остаются за вами, а нам вы даёте разрешение показывать его на сайте."
+
+#: home/templates/home/terms_page.html:20
+msgid "Registering for an event"
+msgstr "Регистрация на мероприятие"
+
+#: home/templates/home/terms_page.html:21
+msgid ""
+"We are an information and registration platform, not the organizer. The "
+"event itself — its rules, safety, timing, entry fees, refunds, cancellation "
+"and results — is the responsibility of the organizer who published it. Your "
+"registration details are passed to that organizer so they can run the event. "
+"Taking part in sporting events carries risk; assess your own health and "
+"preparation, and follow the organizer's rules."
+msgstr "Мы — информационная и регистрационная платформа, а не организатор. За само мероприятие — его правила, безопасность, хронометраж, стартовые взносы, возвраты, отмену и результаты — отвечает опубликовавший его организатор. Данные вашей регистрации передаются этому организатору, чтобы он мог провести мероприятие. Участие в спортивных мероприятиях связано с риском: оценивайте своё здоровье и подготовку и соблюдайте правила организатора."
+
+#: home/templates/home/terms_page.html:23
+msgid "Acceptable use"
+msgstr "Допустимое использование"
+
+#: home/templates/home/terms_page.html:24
+msgid ""
+"Do not attempt to break into the site, disrupt it, or collect data from it "
+"in bulk by automated means. Do not impersonate other people or register "
+"others without their consent. Use the site's API through the documented "
+"interface and within any limits we set."
+msgstr "Не пытайтесь взломать сайт, нарушить его работу или массово собирать с него данные автоматическими средствами. Не выдавайте себя за других людей и не регистрируйте их без согласия. Пользуйтесь API сайта через документированный интерфейс и в пределах установленных нами ограничений."
+
+#: home/templates/home/terms_page.html:26
+msgid "Availability and liability"
+msgstr "Доступность и ответственность"
+
+#: home/templates/home/terms_page.html:27
+msgid ""
+"The site is provided as-is and free of charge. We do our best to keep it "
+"running and its information correct, but we cannot guarantee that it is "
+"always available, complete or error-free, and we are not liable for "
+"decisions taken on the basis of the information published here. Calendar "
+"entries are gathered from organizers and public sources, so always confirm "
+"the details on the organizer's own page before travelling to an event or "
+"paying an entry fee."
+msgstr "Сайт предоставляется «как есть» и бесплатно. Мы делаем всё возможное, чтобы он работал, а сведения были верными, но не можем гарантировать его постоянную доступность, полноту и безошибочность и не несём ответственности за решения, принятые на основе опубликованной здесь информации. Записи календаря собираются от организаторов и из открытых источников, поэтому всегда проверяйте детали на странице самого организатора, прежде чем ехать на старт или оплачивать взнос."
+
+#: home/templates/home/terms_page.html:29
+msgid "Moderation and closing accounts"
+msgstr "Модерация и закрытие аккаунтов"
+
+#: home/templates/home/terms_page.html:30
+msgid ""
+"We may remove content or restrict an account that breaks these terms. You "
+"can ask us to delete your account at any time."
+msgstr "Мы можем удалить контент или ограничить аккаунт, нарушающий эти условия. Вы в любой момент можете попросить нас удалить ваш аккаунт."
+
+#: home/templates/home/terms_page.html:32
+msgid "Your privacy"
+msgstr "Ваша конфиденциальность"
+
+#: home/templates/home/terms_page.html:35
+#, python-format
+msgid ""
+"The <a href=\"%(privacy_url)s\">Privacy Policy</a> explains what data we "
+"collect and how to have it removed."
+msgstr "<a href=\"%(privacy_url)s\">Политика конфиденциальности</a> объясняет, какие данные мы собираем и как их удалить."
+
+#: home/templates/home/terms_page.html:45
+msgid "If these terms change we will update the date at the top of this page."
+msgstr "Если условия изменятся, мы обновим дату вверху этой страницы."
 
 #: home/templates/home/welcome_page.html:6
 msgid "Visit the Wagtail website"

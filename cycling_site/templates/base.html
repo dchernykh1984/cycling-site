@@ -157,6 +157,10 @@
             <div class="text-muted small mt-1">
                 {% blocktrans with url="https://github.com/dchernykh1984/cycling-site/issues" %}Found a bug or have a suggestion? <a href="{{ url }}" target="_blank" rel="noopener">Open an issue on GitHub</a>.{% endblocktrans %}
             </div>
+            <div class="text-muted small mt-1 d-flex flex-wrap gap-3">
+                <a href="{% url 'privacy_policy' %}">{% trans "Privacy Policy" %}</a>
+                <a href="{% url 'terms_of_use' %}">{% trans "Terms of Use" %}</a>
+            </div>
         </div>
     </footer>
 
