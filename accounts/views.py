@@ -46,11 +46,12 @@ def signin_methods(user) -> dict:
     from allauth.socialaccount.models import SocialAccount
 
     connected = set(SocialAccount.objects.filter(user=user).values_list("provider", flat=True))
-    has_email = bool(user.email) or EmailAddress.objects.filter(user=user).exists()
+    has_email = user.has_email_address()
     has_password = user.has_usable_password()
-    # Both halves are needed for a password to be a way in; the rule lives on the model because the
-    # guard against disconnecting the last provider applies exactly the same one.
-    password_ready = user.can_sign_in_with_password()
+    # Both halves are needed for a password to count as a way in. Combined here rather than through
+    # can_sign_in_with_password() so the address is looked up once; the model still owns the rule,
+    # and the guard against unlinking the last provider applies exactly the same one.
+    password_ready = has_email and has_password
     providers = [{"id": pid, "name": name, "connected": pid in connected} for pid, name in _SIGNIN_PROVIDERS]
     method_count = len(connected) + (1 if password_ready else 0)
     return {
