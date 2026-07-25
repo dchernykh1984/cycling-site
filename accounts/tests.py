@@ -18,7 +18,7 @@ from accounts.access import EMAIL_CONFIRMATION_REQUIRED_MESSAGE
 from accounts.adapters import AccountAdapter, SocialAccountAdapter
 from accounts.models import User
 from accounts.signals import ROLE_GROUP_MAP, _sync_user_group
-from accounts.views import signin_methods
+from accounts.views import signin_methods, signin_providers
 from accounts.wagtail_hooks import _RoleEnforcedMixin
 
 
@@ -1992,3 +1992,19 @@ class HasEmailAddressTests(TestCase):
         user.save(update_fields=["email"])
         EmailAddress.objects.filter(user=user).delete()
         self.assertFalse(user.has_email_address())
+
+
+class SigninProvidersListTests(TestCase):
+    """The card's provider list follows settings, so enabling one does not need a code change."""
+
+    def test_lists_every_configured_provider_in_settings_order(self):
+        self.assertEqual([pid for pid, _ in signin_providers()], list(settings.SOCIALACCOUNT_PROVIDERS))
+
+    def test_uses_the_display_name_from_allauth(self):
+        names = dict(signin_providers())
+        self.assertEqual(names["github"], "GitHub")
+        self.assertEqual(names["strava"], "Strava")
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS={"strava": {}, "made_up": {}})
+    def test_an_unknown_provider_still_gets_a_readable_name(self):
+        self.assertEqual(dict(signin_providers())["made_up"], "Made_up")
