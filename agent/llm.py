@@ -131,8 +131,12 @@ _ENRICH_SYSTEM = (
     "fees, who it is for) using only <p>/<br>/<ul>/<ol>/<li>/<strong>/<em>; date_start/date_end; "
     "url_route (route / GPS-track link, e.g. Strava) and url_registration; event_type_id and "
     "discipline_ids from the provided lists; and country/region/city/venue. The page text ends with "
-    'a "Links on the page" list -- take url_route, url_registration and a more specific source_url '
-    "ONLY from those real links, never invent one, and prefer the specific event page. Keep title, "
+    'a "Links on the page" list, each shown as "name - url" -- take url_route, url_registration and '
+    "a more specific source_url ONLY from those real links, never invent one, and prefer the "
+    "specific event page. If the page you were given is a shared calendar's entry for the race "
+    "rather than the organizer's own announcement, set source_url to the organizer's own page for "
+    "this race from that list (the site the entry credits or links out to); a calendar entry is a "
+    "second-hand copy and is often out of date or plain wrong about the name and place. Keep title, "
     "description "
     "and venue in all three locales (ru/kk/en). Keep it the SAME event -- never turn it into a "
     "different one, and do not invent facts the page does not state. If the page adds nothing, "
