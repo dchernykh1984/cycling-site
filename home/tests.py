@@ -8,6 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from django.utils.translation import override as translation_override
 from PIL import Image as PILImage
 from wagtail.images import get_image_model
 from wagtail.models import Locale, Page, Site
@@ -522,3 +523,54 @@ class AdminUploadAndEditScenarioTests(TestCase):
             root.add_child(instance=home)
         resp = self.client.get(reverse("wagtailadmin_pages:edit", args=[home.id]))
         self.assertEqual(resp.status_code, 200)
+
+
+class LegalPagesTests(TestCase):
+    """The privacy policy and terms live at fixed URLs (issue: Strava API Agreement expects a
+    reachable privacy policy, and the footer links to both from every page)."""
+
+    def test_privacy_page_is_public(self):
+        resp = self.client.get(reverse("privacy_policy"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, "home/privacy_page.html")
+
+    def test_terms_page_is_public(self):
+        resp = self.client.get(reverse("terms_of_use"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, "home/terms_page.html")
+
+    def test_urls_are_the_stable_paths_external_parties_link_to(self):
+        self.assertEqual(reverse("privacy_policy"), "/privacy/")
+        self.assertEqual(reverse("terms_of_use"), "/terms/")
+
+    def test_privacy_page_states_what_strava_data_is_used(self):
+        # The Strava submission relies on this page saying we take identity only, never activities.
+        # Pin the locale: the source strings are English, and the site defaults to Russian.
+        self.client.cookies["django_language"] = "en"
+        resp = self.client.get(reverse("privacy_policy"))
+        body = resp.content.decode()
+        self.assertIn("Strava", body)
+        self.assertIn("athlete identifier and name", body)
+        self.assertIn("we do not request access to your activities", body)
+
+    def test_privacy_page_links_to_the_contact_form(self):
+        resp = self.client.get(reverse("privacy_policy"))
+        self.assertContains(resp, reverse("account_contact_owners"))
+
+    def test_terms_page_links_to_the_privacy_policy(self):
+        resp = self.client.get(reverse("terms_of_use"))
+        self.assertContains(resp, reverse("privacy_policy"))
+
+    def test_footer_links_to_both_pages(self):
+        resp = self.client.get(reverse("privacy_policy"))
+        self.assertContains(resp, reverse("privacy_policy"))
+        self.assertContains(resp, reverse("terms_of_use"))
+
+    def test_pages_are_translated(self):
+        # Both pages are fully localized; the Russian rendering must not fall back to English.
+        for name, english in (("privacy_policy", "Privacy Policy"), ("terms_of_use", "Terms of Use")):
+            with translation_override("ru"):
+                resp = self.client.get(reverse(name), headers={"accept-language": "ru"})
+            body = resp.content.decode()
+            self.assertEqual(resp.status_code, 200)
+            self.assertNotIn(f'<h1 class="mb-2">{english}</h1>', body)
