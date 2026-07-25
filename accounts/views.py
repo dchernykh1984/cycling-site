@@ -29,8 +29,21 @@ from accounts.models import User
 _RESEND_COOLDOWN_SECONDS = 600  # 10 minutes
 logger = logging.getLogger(__name__)
 
-# Social providers offered on the sign-in page, in the order the profile card lists them.
-_SIGNIN_PROVIDERS: tuple[tuple[str, str], ...] = (("google", "Google"), ("github", "GitHub"), ("strava", "Strava"))
+
+def signin_providers() -> list[tuple[str, str]]:
+    """``(id, display name)`` for every social provider this site offers, in settings order.
+
+    Read from ``SOCIALACCOUNT_PROVIDERS`` rather than hardcoded, so enabling another provider makes
+    it manageable from the profile too instead of silently missing from the sign-in methods card.
+    The display name comes from allauth's own provider class ("GitHub", not "Github").
+    """
+    from allauth.socialaccount import providers
+
+    result = []
+    for provider_id in settings.SOCIALACCOUNT_PROVIDERS:
+        provider_class = providers.registry.get_class(provider_id)
+        result.append((provider_id, getattr(provider_class, "name", None) or provider_id.capitalize()))
+    return result
 
 
 def signin_methods(user) -> dict:
@@ -52,7 +65,7 @@ def signin_methods(user) -> dict:
     # can_sign_in_with_password() so the address is looked up once; the model still owns the rule,
     # and the guard against unlinking the last provider applies exactly the same one.
     password_ready = has_email and has_password
-    providers = [{"id": pid, "name": name, "connected": pid in connected} for pid, name in _SIGNIN_PROVIDERS]
+    providers = [{"id": pid, "name": name, "connected": pid in connected} for pid, name in signin_providers()]
     method_count = len(connected) + (1 if password_ready else 0)
     return {
         "has_email": has_email,
