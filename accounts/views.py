@@ -29,6 +29,40 @@ from accounts.models import User
 _RESEND_COOLDOWN_SECONDS = 600  # 10 minutes
 logger = logging.getLogger(__name__)
 
+# Social providers offered on the sign-in page, in the order the profile card lists them.
+_SIGNIN_PROVIDERS: tuple[tuple[str, str], ...] = (("google", "Google"), ("github", "GitHub"), ("strava", "Strava"))
+
+
+def signin_methods(user) -> dict:
+    """State of every way this account can be signed in to (issue #237).
+
+    allauth already supports any number of linked providers alongside an email/password login and
+    ships pages to manage them, but nothing in our interface pointed at those pages. This feeds the
+    profile's "Sign-in methods" card, which shows what is currently active -- the thing a member
+    actually needs to know -- and links to the existing allauth pages for the actions themselves.
+
+    Only structural data is returned; the wording lives in the template so it stays translatable.
+    """
+    from allauth.socialaccount.models import SocialAccount
+
+    connected = set(SocialAccount.objects.filter(user=user).values_list("provider", flat=True))
+    has_email = bool(user.email) or EmailAddress.objects.filter(user=user).exists()
+    has_password = user.has_usable_password()
+    # Email and password only count as a way in when both halves exist: sign-in is by email here,
+    # so a password without an address (a Strava-only signup) cannot be used to log in.
+    password_ready = has_email and has_password
+    providers = [{"id": pid, "name": name, "connected": pid in connected} for pid, name in _SIGNIN_PROVIDERS]
+    method_count = len(connected) + (1 if password_ready else 0)
+    return {
+        "has_email": has_email,
+        "has_password": has_password,
+        "password_ready": password_ready,
+        "providers": providers,
+        "method_count": method_count,
+        # Disconnecting the only remaining method would lock the member out of their own account.
+        "can_disconnect": method_count > 1,
+    }
+
 
 class ProfileEditForm(forms.ModelForm):
     class Meta:
@@ -69,6 +103,7 @@ class ProfileView(TemplateView):
             or EmailAddress.objects.filter(user=user, verified=True).exists()
         )
         context["email_confirmation_required_message"] = EMAIL_CONFIRMATION_REQUIRED_MESSAGE
+        context["signin_methods"] = signin_methods(user)
         cooldown_remaining = 0
         sent_at = self.request.user.last_mail_action_at
         if sent_at:

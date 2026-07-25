@@ -90,6 +90,65 @@
             </div>
         </div>
 
+        {% comment %}Sign-in methods (issue #237): one account can be entered by e-mail and password
+        and by any of the linked providers at once. The card shows which ones are active right now --
+        what a member needs in order to know what happens if they lose access to one of them -- and
+        links to the allauth pages that perform the actions.{% endcomment %}
+        <div class="card mb-4" id="signin-methods">
+            <div class="card-header">{% trans "Sign-in methods" %}</div>
+            <div class="card-body">
+                <p class="mb-3 small text-muted">
+                    {% trans "You can use any of these to sign in to this account. Connect several so that losing one does not lock you out." %}
+                </p>
+                <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>{% trans "Email and password" %}</strong>
+                            {% if not signin_methods.has_email %}
+                            <div class="small text-warning">
+                                {% trans "No email address, so signing in with a password is not possible yet." %}
+                            </div>
+                            {% elif not signin_methods.has_password %}
+                            <div class="small text-muted">{% trans "Password not set." %}</div>
+                            {% else %}
+                            <div class="small text-success">{% trans "Ready to use." %}</div>
+                            {% endif %}
+                        </div>
+                        {% if not signin_methods.has_email %}
+                        <a href="{% url 'account_email' %}" class="btn btn-sm btn-outline-primary">{% trans "Add email" %}</a>
+                        {% elif not signin_methods.has_password %}
+                        <a href="{% url 'account_set_password' %}" class="btn btn-sm btn-outline-primary">{% trans "Set password" %}</a>
+                        {% else %}
+                        <a href="{% url 'account_change_password' %}" class="btn btn-sm btn-outline-secondary">{% trans "Change password" %}</a>
+                        {% endif %}
+                    </div>
+
+                    {% for provider in signin_methods.providers %}
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 border-top pt-2">
+                        <div>
+                            <strong>{{ provider.name }}</strong>
+                            {% if provider.connected %}
+                            <div class="small text-success">{% trans "Connected." %}</div>
+                            {% else %}
+                            <div class="small text-muted">{% trans "Not connected." %}</div>
+                            {% endif %}
+                        </div>
+                        {% if provider.connected %}
+                        {% if signin_methods.can_disconnect %}
+                        <a href="{% url 'socialaccount_connections' %}" class="btn btn-sm btn-outline-secondary">{% trans "Disconnect" %}</a>
+                        {% else %}
+                        <span class="btn btn-sm btn-outline-secondary disabled" aria-disabled="true" tabindex="-1"
+                              title="{% trans 'This is your only way to sign in. Add another one first.' %}">{% trans "Disconnect" %}</span>
+                        {% endif %}
+                        {% else %}
+                        <a href="{% url 'socialaccount_connections' %}" class="btn btn-sm btn-outline-primary">{% trans "Connect" %}</a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
         {% if user.get_role_rank >= 1 %}
         <div class="card mb-4">
             <div class="card-header">{% trans "Contact site owners" %}</div>
