@@ -1694,3 +1694,52 @@ class SyncDefaultSiteHostTests(TestCase):
         site.refresh_from_db()
         self.assertEqual((site.hostname, site.port), before)
         self.assertEqual(DjangoSite.objects.get(pk=settings.SITE_ID).domain, django_domain_before)
+
+
+class StravaProfileLinkTests(TestCase):
+    """Signing up through Strava fills the profile's Strava link (same hook as first/last name)."""
+
+    def _populate(self, user, provider="strava", uid="1613761"):
+        adapter = SocialAccountAdapter()
+        request = RequestFactory().get("/")
+        sociallogin = MagicMock()
+        sociallogin.account.provider = provider
+        sociallogin.account.uid = uid
+        with patch(
+            "allauth.socialaccount.adapter.DefaultSocialAccountAdapter.populate_user",
+            return_value=user,
+        ):
+            return adapter.populate_user(request, sociallogin, {})
+
+    def test_strava_signup_fills_the_profile_link(self):
+        user = User(username="strava_new", email="strava_new@test.local")
+        self._populate(user)
+        self.assertEqual(user.strava_link, "https://www.strava.com/athletes/1613761")
+
+    def test_link_is_not_overwritten_when_the_member_already_set_one(self):
+        user = User(username="strava_own", strava_link="https://www.strava.com/athletes/999")
+        self._populate(user, uid="1613761")
+        self.assertEqual(user.strava_link, "https://www.strava.com/athletes/999")
+
+    def test_other_providers_do_not_set_a_strava_link(self):
+        for provider in ("google", "github"):
+            user = User(username=f"{provider}_user")
+            self._populate(user, provider=provider, uid="42")
+            self.assertEqual(user.strava_link, "")
+
+    def test_missing_athlete_id_leaves_the_link_empty(self):
+        user = User(username="strava_no_uid")
+        self._populate(user, uid="")
+        self.assertEqual(user.strava_link, "")
+
+    def test_generated_link_fits_the_model_field(self):
+        user = User(username="strava_len")
+        self._populate(user)
+        self.assertLessEqual(len(user.strava_link), User._meta.get_field("strava_link").max_length)
+
+    def test_helper_builds_the_public_profile_url_from_the_athlete_id(self):
+        from accounts.adapters import strava_profile_url
+
+        account = MagicMock()
+        account.uid = "1613761"
+        self.assertEqual(strava_profile_url(account), "https://www.strava.com/athletes/1613761")

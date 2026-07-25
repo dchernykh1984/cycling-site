@@ -28,7 +28,26 @@ class AccountAdapter(DefaultAccountAdapter):
             user.save(update_fields=["role"])
 
 
+def strava_profile_url(account) -> str:
+    """Public Strava profile URL of a just-authenticated athlete.
+
+    The Strava provider stores the athlete id as the account's ``uid`` (see its ``extract_uid``),
+    and the public profile lives at a fixed path built from that id. So this needs no extra API
+    call and no extra scope -- it only reformats an identifier the OAuth response already gave us.
+    """
+    return f"https://www.strava.com/athletes/{account.uid}" if account.uid else ""
+
+
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
+    def populate_user(self, request, sociallogin, data):
+        # Same hook (and therefore the same moment) that fills first/last name from the provider,
+        # so a member signing up through Strava lands with their profile link already filled in.
+        # Only ever set on a blank field, never overwriting a link the member typed themselves.
+        user = super().populate_user(request, sociallogin, data)
+        if sociallogin.account.provider == "strava" and not user.strava_link:
+            user.strava_link = strava_profile_url(sociallogin.account)
+        return user
+
     def pre_social_login(self, request, sociallogin):
         # save_user() is only called for new signups; upgrade existing guests here
         if not sociallogin.is_existing:
