@@ -48,9 +48,9 @@ def signin_methods(user) -> dict:
     connected = set(SocialAccount.objects.filter(user=user).values_list("provider", flat=True))
     has_email = bool(user.email) or EmailAddress.objects.filter(user=user).exists()
     has_password = user.has_usable_password()
-    # Email and password only count as a way in when both halves exist: sign-in is by email here,
-    # so a password without an address (a Strava-only signup) cannot be used to log in.
-    password_ready = has_email and has_password
+    # Both halves are needed for a password to be a way in; the rule lives on the model because the
+    # guard against disconnecting the last provider applies exactly the same one.
+    password_ready = user.can_sign_in_with_password()
     providers = [{"id": pid, "name": name, "connected": pid in connected} for pid, name in _SIGNIN_PROVIDERS]
     method_count = len(connected) + (1 if password_ready else 0)
     return {

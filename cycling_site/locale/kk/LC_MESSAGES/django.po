@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-25 10:53+0500\n"
+"POT-Creation-Date: 2026-07-25 11:09+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -18,7 +18,13 @@ msgstr ""
 "старттарға тіркеле алмайсыз, пікір қалдыра алмайсыз, сайт иелеріне жаза "
 "алмайсыз немесе API пайдалана алмайсыз."
 
-#: accounts/models.py:90
+#: accounts/adapters.py:62
+msgid ""
+"Add an email address and a password first, otherwise you would have no way "
+"to sign in."
+msgstr "Алдымен электрондық пошта мекенжайы мен құпиясөзді қосыңыз, әйтпесе кіретін тәсіліңіз қалмайды."
+
+#: accounts/models.py:103
 msgid "Participant"
 msgstr "Қатысушы"
 
@@ -105,7 +111,7 @@ msgstr "Iздеу..."
 #: accounts/templates/accounts/contact_owners.html:9
 #: accounts/templates/accounts/profile.html:155
 #: accounts/templates/accounts/profile.html:163
-#: accounts/templates/accounts/profile.html:164 accounts/tests.py:1432
+#: accounts/templates/accounts/profile.html:164 accounts/tests.py:1433
 msgid "Contact site owners"
 msgstr "Сайт иелерімен байланыс"
 
@@ -235,7 +241,9 @@ msgstr "Кіру тәсілдері"
 msgid ""
 "You can use any of these to sign in to this account. Connect several so that "
 "losing one does not lock you out."
-msgstr "Осы тәсілдердің кез келгенімен бұл тіркелгіге кіруге болады. Біреуін жоғалтқанда қол жеткізу жабылмауы үшін бірнешеуін қосыңыз."
+msgstr ""
+"Осы тәсілдердің кез келгенімен бұл тіркелгіге кіруге болады. Біреуін "
+"жоғалтқанда қол жеткізу жабылмауы үшін бірнешеуін қосыңыз."
 
 #: accounts/templates/accounts/profile.html:107
 msgid "Email and password"
@@ -243,7 +251,9 @@ msgstr "Email және құпиясөз"
 
 #: accounts/templates/accounts/profile.html:110
 msgid "No email address, so signing in with a password is not possible yet."
-msgstr "Электрондық пошта мекенжайы көрсетілмеген, сондықтан құпиясөзбен кіру әзірге мүмкін емес."
+msgstr ""
+"Электрондық пошта мекенжайы көрсетілмеген, сондықтан құпиясөзбен кіру әзірге "
+"мүмкін емес."
 
 #: accounts/templates/accounts/profile.html:113
 msgid "Password not set."
