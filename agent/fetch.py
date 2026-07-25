@@ -1,8 +1,10 @@
 """Fetch a source's recent text (network + HTML parsing). Coverage-omitted I/O adapter.
 
-The text handed to the LLM also lists the page's real hyperlink URLs, because ``get_text`` drops
-``<a href>`` targets -- so without this the model never sees the actual links and tends to invent
-them or miss the specific event page. ``extract_links`` (the pure part) has its own unit tests.
+The text handed to the LLM also lists the page's real hyperlinks -- each as the name it is shown
+under and its URL -- because ``get_text`` drops ``<a href>`` targets, so without this the model
+never sees the actual links and tends to invent them or miss the specific event page. The name
+matters as much as the URL: a calendar's links are indistinguishable without it. The pure parts
+(``extract_links`` and the collector behind it) have their own unit tests.
 """
 
 from __future__ import annotations
@@ -97,24 +99,14 @@ def _get_with_fallback(url: str, timeout: int = 20) -> str:
     raise RuntimeError(f"no URL to fetch for {url}")  # unreachable: _fetch_urls always yields >= 1
 
 
-def _absolute_links(anchors, base_url: str, limit: int = _MAX_LINKS) -> list[str]:
-    """Deduped absolute http(s) URLs from ``<a href>`` anchors, resolved against ``base_url``."""
-    seen: list[str] = []
-    for anchor in anchors:
-        href = (anchor.get("href") or "").strip()
-        if not href or href.startswith(_SKIP_PREFIXES):
-            continue
-        url = urljoin(base_url, href)
-        if urlsplit(url).scheme in ("http", "https") and url not in seen:
-            seen.append(url)
-            if len(seen) >= limit:
-                break
-    return seen
-
-
 def extract_links(html: str, base_url: str, limit: int = _MAX_LINKS) -> list[str]:
-    """Absolute http(s) links found in ``html`` (pure; used by the fetchers, unit-tested)."""
-    return _absolute_links(BeautifulSoup(html, "html.parser").find_all("a", href=True), base_url, limit)
+    """Absolute http(s) links found in ``html`` (pure; unit-tested).
+
+    The URL-only view of :func:`_named_links`, so the collecting rules -- resolve against the base,
+    http(s) only, deduped, capped -- live in one place and cannot drift between the two callers.
+    """
+    anchors = BeautifulSoup(html, "html.parser").find_all("a", href=True)
+    return [url for _, url in _named_links(anchors, base_url, limit)]
 
 
 def _labelled_links(anchors, base_url: str, limit: int = _MAX_LINKS) -> list[str]:
@@ -126,8 +118,16 @@ def _labelled_links(anchors, base_url: str, limit: int = _MAX_LINKS) -> list[str
     what makes that choice possible. Text is squeezed onto one line and capped so a long or
     image-only anchor cannot crowd out the list.
     """
+    return [f"{name} - {url}" if name else url for name, url in _named_links(anchors, base_url, limit)]
+
+
+def _named_links(anchors, base_url: str, limit: int = _MAX_LINKS) -> list[tuple[str, str]]:
+    """``(name, url)`` per deduped http(s) link, in page order, capped at ``limit``.
+
+    The name is empty when nothing on the page names the link.
+    """
     order: list[str] = []
-    labels: dict[str, str] = {}
+    names: dict[str, str] = {}
     for anchor in anchors:
         href = (anchor.get("href") or "").strip()
         if not href or href.startswith(_SKIP_PREFIXES):
@@ -135,17 +135,17 @@ def _labelled_links(anchors, base_url: str, limit: int = _MAX_LINKS) -> list[str
         url = urljoin(base_url, href)
         if urlsplit(url).scheme not in ("http", "https"):
             continue
-        if url not in labels:
+        if url not in names:
             if len(order) >= limit:
                 continue
             order.append(url)
-            labels[url] = ""
+            names[url] = ""
         # A calendar routinely links the same race twice -- once around its logo (no text) and once
-        # around its name -- so keep looking until a labelled one turns up rather than taking the
+        # around its name -- so keep looking until a named one turns up rather than taking the
         # first. The image's title/alt carries the name too, and serves when only the logo links.
-        if not labels[url]:
-            labels[url] = _anchor_label(anchor)
-    return [f"{labels[url]} - {url}" if labels[url] else url for url in order]
+        if not names[url]:
+            names[url] = _anchor_label(anchor)
+    return [(names[url], url) for url in order]
 
 
 def _anchor_label(anchor) -> str:
