@@ -561,8 +561,11 @@ class LegalPagesTests(TestCase):
         resp = self.client.get(reverse("terms_of_use"))
         self.assertContains(resp, reverse("privacy_policy"))
 
-    def test_footer_links_to_both_pages(self):
-        resp = self.client.get(reverse("privacy_policy"))
+    def test_footer_links_to_both_pages_from_an_unrelated_page(self):
+        # Asserted from a page that is neither of the two, so this really shows the footer carries
+        # the links site-wide rather than a page linking to itself.
+        resp = self.client.get(reverse("calendar_list"))
+        self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, reverse("privacy_policy"))
         self.assertContains(resp, reverse("terms_of_use"))
 
