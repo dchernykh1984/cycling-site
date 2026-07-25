@@ -62,8 +62,11 @@ _KIND_GUIDANCE = {
         "race because its row is brief. A calendar of RUNNING events, or of events in far-away "
         "countries, is IN SCOPE just like a cycling one -- running, triathlon and skiing all count, "
         "and a foreign location is never a reason to skip a real event; extract them all the same. "
-        "Set each race's source_url to its OWN page on the organizer's site (chosen from the 'Links "
-        "on the page' list) -- never the aggregator's URL."
+        "Give each race the link that names it in the 'Links on the page' list: the organizer's own "
+        "page for that race when the list has one, otherwise the race's own entry page on this "
+        "calendar (a per-race link, e.g. one ending in a race id). What must NEVER be used is the "
+        "calendar's own listing URL, which names no single race -- if this race has no link of its "
+        'own in the list, leave source_url "" rather than falling back to the listing.'
     ),
     "organizer": (
         "This page belongs to a single event ORGANIZER; extract their real upcoming competitions and "
