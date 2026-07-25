@@ -49,3 +49,30 @@ def test_system_prompts_do_not_narrow_the_brief_to_cycling():
         assert "cycling competitions from" not in prompt
         assert "ONE cycling event" not in prompt
     assert "running" in _SYSTEM and "triathlon" in _SYSTEM
+
+
+def test_system_prompt_explains_that_links_are_listed_under_their_name():
+    # The names are what let a race be matched to its own page; without saying they are there,
+    # the model has no reason to look for them.
+    assert '"name - url"' in _SYSTEM
+    assert "which race a link belongs to" in _SYSTEM
+
+
+def test_aggregator_guidance_asks_only_for_a_link_that_can_exist():
+    # A calendar's listing page links each race's own entry, but not the organizer's site, so
+    # demanding the organizer's page outright left the model with nothing to pick and it gave up.
+    guidance = _KIND_GUIDANCE["aggregator"]
+    assert "otherwise the race's own entry page on this calendar" in guidance
+    assert "leave source_url" in guidance  # empty beats pointing at the listing
+
+
+def test_aggregator_guidance_still_forbids_the_listing_url():
+    assert "NEVER" in _KIND_GUIDANCE["aggregator"]
+    assert "listing URL" in _KIND_GUIDANCE["aggregator"]
+
+
+def test_enrichment_moves_a_calendar_entry_to_the_organizers_page():
+    from agent.llm import _ENRICH_SYSTEM
+
+    assert "organizer's own page for this race" in _ENRICH_SYSTEM
+    assert "second-hand copy" in _ENRICH_SYSTEM  # says why, so the rule is not cargo-culted
