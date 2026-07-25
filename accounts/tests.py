@@ -1971,3 +1971,24 @@ class CanSignInWithPasswordTests(TestCase):
         user.save(update_fields=["email"])
         EmailAddress.objects.create(user=user, email="kept@example.com", verified=False, primary=True)
         self.assertTrue(user.can_sign_in_with_password())
+
+
+class HasEmailAddressTests(TestCase):
+    def test_user_row_address_counts(self):
+        user = make_user(username="row_email")
+        EmailAddress.objects.filter(user=user).delete()
+        self.assertTrue(user.has_email_address())
+
+    def test_allauth_record_counts_when_the_row_is_blank(self):
+        user = make_user(username="record_email")
+        user.email = ""
+        user.save(update_fields=["email"])
+        EmailAddress.objects.create(user=user, email="rec@example.com", verified=False, primary=True)
+        self.assertTrue(user.has_email_address())
+
+    def test_no_address_anywhere(self):
+        user = make_user(username="no_addr")
+        user.email = ""
+        user.save(update_fields=["email"])
+        EmailAddress.objects.filter(user=user).delete()
+        self.assertFalse(user.has_email_address())

@@ -80,6 +80,12 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         except ValueError:
             return 0
 
+    def has_email_address(self) -> bool:
+        """Whether any address is on file, on the user row or as an allauth email record."""
+        from allauth.account.models import EmailAddress
+
+        return bool(self.email) or EmailAddress.objects.filter(user=self).exists()
+
     def can_sign_in_with_password(self) -> bool:
         """Whether this account can actually be signed in to with a password.
 
@@ -88,10 +94,7 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         sign-in methods card and the guard against disconnecting the last provider both depend on
         this, so the rule lives in one place.
         """
-        from allauth.account.models import EmailAddress
-
-        has_email = bool(self.email) or EmailAddress.objects.filter(user=self).exists()
-        return has_email and self.has_usable_password()
+        return self.has_email_address() and self.has_usable_password()
 
     @property
     def public_display_name(self) -> str:
