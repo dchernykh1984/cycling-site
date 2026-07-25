@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Terms of Use" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10 col-lg-8">
+    <h1 class="mb-2">{% trans "Terms of Use" %}</h1>
+    <p class="text-muted small mb-4">{% trans "Last updated" %}: 25.07.2026</p>
+
+    <p>{% blocktrans %}Universal Bicycle Team is a free, non-commercial website for the amateur cycling and running community. It publishes a calendar of amateur events and lets athletes register for them. By using the site you accept these terms.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Your account" %}</h2>
+    <p>{% blocktrans %}Please give accurate details when you register, and keep your password to yourself: anything done from your account is treated as done by you. Tell us if you believe someone else has access to it. Some actions, such as submitting events or leaving comments, require a confirmed email address.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Events and content you publish" %}</h2>
+    <p>{% blocktrans %}Organizers and participants may submit events, comments and files. Submit only information you have the right to publish, and make it accurate: dates, locations, distances and links. Submitted events are reviewed before they appear in the public calendar, and we may edit, decline or remove anything that is inaccurate, misleading, unlawful, offensive or spam. You keep the rights to what you publish and give us permission to display it on the site.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Registering for an event" %}</h2>
+    <p>{% blocktrans %}We are an information and registration platform, not the organizer. The event itself — its rules, safety, timing, entry fees, refunds, cancellation and results — is the responsibility of the organizer who published it. Your registration details are passed to that organizer so they can run the event. Taking part in sporting events carries risk; assess your own health and preparation, and follow the organizer's rules.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Acceptable use" %}</h2>
+    <p>{% blocktrans %}Do not attempt to break into the site, disrupt it, or collect data from it in bulk by automated means. Do not impersonate other people or register others without their consent. Use the site's API through the documented interface and within any limits we set.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Availability and liability" %}</h2>
+    <p>{% blocktrans %}The site is provided as-is and free of charge. We do our best to keep it running and its information correct, but we cannot guarantee that it is always available, complete or error-free, and we are not liable for decisions taken on the basis of the information published here. Calendar entries are gathered from organizers and public sources, so always confirm the details on the organizer's own page before travelling to an event or paying an entry fee.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Moderation and closing accounts" %}</h2>
+    <p>{% blocktrans %}We may remove content or restrict an account that breaks these terms. You can ask us to delete your account at any time.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Your privacy" %}</h2>
+    <p>
+      {% url 'privacy_policy' as privacy_url %}
+      {% blocktrans %}The <a href="{{ privacy_url }}">Privacy Policy</a> explains what data we collect and how to have it removed.{% endblocktrans %}
+    </p>
+
+    <h2 class="h5 mt-4">{% trans "Contact" %}</h2>
+    <p>
+      {% url 'account_contact_owners' as contact_url %}
+      {% blocktrans %}Use the <a href="{{ contact_url }}">contact form</a> to reach the people who run this site.{% endblocktrans %}
+    </p>
+
+    <h2 class="h5 mt-4">{% trans "Changes" %}</h2>
+    <p>{% blocktrans %}If these terms change we will update the date at the top of this page.{% endblocktrans %}</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Privacy Policy" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10 col-lg-8">
+    <h1 class="mb-2">{% trans "Privacy Policy" %}</h1>
+    <p class="text-muted small mb-4">{% trans "Last updated" %}: 25.07.2026</p>
+
+    <p>{% blocktrans %}This policy explains what personal data the Universal Bicycle Team website collects, why we collect it, and how you can have it removed. The site is a free, non-commercial project for the amateur cycling and running community.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "What we collect" %}</h2>
+    <p>{% blocktrans %}<strong>Account data.</strong> When you register we store your email address and a cryptographic hash of your password (never the password itself). You may optionally add your name, date of birth, gender, city, team, a link to your Strava profile, and your preferred sports and locations, so that forms are pre-filled for you.{% endblocktrans %}</p>
+    <p>{% blocktrans %}<strong>Sign-in through Google, GitHub or Strava.</strong> If you use one of these buttons, we receive only your identifier with that service and your name, which we use to create or sign in to your account. From Strava we receive your athlete identifier and name only: we do not request access to your activities, routes, segments or any training data, and we never see them.{% endblocktrans %}</p>
+    <p>{% blocktrans %}<strong>Race registration data.</strong> When you register for an event we store the details the organizer requires: name, date of birth, gender, city, team, category, and an optional free-text field (some organizers use it for a link to your Strava profile).{% endblocktrans %}</p>
+    <p>{% blocktrans %}<strong>Content you publish.</strong> Events, comments, reports about inaccurate events, and files uploaded by organizers such as regulations, route files and result protocols.{% endblocktrans %}</p>
+    <p>{% blocktrans %}<strong>Technical data.</strong> A session cookie that keeps you signed in, cookies remembering your chosen language and colour theme, and ordinary server logs. We do not use advertising or analytics trackers, and there is no third-party tracking code on the site.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Why we use it" %}</h2>
+    <p>{% blocktrans %}To run your account, to let you register for events and to pass the registration details to that event's organizer, to publish the race calendar, start lists and results, to moderate submissions, and to send you service messages such as email confirmation and password reset.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "What is visible to others" %}</h2>
+    <p>{% blocktrans %}Sport results are public by nature. Start lists and result protocols show participants' names and the details the organizer chose to publish, such as city, team and category. The organizer of an event can see the registration data of the people registered for it. Your email address is never shown publicly. Comments you leave are public and are shown with your name.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "What we never do" %}</h2>
+    <p>{% blocktrans %}We do not sell, rent or trade your data. We do not use it for advertising and we do not use it to train machine-learning or AI models. We do not share it with anyone except the service providers listed below and the organizer of an event you personally registered for.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Service providers" %}</h2>
+    <p>{% blocktrans %}The site runs on a commercial hosting platform and uses an email provider to deliver service messages; both process data solely on our behalf. Map tiles are loaded from OpenStreetMap, and some interface libraries are loaded from public content delivery networks, which means those services see your IP address as part of serving the request.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Storage and deletion" %}</h2>
+    <p>{% blocktrans %}We keep your data while your account exists. You can edit or clear most of it yourself in your profile at any time, and you can disconnect a linked Google, GitHub or Strava account from that service's settings. If you ask us to delete your account, we remove your personal data, including any identifier and name received from Strava. Published results of past events may be kept for historical accuracy in the same way they appear in ordinary sport protocols.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Your rights" %}</h2>
+    <p>{% blocktrans %}You can ask us what data we hold about you, ask for it to be corrected, or ask for it to be deleted. Write to us and we will respond.{% endblocktrans %}</p>
+
+    <h2 class="h5 mt-4">{% trans "Contact" %}</h2>
+    <p>
+      {% url 'account_contact_owners' as contact_url %}
+      {% blocktrans %}Use the <a href="{{ contact_url }}">contact form</a> to reach the people who run this site.{% endblocktrans %}
+    </p>
+
+    <h2 class="h5 mt-4">{% trans "Changes" %}</h2>
+    <p>{% blocktrans %}If this policy changes we will update the date at the top of this page.{% endblocktrans %}</p>
+  </div>
+</div>
+{% endblock %}
