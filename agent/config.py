@@ -32,7 +32,7 @@ def from_env(env: dict[str, str]) -> Config:
     if missing:
         raise ConfigError(f"Missing required environment variables: {', '.join(missing)}")
     try:
-        max_events = int(env.get("MAX_EVENTS_PER_RUN") or "10")
+        max_events = int(env.get("MAX_EVENTS_PER_RUN") or "25")
     except ValueError as exc:
         raise ConfigError("MAX_EVENTS_PER_RUN must be an integer") from exc
     return Config(

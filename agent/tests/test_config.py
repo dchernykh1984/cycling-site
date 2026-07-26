@@ -15,7 +15,7 @@ def test_defaults_and_trailing_slash_stripped():
     assert config.site_base_url == "https://s"
     assert config.llm_base_url == "https://llm"
     assert config.llm_model == "deepseek-chat"
-    assert config.max_events == 10
+    assert config.max_events == 25
     assert config.dry_run is False
 
 
