@@ -17,7 +17,7 @@ on:
       max_events:
         description: "Max events to propose this run"
         type: string
-        default: "10"
+        default: "25"
 
 concurrency:
   group: events-agent
@@ -29,8 +29,9 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 40 # sources may retry with a 10s backoff, and each placed event now downloads a
-    # GPS track for its start coordinate -- a large manual run (max_events=100) needs the headroom
+    timeout-minutes: 60 # sources may retry with a 10s backoff, and each placed event now downloads a
+    # GPS track for its start coordinate; a 10-event run took 25 minutes, so the 25-event default
+    # (and a larger manual run) needs the headroom
     steps:
       # Fail a manual run started by anyone other than the owner before any secret is used.
       - name: Restrict manual runs to the repository owner
@@ -50,6 +51,6 @@ jobs:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
-          MAX_EVENTS_PER_RUN: ${{ github.event.inputs.max_events || '10' }}
+          MAX_EVENTS_PER_RUN: ${{ github.event.inputs.max_events || '25' }}
           AGENT_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: python -m agent.run
