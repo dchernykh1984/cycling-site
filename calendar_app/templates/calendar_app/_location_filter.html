@@ -89,6 +89,10 @@ document.addEventListener('DOMContentLoaded', function () {
     nodesUnder: nodesUnder,
     restoreChains: restoreChains,
     searchable: true,
+    // Ticking every region says no more than the countries already do, and the tree is large
+    // enough (hundreds of regions, over a thousand cities) that spelling it out overruns the
+    // request line the server accepts.
+    collapseWholeLevels: true,
     labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}', search: '{% trans "Search..." %}' },
     onChange: function () { if (window.onCalendarFilterChange) window.onCalendarFilterChange(); }
   });

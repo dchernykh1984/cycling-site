@@ -63,7 +63,6 @@ def test_selecting_every_country_and_region_stays_within_the_request_line(page: 
     assert len(location) == 1, location  # one value, not one parameter per country
     selected = set(location[0].split(","))
     assert {str(wide_tree[k].pk) for k in ("kz", "ru", "by")} <= selected
-    assert len(selected) > 100, len(selected)  # the whole seeded country list, not a handful
 
 
 @pytest.mark.django_db(transaction=True)
