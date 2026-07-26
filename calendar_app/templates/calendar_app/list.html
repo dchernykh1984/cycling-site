@@ -64,13 +64,9 @@
       // Keep the Calendar/Map switcher links in sync with the current filters + dates.
       function updateSwitcherLinks() {
         var params = new URLSearchParams();
-        (window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []).forEach(function (id) {
-          params.append('event_type', id);
-        });
+        window.appendIdsParam(params, 'event_type', window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []);
         if (window.applyDirectionParams) window.applyDirectionParams(params, 'discipline_category');
-        (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
-          params.append('location', id);
-        });
+        window.appendIdsParam(params, 'location', window.getLocationFilterIds ? window.getLocationFilterIds() : []);
         var dfEl = form.querySelector('input[name="date_from"]');
         var dtEl = form.querySelector('input[name="date_to"]');
         if (dfEl && dfEl.value) {
@@ -99,20 +95,19 @@
         form.appendChild(inp);
       }
       function syncFilterInputs() {
+        // One hidden input per filter carrying the comma-joined ids, not one per id: this form is
+        // submitted by GET, so a few hundred separate inputs build the same over-long request line
+        // the switcher links used to.
         form.querySelectorAll('input.mf-filter-input').forEach(function (el) { el.remove(); });
-        (window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []).forEach(function (id) {
-          addInput('event_type', id);
-        });
+        var params = new URLSearchParams();
+        window.appendIdsParam(params, 'event_type', window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []);
         if (window.applyDirectionParams) {
           // Single source of truth with the switcher links: emit chosen disciplines plus any
           // direction picked without a drilled-in discipline (so a second direction is not lost).
-          var dirParams = new URLSearchParams();
-          window.applyDirectionParams(dirParams, 'discipline_category');
-          dirParams.forEach(function (value, key) { addInput(key, value); });
+          window.applyDirectionParams(params, 'discipline_category');
         }
-        (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
-          addInput('location', id);
-        });
+        window.appendIdsParam(params, 'location', window.getLocationFilterIds ? window.getLocationFilterIds() : []);
+        params.forEach(function (value, key) { addInput(key, value); });
       }
       window.onCalendarFilterChange = function () { syncFilterInputs(); updateSwitcherLinks(); form.submit(); };
       document.addEventListener('DOMContentLoaded', function () { syncFilterInputs(); updateSwitcherLinks(); });

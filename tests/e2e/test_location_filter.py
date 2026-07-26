@@ -2,8 +2,11 @@
 
 Each level (country/region/city/location) is a Bootstrap dropdown of checkboxes; lower
 levels merge children of all selected parents and de-duplicate by name. Selecting a
-checkbox auto-submits the list form with one ?location= param per selected id.
+checkbox auto-submits the list form, which carries the selected ids as one
+comma-joined ?location= value.
 """
+
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -75,8 +78,10 @@ def test_select_all_master_checkbox_selects_every_country(page: Page, live_serve
     page.click("#mf-btn-1")
     with page.expect_navigation():
         page.check("#mf-menu-1 input.mf-all")
-    assert f"location={location_tree['kz'].pk}" in page.url
-    assert f"location={location_tree['ru'].pk}" in page.url
+    # The ids travel as one comma-joined value, so that hundreds of countries cannot overrun the
+    # request line the server accepts (tests/e2e/test_filter_url_length.py).
+    selected = set(parse_qs(urlsplit(page.url).query)["location"][0].split(","))
+    assert {str(location_tree["kz"].pk), str(location_tree["ru"].pk)} <= selected
 
 
 @pytest.mark.django_db(transaction=True)

@@ -4,10 +4,11 @@ Direction (dd-btn-1/menu-1) and Discipline (dd-btn-2/menu-2) form a 2-level casc
 Event type (et-btn-1/menu-1) is a single-level dropdown. Each level is a Bootstrap
 dropdown of checkboxes with a master "All" checkbox; the discipline level merges the
 disciplines of every selected direction. Selecting a checkbox auto-submits the list
-form (one ?param= per selected id) and refetches the calendar.
+form (each filter's ids as one comma-joined ?param= value) and refetches the calendar.
 """
 
 import datetime
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -208,8 +209,9 @@ def test_event_type_master_checkbox_selects_all(page: Page, live_server, race_ev
     page.click("#et-btn-1")
     with page.expect_navigation():
         page.check("#et-menu-1 input.mf-all")
-    assert f"event_type={race_event_type.pk}" in page.url
-    assert f"event_type={training_event_type.pk}" in page.url
+    # One comma-joined value per filter, not one parameter per id (see test_filter_url_length.py).
+    selected = set(parse_qs(urlsplit(page.url).query)["event_type"][0].split(","))
+    assert selected == {str(race_event_type.pk), str(training_event_type.pk)}
 
 
 # --------------------------------------------------------------------------- #
