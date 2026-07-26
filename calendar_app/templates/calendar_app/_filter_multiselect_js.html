@@ -15,6 +15,16 @@ config:
 returns {effective(), effectivePks(), effectiveDepth(), refresh()}.
 {% endcomment %}
 <script>
+// Every id-valued filter travels as ONE comma-joined value ("location=1,2,3") rather than one
+// parameter per id. The server splits each value on commas already (it has to: same-name nodes are
+// merged into a single comma-joined choice), so this changes nothing about what is filtered -- it
+// only shortens the query string, which a few hundred ids otherwise push past the ~4 KB request
+// line the server accepts, answering "Request Line is too large" instead of the page.
+window.appendIdsParam = window.appendIdsParam || function (params, name, ids) {
+  var joined = (ids || []).join(',');
+  if (joined) params.append(name, joined);
+};
+
 window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
   var N = config.levels.length;
   var menu = {}, btn = {}, selected = {}, currentGroups = {};
@@ -171,13 +181,32 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     }
   }
 
-  // Effective filter = selected ids at the deepest level that has any selection.
+  // Whether every option offered at level d is selected -- i.e. the level's own "All" checkbox.
+  function isWholeLevel(d) {
+    var groups = currentGroups[d] || [];
+    return groups.length > 0 && groups.every(function (g) { return selected[d].has(g.pks.join(',')); });
+  }
+
+  // Effective filter = selected ids at the deepest level that narrows anything.
+  //
+  // A lower level with every option ticked narrows nothing its parent level does not already say
+  // -- every node it lists descends from a selected parent -- so it is skipped and the parent
+  // stands in for it. That is what keeps the query string bounded: with every country and every
+  // region ticked the switcher used to build a 7 KB request line, which the server refused outright
+  // with "Request Line is too large (7091 > 4094)" before any view ran; now the regions collapse
+  // back onto the countries.
+  //
+  // The top level is never dropped this way. Sending nothing is not the same filter: it also
+  // admits rows the level cannot list at all -- competitions with no location, or none of the
+  // chosen event type -- and where a level offers a single option, picking it would otherwise stop
+  // filtering entirely while the control still names the choice.
   function effective() {
-    for (var d = N; d >= 1; d--) {
+    for (var d = N; d >= 2; d--) {
       var p = selectedPks(d);
-      if (p.length) return { depth: d, pks: p };
+      if (p.length && !isWholeLevel(d)) return { depth: d, pks: p };
     }
-    return { depth: 0, pks: [] };
+    var top = selectedPks(1);
+    return top.length ? { depth: 1, pks: top } : { depth: 0, pks: [] };
   }
 
   rebuildFrom(1);

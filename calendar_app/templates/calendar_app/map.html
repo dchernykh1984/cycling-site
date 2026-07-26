@@ -88,9 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function appendFilters(params, directionParam) {
     if (dfEl.value) params.set('date_from', dfEl.value);
     if (dtEl.value) params.set('date_to', dtEl.value);
-    (window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []).forEach(function (id) {
-      params.append('event_type', id);
-    });
+    window.appendIdsParam(params, 'event_type', window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []);
     if (window.applyDirectionParams) window.applyDirectionParams(params, directionParam);
     if (favEl && favEl.checked) params.set('favorite', '1');
   }
@@ -102,9 +100,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // adds a `location`. But a location filter chosen on the list/calendar arrives in our URL and
     // must survive a round-trip through the map: carry those `location` params into the links back
     // to the list/calendar, or switching to the map and back would silently drop the filter.
-    new URLSearchParams(window.location.search).getAll('location').forEach(function (v) {
-      params.append('location', v);
-    });
+    // Re-joined into a single value, so a link arriving with one parameter per id (an older
+    // bookmark) leaves the map in the compact form the rest of the site now uses.
+    window.appendIdsParam(params, 'location', new URLSearchParams(window.location.search).getAll('location'));
     var qs = params.toString();
     ['view-link-calendar', 'view-link-list'].forEach(function (id) {
       var a = document.getElementById(id);

@@ -85,11 +85,10 @@ document.addEventListener('DOMContentLoaded', function () {
     discPks.forEach(function (id) {
       var d = discById(id);
       if (d) coveredCats[String(d.category_id)] = 1;
-      params.append('discipline', id);
     });
-    inst.levelPks(1).forEach(function (id) {
-      if (!coveredCats[String(id)]) params.append(dirParam, id);
-    });
+    var dirPks = inst.levelPks(1).filter(function (id) { return !coveredCats[String(id)]; });
+    window.appendIdsParam(params, 'discipline', discPks);
+    window.appendIdsParam(params, dirParam, dirPks);
   };
 });
 </script>

@@ -78,13 +78,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // window.onCalendarFilterChange() (defined below) whenever the selection changes.
 
   function appendFilterParams(params, directionParam) {
-    (window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []).forEach(function (id) {
-      params.append('event_type', id);
-    });
+    window.appendIdsParam(params, 'event_type', window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []);
     if (window.applyDirectionParams) window.applyDirectionParams(params, directionParam);
-    (window.getLocationFilterIds ? window.getLocationFilterIds() : []).forEach(function (id) {
-      params.append('location', id);
-    });
+    window.appendIdsParam(params, 'location', window.getLocationFilterIds ? window.getLocationFilterIds() : []);
     var favEl = document.getElementById('favorite-filter');
     if (favEl && favEl.checked) params.set('favorite', '1');
   }
