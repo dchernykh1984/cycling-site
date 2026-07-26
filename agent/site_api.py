@@ -55,8 +55,9 @@ class SiteApiClient:
         """Approved, own pending and anything deleted become dedup keys; own rejected carry reasons."""
         known = KnownEvents()
         # Deleted ones count as known too: throwing an event away says "not this", so it must not
-        # come back on the next run. It carries no rejection reason, hence a plain dedup key rather
-        # than a lesson in the prompt.
+        # come back on the next run. They join the same list as live events rather than only the key
+        # set, because the fuzzy cross-language dedup reads that list -- a deleted event that comes
+        # back under a reworded title is exactly the case an exact key misses.
         listed = [
             comp
             for status in ("approved", "pending_approval")
