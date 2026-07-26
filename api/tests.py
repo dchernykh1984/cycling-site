@@ -3663,3 +3663,55 @@ class CompetitionResubmitApiTest(TestCase, ApiTestMixin):
 
     def test_requires_auth(self):
         self.assertEqual(self.post(self._url(), {}).status_code, 401)
+
+
+class DeletedCompetitionListingTests(ApiTestMixin, TestCase):
+    """Listing deleted competitions, so the import agent stops re-proposing what was thrown away.
+
+    Deleting an unwanted event used to hide it from everyone including the agent, which then
+    proposed it again on the next nightly run. The author (the agent) and admins can now list it.
+    """
+
+    URL = "/api/v1/competitions/?status=pending_approval&deleted=true"
+
+    def setUp(self):
+        self.agent = _user("importer", role=User.Role.ORGANIZER)
+        self.other = _user("someone_else", role=User.Role.ORGANIZER)
+        self.admin = _user("api_admin", role=User.Role.ADMIN)
+        self.thrown_away = _competition(
+            title_ru="Thrown away",
+            status=Competition.Status.PENDING_APPROVAL,
+            submitted_by=self.agent,
+            is_deleted=True,
+        )
+        self.live = _competition(
+            title_ru="Still here",
+            status=Competition.Status.PENDING_APPROVAL,
+            submitted_by=self.agent,
+        )
+
+    def _titles(self, resp):
+        return [row["title"]["ru"] for row in resp.json()]
+
+    def test_author_sees_its_own_deleted_competition(self):
+        resp = self.get(self.URL, self.agent)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(self._titles(resp), ["Thrown away"])
+
+    def test_deleted_are_not_mixed_into_the_normal_listing(self):
+        resp = self.get("/api/v1/competitions/?status=pending_approval", self.agent)
+        self.assertEqual(self._titles(resp), ["Still here"])
+
+    def test_another_author_does_not_see_it(self):
+        self.assertEqual(self._titles(self.get(self.URL, self.other)), [])
+
+    def test_admin_sees_every_deleted_competition(self):
+        self.assertEqual(self._titles(self.get(self.URL, self.admin)), ["Thrown away"])
+
+    def test_anonymous_is_refused(self):
+        self.assertEqual(self.get(self.URL).status_code, 401)
+
+    def test_a_deleted_but_approved_race_is_not_public(self):
+        # Without the auth gate this would leak: the public branch lets anyone see approved races.
+        _competition(title_ru="Deleted approved", is_deleted=True)
+        self.assertEqual(self.get("/api/v1/competitions/?deleted=true").status_code, 401)

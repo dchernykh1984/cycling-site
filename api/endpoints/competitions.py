@@ -251,6 +251,26 @@ def _to_detail(competition: Competition, user=None) -> Competition:
     return competition
 
 
+def _listable_by(qs, user, deleted: bool):
+    """Narrow a competition list to what ``user`` is allowed to see.
+
+    A deleted competition is off the site, so it is never public: only its author -- in practice
+    the import agent asking what it submitted -- and admins may list it. The agent needs that to
+    tell an event it proposed was thrown away and stop proposing it; without it, deleting an
+    unwanted event only hides it until the next nightly run puts it back.
+    """
+    if deleted:
+        if not getattr(user, "is_authenticated", False):
+            raise HttpError(401, "Authentication is required to list deleted competitions.")
+        return qs if is_admin(user) else qs.filter(submitted_by=user)
+    if is_admin(user):
+        return qs
+    visible = Q(status=Competition.Status.APPROVED, is_hidden=False)
+    if getattr(user, "is_authenticated", False):
+        visible |= Q(submitted_by=user)
+    return qs.filter(visible)
+
+
 # -- Endpoints -------------------------------------------------------------
 
 
@@ -263,14 +283,10 @@ def list_competitions(
     event_type_ids: list[int] = Query(default=[]),  # noqa: B008
     location_ids: list[int] = Query(default=[]),  # noqa: B008
     only_favorite: bool = False,
+    deleted: bool = False,
 ):
     user = request.auth
-    qs = Competition.objects.filter(is_deleted=False).prefetch_related("disciplines")
-    if not is_admin(user):
-        base_q = Q(status=Competition.Status.APPROVED, is_hidden=False)
-        if getattr(user, "is_authenticated", False):
-            base_q |= Q(submitted_by=user)
-        qs = qs.filter(base_q)
+    qs = _listable_by(Competition.objects.filter(is_deleted=deleted).prefetch_related("disciplines"), user, deleted)
     qs = qs.filter(status=status)
     # discipline_ids and direction_ids (DisciplineCategory) are the same taxonomy dimension and are
     # OR-ed, matching the web calendar/list/map: a competition matches if it has a selected discipline
