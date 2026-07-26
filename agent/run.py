@@ -216,6 +216,11 @@ def main() -> int:
         merged = enrich.merge_candidate(candidate, refined[0]) if refined else candidate
         return _add_start_coordinate(merged, page_text)
 
+    def city_of(candidate: Candidate) -> int | None:
+        """The site city a candidate starts in, for duplicate detection. Never creates anything:
+        an unknown city simply means the place cannot rule a duplicate in or out."""
+        return locations.match_city(cities, candidate.city, candidate.region, candidate.country)
+
     def create(candidate: Candidate) -> None:
         # The geography is posted before the competition, so a failing competition POST leaves it
         # behind. Name what was created in the error the pipeline records, otherwise those pending
@@ -240,6 +245,7 @@ def main() -> int:
         create=create,
         max_events=config.max_events,
         max_per_source=config.max_per_source,
+        city_of=city_of,
         dry_run=config.dry_run,
         enrich=enrich_candidate,
     )

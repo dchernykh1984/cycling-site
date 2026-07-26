@@ -79,7 +79,14 @@ class SiteApiClient:
             if key in known.existing_keys:
                 continue
             known.existing_keys.add(key)
-            known.existing.append({"title": title, "titles": _titles(comp.get("title")), "date_start": date_start})
+            known.existing.append(
+                {
+                    "title": title,
+                    "titles": _titles(comp.get("title")),
+                    "date_start": date_start,
+                    "city_id": comp.get("location_city_id"),
+                }
+            )
             if is_deleted:
                 known.deleted_count += 1
         rejected_keys: set[str] = set()
@@ -97,6 +104,7 @@ class SiteApiClient:
                     "title": title,
                     "titles": _titles(comp.get("title")),
                     "date_start": date_start,
+                    "city_id": comp.get("location_city_id"),
                     "reason": comp.get("rejection_reason", ""),
                 }
             )
