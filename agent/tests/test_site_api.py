@@ -81,3 +81,27 @@ def test_a_deleted_rejection_still_carries_its_reason():
     )
     known = client.known()
     assert [r["reason"] for r in known.rejected] == ["a duplicate of 343"]
+
+
+def test_known_counts_the_deleted_events_it_folded_in():
+    """The run logs this: a blocked event leaves no other trace, so the count is the only proof."""
+    client = _ListingClient(
+        {
+            "status=approved&deleted=true": [_competition("Gone", "2026-09-26")],
+            "status=rejected&deleted=true": [_competition("Also gone", "2026-10-04")],
+            "status=approved": [_competition("Live", "2026-09-27")],
+        }
+    )
+    known = client.known()
+    assert known.deleted_count == 2
+    assert len(known.existing) == 2  # the live one and the deleted approved one
+
+
+def test_live_events_come_before_deleted_ones_in_the_prompt_list():
+    client = _ListingClient(
+        {
+            "status=pending_approval&deleted=true": [_competition("Gone", "2026-09-26")],
+            "status=pending_approval": [_competition("Live", "2026-09-27")],
+        }
+    )
+    assert [item["title"] for item in client.known().existing] == ["Live", "Gone"]
