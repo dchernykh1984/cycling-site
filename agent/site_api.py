@@ -30,8 +30,9 @@ class SiteApiClient:
         result = self._request("GET", path)
         return result if isinstance(result, list) else []
 
-    def _list(self, status: str) -> list[dict]:
-        return self._get_list(f"/api/v1/competitions/?status={status}")
+    def _list(self, status: str, deleted: bool = False) -> list[dict]:
+        query = f"status={status}" + ("&deleted=true" if deleted else "")
+        return self._get_list(f"/api/v1/competitions/?{query}")
 
     def taxonomy(self) -> Taxonomy:
         """Event types + disciplines the LLM classifies an event into (ids validated on parse)."""
@@ -51,13 +52,21 @@ class SiteApiClient:
         return tax
 
     def known(self) -> KnownEvents:
-        """Approved + own pending become dedup keys; own rejected carry their reasons to learn from."""
+        """Approved, own pending and anything deleted become dedup keys; own rejected carry reasons."""
         known = KnownEvents()
-        for comp in self._list("approved") + self._list("pending_approval"):
+        # Deleted ones count as known too: throwing an event away says "not this", so it must not
+        # come back on the next run. It carries no rejection reason, hence a plain dedup key rather
+        # than a lesson in the prompt.
+        listed = [
+            comp
+            for status in ("approved", "pending_approval")
+            for comp in self._list(status) + self._list(status, deleted=True)
+        ]
+        for comp in listed:
             title, date_start = _ru(comp.get("title")), comp.get("date_start", "")
             known.existing_keys.add(normalize_key(title, date_start))
             known.existing.append({"title": title, "titles": _titles(comp.get("title")), "date_start": date_start})
-        for comp in self._list("rejected"):
+        for comp in self._list("rejected") + self._list("rejected", deleted=True):
             title, date_start = _ru(comp.get("title")), comp.get("date_start", "")
             known.rejected.append(
                 {
