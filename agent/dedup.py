@@ -202,15 +202,15 @@ def matching_known(
     window_days: int = _WINDOW_DAYS,
 ) -> str | None:
     """The known event this one duplicates, or None. Any localized title may be the one that matches."""
+    # Read once, not once per known title: a run compares every candidate against the site's whole
+    # calendar, so tokenizing inside that loop would repeat the same work thousands of times.
+    prepared = [(title_tokens(title), _with_merged_neighbours(title)) for title in titles if title]
     for known in index.entries:
         if not _dates_close(date_start, known.date_start, window_days):
             continue
         if not _same_place(city_id, known.city_id):
             continue
-        for title in titles:
-            if not title:
-                continue
-            tokens, merged = title_tokens(title), _with_merged_neighbours(title)
+        for tokens, merged in prepared:
             if _looks_like(tokens, merged, known, index, threshold, min_shared):
                 return known.title
     return None
