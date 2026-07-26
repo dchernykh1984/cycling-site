@@ -10,6 +10,7 @@ config:
   levels:        [{btn: HTMLElement, menu: HTMLElement}, ...]  // index 0 == depth 1
   nodesUnder(depth, parentPks): [{pk, name}, ...]  // children for the selected parents
   restoreChains(): [[{depth, pk}, ...], ...]       // ancestor chains to pre-select
+  collapseWholeLevels: bool  // filters only: a fully ticked level yields its parent's ids instead
   labels:        {all: "...", selected: "..."}
   onChange():    called after every user-driven selection change
 returns {effective(), effectivePks(), effectiveDepth(), refresh()}.
@@ -45,6 +46,7 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
   }
   var ALL_LABEL = config.labels.all;
   var SELECTED_LABEL = config.labels.selected;
+  var COLLAPSE_WHOLE_LEVELS = !!config.collapseWholeLevels;
 
   function selectedPks(d) {
     var out = [];
@@ -187,23 +189,26 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     return groups.length > 0 && groups.every(function (g) { return selected[d].has(g.pks.join(',')); });
   }
 
-  // Effective filter = selected ids at the deepest level that narrows anything.
+  // Effective selection = the ids at the deepest level that has any.
   //
-  // A lower level with every option ticked narrows nothing its parent level does not already say
-  // -- every node it lists descends from a selected parent -- so it is skipped and the parent
-  // stands in for it. That is what keeps the query string bounded: with every country and every
-  // region ticked the switcher used to build a 7 KB request line, which the server refused outright
-  // with "Request Line is too large (7091 > 4094)" before any view ran; now the regions collapse
-  // back onto the countries.
+  // With collapseWholeLevels, a lower level with every option ticked is skipped and its parent
+  // stands in for it: the level narrows nothing the parent does not already say, since every node
+  // it lists descends from a selected parent. That is what keeps a location query string bounded --
+  // with every country and every region ticked the switcher used to build a 7 KB request line and
+  // the server refused the page outright with "Request Line is too large (7091 > 4094)"; now the
+  // regions collapse back onto the countries. It is off by default because it only holds for a
+  // filter, where a parent stands for all of its descendants. The competition form's discipline
+  // picker reads the same selection as the value of a field: there, collapsing "every discipline of
+  // this direction" to the direction itself would save the wrong ids (in fact none, as it wants the
+  // leaf level).
   //
-  // The top level is never dropped this way. Sending nothing is not the same filter: it also
-  // admits rows the level cannot list at all -- competitions with no location, or none of the
-  // chosen event type -- and where a level offers a single option, picking it would otherwise stop
-  // filtering entirely while the control still names the choice.
+  // The top level is never collapsed even so. Sending nothing is not the same filter: it also
+  // admits rows the level cannot list at all -- competitions with no location -- and where a level
+  // offers one option, picking it would otherwise stop filtering while the control names the choice.
   function effective() {
     for (var d = N; d >= 2; d--) {
       var p = selectedPks(d);
-      if (p.length && !isWholeLevel(d)) return { depth: d, pks: p };
+      if (p.length && !(COLLAPSE_WHOLE_LEVELS && isWholeLevel(d))) return { depth: d, pks: p };
     }
     var top = selectedPks(1);
     return top.length ? { depth: 1, pks: top } : { depth: 0, pks: [] };
