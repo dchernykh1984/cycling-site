@@ -9,6 +9,11 @@ from agent.models import Candidate, KnownEvents, Taxonomy
 from agent.pipeline import normalize_key
 
 
+def _tagged(live: list[dict], deleted: list[dict]) -> list[tuple[dict, bool]]:
+    """Live rows then deleted rows, each carrying which list it came from."""
+    return [(comp, False) for comp in live] + [(comp, True) for comp in deleted]
+
+
 class SiteApiClient:
     def __init__(self, base_url: str, token: str, timeout: int = 30) -> None:
         self.base_url = base_url.rstrip("/")
@@ -64,17 +69,29 @@ class SiteApiClient:
             deleted += self._list(status, deleted=True)
         # Live events first: the prompt shows only a slice of this list, and a deleted event is
         # worth less of that room than one actually on the site.
-        for comp in live + deleted:
+        for comp, is_deleted in _tagged(live, deleted):
             title, date_start = _ru(comp.get("title")), comp.get("date_start", "")
-            known.existing_keys.add(normalize_key(title, date_start))
+            key = normalize_key(title, date_start)
+            # Skipping a key already seen is not just tidiness. A site that predates the `deleted`
+            # parameter ignores it and answers with the live list again, which would then fill the
+            # prompt's limited room with each event twice and report those copies as blocked
+            # deletions. Counting only what is genuinely new keeps both honest against either site.
+            if key in known.existing_keys:
+                continue
+            known.existing_keys.add(key)
             known.existing.append({"title": title, "titles": _titles(comp.get("title")), "date_start": date_start})
-        deleted_rejected = self._list("rejected", deleted=True)
-        known.deleted_count = len(deleted) + len(deleted_rejected)
-        for comp in self._list("rejected") + deleted_rejected:
+            known.deleted_count += is_deleted
+        rejected_keys: set[str] = set()
+        for comp, is_deleted in _tagged(self._list("rejected"), self._list("rejected", deleted=True)):
             title, date_start = _ru(comp.get("title")), comp.get("date_start", "")
+            key = normalize_key(title, date_start)
+            if key in rejected_keys:
+                continue
+            rejected_keys.add(key)
+            known.deleted_count += is_deleted
             known.rejected.append(
                 {
-                    "key": normalize_key(title, date_start),
+                    "key": key,
                     "title": title,
                     "titles": _titles(comp.get("title")),
                     "date_start": date_start,
