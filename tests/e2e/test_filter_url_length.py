@@ -15,6 +15,8 @@ from urllib.parse import parse_qs, urlsplit
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.conftest import open_filter_panel
+
 _LIST_URL = "/calendar/list/"
 _DATES = "date_from=2026-07-01&date_to=2026-07-31"
 
@@ -31,6 +33,11 @@ def _href(page: Page, link_id: str) -> str:
 
 def _switcher_query(page: Page, link_id: str) -> dict:
     return _query(_href(page, link_id))
+
+
+def _close_dropdown(page: Page) -> None:
+    """An open menu covers the control below it on a narrow viewport, so close it before moving on."""
+    page.keyboard.press("Escape")
 
 
 @pytest.fixture
@@ -51,9 +58,11 @@ def test_selecting_every_country_and_region_stays_within_the_request_line(page: 
     collapse back onto the countries, and the ids travel as one comma-joined value.
     """
     page.goto(f"{live_server.url}/calendar/?{_DATES}")
+    open_filter_panel(page)
     page.click("#mf-btn-1")
     page.click("#mf-menu-1 input.mf-all")
     expect(page.locator("#mf-btn-2")).to_be_enabled()
+    _close_dropdown(page)
     page.click("#mf-btn-2")
     page.click("#mf-menu-2 input.mf-all")
 
@@ -70,6 +79,7 @@ def test_two_of_three_countries_travel_as_one_comma_joined_parameter(page: Page,
     """A partial selection is still sent -- as a single value, not one parameter per id."""
     kz, ru = wide_tree["kz"].pk, wide_tree["ru"].pk
     page.goto(f"{live_server.url}/calendar/?{_DATES}")
+    open_filter_panel(page)
     page.click("#mf-btn-1")
     page.click(f"#mf-menu-1 input[value='{kz}']")
     page.click(f"#mf-menu-1 input[value='{ru}']")
@@ -83,8 +93,10 @@ def test_selecting_every_region_of_a_country_falls_back_to_that_country(page: Pa
     """A whole lower level is dropped for its parent, which selects the same events far more briefly."""
     kz = wide_tree["kz"].pk
     page.goto(f"{live_server.url}/calendar/?{_DATES}")
+    open_filter_panel(page)
     page.click("#mf-btn-1")
     page.click(f"#mf-menu-1 input[value='{kz}']")
+    _close_dropdown(page)
     page.click("#mf-btn-2")
     page.click("#mf-menu-2 input.mf-all")
 
@@ -97,9 +109,10 @@ def test_the_list_page_survives_switching_with_everything_selected(
 ):
     """The reported failure end to end: select everything, switch to the list, get the list."""
     page.goto(f"{live_server.url}/calendar/?{_DATES}")
+    open_filter_panel(page)
     page.click("#mf-btn-1")
     page.click("#mf-menu-1 input.mf-all")
-    page.click("#mf-btn-1")  # close the dropdown before clicking the switcher underneath
+    _close_dropdown(page)  # the open menu covers the switcher underneath
     with page.expect_navigation():
         page.click("#view-link-list")
 
@@ -115,6 +128,7 @@ def test_the_list_form_submits_one_input_per_filter(page: Page, live_server, wid
     kz, ru = wide_tree["kz"].pk, wide_tree["ru"].pk
     # Each tick auto-submits the form, so the second one is picked after the reload.
     page.goto(f"{live_server.url}{_LIST_URL}?{_DATES}")
+    open_filter_panel(page)
     page.click("#mf-btn-1")
     with page.expect_navigation():
         page.click(f"#mf-menu-1 input[value='{kz}']")
