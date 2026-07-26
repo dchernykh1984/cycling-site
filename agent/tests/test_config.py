@@ -34,3 +34,14 @@ def test_flag_model_and_max_events():
 def test_non_integer_max_events_raises():
     with pytest.raises(ConfigError):
         from_env({**_BASE, "MAX_EVENTS_PER_RUN": "lots"})
+
+
+def test_per_source_budget_defaults_and_is_configurable():
+    assert from_env(dict(_BASE)).max_per_source == 5
+    assert from_env({**_BASE, "MAX_EVENTS_PER_SOURCE": "2"}).max_per_source == 2
+    assert from_env({**_BASE, "MAX_EVENTS_PER_SOURCE": "0"}).max_per_source == 0  # 0 = no limit
+
+
+def test_non_integer_per_source_budget_raises():
+    with pytest.raises(ConfigError):
+        from_env({**_BASE, "MAX_EVENTS_PER_SOURCE": "five"})

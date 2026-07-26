@@ -59,6 +59,8 @@ def _summary(report: RunReport) -> str:
         lines.append(f"  ! post failed: {title} ({error})")
     for ref, count in report.extracted:
         lines.append(f"  = extracted {count} from {ref}")
+    for ref in report.source_capped:
+        lines.append(f"  # {ref} reached its per-source limit")
     return "\n".join(lines)
 
 
@@ -237,6 +239,7 @@ def main() -> int:
         extract=extract,
         create=create,
         max_events=config.max_events,
+        max_per_source=config.max_per_source,
         dry_run=config.dry_run,
         enrich=enrich_candidate,
     )
