@@ -26,7 +26,7 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
-def _place(candidate) -> str:
+def _place(candidate: Candidate) -> str:
     """The geography and start coordinate a candidate carries, for the run summary.
 
     Without this a dry run reports only a title and a date, which cannot answer the two questions
