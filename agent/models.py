@@ -83,9 +83,9 @@ class KnownEvents:
     # the fuzzy cross-language dedup so a ru proposal can match an en event already on the site.
     existing: list[dict] = field(default_factory=list)
     rejected: list[dict] = field(default_factory=list)  # [{"key","title","titles","date_start","reason"}]
-    # How many of the above were read from the site's deleted events. Logged at the start of a run:
-    # a deleted event leaves no other trace in the output (it simply never comes back), so this is
-    # what shows the blind spot is closed rather than merely quiet.
+    # How many entries across both lists above came from the site's deleted events. Logged at the
+    # start of a run: a deleted event leaves no other trace in the output (it simply never comes
+    # back), so this is what shows the blind spot is closed rather than merely quiet.
     deleted_count: int = 0
 
 
