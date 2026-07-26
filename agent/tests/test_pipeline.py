@@ -456,3 +456,22 @@ def test_the_budget_counts_accepted_events_not_candidates_looked_at():
     stale = [Candidate(title=f"Old {n}", date_start="2020-01-01", description="d") for n in range(6)]
     report, _ = _run([src], {src.fetch_url: stale + _candidates("Good", 4)}, max_per_source=5)
     assert [c.title for c in report.accepted] == [f"Good {n}" for n in range(4)]
+
+
+def test_every_source_reports_what_it_contributed():
+    """Including the ones that gave nothing: "where did this run's events come from" is the
+    question a log has to answer, and a source that quietly yields its whole budget and then runs
+    dry is indistinguishable from one that was cut short unless the count is always there."""
+    generous, empty = _src("https://generous.example"), _src("https://empty.example")
+    report, _ = _run(
+        [generous, empty],
+        {generous.fetch_url: _candidates("Good", 3), empty.fetch_url: []},
+        max_per_source=5,
+    )
+    assert report.proposed_by_source == {generous.fetch_url: 3, empty.fetch_url: 0}
+
+
+def test_a_capped_source_reports_exactly_its_budget():
+    deep = _src("https://deep.example")
+    report, _ = _run([deep], {deep.fetch_url: _candidates("Deep", 9)}, max_per_source=4)
+    assert report.proposed_by_source == {deep.fetch_url: 4}

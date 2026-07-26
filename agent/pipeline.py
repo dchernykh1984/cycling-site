@@ -298,4 +298,8 @@ def run_pipeline(
             before = len(report.accepted)
             _consider(candidate, seen, known_titles, report, today, enrich=enrich, create=create, dry_run=dry_run)
             from_source += len(report.accepted) - before
+        # Recorded for every source, spent budget or not: a source that yields exactly its budget
+        # and then runs dry logs nothing above, which leaves the run unreadable on the one question
+        # it is meant to answer -- where did this run's events actually come from.
+        report.proposed_by_source[source.ref] = from_source
     return report
