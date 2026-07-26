@@ -20,6 +20,14 @@ FetchFn = Callable[[Source], str]
 ExtractFn = Callable[[str, Source], list[Candidate]]
 EnrichFn = Callable[[Candidate], Candidate]
 CreateFn = Callable[[Candidate], None]
+# Which city of the site a candidate starts in, when it can be told: the third signal duplicate
+# detection uses, alongside the title and the date.
+CityFn = Callable[[Candidate], "int | None"]
+
+
+def _no_city(candidate: Candidate) -> int | None:
+    """Default resolver: no city known, so the place never rules a duplicate in or out."""
+    return None
 
 
 def _identity(candidate: Candidate) -> Candidate:
@@ -214,13 +222,14 @@ def _source_candidates(source: Source, fetch: FetchFn, extract: ExtractFn, repor
 def _consider(
     candidate: Candidate,
     seen: set[str],
-    known_titles: list[tuple[set[str], str]],
+    index: dedup.KnownIndex,
     report: RunReport,
     today: datetime.date,
     *,
     enrich: EnrichFn,
     create: CreateFn,
     dry_run: bool,
+    city_of: CityFn,
 ) -> None:
     """Dedup + validate one candidate; accept (and post, unless dry-run) or record why it was skipped."""
     key = normalize_key(candidate.title, candidate.date_start)
@@ -228,8 +237,11 @@ def _consider(
         report.skipped_candidates.append((candidate.title, "already known or rejected"))
         return
     variants = [candidate.title, candidate.title_kk, candidate.title_en]
-    if dedup.matches_known(variants, candidate.date_start, known_titles):
-        report.skipped_candidates.append((candidate.title, "near-duplicate of an existing event"))
+    # Name what it matched: a wrong match drops a real event silently, and an anonymous
+    # "near-duplicate" gives a reader no way to notice that it was wrong.
+    match = dedup.matching_known(variants, candidate.date_start, city_of(candidate), index)
+    if match:
+        report.skipped_candidates.append((candidate.title, f"near-duplicate of {match!r}"))
         return
     ok, reason = _is_valid(candidate, today)
     if not ok:
@@ -242,8 +254,16 @@ def _consider(
         report.skipped_candidates.append((candidate.title, f"after enrich: {reason}"))
         return
     seen.add(normalize_key(candidate.title, candidate.date_start))
-    variants = [candidate.title, candidate.title_kk, candidate.title_en]
-    known_titles.extend((dedup.title_tokens(v), candidate.date_start) for v in variants if v)
+    variants = [v for v in (candidate.title, candidate.title_kk, candidate.title_en) if v]
+    # Feed it back, so a later source in this same run does not propose the same event again.
+    index.add(
+        {
+            "title": candidate.title,
+            "titles": variants,
+            "date_start": candidate.date_start,
+            "city_id": city_of(candidate),
+        }
+    )
     report.accepted.append(candidate)
     if not dry_run:
         try:
@@ -264,6 +284,7 @@ def run_pipeline(
     today: datetime.date | None = None,
     enrich: EnrichFn = _identity,
     max_per_source: int = 0,
+    city_of: CityFn = _no_city,
 ) -> RunReport:
     """Fetch each source, extract candidates, and propose new valid ones up to ``max_events``.
 
@@ -276,13 +297,9 @@ def run_pipeline(
     report = RunReport(dry_run=dry_run)
     # Never re-propose something already on the site or previously rejected (exact match)...
     seen = set(known.existing_keys) | {r["key"] for r in known.rejected}
-    # ...and catch near-duplicates worded differently via title tokens + date (grown as we accept).
-    # One entry per localized title, so a ru proposal can match an en event already on the site.
-    known_titles: list[tuple[set[str], str]] = [
-        (dedup.title_tokens(title), item.get("date_start", ""))
-        for item in (*known.existing, *known.rejected)
-        for title in (item.get("titles") or [item.get("title", "")])
-    ]
+    # ...and catch near-duplicates worded differently, via title words + date + city (agent.dedup).
+    # The index grows as the run accepts events, so one run cannot propose the same race twice.
+    index = dedup.build_index((*known.existing, *known.rejected))
 
     for source in sources:
         if report.capped:
@@ -296,7 +313,17 @@ def run_pipeline(
                 report.source_capped.append(source.ref)
                 break
             before = len(report.accepted)
-            _consider(candidate, seen, known_titles, report, today, enrich=enrich, create=create, dry_run=dry_run)
+            _consider(
+                candidate,
+                seen,
+                index,
+                report,
+                today,
+                enrich=enrich,
+                create=create,
+                dry_run=dry_run,
+                city_of=city_of,
+            )
             from_source += len(report.accepted) - before
         # Recorded for every source, spent budget or not: a source that yields exactly its budget
         # and then runs dry logs nothing above, which leaves the run unreadable on the one question
