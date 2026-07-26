@@ -189,6 +189,10 @@ def main() -> int:
     guidance = _read(_GUIDANCE_FILE)
     parsed_sources = sources.parse_sources(_read(_SOURCES_FILE))
     known = client.known()
+    print(
+        f"known: {len(known.existing)} events ({known.deleted_count} of them deleted), {len(known.rejected)} rejected",
+        flush=True,
+    )
     taxonomy = client.taxonomy()
     tree = client.location_tree()
     cities = locations.flatten_cities(tree)

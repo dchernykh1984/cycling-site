@@ -58,16 +58,19 @@ class SiteApiClient:
         # come back on the next run. They join the same list as live events rather than only the key
         # set, because the fuzzy cross-language dedup reads that list -- a deleted event that comes
         # back under a reworded title is exactly the case an exact key misses.
-        listed = [
-            comp
-            for status in ("approved", "pending_approval")
-            for comp in self._list(status) + self._list(status, deleted=True)
-        ]
-        for comp in listed:
+        live, deleted = [], []
+        for status in ("approved", "pending_approval"):
+            live += self._list(status)
+            deleted += self._list(status, deleted=True)
+        # Live events first: the prompt shows only a slice of this list, and a deleted event is
+        # worth less of that room than one actually on the site.
+        for comp in live + deleted:
             title, date_start = _ru(comp.get("title")), comp.get("date_start", "")
             known.existing_keys.add(normalize_key(title, date_start))
             known.existing.append({"title": title, "titles": _titles(comp.get("title")), "date_start": date_start})
-        for comp in self._list("rejected") + self._list("rejected", deleted=True):
+        deleted_rejected = self._list("rejected", deleted=True)
+        known.deleted_count = len(deleted) + len(deleted_rejected)
+        for comp in self._list("rejected") + deleted_rejected:
             title, date_start = _ru(comp.get("title")), comp.get("date_start", "")
             known.rejected.append(
                 {
