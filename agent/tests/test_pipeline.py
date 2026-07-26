@@ -364,3 +364,48 @@ def test_a_link_the_model_found_always_wins():
     for kind in ("aggregator", "organizer"):
         (candidate,) = _extract_with(kind, reply)
         assert candidate.source_url == "https://velogearance.ru/tg26/"
+
+
+def _accepted(**kwargs):
+    from agent.models import Candidate
+
+    defaults = {"title": "Dark Race", "date_start": "2026-09-26"}
+    defaults.update(kwargs)
+    return Candidate(**defaults)
+
+
+def _summary_for(*candidates, dry_run: bool = True) -> str:
+    from agent.models import RunReport
+    from agent.run import _summary
+
+    report = RunReport(dry_run=dry_run)
+    report.accepted.extend(candidates)
+    return _summary(report)
+
+
+def test_summary_shows_the_link_and_place_of_each_proposed_event():
+    # A dry run is judged on exactly these two things, so a title and a date alone are useless.
+    out = _summary_for(
+        _accepted(
+            source_url="https://velogearance.ru/tg26/",
+            country="Russia",
+            region="Ryazan Oblast",
+            city="Skopin",
+            venue="Troitskaya Grove",
+            lat=53.801524,
+            lng=39.549943,
+        )
+    )
+    assert "link:  https://velogearance.ru/tg26/" in out
+    assert "Russia / Ryazan Oblast / Skopin / Troitskaya Grove (53.801524, 39.549943)" in out
+
+
+def test_summary_makes_a_missing_link_and_place_visible():
+    out = _summary_for(_accepted())
+    assert "link:  (none)" in out
+    assert "(no place) (no coordinate)" in out
+
+
+def test_summary_reports_a_place_without_a_coordinate():
+    out = _summary_for(_accepted(country="Russia", city="Moscow"))
+    assert "Russia / Moscow (no coordinate)" in out

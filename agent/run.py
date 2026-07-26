@@ -26,6 +26,20 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
+def _place(candidate) -> str:
+    """The geography and start coordinate a candidate carries, for the run summary.
+
+    Without this a dry run reports only a title and a date, which cannot answer the two questions
+    a run is actually judged on -- did the event get a real venue, and did a start coordinate come
+    out of its track. Printed even when empty, so a missing place is visible rather than absent.
+    """
+    parts = [part for part in (candidate.country, candidate.region, candidate.city, candidate.venue) if part]
+    place = " / ".join(parts) if parts else "(no place)"
+    if candidate.lat is not None and candidate.lng is not None:
+        return f"{place} ({candidate.lat}, {candidate.lng})"
+    return f"{place} (no coordinate)"
+
+
 def _summary(report: RunReport) -> str:
     verb = "would propose" if report.dry_run else "proposed"
     lines = [
@@ -35,6 +49,8 @@ def _summary(report: RunReport) -> str:
     ]
     for candidate in report.accepted:
         lines.append(f"  + {candidate.date_start} {candidate.title}")
+        lines.append(f"      link:  {candidate.source_url or '(none)'}")
+        lines.append(f"      place: {_place(candidate)}")
     for title, reason in report.skipped_candidates:
         lines.append(f"  - skipped: {title} ({reason})")
     for ref, reason in report.skipped_sources:
