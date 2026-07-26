@@ -105,3 +105,26 @@ def test_live_events_come_before_deleted_ones_in_the_prompt_list():
         }
     )
     assert [item["title"] for item in client.known().existing] == ["Live", "Gone"]
+
+
+def test_a_site_without_the_deleted_parameter_is_not_read_as_a_pile_of_deletions():
+    """An older site ignores `deleted` and answers with the live list again.
+
+    Taken at face value that fills the prompt's limited room with every event twice and reports the
+    copies as blocked deletions -- a count that reads like the fix works when it is not deployed.
+    """
+    live = [_competition("Dark Race", "2026-09-26"), _competition("Light Race", "2026-10-04")]
+    client = _ListingClient(
+        {"status=approved": live, "status=approved&deleted=true": live, "status=rejected": [], "": live}
+    )
+    known = client.known()
+
+    assert known.deleted_count == 0
+    assert [item["title"] for item in known.existing] == ["Dark Race", "Light Race"]
+
+
+def test_a_deleted_event_that_repeats_a_live_one_is_counted_once():
+    same = _competition("Dark Race", "2026-09-26")
+    client = _ListingClient({"status=approved": [same], "status=approved&deleted=true": [same]})
+    known = client.known()
+    assert (known.deleted_count, len(known.existing)) == (0, 1)
