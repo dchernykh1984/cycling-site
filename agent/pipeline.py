@@ -263,8 +263,15 @@ def run_pipeline(
     dry_run: bool,
     today: datetime.date | None = None,
     enrich: EnrichFn = _identity,
+    max_per_source: int = 0,
 ) -> RunReport:
-    """Fetch each source, extract candidates, and propose new valid ones up to ``max_events``."""
+    """Fetch each source, extract candidates, and propose new valid ones up to ``max_events``.
+
+    ``max_per_source`` (0 = no limit) caps what one source may contribute. Sources are not equal in
+    supply: the site's own organizers run out of unseen races once they have been harvested, while a
+    calendar of foreign events never does, so without a per-source cap the whole run ends up coming
+    from the deepest source regardless of how relevant it is.
+    """
     today = today or datetime.date.today()
     report = RunReport(dry_run=dry_run)
     # Never re-propose something already on the site or previously rejected (exact match)...
@@ -280,9 +287,15 @@ def run_pipeline(
     for source in sources:
         if report.capped:
             break
+        from_source = 0
         for candidate in _source_candidates(source, fetch, extract, report):
             if len(report.accepted) >= max_events:
                 report.capped = True
                 break
+            if max_per_source and from_source >= max_per_source:
+                report.source_capped.append(source.ref)
+                break
+            before = len(report.accepted)
             _consider(candidate, seen, known_titles, report, today, enrich=enrich, create=create, dry_run=dry_run)
+            from_source += len(report.accepted) - before
     return report

@@ -11,7 +11,7 @@ def _src(url="https://x.kz"):
     return Source("organizer", url, url)
 
 
-def _run(sources, by_source, *, known=None, max_events=10, dry_run=False):
+def _run(sources, by_source, *, known=None, max_events=10, dry_run=False, max_per_source=0):
     created = []
     report = run_pipeline(
         sources,
@@ -22,6 +22,7 @@ def _run(sources, by_source, *, known=None, max_events=10, dry_run=False):
         max_events=max_events,
         dry_run=dry_run,
         today=TODAY,
+        max_per_source=max_per_source,
     )
     return report, created
 
@@ -337,6 +338,7 @@ def _extract_with(kind: str, reply: str):
         llm_base_url="https://llm.test",
         llm_model="m",
         max_events=10,
+        max_per_source=5,
         dry_run=True,
     )
     with patch("agent.llm.extract_raw", return_value=reply):
@@ -409,3 +411,48 @@ def test_summary_makes_a_missing_link_and_place_visible():
 def test_summary_reports_a_place_without_a_coordinate():
     out = _summary_for(_accepted(country="Russia", city="Moscow"))
     assert "Russia / Moscow (no coordinate)" in out
+
+
+def _candidates(prefix: str, count: int) -> list:
+    return [Candidate(title=f"{prefix} {n}", date_start="2026-09-26", description="d") for n in range(count)]
+
+
+def test_one_source_cannot_take_the_whole_run():
+    """A calendar of the world's races never runs out; our own organizers do, once harvested.
+
+    Without a per-source budget the deepest source takes every slot -- three runs in a row proposed
+    nothing but foreign marathons while the cycling sources returned only events already on the site.
+    """
+    deep, shallow = _src("https://deep.example"), _src("https://shallow.example")
+    report, created = _run(
+        [deep, shallow],
+        {deep.fetch_url: _candidates("Deep", 20), shallow.fetch_url: _candidates("Shallow", 3)},
+        max_events=10,
+        max_per_source=5,
+    )
+    titles = [c.title for c in report.accepted]
+    assert sum(t.startswith("Deep") for t in titles) == 5
+    assert sum(t.startswith("Shallow") for t in titles) == 3
+    assert len(created) == 8
+
+
+def test_a_source_that_hits_its_budget_is_named_in_the_report():
+    deep = _src("https://deep.example")
+    report, _ = _run([deep], {deep.fetch_url: _candidates("Deep", 9)}, max_per_source=5)
+    assert report.source_capped == [deep.fetch_url]
+    assert report.capped is False  # the run itself still has room; only this source is done
+
+
+def test_no_per_source_budget_means_no_limit():
+    deep = _src("https://deep.example")
+    report, _ = _run([deep], {deep.fetch_url: _candidates("Deep", 9)}, max_per_source=0)
+    assert len(report.accepted) == 9
+    assert report.source_capped == []
+
+
+def test_the_budget_counts_accepted_events_not_candidates_looked_at():
+    """Duplicates and past events cost a source nothing -- otherwise a noisy source starves itself."""
+    src = _src("https://mixed.example")
+    stale = [Candidate(title=f"Old {n}", date_start="2020-01-01", description="d") for n in range(6)]
+    report, _ = _run([src], {src.fetch_url: stale + _candidates("Good", 4)}, max_per_source=5)
+    assert [c.title for c in report.accepted] == [f"Good {n}" for n in range(4)]

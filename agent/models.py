@@ -98,5 +98,6 @@ class RunReport:
     skipped_sources: list[tuple[str, str]] = field(default_factory=list)  # (ref, reason)
     post_errors: list[tuple[str, str]] = field(default_factory=list)  # (title, error)
     extracted: list[tuple[str, int]] = field(default_factory=list)  # (source ref, raw candidate count)
+    source_capped: list[str] = field(default_factory=list)  # refs that reached their own budget
     capped: bool = False
     dry_run: bool = False

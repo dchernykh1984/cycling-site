@@ -18,6 +18,10 @@ on:
         description: "Max events to propose this run"
         type: string
         default: "25"
+      max_per_source:
+        description: "Max events one source may contribute (0 = no limit)"
+        type: string
+        default: "5"
 
 concurrency:
   group: events-agent
@@ -52,5 +56,8 @@ jobs:
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
           MAX_EVENTS_PER_RUN: ${{ github.event.inputs.max_events || '25' }}
+          # No single source may take more than this many of the run's slots, so a calendar with an
+          # endless supply of races cannot crowd out the organizers whose events the site is for.
+          MAX_EVENTS_PER_SOURCE: ${{ github.event.inputs.max_per_source || '5' }}
           AGENT_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: python -m agent.run
