@@ -3715,3 +3715,56 @@ class DeletedCompetitionListingTests(ApiTestMixin, TestCase):
         # Without the auth gate this would leak: the public branch lets anyone see approved races.
         _competition(title_ru="Deleted approved", is_deleted=True)
         self.assertEqual(self.get("/api/v1/competitions/?deleted=true").status_code, 401)
+
+
+class CompetitionCityFieldTests(ApiTestMixin, TestCase):
+    """The city of a competition's location, which the import agent compares events by.
+
+    A start venue is too fine a place to judge two events by -- one calendar's named venue and
+    another's "other location" are the same race -- so the listing carries the city above it.
+    """
+
+    def setUp(self):
+        self.user = _user("city_api_user", role=User.Role.ORGANIZER)
+        self.country = Location.add_root(name="KZ", name_ru="KZ", name_kk="KZ", name_en="KZ")
+        self.region = self.country.add_child(name="Region", name_ru="Region", name_kk="R", name_en="R")
+        self.city = self.region.add_child(name="Almaty", name_ru="Almaty", name_kk="A", name_en="A")
+        self.venue = self.city.add_child(name="Velodrome", name_ru="Velodrome", name_kk="V", name_en="V")
+
+    def _rows(self):
+        resp = self.get("/api/v1/competitions/?status=approved")
+        self.assertEqual(resp.status_code, 200)
+        return {row["title"]["ru"]: row for row in resp.json()}
+
+    def test_a_venue_reports_the_city_above_it(self):
+        _competition(title_ru="At a venue", location=self.venue)
+        self.assertEqual(self._rows()["At a venue"]["location_city_id"], self.city.pk)
+
+    def test_a_city_reports_itself(self):
+        _competition(title_ru="In a city", location=self.city)
+        self.assertEqual(self._rows()["In a city"]["location_city_id"], self.city.pk)
+
+    def test_a_region_has_no_city(self):
+        _competition(title_ru="In a region", location=self.region)
+        self.assertIsNone(self._rows()["In a region"]["location_city_id"])
+
+    def test_a_competition_without_a_location_has_no_city(self):
+        _competition(title_ru="Nowhere", location=None)
+        self.assertIsNone(self._rows()["Nowhere"]["location_city_id"])
+
+    def test_listing_resolves_every_city_without_a_query_per_row(self):
+        """The city is resolved for the whole page at once; a query per row would not scale."""
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        for n in range(3):
+            _competition(title_ru=f"Race {n}", location=self.venue)
+        with CaptureQueriesContext(connection) as few:
+            rows = self.get("/api/v1/competitions/?status=approved").json()
+        self.assertEqual({row["location_city_id"] for row in rows}, {self.city.pk})
+
+        for n in range(3, 12):
+            _competition(title_ru=f"Race {n}", location=self.venue)
+        with CaptureQueriesContext(connection) as many:
+            self.get("/api/v1/competitions/?status=approved")
+        self.assertEqual(len(many), len(few), "four times the rows must not cost more queries")

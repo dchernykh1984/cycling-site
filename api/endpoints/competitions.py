@@ -62,6 +62,11 @@ class CompetitionOut(Schema):
     event_type_id: int | None
     discipline_ids: list[int]
     location_id: int | None
+    # The city the location sits in (its depth-3 ancestor, or itself when it is one). A start venue
+    # is too fine a place to compare two events by -- one calendar's "Grebnevo Estate" and another's
+    # "other location" are the same race -- while the city is the level both agree on, which is what
+    # the import agent's duplicate detection needs.
+    location_city_id: int | None
     date_start: date
     date_end: date | None
     status: str
@@ -77,6 +82,14 @@ class CompetitionOut(Schema):
     url_results: str
     is_hidden: bool
     is_deleted: bool
+
+    @staticmethod
+    def resolve_location_city_id(obj: Competition) -> int | None:
+        # The list endpoint resolves every row's city in one query and caches it here; anything else
+        # falls back to looking this row's up, so the field is right however the schema is used.
+        if hasattr(obj, "_city_id"):
+            return obj._city_id
+        return city_id_of(obj.location)
 
     @staticmethod
     def resolve_title(obj: Competition) -> LocalizedStr:
@@ -100,6 +113,36 @@ class CompetitionDetailOut(CompetitionOut):
 
 
 # -- Helpers ---------------------------------------------------------------
+
+
+_CITY_DEPTH = 3  # country -> region -> city -> venue
+
+
+def _city_path(location) -> str | None:
+    """The treebeard path of the city ``location`` belongs to, or None above city level."""
+    if location is None or location.depth < _CITY_DEPTH:
+        return None
+    step = len(location.path) // location.depth
+    return location.path[: step * _CITY_DEPTH]
+
+
+def city_id_of(location) -> int | None:
+    """The id of the city a location sits in (itself when it is one); None above city level."""
+    path = _city_path(location)
+    if path is None:
+        return None
+    if location.depth == _CITY_DEPTH:
+        return location.pk
+    return Location.objects.filter(path=path, depth=_CITY_DEPTH).values_list("pk", flat=True).first()
+
+
+def _annotate_city_ids(competitions: list) -> list:
+    """Resolve every row's city in one query, so serializing a list is not one query per row."""
+    wanted = {path for comp in competitions if (path := _city_path(comp.location)) is not None}
+    by_path = dict(Location.objects.filter(path__in=wanted, depth=_CITY_DEPTH).values_list("path", "pk"))
+    for comp in competitions:
+        comp._city_id = by_path.get(_city_path(comp.location))
+    return competitions
 
 
 def _descendant_location_ids(location_ids: list[int]) -> set[int]:
@@ -309,7 +352,7 @@ def list_competitions(
         if not getattr(user, "is_authenticated", False):
             raise HttpError(401, "Authentication is required to filter by favorites.")
         qs = qs.filter(favorited_by__user=user)
-    return list(qs)
+    return _annotate_city_ids(list(qs.select_related("location")))
 
 
 @router.get("/{competition_id}", response=CompetitionDetailOut, auth=optional_auth, summary="Get competition detail")
