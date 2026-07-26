@@ -190,7 +190,8 @@ def main() -> int:
     parsed_sources = sources.parse_sources(_read(_SOURCES_FILE))
     known = client.known()
     print(
-        f"known: {len(known.existing)} events ({known.deleted_count} of them deleted), {len(known.rejected)} rejected",
+        f"known: {len(known.existing)} events, {len(known.rejected)} rejected; "
+        f"{known.deleted_count} of these are deleted and blocked from coming back",
         flush=True,
     )
     taxonomy = client.taxonomy()
