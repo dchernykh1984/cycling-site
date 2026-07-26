@@ -6,6 +6,7 @@ the (error-prone) parsing stays pure and unit-tested.
 
 from __future__ import annotations
 
+import datetime
 import json
 import urllib.request
 
@@ -80,9 +81,35 @@ _KIND_GUIDANCE = {
 }
 
 
-def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy) -> str:
-    existing = "\n".join(f"- {e['title']} ({e['date_start']})" for e in known.existing[:200])
-    rejected = "\n".join(f"- {r['title']} ({r['date_start']}): {r['reason']}" for r in known.rejected[:40])
+_MAX_EXISTING = 200
+_MAX_REJECTED = 40
+
+
+def _for_prompt(items: list[dict], limit: int, today: str) -> list[dict]:
+    """The known events worth spending prompt room on: the ones a run could still propose.
+
+    The site carries far more events than fit here -- 374 approved in July 2026, only 189 of them
+    upcoming -- and a run never proposes a past event, so filling the list from the top spends most
+    of the room on events that can never be duplicated and leaves real upcoming ones unmentioned.
+    Upcoming first, soonest first; past ones fill whatever room is left, most recent first.
+    """
+    upcoming = sorted((item for item in items if item.get("date_start", "") >= today), key=_date_start)
+    past = sorted((item for item in items if item.get("date_start", "") < today), key=_date_start, reverse=True)
+    return (upcoming + past)[:limit]
+
+
+def _date_start(item: dict) -> str:
+    return item.get("date_start", "")
+
+
+def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, today: str = "") -> str:
+    today = today or datetime.date.today().isoformat()
+    existing = "\n".join(
+        f"- {e['title']} ({e['date_start']})" for e in _for_prompt(known.existing, _MAX_EXISTING, today)
+    )
+    rejected = "\n".join(
+        f"- {r['title']} ({r['date_start']}): {r['reason']}" for r in _for_prompt(known.rejected, _MAX_REJECTED, today)
+    )
     event_types = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.event_types)
     disciplines = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.disciplines)
     kind_note = _KIND_GUIDANCE.get(source.kind, "(generic web page)")

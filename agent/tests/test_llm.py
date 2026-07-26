@@ -76,3 +76,59 @@ def test_enrichment_moves_a_calendar_entry_to_the_organizers_page():
 
     assert "organizer's own page for this race" in _ENRICH_SYSTEM
     assert "second-hand copy" in _ENRICH_SYSTEM  # says why, so the rule is not cargo-culted
+
+
+def _known_with(*dates: str):
+    from agent.models import KnownEvents
+
+    known = KnownEvents()
+    for date in dates:
+        known.existing.append({"title": f"Race {date}", "titles": [f"Race {date}"], "date_start": date})
+    return known
+
+
+def _prompt_with_known(known, today: str) -> str:
+    from agent.llm import _prompt
+    from agent.models import Source, Taxonomy
+
+    source = Source(ref="s", kind="organizer", fetch_url="https://example.test/")
+    return _prompt("text", source, "", known, Taxonomy(), today=today)
+
+
+def test_the_known_events_shown_to_the_model_are_the_upcoming_ones():
+    """A run only ever proposes future events, so past ones must not crowd them out of the list.
+
+    The site had 374 approved events and room for 200; filling from the top spent most of the room
+    on races that had already happened, so a real upcoming duplicate went unmentioned.
+    """
+    from agent.llm import _MAX_EXISTING, _for_prompt
+
+    past = [f"2020-01-{day:02d}" for day in range(1, 29)] * 10  # 280 past events
+    upcoming = ["2026-09-26", "2026-10-04"]
+    known = _known_with(*past, *upcoming)
+    shown = _for_prompt(known.existing, _MAX_EXISTING, "2026-07-26")
+
+    assert len(shown) == _MAX_EXISTING
+    assert [item["date_start"] for item in shown[:2]] == upcoming
+
+
+def test_an_upcoming_event_reaches_the_prompt_even_from_the_end_of_a_long_list():
+    known = _known_with(*[f"2020-01-{day:02d}" for day in range(1, 29)] * 10, "2026-09-26")
+    assert "Race 2026-09-26 (2026-09-26)" in _prompt_with_known(known, "2026-07-26")
+
+
+def test_past_events_still_fill_the_room_that_is_left():
+    # They are cheap dedup hints while there is room -- most recent first, as those recur soonest.
+    known = _known_with("2020-01-01", "2026-01-01", "2026-09-26")
+    from agent.llm import _MAX_EXISTING, _for_prompt
+
+    shown = [item["date_start"] for item in _for_prompt(known.existing, _MAX_EXISTING, "2026-07-26")]
+    assert shown == ["2026-09-26", "2026-01-01", "2020-01-01"]
+
+
+def test_an_event_with_no_date_does_not_crowd_out_a_real_one():
+    known = _known_with("", "2026-09-26")
+    from agent.llm import _for_prompt
+
+    shown = [item["date_start"] for item in _for_prompt(known.existing, 1, "2026-07-26")]
+    assert shown == ["2026-09-26"]
