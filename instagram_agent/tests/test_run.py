@@ -158,3 +158,18 @@ def test_an_account_that_cannot_be_read_is_reported_not_silently_empty():
     assert report.accepted == []
     assert [ref for ref, _ in report.skipped_sources] == ["@gone"]
     assert "professional" in report.skipped_sources[0][1]
+
+
+def test_the_guidance_is_this_agents_own_and_wants_club_rides():
+    """The events agent's guidance says to skip club and social rides -- the opposite of the job.
+
+    Pointing this agent at that file would make every run propose nothing, and the run would look
+    healthy while doing it.
+    """
+    from instagram_agent.run import _GUIDANCE_FILE, _read
+
+    assert _GUIDANCE_FILE.name == "guidance.md"
+    assert _GUIDANCE_FILE.parent.name == "instagram_agent"
+    guidance = _read(_GUIDANCE_FILE)
+    assert "Club rides and group rides" in guidance
+    assert "coffee rides" in guidance
