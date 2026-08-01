@@ -33,12 +33,8 @@ _USER_AGENT = (
 _TIMEOUT = 30
 _MAX_CAPTION_CHARS = 2000
 
-# One account is read per run, from a runner of its own, so a run makes exactly one request and
-# never retries. A refusal is not about how fast we asked -- three requests could not exhaust
-# anything. It is the address: runners come from a shared cloud pool and inherit whatever reputation
-# previous tenants left on it, so a refused address stays refused for as long as this job holds it.
-# Asking again from the same runner spends minutes to be told the same thing; tomorrow's job gets a
-# different address instead.
+# Instagram fails to serialize some professional accounts and answers 400 quoting this asset. It is
+# a fault on their side, has nothing to do with the request, and clears up on its own.
 _THEIR_BUG = "ig_business_category_subvertical"
 
 
@@ -137,7 +133,14 @@ def _get(url: str) -> dict:
 
 
 def _get_once(url: str) -> dict:
-    """Fetch, turning every failure into AccountUnavailableError with why it failed."""
+    """Fetch once, turning every failure into AccountUnavailableError with why it failed.
+
+    Once, and never again in the same run. A refusal is not about how fast we asked -- one account
+    a run could not exhaust anything. It is the address: runners come from a shared cloud pool and
+    inherit whatever reputation previous tenants left on it, so an address that is refused stays
+    refused for as long as this job holds it. Asking again spends minutes to be told the same thing;
+    the next run gets a different address instead.
+    """
     try:
         return _get(url)
     except urllib.error.HTTPError as exc:
