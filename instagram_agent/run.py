@@ -91,6 +91,13 @@ def _what_the_site_knows(client: SiteApiClient) -> tuple[KnownEvents, Taxonomy, 
     return known, client.taxonomy(), client.location_tree()
 
 
+def selected(accounts: list[Account], only: str) -> list[Account]:
+    """The accounts this run reads: the one it was pointed at, or all of them when it was not."""
+    if not only:
+        return accounts
+    return [account for account in accounts if account.username.lower() == only.lower()]
+
+
 def main() -> int:
     try:
         config = insta_config.from_env(dict(os.environ))
@@ -98,17 +105,14 @@ def main() -> int:
         print(f"Configuration error: {exc}", file=sys.stderr)
         return 2
 
-    accounts = parse_accounts(_read(_ACCOUNTS_FILE))
-    if config.only_account:
-        accounts = [a for a in accounts if a.username.lower() == config.only_account.lower()]
-        if not accounts:
-            print(
-                f"No enabled account named {config.only_account!r} in instagram_accounts.yaml.",
-                file=sys.stderr,
-            )
-            return 2
+    accounts = selected(parse_accounts(_read(_ACCOUNTS_FILE)), config.only_account)
     if not accounts:
-        print("No enabled accounts in instagram_accounts.yaml -- nothing to do.")
+        if config.only_account:
+            # A name the file does not carry is a broken workflow, not a quiet night: the matrix is
+            # built from this very file, so the two can only disagree if something is wrong.
+            print(f"No enabled account named {config.only_account!r} in {_ACCOUNTS_FILE.name}.", file=sys.stderr)
+            return 2
+        print(f"No enabled accounts in {_ACCOUNTS_FILE.name} -- nothing to do.")
         return 0
 
     client = SiteApiClient(config.site_base_url, config.api_token)
