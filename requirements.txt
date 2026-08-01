@@ -2,7 +2,7 @@
 #    uv export --no-hashes --no-annotate --no-default-groups --no-emit-project -o requirements.txt
 annotated-types==0.8.0
 anyascii==0.3.3
-asgiref==3.11.1
+asgiref==3.12.1
 beautifulsoup4==4.15.0
 brotli==1.2.0
 certifi==2026.5.20
