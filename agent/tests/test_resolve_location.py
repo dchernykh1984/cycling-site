@@ -2,7 +2,7 @@
 
 from agent.locations import flatten_cities, match_city
 from agent.models import Candidate
-from agent.placing import resolve_location as _resolve_location
+from agent.placing import resolve_location
 
 
 def _tree():
@@ -54,7 +54,7 @@ class _FakeClient:
 
 def _resolve(candidate, tree=None):
     client, tree = _FakeClient(), tree if tree is not None else _tree()
-    return client, _resolve_location(client, tree, flatten_cities(tree), candidate)
+    return client, resolve_location(client, tree, flatten_cities(tree), candidate)
 
 
 def _candidate(**kwargs):
@@ -120,8 +120,8 @@ def test_second_candidate_in_the_run_reuses_the_city_just_proposed():
     cities = flatten_cities(tree)
     first = _candidate(country="Kazakhstan", region="Almaty-region", city="Talgar")
     second = _candidate(country="Kazakhstan", region="Almaty-region", city="Talgar", venue="Start")
-    _resolve_location(client, tree, cities, first)
-    _resolve_location(client, tree, cities, second)
+    resolve_location(client, tree, cities, first)
+    resolve_location(client, tree, cities, second)
     assert client.places == [(2, "Talgar")]  # proposed once, then reused from the in-memory index
     assert client.venues == [(101, "Start")]
 
@@ -150,7 +150,7 @@ def test_ambiguous_city_does_not_multiply_across_candidates():
     client, tree = _FakeClient(), _tree_with_twin_cities()
     cities = flatten_cities(tree)
     for _ in range(3):
-        _resolve_location(client, tree, cities, _candidate(country="Kazakhstan", city="Esil"))
+        resolve_location(client, tree, cities, _candidate(country="Kazakhstan", city="Esil"))
     assert client.places == []  # a third namesake would make every later candidate ambiguous too
 
 
@@ -161,8 +161,8 @@ def test_namesake_city_in_another_region_is_proposed_not_reused():
     first = _candidate(country="Kazakhstan", region="Almaty-region", city="Troitsk")
     second = _candidate(country="Kazakhstan", region="Astana-region", city="Troitsk")
     tree[0]["children"].append({"id": 7, "name": {"ru": "Astana-region", "kk": "", "en": ""}, "children": []})
-    _resolve_location(client, tree, cities, first)
-    _resolve_location(client, tree, cities, second)
+    resolve_location(client, tree, cities, first)
+    resolve_location(client, tree, cities, second)
     assert client.places == [(2, "Troitsk"), (7, "Troitsk")]
 
 
@@ -202,7 +202,7 @@ def test_a_proposed_place_carries_every_locale_the_model_gave():
     """A place created in one language only would be proposed again by a source in another."""
     client, tree = _FakeClient(), _tree()
     cities = flatten_cities(tree)
-    _resolve_location(
+    resolve_location(
         client,
         tree,
         cities,
@@ -223,7 +223,7 @@ def test_geography_left_behind_by_a_failed_event_post_is_named():
     """Pending nodes outliving their event must be traceable, not anonymous queue entries."""
     client, tree = _FakeClient(), _tree()
     cities, created = flatten_cities(tree), []
-    _resolve_location(
+    resolve_location(
         client,
         tree,
         cities,
