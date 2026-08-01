@@ -60,3 +60,18 @@ def test_the_shipped_accounts_file_parses_and_names_only_real_accounts():
     accounts = parse_accounts(Path("instagram_accounts.yaml").read_text(encoding="utf-8"))
     assert accounts, "the shipped file should carry at least one enabled account"
     assert all(a.username and " " not in a.username for a in accounts)
+
+
+def test_the_enabled_names_are_what_a_workflow_builds_its_jobs_from():
+    from instagram_agent.accounts import enabled_usernames
+
+    text = "accounts:\n  - live_one\n  - username: paused\n    enabled: false\n  - '@second'\n"
+    assert enabled_usernames(text) == ["live_one", "second"]
+
+
+def test_the_shipped_file_names_the_accounts_the_workflow_will_run():
+    from instagram_agent.accounts import enabled_usernames
+
+    names = enabled_usernames(Path("instagram_accounts.yaml").read_text(encoding="utf-8"))
+    assert names, "an empty list would leave the workflow with no jobs to run"
+    assert len(names) == len(set(names))

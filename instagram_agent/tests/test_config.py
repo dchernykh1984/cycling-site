@@ -51,3 +51,10 @@ def test_the_shared_api_adapter_gets_the_same_model_and_key():
     shared = as_agent_config(config)
     assert shared.llm_model == "deepseek-v4-flash"
     assert shared.llm_api_key == "k"
+
+
+def test_a_run_can_be_pointed_at_one_account():
+    """Each account gets a job of its own, so a refused address costs that account and no other."""
+    assert from_env({**_BASE, "INSTAGRAM_ACCOUNT": "ubtalmaty"}).only_account == "ubtalmaty"
+    assert from_env({**_BASE, "INSTAGRAM_ACCOUNT": " @UBTAlmaty "}).only_account == "UBTAlmaty"
+    assert from_env(dict(_BASE)).only_account == "", "no name means every enabled account"

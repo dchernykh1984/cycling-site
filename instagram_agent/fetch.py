@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import datetime
 import json
-import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -32,21 +31,14 @@ _USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 )
 _TIMEOUT = 30
-# Instagram answers a burst of requests with an error, and a nightly run has all the time it needs,
-# so accounts are read one at a time with a pause between them.
-_PAUSE_BETWEEN_ACCOUNTS = 20
 _MAX_CAPTION_CHARS = 2000
 
-# Statuses that mean "not now" rather than "not this account": rate limiting (Instagram answers it
-# as 401 "please wait a few minutes" as often as 429) and its own gateway errors. Worth waiting out,
-# because the alternative is losing a whole account for a night over a passing refusal.
-_TRANSIENT_STATUSES = frozenset({401, 429, 500, 502, 503, 504})
-_RETRIES = 3
-_RETRY_BACKOFF = (30, 90)  # seconds before the second and third attempts
-
-# Instagram fails to serialize some professional accounts and answers 400 with this. It is a fault
-# on their side, has nothing to do with the request, and clears up on its own -- so an account that
-# answers this is kept in the list and simply skipped for the night.
+# One account is read per run, from a runner of its own, so a run makes exactly one request and
+# never retries. A refusal is not about how fast we asked -- three requests could not exhaust
+# anything. It is the address: runners come from a shared cloud pool and inherit whatever reputation
+# previous tenants left on it, so a refused address stays refused for as long as this job holds it.
+# Asking again from the same runner spends minutes to be told the same thing; tomorrow's job gets a
+# different address instead.
 _THEIR_BUG = "ig_business_category_subvertical"
 
 
@@ -144,27 +136,19 @@ def _get(url: str) -> dict:
         return json.loads(response.read().decode("utf-8", "replace"))
 
 
-def _get_with_retries(url: str) -> dict:
-    """Fetch, waiting out a refusal that says "not now" rather than "not this account"."""
-    for attempt in range(_RETRIES):
-        try:
-            return _get(url)
-        except urllib.error.HTTPError as exc:
-            body = _error_body(exc)
-            if _THEIR_BUG in body:
-                raise AccountUnavailableError(
-                    f"HTTP {exc.code}: Instagram could not serialize this account (its own error, "
-                    f"not the request); it usually clears up on its own"
-                ) from exc
-            last = exc.code not in _TRANSIENT_STATUSES or attempt == _RETRIES - 1
-            if last:
-                raise AccountUnavailableError(f"HTTP {exc.code}{_hint_for(exc.code)}") from exc
-            time.sleep(_RETRY_BACKOFF[attempt])
-        except Exception as exc:  # network, DNS, malformed JSON
-            if attempt == _RETRIES - 1:
-                raise AccountUnavailableError(str(exc)) from exc
-            time.sleep(_RETRY_BACKOFF[attempt])
-    raise AccountUnavailableError("no attempt succeeded")  # unreachable, kept for the type checker
+def _get_once(url: str) -> dict:
+    """Fetch, turning every failure into AccountUnavailableError with why it failed."""
+    try:
+        return _get(url)
+    except urllib.error.HTTPError as exc:
+        if _THEIR_BUG in _error_body(exc):
+            raise AccountUnavailableError(
+                f"HTTP {exc.code}: Instagram could not serialize this account (its own error, not "
+                f"the request); it usually clears up on its own"
+            ) from exc
+        raise AccountUnavailableError(f"HTTP {exc.code}{_hint_for(exc.code)}") from exc
+    except Exception as exc:  # network, DNS, malformed JSON
+        raise AccountUnavailableError(str(exc)) from exc
 
 
 def _error_body(exc: urllib.error.HTTPError) -> str:
@@ -176,7 +160,7 @@ def _error_body(exc: urllib.error.HTTPError) -> str:
 
 def _hint_for(status: int) -> str:
     if status in (401, 429):
-        return " (rate limited -- Instagram refuses this address for now)"
+        return " (this runner's address is refused; tomorrow's run gets another one)"
     if status == 404:
         return " (no such account)"
     return ""
@@ -188,7 +172,7 @@ def fetch_posts(account: Account) -> list[Post]:
     An empty list is a real answer (an account that has posted nothing lately) and must not be
     confused with an account that could not be read at all.
     """
-    payload = _get_with_retries(_PROFILE_URL.format(username=account.username))
+    payload = _get_once(_PROFILE_URL.format(username=account.username))
     user = ((payload or {}).get("data") or {}).get("user")
     if not user:
         raise AccountUnavailableError("no profile in the reply")
@@ -197,7 +181,3 @@ def fetch_posts(account: Account) -> list[Post]:
     if not is_professional(payload):
         raise AccountUnavailableError("not a professional account, so its posts are not readable")
     return posts_from_profile(payload)
-
-
-def pause_between_accounts() -> None:
-    time.sleep(_PAUSE_BETWEEN_ACCOUNTS)
