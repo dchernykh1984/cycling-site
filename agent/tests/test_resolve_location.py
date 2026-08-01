@@ -2,7 +2,7 @@
 
 from agent.locations import flatten_cities, match_city
 from agent.models import Candidate
-from agent.run import _resolve_location
+from agent.placing import resolve_location as _resolve_location
 
 
 def _tree():
