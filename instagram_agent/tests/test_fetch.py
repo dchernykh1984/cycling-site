@@ -119,3 +119,16 @@ def test_an_account_that_cannot_be_read_says_why():
             fetch_posts(Account("someone"))
     finally:
         module._get = original
+
+
+def test_a_pinned_old_post_does_not_come_first():
+    """Instagram puts pinned posts ahead of the rest, so the reply is not in date order.
+
+    Taken at face value, an account with a pinned post from spring spends a slot of the post budget
+    on it before the announcements it actually published this week.
+    """
+    pinned = _node("Pinned", "our club, join us", datetime.date(2026, 5, 12))
+    recent = _node("Recent", "this Saturday we ride", datetime.date(2026, 7, 31))
+    older = _node("Older", "last month", datetime.date(2026, 6, 30))
+    posts = posts_from_profile(_payload(pinned, recent, older))
+    assert [p.shortcode for p in posts] == ["Recent", "Older", "Pinned"]

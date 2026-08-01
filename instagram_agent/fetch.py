@@ -66,7 +66,12 @@ def _caption_of(node: dict) -> str:
 
 
 def posts_from_profile(payload: dict) -> list[Post]:
-    """The posts in a profile reply, newest first. Anything malformed is skipped, not raised."""
+    """The posts in a profile reply, newest first. Anything malformed is skipped, not raised.
+
+    Instagram returns pinned posts ahead of the rest whatever their age, so the reply is not in date
+    order: an account with a pinned post from May opens with it. Sorting here is what makes "the
+    newest N posts" mean that, instead of spending the budget on whatever the club pinned.
+    """
     user = ((payload or {}).get("data") or {}).get("user") or {}
     edges = (user.get("edge_owner_to_timeline_media") or {}).get("edges") or []
     posts: list[Post] = []
@@ -83,7 +88,7 @@ def posts_from_profile(payload: dict) -> list[Post]:
                 is_video=bool(node.get("is_video")),
             )
         )
-    return posts
+    return sorted(posts, key=lambda post: post.published, reverse=True)
 
 
 def is_professional(payload: dict) -> bool:
