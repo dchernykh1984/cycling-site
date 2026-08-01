@@ -101,12 +101,12 @@ def test_the_known_events_shown_to_the_model_are_the_upcoming_ones():
     The site had 374 approved events and room for 200; filling from the top spent most of the room
     on races that had already happened, so a real upcoming duplicate went unmentioned.
     """
-    from agent.llm import _MAX_EXISTING, _for_prompt
+    from agent.llm import _MAX_EXISTING, upcoming_first
 
     past = [f"2020-01-{day:02d}" for day in range(1, 29)] * 10  # 280 past events
     upcoming = ["2026-09-26", "2026-10-04"]
     known = _known_with(*past, *upcoming)
-    shown = _for_prompt(known.existing, _MAX_EXISTING, "2026-07-26")
+    shown = upcoming_first(known.existing, _MAX_EXISTING, "2026-07-26")
 
     assert len(shown) == _MAX_EXISTING
     assert [item["date_start"] for item in shown[:2]] == upcoming
@@ -120,15 +120,15 @@ def test_an_upcoming_event_reaches_the_prompt_even_from_the_end_of_a_long_list()
 def test_past_events_still_fill_the_room_that_is_left():
     # They are cheap dedup hints while there is room -- most recent first, as those recur soonest.
     known = _known_with("2020-01-01", "2026-01-01", "2026-09-26")
-    from agent.llm import _MAX_EXISTING, _for_prompt
+    from agent.llm import _MAX_EXISTING, upcoming_first
 
-    shown = [item["date_start"] for item in _for_prompt(known.existing, _MAX_EXISTING, "2026-07-26")]
+    shown = [item["date_start"] for item in upcoming_first(known.existing, _MAX_EXISTING, "2026-07-26")]
     assert shown == ["2026-09-26", "2026-01-01", "2020-01-01"]
 
 
 def test_an_event_with_no_date_does_not_crowd_out_a_real_one():
     known = _known_with("", "2026-09-26")
-    from agent.llm import _for_prompt
+    from agent.llm import upcoming_first
 
-    shown = [item["date_start"] for item in _for_prompt(known.existing, 1, "2026-07-26")]
+    shown = [item["date_start"] for item in upcoming_first(known.existing, 1, "2026-07-26")]
     assert shown == ["2026-09-26"]

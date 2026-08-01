@@ -1,0 +1,40 @@
+# Instagram accounts the Instagram agent reads, alongside events_sources.yaml for the web agent.
+# Re-read on every run -- edit it freely.
+#
+# Each entry is either a bare username, or a mapping for extra control:
+#   - ubtalmaty                                  # simple form
+#   - username: ubtalmaty                        # with options:
+#     hint: "an Almaty club; rides start in the city"  #   free-text nudge passed to the model
+#     city: "Almaty"                             #   where this club rides, when its posts leave it out
+#     enabled: false                             #   set false to pause the account without losing it
+#
+# Only professional (Business/Creator) accounts can be read; a personal account returns nothing.
+# What is worth adding here is a club or organizer that ANNOUNCES rides -- an account that only
+# posts results and photo reports costs a request every night and yields nothing.
+
+accounts:
+  - username: ubtalmaty
+    hint: >-
+      Universal Bicycle Team, an Almaty road club. Announces a recurring Saturday "Early Bird" coffee
+      ride, usually starting from the Giant store at Abay 47. Posts alternate between announcements
+      of the next ride and photo reports from the last one.
+    city: Almaty
+
+  - username: bike_buddies_kids
+    hint: >-
+      A children's balance-bike section in Almaty. Announces kids' starts and race days; most other
+      posts are training and marketing.
+    city: Almaty
+
+  - username: kcfkz
+    hint: >-
+      The Kazakhstan National Cycling Federation. Mostly publishes RESULTS of championships that have
+      already finished -- those are not events to propose. Take only posts announcing a start that
+      has not happened yet.
+
+  # Instagram answers HTTP 400 for these two accounts (an error on their side while serializing the
+  # account's business category), so they are paused until it starts working again.
+  - username: almaty_cycling
+    enabled: false
+  - username: kids_bike_academy
+    enabled: false
