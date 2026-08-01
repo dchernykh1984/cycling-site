@@ -8,15 +8,17 @@
 #     city: "Almaty"                             #   where this club rides, when its posts leave it out
 #     enabled: false                             #   set false to pause the account without losing it
 #
-# Only professional (Business/Creator) accounts can be read; a personal account returns nothing.
-# What is worth adding here is a club or organizer that ANNOUNCES rides -- an account that only
-# posts results and photo reports costs a request every night and yields nothing.
+# WHAT BELONGS HERE. Only a club that announces its rides NOWHERE ELSE. Anything with a website, a
+# public Telegram channel or any other readable source goes to the events agent instead
+# (events_sources.yaml): reading a feed this way is a last resort and is used only where there is no
+# alternative. Beyond that, only professional (Business/Creator) accounts can be read at all -- a
+# personal one returns nothing -- and an account that only posts results and photo reports costs a
+# request every night and yields nothing.
+#
+# Each account is read by a job of its own (see instagram_agent/README.md), so adding one here adds
+# a job to the nightly run.
 
 accounts:
-  # Only clubs that announce their rides nowhere else. Everything with a website, a public Telegram
-  # channel or any other readable source belongs to the events agent instead (events_sources.yaml):
-  # reading a feed this way is a last resort, so it is used only where there is no alternative.
-
   - username: ubtalmaty
     hint: >-
       Universal Bicycle Team, an Almaty road club. Announces a recurring Saturday "Early Bird" coffee
