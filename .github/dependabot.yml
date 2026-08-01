@@ -1,6 +1,12 @@
 version: 2
 updates:
-  - package-ecosystem: "pip"
+  # "uv", not "pip": this project locks with uv, and CI runs `uv sync --locked` /
+  # `uv export --locked`, which refuse to proceed when uv.lock and pyproject.toml disagree. The pip
+  # ecosystem edits pyproject.toml and requirements.txt and leaves the lock alone, so every update it
+  # opened failed all three jobs on "The lockfile at `uv.lock` needs to be updated". Worse, a bump
+  # merged that way was silently undone later: the pre-commit hook rebuilds requirements.txt from the
+  # stale lock, putting the old pins back in whatever commit came next.
+  - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "monthly"
