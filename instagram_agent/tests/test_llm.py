@@ -44,10 +44,12 @@ def test_no_link_and_no_platform_may_reach_a_published_event():
     """The site's maintainer must not publish the platform's name or a link into it -- see
     instagram_agent/attribution.py. The prompt is the first of two guards; the code is the one that
     holds."""
-    assert "NO LINKS AND NO PLATFORM" in _SYSTEM
+    assert "NO LINKS, NO PLATFORM, NO PICTURES" in _SYSTEM
     assert "Do not output source_url" in _SYSTEM
-    assert "never " in _SYSTEM and "name the website or app" in _SYSTEM
-    assert "source_url" not in _SYSTEM.split("NO LINKS AND NO PLATFORM")[0], "the schema must not ask for it"
+    assert "name the website or app" in _SYSTEM
+    assert "no <img>" in _SYSTEM
+    schema_half = _SYSTEM.split("NO LINKS, NO PLATFORM, NO PICTURES")[0]
+    assert "source_url" not in schema_half, "the schema must not ask for a link"
 
 
 def test_the_prompt_carries_the_taxonomy_and_what_the_site_already_knows():

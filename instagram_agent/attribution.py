@@ -28,6 +28,12 @@ _INSTA_CYRILLIC = "".join(chr(c) for c in (0x438, 0x43D, 0x441, 0x442, 0x430))  
 _PLATFORM = re.compile(rf"({_INSTA_LATIN}|{_INSTA_CYRILLIC}\w*)", re.IGNORECASE)
 _URL = re.compile(r"https?://[^\s<]+|\bwww\.[^\s<]+", re.IGNORECASE)
 _HTML_LINK = re.compile(r"<a\b[^>]*>(.*?)</a>", re.IGNORECASE | re.DOTALL)
+# Anything that would make a reader's browser fetch a file from the platform. No image is ever
+# collected from a post -- the reader does not even read the media fields -- but a model can write
+# an <img> into a description, and a hotlinked image is the platform on the page as surely as its
+# name is. Paired tags go with their contents; void ones go on their own.
+_MEDIA_BLOCK = re.compile(r"<(video|picture|iframe|object|figure|audio)\b[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
+_MEDIA_TAG = re.compile(r"</?(img|source|embed|track|svg|canvas|video|iframe|picture)\b[^>]*/?>", re.IGNORECASE)
 _EMPTY_TAGS = re.compile(r"<(p|li)>\s*</\1>", re.IGNORECASE)
 _SPACES = re.compile(r"[ \t]{2,}")
 
@@ -45,8 +51,10 @@ _CREDIT = {
 
 
 def _strip_platform(text: str) -> str:
-    """Remove links and any naming of the platform, leaving the rest of the text readable."""
-    without_links = _HTML_LINK.sub(r"\1", text or "")
+    """Remove links, embedded media and any naming of the platform; keep the text readable."""
+    without_media = _MEDIA_BLOCK.sub("", text or "")
+    without_media = _MEDIA_TAG.sub("", without_media)
+    without_links = _HTML_LINK.sub(r"\1", without_media)
     without_links = _URL.sub("", without_links)
     scrubbed = _PLATFORM.sub("", without_links)
     scrubbed = _EMPTY_TAGS.sub("", scrubbed)
