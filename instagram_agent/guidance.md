@@ -45,8 +45,9 @@ published; if that is not possible, skip it rather than guessing.
   show up: the gathering time and the start time, the meeting place, the route, the pace, whether
   anyone may join, the fee, and how to register when the post says. Keep the club's own concrete
   wording; do not invent details the post does not state.
-- **Link**: `source_url` is the permalink of the post the event came from, exactly as given above
-  that post. A registration link goes in `url_registration` only if the post carries one.
+- **No links and no platform.** Do not write a link anywhere, and never name the site or app the
+  posts come from. The event is credited to the account by name alone, and that line is added for
+  you -- do not write it yourself.
 - **Place**: the meeting point is the venue ("магазин Giant, Абая 47"), with the city and its
   first-level region above it. When a post never says where -- because everyone following the club
   knows -- use the city the maintainers gave the account. Use the current official spelling

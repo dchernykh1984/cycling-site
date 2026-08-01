@@ -24,6 +24,7 @@ from agent.site_api import SiteApiClient
 from instagram_agent import config as insta_config
 from instagram_agent import fetch, llm
 from instagram_agent.accounts import Account, parse_accounts
+from instagram_agent.attribution import credit_account
 
 _ROOT = Path(__file__).resolve().parent.parent
 _ACCOUNTS_FILE = _ROOT / "instagram_accounts.yaml"
@@ -51,7 +52,6 @@ def summary(report: RunReport) -> str:
     ]
     for candidate in report.accepted:
         lines.append(f"  + {candidate.date_start} {candidate.title}")
-        lines.append(f"      link:  {candidate.source_url or '(none)'}")
         lines.append(f"      place: {_place(candidate)}")
     for title, reason in report.skipped_candidates:
         lines.append(f"  - skipped: {title} ({reason})")
@@ -142,7 +142,7 @@ def _run(
         # declining -- surface it so the two are told apart without another run.
         if not parsed and raw.strip() not in ("", "[]"):
             print(f"  . {source.ref}: {len(raw)}-char reply parsed to 0: {' '.join(raw.split())[:400]}", flush=True)
-        return [_with_account_city(candidate, account) for candidate in parsed]
+        return [credit_account(_with_account_city(candidate, account), account) for candidate in parsed]
 
     def city_of(candidate: Candidate) -> int | None:
         return locations.match_city(cities, candidate.city, candidate.region, candidate.country)

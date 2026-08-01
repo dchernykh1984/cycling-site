@@ -85,18 +85,17 @@ def test_reading_an_account_keeps_only_the_newest_posts():
     assert "post number 2" not in text
 
 
-def test_the_summary_names_each_proposal_its_link_and_its_place():
+def test_the_summary_names_each_proposal_and_its_place_but_never_a_post():
+    """Even the run log stays clear of the platform: this repository is public."""
     report = RunReport(dry_run=True)
-    report.accepted.append(
-        _candidate(source_url="https://www.instagram.com/p/Abc123/", country="KZ", city="Almaty", venue="Giant Abay 47")
-    )
+    report.accepted.append(_candidate(country="KZ", city="Almaty", venue="Giant Abay 47"))
     report.extracted.append(("@ubtalmaty", 4))
     report.proposed_by_source["@ubtalmaty"] = 1
     out = summary(report)
     assert "would propose: 1" in out
-    assert "link:  https://www.instagram.com/p/Abc123/" in out
     assert "place: KZ / Almaty / Giant Abay 47" in out
     assert "@ubtalmaty: 4 extracted, 1 proposed" in out
+    assert "instagram.com" not in out.lower()
 
 
 def test_the_summary_separates_an_unreadable_account_from_a_quiet_one():
