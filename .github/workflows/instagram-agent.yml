@@ -1,0 +1,64 @@
+name: instagram-agent
+
+on:
+  schedule:
+    # 23:17 UTC daily -- an hour after the web agent, so the two never overlap and this one sees the
+    # events that one just proposed. Outside DeepSeek's peak windows (09:00-12:00 and 14:00-18:00
+    # Beijing time = 01:00-04:00 and 06:00-10:00 UTC), where every token costs double, and off the
+    # round minute to dodge cron congestion.
+    - cron: "17 23 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Log the events without posting them"
+        type: boolean
+        default: false
+      max_events:
+        description: "Max events to propose this run"
+        type: string
+        default: "10"
+      max_posts:
+        description: "Max recent posts to read per account"
+        type: string
+        default: "10"
+      recent_days:
+        description: "How far back to look, in days"
+        type: string
+        default: "21"
+
+concurrency:
+  group: instagram-agent
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30 # accounts are read one at a time with a pause between them, then one model
+    # call per account -- a handful of accounts, not a night of calendars
+    steps:
+      # Fail a manual run started by anyone other than the owner before any secret is used.
+      - name: Restrict manual runs to the repository owner
+        if: ${{ github.event_name == 'workflow_dispatch' && github.actor != github.repository_owner }}
+        run: |
+          echo "::error::Only ${{ github.repository_owner }} may run this workflow manually (actor: ${{ github.actor }})."
+          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install pyyaml
+      - name: Run Instagram agent
+        env:
+          SITE_BASE_URL: ${{ secrets.SITE_BASE_URL || 'https://universalbicycle.team' }}
+          AGENT_API_TOKEN: ${{ secrets.AGENT_API_TOKEN }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
+          INSTAGRAM_MAX_EVENTS: ${{ github.event.inputs.max_events || '10' }}
+          INSTAGRAM_MAX_POSTS: ${{ github.event.inputs.max_posts || '10' }}
+          INSTAGRAM_RECENT_DAYS: ${{ github.event.inputs.recent_days || '21' }}
+          INSTAGRAM_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: python -m instagram_agent.run

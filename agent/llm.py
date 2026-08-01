@@ -85,7 +85,7 @@ _MAX_EXISTING = 200
 _MAX_REJECTED = 40
 
 
-def _for_prompt(items: list[dict], limit: int, today: str) -> list[dict]:
+def upcoming_first(items: list[dict], limit: int, today: str) -> list[dict]:
     """The known events worth spending prompt room on: the ones a run could still propose.
 
     The site carries far more events than fit here -- 374 approved in July 2026, only 189 of them
@@ -105,10 +105,11 @@ def _date_start(item: dict) -> str:
 def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, today: str = "") -> str:
     today = today or datetime.date.today().isoformat()
     existing = "\n".join(
-        f"- {e['title']} ({e['date_start']})" for e in _for_prompt(known.existing, _MAX_EXISTING, today)
+        f"- {e['title']} ({e['date_start']})" for e in upcoming_first(known.existing, _MAX_EXISTING, today)
     )
     rejected = "\n".join(
-        f"- {r['title']} ({r['date_start']}): {r['reason']}" for r in _for_prompt(known.rejected, _MAX_REJECTED, today)
+        f"- {r['title']} ({r['date_start']}): {r['reason']}"
+        for r in upcoming_first(known.rejected, _MAX_REJECTED, today)
     )
     event_types = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.event_types)
     disciplines = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.disciplines)
@@ -128,7 +129,8 @@ def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxono
     )
 
 
-def _chat(system: str, user: str, config: Config) -> str:
+def chat(system: str, user: str, config: Config) -> str:
+    """One call to the chat API. Shared by every agent -- they all talk to the same endpoint."""
     payload = {
         "model": config.llm_model,
         "messages": [
@@ -152,7 +154,7 @@ def _chat(system: str, user: str, config: Config) -> str:
 def extract_raw(
     text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, config: Config
 ) -> str:
-    return _chat(_SYSTEM, _prompt(text, source, guidance, known, taxonomy), config)
+    return chat(_SYSTEM, _prompt(text, source, guidance, known, taxonomy), config)
 
 
 _ENRICH_SYSTEM = (
@@ -214,4 +216,4 @@ def enrich_raw(candidate: Candidate, page_text: str, guidance: str, taxonomy: Ta
         f"Current event (JSON):\n{_event_json(candidate)}\n\n"
         f"Event page text:\n{page_text}"
     )
-    return _chat(_ENRICH_SYSTEM, user, config)
+    return chat(_ENRICH_SYSTEM, user, config)
