@@ -54,7 +54,13 @@ jobs:
           python-version: "3.13"
       - run: pip install pyyaml
       - id: list
-        run: echo "accounts=$(python -m instagram_agent.accounts)" >> "$GITHUB_OUTPUT"
+        # Assigned first so a failure here fails this step: written as echo "$(...)" the exit status
+        # would be echo's, the output would be empty, and the matrix below would blow up on it with
+        # an error naming fromJson rather than whatever actually broke.
+        run: |
+          accounts=$(python -m instagram_agent.accounts)
+          echo "Accounts to read: $accounts"
+          echo "accounts=$accounts" >> "$GITHUB_OUTPUT"
 
   # One job per account, deliberately. A job is a machine of its own with an address of its own, and
   # those come from a shared cloud pool: an address a previous tenant has burned is refused whatever
