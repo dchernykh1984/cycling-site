@@ -49,7 +49,7 @@ jobs:
           echo "::error::Only ${{ github.repository_owner }} may run this workflow manually (actor: ${{ github.actor }})."
           exit 1
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - run: pip install pyyaml
@@ -80,7 +80,7 @@ jobs:
         account: ${{ fromJson(needs.plan.outputs.accounts) }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - run: pip install pyyaml
