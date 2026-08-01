@@ -5,7 +5,7 @@ import datetime
 from agent.models import Candidate, KnownEvents, RunReport
 from agent.pipeline import run_pipeline
 from instagram_agent.accounts import Account
-from instagram_agent.run import _with_account_city, as_source, read_account, summary
+from instagram_agent.run import _with_account_city, as_source, read_account, selected, summary
 
 TODAY = datetime.date(2026, 8, 1)
 
@@ -172,3 +172,22 @@ def test_the_guidance_is_this_agents_own_and_wants_club_rides():
     guidance = _read(_GUIDANCE_FILE)
     assert "Club rides and group rides" in guidance
     assert "coffee rides" in guidance
+
+
+def test_a_run_reads_the_account_it_was_pointed_at():
+    accounts = [Account("ubtalmaty"), Account("almaty_cycling_track"), Account("bike_buddies_kids")]
+    assert [a.username for a in selected(accounts, "almaty_cycling_track")] == ["almaty_cycling_track"]
+
+
+def test_the_name_is_matched_however_it_is_written():
+    assert [a.username for a in selected([Account("UBTAlmaty")], "ubtalmaty")] == ["UBTAlmaty"]
+
+
+def test_without_a_name_a_run_reads_every_enabled_account():
+    accounts = [Account("one"), Account("two")]
+    assert selected(accounts, "") == accounts
+
+
+def test_a_name_the_file_does_not_carry_selects_nothing():
+    """The matrix is built from that same file, so a mismatch means something is broken."""
+    assert selected([Account("one")], "gone_from_the_file") == []
