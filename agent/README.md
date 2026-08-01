@@ -1,6 +1,6 @@
 # Events agent
 
-A scheduled tool that discovers cycling events from a curated source list and proposes them to the
+A scheduled tool that discovers cycling events from a curated list of websites and calendars and proposes them to the
 site as **pending** competitions for a human moderator to approve. It is one of several ways events
 get added - the normal GUI/API flows for real users are unchanged.
 
@@ -17,7 +17,7 @@ get added - the normal GUI/API flows for real users are unchanged.
    chats) is skipped and logged for now.
 4. An LLM (DeepSeek by default, any OpenAI-compatible endpoint) extracts event candidates.
 5. Drops anything already known or previously rejected, keeps only valid future events, and
-   proposes at most `MAX_EVENTS_PER_RUN` (default **10**) via `POST /api/v1/competitions/`
+   proposes at most `MAX_EVENTS_PER_RUN` (default **25**) via `POST /api/v1/competitions/`
    (organizer token -> status `pending_approval`).
 6. **Second pass (enrichment):** before posting, for each accepted event that links to its own
    specific web page, the agent fetches that page and asks the LLM to refine the event (formatted
@@ -43,7 +43,8 @@ the model) and `enabled: false` (to pause a source). Types:
   an account, so they are kept for reference and skipped.
 
 ## Guardrails
-- Hard cap of `MAX_EVENTS_PER_RUN` proposals per run (agent-side; the site does not limit users).
+- Hard cap of `MAX_EVENTS_PER_RUN` proposals per run, and of `MAX_EVENTS_PER_SOURCE` (default **5**)
+  from any single source, so one endless calendar cannot take the whole run.
 - Dedup against existing + past rejections: exact (title+date) plus fuzzy, so a near-duplicate of
   an existing event -- same words, close date, worded differently, or in **another language** (the
   ru/kk/en titles are compared per-locale) -- is dropped too.
@@ -68,5 +69,7 @@ python -m agent.run
 - `SITE_BASE_URL` (secret, optional) - the site to post to, e.g. `https://universalbicycle.team`
   (defaults to the production URL if unset).
 
-Runs daily at **00:43 UTC (05:43 Almaty)**, and on demand via the **Run workflow** button (owner
+Runs daily at **22:17 UTC (03:17 Almaty)**, and on demand via the **Run workflow** button (owner
 only). Scheduled runs only fire from the default branch (`main`).
+
+Club feeds are read by a separate agent -- see [instagram_agent/README.md](../instagram_agent/README.md).
