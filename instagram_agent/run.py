@@ -18,7 +18,7 @@ from pathlib import Path
 
 from agent import locations, pipeline
 from agent.config import ConfigError
-from agent.models import Candidate, RunReport, Source
+from agent.models import Candidate, KnownEvents, RunReport, Source, Taxonomy
 from agent.placing import resolve_location
 from agent.site_api import SiteApiClient
 from instagram_agent import config as insta_config
@@ -78,7 +78,7 @@ def read_account(account: Account, recent_days: int, max_posts: int, today: date
     return fetch.account_text(account, posts[:max_posts], recent_days, today)
 
 
-def _what_the_site_knows(client: SiteApiClient):
+def _what_the_site_knows(client: SiteApiClient) -> tuple[KnownEvents, Taxonomy, list]:
     """The events, taxonomy and geography a run is judged against, with the block-list reported."""
     known = client.known()
     print(
@@ -107,19 +107,29 @@ def main() -> int:
     return 0
 
 
-def _run(config, accounts, client: SiteApiClient, known, taxonomy, tree) -> str:
+def _run(
+    config: insta_config.Config,
+    accounts: list[Account],
+    client: SiteApiClient,
+    known: KnownEvents,
+    taxonomy: Taxonomy,
+    tree: list,
+) -> str:
     """One pass over the accounts, through the same pipeline the web agent runs on."""
     guidance = _read(_GUIDANCE_FILE)
     cities = locations.flatten_cities(tree)
     today = datetime.date.today()
     agent_config = insta_config.as_agent_config(config)
     by_ref = {as_source(account).ref: account for account in accounts}
-    first = [True]  # accounts are read one at a time, with a pause before every one but the first
+    read_so_far = 0
 
     def fetch_source(source: Source) -> str:
-        if not first[0]:
+        # Accounts are read one at a time with a pause between them: a burst of requests is what
+        # Instagram answers with an error, and a nightly run is in no hurry.
+        nonlocal read_so_far
+        if read_so_far:
             fetch.pause_between_accounts()
-        first[0] = False
+        read_so_far += 1
         return read_account(by_ref[source.ref], config.recent_days, config.max_posts, today)
 
     def extract(text: str, source: Source) -> list[Candidate]:
@@ -151,7 +161,7 @@ def _run(config, accounts, client: SiteApiClient, known, taxonomy, tree) -> str:
     return summary(report)
 
 
-def _create(client: SiteApiClient, tree: list, cities: list, known, candidate: Candidate) -> None:
+def _create(client: SiteApiClient, tree: list, cities: list, known: KnownEvents, candidate: Candidate) -> None:
     """Place the event and post it; name any geography left behind when the post itself fails."""
     created: list[str] = []
     try:
