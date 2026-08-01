@@ -15,7 +15,7 @@ dependencies = [
     "django-allauth[socialaccount]>=65.0,<66",
     "wagtail-localize>=1.13,<2.0",
     "django-modeltranslation>=0.20,<0.21",
-    "django-treebeard>=4.8,<6.0",
+    "django-treebeard>=4.8,<7.0",
     "django-ninja>=1.6.2,<2",
     "pyyaml>=6,<7",
 ]
