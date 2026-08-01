@@ -37,6 +37,18 @@ _TIMEOUT = 30
 _PAUSE_BETWEEN_ACCOUNTS = 20
 _MAX_CAPTION_CHARS = 2000
 
+# Statuses that mean "not now" rather than "not this account": rate limiting (Instagram answers it
+# as 401 "please wait a few minutes" as often as 429) and its own gateway errors. Worth waiting out,
+# because the alternative is losing a whole account for a night over a passing refusal.
+_TRANSIENT_STATUSES = frozenset({401, 429, 500, 502, 503, 504})
+_RETRIES = 3
+_RETRY_BACKOFF = (30, 90)  # seconds before the second and third attempts
+
+# Instagram fails to serialize some professional accounts and answers 400 with this. It is a fault
+# on their side, has nothing to do with the request, and clears up on its own -- so an account that
+# answers this is kept in the list and simply skipped for the night.
+_THEIR_BUG = "ig_business_category_subvertical"
+
 
 class AccountUnavailableError(Exception):
     """The account could not be read: private, personal, renamed, or refused by Instagram."""
@@ -119,10 +131,55 @@ def account_text(account: Account, posts: list[Post], recent_days: int, today: d
 def _get(url: str) -> dict:
     request = urllib.request.Request(
         url,
-        headers={"User-Agent": _USER_AGENT, "X-IG-App-ID": _WEB_APP_ID, "Accept": "*/*"},
+        headers={
+            "User-Agent": _USER_AGENT,
+            "X-IG-App-ID": _WEB_APP_ID,
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Sec-Fetch-Site": "same-origin",
+            "Referer": "https://www.instagram.com/",
+        },
     )
     with urllib.request.urlopen(request, timeout=_TIMEOUT) as response:
         return json.loads(response.read().decode("utf-8", "replace"))
+
+
+def _get_with_retries(url: str) -> dict:
+    """Fetch, waiting out a refusal that says "not now" rather than "not this account"."""
+    for attempt in range(_RETRIES):
+        try:
+            return _get(url)
+        except urllib.error.HTTPError as exc:
+            body = _error_body(exc)
+            if _THEIR_BUG in body:
+                raise AccountUnavailableError(
+                    f"HTTP {exc.code}: Instagram could not serialize this account (its own error, "
+                    f"not the request); it usually clears up on its own"
+                ) from exc
+            last = exc.code not in _TRANSIENT_STATUSES or attempt == _RETRIES - 1
+            if last:
+                raise AccountUnavailableError(f"HTTP {exc.code}{_hint_for(exc.code)}") from exc
+            time.sleep(_RETRY_BACKOFF[attempt])
+        except Exception as exc:  # network, DNS, malformed JSON
+            if attempt == _RETRIES - 1:
+                raise AccountUnavailableError(str(exc)) from exc
+            time.sleep(_RETRY_BACKOFF[attempt])
+    raise AccountUnavailableError("no attempt succeeded")  # unreachable, kept for the type checker
+
+
+def _error_body(exc: urllib.error.HTTPError) -> str:
+    try:
+        return exc.read().decode("utf-8", "replace")[:500]
+    except Exception:
+        return ""
+
+
+def _hint_for(status: int) -> str:
+    if status in (401, 429):
+        return " (rate limited -- Instagram refuses this address for now)"
+    if status == 404:
+        return " (no such account)"
+    return ""
 
 
 def fetch_posts(account: Account) -> list[Post]:
@@ -131,12 +188,7 @@ def fetch_posts(account: Account) -> list[Post]:
     An empty list is a real answer (an account that has posted nothing lately) and must not be
     confused with an account that could not be read at all.
     """
-    try:
-        payload = _get(_PROFILE_URL.format(username=account.username))
-    except urllib.error.HTTPError as exc:
-        raise AccountUnavailableError(f"HTTP {exc.code}") from exc
-    except Exception as exc:  # network, DNS, malformed JSON
-        raise AccountUnavailableError(str(exc)) from exc
+    payload = _get_with_retries(_PROFILE_URL.format(username=account.username))
     user = ((payload or {}).get("data") or {}).get("user")
     if not user:
         raise AccountUnavailableError("no profile in the reply")
