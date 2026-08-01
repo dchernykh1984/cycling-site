@@ -14,9 +14,9 @@ detection those feed, the location tree, and the API they post through.
    every run.
 2. Asks the site API for what it already knows: approved, its own pending, anything deleted, and
    its own rejected events with reasons.
-3. Reads the account's recent posts: only what a logged-out browser is served, one request, no
-   retry. An account that cannot be read -- private, personal (not Business/Creator), renamed, or
-   on an address Instagram refuses -- is reported with the reason.
+3. Reads the account's recent posts with `curl`: only what a logged-out browser is served, one
+   request, no retry. An account that cannot be read -- private, personal (not Business/Creator),
+   renamed, or refused this time -- is reported with the reason.
 4. An LLM (DeepSeek by default) is given each post **with the date it was published** and asked for
    the rides being announced.
 5. Drops anything already known, previously rejected or already past, and proposes at most
@@ -68,12 +68,9 @@ tells the model to skip club rides and social rides, which are exactly what this
 ## One job per account
 
 A run reads a single account, named by `INSTAGRAM_ACCOUNT`, and the workflow gives each account a
-job of its own. That is not about spreading requests -- three a night could not exhaust anything.
-A job is a machine with an address of its own, drawn from a shared cloud pool, and an address a
-previous tenant has burned is refused whatever we do with it. Reading every account from one job
-means one such address costs the whole night, which is exactly what happened; a job each means it
-costs that account, and tomorrow's job gets another address. The jobs run one after another so each
-account sees what the one before it proposed.
+job of its own, one after another. Not to spread requests out -- three a night could not exhaust
+anything -- but so that one account being refused costs that account alone, and so each account
+sees what the one before it proposed.
 
 The workflow builds its matrix from `instagram_accounts.yaml` (`python -m instagram_agent.accounts`
 prints the enabled names), so the list lives in one place.
@@ -113,7 +110,10 @@ On demand via the **Run workflow** button (owner only).
 
 ## Reading Instagram
 
-This reads the profile endpoint Instagram's own web client calls, without logging in. The official
+This reads the profile endpoint Instagram's own web client calls, without logging in, and it makes
+that request with `curl`. Python's own HTTP client is refused: on the same machines, in the same
+minute, curl was answered 3 times out of 3 and `urllib` refused 3 out of 3 with HTTP 429. The TLS
+handshake is what differs, and from a cloud address it is enough on its own. The official
 route is the Graph API's `business_discovery`, which returns the same captions, dates and images for
 professional accounts; it needs a Meta app with business verification and App Review. `fetch.py` is
 the only module that talks to Instagram, so swapping in that backend touches nothing else.

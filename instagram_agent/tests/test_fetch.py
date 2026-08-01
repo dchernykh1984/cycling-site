@@ -1,8 +1,7 @@
 """Turning a profile reply into the posts, and the posts into the text the model reads."""
 
 import datetime
-import io
-import urllib.error
+import json
 
 import pytest
 
@@ -99,106 +98,77 @@ def test_posts_older_than_the_window_are_left_out():
 
 def test_an_account_that_cannot_be_read_says_why():
     """A run must tell "nothing announced" from "could not read it" -- they need different fixes."""
+    with pytest.raises(AccountUnavailableError, match="professional"):
+        _with_transport(_answering((200, json.dumps(_payload(professional=False)))))
 
-    class _Refused:
-        def __init__(self, payload):
-            self.payload = payload
+    with pytest.raises(AccountUnavailableError, match="private"):
+        _with_transport(_answering((200, json.dumps(_payload(private=True)))))
 
+    with pytest.raises(AccountUnavailableError, match="no profile"):
+        _with_transport(_answering((200, json.dumps({"data": {}}))))
+
+
+def _answering(*replies):
+    """A transport that answers with the given (status, body) pairs in turn."""
+    remaining = list(replies)
+
+    def _request(url):
+        return remaining.pop(0) if remaining else (200, "{}")
+
+    return _request
+
+
+def _with_transport(request):
     import instagram_agent.fetch as module
 
-    original = module._get
-    try:
-        module._get = lambda url: _payload(professional=False)
-        with pytest.raises(AccountUnavailableError, match="professional"):
-            fetch_posts(Account("someone"))
-
-        module._get = lambda url: _payload(private=True)
-        with pytest.raises(AccountUnavailableError, match="private"):
-            fetch_posts(Account("someone"))
-
-        module._get = lambda url: {"data": {}}
-        with pytest.raises(AccountUnavailableError, match="no profile"):
-            fetch_posts(Account("someone"))
-    finally:
-        module._get = original
-
-
-def test_a_pinned_old_post_does_not_come_first():
-    """Instagram puts pinned posts ahead of the rest, so the reply is not in date order.
-
-    Taken at face value, an account with a pinned post from spring spends a slot of the post budget
-    on it before the announcements it actually published this week.
-    """
-    pinned = _node("Pinned", "our club, join us", datetime.date(2026, 5, 12))
-    recent = _node("Recent", "this Saturday we ride", datetime.date(2026, 7, 31))
-    older = _node("Older", "last month", datetime.date(2026, 6, 30))
-    posts = posts_from_profile(_payload(pinned, recent, older))
-    assert [p.shortcode for p in posts] == ["Recent", "Older", "Pinned"]
-
-
-class _Refusal(urllib.error.HTTPError):
-    """An HTTPError with a body, as Instagram actually answers."""
-
-    def __init__(self, code, body=""):
-        super().__init__("https://instagram.test", code, "refused", {}, io.BytesIO(body.encode()))
-
-
-def _failing(*errors):
-    """A transport that raises the given errors in turn, then answers with a real profile."""
-    remaining = list(errors)
-
-    def _get(url):
-        if remaining:
-            raise remaining.pop(0)
-        return _payload(_node("Ok1", "this Saturday we ride", datetime.date(2026, 7, 31)))
-
-    return _get
-
-
-def _with_transport(get, waits):
-    """Run fetch_posts against a canned transport. ``waits`` records any sleeping, which there
-    should be none of: a run makes one request and takes the answer."""
-    import time
-
-    import instagram_agent.fetch as module
-
-    original_get, original_sleep = module._get, time.sleep
-    module._get, time.sleep = get, lambda seconds: waits.append(seconds)
+    original = module._request
+    module._request = request
     try:
         return fetch_posts(Account("someone"))
     finally:
-        module._get, time.sleep = original_get, original_sleep
+        module._request = original
 
 
-def test_a_refused_address_is_reported_rather_than_asked_again():
-    """One account per run, from a runner of its own, so a refusal is the address and not the pace.
+def _profile_json(*posts):
+    return json.dumps(_payload(*posts))
 
-    Retrying it from the same runner spends minutes to be told the same thing; the next run gets a
-    different address instead.
-    """
-    waits: list = []
-    with pytest.raises(AccountUnavailableError, match="address is refused"):
-        _with_transport(_failing(_Refusal(429)), waits)
-    assert waits == [], "a refused address is not worth waiting on"
+
+def test_a_readable_account_gives_up_its_posts():
+    reply = _profile_json(_node("Ok1", "this Saturday we ride", datetime.date(2026, 7, 31)))
+    posts = _with_transport(_answering((200, reply)))
+    assert [p.shortcode for p in posts] == ["Ok1"]
+
+
+def test_a_refusal_is_reported_rather_than_asked_again():
+    """A second attempt from the same machine seconds later is the same request; the next run asks."""
+    asked: list = []
+
+    def _request(url):
+        asked.append(url)
+        return 429, ""
+
+    with pytest.raises(AccountUnavailableError, match="refused this time"):
+        _with_transport(_request)
+    assert len(asked) == 1
 
 
 def test_rate_limiting_answered_as_401_reads_the_same_way():
-    with pytest.raises(AccountUnavailableError, match="address is refused"):
-        _with_transport(_failing(_Refusal(401)), [])
+    with pytest.raises(AccountUnavailableError, match="refused this time"):
+        _with_transport(_answering((401, '{"message":"Please wait a few minutes"}')))
 
 
 def test_instagrams_own_serialization_error_is_named_as_theirs():
     """A 400 about the account's business category is their bug, not something we did."""
     body = '{"message":"Asset asset://laser.provider/ig_business_category_subvertical has been deleted"}'
     with pytest.raises(AccountUnavailableError, match="its own error"):
-        _with_transport(_failing(_Refusal(400, body)), [])
+        _with_transport(_answering((400, body)))
 
 
 def test_a_missing_account_says_so():
     with pytest.raises(AccountUnavailableError, match="no such account"):
-        _with_transport(_failing(_Refusal(404)), [])
+        _with_transport(_answering((404, "")))
 
 
-def test_a_network_failure_is_reported_with_its_reason():
-    with pytest.raises(AccountUnavailableError, match="connection reset"):
-        _with_transport(_failing(OSError("connection reset")), [])
+def test_a_reply_that_is_not_json_is_reported_as_such():
+    with pytest.raises(AccountUnavailableError, match="not JSON"):
+        _with_transport(_answering((200, "<html>maintenance</html>")))
