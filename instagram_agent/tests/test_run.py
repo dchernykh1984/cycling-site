@@ -105,3 +105,56 @@ def test_the_summary_separates_an_unreadable_account_from_a_quiet_one():
     out = summary(report)
     assert "unreadable accounts: 1" in out
     assert "account unreadable: @someone (not a professional account)" in out
+
+
+def test_a_reply_in_the_agreed_schema_becomes_a_placed_three_locale_event():
+    """The contract between this agent's prompt and the shared parser, in one test.
+
+    If the schema in the prompt drifts from what agent.pipeline reads, events lose their locales or
+    their link and nobody notices until a run posts something half-empty.
+    """
+    from agent.pipeline import parse_candidates
+
+    reply = """[{
+      "title": {"ru": "Early Bird Coffee Ride", "kk": "Erte Coffee Ride", "en": "Early Bird Coffee Ride"},
+      "date_start": "2026-08-08",
+      "description": {"ru": "<p>Sbor 5:45</p>", "kk": "<p>Zhinalu 5:45</p>", "en": "<p>Gather 5:45</p>"},
+      "source_url": "https://www.instagram.com/p/Abc123/",
+      "city": {"ru": "Almaty", "kk": "Almaty", "en": "Almaty"},
+      "venue": {"ru": "Giant Abay 47", "kk": "Giant Abay 47", "en": "Giant Abay 47"},
+      "country": "KZ", "event_type_id": 3, "discipline_ids": [7]
+    }]"""
+    candidate = parse_candidates(reply, "", None)[0]
+
+    assert (candidate.title, candidate.title_kk, candidate.title_en) == (
+        "Early Bird Coffee Ride",
+        "Erte Coffee Ride",
+        "Early Bird Coffee Ride",
+    )
+    assert candidate.description_kk and candidate.description_en
+    assert candidate.venue_kk and candidate.venue_en
+    assert candidate.source_url == "https://www.instagram.com/p/Abc123/"
+    assert (candidate.city, candidate.country, candidate.date_start) == ("Almaty", "KZ", "2026-08-08")
+
+
+def test_an_account_that_cannot_be_read_is_reported_not_silently_empty():
+    from instagram_agent.fetch import AccountUnavailableError
+
+    source = as_source(Account("gone"))
+
+    def refuse(_source):
+        raise AccountUnavailableError("not a professional account")
+
+    report = run_pipeline(
+        [source],
+        KnownEvents(),
+        fetch=refuse,
+        extract=lambda text, s: [],
+        create=lambda c: None,
+        max_events=10,
+        dry_run=True,
+        today=TODAY,
+    )
+    assert report.accepted == []
+    assert [ref for ref, _ in report.skipped_sources] == ["@gone"]
+    assert "professional" in report.skipped_sources[0][1]
