@@ -99,6 +99,10 @@ python -m instagram_agent.run
 ```
 (only `pyyaml` is needed beyond the standard library)
 
+`INSTAGRAM_ACCOUNT=ubtalmaty` reads that one account, which is how the workflow runs them. Without
+it a local run reads every enabled account in turn -- fine from a home address, which has an
+allowance of its own, and the reason the code still handles a list.
+
 ## Secrets
 The same ones the events agent uses -- `AGENT_API_TOKEN`, `LLM_API_KEY`, `LLM_BASE_URL`,
 `LLM_MODEL`, `SITE_BASE_URL`. It posts as the same organizer account.
