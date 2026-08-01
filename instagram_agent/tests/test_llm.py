@@ -40,9 +40,14 @@ def test_every_locale_is_required():
         assert locale in _SYSTEM
 
 
-def test_the_link_must_be_the_post_it_came_from():
-    assert "permalink of the post" in _SYSTEM
-    assert "Never invent a URL" in _SYSTEM
+def test_no_link_and_no_platform_may_reach_a_published_event():
+    """The site's maintainer must not publish the platform's name or a link into it -- see
+    instagram_agent/attribution.py. The prompt is the first of two guards; the code is the one that
+    holds."""
+    assert "NO LINKS AND NO PLATFORM" in _SYSTEM
+    assert "Do not output source_url" in _SYSTEM
+    assert "never " in _SYSTEM and "name the website or app" in _SYSTEM
+    assert "source_url" not in _SYSTEM.split("NO LINKS AND NO PLATFORM")[0], "the schema must not ask for it"
 
 
 def test_the_prompt_carries_the_taxonomy_and_what_the_site_already_knows():

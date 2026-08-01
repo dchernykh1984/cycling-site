@@ -26,9 +26,9 @@ _SYSTEM = (
     "You read the recent posts of a cycling club's Instagram account and extract the rides and "
     "races it ANNOUNCES. "
     'Return ONLY a JSON array; each item: {"title": ' + _LOC + ', "date_start": "YYYY-MM-DD", '
-    '"date_end": "YYYY-MM-DD"|null, "description": ' + _LOC + ', "source_url": str, '
-    '"url_registration": str, "event_type_id": int|null, "discipline_ids": [int], '
-    '"country": str, "region": ' + _LOC + ', "city": ' + _LOC + ', "venue": ' + _LOC + "}. "
+    '"date_end": "YYYY-MM-DD"|null, "description": ' + _LOC + ', "event_type_id": int|null, '
+    '"discipline_ids": [int], "country": str, "region": ' + _LOC + ', "city": ' + _LOC + ", "
+    '"venue": ' + _LOC + "}. "
     "\n\n"
     "ONLY ANNOUNCEMENTS. Most posts in a club's feed are not events. A photo report of a ride that "
     'already happened ("we rode", "thank you all who came", "great company today"), a training '
@@ -58,9 +58,10 @@ _SYSTEM = (
     "region and city it sits in. When the post does not say where, use the city the maintainers "
     'gave for this account; leave a field "" when you still do not know -- do not guess. '
     "\n\n"
-    "LINKS. source_url MUST be the permalink of the post the event was taken from, exactly as given "
-    "above that post. Never invent a URL. Put a registration link in url_registration only if the "
-    "post carries one. "
+    "NO LINKS AND NO PLATFORM. Do not output source_url, url_route or url_registration, and never "
+    "name the website or app these posts come from, or link a post on it, anywhere in a title or a "
+    "description. The event is credited to the account by name and to nothing else; that credit is "
+    "added afterwards, so do not write it yourself. "
     "\n\n"
     "Choose event_type_id and discipline_ids ONLY from the provided lists of ids; if unsure use "
     "null / []. A club ride is usually a ride rather than a race -- pick the type that fits. "

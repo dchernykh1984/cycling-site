@@ -17,8 +17,8 @@ detection those feed, the location tree, and the API they post through.
 3. Reads each account's recent posts, one account at a time with a pause between them. Only what a
    logged-out browser is served, one request per account. Accounts that cannot be read -- private,
    personal (not Business/Creator), renamed -- are reported with the reason rather than retried.
-4. An LLM (DeepSeek by default) is given each post **with the date it was published** and its
-   permalink, and asked for the rides being announced.
+4. An LLM (DeepSeek by default) is given each post **with the date it was published** and asked for
+   the rides being announced.
 5. Drops anything already known, previously rejected or already past, and proposes at most
    `INSTAGRAM_MAX_EVENTS` (default **10**) via `POST /api/v1/competitions/` (organizer token ->
    status `pending_approval`), placing each event on the location tree like the events agent does.
@@ -48,6 +48,16 @@ pasted profile link, or a mapping with:
 Only **professional** (Business/Creator) accounts can be read; a personal account answers with
 nothing useful. An account that only publishes results and photo reports costs a request every night
 and yields nothing -- it does not belong here.
+
+## What a published event says about its source
+
+Only the account's own name, as a last line of the description -- "Istochnik obyavleniya:
+@ubtalmaty", in each of the three locales.
+Never the platform the account is on, and never a link to a post -- not in the description, not in
+the announcement/route/registration fields, not in the run log. This repository is public and its
+maintainer is a Russian citizen; the platform these accounts live on is designated extremist in
+Russia, and publishing its name on a site he runs is a legal risk he should not have to take to
+list a Saturday ride. `attribution.py` enforces it in code rather than asking the model to remember.
 
 ## Guidance
 
