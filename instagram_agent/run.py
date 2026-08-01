@@ -99,6 +99,14 @@ def main() -> int:
         return 2
 
     accounts = parse_accounts(_read(_ACCOUNTS_FILE))
+    if config.only_account:
+        accounts = [a for a in accounts if a.username.lower() == config.only_account.lower()]
+        if not accounts:
+            print(
+                f"No enabled account named {config.only_account!r} in instagram_accounts.yaml.",
+                file=sys.stderr,
+            )
+            return 2
     if not accounts:
         print("No enabled accounts in instagram_accounts.yaml -- nothing to do.")
         return 0
@@ -123,15 +131,8 @@ def _run(
     today = datetime.date.today()
     agent_config = insta_config.as_agent_config(config)
     by_ref = {as_source(account).ref: account for account in accounts}
-    read_so_far = 0
 
     def fetch_source(source: Source) -> str:
-        # Accounts are read one at a time with a pause between them: a burst of requests is what
-        # Instagram answers with an error, and a nightly run is in no hurry.
-        nonlocal read_so_far
-        if read_so_far:
-            fetch.pause_between_accounts()
-        read_so_far += 1
         return read_account(by_ref[source.ref], config.recent_days, config.max_posts, today)
 
     def extract(text: str, source: Source) -> list[Candidate]:

@@ -14,9 +14,9 @@ detection those feed, the location tree, and the API they post through.
    every run.
 2. Asks the site API for what it already knows: approved, its own pending, anything deleted, and
    its own rejected events with reasons.
-3. Reads each account's recent posts, one account at a time with a pause between them. Only what a
-   logged-out browser is served, one request per account. Accounts that cannot be read -- private,
-   personal (not Business/Creator), renamed -- are reported with the reason rather than retried.
+3. Reads the account's recent posts: only what a logged-out browser is served, one request, no
+   retry. An account that cannot be read -- private, personal (not Business/Creator), renamed, or
+   on an address Instagram refuses -- is reported with the reason.
 4. An LLM (DeepSeek by default) is given each post **with the date it was published** and asked for
    the rides being announced.
 5. Drops anything already known, previously rejected or already past, and proposes at most
@@ -65,8 +65,21 @@ list a Saturday ride. `attribution.py` enforces it in code rather than asking th
 edited without touching code. It is deliberately **not** the events agent's guidance: that file
 tells the model to skip club rides and social rides, which are exactly what this agent is for.
 
+## One job per account
+
+A run reads a single account, named by `INSTAGRAM_ACCOUNT`, and the workflow gives each account a
+job of its own. That is not about spreading requests -- three a night could not exhaust anything.
+A job is a machine with an address of its own, drawn from a shared cloud pool, and an address a
+previous tenant has burned is refused whatever we do with it. Reading every account from one job
+means one such address costs the whole night, which is exactly what happened; a job each means it
+costs that account, and tomorrow's job gets another address. The jobs run one after another so each
+account sees what the one before it proposed.
+
+The workflow builds its matrix from `instagram_accounts.yaml` (`python -m instagram_agent.accounts`
+prints the enabled names), so the list lives in one place.
+
 ## Guardrails
-- `INSTAGRAM_MAX_EVENTS` (default **10**) caps what one run proposes.
+- `INSTAGRAM_MAX_EVENTS` (default **10**) caps what one run -- that is, one account -- proposes.
 - `INSTAGRAM_MAX_POSTS` (default **10**) caps how many of an account's newest posts are read.
   Raising it has a ceiling: the profile reply carries about a dozen posts and this reader does not
   page further back on purpose.

@@ -37,6 +37,11 @@ def _username_of(value: str) -> str:
     return text if _USERNAME.match(text) else ""
 
 
+def enabled_usernames(text: str) -> list[str]:
+    """The names a workflow needs to give each account a job of its own."""
+    return [account.username for account in parse_accounts(text)]
+
+
 def parse_accounts(text: str) -> list[Account]:
     """The enabled accounts declared in the instagram_accounts.yaml text, de-duplicated in order."""
     data = yaml.safe_load(text)
@@ -60,3 +65,21 @@ def parse_accounts(text: str) -> list[Account]:
         seen.add(username.lower())
         accounts.append(Account(username=username, hint=hint, city=city))
     return accounts
+
+
+def main() -> None:
+    """`python -m instagram_agent.accounts` prints the enabled accounts as a JSON array.
+
+    The workflow reads it to build one job per account: keeping the list in the workflow as well
+    would mean two places to edit and one of them silently going stale.
+    """
+    import json
+    import sys
+    from pathlib import Path
+
+    path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("instagram_accounts.yaml")
+    print(json.dumps(enabled_usernames(path.read_text(encoding="utf-8"))))
+
+
+if __name__ == "__main__":
+    main()

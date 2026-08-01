@@ -2,9 +2,9 @@ name: instagram-agent
 
 on:
   schedule:
-    # 23:17 UTC daily -- an hour after the web agent, so the two never overlap and this one sees the
-    # events that one just proposed. Outside DeepSeek's peak windows (09:00-12:00 and 14:00-18:00
-    # Beijing time = 01:00-04:00 and 06:00-10:00 UTC), where every token costs double, and off the
+    # 23:17 UTC daily -- an hour after the events agent, so the two never overlap and this one sees
+    # the events that one just proposed. Outside the windows where the model bills double
+    # (09:00-12:00 and 14:00-18:00 Beijing time = 01:00-04:00 and 06:00-10:00 UTC), and off the
     # round minute to dodge cron congestion.
     - cron: "17 23 * * *"
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       max_events:
-        description: "Max events to propose this run"
+        description: "Max events to propose per account"
         type: string
         default: "10"
       max_posts:
@@ -34,11 +34,13 @@ permissions:
   contents: read
 
 jobs:
-  run:
+  # The account list lives in instagram_accounts.yaml and nowhere else; repeating it here would be a
+  # second place to edit, and the one that quietly goes stale.
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 60 # accounts are read one at a time with a pause between them and a refusal is
-    # waited out before giving up, so the floor is about 20s per account plus up to two minutes for
-    # any that Instagram is refusing -- with a couple of dozen accounts that adds up
+    timeout-minutes: 5
+    outputs:
+      accounts: ${{ steps.list.outputs.accounts }}
     steps:
       # Fail a manual run started by anyone other than the owner before any secret is used.
       - name: Restrict manual runs to the repository owner
@@ -51,13 +53,39 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install pyyaml
-      - name: Run Instagram agent
+      - id: list
+        run: echo "accounts=$(python -m instagram_agent.accounts)" >> "$GITHUB_OUTPUT"
+
+  # One job per account, deliberately. A job is a machine of its own with an address of its own, and
+  # those come from a shared cloud pool: an address a previous tenant has burned is refused whatever
+  # we do with it, which is what a run reading every account from one job discovered -- one bad
+  # address cost the whole night. Read from a job each and it costs that account alone, with
+  # tomorrow's job getting a different address. Sequential, so each account sees what the one before
+  # it proposed and two clubs announcing the same ride cannot both add it.
+  read:
+    needs: plan
+    if: ${{ needs.plan.outputs.accounts != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        account: ${{ fromJson(needs.plan.outputs.accounts) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install pyyaml
+      - name: Read one account
         env:
           SITE_BASE_URL: ${{ secrets.SITE_BASE_URL || 'https://universalbicycle.team' }}
           AGENT_API_TOKEN: ${{ secrets.AGENT_API_TOKEN }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
+          INSTAGRAM_ACCOUNT: ${{ matrix.account }}
           INSTAGRAM_MAX_EVENTS: ${{ github.event.inputs.max_events || '10' }}
           INSTAGRAM_MAX_POSTS: ${{ github.event.inputs.max_posts || '10' }}
           INSTAGRAM_RECENT_DAYS: ${{ github.event.inputs.recent_days || '21' }}

@@ -35,6 +35,9 @@ class Config:
     recent_days: int
     max_posts: int
     dry_run: bool
+    # The one account this run reads. Each account gets a job of its own, so a refused address
+    # costs that account and no other; empty means read every enabled account (a local run).
+    only_account: str = ""
 
 
 def from_env(env: dict[str, str]) -> Config:
@@ -53,6 +56,7 @@ def from_env(env: dict[str, str]) -> Config:
         recent_days=_whole_number(env.get("INSTAGRAM_RECENT_DAYS"), _DEFAULT_RECENT_DAYS, "INSTAGRAM_RECENT_DAYS"),
         max_posts=_whole_number(env.get("INSTAGRAM_MAX_POSTS"), _DEFAULT_MAX_POSTS, "INSTAGRAM_MAX_POSTS"),
         dry_run=_flag(env.get("INSTAGRAM_DRY_RUN")),
+        only_account=(env.get("INSTAGRAM_ACCOUNT") or "").strip().lstrip("@"),
     )
 
 
