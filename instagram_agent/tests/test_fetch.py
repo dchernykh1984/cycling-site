@@ -1,6 +1,8 @@
 """Turning a profile reply into the posts, and the posts into the text the model reads."""
 
 import datetime
+import io
+import urllib.error
 
 import pytest
 
@@ -132,3 +134,69 @@ def test_a_pinned_old_post_does_not_come_first():
     older = _node("Older", "last month", datetime.date(2026, 6, 30))
     posts = posts_from_profile(_payload(pinned, recent, older))
     assert [p.shortcode for p in posts] == ["Recent", "Older", "Pinned"]
+
+
+class _Refusal(urllib.error.HTTPError):
+    """An HTTPError with a body, as Instagram actually answers."""
+
+    def __init__(self, code, body=""):
+        super().__init__("https://instagram.test", code, "refused", {}, io.BytesIO(body.encode()))
+
+
+def _failing(*errors):
+    """A transport that raises the given errors in turn, then answers with a real profile."""
+    remaining = list(errors)
+
+    def _get(url):
+        if remaining:
+            raise remaining.pop(0)
+        return _payload(_node("Ok1", "this Saturday we ride", datetime.date(2026, 7, 31)))
+
+    return _get
+
+
+def _with_transport(get, waits):
+    import instagram_agent.fetch as module
+
+    original_get, original_sleep = module._get, module.time.sleep
+    module._get, module.time.sleep = get, lambda seconds: waits.append(seconds)
+    try:
+        return fetch_posts(Account("someone"))
+    finally:
+        module._get, module.time.sleep = original_get, original_sleep
+
+
+def test_a_rate_limited_account_is_retried_rather_than_lost_for_the_night():
+    """Instagram answers rate limiting as 401 as often as 429, and it passes in a minute or two."""
+    waits: list = []
+    posts = _with_transport(_failing(_Refusal(401), _Refusal(429)), waits)
+    assert [p.shortcode for p in posts] == ["Ok1"]
+    assert waits == [30, 90], "each retry should wait longer than the last"
+
+
+def test_a_refusal_that_never_passes_reports_the_rate_limit_plainly():
+    waits: list = []
+    with pytest.raises(AccountUnavailableError, match="rate limited"):
+        _with_transport(_failing(_Refusal(429), _Refusal(429), _Refusal(429)), waits)
+
+
+def test_instagrams_own_serialization_error_is_named_and_not_retried():
+    """A 400 about the account's business category is their bug: retrying it only wastes the run."""
+    body = '{"message":"Asset asset://laser.provider/ig_business_category_subvertical has been deleted"}'
+    waits: list = []
+    with pytest.raises(AccountUnavailableError, match="its own error"):
+        _with_transport(_failing(_Refusal(400, body)), waits)
+    assert waits == [], "their bug does not clear up by trying again straight away"
+
+
+def test_a_missing_account_is_not_retried_either():
+    waits: list = []
+    with pytest.raises(AccountUnavailableError, match="no such account"):
+        _with_transport(_failing(_Refusal(404)), waits)
+    assert waits == []
+
+
+def test_a_network_failure_is_retried_too():
+    waits: list = []
+    posts = _with_transport(_failing(OSError("connection reset")), waits)
+    assert [p.shortcode for p in posts] == ["Ok1"]

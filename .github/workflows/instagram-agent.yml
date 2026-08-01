@@ -36,8 +36,9 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 30 # accounts are read one at a time with a pause between them, then one model
-    # call per account -- a handful of accounts, not a night of calendars
+    timeout-minutes: 60 # accounts are read one at a time with a pause between them and a refusal is
+    # waited out before giving up, so the floor is about 20s per account plus up to two minutes for
+    # any that Instagram is refusing -- with a couple of dozen accounts that adds up
     steps:
       # Fail a manual run started by anyone other than the owner before any secret is used.
       - name: Restrict manual runs to the repository owner

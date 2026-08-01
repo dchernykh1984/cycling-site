@@ -13,6 +13,7 @@
 # posts results and photo reports costs a request every night and yields nothing.
 
 accounts:
+  # --- Almaty clubs and organizers ------------------------------------------------------------
   - username: ubtalmaty
     hint: >-
       Universal Bicycle Team, an Almaty road club. Announces a recurring Saturday "Early Bird" coffee
@@ -20,21 +21,81 @@ accounts:
       of the next ride and photo reports from the last one.
     city: Almaty
 
+  - username: roadbikealmaty
+    hint: An Almaty road-cycling account. Quiet since spring 2025, kept in case it wakes up.
+    city: Almaty
+
+  - username: gorny_club_almaty
+    city: Almaty
+
+  - username: almatymountfest
+    hint: An Almaty mountain-sport festival.
+    city: Almaty
+
+  - username: sportevents.ala
+    hint: An Almaty sport-events organizer.
+    city: Almaty
+
+  - username: alatau.run
+    hint: A running club in the Alatau area of Almaty.
+    city: Almaty
+
+  - username: orient_school_almaty
+    hint: An Almaty orienteering school; its starts are open events rather than lessons.
+    city: Almaty
+
+  - username: almaty_cycling_track
+    hint: The Almaty velodrome. Announces track sessions and starts held there.
+    city: Almaty
+
+  - username: qaarman_bike_park
+    hint: A bike park; announces races and open days on its own trails.
+
+  # --- Children's cycling ---------------------------------------------------------------------
   - username: bike_buddies_kids
     hint: >-
       A children's balance-bike section in Almaty. Announces kids' starts and race days; most other
       posts are training and marketing.
     city: Almaty
 
+  - username: kidscycling_almaty
+    hint: Children's cycling in Almaty.
+    city: Almaty
+
+  - username: kids_bike_academy
+    hint: A children's cycling and motorsport academy near Almaty (Talgar).
+
+  # --- Federations and series -----------------------------------------------------------------
   - username: kcfkz
     hint: >-
       The Kazakhstan National Cycling Federation. Mostly publishes RESULTS of championships that have
       already finished -- those are not events to propose. Take only posts announcing a start that
       has not happened yet.
 
-  # Instagram answers HTTP 400 for these two accounts (an error on their side while serializing the
-  # account's business category), so they are paused until it starts working again.
   - username: almaty_cycling
-    enabled: false
-  - username: kids_bike_academy
+    hint: Cycling recruitment and events run with the Almaty cycling federation.
+    city: Almaty
+
+  - username: ccnsportkazakhstan
+    hint: A sport organizer in Kazakhstan.
+
+  - username: ridebikes_kz
+    hint: A Kazakh cycling account posting rides and starts.
+
+  - username: redbikecup
+    hint: >-
+      The redBikeCup series (Russia). Its stages also reach the site through the events agent, so a
+      post about a stage already listed is a repeat, not a new event.
+
+  # --- Kyrgyzstan -----------------------------------------------------------------------------
+  - username: velosportkg
+    hint: Cycling in Kyrgyzstan.
+
+  - username: cross_country_ski_karakol
+    hint: Cross-country skiing in Karakol, Kyrgyzstan.
+    city: Karakol
+
+  # --- Paused ---------------------------------------------------------------------------------
+  # A personal account, so its posts cannot be read at all, and nothing new since September 2024.
+  - username: alatauxco
     enabled: false
