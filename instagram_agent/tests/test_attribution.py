@@ -96,3 +96,28 @@ def test_everything_else_about_the_event_is_left_alone():
     credited = credit_account(_candidate(city="Almaty", venue="Giant Abay 47"), ACCOUNT)
     assert (credited.date_start, credited.city, credited.venue) == ("2026-08-08", "Almaty", "Giant Abay 47")
     assert credited.title == "Early Bird Coffee Ride"
+
+
+def test_an_image_the_model_embedded_is_removed_with_its_tag():
+    """No picture from a post reaches the site: not stored, not linked, not hotlinked.
+
+    Nothing collects media in the first place -- the reader never reads those fields -- but a model
+    can write an <img> into a description, and a hotlinked image puts the platform on the page as
+    surely as its name does.
+    """
+    described = _candidate(description='<p>Look</p><img src="https://instagram.fxyz.fna.fbcdn.net/v/t51.jpg">')
+    credited = credit_account(described, ACCOUNT)
+    assert "<img" not in credited.description
+    assert "fbcdn" not in credited.description
+    assert "Look" in credited.description
+
+
+def test_an_embedded_video_or_frame_goes_with_its_contents():
+    described = _candidate(
+        description='<p>Ride</p><video src="https://cdn.example/x.mp4">fallback</video>'
+        '<iframe src="https://www.instagram.com/p/Abc/embed"></iframe>'
+    )
+    credited = credit_account(described, ACCOUNT)
+    for tag in ("<video", "<iframe", "fallback", "cdn.example"):
+        assert tag not in credited.description
+    assert "Ride" in credited.description
