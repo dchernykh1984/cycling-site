@@ -10,7 +10,8 @@ schedules, but they share what must not diverge -- the events the site already k
 detection those feed, the location tree, and the API they post through.
 
 ## How it works (one run)
-1. Reads `instagram_accounts.yaml` (repo root, re-read every run) and `agent/guidance.md`.
+1. Reads `instagram_accounts.yaml` (repo root) and `instagram_agent/guidance.md`, both re-read
+   every run.
 2. Asks the site API for what it already knows: approved, its own pending, anything deleted, and
    its own rejected events with reasons.
 3. Reads each account's recent posts, one account at a time with a pause between them. Only what a
@@ -47,6 +48,12 @@ pasted profile link, or a mapping with:
 Only **professional** (Business/Creator) accounts can be read; a personal account answers with
 nothing useful. An account that only publishes results and photo reports costs a request every night
 and yields nothing -- it does not belong here.
+
+## Guidance
+
+`instagram_agent/guidance.md` steers what a run proposes and is re-read every run, so it can be
+edited without touching code. It is deliberately **not** the events agent's guidance: that file
+tells the model to skip club rides and social rides, which are exactly what this agent is for.
 
 ## Guardrails
 - `INSTAGRAM_MAX_EVENTS` (default **10**) caps what one run proposes.

@@ -27,7 +27,9 @@ from instagram_agent.accounts import Account, parse_accounts
 
 _ROOT = Path(__file__).resolve().parent.parent
 _ACCOUNTS_FILE = _ROOT / "instagram_accounts.yaml"
-_GUIDANCE_FILE = _ROOT / "agent" / "guidance.md"
+# Its own guidance, not the events agent's: that one is told to skip club and social rides, which
+# are exactly what this agent exists to find.
+_GUIDANCE_FILE = Path(__file__).resolve().parent / "guidance.md"
 
 
 def _read(path: Path) -> str:
