@@ -63,6 +63,10 @@ def summary(report: RunReport) -> str:
         lines.append(f"  ! post failed: {title} ({error})")
     for ref, count in report.extracted:
         lines.append(f"  = {ref}: {count} extracted, {report.proposed_by_source.get(ref, 0)} proposed")
+    for ref in report.source_capped:
+        # Without this, "9 extracted, 5 proposed" cannot be told from "the other 4 were duplicates":
+        # one means raise the per-channel budget and read it again, the other means nothing to do.
+        lines.append(f"  # {ref} reached its per-channel limit")
     return "\n".join(lines)
 
 
