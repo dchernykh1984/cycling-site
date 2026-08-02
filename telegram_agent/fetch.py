@@ -15,12 +15,17 @@ exercise the pure parts and never need the dependency installed.
 from __future__ import annotations
 
 import datetime
+import time
 from dataclasses import dataclass
 from typing import Any
 
 from telegram_agent.channels import Channel
 
 _MAX_MESSAGE_CHARS = 2000
+# The longest FloodWait worth sitting out. Telegram hands out waits of a few seconds routinely when
+# several channels are read in a row; a nightly, unhurried run just serves those. Anything longer
+# means tonight is over for this channel, and the wait is reported instead.
+_FLOOD_PATIENCE_SECONDS = 60
 
 
 class ChannelUnavailableError(Exception):
@@ -114,20 +119,32 @@ def entity_of(client: Any, channel: Channel) -> Any:
         raise ChannelUnavailableError("the channel is private and the account is not in it") from exc
 
 
-def read_messages(client: Any, channel: Channel, max_posts: int) -> list[Message]:
-    """The channel's newest text messages, newest first. Coverage-omitted I/O.
+def _sit_out(seconds: int) -> None:
+    """Serve a FloodWait if it is short, or report it if it is not (pure decision, unit-tested).
 
-    FloodWait is Telegram saying "slower" with a number of seconds attached. A short one is worth
-    sitting out -- the run is nightly and unhurried; a long one means tonight is over for this
-    channel, and the wait is reported instead of served.
+    FloodWait is Telegram saying "slower" with a number of seconds attached, and checking invites
+    is one of the calls it slows readily -- so the whole read of a channel sits under this, not
+    just fetching the messages.
     """
+    if seconds > _FLOOD_PATIENCE_SECONDS:
+        raise ChannelUnavailableError(f"Telegram asked to wait {seconds}s (flood limit)")
+    time.sleep(seconds + 1)
+
+
+def read_messages(client: Any, channel: Channel, max_posts: int) -> list[Message]:
+    """The channel's newest text messages, newest first. Coverage-omitted I/O."""
     from telethon.errors import FloodWaitError
 
-    entity = entity_of(client, channel)
     try:
-        raw = client.get_messages(entity, limit=max_posts)
+        raw = client.get_messages(entity_of(client, channel), limit=max_posts)
     except FloodWaitError as exc:
-        raise ChannelUnavailableError(f"Telegram asked to wait {exc.seconds}s (flood limit)") from exc
+        # Served once: a second FloodWait straight after the first means Telegram is not asking for
+        # patience but for absence, and the channel is reported rather than hammered.
+        _sit_out(exc.seconds)
+        try:
+            raw = client.get_messages(entity_of(client, channel), limit=max_posts)
+        except FloodWaitError as again:
+            raise ChannelUnavailableError(f"Telegram asked to wait {again.seconds}s twice (flood limit)") from again
     messages = []
     for item in raw:
         text = (getattr(item, "message", "") or "").strip()

@@ -54,3 +54,18 @@ def test_no_link_of_any_kind_is_offered_to_the_model():
     text = channel_text(Channel(ref="c/1949598843"), [_message("ride tomorrow")], 21, TODAY)
     assert "https://" not in text
     assert "t.me" not in text
+
+
+def test_a_short_flood_wait_is_served_and_a_long_one_reported(monkeypatch):
+    """Telegram hands out short waits routinely; a nightly run serves them instead of losing the channel."""
+    import pytest
+
+    from telegram_agent import fetch as module
+
+    slept = []
+    monkeypatch.setattr(module.time, "sleep", slept.append)
+    module._sit_out(5)
+    assert slept == [6], "a second on top, so the wait is truly over"
+    with pytest.raises(module.ChannelUnavailableError, match="flood limit"):
+        module._sit_out(300)
+    assert slept == [6], "a long wait is never served"
