@@ -37,7 +37,7 @@ class Channel:
 
     ref: str  # "+HASH", "c/<id>" or "@handle" -- normalized, and how logs name it
     hint: str = ""  # free-text nudge passed to the model, like a web source's hint
-    city: str = ""  # where this community rides, for announcements that never name the place
+    city: str = ""  # where this community is based, for announcements that never name the place
 
 
 def _ref_of(value: str) -> str:

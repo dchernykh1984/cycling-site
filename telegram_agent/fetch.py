@@ -204,7 +204,7 @@ def channel_text(channel: Channel, messages: list[Message], recent_days: int, to
     if channel.hint:
         lines.append(f"What the maintainers know about it: {channel.hint}")
     if channel.city:
-        lines.append(f"This community rides in: {channel.city}")
+        lines.append(f"This community is based in: {channel.city}")
     lines.append(f"Today is {today.isoformat()}. Messages published in the last {recent_days} days:")
     for message in messages:
         if (today - message.published).days > recent_days:
