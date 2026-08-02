@@ -40,12 +40,12 @@ def test_every_locale_is_required():
         assert locale in _SYSTEM
 
 
-def test_the_source_may_never_be_named():
-    """The channels are private; the site must not disclose where an announcement was read.
+def test_the_source_may_never_be_named_by_the_model():
+    """The credit is appended in code; a model writing its own would leak links and invites.
     The prompt is the first of two guards; run._scrubbed is the one that holds."""
-    assert "NEVER NAME THE SOURCE" in _SYSTEM
+    assert "NEVER NAME THE SOURCE YOURSELF" in _SYSTEM
     assert "Do not output source_url" in _SYSTEM
-    assert "no attribution at all" in _SYSTEM
+    assert "appended" in _SYSTEM
     assert "never a t.me link" in _SYSTEM
 
 

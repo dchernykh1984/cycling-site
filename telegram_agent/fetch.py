@@ -131,8 +131,11 @@ def _sit_out(seconds: int) -> None:
     time.sleep(seconds + 1)
 
 
-def read_messages(client: Any, channel: Channel, max_posts: int) -> list[Message]:
-    """The channel's newest text messages, newest first. Coverage-omitted I/O.
+def read_messages(client: Any, channel: Channel, max_posts: int) -> tuple[str, list[Message]]:
+    """The channel's display name and its newest text messages, newest first. Coverage-omitted I/O.
+
+    The name rides along because the channels file carries bare ids on purpose, and a private
+    channel is credited on the site by this name and nothing else.
 
     Both steps sit under the FloodWait envelope -- resolving an invite (CheckChatInvite) is the
     call Telegram slows most readily, not the message fetch. The entity is resolved once and kept:
@@ -161,7 +164,7 @@ def read_messages(client: Any, channel: Channel, max_posts: int) -> list[Message
         when = getattr(item, "date", None)
         if text and when is not None:
             messages.append(Message(text=text[:_MAX_MESSAGE_CHARS], published=when.date()))
-    return messages
+    return (getattr(entity, "title", "") or "").strip(), messages
 
 
 def channel_text(channel: Channel, messages: list[Message], recent_days: int, today: datetime.date) -> str:
