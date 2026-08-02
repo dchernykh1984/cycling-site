@@ -200,8 +200,8 @@ def _source_candidates(source: Source, fetch: FetchFn, extract: ExtractFn, repor
     """Fetch + extract one source's candidates; log and return [] on an unsupported source or error."""
     if not source.fetch_url:
         reason = {
-            "tg_account": "public group/account -- needs a Telegram account",
-            "tg_private": "private Telegram -- needs an invite",
+            "tg_account": "needs a Telegram account -- list it in telegram_channels.yaml (Telegram agent)",
+            "tg_private": "private Telegram -- list it in telegram_channels.yaml (Telegram agent)",
         }.get(source.kind, "unsupported source")
         report.skipped_sources.append((source.ref, reason))
         return []
