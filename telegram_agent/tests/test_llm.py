@@ -71,3 +71,11 @@ def test_a_weekly_ride_is_a_new_event_each_week():
     prompt = build_prompt("text", Channel(ref="+abc"), "", _known(), Taxonomy(), today="2026-08-02")
     assert "NEW event each week" in prompt
     assert "SAME DAY" in prompt
+
+
+def test_the_model_is_told_the_calendar_is_not_cycling_only():
+    """The channels are outdoor communities of every kind; a hike is as much an event as a race."""
+    assert "hiking" in _SYSTEM
+    assert "running" in _SYSTEM
+    assert "hikes" in _SYSTEM
+    assert "more than cycling" in _SYSTEM

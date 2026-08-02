@@ -1,7 +1,8 @@
 # Telegram agent
 
 Reads the Telegram channels no other agent can -- private club channels and closed communities --
-and proposes the rides they announce as pending events on the site, in all three locales
+and proposes the events they announce (rides, hikes, runs, ski outings: the channels are outdoor
+communities of every kind, not only cycling) as pending events on the site, in all three locales
 (ru/kk/en), through the same API, dedup and location machinery as the events and Instagram agents.
 
 ## Why a member account and not a bot
@@ -56,7 +57,7 @@ unread, exactly as before this agent existed.
    session hopping addresses inside one night is how sessions get revoked. A channel the account
    has not joined, an expired invite or a flood limit is reported per channel, never fatal.
 3. Hands each channel's messages, **with their publication dates**, to the LLM (DeepSeek by
-   default) and asks for the rides being announced, in ru/kk/en.
+   default) and asks for the events being announced, in ru/kk/en.
 4. Drops anything already known, previously rejected or already past; at most
    `TELEGRAM_MAX_EVENTS` (default **10**) per run and 5 per channel are proposed via
    `POST /api/v1/competitions/` (organizer token -> status `pending_approval`), placed on the

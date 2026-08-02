@@ -1,4 +1,4 @@
-"""The prompt that turns a Telegram channel's messages into ride announcements. Coverage-omitted I/O.
+"""The prompt that turns a Telegram channel's messages into event announcements. Coverage-omitted I/O.
 
 The schema is deliberately the one the other agents use, so the reply is parsed by the same
 ``agent.pipeline.parse_candidates`` and the events land on the site through the same path.
@@ -22,21 +22,22 @@ from telegram_agent.channels import Channel
 _LOC = '{"ru": str, "kk": str, "en": str}'
 
 _SYSTEM = (
-    "You read the recent messages of a cycling community's Telegram channel or group chat and "
-    "extract the rides and races it ANNOUNCES. "
+    "You read the recent messages of a local sports community's Telegram channel or group chat -- "
+    "cycling, running, hiking, skiing, any outdoor sport -- and extract the events it ANNOUNCES: "
+    "rides, runs, hikes, walks, ascents, races, group outings. "
     'Return ONLY a JSON array; each item: {"title": ' + _LOC + ', "date_start": "YYYY-MM-DD", '
     '"date_end": "YYYY-MM-DD"|null, "description": ' + _LOC + ', "url_registration": str, '
     '"event_type_id": int|null, '
     '"discipline_ids": [int], "country": str, "region": ' + _LOC + ', "city": ' + _LOC + ", "
     '"venue": ' + _LOC + "}. "
     "\n\n"
-    "ONLY ANNOUNCEMENTS. A group chat is mostly conversation: photo reports of the last ride "
-    '("we rode", "thank you all who came"), people asking who is coming, route talk, results of a '
-    "finished start, stickers and memes. None of those are events -- skip them silently. An event "
-    "is a message inviting people to something that has not happened yet: it names a day, and "
-    "usually a meeting place and a time. A reply discussing an announced ride is not a second "
-    "event. When a message is about a start that already took place, skip it even if it names the "
-    "date. "
+    "ONLY ANNOUNCEMENTS. A group chat is mostly conversation: photo reports of the last outing "
+    '("we rode", "thank you all who came"), people asking who is coming or how to get somewhere, '
+    "route talk, taxi and gear questions, items for sale, results of a finished start, stickers "
+    "and memes. None of those are events -- skip them silently. An event is a message inviting "
+    "people to something that has not happened yet: it names a day, and usually a meeting place "
+    "and a time. A reply discussing an announced event is not a second event. When a message is "
+    "about a start that already took place, skip it even if it names the date. "
     "\n\n"
     'DATES. Each message is given with the date it was published. A message says "this Saturday" '
     'or "tomorrow at 7" -- resolve that against the publication date and return a real '
@@ -44,12 +45,12 @@ _SYSTEM = (
     "all, or the day is only legible on an image you cannot read, omit the event rather than "
     "inventing a date. If the announced day is already in the past, omit it. "
     "\n\n"
-    "WHAT TO WRITE. title: the ride's own name as the community calls it, not a description of "
-    "it. description: simple HTML (<p>, <br>, <ul>/<li>, <strong>) carrying what a rider needs -- "
-    "the meeting time and the start time, the meeting place, the route, the pace, whether it is "
-    "open to everyone, the fee, and registration details if there are any; never <script>, "
-    "<style> or <iframe>. Keep the community's own wording where it is concrete, and do not "
-    "invent details the message does not state. "
+    "WHAT TO WRITE. title: the event's own name as the community calls it, not a description of "
+    "it. description: simple HTML (<p>, <br>, <ul>/<li>, <strong>) carrying what a participant "
+    "needs -- the meeting time and the start time, the meeting place, the route, the pace or "
+    "difficulty, whether it is open to everyone, the fee, and registration details if there are "
+    "any; never <script>, <style> or <iframe>. Keep the community's own wording where it is "
+    "concrete, and do not invent details the message does not state. "
     "\n\n"
     "title, description, region, city and venue MUST be given in all three locales -- ru (Russian), "
     "kk (Kazakh) and en (English). Translate faithfully; if you cannot translate one, repeat the "
@@ -69,7 +70,9 @@ _SYSTEM = (
     "<img>, <video>, <iframe> or <picture>; a description is text. "
     "\n\n"
     "Choose event_type_id and discipline_ids ONLY from the provided lists of ids; if unsure use "
-    "null / []. A community ride is usually a ride rather than a race -- pick the type that fits. "
+    "null / []. The lists cover more than cycling -- running, ski racing, hiking and more; a "
+    "community outing is usually a training/leisure event rather than a race, and a hike belongs "
+    "to the hiking disciplines -- pick what fits. "
     "If the channel announced nothing, return []. Do not invent events."
 )
 
@@ -101,8 +104,8 @@ def build_prompt(
         f"Event types (id=name): {event_types or '(none)'}\n"
         f"Disciplines (id=name): {disciplines or '(none)'}\n\n"
         f"Events already on the site or already proposed in this run -- do NOT propose any of these "
-        f"again, even if the wording, language or year differs. A community's weekly ride is a NEW "
-        f"event each week, so only the one on the SAME DAY as a listed event is a repeat:\n"
+        f"again, even if the wording, language or year differs. A community's weekly outing is a "
+        f"NEW event each week, so only the one on the SAME DAY as a listed event is a repeat:\n"
         f"{existing or '(none)'}\n\n"
         f"Do NOT propose events similar to these previously rejected ones:\n{rejected or '(none)'}\n\n"
         f"{text}"
