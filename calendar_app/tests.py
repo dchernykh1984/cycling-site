@@ -3304,7 +3304,12 @@ class TemplateCommentLeakTests(TestCase):
 class HikingCategoryMigrationTests(TransactionTestCase):
     """0026 seeds the hiking category the Telegram agent's mountain outings land in, and 0027
     renames the leisure event type that used to call every outing a ride. Assertions use ASCII
-    (name_en) so this file stays non-Cyrillic."""
+    (name_en) so this file stays non-Cyrillic.
+
+    Every test rolls back to BEFORE first: a TransactionTestCase flushes the tables between tests
+    while the migration stays recorded as applied, so migrating forward from the already-applied
+    state is a no-op that seeds nothing.
+    """
 
     APP = "calendar_app"
     BEFORE = "0025_competitionreport"
@@ -3323,7 +3328,18 @@ class HikingCategoryMigrationTests(TransactionTestCase):
         executor.migrate([(self.APP, target)])
         return executor.loader.project_state([(self.APP, target)]).apps
 
+    def _leisure_type(self, apps):
+        """The seeded type as 0010 leaves it -- recreated here, since a flush may have removed it."""
+        return apps.get_model(self.APP, "EventType").objects.create(
+            name="Trenirovka",
+            name_ru="Trenirovka",
+            name_kk="Zhattygu",
+            name_en="Training / Leisure Ride",
+            order=3,
+        )
+
     def test_forward_seeds_the_category_in_every_locale(self):
+        self._migrate(self.BEFORE)
         apps = self._migrate(self.AFTER)
         category = apps.get_model(self.APP, "DisciplineCategory").objects.filter(name_en="Hiking").first()
         self.assertIsNotNone(category)
@@ -3338,6 +3354,7 @@ class HikingCategoryMigrationTests(TransactionTestCase):
 
     def test_forward_runs_twice_without_duplicating_anything(self):
         """A re-run must be a no-op: migrations get replayed on restored backups."""
+        self._migrate(self.BEFORE)
         self._migrate(self.AFTER)
         self._migrate(self.BEFORE)
         apps = self._migrate(self.AFTER)
@@ -3349,6 +3366,7 @@ class HikingCategoryMigrationTests(TransactionTestCase):
         """The guard is the only thing between a rollback and a competition losing its discipline."""
         import datetime
 
+        self._migrate(self.BEFORE)
         apps = self._migrate(self.AFTER)
         hike = apps.get_model(self.APP, "Discipline").objects.get(name_en="Day Hike", category__name_en="Hiking")
         competition = apps.get_model(self.APP, "Competition").objects.create(
@@ -3362,23 +3380,28 @@ class HikingCategoryMigrationTests(TransactionTestCase):
         self.assertEqual(list(competition.disciplines.values_list("pk", flat=True)), [hike.pk])
 
     def test_reverse_removes_the_category_when_nothing_uses_it(self):
+        self._migrate(self.BEFORE)
         self._migrate(self.AFTER)
         apps = self._migrate(self.BEFORE)
         self.assertFalse(apps.get_model(self.APP, "DisciplineCategory").objects.filter(name_en="Hiking").exists())
         self.assertFalse(apps.get_model(self.APP, "Discipline").objects.filter(name_en="Day Hike").exists())
 
     def test_the_leisure_type_is_renamed_in_english_only(self):
+        apps = self._migrate(self.BEFORE)
+        self._leisure_type(apps)
         apps = self._migrate(self.AFTER)
         EventType = apps.get_model(self.APP, "EventType")
         leisure = EventType.objects.filter(name_en="Training / Leisure Outing").first()
         self.assertIsNotNone(leisure, "0027 should rename the English name")
         self.assertFalse(EventType.objects.filter(name_en="Training / Leisure Ride").exists())
         # The Russian and Kazakh names never said "ride", so the rename must not have touched them.
-        self.assertTrue(leisure.name_ru and leisure.name_kk)
-        self.assertEqual(leisure.name, leisure.name_ru)
+        self.assertEqual((leisure.name, leisure.name_ru, leisure.name_kk), ("Trenirovka", "Trenirovka", "Zhattygu"))
 
     def test_the_rename_is_reversible(self):
+        apps = self._migrate(self.BEFORE)
+        self._leisure_type(apps)
         self._migrate(self.AFTER)
         apps = self._migrate("0026_add_hiking_category")
-        EventType = apps.get_model(self.APP, "EventType")
-        self.assertTrue(EventType.objects.filter(name_en="Training / Leisure Ride").exists())
+        self.assertTrue(
+            apps.get_model(self.APP, "EventType").objects.filter(name_en="Training / Leisure Ride").exists()
+        )
