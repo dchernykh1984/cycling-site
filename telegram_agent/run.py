@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import datetime
 import os
+import re
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from agent import locations, pipeline
@@ -168,17 +170,32 @@ def _run(
     return summary(report)
 
 
+# Any t.me address, bare or with a scheme -- in a URL field it is the channel or something a reader
+# without the invite cannot open; in running text it points back at a private source.
+_TME_LINK = re.compile(r"(?:https?://)?(?:www\.)?t(?:elegram)?\.me/\S+", re.IGNORECASE)
+
+
 def _scrubbed(candidate: Candidate) -> Candidate:
     """Strip anything that would point back at the channel the announcement was read in.
 
-    The model is told not to write these, and this makes it so regardless: no source link ever, and
-    a registration link only when it leads outside Telegram -- a t.me link is either the private
-    channel itself or something a reader without the invite cannot open anyway.
+    The model is told not to write these, and this makes it so regardless -- in the URL fields AND
+    in the text: a t.me link pasted into a description would disclose the private source just as
+    surely as one in source_url.
     """
-    from dataclasses import replace
-
     registration = candidate.url_registration if "t.me/" not in candidate.url_registration else ""
-    return replace(candidate, source_url="", url_route="", url_registration=registration)
+    unlink = lambda text: _TME_LINK.sub("", text)  # noqa: E731 -- six fields, one rule
+    return replace(
+        candidate,
+        source_url="",
+        url_route="",
+        url_registration=registration,
+        title=unlink(candidate.title),
+        title_kk=unlink(candidate.title_kk),
+        title_en=unlink(candidate.title_en),
+        description=unlink(candidate.description),
+        description_kk=unlink(candidate.description_kk),
+        description_en=unlink(candidate.description_en),
+    )
 
 
 def _create(client: SiteApiClient, tree: list, cities: list, known: KnownEvents, candidate: Candidate) -> None:
@@ -202,8 +219,6 @@ def _with_channel_city(candidate: Candidate, channel: Channel) -> Candidate:
     Inside a club's own chat nobody says which city they are in -- everyone knows. The maintainers
     do too, and wrote it next to the channel.
     """
-    from dataclasses import replace
-
     if candidate.city or not channel.city:
         return candidate
     return replace(candidate, city=channel.city, city_en=channel.city)

@@ -161,7 +161,10 @@ def channel_text(channel: Channel, messages: list[Message], recent_days: int, to
     Saturday" into a real date. No links are included -- an announcement in a private channel has
     no address the public could open.
     """
-    lines = [f"Telegram channel: {channel.ref}"]
+    # A public group is named to the model; an invite hash or internal id is not -- the model has
+    # no business seeing a credential-like string it could echo into a description.
+    named = channel.ref if channel.ref.startswith("@") else "(a private channel)"
+    lines = [f"Telegram channel: {named}"]
     if channel.hint:
         lines.append(f"What the maintainers know about it: {channel.hint}")
     if channel.city:

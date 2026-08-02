@@ -56,6 +56,15 @@ def test_no_link_of_any_kind_is_offered_to_the_model():
     assert "t.me" not in text
 
 
+def test_the_model_is_not_handed_an_invite_hash_it_could_echo():
+    """A public group is named; a private ref is a credential-like string the model must not see."""
+    text = channel_text(Channel(ref="+AbCdEfGhIjKlMnOp"), [], 21, TODAY)
+    assert "AbCdEfGhIjKlMnOp" not in text
+    assert "(a private channel)" in text
+    assert "Telegram channel: c/" not in channel_text(Channel(ref="c/1949598843"), [], 21, TODAY)
+    assert "@almatyriders" in channel_text(Channel(ref="@almatyriders"), [], 21, TODAY)
+
+
 def test_a_short_flood_wait_is_served_and_a_long_one_reported(monkeypatch):
     """Telegram hands out short waits routinely; a nightly run serves them instead of losing the channel."""
     import pytest
