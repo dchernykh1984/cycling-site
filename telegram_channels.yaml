@@ -49,7 +49,4 @@ channels:
   - url: "@talgar2026"
     hint: "Group (~29 members)."
     city: "Talgar"
-  - url: "@kztime"
-    hint: "Personal account (@kztime), not a channel -- there is no feed of messages to read."
-    enabled: false
   # "RideBikes Казахстан" was listed without a handle -- add its @handle here when it is known.
