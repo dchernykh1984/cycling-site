@@ -98,6 +98,8 @@ omit = [
     # The Instagram agent is the same kind of standalone tool, with its own tests under
     # instagram_agent/tests/.
     "instagram_agent/*",
+    # And so is the Telegram agent (telegram_agent/tests/).
+    "telegram_agent/*",
 ]
 
 [tool.pytest.ini_options]

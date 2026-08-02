@@ -1,0 +1,45 @@
+# Telegram channels the Telegram agent reads, alongside events_sources.yaml (web agent) and
+# instagram_accounts.yaml (Instagram agent). Re-read on every run -- edit it freely.
+#
+# Each entry is either a bare link/handle, or a mapping for extra control:
+#   - https://t.me/+INVITEHASH                   # private channel/chat, by its invite link
+#   - https://t.me/c/1234567890/1                # private channel, by an internal link
+#   - "@somegroup"                               # public group (no t.me/s/ preview, needs an account)
+#   - url: "@somegroup"                          # with options:
+#     hint: "an Almaty club chat"                #   free-text nudge passed to the model
+#     city: "Almaty"                             #   where this community rides, when messages leave it out
+#     enabled: false                             #   set false to pause the channel without losing it
+#
+# WHAT BELONGS HERE. Only what an ACCOUNT is needed for: private channels (invite/internal links)
+# and public groups without a web feed. A public broadcast channel with a t.me/s/ preview belongs
+# in events_sources.yaml under telegram_public instead -- the account-less events agent reads it.
+#
+# The service account must have JOINED every channel listed here (by hand, from the account's
+# phone). The agent never joins anything itself: it only reads, and reports channels it is not in.
+
+channels:
+  # --- private channels/chats (moved from events_sources.yaml: telegram_private) ---
+  - https://t.me/c/1796089754/113
+  - https://t.me/c/1949598843/1
+
+  # --- public groups that still need an account (moved from events_sources.yaml: telegram_account;
+  #     verified 2026-07-14 via telegram.me) ---
+  - url: "@almatyriders"
+    hint: "Group (~351 members)."
+    city: "Almaty"
+  - url: "@roadbikealmaty"
+    hint: "700c Almaty club chat (~533 members)."
+    city: "Almaty"
+  - url: "@almatyskiing"
+    hint: "Group (~131 members)."
+    city: "Almaty"
+  - url: https://t.me/cyclingtourismalmaty
+    hint: "Group (~60 members)."
+    city: "Almaty"
+  - url: https://t.me/talgar2026
+    hint: "Group (~29 members)."
+    city: "Talgar"
+  - url: https://t.me/kztime
+    hint: "Personal account (@kztime), not a channel -- there is no feed of messages to read."
+    enabled: false
+  # "RideBikes Казахстан" was listed without a handle -- add its @handle here when it is known.
