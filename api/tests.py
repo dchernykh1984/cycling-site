@@ -2648,6 +2648,20 @@ class DisciplineListTest(TestCase, ApiTestMixin):
         resp = self.get("/api/v1/disciplines/")
         self.assertEqual(resp.status_code, 200)
 
+    def test_the_hiking_category_is_seeded_in_all_three_locales(self):
+        """Migration 0026: the mountain communities' hikes need a discipline to land in, and the
+        agents read this endpoint -- so the category must arrive seeded and fully localized."""
+        resp = self.get("/api/v1/disciplines/")
+        hiking = next((c for c in resp.json() if c["name"]["en"] == "Hiking"), None)
+        self.assertIsNotNone(hiking, "the seeded hiking category should be exposed")
+        self.assertTrue(hiking["name"]["ru"])
+        self.assertTrue(hiking["name"]["kk"])
+        names_en = {d["name"]["en"] for d in hiking["disciplines"]}
+        self.assertEqual(names_en, {"Day Hike", "Multi-Day Trek", "Summit Hike", "Other (Hiking)"})
+        for discipline in hiking["disciplines"]:
+            for locale in ("ru", "kk", "en"):
+                self.assertTrue(discipline["name"][locale], f"{discipline['name']} misses {locale}")
+
 
 class EventTypeListTest(TestCase, ApiTestMixin):
     def setUp(self):
