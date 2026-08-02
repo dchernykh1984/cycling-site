@@ -73,6 +73,15 @@ def test_the_limit_caps_how_many_events_one_run_proposes():
     assert len(created) == 3
 
 
+def test_a_channel_that_hit_its_budget_says_so_in_the_summary():
+    """ "9 extracted, 5 proposed" alone cannot be told from "the other four were duplicates"."""
+    report = RunReport(dry_run=True)
+    report.extracted.append(("@chatty", 9))
+    report.proposed_by_source["@chatty"] = 5
+    report.source_capped.append("@chatty")
+    assert "@chatty reached its per-channel limit" in summary(report)
+
+
 def test_one_talkative_channel_cannot_spend_the_whole_budget():
     chatty = as_source(Channel(ref="@chatty"))
     quiet = as_source(Channel(ref="@quiet"))
