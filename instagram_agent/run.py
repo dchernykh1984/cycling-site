@@ -43,7 +43,10 @@ def _read(path: Path) -> str:
 
 def _place(candidate: Candidate) -> str:
     parts = [part for part in (candidate.country, candidate.region, candidate.city, candidate.venue) if part]
-    return " / ".join(parts) if parts else "(no place)"
+    where = " / ".join(parts) if parts else "(no place)"
+    if candidate.lat is None or candidate.lng is None:
+        return f"{where} (no point)"
+    return f"{where} ({candidate.lat:.5f}, {candidate.lng:.5f})"
 
 
 def summary(report: RunReport) -> str:
@@ -151,13 +154,14 @@ def _run(
         # declining -- surface it so the two are told apart without another run.
         if not parsed and raw.strip() not in ("", "[]"):
             print(f"  . {source.ref}: {len(raw)}-char reply parsed to 0: {' '.join(raw.split())[:400]}", flush=True)
-        return [credit_account(_with_account_city(candidate, account), account) for candidate in parsed]
+        placed = (_located(_with_account_city(candidate, account), tree, cities) for candidate in parsed)
+        return [credit_account(candidate, account) for candidate in placed]
 
     def city_of(candidate: Candidate) -> int | None:
         return locations.match_city(cities, candidate.city, candidate.region, candidate.country)
 
     def create(candidate: Candidate) -> None:
-        _create(client, tree, cities, known, _located(candidate, tree, cities))
+        _create(client, tree, cities, known, candidate)
 
     report = pipeline.run_pipeline(
         [as_source(account) for account in accounts],
@@ -178,6 +182,9 @@ def _located(candidate: Candidate, tree: list, cities: list) -> Candidate:
     A post says where to gather and never says where that is: no coordinates, and each club writes
     the same corner its own way. Without a point the event lands on a node with no place on the map,
     and a fourth node gets added for a car park the site already carries three times.
+
+    Done while the candidates are read rather than when one is posted, so a dry run shows the point
+    too -- otherwise the only way to see whether this works is to let a run post something.
     """
     from dataclasses import replace
 
