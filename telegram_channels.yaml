@@ -55,7 +55,4 @@ channels:
   - url: "@cyclingtourismalmaty"
     hint: "Group (~60 members)."
     city: "Almaty"
-  - url: "@talgar2026"
-    hint: "Group (~29 members)."
-    city: "Talgar"
   # "RideBikes Казахстан" was listed without a handle -- add its @handle here when it is known.
