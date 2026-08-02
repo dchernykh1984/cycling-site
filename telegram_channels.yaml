@@ -7,7 +7,7 @@
 #   - https://t.me/+INVITEHASH                   # an invite link works too, but see the warning below
 #   - url: "@somegroup"                          # with options:
 #     hint: "an Almaty club chat"                #   free-text nudge passed to the model
-#     city: "Almaty"                             #   where this community rides, when messages leave it out
+#     city: "Almaty"                             #   where this community is based, when messages leave it out
 #     enabled: false                             #   set false to pause the channel without losing it
 #
 # WHAT BELONGS HERE. Only what an ACCOUNT is needed for: private channels (invite/internal links)
