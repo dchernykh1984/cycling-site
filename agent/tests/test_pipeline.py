@@ -252,13 +252,15 @@ def test_dry_run_posts_nothing():
 
 def test_private_source_skipped_and_logged():
     report, _ = _run([Source("tg_private", "t.me/+secret")], {})
-    assert report.skipped_sources[0][1] == "private Telegram -- needs an invite"
+    assert report.skipped_sources[0][1] == "private Telegram -- list it in telegram_channels.yaml (Telegram agent)"
     assert not report.accepted
 
 
 def test_account_source_skipped_with_its_own_reason():
     report, _ = _run([Source("tg_account", "@almatyriders")], {})
-    assert report.skipped_sources[0][1] == "public group/account -- needs a Telegram account"
+    assert (
+        report.skipped_sources[0][1] == "needs a Telegram account -- list it in telegram_channels.yaml (Telegram agent)"
+    )
     assert not report.accepted
 
 

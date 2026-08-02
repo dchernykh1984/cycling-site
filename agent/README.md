@@ -37,10 +37,11 @@ the model) and `enabled: false` (to pause a source). Types:
   surfaced so it can find them.
 - **organizers** - a single organizer's own website, scanned for their upcoming races.
 - **telegram_public** - public broadcast channels read via the `t.me/s/<channel>` preview (no login).
-- **telegram_account** - public groups/chats or a user (no invite needed, but a Telegram account is);
-  they have no `t.me/s/` web feed, so the account-less agent skips them for now.
-- **telegram_private** - invite/internal links (`t.me/+...`, `t.me/c/...`); need both an invite and
-  an account, so they are kept for reference and skipped.
+
+Anything needing a logged-in Telegram account -- private channels (`t.me/+...`, `t.me/c/...`) and
+public groups without a `t.me/s/` feed -- lives in `telegram_channels.yaml` instead and is read by
+the Telegram agent (`telegram_agent/`, see its README for the service account, the secrets and the
+privacy notes). Entries of those kinds left in this agent's file are still skipped, with a pointer.
 
 ## Guardrails
 - Hard cap of `MAX_EVENTS_PER_RUN` proposals per run, and of `MAX_EVENTS_PER_SOURCE` (default **5**)
