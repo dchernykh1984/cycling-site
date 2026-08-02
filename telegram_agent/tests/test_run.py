@@ -96,6 +96,21 @@ def test_an_external_registration_link_from_the_announcement_survives():
     assert scrubbed.url_registration == "https://forms.gle/abc123"
 
 
+def test_a_channel_link_written_into_the_text_is_scrubbed_too():
+    """A t.me link in a description discloses the private source as surely as one in source_url."""
+    candidate = Candidate(
+        title="Ride (telegram.me/+abc)",
+        date_start="2026-08-08",
+        description="<p>Ride at 7. Details: https://t.me/+AbCdEfGhIjKlMnOp ask there.</p>",
+        description_en="<p>See t.me/c/1949598843/5 for the route.</p>",
+    )
+    scrubbed = _scrubbed(candidate)
+    for text in (scrubbed.description, scrubbed.description_en, scrubbed.title):
+        assert "t.me" not in text
+        assert "AbCdEfGhIjKlMnOp" not in text
+    assert "Ride at 7." in scrubbed.description, "the announcement itself survives"
+
+
 def test_the_summary_names_each_proposal_and_its_place_but_never_a_channel_link():
     report = RunReport(dry_run=True)
     report.accepted.append(_candidate(city="Almaty", venue="Halyk Bank car park", country="KZ"))
