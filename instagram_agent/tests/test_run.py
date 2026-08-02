@@ -93,7 +93,7 @@ def test_the_summary_names_each_proposal_and_its_place_but_never_a_post():
     report.proposed_by_source["@ubtalmaty"] = 1
     out = summary(report)
     assert "would propose: 1" in out
-    assert "place: KZ / Almaty / Giant Abay 47" in out
+    assert "place: KZ / Almaty / Giant Abay 47 (no point)" in out
     assert "@ubtalmaty: 4 extracted, 1 proposed" in out
     assert "instagram.com" not in out.lower()
 
@@ -191,3 +191,10 @@ def test_without_a_name_a_run_reads_every_enabled_account():
 def test_a_name_the_file_does_not_carry_selects_nothing():
     """The matrix is built from that same file, so a mismatch means something is broken."""
     assert selected([Account("one")], "gone_from_the_file") == []
+
+
+def test_the_summary_shows_the_point_a_meeting_place_was_found_at():
+    """A dry run is read to see whether the address turned into a place on the map."""
+    report = RunReport(dry_run=True)
+    report.accepted.append(_candidate(city="Almaty", venue="Halyk Bank car park", lat=43.225803, lng=76.942106))
+    assert "(43.22580, 76.94211)" in summary(report)
