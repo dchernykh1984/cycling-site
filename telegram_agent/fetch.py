@@ -80,7 +80,7 @@ def entity_of(client: Any, channel: Channel) -> Any:
         UsernameNotOccupiedError,
     )
     from telethon.tl.functions.messages import CheckChatInviteRequest
-    from telethon.tl.types import ChatInviteAlready, PeerChannel
+    from telethon.tl.types import ChatInviteAlready
 
     try:
         if channel.ref.startswith("+"):
@@ -91,7 +91,20 @@ def entity_of(client: Any, channel: Channel) -> Any:
                 "the service account has not joined this invite -- open it from the account's phone first"
             )
         if channel.ref.startswith("c/"):
-            return client.get_entity(PeerChannel(internal_id(channel.ref)))
+            # A marked id (-100...) is passed bare: PeerChannel wants the unmarked form, and the
+            # marked integer is the one Telethon resolves directly. A private channel is not in the
+            # session cache until the account's dialogs have been listed once, so an unknown id
+            # gets one dialog sweep before it is declared not joined.
+            try:
+                return client.get_entity(internal_id(channel.ref))
+            except ValueError:
+                client.get_dialogs()
+                try:
+                    return client.get_entity(internal_id(channel.ref))
+                except ValueError:
+                    raise ChannelUnavailableError(
+                        "not among the account's chats -- join it from the account's phone first"
+                    ) from None
         return client.get_entity(channel.ref)
     except (InviteHashExpiredError, InviteHashInvalidError) as exc:
         raise ChannelUnavailableError("the invite link has expired or was revoked") from exc
