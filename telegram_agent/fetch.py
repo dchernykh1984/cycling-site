@@ -132,17 +132,27 @@ def _sit_out(seconds: int) -> None:
 
 
 def read_messages(client: Any, channel: Channel, max_posts: int) -> list[Message]:
-    """The channel's newest text messages, newest first. Coverage-omitted I/O."""
+    """The channel's newest text messages, newest first. Coverage-omitted I/O.
+
+    Both steps sit under the FloodWait envelope -- resolving an invite (CheckChatInvite) is the
+    call Telegram slows most readily, not the message fetch. The entity is resolved once and kept:
+    retrying the fetch must not spend a second invite check on the same channel.
+    """
     from telethon.errors import FloodWaitError
 
     try:
-        raw = client.get_messages(entity_of(client, channel), limit=max_posts)
+        entity = entity_of(client, channel)
+    except FloodWaitError as exc:
+        _sit_out(exc.seconds)
+        entity = entity_of(client, channel)
+    try:
+        raw = client.get_messages(entity, limit=max_posts)
     except FloodWaitError as exc:
         # Served once: a second FloodWait straight after the first means Telegram is not asking for
         # patience but for absence, and the channel is reported rather than hammered.
         _sit_out(exc.seconds)
         try:
-            raw = client.get_messages(entity_of(client, channel), limit=max_posts)
+            raw = client.get_messages(entity, limit=max_posts)
         except FloodWaitError as again:
             raise ChannelUnavailableError(f"Telegram asked to wait {again.seconds}s twice (flood limit)") from again
     messages = []
