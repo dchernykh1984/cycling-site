@@ -22,12 +22,16 @@ from agent.models import Candidate, KnownEvents, RunReport, Source, Taxonomy
 from agent.placing import resolve_location
 from agent.site_api import SiteApiClient
 from instagram_agent import config as insta_config
-from instagram_agent import fetch, llm
+from instagram_agent import fetch, geo, llm
 from instagram_agent.accounts import Account, parse_accounts
 from instagram_agent.attribution import credit_account
 
 _ROOT = Path(__file__).resolve().parent.parent
 _ACCOUNTS_FILE = _ROOT / "instagram_accounts.yaml"
+# How far from a city's own point a meeting place may still be in it. Almaty spans some 25 km, and
+# a club ride can start at a reservoir on the edge of one, so this is deliberately generous: it is
+# here to catch a geocoder answering with another country, not to police the city limits.
+_CITY_RADIUS_METRES = 60_000
 # Its own guidance, not the events agent's: that one is told to skip club and social rides, which
 # are exactly what this agent exists to find.
 _GUIDANCE_FILE = Path(__file__).resolve().parent / "guidance.md"
@@ -153,7 +157,7 @@ def _run(
         return locations.match_city(cities, candidate.city, candidate.region, candidate.country)
 
     def create(candidate: Candidate) -> None:
-        _create(client, tree, cities, known, candidate)
+        _create(client, tree, cities, known, _located(candidate, tree, cities))
 
     report = pipeline.run_pipeline(
         [as_source(account) for account in accounts],
@@ -168,11 +172,42 @@ def _run(
     return summary(report)
 
 
+def _located(candidate: Candidate, tree: list, cities: list) -> Candidate:
+    """Give the candidate the point its meeting place sits at, when the post named one.
+
+    A post says where to gather and never says where that is: no coordinates, and each club writes
+    the same corner its own way. Without a point the event lands on a node with no place on the map,
+    and a fourth node gets added for a car park the site already carries three times.
+    """
+    from dataclasses import replace
+
+    if not candidate.venue or candidate.lat is not None:
+        return candidate
+    point = geo.locate(candidate.venue, candidate.city, candidate.country)
+    if point is None:
+        return candidate
+    city_id = locations.match_city(cities, candidate.city, candidate.region, candidate.country)
+    if city_id is not None and not _near_its_city(point, tree, city_id):
+        # A geocoder handed an address it does not know answers with something of that name
+        # elsewhere -- a river, a village in another country. Anything outside the city the post
+        # named is that, not the meeting point.
+        print(f"  ~ geocoder placed {candidate.venue!r} outside {candidate.city!r}; ignoring it", flush=True)
+        return candidate
+    print(f"  * {candidate.venue!r} is at {point[0]:.5f}, {point[1]:.5f}", flush=True)
+    return replace(candidate, lat=point[0], lng=point[1])
+
+
+def _near_its_city(point: geo.Point, tree: list, city_id: int) -> bool:
+    """Whether a geocoded point is close enough to the city to be in it. Unknown city means yes."""
+    apart = geo.distance_metres(point, geo.city_point(tree, city_id))
+    return apart is None or apart <= _CITY_RADIUS_METRES
+
+
 def _create(client: SiteApiClient, tree: list, cities: list, known: KnownEvents, candidate: Candidate) -> None:
     """Place the event and post it; name any geography left behind when the post itself fails."""
     created: list[str] = []
     try:
-        location_id = resolve_location(client, tree, cities, candidate, created=created)
+        location_id = _venue_for(client, tree, cities, candidate, created)
         client.create(candidate, location_id)
     except Exception as exc:
         if created:
@@ -181,6 +216,18 @@ def _create(client: SiteApiClient, tree: list, cities: list, known: KnownEvents,
     # Feed it back, so the next account in this same run does not propose the same ride.
     titles = [t for t in (candidate.title, candidate.title_kk, candidate.title_en) if t]
     known.existing.append({"title": candidate.title, "titles": titles, "date_start": candidate.date_start})
+
+
+def _venue_for(client: SiteApiClient, tree: list, cities: list, candidate: Candidate, created: list) -> int | None:
+    """The venue this event starts from: the one the site already has, or a new one as before."""
+    city_id = locations.match_city(cities, candidate.city, candidate.region, candidate.country)
+    if city_id is not None and candidate.venue:
+        point = (candidate.lat, candidate.lng) if candidate.lat is not None and candidate.lng is not None else None
+        existing = geo.existing_venue(geo.venues_of(tree, city_id), candidate.venue, point)
+        if existing is not None:
+            print(f"  * {candidate.venue!r} is a place the site already has (#{existing})", flush=True)
+            return existing
+    return resolve_location(client, tree, cities, candidate, created=created)
 
 
 def _with_account_city(candidate: Candidate, account: Account) -> Candidate:

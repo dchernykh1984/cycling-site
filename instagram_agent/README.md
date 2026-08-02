@@ -19,7 +19,10 @@ detection those feed, the location tree, and the API they post through.
    renamed, or refused this time -- is reported with the reason.
 4. An LLM (DeepSeek by default) is given each post **with the date it was published** and asked for
    the rides being announced.
-5. Drops anything already known, previously rejected or already past, and proposes at most
+5. Turns the meeting place the post names into a point (OpenStreetMap's Nominatim) and looks for a
+   venue the site already carries there; if there is one the event is hung on it, and if not the new
+   venue is created **with** that point instead of showing in the middle of the city.
+6. Drops anything already known, previously rejected or already past, and proposes at most
    `INSTAGRAM_MAX_EVENTS` (default **10**) via `POST /api/v1/competitions/` (organizer token ->
    status `pending_approval`), placing each event on the location tree like the events agent does.
 
