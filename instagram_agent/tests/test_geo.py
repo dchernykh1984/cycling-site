@@ -265,3 +265,79 @@ def test_an_address_nobody_knows_says_so(capsys):
     finally:
         module._wait_our_turn, module._first_point = original_wait, original_get
         importlib.reload(module)
+
+
+# --- the spellings a literal-minded geocoder is offered ---------------------------------------------
+
+
+def test_a_wrapped_address_is_offered_as_written_and_then_cleaned():
+    """The address that broke: found only with the parenthetical stripped AND the road kind dropped."""
+    from instagram_agent.geo import _spellings
+
+    assert _spellings("ul. Al-Farabi, 40 (parkovka Halyk Banka)") == [
+        "ul. Al-Farabi, 40 (parkovka Halyk Banka)",
+        "Al-Farabi, 40",
+    ]
+
+
+def test_the_spelling_that_lied_is_never_offered():
+    """Parenthetical stripped but road kind kept answered with a namesake road 25 km away."""
+    from instagram_agent.geo import _spellings
+
+    assert "ul. Al-Farabi, 40" not in _spellings("ul. Al-Farabi, 40 (parkovka Halyk Banka)")
+
+
+def test_a_cyrillic_road_kind_is_recognised_too():
+    """Posts write the road kind in Cyrillic; the ladder must clean those the same way."""
+    from instagram_agent.geo import _spellings
+
+    ul = chr(0x443) + chr(0x43B)  # "ul" in Cyrillic
+    assert _spellings(f"{ul}. Al-Farabi, 40")[-1] == "Al-Farabi, 40"
+
+
+def test_a_name_that_is_not_an_address_is_offered_once_and_untouched():
+    from instagram_agent.geo import _spellings
+
+    assert _spellings("Velotrek im. A.Vinokurova") == ["Velotrek im. A.Vinokurova"]
+    assert _spellings("Park Pervogo Prezidenta") == ["Park Pervogo Prezidenta"]
+
+
+def test_a_venue_that_is_only_a_parenthetical_is_not_cleaned_into_nothing():
+    from instagram_agent.geo import _spellings
+
+    assert _spellings("(parkovka Halyk Banka)") == ["(parkovka Halyk Banka)"]
+
+
+def test_locate_falls_through_to_the_cleaned_spelling(capsys):
+    """As written finds nothing; the cleaned spelling finds the point, and the log says so."""
+    import instagram_agent.geo as module
+
+    answers = {"Al-Farabi, 40": (43.2258032, 76.9421057)}
+    original = module._ask
+    try:
+        module._ask = lambda venue, city, country: answers.get(venue)
+        point = module.locate("ul. Al-Farabi, 40 (parkovka Halyk Banka)", "Almaty", "Kazakhstan")
+        assert point == (43.2258032, 76.9421057)
+        assert "was found as 'Al-Farabi, 40'" in capsys.readouterr().out
+    finally:
+        module._ask = original
+
+
+def test_a_service_that_refused_once_is_not_asked_again(capsys):
+    """Each question costs a throttled second, and a refusal is not an unknown address."""
+    import instagram_agent.geo as module
+
+    asked: list[str] = []
+
+    def _refusing(venue, city, country):
+        asked.append(venue)
+        raise module._UnreachableError
+
+    original = module._ask
+    try:
+        module._ask = _refusing
+        assert module.locate("ul. Al-Farabi, 40 (parkovka Halyk Banka)", "Almaty", "Kazakhstan") is None
+        assert len(asked) == 1
+        assert "does not know" not in capsys.readouterr().out
+    finally:
+        module._ask = original
