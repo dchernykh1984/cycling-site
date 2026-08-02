@@ -90,3 +90,45 @@ def test_the_reading_note_says_how_deep_the_read_went():
     assert "2 within 21d" in note
     assert "reaching back to 2026-06-23" in note
     assert reading_note("+abc", [], 21, TODAY) == "  ~ +abc: read 0 text messages"
+
+
+def test_a_vanished_username_is_reported_as_unreadable_not_raised_raw(monkeypatch):
+    """Telethon wraps UsernameNotOccupiedError into a bare ValueError; entity_of must still turn
+    it into the per-channel report. Measured live on a group that went private."""
+    import sys
+    import types
+
+    import pytest
+
+    from telegram_agent.fetch import ChannelUnavailableError, entity_of
+
+    errors = types.ModuleType("telethon.errors")
+    for name in (
+        "ChannelPrivateError",
+        "InviteHashExpiredError",
+        "InviteHashInvalidError",
+        "UsernameInvalidError",
+        "UsernameNotOccupiedError",
+        "FloodWaitError",
+    ):
+        setattr(errors, name, type(name, (Exception,), {}))
+    functions_messages = types.ModuleType("telethon.tl.functions.messages")
+    functions_messages.CheckChatInviteRequest = type("CheckChatInviteRequest", (), {})
+    tl_types = types.ModuleType("telethon.tl.types")
+    tl_types.ChatInviteAlready = type("ChatInviteAlready", (), {})
+    for name, module in {
+        "telethon": types.ModuleType("telethon"),
+        "telethon.errors": errors,
+        "telethon.tl": types.ModuleType("telethon.tl"),
+        "telethon.tl.functions": types.ModuleType("telethon.tl.functions"),
+        "telethon.tl.functions.messages": functions_messages,
+        "telethon.tl.types": tl_types,
+    }.items():
+        monkeypatch.setitem(sys.modules, name, module)
+
+    class _Client:
+        def get_entity(self, ref):
+            raise ValueError(f'No user has "{ref}" as username')
+
+    with pytest.raises(ChannelUnavailableError, match="username is not in use"):
+        entity_of(_Client(), Channel(ref="@gone_private"))
