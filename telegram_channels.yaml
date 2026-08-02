@@ -16,6 +16,11 @@
 #
 # The service account must have JOINED every channel listed here (by hand, from the account's
 # phone). The agent never joins anything itself: it only reads, and reports channels it is not in.
+#
+# THIS REPOSITORY IS PUBLIC, and an invite hash is the key to its channel: anyone reading this file
+# can join through a t.me/+... link listed here. Once the service account is in, prefer replacing an
+# invite entry with the channel's t.me/c/<id> form (copy any message link from inside it) -- the id
+# is useless to outsiders. An invite to anything genuinely sensitive does not belong in this file.
 
 channels:
   # --- private channels/chats (moved from events_sources.yaml: telegram_private) ---
