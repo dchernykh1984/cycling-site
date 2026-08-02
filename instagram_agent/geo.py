@@ -165,9 +165,12 @@ def _query(venue: str, city: str, country: str) -> str:
 def locate(venue: str, city: str, country: str) -> Point | None:
     """The point an address names, or None when the geocoder does not recognise it.
 
-    Coverage-omitted: the request itself is I/O. Callers must check the answer is where they expect
-    -- a geocoder handed a street it does not know will happily answer with a river of that name in
-    another country, which is how a village once landed 200 km from where its race was held.
+    Ask in the language the place is written in locally. Measured against this service: the Almaty
+    addresses these clubs post resolve to the metre in Russian and return nothing at all
+    transliterated, so an address must go out as the post wrote it, never romanised on the way.
+
+    Callers must check the answer is where they expect -- a geocoder handed a street it does not
+    know can answer with something of that name in another country.
     """
     if not venue:
         return None
