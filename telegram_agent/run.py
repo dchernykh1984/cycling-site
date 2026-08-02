@@ -111,7 +111,13 @@ def main() -> int:
 
     client = SiteApiClient(config.site_base_url, config.api_token)
     known, taxonomy, tree = _what_the_site_knows(client)
-    telegram = fetch.open_client(config.telegram_api_id, config.telegram_api_hash, config.telegram_session)
+    try:
+        telegram = fetch.open_client(config.telegram_api_id, config.telegram_api_hash, config.telegram_session)
+    except fetch.ChannelUnavailableError as exc:
+        # A revoked session needs the owner's hand, so the run fails -- but with the message that
+        # says what to do, not a traceback burying it.
+        print(f"Cannot sign in: {exc}", file=sys.stderr)
+        return 1
     try:
         print(_run(config, channels, client, telegram, known, taxonomy, tree))
     finally:
