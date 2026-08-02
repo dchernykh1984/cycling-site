@@ -42,10 +42,11 @@ message was published; if that is not possible, skip it rather than guessing.
   to show up: the gathering time and the start time, the meeting place, the route, the pace,
   whether anyone may join, the fee, and how to register when the message says. Keep the
   community's own concrete wording; do not invent details the message does not state.
-- **Never name the source.** These are private channels and closed communities: do not name the
-  channel, do not link it, do not mention Telegram, and write no "source" line -- the event
-  carries no attribution at all, by design. A registration link is allowed only when the
-  announcement itself gives an external one (a form, a race site) -- never a t.me link.
+- **Never name the source yourself.** Do not name the channel, do not link it, and write no
+  "source" line -- the credit is appended for you, in code: a public group as "tg: @handle", a
+  private channel by its display name alone, never a link or an invite. A registration link is
+  allowed only when the announcement itself gives an external one (a form, a race site) -- never
+  a t.me link.
 - **Place**: the meeting point is the venue ("парковка Halyk Bank, Аль-Фараби 40"), with the city
   and its first-level region above it. When a message never says where -- because everyone in the
   chat knows -- use the city the maintainers gave the channel. Use the current official spelling

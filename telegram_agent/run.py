@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import datetime
 import os
-import re
 import sys
 from dataclasses import replace
 from pathlib import Path
@@ -26,6 +25,7 @@ from agent.placing import resolve_location
 from agent.site_api import SiteApiClient
 from telegram_agent import config as tg_config
 from telegram_agent import fetch, llm
+from telegram_agent.attribution import TME_LINK, credit_source, source_label
 from telegram_agent.channels import Channel, parse_channels
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -141,10 +141,12 @@ def _run(
     today = datetime.date.today()
     agent_config = tg_config.as_agent_config(config)
     by_ref = {channel.ref: channel for channel in channels}
+    # Display names, learned as each channel is opened; the file itself carries only ids.
+    names: dict[str, str] = {}
 
     def fetch_source(source: Source) -> str:
         channel = by_ref[source.ref]
-        messages = fetch.read_messages(telegram, channel, config.max_posts)
+        names[source.ref], messages = fetch.read_messages(telegram, channel, config.max_posts)
         return fetch.channel_text(channel, messages, config.recent_days, today)
 
     def extract(text: str, source: Source) -> list[Candidate]:
@@ -155,7 +157,8 @@ def _run(
         # declining -- surface it so the two are told apart without another run.
         if not parsed and raw.strip() not in ("", "[]"):
             print(f"  . {source.ref}: {len(raw)}-char reply parsed to 0: {' '.join(raw.split())[:400]}", flush=True)
-        return [_scrubbed(_with_channel_city(candidate, channel)) for candidate in parsed]
+        label = source_label(source.ref, names.get(source.ref, ""))
+        return [credit_source(_scrubbed(_with_channel_city(candidate, channel)), label) for candidate in parsed]
 
     def city_of(candidate: Candidate) -> int | None:
         return locations.match_city(cities, candidate.city, candidate.region, candidate.country)
@@ -177,11 +180,6 @@ def _run(
     return summary(report)
 
 
-# Any t.me address, bare or with a scheme -- in a URL field it is the channel or something a reader
-# without the invite cannot open; in running text it points back at a private source.
-_TME_LINK = re.compile(r"(?:https?://)?(?:www\.)?t(?:elegram)?\.me/\S+", re.IGNORECASE)
-
-
 def _scrubbed(candidate: Candidate) -> Candidate:
     """Strip anything that would point back at the channel the announcement was read in.
 
@@ -190,7 +188,7 @@ def _scrubbed(candidate: Candidate) -> Candidate:
     surely as one in source_url.
     """
     registration = candidate.url_registration if "t.me/" not in candidate.url_registration else ""
-    unlink = lambda text: _TME_LINK.sub("", text)  # noqa: E731 -- six fields, one rule
+    unlink = lambda text: TME_LINK.sub("", text)  # noqa: E731 -- six fields, one rule
     return replace(
         candidate,
         source_url="",
