@@ -2,7 +2,7 @@
 
 import datetime
 
-from agent.models import Candidate, KnownEvents, RunReport
+from agent.models import Candidate, KnownEvents, RunReport, Taxonomy
 from agent.pipeline import run_pipeline
 from telegram_agent.channels import Channel
 from telegram_agent.run import _MAX_PER_CHANNEL, _scrubbed, _with_channel_city, as_source, summary
@@ -226,3 +226,54 @@ def test_the_guidance_is_this_agents_own_and_wants_more_than_rides():
     assert "Hikes, walks and ascents" in guidance
     assert "Runs and ski outings" in guidance
     assert "Club rides and group rides" in guidance, "the cycling half must survive too"
+
+
+def test_a_run_reports_how_deep_it_read_each_channel(capsys):
+    """The visibility line only helps if the run actually emits it -- and nothing else calls it.
+
+    Drives the real _run (not the pipeline directly) with a stub Telegram client, so the wiring
+    between reading a channel and printing what was read is exercised end to end.
+    """
+    import datetime
+
+    from telegram_agent import run as module
+    from telegram_agent.config import Config
+    from telegram_agent.fetch import Message
+
+    config = Config(
+        site_base_url="https://example.kz",
+        api_token="t",
+        llm_api_key="k",
+        llm_base_url="https://llm.example",
+        llm_model="m",
+        telegram_api_id=1,
+        telegram_api_hash="h",
+        telegram_session="s",
+        max_events=10,
+        recent_days=21,
+        max_posts=10,
+        dry_run=True,
+    )
+    today = datetime.date.today()
+    messages = [
+        Message(text="an announcement", published=today),
+        Message(text="older chatter", published=today - datetime.timedelta(days=40)),
+    ]
+    original_read, original_extract = module.fetch.read_messages, module.llm.extract_raw
+    try:
+        module.fetch.read_messages = lambda client, channel, limit: ("A club", messages)
+        module.llm.extract_raw = lambda *args, **kwargs: "[]"
+        module._run(
+            config,
+            [Channel(ref="@almatyriders", city="Almaty")],
+            client=None,
+            telegram=None,
+            known=KnownEvents(),
+            taxonomy=Taxonomy(),
+            tree=[],
+        )
+    finally:
+        module.fetch.read_messages, module.llm.extract_raw = original_read, original_extract
+    out = capsys.readouterr().out
+    assert "read 2 text messages" in out
+    assert "1 within 21d" in out
