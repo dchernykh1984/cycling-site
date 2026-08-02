@@ -1,0 +1,187 @@
+"""Turn an address from a post into a point, and that point into a venue the site already has.
+
+A club writes where it meets ("ul. Al-Farabi 40, the Halyk Bank car park") and nothing else: no
+coordinates, and no two clubs write the same place the same way. Left alone, every announcement
+added another node -- this site carried one Almaty car park four times over, twice with identical
+coordinates -- and an event hung on a node without coordinates shows in the middle of the city.
+
+So the address is geocoded, and the point is used twice: to recognise a venue that is already there,
+and, when there is none, to give the new one a real place on the map.
+
+What decides a match is the name; the distance vetoes. Measured on this site's own venues, two
+different places sit 43 m apart while two spellings of one place sit 75 m apart, so distance alone
+cannot tell them apart. But the site also carries two venues both called "Industrialka" 2.8 km
+apart, which the name alone cannot tell apart either. Together they answer both.
+"""
+
+from __future__ import annotations
+
+import json
+import math
+import urllib.parse
+import urllib.request
+
+from agent import dedup, locations
+
+_NOMINATIM = "https://nominatim.openstreetmap.org/search?{query}"
+# Nominatim asks every caller to identify itself and to stay under one request a second. A run makes
+# at most a handful, so the limit is never in sight.
+_USER_AGENT = "universalbicycle.team events agent (contact via https://universalbicycle.team)"
+_TIMEOUT = 20
+
+# Two venues further apart than this are different places whatever they are called. "Industrialka"
+# is a district some 5 km across and clubs name the exact corner they start from, so the site
+# rightly carries two of them 2.8 km apart -- one name, two start lines.
+_TOO_FAR_METRES = 500
+# Within this, a single distinctive word in common is enough: "Compass" and "Magazin Compass" are
+# one shop, and they sit at the same coordinates.
+_CLOSE_METRES = 250
+
+# Two words of a name have to agree before it counts as the same place, and they have to be most of
+# the shorter name. Measured against this site's venues: at this setting every pair it calls one
+# place is one, and no two distinct venues are merged.
+_NAME_OVERLAP = 0.8
+_MIN_SHARED_WORDS = 2
+_MIN_PREFIX = 4  # "Banka" and "Bank" are one word; "im." and "imeni" are not
+
+Point = tuple[float, float]
+
+
+def venue_words(name: str) -> set[str]:
+    """The words of a venue name, transliterated, with "kh" folded onto "h".
+
+    A borrowed name transliterates apart from its original otherwise: the Cyrillic spelling becomes
+    khalyk where the Latin spelling on the same sign reads halyk.
+    """
+    return {word[1:] if word.startswith("kh") else word for word in dedup.title_tokens(name)}
+
+
+def _means_the_same(word: str, others: set[str]) -> bool:
+    if word in others:
+        return True
+    return any(
+        len(word) >= _MIN_PREFIX and len(other) >= _MIN_PREFIX and (word.startswith(other) or other.startswith(word))
+        for other in others
+    )
+
+
+def same_name(name: str, other: str) -> bool:
+    """Whether two venue names are two ways of writing one place."""
+    words, other_words = venue_words(name), venue_words(other)
+    if len(words) < _MIN_SHARED_WORDS or len(other_words) < _MIN_SHARED_WORDS:
+        return False
+    shared = max(
+        sum(1 for word in words if _means_the_same(word, other_words)),
+        sum(1 for word in other_words if _means_the_same(word, words)),
+    )
+    return shared >= _MIN_SHARED_WORDS and shared / min(len(words), len(other_words)) >= _NAME_OVERLAP
+
+
+def distance_metres(a: Point | None, b: Point | None) -> float | None:
+    """Great-circle distance, or None when either point is unknown."""
+    if a is None or b is None:
+        return None
+    lat1, lng1, lat2, lng2 = (math.radians(value) for value in (*a, *b))
+    haversine = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lng2 - lng1) / 2) ** 2
+    return 2 * 6371000 * math.asin(math.sqrt(haversine))
+
+
+def _shares_a_distinctive_word(name: str, other: str) -> bool:
+    words, other_words = venue_words(name), venue_words(other)
+    return bool({word for word in words & other_words if len(word) >= 4})
+
+
+def same_place(name: str, point: Point | None, other_name: str, other_point: Point | None) -> bool:
+    """Whether two venues are one place: the names decide, the distance vetoes."""
+    apart = distance_metres(point, other_point)
+    if apart is not None and apart > _TOO_FAR_METRES:
+        return False
+    if same_name(name, other_name):
+        return True
+    # A name of one word says too little on its own, but next door it is enough.
+    return apart is not None and apart <= _CLOSE_METRES and _shares_a_distinctive_word(name, other_name)
+
+
+def _city_node(tree: list, city_id: int) -> dict | None:
+    for country in tree or []:
+        for region in country.get("children") or []:
+            for city in region.get("children") or []:
+                if city.get("id") == city_id:
+                    return city
+    return None
+
+
+def city_point(tree: list, city_id: int) -> Point | None:
+    """Where a city itself sits, for checking a geocoder's answer landed in it."""
+    city = _city_node(tree, city_id)
+    return _point_of(city) if city else None
+
+
+def venues_of(tree: list, city_id: int) -> list[dict]:
+    """The start venues already under a city: ``[{"id", "names", "point"}]``."""
+    city = _city_node(tree, city_id)
+    if city is None:
+        return []
+    return [
+        {"id": venue["id"], "names": _names_of(venue), "point": _point_of(venue)}
+        for venue in city.get("children") or []
+        if venue.get("id") is not None
+    ]
+
+
+def _names_of(node: dict) -> list[str]:
+    name = node.get("name")
+    if isinstance(name, dict):
+        return [str(value) for value in name.values() if value]
+    return [str(name)] if name else []
+
+
+def _point_of(node: dict) -> Point | None:
+    try:
+        return float(node["lat"]), float(node["lng"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def existing_venue(venues: list[dict], name: str, point: Point | None) -> int | None:
+    """The id of a venue on the site that is this same place, or None."""
+    if not locations.has_real_name(name):
+        return None
+    for venue in venues:
+        if any(same_place(name, point, existing, venue["point"]) for existing in venue["names"]):
+            return venue["id"]
+    return None
+
+
+def _query(venue: str, city: str, country: str) -> str:
+    address = ", ".join(part for part in (venue, city, country) if part)
+    return urllib.parse.urlencode({"q": address, "format": "jsonv2", "limit": "1", "addressdetails": "1"})
+
+
+def locate(venue: str, city: str, country: str) -> Point | None:
+    """The point an address names, or None when the geocoder does not recognise it.
+
+    Coverage-omitted: the request itself is I/O. Callers must check the answer is where they expect
+    -- a geocoder handed a street it does not know will happily answer with a river of that name in
+    another country, which is how a village once landed 200 km from where its race was held.
+    """
+    if not venue:
+        return None
+    request = urllib.request.Request(
+        _NOMINATIM.format(query=_query(venue, city, country)), headers={"User-Agent": _USER_AGENT}
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=_TIMEOUT) as response:
+            found = json.loads(response.read().decode("utf-8", "replace"))
+    except Exception:
+        return None
+    return _first_point(found)
+
+
+def _first_point(found: object) -> Point | None:
+    if not isinstance(found, list) or not found:
+        return None
+    try:
+        return float(found[0]["lat"]), float(found[0]["lon"])
+    except (KeyError, TypeError, ValueError):
+        return None
