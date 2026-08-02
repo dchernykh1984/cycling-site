@@ -41,7 +41,7 @@ repos:
         # The agents' guidance files and their source/account lists are free-text steering files for
         # the maintainer; they naturally hold Russian (the events' language), so they are exempt
         # from ASCII-only.
-        exclude: ^(uv\.lock|.*/migrations/.*|agent/guidance\.md|events_sources\.yaml|instagram_agent/guidance\.md|instagram_accounts\.yaml)$
+        exclude: ^(uv\.lock|.*/migrations/.*|agent/guidance\.md|events_sources\.yaml|instagram_agent/guidance\.md|instagram_accounts\.yaml|telegram_agent/guidance\.md|telegram_channels\.yaml)$
 
       - id: uv-export
         name: export requirements.txt from uv.lock

@@ -1,0 +1,69 @@
+name: telegram-agent
+
+on:
+  schedule:
+    # 00:17 UTC daily -- after the events agent (22:17) and the Instagram agent (23:17), so this one
+    # sees everything they just proposed; still finishes before the model's 01:00 UTC peak window
+    # (2x pricing), and off the round minute to dodge cron congestion.
+    - cron: "17 0 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Log the events without posting them"
+        type: boolean
+        default: false
+      max_events:
+        description: "Max events to propose per run"
+        type: string
+        default: "10"
+      max_posts:
+        description: "Max recent messages to read per channel"
+        type: string
+        default: "10"
+      recent_days:
+        description: "How far back to look, in days"
+        type: string
+        default: "21"
+
+concurrency:
+  group: telegram-agent
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # One job for every channel, deliberately -- the opposite of the Instagram agent's matrix. All
+  # reads go through one logged-in session, and a session hopping addresses inside one night is
+  # what gets a session revoked. One process, one connection, channels in sequence; the channel
+  # list lives in telegram_channels.yaml and the agent reads it itself.
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Fail a manual run started by anyone other than the owner before any secret is used.
+      - name: Restrict manual runs to the repository owner
+        if: ${{ github.event_name == 'workflow_dispatch' && github.actor != github.repository_owner }}
+        run: |
+          echo "::error::Only ${{ github.repository_owner }} may run this workflow manually (actor: ${{ github.actor }})."
+          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: pip install pyyaml telethon
+      - name: Read the channels
+        env:
+          SITE_BASE_URL: ${{ secrets.SITE_BASE_URL || 'https://universalbicycle.team' }}
+          AGENT_API_TOKEN: ${{ secrets.AGENT_API_TOKEN }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          TELEGRAM_MAX_EVENTS: ${{ github.event.inputs.max_events || '10' }}
+          TELEGRAM_MAX_POSTS: ${{ github.event.inputs.max_posts || '10' }}
+          TELEGRAM_RECENT_DAYS: ${{ github.event.inputs.recent_days || '21' }}
+          TELEGRAM_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: python -m telegram_agent.run
