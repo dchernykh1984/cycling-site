@@ -29,7 +29,7 @@ def test_public_channel_from_handle_and_post_link():
 
 
 def test_private_telegram_marked_unfetchable():
-    result = parse_sources("telegram_private:\n  - https://t.me/+3mTEnASuHG40MTRi\n  - https://t.me/c/1949598843/1\n")
+    result = parse_sources("telegram_private:\n  - https://t.me/+AbCdEfGhIjKlMnOp\n  - https://t.me/c/1949598843/1\n")
     assert len(result) == 2
     assert all(s.kind == "tg_private" and s.fetch_url is None for s in result)
 
