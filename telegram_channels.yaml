@@ -29,8 +29,17 @@
 
 channels:
   # --- private channels/chats (moved from events_sources.yaml: telegram_private) ---
-  - c/1796089754
-  - c/1949598843
+  - url: c/1796089754
+    hint: >-
+      "Велосреда с Alatau Racing" -- вечерние МТБ-катания по средам, анонс с маршрутом и точкой
+      сбора выходит в день выезда или накануне.
+    city: "Almaty"
+  - url: c/1949598843
+    hint: >-
+      "Алматы,горы,кафе,пикники" -- большая группа выходного отдыха: походы и прогулки в горы,
+      восхождения, пробежки, выезды. Анонсы тонут в бытовой болтовне; событие -- только сообщение
+      с датой и местом сбора, приглашающее присоединиться.
+    city: "Almaty"
 
   # --- public groups that still need an account (moved from events_sources.yaml: telegram_account;
   #     verified 2026-07-14 via telegram.me) ---
