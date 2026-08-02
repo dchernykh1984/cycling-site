@@ -2,6 +2,9 @@
 
 import datetime
 
+import pytest
+
+from agent import locations
 from agent.models import Candidate, KnownEvents, RunReport
 from agent.pipeline import run_pipeline
 from instagram_agent.accounts import Account
@@ -198,3 +201,113 @@ def test_the_summary_shows_the_point_a_meeting_place_was_found_at():
     report = RunReport(dry_run=True)
     report.accepted.append(_candidate(city="Almaty", venue="Halyk Bank car park", lat=43.225803, lng=76.942106))
     assert "(43.22580, 76.94211)" in summary(report)
+
+
+# --- turning the address in a post into the venue the site already has -----------------------------
+
+ALMATY = (43.236392, 76.945728)
+HALYK = (43.225803, 76.942106)
+CAR_PARK = "Parkovka Halyk Bank (pr. Al-Farabi 40)"
+
+
+def _tree(*venues):
+    return [
+        {
+            "id": 1,
+            "name": {"ru": "Kazakhstan"},
+            "children": [
+                {
+                    "id": 2,
+                    "name": {"ru": "Almaty region"},
+                    "children": [
+                        {
+                            "id": 3,
+                            "name": {"ru": "Almaty"},
+                            "lat": str(ALMATY[0]),
+                            "lng": str(ALMATY[1]),
+                            "children": [
+                                {"id": vid, "name": {"ru": name}, "lat": str(pt[0]), "lng": str(pt[1])}
+                                for vid, name, pt in venues
+                            ],
+                        }
+                    ],
+                }
+            ],
+        }
+    ]
+
+
+def _almaty(**kwargs):
+    return _candidate(city="Almaty", country="Kazakhstan", **kwargs)
+
+
+def _reading(candidate, tree, found, monkeypatch):
+    """Read one candidate the way a run does, with the geocoder answering `found`."""
+    from instagram_agent import run as module
+
+    monkeypatch.setattr(module.geo, "locate", lambda venue, city, country: found)
+    return module._located(candidate, tree, locations.flatten_cities(tree))
+
+
+def test_an_address_in_a_post_becomes_the_point_the_event_starts_at(monkeypatch):
+    placed = _reading(_almaty(venue=CAR_PARK), _tree(), HALYK, monkeypatch)
+    assert (placed.lat, placed.lng) == HALYK
+
+
+def test_an_answer_from_another_country_is_not_the_meeting_point(monkeypatch, capsys):
+    """A geocoder handed a street it does not know answers with a river of that name elsewhere."""
+    placed = _reading(_almaty(venue=CAR_PARK), _tree(), (55.75, 37.61), monkeypatch)
+    assert (placed.lat, placed.lng) == (None, None)
+    assert "outside" in capsys.readouterr().out
+
+
+def test_a_post_that_already_carried_coordinates_is_left_alone(monkeypatch):
+    """Nothing the model read out of the post is overwritten by a guess from an address."""
+
+    def _refuse(*args):
+        raise AssertionError("the geocoder should not be asked about a point we already have")
+
+    from instagram_agent import run as module
+
+    monkeypatch.setattr(module.geo, "locate", _refuse)
+    already = _almaty(venue=CAR_PARK, lat=HALYK[0], lng=HALYK[1])
+    assert module._located(already, _tree(), []) is already
+
+
+def test_a_post_naming_no_place_is_not_geocoded(monkeypatch):
+    from instagram_agent import run as module
+
+    monkeypatch.setattr(module.geo, "locate", lambda *args: pytest.fail("nothing to look up"))
+    assert module._located(_almaty(), _tree(), []).lat is None
+
+
+def test_a_geocoder_that_answers_nothing_leaves_the_event_as_it_was(monkeypatch):
+    placed = _reading(_almaty(venue=CAR_PARK), _tree(), None, monkeypatch)
+    assert (placed.lat, placed.lng) == (None, None)
+
+
+def test_reading_already_says_the_site_has_this_venue_so_a_dry_run_shows_it(monkeypatch, capsys):
+    """Reusing a venue is the point of all this; a dry run has to be able to show it happening."""
+    tree = _tree((100, "ul. Al-Farabi 40, Halyk Bank", HALYK))
+    _reading(_almaty(venue=CAR_PARK), tree, HALYK, monkeypatch)
+    assert "already has (#100)" in capsys.readouterr().out
+
+
+def test_an_event_is_hung_on_the_venue_the_site_already_has():
+    from instagram_agent import run as module
+
+    tree = _tree((100, "ul. Al-Farabi 40, Halyk Bank", HALYK))
+    candidate = _almaty(venue=CAR_PARK, lat=HALYK[0], lng=HALYK[1])
+    created: list[str] = []
+    venue = module._venue_for(None, tree, locations.flatten_cities(tree), candidate, created)
+    assert venue == 100
+    assert created == [], "an existing venue is reused, not added again"
+
+
+def test_a_place_the_site_does_not_have_is_created_as_before(monkeypatch):
+    from instagram_agent import run as module
+
+    tree = _tree((100, "Velotrek im. A.Vinokurova", (43.258907, 76.969335)))
+    monkeypatch.setattr(module, "resolve_location", lambda *args, **kwargs: 777)
+    candidate = _almaty(venue=CAR_PARK, lat=HALYK[0], lng=HALYK[1])
+    assert module._venue_for(None, tree, locations.flatten_cities(tree), candidate, []) == 777

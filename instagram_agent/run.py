@@ -14,6 +14,7 @@ from __future__ import annotations
 import datetime
 import os
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from agent import locations, pipeline
@@ -186,9 +187,7 @@ def _located(candidate: Candidate, tree: list, cities: list) -> Candidate:
     Done while the candidates are read rather than when one is posted, so a dry run shows the point
     too -- otherwise the only way to see whether this works is to let a run post something.
     """
-    from dataclasses import replace
-
-    if not candidate.venue or candidate.lat is not None:
+    if not candidate.venue or (candidate.lat is not None and candidate.lng is not None):
         return candidate
     point = geo.locate(candidate.venue, candidate.city, candidate.country)
     if point is None:
@@ -201,7 +200,11 @@ def _located(candidate: Candidate, tree: list, cities: list) -> Candidate:
         print(f"  ~ geocoder placed {candidate.venue!r} outside {candidate.city!r}; ignoring it", flush=True)
         return candidate
     print(f"  * {candidate.venue!r} is at {point[0]:.5f}, {point[1]:.5f}", flush=True)
-    return replace(candidate, lat=point[0], lng=point[1])
+    placed = replace(candidate, lat=point[0], lng=point[1])
+    already = _venue_already_there(tree, cities, placed)
+    if already is not None:  # said here rather than when posting, so a dry run shows it too
+        print(f"  * {placed.venue!r} is a place the site already has (#{already})", flush=True)
+    return placed
 
 
 def _near_its_city(point: geo.Point, tree: list, city_id: int) -> bool:
@@ -227,14 +230,25 @@ def _create(client: SiteApiClient, tree: list, cities: list, known: KnownEvents,
 
 def _venue_for(client: SiteApiClient, tree: list, cities: list, candidate: Candidate, created: list) -> int | None:
     """The venue this event starts from: the one the site already has, or a new one as before."""
-    city_id = locations.match_city(cities, candidate.city, candidate.region, candidate.country)
-    if city_id is not None and candidate.venue:
-        point = (candidate.lat, candidate.lng) if candidate.lat is not None and candidate.lng is not None else None
-        existing = geo.existing_venue(geo.venues_of(tree, city_id), candidate.venue, point)
-        if existing is not None:
-            print(f"  * {candidate.venue!r} is a place the site already has (#{existing})", flush=True)
-            return existing
+    existing = _venue_already_there(tree, cities, candidate)
+    if existing is not None:
+        print(f"  * hung on the venue the site already has (#{existing})", flush=True)
+        return existing
     return resolve_location(client, tree, cities, candidate, created=created)
+
+
+def _venue_already_there(tree: list, cities: list, candidate: Candidate) -> int | None:
+    """The venue on the site this candidate starts from, if it is one the site already carries.
+
+    Asked twice: once while reading, where it only reports, and once when posting, where it decides.
+    Reading the tree costs nothing, and reusing a venue is the whole point of geocoding the address
+    -- if only the posting run said so, a dry run could not show whether any of this works.
+    """
+    city_id = locations.match_city(cities, candidate.city, candidate.region, candidate.country)
+    if city_id is None or not candidate.venue:
+        return None
+    point = (candidate.lat, candidate.lng) if candidate.lat is not None and candidate.lng is not None else None
+    return geo.existing_venue(geo.venues_of(tree, city_id), candidate.venue, point)
 
 
 def _with_account_city(candidate: Candidate, account: Account) -> Candidate:
