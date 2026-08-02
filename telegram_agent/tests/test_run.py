@@ -5,9 +5,32 @@ import datetime
 from agent.models import Candidate, KnownEvents, RunReport, Taxonomy
 from agent.pipeline import run_pipeline
 from telegram_agent.channels import Channel
-from telegram_agent.run import _MAX_PER_CHANNEL, _scrubbed, _with_channel_city, as_source, summary
+from telegram_agent.run import _scrubbed, _with_channel_city, as_source, summary
+
+_PER_CHANNEL = 5
 
 TODAY = datetime.date(2026, 8, 2)
+
+
+def _config(**overrides):
+    from telegram_agent.config import Config
+
+    settings = {
+        "site_base_url": "https://example.kz",
+        "api_token": "t",
+        "llm_api_key": "k",
+        "llm_base_url": "https://llm.example",
+        "llm_model": "m",
+        "telegram_api_id": 1,
+        "telegram_api_hash": "h",
+        "telegram_session": "s",
+        "max_events": 10,
+        "max_per_channel": _PER_CHANNEL,
+        "recent_hours": 25,
+        "max_posts": 1000,
+        "dry_run": True,
+    }
+    return Config(**{**settings, **overrides})
 
 
 def _candidate(title="Saturday Ride", date="2026-08-08", **kwargs):
@@ -23,7 +46,7 @@ def _run(sources, by_source, *, max_events=10, dry_run=False):
         extract=lambda text, s: by_source.get(s.ref, []),
         create=created.append,
         max_events=max_events,
-        max_per_source=_MAX_PER_CHANNEL,
+        max_per_source=_PER_CHANNEL,
         dry_run=dry_run,
         today=TODAY,
     )
@@ -56,7 +79,7 @@ def test_one_talkative_channel_cannot_spend_the_whole_budget():
     flood = [_candidate(title=f"Ride {n}", date=f"2026-08-{n + 10:02d}") for n in range(8)]
     one = [_candidate(title="The one ride", date="2026-08-25")]
     report, _ = _run([chatty, quiet], {chatty.ref: flood, quiet.ref: one}, max_events=10)
-    assert report.proposed_by_source[chatty.ref] == _MAX_PER_CHANNEL
+    assert report.proposed_by_source[chatty.ref] == _PER_CHANNEL
     assert report.proposed_by_source[quiet.ref] == 1
 
 
@@ -202,8 +225,9 @@ def test_the_workflow_hands_the_run_every_name_the_config_reads():
         "TELEGRAM_API_HASH",
         "TELEGRAM_SESSION",
         "TELEGRAM_MAX_EVENTS",
+        "TELEGRAM_MAX_PER_CHANNEL",
+        "TELEGRAM_RECENT_HOURS",
         "TELEGRAM_MAX_POSTS",
-        "TELEGRAM_RECENT_DAYS",
         "TELEGRAM_DRY_RUN",
     ):
         assert f"{name}:" in workflow, f"the workflow never sets {name}"
@@ -237,34 +261,22 @@ def test_a_run_reports_how_deep_it_read_each_channel(capsys):
     import datetime
 
     from telegram_agent import run as module
-    from telegram_agent.config import Config
     from telegram_agent.fetch import Message
 
-    config = Config(
-        site_base_url="https://example.kz",
-        api_token="t",
-        llm_api_key="k",
-        llm_base_url="https://llm.example",
-        llm_model="m",
-        telegram_api_id=1,
-        telegram_api_hash="h",
-        telegram_session="s",
-        max_events=10,
-        recent_days=21,
-        max_posts=10,
-        dry_run=True,
-    )
     today = datetime.date.today()
-    messages = [
-        Message(text="an announcement", published=today),
-        Message(text="older chatter", published=today - datetime.timedelta(days=40)),
-    ]
+    messages = [Message(text="an announcement worth reading", published=today)] * 2
+    prompts: list[str] = []
+
+    def _record(text, *args, **kwargs):
+        prompts.append(text)
+        return "[]"
+
     original_read, original_extract = module.fetch.read_messages, module.llm.extract_raw
     try:
-        module.fetch.read_messages = lambda client, channel, limit: ("A club", messages)
-        module.llm.extract_raw = lambda *args, **kwargs: "[]"
+        module.fetch.read_messages = lambda client, channel, hours, cap: ("A club", messages, False)
+        module.llm.extract_raw = _record
         module._run(
-            config,
+            _config(),
             [Channel(ref="@almatyriders", city="Almaty")],
             client=None,
             telegram=None,
@@ -275,5 +287,75 @@ def test_a_run_reports_how_deep_it_read_each_channel(capsys):
     finally:
         module.fetch.read_messages, module.llm.extract_raw = original_read, original_extract
     out = capsys.readouterr().out
-    assert "read 2 text messages" in out
-    assert "1 within 21d" in out
+    assert "read 2 messages of the last 25h" in out
+    assert len(prompts) == 1, "a quiet channel is a single prompt"
+
+
+def test_a_channel_with_more_than_a_promptful_is_read_in_several_prompts():
+    """Ten days of a busy chat must not become one prompt: the announcement would drown in it."""
+    import datetime
+
+    from telegram_agent import run as module
+    from telegram_agent.fetch import MESSAGES_PER_PROMPT, Message
+
+    today = datetime.date.today()
+    messages = [Message(text=f"message number {n} in the chat", published=today) for n in range(250)]
+    prompts: list[str] = []
+
+    def _record(text, *args, **kwargs):
+        prompts.append(text)
+        return "[]"
+
+    original_read, original_extract = module.fetch.read_messages, module.llm.extract_raw
+    try:
+        module.fetch.read_messages = lambda client, channel, hours, cap: ("A club", messages, True)
+        module.llm.extract_raw = _record
+        module._run(
+            _config(recent_hours=250),
+            [Channel(ref="@chatty")],
+            client=None,
+            telegram=None,
+            known=KnownEvents(),
+            taxonomy=Taxonomy(),
+            tree=[],
+        )
+    finally:
+        module.fetch.read_messages, module.llm.extract_raw = original_read, original_extract
+    assert len(prompts) == 3, f"250 messages at {MESSAGES_PER_PROMPT} per prompt"
+    seen = "\n".join(prompts)
+    for n in (0, 99, 100, 249):
+        assert f"message number {n} in the chat" in seen, f"message {n} never reached the model"
+
+
+def test_every_batch_of_a_channel_contributes_its_events():
+    """Candidates from a later batch must not be dropped on the floor."""
+    import datetime
+
+    from telegram_agent import run as module
+    from telegram_agent.fetch import Message
+
+    today = datetime.date.today()
+    messages = [Message(text=f"message number {n} in the chat", published=today) for n in range(150)]
+    replies = iter(
+        [
+            '[{"title": {"ru": "First"}, "date_start": "2026-08-08", "description": {"ru": "d"}}]',
+            '[{"title": {"ru": "Second"}, "date_start": "2026-08-09", "description": {"ru": "d"}}]',
+        ]
+    )
+    original_read, original_extract = module.fetch.read_messages, module.llm.extract_raw
+    try:
+        module.fetch.read_messages = lambda client, channel, hours, cap: ("A club", messages, False)
+        module.llm.extract_raw = lambda *args, **kwargs: next(replies)
+        out = module._run(
+            _config(),
+            [Channel(ref="@chatty")],
+            client=None,
+            telegram=None,
+            known=KnownEvents(),
+            taxonomy=Taxonomy(),
+            tree=[],
+        )
+    finally:
+        module.fetch.read_messages, module.llm.extract_raw = original_read, original_extract
+    assert "First" in out
+    assert "Second" in out

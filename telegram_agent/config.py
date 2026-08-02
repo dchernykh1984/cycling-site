@@ -19,11 +19,18 @@ from agent.config import ConfigError, _flag
 # A private club channel carries a couple of announcements a week; a run proposing more than this
 # is reading something wrong, and the cap keeps that out of the moderation queue in bulk.
 _DEFAULT_MAX_EVENTS = 10
-# How far back a run looks. Anything older has either happened or been proposed on an earlier night.
-_DEFAULT_RECENT_DAYS = 21
-# How many of a channel's newest messages a run reads. Group chats are talkative, so this exists to
-# keep one lively chat from filling the prompt; announcements sit within the newest handful.
-_DEFAULT_MAX_POSTS = 10
+# What one talkative channel may contribute, so a lively group chat cannot spend the whole budget.
+_DEFAULT_MAX_PER_CHANNEL = 5
+# How far back a run reads, in hours. The run is nightly, so a day plus an hour of overlap: the
+# overlap covers a cron that fired late, and costs nothing, because an announcement seen twice is
+# dropped by the dedup that already knows it. Hours rather than days because this has to line up
+# with how often the run happens -- measured on these channels, the newest 50 messages of a busy
+# group do not even reach back a full day, while 50 of a quiet channel reach back two years.
+_DEFAULT_RECENT_HOURS = 25
+# A safety net, not a budget: the run reads by time, and this only stops one runaway chat from
+# swallowing a night. When it bites, the run says so -- a silent truncation would read like "the
+# channel had nothing to say".
+_DEFAULT_MAX_POSTS = 1000
 
 
 @dataclass
@@ -37,7 +44,8 @@ class Config:
     telegram_api_hash: str
     telegram_session: str
     max_events: int
-    recent_days: int
+    max_per_channel: int
+    recent_hours: int
     max_posts: int
     dry_run: bool
 
@@ -69,7 +77,10 @@ def from_env(env: dict[str, str]) -> Config:
         telegram_api_hash=env.get("TELEGRAM_API_HASH") or "",
         telegram_session=env.get("TELEGRAM_SESSION") or "",
         max_events=_whole_number(env.get("TELEGRAM_MAX_EVENTS"), _DEFAULT_MAX_EVENTS, "TELEGRAM_MAX_EVENTS"),
-        recent_days=_whole_number(env.get("TELEGRAM_RECENT_DAYS"), _DEFAULT_RECENT_DAYS, "TELEGRAM_RECENT_DAYS"),
+        max_per_channel=_whole_number(
+            env.get("TELEGRAM_MAX_PER_CHANNEL"), _DEFAULT_MAX_PER_CHANNEL, "TELEGRAM_MAX_PER_CHANNEL"
+        ),
+        recent_hours=_whole_number(env.get("TELEGRAM_RECENT_HOURS"), _DEFAULT_RECENT_HOURS, "TELEGRAM_RECENT_HOURS"),
         max_posts=_whole_number(env.get("TELEGRAM_MAX_POSTS"), _DEFAULT_MAX_POSTS, "TELEGRAM_MAX_POSTS"),
         dry_run=_flag(env.get("TELEGRAM_DRY_RUN")),
     )
@@ -96,6 +107,6 @@ def as_agent_config(config: Config):
         llm_base_url=config.llm_base_url,
         llm_model=config.llm_model,
         max_events=config.max_events,
-        max_per_source=0,
+        max_per_source=config.max_per_channel,
         dry_run=config.dry_run,
     )
