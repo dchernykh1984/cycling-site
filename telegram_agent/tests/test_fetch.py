@@ -78,3 +78,15 @@ def test_a_short_flood_wait_is_served_and_a_long_one_reported(monkeypatch):
     with pytest.raises(module.ChannelUnavailableError, match="flood limit"):
         module._sit_out(300)
     assert slept == [6], "a long wait is never served"
+
+
+def test_the_reading_note_says_how_deep_the_read_went():
+    """The line that tells "no announcements" apart from "the run barely saw the channel"."""
+    from telegram_agent.fetch import reading_note
+
+    messages = [_message("a", days_ago=0), _message("b", days_ago=1), _message("c", days_ago=40)]
+    note = reading_note("@almatyriders", messages, recent_days=21, today=TODAY)
+    assert "read 3 text messages" in note
+    assert "2 within 21d" in note
+    assert "reaching back to 2026-06-23" in note
+    assert reading_note("+abc", [], 21, TODAY) == "  ~ +abc: read 0 text messages"

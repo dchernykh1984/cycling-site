@@ -147,6 +147,7 @@ def _run(
     def fetch_source(source: Source) -> str:
         channel = by_ref[source.ref]
         names[source.ref], messages = fetch.read_messages(telegram, channel, config.max_posts)
+        print(fetch.reading_note(source.ref, messages, config.recent_days, today), flush=True)
         return fetch.channel_text(channel, messages, config.recent_days, today)
 
     def extract(text: str, source: Source) -> list[Candidate]:
