@@ -167,6 +167,23 @@ def read_messages(client: Any, channel: Channel, max_posts: int) -> tuple[str, l
     return (getattr(entity, "title", "") or "").strip(), messages
 
 
+def reading_note(ref: str, messages: list[Message], recent_days: int, today: datetime.date) -> str:
+    """One log line saying how deep the read went (pure, unit-tested).
+
+    "0 extracted" alone cannot be told apart from "the newest N messages were all today's chatter
+    and the announcement sits just beyond them" -- this line is what tells them apart: it names
+    how many messages were read, how many fall inside the window, and how far back the read
+    reached. A chatty group whose oldest-read date is today is a channel the run barely saw.
+    """
+    if not messages:
+        return f"  ~ {ref}: read 0 text messages"
+    recent = sum(1 for m in messages if (today - m.published).days <= recent_days)
+    return (
+        f"  ~ {ref}: read {len(messages)} text messages, {recent} within {recent_days}d, "
+        f"reaching back to {messages[-1].published.isoformat()}"
+    )
+
+
 def channel_text(channel: Channel, messages: list[Message], recent_days: int, today: datetime.date) -> str:
     """The channel's recent messages as the text the model reads (pure, unit-tested).
 
