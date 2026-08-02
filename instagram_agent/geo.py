@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import time
 import urllib.parse
 import urllib.request
@@ -162,6 +163,33 @@ def _query(venue: str, city: str, country: str) -> str:
     return urllib.parse.urlencode({"q": address, "format": "jsonv2", "limit": "1", "addressdetails": "1"})
 
 
+# What a post wraps around an address that the geocoder cannot see past: "(parkovka Halyk Banka)".
+_PARENTHETICAL = re.compile(r"\s*\([^)]*\)")
+# The first word of an address when it merely names the kind of road, with or without its dot.
+_FIRST_WORD = re.compile(r"^\s*(\S+?)\.?\s+")
+# Road kinds as dedup.title_tokens renders them, so "ul.", "prospekt" and their Cyrillic spellings
+# all land here. Only road kinds: stripping a word like "park" would change what is being asked.
+_ROAD_KINDS = {"ul", "ulitsa", "pr", "prospekt"}
+
+
+def _spellings(venue: str) -> list[str]:
+    """The venue as written, then cleaned, for asking a geocoder that matches addresses literally.
+
+    Measured against the address that broke: "ul. Al-Farabi, 40 (parkovka Halyk Banka)" finds
+    nothing as written; with the parenthetical stripped AND the road kind dropped it resolves to the
+    metre, because the service knows better than the post whether Al-Farabi is a street or an
+    avenue. The in-between spelling -- parenthetical stripped, road kind kept -- is never asked: it
+    is the one that confidently answered with a namesake road 25 km away.
+    """
+    cleaned = _PARENTHETICAL.sub("", venue).strip()
+    first = _FIRST_WORD.match(cleaned)
+    if first and dedup.title_tokens(first.group(1)) <= _ROAD_KINDS:
+        cleaned = cleaned[first.end() :].strip()
+    if cleaned and cleaned != venue:
+        return [venue, cleaned]
+    return [venue]
+
+
 def locate(venue: str, city: str, country: str) -> Point | None:
     """The point an address names, or None when the geocoder does not recognise it.
 
@@ -174,6 +202,25 @@ def locate(venue: str, city: str, country: str) -> Point | None:
     """
     if not venue:
         return None
+    try:
+        for spelling in _spellings(venue):
+            point = _ask(spelling, city, country)
+            if point is not None:
+                if spelling != venue:
+                    print(f"  ~ {venue!r} was found as {spelling!r}", flush=True)
+                return point
+    except _UnreachableError:
+        return None
+    print(f"  ~ the geocoder does not know {venue!r}", flush=True)
+    return None
+
+
+class _UnreachableError(Exception):
+    """The service could not be asked at all -- a different failure from an unknown address."""
+
+
+def _ask(venue: str, city: str, country: str) -> Point | None:
+    """One question to the geocoder; None when it has no answer for this spelling."""
     _wait_our_turn()
     request = urllib.request.Request(
         _NOMINATIM.format(query=_query(venue, city, country)), headers={"User-Agent": _USER_AGENT}
@@ -183,13 +230,12 @@ def locate(venue: str, city: str, country: str) -> Point | None:
             found = json.loads(response.read().decode("utf-8", "replace"))
     except Exception as exc:
         # "The service refused us" and "nobody knows this address" both leave an event without a
-        # point, and they need opposite fixes, so they must not read the same in a log.
+        # point, and they need opposite fixes, so they must not read the same in a log. And a
+        # service that refused one spelling will refuse the next: asking again only wastes the
+        # seconds the throttle makes each question cost.
         print(f"  ~ the geocoder could not be asked about {venue!r}: {exc}", flush=True)
-        return None
-    point = _first_point(found)
-    if point is None:
-        print(f"  ~ the geocoder does not know {venue!r}", flush=True)
-    return point
+        raise _UnreachableError from exc
+    return _first_point(found)
 
 
 def _wait_our_turn() -> None:
