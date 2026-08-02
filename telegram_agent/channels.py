@@ -24,6 +24,10 @@ _USERNAME = re.compile(r"^[A-Za-z0-9_]{5,32}$")
 # circulates in pinned messages and old chat descriptions. Read as one kind -- the hash is the same.
 _INVITE = re.compile(r"t\.me/(?:\+|joinchat/)([A-Za-z0-9_-]+)")
 _INTERNAL = re.compile(r"t\.me/c/(\d+)")
+# The same internal id written without any domain: "c/<id>", the API's marked "-100<id>", or the
+# bare number, with or without topic/message tails. Domain-free is the preferred spelling here --
+# t.me has gone NXDOMAIN before, and nothing about an id needs a web host.
+_BARE_INTERNAL = re.compile(r"^(?:c/|-100)?(\d{6,})(?:/\d+)*$")
 _PUBLIC_URL = re.compile(r"t\.me/([A-Za-z0-9_]{5,32})")
 
 
@@ -47,18 +51,14 @@ def _ref_of(value: str) -> str:
     internal = _INTERNAL.search(text)
     if internal:
         return f"c/{internal.group(1)}"
+    bare = _BARE_INTERNAL.match(text)
+    if bare:
+        return f"c/{bare.group(1)}"
     url = _PUBLIC_URL.search(text)
     if url:
         return f"@{url.group(1)}"
     name = text.removeprefix("@").split("?", 1)[0].split("/", 1)[0]
     return f"@{name}" if _USERNAME.match(name) else ""
-
-
-def link_of(ref: str) -> str:
-    """The t.me address a ref names. A real address, though not a publicly readable one."""
-    if ref.startswith("@"):
-        return f"https://t.me/{ref.removeprefix('@')}"
-    return f"https://t.me/{ref}"
 
 
 def parse_channels(text: str) -> list[Channel]:
@@ -70,8 +70,9 @@ def parse_channels(text: str) -> list[Channel]:
     channels: list[Channel] = []
     seen: set[str] = set()
     for entry in entries:
-        if isinstance(entry, str):
-            ref, hint, city, enabled = _ref_of(entry), "", "", True
+        if isinstance(entry, (str, int)):
+            # An unquoted bare id ("- 1796089754") arrives as YAML's integer, not a string.
+            ref, hint, city, enabled = _ref_of(str(entry)), "", "", True
         elif isinstance(entry, dict):
             ref = _ref_of(str(entry.get("url") or entry.get("channel") or ""))
             hint = str(entry.get("hint") or "").strip()

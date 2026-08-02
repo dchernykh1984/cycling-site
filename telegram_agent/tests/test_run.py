@@ -31,14 +31,14 @@ def _run(sources, by_source, *, max_events=10, dry_run=False):
 
 
 def test_a_channel_becomes_a_source_the_shared_pipeline_will_read():
-    """A missing fetch_url means "skip this source" to the pipeline, so it must be present."""
+    """A missing fetch_url means "skip this source"; a pseudo-scheme satisfies that without ever
+    baking a web domain into an agent that talks MTProto and would not notice t.me being down."""
     source = as_source(Channel(ref="+abc", hint="a club chat"))
     assert source.kind == "telegram"
     assert source.ref == "+abc"
-    assert source.fetch_url == "https://t.me/+abc"
+    assert source.fetch_url == "mtproto:+abc"
     assert source.hint == "a club chat"
-    assert as_source(Channel(ref="@almatyriders")).fetch_url == "https://t.me/almatyriders"
-    assert as_source(Channel(ref="c/1949598843")).fetch_url == "https://t.me/c/1949598843"
+    assert as_source(Channel(ref="c/1949598843")).fetch_url == "mtproto:c/1949598843"
 
 
 def test_the_limit_caps_how_many_events_one_run_proposes():

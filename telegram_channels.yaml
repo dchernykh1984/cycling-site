@@ -1,10 +1,10 @@
 # Telegram channels the Telegram agent reads, alongside events_sources.yaml (web agent) and
 # instagram_accounts.yaml (Instagram agent). Re-read on every run -- edit it freely.
 #
-# Each entry is either a bare link/handle, or a mapping for extra control:
-#   - https://t.me/+INVITEHASH                   # private channel/chat, by its invite link
-#   - https://t.me/c/1234567890/1                # private channel, by an internal link
+# Each entry is either a bare id/handle, or a mapping for extra control:
+#   - c/1234567890                               # private channel/chat, by its internal id
 #   - "@somegroup"                               # public group (no t.me/s/ preview, needs an account)
+#   - https://t.me/+INVITEHASH                   # an invite link works too, but see the warning below
 #   - url: "@somegroup"                          # with options:
 #     hint: "an Almaty club chat"                #   free-text nudge passed to the model
 #     city: "Almaty"                             #   where this community rides, when messages leave it out
@@ -18,14 +18,19 @@
 # phone). The agent never joins anything itself: it only reads, and reports channels it is not in.
 #
 # THIS REPOSITORY IS PUBLIC, and an invite hash is the key to its channel: anyone reading this file
-# can join through a t.me/+... link listed here. Once the service account is in, prefer replacing an
-# invite entry with the channel's t.me/c/<id> form (copy any message link from inside it) -- the id
-# is useless to outsiders. An invite to anything genuinely sensitive does not belong in this file.
+# can join through an invite link listed here. Once the service account is in, replace an invite
+# entry with the channel's bare id (copy any message link from inside it -- the number after /c/ is
+# the id) -- an id is useless to outsiders. An invite to anything genuinely sensitive does not
+# belong in this file at all.
+#
+# Prefer ids and @handles over t.me links: the ids are what the agent uses (it reads over MTProto,
+# not the web, so it does not care whether t.me resolves today), and a pasted t.me link is merely
+# accepted and reduced to one.
 
 channels:
   # --- private channels/chats (moved from events_sources.yaml: telegram_private) ---
-  - https://t.me/c/1796089754/113
-  - https://t.me/c/1949598843/1
+  - c/1796089754
+  - c/1949598843
 
   # --- public groups that still need an account (moved from events_sources.yaml: telegram_account;
   #     verified 2026-07-14 via telegram.me) ---
@@ -38,13 +43,13 @@ channels:
   - url: "@almatyskiing"
     hint: "Group (~131 members)."
     city: "Almaty"
-  - url: https://t.me/cyclingtourismalmaty
+  - url: "@cyclingtourismalmaty"
     hint: "Group (~60 members)."
     city: "Almaty"
-  - url: https://t.me/talgar2026
+  - url: "@talgar2026"
     hint: "Group (~29 members)."
     city: "Talgar"
-  - url: https://t.me/kztime
+  - url: "@kztime"
     hint: "Personal account (@kztime), not a channel -- there is no feed of messages to read."
     enabled: false
   # "RideBikes Казахстан" was listed without a handle -- add its @handle here when it is known.
