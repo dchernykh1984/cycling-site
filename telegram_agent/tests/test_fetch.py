@@ -197,3 +197,11 @@ def test_a_vanished_username_is_reported_as_unreadable_not_raised_raw(monkeypatc
 
     with pytest.raises(ChannelUnavailableError, match="username is not in use"):
         entity_of(_Client(), Channel(ref="@gone_private"))
+
+
+def test_the_floor_keeps_the_shortest_real_announcements_this_project_has_seen():
+    """Sampled from the channels themselves: what is dropped is chatter, what is kept is an event."""
+    for chatter in ("Spasibo", "Krasivo", "@banofbot", "Pochemu?", "Vsem privet", "A realno?"):
+        assert not worth_reading(chatter), chatter
+    for real in ("Velosreda 5.08, 18:20", "Zavtra pohod na BAO, sbor v 6", "Start 8:00 ot Medeo"):
+        assert worth_reading(real), real
