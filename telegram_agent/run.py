@@ -33,9 +33,6 @@ _CHANNELS_FILE = _ROOT / "telegram_channels.yaml"
 # Its own guidance, not the events agent's: that one is told to skip club and social rides, which
 # are exactly what a private club channel announces.
 _GUIDANCE_FILE = Path(__file__).resolve().parent / "guidance.md"
-# What one talkative channel may contribute to a run -- the same per-source budget the events agent
-# holds its sources to, so a lively group chat cannot spend the whole night's allowance.
-_MAX_PER_CHANNEL = 5
 
 
 def _read(path: Path) -> str:
@@ -144,22 +141,38 @@ def _run(
     # Display names, learned as each channel is opened; the file itself carries only ids.
     names: dict[str, str] = {}
 
+    # Each channel's window, split into prompt-sized batches while it is read.
+    batches: dict[str, list[list[fetch.Message]]] = {}
+
     def fetch_source(source: Source) -> str:
         channel = by_ref[source.ref]
-        names[source.ref], messages = fetch.read_messages(telegram, channel, config.max_posts)
-        print(fetch.reading_note(source.ref, messages, config.recent_days, today), flush=True)
-        return fetch.channel_text(channel, messages, config.recent_days, today)
+        names[source.ref], messages, capped = fetch.read_messages(
+            telegram, channel, config.recent_hours, config.max_posts
+        )
+        print(fetch.reading_note(source.ref, messages, config.recent_hours, capped), flush=True)
+        batches[source.ref] = fetch.in_batches(messages)
+        # The pipeline only hands this text to extract, which reads the batches instead: a day of a
+        # busy chat is several prompts, and one string cannot be several prompts.
+        return f"{len(messages)} messages"
 
-    def extract(text: str, source: Source) -> list[Candidate]:
+    def extract(_text: str, source: Source) -> list[Candidate]:
         channel = by_ref[source.ref]
-        raw = llm.extract_raw(text, channel, guidance, known, taxonomy, agent_config, today.isoformat())
-        parsed = pipeline.parse_candidates(raw, "", taxonomy)
-        # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
-        # declining -- surface it so the two are told apart without another run.
-        if not parsed and raw.strip() not in ("", "[]"):
-            print(f"  . {source.ref}: {len(raw)}-char reply parsed to 0: {' '.join(raw.split())[:400]}", flush=True)
         label = source_label(source.ref, names.get(source.ref, ""))
-        return [credit_source(_scrubbed(_with_channel_city(candidate, channel)), label) for candidate in parsed]
+        found: list[Candidate] = []
+        for number, batch in enumerate(batches.get(source.ref, []), start=1):
+            text = fetch.channel_text(channel, batch, config.recent_hours, today)
+            raw = llm.extract_raw(text, channel, guidance, known, taxonomy, agent_config, today.isoformat())
+            parsed = pipeline.parse_candidates(raw, "", taxonomy)
+            # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
+            # declining -- surface it so the two are told apart without another run.
+            if not parsed and raw.strip() not in ("", "[]"):
+                print(
+                    f"  . {source.ref} batch {number}: {len(raw)}-char reply parsed to 0: "
+                    f"{' '.join(raw.split())[:400]}",
+                    flush=True,
+                )
+            found.extend(credit_source(_scrubbed(_with_channel_city(c, channel)), label) for c in parsed)
+        return found
 
     def city_of(candidate: Candidate) -> int | None:
         return locations.match_city(cities, candidate.city, candidate.region, candidate.country)
@@ -174,7 +187,7 @@ def _run(
         extract=extract,
         create=create,
         max_events=config.max_events,
-        max_per_source=_MAX_PER_CHANNEL,
+        max_per_source=config.max_per_channel,
         dry_run=config.dry_run,
         city_of=city_of,
     )

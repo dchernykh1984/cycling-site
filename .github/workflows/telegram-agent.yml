@@ -16,14 +16,18 @@ on:
         description: "Max events to propose per run"
         type: string
         default: "10"
+      max_per_channel:
+        description: "Max events one channel may contribute"
+        type: string
+        default: "5"
+      recent_hours:
+        description: "How far back to read, in hours (25 = a nightly day plus overlap)"
+        type: string
+        default: "25"
       max_posts:
-        description: "Max recent messages to read per channel"
+        description: "Safety net: max messages read per channel"
         type: string
-        default: "10"
-      recent_days:
-        description: "How far back to look, in days"
-        type: string
-        default: "21"
+        default: "1000"
 
 concurrency:
   group: telegram-agent
@@ -63,7 +67,8 @@ jobs:
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
           TELEGRAM_MAX_EVENTS: ${{ github.event.inputs.max_events || '10' }}
-          TELEGRAM_MAX_POSTS: ${{ github.event.inputs.max_posts || '10' }}
-          TELEGRAM_RECENT_DAYS: ${{ github.event.inputs.recent_days || '21' }}
+          TELEGRAM_MAX_PER_CHANNEL: ${{ github.event.inputs.max_per_channel || '5' }}
+          TELEGRAM_RECENT_HOURS: ${{ github.event.inputs.recent_hours || '25' }}
+          TELEGRAM_MAX_POSTS: ${{ github.event.inputs.max_posts || '1000' }}
           TELEGRAM_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: python -m telegram_agent.run

@@ -22,6 +22,14 @@ from typing import Any
 from telegram_agent.channels import Channel
 
 _MAX_MESSAGE_CHARS = 2000
+# Below this a message cannot be an announcement -- "+", a thumbs-up, "spasibo", "da". A group chat
+# is full of them, and every one spends prompt on nothing. An announcement names a day and a place
+# and never fits in fifteen characters.
+_MIN_MESSAGE_CHARS = 15
+# How many messages one prompt carries. A long prompt is not just expensive, it is worse at the job:
+# a single announcement among five hundred replies about bike lights is exactly the needle a long
+# context loses. Reading ten days of a busy chat therefore becomes several prompts, not one huge one.
+MESSAGES_PER_PROMPT = 100
 # The longest FloodWait worth sitting out. Telegram hands out waits of a few seconds routinely when
 # several channels are read in a row; a nightly, unhurried run just serves those. Anything longer
 # means tonight is over for this channel, and the wait is reported instead.
@@ -38,6 +46,11 @@ class Message:
 
     text: str
     published: datetime.date
+
+
+def worth_reading(text: str) -> bool:
+    """Whether a message could possibly be an announcement (pure, unit-tested)."""
+    return len(" ".join(text.split())) >= _MIN_MESSAGE_CHARS
 
 
 def invite_hash(ref: str) -> str:
@@ -137,8 +150,16 @@ def _sit_out(seconds: int) -> None:
     time.sleep(seconds + 1)
 
 
-def read_messages(client: Any, channel: Channel, max_posts: int) -> tuple[str, list[Message]]:
-    """The channel's display name and its newest text messages, newest first. Coverage-omitted I/O.
+def read_messages(client: Any, channel: Channel, recent_hours: int, max_posts: int) -> tuple[str, list[Message], bool]:
+    """The channel's title, its messages from the last ``recent_hours``, and whether the cap bit.
+
+    Coverage-omitted I/O; the decisions it makes are in :func:`worth_reading` and :func:`within`.
+
+    Read by time, not by count, because the two are not interchangeable across these channels:
+    measured here, the newest 50 messages of a busy group do not reach back a single day while 50
+    of a quiet channel reach back two years. Telegram hands messages back newest first, so the read
+    simply stops at the first one older than the window -- no paging arithmetic, and a quiet
+    channel costs one request.
 
     The name rides along because the channels file carries bare ids on purpose, and a private
     channel is credited on the site by this name and nothing else.
@@ -155,43 +176,65 @@ def read_messages(client: Any, channel: Channel, max_posts: int) -> tuple[str, l
         _sit_out(exc.seconds)
         entity = entity_of(client, channel)
     try:
-        raw = client.get_messages(entity, limit=max_posts)
+        messages, capped = _collect(client, entity, recent_hours, max_posts)
     except FloodWaitError as exc:
         # Served once: a second FloodWait straight after the first means Telegram is not asking for
         # patience but for absence, and the channel is reported rather than hammered.
         _sit_out(exc.seconds)
         try:
-            raw = client.get_messages(entity, limit=max_posts)
+            messages, capped = _collect(client, entity, recent_hours, max_posts)
         except FloodWaitError as again:
             raise ChannelUnavailableError(f"Telegram asked to wait {again.seconds}s twice (flood limit)") from again
-    messages = []
-    for item in raw:
-        text = (getattr(item, "message", "") or "").strip()
+    return (getattr(entity, "title", "") or "").strip(), messages, capped
+
+
+def _collect(client: Any, entity: Any, recent_hours: int, max_posts: int) -> tuple[list[Message], bool]:
+    """Messages newer than the window, newest first, and whether the safety net stopped the read."""
+    oldest_wanted = datetime.datetime.now(datetime.UTC) - datetime.timedelta(hours=recent_hours)
+    messages: list[Message] = []
+    for item in client.iter_messages(entity):
         when = getattr(item, "date", None)
-        if text and when is not None:
+        if when is None:
+            continue
+        if when < oldest_wanted:
+            return messages, False  # Telegram hands them back newest first: everything below is older
+        text = " ".join((getattr(item, "message", "") or "").split())
+        if worth_reading(text):
             messages.append(Message(text=text[:_MAX_MESSAGE_CHARS], published=when.date()))
-    return (getattr(entity, "title", "") or "").strip(), messages
+        if max_posts and len(messages) >= max_posts:
+            return messages, True
+    return messages, False
 
 
-def reading_note(ref: str, messages: list[Message], recent_days: int, today: datetime.date) -> str:
-    """One log line saying how deep the read went (pure, unit-tested).
+def reading_note(ref: str, messages: list[Message], recent_hours: int, capped: bool) -> str:
+    """One log line saying how much of the channel the run actually saw (pure, unit-tested).
 
-    "0 extracted" alone cannot be told apart from "the newest N messages were all today's chatter
-    and the announcement sits just beyond them" -- this line is what tells them apart: it names
-    how many messages were read, how many fall inside the window, and how far back the read
-    reached. A chatty group whose oldest-read date is today is a channel the run barely saw.
+    "0 extracted" alone cannot be told apart from "the run barely saw the channel" -- this line is
+    what tells them apart. When the safety net stopped the read it says so outright: a silent
+    truncation would read exactly like a quiet night.
     """
     if not messages:
-        return f"  ~ {ref}: read 0 text messages"
-    recent = sum(1 for m in messages if (today - m.published).days <= recent_days)
-    return (
-        f"  ~ {ref}: read {len(messages)} text messages, {recent} within {recent_days}d, "
-        f"reaching back to {messages[-1].published.isoformat()}"
-    )
+        return f"  ~ {ref}: no messages worth reading in the last {recent_hours}h"
+    note = f"  ~ {ref}: read {len(messages)} messages of the last {recent_hours}h, back to {messages[-1].published}"
+    if capped:
+        note += " -- CAPPED, older messages in the window were not read"
+    return note
 
 
-def channel_text(channel: Channel, messages: list[Message], recent_days: int, today: datetime.date) -> str:
-    """The channel's recent messages as the text the model reads (pure, unit-tested).
+def in_batches(messages: list[Message], size: int = MESSAGES_PER_PROMPT) -> list[list[Message]]:
+    """The messages split into prompt-sized batches, oldest batch last (pure, unit-tested).
+
+    One prompt per hundred messages rather than one prompt for everything: a long context is not
+    merely expensive, it is worse at finding the single announcement buried in a day of chatter,
+    and ten days of a busy group would crowd out the taxonomy and the known-events list as well.
+    """
+    if not messages:
+        return []
+    return [messages[start : start + size] for start in range(0, len(messages), max(size, 1))]
+
+
+def channel_text(channel: Channel, messages: list[Message], recent_hours: int, today: datetime.date) -> str:
+    """One batch of a channel's messages as the text the model reads (pure, unit-tested).
 
     Every message carries the date it was published: that is what turns an announcement's "this
     Saturday" into a real date. No links are included -- an announcement in a private channel has
@@ -205,9 +248,7 @@ def channel_text(channel: Channel, messages: list[Message], recent_days: int, to
         lines.append(f"What the maintainers know about it: {channel.hint}")
     if channel.city:
         lines.append(f"This community is based in: {channel.city}")
-    lines.append(f"Today is {today.isoformat()}. Messages published in the last {recent_days} days:")
+    lines.append(f"Today is {today.isoformat()}. Messages published in the last {recent_hours} hours:")
     for message in messages:
-        if (today - message.published).days > recent_days:
-            continue
-        lines.append(f"\n--- published {message.published.isoformat()}\n{' '.join(message.text.split())}")
+        lines.append(f"\n--- published {message.published.isoformat()}\n{message.text}")
     return "\n".join(lines)

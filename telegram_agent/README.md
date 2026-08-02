@@ -51,18 +51,28 @@ unread, exactly as before this agent existed.
    handles (`@name`) and, as a last resort, invite links, each with an optional hint and home
    city. Ids and handles are domain-free on purpose: the agent reads over MTProto and does not
    care whether t.me resolves today.
-2. Connects once with the stored session and reads each channel's newest
-   `TELEGRAM_MAX_POSTS` (default **10**) messages, keeping those from the last
-   `TELEGRAM_RECENT_DAYS` (default **21**) days. One connection, channels in sequence -- a
-   session hopping addresses inside one night is how sessions get revoked. A channel the account
+2. Connects once with the stored session and reads **by time**: everything published in the last
+   `TELEGRAM_RECENT_HOURS` (default **25** -- a nightly day plus an hour of overlap for a cron
+   that fires late). Reading by time rather than by count is deliberate: measured on these
+   channels, the newest 50 messages of a busy group do not reach back a single day while 50 of a
+   quiet channel reach back two years. `TELEGRAM_MAX_POSTS` (default **1000**) is only a safety
+   net against one runaway chat, and when it bites the run says so. Messages too short to be an
+   announcement ("+", a thumbs-up) never reach the model. One connection, channels in sequence --
+   a session hopping addresses inside one night is how sessions get revoked. A channel the account
    has not joined, an expired invite or a flood limit is reported per channel, never fatal.
 3. Hands each channel's messages, **with their publication dates**, to the LLM (DeepSeek by
-   default) and asks for the events being announced, in ru/kk/en.
+   default) and asks for the events being announced, in ru/kk/en. A channel with more than a
+   hundred messages in the window becomes **several prompts**, not one huge one: a long context is
+   not merely costlier, it is worse at finding the single announcement buried in a day of chatter.
 4. Drops anything already known, previously rejected or already past; at most
-   `TELEGRAM_MAX_EVENTS` (default **10**) per run and 5 per channel are proposed via
-   `POST /api/v1/competitions/` (organizer token -> status `pending_approval`), placed on the
-   location tree like every other agent's events.
+   `TELEGRAM_MAX_EVENTS` (default **10**) per run and `TELEGRAM_MAX_PER_CHANNEL` (default **5**)
+   from any one channel are proposed via `POST /api/v1/competitions/` (organizer token -> status
+   `pending_approval`), placed on the location tree like every other agent's events.
 5. `TELEGRAM_DRY_RUN=true` logs what would be proposed without posting anything.
+
+To backfill after adding a channel, run it manually with a wider window -- e.g. `recent_hours=250`
+for the last ten days, with `max_events` and `max_per_channel` raised to match, or the run will
+cap itself long before it has read everything.
 
 ## Privacy
 
