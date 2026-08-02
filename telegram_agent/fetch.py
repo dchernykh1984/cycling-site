@@ -117,6 +117,12 @@ def entity_of(client: Any, channel: Channel) -> Any:
         raise ChannelUnavailableError("no such public channel or group") from exc
     except ChannelPrivateError as exc:
         raise ChannelUnavailableError("the channel is private and the account is not in it") from exc
+    except ValueError as exc:
+        # Telethon wraps UsernameNotOccupiedError into a bare ValueError when resolving a string,
+        # so a vanished username never reaches the except above. Measured live on a group that
+        # went private and gave its username up: without this the whole error handling is dead
+        # code and the log shows a raw "fetch failed" instead of the reason.
+        raise ChannelUnavailableError("no such public channel or group -- the username is not in use") from exc
 
 
 def _sit_out(seconds: int) -> None:
