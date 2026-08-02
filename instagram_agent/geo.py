@@ -18,16 +18,20 @@ from __future__ import annotations
 
 import json
 import math
+import time
 import urllib.parse
 import urllib.request
 
 from agent import dedup, locations
 
 _NOMINATIM = "https://nominatim.openstreetmap.org/search?{query}"
-# Nominatim asks every caller to identify itself and to stay under one request a second. A run makes
-# at most a handful, so the limit is never in sight.
+# Nominatim asks every caller to identify itself and to stay under one request a second. A run can
+# read a dozen announcements in a burst, so the second is kept here rather than assumed: being
+# turned away by a service for asking too fast is a week this project has already spent once.
 _USER_AGENT = "universalbicycle.team events agent (contact via https://universalbicycle.team)"
 _TIMEOUT = 20
+_SECONDS_BETWEEN_CALLS = 1.0
+_asked_at = 0.0
 
 # Two venues further apart than this are different places whatever they are called. "Industrialka"
 # is a district some 5 km across and clubs name the exact corner they start from, so the site
@@ -167,6 +171,7 @@ def locate(venue: str, city: str, country: str) -> Point | None:
     """
     if not venue:
         return None
+    _wait_our_turn()
     request = urllib.request.Request(
         _NOMINATIM.format(query=_query(venue, city, country)), headers={"User-Agent": _USER_AGENT}
     )
@@ -176,6 +181,15 @@ def locate(venue: str, city: str, country: str) -> Point | None:
     except Exception:
         return None
     return _first_point(found)
+
+
+def _wait_our_turn() -> None:
+    """Hold to one request a second, as the service asks."""
+    global _asked_at
+    since = time.monotonic() - _asked_at
+    if since < _SECONDS_BETWEEN_CALLS:
+        time.sleep(_SECONDS_BETWEEN_CALLS - since)
+    _asked_at = time.monotonic()
 
 
 def _first_point(found: object) -> Point | None:

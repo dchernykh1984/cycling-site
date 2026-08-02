@@ -9,6 +9,8 @@ Names are written transliterated so this file stays ASCII like the rest of the s
 that is *about* Cyrillic builds its string from code points.
 """
 
+import time
+
 from instagram_agent.geo import (
     city_point,
     distance_metres,
@@ -186,3 +188,29 @@ def test_venues_of_an_unknown_city_is_empty_rather_than_an_error():
 def test_a_city_gives_up_its_own_point_for_checking_a_geocoder():
     assert city_point(_tree(), 3) == (43.236392, 76.945728)
     assert city_point(_tree(), 999) is None
+
+
+def test_the_geocoder_is_asked_no_faster_than_it_allows():
+    """Nominatim asks for one request a second, and a run can read a dozen announcements at once."""
+    import instagram_agent.geo as module
+
+    slept: list[float] = []
+    now = [1000.0]
+    original_sleep, original_clock = time.sleep, time.monotonic
+
+    def _record(seconds: float) -> None:
+        slept.append(seconds)
+        now[0] += seconds
+
+    try:
+        time.sleep = _record
+        time.monotonic = lambda: now[0]
+        module._asked_at = 0.0
+        module._wait_our_turn()  # the first call waits for nobody
+        assert slept == []
+        now[0] += 0.2
+        module._wait_our_turn()  # a second one, straight after, waits out the rest of the second
+        assert slept and 0.7 < slept[0] <= 1.0
+    finally:
+        time.sleep, time.monotonic = original_sleep, original_clock
+        module._asked_at = 0.0
