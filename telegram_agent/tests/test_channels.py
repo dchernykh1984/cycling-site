@@ -19,6 +19,13 @@ def test_an_internal_link_is_reduced_to_the_channel_id():
     assert [c.ref for c in parse_channels("channels:\n  - https://t.me/c/1949598843/1\n")] == ["c/1949598843"]
 
 
+def test_a_bare_internal_id_needs_no_domain_at_all():
+    """t.me has gone NXDOMAIN before; an id is what the agent actually uses, so it stands alone."""
+    for spelling in ("c/1796089754", "1796089754", "-1001796089754", "c/1949598843/1/92775"):
+        refs = [c.ref for c in parse_channels(f"channels:\n  - {spelling}\n")]
+        assert refs == [f"c/{spelling.removeprefix('c/').removeprefix('-100').split('/')[0]}"], spelling
+
+
 def test_a_public_group_is_accepted_as_handle_or_link():
     text = "channels:\n  - '@almatyriders'\n  - https://t.me/cyclingtourismalmaty\n"
     assert [c.ref for c in parse_channels(text)] == ["@almatyriders", "@cyclingtourismalmaty"]
