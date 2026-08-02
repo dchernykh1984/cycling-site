@@ -14,8 +14,11 @@
 #   organizers        a single organizer's own website -- scanned for their upcoming races.
 #   telegram_public   public Telegram channels, read via the t.me/s/<channel> web preview (no login).
 #                     Give the channel URL or an @handle.
-#   telegram_private  private channels/chats (t.me/+invite, t.me/c/<id>). They cannot be read without
-#                     an account, so they are kept here for reference and skipped at runtime.
+#
+# Anything that needs a logged-in Telegram account -- private channels/chats (t.me/+invite,
+# t.me/c/<id>) and public groups without a t.me/s/ web feed -- lives in telegram_channels.yaml
+# instead, read by the Telegram agent (telegram_agent/). Entries of those kinds left here are
+# still skipped at runtime, with a pointer to that file.
 
 aggregators:
   - url: https://bike-events.ru/index.php?season=S2026
@@ -88,26 +91,5 @@ telegram_public:
   - https://t.me/not_olympic
   - https://t.me/randonneurs_kz
 
-telegram_account:
-  # Public but with NO t.me/s/ web feed -- groups/chats (members, not subscribers) or a personal
-  # account. No invite is needed, but a logged-in Telegram account is, so the current (account-less)
-  # agent cannot read them and skips them. Verified 2026-07-14 via telegram.me.
-  - url: "@almatyriders"
-    hint: "Group (~351 members)."
-  - url: "@roadbikealmaty"
-    hint: "700c Almaty club chat (~533 members)."
-  - url: "@almatyskiing"
-    hint: "Group (~131 members)."
-  - url: https://t.me/cyclingtourismalmaty
-    hint: "Group (~60 members)."
-  - url: https://t.me/talgar2026
-    hint: "Group (~29 members)."
-  - url: https://t.me/kztime
-    hint: "Personal account (@kztime), not a channel."
-  # "RideBikes Казахстан" was listed without a handle -- add its @handle to a section above.
-
-telegram_private:
-  # Invite-only / internal links (t.me/+invite, t.me/c/<id>) -- need an invite AND an account.
-  - https://t.me/+3mTEnASuHG40MTRi
-  - https://t.me/+tOGgIdNmTygyZDEy
-  - https://t.me/c/1949598843/1
+# Everything that used to sit here under telegram_account / telegram_private -- groups and private
+# channels a logged-in account is needed for -- moved to telegram_channels.yaml (the Telegram agent).
