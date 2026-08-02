@@ -178,9 +178,15 @@ def locate(venue: str, city: str, country: str) -> Point | None:
     try:
         with urllib.request.urlopen(request, timeout=_TIMEOUT) as response:
             found = json.loads(response.read().decode("utf-8", "replace"))
-    except Exception:
+    except Exception as exc:
+        # "The service refused us" and "nobody knows this address" both leave an event without a
+        # point, and they need opposite fixes, so they must not read the same in a log.
+        print(f"  ~ the geocoder could not be asked about {venue!r}: {exc}", flush=True)
         return None
-    return _first_point(found)
+    point = _first_point(found)
+    if point is None:
+        print(f"  ~ the geocoder does not know {venue!r}", flush=True)
+    return point
 
 
 def _wait_our_turn() -> None:
