@@ -209,3 +209,20 @@ def test_the_workflow_hands_the_run_every_name_the_config_reads():
         assert f"{name}:" in workflow, f"the workflow never sets {name}"
     assert "python -m telegram_agent.run" in workflow
     assert "telethon" in workflow, "the runner must install the one dependency the site does not carry"
+
+
+def test_the_guidance_is_this_agents_own_and_wants_more_than_rides():
+    """This agent reads mountain and running communities as well as cycling clubs.
+
+    Nothing else pins this file: reverting it to a cycling-only text leaves every test green while
+    the nightly run quietly stops proposing hikes -- which is the half of the job the mountain
+    channel was added for. Keywords only, so the file stays freely hand-editable.
+    """
+    from telegram_agent.run import _GUIDANCE_FILE, _read
+
+    guidance = _read(_GUIDANCE_FILE)
+    assert guidance, "the agent ships its own guidance file"
+    assert "not cycling-only" in guidance
+    assert "Hikes, walks and ascents" in guidance
+    assert "Runs and ski outings" in guidance
+    assert "Club rides and group rides" in guidance, "the cycling half must survive too"
