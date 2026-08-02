@@ -185,3 +185,27 @@ def test_a_revoked_session_fails_with_its_own_message_not_a_traceback(monkeypatc
     monkeypatch.setattr(module.fetch, "open_client", _refused)
     assert module.main() == 1
     assert "not authorized" in capsys.readouterr().err
+
+
+def test_the_workflow_hands_the_run_every_name_the_config_reads():
+    """The two are tied only by env names; a typo on either side silently falls back to a default."""
+    from pathlib import Path
+
+    workflow = Path(".github/workflows/telegram-agent.yml").read_text(encoding="utf-8")
+    for name in (
+        "SITE_BASE_URL",
+        "AGENT_API_TOKEN",
+        "LLM_API_KEY",
+        "LLM_BASE_URL",
+        "LLM_MODEL",
+        "TELEGRAM_API_ID",
+        "TELEGRAM_API_HASH",
+        "TELEGRAM_SESSION",
+        "TELEGRAM_MAX_EVENTS",
+        "TELEGRAM_MAX_POSTS",
+        "TELEGRAM_RECENT_DAYS",
+        "TELEGRAM_DRY_RUN",
+    ):
+        assert f"{name}:" in workflow, f"the workflow never sets {name}"
+    assert "python -m telegram_agent.run" in workflow
+    assert "telethon" in workflow, "the runner must install the one dependency the site does not carry"
