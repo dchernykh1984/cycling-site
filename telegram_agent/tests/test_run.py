@@ -163,3 +163,25 @@ def test_missing_telegram_credentials_end_the_run_cleanly(monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "Telegram credentials not set" in out
     assert "TELEGRAM_SESSION" in out
+
+
+def test_a_revoked_session_fails_with_its_own_message_not_a_traceback(monkeypatch, capsys):
+    """The message says how to fix it (mint a new session); a traceback would bury that."""
+    from telegram_agent import fetch as fetch_module
+    from telegram_agent import run as module
+
+    monkeypatch.setenv("SITE_BASE_URL", "https://example.kz")
+    monkeypatch.setenv("AGENT_API_TOKEN", "t")
+    monkeypatch.setenv("LLM_API_KEY", "k")
+    monkeypatch.setenv("LLM_BASE_URL", "https://llm.example")
+    monkeypatch.setenv("TELEGRAM_API_ID", "1")
+    monkeypatch.setenv("TELEGRAM_API_HASH", "h")
+    monkeypatch.setenv("TELEGRAM_SESSION", "revoked")
+
+    def _refused(api_id, api_hash, session):
+        raise fetch_module.ChannelUnavailableError("the Telegram session is not authorized")
+
+    monkeypatch.setattr(module, "_what_the_site_knows", lambda client: (KnownEvents(), None, []))
+    monkeypatch.setattr(module.fetch, "open_client", _refused)
+    assert module.main() == 1
+    assert "not authorized" in capsys.readouterr().err
