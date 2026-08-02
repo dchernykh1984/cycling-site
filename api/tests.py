@@ -2663,6 +2663,25 @@ class DisciplineListTest(TestCase, ApiTestMixin):
                 self.assertTrue(discipline["name"][locale], f"{discipline['name']} misses {locale}")
 
 
+class SeededEventTypeNamesTest(TestCase, ApiTestMixin):
+    """The seeded types are read by every agent and shown to every visitor, in three locales."""
+
+    def setUp(self):
+        self.reader = _user("et_names_reader", role=User.Role.PARTICIPANT)
+
+    def test_the_leisure_type_no_longer_calls_every_outing_a_ride(self):
+        """Migration 0027: hikes land in this type, and in English it used to say "Ride"."""
+        resp = self.get("/api/v1/event-types/", user=self.reader)
+        names_en = {t["name"]["en"] for t in resp.json()}
+        self.assertIn("Training / Leisure Outing", names_en)
+        self.assertNotIn("Training / Leisure Ride", names_en)
+
+    def test_every_seeded_type_carries_all_three_locales(self):
+        for event_type in self.get("/api/v1/event-types/", user=self.reader).json():
+            for locale in ("ru", "kk", "en"):
+                self.assertTrue(event_type["name"][locale], f"{event_type['name']} misses {locale}")
+
+
 class EventTypeListTest(TestCase, ApiTestMixin):
     def setUp(self):
         self.reader = _user("et_reader", role=User.Role.PARTICIPANT)
