@@ -69,7 +69,8 @@ unread, exactly as before this agent existed.
 Two deliberate rules, because the sources are private:
 
 - **Message text leaves Telegram**: it is sent to the LLM provider (DeepSeek) for extraction.
-  Only channels whose announcements are meant to reach riders belong in the channels file.
+  Only channels whose announcements are meant to reach the people who would come -- riders,
+  runners, hikers -- belong in the channels file.
 - **Events are credited without disclosing a way in.** A public group is credited as
   "tg: @handle" -- searchable by anyone; a private channel by its display name alone, read from
   Telegram at fetch time. Never a t.me link, an invite or an id, and no `source_url`; a
