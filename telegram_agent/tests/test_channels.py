@@ -9,6 +9,11 @@ def test_an_invite_link_keeps_its_hash():
     assert [c.ref for c in parse_channels("channels:\n  - https://t.me/+AbCdEfGhIjKlMnOp\n")] == ["+AbCdEfGhIjKlMnOp"]
 
 
+def test_an_old_style_joinchat_invite_is_an_invite_not_a_username():
+    """t.me/joinchat/HASH still circulates; read as @joinchat it would silently fetch a stranger."""
+    assert [c.ref for c in parse_channels("channels:\n  - https://t.me/joinchat/AbCdEf123\n")] == ["+AbCdEf123"]
+
+
 def test_an_internal_link_is_reduced_to_the_channel_id():
     """The /1 tail is a message number Telegram copied along -- not part of the channel."""
     assert [c.ref for c in parse_channels("channels:\n  - https://t.me/c/1949598843/1\n")] == ["c/1949598843"]
