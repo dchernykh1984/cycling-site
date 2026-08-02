@@ -161,7 +161,14 @@ def _run(
         found: list[Candidate] = []
         for number, batch in enumerate(batches.get(source.ref, []), start=1):
             text = fetch.channel_text(channel, batch, config.recent_hours, today)
-            raw = llm.extract_raw(text, channel, guidance, known, taxonomy, agent_config, today.isoformat())
+            try:
+                raw = llm.extract_raw(text, channel, guidance, known, taxonomy, agent_config, today.isoformat())
+            except Exception as exc:
+                # One batch failing must not throw away what the others already found: the shared
+                # pipeline catches an exception at the SOURCE level, so letting this out would
+                # discard the whole channel -- including the Telegram read already paid for.
+                print(f"  . {source.ref} batch {number} failed, keeping the rest: {exc}", flush=True)
+                continue
             parsed = pipeline.parse_candidates(raw, "", taxonomy)
             # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
             # declining -- surface it so the two are told apart without another run.

@@ -359,3 +359,40 @@ def test_every_batch_of_a_channel_contributes_its_events():
         module.fetch.read_messages, module.llm.extract_raw = original_read, original_extract
     assert "First" in out
     assert "Second" in out
+
+
+def test_one_failing_batch_does_not_discard_what_the_others_found(capsys):
+    """The shared pipeline catches at the source level: an escaping error costs the whole channel."""
+    import datetime
+
+    from telegram_agent import run as module
+    from telegram_agent.fetch import Message
+
+    today = datetime.date.today()
+    messages = [Message(text=f"message number {n} in the chat", published=today) for n in range(150)]
+    calls = {"n": 0}
+
+    def _second_batch_explodes(*args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("the model timed out")
+        return '[{"title": {"ru": "Survivor"}, "date_start": "2026-08-09", "description": {"ru": "d"}}]'
+
+    original_read, original_extract = module.fetch.read_messages, module.llm.extract_raw
+    try:
+        module.fetch.read_messages = lambda client, channel, hours, cap: ("A club", messages, False)
+        module.llm.extract_raw = _second_batch_explodes
+        out = module._run(
+            _config(),
+            [Channel(ref="@chatty")],
+            client=None,
+            telegram=None,
+            known=KnownEvents(),
+            taxonomy=Taxonomy(),
+            tree=[],
+        )
+    finally:
+        module.fetch.read_messages, module.llm.extract_raw = original_read, original_extract
+    assert "Survivor" in out, "the surviving batch's event must still be proposed"
+    assert "batch 1 failed, keeping the rest" in capsys.readouterr().out
+    assert "channel unreadable" not in out, "one bad batch is not an unreadable channel"
