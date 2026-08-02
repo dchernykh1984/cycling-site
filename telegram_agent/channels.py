@@ -20,7 +20,9 @@ import yaml
 
 # A public username as Telegram allows it: letters, digits and underscores, five characters up.
 _USERNAME = re.compile(r"^[A-Za-z0-9_]{5,32}$")
-_INVITE = re.compile(r"t\.me/\+([A-Za-z0-9_-]+)")
+# Both invite spellings: the current t.me/+HASH and the old t.me/joinchat/HASH, which still
+# circulates in pinned messages and old chat descriptions. Read as one kind -- the hash is the same.
+_INVITE = re.compile(r"t\.me/(?:\+|joinchat/)([A-Za-z0-9_-]+)")
 _INTERNAL = re.compile(r"t\.me/c/(\d+)")
 _PUBLIC_URL = re.compile(r"t\.me/([A-Za-z0-9_]{5,32})")
 
