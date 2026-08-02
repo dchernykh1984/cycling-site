@@ -131,7 +131,25 @@ def test_a_days_worth_of_chatter_becomes_several_prompts():
     batches = in_batches(messages)
     assert [len(b) for b in batches] == [MESSAGES_PER_PROMPT, MESSAGES_PER_PROMPT, 50]
     assert sum(len(b) for b in batches) == 250, "no message may be lost between batches"
-    assert [m for b in batches for m in b] == messages, "and none reordered"
+
+
+def test_the_model_reads_a_chat_in_the_order_it_was_written():
+    """Telegram hands messages back newest first; a reply before its announcement reads backwards."""
+    newest_first = [
+        Message(text="a reply to the announcement", published=TODAY),
+        Message(text="the announcement itself", published=TODAY - datetime.timedelta(days=1)),
+    ]
+    assert [m.text for m in in_batches(newest_first)[0]] == [
+        "the announcement itself",
+        "a reply to the announcement",
+    ]
+
+
+def test_the_oldest_messages_are_in_the_first_batch():
+    messages = [_message(f"message number {n}") for n in range(150)]
+    batches = in_batches(messages)
+    assert batches[0][0].text == "message number 149", "the oldest message opens the first prompt"
+    assert batches[-1][-1].text == "message number 0", "the newest closes the last"
 
 
 def test_a_quiet_channel_is_one_prompt_and_an_empty_one_is_none():

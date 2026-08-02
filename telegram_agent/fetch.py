@@ -222,15 +222,21 @@ def reading_note(ref: str, messages: list[Message], recent_hours: int, capped: b
 
 
 def in_batches(messages: list[Message], size: int = MESSAGES_PER_PROMPT) -> list[list[Message]]:
-    """The messages split into prompt-sized batches, oldest batch last (pure, unit-tested).
+    """The messages split into prompt-sized batches, in the order they were written (unit-tested).
 
     One prompt per hundred messages rather than one prompt for everything: a long context is not
     merely expensive, it is worse at finding the single announcement buried in a day of chatter,
     and ten days of a busy group would crowd out the taxonomy and the known-events list as well.
+
+    Telegram hands messages back newest first -- which is what the read needs, to know when to
+    stop -- but that is backwards for reading a conversation: the model would meet the replies
+    before the announcement they answer, and "moved to 8:00" before the ride it moves. So the
+    batches are handed over oldest first, the way the chat was written.
     """
     if not messages:
         return []
-    return [messages[start : start + size] for start in range(0, len(messages), max(size, 1))]
+    in_order = list(reversed(messages))
+    return [in_order[start : start + size] for start in range(0, len(in_order), max(size, 1))]
 
 
 def channel_text(channel: Channel, messages: list[Message], recent_hours: int, today: datetime.date) -> str:
