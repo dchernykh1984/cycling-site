@@ -9,6 +9,9 @@ Names are written transliterated so this file stays ASCII like the rest of the s
 that is *about* Cyrillic builds its string from code points.
 """
 
+import contextlib
+import importlib
+import io
 import time
 
 from instagram_agent.geo import (
@@ -19,6 +22,24 @@ from instagram_agent.geo import (
     same_place,
     venues_of,
 )
+
+
+def _raising(error):
+    """A urlopen that fails the way a refused or unreachable service does."""
+
+    def _open(*args, **kwargs):
+        raise error
+
+    return _open
+
+
+def _answering_with(body: str):
+    @contextlib.contextmanager
+    def _open(*args, **kwargs):
+        yield io.BytesIO(body.encode())
+
+    return _open
+
 
 # The Almaty car park this site carried four times over, once per announcement that mentioned it.
 HALYK = (43.225803, 76.942106)
@@ -214,3 +235,33 @@ def test_the_geocoder_is_asked_no_faster_than_it_allows():
     finally:
         time.sleep, time.monotonic = original_sleep, original_clock
         module._asked_at = 0.0
+
+
+def test_a_refused_geocoder_does_not_read_like_an_unknown_address(capsys):
+    """They leave the event equally without a point and need opposite fixes."""
+    import instagram_agent.geo as module
+
+    original = module._wait_our_turn
+    try:
+        module._wait_our_turn = lambda: None
+        module.urllib.request.urlopen = _raising(OSError("connection refused"))
+        assert module.locate("ul. Al-Farabi 40", "Almaty", "Kazakhstan") is None
+        assert "could not be asked" in capsys.readouterr().out
+    finally:
+        module._wait_our_turn = original
+        importlib.reload(module)
+
+
+def test_an_address_nobody_knows_says_so(capsys):
+    import instagram_agent.geo as module
+
+    original_wait, original_get = module._wait_our_turn, module._first_point
+    try:
+        module._wait_our_turn = lambda: None
+        module._first_point = lambda found: None
+        module.urllib.request.urlopen = _answering_with("[]")
+        assert module.locate("nowhere at all", "Almaty", "Kazakhstan") is None
+        assert "does not know" in capsys.readouterr().out
+    finally:
+        module._wait_our_turn, module._first_point = original_wait, original_get
+        importlib.reload(module)
