@@ -73,6 +73,14 @@ organizers:
     hint: "Brevet calendar of the Randonneurs Kazakhstan / Saryarqa clubs (Almaty, Astana, Karaganda,
       Shchuchinsk). Every start has its own /event/<slug> page naming the start venue -- use it as
       source_url."
+  - url: https://astanaski.kz/calendar/
+    hint: "Cross-country skiing and roller-ski calendar for Kazakhstan (Astana Ski). One page, one
+      line per start: dates, city and format, e.g. '22 августа 2026, Павлодар, Лыжероллерный
+      полумарафон, 30/20/10 км, св.ход'. The line's leading emoji is the level, and the page prints
+      its own legend: 💪 professional, 🌍 international, 🐢 amateur / mass (marathons and the like).
+      Take the 🐢 ones; a 💪 championship is an elite federation race and out of scope unless the
+      line itself says it is open to amateurs. Dates on amateur starts are marked as provisional --
+      still extract them. Give the city and its region; the line names no venue, so leave it empty."
   # Russia (lower priority)
   - https://velogearance.ru/
   - https://redbikecup.ru/rbc/2026
