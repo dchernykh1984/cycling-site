@@ -81,3 +81,5 @@ jobs:
         run: uv sync --locked
       - name: Run tests
         run: uv run pytest
+
+# CI baseline check: an empty change so the suite runs on an unmodified main.
