@@ -3301,55 +3301,36 @@ class TemplateCommentLeakTests(TestCase):
         self._assert_no_comment_leak(self.client.get(reverse("calendar_moderate")))
 
 
-class HikingCategoryMigrationTests(TransactionTestCase):
-    """0026 seeds the hiking category the Telegram agent's mountain outings land in, and 0027
-    renames the leisure event type that used to call every outing a ride. Assertions use ASCII
-    (name_en) so this file stays non-Cyrillic.
+class HikingMigrationTests(TestCase):
+    """0026 seeds the hiking category the Telegram agent's mountain outings land in; 0027 renames
+    the leisure event type that used to call every outing a ride.
 
-    Every test rolls back to BEFORE first: a TransactionTestCase flushes the tables between tests
-    while the migration stays recorded as applied, so migrating forward from the already-applied
-    state is a no-op that seeds nothing.
+    The migration functions are called directly against the real app registry, rather than driven
+    through MigrationExecutor: rolling the app back and forward in-process truncates every table,
+    seeded rows included, and the tests that run afterwards then inherit a database missing what
+    their own migrations put there. That cost the locations concurrency tests on CI while passing
+    everywhere locally. A TestCase wraps each of these in a transaction, so the writes below are
+    rolled back and nothing leaks to the next test. Assertions use ASCII (name_en) so this file
+    stays non-Cyrillic.
     """
 
     APP = "calendar_app"
-    BEFORE = "0025_competitionreport"
-    AFTER = "0027_rename_leisure_ride_event_type"
-    # Rolling the app back and forward truncates every table, seeded rows included, and without
-    # this the tests that run afterwards inherit a database missing the data their own migrations
-    # put there -- which is how this class made the locations concurrency tests fail on CI while
-    # passing everywhere locally.
-    serialized_rollback = True
 
-    def tearDown(self):
-        from django.core.management import call_command
+    def _migration(self, name):
+        import importlib
 
-        call_command("migrate", self.APP, verbosity=0)
+        return importlib.import_module(f"{self.APP}.migrations.{name}")
 
-    def _migrate(self, target):
-        from django.db import connection
-        from django.db.migrations.executor import MigrationExecutor
+    def _hiking(self):
+        from django.apps import apps as registry
 
-        executor = MigrationExecutor(connection)
-        executor.migrate([(self.APP, target)])
-        return executor.loader.project_state([(self.APP, target)]).apps
+        return registry.get_model(self.APP, "DisciplineCategory").objects.filter(name_en="Hiking")
 
-    def _leisure_type(self, apps):
-        """The seeded type as 0010 leaves it -- recreated here, since a flush may have removed it."""
-        return apps.get_model(self.APP, "EventType").objects.create(
-            name="Trenirovka",
-            name_ru="Trenirovka",
-            name_kk="Zhattygu",
-            name_en="Training / Leisure Ride",
-            order=3,
-        )
-
-    def test_forward_seeds_the_category_in_every_locale(self):
-        self._migrate(self.BEFORE)
-        apps = self._migrate(self.AFTER)
-        category = apps.get_model(self.APP, "DisciplineCategory").objects.filter(name_en="Hiking").first()
-        self.assertIsNotNone(category)
+    def test_the_category_is_seeded_in_every_locale(self):
+        category = self._hiking().first()
+        self.assertIsNotNone(category, "migration 0026 should have seeded it")
         self.assertTrue(category.name_ru and category.name_kk, "the category needs all three locales")
-        disciplines = apps.get_model(self.APP, "Discipline").objects.filter(category=category)
+        disciplines = Discipline.objects.filter(category=category)
         self.assertEqual(
             {d.name_en for d in disciplines},
             {"Day Hike", "Multi-Day Trek", "Summit Hike", "Other (Hiking)"},
@@ -3357,56 +3338,52 @@ class HikingCategoryMigrationTests(TransactionTestCase):
         for discipline in disciplines:
             self.assertTrue(discipline.name_ru and discipline.name_kk, f"{discipline.name_en} misses a locale")
 
-    def test_forward_runs_twice_without_duplicating_anything(self):
-        """A re-run must be a no-op: migrations get replayed on restored backups."""
-        self._migrate(self.BEFORE)
-        self._migrate(self.AFTER)
-        self._migrate(self.BEFORE)
-        apps = self._migrate(self.AFTER)
-        categories = apps.get_model(self.APP, "DisciplineCategory").objects.filter(name_en="Hiking")
-        self.assertEqual(categories.count(), 1)
-        self.assertEqual(apps.get_model(self.APP, "Discipline").objects.filter(category__name_en="Hiking").count(), 4)
+    def test_seeding_again_duplicates_nothing(self):
+        """Migrations get replayed on restored backups, so a second run must be a no-op."""
+        from django.apps import apps as registry
 
-    def test_reverse_refuses_to_drop_a_hiking_discipline_linked_to_a_competition(self):
-        """The guard is the only thing between a rollback and a competition losing its discipline."""
-        import datetime
+        self._migration("0026_add_hiking_category").add_hiking(registry, None)
+        self.assertEqual(self._hiking().count(), 1)
+        self.assertEqual(Discipline.objects.filter(category__name_en="Hiking").count(), 4)
 
-        self._migrate(self.BEFORE)
-        apps = self._migrate(self.AFTER)
-        hike = apps.get_model(self.APP, "Discipline").objects.get(name_en="Day Hike", category__name_en="Hiking")
-        competition = apps.get_model(self.APP, "Competition").objects.create(
-            title="Hike", date_start=datetime.date(2026, 8, 8)
-        )
+    def test_the_reverse_refuses_to_drop_a_discipline_a_competition_uses(self):
+        """This guard is the only thing between a rollback and a competition losing its discipline."""
+        from django.apps import apps as registry
+
+        hike = Discipline.objects.get(name_en="Day Hike", category__name_en="Hiking")
+        competition = Competition.objects.create(title="Hike", date_start=datetime.date(2026, 8, 8))
         competition.disciplines.add(hike)
         with self.assertRaises(RuntimeError):
-            self._migrate(self.BEFORE)
+            self._migration("0026_add_hiking_category").remove_hiking(registry, None)
         # The refused rollback left both the discipline and the competition link intact.
-        self.assertTrue(apps.get_model(self.APP, "Discipline").objects.filter(pk=hike.pk).exists())
+        self.assertTrue(Discipline.objects.filter(pk=hike.pk).exists())
         self.assertEqual(list(competition.disciplines.values_list("pk", flat=True)), [hike.pk])
 
-    def test_reverse_removes_the_category_when_nothing_uses_it(self):
-        self._migrate(self.BEFORE)
-        self._migrate(self.AFTER)
-        apps = self._migrate(self.BEFORE)
-        self.assertFalse(apps.get_model(self.APP, "DisciplineCategory").objects.filter(name_en="Hiking").exists())
-        self.assertFalse(apps.get_model(self.APP, "Discipline").objects.filter(name_en="Day Hike").exists())
+    def test_the_reverse_removes_the_category_when_nothing_uses_it(self):
+        from django.apps import apps as registry
 
-    def test_the_leisure_type_is_renamed_in_english_only(self):
-        apps = self._migrate(self.BEFORE)
-        self._leisure_type(apps)
-        apps = self._migrate(self.AFTER)
-        EventType = apps.get_model(self.APP, "EventType")
+        self._migration("0026_add_hiking_category").remove_hiking(registry, None)
+        self.assertFalse(self._hiking().exists())
+        self.assertFalse(Discipline.objects.filter(name_en="Day Hike").exists())
+
+    def test_the_leisure_type_no_longer_says_ride_in_english(self):
         leisure = EventType.objects.filter(name_en="Training / Leisure Outing").first()
-        self.assertIsNotNone(leisure, "0027 should rename the English name")
+        self.assertIsNotNone(leisure, "migration 0027 should have renamed it")
         self.assertFalse(EventType.objects.filter(name_en="Training / Leisure Ride").exists())
         # The Russian and Kazakh names never said "ride", so the rename must not have touched them.
-        self.assertEqual((leisure.name, leisure.name_ru, leisure.name_kk), ("Trenirovka", "Trenirovka", "Zhattygu"))
+        self.assertTrue(leisure.name_ru and leisure.name_kk)
+        self.assertEqual(leisure.name, leisure.name_ru)
 
-    def test_the_rename_is_reversible(self):
-        apps = self._migrate(self.BEFORE)
-        self._leisure_type(apps)
-        self._migrate(self.AFTER)
-        apps = self._migrate("0026_add_hiking_category")
-        self.assertTrue(
-            apps.get_model(self.APP, "EventType").objects.filter(name_en="Training / Leisure Ride").exists()
+    def test_the_rename_is_reversible_and_touches_english_only(self):
+        from django.apps import apps as registry
+
+        rename = self._migration("0027_rename_leisure_ride_event_type")
+        before = EventType.objects.get(name_en="Training / Leisure Outing")
+        rename.rename_back(registry, None)
+        restored = EventType.objects.get(pk=before.pk)
+        self.assertEqual(restored.name_en, "Training / Leisure Ride")
+        self.assertEqual(
+            (restored.name, restored.name_ru, restored.name_kk), (before.name, before.name_ru, before.name_kk)
         )
+        rename.rename_forward(registry, None)
+        self.assertEqual(EventType.objects.get(pk=before.pk).name_en, "Training / Leisure Outing")
