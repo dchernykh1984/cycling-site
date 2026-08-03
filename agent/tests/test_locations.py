@@ -240,3 +240,36 @@ def test_match_region_keeps_two_regions_where_one_name_nests_in_the_other():
     }
     assert match_region(country, "Nenets autonomous okrug") is None  # distinct region -> propose it
     assert match_region(country, "Yamalo-Nenets okrug")["id"] == 2  # the same one, reworded
+
+
+def test_a_country_written_as_a_code_still_finds_its_cities():
+    """A model asked for a country sometimes answers "KZ", and a code matches no name at all.
+
+    It is not a substring of "Kazakhstan" and is too short for the five-character opening rule, so
+    the country filter used to drop every candidate and the event reached the site with no place --
+    which is exactly how a real skiing session arrived unplaced.
+    """
+    cities = flatten_cities(_tree())
+    assert match_city(cities, "Uniquely-Almaty", country="KZ") == 3
+    assert match_city(cities, "Uniquely-Almaty", country="kz") == 3
+    assert match_city(cities, "Uniquely-Almaty", country="Kazakhstan") == 3
+
+
+def test_a_code_for_another_country_still_filters_the_city_out():
+    """The code must resolve the name, not wave the filter through."""
+    cities = flatten_cities(_tree())
+    assert match_city(cities, "Uniquely-Almaty", country="RU") is None
+
+
+def test_a_country_node_is_found_by_its_code_too():
+    tree = _tree_with_catch_alls()
+    assert match_country(tree, "KZ")["id"] == 1
+    assert match_country(tree, "kg")["id"] == 6  # Kyrgyzstan
+
+
+def test_canonical_country_leaves_a_real_name_alone():
+    from agent.locations import canonical_country
+
+    assert canonical_country("Kazakhstan") == "Kazakhstan"
+    assert canonical_country("") == ""
+    assert canonical_country("KZ") == "kazakhstan"

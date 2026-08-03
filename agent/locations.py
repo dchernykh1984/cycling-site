@@ -97,7 +97,8 @@ def city_matches(cities: list[dict], city: str, region: str = "", country: str =
     # far worse than proposing a second city for a human to look at. The comparison is loose enough
     # to survive the wording sources actually use ("Almaty obl." vs "Almaty Region").
     if country:
-        matches = [c for c in matches if _hint_matches(country, c["country_names"])]
+        hint = canonical_country(country)
+        matches = [c for c in matches if _hint_matches(hint, c["country_names"])]
     if region:
         strict = [c for c in matches if _hint_matches(region, c["region_names"])]
         if strict:
@@ -148,6 +149,38 @@ _COUNTRY_ALIASES = {
     "turkiye": "turkey",
     "kyrgyz republic": "kyrgyzstan",
 }
+
+# Two-letter country codes, for the same reason. A model asked for a country sometimes answers
+# "KZ", and a code matches nothing: it is not a substring of any name and is too short for the
+# five-character opening rule, so the event lands on the calendar with no place at all -- which is
+# how a real skiing session arrived unplaced. Only the countries this site actually sees are
+# listed; the lookup is an exact match on the whole hint, so a code can never shadow a real name.
+_COUNTRY_CODES = {
+    "kz": "kazakhstan",
+    "ru": "russia",
+    "kg": "kyrgyzstan",
+    "uz": "uzbekistan",
+    "tj": "tajikistan",
+    "tm": "turkmenistan",
+    "by": "belarus",
+    "ua": "ukraine",
+    "ge": "georgia",
+    "am": "armenia",
+    "az": "azerbaijan",
+    "tr": "turkey",
+    "cn": "china",
+    "ae": "united arab emirates",
+    "eg": "egypt",
+    "rf": "russia",
+}
+
+
+def canonical_country(country: str) -> str:
+    """The country hint as the tree is likely to spell it: a code or a variant becomes the name."""
+    target = normalize_name(country)
+    if not target:
+        return country
+    return _COUNTRY_CODES.get(target) or _COUNTRY_ALIASES.get(target) or country
 
 
 def _match_node(nodes: list[dict], name: str) -> dict | None:
@@ -225,7 +258,7 @@ def match_country(tree: list[dict], country: str) -> dict | None:
     target = normalize_name(country)
     if not target:
         return None
-    exact = _match_node(tree, country) or _match_node(tree, _COUNTRY_ALIASES.get(target, ""))
+    exact = _match_node(tree, country) or _match_node(tree, canonical_country(country))
     if exact is not None:
         return exact
     # An official long form or an abbreviation ("Republic of ...", "RF") that the alias table does
