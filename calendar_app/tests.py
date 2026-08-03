@@ -3314,6 +3314,11 @@ class HikingCategoryMigrationTests(TransactionTestCase):
     APP = "calendar_app"
     BEFORE = "0025_competitionreport"
     AFTER = "0027_rename_leisure_ride_event_type"
+    # Rolling the app back and forward truncates every table, seeded rows included, and without
+    # this the tests that run afterwards inherit a database missing the data their own migrations
+    # put there -- which is how this class made the locations concurrency tests fail on CI while
+    # passing everywhere locally.
+    serialized_rollback = True
 
     def tearDown(self):
         from django.core.management import call_command
