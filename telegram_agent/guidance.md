@@ -23,6 +23,11 @@ from the usual place" message that never reaches any calendar.
   a **day**, a **meeting place** and an invitation to come.
 
 ## What to skip
+- **Anything that is not the sport itself.** This calendar carries activities people do under
+  their own power. A drive out to Balkhash with tents, a carpool with the fuel split, a picnic,
+  a party or a bus excursion is not an event here, however well it names a day and a time.
+- **Private arrangements.** "Осталось одно место, подробности в личку" invites a person, not the
+  public; the calendar publishes what anyone may come to.
 - **Anything that already happened.** A chat is mostly photo reports and thanks after the outing
   -- "покатались", "сходили, спасибо всем". These are not events, whatever date they mention.
 - **Talk about an announced event.** "Кто едет в субботу?", route bickering, a dozen replies --

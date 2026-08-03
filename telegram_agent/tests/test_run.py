@@ -259,6 +259,7 @@ def test_the_guidance_is_this_agents_own_and_wants_more_than_rides():
     assert "Hikes, walks and ascents" in guidance
     assert "Runs and ski outings" in guidance
     assert "Club rides and group rides" in guidance, "the cycling half must survive too"
+    assert "their own power" in guidance, "a car trip is not a sport event"
 
 
 def test_a_run_reports_how_deep_it_read_each_channel(capsys):

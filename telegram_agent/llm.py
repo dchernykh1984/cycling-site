@@ -31,6 +31,12 @@ _SYSTEM = (
     '"discipline_ids": [int], "country": str, "region": ' + _LOC + ', "city": ' + _LOC + ", "
     '"venue": ' + _LOC + "}. "
     "\n\n"
+    "WHAT COUNTS AS AN EVENT. The activity itself must be the sport -- riding, running, hiking, "
+    "walking, skiing, swimming -- done under the participants' own power. Getting somewhere by "
+    "car is not: a trip where people drive out and camp, a carpool with the fuel split, a picnic "
+    "or a party is not an event for this calendar however well it names a day. Nor is a private "
+    'arrangement -- "one seat left, details in DM" invites a person, not the public. '
+    "\n\n"
     "ONLY ANNOUNCEMENTS. A group chat is mostly conversation: photo reports of the last outing "
     '("we rode", "thank you all who came"), people asking who is coming or how to get somewhere, '
     "route talk, taxi and gear questions, items for sale, results of a finished start, stickers "
