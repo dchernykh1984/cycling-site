@@ -85,3 +85,11 @@ def test_the_model_is_told_to_name_the_country_not_code_it():
     """A code like "KZ" matches no country on the site, and the event lands with no place at all."""
     assert "never a code" in _SYSTEM
     assert '"KZ"' in _SYSTEM
+
+
+def test_the_model_is_told_a_car_trip_is_not_a_sport_event():
+    """A carpool to a lake with tents names a day and a time, and is still not for this calendar."""
+    assert "WHAT COUNTS AS AN EVENT" in _SYSTEM
+    assert "own power" in _SYSTEM
+    assert "carpool" in _SYSTEM
+    assert "details in DM" in _SYSTEM
