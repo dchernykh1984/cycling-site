@@ -58,6 +58,8 @@ the day the message was published; if that is not possible, skip it rather than 
   private channel by its display name alone, never a link or an invite. A registration link is
   allowed only when the announcement itself gives an external one (a form, a race site) -- never
   a t.me link.
+- **Country**: write the country's name the way people say it ("Казахстан", "Россия"), never a
+  code like "KZ". The site matches geography by name, and a code leaves the event with no place.
 - **Place**: the meeting point is the venue ("парковка Halyk Bank, Аль-Фараби 40"), with the city
   and its first-level region above it. When a message never says where -- because everyone in the
   chat knows -- use the city the maintainers gave the channel. Use the current official spelling

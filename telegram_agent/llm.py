@@ -60,6 +60,9 @@ _SYSTEM = (
     'Al-Farabi 40"), and the region and city it sits in. When the message does not say where, use '
     'the city the maintainers gave for this channel; leave a field "" when you still do not know '
     "-- do not guess. "
+    "country is the country's NAME as people write it, in Russian -- "
+    '"Kazakhstan" spelled out, never a code like "KZ" or "RU": the site matches geography by name, '
+    "and a code puts the event on the calendar with no place at all. "
     "\n\n"
     "NEVER NAME THE SOURCE YOURSELF. These messages come from private channels and closed "
     "communities. Do not name the channel, do not link it, and do not write any 'source' or "
