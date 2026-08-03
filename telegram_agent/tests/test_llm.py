@@ -79,3 +79,9 @@ def test_the_model_is_told_the_calendar_is_not_cycling_only():
     assert "running" in _SYSTEM
     assert "hikes" in _SYSTEM
     assert "more than cycling" in _SYSTEM
+
+
+def test_the_model_is_told_to_name_the_country_not_code_it():
+    """A code like "KZ" matches no country on the site, and the event lands with no place at all."""
+    assert "never a code" in _SYSTEM
+    assert '"KZ"' in _SYSTEM
