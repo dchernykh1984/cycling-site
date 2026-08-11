@@ -76,6 +76,12 @@ class StartPointRuleTests(TestCase):
         self.assertIsNone(start_point(None))
         self.assertEqual(map_links(None), [])
 
+    def test_something_that_is_not_a_location_is_refused_loudly(self):
+        """Failing closed matters more than being forgiving: a permissive default would hand out a
+        link for an object nobody could vouch for, which is precisely what this rule prevents."""
+        with self.assertRaises(AttributeError):
+            start_point(object())  # type: ignore[arg-type]
+
 
 class MapLinkTests(TestCase):
     """What the links actually contain."""
