@@ -652,7 +652,9 @@ class CompetitionDetailView(View):
         # Links to the outside map services are a different question from the pin: they are meant to
         # be forwarded and driven to, so they are offered only for a venue's own point, never for a
         # city resolved from a venue that has none (locations.maps.start_point).
-        ctx["map_links"] = map_links(loc, competition.location_full_label or competition.title)
+        # The name only becomes a caption on the pin, so it is the place's own name -- the full
+        # country-region-city path would read as a wall of text over a single point.
+        ctx["map_links"] = map_links(loc, (loc.name if loc is not None else "") or competition.title)
         if display is not None:
             lat = float(display.lat)
             lng = float(display.lng)
