@@ -18,13 +18,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from django.utils.translation import gettext_lazy as _
 
-if TYPE_CHECKING:  # pragma: no cover - import kept out of runtime to avoid a models cycle
-    from locations.models import Location
+from locations.models import Location
 
 # Zoom close enough to show the actual corner of a car park, on the services that take one.
 _ZOOM = 17
