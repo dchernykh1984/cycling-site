@@ -17,6 +17,7 @@ from django.views.generic import TemplateView, View
 
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
+from locations.maps import map_links
 from locations.models import (
     Location,
     LocationConflictError,
@@ -648,6 +649,10 @@ class CompetitionDetailView(View):
         if loc is not None:
             by_path = {node.path: node for node in [*loc.get_ancestors(), loc]}
             display = map_display_node(loc, by_path, Location.steplen)
+        # Links to the outside map services are a different question from the pin: they are meant to
+        # be forwarded and driven to, so they are offered only for a venue's own point, never for a
+        # city resolved from a venue that has none (locations.maps.start_point).
+        ctx["map_links"] = map_links(loc, competition.location_full_label or competition.title)
         if display is not None:
             lat = float(display.lat)
             lng = float(display.lng)
