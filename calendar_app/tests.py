@@ -3443,6 +3443,12 @@ class CompetitionDetailMapLinksTests(TestCase):
         body = self._page(self.venue).content.decode()
         self.assertIn('rel="noopener noreferrer"', body)
 
+    def test_the_row_of_links_carries_an_accessible_name(self):
+        """Five bare brand names in a row tell a screen-reader user nothing on their own."""
+        body = self._page(self.venue).content.decode()
+        self.assertIn('role="group"', body)
+        self.assertIn('id="map-link-2gis"', body)
+
     def test_a_venue_without_a_point_offers_no_links_at_all(self):
         body = self._page(self.blank_venue).content.decode()
         for host in ("2gis.com", "yandex.ru/maps", "maps.apple.com", "openstreetmap.org/?mlat"):
