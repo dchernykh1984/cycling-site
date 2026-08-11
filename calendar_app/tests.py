@@ -1,6 +1,7 @@
 import datetime
 import json
 
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
@@ -3461,6 +3462,37 @@ class CompetitionDetailMapLinksTests(TestCase):
         self.assertEqual(response.context["map_links"], [])
         self.assertNotIn("2gis.com", body)
         self.assertIn("competition-map", body)
+
+    # The wording the maintainer chose, spelled in escapes because the sources are ASCII-only.
+    # Transliterated: "Ssylka na tochku starta" (ru), "Start nuktesine silteme" (kk) --
+    # "a link to the start point". The catalogues carry the real text.
+    HEADING_RU = (
+        "\u0421\u0441\u044b\u043b\u043a\u0430 \u043d\u0430 \u0442\u043e\u0447\u043a\u0443 \u0441"
+        "\u0442\u0430\u0440\u0442\u0430"
+    )
+    HEADING_KK = (
+        "\u0421\u0442\u0430\u0440\u0442 \u043d\u04af\u043a\u0442\u0435\u0441\u0456\u043d\u0435 "
+        "\u0441\u0456\u043b\u0442\u0435\u043c\u0435"
+    )
+
+    def test_the_heading_reads_as_a_link_to_the_start_point(self):
+        """The wording is a deliberate choice, so it is pinned rather than left to drift."""
+        body = self._page(self.venue).content.decode()
+        self.assertIn(f"{self.HEADING_RU}:", body)
+
+    def test_the_heading_is_translated_in_every_site_language(self):
+        expected = {"ru": self.HEADING_RU, "kk": self.HEADING_KK, "en": "Link to the start point"}
+        for code, text in expected.items():
+            with self.subTest(locale=code):
+                self.client.cookies[settings.LANGUAGE_COOKIE_NAME] = code
+                body = self._page(self.venue).content.decode()
+                self.assertIn(text, body)
+
+    def test_the_row_keeps_its_accessible_name_in_every_language(self):
+        """The aria-label carries the same wording, so it must be translated too, not left English."""
+        self.client.cookies[settings.LANGUAGE_COOKIE_NAME] = "ru"
+        body = self._page(self.venue).content.decode()
+        self.assertIn(f'aria-label="{self.HEADING_RU}"', body)
 
     def test_an_event_with_no_location_renders_without_links(self):
         response = self._page(None)
