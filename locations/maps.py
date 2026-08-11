@@ -18,9 +18,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from django.utils.translation import gettext_lazy as _
+
+if TYPE_CHECKING:  # pragma: no cover - import kept out of runtime to avoid a models cycle
+    from locations.models import Location
 
 # Zoom close enough to show the actual corner of a car park, on the services that take one.
 _ZOOM = 17
@@ -37,32 +41,28 @@ class MapLink:
     url: str
 
 
-def start_point(location) -> tuple[Decimal, Decimal] | None:
+def start_point(location: Location | None) -> tuple[Decimal, Decimal] | None:
     """The coordinates worth handing to a navigator, or None when there is no such point.
 
     A country, region or city is not a start line -- somebody who only needs the city types the
     city into their navigator anyway. A city's hidden catch-all venue ("other location") is not one
     either: it exists precisely to say "the announcement did not tell us where", and it may carry
     the city's coordinates so the site can still draw a marker.
+
+    Attributes are read outright rather than through getattr defaults on purpose. Every default here
+    would have to be the permissive one (depth 0, not hidden), so a malformed object would quietly
+    earn a link -- failing open on the single rule this module exists to enforce. Nothing but a
+    Location or None ever reaches this function, and if something else does it should say so.
     """
     if location is None:
         return None
-    if getattr(location, "depth", 0) < _VENUE_DEPTH:
+    if location.depth < _VENUE_DEPTH:
         return None
-    if getattr(location, "is_hidden", False) or _is_catch_all(location):
+    if location.is_hidden or location.is_system_fallback:
         return None
-    lat, lng = getattr(location, "lat", None), getattr(location, "lng", None)
-    if lat is None or lng is None:
+    if location.lat is None or location.lng is None:
         return None
-    return lat, lng
-
-
-def _is_catch_all(location) -> bool:
-    """Whether this node is a city's system catch-all rather than a real place."""
-    try:
-        return bool(location.is_system_fallback)
-    except Exception:  # a detached or partial object simply is not a catch-all
-        return False
+    return location.lat, location.lng
 
 
 def _coord(value: Decimal) -> str:
@@ -70,7 +70,7 @@ def _coord(value: Decimal) -> str:
     return f"{Decimal(value):.6f}"
 
 
-def map_links(location, name: str = "") -> list[MapLink]:
+def map_links(location: Location | None, name: str = "") -> list[MapLink]:
     """Every "open in ..." link for this location, in the order they should be offered.
 
     Empty when the location has no start point of its own -- callers can simply check the list.
