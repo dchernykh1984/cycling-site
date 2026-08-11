@@ -61,8 +61,11 @@ class StartPointRuleTests(TestCase):
     def test_a_citys_catch_all_venue_offers_nothing_even_carrying_a_point(self):
         """ "Other location" means the announcement never said where -- and it may carry the city's
         own coordinates so the site can still draw a marker. Forwarding that as a start line is
-        exactly the failure this rule exists to prevent."""
-        _, _, city, venue = _tree(lat=ALMATY_LAT, lng=ALMATY_LNG, is_hidden=True)
+        exactly the failure this rule exists to prevent.
+
+        The node here is deliberately left visible: being a catch-all has to disqualify it on its
+        own, or the guard would rest entirely on the hidden flag a moderator can clear in admin."""
+        _, _, city, venue = _tree(lat=ALMATY_LAT, lng=ALMATY_LNG, is_hidden=False)
         LocationFallback.objects.create(city=city, location=venue)
         venue.refresh_from_db()
         self.assertIsNone(start_point(venue))
