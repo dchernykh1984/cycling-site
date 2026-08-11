@@ -3387,3 +3387,64 @@ class HikingMigrationTests(TestCase):
         )
         rename.rename_forward(registry, None)
         self.assertEqual(EventType.objects.get(pk=before.pk).name_en, "Training / Leisure Outing")
+
+
+class CompetitionDetailMapLinksTests(TestCase):
+    """The "open the start in ..." links on the event page (locations.maps).
+
+    They are offered only for a venue's own point, because they are made to be forwarded: a link
+    that silently resolves to a city centre sends someone to the wrong place.
+    """
+
+    def setUp(self):
+        from decimal import Decimal
+
+        from locations.models import Location, LocationFallback
+
+        country = Location.add_root(name="KZ", name_ru="KZ")
+        region = country.add_child(name="Almaty region", name_ru="Almaty region")
+        self.city = region.add_child(name="Almaty", name_ru="Almaty", lat=Decimal("43.2220"), lng=Decimal("76.8512"))
+        self.venue = self.city.add_child(
+            name="Abaya 47", name_ru="Abaya 47", lat=Decimal("43.238949"), lng=Decimal("76.889709")
+        )
+        self.blank_venue = self.city.add_child(name="Somewhere", name_ru="Somewhere")
+        self.catch_all = self.city.add_child(
+            name="Other location", name_ru="Other location", lat=self.city.lat, lng=self.city.lng, is_hidden=True
+        )
+        LocationFallback.objects.create(city=self.city, location=self.catch_all)
+
+    def _page(self, location):
+        comp = _make_competition("With a place", status=Competition.Status.APPROVED)
+        comp.location = location
+        comp.save(update_fields=["location"])
+        return self.client.get(reverse("competition_detail", args=[comp.pk]))
+
+    def test_a_real_venue_offers_every_service(self):
+        body = self._page(self.venue).content.decode()
+        self.assertIn("2gis.com/geo/76.889709,43.238949", body)
+        self.assertIn("yandex.ru/maps/?pt=76.889709,43.238949", body)
+        self.assertIn("google.com/maps/search/?api=1&amp;query=43.238949,76.889709", body)
+        self.assertIn("maps.apple.com/?ll=43.238949,76.889709", body)
+        self.assertIn("openstreetmap.org/?mlat=43.238949", body)
+
+    def test_links_open_in_a_new_tab_without_handing_over_the_page(self):
+        body = self._page(self.venue).content.decode()
+        self.assertIn('rel="noopener noreferrer"', body)
+
+    def test_a_venue_without_a_point_offers_no_links_at_all(self):
+        body = self._page(self.blank_venue).content.decode()
+        for host in ("2gis.com", "yandex.ru/maps", "maps.apple.com", "openstreetmap.org/?mlat"):
+            self.assertNotIn(host, body, host)
+
+    def test_the_citys_catch_all_offers_no_links_though_the_map_still_has_a_pin(self):
+        """The page still draws a marker from the city point -- but nothing is offered to forward."""
+        response = self._page(self.catch_all)
+        body = response.content.decode()
+        self.assertEqual(response.context["map_links"], [])
+        self.assertNotIn("2gis.com", body)
+        self.assertIn("competition-map", body)
+
+    def test_an_event_with_no_location_renders_without_links(self):
+        response = self._page(None)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["map_links"], [])

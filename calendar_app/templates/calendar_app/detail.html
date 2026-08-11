@@ -117,6 +117,15 @@
     <div id="competition-map" class="mb-4" style="height: 300px; border-radius: 0.375rem;"></div>
     {% endif %}
 
+    {# Only a venue's own point earns these, so a forwarded link never lands on a city centre (locations.maps.start_point). #}
+    {% if map_links %}
+    <div class="mb-4 small">
+      <strong class="text-muted">{% trans "Open the start in" %}:</strong>
+      {% for link in map_links %}<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+         class="btn btn-outline-secondary btn-sm me-1 mb-1">{{ link.label }}</a>{% endfor %}
+    </div>
+    {% endif %}
+
     {% if competition.description %}
     {# Description is sanitized rich HTML on save (forms + API), so render as-is. #}
     <div class="mb-4 competition-description">{{ competition.description|safe }}</div>
