@@ -3426,6 +3426,12 @@ class CompetitionDetailMapLinksTests(TestCase):
         self.assertIn("pt=76.889709,43.238949", body)
         self.assertIn("google.com/maps/search/?api=1&amp;query=43.238949,76.889709", body)
         self.assertIn("maps.apple.com/?ll=43.238949,76.889709", body)
+
+    def test_the_apple_pin_is_captioned_with_the_place_not_its_whole_address_path(self):
+        """Apple prints q= over the pin; the country-region-city path would be a wall of text."""
+        body = self._page(self.venue).content.decode()
+        self.assertIn("q=Abaya%2047", body)
+        self.assertNotIn("Almaty%20region", body)
         self.assertIn("openstreetmap.org/?mlat=43.238949", body)
 
     def test_links_open_in_a_new_tab_without_handing_over_the_page(self):
