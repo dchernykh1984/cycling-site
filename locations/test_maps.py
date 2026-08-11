@@ -166,15 +166,38 @@ class MapLinkTests(TestCase):
 
 
 class MapLinkLocaleTests(TestCase):
-    """The heading and the labels have to exist in all three site languages."""
+    """The labels have to exist in all three site languages -- and actually be translated.
 
-    def test_labels_are_present_in_every_locale(self):
+    Asserting only that they are non-empty would stay green if every catalogue entry were dropped,
+    since gettext falls back to the English source. So the local brand names are named outright.
+    """
+
+    def setUp(self):
+        _, _, _, self.venue = _tree(lat=ALMATY_LAT, lng=ALMATY_LNG)
+
+    def _labels(self, code):
         from django.utils import translation
 
-        _, _, _, venue = _tree(lat=ALMATY_LAT, lng=ALMATY_LNG)
+        with translation.override(code):
+            return {link.key: link.label for link in map_links(self.venue)}
+
+    def test_every_locale_labels_all_five_services(self):
         for code in ("ru", "kk", "en"):
-            with translation.override(code):
-                labels = [link.label for link in map_links(venue)]
-                self.assertEqual(len(labels), 5, code)
-                for label in labels:
-                    self.assertTrue(label.strip(), f"{code}: an empty service label")
+            labels = self._labels(code)
+            self.assertEqual(len(labels), 5, code)
+            for key, label in labels.items():
+                self.assertTrue(label.strip(), f"{code}: an empty label for {key}")
+
+    def test_the_services_carry_their_local_brand_names(self):
+        """A reader here knows 2GIS and Yandex by their Cyrillic names, not the Latin ones."""
+        for code in ("ru", "kk"):
+            labels = self._labels(code)
+            self.assertEqual(labels["2gis"], "2\u0413\u0418\u0421", code)  # 2GIS
+            self.assertNotEqual(labels["yandex"], "Yandex Maps", code)
+            self.assertTrue(labels["yandex"].startswith("\u042f\u043d\u0434\u0435\u043a\u0441"), code)  # Yandex
+
+    def test_english_keeps_the_source_names(self):
+        labels = self._labels("en")
+        self.assertEqual(labels["2gis"], "2GIS")
+        self.assertEqual(labels["yandex"], "Yandex Maps")
+        self.assertEqual(labels["osm"], "OpenStreetMap")
