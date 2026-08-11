@@ -119,10 +119,10 @@
 
     {# Only a venue's own point earns these, so a forwarded link never lands on a city centre (locations.maps.start_point). #}
     {% if map_links %}
-    <div class="mb-4 small">
+    <div class="mb-4 small" role="group" aria-label="{% trans 'Open the start in' %}">
       <strong class="text-muted">{% trans "Open the start in" %}:</strong>
       {% for link in map_links %}<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
-         class="btn btn-outline-secondary btn-sm me-1 mb-1">{{ link.label }}</a>{% endfor %}
+         class="btn btn-outline-secondary btn-sm me-1 mb-1" id="map-link-{{ link.key }}">{{ link.label }}</a>{% endfor %}
     </div>
     {% endif %}
 
