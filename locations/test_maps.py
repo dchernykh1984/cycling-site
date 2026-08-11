@@ -92,6 +92,13 @@ class MapLinkTests(TestCase):
         """2GIS and Yandex read lon,lat. Swapping puts the start in the Arctic Ocean."""
         self.assertIn("76.889709,43.238949", self.links["2gis"])
         self.assertIn("pt=76.889709,43.238949", self.links["yandex"])
+        self.assertIn("ll=76.889709,43.238949", self.links["yandex"])
+
+    def test_yandex_is_told_where_to_centre_not_just_where_to_draw_a_pin(self):
+        """Yandex without ll opens on the reader's own region and the pin can be off-screen."""
+        url = self.links["yandex"]
+        self.assertIn("ll=", url)
+        self.assertLess(url.index("ll="), url.index("z="), "the zoom only applies to a given centre")
 
     def test_services_that_take_latitude_first_get_latitude_first(self):
         """Google, Apple and OpenStreetMap read lat,lon."""

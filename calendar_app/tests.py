@@ -3422,7 +3422,8 @@ class CompetitionDetailMapLinksTests(TestCase):
     def test_a_real_venue_offers_every_service(self):
         body = self._page(self.venue).content.decode()
         self.assertIn("2gis.com/geo/76.889709,43.238949", body)
-        self.assertIn("yandex.ru/maps/?pt=76.889709,43.238949", body)
+        self.assertIn("yandex.ru/maps/?ll=76.889709,43.238949", body)
+        self.assertIn("pt=76.889709,43.238949", body)
         self.assertIn("google.com/maps/search/?api=1&amp;query=43.238949,76.889709", body)
         self.assertIn("maps.apple.com/?ll=43.238949,76.889709", body)
         self.assertIn("openstreetmap.org/?mlat=43.238949", body)

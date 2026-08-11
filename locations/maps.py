@@ -82,7 +82,13 @@ def map_links(location, name: str = "") -> list[MapLink]:
     label = quote(name or "", safe="")
     return [
         MapLink("2gis", str(_("2GIS")), f"https://2gis.com/geo/{lng},{lat}"),
-        MapLink("yandex", str(_("Yandex Maps")), f"https://yandex.ru/maps/?pt={lng},{lat}&z={_ZOOM}&l=map"),
+        # ll centres the map; without it Yandex opens wherever it thinks the reader is and the
+        # pt marker can sit off-screen entirely, which is the whole failure this feature avoids.
+        MapLink(
+            "yandex",
+            str(_("Yandex Maps")),
+            f"https://yandex.ru/maps/?ll={lng},{lat}&z={_ZOOM}&pt={lng},{lat}&l=map",
+        ),
         MapLink("google", str(_("Google Maps")), f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"),
         MapLink("apple", str(_("Apple Maps")), f"https://maps.apple.com/?ll={lat},{lng}&q={label}"),
         MapLink(
