@@ -3409,7 +3409,12 @@ class CompetitionDetailMapLinksTests(TestCase):
         )
         self.blank_venue = self.city.add_child(name="Somewhere", name_ru="Somewhere")
         self.catch_all = self.city.add_child(
-            name="Other location", name_ru="Other location", lat=self.city.lat, lng=self.city.lng, is_hidden=True
+            # Left visible on purpose: being the city's catch-all must disqualify it by itself.
+            name="Other location",
+            name_ru="Other location",
+            lat=self.city.lat,
+            lng=self.city.lng,
+            is_hidden=False,
         )
         LocationFallback.objects.create(city=self.city, location=self.catch_all)
 
