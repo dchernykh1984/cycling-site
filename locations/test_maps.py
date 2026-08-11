@@ -134,9 +134,14 @@ class MapLinkTests(TestCase):
         self.assertNotIn(" ", self.links["apple"])
 
     def test_a_missing_name_still_produces_working_links(self):
+        """An empty caption is worse than none: Apple would print a blank label over the pin."""
         links = {link.key: link.url for link in map_links(self.venue)}
-        self.assertTrue(links["apple"].endswith("q="))
+        self.assertEqual(links["apple"], "https://maps.apple.com/?ll=43.238949,76.889709")
         self.assertEqual(len(links), 5)
+
+    def test_a_name_that_is_only_whitespace_counts_as_no_name(self):
+        links = {link.key: link.url for link in map_links(self.venue, "   ")}
+        self.assertNotIn("q=", links["apple"])
 
     def test_coordinates_are_written_plainly_never_in_scientific_notation(self):
         """A point near the prime meridian would otherwise render as 1E-7 and land nowhere."""

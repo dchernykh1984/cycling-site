@@ -79,7 +79,9 @@ def map_links(location: Location | None, name: str = "") -> list[MapLink]:
     if point is None:
         return []
     lat, lng = _coord(point[0]), _coord(point[1])
-    label = quote(name or "", safe="")
+    # Apple prints q= as the pin's caption. An empty one is not harmless -- it is a caption saying
+    # nothing over a pin, so the parameter is left out rather than sent blank.
+    caption = f"&q={quote(name.strip(), safe='')}" if name and name.strip() else ""
     return [
         MapLink("2gis", str(_("2GIS")), f"https://2gis.com/geo/{lng},{lat}"),
         # ll centres the map; without it Yandex opens wherever it thinks the reader is and the
@@ -90,7 +92,7 @@ def map_links(location: Location | None, name: str = "") -> list[MapLink]:
             f"https://yandex.ru/maps/?ll={lng},{lat}&z={_ZOOM}&pt={lng},{lat}&l=map",
         ),
         MapLink("google", str(_("Google Maps")), f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"),
-        MapLink("apple", str(_("Apple Maps")), f"https://maps.apple.com/?ll={lat},{lng}&q={label}"),
+        MapLink("apple", str(_("Apple Maps")), f"https://maps.apple.com/?ll={lat},{lng}{caption}"),
         MapLink(
             "osm",
             str(_("OpenStreetMap")),
