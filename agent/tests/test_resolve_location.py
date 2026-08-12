@@ -398,7 +398,9 @@ def test_a_venue_under_a_city_proposed_in_the_same_run_is_remembered_too():
     assert client.places == [(2, "Talgar")]
 
 
-def test_reusing_a_venue_is_reported_to_the_caller():
+def test_a_reused_venue_is_not_reported_as_something_this_run_created():
+    """``created`` is the run's cleanup trail ("left behind: ..."). A node that was already there
+    does not belong on it -- following that report would delete a venue other events sit on."""
     tree = _tree_with_venues(_venue(70, "Magazin Athletex Pro, Atakent"))
     client, created = _FakeClient(), []
     resolve_location(
@@ -408,4 +410,4 @@ def test_reusing_a_venue_is_reported_to_the_caller():
         _candidate(city="Almaty", venue="Magazin Athletex Pro, Atakent"),
         created=created,
     )
-    assert any("#70" in line for line in created)
+    assert created == []
