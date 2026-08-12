@@ -8,7 +8,7 @@ this lives apart from either runner.
 
 from __future__ import annotations
 
-from agent import locations
+from agent import locations, venues
 from agent.models import Candidate
 
 
@@ -59,6 +59,15 @@ def propose_city(client, tree: list, cities: list, candidate: Candidate, created
     cities.append(
         locations.city_record(city_id, (candidate.city, candidate.city_kk, candidate.city_en), region, country)
     )
+    # And the tree, so a venue added under this city in the same run is found again rather than
+    # proposed twice -- venues are looked up in the tree, not in the flat city index.
+    region.setdefault("children", []).append(
+        {
+            "id": city_id,
+            "name": {"ru": candidate.city, "kk": candidate.city_kk, "en": candidate.city_en},
+            "children": [],
+        }
+    )
     return city_id
 
 
@@ -76,8 +85,50 @@ def resolve_location(client, tree: list, cities: list, candidate: Candidate, cre
         # place it under. The event is still worth proposing -- the guidance asks the model to
         # repeat the place in the description, so a reviewer can set the location by hand.
         return None
-    if candidate.venue:
-        return client.propose_venue(
-            city_id, candidate.venue, candidate.venue_kk, candidate.venue_en, candidate.lat, candidate.lng
-        )
-    return client.fallback_venue(city_id)
+    if not candidate.venue:
+        return client.fallback_venue(city_id)
+    # A venue the site already carries is reused rather than added again. Without this every
+    # announcement grew another node: Almaty ended up carrying one shop twice over, the two spellings
+    # differing only in the case of the first letter, and the second copy had no coordinates at all.
+    # The Instagram agent already checked for this; the web and Telegram agents came through here
+    # and did not.
+    point = _candidate_point(candidate)
+    known = venues.venues_of(tree, city_id)
+    existing = venues.existing_venue(known, candidate.venue, point)
+    if existing is not None:
+        if created is not None:
+            created.append(f"reused venue {candidate.venue!r} (#{existing})")
+        return existing
+    venue_id = client.propose_venue(
+        city_id, candidate.venue, candidate.venue_kk, candidate.venue_en, candidate.lat, candidate.lng
+    )
+    _remember_venue(tree, city_id, venue_id, candidate)
+    return venue_id
+
+
+def _candidate_point(candidate: Candidate):
+    """The candidate's own coordinates, or None -- most events read off a chat message have none."""
+    if candidate.lat is None or candidate.lng is None:
+        return None
+    try:
+        return float(candidate.lat), float(candidate.lng)
+    except (TypeError, ValueError):
+        return None
+
+
+def _remember_venue(tree: list, city_id: int, venue_id: int, candidate: Candidate) -> None:
+    """Add the venue just created to the tree, so the next candidate in this run finds it there.
+
+    A run reads many announcements and several of them name the same start; without this the second
+    one proposes the venue a second time, which is the very duplicate this function exists to stop.
+    """
+    city = venues.city_node(tree, city_id)
+    if city is None:
+        return
+    node = {
+        "id": venue_id,
+        "name": {"ru": candidate.venue, "kk": candidate.venue_kk, "en": candidate.venue_en},
+    }
+    if candidate.lat is not None and candidate.lng is not None:
+        node["lat"], node["lng"] = candidate.lat, candidate.lng
+    city.setdefault("children", []).append(node)

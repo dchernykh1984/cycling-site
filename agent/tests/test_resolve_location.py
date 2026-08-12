@@ -303,3 +303,109 @@ def test_enrich_uses_the_models_url_route_when_the_page_lists_no_track():
         assert seen[0] == "https://8.8.8.8/2026/brm.gpx"  # url_route is tried first
     finally:
         run.geo.start_coordinate = orig
+
+
+# --- reusing a venue the site already carries -------------------------------------------------
+#
+# A venue named in an announcement used to be posted as a new node every time, so the same start
+# line accumulated copies: the site grew two "Athletex Pro shop, Atakent" in Almaty whose names
+# differed only in the case of the first letter, the second one without coordinates. Matching lives
+# in agent.venues; these pin that resolve_location actually consults it.
+
+
+def _tree_with_venues(*venues):
+    tree = _tree()
+    tree[0]["children"][0]["children"][0]["children"] = list(venues)
+    return tree
+
+
+def _venue(node_id, name, lat=None, lng=None):
+    node = {"id": node_id, "name": {"ru": name, "kk": "", "en": ""}}
+    if lat is not None:
+        node["lat"], node["lng"] = lat, lng
+    return node
+
+
+def test_a_venue_already_on_the_site_is_reused_not_added_again():
+    tree = _tree_with_venues(_venue(70, "Magazin Athletex Pro, Atakent", 43.223060, 76.910377))
+    client, location_id = _resolve(_candidate(city="Almaty", venue="Magazin Athletex Pro, Atakent"), tree)
+    assert location_id == 70
+    assert client.venues == []
+
+
+def test_the_same_venue_written_in_another_case_is_still_the_same_venue():
+    """The real duplicate differed by one capital letter and nothing else."""
+    tree = _tree_with_venues(_venue(70, "Magazin Athletex Pro, Atakent", 43.223060, 76.910377))
+    client, location_id = _resolve(_candidate(city="Almaty", venue="magazin athletex pro, atakent"), tree)
+    assert location_id == 70
+    assert client.venues == []
+
+
+def test_a_venue_without_coordinates_still_matches_one_that_has_them():
+    """Announcements read off a chat message carry no point; that must not make it a new place."""
+    tree = _tree_with_venues(_venue(70, "Magazin Athletex Pro, Atakent", 43.223060, 76.910377))
+    client, location_id = _resolve(_candidate(city="Almaty", venue="Magazin Athletex Pro, Atakent"), tree)
+    assert location_id == 70
+    assert client.venues == []
+
+
+def test_a_genuinely_different_venue_is_still_proposed():
+    tree = _tree_with_venues(_venue(70, "Magazin Athletex Pro, Atakent"))
+    client, location_id = _resolve(_candidate(city="Almaty", venue="Medeu skating rink"), tree)
+    assert location_id == 555
+    assert client.venues == [(3, "Medeu skating rink")]
+
+
+def test_a_venue_of_the_same_name_in_another_city_is_not_reused():
+    """Venues are looked up under the candidate's own city, never across the tree."""
+    tree = _tree()
+    other_city = {"id": 40, "name": {"ru": "Astana", "kk": "", "en": ""}, "children": []}
+    other_city["children"].append(_venue(70, "Magazin Athletex Pro, Atakent"))
+    tree[0]["children"][0]["children"].append(other_city)
+    client, location_id = _resolve(_candidate(city="Almaty", venue="Magazin Athletex Pro, Atakent"), tree)
+    assert location_id == 555
+    assert client.venues == [(3, "Magazin Athletex Pro, Atakent")]
+
+
+def test_two_venues_far_apart_with_one_name_stay_two_places():
+    """The site really carries two "Industrialka" 2.8 km apart -- one name, two start lines."""
+    tree = _tree_with_venues(_venue(70, "Industrialka most", 43.30, 76.90))
+    candidate = _candidate(city="Almaty", venue="Industrialka most", lat=43.33, lng=76.93)
+    client, location_id = _resolve(candidate, tree)
+    assert location_id == 555
+    assert client.venues == [(3, "Industrialka most")]
+
+
+def test_a_second_candidate_in_the_run_reuses_the_venue_just_created():
+    """Otherwise one run reading two announcements about one start creates the duplicate itself."""
+    client, tree = _FakeClient(), _tree()
+    cities = flatten_cities(tree)
+    first = _candidate(city="Almaty", venue="Magazin Athletex Pro, Atakent")
+    second = _candidate(city="Almaty", venue="Magazin Athletex Pro, Atakent")
+    assert resolve_location(client, tree, cities, first) == 555
+    assert resolve_location(client, tree, cities, second) == 555
+    assert client.venues == [(3, "Magazin Athletex Pro, Atakent")]
+
+
+def test_a_venue_under_a_city_proposed_in_the_same_run_is_remembered_too():
+    """A brand-new city starts empty, so its first venue is the one a repeat run must not double."""
+    client, tree = _FakeClient(), _tree()
+    cities = flatten_cities(tree)
+    candidate = _candidate(country="Kazakhstan", region="Almaty-region", city="Talgar", venue="Central square")
+    assert resolve_location(client, tree, cities, candidate) == 555
+    assert resolve_location(client, tree, cities, candidate) == 555
+    assert client.venues == [(101, "Central square")]
+    assert client.places == [(2, "Talgar")]
+
+
+def test_reusing_a_venue_is_reported_to_the_caller():
+    tree = _tree_with_venues(_venue(70, "Magazin Athletex Pro, Atakent"))
+    client, created = _FakeClient(), []
+    resolve_location(
+        client,
+        tree,
+        flatten_cities(tree),
+        _candidate(city="Almaty", venue="Magazin Athletex Pro, Atakent"),
+        created=created,
+    )
+    assert any("#70" in line for line in created)
