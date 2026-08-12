@@ -96,8 +96,8 @@ def resolve_location(client, tree: list, cities: list, candidate: Candidate, cre
     known = venues.venues_of(tree, city_id)
     existing = venues.existing_venue(known, candidate.venue, point)
     if existing is not None:
-        if created is not None:
-            created.append(f"reused venue {candidate.venue!r} (#{existing})")
+        # Deliberately not added to ``created``: that list is what this run would leave behind if
+        # posting the event then failed, and a node that was already there is not ours to clean up.
         return existing
     venue_id = client.propose_venue(
         city_id, candidate.venue, candidate.venue_kk, candidate.venue_en, candidate.lat, candidate.lng
