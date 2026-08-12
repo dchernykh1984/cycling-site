@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-11 13:32+0500\n"
+"POT-Creation-Date: 2026-08-12 08:56+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -203,7 +203,7 @@ msgstr "Команда"
 #: calendar_app/templates/calendar_app/_location_cascade.html:21
 #: calendar_app/templates/calendar_app/_location_filter.html:29
 #: calendar_app/templates/calendar_app/list.html:151
-#: calendar_app/templates/calendar_app/list.html:177
+#: calendar_app/templates/calendar_app/list.html:177 locations/models.py:283
 #: locations/templates/locations/location_form.html:106
 #: registrations/templates/registrations/_participant_row.html:8
 #: registrations/templates/registrations/_participant_table_head.html:9
@@ -700,14 +700,14 @@ msgstr ""
 #: calendar_app/templates/calendar_app/_location_filter.html:39
 #: calendar_app/templates/calendar_app/detail.html:108
 #: calendar_app/templates/calendar_app/list.html:152
-#: calendar_app/templates/calendar_app/list.html:178
+#: calendar_app/templates/calendar_app/list.html:178 locations/models.py:289
 msgid "Location"
 msgstr "Локация"
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:9
 #: calendar_app/templates/calendar_app/_location_filter.html:9
 #: calendar_app/templates/calendar_app/list.html:149
-#: calendar_app/templates/calendar_app/list.html:175
+#: calendar_app/templates/calendar_app/list.html:175 locations/models.py:281
 #: locations/templates/locations/location_form.html:93
 msgid "Country"
 msgstr "Страна"
@@ -715,12 +715,13 @@ msgstr "Страна"
 #: calendar_app/templates/calendar_app/_location_cascade.html:15
 #: calendar_app/templates/calendar_app/_location_filter.html:19
 #: calendar_app/templates/calendar_app/list.html:150
-#: calendar_app/templates/calendar_app/list.html:176
+#: calendar_app/templates/calendar_app/list.html:176 locations/models.py:282
 #: locations/templates/locations/location_form.html:100
 msgid "Region"
 msgstr "Регион"
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:27
+#: locations/models.py:284
 msgid "Venue"
 msgstr "Локация"
 
@@ -2394,6 +2395,10 @@ msgstr "Apple Карты"
 #: locations/maps.py:96
 msgid "OpenStreetMap"
 msgstr "OpenStreetMap"
+
+#: locations/models.py:65
+msgid "Other location"
+msgstr "Другая локация"
 
 #: locations/templates/locations/location_form.html:4
 #: locations/templates/locations/location_form.html:15

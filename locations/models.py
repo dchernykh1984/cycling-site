@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.paginator import Paginator
 from django.db import connection, models, transaction
 from django.utils import translation
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_noop
 from treebeard.mp_tree import MP_Node
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
@@ -55,6 +55,14 @@ def _lock_tree_mutation_namespace():
 # The catch-all nodes at every level ("Other country" / "Other region" / "Other city" / "Other
 # location") are pinned to the end of their list with this sort_order; real nodes stay below it.
 CATCH_ALL_SORT_ORDER = 9999
+
+# The name a city's catch-all venue is created under, marked here because it is translated through
+# a variable (_localized_names) and xgettext follows only literals. Without this marker the string
+# never reaches the catalogues, gettext hands back the English source for every language, and the
+# node is born called "Other location" in Russian and Kazakh alike -- which is what happened to the
+# catch-alls migration 0017 repairs. The level names below are marked for the same reason; those
+# only ever worked because the same words happen to appear in templates too.
+_OTHER_LOCATION = gettext_noop("Other location")
 
 # Ranks a node above every sibling (including a catch-all) while it is being moved, so
 # treebeard's sorted move appends instead of shifting the siblings' paths.
@@ -201,7 +209,10 @@ class Location(MP_Node, index.Indexed):
 
     @staticmethod
     def _localized_names(source: str) -> dict:
-        """Return {ru, kk, en} translations of a gettext source string."""
+        """Return {ru, kk, en} translations of a gettext source string.
+
+        The source must arrive already marked for extraction -- see _OTHER_LOCATION above.
+        """
         names = {}
         for lang in ("ru", "kk", "en"):
             with translation.override(lang):
@@ -253,7 +264,7 @@ class Location(MP_Node, index.Indexed):
                     existing.save(update_fields=["is_deleted", "is_hidden"])
                 return existing
 
-            names = cls._localized_names("Other location")
+            names = cls._localized_names(_OTHER_LOCATION)
             fallback = add_location_child(
                 locked_city,
                 name=names["ru"],
@@ -266,11 +277,16 @@ class Location(MP_Node, index.Indexed):
             LocationFallback.objects.create(city=locked_city, location=fallback)
             return fallback
 
-    _LEVEL_LABELS: ClassVar[dict] = {1: "Country", 2: "Region", 3: "City", 4: "Venue"}
+    _LEVEL_LABELS: ClassVar[dict] = {
+        1: gettext_noop("Country"),
+        2: gettext_noop("Region"),
+        3: gettext_noop("City"),
+        4: gettext_noop("Venue"),
+    }
 
     def get_level_label(self) -> str:
         """The node's level as a word, for a moderator deciding what a proposal actually is."""
-        return gettext(self._LEVEL_LABELS.get(self.depth, "Location"))
+        return gettext(self._LEVEL_LABELS.get(self.depth, gettext_noop("Location")))
 
     @property
     def ancestor_label(self) -> str:

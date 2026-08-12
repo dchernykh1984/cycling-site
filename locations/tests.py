@@ -1925,3 +1925,120 @@ class ConcurrentLocationMutationTests(TransactionTestCase):
         roots = Location.objects.filter(depth=1, name__in=["RootA", "RootB"])
         self.assertEqual(roots.count(), 2)
         self.assertEqual(len({r.path for r in roots}), 2)  # distinct paths
+
+
+class CatchAllVenueNameTests(TestCase):
+    """A city's catch-all has to be named in the reader's language, not left as the source string.
+
+    ``_localized_names`` translates through a variable, and xgettext follows only literals, so the
+    source has to reach it already marked with ``gettext_noop``. Miss that marker and the string
+    never lands in a catalogue: gettext hands back the English source for every language, and the
+    node is created called "Other location" in Russian and Kazakh alike. That is what happened to
+    the catch-alls migration 0017 repairs.
+    """
+
+    # Escaped because the sources are ASCII-only: "Drugaya lokatsiya" (ru), "Basqa oryn" (kk).
+    NAME_RU = "\u0414\u0440\u0443\u0433\u0430\u044f \u043b\u043e\u043a\u0430\u0446\u0438\u044f"
+    NAME_KK = "\u0411\u0430\u0441\u049b\u0430 \u043e\u0440\u044b\u043d"
+
+    def setUp(self):
+        _, _, self.city = _make_tree()
+
+    def test_the_catch_all_is_named_in_every_language(self):
+        other = Location.get_or_create_other_location(self.city)
+        self.assertEqual(other.name_ru, self.NAME_RU)
+        self.assertEqual(other.name_kk, self.NAME_KK)
+        self.assertEqual(other.name_en, "Other location")
+
+    def test_the_untranslated_column_follows_the_russian_name(self):
+        """``name`` is what the tree sorts and searches on, so it must not stay English either."""
+        self.assertEqual(Location.get_or_create_other_location(self.city).name, self.NAME_RU)
+
+    def test_the_source_string_reached_the_catalogues(self):
+        """The marker alone is not enough: drop the catalogue entry and the name goes English."""
+        from django.utils import translation
+        from django.utils.translation import gettext
+
+        from locations.models import _OTHER_LOCATION
+
+        for lang, expected in (("ru", self.NAME_RU), ("kk", self.NAME_KK)):
+            with self.subTest(lang=lang), translation.override(lang):
+                self.assertEqual(gettext(_OTHER_LOCATION), expected)
+
+
+class CatchAllNameRepairMigrationTests(TestCase):
+    """0017 renames the catch-alls that were created before the string was translatable.
+
+    The migration function is called directly against the real app registry rather than driven
+    through MigrationExecutor: rolling an app back in-process truncates every table and leaves the
+    tests that run afterwards without their own seeded rows, which once cost this very module its
+    concurrency tests on CI. A TestCase wraps each test in a transaction, so nothing leaks.
+    """
+
+    NAME_RU = CatchAllVenueNameTests.NAME_RU
+    NAME_KK = CatchAllVenueNameTests.NAME_KK
+    ENGLISH = "Other location"
+
+    def _repair(self):
+        import importlib
+
+        from django.apps import apps as registry
+
+        importlib.import_module("locations.migrations.0017_repair_catch_all_venue_names").repair(registry, None)
+
+    def _broken_catch_all(self):
+        _, _, city = _make_tree()
+        node = Location.get_or_create_other_location(city)
+        Location.objects.filter(pk=node.pk).update(
+            name=self.ENGLISH, name_ru=self.ENGLISH, name_kk=self.ENGLISH, name_en=self.ENGLISH
+        )
+        node.refresh_from_db()
+        return node
+
+    def test_it_renames_a_catch_all_left_in_english(self):
+        node = self._broken_catch_all()
+        self._repair()
+        node.refresh_from_db()
+        self.assertEqual(node.name_ru, self.NAME_RU)
+        self.assertEqual(node.name_kk, self.NAME_KK)
+        self.assertEqual(node.name_en, self.ENGLISH)
+        self.assertEqual(node.name, self.NAME_RU)
+
+    def test_it_fills_a_locale_that_was_left_empty(self):
+        """Some catch-alls carry a Russian name and nothing else; the gaps get filled, not blanked."""
+        _, _, city = _make_tree()
+        node = Location.get_or_create_other_location(city)
+        Location.objects.filter(pk=node.pk).update(name_kk="", name_en="")
+        self._repair()
+        node.refresh_from_db()
+        self.assertEqual(node.name_ru, self.NAME_RU)
+        self.assertEqual(node.name_kk, self.NAME_KK)
+        self.assertEqual(node.name_en, self.ENGLISH)
+
+    def test_it_leaves_a_name_a_person_edited_alone(self):
+        """Only the untranslated ones are wrong; a hand-written name is a decision, not a defect."""
+        _, _, city = _make_tree()
+        node = Location.get_or_create_other_location(city)
+        Location.objects.filter(pk=node.pk).update(name_ru="Start area", name="Start area")
+        self._repair()
+        node.refresh_from_db()
+        self.assertEqual(node.name_ru, "Start area")
+        self.assertEqual(node.name, "Start area")
+
+    def test_it_does_not_touch_an_ordinary_venue_named_the_same(self):
+        """The repair is keyed on being a city's catch-all, not on carrying that name."""
+        _, _, city = _make_tree()
+        ordinary = add_location_child(city, name=self.ENGLISH, name_ru=self.ENGLISH)
+        self._repair()
+        ordinary.refresh_from_db()
+        self.assertEqual(ordinary.name_ru, self.ENGLISH)
+
+    def test_running_it_twice_changes_nothing_further(self):
+        """Migrations get replayed on restored backups, so a second run must be a no-op."""
+        node = self._broken_catch_all()
+        self._repair()
+        node.refresh_from_db()
+        before = (node.name, node.name_ru, node.name_kk, node.name_en)
+        self._repair()
+        node.refresh_from_db()
+        self.assertEqual((node.name, node.name_ru, node.name_kk, node.name_en), before)
