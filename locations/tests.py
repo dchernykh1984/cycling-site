@@ -2033,6 +2033,21 @@ class CatchAllNameRepairMigrationTests(TestCase):
         ordinary.refresh_from_db()
         self.assertEqual(ordinary.name_ru, self.ENGLISH)
 
+    def test_the_historical_models_carry_the_fields_it_writes(self):
+        """Calling the function against the live registry cannot catch a field the migration's own
+        state lacks, so the state is built (in memory -- no schema is touched) and checked here."""
+        from django.db import connection
+        from django.db.migrations.executor import MigrationExecutor
+
+        state = MigrationExecutor(connection).loader.project_state([("locations", "0017_repair_catch_all_venue_names")])
+        location = state.apps.get_model("locations", "Location")
+        for field in ("name", "name_ru", "name_kk", "name_en"):
+            self.assertTrue(
+                any(f.name == field for f in location._meta.get_fields()),
+                f"migration 0017 writes {field}, which its own historical model does not have",
+            )
+        self.assertIsNotNone(state.apps.get_model("locations", "LocationFallback"))
+
     def test_running_it_twice_changes_nothing_further(self):
         """Migrations get replayed on restored backups, so a second run must be a no-op."""
         node = self._broken_catch_all()
