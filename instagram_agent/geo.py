@@ -29,6 +29,7 @@ from agent import dedup
 # runner and its tests talk to.
 from agent.venues import (  # noqa: F401  (re-exported for this agent's runner and tests)
     Point,
+    candidate_point,
     city_point,
     distance_metres,
     existing_venue,
