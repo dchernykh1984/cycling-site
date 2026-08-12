@@ -135,6 +135,17 @@ def _point_of(node: dict) -> Point | None:
         return None
 
 
+def candidate_point(candidate) -> Point | None:
+    """A candidate's own coordinates, or None -- most events read off a chat message have none."""
+    lat, lng = getattr(candidate, "lat", None), getattr(candidate, "lng", None)
+    if lat is None or lng is None:
+        return None
+    try:
+        return float(lat), float(lng)
+    except (TypeError, ValueError):
+        return None
+
+
 def existing_venue(venues: list[dict], name: str, point: Point | None) -> int | None:
     """The id of a venue on the site that is this same place, or None."""
     if not locations.has_real_name(name):

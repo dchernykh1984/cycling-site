@@ -92,7 +92,7 @@ def resolve_location(client, tree: list, cities: list, candidate: Candidate, cre
     # differing only in the case of the first letter, and the second copy had no coordinates at all.
     # The Instagram agent already checked for this; the web and Telegram agents came through here
     # and did not.
-    point = _candidate_point(candidate)
+    point = venues.candidate_point(candidate)
     known = venues.venues_of(tree, city_id)
     existing = venues.existing_venue(known, candidate.venue, point)
     if existing is not None:
@@ -104,16 +104,6 @@ def resolve_location(client, tree: list, cities: list, candidate: Candidate, cre
     )
     _remember_venue(tree, city_id, venue_id, candidate)
     return venue_id
-
-
-def _candidate_point(candidate: Candidate):
-    """The candidate's own coordinates, or None -- most events read off a chat message have none."""
-    if candidate.lat is None or candidate.lng is None:
-        return None
-    try:
-        return float(candidate.lat), float(candidate.lng)
-    except (TypeError, ValueError):
-        return None
 
 
 def _remember_venue(tree: list, city_id: int, venue_id: int, candidate: Candidate) -> None:

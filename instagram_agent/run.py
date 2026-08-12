@@ -247,7 +247,7 @@ def _venue_already_there(tree: list, cities: list, candidate: Candidate) -> int 
     city_id = locations.match_city(cities, candidate.city, candidate.region, candidate.country)
     if city_id is None or not candidate.venue:
         return None
-    point = (candidate.lat, candidate.lng) if candidate.lat is not None and candidate.lng is not None else None
+    point = geo.candidate_point(candidate)
     return geo.existing_venue(geo.venues_of(tree, city_id), candidate.venue, point)
 
 
