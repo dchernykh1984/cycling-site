@@ -411,3 +411,25 @@ def test_a_reused_venue_is_not_reported_as_something_this_run_created():
         created=created,
     )
     assert created == []
+
+
+def test_a_one_word_venue_name_is_not_matched_on_the_name_alone():
+    """Where the matcher deliberately stops, pinned so nobody widens it to kill a duplicate.
+
+    "Medeu" says too little on its own: the site carries several starts a single word could name.
+    Two words have to agree before two spellings count as one place, so a one-word name is only
+    reused when a point puts it next door -- see agent.venues.
+    """
+    tree = _tree_with_venues(_venue(70, "Medeu"))
+    client, location_id = _resolve(_candidate(city="Almaty", venue="Medeu"), tree)
+    assert location_id == 555
+    assert client.venues == [(3, "Medeu")]
+
+
+def test_a_one_word_venue_next_door_is_reused_after_all():
+    """With both points known and 250 m or less between them, one shared word is enough."""
+    tree = _tree_with_venues(_venue(70, "Medeu", 43.157500, 77.056100))
+    candidate = _candidate(city="Almaty", venue="Medeu", lat=43.157600, lng=77.056200)
+    client, location_id = _resolve(candidate, tree)
+    assert location_id == 70
+    assert client.venues == []
