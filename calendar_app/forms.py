@@ -18,6 +18,21 @@ from .models import (
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
+# Taken from the column rather than written out, so the form cannot drift from what the database
+# will actually accept. A URLField declared without max_length is varchar(200), and a link past
+# that used to reach the INSERT and come back as a 500 instead of a field error -- which is what a
+# Google form link with a Facebook click-id (fbclid) does at 294 characters.
+_URL_MAX_LENGTH = Competition._meta.get_field("url_route").max_length
+
+
+def _url_field() -> forms.URLField:
+    """A link field bounded by the column behind it; Django renders the maxlength attribute itself."""
+    return forms.URLField(
+        required=False,
+        max_length=_URL_MAX_LENGTH,
+        widget=forms.URLInput(attrs={"class": "form-control"}),
+    )
+
 
 class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     def __init__(self, *args, user=None, **kwargs):
@@ -87,14 +102,14 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         label=_("Date end"),
         widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}, format="%Y-%m-%d"),
     )
-    url_announcement = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))
+    url_announcement = _url_field()
     file_announcement = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
-    url_registration = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))
-    url_route = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))
+    url_registration = _url_field()
+    url_route = _url_field()
     file_route = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
-    url_regulations = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))
+    url_regulations = _url_field()
     file_regulations = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
-    url_results = forms.URLField(required=False, widget=forms.URLInput(attrs={"class": "form-control"}))
+    url_results = _url_field()
     file_results = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
 
     _MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
