@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import urllib.request
 
-from agent.links import strip_tracking
+from agent.links import MAX_URL_LENGTH, fits, strip_tracking
 from agent.models import Candidate, KnownEvents, Taxonomy
 from agent.pipeline import normalize_key
 
@@ -20,6 +20,8 @@ class SiteApiClient:
         self.base_url = base_url.rstrip("/")
         self.token = token
         self.timeout = timeout
+        # Links this run had to leave out because the site cannot store them (see create()).
+        self.dropped_links: list[tuple[str, str]] = []
 
     def _request(self, method: str, path: str, payload: dict | None = None) -> object:
         data = json.dumps(payload).encode() if payload is not None else None
@@ -171,8 +173,19 @@ class SiteApiClient:
             ("url_registration", candidate.url_registration),
         ):
             link = strip_tracking(source)
-            if link:
-                payload[field] = link
+            if not link:
+                continue
+            if not fits(link):
+                # Still too long with the tracking gone. Posting it fails the whole event, and an
+                # event on the calendar without one of its links is worth more than no event at all
+                # -- so the link is left out and said out loud, for someone to add by hand.
+                self.dropped_links.append((field, link))
+                print(
+                    f"  ! {field} left out: {len(link)} characters, the site stores {MAX_URL_LENGTH} -- {link[:70]}...",
+                    flush=True,
+                )
+                continue
+            payload[field] = link
         if candidate.event_type_id is not None:
             payload["event_type_id"] = candidate.event_type_id
         if candidate.discipline_ids:

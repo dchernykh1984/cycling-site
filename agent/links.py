@@ -16,6 +16,11 @@ from __future__ import annotations
 
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+# What the site's URL columns hold (Django's URLField default). The agent talks to the site over
+# HTTP and has no models to read it off, so it is written out here; the API answers an over-long
+# value with a 422 naming its own limit, which is what would show up if these ever diverged.
+MAX_URL_LENGTH = 200
+
 # Parameters that identify the click rather than the page. Prefix entries cover the families that
 # generate a name per campaign (utm_source, utm_content, ...) rather than one fixed key.
 _TRACKING_PREFIXES = ("utm_",)
@@ -77,3 +82,8 @@ def strip_tracking(url: str) -> str:
     if len(kept) == len(parse_qsl(parts.query, keep_blank_values=True)):
         return url
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(kept), parts.fragment))
+
+
+def fits(url: str, limit: int = MAX_URL_LENGTH) -> bool:
+    """Whether the site can store this link at all."""
+    return len(url) <= limit
