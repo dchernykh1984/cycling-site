@@ -6,7 +6,7 @@ from ninja import Query, Router, Schema, Status
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
-from api.schemas import LocalizedStr, localize_field
+from api.schemas import LocalizedStr, LocalizedTitle, Url, localize_field
 from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline
 from locations.models import (
     Location,
@@ -25,33 +25,33 @@ router = Router(tags=["competitions"])
 
 
 class CompetitionIn(Schema):
-    title: LocalizedStr
+    title: LocalizedTitle
     description: LocalizedStr = LocalizedStr()
     event_type_id: int | None = None
     discipline_ids: list[int] = []  # noqa: RUF012
     location_id: int | None = None
     date_start: date
     date_end: date | None = None
-    url_route: str = ""
-    url_announcement: str = ""
-    url_registration: str = ""
-    url_regulations: str = ""
-    url_results: str = ""
+    url_route: Url = ""
+    url_announcement: Url = ""
+    url_registration: Url = ""
+    url_regulations: Url = ""
+    url_results: Url = ""
 
 
 class CompetitionPatchIn(Schema):
-    title: LocalizedStr | None = None
+    title: LocalizedTitle | None = None
     description: LocalizedStr | None = None
     event_type_id: int | None = None
     discipline_ids: list[int] | None = None
     location_id: int | None = None
     date_start: date | None = None
     date_end: date | None = None
-    url_route: str | None = None
-    url_announcement: str | None = None
-    url_registration: str | None = None
-    url_regulations: str | None = None
-    url_results: str | None = None
+    url_route: Url | None = None
+    url_announcement: Url | None = None
+    url_registration: Url | None = None
+    url_regulations: Url | None = None
+    url_results: Url | None = None
     is_hidden: bool | None = None
 
 

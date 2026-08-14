@@ -3801,3 +3801,91 @@ class CompetitionCityFieldTests(ApiTestMixin, TestCase):
         with CaptureQueriesContext(connection) as many:
             self.get("/api/v1/competitions/?status=approved")
         self.assertEqual(len(many), len(few), "four times the rows must not cost more queries")
+
+
+class RequestLengthLimitTests(ApiTestMixin, TestCase):
+    """A value longer than its column must come back as a 422 naming the field, never as a 500.
+
+    Left unbounded, the schema accepted anything and Postgres refused it inside the INSERT: the
+    caller saw a 500 and the maintainer got an error email. A 294-character registration link -- a
+    Google form with a Facebook click-id glued on -- did exactly that on two nightly agent runs.
+    """
+
+    def setUp(self):
+        self.organizer = _user("length-org", role=User.Role.ORGANIZER)
+
+    def _payload(self, **kwargs):
+        payload = {
+            "title": {"ru": "Race RU", "kk": "", "en": ""},
+            "description": {"ru": "", "kk": "", "en": ""},
+            "date_start": "2026-07-01",
+        }
+        payload.update(kwargs)
+        return payload
+
+    def _long(self, limit):
+        return "https://example.com/x?q=" + "a" * limit
+
+    def test_an_over_long_link_is_refused_with_422(self):
+        limit = Competition._meta.get_field("url_registration").max_length
+        resp = self.post(
+            "/api/v1/competitions/",
+            self._payload(url_registration=self._long(limit)),
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 422, resp.content[:300])
+        self.assertIn("url_registration", resp.content.decode())
+
+    def test_every_link_field_is_refused_the_same_way(self):
+        limit = Competition._meta.get_field("url_route").max_length
+        for name in ("url_route", "url_announcement", "url_registration", "url_regulations", "url_results"):
+            with self.subTest(field=name):
+                resp = self.post(
+                    "/api/v1/competitions/", self._payload(**{name: self._long(limit)}), user=self.organizer
+                )
+                self.assertEqual(resp.status_code, 422)
+
+    def test_a_link_of_exactly_the_column_length_is_accepted(self):
+        """The bound has to be the column's, not one character tighter."""
+        limit = Competition._meta.get_field("url_route").max_length
+        url = "https://example.com/" + "a" * (limit - len("https://example.com/"))
+        self.assertEqual(len(url), limit)
+        resp = self.post("/api/v1/competitions/", self._payload(url_route=url), user=self.organizer)
+        self.assertEqual(resp.status_code, 201, resp.content[:300])
+        self.assertEqual(Competition.objects.get(pk=resp.json()["id"]).url_route, url)
+
+    def test_an_over_long_title_is_refused_in_every_locale(self):
+        limit = Competition._meta.get_field("title").max_length
+        for locale in ("ru", "kk", "en"):
+            with self.subTest(locale=locale):
+                title = {"ru": "Race", "kk": "", "en": ""}
+                title[locale] = "x" * (limit + 1)
+                resp = self.post("/api/v1/competitions/", self._payload(title=title), user=self.organizer)
+                self.assertEqual(resp.status_code, 422)
+
+    def test_patching_an_over_long_link_is_refused_too(self):
+        """The create path was fixed once before and the patch path was left behind; not again."""
+        comp = _competition(submitted_by=self.organizer, status=Competition.Status.PENDING_APPROVAL)
+        limit = Competition._meta.get_field("url_route").max_length
+        resp = self.patch(
+            f"/api/v1/competitions/{comp.pk}",
+            {"url_route": self._long(limit)},
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 422)
+
+    def test_the_declared_limits_still_match_the_columns(self):
+        """The schema writes the numbers out; this is what stops them drifting from the database."""
+        from api import schemas
+        from knowledge.models import KnowledgeArticle
+        from locations.models import Location
+
+        self.assertEqual(schemas.MAX_URL_LENGTH, Competition._meta.get_field("url_route").max_length)
+        for model, field in (
+            (Competition, "title"),
+            (Location, "name"),
+            (KnowledgeArticle, "title"),
+        ):
+            with self.subTest(model=model.__name__, field=field):
+                self.assertEqual(schemas.MAX_TITLE_LENGTH, model._meta.get_field(field).max_length)
+        self.assertEqual(schemas.MAX_CATEGORY_LENGTH, KnowledgeArticle._meta.get_field("category").max_length)
