@@ -8,7 +8,7 @@ from ninja.schema import Field
 
 from accounts.models import User
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
-from api.schemas import LocalizedStr, localize_field
+from api.schemas import LocalizedStr, LocalizedTitle, localize_field
 from locations.models import (
     Location,
     LocationConflictError,
@@ -30,7 +30,7 @@ router = Router(tags=["locations"])
 
 
 class LocationIn(Schema):
-    name: LocalizedStr
+    name: LocalizedTitle
     parent_id: int | None = None
     lat: Decimal | None = None
     lng: Decimal | None = None
@@ -38,7 +38,7 @@ class LocationIn(Schema):
 
 
 class LocationPatchIn(Schema):
-    name: LocalizedStr | None = None
+    name: LocalizedTitle | None = None
     lat: Decimal | None = None
     lng: Decimal | None = None
     is_hidden: bool | None = None

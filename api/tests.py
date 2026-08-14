@@ -3889,3 +3889,51 @@ class RequestLengthLimitTests(ApiTestMixin, TestCase):
             with self.subTest(model=model.__name__, field=field):
                 self.assertEqual(schemas.MAX_TITLE_LENGTH, model._meta.get_field(field).max_length)
         self.assertEqual(schemas.MAX_CATEGORY_LENGTH, KnowledgeArticle._meta.get_field("category").max_length)
+
+
+class LocationNameLengthTests(ApiTestMixin, TestCase):
+    """A location name longer than its column is a 422, not a database error behind a 500."""
+
+    def setUp(self):
+        self.admin = _user("length-admin", role=User.Role.ADMIN)
+
+    def _limit(self):
+        from locations.models import Location
+
+        return Location._meta.get_field("name").max_length
+
+    def test_an_over_long_name_is_refused(self):
+        country = _location()
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "x" * (self._limit() + 1), "kk": "", "en": ""}, "parent_id": country.pk},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 422, resp.content[:300])
+
+    def test_an_over_long_name_in_any_locale_is_refused(self):
+        country = _location()
+        for locale in ("ru", "kk", "en"):
+            with self.subTest(locale=locale):
+                name = {"ru": "Fine", "kk": "", "en": ""}
+                name[locale] = "x" * (self._limit() + 1)
+                resp = self.post("/api/v1/locations/", {"name": name, "parent_id": country.pk}, user=self.admin)
+                self.assertEqual(resp.status_code, 422)
+
+    def test_a_name_of_exactly_the_column_length_is_accepted(self):
+        country = _location()
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "x" * self._limit(), "kk": "", "en": ""}, "parent_id": country.pk},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 201, resp.content[:300])
+
+    def test_renaming_a_location_is_bounded_too(self):
+        country = _location()
+        resp = self.patch(
+            f"/api/v1/locations/{country.pk}",
+            {"name": {"ru": "x" * (self._limit() + 1), "kk": "", "en": ""}},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 422)
