@@ -18,14 +18,10 @@ from pydantic import Field
 
 # calendar_app.Competition.url_route and its four siblings (Django's URLField default).
 MAX_URL_LENGTH = 200
-# calendar_app.Competition.title, locations.Location.name, knowledge/news article titles.
+# calendar_app.Competition.title and locations.Location.name, the two this bounds.
 MAX_TITLE_LENGTH = 255
-# knowledge.KnowledgeArticle.category and DraftSubmission.category.
-MAX_CATEGORY_LENGTH = 100
-
 Url = Annotated[str, Field(max_length=MAX_URL_LENGTH)]
 Title = Annotated[str, Field(max_length=MAX_TITLE_LENGTH)]
-Category = Annotated[str, Field(max_length=MAX_CATEGORY_LENGTH)]
 
 
 class LocalizedStr(Schema):
