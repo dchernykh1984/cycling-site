@@ -31,7 +31,7 @@ from calendar_app.models import Competition, CompetitionComment
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment
 from locations.models import Location
 from news.models import NewsArticle, NewsArticleComment
-from registrations.models import CompetitionRegistration
+from registrations.models import CompetitionRegistration, RegistrationCategory, Team
 
 FORM_MODULES = (
     "accounts.views",
@@ -43,14 +43,16 @@ FORM_MODULES = (
     "registrations.forms",
 )
 
-# Which model each form writes into. ``None`` means it writes nothing a column has to hold -- a
-# filter, a search, a confirmation -- and its text fields are free.
+# Which model (or models) each form writes into. A form may feed more than one -- the registration
+# settings carry the competition's own flags and the names of its categories -- and every one of
+# them is searched for the column behind a field. ``None`` means the form writes nothing a column
+# has to hold: a filter, a search, a confirmation.
 FORM_TARGETS = {
     "accounts.views.ContactOwnersForm": None,
     "accounts.views.ProfileEditForm": None,
     "calendar_app.forms.AddCompetitionCommentForm": CompetitionComment,
     "calendar_app.forms.CompetitionFilterForm": None,
-    "calendar_app.forms.RegistrationSettingsForm": Competition,
+    "calendar_app.forms.RegistrationSettingsForm": (Competition, RegistrationCategory),
     "calendar_app.forms.RejectCompetitionForm": Competition,
     "calendar_app.forms.ReportCompetitionForm": None,
     "calendar_app.forms.SubmitCompetitionForm": Competition,
@@ -63,8 +65,8 @@ FORM_TARGETS = {
     "news.forms.AddNewsArticleCommentForm": NewsArticleComment,
     "news.forms.NewsArticleForm": NewsArticle,
     "news.forms.SubmitNewsForm": NewsArticle,
-    "registrations.forms.EditRegistrationForm": CompetitionRegistration,
-    "registrations.forms.RegistrationForm": CompetitionRegistration,
+    "registrations.forms.EditRegistrationForm": (CompetitionRegistration, Team),
+    "registrations.forms.RegistrationForm": (CompetitionRegistration, Team),
     "registrations.forms.RejectRegistrationForm": None,
 }
 
@@ -139,19 +141,24 @@ def _request_schemas():
     yield from sorted(seen.items())
 
 
-def _column_limit(model, name: str) -> int | None:
-    """What the column of that name holds, or None when the model has no such bounded column.
+def _column_limit(target, name: str) -> int | None:
+    """What the column of that name holds, or None when no target model has such a bounded column.
 
-    ``name`` may carry a locale suffix: a form posts title_ru, the column is title.
+    ``target`` is one model or several. ``name`` may carry a locale suffix: a form posts title_ru
+    where the column is title. The narrowest limit wins, so a name shared by two models is held to
+    whichever of them would refuse it first.
     """
-    for candidate in (name, name.rsplit("_", 1)[0]):
-        try:
-            field = model._meta.get_field(candidate)
-        except FieldDoesNotExist:  # a form field with no column behind it is simply free
-            continue
-        if isinstance(field, Field) and field.max_length:
-            return field.max_length
-    return None
+    models = target if isinstance(target, tuple) else (target,)
+    limits = []
+    for model in models:
+        for candidate in (name, name.rsplit("_", 1)[0]):
+            try:
+                field = model._meta.get_field(candidate)
+            except FieldDoesNotExist:  # a form field with no column behind it is simply free
+                continue
+            if isinstance(field, Field) and field.max_length:
+                limits.append(field.max_length)
+    return min(limits) if limits else None
 
 
 def _carries_a_maximum(constraint) -> bool:
@@ -202,8 +209,8 @@ class FormLengthLimitTests(SimpleTestCase):
     def test_every_text_field_is_bounded_or_checked_elsewhere(self):
         unbounded = []
         for label, form_class in _forms():
-            model = FORM_TARGETS.get(label)
-            if model is None:
+            target = FORM_TARGETS.get(label)
+            if target is None:
                 continue
             try:
                 instance = form_class()
@@ -214,9 +221,9 @@ class FormLengthLimitTests(SimpleTestCase):
                     continue
                 if field.max_length or (label, name) in CHECKED_ELSEWHERE:
                     continue
-                limit = _column_limit(model, name)
+                limit = _column_limit(target, name)
                 if limit:
-                    unbounded.append(f"{label}.{name} -> {model.__name__} column holds {limit}")
+                    unbounded.append(f"{label}.{name} -> the column holds {limit}")
         self.assertEqual(
             unbounded, [], "these form fields accept more than the column will:\n  " + "\n  ".join(unbounded)
         )
@@ -228,17 +235,17 @@ class SchemaLengthLimitTests(SimpleTestCase):
     def test_every_request_string_is_bounded_or_checked_elsewhere(self):
         unbounded = []
         for label, schema in _request_schemas():
-            model = SCHEMA_TARGETS.get(label)
-            if model is None:
+            target = SCHEMA_TARGETS.get(label)
+            if target is None:
                 continue
             for name, info in schema.model_fields.items():
                 if not _carries_text(info.annotation) or (label, name) in CHECKED_ELSEWHERE:
                     continue
                 if _schema_field_is_bounded(info):
                     continue
-                limit = _column_limit(model, name)
+                limit = _column_limit(target, name)
                 if limit:
-                    unbounded.append(f"{label}.{name} -> {model.__name__} column holds {limit}")
+                    unbounded.append(f"{label}.{name} -> the column holds {limit}")
         self.assertEqual(
             unbounded, [], "these request fields accept more than the column will:\n  " + "\n  ".join(unbounded)
         )
