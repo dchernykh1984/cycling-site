@@ -72,3 +72,17 @@ def test_a_blank_value_of_a_kept_parameter_stays_blank_rather_than_vanishing():
 
 def test_matching_ignores_the_case_the_parameter_was_written_in():
     assert strip_tracking("https://example.com/x?FBCLID=abc") == "https://example.com/x"
+
+
+def test_a_surviving_parameter_is_carried_across_exactly_as_written():
+    """Parsing and re-encoding turns "%20" into "+", handing a service something subtly different."""
+    assert strip_tracking("https://example.com/s?q=hello%20world&fbclid=x") == "https://example.com/s?q=hello%20world"
+    assert strip_tracking("https://example.com/s?path=%2Fraces%2F1&utm_source=t") == (
+        "https://example.com/s?path=%2Fraces%2F1"
+    )
+    cyrillic = "https://example.com/s?tag=%D0%B3%D0%BE%D0%BD%D0%BA%D0%B0&fbclid=x"
+    assert strip_tracking(cyrillic) == "https://example.com/s?tag=%D0%B3%D0%BE%D0%BD%D0%BA%D0%B0"
+
+
+def test_a_parameter_with_no_value_at_all_is_still_a_parameter():
+    assert strip_tracking("https://example.com/s?debug&fbclid=x") == "https://example.com/s?debug"

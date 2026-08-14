@@ -14,7 +14,7 @@ goes -- only the query is touched, and only the parameters named below.
 
 from __future__ import annotations
 
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import unquote, urlsplit, urlunsplit
 
 # What the site's URL columns hold (Django's URLField default). The agent talks to the site over
 # HTTP and has no models to read it off, so it is written out here; the API answers an over-long
@@ -69,19 +69,22 @@ def is_tracking(key: str) -> bool:
 def strip_tracking(url: str) -> str:
     """The same link without the parameters that only identify whoever clicked it.
 
-    Anything that is not a recognised tracker is kept, in the order it was written: a query is how a
-    page is chosen as often as it is how a click is counted, and dropping the wrong one would send
-    the reader somewhere else. A link that is not http(s), or carries no query, comes back unchanged.
+    Anything that is not a recognised tracker is kept, exactly as it was written and in the order it
+    was written. A query is how a page is chosen as often as it is how a click is counted, so the
+    surviving pairs are carried across as raw text rather than parsed and re-encoded: round-tripping
+    them through urlencode turns "%20" into "+" and would hand a service something subtly different
+    from what the announcement linked to. A link that is not http(s), or has no query, comes back
+    unchanged.
     """
     if not url:
         return url
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https") or not parts.query:
         return url
-    kept = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True) if not is_tracking(key)]
-    if len(kept) == len(parse_qsl(parts.query, keep_blank_values=True)):
+    kept = [pair for pair in parts.query.split("&") if not is_tracking(unquote(pair.split("=", 1)[0]))]
+    if len(kept) == len(parts.query.split("&")):
         return url
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(kept), parts.fragment))
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, "&".join(kept), parts.fragment))
 
 
 def fits(url: str, limit: int = MAX_URL_LENGTH) -> bool:
