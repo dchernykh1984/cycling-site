@@ -609,6 +609,61 @@ class SubmitCompetitionViewTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("file_route", form.errors)
 
+    # A Google form link copied out of Facebook carries an ~194-character fbclid; the real one that
+    # broke a nightly agent run came to 294 characters against a varchar(200) column.
+    LONG_URL = "https://example.com/forms/d/e/1FAIpQLSc1vdZvuul6bGC66IHZQ76mxiYPK6b-r791Mzlx/viewform?fbclid=" + (
+        "a" * 200
+    )
+
+    def test_a_link_longer_than_the_column_is_a_field_error_not_a_500(self):
+        """Left unbounded it reached the INSERT and came back as DataError -- a 500 and an email."""
+        from calendar_app.forms import SubmitCompetitionForm
+
+        form = SubmitCompetitionForm(data=self._payload(url_registration=self.LONG_URL), user=self.participant)
+        self.assertFalse(form.is_valid())
+        self.assertIn("url_registration", form.errors)
+
+    def test_every_link_field_is_bounded_by_its_own_column(self):
+        from calendar_app.forms import SubmitCompetitionForm
+        from calendar_app.models import Competition
+
+        form = SubmitCompetitionForm(user=self.participant)
+        for name in ("url_announcement", "url_registration", "url_route", "url_regulations", "url_results"):
+            with self.subTest(field=name):
+                column = Competition._meta.get_field(name).max_length
+                self.assertEqual(form.fields[name].max_length, column)
+
+    def test_a_link_that_fits_is_still_accepted(self):
+        """The bound must not turn away the ordinary links the site is full of."""
+        from calendar_app.forms import SubmitCompetitionForm
+
+        form = SubmitCompetitionForm(
+            data=self._payload(url_registration="https://example.com/forms/d/e/abc/viewform"),
+            user=self.participant,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_the_browser_is_told_the_limit_too(self):
+        """Being turned away after typing 300 characters is worse than not being able to."""
+        from calendar_app.forms import SubmitCompetitionForm
+        from calendar_app.models import Competition
+
+        form = SubmitCompetitionForm(user=self.participant)
+        rendered = str(form["url_route"])
+        limit = Competition._meta.get_field("url_route").max_length
+        self.assertIn(f'maxlength="{limit}"', rendered)
+
+    def test_the_link_length_error_is_translated(self):
+        """Same catalogue route as the title error, so KK does not fall back to Russian."""
+        from calendar_app.forms import SubmitCompetitionForm
+
+        for lang in ("ru", "kk", "en"):
+            with self.subTest(lang=lang), translation_override(lang):
+                form = SubmitCompetitionForm(data=self._payload(url_route=self.LONG_URL), user=self.participant)
+                self.assertFalse(form.is_valid())
+                expected = gettext("Ensure this value has at most %(limit_value)d characters.") % {"limit_value": 200}
+                self.assertIn(expected, str(form.errors["url_route"]))
+
     def test_title_max_length_error_uses_project_catalog_kk(self):
         """Regression: the shared mixin routes the title max_length error through the project
         catalog so the KK tab shows Kazakh, not Django's Russian fallback."""
