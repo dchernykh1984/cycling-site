@@ -29,9 +29,19 @@ _TOO_FAR_METRES = 500
 _CLOSE_METRES = 250
 
 # Two words of a name have to agree before it counts as the same place, and they have to be most of
-# the shorter name. Measured against this site's venues: at this setting every pair it calls one
-# place is one, and no two distinct venues are merged.
-_NAME_OVERLAP = 0.8
+# the shorter name. Measured over all 230 venues the site carries, comparing each name against the
+# others in its own city the way the agent asks -- a name, no coordinates:
+#
+#   0.8   4 pairs called one place
+#   0.75  5      "
+#   0.7   5      "   -- adds Tula's "Central park im. P.P. Belousova" == "TsPKiO im. P. P. Belousova"
+#   0.65  8      "   -- and three of those are wrong (see the tests below)
+#
+# So 0.7 is the last setting that merges only real duplicates, and 0.65 is where it starts merging
+# different places. At 0.8 the site grew a second "Giant shop, Abaya 47" beside the first because
+# three words of four agreeing came to 0.75. The margin to the first mistake is one step, which is
+# why the pairs that break at 0.65 are pinned as tests rather than left to a future measurement.
+_NAME_OVERLAP = 0.7
 _MIN_SHARED_WORDS = 2
 _MIN_PREFIX = 4  # "Banka" and "Bank" are one word; "im." and "imeni" are not
 
