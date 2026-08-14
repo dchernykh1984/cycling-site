@@ -3616,3 +3616,57 @@ class CompetitionDetailMapLinksTests(TestCase):
         response = self._page(None)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["map_links"], [])
+
+
+class ProfessionalRaceEventTypeTests(TestCase):
+    """0028 names the elite start, so a reader can tell it from the amateur ones.
+
+    The migration function is called against the real registry rather than driven through
+    MigrationExecutor: rolling the app back in-process truncates every table, seeded rows included,
+    and whatever runs next on the same worker then starts from an empty database. A TestCase wraps
+    each of these in a transaction, so nothing leaks.
+    """
+
+    APP = "calendar_app"
+    NAME_EN = "Professional Race"
+
+    def _migration(self):
+        import importlib
+
+        return importlib.import_module(f"{self.APP}.migrations.0028_add_professional_race_event_type")
+
+    def _registry(self):
+        from django.apps import apps
+
+        return apps
+
+    def test_the_type_is_seeded_in_every_locale(self):
+        event_type = EventType.objects.filter(name_en=self.NAME_EN).first()
+        self.assertIsNotNone(event_type, "migration 0028 should have seeded it")
+        self.assertTrue(event_type.name_ru, "the Russian name is what the site shows by default")
+        self.assertTrue(event_type.name_kk, "the Kazakh tab would fall back to Russian without it")
+        self.assertEqual(event_type.name, event_type.name_ru, "the base column carries the Russian text")
+
+    def test_it_sits_beside_the_types_that_were_already_there(self):
+        """It is one more type, not a replacement: the amateur ones stay exactly as they were."""
+        names = set(EventType.objects.values_list("name_en", flat=True))
+        self.assertIn(self.NAME_EN, names)
+        self.assertIn("Race", names)
+        self.assertIn("Kids Race", names)
+
+    def test_seeding_again_adds_no_second_copy(self):
+        """Migrations get replayed on restored backups, so a second run must be a no-op."""
+        self._migration().add_professional_race(self._registry(), None)
+        self.assertEqual(EventType.objects.filter(name_en=self.NAME_EN).count(), 1)
+
+    def test_it_can_be_removed_again_while_nothing_uses_it(self):
+        self._migration().remove_professional_race(self._registry(), None)
+        self.assertFalse(EventType.objects.filter(name_en=self.NAME_EN).exists())
+
+    def test_removing_it_is_refused_once_an_event_is_marked_with_it(self):
+        """Reversing must not quietly drop what an organizer said about their race."""
+        event_type = EventType.objects.get(name_en=self.NAME_EN)
+        _make_competition("Elite", event_type=event_type)
+        with self.assertRaises(RuntimeError):
+            self._migration().remove_professional_race(self._registry(), None)
+        self.assertTrue(EventType.objects.filter(name_en=self.NAME_EN).exists())
