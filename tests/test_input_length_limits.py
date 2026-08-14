@@ -20,7 +20,6 @@ cannot be added without someone deciding which model it writes to.
 
 import importlib
 import inspect
-import pkgutil
 
 from django import forms
 from django.core.exceptions import FieldDoesNotExist
@@ -69,8 +68,8 @@ FORM_TARGETS = {
     "registrations.forms.RejectRegistrationForm": None,
 }
 
-# The same for request schemas. Only ``*In`` schemas carry a request body; ``*Out`` serializes rows
-# the database already accepted.
+# The same for request schemas -- the ones the routers actually accept a body into. A response
+# schema needs no bound: it serializes rows the database has already accepted.
 SCHEMA_TARGETS = {
     "api.endpoints.competitions.CompetitionIn": Competition,
     "api.endpoints.competitions.CompetitionPatchIn": Competition,
@@ -121,16 +120,23 @@ def _forms():
 
 
 def _request_schemas():
-    import api.endpoints as package
+    """Every schema the API really accepts as a request body, read off the routers themselves.
 
-    modules = [f"api.endpoints.{info.name}" for info in pkgutil.iter_modules(package.__path__)]
-    for module in [*modules, "api.schemas"]:
-        mod = importlib.import_module(module)
-        for name, obj in vars(mod).items():
-            if not (inspect.isclass(obj) and issubclass(obj, Schema) and obj.__module__ == module):
-                continue
-            if name.endswith("In"):
-                yield f"{module}.{name}", obj
+    Not off a name: a schema called ``CompetitionPayload`` would be just as much an entrance, and a
+    guard that can be stepped around by naming something differently is not a guard.
+    """
+    from api.router import api
+
+    seen = {}
+    for _prefix, router in api._routers:
+        for _path, path_view in router.path_operations.items():
+            for operation in path_view.operations:
+                for param in inspect.signature(operation.view_func).parameters.values():
+                    annotation = param.annotation
+                    for candidate in [annotation, *(getattr(annotation, "__args__", ()) or ())]:
+                        if inspect.isclass(candidate) and issubclass(candidate, Schema):
+                            seen[f"{candidate.__module__}.{candidate.__name__}"] = candidate
+    yield from sorted(seen.items())
 
 
 def _column_limit(model, name: str) -> int | None:
