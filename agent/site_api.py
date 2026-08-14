@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import urllib.request
 
+from agent.links import strip_tracking
 from agent.models import Candidate, KnownEvents, Taxonomy
 from agent.pipeline import normalize_key
 
@@ -162,12 +163,16 @@ class SiteApiClient:
             payload["date_end"] = candidate.date_end
         if candidate.description:
             payload["description"] = _loc(candidate.description, candidate.description_kk, candidate.description_en)
-        if candidate.source_url:
-            payload["url_announcement"] = candidate.source_url
-        if candidate.url_route:
-            payload["url_route"] = candidate.url_route
-        if candidate.url_registration:
-            payload["url_registration"] = candidate.url_registration
+        # Links arrive as whoever wrote the announcement had them in their clipboard, which is to
+        # say with whatever click-id the network they copied from glued on (agent.links).
+        for field, source in (
+            ("url_announcement", candidate.source_url),
+            ("url_route", candidate.url_route),
+            ("url_registration", candidate.url_registration),
+        ):
+            link = strip_tracking(source)
+            if link:
+                payload[field] = link
         if candidate.event_type_id is not None:
             payload["event_type_id"] = candidate.event_type_id
         if candidate.discipline_ids:
