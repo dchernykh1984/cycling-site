@@ -225,10 +225,30 @@ def _validate_locale(locale: str) -> None:
         raise HttpError(422, f"locale must be one of: {', '.join(_LOCALE_VALUES)}")
 
 
+def _validate_draft_lengths(title: str | None, category: str | None) -> None:
+    """Bound a draft's title and category to their columns, as the article endpoints already do.
+
+    Only the body was checked here, so an over-long title reached the INSERT and returned a 500
+    instead of naming the field. The messages are the ones the article path already uses, so the
+    reader gets the same sentence whichever endpoint they hit.
+    """
+    for field, value, message in (
+        ("title", title, _("Title is too long (max %(limit)d characters).")),
+        ("category", category, _("Category is too long (max %(limit)d characters).")),
+    ):
+        if not value:
+            continue
+        field_obj = DraftSubmission._meta.get_field(field)
+        limit = field_obj.max_length if isinstance(field_obj, Field) else None
+        if limit is not None and len(value) > limit:
+            raise HttpError(422, message % {"limit": limit})
+
+
 def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmission:
     user = request.auth
     _require_min_participant(user)
     _validate_locale(payload.locale)
+    _validate_draft_lengths(payload.title, payload.category)
     _validate_body_length(payload.body)
 
     draft = DraftSubmission.objects.create(
@@ -262,6 +282,7 @@ def _update_draft(request, pk: int, payload: DraftPatchIn, submission_type: str)
     data = payload.dict(exclude_unset=True)
     if "locale" in data:
         _validate_locale(data["locale"])
+    _validate_draft_lengths(data.get("title"), data.get("category"))
     if "body" in data:
         _validate_body_length(data["body"])
 
