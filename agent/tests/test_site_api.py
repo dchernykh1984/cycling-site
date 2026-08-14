@@ -128,3 +128,51 @@ def test_a_deleted_event_that_repeats_a_live_one_is_counted_once():
     client = _ListingClient({"status=approved": [same], "status=approved&deleted=true": [same]})
     known = client.known()
     assert (known.deleted_count, len(known.existing)) == (0, 1)
+
+
+class _PostingClient(SiteApiClient):
+    """A client that records the competition payload instead of sending it."""
+
+    def __init__(self):
+        super().__init__("https://example.test", "token")
+        self.payload: dict = {}
+
+    def _request(self, method, path, payload=None):
+        if path == "/api/v1/competitions/":
+            self.payload = payload or {}
+        return {"id": 1}
+
+
+def _candidate(**kwargs):
+    from agent.models import Candidate
+
+    return Candidate(title="Race", date_start="2026-09-01", **kwargs)
+
+
+def test_the_click_id_comes_off_every_link_before_it_is_posted():
+    """An announcement carries whatever the writer had in their clipboard (agent.links)."""
+    client = _PostingClient()
+    client.create(
+        _candidate(
+            source_url="https://example.com/post?fbclid=abc",
+            url_route="https://strava.com/routes/1?utm_source=tg",
+            url_registration="https://example.com/form?entry=7&fbclid=xyz",
+        )
+    )
+    assert client.payload["url_announcement"] == "https://example.com/post"
+    assert client.payload["url_route"] == "https://strava.com/routes/1"
+    assert client.payload["url_registration"] == "https://example.com/form?entry=7"
+
+
+def test_a_link_with_nothing_to_strip_is_posted_as_it_was_written():
+    client = _PostingClient()
+    client.create(_candidate(source_url="https://t.me/s/mystartkz"))
+    assert client.payload["url_announcement"] == "https://t.me/s/mystartkz"
+
+
+def test_a_link_the_candidate_never_had_is_still_absent():
+    """Cleaning must not turn a missing link into an empty one the site would then show."""
+    client = _PostingClient()
+    client.create(_candidate(source_url="https://example.com/post"))
+    assert "url_route" not in client.payload
+    assert "url_registration" not in client.payload
