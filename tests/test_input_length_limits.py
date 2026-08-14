@@ -184,8 +184,14 @@ def _carries_text(annotation) -> bool:
         origin = getattr(candidate, "__origin__", candidate)
         if origin is str:
             return True
-        if inspect.isclass(candidate) and issubclass(candidate, Schema):
-            return any(_carries_text(sub.annotation) for sub in candidate.model_fields.values())
+        # Keep going rather than answering from the first nested schema: a union whose other member
+        # is a plain string would otherwise be read as carrying no text at all.
+        if (
+            inspect.isclass(candidate)
+            and issubclass(candidate, Schema)
+            and any(_carries_text(sub.annotation) for sub in candidate.model_fields.values())
+        ):
+            return True
     return False
 
 
