@@ -3937,3 +3937,66 @@ class LocationNameLengthTests(ApiTestMixin, TestCase):
             user=self.admin,
         )
         self.assertEqual(resp.status_code, 422)
+
+
+class DraftLengthLimitTests(ApiTestMixin, TestCase):
+    """Only the body of a draft was ever measured; its title and category could outgrow the column.
+
+    The article endpoints next door have refused an over-long title since they were written, with a
+    translated message. Drafts get the same sentence rather than a second wording.
+    """
+
+    def setUp(self):
+        self.admin = _user("draft-length-admin", role=User.Role.ADMIN)
+
+    def _limits(self):
+        from knowledge.models import DraftSubmission
+
+        return (
+            DraftSubmission._meta.get_field("title").max_length,
+            DraftSubmission._meta.get_field("category").max_length,
+        )
+
+    def test_an_over_long_draft_title_is_refused(self):
+        title_max, _category_max = self._limits()
+        resp = self.post(
+            "/api/v1/knowledge/drafts/",
+            {"title": "x" * (title_max + 1), "body": "<p>hi</p>", "locale": "ru"},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 422, resp.content[:300])
+
+    def test_an_over_long_draft_category_is_refused(self):
+        _title_max, category_max = self._limits()
+        resp = self.post(
+            "/api/v1/knowledge/drafts/",
+            {"title": "Fine", "body": "<p>hi</p>", "locale": "ru", "category": "c" * (category_max + 1)},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 422, resp.content[:300])
+
+    def test_a_draft_that_fits_is_still_accepted(self):
+        title_max, category_max = self._limits()
+        resp = self.post(
+            "/api/v1/knowledge/drafts/",
+            {"title": "x" * title_max, "body": "<p>hi</p>", "locale": "ru", "category": "c" * category_max},
+            user=self.admin,
+        )
+        self.assertEqual(resp.status_code, 201, resp.content[:300])
+
+    def test_the_refusal_is_translated_like_the_article_one(self):
+        from django.utils.translation import gettext, override
+
+        title_max, _category_max = self._limits()
+        for locale in ("ru", "kk", "en"):
+            with self.subTest(locale=locale):
+                resp = self.post(
+                    "/api/v1/knowledge/drafts/",
+                    {"title": "x" * (title_max + 1), "body": "<p>hi</p>", "locale": "ru"},
+                    user=self.admin,
+                    HTTP_ACCEPT_LANGUAGE=locale,
+                )
+                self.assertEqual(resp.status_code, 422)
+                with override(locale):
+                    expected = gettext("Title is too long (max %(limit)d characters).") % {"limit": title_max}
+                self.assertEqual(resp.json()["detail"], expected)
