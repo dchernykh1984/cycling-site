@@ -176,3 +176,63 @@ def test_a_link_the_candidate_never_had_is_still_absent():
     client.create(_candidate(source_url="https://example.com/post"))
     assert "url_route" not in client.payload
     assert "url_registration" not in client.payload
+
+
+def _too_long(field_value_length=250):
+    """A link that carries no tracking at all and still cannot be stored."""
+    return "https://example.com/" + "a" * (field_value_length - len("https://example.com/"))
+
+
+def test_a_link_that_still_does_not_fit_is_left_out_rather_than_failing_the_event():
+    """Posting it fails the whole event; an event missing one link is worth more than no event."""
+    client = _PostingClient()
+    client.create(_candidate(source_url="https://example.com/post", url_registration=_too_long()))
+    assert "url_registration" not in client.payload
+    assert client.payload["url_announcement"] == "https://example.com/post"
+
+
+def test_the_link_that_was_left_out_is_said_out_loud(capsys):
+    client = _PostingClient()
+    link = _too_long()
+    client.create(_candidate(url_registration=link))
+    assert client.dropped_links == [("url_registration", link)]
+    printed = capsys.readouterr().out
+    assert "url_registration left out" in printed
+    assert "250 characters" in printed
+
+
+def test_a_link_only_the_tracking_made_too_long_is_kept_after_cleaning():
+    """The whole point of cleaning first: this one used to be dropped, and does not need to be."""
+    from agent.links import MAX_URL_LENGTH
+
+    link = "https://docs.google.com/forms/d/e/1FAIpQLSc1vdZvuul/viewform?fbclid=" + "z" * 200
+    assert len(link) > MAX_URL_LENGTH
+    client = _PostingClient()
+    client.create(_candidate(url_registration=link))
+    assert client.payload["url_registration"] == "https://docs.google.com/forms/d/e/1FAIpQLSc1vdZvuul/viewform"
+    assert client.dropped_links == []
+
+
+def test_a_link_of_exactly_the_limit_is_kept():
+    from agent.links import MAX_URL_LENGTH
+
+    link = _too_long(MAX_URL_LENGTH)
+    client = _PostingClient()
+    client.create(_candidate(url_route=link))
+    assert client.payload["url_route"] == link
+    assert client.dropped_links == []
+
+
+def test_dropping_one_link_does_not_disturb_the_others():
+    client = _PostingClient()
+    client.create(
+        _candidate(
+            source_url="https://example.com/post",
+            url_route="https://strava.com/routes/1",
+            url_registration=_too_long(),
+        )
+    )
+    assert client.payload["url_announcement"] == "https://example.com/post"
+    assert client.payload["url_route"] == "https://strava.com/routes/1"
+    assert "url_registration" not in client.payload
+    assert [field for field, _url in client.dropped_links] == ["url_registration"]
