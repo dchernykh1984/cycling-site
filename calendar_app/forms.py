@@ -2,11 +2,13 @@ import json
 from typing import ClassVar
 
 from django import forms
+from django.db.models import Field
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import User
 from cycling_site.forms import LocalizedMaxLengthMixin
 from locations.models import Location, competition_location_block_reason
+from registrations.models import RegistrationCategory
 
 from .models import (
     MAX_DESCRIPTION_LENGTH,
@@ -17,6 +19,12 @@ from .models import (
 )
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
+
+# Registration categories arrive as a JSON blob, so their names never met a form field. The limit
+# is read off the column (``max_length`` is typed as optional, hence the narrowing) rather than
+# written out, so the form cannot come to disagree with what the database will store.
+_category_name_field = RegistrationCategory._meta.get_field("name")
+_CATEGORY_NAME_MAX_LENGTH = _category_name_field.max_length if isinstance(_category_name_field, Field) else None
 
 # Taken from the column rather than written out, so the form cannot drift from what the database
 # will actually accept. A URLField declared without max_length is varchar(200), and a link past
@@ -233,6 +241,35 @@ class RegistrationSettingsForm(forms.Form):
         widget=forms.NumberInput(attrs={"class": "form-control", "style": "width:80px;"}),
     )
     categories_json = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    def clean_categories_json(self) -> str:
+        """Refuse a category name the column cannot hold, before the INSERT does it with a 500.
+
+        The field is a hidden JSON blob the page's JavaScript assembles, so nothing between the
+        text box and the database checked how long a name was; one longer than the column turned
+        saving the registration settings into a server error.
+        """
+        raw = self.cleaned_data.get("categories_json", "")
+        if not raw:
+            return raw
+        try:
+            categories = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            # Unparseable input keeps its long-standing meaning of "no categories" (get_categories).
+            return raw
+        if not isinstance(categories, list):
+            return raw
+        if _CATEGORY_NAME_MAX_LENGTH is None:  # a column without a limit needs no guard here
+            return raw
+        for category in categories:
+            name = category.get("name", "") if isinstance(category, dict) else ""
+            if isinstance(name, str) and len(name) > _CATEGORY_NAME_MAX_LENGTH:
+                raise forms.ValidationError(
+                    _("Category name is too long: at most %(limit_value)d characters."),
+                    params={"limit_value": _CATEGORY_NAME_MAX_LENGTH},
+                    code="max_length",
+                )
+        return raw
 
     def get_categories(self) -> list[dict]:
         raw = self.cleaned_data.get("categories_json", "")
