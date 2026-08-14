@@ -1247,6 +1247,69 @@ class SubmitCompetitionRegistrationTests(TestCase):
             "categories_json": "[]",
         }
 
+    def _categories(self, name):
+        import json
+
+        return json.dumps([{"name": name, "male": True, "female": True}])
+
+    def test_an_over_long_category_name_is_a_form_error_not_a_500(self):
+        """The names arrive as a hidden JSON blob, so nothing measured them before the INSERT did."""
+        from calendar_app.forms import RegistrationSettingsForm
+        from registrations.models import RegistrationCategory
+
+        limit = RegistrationCategory._meta.get_field("name").max_length
+        form = RegistrationSettingsForm(
+            data={"registration_enabled": "on", "categories_json": self._categories("x" * (limit + 1))}
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("categories_json", form.errors)
+
+    def test_a_category_name_of_exactly_the_column_length_is_accepted(self):
+        from calendar_app.forms import RegistrationSettingsForm
+        from registrations.models import RegistrationCategory
+
+        limit = RegistrationCategory._meta.get_field("name").max_length
+        form = RegistrationSettingsForm(
+            data={"registration_enabled": "on", "categories_json": self._categories("x" * limit)}
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_unparseable_categories_still_mean_no_categories(self):
+        """Long-standing behaviour: junk in that hidden field is ignored, not turned into an error."""
+        from calendar_app.forms import RegistrationSettingsForm
+
+        form = RegistrationSettingsForm(data={"registration_enabled": "on", "categories_json": "{not json"})
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.get_categories(), [])
+
+    def test_the_category_length_error_is_translated(self):
+        from calendar_app.forms import RegistrationSettingsForm
+        from registrations.models import RegistrationCategory
+
+        limit = RegistrationCategory._meta.get_field("name").max_length
+        for lang in ("ru", "kk", "en"):
+            with self.subTest(lang=lang), translation_override(lang):
+                form = RegistrationSettingsForm(
+                    data={"registration_enabled": "on", "categories_json": self._categories("x" * (limit + 1))}
+                )
+                self.assertFalse(form.is_valid())
+                expected = gettext("Category name is too long: at most %(limit_value)d characters.") % {
+                    "limit_value": limit
+                }
+                self.assertIn(expected, str(form.errors["categories_json"]))
+
+    def test_an_over_long_category_name_does_not_reach_the_database(self):
+        """The whole point: posting the page must not turn into a server error."""
+        from registrations.models import RegistrationCategory
+
+        limit = RegistrationCategory._meta.get_field("name").max_length
+        self.client.login(username="o_reg@example.com", password="password123")
+        payload = self._reg_payload()
+        payload["categories_json"] = self._categories("x" * (limit + 1))
+        response = self.client.post(self.url, payload)
+        self.assertEqual(response.status_code, 200)  # redisplayed with the error, not a 500
+        self.assertFalse(RegistrationCategory.objects.filter(name__startswith="xxxx").exists())
+
     def test_participant_cannot_enable_registration(self):
         self.client.login(username="p_reg@example.com", password="password123")
         self.client.post(self.url, self._reg_payload())

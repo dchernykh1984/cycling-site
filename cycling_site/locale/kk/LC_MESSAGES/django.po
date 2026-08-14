@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-12 08:56+0500\n"
+"POT-Creation-Date: 2026-08-14 09:27+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -622,12 +622,12 @@ msgstr "Санат тым ұзын (ең көбі %(limit)d таңба)."
 msgid "Intro is too long (max %(limit)d characters)."
 msgstr "Кіріспе тым ұзын (ең көбі %(limit)d таңба)."
 
-#: calendar_app/forms.py:39
+#: calendar_app/forms.py:58
 #: calendar_app/templates/calendar_app/_event_type_filter.html:8
 msgid "Event type"
 msgstr "Іс-шара түрі"
 
-#: calendar_app/forms.py:47
+#: calendar_app/forms.py:66
 #: calendar_app/templates/calendar_app/_disciplines_field.html:14
 #: calendar_app/templates/calendar_app/detail.html:56
 #: calendar_app/templates/calendar_app/list.html:148
@@ -635,46 +635,51 @@ msgstr "Іс-шара түрі"
 msgid "Disciplines"
 msgstr "Пәндер"
 
-#: calendar_app/forms.py:82
+#: calendar_app/forms.py:101
 msgid "Date start"
 msgstr "Басталу күні"
 
-#: calendar_app/forms.py:87
+#: calendar_app/forms.py:106
 msgid "Date end"
 msgstr "Аяқталу күні"
 
-#: calendar_app/forms.py:109
+#: calendar_app/forms.py:128
 msgid "File size must not exceed 10 MB."
 msgstr "Файл өлшемі 10 МБ-тан аспауы керек."
 
-#: calendar_app/forms.py:113
+#: calendar_app/forms.py:132
 #, python-format
 msgid "Unsupported file type. Allowed: %(allowed)s."
 msgstr "Қолданылмайтын файл түрі. Рұқсат етілген: %(allowed)s."
 
-#: calendar_app/forms.py:123
+#: calendar_app/forms.py:142
 msgid "Description is too large. Use fewer or smaller inline images."
 msgstr "Сипаттама тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
 
-#: calendar_app/forms.py:153 calendar_app/tests.py:516
+#: calendar_app/forms.py:172 calendar_app/tests.py:516
 msgid "End date cannot be before start date."
 msgstr "Аяқталу күні басталу күнінен бұрын болмауы керек."
 
-#: calendar_app/forms.py:166
+#: calendar_app/forms.py:185
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:176 calendar_app/views.py:888
+#: calendar_app/forms.py:195 calendar_app/views.py:888
 #: calendar_app/views.py:1086
 msgid "This location is not available."
 msgstr "Бұл локация қолжетімді емес."
 
-#: calendar_app/forms.py:235 calendar_app/tests.py:1515 knowledge/forms.py:44
+#: calendar_app/forms.py:262
+#, python-format
+msgid "Category name is too long: at most %(limit_value)d characters."
+msgstr "Санат атауы тым ұзын: ең көбі %(limit_value)d таңба."
+
+#: calendar_app/forms.py:281 calendar_app/tests.py:1570 knowledge/forms.py:44
 #: knowledge/tests.py:909 news/forms.py:113 news/forms.py:126 news/tests.py:689
 msgid "Write a comment..."
 msgstr "Пікір жазыңыз..."
 
-#: calendar_app/forms.py:262
+#: calendar_app/forms.py:308
 msgid "Optional: what looks wrong?"
 msgstr "Міндетті емес: не дұрыс емес?"
 
@@ -1485,7 +1490,8 @@ msgstr "Бекітуді күтіп тұрған орындар жоқ."
 msgid "Submit"
 msgstr "Жіберу"
 
-#: calendar_app/tests.py:622 cycling_site/forms.py:18 news/tests.py:579
+#: calendar_app/tests.py:664 calendar_app/tests.py:677 cycling_site/forms.py:18
+#: news/tests.py:579
 #, python-format
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."

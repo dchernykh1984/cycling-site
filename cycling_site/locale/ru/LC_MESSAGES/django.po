@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-12 08:56+0500\n"
+"POT-Creation-Date: 2026-08-14 09:27+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -622,12 +622,12 @@ msgstr "Категория слишком длинная (максимум %(lim
 msgid "Intro is too long (max %(limit)d characters)."
 msgstr "Анонс слишком длинный (максимум %(limit)d символов)."
 
-#: calendar_app/forms.py:39
+#: calendar_app/forms.py:58
 #: calendar_app/templates/calendar_app/_event_type_filter.html:8
 msgid "Event type"
 msgstr "Тип события"
 
-#: calendar_app/forms.py:47
+#: calendar_app/forms.py:66
 #: calendar_app/templates/calendar_app/_disciplines_field.html:14
 #: calendar_app/templates/calendar_app/detail.html:56
 #: calendar_app/templates/calendar_app/list.html:148
@@ -635,48 +635,53 @@ msgstr "Тип события"
 msgid "Disciplines"
 msgstr "Дисциплины"
 
-#: calendar_app/forms.py:82
+#: calendar_app/forms.py:101
 msgid "Date start"
 msgstr "Дата начала"
 
-#: calendar_app/forms.py:87
+#: calendar_app/forms.py:106
 msgid "Date end"
 msgstr "Дата окончания"
 
-#: calendar_app/forms.py:109
+#: calendar_app/forms.py:128
 msgid "File size must not exceed 10 MB."
 msgstr "Размер файла не должен превышать 10 МБ."
 
-#: calendar_app/forms.py:113
+#: calendar_app/forms.py:132
 #, python-format
 msgid "Unsupported file type. Allowed: %(allowed)s."
 msgstr "Неподдерживаемый тип файла. Разрешены: %(allowed)s."
 
-#: calendar_app/forms.py:123
+#: calendar_app/forms.py:142
 msgid "Description is too large. Use fewer or smaller inline images."
 msgstr ""
 "Описание слишком большое. Используйте меньше изображений или уменьшите их "
 "размер."
 
-#: calendar_app/forms.py:153 calendar_app/tests.py:516
+#: calendar_app/forms.py:172 calendar_app/tests.py:516
 msgid "End date cannot be before start date."
 msgstr "Дата окончания не может быть раньше даты начала."
 
-#: calendar_app/forms.py:166
+#: calendar_app/forms.py:185
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:176 calendar_app/views.py:888
+#: calendar_app/forms.py:195 calendar_app/views.py:888
 #: calendar_app/views.py:1086
 msgid "This location is not available."
 msgstr "Эта локация недоступна."
 
-#: calendar_app/forms.py:235 calendar_app/tests.py:1515 knowledge/forms.py:44
+#: calendar_app/forms.py:262
+#, python-format
+msgid "Category name is too long: at most %(limit_value)d characters."
+msgstr "Название категории слишком длинное: не более %(limit_value)d символов."
+
+#: calendar_app/forms.py:281 calendar_app/tests.py:1570 knowledge/forms.py:44
 #: knowledge/tests.py:909 news/forms.py:113 news/forms.py:126 news/tests.py:689
 msgid "Write a comment..."
 msgstr "Напишите комментарий..."
 
-#: calendar_app/forms.py:262
+#: calendar_app/forms.py:308
 msgid "Optional: what looks wrong?"
 msgstr "Необязательно: что не так?"
 
@@ -1488,7 +1493,8 @@ msgstr "Нет локаций, ожидающих одобрения."
 msgid "Submit"
 msgstr "Отправить"
 
-#: calendar_app/tests.py:622 cycling_site/forms.py:18 news/tests.py:579
+#: calendar_app/tests.py:664 calendar_app/tests.py:677 cycling_site/forms.py:18
+#: news/tests.py:579
 #, python-format
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Значение должно содержать не более %(limit_value)d символов."
