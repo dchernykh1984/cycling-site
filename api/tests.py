@@ -3874,21 +3874,21 @@ class RequestLengthLimitTests(ApiTestMixin, TestCase):
         )
         self.assertEqual(resp.status_code, 422)
 
-    def test_the_declared_limits_still_match_the_columns(self):
-        """The schema writes the numbers out; this is what stops them drifting from the database."""
+    def test_the_declared_limits_still_match_the_columns_they_guard(self):
+        """The schema writes the numbers out; this is what stops them drifting from the database.
+
+        Only the columns these aliases actually stand in front of are checked -- asserting against a
+        column nothing here bounds would fail the day that column was widened for its own reasons.
+        """
         from api import schemas
-        from knowledge.models import KnowledgeArticle
         from locations.models import Location
 
-        self.assertEqual(schemas.MAX_URL_LENGTH, Competition._meta.get_field("url_route").max_length)
-        for model, field in (
-            (Competition, "title"),
-            (Location, "name"),
-            (KnowledgeArticle, "title"),
-        ):
+        for field in ("url_route", "url_announcement", "url_registration", "url_regulations", "url_results"):
+            with self.subTest(field=field):
+                self.assertEqual(schemas.MAX_URL_LENGTH, Competition._meta.get_field(field).max_length)
+        for model, field in ((Competition, "title"), (Location, "name")):
             with self.subTest(model=model.__name__, field=field):
                 self.assertEqual(schemas.MAX_TITLE_LENGTH, model._meta.get_field(field).max_length)
-        self.assertEqual(schemas.MAX_CATEGORY_LENGTH, KnowledgeArticle._meta.get_field("category").max_length)
 
 
 class LocationNameLengthTests(ApiTestMixin, TestCase):
