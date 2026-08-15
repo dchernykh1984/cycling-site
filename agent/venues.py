@@ -17,6 +17,7 @@ Nothing here does I/O: the tree is whatever the caller already fetched.
 from __future__ import annotations
 
 import math
+import re
 
 from agent import dedup, locations
 
@@ -48,13 +49,41 @@ _MIN_PREFIX = 4  # "Banka" and "Bank" are one word; "im." and "imeni" are not
 Point = tuple[float, float]
 
 
-def venue_words(name: str) -> set[str]:
-    """The words of a venue name, transliterated, with "kh" folded onto "h".
+# One name written in two scripts comes out of transliteration as two different words, and the site
+# grew four nodes for one filling station because of it: the sign says Compass, the announcements
+# say Kompas, and "compass" and "kompas" share not a single letter position. These rules fold both
+# spellings onto one form. Each is a pair this site actually carries, in order -- kh before h, ph
+# before f, dzh before j, so a longer sequence is not eaten by a shorter rule first.
+_SCRIPT_FOLDING = (
+    ("kh", "h"),  # Halyk / Khalyk
+    ("ph", "f"),  # Sophia / Sofiya
+    ("dzh", "j"),  # Jailau / Dzhaylau
+    ("x", "ks"),  # Maxim / Maksim
+    ("w", "v"),  # Wolf / Volf
+    ("q", "k"),  # Qazaqstan / Kazakstan
+    ("y", "i"),  # Jailau / Jaylau -- both spellings fold the same way
+)
+# "c" is a k sound before a back vowel and an s sound before a front one, which is why Compass
+# transliterates from Cyrillic as Kompas and Center as Tsentr.
+_C_BEFORE_FRONT_VOWEL = re.compile(r"c(?=[eiy])")
+# Latin doubles a consonant where the Cyrillic spelling does not: Compass against Kompas.
+_DOUBLED = re.compile(r"(.)\1+")
 
-    A borrowed name transliterates apart from its original otherwise: the Cyrillic spelling becomes
-    khalyk where the Latin spelling on the same sign reads halyk.
+
+def fold_script(word: str) -> str:
+    """One spelling of a borrowed word, whichever script it was written in.
+
+    Applied to an already-transliterated word, so the two sides of "Compass" / "Kompas" meet.
     """
-    return {word[1:] if word.startswith("kh") else word for word in dedup.title_tokens(name)}
+    word = _C_BEFORE_FRONT_VOWEL.sub("s", word)
+    for pattern, replacement in _SCRIPT_FOLDING:
+        word = word.replace(pattern, replacement)
+    return _DOUBLED.sub(r"\1", word.replace("c", "k"))
+
+
+def venue_words(name: str) -> set[str]:
+    """The words of a venue name, transliterated and folded onto one spelling per script."""
+    return {fold_script(word) for word in dedup.title_tokens(name)}
 
 
 def _means_the_same(word: str, others: set[str]) -> bool:
