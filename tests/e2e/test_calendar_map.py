@@ -28,10 +28,11 @@ def _mapped_competition(organizer, title="Mapped Race", disciplines=None, event_
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         location=loc,
-        event_type=event_type,
     )
     if disciplines:
         comp.disciplines.set(disciplines)
+    if event_type is not None:
+        comp.event_types.set([event_type])
     return loc
 
 
