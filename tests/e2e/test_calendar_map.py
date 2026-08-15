@@ -15,7 +15,13 @@ from calendar_app.models import Competition
 from locations.models import Location
 from tests.e2e.conftest import open_filter_panel
 
-_SEPT = "date_from=2026-09-01&date_to=2026-09-30"
+# The map's own date filter is what these tests drive, so the dates are relative to the day the
+# suite runs. Written as fixed dates they were a time bomb: the "hidden because the range excludes
+# it" test placed its event 30 days and one day out, and started failing the morning the calendar's
+# default 30-day window reached it.
+_EVENT_DAY = datetime.date.today() + datetime.timedelta(days=90)
+_FORTNIGHT = datetime.timedelta(days=14)
+_AROUND_THE_EVENT = f"date_from={_EVENT_DAY - _FORTNIGHT:%Y-%m-%d}&date_to={_EVENT_DAY + _FORTNIGHT:%Y-%m-%d}"
 
 
 def _mapped_competition(organizer, title="Mapped Race", disciplines=None, event_type=None):
@@ -24,7 +30,7 @@ def _mapped_competition(organizer, title="Mapped Race", disciplines=None, event_
     )
     comp = Competition.objects.create(
         title_ru=title,
-        date_start=datetime.date(2026, 9, 15),
+        date_start=_EVENT_DAY,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         location=loc,
@@ -70,7 +76,7 @@ def test_list_page_switches_to_map(page: Page, live_server):
 @pytest.mark.django_db(transaction=True)
 def test_map_marker_popup_links_to_competition(page: Page, live_server, organizer):
     _mapped_competition(organizer)
-    page.goto(f"{live_server.url}/calendar/map/?{_SEPT}")
+    page.goto(f"{live_server.url}/calendar/map/?{_AROUND_THE_EVENT}")
     marker = page.locator(".leaflet-marker-icon")
     expect(marker).to_have_count(1)
     marker.click()
@@ -82,7 +88,7 @@ def test_map_marker_popup_links_to_competition(page: Page, live_server, organize
 @pytest.mark.django_db(transaction=True)
 def test_map_marker_hidden_when_date_range_excludes_competition(page: Page, live_server, organizer):
     _mapped_competition(organizer)
-    # Default range is the next 30 days from today (2026-06); the Sept event is out of range.
+    # The default range is the next 30 days; the event sits 90 days out, so no marker is drawn.
     page.goto(f"{live_server.url}/calendar/map/")
     expect(page.locator("#calendar-map")).to_have_count(1)
     expect(page.locator(".leaflet-marker-icon")).to_have_count(0)
@@ -91,8 +97,8 @@ def test_map_marker_hidden_when_date_range_excludes_competition(page: Page, live
 @pytest.mark.django_db(transaction=True)
 def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organizer):
     # Changing a filter must update the markers in place without resetting the user's pan/zoom.
-    _mapped_competition(organizer)  # 2026-09-15, Almaty
-    page.goto(f"{live_server.url}/calendar/map/?{_SEPT}")
+    _mapped_competition(organizer)  # 90 days out, Almaty
+    page.goto(f"{live_server.url}/calendar/map/?{_AROUND_THE_EVENT}")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(1)  # initial load fits to the marker
     # User pans/zooms somewhere specific.
     page.wait_for_function("() => window.calendarMap")
