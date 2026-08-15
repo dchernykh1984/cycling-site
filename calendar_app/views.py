@@ -228,11 +228,12 @@ def _apply_id_filters(qs, event_type_ids, discipline_ids, direction_ids):
     group of ids). A competition matches if it has at least one of the selected
     disciplines OR at least one discipline in a selected direction (category); the two are
     OR-ed so a direction picked without drilling into a discipline still filters alongside
-    another direction's discipline. ``disciplines`` is a many-to-many, so de-duplicate the join.
+    another direction's discipline. Both ``event_types`` and ``disciplines`` are many-to-many, so
+    each join is de-duplicated -- without that a race carrying two of the selected values would be
+    listed twice.
     """
     event_types = _parse_int_ids(event_type_ids)
     if event_types:
-        # An event may carry several types, so the join can repeat a row -- distinct() as below.
         qs = qs.filter(event_types__id__in=event_types).distinct()
     disciplines = _parse_int_ids(discipline_ids)
     directions = _parse_int_ids(direction_ids)

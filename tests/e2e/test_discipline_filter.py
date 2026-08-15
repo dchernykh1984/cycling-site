@@ -25,10 +25,11 @@ def _make_comp(organizer, title, discipline=None, event_type=None):
         date_start=datetime.date(2026, 9, 15),
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
-        event_type=event_type,
     )
     if discipline is not None:
         comp.disciplines.set([discipline])
+    if event_type is not None:
+        comp.event_types.set([event_type])
 
 
 # --------------------------------------------------------------------------- #
