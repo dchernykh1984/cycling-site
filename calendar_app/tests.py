@@ -3778,6 +3778,43 @@ class SeveralEventTypesFormTests(TestCase):
                 self.assertNotEqual(gettext(source), source, f"untranslated for {lang}")
 
 
+class EditKeepsSeveralEventTypesTests(TestCase):
+    """Editing an event must save its types, not only the ones chosen when it was submitted.
+
+    The submit and edit views set the many-to-many fields in two separate places; a change made in
+    one and not the other leaves editing an event quietly clearing what it carries.
+    """
+
+    def setUp(self):
+        self.organizer = _make_user("edit-types@example.com", User.Role.ORGANIZER)
+        self.race = EventType.objects.get(name_en="Race")
+        self.kids = EventType.objects.get(name_en="Kids Race")
+        self.professional = EventType.objects.get(name_en="Professional Race")
+        self.comp = _make_competition("Editable", submitted_by=self.organizer, event_types=[self.race])
+        self.client.login(username="edit-types@example.com", password="password123")
+
+    def _post(self, **extra):
+        payload = {"title_ru": "Editable", "date_start": "2026-09-01"}
+        payload.update(extra)
+        return self.client.post(reverse("competition_edit", args=[self.comp.pk]), payload)
+
+    def test_editing_saves_a_newly_chosen_set(self):
+        self._post(event_types=[str(self.race.pk), str(self.kids.pk)])
+        self.comp.refresh_from_db()
+        self.assertEqual(set(self.comp.event_types.values_list("pk", flat=True)), {self.race.pk, self.kids.pk})
+
+    def test_editing_can_replace_the_set(self):
+        self._post(event_types=[str(self.professional.pk)])
+        self.comp.refresh_from_db()
+        self.assertEqual(list(self.comp.event_types.values_list("pk", flat=True)), [self.professional.pk])
+
+    def test_the_edit_form_arrives_with_the_current_set_chosen(self):
+        self.comp.event_types.set([self.race, self.kids])
+        response = self.client.get(reverse("competition_edit", args=[self.comp.pk]))
+        chosen = {int(pk) for pk in response.context["form"]["event_types"].value()}
+        self.assertEqual(chosen, {self.race.pk, self.kids.pk})
+
+
 class SeveralEventTypesFilterTests(TestCase):
     """Filtering by type matches an event that carries it among others, and never doubles a row."""
 

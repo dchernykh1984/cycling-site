@@ -1082,6 +1082,7 @@ class EditCompetitionView(View):
                     _unpublish_if_geography_is_pending(comp, request.user)
                     comp.save()
                     comp.disciplines.set(cd.get("disciplines") or [])
+                    comp.event_types.set(cd.get("event_types") or [])
                     _save_categories(comp, reg_form, is_org)
             except LocationConflictError:
                 form.add_error("location", _("This location is not available."))
