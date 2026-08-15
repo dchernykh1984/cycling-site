@@ -26,7 +26,11 @@ def add_professional_race(apps, schema_editor):
     existing = EventType.objects.filter(name_en=NAMES["name_en"]).first()
     if existing is not None:
         return
-    EventType.objects.create(**NAMES)
+    # The list is shown in ``order``, and the field defaults to 0 -- which would put the newest type
+    # at the top of every dropdown, ahead of the plain race. It belongs after the ones already
+    # there, so it is numbered past the last of them.
+    last = EventType.objects.order_by("-order").values_list("order", flat=True).first() or 0
+    EventType.objects.create(order=last + 1, **NAMES)
 
 
 def remove_professional_race(apps, schema_editor):
