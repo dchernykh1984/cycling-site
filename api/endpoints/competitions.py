@@ -7,7 +7,7 @@ from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedStr, LocalizedTitle, Url, localize_field
-from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline
+from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline, EventType
 from locations.models import (
     Location,
     LocationConflictError,
@@ -27,7 +27,7 @@ router = Router(tags=["competitions"])
 class CompetitionIn(Schema):
     title: LocalizedTitle
     description: LocalizedStr = LocalizedStr()
-    event_type_id: int | None = None
+    event_type_ids: list[int] = []  # noqa: RUF012
     discipline_ids: list[int] = []  # noqa: RUF012
     location_id: int | None = None
     date_start: date
@@ -42,7 +42,7 @@ class CompetitionIn(Schema):
 class CompetitionPatchIn(Schema):
     title: LocalizedTitle | None = None
     description: LocalizedStr | None = None
-    event_type_id: int | None = None
+    event_type_ids: list[int] | None = None
     discipline_ids: list[int] | None = None
     location_id: int | None = None
     date_start: date | None = None
@@ -59,7 +59,7 @@ class CompetitionOut(Schema):
     id: int
     title: LocalizedStr
     description: LocalizedStr
-    event_type_id: int | None
+    event_type_ids: list[int]
     discipline_ids: list[int]
     location_id: int | None
     # The city the location sits in (its depth-3 ancestor, or itself when it is one). A start venue
@@ -102,6 +102,10 @@ class CompetitionOut(Schema):
     @staticmethod
     def resolve_discipline_ids(obj: Competition) -> list[int]:
         return [d.pk for d in obj.disciplines.all()]
+
+    @staticmethod
+    def resolve_event_type_ids(obj: Competition) -> list[int]:
+        return [e.pk for e in obj.event_types.all()]
 
 
 class CompetitionDetailOut(CompetitionOut):
@@ -166,8 +170,8 @@ def _is_owner(user, competition: Competition) -> bool:
 def _get_or_404(pk: int) -> Competition:
     try:
         return (
-            Competition.objects.select_related("event_type", "location")
-            .prefetch_related("disciplines")
+            Competition.objects.select_related("location")
+            .prefetch_related("disciplines", "event_types")
             .get(pk=pk, is_deleted=False)
         )
     except Competition.DoesNotExist:
@@ -237,6 +241,17 @@ def _set_disciplines(competition: Competition, discipline_ids: list[int] | None)
     if len(disciplines) != len(ids):
         raise HttpError(404, "Discipline not found")
     competition.disciplines.set(disciplines)
+
+
+def _set_event_types(competition: Competition, event_type_ids: list[int] | None) -> None:
+    """Replace the competition's types from a list of IDs, rejecting any that do not exist."""
+    if event_type_ids is None:
+        return
+    ids = list(dict.fromkeys(event_type_ids))  # de-dup, keep order
+    event_types = list(EventType.objects.filter(pk__in=ids))
+    if len(event_types) != len(ids):
+        raise HttpError(404, "Event type not found")
+    competition.event_types.set(event_types)
 
 
 def _demote_for_pending_geography(competition: Competition, user) -> bool:
@@ -329,7 +344,13 @@ def list_competitions(
     deleted: bool = False,
 ):
     user = request.auth
-    qs = _listable_by(Competition.objects.filter(is_deleted=deleted).prefetch_related("disciplines"), user, deleted)
+    # Both id lists in the response walk a many-to-many, so prefetch each: one query per set for
+    # the whole page instead of one per row.
+    qs = _listable_by(
+        Competition.objects.filter(is_deleted=deleted).prefetch_related("disciplines", "event_types"),
+        user,
+        deleted,
+    )
     qs = qs.filter(status=status)
     # discipline_ids and direction_ids (DisciplineCategory) are the same taxonomy dimension and are
     # OR-ed, matching the web calendar/list/map: a competition matches if it has a selected discipline
@@ -342,7 +363,8 @@ def list_competitions(
             match |= Q(disciplines__category_id__in=direction_ids)
         qs = qs.filter(match).distinct()
     if event_type_ids:
-        qs = qs.filter(event_type_id__in=event_type_ids)
+        # A competition may carry several types, so the join can repeat a row.
+        qs = qs.filter(event_types__id__in=event_type_ids).distinct()
     if location_ids:
         qs = qs.filter(location_id__in=_descendant_location_ids(list(location_ids)))
     # only_favorite restricts to the authenticated user's favorites (issue #183). There is no way
@@ -378,7 +400,6 @@ def create_competition(request, payload: CompetitionIn):
     _apply_localized(competition, "description", payload.description)
 
     for field in (
-        "event_type_id",
         "date_start",
         "date_end",
         "url_route",
@@ -404,6 +425,7 @@ def create_competition(request, payload: CompetitionIn):
                 competition.status = Competition.Status.PENDING_APPROVAL
             competition.save()
             _set_disciplines(competition, payload.discipline_ids)
+            _set_event_types(competition, payload.event_type_ids)
             if competition.status == Competition.Status.APPROVED and competition.location is not None:
                 competition.location.approve_with_competition(user)
     except LocationConflictError:
@@ -427,10 +449,14 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
     # Unambiguous discipline semantics: omit = leave unchanged, [] = clear, null = error.
     if "discipline_ids" in data and data["discipline_ids"] is None:
         raise HttpError(422, "discipline_ids cannot be null; pass [] to clear")
+    if "event_type_ids" in data and data["event_type_ids"] is None:
+        raise HttpError(422, "event_type_ids cannot be null; pass [] to clear")
 
     # disciplines is a many-to-many: set it after the row is saved, not via update_fields.
     set_disciplines = "discipline_ids" in data
     discipline_ids = data.pop("discipline_ids", None)
+    set_event_types = "event_type_ids" in data
+    event_type_ids = data.pop("event_type_ids", None)
 
     try:
         # Lock + re-validate a changed location and save in one transaction so a concurrent
@@ -441,6 +467,8 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
                 competition.save(update_fields=update_fields)
             if set_disciplines:
                 _set_disciplines(competition, discipline_ids)
+            if set_event_types:
+                _set_event_types(competition, event_type_ids)
     except LocationConflictError:
         raise HttpError(409, "Location is no longer usable for a competition") from None
 

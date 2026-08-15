@@ -82,12 +82,14 @@ class Competition(index.Indexed, models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    event_type = models.ForeignKey(
+    # A start is often more than one thing at once: a race with a kids race inside it, or an open
+    # mass start that also holds a professional field. One type per event forced those to be filed
+    # as two events or as neither, so an event carries a set of types the way it carries a set of
+    # disciplines. Nothing requires more than one.
+    event_types: models.ManyToManyField = models.ManyToManyField(
         "EventType",
-        null=True,
         blank=True,
-        on_delete=models.SET_NULL,
-        related_name="+",
+        related_name="competitions",
     )
     disciplines: models.ManyToManyField = models.ManyToManyField(
         "Discipline",
@@ -353,6 +355,11 @@ class Competition(index.Indexed, models.Model):
         if not loc:
             return ""
         return ", ".join(n.name for n in [*loc.get_ancestors(), loc])
+
+    @property
+    def event_type_label(self) -> str:
+        """All attached types, comma-joined (an event can be a race and a kids race at once)."""
+        return ", ".join(e.name for e in self.event_types.all() if e.name)
 
     @property
     def disciplines_label(self) -> str:

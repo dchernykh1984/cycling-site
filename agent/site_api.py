@@ -187,7 +187,10 @@ class SiteApiClient:
                 continue
             payload[field] = link
         if candidate.event_type_id is not None:
-            payload["event_type_id"] = candidate.event_type_id
+            # The site takes a set of types now (an event can be a race and a kids race at once).
+            # The agents still choose one, so it goes as a set of one -- nothing about how they read
+            # an announcement changes here.
+            payload["event_type_ids"] = [candidate.event_type_id]
         if candidate.discipline_ids:
             payload["discipline_ids"] = candidate.discipline_ids
         if location_id is not None:

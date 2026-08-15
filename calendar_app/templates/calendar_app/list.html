@@ -169,7 +169,7 @@
           — {{ comp.date_end|date:"d.m.Y" }}
           {% endif %}
         </td>
-        <td data-label="{% trans 'Type' %}">{{ comp.event_type.name|default:"—" }}</td>
+        <td data-label="{% trans 'Type' %}">{{ comp.event_type_label|default:"—" }}</td>
         <td data-label="{% trans 'Directions' %}">{{ comp.direction_label|default:"—" }}</td>
         <td data-label="{% trans 'Disciplines' %}">{{ comp.disciplines_label|default:"—" }}</td>
         <td data-label="{% trans 'Country' %}">{{ comp.country_label|default:"—" }}</td>

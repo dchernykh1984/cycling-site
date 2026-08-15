@@ -55,11 +55,14 @@ def _competition(**kwargs):
         "status": Competition.Status.APPROVED,
     }
     defaults.update(kwargs)
-    # disciplines is a many-to-many - set it after the row exists.
+    # disciplines and event_types are many-to-many - set them after the row exists.
     disciplines = defaults.pop("disciplines", None)
+    event_types = defaults.pop("event_types", None)
     comp = Competition.objects.create(**defaults)
     if disciplines:
         comp.disciplines.set(disciplines)
+    if event_types:
+        comp.event_types.set(event_types)
     return comp
 
 
@@ -299,7 +302,7 @@ class CompetitionListTest(TestCase, ApiTestMixin):
 
     def test_filter_by_event_type_ids(self):
         et = EventType.objects.create(name="Stage race")
-        _competition(event_type=et)
+        _competition(event_types=[et])
         _competition()
         resp = self.get(f"/api/v1/competitions/?event_type_ids={et.pk}", user=self.reader)
         self.assertEqual(resp.status_code, 200)
@@ -4000,3 +4003,94 @@ class DraftLengthLimitTests(ApiTestMixin, TestCase):
                 with override(locale):
                     expected = gettext("Title is too long (max %(limit)d characters).") % {"limit": title_max}
                 self.assertEqual(resp.json()["detail"], expected)
+
+
+class CompetitionEventTypesApiTests(TestCase, ApiTestMixin):
+    """The API takes a set of types, the way it already takes a set of disciplines.
+
+    A start is often more than one thing at once -- a race with a kids race inside it, an open mass
+    start that also holds a professional field -- and one type per event forced those to be posted
+    as two events or as neither.
+    """
+
+    def setUp(self):
+        self.admin = _user("etypes_adm", role=User.Role.ADMIN)
+        self.reader = _user("etypes_read", role=User.Role.PARTICIPANT)
+        self.race = EventType.objects.get(name_en="Race")
+        self.kids = EventType.objects.get(name_en="Kids Race")
+        self.professional = EventType.objects.get(name_en="Professional Race")
+
+    def _payload(self, **kwargs):
+        payload = {
+            "title": {"ru": "Race RU", "kk": "", "en": ""},
+            "description": {"ru": "", "kk": "", "en": ""},
+            "date_start": "2026-07-01",
+        }
+        payload.update(kwargs)
+        return payload
+
+    def _create(self, **kwargs):
+        return self.post("/api/v1/competitions/", self._payload(**kwargs), user=self.admin)
+
+    def test_creating_with_several_types_keeps_all_of_them(self):
+        resp = self._create(event_type_ids=[self.race.pk, self.kids.pk])
+        self.assertEqual(resp.status_code, 201, resp.content[:300])
+        self.assertEqual(set(resp.json()["event_type_ids"]), {self.race.pk, self.kids.pk})
+        competition = Competition.objects.get(pk=resp.json()["id"])
+        self.assertEqual(set(competition.event_types.values_list("pk", flat=True)), {self.race.pk, self.kids.pk})
+
+    def test_creating_without_a_type_leaves_the_set_empty(self):
+        """The type stays optional: plenty of announcements never say what kind of start it is."""
+        self.assertEqual(self._create().json()["event_type_ids"], [])
+
+    def test_creating_with_an_unknown_type_is_refused_and_saves_nothing(self):
+        resp = self._create(event_type_ids=[999999])
+        self.assertEqual(resp.status_code, 404)
+        self.assertFalse(Competition.objects.filter(title_ru="Race RU").exists())
+
+    def test_a_repeated_id_is_stored_once(self):
+        resp = self._create(event_type_ids=[self.race.pk, self.race.pk])
+        self.assertEqual(resp.json()["event_type_ids"], [self.race.pk])
+
+    def test_patching_replaces_the_whole_set(self):
+        pk = self._create(event_type_ids=[self.race.pk]).json()["id"]
+        resp = self.patch(f"/api/v1/competitions/{pk}", {"event_type_ids": [self.professional.pk]}, user=self.admin)
+        self.assertEqual(resp.status_code, 200, resp.content[:300])
+        self.assertEqual(resp.json()["event_type_ids"], [self.professional.pk])
+
+    def test_patching_with_an_empty_list_clears_the_set(self):
+        pk = self._create(event_type_ids=[self.race.pk]).json()["id"]
+        resp = self.patch(f"/api/v1/competitions/{pk}", {"event_type_ids": []}, user=self.admin)
+        self.assertEqual(resp.json()["event_type_ids"], [])
+
+    def test_patching_without_mentioning_them_leaves_them_alone(self):
+        """Omitting a field must not silently empty it -- the same rule disciplines follow."""
+        pk = self._create(event_type_ids=[self.race.pk]).json()["id"]
+        resp = self.patch(f"/api/v1/competitions/{pk}", {"date_end": "2026-07-02"}, user=self.admin)
+        self.assertEqual(resp.json()["event_type_ids"], [self.race.pk])
+
+    def test_patching_them_to_null_is_refused_rather_than_guessed(self):
+        pk = self._create(event_type_ids=[self.race.pk]).json()["id"]
+        resp = self.patch(f"/api/v1/competitions/{pk}", {"event_type_ids": None}, user=self.admin)
+        self.assertEqual(resp.status_code, 422)
+
+    def test_patching_to_an_unknown_type_is_refused(self):
+        pk = self._create(event_type_ids=[self.race.pk]).json()["id"]
+        resp = self.patch(f"/api/v1/competitions/{pk}", {"event_type_ids": [999999]}, user=self.admin)
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(Competition.objects.get(pk=pk).event_types.count(), 1)
+
+    def test_filtering_finds_an_event_that_carries_the_type_among_others(self):
+        self._create(event_type_ids=[self.race.pk, self.kids.pk])
+        self._create(title={"ru": "Elite", "kk": "", "en": ""}, event_type_ids=[self.professional.pk])
+        rows = self.get(f"/api/v1/competitions/?event_type_ids={self.kids.pk}", user=self.reader).json()
+        self.assertEqual([row["title"]["ru"] for row in rows], ["Race RU"])
+
+    def test_filtering_by_two_of_an_events_types_returns_it_once(self):
+        """The join can repeat a row; a caller must not receive one race twice."""
+        self._create(event_type_ids=[self.race.pk, self.kids.pk])
+        rows = self.get(
+            f"/api/v1/competitions/?event_type_ids={self.race.pk}&event_type_ids={self.kids.pk}",
+            user=self.reader,
+        ).json()
+        self.assertEqual(len(rows), 1)

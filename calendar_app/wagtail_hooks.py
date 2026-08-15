@@ -11,7 +11,7 @@ from .models import Competition, Discipline, DisciplineCategory, EventType
 class CompetitionFilterSet(WagtailFilterSet):
     class Meta:
         model = Competition
-        fields: ClassVar[list] = ["status", "event_type", "disciplines__category", "disciplines"]
+        fields: ClassVar[list] = ["status", "event_types", "disciplines__category", "disciplines"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -70,13 +70,20 @@ class CompetitionViewSet(SnippetViewSet):
     icon = "calendar-alt"
     menu_label = "Competitions"
     menu_order = 320
-    list_display: ClassVar[list] = ["title", "date_start", "event_type", "disciplines_label", "status", "submitted_by"]
+    list_display: ClassVar[list] = [
+        "title",
+        "date_start",
+        "event_type_label",
+        "disciplines_label",
+        "status",
+        "submitted_by",
+    ]
     filterset_class = CompetitionFilterSet
     search_fields: ClassVar[list] = ["title_ru", "title_kk", "title_en"]
 
     def get_queryset(self, request):
-        # disciplines_label (in list_display) walks disciplines per row; prefetch to avoid N+1.
-        return Competition.objects.prefetch_related("disciplines")
+        # The two labels in list_display walk a many-to-many per row; prefetch to avoid N+1.
+        return Competition.objects.prefetch_related("disciplines", "event_types")
 
     panels: ClassVar[list] = [
         MultiFieldPanel(
@@ -87,7 +94,7 @@ class CompetitionViewSet(SnippetViewSet):
             [FieldPanel("description_ru"), FieldPanel("description_kk"), FieldPanel("description_en")],
             heading="Description",
         ),
-        FieldPanel("event_type"),
+        FieldPanel("event_types"),
         FieldPanel("disciplines"),
         FieldPanel("location"),
         FieldPanel("date_start"),

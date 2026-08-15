@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 09:27+0500\n"
+"POT-Creation-Date: 2026-08-15 18:31+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -131,8 +131,8 @@ msgstr "Хабарлама жіберу"
 
 #: accounts/templates/accounts/contact_owners.html:33
 #: accounts/templates/accounts/profile_edit.html:72
-#: calendar_app/templates/calendar_app/edit.html:171
-#: calendar_app/templates/calendar_app/submit.html:154
+#: calendar_app/templates/calendar_app/edit.html:174
+#: calendar_app/templates/calendar_app/submit.html:157
 #: home/templates/home/home_edit.html:117
 #: knowledge/templates/knowledge/add_article.html:51
 #: knowledge/templates/knowledge/admin/approve_confirm.html:21
@@ -551,7 +551,7 @@ msgid "Calendar defaults"
 msgstr "Күнтізбенің әдепкі параметрлері"
 
 #: accounts/templates/accounts/profile_edit.html:71
-#: calendar_app/templates/calendar_app/edit.html:170
+#: calendar_app/templates/calendar_app/edit.html:173
 #: knowledge/templates/knowledge/edit_article.html:49
 #: locations/templates/locations/location_form.html:143
 #: registrations/templates/registrations/edit_registration.html:28
@@ -599,7 +599,8 @@ msgid "At least one title translation is required."
 msgstr "Кемінде бір тілде тақырып қажет."
 
 #: api/endpoints/content.py:157 api/endpoints/content.py:168
-#: api/endpoints/content.py:184 api/tests.py:1184
+#: api/endpoints/content.py:184 api/endpoints/content.py:236 api/tests.py:1187
+#: api/tests.py:4004
 #, python-format
 msgid "Title is too long (max %(limit)d characters)."
 msgstr "Тақырып тым ұзын (ең көбі %(limit)d таңба)."
@@ -613,21 +614,28 @@ msgid "A title is required."
 msgstr "Тақырып қажет."
 
 #: api/endpoints/content.py:169 api/endpoints/content.py:185
+#: api/endpoints/content.py:237
 #, python-format
 msgid "Category is too long (max %(limit)d characters)."
 msgstr "Санат тым ұзын (ең көбі %(limit)d таңба)."
 
-#: api/endpoints/content.py:337 api/endpoints/content.py:358
+#: api/endpoints/content.py:358 api/endpoints/content.py:379
 #, python-format
 msgid "Intro is too long (max %(limit)d characters)."
 msgstr "Кіріспе тым ұзын (ең көбі %(limit)d таңба)."
 
-#: calendar_app/forms.py:58
+#: calendar_app/forms.py:64
 #: calendar_app/templates/calendar_app/_event_type_filter.html:8
 msgid "Event type"
 msgstr "Іс-шара түрі"
 
-#: calendar_app/forms.py:66
+#: calendar_app/forms.py:65
+msgid ""
+"Choose one or more types - an event can be a race and a kids race at once."
+msgstr ""
+"Бір немесе бірнеше түрін таңдаңыз — старт бір мезгілде жарыс та, балалар жарысы да бола алады."
+
+#: calendar_app/forms.py:72
 #: calendar_app/templates/calendar_app/_disciplines_field.html:14
 #: calendar_app/templates/calendar_app/detail.html:56
 #: calendar_app/templates/calendar_app/list.html:148
@@ -635,51 +643,51 @@ msgstr "Іс-шара түрі"
 msgid "Disciplines"
 msgstr "Пәндер"
 
-#: calendar_app/forms.py:101
+#: calendar_app/forms.py:107
 msgid "Date start"
 msgstr "Басталу күні"
 
-#: calendar_app/forms.py:106
+#: calendar_app/forms.py:112
 msgid "Date end"
 msgstr "Аяқталу күні"
 
-#: calendar_app/forms.py:128
+#: calendar_app/forms.py:134
 msgid "File size must not exceed 10 MB."
 msgstr "Файл өлшемі 10 МБ-тан аспауы керек."
 
-#: calendar_app/forms.py:132
+#: calendar_app/forms.py:138
 #, python-format
 msgid "Unsupported file type. Allowed: %(allowed)s."
 msgstr "Қолданылмайтын файл түрі. Рұқсат етілген: %(allowed)s."
 
-#: calendar_app/forms.py:142
+#: calendar_app/forms.py:148
 msgid "Description is too large. Use fewer or smaller inline images."
 msgstr "Сипаттама тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
 
-#: calendar_app/forms.py:172 calendar_app/tests.py:516
+#: calendar_app/forms.py:178 calendar_app/tests.py:519
 msgid "End date cannot be before start date."
 msgstr "Аяқталу күні басталу күнінен бұрын болмауы керек."
 
-#: calendar_app/forms.py:185
+#: calendar_app/forms.py:191
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:195 calendar_app/views.py:888
+#: calendar_app/forms.py:201 calendar_app/views.py:889
 #: calendar_app/views.py:1086
 msgid "This location is not available."
 msgstr "Бұл локация қолжетімді емес."
 
-#: calendar_app/forms.py:262
+#: calendar_app/forms.py:270 calendar_app/tests.py:1299
 #, python-format
 msgid "Category name is too long: at most %(limit_value)d characters."
 msgstr "Санат атауы тым ұзын: ең көбі %(limit_value)d таңба."
 
-#: calendar_app/forms.py:281 calendar_app/tests.py:1570 knowledge/forms.py:44
+#: calendar_app/forms.py:289 calendar_app/tests.py:1636 knowledge/forms.py:44
 #: knowledge/tests.py:909 news/forms.py:113 news/forms.py:126 news/tests.py:689
 msgid "Write a comment..."
 msgstr "Пікір жазыңыз..."
 
-#: calendar_app/forms.py:308
+#: calendar_app/forms.py:316
 msgid "Optional: what looks wrong?"
 msgstr "Міндетті емес: не дұрыс емес?"
 
@@ -1105,9 +1113,9 @@ msgstr "Сіз бұл іс-шараға шағым жасадыңыз; моде�
 
 #: calendar_app/templates/calendar_app/detail.html:161
 #: calendar_app/templates/calendar_app/detail.html:164
-#: calendar_app/templates/calendar_app/edit.html:103
+#: calendar_app/templates/calendar_app/edit.html:106
 #: calendar_app/templates/calendar_app/moderate.html:38
-#: calendar_app/templates/calendar_app/submit.html:96
+#: calendar_app/templates/calendar_app/submit.html:99
 msgid "Announcement"
 msgstr "Хабарлама"
 
@@ -1123,15 +1131,15 @@ msgstr "Тiркелу"
 
 #: calendar_app/templates/calendar_app/detail.html:172
 #: calendar_app/templates/calendar_app/detail.html:175
-#: calendar_app/templates/calendar_app/edit.html:115
-#: calendar_app/templates/calendar_app/submit.html:105
+#: calendar_app/templates/calendar_app/edit.html:118
+#: calendar_app/templates/calendar_app/submit.html:108
 msgid "Route"
 msgstr "Маршрут"
 
 #: calendar_app/templates/calendar_app/detail.html:179
 #: calendar_app/templates/calendar_app/detail.html:182
-#: calendar_app/templates/calendar_app/edit.html:127
-#: calendar_app/templates/calendar_app/submit.html:114
+#: calendar_app/templates/calendar_app/edit.html:130
+#: calendar_app/templates/calendar_app/submit.html:117
 msgid "Regulations"
 msgstr "Ереже"
 
@@ -1343,48 +1351,48 @@ msgstr "Пікір жазу тек расталған қатысушыларға
 msgid "Description"
 msgstr "Сипаттама"
 
-#: calendar_app/templates/calendar_app/edit.html:100
-#: calendar_app/templates/calendar_app/submit.html:93
+#: calendar_app/templates/calendar_app/edit.html:103
+#: calendar_app/templates/calendar_app/submit.html:96
 msgid "Documents"
 msgstr "Құжаттар"
 
-#: calendar_app/templates/calendar_app/edit.html:106
-#: calendar_app/templates/calendar_app/edit.html:118
-#: calendar_app/templates/calendar_app/edit.html:130
-#: calendar_app/templates/calendar_app/edit.html:142
-#: calendar_app/templates/calendar_app/submit.html:99
-#: calendar_app/templates/calendar_app/submit.html:108
-#: calendar_app/templates/calendar_app/submit.html:117
-#: calendar_app/templates/calendar_app/submit.html:126
+#: calendar_app/templates/calendar_app/edit.html:109
+#: calendar_app/templates/calendar_app/edit.html:121
+#: calendar_app/templates/calendar_app/edit.html:133
+#: calendar_app/templates/calendar_app/edit.html:145
+#: calendar_app/templates/calendar_app/submit.html:102
+#: calendar_app/templates/calendar_app/submit.html:111
+#: calendar_app/templates/calendar_app/submit.html:120
+#: calendar_app/templates/calendar_app/submit.html:129
 msgid "or upload file"
 msgstr "немесе файл жүктеу"
 
-#: calendar_app/templates/calendar_app/edit.html:108
-#: calendar_app/templates/calendar_app/edit.html:120
-#: calendar_app/templates/calendar_app/edit.html:132
-#: calendar_app/templates/calendar_app/edit.html:144
+#: calendar_app/templates/calendar_app/edit.html:111
+#: calendar_app/templates/calendar_app/edit.html:123
+#: calendar_app/templates/calendar_app/edit.html:135
+#: calendar_app/templates/calendar_app/edit.html:147
 msgid "Current file"
 msgstr "Ағымдағы файл"
 
-#: calendar_app/templates/calendar_app/edit.html:108
-#: calendar_app/templates/calendar_app/edit.html:120
-#: calendar_app/templates/calendar_app/edit.html:132
-#: calendar_app/templates/calendar_app/edit.html:144
+#: calendar_app/templates/calendar_app/edit.html:111
+#: calendar_app/templates/calendar_app/edit.html:123
+#: calendar_app/templates/calendar_app/edit.html:135
+#: calendar_app/templates/calendar_app/edit.html:147
 msgid "Download"
 msgstr "Жүктеп алу"
 
-#: calendar_app/templates/calendar_app/edit.html:139
-#: calendar_app/templates/calendar_app/submit.html:123
+#: calendar_app/templates/calendar_app/edit.html:142
+#: calendar_app/templates/calendar_app/submit.html:126
 msgid "External results link"
 msgstr "Нәтижелерге сыртқы сілтеме"
 
-#: calendar_app/templates/calendar_app/edit.html:151
-#: calendar_app/templates/calendar_app/submit.html:132
+#: calendar_app/templates/calendar_app/edit.html:154
+#: calendar_app/templates/calendar_app/submit.html:135
 msgid "External registration link"
 msgstr "Сыртқы тіркеуге сілтеме"
 
-#: calendar_app/templates/calendar_app/edit.html:161
-#: calendar_app/templates/calendar_app/submit.html:143
+#: calendar_app/templates/calendar_app/edit.html:164
+#: calendar_app/templates/calendar_app/submit.html:146
 msgid "Set up registration on our site"
 msgstr "Біздің сайтта тіркеуді баптау"
 
@@ -1485,30 +1493,30 @@ msgstr ""
 msgid "No locations pending approval."
 msgstr "Бекітуді күтіп тұрған орындар жоқ."
 
-#: calendar_app/templates/calendar_app/submit.html:153
+#: calendar_app/templates/calendar_app/submit.html:156
 #: knowledge/templates/knowledge/submit.html:47
 msgid "Submit"
 msgstr "Жіберу"
 
-#: calendar_app/tests.py:664 calendar_app/tests.py:677 cycling_site/forms.py:18
+#: calendar_app/tests.py:667 calendar_app/tests.py:680 cycling_site/forms.py:18
 #: news/tests.py:579
 #, python-format
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."
 
-#: calendar_app/views.py:663
+#: calendar_app/views.py:664
 msgid "N"
 msgstr "с.е."
 
-#: calendar_app/views.py:663
+#: calendar_app/views.py:664
 msgid "S"
 msgstr "о.е."
 
-#: calendar_app/views.py:664
+#: calendar_app/views.py:665
 msgid "E"
 msgstr "ш.б."
 
-#: calendar_app/views.py:664
+#: calendar_app/views.py:665
 msgid "W"
 msgstr "б.б."
 

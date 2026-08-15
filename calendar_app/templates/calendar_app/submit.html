@@ -73,6 +73,9 @@
             {{ field.label }}{% if field.field.required %} *{% endif %}
           </label>
           {{ field }}
+          {% if field.help_text %}
+          <div class="form-text">{{ field.help_text }}</div>
+          {% endif %}
           {% if field.errors %}
           <div class="text-danger small mt-1">{% for error in field.errors %}{{ error }}{% endfor %}</div>
           {% endif %}

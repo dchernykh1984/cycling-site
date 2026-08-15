@@ -232,7 +232,8 @@ def _apply_id_filters(qs, event_type_ids, discipline_ids, direction_ids):
     """
     event_types = _parse_int_ids(event_type_ids)
     if event_types:
-        qs = qs.filter(event_type_id__in=event_types)
+        # An event may carry several types, so the join can repeat a row -- distinct() as below.
+        qs = qs.filter(event_types__id__in=event_types).distinct()
     disciplines = _parse_int_ids(discipline_ids)
     directions = _parse_int_ids(direction_ids)
     if disciplines or directions:
@@ -357,7 +358,7 @@ class CalendarEventsAPIView(View):
         is_manager = _can_manage_any_competition(request.user)
         qs = (
             Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False)
-            .select_related("event_type")
+            .prefetch_related("event_types")
             .prefetch_related("disciplines__category")
         )
         if not is_manager:
@@ -398,7 +399,7 @@ class CalendarEventsAPIView(View):
                 "end": comp.get_calendar_end(),
                 "url": reverse("competition_detail", args=[comp.pk]),
                 "extendedProps": {
-                    "event_type": comp.event_type.name if comp.event_type else "",
+                    "event_type": comp.event_type_label,
                     "discipline": comp.disciplines_label,
                     "favorite": comp.pk in favorited_ids,
                 },
@@ -421,7 +422,8 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
         is_manager = _can_manage_any_competition(self.request.user)
         qs = (
             Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False)
-            .select_related("event_type", "location")
+            .select_related("location")
+            .prefetch_related("event_types")
             .prefetch_related("disciplines__category")
         )
         if not is_manager:
@@ -849,7 +851,6 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         description_ru=cd.get("description_ru", ""),
                         description_kk=cd.get("description_kk", ""),
                         description_en=cd.get("description_en", ""),
-                        event_type=cd.get("event_type"),
                         location=location,
                         date_start=cd["date_start"],
                         date_end=cd.get("date_end"),
@@ -882,6 +883,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         comp.registration_enabled = False
                     comp.save()
                     comp.disciplines.set(cd.get("disciplines") or [])
+                    comp.event_types.set(cd.get("event_types") or [])
                     if is_organizer and reg_form.is_valid():
                         _save_categories(comp, reg_form, True)
             except LocationConflictError:
@@ -921,7 +923,7 @@ class EditCompetitionView(View):
                 "description_ru": comp.description_ru or "",
                 "description_kk": comp.description_kk or "",
                 "description_en": comp.description_en or "",
-                "event_type": comp.event_type_id,
+                "event_types": list(comp.event_types.values_list("pk", flat=True)),
                 "disciplines": list(comp.disciplines.values_list("pk", flat=True)),
                 "location": comp.location_id,
                 "date_start": comp.date_start,
@@ -1053,7 +1055,6 @@ class EditCompetitionView(View):
             comp.description_ru = cd.get("description_ru", "")
             comp.description_kk = cd.get("description_kk", "")
             comp.description_en = cd.get("description_en", "")
-            comp.event_type = cd.get("event_type")
             comp.date_start = cd["date_start"]
             comp.date_end = cd.get("date_end")
             comp.url_announcement = cd.get("url_announcement", "")
@@ -1130,7 +1131,8 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         competitions = list(
             Competition.objects.filter(status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
-            .select_related("submitted_by", "event_type", "location")
+            .select_related("submitted_by", "location")
+            .prefetch_related("event_types")
             .prefetch_related("disciplines__category")
             .order_by("date_start")
         )
@@ -1159,7 +1161,8 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
                     status=Competition.Status.APPROVED, is_deleted=False, reports__resolved=False
                 )
                 .distinct()
-                .select_related("event_type", "location")
+                .select_related("location")
+                .prefetch_related("event_types")
                 .prefetch_related(
                     "disciplines__category",
                     Prefetch(
