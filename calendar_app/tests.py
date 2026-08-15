@@ -2815,54 +2815,60 @@ class OtherAndMtbDisciplineMigrationTests(TransactionTestCase):
         self.assertEqual(survived.name_en, "Other (Custom)")
 
 
-class RegistrationDeadlineMigrationTests(TransactionTestCase):
+class RegistrationDeadlineMigrationTests(TestCase):
     """0018 shifts legacy date-only (midnight) deadlines to end-of-day so registration stays
-    open for the whole deadline day, preserving the old DateField semantics."""
+    open for the whole deadline day, preserving the old DateField semantics.
+
+    The migration function is called against the real registry rather than driven through
+    MigrationExecutor. Rolling an app back and forward in-process truncates every table, seeded
+    rows included, and whatever runs next on the same xdist worker then starts from a database
+    that has been emptied -- which is how this suite kept breaking the locations concurrency tests
+    on CI while passing on every machine with more cores. A TestCase wraps each test in a
+    transaction, so the writes below are rolled back and nothing leaks to the next test.
+    """
 
     APP = "calendar_app"
-    BEFORE = "0017_alter_competition_registration_deadline"
-    AFTER = "0018_shift_date_deadlines_to_end_of_day"
 
-    def tearDown(self):
-        from django.core.management import call_command
+    def _forward(self):
+        import importlib
 
-        call_command("migrate", self.APP, verbosity=0)
+        from django.apps import apps
 
-    def _migrate(self, target):
-        from django.db import connection
-        from django.db.migrations.executor import MigrationExecutor
-
-        executor = MigrationExecutor(connection)
-        executor.migrate([(self.APP, target)])
-        return executor.loader.project_state([(self.APP, target)]).apps
+        importlib.import_module(f"{self.APP}.migrations.0018_shift_date_deadlines_to_end_of_day")._forward(apps, None)
 
     def test_forward_shifts_legacy_midnight_deadline_to_end_of_day(self):
-        import datetime
-
         # The runtime helper computes the expected value, cross-checking the migration's own
         # (deliberately self-contained) copy of the same transform.
         from calendar_app.registration_deadline import date_only_to_end_of_day
 
-        apps = self._migrate(self.BEFORE)
         midnight_utc = datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC)
-        comp = apps.get_model(self.APP, "Competition").objects.create(
-            title="X", date_start=datetime.date(2026, 9, 1), registration_deadline=midnight_utc
-        )
-        apps = self._migrate(self.AFTER)
-        migrated = apps.get_model(self.APP, "Competition").objects.get(pk=comp.pk)
-        self.assertEqual(migrated.registration_deadline, date_only_to_end_of_day(midnight_utc))
+        comp = _make_competition("Midnight", registration_deadline=midnight_utc)
+        self._forward()
+        comp.refresh_from_db()
+        self.assertEqual(comp.registration_deadline, date_only_to_end_of_day(midnight_utc))
 
     def test_forward_leaves_real_time_deadline_untouched(self):
-        import datetime
+        afternoon = datetime.datetime(2026, 9, 1, 14, 30, tzinfo=datetime.UTC)
+        comp = _make_competition("Afternoon", registration_deadline=afternoon)
+        self._forward()
+        comp.refresh_from_db()
+        self.assertEqual(comp.registration_deadline, afternoon)
 
-        apps = self._migrate(self.BEFORE)
-        dt = datetime.datetime(2026, 9, 1, 14, 30, tzinfo=datetime.UTC)
-        comp = apps.get_model(self.APP, "Competition").objects.create(
-            title="Y", date_start=datetime.date(2026, 9, 1), registration_deadline=dt
-        )
-        apps = self._migrate(self.AFTER)
-        migrated = apps.get_model(self.APP, "Competition").objects.get(pk=comp.pk)
-        self.assertEqual(migrated.registration_deadline, dt)
+    def test_forward_leaves_a_competition_without_a_deadline_alone(self):
+        comp = _make_competition("No deadline")
+        self._forward()
+        comp.refresh_from_db()
+        self.assertIsNone(comp.registration_deadline)
+
+    def test_running_it_twice_shifts_nothing_further(self):
+        """Migrations get replayed on restored backups, so a second run must be a no-op."""
+        comp = _make_competition("Midnight", registration_deadline=datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC))
+        self._forward()
+        comp.refresh_from_db()
+        once = comp.registration_deadline
+        self._forward()
+        comp.refresh_from_db()
+        self.assertEqual(comp.registration_deadline, once)
 
 
 class UploadTokenManagementTests(TestCase):
