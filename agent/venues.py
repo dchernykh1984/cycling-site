@@ -52,16 +52,19 @@ Point = tuple[float, float]
 # One name written in two scripts comes out of transliteration as two different words, and the site
 # grew four nodes for one filling station because of it: the sign says Compass, the announcements
 # say Kompas, and "compass" and "kompas" share not a single letter position. These rules fold both
-# spellings onto one form. Each is a pair this site actually carries, in order -- kh before h, ph
-# before f, dzh before j, so a longer sequence is not eaten by a shorter rule first.
+# spellings onto one form.
+#
+# The order matters: kh before h, ph before f, dzh before j, so a longer sequence is not eaten by a
+# shorter rule first. The names marked (*) are ones this site carries in both scripts today; the
+# rest are the same letter-for-letter correspondence, written out before a name needing it arrives.
 _SCRIPT_FOLDING = (
-    ("kh", "h"),  # Halyk / Khalyk
+    ("kh", "h"),  # (*) Halyk Bank / Khalyk Arena
     ("ph", "f"),  # Sophia / Sofiya
-    ("dzh", "j"),  # Jailau / Dzhaylau
-    ("x", "ks"),  # Maxim / Maksim
+    ("dzh", "j"),  # (*) Ujimqin / Udzhimchin
+    ("x", "ks"),  # (*) Athletex / Atletks, Maxim / Maksim
     ("w", "v"),  # Wolf / Volf
-    ("q", "k"),  # Qazaqstan / Kazakstan
-    ("y", "i"),  # Jailau / Jaylau -- both spellings fold the same way
+    ("q", "k"),  # (*) Qazaq Energy / Kazak
+    ("y", "i"),  # (*) Almaty / Almati -- both spellings fold the same way
 )
 # "c" is a k sound before a back vowel and an s sound before a front one, which is why Compass
 # transliterates from Cyrillic as Kompas and Center as Tsentr.
