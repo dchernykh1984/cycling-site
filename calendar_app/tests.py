@@ -39,11 +39,14 @@ def _make_competition(title="Test Race", status=Competition.Status.APPROVED, **k
         "status": status,
     }
     defaults.update(kwargs)
-    # disciplines is a many-to-many - set it after the row exists.
+    # disciplines and event_types are many-to-many - set them after the row exists.
     disciplines = defaults.pop("disciplines", None)
+    event_types = defaults.pop("event_types", None)
     comp = Competition.objects.create(**defaults)
     if disciplines:
         comp.disciplines.set(disciplines)
+    if event_types:
+        comp.event_types.set(event_types)
     return comp
 
 
@@ -165,7 +168,7 @@ class CalendarEventsAPIViewTests(TestCase):
             "Race A",
             status=Competition.Status.APPROVED,
             date_start=datetime.date(2026, 7, 10),
-            event_type=self.event_type,
+            event_types=[self.event_type],
             disciplines=[self.discipline],
         )
         self.comp2 = _make_competition(
@@ -1802,13 +1805,13 @@ class MultiSelectIdFilterTests(TestCase):
         self.mtb_relay = Discipline.objects.create(name_ru="Relay", category=self.mtb, order=2)
         d = datetime.date(2026, 9, 1)
         self.c_race_road = _make_competition(
-            "Race Road", event_type=self.race, disciplines=[self.road_disc], date_start=d
+            "Race Road", event_types=[self.race], disciplines=[self.road_disc], date_start=d
         )
         self.c_train_mtb = _make_competition(
-            "Train MTB", event_type=self.training, disciplines=[self.mtb_disc], date_start=d
+            "Train MTB", event_types=[self.training], disciplines=[self.mtb_disc], date_start=d
         )
         self.c_fest_run = _make_competition(
-            "Fest Run", event_type=self.festival, disciplines=[self.run_disc], date_start=d
+            "Fest Run", event_types=[self.festival], disciplines=[self.run_disc], date_start=d
         )
         self.c_road_relay = _make_competition("Road Relay", disciplines=[self.road_relay], date_start=d)
         self.c_mtb_relay = _make_competition("MTB Relay", disciplines=[self.mtb_relay], date_start=d)
@@ -1951,10 +1954,10 @@ class CompetitionAdminCategoryFilterTests(TestCase):
 
 
 class CompetitionAdminListQueryTests(TestCase):
-    """The Wagtail admin index queryset must prefetch disciplines so disciplines_label (in
-    list_display) does not issue one query per row."""
+    """The Wagtail admin index queryset must prefetch the two labelled sets, so disciplines_label
+    and event_type_label (both in list_display) do not issue one query per row."""
 
-    def test_index_queryset_prefetches_disciplines(self):
+    def test_index_queryset_prefetches_the_sets_its_labels_walk(self):
         from calendar_app.wagtail_hooks import CompetitionViewSet
 
         cat = DisciplineCategory.objects.create(name_ru="Road")
@@ -1962,11 +1965,12 @@ class CompetitionAdminListQueryTests(TestCase):
         for i in range(3):
             _make_competition(f"Row {i}", disciplines=discs)
         viewset = CompetitionViewSet()
-        # 1 query for the competitions + 1 for the prefetched disciplines, regardless of row count
-        # (without the prefetch this is 1 + N, i.e. 4 here).
-        with self.assertNumQueries(2):
-            labels = [c.disciplines_label for c in viewset.get_queryset(None)]
-        self.assertTrue(all(labels))
+        # 1 query for the competitions + 1 per prefetched set, regardless of row count (without
+        # the prefetch each label would cost one query per row, i.e. 1 + 3 + 3 here).
+        with self.assertNumQueries(3):
+            rows = list(viewset.get_queryset(None))
+            labels = [(c.disciplines_label, c.event_type_label) for c in rows]
+        self.assertTrue(all(disciplines for disciplines, _types in labels))
 
 
 class CalendarMapViewTests(TestCase):
@@ -2004,7 +2008,7 @@ class CalendarMapAPIViewTests(TestCase):
             "Mapped Race",
             location=self.loc,
             disciplines=[self.disc],
-            event_type=self.event_type,
+            event_types=[self.event_type],
             date_start=datetime.date(2026, 7, 10),
         )
         _make_competition("Unmapped", location=self.loc_nocoords, date_start=datetime.date(2026, 7, 10))
@@ -2377,7 +2381,7 @@ class SubmitCompetitionScenariosTests(TestCase):
                 date_start="2026-09-01",
                 date_end="2026-09-03",
                 disciplines=[str(self.disc.pk)],
-                event_type=str(self.event_type.pk),
+                event_types=[str(self.event_type.pk)],
                 description_ru="Some description",
                 url_announcement="https://example.com/a",
                 url_results="https://example.com/r",
@@ -2388,7 +2392,7 @@ class SubmitCompetitionScenariosTests(TestCase):
         comp = Competition.objects.get(title_ru="V10")
         self.assertEqual(comp.date_end, datetime.date(2026, 9, 3))
         self.assertEqual(list(comp.disciplines.values_list("pk", flat=True)), [self.disc.pk])
-        self.assertEqual(comp.event_type.pk, self.event_type.pk)
+        self.assertEqual(list(comp.event_types.values_list("pk", flat=True)), [self.event_type.pk])
 
     def test_multiple_disciplines_are_saved(self):
         self.client.force_login(self.organizer)
@@ -3659,14 +3663,151 @@ class ProfessionalRaceEventTypeTests(TestCase):
         self._migration().add_professional_race(self._registry(), None)
         self.assertEqual(EventType.objects.filter(name_en=self.NAME_EN).count(), 1)
 
-    def test_it_can_be_removed_again_while_nothing_uses_it(self):
-        self._migration().remove_professional_race(self._registry(), None)
-        self.assertFalse(EventType.objects.filter(name_en=self.NAME_EN).exists())
+    def test_its_reverse_reads_the_column_that_exists_when_it_runs(self):
+        """0028 is reversed only after 0029 has put the single-type column back, so its guard is
+        written against that column rather than against the set 0029 introduces. Calling it here,
+        where the column is gone, is not the order it ever runs in -- what is checked instead is
+        that the guard names the field its own historical model has."""
+        import inspect
 
-    def test_removing_it_is_refused_once_an_event_is_marked_with_it(self):
-        """Reversing must not quietly drop what an organizer said about their race."""
-        event_type = EventType.objects.get(name_en=self.NAME_EN)
-        _make_competition("Elite", event_type=event_type)
-        with self.assertRaises(RuntimeError):
-            self._migration().remove_professional_race(self._registry(), None)
-        self.assertTrue(EventType.objects.filter(name_en=self.NAME_EN).exists())
+        source = inspect.getsource(self._migration().remove_professional_race)
+        self.assertIn("event_type=", source)
+        self.assertNotIn("event_types", source)
+
+
+class SeveralEventTypesReverseMigrationTests(TestCase):
+    """0029 must refuse to collapse a set of types back into one column when that would lose one."""
+
+    def _migration(self):
+        import importlib
+
+        return importlib.import_module("calendar_app.migrations.0029_competition_event_types")
+
+    def _registry(self):
+        from django.apps import apps
+
+        return apps
+
+    def test_reversing_is_refused_when_an_event_carries_several_types(self):
+        race = EventType.objects.get(name_en="Race")
+        kids = EventType.objects.get(name_en="Kids Race")
+        comp = _make_competition("Race with a kids race", event_types=[race, kids])
+        with self.assertRaises(RuntimeError) as caught:
+            self._migration().copy_event_types_to_event_type(self._registry(), None)
+        self.assertIn(str(comp.pk), str(caught.exception))
+
+
+class SeveralEventTypesPerCompetitionTests(TestCase):
+    """A start is often more than one thing at once, so an event carries a set of types.
+
+    A race with a kids race inside it, or an open mass start that also holds a professional field,
+    used to have to be filed as two events or as neither. Nothing requires more than one type.
+    """
+
+    def setUp(self):
+        self.race = EventType.objects.get(name_en="Race")
+        self.kids = EventType.objects.get(name_en="Kids Race")
+        self.professional = EventType.objects.get(name_en="Professional Race")
+
+    def test_an_event_can_hold_more_than_one_type(self):
+        comp = _make_competition("Family race", event_types=[self.race, self.kids])
+        self.assertEqual(set(comp.event_types.values_list("name_en", flat=True)), {"Race", "Kids Race"})
+
+    def test_the_label_names_every_type_it_holds(self):
+        comp = _make_competition("Open start", event_types=[self.race, self.professional])
+        label = comp.event_type_label
+        self.assertIn(self.race.name, label)
+        self.assertIn(self.professional.name, label)
+
+    def test_an_event_with_no_type_has_an_empty_label(self):
+        """The type stays optional: plenty of announcements never say what kind of start it is."""
+        self.assertEqual(_make_competition("Unclassified").event_type_label, "")
+
+    def test_the_label_is_translated_like_the_type_itself(self):
+        comp = _make_competition("Elite start", event_types=[self.professional])
+        for lang in ("ru", "kk", "en"):
+            with self.subTest(lang=lang), translation_override(lang):
+                comp.refresh_from_db()
+                expected = EventType.objects.get(pk=self.professional.pk).name
+                self.assertEqual(comp.event_type_label, expected)
+
+
+class SeveralEventTypesFormTests(TestCase):
+    """The submit form takes a set, and says so -- a multi-select gives no hint by itself."""
+
+    def setUp(self):
+        self.user = _make_user("types-form@example.com", User.Role.PARTICIPANT)
+        self.race = EventType.objects.get(name_en="Race")
+        self.kids = EventType.objects.get(name_en="Kids Race")
+
+    def test_the_form_accepts_several_types(self):
+        from calendar_app.forms import SubmitCompetitionForm
+
+        form = SubmitCompetitionForm(
+            data={
+                "title_ru": "Family race",
+                "date_start": "2026-09-01",
+                "event_types": [str(self.race.pk), str(self.kids.pk)],
+            },
+            user=self.user,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual({e.pk for e in form.cleaned_data["event_types"]}, {self.race.pk, self.kids.pk})
+
+    def test_the_type_stays_optional(self):
+        """Plenty of announcements never say what kind of start it is."""
+        from calendar_app.forms import SubmitCompetitionForm
+
+        form = SubmitCompetitionForm(data={"title_ru": "Unclassified", "date_start": "2026-09-01"}, user=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(list(form.cleaned_data["event_types"]), [])
+
+    def test_the_page_tells_the_reader_several_may_be_chosen(self):
+        """A <select multiple> looks like a single-choice list until something says otherwise."""
+        self.client.login(username="types-form@example.com", password="password123")
+        body = self.client.get(reverse("calendar_submit")).content.decode()
+        self.assertIn("multiple", body)
+        with translation_override("en"):
+            expected = gettext("Choose one or more types - an event can be a race and a kids race at once.")
+        self.assertIn(expected, self.client.get(reverse("calendar_submit"), HTTP_ACCEPT_LANGUAGE="en").content.decode())
+
+    def test_the_hint_is_translated(self):
+        source = "Choose one or more types - an event can be a race and a kids race at once."
+        for lang in ("ru", "kk"):
+            with self.subTest(lang=lang), translation_override(lang):
+                self.assertNotEqual(gettext(source), source, f"untranslated for {lang}")
+
+
+class SeveralEventTypesFilterTests(TestCase):
+    """Filtering by type matches an event that carries it among others, and never doubles a row."""
+
+    def setUp(self):
+        self.race = EventType.objects.get(name_en="Race")
+        self.kids = EventType.objects.get(name_en="Kids Race")
+        self.professional = EventType.objects.get(name_en="Professional Race")
+        # The list shows what is still to come, so these sit in the future rather than on the
+        # helper's default date.
+        soon = timezone.localdate() + datetime.timedelta(days=30)
+        self.both = _make_competition("Race with a kids race", date_start=soon, event_types=[self.race, self.kids])
+        self.plain = _make_competition("Plain race", date_start=soon, event_types=[self.race])
+        self.elite = _make_competition("Elite only", date_start=soon, event_types=[self.professional])
+
+    def _titles(self, **params):
+        response = self.client.get(reverse("calendar_list"), params)
+        return {c.title_ru for c in response.context["competitions"]}
+
+    def test_a_type_finds_an_event_that_also_carries_another(self):
+        self.assertEqual(self._titles(event_type=self.kids.pk), {"Race with a kids race"})
+
+    def test_an_event_appears_once_when_several_of_its_types_are_selected(self):
+        """The join can repeat a row; a reader must not see one race twice."""
+        response = self.client.get(reverse("calendar_list") + f"?event_type={self.race.pk}&event_type={self.kids.pk}")
+        titles = [c.title_ru for c in response.context["competitions"]]
+        self.assertEqual(titles.count("Race with a kids race"), 1)
+        self.assertIn("Plain race", titles)
+
+    def test_selecting_the_professional_type_leaves_the_amateur_starts_out(self):
+        self.assertEqual(self._titles(event_type=self.professional.pk), {"Elite only"})
+
+    def test_no_type_selected_still_shows_everything(self):
+        self.assertEqual(self._titles(), {"Race with a kids race", "Plain race", "Elite only"})

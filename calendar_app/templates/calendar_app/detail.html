@@ -46,8 +46,8 @@
         — {{ competition.date_end|date:"d.m.Y" }}
         {% endif %}
       </span>
-      {% if competition.event_type %}
-      <span><strong>{% trans "Type" %}:</strong> {{ competition.event_type.name }}</span>
+      {% if competition.event_type_label %}
+      <span><strong>{% trans "Type" %}:</strong> {{ competition.event_type_label }}</span>
       {% endif %}
       {% if competition.direction_label %}
       <span><strong>{% trans "Directions" %}:</strong> {{ competition.direction_label }}</span>

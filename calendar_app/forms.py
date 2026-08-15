@@ -56,12 +56,14 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     description_ru = forms.CharField(required=False, widget=forms.HiddenInput())
     description_kk = forms.CharField(required=False, widget=forms.HiddenInput())
     description_en = forms.CharField(required=False, widget=forms.HiddenInput())
-    event_type: forms.ModelChoiceField[EventType] = forms.ModelChoiceField(
+    # A start can be more than one thing at once -- a race with a kids race inside it, an open
+    # mass start that also holds a professional field -- so the types are a set, like disciplines.
+    event_types: forms.ModelMultipleChoiceField[EventType] = forms.ModelMultipleChoiceField(
         queryset=EventType.objects.all(),
         required=False,
         label=_("Event type"),
-        empty_label="--",
-        widget=forms.Select(attrs={"class": "form-select"}),
+        help_text=_("Choose one or more types - an event can be a race and a kids race at once."),
+        widget=forms.SelectMultiple(attrs={"class": "form-select", "size": "5"}),
     )
     # A competition can belong to several disciplines (and thus directions) at once (#multi-discipline).
     disciplines: forms.ModelMultipleChoiceField[Discipline] = forms.ModelMultipleChoiceField(
