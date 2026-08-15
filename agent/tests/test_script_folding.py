@@ -131,7 +131,19 @@ def test_a_venue_named_in_the_other_script_is_reused_rather_than_added_again():
     assert venues.existing_venue(known, written_differently, (43.262386, 76.984031)) == 1414
 
 
-def test_a_name_that_needs_no_folding_is_untouched():
-    """Most names are already one spelling; the folding must not quietly rewrite them."""
-    for word in ("medeu", "shymbulak", "arena", "park"):
-        assert venues.fold_script(word) == word.replace("y", "i")
+def test_a_word_with_nothing_to_fold_comes_through_as_it_was():
+    """Most names hold nothing the rules touch, and those must come through unchanged."""
+    for word in ("medeu", "arena", "park", "start", "most"):
+        assert venues.fold_script(word) == word
+
+
+def test_folding_is_idempotent():
+    """Folding a folded word must not keep changing it, or two runs would disagree."""
+    for word in ("kompas", "shimbulak", "halik", "maksim", "jailau"):
+        assert venues.fold_script(venues.fold_script(word)) == venues.fold_script(word)
+
+
+def test_it_is_the_y_rule_that_touches_a_name_like_shymbulak():
+    """Named rather than hidden: "shymbulak" does change, because both spellings fold alike."""
+    assert venues.fold_script("shymbulak") == "shimbulak"
+    assert venues.fold_script("shimbulak") == "shimbulak"
