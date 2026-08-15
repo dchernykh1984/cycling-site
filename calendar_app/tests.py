@@ -3651,6 +3651,12 @@ class ProfessionalRaceEventTypeTests(TestCase):
         self.assertTrue(event_type.name_kk, "the Kazakh tab would fall back to Russian without it")
         self.assertEqual(event_type.name, event_type.name_ru, "the base column carries the Russian text")
 
+    def test_it_is_listed_after_the_types_that_were_already_there(self):
+        """``order`` defaults to 0, which would put the newest type ahead of the plain race."""
+        listed = list(EventType.objects.values_list("name_en", flat=True))
+        self.assertEqual(listed[-1], self.NAME_EN)
+        self.assertLess(listed.index("Race"), listed.index(self.NAME_EN))
+
     def test_it_sits_beside_the_types_that_were_already_there(self):
         """It is one more type, not a replacement: the amateur ones stay exactly as they were."""
         names = set(EventType.objects.values_list("name_en", flat=True))
