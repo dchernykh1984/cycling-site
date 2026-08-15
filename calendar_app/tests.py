@@ -2722,97 +2722,104 @@ class CompetitionDisciplinesMigrationTests(TransactionTestCase):
             self._migrate(self.BEFORE)
 
 
-class OtherAndMtbDisciplineMigrationTests(TransactionTestCase):
+class OtherAndMtbDisciplineMigrationTests(TestCase):
     """0016 qualifies each generic "Other" discipline with its direction and adds the two missing
-    Mountain Bike formats. Assertions use ASCII (name_en) so the test file stays non-Cyrillic."""
+    Mountain Bike formats. Assertions use ASCII (name_en) so the test file stays non-Cyrillic.
+
+    The migration functions are called against the real registry rather than driven through
+    MigrationExecutor -- see RegistrationDeadlineMigrationTests for why that matters on CI.
+    """
 
     APP = "calendar_app"
-    BEFORE = "0015_discipline_category_required"
-    AFTER = "0016_qualify_other_and_add_mtb_disciplines"
+    MTB_FORMATS = ("Individual Time Trial (MTB)", "Hill Climb (MTB)")
 
-    def tearDown(self):
-        from django.core.management import call_command
+    def _migration(self):
+        import importlib
 
-        call_command("migrate", self.APP, verbosity=0)
+        return importlib.import_module(f"{self.APP}.migrations.0016_qualify_other_and_add_mtb_disciplines")
 
-    def _migrate(self, target):
-        from django.db import connection
-        from django.db.migrations.executor import MigrationExecutor
+    def _registry(self):
+        from django.apps import apps
 
-        executor = MigrationExecutor(connection)
-        executor.migrate([(self.APP, target)])
-        return executor.loader.project_state([(self.APP, target)]).apps
+        return apps
 
-    def test_other_discipline_gets_direction_suffix_in_every_locale(self):
-        apps = self._migrate(self.BEFORE)
-        cat = apps.get_model(self.APP, "DisciplineCategory").objects.create(
+    def _mtb(self):
+        return DisciplineCategory.objects.get(name_en="Mountain Bike")
+
+    def test_a_generic_discipline_takes_its_direction_in_every_locale(self):
+        cat = DisciplineCategory.objects.create(
             name="DirRU", name_ru="DirRU", name_kk="DirKK", name_en="DirEN", order=99
         )
-        d = apps.get_model(self.APP, "Discipline").objects.create(
+        generic = Discipline.objects.create(
             name="GenRU", name_ru="GenRU", name_kk="GenKK", name_en="Other", category=cat, order=99
         )
-        apps = self._migrate(self.AFTER)
-        migrated = apps.get_model(self.APP, "Discipline").objects.get(pk=d.pk)
-        self.assertEqual(migrated.name_en, "Other (DirEN)")
-        self.assertEqual(migrated.name_ru, "GenRU (DirRU)")
-        self.assertEqual(migrated.name_kk, "GenKK (DirKK)")
-        self.assertEqual(migrated.name, "GenRU (DirRU)")
-        # No bare generic name should survive the migration.
-        self.assertFalse(apps.get_model(self.APP, "Discipline").objects.filter(name_en="Other").exists())
+        self._migration().qualify_other_disciplines(self._registry(), None)
+        generic.refresh_from_db()
+        self.assertEqual(generic.name_en, "Other (DirEN)")
+        self.assertEqual(generic.name_ru, "GenRU (DirRU)")
+        self.assertEqual(generic.name_kk, "GenKK (DirKK)")
+        self.assertEqual(generic.name, "GenRU (DirRU)", "the base column follows the Russian name")
+        self.assertFalse(Discipline.objects.filter(name_en="Other").exists(), "no bare generic name may survive")
 
-    def test_mtb_formats_are_added_under_mountain_bike(self):
-        apps = self._migrate(self.BEFORE)
-        # The migration targets the seeded "Mountain Bike" category; in a full TransactionTestCase
-        # run the seed data is flushed, so ensure the category exists rather than relying on it.
-        apps.get_model(self.APP, "DisciplineCategory").objects.get_or_create(
-            name_en="Mountain Bike", defaults={"name": "MTB", "name_ru": "MTB", "name_kk": "MTB", "order": 50}
-        )
-        apps = self._migrate(self.AFTER)
-        Discipline = apps.get_model(self.APP, "Discipline")
-        for name_en in ("Individual Time Trial (MTB)", "Hill Climb (MTB)"):
-            d = Discipline.objects.filter(name_en=name_en, category__name_en="Mountain Bike").first()
-            self.assertIsNotNone(d, name_en)
-            self.assertTrue(d.name_ru and d.name_kk, f"{name_en} missing localized names")
+    def test_the_mountain_bike_formats_are_there_in_every_locale(self):
+        for name_en in self.MTB_FORMATS:
+            with self.subTest(name=name_en):
+                discipline = Discipline.objects.filter(name_en=name_en, category__name_en="Mountain Bike").first()
+                self.assertIsNotNone(discipline, f"migration 0016 should have added {name_en}")
+                self.assertTrue(discipline.name_ru and discipline.name_kk, f"{name_en} misses a locale")
 
-    def _make_mtb_category(self, apps):
-        cat, _ = apps.get_model(self.APP, "DisciplineCategory").objects.get_or_create(
-            name_en="Mountain Bike", defaults={"name": "MTB", "name_ru": "MTB", "name_kk": "MTB", "order": 50}
-        )
-        return cat
+    def test_adding_them_again_creates_no_second_copy(self):
+        """Migrations get replayed on restored backups, so a second run must be a no-op."""
+        self._migration().add_mtb_disciplines(self._registry(), None)
+        for name_en in self.MTB_FORMATS:
+            with self.subTest(name=name_en):
+                self.assertEqual(
+                    Discipline.objects.filter(name_en=name_en, category__name_en="Mountain Bike").count(), 1
+                )
 
-    def test_reverse_refuses_to_drop_an_mtb_discipline_linked_to_a_competition(self):
-        apps = self._migrate(self.BEFORE)
-        self._make_mtb_category(apps)
-        apps = self._migrate(self.AFTER)
-        Discipline = apps.get_model(self.APP, "Discipline")
-        Competition = apps.get_model(self.APP, "Competition")
+    def test_removing_them_is_refused_while_a_competition_uses_one(self):
+        """A rollback must never silently drop a discipline a race is filed under."""
         itt = Discipline.objects.get(name_en="Individual Time Trial (MTB)", category__name_en="Mountain Bike")
-        comp = Competition.objects.create(title="Race", date_start=datetime.date(2026, 7, 1))
-        comp.disciplines.add(itt)
+        comp = _make_competition("Race", disciplines=[itt])
         with self.assertRaises(RuntimeError):
-            self._migrate(self.BEFORE)
-        # The refused rollback left both the discipline and the competition link intact.
+            self._migration().remove_mtb_disciplines(self._registry(), None)
         self.assertTrue(Discipline.objects.filter(pk=itt.pk).exists())
         self.assertEqual(list(comp.disciplines.values_list("pk", flat=True)), [itt.pk])
 
-    def test_reverse_leaves_disciplines_added_after_the_migration_untouched(self):
-        apps = self._migrate(self.BEFORE)
-        self._make_mtb_category(apps)
-        apps = self._migrate(self.AFTER)
-        Discipline = apps.get_model(self.APP, "Discipline")
-        mtb = apps.get_model(self.APP, "DisciplineCategory").objects.get(name_en="Mountain Bike")
-        # A generic-looking discipline created AFTER the migration must survive a rollback unchanged.
+    def test_removing_them_is_allowed_while_nothing_uses_them(self):
+        self._migration().remove_mtb_disciplines(self._registry(), None)
+        self.assertFalse(
+            Discipline.objects.filter(category__name_en="Mountain Bike", name_en__in=self.MTB_FORMATS).exists()
+        )
+
+    def test_the_reverse_leaves_a_discipline_added_afterwards_untouched(self):
+        """It strips only the names its own forward step produced, matched category and all."""
         custom = Discipline.objects.create(
             name="Other (Custom)",
             name_ru="Other (Custom)",
             name_kk="Other (Custom)",
             name_en="Other (Custom)",
-            category=mtb,
+            category=self._mtb(),
             order=80,
         )
-        apps = self._migrate(self.BEFORE)  # no linked MTB formats -> rollback is allowed
-        survived = apps.get_model(self.APP, "Discipline").objects.get(pk=custom.pk)
-        self.assertEqual(survived.name_en, "Other (Custom)")
+        self._migration().strip_direction_suffix(self._registry(), None)
+        custom.refresh_from_db()
+        self.assertEqual(custom.name_en, "Other (Custom)")
+
+    def test_the_reverse_does_strip_what_the_forward_step_wrote(self):
+        """The pair has to round-trip, or the guard above would be passing for the wrong reason."""
+        cat = DisciplineCategory.objects.create(
+            name="DirRU", name_ru="DirRU", name_kk="DirKK", name_en="DirEN", order=98
+        )
+        generic = Discipline.objects.create(
+            name="GenRU", name_ru="GenRU", name_kk="GenKK", name_en="Other", category=cat, order=98
+        )
+        migration = self._migration()
+        migration.qualify_other_disciplines(self._registry(), None)
+        migration.strip_direction_suffix(self._registry(), None)
+        generic.refresh_from_db()
+        self.assertEqual(generic.name_en, "Other")
+        self.assertEqual(generic.name_ru, "GenRU")
 
 
 class RegistrationDeadlineMigrationTests(TestCase):
