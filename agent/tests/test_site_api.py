@@ -236,3 +236,20 @@ def test_dropping_one_link_does_not_disturb_the_others():
     assert client.payload["url_route"] == "https://strava.com/routes/1"
     assert "url_registration" not in client.payload
     assert [field for field, _url in client.dropped_links] == ["url_registration"]
+
+
+def test_the_single_type_an_agent_chose_is_posted_as_a_set_of_one():
+    """The site takes a set of types now; the agents still pick one, and nothing about how they
+    read an announcement changed. This is the whole of the adaptation, so it is pinned here."""
+    client = _PostingClient()
+    client.create(_candidate(event_type_id=4))
+    assert client.payload["event_type_ids"] == [4]
+    assert "event_type_id" not in client.payload
+
+
+def test_no_type_chosen_means_no_type_posted():
+    """An announcement that never says what kind of start it is must not be given one."""
+    client = _PostingClient()
+    client.create(_candidate())
+    assert "event_type_ids" not in client.payload
+    assert "event_type_id" not in client.payload
