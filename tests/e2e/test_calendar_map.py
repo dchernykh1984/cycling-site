@@ -103,10 +103,11 @@ def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organiz
     # User pans/zooms somewhere specific.
     page.wait_for_function("() => window.calendarMap")
     page.evaluate("() => window.calendarMap.setView([50.0, 60.0], 6)")
-    # Narrow the date filter so the result set changes (the Sept event drops out). On mobile the
-    # filter panel is collapsed, so expand it before touching the date input.
+    # Narrow the date filter so the result set changes: end the range the day before the event, so
+    # it drops out whenever the suite runs. On mobile the filter panel is collapsed, so expand it
+    # before touching the date input.
     open_filter_panel(page)
-    page.fill("#map-date-to", "2026-09-10")
+    page.fill("#map-date-to", f"{_EVENT_DAY - datetime.timedelta(days=1):%Y-%m-%d}")
     page.dispatch_event("#map-date-to", "change")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(0)  # markers refreshed in place
     # ...but the map view stayed exactly where the user left it (no re-fit / no reset to default).

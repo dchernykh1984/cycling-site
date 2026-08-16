@@ -12,7 +12,7 @@ from playwright.sync_api import Page, expect
 from accounts.models import User
 from calendar_app.models import Competition
 from registrations.models import CompetitionRegistration, RegistrationCategory
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import UPCOMING, inject_session
 
 PROFILE_PATH = "/accounts/profile/"
 
@@ -53,7 +53,7 @@ def other_rider(db):
 def _base_comp(**kwargs):
     defaults = {
         "title_ru": "Profile Test Race",
-        "date_start": datetime.date(2026, 9, 1),
+        "date_start": UPCOMING,
         "status": Competition.Status.APPROVED,
         "registration_enabled": True,
         "birth_date_mode": "year",

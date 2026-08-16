@@ -4,7 +4,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import UPCOMING, inject_session
 
 
 def _goto_participants(page, live_server, user, competition):
@@ -31,12 +31,11 @@ def test_approve_reject_buttons_visible_when_approval_required(
 @pytest.mark.django_db(transaction=True)
 def test_approve_reject_buttons_hidden_without_approval(page: Page, live_server, organizer, db):
     """When require_approval=False, approve/reject buttons must not appear."""
-    import datetime
 
     comp = Competition.objects.create(
         title_ru="No Approval RU",
         title_en="No Approval",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         registration_enabled=True,
@@ -80,7 +79,7 @@ def test_mark_paid_hidden_without_payment(page: Page, live_server, organizer, db
     comp = Competition.objects.create(
         title_ru="No Payment RU",
         title_en="No Payment",
-        date_start=dt.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         registration_enabled=True,
@@ -125,12 +124,11 @@ def test_approve_button_visible_for_rejected_participant(
 
 @pytest.mark.django_db(transaction=True)
 def test_approved_column_hidden_without_approval(page: Page, live_server, organizer, db):
-    import datetime as dt
 
     comp = Competition.objects.create(
         title_ru="No Approval Col RU",
         title_en="No Approval Col",
-        date_start=dt.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         registration_enabled=True,
@@ -156,7 +154,7 @@ def test_participant_list_no_horizontal_scroll_with_long_values(page: Page, live
     comp = Competition.objects.create(
         title_ru="Scroll Test RU",
         title_en="Scroll Test",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         registration_enabled=True,
@@ -192,7 +190,7 @@ def test_participant_list_stacks_into_cards_on_mobile(page: Page, live_server, o
     comp = Competition.objects.create(
         title_ru="Cards Test RU",
         title_en="Cards Test",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         registration_enabled=True,

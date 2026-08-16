@@ -7,13 +7,11 @@ leaving every toolbar unstyled (giant SVG icons). The HTML still *contained* the
 right strings, so ``assertContains`` stayed green; only a browser reveals it.
 """
 
-import datetime
-
 import pytest
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
-from tests.e2e.conftest import inject_session, switch_locale
+from tests.e2e.conftest import UPCOMING, inject_session, switch_locale
 
 
 def _header_label_text(page: Page) -> str:
@@ -88,7 +86,7 @@ def test_submit_round_trips_all_three_locales(page: Page, live_server, organizer
     inject_session(page, live_server, organizer)
     page.goto(f"{live_server.url}/calendar/submit/")
     page.fill("#id_title_ru", "Trilingual Race")
-    page.fill("#id_date_start", "2026-09-01")
+    page.fill("#id_date_start", f"{UPCOMING:%Y-%m-%d}")
     # Wait until all three editors are initialised before scripting them (on slow mobile webkit the
     # hidden-tab editors finish a beat later, and scripting a not-yet-existent .ql-editor silently
     # skipped the submit).
@@ -119,7 +117,7 @@ def test_submit_strips_script_from_editor_html(page: Page, live_server, organize
     inject_session(page, live_server, organizer)
     page.goto(f"{live_server.url}/calendar/submit/")
     page.fill("#id_title_ru", "XSS Race")
-    page.fill("#id_date_start", "2026-09-01")
+    page.fill("#id_date_start", f"{UPCOMING:%Y-%m-%d}")
     expect(page.locator(".ql-editor")).to_have_count(3)
     # Put markup containing a script into the editor's live DOM (as a malicious paste could) and
     # submit in one synchronous step: the submit handler copies quill.root.innerHTML into the
@@ -160,7 +158,7 @@ def test_heading_picker_labels_are_localized(page: Page, live_server, organizer)
 def test_edit_editor_prefills_existing_description(page: Page, live_server, organizer):
     comp = Competition.objects.create(
         title_ru="Editor Prefill Race",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         description_ru="<p>Existing <strong>rich</strong> description</p>",

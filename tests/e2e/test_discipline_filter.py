@@ -7,22 +7,22 @@ disciplines of every selected direction. Selecting a checkbox auto-submits the l
 form (each filter's ids as one comma-joined ?param= value) and refetches the calendar.
 """
 
-import datetime
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
-from tests.e2e.conftest import open_filter_panel
+from tests.e2e.conftest import AROUND_UPCOMING, UPCOMING, open_filter_panel
 
-_DATES = "date_from=2026-09-01&date_to=2026-09-30"
+# Built from the day the suite runs, like the events below it (conftest.UPCOMING).
+_DATES = AROUND_UPCOMING
 
 
 def _make_comp(organizer, title, discipline=None, event_type=None):
     comp = Competition.objects.create(
         title_ru=title,
-        date_start=datetime.date(2026, 9, 15),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
     )

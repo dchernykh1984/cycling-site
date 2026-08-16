@@ -6,7 +6,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition, CompetitionFavorite
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import AROUND_UPCOMING, UPCOMING, inject_session
 
 
 @pytest.mark.django_db(transaction=True)
@@ -39,7 +39,7 @@ def test_list_favorites_only_checkbox_filters(page: Page, live_server, superuser
         title_ru="FavoriteRaceZ",
         title_en="FavoriteRaceZ",
         title_kk="FavoriteRaceZ",
-        date_start=datetime.date(2026, 9, 10),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
     )
@@ -47,14 +47,14 @@ def test_list_favorites_only_checkbox_filters(page: Page, live_server, superuser
         title_ru="PlainRaceZ",
         title_en="PlainRaceZ",
         title_kk="PlainRaceZ",
-        date_start=datetime.date(2026, 9, 12),
+        date_start=UPCOMING + datetime.timedelta(days=2),
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
     )
     CompetitionFavorite.objects.create(user=superuser, competition=favorited)
 
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/calendar/list/?date_from=2026-01-01&date_to=2026-12-31")
+    page.goto(f"{live_server.url}/calendar/list/?{AROUND_UPCOMING}")
     expect(page.get_by_role("link", name="FavoriteRaceZ")).to_be_visible()
     expect(page.get_by_role("link", name="PlainRaceZ")).to_be_visible()
 

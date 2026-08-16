@@ -6,14 +6,12 @@ real browser because the selection is wired entirely in JavaScript (hidden input
 on the fly), which Django template-level tests cannot exercise.
 """
 
-import datetime
-
 import pytest
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from calendar_app.models import Competition, Discipline, DisciplineCategory
-from tests.e2e.conftest import inject_session, switch_locale
+from tests.e2e.conftest import UPCOMING, inject_session, switch_locale
 
 
 def _open(page: Page, btn: str, menu: str) -> None:
@@ -65,7 +63,7 @@ def test_create_with_multiple_disciplines_across_directions(
     inject_session(page, live_server, organizer)
     page.goto(f"{live_server.url}/calendar/submit/")
     page.fill("#id_title_ru", "Multi Disc Race")
-    page.fill("#id_date_start", "2026-09-01")
+    page.fill("#id_date_start", f"{UPCOMING:%Y-%m-%d}")
     _pick_direction(page, road_category.pk)
     _pick_direction(page, mtb_category.pk)
     _pick_discipline(page, road_discipline.pk)
@@ -84,7 +82,7 @@ def test_edit_prefilled_then_add_another_discipline(
 ):
     comp = Competition.objects.create(
         title_ru="Editable Disc",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
     )
@@ -109,7 +107,7 @@ def test_detail_shows_discipline_name_in_active_locale(page: Page, live_server, 
     comp = Competition.objects.create(
         title_ru="LocaleRace",
         title_en="LocaleRace",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
     )

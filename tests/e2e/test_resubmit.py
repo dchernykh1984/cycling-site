@@ -1,14 +1,12 @@
 """E2E: the author resubmits their own rejected competition from the profile (#200)."""
 
-import datetime
-
 import pytest
 from django.urls import reverse
 from playwright.sync_api import Page, expect
 
 from accounts.models import User
 from calendar_app.models import Competition
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import UPCOMING, inject_session
 
 
 @pytest.mark.django_db(transaction=True)
@@ -18,7 +16,7 @@ def test_author_resubmits_rejected_competition_from_profile(page: Page, live_ser
     )
     comp = Competition.objects.create(
         title_ru="Rejected Race",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         status=Competition.Status.REJECTED,
         submitted_by=author,
         rejection_reason="Please fix the date",
