@@ -341,7 +341,10 @@ def city_record(city_id: int, city, region: dict, country: dict) -> dict:
     names = city if isinstance(city, (tuple, list)) else (city,)
     return {
         "id": city_id,
-        "names": {normalize_name(name) for name in names if name},
+        # Folded like every other record the matcher compares against: the same run naming this
+        # town again is exactly the case this record exists for, and a raw spelling here would miss
+        # it -- proposing the town a second time, which is the fault fold_name was added to end.
+        "names": {fold_name(name) for name in names if name},
         "region_names": _names(region or {}),
         "country_names": _names(country or {}),
     }
