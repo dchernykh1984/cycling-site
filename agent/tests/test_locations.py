@@ -273,3 +273,118 @@ def test_canonical_country_leaves_a_real_name_alone():
     assert canonical_country("Kazakhstan") == "Kazakhstan"
     assert canonical_country("") == ""
     assert canonical_country("KZ") == "kazakhstan"
+
+
+# The site stores Ulytau Region's Russian name beginning with the Kazakh letter U-hook, and a model
+# writing Russian spells it with the ordinary Russian U. On the raw letters those read as two
+# different regions: the agent proposed a second Ulytau Region and a second Zhezkazgan beneath it,
+# neither with coordinates, and filed a race there. Names are escaped because this file is ASCII-only
+# and glossed above each.
+# "Ulytauskaya oblast", Russian U
+_RU_SPELLING = "\u0423\u043b\u044b\u0442\u0430\u0443\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c"
+# the same, with the Kazakh U-hook -- what the site stores
+_KK_SPELLING = "\u04b0\u043b\u044b\u0442\u0430\u0443\u0441\u043a\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c"
+_KK_OWN_NAME = "\u0423\u043b\u044b\u0442\u0430\u0443 \u043e\u0431\u043b\u044b\u0441\u044b"  # "Ulytau oblysy"
+_CITY = "\u0416\u0435\u0437\u043a\u0430\u0437\u0433\u0430\u043d"  # "Zhezkazgan"
+
+
+def _ulytau_tree():
+    return [
+        {
+            "id": 1,
+            "name": {
+                "ru": "\u041a\u0430\u0437\u0430\u0445\u0441\u0442\u0430\u043d",
+                "kk": "\u049a\u0430\u0437\u0430\u049b\u0441\u0442\u0430\u043d",
+                "en": "Kazakhstan",
+            },
+            "children": [
+                {
+                    "id": 225,
+                    "name": {"ru": _KK_SPELLING, "kk": _KK_OWN_NAME, "en": "Ulytau Region"},
+                    "children": [
+                        {
+                            "id": 226,
+                            "name": {
+                                "ru": _CITY,
+                                "kk": "\u0416\u0435\u0437\u049b\u0430\u0437\u0493\u0430\u043d",
+                                "en": "Zhezkazgan",
+                            },
+                            "children": [],
+                        }
+                    ],
+                }
+            ],
+        }
+    ]
+
+
+def test_a_region_written_in_either_script_finds_the_one_node():
+    tree = _ulytau_tree()
+    country = match_country(tree, "Kazakhstan")
+    for spelling in (_RU_SPELLING, _KK_SPELLING, _KK_OWN_NAME, "Ulytau Region"):
+        assert match_region(country, spelling) is not None, spelling
+        assert match_region(country, spelling)["id"] == 225, spelling
+
+
+def test_the_city_is_found_once_its_region_is():
+    """The region is a filter on the city, so a missed region loses the city with it -- which is how
+    both came to be proposed a second time."""
+    tree = _ulytau_tree()
+    cities = flatten_cities(tree)
+    for spelling in (_RU_SPELLING, _KK_SPELLING, "Ulytau Region"):
+        assert match_city(cities, _CITY, spelling, "Kazakhstan") == 226, spelling
+
+
+def test_two_regions_that_differ_by_more_than_a_letter_stay_apart():
+    """Folding must not reach past spelling: these pairs are genuinely different regions."""
+    for first, second in (
+        (
+            "\u0410\u043b\u0442\u0430\u0439\u0441\u043a\u0438\u0439 \u043a\u0440\u0430\u0439",
+            "\u0420\u0435\u0441\u043f\u0443\u0431\u043b\u0438\u043a\u0430 \u0410\u043b\u0442\u0430\u0439",
+        ),  # Altai Krai / Altai Republic
+        (
+            "\u041d\u0435\u043d\u0435\u0446\u043a\u0438\u0439"
+            " \u0430\u0432\u0442\u043e\u043d\u043e\u043c\u043d\u044b\u0439 \u043e\u043a\u0440\u0443\u0433",
+            "\u042f\u043c\u0430\u043b\u043e-\u041d\u0435\u043d\u0435\u0446\u043a\u0438\u0439"
+            " \u0430\u0432\u0442\u043e\u043d\u043e\u043c\u043d\u044b\u0439 \u043e\u043a\u0440\u0443\u0433",
+        ),  # Nenets / Yamalo-Nenets autonomous okrug
+    ):
+        tree = [
+            {
+                "id": 1,
+                "name": {"ru": "\u0420\u043e\u0441\u0441\u0438\u044f", "kk": "", "en": "Russia"},
+                "children": [
+                    {"id": 10, "name": {"ru": first, "kk": "", "en": ""}, "children": []},
+                    {"id": 11, "name": {"ru": second, "kk": "", "en": ""}, "children": []},
+                ],
+            }
+        ]
+        country = match_country(tree, "Russia")
+        assert match_region(country, first)["id"] == 10, first
+        assert match_region(country, second)["id"] == 11, second
+
+
+def test_the_tables_keyed_on_cyrillic_still_match():
+    """The placeholder, district and country tables are keyed on the raw letters and are matched
+    with normalize_name, not the folding. Folding one side of those without the other would stop
+    them matching at all -- silently, since nothing else would fail."""
+    from agent.locations import canonical_country, is_placeholder_name, looks_like_district
+
+    assert is_placeholder_name("\u0414\u0440\u0443\u0433\u0430\u044f \u043e\u0431\u043b\u0430\u0441\u0442\u044c"), (
+        "the site's own catch-all name"
+    )
+    assert looks_like_district(
+        "\u041a\u0438\u0440\u043e\u0432\u0441\u043a\u0438\u0439 \u0440\u0430\u0439\u043e\u043d"
+    ), "a district must not become a region"
+    assert canonical_country("\u041a\u0438\u0440\u0433\u0438\u0437\u0438\u044f") == "kyrgyzstan"
+    assert canonical_country("KZ") == "kazakhstan"
+
+
+def test_folding_lower_cases_before_it_transliterates():
+    """The transliteration table is keyed on the lower-case letters, so an upper-case one handed to
+    it comes back untouched. Getting this order wrong made the fix do nothing while every test
+    still passed."""
+    from agent.locations import fold_name
+
+    assert fold_name(_RU_SPELLING) == fold_name(_KK_SPELLING)
+    assert fold_name(_RU_SPELLING).isascii(), fold_name(_RU_SPELLING)

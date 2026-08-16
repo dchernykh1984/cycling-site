@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import re
 
+from agent import dedup
+
 _WS = re.compile(r"\s+")
 _PUNCT = re.compile(r"[^\w\s]", re.UNICODE)
 
@@ -19,6 +21,24 @@ def normalize_name(value: str) -> str:
     return _WS.sub(" ", norm).strip()
 
 
+def fold_name(value: str) -> str:
+    """A place name in the one spelling both scripts reduce to, for comparing against the tree.
+
+    The site stores "Ulytau Region" in Russian as a word beginning with the Kazakh letter U-hook,
+    and a model writing Russian spells the same region with the ordinary Russian U. On the raw
+    letters those are two different regions, so the agent proposed a second Ulytau Region and a
+    second Zhezkazgan beneath it, neither with coordinates, and filed a race there.
+
+    Only comparisons against the tree's own names use this. The placeholder, district and country
+    tables below are keyed on the raw Cyrillic and are matched with ``normalize_name`` as before --
+    folding one side of those without the other would quietly stop them matching at all.
+    """
+    # Lower-cased first and transliterated second: the transliteration table is keyed on the
+    # lower-case letters, so an upper-case one passed to it comes back untouched -- which is how
+    # this fix silently did nothing on its first attempt while every test still passed.
+    return dedup.latin(normalize_name(value))
+
+
 def _localized_values(node: dict) -> list[str]:
     """A tree node's raw name strings across all locales (accepts a LocalizedStr dict or a string)."""
     name = node.get("name")
@@ -27,8 +47,8 @@ def _localized_values(node: dict) -> list[str]:
 
 
 def _names(node: dict) -> set[str]:
-    """Normalized name of a tree node across all locales (accepts a LocalizedStr dict or a string)."""
-    return {normalize_name(v) for v in _localized_values(node)}
+    """Folded name of a tree node across all locales (accepts a LocalizedStr dict or a string)."""
+    return {fold_name(v) for v in _localized_values(node)}
 
 
 def flatten_cities(tree: list[dict]) -> list[dict]:
@@ -68,7 +88,7 @@ def _hint_matches(hint: str, names: set[str]) -> bool:
     matches; a shared five-character opening or one name containing the other keeps those while
     still telling Chelyabinsk Oblast apart from Moscow Oblast.
     """
-    target = normalize_name(hint)
+    target = fold_name(hint)
     if not target:
         return True
     for name in names:
@@ -88,7 +108,7 @@ def city_matches(cities: list[dict], city: str, region: str = "", country: str =
     namesake in another oblast files the race where it is not held. The comparison is deliberately
     loose, and a city that is its own region is exempt from the region filter.
     """
-    target = normalize_name(city)
+    target = fold_name(city)
     if not target:
         return []
     matches = [c for c in cities if target in c["names"]]
@@ -185,7 +205,7 @@ def canonical_country(country: str) -> str:
 
 def _match_node(nodes: list[dict], name: str) -> dict | None:
     """The single node of ``nodes`` whose name matches in any locale, or None if absent/ambiguous."""
-    target = normalize_name(name)
+    target = fold_name(name)
     if not target:
         return None
     matches = [n for n in nodes or [] if target in _names(n)]
@@ -255,7 +275,7 @@ def match_country(tree: list[dict], country: str) -> dict | None:
     not carry is filed under "Other country" and a human moves it later. An *unnamed* country is a
     different case and gets None -- guessing there would file a real region under the catch-all.
     """
-    target = normalize_name(country)
+    target = fold_name(country)
     if not target:
         return None
     exact = _match_node(tree, country) or _match_node(tree, canonical_country(country))
@@ -284,8 +304,12 @@ _REGION_WORDS = frozenset(
 
 
 def _region_core(name: str) -> str:
-    """A region name with its generic administrative words stripped, for a spelling-tolerant compare."""
-    return " ".join(w for w in normalize_name(name).split() if w not in _REGION_WORDS)
+    """A region name with its generic administrative words stripped, for a spelling-tolerant compare.
+
+    Folded, like every other comparison against the tree -- which also means the words below finally
+    reach a Russian name: "oblast" is in the list, the Cyrillic word it transliterates from was not.
+    """
+    return " ".join(w for w in fold_name(name).split() if w not in _REGION_WORDS)
 
 
 def match_region(country: dict, region: str) -> dict | None:
