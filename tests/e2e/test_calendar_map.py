@@ -13,15 +13,10 @@ from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
 from locations.models import Location
-from tests.e2e.conftest import open_filter_panel
+from tests.e2e.conftest import AROUND_UPCOMING, UPCOMING, open_filter_panel
 
-# The map's own date filter is what these tests drive, so the dates are relative to the day the
-# suite runs. Written as fixed dates they were a time bomb: the "hidden because the range excludes
-# it" test placed its event 30 days and one day out, and started failing the morning the calendar's
-# default 30-day window reached it.
-_EVENT_DAY = datetime.date.today() + datetime.timedelta(days=90)
-_FORTNIGHT = datetime.timedelta(days=14)
-_AROUND_THE_EVENT = f"date_from={_EVENT_DAY - _FORTNIGHT:%Y-%m-%d}&date_to={_EVENT_DAY + _FORTNIGHT:%Y-%m-%d}"
+# The map's own date filter is what these tests drive, so they take the suite's shared relative
+# dates rather than keeping a second copy of them that could drift.
 
 
 def _mapped_competition(organizer, title="Mapped Race", disciplines=None, event_type=None):
@@ -30,7 +25,7 @@ def _mapped_competition(organizer, title="Mapped Race", disciplines=None, event_
     )
     comp = Competition.objects.create(
         title_ru=title,
-        date_start=_EVENT_DAY,
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         location=loc,
@@ -76,7 +71,7 @@ def test_list_page_switches_to_map(page: Page, live_server):
 @pytest.mark.django_db(transaction=True)
 def test_map_marker_popup_links_to_competition(page: Page, live_server, organizer):
     _mapped_competition(organizer)
-    page.goto(f"{live_server.url}/calendar/map/?{_AROUND_THE_EVENT}")
+    page.goto(f"{live_server.url}/calendar/map/?{AROUND_UPCOMING}")
     marker = page.locator(".leaflet-marker-icon")
     expect(marker).to_have_count(1)
     marker.click()
@@ -98,7 +93,7 @@ def test_map_marker_hidden_when_date_range_excludes_competition(page: Page, live
 def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organizer):
     # Changing a filter must update the markers in place without resetting the user's pan/zoom.
     _mapped_competition(organizer)  # 90 days out, Almaty
-    page.goto(f"{live_server.url}/calendar/map/?{_AROUND_THE_EVENT}")
+    page.goto(f"{live_server.url}/calendar/map/?{AROUND_UPCOMING}")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(1)  # initial load fits to the marker
     # User pans/zooms somewhere specific.
     page.wait_for_function("() => window.calendarMap")
@@ -107,7 +102,7 @@ def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organiz
     # it drops out whenever the suite runs. On mobile the filter panel is collapsed, so expand it
     # before touching the date input.
     open_filter_panel(page)
-    page.fill("#map-date-to", f"{_EVENT_DAY - datetime.timedelta(days=1):%Y-%m-%d}")
+    page.fill("#map-date-to", f"{UPCOMING - datetime.timedelta(days=1):%Y-%m-%d}")
     page.dispatch_event("#map-date-to", "change")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(0)  # markers refreshed in place
     # ...but the map view stayed exactly where the user left it (no re-fit / no reset to default).
