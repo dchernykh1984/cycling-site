@@ -15,10 +15,12 @@ from urllib.parse import parse_qs, urlsplit
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.e2e.conftest import open_filter_panel
+from tests.e2e.conftest import AROUND_UPCOMING, open_filter_panel
 
 _LIST_URL = "/calendar/list/"
-_DATES = "date_from=2026-07-01&date_to=2026-07-31"
+# The fixtures are dated from the day the suite runs (conftest.UPCOMING), so the range that has to
+# contain them is built the same way rather than pinned to a month that eventually passes.
+_DATES = AROUND_UPCOMING
 
 
 def _query(url: str) -> dict:

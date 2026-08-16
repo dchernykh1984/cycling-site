@@ -18,6 +18,18 @@ os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 # ---------------------------------------------------------------------------
 
 
+# Every fixture event is dated from the day the suite runs rather than from a fixed 2026 date.
+# Written as fixed dates they are a time bomb: the calendar shows what is still to come, so a test
+# whose event sits in the past stops seeing it, and one that relies on an event being *outside* the
+# default 30-day window starts seeing it the morning that window reaches it. Both have happened.
+#
+# UPCOMING is far enough out to sit beyond the calendar's default window, and AROUND_UPCOMING is an
+# explicit range that contains it, for the tests that ask for one.
+UPCOMING = datetime.date.today() + datetime.timedelta(days=90)
+_FORTNIGHT = datetime.timedelta(days=14)
+AROUND_UPCOMING = f"date_from={UPCOMING - _FORTNIGHT:%Y-%m-%d}&date_to={UPCOMING + _FORTNIGHT:%Y-%m-%d}"
+
+
 @pytest.fixture(autouse=True)
 def default_language_cookie(page, live_server):
     """Force Russian locale for every e2e test via the django_language cookie.
@@ -192,7 +204,7 @@ def approved_competition(db, organizer):
     return Competition.objects.create(
         title_ru="E2E Test Race RU",
         title_en="E2E Test Race",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
     )
@@ -203,7 +215,7 @@ def competition_with_approval(db, organizer):
     return Competition.objects.create(
         title_ru="E2E Approval Race RU",
         title_en="E2E Approval Race",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         registration_enabled=True,
@@ -332,7 +344,7 @@ def kz_competition(db, location_tree, organizer):
     """Approved competition in KZ / Almaty (hidden fallback venue)."""
     return Competition.objects.create(
         title_ru="KZ Race",
-        date_start=datetime.date(2026, 7, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         location=location_tree["hidden"],
@@ -344,7 +356,7 @@ def ru_competition(db, location_tree, organizer):
     """Approved competition in RU / Moscow (hidden fallback venue)."""
     return Competition.objects.create(
         title_ru="RU Race",
-        date_start=datetime.date(2026, 7, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         location=location_tree["ru_hidden"],
