@@ -8,7 +8,7 @@ from playwright.sync_api import Page, expect
 from accounts.models import User
 from calendar_app.models import Competition
 from registrations.models import CompetitionRegistration, RegistrationCategory
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import UPCOMING, inject_session
 
 # ---------------------------------------------------------------------------
 # fixtures
@@ -19,7 +19,7 @@ from tests.e2e.conftest import inject_session
 def relay_competition(db, organizer):
     return Competition.objects.create(
         title_ru="Relay Race",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         registration_enabled=True,
@@ -248,7 +248,7 @@ def test_individual_competition_shows_first_last_name_inputs(page: Page, live_se
     """Non-relay competition must show standard first/last name inputs, not relay rows."""
     comp = Competition.objects.create(
         title_ru="Individual Race RU",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         registration_enabled=True,

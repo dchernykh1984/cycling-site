@@ -1,12 +1,10 @@
 """E2E: a moderator can open a pending competition's page and approve it there (issue #180)."""
 
-import datetime
-
 import pytest
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import UPCOMING, inject_session
 
 
 @pytest.mark.django_db(transaction=True)
@@ -15,7 +13,7 @@ def test_moderator_approves_pending_from_detail_page(page: Page, live_server, su
         title_ru="PendingModZ",
         title_en="PendingModZ",
         title_kk="PendingModZ",
-        date_start=datetime.date(2026, 9, 20),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.PENDING_APPROVAL,
     )

@@ -1,12 +1,10 @@
 """E2E tests for the 4-level location cascade widget on submit and edit forms."""
 
-import datetime
-
 import pytest
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import UPCOMING, inject_session
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -118,7 +116,7 @@ def test_submit_form_selecting_real_venue_updates_hidden_input(page: Page, live_
 def test_edit_form_cascade_prepopulated_country(page: Page, live_server, organizer, location_tree):
     comp = Competition.objects.create(
         title_ru="Test Edit Race",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         location=location_tree["hidden"],
@@ -131,7 +129,7 @@ def test_edit_form_cascade_prepopulated_country(page: Page, live_server, organiz
 def test_edit_form_cascade_prepopulated_region(page: Page, live_server, organizer, location_tree):
     comp = Competition.objects.create(
         title_ru="Test Edit Race",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         location=location_tree["hidden"],
@@ -144,7 +142,7 @@ def test_edit_form_cascade_prepopulated_region(page: Page, live_server, organize
 def test_edit_form_cascade_prepopulated_city(page: Page, live_server, organizer, location_tree):
     comp = Competition.objects.create(
         title_ru="Test Edit Race",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         location=location_tree["hidden"],
@@ -158,7 +156,7 @@ def test_edit_form_cascade_prepopulated_real_venue(page: Page, live_server, orga
     """When the saved location is a real venue the venue select shows it selected."""
     comp = Competition.objects.create(
         title_ru="Test Edit Race",
-        date_start=datetime.date(2026, 9, 1),
+        date_start=UPCOMING,
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
         location=location_tree["real"],
