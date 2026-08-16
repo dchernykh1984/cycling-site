@@ -388,3 +388,21 @@ def test_folding_lower_cases_before_it_transliterates():
 
     assert fold_name(_RU_SPELLING) == fold_name(_KK_SPELLING)
     assert fold_name(_RU_SPELLING).isascii(), fold_name(_RU_SPELLING)
+
+
+def test_a_town_proposed_earlier_in_the_run_is_found_again():
+    """city_record exists so a second source naming the same town reuses it. Its names have to be
+    folded like every other record, or the reuse misses and the town is proposed twice -- the very
+    fault this folding was added to end.
+
+    The record stands alone here: adding it beside the tree's own Zhezkazgan would make the name
+    ambiguous, and the matcher would rightly refuse both."""
+    tree = _ulytau_tree()
+    region = tree[0]["children"][0]
+    # All three locales carry the Cyrillic name: that is what propose_city posts when the model
+    # gives no translation, and it is the case a raw record would lose.
+    proposed = [city_record(999, (_CITY, _CITY, _CITY), region, tree[0])]
+    for spelling in (_RU_SPELLING, _KK_SPELLING, "Ulytau Region"):
+        assert match_city(proposed, _CITY, spelling, "Kazakhstan") == 999, spelling
+    # And the town is reachable by its Latin spelling too, which is what folding buys.
+    assert match_city(proposed, "Zhezkazgan", _RU_SPELLING, "Kazakhstan") == 999
