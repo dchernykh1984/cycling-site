@@ -79,14 +79,14 @@ _MIN_EVENTS_FOR_RARITY = 30
 _WINDOW_DAYS = 3
 
 
-def _latin(text: str) -> str:
+def latin(text: str) -> str:
     return "".join(_TRANSLIT.get(ch, ch) for ch in text)
 
 
 def _words(title: str) -> list[str]:
     """Meaningful lower-case words of a title, transliterated; year and punctuation dropped."""
     text = _PUNCT.sub(" ", _YEAR.sub(" ", (title or "").lower()))
-    return [_latin(word) for word in _WS.sub(" ", text).strip().split() if word and word not in _STOPWORDS]
+    return [latin(word) for word in _WS.sub(" ", text).strip().split() if word and word not in _STOPWORDS]
 
 
 def title_tokens(title: str) -> set[str]:
