@@ -176,6 +176,8 @@
             {% if material_form.url.errors %}<div class="text-danger small mt-1">{% for e in material_form.url.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
           <div class="col-md-2">
+            {# A saved row is removed by ticking its delete box, which the server acts on; a row that
+               only exists on this page has no box (can_delete_extra=False) and is dropped outright. #}
             {% if material_form.instance.pk %}
             <div class="form-check mt-2">
               {{ material_form.DELETE }}

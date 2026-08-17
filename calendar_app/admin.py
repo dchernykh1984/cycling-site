@@ -6,7 +6,20 @@ from django.contrib import admin
 from django.db import models
 from django.forms import Textarea
 
-from .models import Competition, CompetitionComment, CompetitionFavorite, CompetitionReport
+from .models import (
+    Competition,
+    CompetitionComment,
+    CompetitionFavorite,
+    CompetitionMaterial,
+    CompetitionReport,
+)
+
+
+class CompetitionMaterialInline(admin.TabularInline):
+    """The coverage links, so staff can fix or pull a bad one without going through the event page."""
+
+    model = CompetitionMaterial
+    extra = 0
 
 
 @admin.register(Competition)
@@ -15,6 +28,7 @@ class CompetitionAdmin(admin.ModelAdmin):
     list_filter = ("status",)
     readonly_fields = ("upload_token",)
     search_fields = ("title_ru", "title_kk", "title_en")
+    inlines: ClassVar[list] = [CompetitionMaterialInline]
 
 
 @admin.register(CompetitionComment)
