@@ -27,7 +27,7 @@ from django.db.models import Field
 from django.test import SimpleTestCase
 from ninja import Schema
 
-from calendar_app.models import Competition, CompetitionComment
+from calendar_app.models import Competition, CompetitionComment, CompetitionMaterial
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment
 from locations.models import Location
 from news.models import NewsArticle, NewsArticleComment
@@ -52,6 +52,7 @@ FORM_TARGETS = {
     "accounts.views.ProfileEditForm": None,
     "calendar_app.forms.AddCompetitionCommentForm": CompetitionComment,
     "calendar_app.forms.CompetitionFilterForm": None,
+    "calendar_app.forms.CompetitionMaterialForm": CompetitionMaterial,
     "calendar_app.forms.RegistrationSettingsForm": (Competition, RegistrationCategory),
     "calendar_app.forms.RejectCompetitionForm": Competition,
     "calendar_app.forms.ReportCompetitionForm": None,

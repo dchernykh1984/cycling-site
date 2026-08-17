@@ -156,6 +156,52 @@
         {% if form.url_registration.errors %}<div class="text-danger small mt-1">{% for e in form.url_registration.errors %}{{ e }}{% endfor %}</div>{% endif %}
       </div>
 
+      <hr class="my-4">
+      <h2 class="mb-1 h5">{% trans "Additional materials" %}</h2>
+      <p class="form-text mt-0 mb-3">{% trans "Links to photo and video coverage. Each one needs both a name and a link." %}</p>
+      {{ material_formset.management_form }}
+      {% if material_formset.non_form_errors %}
+      <div class="alert alert-danger">{% for e in material_formset.non_form_errors %}{{ e }}{% endfor %}</div>
+      {% endif %}
+      <div id="materials-container">
+        {% for material_form in material_formset %}
+        <div class="row g-2 align-items-start mb-2 material-row">
+          {{ material_form.id }}
+          <div class="col-md-4">
+            {{ material_form.title }}
+            {% if material_form.title.errors %}<div class="text-danger small mt-1">{% for e in material_form.title.errors %}{{ e }}{% endfor %}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            {{ material_form.url }}
+            {% if material_form.url.errors %}<div class="text-danger small mt-1">{% for e in material_form.url.errors %}{{ e }}{% endfor %}</div>{% endif %}
+          </div>
+          <div class="col-md-2">
+            {% if material_form.instance.pk %}
+            <div class="form-check mt-2">
+              {{ material_form.DELETE }}
+              <label class="form-check-label small" for="{{ material_form.DELETE.id_for_label }}">{% trans "Remove" %}</label>
+            </div>
+            {% else %}
+            <button type="button" class="btn btn-outline-danger btn-sm clear-material-btn"
+                    title="{% trans 'Remove' %}" aria-label="{% trans 'Remove' %}">&times;</button>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <template id="material-empty-form">
+        <div class="row g-2 align-items-start mb-2 material-row">
+          {{ material_formset.empty_form.id }}
+          <div class="col-md-4">{{ material_formset.empty_form.title }}</div>
+          <div class="col-md-6">{{ material_formset.empty_form.url }}</div>
+          <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger btn-sm clear-material-btn"
+                    title="{% trans 'Remove' %}" aria-label="{% trans 'Remove' %}">&times;</button>
+          </div>
+        </div>
+      </template>
+      <button type="button" class="btn btn-sm btn-outline-primary mb-4" id="add-material-btn">+ {% trans "Add material" %}</button>
+
       <div class="card mb-4">
         <div class="card-header d-flex align-items-center gap-2">
           <div class="form-check mb-0">
@@ -205,5 +251,30 @@ if (regEnabled && regCollapse) {
   regEnabled.addEventListener('change', updateCollapse);
   updateCollapse();
 }
+(function() {
+  const container = document.getElementById('materials-container');
+  const tpl = document.getElementById('material-empty-form');
+  const addBtn = document.getElementById('add-material-btn');
+  const totalForms = document.getElementById('id_materials-TOTAL_FORMS');
+  if (!container || !tpl || !addBtn || !totalForms) return;
+  addBtn.addEventListener('click', function() {
+    const index = parseInt(totalForms.value, 10);
+    const holder = document.createElement('div');
+    holder.innerHTML = tpl.innerHTML.replace(/__prefix__/g, index);
+    const row = holder.firstElementChild;
+    container.appendChild(row);
+    // Only the counter moves; the new row's fields are already numbered for this index.
+    totalForms.value = index + 1;
+    const first = row.querySelector('input[type="text"]');
+    if (first) first.focus();
+  });
+  // A row that has never been saved is dropped from the page outright. TOTAL_FORMS deliberately
+  // stays where it is: the server builds a form per index and one with nothing posted for it is an
+  // untouched row, which it ignores. Saved rows are not removed this way -- they carry a delete box.
+  container.addEventListener('click', function(ev) {
+    const btn = ev.target.closest('.clear-material-btn');
+    if (btn) btn.closest('.material-row').remove();
+  });
+})();
 </script>
 {% endblock %}

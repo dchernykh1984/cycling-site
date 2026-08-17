@@ -4,6 +4,7 @@ from typing import ClassVar
 from django import forms
 from django.db.models import Field
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from accounts.models import User
 from cycling_site.forms import LocalizedMaxLengthMixin
@@ -14,6 +15,7 @@ from .models import (
     MAX_DESCRIPTION_LENGTH,
     Competition,
     CompetitionComment,
+    CompetitionMaterial,
     Discipline,
     EventType,
 )
@@ -281,6 +283,47 @@ class RegistrationSettingsForm(forms.Form):
             return json.loads(raw)
         except (json.JSONDecodeError, ValueError):
             return []
+
+
+_MATERIAL_NAME = pgettext_lazy("photo or video material", "Name")
+
+
+class CompetitionMaterialForm(forms.ModelForm):
+    """One row of the coverage list: what the link is called, and where it goes.
+
+    Both halves are required, which the model's columns already say; spelling it out here is only
+    about the message the editor sees, since a half-filled row is the one mistake this form can make.
+    """
+
+    class Meta:
+        model = CompetitionMaterial
+        fields: ClassVar[list] = ["title", "url"]
+        # A material's name is the caption on a button, not a person's -- the plain "Name" already in
+        # the catalog is the one on a registration form and translates to a personal name. The
+        # context keeps the two apart while leaving the English label short.
+        labels: ClassVar[dict] = {"title": _MATERIAL_NAME, "url": _("Link")}
+        error_messages: ClassVar[dict] = {
+            "title": {"required": _("Give this material a name.")},
+            "url": {"required": _("Add a link to this material.")},
+        }
+        widgets: ClassVar[dict] = {
+            "title": forms.TextInput(attrs={"class": "form-control", "placeholder": _MATERIAL_NAME}),
+            "url": forms.URLInput(attrs={"class": "form-control", "placeholder": _("Link")}),
+        }
+
+
+# ``extra=1`` leaves one blank row waiting on the edit page, so adding the first link needs no
+# button press; a row left untouched is dropped rather than validated (Django's empty_permitted).
+# Only saved rows offer a delete box -- a row that was just added is removed by emptying it, which
+# is what the "x" button in the template does.
+CompetitionMaterialFormSet = forms.inlineformset_factory(
+    Competition,
+    CompetitionMaterial,
+    form=CompetitionMaterialForm,
+    extra=1,
+    can_delete=True,
+    can_delete_extra=False,
+)
 
 
 class AddCompetitionCommentForm(forms.ModelForm):
