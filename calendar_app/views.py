@@ -31,6 +31,7 @@ from locations.models import (
 from .forms import (
     AddCompetitionCommentForm,
     CompetitionFilterForm,
+    CompetitionMaterialFormSet,
     RegistrationSettingsForm,
     RejectCompetitionForm,
     ReportCompetitionForm,
@@ -796,6 +797,28 @@ def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
             )
 
 
+def _save_materials(formset, comp):
+    """Store the coverage links, numbering the survivors in the order the page showed them.
+
+    The order is rewritten on every save rather than kept per row, so deleting a link from the
+    middle closes the gap instead of leaving one, and a row moved by an edit lands where the editor
+    put it. Rows left blank never reach here: Django drops an untouched extra form.
+    """
+    formset.instance = comp
+    formset.save(commit=False)
+    for removed in formset.deleted_objects:
+        removed.delete()
+    position = 0
+    for form in formset.forms:
+        if form in formset.deleted_forms or not form.cleaned_data:
+            continue
+        material = form.instance
+        material.competition = comp
+        material.order = position
+        material.save()
+        position += 1
+
+
 class SubmitCompetitionView(ParticipantRequiredMixin, View):
     template_name = "calendar_app/submit.html"
 
@@ -998,6 +1021,7 @@ class EditCompetitionView(View):
                 "competition": comp,
                 "form": form,
                 "reg_form": reg_form,
+                "material_formset": CompetitionMaterialFormSet(instance=comp, prefix="materials"),
                 "categories_json": json.dumps(categories),
                 "mode_locked": comp.registration_mode_locked,
                 **disc_ctx,
@@ -1008,7 +1032,10 @@ class EditCompetitionView(View):
         comp = self._get_competition_or_403(request, pk)
         form = SubmitCompetitionForm(request.POST, request.FILES, user=request.user)
         reg_form = RegistrationSettingsForm(request.POST)
-        if form.is_valid() and reg_form.is_valid():
+        # The coverage links are editable by whoever may edit the event at all -- the same permission
+        # that got past _get_competition_or_403 above, with no separate organizer check.
+        material_formset = CompetitionMaterialFormSet(request.POST, instance=comp, prefix="materials")
+        if form.is_valid() and reg_form.is_valid() and material_formset.is_valid():
             cd = form.cleaned_data
             if not _validate_deadline(form, reg_form, cd["date_start"], cd.get("date_end")):
                 import json as _json
@@ -1046,6 +1073,7 @@ class EditCompetitionView(View):
                         "competition": comp,
                         "form": form,
                         "reg_form": reg_form,
+                        "material_formset": material_formset,
                         "categories_json": _json.dumps(_cats),
                         "mode_locked": comp.registration_mode_locked,
                         **_discipline_picker_context(form),
@@ -1087,6 +1115,7 @@ class EditCompetitionView(View):
                     comp.save()
                     comp.disciplines.set(cd.get("disciplines") or [])
                     comp.event_types.set(cd.get("event_types") or [])
+                    _save_materials(material_formset, comp)
                     _save_categories(comp, reg_form, is_org)
             except LocationConflictError:
                 form.add_error("location", _("This location is not available."))
@@ -1122,6 +1151,7 @@ class EditCompetitionView(View):
                 "competition": comp,
                 "form": form,
                 "reg_form": reg_form,
+                "material_formset": material_formset,
                 "categories_json": json.dumps(categories, default=str),
                 "mode_locked": comp.registration_mode_locked,
                 **disc_ctx,

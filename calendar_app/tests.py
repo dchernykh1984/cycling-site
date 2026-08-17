@@ -14,6 +14,7 @@ from calendar_app.models import (
     Competition,
     CompetitionComment,
     CompetitionFavorite,
+    CompetitionMaterial,
     CompetitionReport,
     Discipline,
     DisciplineCategory,
@@ -3870,3 +3871,227 @@ class SeveralEventTypesFilterTests(TestCase):
 
     def test_no_type_selected_still_shows_everything(self):
         self.assertEqual(self._titles(), {"Race with a kids race", "Plain race", "Elite only"})
+
+
+class CompetitionMaterialsOnEventPageTests(TestCase):
+    """The coverage links, as a reader of the event page meets them."""
+
+    def setUp(self):
+        self.comp = _make_competition("Race with photos")
+
+    def _page(self, language="en"):
+        response = self.client.get(reverse("competition_detail", args=[self.comp.pk]), HTTP_ACCEPT_LANGUAGE=language)
+        return response.content.decode()
+
+    def test_an_event_with_no_materials_has_no_section(self):
+        self.assertNotIn("Additional materials", self._page())
+
+    def test_each_material_becomes_a_button_carrying_its_own_name(self):
+        CompetitionMaterial.objects.create(
+            competition=self.comp, title="Photos by Ivan", url="https://photos.example/album"
+        )
+        page = self._page()
+        self.assertIn("Additional materials", page)
+        self.assertIn("Photos by Ivan", page)
+        self.assertIn("https://photos.example/album", page)
+
+    def test_a_material_opens_in_a_new_tab(self):
+        """The reader is on the event page for a reason; a gallery must not replace it."""
+        CompetitionMaterial.objects.create(competition=self.comp, title="Drone edit", url="https://video.example/1")
+        page = self._page()
+        anchor = page[page.index("https://video.example/1") - 200 : page.index("Drone edit") + 20]
+        self.assertIn('target="_blank"', anchor)
+        self.assertIn('rel="noopener"', anchor)
+
+    def test_materials_keep_the_order_they_were_arranged_in(self):
+        CompetitionMaterial.objects.create(competition=self.comp, title="Second", url="https://e.example/2", order=1)
+        CompetitionMaterial.objects.create(competition=self.comp, title="First", url="https://e.example/1", order=0)
+        page = self._page()
+        self.assertLess(page.index("First"), page.index("Second"))
+
+    def test_the_section_comes_after_the_protocols(self):
+        from django.core.files.base import ContentFile
+
+        from protocols.models import Protocol
+
+        protocol = Protocol.objects.create(competition=self.comp, protocol_type=Protocol.ProtocolType.ABSOLUTE)
+        protocol.html_file.save("results.html", ContentFile(b"<html></html>"), save=True)
+        CompetitionMaterial.objects.create(competition=self.comp, title="Photos", url="https://photos.example/a")
+        page = self._page()
+        self.assertLess(page.index("Protocols"), page.index("Additional materials"))
+
+    def test_the_heading_is_translated_in_every_locale(self):
+        """A string left untranslated -- or marked fuzzy, which gettext ignores -- reads as English."""
+        CompetitionMaterial.objects.create(competition=self.comp, title="Photos", url="https://photos.example/a")
+        for language in ("ru", "kk"):
+            with self.subTest(language=language), translation_override(language):
+                heading = gettext("Additional materials")
+                self.assertNotEqual(heading, "Additional materials")
+                self.assertIn(heading, self._page(language))
+
+    def test_a_name_with_markup_in_it_is_escaped(self):
+        """The name is written by an organizer, so the page must not take it as HTML."""
+        CompetitionMaterial.objects.create(
+            competition=self.comp, title="<script>alert(1)</script>", url="https://e.example/x"
+        )
+        self.assertNotIn("<script>alert(1)</script>", self._page())
+
+
+class EditCompetitionMaterialsTests(TestCase):
+    """Adding, changing and removing the links from the event's edit page."""
+
+    def setUp(self):
+        # A plain participant who submitted the event: the least-privileged person allowed to edit
+        # it, so the materials must be within reach of exactly this account.
+        self.author = _make_user("materials-author@example.com", User.Role.PARTICIPANT)
+        self.comp = _make_competition("Editable race", submitted_by=self.author)
+        self.client.login(username="materials-author@example.com", password="password123")
+
+    def _payload(self, rows, *, total=None, initial=0, **extra):
+        payload = {
+            "title_ru": "Editable race",
+            "date_start": "2026-09-01",
+            "materials-TOTAL_FORMS": str(total if total is not None else len(rows)),
+            "materials-INITIAL_FORMS": str(initial),
+            "materials-MIN_NUM_FORMS": "0",
+            "materials-MAX_NUM_FORMS": "1000",
+        }
+        for index, row in enumerate(rows):
+            for field, value in row.items():
+                payload[f"materials-{index}-{field}"] = value
+        payload.update(extra)
+        return payload
+
+    def _post(self, rows, **kwargs):
+        return self.client.post(reverse("competition_edit", args=[self.comp.pk]), self._payload(rows, **kwargs))
+
+    def _materials(self):
+        return list(self.comp.materials.values_list("title", "url", "order"))
+
+    def test_the_author_can_add_a_material(self):
+        response = self._post([{"title": "Photos", "url": "https://photos.example/a"}])
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self._materials(), [("Photos", "https://photos.example/a", 0)])
+
+    def test_a_manager_who_did_not_submit_the_event_can_add_one_too(self):
+        _make_user("materials-admin@example.com", User.Role.ADMIN)
+        self.client.login(username="materials-admin@example.com", password="password123")
+        self._post([{"title": "Video", "url": "https://video.example/a"}])
+        self.assertEqual(self._materials(), [("Video", "https://video.example/a", 0)])
+
+    def test_a_stranger_cannot_add_one(self):
+        _make_user("materials-stranger@example.com", User.Role.PARTICIPANT)
+        self.client.login(username="materials-stranger@example.com", password="password123")
+        response = self._post([{"title": "Photos", "url": "https://photos.example/a"}])
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self._materials(), [])
+
+    def test_a_row_with_a_name_and_no_link_is_refused(self):
+        response = self._post([{"title": "Photos", "url": ""}])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._materials(), [])
+        self.assertTrue(response.context["material_formset"].errors[0]["url"])
+
+    def test_a_row_with_a_link_and_no_name_is_refused(self):
+        response = self._post([{"title": "", "url": "https://photos.example/a"}])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._materials(), [])
+        self.assertTrue(response.context["material_formset"].errors[0]["title"])
+
+    def test_a_half_filled_row_does_not_lose_the_rest_of_the_edit(self):
+        """The event keeps what it had: a refused row must not save half an edit either."""
+        self._post([{"title": "Photos", "url": ""}], title_ru="Renamed race")
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.title_ru, "Editable race")
+
+    def test_a_row_left_untouched_is_ignored(self):
+        response = self._post([{"title": "", "url": ""}])
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self._materials(), [])
+
+    def test_a_link_past_the_column_is_a_field_error_not_a_crash(self):
+        long_url = "https://photos.example/" + "a" * 300
+        response = self._post([{"title": "Photos", "url": long_url}])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._materials(), [])
+        self.assertTrue(response.context["material_formset"].errors[0]["url"])
+
+    def test_several_materials_are_numbered_in_the_order_they_were_posted(self):
+        self._post(
+            [
+                {"title": "First", "url": "https://e.example/1"},
+                {"title": "Second", "url": "https://e.example/2"},
+            ]
+        )
+        self.assertEqual(
+            self._materials(),
+            [("First", "https://e.example/1", 0), ("Second", "https://e.example/2", 1)],
+        )
+
+    def test_an_existing_material_can_be_renamed(self):
+        material = CompetitionMaterial.objects.create(
+            competition=self.comp, title="Photos", url="https://photos.example/a"
+        )
+        self._post(
+            [{"id": str(material.pk), "title": "Photos by Ivan", "url": "https://photos.example/a"}],
+            initial=1,
+        )
+        self.assertEqual(self._materials(), [("Photos by Ivan", "https://photos.example/a", 0)])
+
+    def test_removing_a_material_deletes_it(self):
+        material = CompetitionMaterial.objects.create(
+            competition=self.comp, title="Photos", url="https://photos.example/a"
+        )
+        self._post(
+            [{"id": str(material.pk), "title": "Photos", "url": "https://photos.example/a", "DELETE": "on"}],
+            initial=1,
+        )
+        self.assertEqual(self._materials(), [])
+
+    def test_removing_the_first_of_three_closes_the_gap_in_the_order(self):
+        """Positions are rewritten on save, so a deletion must not leave a hole behind it."""
+        kept_before, removed, kept_after = (
+            CompetitionMaterial.objects.create(
+                competition=self.comp, title=title, url=f"https://e.example/{order}", order=order
+            )
+            for order, title in ((0, "First"), (1, "Second"), (2, "Third"))
+        )
+        self._post(
+            [
+                {"id": str(kept_before.pk), "title": "First", "url": "https://e.example/0"},
+                {"id": str(removed.pk), "title": "Second", "url": "https://e.example/1", "DELETE": "on"},
+                {"id": str(kept_after.pk), "title": "Third", "url": "https://e.example/2"},
+            ],
+            initial=3,
+        )
+        self.assertEqual(
+            self._materials(),
+            [("First", "https://e.example/0", 0), ("Third", "https://e.example/2", 1)],
+        )
+
+    def test_a_gap_in_the_posted_rows_is_not_a_missing_material(self):
+        """The remove button drops a fresh row from the page without renumbering the ones left."""
+        response = self._post(
+            [{"title": "Kept", "url": "https://e.example/kept"}],
+            total=3,
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self._materials(), [("Kept", "https://e.example/kept", 0)])
+
+    def test_the_edit_page_arrives_with_the_current_materials(self):
+        CompetitionMaterial.objects.create(competition=self.comp, title="Photos", url="https://photos.example/a")
+        response = self.client.get(reverse("competition_edit", args=[self.comp.pk]))
+        page = response.content.decode()
+        self.assertIn("Photos", page)
+        self.assertIn("https://photos.example/a", page)
+        # One saved row plus the blank one waiting to be filled.
+        self.assertEqual(response.context["material_formset"].total_form_count(), 2)
+
+    def test_editing_an_event_without_materials_still_works(self):
+        """The formset is required on every edit, so a post that predates it must not 500."""
+        response = self.client.post(
+            reverse("competition_edit", args=[self.comp.pk]),
+            {"title_ru": "Editable race", "date_start": "2026-09-01"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._materials(), [])
