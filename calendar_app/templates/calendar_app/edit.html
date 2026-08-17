@@ -255,7 +255,7 @@ if (regEnabled && regCollapse) {
   const container = document.getElementById('materials-container');
   const tpl = document.getElementById('material-empty-form');
   const addBtn = document.getElementById('add-material-btn');
-  const totalForms = document.getElementById('id_materials-TOTAL_FORMS');
+  const totalForms = document.getElementById('id_{{ material_formset.prefix }}-TOTAL_FORMS');
   if (!container || !tpl || !addBtn || !totalForms) return;
   addBtn.addEventListener('click', function() {
     const index = parseInt(totalForms.value, 10);

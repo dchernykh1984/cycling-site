@@ -3897,11 +3897,13 @@ class CompetitionMaterialsOnEventPageTests(TestCase):
 
     def test_a_material_opens_in_a_new_tab(self):
         """The reader is on the event page for a reason; a gallery must not replace it."""
+        import re
+
         CompetitionMaterial.objects.create(competition=self.comp, title="Drone edit", url="https://video.example/1")
-        page = self._page()
-        anchor = page[page.index("https://video.example/1") - 200 : page.index("Drone edit") + 20]
-        self.assertIn('target="_blank"', anchor)
-        self.assertIn('rel="noopener"', anchor)
+        anchor = re.search(r'<a\b[^>]*href="https://video\.example/1"[^>]*>', self._page())
+        self.assertIsNotNone(anchor)
+        self.assertIn('target="_blank"', anchor.group(0))
+        self.assertIn('rel="noopener"', anchor.group(0))
 
     def test_materials_keep_the_order_they_were_arranged_in(self):
         CompetitionMaterial.objects.create(competition=self.comp, title="Second", url="https://e.example/2", order=1)
@@ -4012,6 +4014,13 @@ class EditCompetitionMaterialsTests(TestCase):
     def test_a_link_past_the_column_is_a_field_error_not_a_crash(self):
         long_url = "https://photos.example/" + "a" * 300
         response = self._post([{"title": "Photos", "url": long_url}])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._materials(), [])
+        self.assertTrue(response.context["material_formset"].errors[0]["url"])
+
+    def test_a_script_url_is_refused(self):
+        """The name and the link both come from a form; the link must not be able to run code."""
+        response = self._post([{"title": "Photos", "url": "javascript:alert(1)"}])
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self._materials(), [])
         self.assertTrue(response.context["material_formset"].errors[0]["url"])
