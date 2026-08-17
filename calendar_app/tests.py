@@ -4018,6 +4018,13 @@ class EditCompetitionMaterialsTests(TestCase):
         self.assertEqual(self._materials(), [])
         self.assertTrue(response.context["material_formset"].errors[0]["url"])
 
+    def test_a_name_of_only_spaces_is_refused(self):
+        """Spaces are not a name: the button they would caption reads as blank."""
+        response = self._post([{"title": "   ", "url": "https://photos.example/a"}])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._materials(), [])
+        self.assertTrue(response.context["material_formset"].errors[0]["title"])
+
     def test_a_script_url_is_refused(self):
         """The name and the link both come from a form; the link must not be able to run code."""
         response = self._post([{"title": "Photos", "url": "javascript:alert(1)"}])
