@@ -797,6 +797,25 @@ def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
             )
 
 
+# The prefix the coverage-links formset posts under, shared by the view and the edit template's JS.
+MATERIALS_PREFIX = "materials"
+
+
+def _material_formset(request, comp):
+    """The coverage-links formset for this request, bound only if the request actually carried one.
+
+    An edit that never mentions the links -- no management form anywhere in the post -- is not an
+    edit of the links, and leaving them alone beats failing the whole save over data the caller
+    never sent. The two helpers below read an unbound formset as exactly that: nothing to say.
+    """
+    posted = request.method == "POST" and f"{MATERIALS_PREFIX}-TOTAL_FORMS" in request.POST
+    return CompetitionMaterialFormSet(request.POST if posted else None, instance=comp, prefix=MATERIALS_PREFIX)
+
+
+def _materials_are_valid(formset) -> bool:
+    return not formset.is_bound or formset.is_valid()
+
+
 def _save_materials(formset, comp):
     """Store the coverage links, numbering the survivors in the order the page showed them.
 
@@ -804,6 +823,8 @@ def _save_materials(formset, comp):
     middle closes the gap instead of leaving one, and a row moved by an edit lands where the editor
     put it. Rows left blank never reach here: Django drops an untouched extra form.
     """
+    if not formset.is_bound:
+        return
     formset.instance = comp
     formset.save(commit=False)
     for removed in formset.deleted_objects:
@@ -1021,7 +1042,7 @@ class EditCompetitionView(View):
                 "competition": comp,
                 "form": form,
                 "reg_form": reg_form,
-                "material_formset": CompetitionMaterialFormSet(instance=comp, prefix="materials"),
+                "material_formset": _material_formset(request, comp),
                 "categories_json": json.dumps(categories),
                 "mode_locked": comp.registration_mode_locked,
                 **disc_ctx,
@@ -1034,8 +1055,8 @@ class EditCompetitionView(View):
         reg_form = RegistrationSettingsForm(request.POST)
         # The coverage links are editable by whoever may edit the event at all -- the same permission
         # that got past _get_competition_or_403 above, with no separate organizer check.
-        material_formset = CompetitionMaterialFormSet(request.POST, instance=comp, prefix="materials")
-        if form.is_valid() and reg_form.is_valid() and material_formset.is_valid():
+        material_formset = _material_formset(request, comp)
+        if form.is_valid() and reg_form.is_valid() and _materials_are_valid(material_formset):
             cd = form.cleaned_data
             if not _validate_deadline(form, reg_form, cd["date_start"], cd.get("date_end")):
                 import json as _json

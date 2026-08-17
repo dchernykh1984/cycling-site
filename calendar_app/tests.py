@@ -4087,11 +4087,14 @@ class EditCompetitionMaterialsTests(TestCase):
         # One saved row plus the blank one waiting to be filled.
         self.assertEqual(response.context["material_formset"].total_form_count(), 2)
 
-    def test_editing_an_event_without_materials_still_works(self):
-        """The formset is required on every edit, so a post that predates it must not 500."""
+    def test_a_post_that_says_nothing_about_materials_leaves_them_alone(self):
+        """An edit that carries no formset is not an edit of the links -- it must not refuse or wipe."""
+        CompetitionMaterial.objects.create(competition=self.comp, title="Photos", url="https://photos.example/a")
         response = self.client.post(
             reverse("competition_edit", args=[self.comp.pk]),
-            {"title_ru": "Editable race", "date_start": "2026-09-01"},
+            {"title_ru": "Renamed race", "date_start": "2026-09-01"},
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(self._materials(), [])
+        self.assertEqual(response.status_code, 302)
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.title_ru, "Renamed race")
+        self.assertEqual(self._materials(), [("Photos", "https://photos.example/a", 0)])
