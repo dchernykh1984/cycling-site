@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-15 18:31+0500\n"
+"POT-Creation-Date: 2026-08-17 20:45+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -131,7 +131,7 @@ msgstr "Хабарлама жіберу"
 
 #: accounts/templates/accounts/contact_owners.html:33
 #: accounts/templates/accounts/profile_edit.html:72
-#: calendar_app/templates/calendar_app/edit.html:174
+#: calendar_app/templates/calendar_app/edit.html:220
 #: calendar_app/templates/calendar_app/submit.html:157
 #: home/templates/home/home_edit.html:117
 #: knowledge/templates/knowledge/add_article.html:51
@@ -414,8 +414,8 @@ msgid "Delete this competition?"
 msgstr "Бұл жарысты жою керек пе?"
 
 #: accounts/templates/accounts/profile.html:299
-#: calendar_app/templates/calendar_app/detail.html:321
-#: calendar_app/templates/calendar_app/detail.html:342
+#: calendar_app/templates/calendar_app/detail.html:334
+#: calendar_app/templates/calendar_app/detail.html:355
 #: knowledge/templates/knowledge/knowledge_article_detail.html:52
 #: knowledge/templates/knowledge/knowledge_article_detail.html:72
 #: locations/templates/locations/locations_map_page.html:103
@@ -486,22 +486,22 @@ msgstr ""
 "Bearer &lt;token&gt;</code>"
 
 #: accounts/templates/accounts/profile.html:366
-#: calendar_app/templates/calendar_app/detail.html:238
+#: calendar_app/templates/calendar_app/detail.html:251
 msgid "Copy"
 msgstr "Көшіру"
 
 #: accounts/templates/accounts/profile.html:369
-#: calendar_app/templates/calendar_app/detail.html:264
+#: calendar_app/templates/calendar_app/detail.html:277
 msgid "No token yet. Generate one below."
 msgstr "Токен алi жок. Томенде жасаныз."
 
 #: accounts/templates/accounts/profile.html:374
-#: calendar_app/templates/calendar_app/detail.html:243
+#: calendar_app/templates/calendar_app/detail.html:256
 msgid "Regenerate token"
 msgstr "Токендi жаналау"
 
 #: accounts/templates/accounts/profile.html:374
-#: calendar_app/templates/calendar_app/detail.html:267
+#: calendar_app/templates/calendar_app/detail.html:280
 msgid "Generate token"
 msgstr "Токен жасау"
 
@@ -551,7 +551,7 @@ msgid "Calendar defaults"
 msgstr "Күнтізбенің әдепкі параметрлері"
 
 #: accounts/templates/accounts/profile_edit.html:71
-#: calendar_app/templates/calendar_app/edit.html:173
+#: calendar_app/templates/calendar_app/edit.html:219
 #: knowledge/templates/knowledge/edit_article.html:49
 #: locations/templates/locations/location_form.html:143
 #: registrations/templates/registrations/edit_registration.html:28
@@ -624,18 +624,19 @@ msgstr "Санат тым ұзын (ең көбі %(limit)d таңба)."
 msgid "Intro is too long (max %(limit)d characters)."
 msgstr "Кіріспе тым ұзын (ең көбі %(limit)d таңба)."
 
-#: calendar_app/forms.py:64
+#: calendar_app/forms.py:66
 #: calendar_app/templates/calendar_app/_event_type_filter.html:8
 msgid "Event type"
 msgstr "Іс-шара түрі"
 
-#: calendar_app/forms.py:65
+#: calendar_app/forms.py:67 calendar_app/tests.py:3794
 msgid ""
 "Choose one or more types - an event can be a race and a kids race at once."
 msgstr ""
-"Бір немесе бірнеше түрін таңдаңыз — старт бір мезгілде жарыс та, балалар жарысы да бола алады."
+"Бір немесе бірнеше түрін таңдаңыз — старт бір мезгілде жарыс та, балалар "
+"жарысы да бола алады."
 
-#: calendar_app/forms.py:72
+#: calendar_app/forms.py:74
 #: calendar_app/templates/calendar_app/_disciplines_field.html:14
 #: calendar_app/templates/calendar_app/detail.html:56
 #: calendar_app/templates/calendar_app/list.html:148
@@ -643,51 +644,68 @@ msgstr ""
 msgid "Disciplines"
 msgstr "Пәндер"
 
-#: calendar_app/forms.py:107
+#: calendar_app/forms.py:109
 msgid "Date start"
 msgstr "Басталу күні"
 
-#: calendar_app/forms.py:112
+#: calendar_app/forms.py:114
 msgid "Date end"
 msgstr "Аяқталу күні"
 
-#: calendar_app/forms.py:134
+#: calendar_app/forms.py:136
 msgid "File size must not exceed 10 MB."
 msgstr "Файл өлшемі 10 МБ-тан аспауы керек."
 
-#: calendar_app/forms.py:138
+#: calendar_app/forms.py:140
 #, python-format
 msgid "Unsupported file type. Allowed: %(allowed)s."
 msgstr "Қолданылмайтын файл түрі. Рұқсат етілген: %(allowed)s."
 
-#: calendar_app/forms.py:148
+#: calendar_app/forms.py:150
 msgid "Description is too large. Use fewer or smaller inline images."
 msgstr "Сипаттама тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
 
-#: calendar_app/forms.py:178 calendar_app/tests.py:519
+#: calendar_app/forms.py:180 calendar_app/tests.py:520
 msgid "End date cannot be before start date."
 msgstr "Аяқталу күні басталу күнінен бұрын болмауы керек."
 
-#: calendar_app/forms.py:191
+#: calendar_app/forms.py:193
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:201 calendar_app/views.py:889
-#: calendar_app/views.py:1086
+#: calendar_app/forms.py:203 calendar_app/views.py:917
+#: calendar_app/views.py:1121
 msgid "This location is not available."
 msgstr "Бұл локация қолжетімді емес."
 
-#: calendar_app/forms.py:270 calendar_app/tests.py:1299
+#: calendar_app/forms.py:272 calendar_app/tests.py:1300
 #, python-format
 msgid "Category name is too long: at most %(limit_value)d characters."
 msgstr "Санат атауы тым ұзын: ең көбі %(limit_value)d таңба."
 
-#: calendar_app/forms.py:289 calendar_app/tests.py:1636 knowledge/forms.py:44
+#: calendar_app/forms.py:288
+msgctxt "photo or video material"
+msgid "Name"
+msgstr "Атауы"
+
+#: calendar_app/forms.py:304 calendar_app/forms.py:311
+msgid "Link"
+msgstr "Сілтеме"
+
+#: calendar_app/forms.py:306
+msgid "Give this material a name."
+msgstr "Бұл материалдың атауын жазыңыз."
+
+#: calendar_app/forms.py:307
+msgid "Add a link to this material."
+msgstr "Бұл материалға сілтеме қосыңыз."
+
+#: calendar_app/forms.py:332 calendar_app/tests.py:1637 knowledge/forms.py:44
 #: knowledge/tests.py:909 news/forms.py:113 news/forms.py:126 news/tests.py:689
 msgid "Write a comment..."
 msgstr "Пікір жазыңыз..."
 
-#: calendar_app/forms.py:316
+#: calendar_app/forms.py:359
 msgid "Optional: what looks wrong?"
 msgstr "Міндетті емес: не дұрыс емес?"
 
@@ -1193,17 +1211,22 @@ msgid "Live"
 msgstr "Тікелей эфир"
 
 #: calendar_app/templates/calendar_app/detail.html:232
+#: calendar_app/templates/calendar_app/edit.html:160 calendar_app/tests.py:3928
+msgid "Additional materials"
+msgstr "Қосымша материалдар"
+
+#: calendar_app/templates/calendar_app/detail.html:245
 msgid "Timing system token"
 msgstr "Хронометраж жүйесінің токені"
 
-#: calendar_app/templates/calendar_app/detail.html:241
+#: calendar_app/templates/calendar_app/detail.html:254
 msgid ""
 "Regenerate the timing token? The current token will stop working immediately."
 msgstr ""
 "Хронометраж токенін қайта жасау керек пе? Ағымдағы токен бірден жұмысын "
 "тоқтатады."
 
-#: calendar_app/templates/calendar_app/detail.html:246
+#: calendar_app/templates/calendar_app/detail.html:259
 msgid ""
 "Delete the timing token? Timing tools will lose access until you generate a "
 "new one."
@@ -1211,11 +1234,11 @@ msgstr ""
 "Хронометраж токенін жою керек пе? Жаңасын жасағанша хронометраж құралдары "
 "қолжетімсіз болады."
 
-#: calendar_app/templates/calendar_app/detail.html:248
+#: calendar_app/templates/calendar_app/detail.html:261
 msgid "Delete token"
 msgstr "Токенді жою"
 
-#: calendar_app/templates/calendar_app/detail.html:252
+#: calendar_app/templates/calendar_app/detail.html:265
 msgid ""
 "If this token leaks, anyone could later alter or delete the results — "
 "regenerate or delete it."
@@ -1223,15 +1246,15 @@ msgstr ""
 "Егер токен таралып кетсе, біреу кейін нәтижелерді өзгертуі немесе жоюы "
 "мүмкін — оны қайта жасаңыз немесе жойыңыз."
 
-#: calendar_app/templates/calendar_app/detail.html:255
+#: calendar_app/templates/calendar_app/detail.html:268
 msgid "Access token for the offline timing system:"
 msgstr "Офлайн хронометраж жүйесіне кіру токені:"
 
-#: calendar_app/templates/calendar_app/detail.html:274
+#: calendar_app/templates/calendar_app/detail.html:287
 msgid "This competition is hidden from public view."
 msgstr "Бұл жарыс жалпы көрінімнен жасырылған."
 
-#: calendar_app/templates/calendar_app/detail.html:282
+#: calendar_app/templates/calendar_app/detail.html:295
 #: calendar_app/templates/calendar_app/moderate.html:49
 #: calendar_app/templates/calendar_app/moderate.html:158
 #: knowledge/templates/knowledge/knowledge_index_page.html:41
@@ -1242,7 +1265,7 @@ msgstr "Бұл жарыс жалпы көрінімнен жасырылған."
 msgid "Approve"
 msgstr "Бекіту"
 
-#: calendar_app/templates/calendar_app/detail.html:285
+#: calendar_app/templates/calendar_app/detail.html:298
 #: calendar_app/templates/calendar_app/moderate.html:55
 #: calendar_app/templates/calendar_app/moderate.html:163
 #: knowledge/templates/knowledge/admin/reject_form.html:21
@@ -1255,73 +1278,73 @@ msgid "Reject"
 msgstr "Қабылдамау"
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/templates/calendar_app/detail.html:292
+#: calendar_app/templates/calendar_app/detail.html:305
 #: calendar_app/templates/calendar_app/moderate.html:63
 msgid "Rejection reason"
 msgstr "Қабылданбау себебі"
 
-#: calendar_app/templates/calendar_app/detail.html:294
+#: calendar_app/templates/calendar_app/detail.html:307
 #: calendar_app/templates/calendar_app/moderate.html:66
 msgid "Confirm rejection"
 msgstr "Қабылдамауды растау"
 
-#: calendar_app/templates/calendar_app/detail.html:302
+#: calendar_app/templates/calendar_app/detail.html:315
 #: calendar_app/templates/calendar_app/edit.html:4
 #: calendar_app/templates/calendar_app/edit.html:18
 msgid "Edit competition"
 msgstr "Жарысты өңдеу"
 
-#: calendar_app/templates/calendar_app/detail.html:307
+#: calendar_app/templates/calendar_app/detail.html:320
 msgid "Resubmit for review"
 msgstr "Қайта қарауға жіберу"
 
-#: calendar_app/templates/calendar_app/detail.html:314
+#: calendar_app/templates/calendar_app/detail.html:327
 #: knowledge/templates/knowledge/knowledge_article_detail.html:46
 #: locations/templates/locations/locations_map_page.html:96
 #: news/templates/news/article_detail.html:51
 msgid "Unhide"
 msgstr "Көрсету"
 
-#: calendar_app/templates/calendar_app/detail.html:314
+#: calendar_app/templates/calendar_app/detail.html:327
 #: knowledge/templates/knowledge/knowledge_article_detail.html:46
 #: locations/templates/locations/locations_map_page.html:96
 #: news/templates/news/article_detail.html:51
 msgid "Hide"
 msgstr "Жасыру"
 
-#: calendar_app/templates/calendar_app/detail.html:319
+#: calendar_app/templates/calendar_app/detail.html:332
 msgid "Are you sure you want to delete this competition?"
 msgstr "Бұл жарысты жойғыңыз келетінін растайсыз ба?"
 
-#: calendar_app/templates/calendar_app/detail.html:329
+#: calendar_app/templates/calendar_app/detail.html:342
 #: knowledge/templates/knowledge/knowledge_article_detail.html:59
 #: news/templates/news/article_detail.html:64
 #: news/templates/news/news_page.html:65
 msgid "Comments"
 msgstr "Пікірлер"
 
-#: calendar_app/templates/calendar_app/detail.html:350
+#: calendar_app/templates/calendar_app/detail.html:363
 #: knowledge/templates/knowledge/knowledge_article_detail.html:80
 #: news/templates/news/article_detail.html:85
 #: news/templates/news/news_page.html:91
 msgid "No comments yet. Be the first!"
 msgstr "Пікірлер жоқ. Бірінші болыңыз!"
 
-#: calendar_app/templates/calendar_app/detail.html:356
+#: calendar_app/templates/calendar_app/detail.html:369
 #: knowledge/templates/knowledge/knowledge_article_detail.html:86
 #: news/templates/news/article_detail.html:91
 #: news/templates/news/news_page.html:97
 msgid "Add a comment"
 msgstr "Пікір қосу"
 
-#: calendar_app/templates/calendar_app/detail.html:360
+#: calendar_app/templates/calendar_app/detail.html:373
 #: knowledge/templates/knowledge/knowledge_article_detail.html:90
 #: news/templates/news/article_detail.html:95
 #: news/templates/news/news_page.html:104
 msgid "Submit comment"
 msgstr "Пікірді жіберу"
 
-#: calendar_app/templates/calendar_app/detail.html:366
+#: calendar_app/templates/calendar_app/detail.html:379
 #: cycling_site/templates/base.html:131
 #: knowledge/templates/knowledge/knowledge_article_detail.html:96
 #: news/templates/news/article_detail.html:101
@@ -1329,14 +1352,14 @@ msgstr "Пікірді жіберу"
 msgid "Log in"
 msgstr "Кiру"
 
-#: calendar_app/templates/calendar_app/detail.html:366
+#: calendar_app/templates/calendar_app/detail.html:379
 #: knowledge/templates/knowledge/knowledge_article_detail.html:96
 #: news/templates/news/article_detail.html:101
 #: news/templates/news/news_page.html:112
 msgid "to leave a comment."
 msgstr "пікір қалдыру үшін."
 
-#: calendar_app/templates/calendar_app/detail.html:369
+#: calendar_app/templates/calendar_app/detail.html:382
 #: knowledge/templates/knowledge/knowledge_article_detail.html:99
 #: news/templates/news/article_detail.html:104
 msgid "Commenting is available to verified participants."
@@ -1391,7 +1414,24 @@ msgstr "Нәтижелерге сыртқы сілтеме"
 msgid "External registration link"
 msgstr "Сыртқы тіркеуге сілтеме"
 
-#: calendar_app/templates/calendar_app/edit.html:164
+#: calendar_app/templates/calendar_app/edit.html:161
+msgid ""
+"Links to photo and video coverage. Each one needs both a name and a link."
+msgstr ""
+"Фото және бейне материалдарға сілтемелер. Әрқайсында атауы да, сілтемесі де "
+"болуы керек."
+
+#: calendar_app/templates/calendar_app/edit.html:182
+#: calendar_app/templates/calendar_app/edit.html:186
+#: calendar_app/templates/calendar_app/edit.html:199
+msgid "Remove"
+msgstr "Жою"
+
+#: calendar_app/templates/calendar_app/edit.html:203
+msgid "Add material"
+msgstr "Материал қосу"
+
+#: calendar_app/templates/calendar_app/edit.html:210
 #: calendar_app/templates/calendar_app/submit.html:146
 msgid "Set up registration on our site"
 msgstr "Біздің сайтта тіркеуді баптау"
@@ -1498,69 +1538,69 @@ msgstr "Бекітуді күтіп тұрған орындар жоқ."
 msgid "Submit"
 msgstr "Жіберу"
 
-#: calendar_app/tests.py:667 calendar_app/tests.py:680 cycling_site/forms.py:18
+#: calendar_app/tests.py:668 calendar_app/tests.py:681 cycling_site/forms.py:18
 #: news/tests.py:579
 #, python-format
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."
 
-#: calendar_app/views.py:664
+#: calendar_app/views.py:670
 msgid "N"
 msgstr "с.е."
 
-#: calendar_app/views.py:664
+#: calendar_app/views.py:670
 msgid "S"
 msgstr "о.е."
 
-#: calendar_app/views.py:665
+#: calendar_app/views.py:671
 msgid "E"
 msgstr "ш.б."
 
-#: calendar_app/views.py:665
+#: calendar_app/views.py:671
 msgid "W"
 msgstr "б.б."
 
-#: calendar_app/views.py:1200
+#: calendar_app/views.py:1238
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
 msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/views.py:1212
+#: calendar_app/views.py:1250
 msgid "Please provide a reason for rejection."
 msgstr "Қабылданбау себебін көрсетіңіз."
 
-#: calendar_app/views.py:1240 calendar_app/views.py:1260 knowledge/views.py:164
+#: calendar_app/views.py:1278 calendar_app/views.py:1298 knowledge/views.py:164
 #: news/views.py:232
 msgid "Invalid submission."
 msgstr "Жарамсыз жіберу."
 
-#: calendar_app/views.py:1278
+#: calendar_app/views.py:1316
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Сіз бұл іс-шараға шағым жасап қойдыңыз; модератор оны тексереді."
 
-#: calendar_app/views.py:1280
+#: calendar_app/views.py:1318
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Рахмет. Сіздің шағымыңыз модераторларға жіберілді."
 
-#: calendar_app/views.py:1299
+#: calendar_app/views.py:1337
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Шағым алынып тасталды; іс-шара модерация кезегінен шығарылды."
 
-#: calendar_app/views.py:1363
+#: calendar_app/views.py:1401
 msgid "Only a rejected competition can be resubmitted."
 msgstr "Тек қабылданбаған жарысты қайта жіберуге болады."
 
-#: calendar_app/views.py:1365
+#: calendar_app/views.py:1403
 msgid "Your competition was sent for review again."
 msgstr "Жарыс қайта қарауға жіберілді."
 
-#: calendar_app/views.py:1388
+#: calendar_app/views.py:1426
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Хронометраж токені қайта жасалды. Бұрынғы токен енді жұмыс істемейді."
 
-#: calendar_app/views.py:1399
+#: calendar_app/views.py:1437
 msgid ""
 "Timing token deleted. Timing tools can no longer access this competition."
 msgstr ""
