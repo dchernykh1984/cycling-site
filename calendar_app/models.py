@@ -402,6 +402,37 @@ class Competition(index.Indexed, models.Model):
         return node.name if node else ""
 
 
+class CompetitionMaterial(models.Model):
+    """One named link to photo or video coverage of an event.
+
+    The documents already on a competition (announcement, route, regulations, results) are a fixed
+    set of known slots, each with its own meaning. Coverage is not: an event can come back with one
+    album or with a photographer's gallery, a drone edit and three riders' onboard videos, and there
+    is no telling in advance what any of them should be called. So this is an open-ended list where
+    the caption is written by whoever adds the link, and both halves are mandatory -- a link with no
+    caption is a button nobody can read, and a caption with no link is a button that does nothing.
+
+    The caption is not translated: it names a specific album the way its author named it, and asking
+    for three spellings of "Photos by Ivan" would leave two of them empty on most events.
+    """
+
+    objects: ClassVar[models.Manager["CompetitionMaterial"]]
+
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="materials")
+    title = models.CharField(max_length=255)
+    url = models.URLField()
+    # Position in the list as its author arranged it, renumbered from the form on every save. Ties
+    # (rows added in the same edit before the renumbering runs) fall back to insertion order.
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering: ClassVar[list] = ["order", "pk"]
+        verbose_name = "Competition material"
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.url})"
+
+
 class CompetitionRejection(models.Model):
     """One moderation rejection of a competition, kept as history across resubmissions (#200)."""
 
