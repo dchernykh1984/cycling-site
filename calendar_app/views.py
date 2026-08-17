@@ -622,6 +622,9 @@ class CompetitionDetailView(View):
         ctx: dict = {
             "competition": competition,
             "protocols": protocols,
+            # Photo and video coverage, in the order its author arranged it. Shown to everyone who
+            # can see the event at all -- the links are public pages, not a manager's business.
+            "materials": competition.materials.all(),
             "show_upload_token": show_upload_token,
             "is_manager": is_manager,
             # The author (any role) may edit/delete/resubmit their own submission (#200); Hide and
