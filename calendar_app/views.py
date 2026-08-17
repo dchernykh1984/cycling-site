@@ -797,7 +797,8 @@ def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
             )
 
 
-# The prefix the coverage-links formset posts under, shared by the view and the edit template's JS.
+# The prefix the coverage-links formset posts under. The edit template reads it back off the formset
+# rather than repeating it, so the two cannot drift apart.
 MATERIALS_PREFIX = "materials"
 
 

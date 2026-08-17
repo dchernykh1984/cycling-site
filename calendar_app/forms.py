@@ -306,10 +306,28 @@ class CompetitionMaterialForm(forms.ModelForm):
             "title": {"required": _("Give this material a name.")},
             "url": {"required": _("Add a link to this material.")},
         }
+        # The rows are a grid with no visible label above each field, so the placeholder is what a
+        # sighted editor reads and aria-label is what everyone else gets.
         widgets: ClassVar[dict] = {
-            "title": forms.TextInput(attrs={"class": "form-control", "placeholder": _MATERIAL_NAME}),
-            "url": forms.URLInput(attrs={"class": "form-control", "placeholder": _("Link")}),
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": _MATERIAL_NAME, "aria-label": _MATERIAL_NAME}
+            ),
+            "url": forms.URLInput(attrs={"class": "form-control", "placeholder": _("Link"), "aria-label": _("Link")}),
         }
+
+
+class BaseCompetitionMaterialFormSet(forms.BaseInlineFormSet):
+    """Adds the one thing the factory cannot: Bootstrap's class on the delete box.
+
+    ``DELETE`` is added by the formset itself, after the form class has had its say, so its widget
+    is the plain unstyled checkbox unless it is reached here.
+    """
+
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+        delete_field = form.fields.get("DELETE")
+        if delete_field is not None:
+            delete_field.widget.attrs["class"] = "form-check-input"
 
 
 # ``extra=1`` leaves one blank row waiting on the edit page, so adding the first link needs no
@@ -320,6 +338,7 @@ CompetitionMaterialFormSet = forms.inlineformset_factory(
     Competition,
     CompetitionMaterial,
     form=CompetitionMaterialForm,
+    formset=BaseCompetitionMaterialFormSet,
     extra=1,
     can_delete=True,
     can_delete_extra=False,
