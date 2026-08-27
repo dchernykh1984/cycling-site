@@ -45,6 +45,20 @@ class PrefixedAddressTests(TestCase):
         response = self.client.get("/calendar/list/?location=7", HTTP_ACCEPT_LANGUAGE="ru")
         self.assertEqual(response["Location"], "/ru/calendar/list/?location=7")
 
+    def test_a_signed_in_reader_lands_on_the_language_they_chose(self):
+        """Their profile preference decides which prefix a bare link opens in, cookie or not."""
+        from accounts.models import User
+
+        user = User.objects.create_user(
+            username="prefers_kazakh",
+            email="kk@example.com",
+            password="Pass1234!",
+            preferred_language="kk",
+        )
+        self.client.force_login(user)
+        response = self.client.get("/calendar/list/", HTTP_ACCEPT_LANGUAGE="en")
+        self.assertEqual(response["Location"], "/kk/calendar/list/")
+
     def test_machine_addresses_carry_no_language(self):
         for path in ("/sitemap.xml", "/robots.txt"):
             with self.subTest(path=path):
