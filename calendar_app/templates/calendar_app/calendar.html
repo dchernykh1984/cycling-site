@@ -53,6 +53,22 @@
 </div>
 
 <div id="calendar"></div>
+
+{% if upcoming %}
+<section class="mt-4">
+  <h2 class="h5">{% trans "Nearest competitions" %}</h2>
+  <ul class="list-unstyled mb-2">
+    {% for comp in upcoming %}
+    <li class="mb-1">
+      <span class="text-muted me-2">{{ comp.date_start|date:"d.m.Y" }}</span>
+      <a href="{% url 'competition_detail' comp.pk %}">{{ comp.title }}</a>
+      {% if comp.city_label %}<span class="text-muted">, {{ comp.city_label }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <a href="{% url 'calendar_list' %}">{% trans "All competitions as a list" %}</a>
+</section>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

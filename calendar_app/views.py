@@ -340,11 +340,33 @@ class DefaultFilterRedirectMixin:
         return super().get(request, *args, **kwargs)
 
 
+def upcoming_competitions(limit: int = 20) -> list[Competition]:
+    """The next events, as plain rows.
+
+    The grid draws itself from JSON after the page loads, so a crawler that does not run
+    scripts sees a calendar with nothing in it. These rows are rendered into the page itself,
+    which gives every event a link that can be followed from /calendar/ -- and gives a reader
+    on a slow connection something to read before the grid appears.
+    """
+    today = timezone.localdate()
+    return list(
+        Competition.objects.filter(
+            status=Competition.Status.APPROVED,
+            is_deleted=False,
+            is_hidden=False,
+            date_start__gte=today,
+        )
+        .select_related("location")
+        .order_by("date_start", "pk")[:limit]
+    )
+
+
 class CalendarView(DefaultFilterRedirectMixin, TemplateView):
     template_name = "calendar_app/calendar.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["upcoming"] = upcoming_competitions()
         context["event_types"] = EventType.objects.all()
         context["discipline_categories"] = DisciplineCategory.objects.all()
         context["event_types_json"] = _event_types_for_locale()
