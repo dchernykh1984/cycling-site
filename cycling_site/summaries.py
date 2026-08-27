@@ -26,3 +26,45 @@ def summarize(*sources: str | None, limit: int = MAX_DESCRIPTION_CHARS) -> str:
         if text:
             return Truncator(text).chars(limit, truncate="...")
     return ""
+
+
+def article_markup(
+    *,
+    kind: str,
+    headline: str,
+    url: str,
+    description: str,
+    published=None,
+    modified=None,
+    author: str = "",
+    language: str = "",
+) -> str:
+    """schema.org JSON-LD for a written page, ready to drop inside a script tag.
+
+    An article page carries prose and nothing a machine can key on. This states plainly what the
+    page is, when it was written and in which language -- the last matters here because the same
+    subject exists three times, once per locale, as separate articles.
+    """
+    import json
+
+    from django.utils.html import escape
+
+    data: dict = {
+        "@context": "https://schema.org",
+        "@type": kind,
+        "headline": headline,
+        "url": url,
+        "mainEntityOfPage": {"@type": "WebPage", "@id": url},
+    }
+    if description:
+        data["description"] = description
+    if published is not None:
+        data["datePublished"] = published.isoformat()
+    if modified is not None:
+        data["dateModified"] = modified.isoformat()
+    if author:
+        data["author"] = {"@type": "Person", "name": author}
+    if language:
+        data["inLanguage"] = language
+    # escape() keeps a "</script>" that reached a headline from ending the block early.
+    return escape(json.dumps(data, ensure_ascii=False))

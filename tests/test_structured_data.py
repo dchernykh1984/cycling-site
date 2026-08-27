@@ -86,3 +86,52 @@ class SportsEventMarkupTests(TestCase):
         html = self.client.get(comp.get_absolute_url()).content.decode()
         block = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)
         self.assertNotIn("<b>", block.group(1))
+
+
+def _article_payload(client, url):
+    html = client.get(url).content.decode()
+    block = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)
+    assert block is not None, "no JSON-LD on the page"
+    raw = (
+        block.group(1)
+        .replace("&quot;", '"')
+        .replace("&#x27;", "'")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&amp;", "&")
+    )
+    return json.loads(raw)
+
+
+class KnowledgeArticleMarkupTests(TestCase):
+    def test_the_page_declares_an_article(self):
+        from knowledge.models import KnowledgeArticle
+
+        article = KnowledgeArticle.objects.create(
+            title="Chain wear", slug="chain-wear", body="<p>When to replace a chain.</p>"
+        )
+        data = _article_payload(self.client, article.get_absolute_url())
+        self.assertEqual(data["@type"], "Article")
+        self.assertEqual(data["headline"], "Chain wear")
+        self.assertIn("replace a chain", data["description"])
+        self.assertTrue(data["url"].startswith("http"))
+
+    def test_the_language_is_stated(self):
+        from knowledge.models import KnowledgeArticle
+
+        article = KnowledgeArticle.objects.create(
+            title="Kazakh guide", slug="kazakh-guide", locale="kk", body="<p>Text.</p>"
+        )
+        self.assertEqual(_article_payload(self.client, article.get_absolute_url())["inLanguage"], "kk")
+
+
+class NewsArticleMarkupTests(TestCase):
+    def test_the_page_declares_a_news_article_with_its_date(self):
+        from news.models import NewsArticle
+
+        article = NewsArticle.objects.create(
+            title_ru="Season opens", slug="season-opens", intro="The season opens in April."
+        )
+        data = _article_payload(self.client, article.get_absolute_url())
+        self.assertEqual(data["@type"], "NewsArticle")
+        self.assertIn("datePublished", data)

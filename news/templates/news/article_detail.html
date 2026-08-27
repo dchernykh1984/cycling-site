@@ -3,6 +3,10 @@
 
 {% block title %}{{ article.title }}{% endblock %}
 
+{% block extra_head %}
+{% if structured_data %}<script type="application/ld+json">{{ structured_data|safe }}</script>{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-lg-9 col-xl-8">
