@@ -372,9 +372,26 @@ class CalendarView(DefaultFilterRedirectMixin, TemplateView):
         context["event_types_json"] = _event_types_for_locale()
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
-        context["locations_data"] = _get_locations_data()
         context["only_favorite"] = _only_favorite_requested(self.request)
         return context
+
+
+class LocationsDataView(View):
+    """The location tree the filter cascade is built from, as its own cacheable response.
+
+    It used to be inlined into every calendar page: a megabyte of JSON on the two addresses that
+    are loaded and crawled most. Served separately it is fetched once and then answered from the
+    browser cache, and the page itself becomes small enough to read.
+    """
+
+    #: Ten minutes. The tree changes when a venue is approved, and a filter list that is a few
+    #: minutes behind costs nothing; a fresh copy on every page load costs a megabyte.
+    MAX_AGE = 600
+
+    def get(self, request):
+        response = JsonResponse(_get_locations_data(), safe=False)
+        response["Cache-Control"] = f"public, max-age={self.MAX_AGE}"
+        return response
 
 
 class CalendarEventsAPIView(View):
@@ -488,7 +505,6 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
         context["event_types_json"] = _event_types_for_locale()
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
-        context["locations_data"] = _get_locations_data()
         # A filtered list is a page about a city or a discipline; say so, instead of leaving every
         # combination sharing one title and one site-wide description.
         meta_title, meta_description = describe_filters(

@@ -11,6 +11,7 @@ urlpatterns = [
     path("events.atom", NewCompetitionsAtomFeed(), name="calendar_atom"),
     path("map/", views.CalendarMapView.as_view(), name="calendar_map"),
     path("events/", views.CalendarEventsAPIView.as_view(), name="calendar_events_api"),
+    path("locations.json", views.LocationsDataView.as_view(), name="calendar_locations_json"),
     path("map/events/", views.CalendarMapAPIView.as_view(), name="calendar_map_api"),
     path("submit/", views.SubmitCompetitionView.as_view(), name="calendar_submit"),
     path("moderate/", views.ModerationView.as_view(), name="calendar_moderate"),

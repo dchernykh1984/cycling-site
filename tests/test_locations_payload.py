@@ -1,0 +1,40 @@
+"""The location tree is fetched, not shipped inside the page.
+
+Inlined, it was 1 021 380 bytes on `/calendar/` and `/calendar/list/` -- the two addresses that
+get loaded and crawled most, and where that megabyte dominated the page weight.
+"""
+
+from django.test import TestCase
+from django.urls import reverse
+
+from locations.models import add_location_child
+
+
+class LocationPayloadTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        cls.city = add_location_child(region, name="Almaty", name_ru="Almaty")
+        add_location_child(cls.city, name="Republic Square", name_ru="Republic Square")
+
+    def test_the_calendar_pages_do_not_carry_the_tree(self):
+        for name in ("calendar", "calendar_list"):
+            html = self.client.get(reverse(name)).content.decode()
+            self.assertNotIn('id="locations-data"', html, name)
+            self.assertIn(reverse("calendar_locations_json"), html, name)
+
+    def test_the_endpoint_returns_the_nodes_the_cascade_needs(self):
+        response = self.client.get(reverse("calendar_locations_json"))
+        self.assertEqual(response.status_code, 200)
+        rows = response.json()
+        self.assertTrue(rows)
+        first = rows[0]
+        for field in ("pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden", "lat", "lng"):
+            self.assertIn(field, first)
+        self.assertIn(self.city.pk, [row["pk"] for row in rows])
+
+    def test_it_may_be_cached(self):
+        """It is the same tree for everyone, and a few minutes stale costs nothing."""
+        response = self.client.get(reverse("calendar_locations_json"))
+        self.assertIn("max-age", response["Cache-Control"])

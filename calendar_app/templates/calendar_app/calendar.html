@@ -83,7 +83,6 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js"></script>
-{{ locations_data|json_script:"locations-data" }}
 <script>
 // Server-side month names for the active locale — avoids inconsistent kk
 // support in browser Intl implementations that produce "M06" instead of "Маусым".
@@ -135,6 +134,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (dt) sessionStorage.setItem('cal_date_to', dt);
     updateSwitcherLinks();
   }());
+
+  // The location tree is fetched, so the cascade answers for itself only once it arrives.
+  document.addEventListener('location-filter-ready', updateSwitcherLinks);
 
   // --- FullCalendar ---
   var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
