@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 18:47+0500\n"
+"POT-Creation-Date: 2026-08-27 18:53+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -150,7 +150,7 @@ msgstr "Отмена"
 
 #: accounts/templates/accounts/profile.html:4
 #: accounts/templates/accounts/profile.html:9
-#: cycling_site/templates/base.html:104
+#: cycling_site/templates/base.html:107
 msgid "Profile"
 msgstr "Профиль"
 
@@ -508,7 +508,7 @@ msgid "API docs (Swagger)"
 msgstr "Документация API (Swagger)"
 
 #: accounts/templates/accounts/profile.html:383
-#: cycling_site/templates/base.html:115
+#: cycling_site/templates/base.html:118
 msgid "Log out"
 msgstr "Выйти"
 
@@ -675,8 +675,8 @@ msgstr "Дата окончания не может быть раньше дат
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:203 calendar_app/views.py:939
-#: calendar_app/views.py:1143
+#: calendar_app/forms.py:203 calendar_app/views.py:944
+#: calendar_app/views.py:1148
 msgid "This location is not available."
 msgstr "Эта локация недоступна."
 
@@ -710,6 +710,17 @@ msgstr "Напишите комментарий..."
 #: calendar_app/forms.py:378
 msgid "Optional: what looks wrong?"
 msgstr "Необязательно: что не так?"
+
+#: calendar_app/models.py:258
+#, python-format
+msgid "Disciplines: %(kinds)s."
+msgstr "Дисциплины: %(kinds)s."
+
+#: calendar_app/models.py:259
+msgid ""
+"Details, start point and results on the Universal Bicycle Team calendar."
+msgstr ""
+"Подробности, точка старта и результаты в календаре Universal Bicycle Team."
 
 #: calendar_app/templates/calendar_app/_direction_filter.html:11
 #: calendar_app/templates/calendar_app/_disciplines_field.html:18
@@ -947,7 +958,7 @@ msgstr "Вид"
 #: calendar_app/templates/calendar_app/calendar.html:16
 #: calendar_app/templates/calendar_app/map.html:4
 #: calendar_app/templates/calendar_app/map.html:16
-#: cycling_site/templates/base.html:56
+#: cycling_site/templates/base.html:59
 msgid "Calendar"
 msgstr "Календарь"
 
@@ -957,7 +968,7 @@ msgstr "Список"
 
 #: calendar_app/templates/calendar_app/_view_switcher.html:17
 #: cycling_site/templates/_map_layers.html:22
-#: cycling_site/templates/base.html:61
+#: cycling_site/templates/base.html:64
 #: locations/templates/locations/location_form.html:13
 #: locations/templates/locations/locations_map_page.html:4
 #: locations/templates/locations/locations_map_page.html:14
@@ -1144,7 +1155,7 @@ msgstr "Объявление"
 #: calendar_app/templates/calendar_app/detail.html:168
 #: calendar_app/templates/calendar_app/detail.html:201
 #: calendar_app/templates/calendar_app/list.html:187
-#: cycling_site/templates/base.html:122
+#: cycling_site/templates/base.html:125
 #: registrations/templates/registrations/register.html:4
 #: registrations/templates/registrations/register.html:13
 #: registrations/templates/registrations/register.html:207
@@ -1348,7 +1359,7 @@ msgid "Submit comment"
 msgstr "Отправить комментарий"
 
 #: calendar_app/templates/calendar_app/detail.html:379
-#: cycling_site/templates/base.html:121
+#: cycling_site/templates/base.html:124
 #: knowledge/templates/knowledge/knowledge_article_detail.html:96
 #: news/templates/news/article_detail.html:101
 #: news/templates/news/news_page.html:111
@@ -1546,23 +1557,23 @@ msgstr "Отправить"
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Значение должно содержать не более %(limit_value)d символов."
 
-#: calendar_app/views.py:670
+#: calendar_app/views.py:675
 msgid "N"
 msgstr "с.ш."
 
-#: calendar_app/views.py:670
+#: calendar_app/views.py:675
 msgid "S"
 msgstr "ю.ш."
 
-#: calendar_app/views.py:671
+#: calendar_app/views.py:676
 msgid "E"
 msgstr "в.д."
 
-#: calendar_app/views.py:671
+#: calendar_app/views.py:676
 msgid "W"
 msgstr "з.д."
 
-#: calendar_app/views.py:1260
+#: calendar_app/views.py:1265
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
@@ -1571,41 +1582,41 @@ msgstr ""
 "администратор."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/views.py:1272
+#: calendar_app/views.py:1277
 msgid "Please provide a reason for rejection."
 msgstr "Пожалуйста, укажите причину отказа."
 
-#: calendar_app/views.py:1300 calendar_app/views.py:1320 knowledge/views.py:164
+#: calendar_app/views.py:1305 calendar_app/views.py:1325 knowledge/views.py:164
 #: news/views.py:232
 msgid "Invalid submission."
 msgstr "Некорректная отправка."
 
-#: calendar_app/views.py:1338
+#: calendar_app/views.py:1343
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Вы уже пожаловались на это событие; модератор его проверит."
 
-#: calendar_app/views.py:1340
+#: calendar_app/views.py:1345
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Спасибо. Ваша жалоба отправлена модераторам."
 
-#: calendar_app/views.py:1359
+#: calendar_app/views.py:1364
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Жалоба снята; событие убрано из очереди модерации."
 
-#: calendar_app/views.py:1423
+#: calendar_app/views.py:1428
 msgid "Only a rejected competition can be resubmitted."
 msgstr ""
 "На повторное рассмотрение можно отправить только отклонённое соревнование."
 
-#: calendar_app/views.py:1425
+#: calendar_app/views.py:1430
 msgid "Your competition was sent for review again."
 msgstr "Соревнование отправлено на повторное рассмотрение."
 
-#: calendar_app/views.py:1448
+#: calendar_app/views.py:1453
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Токен хронометража пересоздан. Прежний токен больше не работает."
 
-#: calendar_app/views.py:1459
+#: calendar_app/views.py:1464
 msgid ""
 "Timing token deleted. Timing tools can no longer access this competition."
 msgstr ""
@@ -1699,7 +1710,7 @@ msgstr "Перейти на страницу"
 msgid "Next"
 msgstr "Вперёд"
 
-#: cycling_site/templates/base.html:15 cycling_site/templates/base.html:20
+#: cycling_site/templates/base.html:18 cycling_site/templates/base.html:23
 msgid ""
 "Calendar of endurance sport events -- cycling, running, cross-country skiing "
 "-- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and "
@@ -1709,51 +1720,51 @@ msgstr ""
 "гонки — в Казахстане, Кыргызстане, России и других странах. Анонсы, "
 "протоколы и база знаний."
 
-#: cycling_site/templates/base.html:44
+#: cycling_site/templates/base.html:47
 msgid "Cycling"
 msgstr "Велоспорт"
 
-#: cycling_site/templates/base.html:47
+#: cycling_site/templates/base.html:50
 msgid "Toggle navigation"
 msgstr "Меню"
 
-#: cycling_site/templates/base.html:53
+#: cycling_site/templates/base.html:56
 #: news/templates/news/article_detail.html:12
 #: news/templates/news/news_list.html:4 news/templates/news/news_list.html:9
 #: search/templates/search/search.html:51
 msgid "News"
 msgstr "Новости"
 
-#: cycling_site/templates/base.html:66
+#: cycling_site/templates/base.html:69
 msgid "Knowledge Base"
 msgstr "База знаний"
 
-#: cycling_site/templates/base.html:71
+#: cycling_site/templates/base.html:74
 msgid "About"
 msgstr "О нас"
 
-#: cycling_site/templates/base.html:75 search/templates/search/search.html:4
+#: cycling_site/templates/base.html:78 search/templates/search/search.html:4
 #: search/templates/search/search.html:9 search/templates/search/search.html:16
 msgid "Search"
 msgstr "Поиск"
 
-#: cycling_site/templates/base.html:80
+#: cycling_site/templates/base.html:83
 msgid "Switch theme"
 msgstr "Сменить тему"
 
-#: cycling_site/templates/base.html:108
+#: cycling_site/templates/base.html:111
 msgid "Admin"
 msgstr "Администратор"
 
-#: cycling_site/templates/base.html:135
+#: cycling_site/templates/base.html:138
 msgid "Close"
 msgstr "Закрыть"
 
-#: cycling_site/templates/base.html:145
+#: cycling_site/templates/base.html:148
 msgid "Cycling events"
 msgstr "Соревнования по велоспорту"
 
-#: cycling_site/templates/base.html:148
+#: cycling_site/templates/base.html:151
 #, python-format
 msgid ""
 "Found a bug or have a suggestion? <a href=\"%(url)s\" target=\"_blank\" "
@@ -1762,12 +1773,12 @@ msgstr ""
 "Нашли баг или есть предложение? <a href=\"%(url)s\" target=\"_blank\" "
 "rel=\"noopener\">Создайте задачу на GitHub</a>."
 
-#: cycling_site/templates/base.html:151 home/templates/home/privacy_page.html:4
+#: cycling_site/templates/base.html:154 home/templates/home/privacy_page.html:4
 #: home/templates/home/privacy_page.html:9
 msgid "Privacy Policy"
 msgstr "Политика конфиденциальности"
 
-#: cycling_site/templates/base.html:152 home/templates/home/terms_page.html:4
+#: cycling_site/templates/base.html:155 home/templates/home/terms_page.html:4
 #: home/templates/home/terms_page.html:9
 msgid "Terms of Use"
 msgstr "Условия использования"

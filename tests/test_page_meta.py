@@ -90,3 +90,39 @@ class SocialTagsTests(TestCase):
         html = self.client.get(reverse("calendar")).content.decode()
         self.assertTrue((_prop(html, "og:image") or "").endswith(".png"))
         self.assertEqual(_meta(html, "twitter:card"), "summary")
+
+
+class CompetitionMetaTests(TestCase):
+    """An event page has to say what it is: 500+ of them shared one description before."""
+
+    def setUp(self):
+        self.comp = _competition("Almaty Gran Fondo", date_start=datetime.date(2026, 10, 4))
+
+    def _html(self):
+        return self.client.get(self.comp.get_absolute_url(), HTTP_ACCEPT_LANGUAGE="en").content.decode()
+
+    def test_the_title_is_the_event_name(self):
+        self.assertIn("Almaty Gran Fondo", re.search(r"<title>(.*?)</title>", self._html()).group(1))
+
+    def test_the_description_carries_the_name_and_the_date(self):
+        description = _meta(self._html(), "description")
+        self.assertIn("Almaty Gran Fondo", description)
+        self.assertIn("2026", description)
+
+    def test_two_events_do_not_share_a_description(self):
+        other = _competition("Astana Night Run", date_start=datetime.date(2026, 5, 1))
+        mine = _meta(self._html(), "description")
+        theirs = _meta(self.client.get(other.get_absolute_url()).content.decode(), "description")
+        self.assertNotEqual(mine, theirs)
+
+    def test_the_description_names_the_place_when_there_is_one(self):
+        from locations.models import Location, add_location_child
+
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan", name_en="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        city = add_location_child(region, name="Almaty", name_ru="Almaty", name_en="Almaty")
+        venue = add_location_child(city, name="Republic Square", name_ru="Republic Square")
+        self.comp.location = venue
+        self.comp.save()
+        self.assertIn("Almaty", _meta(self._html(), "description"))
+        self.assertIsInstance(venue, Location)

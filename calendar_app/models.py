@@ -236,6 +236,29 @@ class Competition(index.Indexed, models.Model):
         competition in hand and wants to link to it without knowing the URL layout."""
         return reverse("competition_detail", kwargs={"pk": self.pk})
 
+    def search_summary(self) -> str:
+        """One sentence about this event, for the page's meta description.
+
+        Built from the facts a search result needs -- what, when, where, which sport -- rather than
+        from the organizer's HTML, which is often several screens of regulations and starts with a
+        greeting. Every competition page used to carry the same site-wide sentence, which told a
+        search engine nothing that distinguished one race from another.
+        """
+        from django.utils.formats import date_format
+        from django.utils.translation import gettext as _
+
+        when = date_format(self.date_start, "j E Y")
+        if self.date_end and self.date_end != self.date_start:
+            when = f"{when} - {date_format(self.date_end, 'j E Y')}"
+        where = ", ".join(part for part in (self.city_label, self.country_label) if part)
+        kinds = ", ".join(d.name for d in self.disciplines.all()[:3])
+
+        parts = [f"{self.title}: {when}" + (f", {where}" if where else "") + "."]
+        if kinds:
+            parts.append(_("Disciplines: %(kinds)s.") % {"kinds": kinds})
+        parts.append(_("Details, start point and results on the Universal Bicycle Team calendar."))
+        return " ".join(parts)
+
     def get_calendar_end(self) -> str | None:
         if self.date_end:
             return (self.date_end + datetime.timedelta(days=1)).isoformat()
