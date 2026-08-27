@@ -647,6 +647,11 @@ class CompetitionDetailView(View):
             "report_form": ReportCompetitionForm() if can_report else None,
             "open_reports": open_reports,
             "can_dismiss_reports": bool(open_reports),
+            # What a search engine and a chat preview read: the event's own name and a sentence
+            # about it, instead of the one site-wide line every page used to carry.
+            "meta_title": competition.title,
+            "meta_description": competition.search_summary(),
+            "og_type": "article",
         }
         # Resolve the map pin: a venue with its own coordinates, else the nearest visible ancestor
         # (city -> region -> country). The hidden "other location" placeholder carries no coordinates,
