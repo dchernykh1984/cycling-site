@@ -1,21 +1,30 @@
-{% load i18n %}
+{% load i18n pagination_tags %}
 {% comment %}
 Reusable pager for any Django Page object. Include with:
   {% include "_pagination.html" with page_obj=competitions %}
-The current-page field is an editable number input; submitting it (Enter or blur)
-jumps to that page. All current GET params except `page` are preserved -- including
-repeated ones like `location` -- via request.GET.lists.
+Numbered links exist so a crawler can reach any page in a couple of hops instead of walking the
+whole chain through "next". The number input stays for people, who would rather type 17 than click.
+All current GET params except `page` are preserved -- including repeated ones like `location`.
 {% endcomment %}
 {% if page_obj.has_other_pages %}
 <nav aria-label="{% trans 'Pagination' %}">
-  <ul class="pagination justify-content-center align-items-center">
+  <ul class="pagination justify-content-center align-items-center flex-wrap">
     {% if page_obj.has_previous %}
     <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for k, values in request.GET.lists %}{% if k != 'page' %}{% for v in values %}&amp;{{ k|urlencode }}={{ v|urlencode }}{% endfor %}{% endif %}{% endfor %}">
+      <a class="page-link" rel="prev" href="{% page_query page_obj.previous_page_number %}">
         &laquo; {% trans "Previous" %}
       </a>
     </li>
     {% endif %}
+    {% for number in page_obj|elided_page_range %}
+      {% if number == page_obj.paginator.ELLIPSIS %}
+      <li class="page-item disabled"><span class="page-link">{{ number }}</span></li>
+      {% elif number == page_obj.number %}
+      <li class="page-item active" aria-current="page"><span class="page-link">{{ number }}</span></li>
+      {% else %}
+      <li class="page-item"><a class="page-link" href="{% page_query number %}">{{ number }}</a></li>
+      {% endif %}
+    {% endfor %}
     <li class="page-item">
       <form method="get" class="d-flex align-items-center gap-1 m-0 px-2">
         {% for k, values in request.GET.lists %}{% if k != 'page' %}{% for v in values %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}{% endif %}{% endfor %}
@@ -28,7 +37,7 @@ repeated ones like `location` -- via request.GET.lists.
     </li>
     {% if page_obj.has_next %}
     <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for k, values in request.GET.lists %}{% if k != 'page' %}{% for v in values %}&amp;{{ k|urlencode }}={{ v|urlencode }}{% endfor %}{% endif %}{% endfor %}">
+      <a class="page-link" rel="next" href="{% page_query page_obj.next_page_number %}">
         {% trans "Next" %} &raquo;
       </a>
     </li>
