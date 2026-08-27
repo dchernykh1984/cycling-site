@@ -96,3 +96,28 @@ class HreflangTests(TestCase):
     def test_the_alternates_are_absolute(self):
         for url in _alternates(self._page("ru")).values():
             self.assertTrue(url.startswith("http"), url)
+
+
+class SitemapLanguageTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        city = add_location_child(region, name="Almaty", name_ru="Almaty")
+        venue = add_location_child(city, name="Republic Square", name_ru="Republic Square")
+        Competition.objects.create(
+            title_ru="Spring race",
+            date_start=datetime.date.today() + datetime.timedelta(days=5),
+            status=Competition.Status.APPROVED,
+            location=venue,
+        )
+
+    def test_the_competition_section_lists_every_language(self):
+        body = self.client.get("/sitemap-competitions.xml").content.decode()
+        for code in ("ru", "kk", "en"):
+            self.assertIn(f"/{code}/calendar/", body)
+
+    def test_each_entry_points_at_its_translations(self):
+        body = self.client.get("/sitemap-competitions.xml").content.decode()
+        self.assertIn('hreflang="kk"', body)
+        self.assertIn('hreflang="x-default"', body)
