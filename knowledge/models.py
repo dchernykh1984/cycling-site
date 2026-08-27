@@ -191,7 +191,7 @@ class KnowledgeIndexPage(RoutablePageMixin, AsciiSlugMixin, Page):
         from django.utils.translation import override as translation_override
 
         from accounts.models import User
-        from cycling_site.summaries import summarize
+        from cycling_site.summaries import article_markup, summarize
         from knowledge.forms import AddKnowledgeArticleCommentForm
 
         can_manage = _can_manage_knowledge(request.user)
@@ -215,6 +215,16 @@ class KnowledgeIndexPage(RoutablePageMixin, AsciiSlugMixin, Page):
             "meta_title": article.title,
             "meta_description": summarize(article.body),
             "og_type": "article",
+            "structured_data": article_markup(
+                kind="Article",
+                headline=article.title,
+                url=f"{request.scheme}://{request.get_host()}{article.get_absolute_url()}",
+                description=summarize(article.body),
+                published=article.published_at,
+                modified=article.updated_at,
+                author=str(article.published_by) if article.published_by else "",
+                language=article.locale,
+            ),
         }
 
         user_lang = (getattr(request, "LANGUAGE_CODE", None) or get_language() or "").split("-")[0]

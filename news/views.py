@@ -11,7 +11,7 @@ from django.views.generic import CreateView, View
 
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
-from cycling_site.summaries import summarize
+from cycling_site.summaries import article_markup, summarize
 from knowledge.models import DraftSubmission
 from news.forms import AddCommentForm, AddNewsArticleCommentForm, NewsArticleForm, SubmitNewsForm
 from news.models import Comment, NewsArticle, NewsArticleComment, NewsPage, NewsSettings
@@ -72,6 +72,14 @@ class NewsArticleDetailView(View):
                 "meta_title": article.title,
                 "meta_description": summarize(article.intro, article.body),
                 "og_type": "article",
+                "structured_data": article_markup(
+                    kind="NewsArticle",
+                    headline=article.title,
+                    url=f"{request.scheme}://{request.get_host()}{article.get_absolute_url()}",
+                    description=summarize(article.intro, article.body),
+                    published=article.published_at,
+                    author=str(article.published_by) if article.published_by else "",
+                ),
             },
         )
 
