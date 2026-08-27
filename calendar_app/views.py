@@ -1,13 +1,15 @@
 import datetime
+import json
 import uuid
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -395,8 +397,20 @@ class LocationsDataView(View):
     #: minutes behind costs nothing; a fresh copy on every page load costs a megabyte.
     MAX_AGE = 600
 
+    #: The same query and the same megabyte of JSON for everyone, so it is built once per worker
+    #: rather than once per visitor. Half the browser's lifetime, so nobody holds a copy older
+    #: than MAX_AGE by much.
+    SERVER_CACHE_SECONDS = 300
+    CACHE_KEY = "calendar:locations-tree"
+
     def get(self, request):
-        response = JsonResponse(_get_locations_data(), safe=False)
+        from django.core.cache import cache
+
+        payload = cache.get(self.CACHE_KEY)
+        if payload is None:
+            payload = json.dumps(_get_locations_data(), cls=DjangoJSONEncoder)
+            cache.set(self.CACHE_KEY, payload, self.SERVER_CACHE_SECONDS)
+        response = HttpResponse(payload, content_type="application/json")
         response["Cache-Control"] = f"public, max-age={self.MAX_AGE}"
         return response
 
