@@ -1,4 +1,5 @@
 from django.contrib.sitemaps import Sitemap
+from django.urls import reverse
 from wagtail.contrib.sitemaps.sitemap_generator import Sitemap as WagtailSitemap
 
 from calendar_app.models import Competition
@@ -79,3 +80,29 @@ class CompetitionSitemap(Sitemap):
         import datetime
 
         return 0.8 if obj.date_start >= datetime.date.today() else 0.4
+
+
+class CalendarFilterSitemap(Sitemap):
+    """The filtered lists that are pages in their own right: a city, or a discipline.
+
+    `/calendar/list/?location=2` has always been server-rendered -- it returns the matching events
+    as plain HTML -- but nothing linked it and nothing listed it, so it existed only for someone
+    who had already built the filter in the browser. "Competitions in Almaty" is the shape of the
+    query people type, and we hold over a thousand cities.
+    """
+
+    changefreq = "weekly"
+    priority = 0.6
+    i18n = True
+    alternates = True
+    x_default = True
+
+    def items(self):
+        from calendar_app.listing_seo import landing_filters
+
+        places, kinds = landing_filters()
+        return [("location", place.pk) for place in places] + [("discipline", kind.pk) for kind in kinds]
+
+    def location(self, item):
+        parameter, pk = item
+        return f"{reverse('calendar_list')}?{parameter}={pk}"

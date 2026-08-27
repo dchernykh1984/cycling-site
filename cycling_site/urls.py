@@ -12,6 +12,7 @@ from wagtail.documents import urls as wagtaildocs_urls
 from accounts.views import set_language as accounts_set_language
 from api.router import api as ninja_api
 from cycling_site.sitemaps import (
+    CalendarFilterSitemap,
     CompetitionSitemap,
     KnowledgeArticleSitemap,
     NewsArticleSitemap,
@@ -69,6 +70,7 @@ sitemaps = {
     "knowledge": KnowledgeArticleSitemap,
     "news": NewsArticleSitemap,
     "competitions": CompetitionSitemap,
+    "calendar-filters": CalendarFilterSitemap,
 }
 
 # Machine-facing addresses, and the ones a language prefix would only get in the way of: the API,
