@@ -237,8 +237,8 @@ class DeleteProtocolTest(TestCase):
     def test_deleted_protocol_link_gone_from_detail_page(self):
         self._upload("absolute")
         proto = Protocol.objects.get()
-        detail_url = f"/calendar/{self.competition.pk}/"
-        link = f"/protocols/{proto.pk}/"
+        detail_url = f"/ru/calendar/{self.competition.pk}/"
+        link = f"/ru/protocols/{proto.pk}/"
         self.assertContains(self.client.get(detail_url), link)
         self._delete(protocol_type="absolute")
         self.assertNotContains(self.client.get(detail_url), link)
@@ -259,7 +259,7 @@ class ProtocolLastUpdatedTest(TestCase):
 
     def test_returns_last_updated_and_hash(self):
         protocol = self._create_protocol()
-        response = self.client.get(f"/api/protocols/{protocol.pk}/last_updated/")
+        response = self.client.get(f"/ru/api/protocols/{protocol.pk}/last_updated/")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("last_updated", data)
@@ -268,11 +268,11 @@ class ProtocolLastUpdatedTest(TestCase):
 
     def test_is_live_false(self):
         protocol = self._create_protocol(is_live=False)
-        response = self.client.get(f"/api/protocols/{protocol.pk}/last_updated/")
+        response = self.client.get(f"/ru/api/protocols/{protocol.pk}/last_updated/")
         self.assertFalse(response.json()["is_live"])
 
     def test_nonexistent_protocol_returns_404(self):
-        response = self.client.get("/api/protocols/99999/last_updated/")
+        response = self.client.get("/ru/api/protocols/99999/last_updated/")
         self.assertEqual(response.status_code, 404)
 
     def test_non_approved_competition_returns_404(self):
@@ -283,7 +283,7 @@ class ProtocolLastUpdatedTest(TestCase):
             is_live=True,
             file_hash="abc",
         )
-        response = self.client.get(f"/api/protocols/{protocol.pk}/last_updated/")
+        response = self.client.get(f"/ru/api/protocols/{protocol.pk}/last_updated/")
         self.assertEqual(response.status_code, 404)
 
     def _protocol_for_flagged_competition(self, **flags):
@@ -295,11 +295,11 @@ class ProtocolLastUpdatedTest(TestCase):
 
     def test_hidden_competition_returns_404(self):
         protocol = self._protocol_for_flagged_competition(is_hidden=True)
-        self.assertEqual(self.client.get(f"/api/protocols/{protocol.pk}/last_updated/").status_code, 404)
+        self.assertEqual(self.client.get(f"/ru/api/protocols/{protocol.pk}/last_updated/").status_code, 404)
 
     def test_deleted_competition_returns_404(self):
         protocol = self._protocol_for_flagged_competition(is_deleted=True)
-        self.assertEqual(self.client.get(f"/api/protocols/{protocol.pk}/last_updated/").status_code, 404)
+        self.assertEqual(self.client.get(f"/ru/api/protocols/{protocol.pk}/last_updated/").status_code, 404)
 
 
 class ProtocolHtmlTest(TestCase):
@@ -327,34 +327,34 @@ class ProtocolHtmlTest(TestCase):
 
     def test_serves_html_content(self):
         protocol = self._create_protocol()
-        response = self.client.get(f"/protocols/{protocol.pk}/html/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/html/")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Test protocol", response.content)
 
     def test_content_type_is_html(self):
         protocol = self._create_protocol()
-        response = self.client.get(f"/protocols/{protocol.pk}/html/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/html/")
         self.assertIn("text/html", response["Content-Type"])
 
     def test_sets_nosniff_header(self):
         protocol = self._create_protocol()
-        response = self.client.get(f"/protocols/{protocol.pk}/html/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/html/")
         self.assertEqual(response["X-Content-Type-Options"], "nosniff")
 
     def test_sets_csp_header(self):
         protocol = self._create_protocol()
-        response = self.client.get(f"/protocols/{protocol.pk}/html/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/html/")
         self.assertIn("Content-Security-Policy", response)
         self.assertIn("default-src 'none'", response["Content-Security-Policy"])
 
     def test_sets_cache_control_no_store(self):
         protocol = self._create_protocol()
-        response = self.client.get(f"/protocols/{protocol.pk}/html/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/html/")
         self.assertEqual(response["Cache-Control"], "no-store")
 
     def test_sets_xframe_sameorigin(self):
         protocol = self._create_protocol()
-        response = self.client.get(f"/protocols/{protocol.pk}/html/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/html/")
         self.assertEqual(response.get("X-Frame-Options"), "SAMEORIGIN")
 
     def test_protocol_without_file_returns_404(self):
@@ -364,11 +364,11 @@ class ProtocolHtmlTest(TestCase):
             is_live=True,
             file_hash="",
         )
-        response = self.client.get(f"/protocols/{protocol.pk}/html/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/html/")
         self.assertEqual(response.status_code, 404)
 
     def test_nonexistent_returns_404(self):
-        response = self.client.get("/protocols/99999/html/")
+        response = self.client.get("/ru/protocols/99999/html/")
         self.assertEqual(response.status_code, 404)
 
     def test_non_approved_competition_returns_404(self):
@@ -381,7 +381,7 @@ class ProtocolHtmlTest(TestCase):
         )
         protocol.html_file.save("protocol.html", ContentFile(HTML), save=False)
         protocol.save()
-        response = self.client.get(f"/protocols/{protocol.pk}/html/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/html/")
         self.assertEqual(response.status_code, 404)
 
     def _html_protocol_for_flagged_competition(self, **flags):
@@ -396,11 +396,11 @@ class ProtocolHtmlTest(TestCase):
 
     def test_hidden_competition_returns_404(self):
         protocol = self._html_protocol_for_flagged_competition(is_hidden=True)
-        self.assertEqual(self.client.get(f"/protocols/{protocol.pk}/html/").status_code, 404)
+        self.assertEqual(self.client.get(f"/ru/protocols/{protocol.pk}/html/").status_code, 404)
 
     def test_deleted_competition_returns_404(self):
         protocol = self._html_protocol_for_flagged_competition(is_deleted=True)
-        self.assertEqual(self.client.get(f"/protocols/{protocol.pk}/html/").status_code, 404)
+        self.assertEqual(self.client.get(f"/ru/protocols/{protocol.pk}/html/").status_code, 404)
 
 
 class ProtocolDetailTest(TestCase):
@@ -428,22 +428,22 @@ class ProtocolDetailTest(TestCase):
 
     def test_detail_page_renders(self):
         protocol = self._create_protocol()
-        response = self.client.get(f"/protocols/{protocol.pk}/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Race")
 
     def test_live_protocol_shows_polling_script(self):
         protocol = self._create_protocol(is_live=True)
-        response = self.client.get(f"/protocols/{protocol.pk}/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/")
         self.assertContains(response, "poll")
 
     def test_non_live_shows_final_results(self):
         protocol = self._create_protocol(is_live=False)
-        response = self.client.get(f"/protocols/{protocol.pk}/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/")
         self.assertNotContains(response, "live-banner")
 
     def test_nonexistent_returns_404(self):
-        response = self.client.get("/protocols/99999/")
+        response = self.client.get("/ru/protocols/99999/")
         self.assertEqual(response.status_code, 404)
 
     def test_non_approved_competition_returns_404(self):
@@ -456,7 +456,7 @@ class ProtocolDetailTest(TestCase):
         )
         protocol.html_file.save("p.html", ContentFile(HTML), save=False)
         protocol.save()
-        response = self.client.get(f"/protocols/{protocol.pk}/")
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/")
         self.assertEqual(response.status_code, 404)
 
     def _detail_protocol_for_flagged_competition(self, **flags):
@@ -471,18 +471,18 @@ class ProtocolDetailTest(TestCase):
 
     def test_hidden_competition_returns_404(self):
         protocol = self._detail_protocol_for_flagged_competition(is_hidden=True)
-        self.assertEqual(self.client.get(f"/protocols/{protocol.pk}/").status_code, 404)
+        self.assertEqual(self.client.get(f"/ru/protocols/{protocol.pk}/").status_code, 404)
 
     def test_deleted_competition_returns_404(self):
         protocol = self._detail_protocol_for_flagged_competition(is_deleted=True)
-        self.assertEqual(self.client.get(f"/protocols/{protocol.pk}/").status_code, 404)
+        self.assertEqual(self.client.get(f"/ru/protocols/{protocol.pk}/").status_code, 404)
 
     @override_settings(LANGUAGE_CODE="en")
     def test_version_history_shown(self):
         protocol = self._create_protocol()
         version = ProtocolVersion(protocol=protocol, file_hash="ver1hash")
         version.html_file.save("v_p.html", ContentFile(HTML), save=True)
-        response = self.client.get(f"/protocols/{protocol.pk}/")
+        response = self.client.get(f"/en/protocols/{protocol.pk}/")
         self.assertContains(response, "Update history")
 
 

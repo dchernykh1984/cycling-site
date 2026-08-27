@@ -13,6 +13,7 @@ from wagtail.test.utils import WagtailPageTests
 from accounts.models import User
 from news.forms import SubmitNewsForm
 from news.models import Comment, NewsArticle, NewsArticleComment, NewsIndexPage, NewsPage, NewsSettings
+from tests.language_urls import in_language
 
 
 def _get_site_root():
@@ -484,7 +485,9 @@ class NewsArticleSanitizeTests(TestCase):
 
         art = NewsArticle.objects.create(title_ru="SearchableNewsItem", body_ru="<p>x</p>")
         get_search_backend().add(art)
-        resp = self.client.get(reverse("search") + "?query=SearchableNewsItem", HTTP_ACCEPT_LANGUAGE="ru")
+        resp = self.client.get(
+            in_language(reverse("search") + "?query=SearchableNewsItem", "ru"), HTTP_ACCEPT_LANGUAGE="ru"
+        )
         self.assertEqual(resp.status_code, 200)
         titles = [a.title for a in resp.context["news_results"]]
         self.assertIn("SearchableNewsItem", titles)
@@ -546,7 +549,7 @@ class NewsRichTextLimitTests(TestCase):
         )
         self.client.force_login(admin)
         response = self.client.post(
-            reverse("news_article_create"),
+            in_language(reverse("news_article_create"), "en"),
             {
                 "title_ru": "T",
                 "title_kk": "",

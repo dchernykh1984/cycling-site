@@ -107,7 +107,7 @@ def test_list_filter_country_returns_all_city_competitions(location_tree):
     _make_comp(location_tree["ru_hidden"], "RU Race")
 
     resp = Client().get(
-        "/calendar/list/",
+        "/ru/calendar/list/",
         {"location": location_tree["kz"].pk, "date_from": _DATE_FROM, "date_to": _DATE_TO},
     )
     assert resp.status_code == 200
@@ -122,7 +122,7 @@ def test_list_filter_region_excludes_other_regions(location_tree):
     _make_comp(location_tree["ru_hidden"], "RU Race")
 
     resp = Client().get(
-        "/calendar/list/",
+        "/ru/calendar/list/",
         {"location": location_tree["region"].pk, "date_from": _DATE_FROM, "date_to": _DATE_TO},
     )
     assert resp.status_code == 200
@@ -148,7 +148,7 @@ def test_list_filter_city_excludes_sibling_cities(location_tree):
     _make_comp(Location.objects.get(pk=hidden2.pk), "City2 Race")
 
     resp = Client().get(
-        "/calendar/list/",
+        "/ru/calendar/list/",
         {"location": location_tree["city"].pk, "date_from": _DATE_FROM, "date_to": _DATE_TO},
     )
     assert resp.status_code == 200

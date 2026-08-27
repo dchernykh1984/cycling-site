@@ -8,6 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from django.utils import translation
 from django.utils.translation import override as translation_override
 from PIL import Image as PILImage
 from wagtail.images import get_image_model
@@ -17,6 +18,7 @@ from wagtail_localize.fields import SynchronizedField
 
 from accounts.models import User
 from home.models import HomePage, SiteContent
+from tests.language_urls import in_language
 
 
 class HomeSetUpTests(WagtailPageTestCase):
@@ -402,7 +404,7 @@ class HomeEditViewTests(TestCase):
         # navbar/page title errors in KK/EN tabs must be rendered too (max_length 100/200).
         self.client.force_login(self.owner)
         response = self.client.post(
-            reverse("home_edit"),
+            in_language(reverse("home_edit"), "en"),
             {
                 "navbar_title_ru": "X",
                 "navbar_title_kk": "k" * 101,  # over navbar_title max_length=100
@@ -540,14 +542,15 @@ class LegalPagesTests(TestCase):
         self.assertTemplateUsed(resp, "home/terms_page.html")
 
     def test_urls_are_the_stable_paths_external_parties_link_to(self):
-        self.assertEqual(reverse("privacy_policy"), "/privacy/")
-        self.assertEqual(reverse("terms_of_use"), "/terms/")
+        # Under the active language, since every reader-facing address carries its prefix now.
+        with translation.override("ru"):
+            self.assertEqual(reverse("privacy_policy"), "/ru/privacy/")
+            self.assertEqual(reverse("terms_of_use"), "/ru/terms/")
 
     def test_privacy_page_states_what_strava_data_is_used(self):
         # The Strava submission relies on this page saying we take identity only, never activities.
         # Pin the locale: the source strings are English, and the site defaults to Russian.
-        self.client.cookies["django_language"] = "en"
-        resp = self.client.get(reverse("privacy_policy"))
+        resp = self.client.get(in_language(reverse("privacy_policy"), "en"))
         body = resp.content.decode()
         self.assertIn("Strava", body)
         self.assertIn("athlete identifier and name", body)

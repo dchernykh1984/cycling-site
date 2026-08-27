@@ -16,7 +16,7 @@ def _map_url(live_server):
     page = LocationsMapPage.objects.live().first()
     if page:
         return f"{live_server.url}{page.url}"
-    return f"{live_server.url}/map/"
+    return f"{live_server.url}/ru/map/"
 
 
 @pytest.fixture
@@ -79,14 +79,14 @@ def test_map_page_renders_for_anonymous(page: Page, live_server, map_page):
 @pytest.mark.django_db(transaction=True)
 def test_map_page_no_add_button_for_anonymous(page: Page, live_server, map_page):
     page.goto(_map_url(live_server))
-    expect(page.locator("a[href='/locations/add/']")).not_to_be_attached()
+    expect(page.locator("a[href='/ru/locations/add/']")).not_to_be_attached()
 
 
 @pytest.mark.django_db(transaction=True)
 def test_map_page_add_button_visible_for_admin(page: Page, live_server, map_page, admin_user):
     inject_session(page, live_server, admin_user)
     page.goto(_map_url(live_server))
-    expect(page.locator("a[href='/locations/add/']")).to_be_visible()
+    expect(page.locator("a[href='/ru/locations/add/']")).to_be_visible()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -104,7 +104,7 @@ def test_map_page_manage_table_visible_for_admin(page: Page, live_server, map_pa
 @pytest.mark.django_db(transaction=True)
 def test_add_form_accessible_for_admin(page: Page, live_server, map_page, admin_user):
     inject_session(page, live_server, admin_user)
-    page.goto(f"{live_server.url}/locations/add/")
+    page.goto(f"{live_server.url}/ru/locations/add/")
     expect(page.locator("#id_name_ru")).to_be_visible()
 
 
@@ -112,7 +112,7 @@ def test_add_form_accessible_for_admin(page: Page, live_server, map_page, admin_
 def test_add_form_accessible_for_non_admin(page: Page, live_server, map_page, organizer):
     # Issue #111: any registered user may open the location form (to propose); not 403.
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/locations/add/")
+    page.goto(f"{live_server.url}/ru/locations/add/")
     expect(page.locator("#id_name_ru")).to_be_visible()
     expect(page.locator("body")).not_to_contain_text("403")
 
@@ -120,7 +120,7 @@ def test_add_form_accessible_for_non_admin(page: Page, live_server, map_page, or
 @pytest.mark.django_db(transaction=True)
 def test_admin_can_create_location(page: Page, live_server, map_page, admin_user, location_tree_basic):
     inject_session(page, live_server, admin_user)
-    page.goto(f"{live_server.url}/locations/add/")
+    page.goto(f"{live_server.url}/ru/locations/add/")
 
     country = location_tree_basic["country"]
     region = location_tree_basic["region"]
@@ -137,7 +137,7 @@ def test_admin_can_create_location(page: Page, live_server, map_page, admin_user
     expect(page.locator("#id_parent")).to_have_value(str(city.pk))
     page.fill("#id_name_ru", "Test Venue")
     page.locator("#location-form button[type=submit]").click()
-    page.wait_for_url(lambda url: "/locations/add/" not in url)
+    page.wait_for_url(lambda url: "/ru/locations/add/" not in url)
 
     from locations.models import Location
 
@@ -154,14 +154,14 @@ def test_admin_can_create_location(page: Page, live_server, map_page, admin_user
 @pytest.mark.django_db(transaction=True)
 def test_edit_form_accessible_for_admin(page: Page, live_server, map_page, admin_user, location_with_coords):
     inject_session(page, live_server, admin_user)
-    page.goto(f"{live_server.url}/locations/{location_with_coords.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/locations/{location_with_coords.pk}/edit/")
     expect(page.locator("#id_name_ru")).to_have_value("Velodrome")
 
 
 @pytest.mark.django_db(transaction=True)
 def test_admin_can_edit_location(page: Page, live_server, map_page, admin_user, location_with_coords):
     inject_session(page, live_server, admin_user)
-    page.goto(f"{live_server.url}/locations/{location_with_coords.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/locations/{location_with_coords.pk}/edit/")
     page.fill("#id_name_ru", "Renamed Venue")
     page.locator("#location-form button[type=submit]").click()
     # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
@@ -181,7 +181,7 @@ def test_manage_table_has_edit_button(page: Page, live_server, map_page, admin_u
     inject_session(page, live_server, admin_user)
     page.goto(_map_url(live_server))
     # The edit link carries a ?next= return target, so match by prefix.
-    edit_link = page.locator(f"a[href^='/locations/{location_with_coords.pk}/edit/']")
+    edit_link = page.locator(f"a[href^='/ru/locations/{location_with_coords.pk}/edit/']")
     expect(edit_link).to_be_visible()
 
 
@@ -193,12 +193,12 @@ def test_manage_table_has_edit_button(page: Page, live_server, map_page, admin_u
 @pytest.mark.django_db(transaction=True)
 def test_admin_can_create_country(page: Page, live_server, map_page, admin_user):
     inject_session(page, live_server, admin_user)
-    page.goto(f"{live_server.url}/locations/add/")
+    page.goto(f"{live_server.url}/ru/locations/add/")
     # No cascade selection -> empty parent -> a depth-1 country.
     expect(page.locator("#id_parent")).to_have_value("")
     page.fill("#id_name_ru", "Newland")
     page.locator("#location-form button[type=submit]").click()
-    page.wait_for_url(lambda url: "/locations/add/" not in url)
+    page.wait_for_url(lambda url: "/ru/locations/add/" not in url)
 
     from locations.models import Location
 
@@ -211,13 +211,13 @@ def test_admin_can_create_country(page: Page, live_server, map_page, admin_user)
 def test_admin_can_create_region_under_country(page: Page, live_server, map_page, admin_user, location_tree_basic):
     country = location_tree_basic["country"]
     inject_session(page, live_server, admin_user)
-    page.goto(f"{live_server.url}/locations/add/")
+    page.goto(f"{live_server.url}/ru/locations/add/")
     page.select_option("#loc-country", str(country.pk))
     # Selecting only the country makes it the parent -> the new node is a depth-2 region.
     expect(page.locator("#id_parent")).to_have_value(str(country.pk))
     page.fill("#id_name_ru", "Brand New Region")
     page.locator("#location-form button[type=submit]").click()
-    page.wait_for_url(lambda url: "/locations/add/" not in url)
+    page.wait_for_url(lambda url: "/ru/locations/add/" not in url)
 
     from locations.models import Location
 
@@ -229,7 +229,7 @@ def test_admin_can_create_region_under_country(page: Page, live_server, map_page
 @pytest.mark.django_db(transaction=True)
 def test_create_hint_for_organizer_is_venue_only(page: Page, live_server, map_page, organizer):
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/locations/add/")
+    page.goto(f"{live_server.url}/ru/locations/add/")
     switch_locale(page, "en")  # the hint is localized; check the English source text
     expect(page.locator("#location-form")).to_contain_text("venue inside the chosen city")
 
@@ -237,7 +237,7 @@ def test_create_hint_for_organizer_is_venue_only(page: Page, live_server, map_pa
 @pytest.mark.django_db(transaction=True)
 def test_create_hint_for_admin_is_not_venue_only(page: Page, live_server, map_page, admin_user):
     inject_session(page, live_server, admin_user)
-    page.goto(f"{live_server.url}/locations/add/")
+    page.goto(f"{live_server.url}/ru/locations/add/")
     switch_locale(page, "en")
     expect(page.locator("#location-form")).not_to_contain_text("venue inside the chosen city")
 
@@ -255,7 +255,7 @@ def test_edit_prefills_parent_cascade_and_coords(
     region = location_tree_basic["region"]
     city = location_tree_basic["city"]
     inject_session(page, live_server, admin_user)
-    page.goto(f"{live_server.url}/locations/{location_with_coords.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/locations/{location_with_coords.pk}/edit/")
     expect(page.locator("#loc-country")).to_have_value(str(country.pk))
     expect(page.locator("#loc-region")).to_have_value(str(region.pk))
     expect(page.locator("#loc-city")).to_have_value(str(city.pk))
@@ -274,7 +274,7 @@ def test_edit_preserves_hidden_parent_on_plain_save(page: Page, live_server, map
     venue = hidden_city.add_child(name="Hidden Child Venue", name_ru="Hidden Child Venue")
 
     inject_session(page, live_server, admin_user)
-    page.goto(f"{live_server.url}/locations/{venue.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/locations/{venue.pk}/edit/")
 
     expect(page.locator("#loc-country")).to_have_value(str(country.pk))
     expect(page.locator("#loc-region")).to_have_value(str(region.pk))
@@ -283,7 +283,7 @@ def test_edit_preserves_hidden_parent_on_plain_save(page: Page, live_server, map
 
     page.fill("#id_name_ru", "Hidden Child Venue Renamed")
     page.locator("#location-form button[type=submit]").click()
-    page.wait_for_url(lambda url: f"/locations/{venue.pk}/edit/" not in url)
+    page.wait_for_url(lambda url: f"/ru/locations/{venue.pk}/edit/" not in url)
 
     venue = Location.objects.get(pk=venue.pk)
     assert venue.name_ru == "Hidden Child Venue Renamed"
@@ -332,11 +332,11 @@ def test_marker_popup_edit_link_navigates(page: Page, live_server, map_page, adm
     marker = page.locator(".leaflet-marker-icon").first
     expect(marker).to_be_visible()
     marker.click()
-    edit_link = page.locator(f".leaflet-popup a[href^='/locations/{location_with_coords.pk}/edit/']")
+    edit_link = page.locator(f".leaflet-popup a[href^='/ru/locations/{location_with_coords.pk}/edit/']")
     expect(edit_link).to_be_visible()
     with page.expect_navigation():
         edit_link.click()
-    assert f"/locations/{location_with_coords.pk}/edit/" in page.url
+    assert f"/ru/locations/{location_with_coords.pk}/edit/" in page.url
     expect(page.locator("#id_name_ru")).to_have_value("Velodrome")
     with page.expect_navigation():
         page.locator("#location-form button[type='submit']").click()

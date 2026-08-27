@@ -8,7 +8,7 @@ from tests.e2e.conftest import inject_session
 
 
 def _profile_url(live_server):
-    return f"{live_server.url}/accounts/profile/"
+    return f"{live_server.url}/ru/accounts/profile/"
 
 
 @pytest.fixture

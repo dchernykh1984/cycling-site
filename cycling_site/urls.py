@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.contrib.sitemaps import views as sitemap_views
 from django.http import HttpResponse
@@ -70,21 +71,14 @@ sitemaps = {
     "competitions": CompetitionSitemap,
 }
 
+# Machine-facing addresses, and the ones a language prefix would only get in the way of: the API,
+# both admins, the media and the files a crawler asks for by exact name.
 urlpatterns: list[URLPattern | URLResolver] = [
     path("django-admin/", admin.site.urls),
     path("api/v1/", ninja_api.urls),
     path("admin/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     path("i18n/set_language/", accounts_set_language, name="set_language"),
-    path("accounts/", include("accounts.urls")),
-    path("accounts/", include("allauth.urls")),
-    path("knowledge/", include("knowledge.urls")),
-    path("locations/", include("locations.urls")),
-    path("news/", include("news.urls")),
-    path("calendar/", include("calendar_app.urls")),
-    path("", include("protocols.urls")),
-    path("", include("registrations.urls")),
-    path("search/", search_views.search, name="search"),
     path("favicon.ico", favicon_redirect, name="favicon"),
     path("robots.txt", robots_txt, name="robots_txt"),
     re_path(
@@ -108,9 +102,32 @@ urlpatterns: list[URLPattern | URLResolver] = [
     ),
     # Serve user-uploaded media in every environment (must precede the Wagtail catch-all).
     re_path(r"^media/(?P<path>.*)$", serve_media, name="media"),
+]
+
+# Everything a reader sees lives under a language prefix: /ru/..., /kk/..., /en/....
+#
+# Each locale is then an address of its own -- indexable, linkable, and unambiguous about which
+# language it is in. Before this the three languages shared one path and were told apart by a
+# cookie, so a crawler only ever saw one of them and two thirds of the site did not exist as far
+# as search was concerned.
+#
+# The unprefixed URL keeps working: LocaleMiddleware answers it with a 302 to the prefix matching
+# the reader's own cookie or Accept-Language, so a link pasted into a chat still opens in each
+# reader's language, and every link ever shared still resolves.
+urlpatterns += i18n_patterns(
+    path("accounts/", include("accounts.urls")),
+    path("accounts/", include("allauth.urls")),
+    path("knowledge/", include("knowledge.urls")),
+    path("locations/", include("locations.urls")),
+    path("news/", include("news.urls")),
+    path("calendar/", include("calendar_app.urls")),
+    path("", include("protocols.urls")),
+    path("", include("registrations.urls")),
+    path("search/", search_views.search, name="search"),
     path("", include("home.urls")),
     path("", include(wagtail_urls)),  # must be last
-]
+    prefix_default_language=True,
+)
 
 
 if settings.DEBUG:  # pragma: no cover - dev-only static serving; tests force DEBUG=False

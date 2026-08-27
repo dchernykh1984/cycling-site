@@ -14,6 +14,7 @@ from django.urls import reverse
 
 from calendar_app.models import Competition, Discipline, DisciplineCategory
 from locations.models import add_location_child
+from tests.language_urls import in_language
 
 FIRST = datetime.date.today() + datetime.timedelta(days=5)
 SPAN = {"date_from": FIRST.isoformat(), "date_to": (FIRST + datetime.timedelta(days=40)).isoformat()}
@@ -43,7 +44,9 @@ class FilteredListMetaTests(TestCase):
         comp.disciplines.set([cls.discipline])
 
     def _get(self, **params):
-        return self.client.get(reverse("calendar_list"), {**SPAN, **params}, HTTP_ACCEPT_LANGUAGE="en").content.decode()
+        return self.client.get(
+            in_language(reverse("calendar_list"), "en"), {**SPAN, **params}, HTTP_ACCEPT_LANGUAGE="en"
+        ).content.decode()
 
     def test_a_city_filter_names_the_city_in_the_title(self):
         self.assertIn("Almaty", _title(self._get(location=self.city.pk)))

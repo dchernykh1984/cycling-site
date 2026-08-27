@@ -24,11 +24,11 @@ def _first_day_of_week_or_skip(page: Page, url: str) -> int:
 
 @pytest.mark.django_db(transaction=True)
 def test_filter_datepicker_starts_on_monday_for_ru(page: Page, live_server):
-    assert _first_day_of_week_or_skip(page, f"{live_server.url}/calendar/list/") == 1  # Monday
+    assert _first_day_of_week_or_skip(page, f"{live_server.url}/ru/calendar/list/") == 1  # Monday
 
 
 @pytest.mark.django_db(transaction=True)
 def test_filter_datepicker_starts_on_sunday_for_en(page: Page, live_server):
     host = live_server.url.split("//")[1].split(":")[0]
     page.context.add_cookies([{"name": "django_language", "value": "en", "domain": host, "path": "/"}])
-    assert _first_day_of_week_or_skip(page, f"{live_server.url}/calendar/list/") == 0  # Sunday
+    assert _first_day_of_week_or_skip(page, f"{live_server.url}/en/calendar/list/") == 0  # Sunday

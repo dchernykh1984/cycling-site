@@ -13,7 +13,7 @@ from tests.e2e.conftest import AROUND_UPCOMING, UPCOMING, inject_session
 def test_star_toggles_favorite_on_detail_page(page: Page, live_server, superuser, approved_competition):
     """Clicking the star favorites the event (lit + persisted), clicking again unfavorites it."""
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/calendar/{approved_competition.pk}/")
+    page.goto(f"{live_server.url}/ru/calendar/{approved_competition.pk}/")
 
     star = page.locator("#favorite-btn")
     expect(star).to_have_attribute("aria-pressed", "false")
@@ -54,7 +54,7 @@ def test_list_favorites_only_checkbox_filters(page: Page, live_server, superuser
     CompetitionFavorite.objects.create(user=superuser, competition=favorited)
 
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/calendar/list/?{AROUND_UPCOMING}")
+    page.goto(f"{live_server.url}/ru/calendar/list/?{AROUND_UPCOMING}")
     expect(page.get_by_role("link", name="FavoriteRaceZ")).to_be_visible()
     expect(page.get_by_role("link", name="PlainRaceZ")).to_be_visible()
 

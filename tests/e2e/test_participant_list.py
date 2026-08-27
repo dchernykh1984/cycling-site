@@ -9,7 +9,7 @@ from tests.e2e.conftest import UPCOMING, inject_session
 
 def _goto_participants(page, live_server, user, competition):
     inject_session(page, live_server, user)
-    page.goto(f"{live_server.url}/competitions/{competition.pk}/participants/")
+    page.goto(f"{live_server.url}/ru/competitions/{competition.pk}/participants/")
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +170,7 @@ def test_participant_list_no_horizontal_scroll_with_long_values(page: Page, live
     )
     inject_session(page, live_server, organizer)
     page.set_viewport_size({"width": 1200, "height": 800})
-    page.goto(f"{live_server.url}/competitions/{comp.pk}/participants/")
+    page.goto(f"{live_server.url}/ru/competitions/{comp.pk}/participants/")
     expect(page.locator(".participant-list-table")).to_be_visible()
     overflow = page.evaluate(
         "() => { const el = document.querySelector('.table-responsive'); return el.scrollWidth - el.clientWidth; }"
@@ -206,7 +206,7 @@ def test_participant_list_stacks_into_cards_on_mobile(page: Page, live_server, o
     )
     inject_session(page, live_server, organizer)
     page.set_viewport_size({"width": 390, "height": 844})
-    page.goto(f"{live_server.url}/competitions/{comp.pk}/participants/")
+    page.goto(f"{live_server.url}/ru/competitions/{comp.pk}/participants/")
 
     expect(page.locator(".participant-list-table thead")).to_be_hidden()
     expect(page.locator(".participant-list-table td[data-label]").first).to_be_visible()

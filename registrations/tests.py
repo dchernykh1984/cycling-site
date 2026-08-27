@@ -14,6 +14,7 @@ from registrations.models import (
     Team,
     check_duplicate,
 )
+from tests.language_urls import in_language
 
 
 def make_user(username, role=User.Role.PARTICIPANT, **kwargs):
@@ -279,7 +280,9 @@ class RegisterForCompetitionViewTests(TestCase):
 
         comp = make_open_competition(birth_date_mode="date")
         self.client.force_login(self.user)  # self.user.birth_date == 1990-01-01
-        resp = self.client.get(reverse("registrations:register", args=[comp.pk]), HTTP_ACCEPT_LANGUAGE="ru")
+        resp = self.client.get(
+            in_language(reverse("registrations:register", args=[comp.pk]), "ru"), HTTP_ACCEPT_LANGUAGE="ru"
+        )
         m = re.search(r'name="birth_date"[^>]*value="([^"]*)"', resp.content.decode())
         self.assertEqual(m.group(1), "1990-01-01")
 
@@ -528,7 +531,7 @@ class RegistrationStravaFieldTests(TestCase):
     def test_strava_mode_without_profile_link_shows_banner(self):
         comp = make_open_competition(additional_info_mode="strava")
         self.client.force_login(self.user)  # no strava_link on profile
-        resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="en")
+        resp = self.client.get(in_language(self._register_url(comp), "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(resp, "Your profile has no Strava link")
 
     def test_strava_mode_with_profile_link_hides_banner(self):
@@ -536,13 +539,13 @@ class RegistrationStravaFieldTests(TestCase):
         self.user.save()
         comp = make_open_competition(additional_info_mode="strava")
         self.client.force_login(self.user)
-        resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="en")
+        resp = self.client.get(in_language(self._register_url(comp), "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertNotContains(resp, "Your profile has no Strava link")
 
     def test_strava_mode_renders_strava_label(self):
         comp = make_open_competition(additional_info_mode="strava")
         self.client.force_login(self.user)
-        resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="en")
+        resp = self.client.get(in_language(self._register_url(comp), "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(resp, "Strava link")
 
     def test_edit_form_label_follows_mode(self):
@@ -561,7 +564,7 @@ class RegistrationStravaFieldTests(TestCase):
         self.client.force_login(self.user)  # no strava_link on profile
         # Missing the required last_name makes the form invalid and re-renders the page.
         resp = self.client.post(
-            self._register_url(comp),
+            in_language(self._register_url(comp), "en"),
             {"first_name": "A", "gender": "M", "birth_year": "1990"},
             HTTP_ACCEPT_LANGUAGE="en",
         )
@@ -574,7 +577,7 @@ class RegistrationStravaFieldTests(TestCase):
 
         comp = make_open_competition(additional_info_mode="strava")
         self.client.force_login(self.user)
-        resp = self.client.get(self._register_url(comp), HTTP_ACCEPT_LANGUAGE="ru")
+        resp = self.client.get(in_language(self._register_url(comp), "ru"), HTTP_ACCEPT_LANGUAGE="ru")
         with translation.override("ru"):
             expected = gettext("Strava link")
         self.assertNotEqual(expected, "Strava link")  # the ru translation is actually loaded
@@ -686,7 +689,7 @@ class ParticipantListViewTests(TestCase):
     def test_list_shows_uncategorized_section(self):
         make_registration(self.comp, category=None, last_name="NoCat")
         self.client.force_login(self.organizer)
-        resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="en")
+        resp = self.client.get(in_language(self.url, "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(resp, "No category")
 
     def test_public_list_also_grouped(self):
@@ -732,7 +735,7 @@ class ParticipantListViewTests(TestCase):
         from django.utils.translation import gettext
 
         make_registration(self.comp, category=None)
-        resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="ru")
+        resp = self.client.get(in_language(self.url, "ru"), HTTP_ACCEPT_LANGUAGE="ru")
         with translation.override("ru"):
             expected = gettext("No category")
         self.assertNotEqual(expected, "No category")  # the ru translation is loaded

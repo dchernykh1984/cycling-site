@@ -41,7 +41,7 @@ def _make_comp(organizer, title, discipline=None, event_type=None):
 def test_direction_dropdown_lists_categories_on_calendar(
     page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
 ):
-    page.goto(f"{live_server.url}/calendar/")
+    page.goto(f"{live_server.url}/ru/calendar/")
     open_filter_panel(page)
     page.click("#dd-btn-1")
     expect(page.locator(f"#dd-menu-1 input[value='{road_category.pk}']")).to_have_count(1)
@@ -50,7 +50,7 @@ def test_direction_dropdown_lists_categories_on_calendar(
 
 @pytest.mark.django_db(transaction=True)
 def test_discipline_dropdown_disabled_before_direction_chosen(page: Page, live_server, road_category, road_discipline):
-    page.goto(f"{live_server.url}/calendar/")
+    page.goto(f"{live_server.url}/ru/calendar/")
     open_filter_panel(page)
     expect(page.locator("#dd-btn-2")).to_be_disabled()
 
@@ -59,7 +59,7 @@ def test_discipline_dropdown_disabled_before_direction_chosen(page: Page, live_s
 def test_selecting_direction_populates_matching_disciplines(
     page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
 ):
-    page.goto(f"{live_server.url}/calendar/")
+    page.goto(f"{live_server.url}/ru/calendar/")
     open_filter_panel(page)
     page.click("#dd-btn-1")
     page.check(f"#dd-menu-1 input[value='{road_category.pk}']")
@@ -72,7 +72,7 @@ def test_selecting_direction_populates_matching_disciplines(
 def test_multiselect_two_directions_merges_disciplines(
     page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
 ):
-    page.goto(f"{live_server.url}/calendar/")
+    page.goto(f"{live_server.url}/ru/calendar/")
     open_filter_panel(page)
     page.click("#dd-btn-1")
     page.check(f"#dd-menu-1 input[value='{road_category.pk}']")
@@ -85,7 +85,7 @@ def test_multiselect_two_directions_merges_disciplines(
 def test_direction_auto_submits_on_list(
     page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
 ):
-    page.goto(f"{live_server.url}/calendar/list/")
+    page.goto(f"{live_server.url}/ru/calendar/list/")
     page.click("#dd-btn-1")
     with page.expect_navigation():
         page.check(f"#dd-menu-1 input[value='{road_category.pk}']")
@@ -101,7 +101,7 @@ def test_list_filters_by_single_direction(
 ):
     _make_comp(organizer, "Road Race Event", discipline=road_discipline)
     _make_comp(organizer, "MTB Race Event", discipline=mtb_discipline)
-    page.goto(f"{live_server.url}/calendar/list/?discipline_category={road_category.pk}&{_DATES}")
+    page.goto(f"{live_server.url}/ru/calendar/list/?discipline_category={road_category.pk}&{_DATES}")
     expect(page.locator("body")).to_contain_text("Road Race Event")
     expect(page.locator("body")).not_to_contain_text("MTB Race Event")
 
@@ -113,7 +113,7 @@ def test_list_multiselect_two_directions_shows_both(
     _make_comp(organizer, "Road Race Event", discipline=road_discipline)
     _make_comp(organizer, "MTB Race Event", discipline=mtb_discipline)
     url = (
-        f"{live_server.url}/calendar/list/"
+        f"{live_server.url}/ru/calendar/list/"
         f"?discipline_category={road_category.pk}&discipline_category={mtb_category.pk}&{_DATES}"
     )
     page.goto(url)
@@ -127,7 +127,7 @@ def test_discipline_level_filter_on_list(
 ):
     _make_comp(organizer, "Road Race Event", discipline=road_discipline)
     _make_comp(organizer, "MTB Race Event", discipline=mtb_discipline)
-    page.goto(f"{live_server.url}/calendar/list/?discipline={road_discipline.pk}&{_DATES}")
+    page.goto(f"{live_server.url}/ru/calendar/list/?discipline={road_discipline.pk}&{_DATES}")
     expect(page.locator("body")).to_contain_text("Road Race Event")
     expect(page.locator("body")).not_to_contain_text("MTB Race Event")
     # The discipline checkbox is restored as checked.
@@ -142,7 +142,7 @@ def test_second_direction_survives_after_drilling_into_a_disciplines(
     # MTB must stay checked after the auto-submit (the deepest-level emit used to drop it).
     _make_comp(organizer, "Road Race Event", discipline=road_discipline)
     _make_comp(organizer, "MTB Race Event", discipline=mtb_discipline)
-    page.goto(f"{live_server.url}/calendar/list/?{_DATES}")
+    page.goto(f"{live_server.url}/ru/calendar/list/?{_DATES}")
 
     page.click("#dd-btn-1")
     with page.expect_navigation():
@@ -172,7 +172,7 @@ def test_second_direction_survives_after_drilling_into_a_disciplines(
 
 @pytest.mark.django_db(transaction=True)
 def test_event_type_dropdown_has_checkbox_options(page: Page, live_server, race_event_type, training_event_type):
-    page.goto(f"{live_server.url}/calendar/")
+    page.goto(f"{live_server.url}/ru/calendar/")
     open_filter_panel(page)
     page.click("#et-btn-1")
     expect(page.locator(f"#et-menu-1 input[value='{race_event_type.pk}']")).to_have_count(1)
@@ -181,7 +181,7 @@ def test_event_type_dropdown_has_checkbox_options(page: Page, live_server, race_
 
 @pytest.mark.django_db(transaction=True)
 def test_event_type_auto_submits_on_list(page: Page, live_server, race_event_type):
-    page.goto(f"{live_server.url}/calendar/list/")
+    page.goto(f"{live_server.url}/ru/calendar/list/")
     page.click("#et-btn-1")
     with page.expect_navigation():
         page.check(f"#et-menu-1 input[value='{race_event_type.pk}']")
@@ -190,7 +190,7 @@ def test_event_type_auto_submits_on_list(page: Page, live_server, race_event_typ
 
 @pytest.mark.django_db(transaction=True)
 def test_event_type_checkbox_restored_from_url(page: Page, live_server, race_event_type):
-    page.goto(f"{live_server.url}/calendar/list/?event_type={race_event_type.pk}")
+    page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race_event_type.pk}")
     page.click("#et-btn-1")
     expect(page.locator(f"#et-menu-1 input[value='{race_event_type.pk}']")).to_be_checked()
 
@@ -199,14 +199,14 @@ def test_event_type_checkbox_restored_from_url(page: Page, live_server, race_eve
 def test_event_type_filters_list(page: Page, live_server, organizer, race_event_type, training_event_type):
     _make_comp(organizer, "Race Event", event_type=race_event_type)
     _make_comp(organizer, "Training Event", event_type=training_event_type)
-    page.goto(f"{live_server.url}/calendar/list/?event_type={race_event_type.pk}&{_DATES}")
+    page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race_event_type.pk}&{_DATES}")
     expect(page.locator("body")).to_contain_text("Race Event")
     expect(page.locator("body")).not_to_contain_text("Training Event")
 
 
 @pytest.mark.django_db(transaction=True)
 def test_event_type_master_checkbox_selects_all(page: Page, live_server, race_event_type, training_event_type):
-    page.goto(f"{live_server.url}/calendar/list/")
+    page.goto(f"{live_server.url}/ru/calendar/list/")
     page.click("#et-btn-1")
     with page.expect_navigation():
         page.check("#et-menu-1 input.mf-all")
@@ -224,7 +224,7 @@ def test_event_type_master_checkbox_selects_all(page: Page, live_server, race_ev
 def test_direction_search_filters_checkboxes(
     page: Page, live_server, road_category, road_discipline, mtb_category, mtb_discipline
 ):
-    page.goto(f"{live_server.url}/calendar/")
+    page.goto(f"{live_server.url}/ru/calendar/")
     open_filter_panel(page)
     page.click("#dd-btn-1")
     road = page.locator(f"#dd-menu-1 li.mf-item-row:has(input[value='{road_category.pk}'])")
@@ -238,7 +238,7 @@ def test_direction_search_filters_checkboxes(
 
 @pytest.mark.django_db(transaction=True)
 def test_event_type_search_filters_checkboxes(page: Page, live_server, race_event_type, training_event_type):
-    page.goto(f"{live_server.url}/calendar/list/")
+    page.goto(f"{live_server.url}/ru/calendar/list/")
     open_filter_panel(page)
     page.click("#et-btn-1")
     race = page.locator(f"#et-menu-1 li.mf-item-row:has(input[value='{race_event_type.pk}'])")
@@ -252,7 +252,7 @@ def test_event_type_search_filters_checkboxes(page: Page, live_server, race_even
 
 @pytest.mark.django_db(transaction=True)
 def test_search_box_present_on_all_three_calendar_tabs(page: Page, live_server, race_event_type, training_event_type):
-    for path in ("/calendar/", "/calendar/list/", "/calendar/map/"):
+    for path in ("/ru/calendar/", "/ru/calendar/list/", "/ru/calendar/map/"):
         page.goto(f"{live_server.url}{path}")
         open_filter_panel(page)
         page.click("#et-btn-1")

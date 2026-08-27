@@ -13,12 +13,12 @@ from tests.e2e.conftest import UPCOMING, inject_session
 
 def _goto_submit(page: Page, live_server, user):
     inject_session(page, live_server, user)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
 
 
 def _goto_edit(page: Page, live_server, user, competition):
     inject_session(page, live_server, user)
-    page.goto(f"{live_server.url}/calendar/{competition.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/calendar/{competition.pk}/edit/")
 
 
 # ---------------------------------------------------------------------------
@@ -183,7 +183,7 @@ def _venue_with_coords(location_tree):
 def test_add_location_page_shows_existing_venue_markers(page: Page, live_server, organizer, location_tree):
     _venue_with_coords(location_tree)
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/locations/add/")
+    page.goto(f"{live_server.url}/ru/locations/add/")
     expect(page.locator("#coord-picker path.leaflet-interactive")).to_have_count(1)
 
 

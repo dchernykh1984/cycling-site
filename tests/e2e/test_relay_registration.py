@@ -62,7 +62,7 @@ def participant_user(db):
 def test_relay_max_wrap_hidden_by_default(page: Page, live_server, organizer):
     """relay_max_members field is hidden until 'Allow relay' checkbox is ticked."""
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     page.locator("#reg_enabled").check()
     expect(page.locator("#relay_max_wrap")).to_have_css("display", "none")
 
@@ -70,7 +70,7 @@ def test_relay_max_wrap_hidden_by_default(page: Page, live_server, organizer):
 @pytest.mark.django_db(transaction=True)
 def test_relay_max_wrap_shown_when_relay_enabled(page: Page, live_server, organizer):
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     page.locator("#reg_enabled").check()
     page.locator("#relay_enabled").check()
     expect(page.locator("#relay_max_wrap")).to_be_visible()
@@ -79,7 +79,7 @@ def test_relay_max_wrap_shown_when_relay_enabled(page: Page, live_server, organi
 @pytest.mark.django_db(transaction=True)
 def test_relay_max_wrap_hides_when_relay_unchecked_again(page: Page, live_server, organizer):
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     page.locator("#reg_enabled").check()
     page.locator("#relay_enabled").check()
     page.locator("#relay_enabled").uncheck()
@@ -97,7 +97,7 @@ def test_relay_form_shows_member_rows_instead_of_first_last(
 ):
     """When relay_enabled, register form must show participant name rows, not first/last name inputs."""
     inject_session(page, live_server, participant_user)
-    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{relay_competition.pk}/register/")
 
     # Relay name input must be present
     expect(page.locator("input[name='participant_name']")).to_be_visible()
@@ -112,7 +112,7 @@ def test_relay_form_add_member_button_adds_row(
 ):
     """Clicking '+ Add member' appends a new input row."""
     inject_session(page, live_server, participant_user)
-    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{relay_competition.pk}/register/")
 
     initial_count = page.locator("input[name='participant_name']").count()
     page.click("#add-relay-member-btn")
@@ -125,7 +125,7 @@ def test_relay_form_add_button_disabled_at_max(
 ):
     """'+ Add member' button becomes disabled once relay_max_members is reached."""
     inject_session(page, live_server, participant_user)
-    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{relay_competition.pk}/register/")
 
     # Fill up to max (relay_max_members=3, 1 row already present)
     page.click("#add-relay-member-btn")
@@ -142,7 +142,7 @@ def test_relay_form_remove_button_hidden_for_single_member(
 ):
     """Remove button must be hidden when there is only one member row."""
     inject_session(page, live_server, participant_user)
-    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{relay_competition.pk}/register/")
 
     remove_btn = page.locator(".remove-relay-member").first
     expect(remove_btn).to_have_css("display", "none")
@@ -154,7 +154,7 @@ def test_relay_form_remove_button_visible_with_multiple_members(
 ):
     """Remove button becomes visible once there are two or more member rows."""
     inject_session(page, live_server, participant_user)
-    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{relay_competition.pk}/register/")
 
     page.click("#add-relay-member-btn")
     expect(page.locator(".remove-relay-member").first).to_be_visible()
@@ -166,7 +166,7 @@ def test_relay_form_remove_button_removes_row(
 ):
     """The '-' remove button removes the corresponding row."""
     inject_session(page, live_server, participant_user)
-    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{relay_competition.pk}/register/")
 
     page.click("#add-relay-member-btn")
     expect(page.locator("input[name='participant_name']")).to_have_count(2)
@@ -186,7 +186,7 @@ def test_relay_registration_submit_creates_record(
 ):
     """Submitting relay form with 2 members creates a CompetitionRegistration with participant_names."""
     inject_session(page, live_server, participant_user)
-    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{relay_competition.pk}/register/")
 
     # Fill first member (name, birth year, city)
     page.locator("input[name='participant_name']").first.fill("Ivanov Ivan")
@@ -209,7 +209,7 @@ def test_relay_registration_submit_creates_record(
     page.locator("#registration-form button[type='submit']").click()
 
     # Should redirect to participant list
-    page.wait_for_url(f"{live_server.url}/competitions/{relay_competition.pk}/participants/")
+    page.wait_for_url(f"{live_server.url}/ru/competitions/{relay_competition.pk}/participants/")
 
     reg = CompetitionRegistration.objects.get(competition=relay_competition)
     assert reg.participant_names == "Ivanov Ivan<BR>Petrov Vasya"
@@ -236,7 +236,7 @@ def test_participant_list_shows_relay_names(page: Page, live_server, organizer, 
         gender="M",
     )
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/participants/")
+    page.goto(f"{live_server.url}/ru/competitions/{relay_competition.pk}/participants/")
 
     # Both names must appear in the table cell
     expect(page.locator("text=Kozlov Artem")).to_be_visible()
@@ -257,7 +257,7 @@ def test_individual_competition_shows_first_last_name_inputs(page: Page, live_se
         relay_enabled=False,
     )
     inject_session(page, live_server, participant_user)
-    page.goto(f"{live_server.url}/competitions/{comp.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{comp.pk}/register/")
 
     expect(page.locator("input[name='last_name']")).to_be_visible()
     expect(page.locator("input[name='first_name']")).to_be_visible()
@@ -275,7 +275,7 @@ def test_individual_registration_still_shows_last_first(page: Page, live_server,
         gender="M",
     )
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/participants/")
+    page.goto(f"{live_server.url}/ru/competitions/{relay_competition.pk}/participants/")
 
     expect(page.locator("text=Testov Ivan")).to_be_visible()
 
@@ -291,7 +291,7 @@ def test_relay_registration_appears_in_user_profile(
 ):
     """After submitting a relay registration, it must appear in the user's profile under 'My registrations'."""
     inject_session(page, live_server, participant_user)
-    page.goto(f"{live_server.url}/competitions/{relay_competition.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{relay_competition.pk}/register/")
 
     page.locator("input[name='participant_name']").first.fill("Ivanov Ivan")
     page.locator("input[name='participant_birth_year']").first.fill("1990")
@@ -302,7 +302,7 @@ def test_relay_registration_appears_in_user_profile(
     page.select_option("select[name='category']", label="Mixed Relay")
 
     page.locator("#registration-form button[type='submit']").click()
-    page.wait_for_url(f"{live_server.url}/competitions/{relay_competition.pk}/participants/")
+    page.wait_for_url(f"{live_server.url}/ru/competitions/{relay_competition.pk}/participants/")
 
-    page.goto(f"{live_server.url}/accounts/profile/")
+    page.goto(f"{live_server.url}/ru/accounts/profile/")
     expect(page.locator("text=Relay Race")).to_be_visible()

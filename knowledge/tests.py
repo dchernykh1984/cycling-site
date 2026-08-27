@@ -10,6 +10,7 @@ from wagtail.models import Locale, Page, Site
 
 from accounts.models import User
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment, KnowledgeIndexPage
+from tests.language_urls import in_language
 
 _MIG_0008 = "knowledge.migrations.0008_populate_knowledgearticle"
 
@@ -129,7 +130,7 @@ class KnowledgeReservedSlugTests(TestCase):
             art = KnowledgeArticle.objects.create(title=title, locale="ru", body="<p>x</p>")
             self.assertNotIn(art.slug, {"add", "submit", "submissions", "articles"})
             # The service URL still resolves to its own view (not shadowed by the article)...
-            self.assertEqual(resolve(f"/knowledge/{reserved}/").url_name, f"knowledge_{reserved}")
+            self.assertEqual(resolve(f"/ru/knowledge/{reserved}/").url_name, f"knowledge_{reserved}")
             # ...and the article's own detail page is reachable.
             self.assertEqual(self.client.get(art.get_absolute_url()).status_code, 200)
 
@@ -236,14 +237,14 @@ class KnowledgeForeignLocaleBannerTests(TestCase):
         )
 
     def test_same_locale_serves_without_banner(self):
-        resp = self.client.get(self.article.get_absolute_url(), HTTP_ACCEPT_LANGUAGE="ru")
+        resp = self.client.get(in_language(self.article.get_absolute_url(), "ru"), HTTP_ACCEPT_LANGUAGE="ru")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Original body content")
         with translation.override("ru"):
             self.assertNotContains(resp, _("Search for a similar article in your language"))
 
     def test_foreign_locale_serves_original_with_banner(self):
-        resp = self.client.get(self.article.get_absolute_url(), HTTP_ACCEPT_LANGUAGE="en")
+        resp = self.client.get(in_language(self.article.get_absolute_url(), "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Original body content")
         self.assertContains(resp, "shown in its original language")
@@ -285,7 +286,7 @@ class SubmissionFormViewTests(TestCase):
 
     def test_anonymous_redirected_to_login(self):
         resp = self.client.get(reverse("knowledge_submit"))
-        self.assertRedirects(resp, f"/accounts/login/?next={reverse('knowledge_submit')}")
+        self.assertRedirects(resp, f"/ru/accounts/login/?next={reverse('knowledge_submit')}")
 
     def test_guest_redirected_to_profile(self):
         self.client.force_login(self.guest)
@@ -451,7 +452,7 @@ class AddArticleViewTests(TestCase):
 
     def test_anonymous_redirected_to_login(self):
         resp = self.client.get(reverse("knowledge_add"))
-        self.assertRedirects(resp, f"/accounts/login/?next={reverse('knowledge_add')}")
+        self.assertRedirects(resp, f"/ru/accounts/login/?next={reverse('knowledge_add')}")
 
     def test_participant_gets_403(self):
         self.client.force_login(self.participant)
@@ -804,7 +805,7 @@ class SearchReturnsKnowledgeArticleTests(TestCase):
         from wagtail.search.backends import get_search_backend
 
         get_search_backend().add(self.article)
-        resp = self.client.get(reverse("search") + "?query=Almaty", HTTP_ACCEPT_LANGUAGE="ru")
+        resp = self.client.get(in_language(reverse("search") + "?query=Almaty", "ru"), HTTP_ACCEPT_LANGUAGE="ru")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Almaty")
 

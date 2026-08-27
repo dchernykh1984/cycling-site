@@ -55,11 +55,11 @@ def test_news_article_created_via_api_appears_on_front(page: Page, live_server, 
     article_id = resp.json()["id"]
 
     # Front list page shows the ru title.
-    page.goto(f"{live_server.url}/news/")
+    page.goto(f"{live_server.url}/ru/news/")
     expect(page.get_by_text("E2E API News RU")).to_be_visible()
 
     # Detail page renders the rich HTML body unescaped (heading element, not text).
-    page.goto(f"{live_server.url}/news/articles/{article_id}/")
+    page.goto(f"{live_server.url}/ru/news/articles/{article_id}/")
     expect(page.locator("h2", has_text="Razdel")).to_be_visible()
     expect(page.get_by_text("Telo novosti RU")).to_be_visible()
 
@@ -79,5 +79,5 @@ def test_competition_created_via_api_appears_on_front(page: Page, live_server, a
     assert resp.status == 201, resp.text()
 
     # Admin-created competitions are auto-approved, so they show on the public list.
-    page.goto(f"{live_server.url}/calendar/list/")
+    page.goto(f"{live_server.url}/ru/calendar/list/")
     expect(page.get_by_text("E2E API Race RU")).to_be_visible()
