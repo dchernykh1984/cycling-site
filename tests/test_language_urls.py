@@ -121,3 +121,20 @@ class SitemapLanguageTests(TestCase):
         body = self.client.get("/sitemap-competitions.xml").content.decode()
         self.assertIn('hreflang="kk"', body)
         self.assertIn('hreflang="x-default"', body)
+
+
+class InternalLinkTests(TestCase):
+    """Links the site writes for itself should land on a page, not on a redirect to one."""
+
+    def test_the_brand_links_to_the_home_page_in_the_current_language(self):
+        html = self.client.get("/en/calendar/list/").content.decode()
+        self.assertIn('class="navbar-brand fw-bold" href="/en/"', html)
+
+    def test_no_navigation_link_needs_a_redirect(self):
+        html = self.client.get("/kk/calendar/list/").content.decode()
+        nav = html.split("<nav")[1].split("</nav>")[0]
+        for href in re.findall(r'href="(/[^"]*)"', nav):
+            if href.startswith(("/static/", "/media/", "/i18n/")):
+                continue
+            with self.subTest(href=href):
+                self.assertEqual(self.client.get(href).status_code, 200, href)

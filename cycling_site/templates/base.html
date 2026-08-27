@@ -60,7 +60,8 @@
     <nav class="navbar navbar-expand-lg sticky-top shadow-sm bg-body-tertiary">
         <div class="container">
             {% get_site_content as sc %}
-            <a class="navbar-brand fw-bold" href="/">{% if sc.navbar_title %}{{ sc.navbar_title }}{% else %}{% trans "Cycling" %}{% endif %}</a>
+            {# The home page in the reader's language: a bare "/" costs every visitor a redirect. #}
+            <a class="navbar-brand fw-bold" href="{% url 'wagtail_serve' '' %}">{% if sc.navbar_title %}{{ sc.navbar_title }}{% else %}{% trans "Cycling" %}{% endif %}</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false"
                 aria-label="{% trans 'Toggle navigation' %}">
