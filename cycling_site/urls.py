@@ -27,6 +27,17 @@ def favicon_redirect(request):
     return redirect(static("favicon.ico"))
 
 
+def indexnow_key_file(request, key):
+    """`/<key>.txt`, which is how Bing, Yandex and Seznam verify that whoever submits URLs for
+    this host controls it. Any other name is a 404, so the file exists only for the real key."""
+    from django.http import Http404
+
+    configured = (getattr(settings, "INDEXNOW_KEY", "") or "").strip()
+    if not configured or key != configured:
+        raise Http404
+    return HttpResponse(configured, content_type="text/plain")
+
+
 def robots_txt(request):
     base_url = getattr(settings, "SITE_BASE_URL", "").rstrip("/")
     sitemap_url = f"{base_url}/sitemap.xml" if base_url else request.build_absolute_uri("/sitemap.xml")
@@ -76,6 +87,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("search/", search_views.search, name="search"),
     path("favicon.ico", favicon_redirect, name="favicon"),
     path("robots.txt", robots_txt, name="robots_txt"),
+    re_path(
+        r"^(?P<key>[A-Za-z0-9\-]{8,128})\.txt$",
+        indexnow_key_file,
+        name="indexnow_key_file",
+    ),
     # An index over per-section files rather than one flat list: the competitions section alone
     # is 500+ URLs and grows with every approved event, and a section can be re-fetched on its own.
     path(
