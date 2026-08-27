@@ -23,6 +23,7 @@
     <meta property="og:url" content="{% firstof canonical_url request.build_absolute_uri %}" />
     <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'apple-touch-icon.png' %}" />
     <meta name="twitter:card" content="summary" />
+    {% block extra_head %}{% endblock %}
     {% if request.in_preview_panel %}
     <base target="_blank">
     {% endif %}

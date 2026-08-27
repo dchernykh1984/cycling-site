@@ -46,6 +46,7 @@ from .models import (
     DisciplineCategory,
     EventType,
 )
+from .seo import sports_event
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 _ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
@@ -652,6 +653,7 @@ class CompetitionDetailView(View):
             "meta_title": competition.title,
             "meta_description": competition.search_summary(),
             "og_type": "article",
+            "structured_data": sports_event(competition, f"{request.scheme}://{request.get_host()}"),
         }
         # Resolve the map pin: a venue with its own coordinates, else the nearest visible ancestor
         # (city -> region -> country). The hidden "other location" placeholder carries no coordinates,
