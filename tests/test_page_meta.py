@@ -1,0 +1,92 @@
+"""The head of every page, as a crawler reads it.
+
+Before this, all 500+ competition pages carried the same description -- "Cycling events, news and
+knowledge base" -- and no canonical at all, so nothing distinguished one event from another in a
+search index. The title was also rendered across several template lines, which Django keeps, so it
+began with blank lines.
+"""
+
+import datetime
+import re
+
+from django.test import TestCase
+from django.urls import reverse
+from django.utils.html import escape
+from django.utils.translation import gettext
+from django.utils.translation import override as translation_override
+
+from calendar_app.models import Competition
+
+DEFAULT_DESCRIPTION = (
+    "Calendar of endurance sport events -- cycling, running, cross-country skiing -- in "
+    "Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base."
+)
+
+
+def _competition(title="Race", **kwargs):
+    defaults = {
+        "title_ru": title,
+        "date_start": datetime.date.today() + datetime.timedelta(days=10),
+        "status": Competition.Status.APPROVED,
+    }
+    defaults.update(kwargs)
+    return Competition.objects.create(**defaults)
+
+
+def _meta(html, name):
+    m = re.search(rf'<meta[^>]+name="{name}"[^>]+content="([^"]*)"', html)
+    return m.group(1) if m else None
+
+
+def _prop(html, prop):
+    m = re.search(rf'<meta[^>]+property="{prop}"[^>]+content="([^"]*)"', html)
+    return m.group(1) if m else None
+
+
+class TitleShapeTests(TestCase):
+    def test_the_title_has_no_stray_whitespace(self):
+        comp = _competition("Tidy title race")
+        html = self.client.get(comp.get_absolute_url()).content.decode()
+        title = re.search(r"<title>(.*?)</title>", html, re.S).group(1)
+        self.assertEqual(title, title.strip())
+        self.assertNotIn("\n", title)
+
+
+class CanonicalTests(TestCase):
+    def test_every_page_declares_a_canonical_address(self):
+        comp = _competition("Canonical race")
+        html = self.client.get(comp.get_absolute_url()).content.decode()
+        m = re.search(r'<link[^>]+rel="canonical"[^>]+href="([^"]*)"', html)
+        self.assertIsNotNone(m)
+        self.assertTrue(m.group(1).endswith(comp.get_absolute_url()))
+
+
+class DefaultDescriptionTests(TestCase):
+    def test_the_fallback_names_more_than_cycling(self):
+        """The old default said "cycling" only, on a site that also lists running and skiing."""
+        page = self.client.get(reverse("calendar"), HTTP_ACCEPT_LANGUAGE="en")
+        description = _meta(page.content.decode(), "description")
+        self.assertIsNotNone(description)
+        lowered = description.lower()
+        for word in ("running", "skiing", "kazakhstan"):
+            self.assertIn(word, lowered)
+
+    def test_the_fallback_is_translated(self):
+        """A string left untranslated -- or marked fuzzy, which gettext ignores -- reads as English."""
+        for language in ("ru", "kk"):
+            with self.subTest(language=language), translation_override(language):
+                expected = gettext(DEFAULT_DESCRIPTION)
+                self.assertNotEqual(expected, DEFAULT_DESCRIPTION)
+                html = self.client.get(reverse("calendar"), HTTP_ACCEPT_LANGUAGE=language).content.decode()
+                self.assertIn(escape(expected), html)
+
+    def test_the_same_text_is_used_for_sharing(self):
+        html = self.client.get(reverse("calendar")).content.decode()
+        self.assertEqual(_meta(html, "description"), _prop(html, "og:description"))
+
+
+class SocialTagsTests(TestCase):
+    def test_a_page_carries_an_image_and_a_card_type(self):
+        html = self.client.get(reverse("calendar")).content.decode()
+        self.assertTrue((_prop(html, "og:image") or "").endswith(".png"))
+        self.assertEqual(_meta(html, "twitter:card"), "summary")
