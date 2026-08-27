@@ -92,12 +92,25 @@ class NewCompetitionsFeedTests(TestCase):
             status=Competition.Status.PENDING_APPROVAL,
             location=venue,
         )
+        cls.never_stamped = Competition.objects.create(
+            title_ru="Approved long ago",
+            date_start=today + datetime.timedelta(days=1),
+            status=Competition.Status.APPROVED,
+            location=venue,
+            approved_at=None,
+        )
 
     def test_the_newest_addition_comes_first(self):
         """The feed answers "what is new", so it is ordered by approval, not by race date."""
         root = _parse(self.client.get(reverse("calendar_rss")).content)
         titles = [item.findtext("title") for item in root.iter("item")]
         self.assertEqual(titles[:2], ["Added yesterday", "Added last month"])
+
+    def test_an_event_with_no_approval_stamp_does_not_head_the_feed(self):
+        """Postgres sorts NULLs first in a descending order, so it would come out on top."""
+        root = _parse(self.client.get(reverse("calendar_rss")).content)
+        titles = [item.findtext("title") for item in root.iter("item")]
+        self.assertNotIn("Approved long ago", titles)
 
     def test_an_unapproved_event_never_appears(self):
         self.assertNotIn("Still waiting", self.client.get(reverse("calendar_rss")).content.decode())
