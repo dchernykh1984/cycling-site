@@ -76,7 +76,22 @@ class PublishTriggersTests(TestCase):
             location=self.venue,
         )
         announced = self._announced(lambda: competition.approve(reviewer=None))
-        self.assertIn([competition.get_absolute_url()], announced)
+        self.assertIn(competition.get_absolute_url(), [path for paths in announced for path in paths])
+
+    def test_every_language_of_a_page_is_announced(self):
+        """Each language is its own indexable address; announcing one leaves the others unseen."""
+        competition = Competition.objects.create(
+            title_ru="Winter race",
+            date_start=datetime.date.today() + datetime.timedelta(days=9),
+            status=Competition.Status.PENDING_APPROVAL,
+            location=self.venue,
+        )
+        announced = self._announced(lambda: competition.approve(reviewer=None))
+        paths = next(group for group in announced if any("/calendar/" in one for one in group))
+        self.assertEqual(
+            sorted(paths),
+            sorted(f"/{code}/calendar/{competition.pk}/" for code in ("ru", "kk", "en")),
+        )
 
     def test_an_event_still_awaiting_approval_is_not_announced(self):
         def submit_one():
@@ -108,7 +123,7 @@ class PublishTriggersTests(TestCase):
             holder["article"] = NewsArticle.objects.create(title_ru="Team news")
 
         announced = self._announced(publish)
-        self.assertIn([holder["article"].get_absolute_url()], announced)
+        self.assertIn(holder["article"].get_absolute_url(), [path for paths in announced for path in paths])
 
 
 class KeyFileTests(TestCase):

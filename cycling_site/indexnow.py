@@ -82,11 +82,26 @@ def submit(paths: list[str]) -> None:
 
 
 def submit_object(obj) -> None:
-    """Announce one published object, by its own URL."""
-    url = getattr(obj, "get_absolute_url", None)
-    if url is None:
+    """Announce one published object -- its address in every language.
+
+    `get_absolute_url()` answers for whichever language happens to be active, which is the
+    reader's language during a moderation click and the default one during a nightly import.
+    Each language is a separate indexable address, so submitting one of them leaves the other two
+    for the crawler to find on its own.
+    """
+    from django.conf import settings
+    from django.utils import translation
+
+    get_url = getattr(obj, "get_absolute_url", None)
+    if get_url is None:
         return
-    submit([url()])
+    paths = []
+    for code, _name in settings.LANGUAGES:
+        with translation.override(code):
+            path = get_url()
+        if path not in paths:
+            paths.append(path)
+    submit(paths)
 
 
 def _competition_is_public(competition) -> bool:
