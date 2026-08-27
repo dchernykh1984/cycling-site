@@ -68,5 +68,17 @@ class CalendarGridLinksTests(TestCase):
         for hidden_from_the_public in (self.hidden, self.pending):
             self.assertNotIn(reverse("competition_detail", args=[hidden_from_the_public.pk]), links)
 
+    def test_an_event_running_right_now_is_still_listed(self):
+        """A stage race is not over on the morning of day two."""
+        today = datetime.date.today()
+        ongoing = Competition.objects.create(
+            title_ru="Stage race",
+            date_start=today - datetime.timedelta(days=1),
+            date_end=today + datetime.timedelta(days=2),
+            status=Competition.Status.APPROVED,
+            location=self.venue,
+        )
+        self.assertIn(reverse("competition_detail", args=[ongoing.pk]), self._links())
+
     def test_a_finished_event_is_not_advertised_as_upcoming(self):
         self.assertNotIn(reverse("competition_detail", args=[self.past.pk]), self._links())
