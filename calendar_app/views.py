@@ -354,8 +354,10 @@ def upcoming_competitions(limit: int = 20) -> list[Competition]:
             status=Competition.Status.APPROVED,
             is_deleted=False,
             is_hidden=False,
-            date_start__gte=today,
         )
+        # A stage race that started yesterday and ends on Sunday is still ahead of the reader,
+        # and dropping it the morning after day one is how a multi-day event disappears mid-race.
+        .filter(Q(date_start__gte=today) | Q(date_end__gte=today))
         .select_related("location")
         .order_by("date_start", "pk")[:limit]
     )
