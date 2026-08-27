@@ -38,7 +38,7 @@ class LocaleFallbackMiddlewareTests(TestCase):
     def test_http404_in_default_locale_returns_404(self):
         # A missing Wagtail page in the default locale must NOT be silently
         # swapped for a foreign-locale article; return custom 404 instead.
-        request = self.factory.get("/knowledge/some-article/")
+        request = self.factory.get("/ru/knowledge/some-article/")
         with translation.override("ru"):
             response = self.middleware.process_exception(request, Http404())
         self.assertEqual(response.status_code, 404)
@@ -46,7 +46,7 @@ class LocaleFallbackMiddlewareTests(TestCase):
     def test_http404_in_non_default_locale_returns_404(self):
         # Locale fallback has been intentionally removed; a page that does not
         # exist in the active locale returns 404, not the default-locale page.
-        request = self.factory.get("/knowledge/some-article/")
+        request = self.factory.get("/ru/knowledge/some-article/")
         with translation.override("kk"):
             response = self.middleware.process_exception(request, Http404())
         self.assertEqual(response.status_code, 404)
@@ -56,17 +56,24 @@ class Custom404IntegrationTests(TestCase):
     """Custom 404.html is served even with DEBUG=True (no Django debug page)."""
 
     def test_nonexistent_url_returns_404(self):
-        response = self.client.get("/bulbul/")
+        response = self.client.get("/ru/bulbul/")
         self.assertEqual(response.status_code, 404)
 
     def test_nonexistent_url_uses_custom_404_template(self):
-        response = self.client.get("/bulbul/")
+        response = self.client.get("/ru/bulbul/")
         self.assertTemplateUsed(response, "404.html")
 
     def test_nonexistent_url_in_kazakh_locale_returns_404(self):
-        response = self.client.get("/bulbul/", HTTP_ACCEPT_LANGUAGE="kk")
+        response = self.client.get("/kk/bulbul/")
         self.assertEqual(response.status_code, 404)
         self.assertTemplateUsed(response, "404.html")
+
+    def test_an_address_without_a_language_is_sent_to_one(self):
+        """Reader-facing addresses live under /ru/, /kk/ and /en/; the bare path redirects to
+        whichever of them the reader asked for, and only then answers."""
+        response = self.client.get("/bulbul/", HTTP_ACCEPT_LANGUAGE="kk")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], "/kk/bulbul/")
 
 
 class LoggingConfigTests(SimpleTestCase):
@@ -184,7 +191,15 @@ class SanitizeRichHtmlTests(SimpleTestCase):
             self.assertNotIn("href=", out, raw)
 
     def test_safe_schemes_and_relative_links_kept(self):
-        for href in ("https://x.com", "http://x.com", "/calendar/1/", "#section", "?q=1", "mailto:a@b.com", "tel:+123"):
+        for href in (
+            "https://x.com",
+            "http://x.com",
+            "/ru/calendar/1/",
+            "#section",
+            "?q=1",
+            "mailto:a@b.com",
+            "tel:+123",
+        ):
             out = sanitize_rich_html(f'<a href="{href}">x</a>')
             self.assertIn(f'href="{href}"', out, href)
             self.assertIn('target="_blank"', out, href)

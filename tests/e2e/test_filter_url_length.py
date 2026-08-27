@@ -17,7 +17,7 @@ from playwright.sync_api import Page, expect
 
 from tests.e2e.conftest import AROUND_UPCOMING, open_filter_panel
 
-_LIST_URL = "/calendar/list/"
+_LIST_URL = "/ru/calendar/list/"
 # The fixtures are dated from the day the suite runs (conftest.UPCOMING), so the range that has to
 # contain them is built the same way rather than pinned to a month that eventually passes.
 _DATES = AROUND_UPCOMING
@@ -59,7 +59,7 @@ def test_selecting_every_country_and_region_stays_within_the_request_line(page: 
     location at all -- so what has to keep the link short is the two other rules: the regions
     collapse back onto the countries, and the ids travel as one comma-joined value.
     """
-    page.goto(f"{live_server.url}/calendar/?{_DATES}")
+    page.goto(f"{live_server.url}/ru/calendar/?{_DATES}")
     open_filter_panel(page)
     page.click("#mf-btn-1")
     page.click("#mf-menu-1 input.mf-all")
@@ -80,7 +80,7 @@ def test_selecting_every_country_and_region_stays_within_the_request_line(page: 
 def test_two_of_three_countries_travel_as_one_comma_joined_parameter(page: Page, live_server, wide_tree):
     """A partial selection is still sent -- as a single value, not one parameter per id."""
     kz, ru = wide_tree["kz"].pk, wide_tree["ru"].pk
-    page.goto(f"{live_server.url}/calendar/?{_DATES}")
+    page.goto(f"{live_server.url}/ru/calendar/?{_DATES}")
     open_filter_panel(page)
     page.click("#mf-btn-1")
     page.click(f"#mf-menu-1 input[value='{kz}']")
@@ -94,7 +94,7 @@ def test_two_of_three_countries_travel_as_one_comma_joined_parameter(page: Page,
 def test_selecting_every_region_of_a_country_falls_back_to_that_country(page: Page, live_server, wide_tree):
     """A whole lower level is dropped for its parent, which selects the same events far more briefly."""
     kz = wide_tree["kz"].pk
-    page.goto(f"{live_server.url}/calendar/?{_DATES}")
+    page.goto(f"{live_server.url}/ru/calendar/?{_DATES}")
     open_filter_panel(page)
     page.click("#mf-btn-1")
     page.click(f"#mf-menu-1 input[value='{kz}']")
@@ -110,7 +110,7 @@ def test_the_list_page_survives_switching_with_everything_selected(
     page: Page, live_server, wide_tree, kz_competition, ru_competition
 ):
     """The reported failure end to end: select everything, switch to the list, get the list."""
-    page.goto(f"{live_server.url}/calendar/?{_DATES}")
+    page.goto(f"{live_server.url}/ru/calendar/?{_DATES}")
     open_filter_panel(page)
     page.click("#mf-btn-1")
     page.click("#mf-menu-1 input.mf-all")

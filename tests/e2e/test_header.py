@@ -9,7 +9,7 @@ _TRANSPARENT = ("rgba(0, 0, 0, 0)", "transparent")
 @pytest.mark.django_db(transaction=True)
 def test_sticky_navbar_has_a_solid_background(page: Page, live_server):
     """The sticky header must have an opaque background so scrolled content cannot show through it."""
-    page.goto(f"{live_server.url}/calendar/")
+    page.goto(f"{live_server.url}/ru/calendar/")
     navbar = page.locator("nav.navbar")
     expect(navbar).to_be_visible()
     background = navbar.evaluate("el => getComputedStyle(el).backgroundColor")

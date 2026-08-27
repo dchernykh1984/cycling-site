@@ -14,7 +14,7 @@ from calendar_app.models import Competition
 from registrations.models import CompetitionRegistration, RegistrationCategory
 from tests.e2e.conftest import UPCOMING, inject_session
 
-PROFILE_PATH = "/accounts/profile/"
+PROFILE_PATH = "/ru/accounts/profile/"
 
 
 # ---------------------------------------------------------------------------
@@ -108,10 +108,10 @@ def test_self_only_registration_appears_in_profile(page: Page, live_server, orga
     _open_category(comp)
     inject_session(page, live_server, rider)
 
-    page.goto(f"{live_server.url}/competitions/{comp.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{comp.pk}/register/")
     page.select_option("select[name='category']", index=1)
     page.locator("#registration-form button[type='submit']").click()
-    page.wait_for_url(f"{live_server.url}/competitions/{comp.pk}/participants/")
+    page.wait_for_url(f"{live_server.url}/ru/competitions/{comp.pk}/participants/")
 
     _go_profile(page, live_server)
     expect(page.locator("text=Profile Test Race")).to_be_visible()
@@ -131,14 +131,14 @@ def test_free_mode_registration_appears_in_profile(page: Page, live_server, orga
     _open_category(comp)
     inject_session(page, live_server, rider)
 
-    page.goto(f"{live_server.url}/competitions/{comp.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{comp.pk}/register/")
     page.fill("input[name='first_name']", "Denis")
     page.fill("input[name='last_name']", "Rider")
     page.fill("input[name='birth_year']", "1990")
     _fire_gender_change(page)
     page.select_option("select[name='category']", index=1)
     page.locator("#registration-form button[type='submit']").click()
-    page.wait_for_url(f"{live_server.url}/competitions/{comp.pk}/participants/")
+    page.wait_for_url(f"{live_server.url}/ru/competitions/{comp.pk}/participants/")
 
     _go_profile(page, live_server)
     expect(page.locator("text=Profile Test Race")).to_be_visible()
@@ -160,14 +160,14 @@ def test_relay_registration_appears_in_profile(page: Page, live_server, organize
     _open_category(comp, name="Mixed Relay")
     inject_session(page, live_server, rider)
 
-    page.goto(f"{live_server.url}/competitions/{comp.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{comp.pk}/register/")
     page.locator("input[name='participant_name']").first.fill("Ivanov Ivan")
     page.locator("input[name='participant_birth_year']").first.fill("1990")
     _fire_gender_change(page)
     expect(page.locator("select[name='category'] option", has_text="Mixed Relay")).to_be_attached()
     page.select_option("select[name='category']", label="Mixed Relay")
     page.locator("#registration-form button[type='submit']").click()
-    page.wait_for_url(f"{live_server.url}/competitions/{comp.pk}/participants/")
+    page.wait_for_url(f"{live_server.url}/ru/competitions/{comp.pk}/participants/")
 
     reg = CompetitionRegistration.objects.get(competition=comp)
     assert reg.user == rider
@@ -264,9 +264,9 @@ def test_competition_title_links_to_detail_page(page: Page, live_server, organiz
 
     _go_profile(page, live_server)
     link = page.get_by_role("link", name="Profile Test Race")
-    expect(link).to_have_attribute("href", f"/calendar/{comp.pk}/")
+    expect(link).to_have_attribute("href", f"/ru/calendar/{comp.pk}/")
     link.click()
-    page.wait_for_url(f"{live_server.url}/calendar/{comp.pk}/")
+    page.wait_for_url(f"{live_server.url}/ru/calendar/{comp.pk}/")
 
 
 @pytest.mark.django_db(transaction=True)
@@ -281,4 +281,4 @@ def test_deleted_competition_registration_hidden(page: Page, live_server, organi
 
     _go_profile(page, live_server)
     expect(page.locator("text=Profile Test Race")).to_have_count(0)
-    expect(page.locator(f"a[href='/calendar/{comp.pk}/']")).to_have_count(0)
+    expect(page.locator(f"a[href='/ru/calendar/{comp.pk}/']")).to_have_count(0)

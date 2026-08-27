@@ -13,7 +13,7 @@ from playwright.sync_api import Page, expect
 
 from tests.e2e.conftest import AROUND_UPCOMING
 
-_LIST_URL = "/calendar/list/"
+_LIST_URL = "/ru/calendar/list/"
 # The fixtures are dated from the day the suite runs (conftest.UPCOMING), so the range that has to
 # contain them is built the same way rather than pinned to a month that eventually passes.
 _DATES = AROUND_UPCOMING

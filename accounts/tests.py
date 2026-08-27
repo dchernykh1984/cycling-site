@@ -20,6 +20,7 @@ from accounts.models import User
 from accounts.signals import ROLE_GROUP_MAP, _sync_user_group
 from accounts.views import signin_methods, signin_providers
 from accounts.wagtail_hooks import _RoleEnforcedMixin
+from tests.language_urls import in_language
 
 
 def make_user(username="alice", role=User.Role.GUEST, **kwargs):
@@ -328,7 +329,7 @@ class ProfileViewTests(TestCase):
     def test_profile_redirects_anonymous(self):
         response = self.client.get(reverse("account_profile"))
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/accounts/login/", response["Location"])
+        self.assertIn("/ru/accounts/login/", response["Location"])
 
     def test_profile_accessible_when_logged_in(self):
         self.client.force_login(self.user)
@@ -518,9 +519,9 @@ class ProfileRegistrationListTests(TestCase):
         regs = self._registrations_in_response()
         self.assertEqual(len(regs), 0)
 
-    def _response(self):
+    def _response(self, language="ru"):
         self.client.force_login(self.user)
-        return self.client.get(self.url)
+        return self.client.get(in_language(self.url, language))
 
     def test_no_approval_required_shows_approved_badge(self):
         comp = self._make_comp(require_approval=False)
@@ -538,17 +539,15 @@ class ProfileRegistrationListTests(TestCase):
         self._make_reg(comp, is_approved=True)
         self.assertContains(self._response(), "bg-success")
 
-    @override_settings(LANGUAGE_CODE="en")
     def test_payment_required_unpaid_shows_not_paid_badge(self):
         comp = self._make_comp(require_approval=False, require_payment=True)
         self._make_reg(comp, is_approved=True, is_paid=False)
-        self.assertContains(self._response(), "Not paid")
+        self.assertContains(self._response("en"), "Not paid")
 
-    @override_settings(LANGUAGE_CODE="en")
     def test_payment_required_paid_shows_paid_badge(self):
         comp = self._make_comp(require_approval=False, require_payment=True)
         self._make_reg(comp, is_approved=True, is_paid=True)
-        self.assertContains(self._response(), "Paid")
+        self.assertContains(self._response("en"), "Paid")
 
     def test_no_payment_required_no_payment_badge(self):
         comp = self._make_comp(require_payment=False)
@@ -877,7 +876,7 @@ class ResendEmailConfirmationTests(TestCase):
     def test_redirects_anonymous(self):
         resp = self.client.post(self.url)
         self.assertEqual(resp.status_code, 302)
-        self.assertIn("/accounts/login/", resp["Location"])
+        self.assertIn("/ru/accounts/login/", resp["Location"])
 
     def test_sends_confirmation_and_sets_cooldown(self):
         self.client.force_login(self.user)
@@ -908,7 +907,7 @@ class ResendEmailConfirmationTests(TestCase):
     def test_profile_shows_resend_button_when_unverified(self):
         self.client.force_login(self.user)
         resp = self.client.get(reverse("account_profile"))
-        self.assertContains(resp, "/accounts/resend-confirmation/")
+        self.assertContains(resp, "/ru/accounts/resend-confirmation/")
 
     def test_profile_button_disabled_during_cooldown(self):
         self.client.force_login(self.user)
@@ -1127,7 +1126,7 @@ class ProfileEditViewTests(TestCase):
         self.user.birth_date = datetime.date(1990, 6, 21)
         self.user.save()
         self.client.force_login(self.user)
-        resp = self.client.get(reverse("account_profile_edit"), HTTP_ACCEPT_LANGUAGE="ru")
+        resp = self.client.get(in_language(reverse("account_profile_edit"), "ru"), HTTP_ACCEPT_LANGUAGE="ru")
         m = re.search(r'name="birth_date"[^>]*value="([^"]*)"', resp.content.decode())
         self.assertEqual(m.group(1), "1990-06-21")
 
@@ -1307,7 +1306,7 @@ class ContactOwnersViewTests(TestCase):
 
     def test_form_marks_required_fields_with_asterisk(self):
         self.client.force_login(make_user(username="contact_ast", role=User.Role.PARTICIPANT))
-        resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="en")
+        resp = self.client.get(in_language(self.url, "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(resp, "Subject *")
         self.assertContains(resp, "Message *")
 

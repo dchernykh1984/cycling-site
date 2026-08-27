@@ -1,7 +1,8 @@
 from django.http import Http404
+from django.middleware.locale import LocaleMiddleware
 from django.shortcuts import render
 from django.utils import translation
-from django.utils.translation import check_for_language
+from django.utils.translation import check_for_language, get_language_from_path
 
 
 class LocaleFallbackMiddleware:
@@ -29,7 +30,11 @@ class LocaleFallbackMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if hasattr(request, "user") and request.user.is_authenticated:
+        # A language prefix in the address is an explicit request for that language, and it wins:
+        # /en/calendar/ has to be English even for a reader whose profile says Russian, or the
+        # three addresses are not really three addresses and a crawler is served the wrong one.
+        # The stored preference still decides which prefix an unprefixed URL redirects to.
+        if hasattr(request, "user") and request.user.is_authenticated and not get_language_from_path(request.path_info):
             pref = request.user.preferred_language
             if pref:
                 if check_for_language(pref):
@@ -42,3 +47,30 @@ class LocaleFallbackMiddleware:
         if not isinstance(exception, Http404):
             return None
         return render(request, "404.html", status=404)
+
+
+class SiteLocaleMiddleware(LocaleMiddleware):
+    """LocaleMiddleware, minus the language redirect on addresses that have no language.
+
+    With i18n_patterns in place, LocaleMiddleware answers any 404 by retrying the same path under
+    a language prefix. That is what makes an unprefixed page redirect to the reader's own language,
+    and it is exactly wrong for the API, the admin and uploaded files: a client asking for a
+    competition that does not exist must be told 404, not sent to /ru/api/v1/... to be told the
+    same thing one round trip later.
+    """
+
+    #: Addresses that are the same in every language, so a prefix means nothing there.
+    LANGUAGE_FREE_PREFIXES = (
+        "/api/v1/",
+        "/admin/",
+        "/django-admin/",
+        "/documents/",
+        "/media/",
+        "/static/",
+        "/i18n/",
+    )
+
+    def process_response(self, request, response):
+        if request.path_info.startswith(self.LANGUAGE_FREE_PREFIXES):
+            return response
+        return super().process_response(request, response)

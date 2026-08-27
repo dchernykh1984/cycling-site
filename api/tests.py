@@ -29,6 +29,7 @@ from protocols.models import (
     StartListUpload,
 )
 from registrations.models import CompetitionRegistration, RegistrationCategory
+from tests.language_urls import in_language
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -931,7 +932,7 @@ class CompetitionDescriptionSanitizeTest(TestCase, ApiTestMixin):
         # Regression: creating from a kk/en UI must not copy the RU body into the empty
         # kk/en columns (modeltranslation descriptor footgun in _apply_localized).
         resp = self.post(
-            "/api/v1/competitions/",
+            in_language("/api/v1/competitions/", "en"),
             {
                 "title": {"ru": "Iso Race", "kk": "", "en": ""},
                 "description": {"ru": "<p>only ru</p>", "kk": "", "en": ""},
@@ -1177,7 +1178,7 @@ class NewsArticleCrudTest(TestCase, ApiTestMixin):
         for loc in ("ru", "kk", "en"):
             with self.subTest(locale=loc):
                 resp = self.post(
-                    "/api/v1/news/",
+                    in_language("/api/v1/news/", loc),
                     self._payload(title={"ru": "a" * 256, "kk": "", "en": ""}),
                     user=self.admin,
                     HTTP_ACCEPT_LANGUAGE=loc,
@@ -1210,11 +1211,11 @@ class NewsArticleCrudTest(TestCase, ApiTestMixin):
         resp = self.post("/api/v1/news/", self._payload(), user=self.admin)
         pk = resp.json()["id"]
         # Front list page (rendered NewsListView) shows the localized title.
-        front = self.client.get("/news/", HTTP_ACCEPT_LANGUAGE="en")
+        front = self.client.get(in_language("/ru/news/", "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertEqual(front.status_code, 200)
         self.assertContains(front, "Headline")
         # Detail page renders the rich HTML body unescaped.
-        detail = self.client.get(f"/news/articles/{pk}/", HTTP_ACCEPT_LANGUAGE="en")
+        detail = self.client.get(in_language(f"/ru/news/articles/{pk}/", "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, "<h2>Section</h2>")
         self.assertContains(detail, "Body text")
@@ -1270,7 +1271,7 @@ class NewsArticleCrudTest(TestCase, ApiTestMixin):
     def test_hidden_article_not_on_public_front(self):
         resp = self.post("/api/v1/news/", self._payload(is_hidden=True), user=self.admin)
         self.assertEqual(resp.status_code, 201)
-        front = self.client.get("/news/", HTTP_ACCEPT_LANGUAGE="en")
+        front = self.client.get(in_language("/ru/news/", "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertNotContains(front, "Headline")
 
     def _create(self):
@@ -2768,14 +2769,14 @@ class CompetitionLocaleCRUDTest(TestCase, ApiTestMixin):
 
     def test_competition_visible_in_web_view_after_api_create(self):
         pk = self._create()
-        resp = self.client.get(f"/calendar/{pk}/")
+        resp = self.client.get(f"/ru/calendar/{pk}/")
         self.assertEqual(resp.status_code, 200)
 
     def test_web_form_creates_competition_with_all_locale_fields_visible_via_api(self):
         organizer = _user("wf_org", role=User.Role.ORGANIZER)
         self.client.force_login(organizer)
         self.client.post(
-            "/calendar/submit/",
+            "/ru/calendar/submit/",
             {
                 "title_ru": "Form RU",
                 "title_kk": "Form KK",
@@ -3026,7 +3027,7 @@ class NewsLocaleTest(TestCase, ApiTestMixin):
 
         self.client.force_login(self.admin)
         self.client.post(
-            "/news/articles/create/",
+            "/ru/news/articles/create/",
             {
                 "title_ru": "Article RU",
                 "title_kk": "Article KK",
@@ -3057,7 +3058,7 @@ class NewsLocaleTest(TestCase, ApiTestMixin):
 
         self.client.force_login(self.admin)
         self.client.post(
-            "/news/articles/create/",
+            "/ru/news/articles/create/",
             {
                 "title_ru": "List Article RU",
                 "title_kk": "List Article KK",
@@ -3078,7 +3079,7 @@ class NewsLocaleTest(TestCase, ApiTestMixin):
 
     def test_api_created_article_visible_in_web_view(self):
         article = _article()
-        resp = self.client.get(f"/news/articles/{article.pk}/")
+        resp = self.client.get(f"/ru/news/articles/{article.pk}/")
         self.assertEqual(resp.status_code, 200)
 
 
@@ -3994,7 +3995,7 @@ class DraftLengthLimitTests(ApiTestMixin, TestCase):
         for locale in ("ru", "kk", "en"):
             with self.subTest(locale=locale):
                 resp = self.post(
-                    "/api/v1/knowledge/drafts/",
+                    in_language("/api/v1/knowledge/drafts/", locale),
                     {"title": "x" * (title_max + 1), "body": "<p>hi</p>", "locale": "ru"},
                     user=self.admin,
                     HTTP_ACCEPT_LANGUAGE=locale,

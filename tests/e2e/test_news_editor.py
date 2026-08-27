@@ -16,7 +16,7 @@ from tests.e2e.conftest import inject_session
 @pytest.mark.django_db(transaction=True)
 def test_news_create_round_trips_body(page: Page, live_server, superuser):
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/news/articles/create/")  # published_at is pre-filled by the view
+    page.goto(f"{live_server.url}/ru/news/articles/create/")  # published_at is pre-filled by the view
     page.fill("#id_title_ru", "E2E News Article")
     expect(page.locator("#quill-ru .ql-editor")).to_have_count(1)
     page.evaluate(
@@ -32,7 +32,7 @@ def test_news_create_round_trips_body(page: Page, live_server, superuser):
     assert "News body in browser" in article.body_ru
 
     # And it renders on the public detail page.
-    page.goto(f"{live_server.url}/news/articles/{article.pk}/")
+    page.goto(f"{live_server.url}/ru/news/articles/{article.pk}/")
     expect(page.get_by_text("News body in browser")).to_be_visible()
 
 
@@ -40,7 +40,7 @@ def test_news_create_round_trips_body(page: Page, live_server, superuser):
 def test_news_edit_round_trips_body(page: Page, live_server, superuser):
     article = NewsArticle.objects.create(title_ru="Editable News", body_ru="<p>Old body</p>")
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/news/articles/{article.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/news/articles/{article.pk}/edit/")
     expect(page.locator("#quill-ru .ql-editor")).to_contain_text("Old body")
 
     # Full innerHTML replace (old + new), then submit, in one synchronous step: the same pattern
@@ -64,7 +64,7 @@ def test_news_edit_round_trips_body(page: Page, live_server, superuser):
 @pytest.mark.django_db(transaction=True)
 def test_server_error_opens_the_errored_locale_tab(page: Page, live_server, superuser):
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/news/articles/create/")
+    page.goto(f"{live_server.url}/ru/news/articles/create/")
     page.fill("#id_title_ru", "Valid RU title")
     # Drop the maxlength attribute and set an over-limit KK title, so the server (not the browser)
     # rejects it and the error lands in the KK tab; then submit in the same step.
@@ -90,7 +90,7 @@ def test_news_submit_form_round_trips_body_via_quill(page: Page, live_server, or
     from knowledge.models import DraftSubmission
 
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/news/submit/")
+    page.goto(f"{live_server.url}/ru/news/submit/")
     page.fill("#id_title", "Reader Story")
     # Wait for the editor to initialise before scripting it.
     expect(page.locator("#quill-body .ql-editor")).to_have_count(1)
@@ -106,7 +106,7 @@ def test_news_submit_form_round_trips_body_via_quill(page: Page, live_server, or
         }"""
     )
     # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
-    page.wait_for_url(lambda url: "/news/submit/" not in url)
+    page.wait_for_url(lambda url: "/ru/news/submit/" not in url)
 
     sub = DraftSubmission.objects.get(title="Reader Story")
     assert "From the reader" in sub.body

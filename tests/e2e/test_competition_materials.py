@@ -14,7 +14,7 @@ from tests.e2e.conftest import inject_session
 
 def _goto_edit(page: Page, live_server, user, competition):
     inject_session(page, live_server, user)
-    page.goto(f"{live_server.url}/calendar/{competition.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/calendar/{competition.pk}/edit/")
 
 
 def _save(page: Page):
@@ -48,7 +48,7 @@ def test_two_materials_added_in_the_page_reach_the_event(page: Page, live_server
     page.locator("#add-material-btn").click()
     _fill_row(page, 1, "Video", "https://video.example/clip")
     _save(page)
-    page.wait_for_url(f"{live_server.url}/calendar/{kz_competition.pk}/")
+    page.wait_for_url(f"{live_server.url}/ru/calendar/{kz_competition.pk}/")
     expect(page.get_by_role("link", name="Photos")).to_have_attribute("href", "https://photos.example/album")
     expect(page.get_by_role("link", name="Video")).to_have_attribute("href", "https://video.example/clip")
 
@@ -64,7 +64,7 @@ def test_a_row_dropped_before_saving_leaves_nothing_behind(page: Page, live_serv
     _fill_row(page, 2, "Video", "https://video.example/clip")
     page.locator("#materials-container .material-row").nth(1).locator(".clear-material-btn").click()
     _save(page)
-    page.wait_for_url(f"{live_server.url}/calendar/{kz_competition.pk}/")
+    page.wait_for_url(f"{live_server.url}/ru/calendar/{kz_competition.pk}/")
     expect(page.get_by_role("link", name="Photos")).to_be_visible()
     expect(page.get_by_role("link", name="Video")).to_be_visible()
     expect(page.get_by_role("link", name="Mistake")).to_have_count(0)

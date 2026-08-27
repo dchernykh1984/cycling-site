@@ -60,14 +60,14 @@ def _assert_editor_healthy(page: Page) -> None:
 @pytest.mark.django_db(transaction=True)
 def test_submit_editor_renders_with_snow_theme(page: Page, live_server, organizer):
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     _assert_editor_healthy(page)
 
 
 @pytest.mark.django_db(transaction=True)
 def test_submit_editor_is_typeable_and_fills_hidden_field(page: Page, live_server, organizer):
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     editor = page.locator("#quill-desc-ru .ql-editor")
     # `fill` drives the real input-event pipeline (focus + a single insertText) so it still proves
     # the editor accepts user input, but without the per-key `type()` races that flake on mobile
@@ -84,7 +84,7 @@ def test_submit_editor_is_typeable_and_fills_hidden_field(page: Page, live_serve
 @pytest.mark.django_db(transaction=True)
 def test_submit_round_trips_all_three_locales(page: Page, live_server, organizer):
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     page.fill("#id_title_ru", "Trilingual Race")
     page.fill("#id_date_start", f"{UPCOMING:%Y-%m-%d}")
     # Wait until all three editors are initialised before scripting them (on slow mobile webkit the
@@ -104,7 +104,7 @@ def test_submit_round_trips_all_three_locales(page: Page, live_server, organizer
         }"""
     )
     # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
-    page.wait_for_url(lambda url: "/calendar/submit/" not in url)
+    page.wait_for_url(lambda url: "/ru/calendar/submit/" not in url)
 
     comp = Competition.objects.get(title_ru="Trilingual Race")
     assert "Russian body" in comp.description_ru
@@ -115,7 +115,7 @@ def test_submit_round_trips_all_three_locales(page: Page, live_server, organizer
 @pytest.mark.django_db(transaction=True)
 def test_submit_strips_script_from_editor_html(page: Page, live_server, organizer):
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     page.fill("#id_title_ru", "XSS Race")
     page.fill("#id_date_start", f"{UPCOMING:%Y-%m-%d}")
     expect(page.locator(".ql-editor")).to_have_count(3)
@@ -131,7 +131,7 @@ def test_submit_strips_script_from_editor_html(page: Page, live_server, organize
         }"""
     )
     # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
-    page.wait_for_url(lambda url: "/calendar/submit/" not in url)
+    page.wait_for_url(lambda url: "/ru/calendar/submit/" not in url)
 
     comp = Competition.objects.get(title_ru="XSS Race")
     assert "safe text" in comp.description_ru
@@ -143,7 +143,7 @@ def test_heading_picker_labels_are_localized(page: Page, live_server, organizer)
     # Asserted structurally (no Cyrillic literals in .py): en keeps Quill's upstream
     # "Normal"; ru and kk are each localized to a distinct non-English label.
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     ru = _header_label_text(page)  # default UI locale is ru (autouse cookie fixture)
     switch_locale(page, "en")
     en = _header_label_text(page)
@@ -164,6 +164,6 @@ def test_edit_editor_prefills_existing_description(page: Page, live_server, orga
         description_ru="<p>Existing <strong>rich</strong> description</p>",
     )
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/{comp.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/calendar/{comp.pk}/edit/")
     _assert_editor_healthy(page)
     expect(page.locator("#quill-desc-ru .ql-editor")).to_contain_text("Existing rich description")

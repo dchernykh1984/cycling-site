@@ -23,7 +23,7 @@ def _tree():
 
 
 def _open_city(page, live_server):
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     page.select_option("#loc-country", label="KZ")
     page.select_option("#loc-region", label="Region")
     page.select_option("#loc-city", label="Almaty")

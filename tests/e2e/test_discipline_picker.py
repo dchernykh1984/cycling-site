@@ -61,7 +61,7 @@ def test_create_with_multiple_disciplines_across_directions(
     page: Page, live_server, organizer, road_category, road_discipline, mtb_category, mtb_discipline
 ):
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     page.fill("#id_title_ru", "Multi Disc Race")
     page.fill("#id_date_start", f"{UPCOMING:%Y-%m-%d}")
     _pick_direction(page, road_category.pk)
@@ -70,7 +70,7 @@ def test_create_with_multiple_disciplines_across_directions(
     _pick_discipline(page, mtb_discipline.pk)
     expect(page.locator("#disciplines-hidden input[name='disciplines']")).to_have_count(2)
     page.evaluate("() => document.getElementById('id_title_ru').form.requestSubmit()")
-    page.wait_for_url(lambda url: "/calendar/submit/" not in url)
+    page.wait_for_url(lambda url: "/ru/calendar/submit/" not in url)
 
     comp = Competition.objects.get(title_ru="Multi Disc Race")
     assert set(comp.disciplines.values_list("pk", flat=True)) == {road_discipline.pk, mtb_discipline.pk}
@@ -88,13 +88,13 @@ def test_edit_prefilled_then_add_another_discipline(
     )
     comp.disciplines.set([road_discipline])
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/{comp.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/calendar/{comp.pk}/edit/")
     expect(page.locator(f"#disciplines-hidden input[value='{road_discipline.pk}']")).to_have_count(1)
     _pick_direction(page, mtb_category.pk)
     _pick_discipline(page, mtb_discipline.pk)
     expect(page.locator("#disciplines-hidden input[name='disciplines']")).to_have_count(2)
     page.evaluate("() => document.getElementById('id_title_ru').form.requestSubmit()")
-    page.wait_for_url(lambda url: f"/calendar/{comp.pk}/edit/" not in url)
+    page.wait_for_url(lambda url: f"/ru/calendar/{comp.pk}/edit/" not in url)
 
     comp.refresh_from_db()
     assert set(comp.disciplines.values_list("pk", flat=True)) == {road_discipline.pk, mtb_discipline.pk}
@@ -113,7 +113,7 @@ def test_detail_shows_discipline_name_in_active_locale(page: Page, live_server, 
     )
     comp.disciplines.set([disc])
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/calendar/{comp.pk}/")
+    page.goto(f"{live_server.url}/ru/calendar/{comp.pk}/")
     expect(page.locator("body")).to_contain_text("RoadRU")  # ru is the default UI locale
     switch_locale(page, "en")
     expect(page.locator("body")).to_contain_text("RoadEN")
@@ -131,7 +131,7 @@ def test_picker_falls_back_for_incomplete_translation(page: Page, live_server, o
     inject_session(page, live_server, organizer)
     host = live_server.url.split("//")[1].split(":")[0]
     page.context.add_cookies([{"name": "django_language", "value": "kk", "domain": host, "path": "/"}])
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
     _pick_direction(page, cat.pk)
     _open(page, "#disc-dd-btn-2", "#disc-dd-menu-2")
     # Two distinct discipline checkboxes (the bug merged the two blank names into one).

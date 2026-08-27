@@ -53,7 +53,7 @@ def _category_option(page: Page):
 @pytest.mark.django_db(transaction=True)
 def test_birth_year_boundaries_keep_category(page: Page, live_server, organizer, year_competition):
     inject_session(page, live_server, organizer)
-    page.goto(f"{live_server.url}/competitions/{year_competition.pk}/register/")
+    page.goto(f"{live_server.url}/ru/competitions/{year_competition.pk}/register/")
     page.check("#gender_f")
     birth_year = page.locator('input[name="birth_year"]')
 

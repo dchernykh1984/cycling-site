@@ -14,7 +14,7 @@ from tests.e2e.conftest import inject_session
 
 def _goto_submit(page: Page, live_server, user):
     inject_session(page, live_server, user)
-    page.goto(f"{live_server.url}/calendar/submit/")
+    page.goto(f"{live_server.url}/ru/calendar/submit/")
 
 
 # ---------------------------------------------------------------------------

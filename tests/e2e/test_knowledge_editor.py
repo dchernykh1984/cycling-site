@@ -46,14 +46,14 @@ def _assert_editor_healthy(page: Page) -> None:
 @pytest.mark.django_db(transaction=True)
 def test_add_editor_renders_with_snow_theme(page: Page, live_server, superuser, knowledge_index):
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/knowledge/add/")
+    page.goto(f"{live_server.url}/ru/knowledge/add/")
     _assert_editor_healthy(page)
 
 
 @pytest.mark.django_db(transaction=True)
 def test_add_round_trips_body(page: Page, live_server, superuser, knowledge_index):
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/knowledge/add/")
+    page.goto(f"{live_server.url}/ru/knowledge/add/")
     page.fill("#id_title", "E2E Knowledge Article")
     expect(page.locator("#quill-body .ql-editor")).to_have_count(1)
     # Set the editor body via the DOM and submit in ONE synchronous step (see
@@ -66,7 +66,7 @@ def test_add_round_trips_body(page: Page, live_server, superuser, knowledge_inde
         }"""
     )
     # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
-    page.wait_for_url(lambda url: "/knowledge/add/" not in url)
+    page.wait_for_url(lambda url: "/ru/knowledge/add/" not in url)
 
     art = KnowledgeArticle.objects.get(title="E2E Knowledge Article")
     assert "Body written in the browser" in art.body
@@ -75,7 +75,7 @@ def test_add_round_trips_body(page: Page, live_server, superuser, knowledge_inde
 @pytest.mark.django_db(transaction=True)
 def test_add_strips_script_on_save(page: Page, live_server, superuser, knowledge_index):
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/knowledge/add/")
+    page.goto(f"{live_server.url}/ru/knowledge/add/")
     page.fill("#id_title", "E2E KB XSS")
     expect(page.locator("#quill-body .ql-editor")).to_have_count(1)
     # Set the script markup and submit in ONE synchronous step: the submit handler copies
@@ -89,7 +89,7 @@ def test_add_strips_script_on_save(page: Page, live_server, superuser, knowledge
         }"""
     )
     # Wait for the post-save redirect (networkidle can settle before the POST round-trips on CI).
-    page.wait_for_url(lambda url: "/knowledge/add/" not in url)
+    page.wait_for_url(lambda url: "/ru/knowledge/add/" not in url)
 
     art = KnowledgeArticle.objects.get(title="E2E KB XSS")
     assert "safe text" in art.body
@@ -102,7 +102,7 @@ def test_edit_prefills_and_updates(page: Page, live_server, superuser, knowledge
         title="Editable KB", locale="ru", body="<p>Existing <strong>body</strong></p>"
     )
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/knowledge/articles/{art.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/knowledge/articles/{art.pk}/edit/")
     _assert_editor_healthy(page)
     expect(page.locator("#quill-body .ql-editor")).to_contain_text("Existing body")
 
@@ -135,7 +135,7 @@ _PNG = (
 def test_editor_exposes_richtext_tools(page: Page, live_server, superuser, knowledge_index):
     """The enriched toolbar (colour/align/indent) renders and blot-formatter is loaded."""
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/knowledge/add/")
+    page.goto(f"{live_server.url}/ru/knowledge/add/")
     _assert_editor_healthy(page)
     # Quill renders each colour/align picker as both a hidden <select> and a picker <span> (so
     # the class resolves to 2 nodes); assert the control exists rather than an exact count.
@@ -160,7 +160,7 @@ def test_image_size_and_float_survive_edit_round_trip(page: Page, live_server, s
     )
     art = KnowledgeArticle.objects.create(title="KB Image", locale="ru", body=body)
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/knowledge/articles/{art.pk}/edit/")
+    page.goto(f"{live_server.url}/ru/knowledge/articles/{art.pk}/edit/")
     _assert_editor_healthy(page)
     expect(page.locator("#quill-body .ql-editor img")).to_have_count(1)
     # Re-submit unchanged; the sized/floated image must round-trip.
@@ -177,7 +177,7 @@ def test_image_size_and_float_survive_edit_round_trip(page: Page, live_server, s
 def test_text_color_and_alignment_saved(page: Page, live_server, superuser, knowledge_index):
     """Toolbar colour + block alignment survive the save-time sanitizer end to end."""
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/knowledge/add/")
+    page.goto(f"{live_server.url}/ru/knowledge/add/")
     page.fill("#id_title", "KB Colored")
     expect(page.locator("#quill-body .ql-editor")).to_have_count(1)
     # Set the markup and submit synchronously (same MutationObserver race as the tests above).
@@ -189,7 +189,7 @@ def test_text_color_and_alignment_saved(page: Page, live_server, superuser, know
           document.getElementById('id_title').form.requestSubmit();
         }"""
     )
-    page.wait_for_url(lambda url: "/knowledge/add/" not in url)
+    page.wait_for_url(lambda url: "/ru/knowledge/add/" not in url)
 
     art = KnowledgeArticle.objects.get(title="KB Colored")
     assert "ql-align-center" in art.body

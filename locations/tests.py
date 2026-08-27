@@ -22,6 +22,7 @@ from locations.models import (
     soft_delete_location,
     sort_locations_for_filter,
 )
+from tests.language_urls import in_language
 
 
 def _get_site_root():
@@ -327,7 +328,7 @@ class LocationCreateViewTests(TestCase):
 
     def test_anonymous_redirects_to_login(self):
         resp = self.client.get(self.url)
-        self.assertRedirects(resp, f"/accounts/login/?next={self.url}", fetch_redirect_response=False)
+        self.assertRedirects(resp, f"/ru/accounts/login/?next={self.url}", fetch_redirect_response=False)
 
     def test_guest_redirected_to_profile_when_opening_propose_form(self):
         # An unconfirmed user (GUEST) must verify their email (become PARTICIPANT) first.
@@ -413,9 +414,9 @@ class LocationCreateViewTests(TestCase):
         # The "select a city" field error renders in English under en and is translated under ru.
         self.client.force_login(self.participant)
         data = {"name_ru": "X", "name_kk": "", "name_en": "", "parent": ""}
-        en = self.client.post(self.url, data, HTTP_ACCEPT_LANGUAGE="en")
+        en = self.client.post(in_language(self.url, "en"), data, HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(en, "a venue is added inside the chosen city")
-        ru = self.client.post(self.url, data, HTTP_ACCEPT_LANGUAGE="ru")
+        ru = self.client.post(in_language(self.url, "ru"), data, HTTP_ACCEPT_LANGUAGE="ru")
         self.assertNotContains(ru, "a venue is added inside the chosen city")
 
     def test_organizer_can_still_create_venue(self):
@@ -445,10 +446,10 @@ class LocationCreateViewTests(TestCase):
         venue_hint_en = "added as a venue inside the chosen city"
         organizer = _make_user("org_hint@x.com", User.Role.ORGANIZER)
         self.client.force_login(organizer)
-        self.assertContains(self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="en"), venue_hint_en)
-        self.assertNotContains(self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="ru"), venue_hint_en)
+        self.assertContains(self.client.get(in_language(self.url, "en"), HTTP_ACCEPT_LANGUAGE="en"), venue_hint_en)
+        self.assertNotContains(self.client.get(in_language(self.url, "ru"), HTTP_ACCEPT_LANGUAGE="ru"), venue_hint_en)
         self.client.force_login(self.admin)
-        self.assertNotContains(self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="en"), venue_hint_en)
+        self.assertNotContains(self.client.get(in_language(self.url, "en"), HTTP_ACCEPT_LANGUAGE="en"), venue_hint_en)
 
     def test_foreign_pending_parent_is_not_selectable(self):
         # Another user's pending node must not appear as a parent in the cascade or validate on POST.
@@ -542,7 +543,7 @@ class LocationEditViewTests(TestCase):
 
     def test_anonymous_redirects_to_login(self):
         resp = self.client.get(self._url())
-        self.assertRedirects(resp, f"/accounts/login/?next={self._url()}", fetch_redirect_response=False)
+        self.assertRedirects(resp, f"/ru/accounts/login/?next={self._url()}", fetch_redirect_response=False)
 
     def test_participant_forbidden(self):
         self.client.force_login(self.participant)
@@ -564,7 +565,7 @@ class LocationEditViewTests(TestCase):
             with self.subTest(lang=lang):
                 loc = self.city.add_child(name="OldName", name_ru="OldName", name_kk="OldName", name_en="OldName")
                 self.client.post(
-                    reverse("location_edit", args=[loc.pk]),
+                    in_language(reverse("location_edit", args=[loc.pk]), lang),
                     {"name_ru": "RuName", "name_kk": "KkName", "name_en": "EnName", "parent": str(self.city.pk)},
                     HTTP_ACCEPT_LANGUAGE=lang,
                 )
@@ -718,9 +719,9 @@ class LocationEditViewTests(TestCase):
         self.client.force_login(self.admin)
         url = reverse("location_edit", args=[self.country.pk])
         data = {"name_ru": "KZ", "name_kk": "", "name_en": "", "parent": str(self.region.pk)}
-        en = self.client.post(url, data, HTTP_ACCEPT_LANGUAGE="en")
+        en = self.client.post(in_language(url, "en"), data, HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(en, "cannot be placed inside itself")
-        ru = self.client.post(url, data, HTTP_ACCEPT_LANGUAGE="ru")
+        ru = self.client.post(in_language(url, "ru"), data, HTTP_ACCEPT_LANGUAGE="ru")
         self.assertNotContains(ru, "cannot be placed inside itself")
 
     def test_edit_get_prefills_parent_with_current_parent(self):
@@ -735,7 +736,7 @@ class LocationEditViewTests(TestCase):
         # with a dot decimal separator so the inputs (and the map marker) populate.
         venue = self.city.add_child(name="Coords", name_ru="Coords", name_en="Coords", lat="43.263815", lng="76.817484")
         self.client.force_login(self.admin)
-        resp = self.client.get(reverse("location_edit", args=[venue.pk]), HTTP_ACCEPT_LANGUAGE="ru")
+        resp = self.client.get(in_language(reverse("location_edit", args=[venue.pk]), "ru"), HTTP_ACCEPT_LANGUAGE="ru")
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode()
         self.assertIn('value="43.263815"', html)
@@ -774,9 +775,13 @@ class LocationDeleteViewTests(TestCase):
         msg_en = "Cannot delete a location that still has nested locations or competitions."
         self.client.force_login(self.admin)
         country, _, _ = _make_tree()
-        en = self.client.post(reverse("location_delete", args=[country.pk]), HTTP_ACCEPT_LANGUAGE="en", follow=True)
+        en = self.client.post(
+            in_language(reverse("location_delete", args=[country.pk]), "en"), HTTP_ACCEPT_LANGUAGE="en", follow=True
+        )
         self.assertIn(msg_en, [str(m) for m in en.context["messages"]])
-        ru = self.client.post(reverse("location_delete", args=[country.pk]), HTTP_ACCEPT_LANGUAGE="ru", follow=True)
+        ru = self.client.post(
+            in_language(reverse("location_delete", args=[country.pk]), "ru"), HTTP_ACCEPT_LANGUAGE="ru", follow=True
+        )
         self.assertNotIn(msg_en, [str(m) for m in ru.context["messages"]])
 
     def test_can_delete_empty_venue(self):
@@ -893,7 +898,7 @@ class LocationsMapLocaleTests(TestCase):
         from django.utils.translation import gettext as _
 
         for lang in ("ru", "kk", "en"):
-            response = self.client.get("/map/", HTTP_ACCEPT_LANGUAGE=lang)
+            response = self.client.get(f"/{lang}/map/")
             self.assertEqual(response.status_code, 200, f"map page should be 200 for locale {lang}")
             self.assertContains(response, "locations-map")  # the map page itself rendered, not a 404
             with translation.override(lang):
@@ -1922,7 +1927,9 @@ class ConcurrentLocationMutationTests(TransactionTestCase):
             lambda: add_location_child(None, name="RootB", name_ru="RootB"),
         )
         self.assertEqual(set(outcomes.values()), {"ok"})  # both succeeded
-        roots = Location.objects.filter(depth=1, name__in=["RootA", "RootB"])
+        # name_ru, not name: `name` follows the active language, and a page request in another
+        # language earlier in the run leaves that language active.
+        roots = Location.objects.filter(depth=1, name_ru__in=["RootA", "RootB"])
         self.assertEqual(roots.count(), 2)
         self.assertEqual(len({r.path for r in roots}), 2)  # distinct paths
 

@@ -18,10 +18,10 @@ def test_moderator_approves_pending_from_detail_page(page: Page, live_server, su
         status=Competition.Status.PENDING_APPROVAL,
     )
     inject_session(page, live_server, superuser)
-    page.goto(f"{live_server.url}/calendar/{comp.pk}/")
+    page.goto(f"{live_server.url}/ru/calendar/{comp.pk}/")
 
     # The pending page opens for a moderator and offers the approve action.
-    approve_btn = page.locator(f'form[action="/calendar/{comp.pk}/approve/"] button[type="submit"]')
+    approve_btn = page.locator(f'form[action="/ru/calendar/{comp.pk}/approve/"] button[type="submit"]')
     expect(approve_btn).to_be_visible()
     with page.expect_navigation():
         approve_btn.click()

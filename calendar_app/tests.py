@@ -1,7 +1,6 @@
 import datetime
 import json
 
-from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -21,6 +20,7 @@ from calendar_app.models import (
     EventType,
 )
 from locations.models import Location
+from tests.language_urls import in_language
 
 
 def _make_user(email, role, is_staff=False):
@@ -157,7 +157,9 @@ class CalendarViewTests(TestCase):
         self.assertIn("event_types", response.context)
         self.assertIn("discipline_categories", response.context)
         self.assertIn("disciplines_json", response.context)
-        self.assertIn("locations_data", response.context)
+        # The location tree is no longer part of the page -- the cascade fetches it (see
+        # tests/test_locations_payload.py).
+        self.assertNotIn('id="locations-data"', response.content.decode())
 
 
 class CalendarEventsAPIViewTests(TestCase):
@@ -501,7 +503,7 @@ class SubmitCompetitionViewTests(TestCase):
     def test_invalid_date_range_shows_error(self):
         self.client.login(username="participant@example.com", password="password123")
         response = self.client.post(
-            self._submit_url(),
+            in_language(self._submit_url(), "en"),
             self._payload(date_start="2026-09-05", date_end="2026-09-01"),
             HTTP_ACCEPT_LANGUAGE="en",
         )
@@ -511,7 +513,7 @@ class SubmitCompetitionViewTests(TestCase):
     def test_date_range_error_translated_to_ru(self):
         self.client.login(username="participant@example.com", password="password123")
         response = self.client.post(
-            self._submit_url(),
+            in_language(self._submit_url(), "ru"),
             self._payload(date_start="2026-09-05", date_end="2026-09-01"),
             HTTP_ACCEPT_LANGUAGE="ru",
         )
@@ -1361,7 +1363,7 @@ class EditCompetitionViewTests(TestCase):
         self.comp.registration_deadline = timezone.make_aware(datetime.datetime(2026, 9, 1, 14, 30))
         self.comp.save()
         self.client.login(username="edit_org@example.com", password="password123")
-        resp = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="ru")
+        resp = self.client.get(in_language(self.url, "ru"), HTTP_ACCEPT_LANGUAGE="ru")
         m = re.search(r'name="registration_deadline"[^>]*value="([^"]*)"', resp.content.decode())
         self.assertEqual(m.group(1), "2026-09-01T14:30")
 
@@ -1710,7 +1712,7 @@ class CompetitionListColumnsViewTests(TestCase):
             disciplines=[discipline],
             date_start=timezone.localdate() + datetime.timedelta(days=3),
         )
-        response = self.client.get(reverse("calendar_list"), HTTP_ACCEPT_LANGUAGE="en")
+        response = self.client.get(in_language(reverse("calendar_list"), "en"), HTTP_ACCEPT_LANGUAGE="en")
         # Multi-valued columns are pluralized; single-valued ones stay singular.
         for header in ("Type", "Directions", "Disciplines", "Country", "Region", "City", "Location"):
             self.assertContains(response, f"<th>{header}</th>")
@@ -2041,7 +2043,7 @@ class CalendarMapAPIViewTests(TestCase):
         self.assertAlmostEqual(group["lat"], 43.238949, places=5)
         self.assertAlmostEqual(group["lng"], 76.889709, places=5)
         comp = group["competitions"][0]
-        self.assertIn(f"/calendar/{self.comp.pk}/", comp["url"])
+        self.assertIn(f"/ru/calendar/{self.comp.pk}/", comp["url"])
         self.assertEqual(comp["date_start"], "2026-07-10")
 
     def test_event_type_filter(self):
@@ -3102,14 +3104,16 @@ class RejectFormAsteriskTests(TestCase):
         moderator = _make_user("mod_ast@example.com", User.Role.ADMIN)
         comp = _make_competition(status=Competition.Status.PENDING_APPROVAL)
         self.client.force_login(moderator)
-        resp = self.client.get(reverse("competition_detail", args=[comp.pk]), HTTP_ACCEPT_LANGUAGE="en")
+        resp = self.client.get(
+            in_language(reverse("competition_detail", args=[comp.pk]), "en"), HTTP_ACCEPT_LANGUAGE="en"
+        )
         self.assertContains(resp, "Rejection reason *")
 
     def test_moderation_queue_reject_form_marks_required_reason(self):
         moderator = _make_user("mod_ast2@example.com", User.Role.ORGANIZER)
         _make_competition("Pending For Asterisk", status=Competition.Status.PENDING_APPROVAL)
         self.client.force_login(moderator)
-        resp = self.client.get(reverse("calendar_moderate"), HTTP_ACCEPT_LANGUAGE="en")
+        resp = self.client.get(in_language(reverse("calendar_moderate"), "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertContains(resp, "Rejection reason *")
 
 
@@ -3558,11 +3562,11 @@ class CompetitionDetailMapLinksTests(TestCase):
         )
         LocationFallback.objects.create(city=self.city, location=self.catch_all)
 
-    def _page(self, location):
+    def _page(self, location, language="ru"):
         comp = _make_competition("With a place", status=Competition.Status.APPROVED)
         comp.location = location
         comp.save(update_fields=["location"])
-        return self.client.get(reverse("competition_detail", args=[comp.pk]))
+        return self.client.get(in_language(reverse("competition_detail", args=[comp.pk]), language))
 
     def test_a_real_venue_offers_every_service(self):
         body = self._page(self.venue).content.decode()
@@ -3623,14 +3627,12 @@ class CompetitionDetailMapLinksTests(TestCase):
         expected = {"ru": self.HEADING_RU, "kk": self.HEADING_KK, "en": "Link to the start point"}
         for code, text in expected.items():
             with self.subTest(locale=code):
-                self.client.cookies[settings.LANGUAGE_COOKIE_NAME] = code
-                body = self._page(self.venue).content.decode()
+                body = self._page(self.venue, code).content.decode()
                 self.assertIn(text, body)
 
     def test_the_row_keeps_its_accessible_name_in_every_language(self):
         """The aria-label carries the same wording, so it must be translated too, not left English."""
-        self.client.cookies[settings.LANGUAGE_COOKIE_NAME] = "ru"
-        body = self._page(self.venue).content.decode()
+        body = self._page(self.venue, "ru").content.decode()
         self.assertIn(f'aria-label="{self.HEADING_RU}"', body)
 
     def test_an_event_with_no_location_renders_without_links(self):
@@ -3792,7 +3794,10 @@ class SeveralEventTypesFormTests(TestCase):
         self.assertIn("multiple", body)
         with translation_override("en"):
             expected = gettext("Choose one or more types - an event can be a race and a kids race at once.")
-        self.assertIn(expected, self.client.get(reverse("calendar_submit"), HTTP_ACCEPT_LANGUAGE="en").content.decode())
+        self.assertIn(
+            expected,
+            self.client.get(in_language(reverse("calendar_submit"), "en"), HTTP_ACCEPT_LANGUAGE="en").content.decode(),
+        )
 
     def test_the_hint_is_translated(self):
         source = "Choose one or more types - an event can be a race and a kids race at once."
@@ -3880,7 +3885,9 @@ class CompetitionMaterialsOnEventPageTests(TestCase):
         self.comp = _make_competition("Race with photos")
 
     def _page(self, language="en"):
-        response = self.client.get(reverse("competition_detail", args=[self.comp.pk]), HTTP_ACCEPT_LANGUAGE=language)
+        response = self.client.get(
+            in_language(reverse("competition_detail", args=[self.comp.pk]), language), HTTP_ACCEPT_LANGUAGE=language
+        )
         return response.content.decode()
 
     def test_an_event_with_no_materials_has_no_section(self):

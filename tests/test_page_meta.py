@@ -16,6 +16,7 @@ from django.utils.translation import gettext
 from django.utils.translation import override as translation_override
 
 from calendar_app.models import Competition
+from tests.language_urls import in_language
 
 DEFAULT_DESCRIPTION = (
     "Calendar of endurance sport events -- cycling, running, cross-country skiing -- in "
@@ -64,7 +65,7 @@ class CanonicalTests(TestCase):
 class DefaultDescriptionTests(TestCase):
     def test_the_fallback_names_more_than_cycling(self):
         """The old default said "cycling" only, on a site that also lists running and skiing."""
-        page = self.client.get(reverse("calendar"), HTTP_ACCEPT_LANGUAGE="en")
+        page = self.client.get(in_language(reverse("calendar"), "en"), HTTP_ACCEPT_LANGUAGE="en")
         description = _meta(page.content.decode(), "description")
         self.assertIsNotNone(description)
         lowered = description.lower()
@@ -77,7 +78,9 @@ class DefaultDescriptionTests(TestCase):
             with self.subTest(language=language), translation_override(language):
                 expected = gettext(DEFAULT_DESCRIPTION)
                 self.assertNotEqual(expected, DEFAULT_DESCRIPTION)
-                html = self.client.get(reverse("calendar"), HTTP_ACCEPT_LANGUAGE=language).content.decode()
+                html = self.client.get(
+                    in_language(reverse("calendar"), language), HTTP_ACCEPT_LANGUAGE=language
+                ).content.decode()
                 self.assertIn(escape(expected), html)
 
     def test_the_same_text_is_used_for_sharing(self):
@@ -99,7 +102,9 @@ class CompetitionMetaTests(TestCase):
         self.comp = _competition("Almaty Gran Fondo", date_start=datetime.date(2026, 10, 4))
 
     def _html(self):
-        return self.client.get(self.comp.get_absolute_url(), HTTP_ACCEPT_LANGUAGE="en").content.decode()
+        return self.client.get(
+            in_language(self.comp.get_absolute_url(), "en"), HTTP_ACCEPT_LANGUAGE="en"
+        ).content.decode()
 
     def test_the_title_is_the_event_name(self):
         self.assertIn("Almaty Gran Fondo", re.search(r"<title>(.*?)</title>", self._html()).group(1))

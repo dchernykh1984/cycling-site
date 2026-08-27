@@ -39,7 +39,7 @@ def _mapped_competition(organizer, title="Mapped Race", disciplines=None, event_
 
 @pytest.mark.django_db(transaction=True)
 def test_map_page_renders_with_three_view_buttons(page: Page, live_server):
-    page.goto(f"{live_server.url}/calendar/map/")
+    page.goto(f"{live_server.url}/ru/calendar/map/")
     expect(page.locator("#calendar-map")).to_have_count(1)
     expect(page.locator("#view-link-calendar")).to_have_count(1)
     expect(page.locator("#view-link-list")).to_have_count(1)
@@ -48,30 +48,30 @@ def test_map_page_renders_with_three_view_buttons(page: Page, live_server):
 
 @pytest.mark.django_db(transaction=True)
 def test_map_view_button_is_active_on_map_page(page: Page, live_server):
-    page.goto(f"{live_server.url}/calendar/map/")
+    page.goto(f"{live_server.url}/ru/calendar/map/")
     expect(page.locator("#view-link-map")).to_have_class(re.compile(r"active"))
 
 
 @pytest.mark.django_db(transaction=True)
 def test_calendar_page_switches_to_map(page: Page, live_server):
-    page.goto(f"{live_server.url}/calendar/")
+    page.goto(f"{live_server.url}/ru/calendar/")
     with page.expect_navigation():
         page.click("#view-link-map")
-    assert "/calendar/map/" in page.url
+    assert "/ru/calendar/map/" in page.url
 
 
 @pytest.mark.django_db(transaction=True)
 def test_list_page_switches_to_map(page: Page, live_server):
-    page.goto(f"{live_server.url}/calendar/list/")
+    page.goto(f"{live_server.url}/ru/calendar/list/")
     with page.expect_navigation():
         page.click("#view-link-map")
-    assert "/calendar/map/" in page.url
+    assert "/ru/calendar/map/" in page.url
 
 
 @pytest.mark.django_db(transaction=True)
 def test_map_marker_popup_links_to_competition(page: Page, live_server, organizer):
     _mapped_competition(organizer)
-    page.goto(f"{live_server.url}/calendar/map/?{AROUND_UPCOMING}")
+    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}")
     marker = page.locator(".leaflet-marker-icon")
     expect(marker).to_have_count(1)
     marker.click()
@@ -84,7 +84,7 @@ def test_map_marker_popup_links_to_competition(page: Page, live_server, organize
 def test_map_marker_hidden_when_date_range_excludes_competition(page: Page, live_server, organizer):
     _mapped_competition(organizer)
     # The default range is the next 30 days; the event sits 90 days out, so no marker is drawn.
-    page.goto(f"{live_server.url}/calendar/map/")
+    page.goto(f"{live_server.url}/ru/calendar/map/")
     expect(page.locator("#calendar-map")).to_have_count(1)
     expect(page.locator(".leaflet-marker-icon")).to_have_count(0)
 
@@ -93,7 +93,7 @@ def test_map_marker_hidden_when_date_range_excludes_competition(page: Page, live
 def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organizer):
     # Changing a filter must update the markers in place without resetting the user's pan/zoom.
     _mapped_competition(organizer)  # 90 days out, Almaty
-    page.goto(f"{live_server.url}/calendar/map/?{AROUND_UPCOMING}")
+    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(1)  # initial load fits to the marker
     # User pans/zooms somewhere specific.
     page.wait_for_function("() => window.calendarMap")
@@ -118,7 +118,7 @@ def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organiz
 def test_map_filter_dropdown_renders_above_zoom_controls(page: Page, live_server, road_category):
     # Regression: the Leaflet zoom (+/-) / layer controls (z-index ~1000) used to show through the
     # open filter dropdown on mobile. The filter dropdowns must stack above the map controls.
-    page.goto(f"{live_server.url}/calendar/map/")
+    page.goto(f"{live_server.url}/ru/calendar/map/")
     expect(page.locator(".leaflet-control-zoom")).to_have_count(1)  # map initialised
     open_filter_panel(page)  # collapsed on mobile
     page.click("#dd-btn-1")  # open the direction dropdown

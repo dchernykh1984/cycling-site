@@ -23,7 +23,7 @@ _DATES = AROUND_UPCOMING
 def test_map_switcher_links_keep_location(page: Page, live_server, location_tree):
     """On the map, the links back to the list and calendar must retain the ?location param."""
     kz = location_tree["kz"].pk
-    page.goto(f"{live_server.url}/calendar/map/?location={kz}")
+    page.goto(f"{live_server.url}/ru/calendar/map/?location={kz}")
     for link_id in ("#view-link-list", "#view-link-calendar"):
         expect(page.locator(link_id)).to_have_attribute("href", re.compile(rf"[?&]location={kz}(&|$)"))
 
@@ -34,7 +34,7 @@ def test_location_filter_survives_map_round_trip_to_list(
 ):
     """List (filtered by KZ) -> Map -> List keeps the KZ-only result set."""
     kz = location_tree["kz"].pk
-    page.goto(f"{live_server.url}/calendar/list/?location={kz}&{_DATES}")
+    page.goto(f"{live_server.url}/ru/calendar/list/?location={kz}&{_DATES}")
     expect(page.locator("body")).to_contain_text("KZ Race")
     expect(page.locator("body")).not_to_contain_text("RU Race")
 
@@ -57,7 +57,7 @@ def test_location_filter_survives_map_round_trip_to_list(
 def test_location_checkbox_restored_after_map_round_trip(page: Page, live_server, location_tree):
     """After List -> Map -> List the country checkbox is still checked (filter visibly retained)."""
     kz = location_tree["kz"].pk
-    page.goto(f"{live_server.url}/calendar/list/?location={kz}&{_DATES}")
+    page.goto(f"{live_server.url}/ru/calendar/list/?location={kz}&{_DATES}")
     expect(page.locator("#view-link-map")).to_have_attribute("href", re.compile(rf"location={kz}"))
     with page.expect_navigation():
         page.click("#view-link-map")
