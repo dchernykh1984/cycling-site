@@ -4,6 +4,7 @@ from typing import ClassVar
 
 from django.conf import settings
 from django.db import models, transaction
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
 from wagtail.search import index
@@ -229,6 +230,11 @@ class Competition(index.Indexed, models.Model):
         # admin and Wagtail snippets (see _DESCRIPTION_FIELDS for the __dict__ rationale).
         sanitize_rich_text_columns(self, _DESCRIPTION_FIELDS, update_fields=kwargs.get("update_fields"))
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self) -> str:
+        """Where this competition lives. Needed by the sitemap, and by anything that has a
+        competition in hand and wants to link to it without knowing the URL layout."""
+        return reverse("competition_detail", kwargs={"pk": self.pk})
 
     def get_calendar_end(self) -> str | None:
         if self.date_end:

@@ -4114,3 +4114,18 @@ class EditCompetitionMaterialsTests(TestCase):
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.title_ru, "Renamed race")
         self.assertEqual(self._materials(), [("Photos", "https://photos.example/a", 0)])
+
+
+class CompetitionAbsoluteUrlTests(TestCase):
+    """A competition has to be able to say where it lives: the sitemap asks it, and so does
+    anything that holds one and wants to link to it without knowing the URL layout."""
+
+    def test_it_points_at_its_own_detail_page(self):
+        comp = _make_competition("Addressable")
+        self.assertEqual(comp.get_absolute_url(), reverse("competition_detail", args=[comp.pk]))
+
+    def test_the_address_actually_serves_the_competition(self):
+        comp = _make_competition("Addressable")
+        response = self.client.get(comp.get_absolute_url())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["competition"].pk, comp.pk)
