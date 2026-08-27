@@ -37,6 +37,7 @@ from .forms import (
     ReportCompetitionForm,
     SubmitCompetitionForm,
 )
+from .listing_seo import describe_filters
 from .models import (
     Competition,
     CompetitionComment,
@@ -466,6 +467,19 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
         context["locations_data"] = _get_locations_data()
+        # A filtered list is a page about a city or a discipline; say so, instead of leaving every
+        # combination sharing one title and one site-wide description.
+        meta_title, meta_description = describe_filters(
+            locations=_parse_int_ids(self.request.GET.getlist("location")),
+            disciplines=_parse_int_ids(self.request.GET.getlist("discipline")),
+            event_types=_parse_int_ids(self.request.GET.getlist("event_type")),
+            count=page.paginator.count,
+            date_from=date_from,
+            date_to=date_to,
+        )
+        if meta_title:
+            context["meta_title"] = meta_title
+            context["meta_description"] = meta_description
         return context
 
 
