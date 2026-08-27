@@ -47,10 +47,37 @@ window.getLocationFilterIds() and calls window.onCalendarFilterChange() on chang
 </div>
 
 <script>
+// Until the tree arrives, answer with what the URL already says. The page rewrites the switcher
+// links and the hidden form inputs as soon as it loads, and without this they would be rewritten
+// without the location the visitor is actually filtering by.
+window.getLocationFilterIds = window.getLocationFilterIds || function () {
+  return new URLSearchParams(window.location.search).getAll('location')
+    .reduce(function (acc, v) { return acc.concat(v.split(',')); }, [])
+    .filter(Boolean);
+};
+
 document.addEventListener('DOMContentLoaded', function () {
+  if (!window.MultiSelectCascade) return;
   var dataEl = document.getElementById('{{ locations_data_element_id|default:"locations-data" }}');
-  if (!dataEl || !window.MultiSelectCascade) return;
-  var allLocations = JSON.parse(dataEl.textContent);
+  if (dataEl) {
+    build(JSON.parse(dataEl.textContent));
+  } else {
+    // The public calendar pages no longer ship the tree in the page -- it is a megabyte of JSON
+    // on the two most-visited (and most-crawled) addresses. Fetched instead, and cached by the
+    // browser, so a second page load costs nothing.
+    fetch('{% url "calendar_locations_json" %}', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        build(data);
+        // The page rebuilt its links from the URL while this was in flight; now that the cascade
+        // owns the answer, let it re-read. Deliberately not onCalendarFilterChange(), which
+        // submits the form -- nothing the visitor did should reload the page here.
+        document.dispatchEvent(new CustomEvent('location-filter-ready'));
+      })
+      .catch(function () { /* the rest of the filters keep working without the location cascade */ });
+  }
+
+  function build(allLocations) {
   var lang = (document.documentElement.lang || 'ru').split('-')[0];
   var nameField = (['ru', 'kk', 'en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
   function nm(l) { return l[nameField] || l.name_ru || ''; }
@@ -98,5 +125,6 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   window.locationFilter = inst;
   window.getLocationFilterIds = function () { return inst.effectivePks(); };
+  }
 });
 </script>

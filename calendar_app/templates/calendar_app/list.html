@@ -9,7 +9,6 @@
 {% endblock %}
 
 {% block content %}
-{{ locations_data|json_script:"locations-data" }}
 <div class="row mb-3">
   <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h1 class="mb-0">{% trans "Competitions" %}</h1>
@@ -116,6 +115,7 @@
       }
       window.onCalendarFilterChange = function () { syncFilterInputs(); updateSwitcherLinks(); form.submit(); };
       document.addEventListener('DOMContentLoaded', function () { syncFilterInputs(); updateSwitcherLinks(); });
+      document.addEventListener('location-filter-ready', function () { syncFilterInputs(); updateSwitcherLinks(); });
 
       // Auto-submit date inputs (selected by class so it survives flatpickr changing the type).
       form.querySelectorAll('.js-date-filter').forEach(function (el) {
