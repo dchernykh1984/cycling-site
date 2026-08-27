@@ -78,6 +78,23 @@
   <a href="{% url 'calendar_rss' %}">{% trans "New competitions (RSS)" %}</a>
 </section>
 {% endif %}
+
+{% if landing_places or landing_kinds %}
+<section class="mt-4 small">
+  {% if landing_places %}
+  <p class="mb-1">
+    <span class="text-muted">{% trans "Competitions by city" %}:</span>
+    {% for place in landing_places %}<a href="{% url 'calendar_list' %}?location={{ place.pk }}">{{ place.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+  </p>
+  {% endif %}
+  {% if landing_kinds %}
+  <p class="mb-0">
+    <span class="text-muted">{% trans "Competitions by discipline" %}:</span>
+    {% for kind in landing_kinds %}<a href="{% url 'calendar_list' %}?discipline={{ kind.pk }}">{{ kind.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+  </p>
+  {% endif %}
+</section>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

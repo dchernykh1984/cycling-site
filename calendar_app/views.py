@@ -37,7 +37,7 @@ from .forms import (
     ReportCompetitionForm,
     SubmitCompetitionForm,
 )
-from .listing_seo import describe_filters
+from .listing_seo import describe_filters, landing_filters
 from .models import (
     Competition,
     CompetitionComment,
@@ -367,6 +367,11 @@ class CalendarView(DefaultFilterRedirectMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["upcoming"] = upcoming_competitions()
+        # Links to the filtered lists worth being pages of their own, so a crawler (and a reader
+        # scanning for their own city) can reach them without building a filter first.
+        places, kinds = landing_filters(limit_places=24, limit_kinds=12)
+        context["landing_places"] = places
+        context["landing_kinds"] = kinds
         context["event_types"] = EventType.objects.all()
         context["discipline_categories"] = DisciplineCategory.objects.all()
         context["event_types_json"] = _event_types_for_locale()
