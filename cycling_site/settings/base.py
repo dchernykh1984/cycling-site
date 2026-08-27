@@ -306,6 +306,10 @@ MAX_PROTOCOL_SIZE_MB = env.int("MAX_PROTOCOL_SIZE_MB", default=5)
 
 SITE_BASE_URL = env("SITE_BASE_URL", default="http://localhost:8000")
 
+# IndexNow key: a random string we also serve at /<key>.txt, which is how Bing, Yandex and Seznam
+# check that whoever submits URLs for this host controls it. Empty means no submissions at all.
+INDEXNOW_KEY = env("INDEXNOW_KEY", default="")
+
 # Allowed file extensions for documents in the document library.
 # This can be omitted to allow all files, but note that this may present a security risk
 # if untrusted users are allowed to upload files -
