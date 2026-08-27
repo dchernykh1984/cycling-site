@@ -153,7 +153,14 @@ class NewCompetitionsFeed(Feed):
 
     def items(self):
         return (
-            Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False)
+            Competition.objects.filter(
+                status=Competition.Status.APPROVED,
+                is_deleted=False,
+                is_hidden=False,
+                # Postgres sorts NULLs first in a descending order, so an event approved before
+                # the timestamp existed would head the feed of what is new.
+                approved_at__isnull=False,
+            )
             .select_related("location")
             .prefetch_related("disciplines")
             .order_by("-approved_at", "-pk")[: self.item_count]
