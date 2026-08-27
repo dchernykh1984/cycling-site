@@ -1,16 +1,21 @@
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.sitemaps import views as sitemap_views
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import URLPattern, URLResolver, include, path, re_path
 from wagtail import urls as wagtail_urls
 from wagtail.admin import urls as wagtailadmin_urls
-from wagtail.contrib.sitemaps.views import sitemap as wagtail_sitemap
 from wagtail.documents import urls as wagtaildocs_urls
 
 from accounts.views import set_language as accounts_set_language
 from api.router import api as ninja_api
-from cycling_site.sitemaps import KnowledgeArticleSitemap, WagtailPagesSitemap
+from cycling_site.sitemaps import (
+    CompetitionSitemap,
+    KnowledgeArticleSitemap,
+    NewsArticleSitemap,
+    WagtailPagesSitemap,
+)
 from search import views as search_views
 
 
@@ -50,6 +55,8 @@ def serve_media(request, path):
 sitemaps = {
     "wagtail": WagtailPagesSitemap,
     "knowledge": KnowledgeArticleSitemap,
+    "news": NewsArticleSitemap,
+    "competitions": CompetitionSitemap,
 }
 
 urlpatterns: list[URLPattern | URLResolver] = [
@@ -69,7 +76,20 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("search/", search_views.search, name="search"),
     path("favicon.ico", favicon_redirect, name="favicon"),
     path("robots.txt", robots_txt, name="robots_txt"),
-    path("sitemap.xml", wagtail_sitemap, {"sitemaps": sitemaps}, name="sitemap"),
+    # An index over per-section files rather than one flat list: the competitions section alone
+    # is 500+ URLs and grows with every approved event, and a section can be re-fetched on its own.
+    path(
+        "sitemap.xml",
+        sitemap_views.index,
+        {"sitemaps": sitemaps, "sitemap_url_name": "sitemap_section"},
+        name="sitemap",
+    ),
+    path(
+        "sitemap-<section>.xml",
+        sitemap_views.sitemap,
+        {"sitemaps": sitemaps},
+        name="sitemap_section",
+    ),
     # Serve user-uploaded media in every environment (must precede the Wagtail catch-all).
     re_path(r"^media/(?P<path>.*)$", serve_media, name="media"),
     path("", include("home.urls")),
