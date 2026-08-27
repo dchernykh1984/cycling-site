@@ -191,6 +191,7 @@ class KnowledgeIndexPage(RoutablePageMixin, AsciiSlugMixin, Page):
         from django.utils.translation import override as translation_override
 
         from accounts.models import User
+        from cycling_site.summaries import summarize
         from knowledge.forms import AddKnowledgeArticleCommentForm
 
         can_manage = _can_manage_knowledge(request.user)
@@ -209,6 +210,11 @@ class KnowledgeIndexPage(RoutablePageMixin, AsciiSlugMixin, Page):
             "can_comment": can_comment,
             "comment_form": AddKnowledgeArticleCommentForm() if can_comment else None,
             "user_can_delete_comment": can_manage,
+            # The article's own name and first prose, instead of the one site-wide sentence every
+            # knowledge page used to carry. "page" here is the index page, so it cannot supply them.
+            "meta_title": article.title,
+            "meta_description": summarize(article.body),
+            "og_type": "article",
         }
 
         user_lang = (getattr(request, "LANGUAGE_CODE", None) or get_language() or "").split("-")[0]

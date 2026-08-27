@@ -11,6 +11,7 @@ from django.views.generic import CreateView, View
 
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
+from cycling_site.summaries import summarize
 from knowledge.models import DraftSubmission
 from news.forms import AddCommentForm, AddNewsArticleCommentForm, NewsArticleForm, SubmitNewsForm
 from news.models import Comment, NewsArticle, NewsArticleComment, NewsPage, NewsSettings
@@ -68,6 +69,9 @@ class NewsArticleDetailView(View):
                 "can_comment": can_comment,
                 "comment_form": AddNewsArticleCommentForm() if can_comment else None,
                 "user_can_delete_comment": can_manage,
+                "meta_title": article.title,
+                "meta_description": summarize(article.intro, article.body),
+                "og_type": "article",
             },
         )
 
