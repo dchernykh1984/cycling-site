@@ -3,6 +3,11 @@
 
 {% block title %}{% if meta_title %}{{ meta_title }}{% else %}{% trans "Competition list" %}{% endif %}{% endblock %}
 
+{% block extra_head %}
+<link rel="alternate" type="text/calendar" title="{% trans 'Calendar' %}" href="{% url 'calendar_ics' %}" />
+<link rel="alternate" type="application/rss+xml" title="{% trans 'New competitions' %}" href="{% url 'calendar_rss' %}" />
+{% endblock %}
+
 {% block content %}
 {{ locations_data|json_script:"locations-data" }}
 <div class="row mb-3">
