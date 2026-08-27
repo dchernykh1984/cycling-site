@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 18:53+0500\n"
+"POT-Creation-Date: 2026-08-27 19:37+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -150,7 +150,7 @@ msgstr "Отмена"
 
 #: accounts/templates/accounts/profile.html:4
 #: accounts/templates/accounts/profile.html:9
-#: cycling_site/templates/base.html:107
+#: cycling_site/templates/base.html:108
 msgid "Profile"
 msgstr "Профиль"
 
@@ -325,7 +325,7 @@ msgstr "Мои регистрации"
 msgid "Competition"
 msgstr "Соревнование"
 
-#: accounts/templates/accounts/profile.html:217 knowledge/models.py:250
+#: accounts/templates/accounts/profile.html:217 knowledge/models.py:266
 #: knowledge/templates/knowledge/add_article.html:30
 #: knowledge/templates/knowledge/edit_article.html:29
 #: knowledge/templates/knowledge/submission_detail.html:31
@@ -412,13 +412,13 @@ msgid "Delete this competition?"
 msgstr "Удалить это соревнование?"
 
 #: accounts/templates/accounts/profile.html:299
-#: calendar_app/templates/calendar_app/detail.html:334
-#: calendar_app/templates/calendar_app/detail.html:355
-#: knowledge/templates/knowledge/knowledge_article_detail.html:52
-#: knowledge/templates/knowledge/knowledge_article_detail.html:72
+#: calendar_app/templates/calendar_app/detail.html:338
+#: calendar_app/templates/calendar_app/detail.html:359
+#: knowledge/templates/knowledge/knowledge_article_detail.html:56
+#: knowledge/templates/knowledge/knowledge_article_detail.html:76
 #: locations/templates/locations/locations_map_page.html:103
-#: news/templates/news/article_detail.html:57
-#: news/templates/news/article_detail.html:77
+#: news/templates/news/article_detail.html:61
+#: news/templates/news/article_detail.html:81
 #: news/templates/news/news_page.html:82
 #: registrations/templates/registrations/_participant_row.html:43
 msgid "Delete"
@@ -448,7 +448,7 @@ msgstr "Отправить статью"
 #: calendar_app/templates/calendar_app/list.html:159
 #: calendar_app/templates/calendar_app/submit.html:29
 #: calendar_app/templates/calendar_app/submit.html:42
-#: calendar_app/templates/calendar_app/submit.html:55 knowledge/models.py:248
+#: calendar_app/templates/calendar_app/submit.html:55 knowledge/models.py:264
 #: knowledge/templates/knowledge/add_article.html:18
 #: knowledge/templates/knowledge/edit_article.html:17
 #: knowledge/templates/knowledge/submit.html:21 news/forms.py:39
@@ -457,7 +457,7 @@ msgid "Title"
 msgstr "Заголовок"
 
 #: accounts/templates/accounts/profile.html:323
-#: calendar_app/templates/calendar_app/detail.html:50
+#: calendar_app/templates/calendar_app/detail.html:54
 #: calendar_app/templates/calendar_app/list.html:146
 #: calendar_app/templates/calendar_app/list.html:172
 msgid "Type"
@@ -484,22 +484,22 @@ msgstr ""
 "Bearer &lt;token&gt;</code>"
 
 #: accounts/templates/accounts/profile.html:366
-#: calendar_app/templates/calendar_app/detail.html:251
+#: calendar_app/templates/calendar_app/detail.html:255
 msgid "Copy"
 msgstr "Копировать"
 
 #: accounts/templates/accounts/profile.html:369
-#: calendar_app/templates/calendar_app/detail.html:277
+#: calendar_app/templates/calendar_app/detail.html:281
 msgid "No token yet. Generate one below."
 msgstr "Токен ещё не создан. Сгенерируйте его ниже."
 
 #: accounts/templates/accounts/profile.html:374
-#: calendar_app/templates/calendar_app/detail.html:256
+#: calendar_app/templates/calendar_app/detail.html:260
 msgid "Regenerate token"
 msgstr "Пересоздать токен"
 
 #: accounts/templates/accounts/profile.html:374
-#: calendar_app/templates/calendar_app/detail.html:280
+#: calendar_app/templates/calendar_app/detail.html:284
 msgid "Generate token"
 msgstr "Создать токен"
 
@@ -508,7 +508,7 @@ msgid "API docs (Swagger)"
 msgstr "Документация API (Swagger)"
 
 #: accounts/templates/accounts/profile.html:383
-#: cycling_site/templates/base.html:118
+#: cycling_site/templates/base.html:119
 msgid "Log out"
 msgstr "Выйти"
 
@@ -638,7 +638,7 @@ msgstr ""
 
 #: calendar_app/forms.py:74
 #: calendar_app/templates/calendar_app/_disciplines_field.html:14
-#: calendar_app/templates/calendar_app/detail.html:56
+#: calendar_app/templates/calendar_app/detail.html:60
 #: calendar_app/templates/calendar_app/list.html:148
 #: calendar_app/templates/calendar_app/list.html:174
 msgid "Disciplines"
@@ -675,8 +675,8 @@ msgstr "Дата окончания не может быть раньше дат
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:203 calendar_app/views.py:944
-#: calendar_app/views.py:1148
+#: calendar_app/forms.py:203 calendar_app/views.py:960
+#: calendar_app/views.py:1164
 msgid "This location is not available."
 msgstr "Эта локация недоступна."
 
@@ -711,6 +711,33 @@ msgstr "Напишите комментарий..."
 msgid "Optional: what looks wrong?"
 msgstr "Необязательно: что не так?"
 
+#: calendar_app/listing_seo.py:33
+#: calendar_app/templates/calendar_app/detail.html:22
+#: calendar_app/templates/calendar_app/edit.html:12
+#: calendar_app/templates/calendar_app/list.html:10
+#: search/templates/search/search.html:21
+msgid "Competitions"
+msgstr "Соревнования"
+
+#: calendar_app/listing_seo.py:36
+#, python-format
+msgid "%(subject)s in %(place)s"
+msgstr "%(subject)s: %(place)s"
+
+#: calendar_app/listing_seo.py:41
+#, python-format
+msgid "%(count)s events in the calendar."
+msgstr "Событий в календаре: %(count)s."
+
+#: calendar_app/listing_seo.py:43
+#, python-format
+msgid "From %(start)s to %(end)s."
+msgstr "С %(start)s по %(end)s."
+
+#: calendar_app/listing_seo.py:44
+msgid "Dates, start points and results on the Universal Bicycle Team calendar."
+msgstr "Даты, точки старта и результаты в календаре Universal Bicycle Team."
+
 #: calendar_app/models.py:258
 #, python-format
 msgid "Disciplines: %(kinds)s."
@@ -740,7 +767,7 @@ msgstr ""
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:6
 #: calendar_app/templates/calendar_app/_location_filter.html:39
-#: calendar_app/templates/calendar_app/detail.html:108
+#: calendar_app/templates/calendar_app/detail.html:112
 #: calendar_app/templates/calendar_app/list.html:152
 #: calendar_app/templates/calendar_app/list.html:178 locations/models.py:289
 msgid "Location"
@@ -784,13 +811,13 @@ msgid "New venue name"
 msgstr "Название новой локации"
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:53
-#: calendar_app/templates/calendar_app/detail.html:113 locations/forms.py:19
+#: calendar_app/templates/calendar_app/detail.html:117 locations/forms.py:19
 #: locations/templates/locations/location_form.html:115
 msgid "Latitude"
 msgstr "Широта"
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:57
-#: calendar_app/templates/calendar_app/detail.html:113 locations/forms.py:20
+#: calendar_app/templates/calendar_app/detail.html:117 locations/forms.py:20
 #: locations/templates/locations/location_form.html:122
 msgid "Longitude"
 msgstr "Долгота"
@@ -958,7 +985,7 @@ msgstr "Вид"
 #: calendar_app/templates/calendar_app/calendar.html:16
 #: calendar_app/templates/calendar_app/map.html:4
 #: calendar_app/templates/calendar_app/map.html:16
-#: cycling_site/templates/base.html:59
+#: cycling_site/templates/base.html:60
 msgid "Calendar"
 msgstr "Календарь"
 
@@ -968,7 +995,7 @@ msgstr "Список"
 
 #: calendar_app/templates/calendar_app/_view_switcher.html:17
 #: cycling_site/templates/_map_layers.html:22
-#: cycling_site/templates/base.html:64
+#: cycling_site/templates/base.html:65
 #: locations/templates/locations/location_form.html:13
 #: locations/templates/locations/locations_map_page.html:4
 #: locations/templates/locations/locations_map_page.html:14
@@ -1051,66 +1078,59 @@ msgstr "Ноябрь"
 msgid "December"
 msgstr "Декабрь"
 
-#: calendar_app/templates/calendar_app/detail.html:18
-#: calendar_app/templates/calendar_app/edit.html:12
-#: calendar_app/templates/calendar_app/list.html:10
-#: search/templates/search/search.html:21
-msgid "Competitions"
-msgstr "Соревнования"
-
 # Favorite events (issue #183)
-#: calendar_app/templates/calendar_app/detail.html:32
-#: calendar_app/templates/calendar_app/detail.html:34
+#: calendar_app/templates/calendar_app/detail.html:36
+#: calendar_app/templates/calendar_app/detail.html:38
 msgid "Add to favorites"
 msgstr "В избранное"
 
 # Favorite events (issue #183)
-#: calendar_app/templates/calendar_app/detail.html:33
-#: calendar_app/templates/calendar_app/detail.html:34
+#: calendar_app/templates/calendar_app/detail.html:37
+#: calendar_app/templates/calendar_app/detail.html:38
 msgid "Remove from favorites"
 msgstr "Убрать из избранного"
 
-#: calendar_app/templates/calendar_app/detail.html:43
+#: calendar_app/templates/calendar_app/detail.html:47
 #: calendar_app/templates/calendar_app/list.html:145
 #: calendar_app/templates/calendar_app/list.html:166
 msgid "Dates"
 msgstr "Даты"
 
-#: calendar_app/templates/calendar_app/detail.html:53
+#: calendar_app/templates/calendar_app/detail.html:57
 #: calendar_app/templates/calendar_app/list.html:147
 #: calendar_app/templates/calendar_app/list.html:173
 msgid "Directions"
 msgstr "Направления"
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/templates/calendar_app/detail.html:61
+#: calendar_app/templates/calendar_app/detail.html:65
 msgid "Awaiting moderation."
 msgstr "Ожидает модерации."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/templates/calendar_app/detail.html:62
+#: calendar_app/templates/calendar_app/detail.html:66
 msgid "This event is not shown in the public calendar yet."
 msgstr "Событие пока не отображается в публичном календаре."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/templates/calendar_app/detail.html:66
+#: calendar_app/templates/calendar_app/detail.html:70
 msgid "This submission was rejected."
 msgstr "Заявка отклонена."
 
-#: calendar_app/templates/calendar_app/detail.html:69
+#: calendar_app/templates/calendar_app/detail.html:73
 msgid "Rejection history"
 msgstr "История отклонений"
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/templates/calendar_app/detail.html:76
+#: calendar_app/templates/calendar_app/detail.html:80
 msgid "Reason"
 msgstr "Причина"
 
-#: calendar_app/templates/calendar_app/detail.html:86
+#: calendar_app/templates/calendar_app/detail.html:90
 msgid "This event has been reported."
 msgstr "На это событие поступила жалоба."
 
-#: calendar_app/templates/calendar_app/detail.html:87
+#: calendar_app/templates/calendar_app/detail.html:91
 msgid ""
 "It stays visible to everyone; review it and edit, delete, comment, or "
 "dismiss the report."
@@ -1118,129 +1138,129 @@ msgstr ""
 "Оно остаётся видимым для всех; проверьте его и отредактируйте, удалите, "
 "прокомментируйте или снимите жалобу."
 
-#: calendar_app/templates/calendar_app/detail.html:101
+#: calendar_app/templates/calendar_app/detail.html:105
 #: calendar_app/templates/calendar_app/moderate.html:114
 msgid "Dismiss report"
 msgstr "Снять жалобу"
 
-#: calendar_app/templates/calendar_app/detail.html:123
-#: calendar_app/templates/calendar_app/detail.html:124
+#: calendar_app/templates/calendar_app/detail.html:127
+#: calendar_app/templates/calendar_app/detail.html:128
 msgid "Link to the start point"
 msgstr "Ссылка на точку старта"
 
-#: calendar_app/templates/calendar_app/detail.html:142
+#: calendar_app/templates/calendar_app/detail.html:146
 msgid "Report a problem"
 msgstr "Пожаловаться"
 
-#: calendar_app/templates/calendar_app/detail.html:147
+#: calendar_app/templates/calendar_app/detail.html:151
 msgid "Tell the moderators what looks wrong (optional)"
 msgstr "Расскажите модераторам, что не так (необязательно)"
 
-#: calendar_app/templates/calendar_app/detail.html:149
+#: calendar_app/templates/calendar_app/detail.html:153
 msgid "Send report"
 msgstr "Отправить жалобу"
 
-#: calendar_app/templates/calendar_app/detail.html:154
+#: calendar_app/templates/calendar_app/detail.html:158
 msgid "You have reported this event; a moderator will review it."
 msgstr "Вы пожаловались на это событие; модератор его проверит."
 
-#: calendar_app/templates/calendar_app/detail.html:161
-#: calendar_app/templates/calendar_app/detail.html:164
+#: calendar_app/templates/calendar_app/detail.html:165
+#: calendar_app/templates/calendar_app/detail.html:168
 #: calendar_app/templates/calendar_app/edit.html:106
 #: calendar_app/templates/calendar_app/moderate.html:38
 #: calendar_app/templates/calendar_app/submit.html:99
 msgid "Announcement"
 msgstr "Объявление"
 
-#: calendar_app/templates/calendar_app/detail.html:168
-#: calendar_app/templates/calendar_app/detail.html:201
+#: calendar_app/templates/calendar_app/detail.html:172
+#: calendar_app/templates/calendar_app/detail.html:205
 #: calendar_app/templates/calendar_app/list.html:187
-#: cycling_site/templates/base.html:125
+#: cycling_site/templates/base.html:126
 #: registrations/templates/registrations/register.html:4
 #: registrations/templates/registrations/register.html:13
 #: registrations/templates/registrations/register.html:207
 msgid "Register"
 msgstr "Регистрация"
 
-#: calendar_app/templates/calendar_app/detail.html:172
-#: calendar_app/templates/calendar_app/detail.html:175
+#: calendar_app/templates/calendar_app/detail.html:176
+#: calendar_app/templates/calendar_app/detail.html:179
 #: calendar_app/templates/calendar_app/edit.html:118
 #: calendar_app/templates/calendar_app/submit.html:108
 msgid "Route"
 msgstr "Маршрут"
 
-#: calendar_app/templates/calendar_app/detail.html:179
-#: calendar_app/templates/calendar_app/detail.html:182
+#: calendar_app/templates/calendar_app/detail.html:183
+#: calendar_app/templates/calendar_app/detail.html:186
 #: calendar_app/templates/calendar_app/edit.html:130
 #: calendar_app/templates/calendar_app/submit.html:117
 msgid "Regulations"
 msgstr "Регламент"
 
-#: calendar_app/templates/calendar_app/detail.html:186
-#: calendar_app/templates/calendar_app/detail.html:189
+#: calendar_app/templates/calendar_app/detail.html:190
+#: calendar_app/templates/calendar_app/detail.html:193
 msgid "Results"
 msgstr "Результаты"
 
-#: calendar_app/templates/calendar_app/detail.html:196
+#: calendar_app/templates/calendar_app/detail.html:200
 #: calendar_app/templates/calendar_app/moderate.html:42
 #: registrations/templates/registrations/register.html:17
 msgid "Registration"
 msgstr "Регистрация"
 
-#: calendar_app/templates/calendar_app/detail.html:197
+#: calendar_app/templates/calendar_app/detail.html:201
 #: registrations/templates/registrations/_participant_row.html:18
 #: registrations/templates/registrations/_participant_table_head.html:13
 msgid "Registered"
 msgstr "Зарегистрировано"
 
-#: calendar_app/templates/calendar_app/detail.html:204
+#: calendar_app/templates/calendar_app/detail.html:208
 msgid "You are registered"
 msgstr "Вы зарегистрированы"
 
-#: calendar_app/templates/calendar_app/detail.html:207
+#: calendar_app/templates/calendar_app/detail.html:211
 msgid "Registration closed"
 msgstr "Регистрация закрыта"
 
-#: calendar_app/templates/calendar_app/detail.html:210
+#: calendar_app/templates/calendar_app/detail.html:214
 msgid "Participant list"
 msgstr "Список участников"
 
-#: calendar_app/templates/calendar_app/detail.html:217
+#: calendar_app/templates/calendar_app/detail.html:221
 msgid "Protocols"
 msgstr "Протоколы"
 
-#: calendar_app/templates/calendar_app/detail.html:221
+#: calendar_app/templates/calendar_app/detail.html:225
 #: protocols/templates/protocols/detail.html:16
 #: protocols/templates/protocols/detail.html:23
 msgid "Absolute results"
 msgstr "Абсолютные результаты"
 
-#: calendar_app/templates/calendar_app/detail.html:221
+#: calendar_app/templates/calendar_app/detail.html:225
 #: protocols/templates/protocols/detail.html:16
 #: protocols/templates/protocols/detail.html:23
 msgid "Group results"
 msgstr "Результаты по группам"
 
-#: calendar_app/templates/calendar_app/detail.html:223
+#: calendar_app/templates/calendar_app/detail.html:227
 msgid "Live"
 msgstr "Прямой эфир"
 
-#: calendar_app/templates/calendar_app/detail.html:232
+#: calendar_app/templates/calendar_app/detail.html:236
 #: calendar_app/templates/calendar_app/edit.html:160 calendar_app/tests.py:3930
 msgid "Additional materials"
 msgstr "Дополнительные материалы"
 
-#: calendar_app/templates/calendar_app/detail.html:245
+#: calendar_app/templates/calendar_app/detail.html:249
 msgid "Timing system token"
 msgstr "Токен системы хронометража"
 
-#: calendar_app/templates/calendar_app/detail.html:254
+#: calendar_app/templates/calendar_app/detail.html:258
 msgid ""
 "Regenerate the timing token? The current token will stop working immediately."
 msgstr ""
 "Пересоздать токен хронометража? Текущий токен сразу перестанет работать."
 
-#: calendar_app/templates/calendar_app/detail.html:259
+#: calendar_app/templates/calendar_app/detail.html:263
 msgid ""
 "Delete the timing token? Timing tools will lose access until you generate a "
 "new one."
@@ -1248,11 +1268,11 @@ msgstr ""
 "Удалить токен хронометража? Инструменты хронометража потеряют доступ, пока "
 "вы не создадите новый."
 
-#: calendar_app/templates/calendar_app/detail.html:261
+#: calendar_app/templates/calendar_app/detail.html:265
 msgid "Delete token"
 msgstr "Удалить токен"
 
-#: calendar_app/templates/calendar_app/detail.html:265
+#: calendar_app/templates/calendar_app/detail.html:269
 msgid ""
 "If this token leaks, anyone could later alter or delete the results — "
 "regenerate or delete it."
@@ -1260,15 +1280,15 @@ msgstr ""
 "Если токен утечёт, кто-то сможет позже изменить или удалить результаты — "
 "пересоздайте или удалите его."
 
-#: calendar_app/templates/calendar_app/detail.html:268
+#: calendar_app/templates/calendar_app/detail.html:272
 msgid "Access token for the offline timing system:"
 msgstr "Токен доступа для офлайн-системы хронометража:"
 
-#: calendar_app/templates/calendar_app/detail.html:287
+#: calendar_app/templates/calendar_app/detail.html:291
 msgid "This competition is hidden from public view."
 msgstr "Это соревнование скрыто от публичного просмотра."
 
-#: calendar_app/templates/calendar_app/detail.html:295
+#: calendar_app/templates/calendar_app/detail.html:299
 #: calendar_app/templates/calendar_app/moderate.html:49
 #: calendar_app/templates/calendar_app/moderate.html:158
 #: knowledge/templates/knowledge/knowledge_index_page.html:41
@@ -1279,7 +1299,7 @@ msgstr "Это соревнование скрыто от публичного �
 msgid "Approve"
 msgstr "Одобрить"
 
-#: calendar_app/templates/calendar_app/detail.html:298
+#: calendar_app/templates/calendar_app/detail.html:302
 #: calendar_app/templates/calendar_app/moderate.html:55
 #: calendar_app/templates/calendar_app/moderate.html:163
 #: knowledge/templates/knowledge/admin/reject_form.html:21
@@ -1292,90 +1312,90 @@ msgid "Reject"
 msgstr "Отклонить"
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/templates/calendar_app/detail.html:305
+#: calendar_app/templates/calendar_app/detail.html:309
 #: calendar_app/templates/calendar_app/moderate.html:63
 msgid "Rejection reason"
 msgstr "Причина отказа"
 
-#: calendar_app/templates/calendar_app/detail.html:307
+#: calendar_app/templates/calendar_app/detail.html:311
 #: calendar_app/templates/calendar_app/moderate.html:66
 msgid "Confirm rejection"
 msgstr "Подтвердить отклонение"
 
-#: calendar_app/templates/calendar_app/detail.html:315
+#: calendar_app/templates/calendar_app/detail.html:319
 #: calendar_app/templates/calendar_app/edit.html:4
 #: calendar_app/templates/calendar_app/edit.html:18
 msgid "Edit competition"
 msgstr "Редактировать соревнование"
 
-#: calendar_app/templates/calendar_app/detail.html:320
+#: calendar_app/templates/calendar_app/detail.html:324
 msgid "Resubmit for review"
 msgstr "Отправить на повторное рассмотрение"
 
-#: calendar_app/templates/calendar_app/detail.html:327
-#: knowledge/templates/knowledge/knowledge_article_detail.html:46
+#: calendar_app/templates/calendar_app/detail.html:331
+#: knowledge/templates/knowledge/knowledge_article_detail.html:50
 #: locations/templates/locations/locations_map_page.html:96
-#: news/templates/news/article_detail.html:51
+#: news/templates/news/article_detail.html:55
 msgid "Unhide"
 msgstr "Показать"
 
-#: calendar_app/templates/calendar_app/detail.html:327
-#: knowledge/templates/knowledge/knowledge_article_detail.html:46
+#: calendar_app/templates/calendar_app/detail.html:331
+#: knowledge/templates/knowledge/knowledge_article_detail.html:50
 #: locations/templates/locations/locations_map_page.html:96
-#: news/templates/news/article_detail.html:51
+#: news/templates/news/article_detail.html:55
 msgid "Hide"
 msgstr "Скрыть"
 
-#: calendar_app/templates/calendar_app/detail.html:332
+#: calendar_app/templates/calendar_app/detail.html:336
 msgid "Are you sure you want to delete this competition?"
 msgstr "Вы уверены, что хотите удалить это соревнование?"
 
-#: calendar_app/templates/calendar_app/detail.html:342
-#: knowledge/templates/knowledge/knowledge_article_detail.html:59
-#: news/templates/news/article_detail.html:64
+#: calendar_app/templates/calendar_app/detail.html:346
+#: knowledge/templates/knowledge/knowledge_article_detail.html:63
+#: news/templates/news/article_detail.html:68
 #: news/templates/news/news_page.html:65
 msgid "Comments"
 msgstr "Комментарии"
 
-#: calendar_app/templates/calendar_app/detail.html:363
-#: knowledge/templates/knowledge/knowledge_article_detail.html:80
-#: news/templates/news/article_detail.html:85
+#: calendar_app/templates/calendar_app/detail.html:367
+#: knowledge/templates/knowledge/knowledge_article_detail.html:84
+#: news/templates/news/article_detail.html:89
 #: news/templates/news/news_page.html:91
 msgid "No comments yet. Be the first!"
 msgstr "Комментариев пока нет. Будьте первым!"
 
-#: calendar_app/templates/calendar_app/detail.html:369
-#: knowledge/templates/knowledge/knowledge_article_detail.html:86
-#: news/templates/news/article_detail.html:91
+#: calendar_app/templates/calendar_app/detail.html:373
+#: knowledge/templates/knowledge/knowledge_article_detail.html:90
+#: news/templates/news/article_detail.html:95
 #: news/templates/news/news_page.html:97
 msgid "Add a comment"
 msgstr "Добавить комментарий"
 
-#: calendar_app/templates/calendar_app/detail.html:373
-#: knowledge/templates/knowledge/knowledge_article_detail.html:90
-#: news/templates/news/article_detail.html:95
+#: calendar_app/templates/calendar_app/detail.html:377
+#: knowledge/templates/knowledge/knowledge_article_detail.html:94
+#: news/templates/news/article_detail.html:99
 #: news/templates/news/news_page.html:104
 msgid "Submit comment"
 msgstr "Отправить комментарий"
 
-#: calendar_app/templates/calendar_app/detail.html:379
-#: cycling_site/templates/base.html:124
-#: knowledge/templates/knowledge/knowledge_article_detail.html:96
-#: news/templates/news/article_detail.html:101
+#: calendar_app/templates/calendar_app/detail.html:383
+#: cycling_site/templates/base.html:125
+#: knowledge/templates/knowledge/knowledge_article_detail.html:100
+#: news/templates/news/article_detail.html:105
 #: news/templates/news/news_page.html:111
 msgid "Log in"
 msgstr "Войти"
 
-#: calendar_app/templates/calendar_app/detail.html:379
-#: knowledge/templates/knowledge/knowledge_article_detail.html:96
-#: news/templates/news/article_detail.html:101
+#: calendar_app/templates/calendar_app/detail.html:383
+#: knowledge/templates/knowledge/knowledge_article_detail.html:100
+#: news/templates/news/article_detail.html:105
 #: news/templates/news/news_page.html:112
 msgid "to leave a comment."
 msgstr "чтобы оставить комментарий."
 
-#: calendar_app/templates/calendar_app/detail.html:382
-#: knowledge/templates/knowledge/knowledge_article_detail.html:99
-#: news/templates/news/article_detail.html:104
+#: calendar_app/templates/calendar_app/detail.html:386
+#: knowledge/templates/knowledge/knowledge_article_detail.html:103
+#: news/templates/news/article_detail.html:108
 msgid "Commenting is available to verified participants."
 msgstr "Комментирование доступно подтверждённым участникам."
 
@@ -1557,23 +1577,23 @@ msgstr "Отправить"
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Значение должно содержать не более %(limit_value)d символов."
 
-#: calendar_app/views.py:675
+#: calendar_app/views.py:691
 msgid "N"
 msgstr "с.ш."
 
-#: calendar_app/views.py:675
+#: calendar_app/views.py:691
 msgid "S"
 msgstr "ю.ш."
 
-#: calendar_app/views.py:676
+#: calendar_app/views.py:692
 msgid "E"
 msgstr "в.д."
 
-#: calendar_app/views.py:676
+#: calendar_app/views.py:692
 msgid "W"
 msgstr "з.д."
 
-#: calendar_app/views.py:1265
+#: calendar_app/views.py:1281
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
@@ -1582,41 +1602,41 @@ msgstr ""
 "администратор."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/views.py:1277
+#: calendar_app/views.py:1293
 msgid "Please provide a reason for rejection."
 msgstr "Пожалуйста, укажите причину отказа."
 
-#: calendar_app/views.py:1305 calendar_app/views.py:1325 knowledge/views.py:164
-#: news/views.py:232
+#: calendar_app/views.py:1321 calendar_app/views.py:1341 knowledge/views.py:164
+#: news/views.py:244
 msgid "Invalid submission."
 msgstr "Некорректная отправка."
 
-#: calendar_app/views.py:1343
+#: calendar_app/views.py:1359
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Вы уже пожаловались на это событие; модератор его проверит."
 
-#: calendar_app/views.py:1345
+#: calendar_app/views.py:1361
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Спасибо. Ваша жалоба отправлена модераторам."
 
-#: calendar_app/views.py:1364
+#: calendar_app/views.py:1380
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Жалоба снята; событие убрано из очереди модерации."
 
-#: calendar_app/views.py:1428
+#: calendar_app/views.py:1444
 msgid "Only a rejected competition can be resubmitted."
 msgstr ""
 "На повторное рассмотрение можно отправить только отклонённое соревнование."
 
-#: calendar_app/views.py:1430
+#: calendar_app/views.py:1446
 msgid "Your competition was sent for review again."
 msgstr "Соревнование отправлено на повторное рассмотрение."
 
-#: calendar_app/views.py:1453
+#: calendar_app/views.py:1469
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Токен хронометража пересоздан. Прежний токен больше не работает."
 
-#: calendar_app/views.py:1464
+#: calendar_app/views.py:1480
 msgid ""
 "Timing token deleted. Timing tools can no longer access this competition."
 msgstr ""
@@ -1700,11 +1720,11 @@ msgstr "Страницы"
 msgid "Previous"
 msgstr "Назад"
 
-#: cycling_site/templates/_pagination.html:25
+#: cycling_site/templates/_pagination.html:34
 msgid "Go to page"
 msgstr "Перейти на страницу"
 
-#: cycling_site/templates/_pagination.html:32
+#: cycling_site/templates/_pagination.html:41
 #: news/templates/news/news_index_page.html:66
 #: news/templates/news/news_list.html:90 search/templates/search/search.html:93
 msgid "Next"
@@ -1720,51 +1740,51 @@ msgstr ""
 "гонки — в Казахстане, Кыргызстане, России и других странах. Анонсы, "
 "протоколы и база знаний."
 
-#: cycling_site/templates/base.html:47
+#: cycling_site/templates/base.html:48
 msgid "Cycling"
 msgstr "Велоспорт"
 
-#: cycling_site/templates/base.html:50
+#: cycling_site/templates/base.html:51
 msgid "Toggle navigation"
 msgstr "Меню"
 
-#: cycling_site/templates/base.html:56
-#: news/templates/news/article_detail.html:12
+#: cycling_site/templates/base.html:57
+#: news/templates/news/article_detail.html:16
 #: news/templates/news/news_list.html:4 news/templates/news/news_list.html:9
 #: search/templates/search/search.html:51
 msgid "News"
 msgstr "Новости"
 
-#: cycling_site/templates/base.html:69
+#: cycling_site/templates/base.html:70
 msgid "Knowledge Base"
 msgstr "База знаний"
 
-#: cycling_site/templates/base.html:74
+#: cycling_site/templates/base.html:75
 msgid "About"
 msgstr "О нас"
 
-#: cycling_site/templates/base.html:78 search/templates/search/search.html:4
+#: cycling_site/templates/base.html:79 search/templates/search/search.html:4
 #: search/templates/search/search.html:9 search/templates/search/search.html:16
 msgid "Search"
 msgstr "Поиск"
 
-#: cycling_site/templates/base.html:83
+#: cycling_site/templates/base.html:84
 msgid "Switch theme"
 msgstr "Сменить тему"
 
-#: cycling_site/templates/base.html:111
+#: cycling_site/templates/base.html:112
 msgid "Admin"
 msgstr "Администратор"
 
-#: cycling_site/templates/base.html:138
+#: cycling_site/templates/base.html:139
 msgid "Close"
 msgstr "Закрыть"
 
-#: cycling_site/templates/base.html:148
+#: cycling_site/templates/base.html:149
 msgid "Cycling events"
 msgstr "Соревнования по велоспорту"
 
-#: cycling_site/templates/base.html:151
+#: cycling_site/templates/base.html:152
 #, python-format
 msgid ""
 "Found a bug or have a suggestion? <a href=\"%(url)s\" target=\"_blank\" "
@@ -1773,12 +1793,12 @@ msgstr ""
 "Нашли баг или есть предложение? <a href=\"%(url)s\" target=\"_blank\" "
 "rel=\"noopener\">Создайте задачу на GitHub</a>."
 
-#: cycling_site/templates/base.html:154 home/templates/home/privacy_page.html:4
+#: cycling_site/templates/base.html:155 home/templates/home/privacy_page.html:4
 #: home/templates/home/privacy_page.html:9
 msgid "Privacy Policy"
 msgstr "Политика конфиденциальности"
 
-#: cycling_site/templates/base.html:155 home/templates/home/terms_page.html:4
+#: cycling_site/templates/base.html:156 home/templates/home/terms_page.html:4
 #: home/templates/home/terms_page.html:9
 msgid "Terms of Use"
 msgstr "Условия использования"
@@ -2242,7 +2262,7 @@ msgstr "Интерфейс администратора"
 msgid "Create your superuser first!"
 msgstr "Сначала создайте суперпользователя!"
 
-#: knowledge/forms.py:20 knowledge/forms.py:54 knowledge/models.py:247
+#: knowledge/forms.py:20 knowledge/forms.py:54 knowledge/models.py:263
 #: knowledge/templates/knowledge/add_article.html:25
 #: knowledge/templates/knowledge/edit_article.html:24
 #: knowledge/templates/knowledge/submission_detail.html:27
@@ -2251,7 +2271,7 @@ msgstr "Сначала создайте суперпользователя!"
 msgid "Locale"
 msgstr "Язык"
 
-#: knowledge/forms.py:22 knowledge/forms.py:56 knowledge/models.py:249
+#: knowledge/forms.py:22 knowledge/forms.py:56 knowledge/models.py:265
 #: knowledge/templates/knowledge/add_article.html:43
 #: knowledge/templates/knowledge/edit_article.html:42
 #: knowledge/templates/knowledge/submit.html:40 news/forms.py:19
@@ -2264,26 +2284,26 @@ msgstr "Текст"
 msgid "comma,separated,tags"
 msgstr "теги,через,запятую"
 
-#: knowledge/models.py:44 knowledge/models.py:244
+#: knowledge/models.py:44 knowledge/models.py:260
 msgid "Russian"
 msgstr "Русский"
 
-#: knowledge/models.py:44 knowledge/models.py:244
+#: knowledge/models.py:44 knowledge/models.py:260
 msgid "Kazakh"
 msgstr "Казахский"
 
-#: knowledge/models.py:44 knowledge/models.py:244
+#: knowledge/models.py:44 knowledge/models.py:260
 msgid "English"
 msgstr "Английский"
 
-#: knowledge/models.py:218
+#: knowledge/models.py:234
 msgid ""
 "This article isn't available in your selected language, so it's shown in its "
 "original language."
 msgstr ""
 "Эта статья недоступна на выбранном вами языке и показана на языке оригинала."
 
-#: knowledge/models.py:220 knowledge/tests.py:243
+#: knowledge/models.py:236 knowledge/tests.py:243
 msgid "Search for a similar article in your language"
 msgstr "Найти похожую статью на вашем языке"
 
@@ -2338,20 +2358,20 @@ msgstr "Заметка рецензента (показывается автор
 
 #: knowledge/templates/knowledge/edit_article.html:4
 #: knowledge/templates/knowledge/edit_article.html:9
-#: knowledge/templates/knowledge/knowledge_article_detail.html:41
-#: news/templates/news/article_detail.html:46
+#: knowledge/templates/knowledge/knowledge_article_detail.html:45
+#: news/templates/news/article_detail.html:50
 #: news/templates/news/article_form.html:4
 #: news/templates/news/article_form.html:16
 msgid "Edit article"
 msgstr "Редактировать статью"
 
-#: knowledge/templates/knowledge/knowledge_article_detail.html:35
-#: news/templates/news/article_detail.html:40
+#: knowledge/templates/knowledge/knowledge_article_detail.html:39
+#: news/templates/news/article_detail.html:44
 msgid "This article is hidden from public view."
 msgstr "Эта статья скрыта от публичного просмотра."
 
-#: knowledge/templates/knowledge/knowledge_article_detail.html:50
-#: news/templates/news/article_detail.html:55
+#: knowledge/templates/knowledge/knowledge_article_detail.html:54
+#: news/templates/news/article_detail.html:59
 msgid "Are you sure you want to delete this article?"
 msgstr "Вы уверены, что хотите удалить эту статью?"
 
@@ -2597,7 +2617,7 @@ msgstr "Добавить новость"
 msgid "Submit for review"
 msgstr "Отправить на проверку"
 
-#: news/views.py:176
+#: news/views.py:188
 msgid "News published successfully."
 msgstr "Новость успешно опубликована."
 

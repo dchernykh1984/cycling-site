@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Competition list" %}{% endblock %}
+{% block title %}{% if meta_title %}{{ meta_title }}{% else %}{% trans "Competition list" %}{% endif %}{% endblock %}
 
 {% block content %}
 {{ locations_data|json_script:"locations-data" }}
