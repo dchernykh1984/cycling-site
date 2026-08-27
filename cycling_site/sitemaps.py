@@ -15,6 +15,9 @@ class KnowledgeArticleSitemap(Sitemap):
     sitemap entry; only visible, non-deleted articles are listed."""
 
     changefreq = "monthly"
+    i18n = True
+    alternates = True
+    x_default = True
 
     def items(self):
         return KnowledgeArticle.objects.filter(is_deleted=False, is_hidden=False)
@@ -30,6 +33,9 @@ class NewsArticleSitemap(Sitemap):
     """News articles, on the same footing as knowledge articles."""
 
     changefreq = "monthly"
+    i18n = True
+    alternates = True
+    x_default = True
 
     def items(self):
         return NewsArticle.objects.filter(is_deleted=False, is_hidden=False)
@@ -55,6 +61,10 @@ class CompetitionSitemap(Sitemap):
 
     limit = 500
     changefreq = "weekly"
+    # One entry per language, each pointing at the other two.
+    i18n = True
+    alternates = True
+    x_default = True
 
     def items(self):
         return Competition.objects.filter(
