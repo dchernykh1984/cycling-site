@@ -1,4 +1,4 @@
-{% load static i18n wagtailcore_tags wagtailuserbar home_tags knowledge_tags locations_tags news_tags %}
+{% load static i18n wagtailcore_tags wagtailuserbar home_tags knowledge_tags locations_tags news_tags seo_tags %}
 {% get_current_language as CURRENT_LANGUAGE %}
 <!DOCTYPE html>
 <html lang="{{ CURRENT_LANGUAGE }}"{% if request.user.is_authenticated %} data-bs-theme="{{ request.user.theme }}"{% endif %}>
@@ -16,6 +16,16 @@
     {% firstof meta_description page.search_description as description %}
     <meta name="description" content="{% if description %}{{ description }}{% else %}{% trans 'Calendar of endurance sport events -- cycling, running, cross-country skiing -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base.' %}{% endif %}" />
     <link rel="canonical" href="{% firstof canonical_url request.build_absolute_uri %}" />
+    {% comment %}
+    Each language is its own address, so each has to point at the other two -- otherwise the three
+    look like three copies of the same page and an engine picks one and drops the rest. x-default
+    goes to Russian, which is what the unprefixed URL resolves to for most of our readers.
+    {% endcomment %}
+    {% language_alternates as alternates %}
+    {% for code, alternate_url in alternates %}
+    <link rel="alternate" hreflang="{{ code }}" href="{{ alternate_url }}" />
+    {% if code == 'ru' %}<link rel="alternate" hreflang="x-default" href="{{ alternate_url }}" />{% endif %}
+    {% endfor %}
     <meta property="og:type" content="{% firstof og_type 'website' %}" />
     <meta property="og:site_name" content="{% if current_site and current_site.site_name %}{{ current_site.site_name }}{% endif %}" />
     <meta property="og:title" content="{% firstof meta_title page.seo_title page.title %}" />

@@ -2,15 +2,19 @@
 
 The three languages used to share one path and be told apart by a cookie, so a crawler only ever
 saw one of them: two thirds of the site did not exist as far as search was concerned. Now every
-reader-facing page answers at /ru/..., /kk/... and /en/...; the bare path still works and
-redirects to whichever one the reader asked for.
+reader-facing page answers at /ru/..., /kk/... and /en/..., each self-canonical and each pointing
+at the other two; the bare path still works and redirects to whichever one the reader asked for.
 """
 
+import datetime
 import re
 
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
+
+from calendar_app.models import Competition
+from locations.models import add_location_child
 
 
 def _alternates(html):
@@ -53,3 +57,42 @@ class PrefixedAddressTests(TestCase):
     def test_reversing_follows_the_active_language(self):
         with translation.override("kk"):
             self.assertEqual(reverse("calendar_list"), "/kk/calendar/list/")
+
+
+class HreflangTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        city = add_location_child(region, name="Almaty", name_ru="Almaty")
+        venue = add_location_child(city, name="Republic Square", name_ru="Republic Square")
+        cls.competition = Competition.objects.create(
+            title_ru="Spring race",
+            date_start=datetime.date.today() + datetime.timedelta(days=5),
+            status=Competition.Status.APPROVED,
+            location=venue,
+        )
+
+    def _page(self, language):
+        url = f"/{language}" + reverse("competition_detail", args=[self.competition.pk])[3:]
+        return self.client.get(url).content.decode()
+
+    def test_every_language_is_declared(self):
+        alternates = _alternates(self._page("ru"))
+        for code in ("ru", "kk", "en"):
+            self.assertIn(code, alternates)
+            self.assertIn(f"/{code}/calendar/{self.competition.pk}/", alternates[code])
+
+    def test_there_is_a_default_for_a_reader_we_cannot_place(self):
+        self.assertIn("x-default", _alternates(self._page("en")))
+
+    def test_each_language_is_canonical_to_itself(self):
+        """Three addresses that all name one canonical would be three copies of one page."""
+        for code in ("ru", "kk", "en"):
+            with self.subTest(language=code):
+                canonical = re.search(r'<link rel="canonical" href="([^"]+)"', self._page(code)).group(1)
+                self.assertIn(f"/{code}/calendar/{self.competition.pk}/", canonical)
+
+    def test_the_alternates_are_absolute(self):
+        for url in _alternates(self._page("ru")).values():
+            self.assertTrue(url.startswith("http"), url)
