@@ -1,10 +1,12 @@
 from django.urls import path
 
 from . import views
+from .feeds import CompetitionICSView
 
 urlpatterns = [
     path("", views.CalendarView.as_view(), name="calendar"),
     path("list/", views.CompetitionListView.as_view(), name="calendar_list"),
+    path("calendar.ics", CompetitionICSView.as_view(), name="calendar_ics"),
     path("map/", views.CalendarMapView.as_view(), name="calendar_map"),
     path("events/", views.CalendarEventsAPIView.as_view(), name="calendar_events_api"),
     path("map/events/", views.CalendarMapAPIView.as_view(), name="calendar_map_api"),
