@@ -23,6 +23,12 @@
     <meta property="og:url" content="{% firstof canonical_url request.build_absolute_uri %}" />
     <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'apple-touch-icon.png' %}" />
     <meta name="twitter:card" content="summary" />
+    {% comment %}
+    Declared site-wide so a reader that follows a link into any page still finds the feeds, and so
+    a crawler has one more address that changes on its own. The calendar pages add their own.
+    {% endcomment %}
+    <link rel="alternate" type="application/rss+xml" title="{% trans 'News' %}" href="{% url 'news_rss' %}" />
+    <link rel="alternate" type="application/atom+xml" title="{% trans 'News' %}" href="{% url 'news_atom' %}" />
     {% block extra_head %}{% endblock %}
     {% if request.in_preview_panel %}
     <base target="_blank">

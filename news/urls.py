@@ -1,9 +1,12 @@
 from django.urls import path
 
 from news import views
+from news.feeds import NewsAtomFeed, NewsFeed
 
 urlpatterns = [
     path("", views.NewsListView.as_view(), name="news_index"),
+    path("rss.xml", NewsFeed(), name="news_rss"),
+    path("atom.xml", NewsAtomFeed(), name="news_atom"),
     path("articles/create/", views.NewsArticleCreateView.as_view(), name="news_article_create"),
     path("articles/<int:pk>/", views.NewsArticleDetailView.as_view(), name="news_article_detail"),
     path("articles/<int:pk>/edit/", views.NewsArticleEditView.as_view(), name="news_article_edit"),

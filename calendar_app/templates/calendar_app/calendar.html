@@ -3,6 +3,11 @@
 
 {% block title %}{% trans "Calendar" %}{% endblock %}
 
+{% block extra_head %}
+<link rel="alternate" type="text/calendar" title="{% trans 'Calendar' %}" href="{% url 'calendar_ics' %}" />
+<link rel="alternate" type="application/rss+xml" title="{% trans 'New competitions' %}" href="{% url 'calendar_rss' %}" />
+{% endblock %}
+
 {% block extra_css %}
 <style>
   #calendar { min-height: 500px; }
@@ -67,6 +72,10 @@
     {% endfor %}
   </ul>
   <a href="{% url 'calendar_list' %}">{% trans "All competitions as a list" %}</a>
+  <span class="text-muted mx-2">|</span>
+  <a href="{% url 'calendar_ics' %}">{% trans "Subscribe in your calendar (.ics)" %}</a>
+  <span class="text-muted mx-2">|</span>
+  <a href="{% url 'calendar_rss' %}">{% trans "New competitions (RSS)" %}</a>
 </section>
 {% endif %}
 {% endblock %}

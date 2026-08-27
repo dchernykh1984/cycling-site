@@ -8,9 +8,12 @@ subscribed to as it stands.
 
 import datetime
 
+from django.contrib.syndication.views import Feed
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.feedgenerator import Atom1Feed
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
 from .models import Competition
@@ -132,3 +135,43 @@ class CompetitionICSView(View):
         response = HttpResponse(body, content_type="text/calendar; charset=utf-8")
         response["Content-Disposition"] = 'inline; filename="universalbicycle.ics"'
         return response
+
+
+class NewCompetitionsFeed(Feed):
+    """Events as they are approved -- what changed since the reader last looked.
+
+    Ordered by approval rather than by date, because that is the question a subscriber has:
+    not "what is on next month" (the ICS feed answers that) but "what has been added".
+    """
+
+    title = _("New competitions")
+    description = _("Competitions recently added to the Universal Bicycle Team calendar.")
+    item_count = 30
+
+    def link(self):
+        return reverse("calendar_list")
+
+    def items(self):
+        return (
+            Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False)
+            .select_related("location")
+            .prefetch_related("disciplines")
+            .order_by("-approved_at", "-pk")[: self.item_count]
+        )
+
+    def item_title(self, item):
+        return item.title
+
+    def item_description(self, item):
+        return item.search_summary()
+
+    def item_link(self, item):
+        return item.get_absolute_url()
+
+    def item_pubdate(self, item):
+        return item.approved_at
+
+
+class NewCompetitionsAtomFeed(NewCompetitionsFeed):
+    feed_type = Atom1Feed
+    subtitle = NewCompetitionsFeed.description
