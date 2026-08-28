@@ -87,7 +87,12 @@ organizers:
   - https://bitza-sport.ru/
   - https://www.sk-romashkovo.ru/
   - https://skisport.ru/
-  - https://forum.velomania.ru/
+  - url: https://forum.velomania.ru/
+    hint: "Russian cycling board. The races are in the calendar block on the front page, and
+      each one links to its own page as calendar.php?do=getinfo&e=<id> -- use that link as
+      source_url, never the forum front page. Drop the s=<session> parameter such a link is
+      copied with: it identifies the reader, not the race. The event page itself is behind a
+      login, so take the date and the place from the calendar entry."
   - https://www.granfondo.ru/
   - https://sportmarafonfest.ru/
 
