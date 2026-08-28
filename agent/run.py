@@ -6,7 +6,7 @@ import os
 import sys
 from pathlib import Path
 
-from agent import chunk, enrich, fetch, geo, llm, locations, pipeline, sources
+from agent import chunk, enrich, fetch, geo, links, llm, locations, pipeline, sources
 from agent.config import Config, ConfigError, from_env
 from agent.models import Candidate, KnownEvents, RunReport, Taxonomy
 from agent.placing import resolve_location
@@ -73,10 +73,14 @@ def _extract_candidates(
     candidates: list = []
     for piece in pieces:
         raw = llm.extract_raw(piece, source, guidance, known, taxonomy, config)
-        # A calendar's own listing URL announces no single race, so it must not stand in when the
-        # model found no link: a reader following it lands on a list of dozens and cannot tell
-        # which entry was meant. Leave it empty instead and let the enrichment pass fill it in.
-        fallback_url = "" if source.kind == "aggregator" else (source.fetch_url or "")
+        # A listing announces no single race, so it must not stand in when the model found no link:
+        # a reader following it lands among dozens of announcements and cannot tell which entry was
+        # meant. A calendar is a listing by what it is, whatever its address looks like; a forum
+        # index and a Telegram channel feed are listings by their address, whichever section of the
+        # sources file they were written in. Both are left empty for the enrichment pass to fill.
+        source_url = source.fetch_url or ""
+        is_listing = source.kind == "aggregator" or not links.announces_one_event(source_url)
+        fallback_url = "" if is_listing else source_url
         parsed = pipeline.parse_candidates(raw, fallback_url, taxonomy)
         # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
         # declining -- surface the raw reply so the two are told apart without another run.

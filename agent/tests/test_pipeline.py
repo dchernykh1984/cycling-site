@@ -324,7 +324,7 @@ def test_report_records_the_per_source_extraction_count():
     assert report.extracted == [("cal", 2)]
 
 
-def _extract_with(kind: str, reply: str):
+def _extract_with(kind: str, reply: str, url: str = "https://bike-events.ru/index.php?season=S2026"):
     """Run agent.run._extract_candidates against a stubbed model reply and return the candidates."""
     from unittest.mock import patch
 
@@ -332,7 +332,7 @@ def _extract_with(kind: str, reply: str):
     from agent.config import Config
     from agent.models import KnownEvents, Taxonomy
 
-    source = sources.Source(kind=kind, ref="cal", fetch_url="https://bike-events.ru/index.php?season=S2026")
+    source = sources.Source(kind=kind, ref="cal", fetch_url=url)
     config = Config(
         site_base_url="https://site.test",
         api_token="t",
@@ -361,6 +361,19 @@ def test_an_organizers_own_page_still_backs_its_events():
     # On the organizer's own site the fetched page *is* the announcement, so it stays the fallback.
     (candidate,) = _extract_with("organizer", _ONE_EVENT_NO_LINK)
     assert candidate.source_url == "https://bike-events.ru/index.php?season=S2026"
+
+
+def test_a_forum_index_is_not_used_as_an_events_announcement():
+    # Filed under organizers, but forum.velomania.ru is a board of thousands of threads: real events
+    # 524, 625 and 626 all went out linking its front page.
+    (candidate,) = _extract_with("organizer", _ONE_EVENT_NO_LINK, "https://forum.velomania.ru/")
+    assert candidate.source_url == ""
+
+
+def test_a_telegram_channel_feed_is_not_used_either():
+    # t.me/s/<channel> is the channel's whole feed; events 515, 520, 527 and 543 linked it.
+    (candidate,) = _extract_with("telegram", _ONE_EVENT_NO_LINK, "https://t.me/s/mystartkz")
+    assert candidate.source_url == ""
 
 
 def test_a_link_the_model_found_always_wins():

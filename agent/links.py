@@ -14,6 +14,7 @@ goes -- only the query is touched, and only the parameters named below.
 
 from __future__ import annotations
 
+import re
 from urllib.parse import unquote, urlsplit, urlunsplit
 
 # What the site's URL columns hold (Django's URLField default). The agent talks to the site over
@@ -90,3 +91,36 @@ def strip_tracking(url: str) -> str:
 def fits(url: str, limit: int = MAX_URL_LENGTH) -> bool:
     """Whether the site can store this link at all."""
     return len(url) <= limit
+
+
+# A Telegram channel's web feed: t.me/s/<channel>, and the channel page itself, t.me/<channel>.
+# A post inside it -- t.me/<channel>/<id> -- is a specific announcement and is not matched.
+_TELEGRAM_FEED = re.compile(r"^/(?:s/)?[A-Za-z0-9_]{5,32}/?$")
+
+
+def announces_one_event(url: str) -> bool:
+    """Whether this address is the announcement of a single event, rather than a list of many.
+
+    A source is read to find events, and when the model finds no link of its own the address the
+    text came from is the obvious stand-in. That works for an organizer whose site is one race. It
+    fails for the addresses that are themselves lists -- a forum index, a Telegram channel feed, a
+    calendar's front page: a reader who follows one of those lands among dozens of announcements
+    with no way to tell which was meant, which is worse than no link at all.
+
+    What is judged is the address, not which section of the sources file it was written in: the
+    same forum is a listing whether it was filed under organizers or aggregators.
+    """
+    if not url:
+        return False
+    parts = urlsplit(url.strip())
+    if parts.scheme not in ("http", "https") or not parts.netloc:
+        return False
+    path = parts.path or "/"
+    host = parts.netloc.lower().removeprefix("www.")
+    if host in ("t.me", "telegram.me"):
+        return not _TELEGRAM_FEED.match(path)
+    # A bare host announces nothing in particular -- it is whatever the site puts on its front page
+    # today, and by the time anyone follows the link the announcement has scrolled off it.
+    if path.strip("/") == "":
+        return False
+    return True
