@@ -58,6 +58,9 @@ the day the message was published; if that is not possible, skip it rather than 
 - **Type and discipline**: the lists cover more than cycling -- running, ski racing and hiking
   included. A hike or a walk goes to the hiking disciplines with the "Тренировка / Прогулка"
   type; a race goes to its discipline with the race type.
+- **Say which message announced it.** Every message is introduced by `--- message <number>,
+  published <date>`; put that number in `source_message_id`. The site builds the link to that post
+  from it -- give the number, never an address of your own.
 - **Never name the source yourself.** Do not name the channel, do not link it, and write no
   "source" line -- the credit is appended for you, in code: a public group as "tg: @handle", a
   private channel by its display name alone, never a link or an invite. A registration link is

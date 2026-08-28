@@ -154,6 +154,7 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
                 date_end=(str(item.get("date_end")).strip() or None) if item.get("date_end") else None,
                 description=desc_ru,
                 source_url=str(item.get("source_url") or source_url).strip(),
+                source_message_id=_as_int(item.get("source_message_id")),
                 url_route=str(item.get("url_route") or "").strip(),
                 url_registration=str(item.get("url_registration") or "").strip(),
                 event_type_id=event_type_id,

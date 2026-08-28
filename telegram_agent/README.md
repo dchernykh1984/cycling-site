@@ -83,8 +83,15 @@ Two deliberate rules, because the sources are private:
   runners, hikers -- belong in the channels file.
 - **Events are credited without disclosing a way in.** A public group is credited as
   "tg: @handle" -- searchable by anyone; a private channel by its display name alone, read from
-  Telegram at fetch time. Never a t.me link, an invite or an id, and no `source_url`; a
-  registration link survives only when the announcement itself gives an external one.
+  Telegram at fetch time. Never an invite hash, and a registration link survives only when the
+  announcement itself gives an external one.
+- **The announcement link points at the post, and is built here.** The model names the message it
+  read the event in (`source_message_id`); the address is assembled from what Telegram gave when
+  the channel was opened -- `t.me/<handle>/<id>` for a public channel, `t.me/c/<id>/<message>` for
+  a private one, with the forum topic in between where there is one. The private form opens the
+  post for a member of that chat and shows nothing to anyone else. Every t.me address the *model*
+  writes is still scrubbed, in the URL fields and in the text: an address we did not build is an
+  address we cannot vouch for.
 
 ## Running it
 

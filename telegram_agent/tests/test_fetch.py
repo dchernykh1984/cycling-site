@@ -42,8 +42,16 @@ def test_the_text_names_the_channel_its_hint_and_its_city():
 def test_each_message_carries_the_date_it_was_published():
     """That date is what turns an announcement's "this Saturday" into a real day."""
     text = channel_text(Channel(ref="+abc"), [_message("ride tomorrow", days_ago=2)], 25, TODAY)
-    assert "--- published 2026-07-31" in text
+    assert "published 2026-07-31" in text
     assert "ride tomorrow" in text
+
+
+def test_each_message_carries_its_own_number():
+    """The model answers with the number of the message that announced an event, and that number
+    is what the link back to the post is built from."""
+    message = Message(text="ride on saturday", published=TODAY, id=93485)
+    text = channel_text(Channel(ref="+abc"), [message], 25, TODAY)
+    assert "--- message 93485, published" in text
 
 
 def test_the_window_is_stated_in_hours_because_the_run_is_nightly():
