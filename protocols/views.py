@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import re
+from urllib.parse import urlsplit
 
+from django.conf import settings
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.clickjacking import xframe_options_sameorigin
@@ -55,6 +57,51 @@ def _inject_resize_script(content: bytes) -> bytes:
     return content + _RESIZE_SCRIPT
 
 
+def image_sources(request) -> list[str]:
+    """Where a protocol may load images from: this site, and wherever this site keeps its media.
+
+    A protocol is a file somebody else wrote, shown on our domain, so it is framed with `sandbox`
+    and given a policy that forbids it to reach outside. Forbidding *everything* outside also
+    forbade the organizer's own logo, uploaded to this very site -- which is what this allows.
+
+    The addresses are read off the request rather than written down: the same code runs on
+    universalbicycle.team, on a staging host and on a developer's laptop, and each has to allow its
+    own address and no other. Django has already checked that host against ALLOWED_HOSTS by the
+    time a view runs, so it is the site's real address and not one a caller chose.
+
+    `'self'` cannot do this job. The frame carries `sandbox` without `allow-same-origin`, so the
+    protocol's own origin is opaque and `'self'` matches nothing at all -- the origin has to be
+    named in full.
+    """
+    sources = [f"{request.scheme}://{request.get_host()}"]
+    media = getattr(settings, "MEDIA_URL", "") or ""
+    if "://" in media:
+        # Media on a bucket or a CDN is a different origin from the site's own.
+        parts = urlsplit(media)
+        elsewhere = f"{parts.scheme}://{parts.netloc}"
+        if elsewhere not in sources:
+            sources.append(elsewhere)
+    return sources
+
+
+def content_security_policy(request) -> str:
+    """The policy a protocol is served under: nothing but its own markup, and our own images."""
+    return "; ".join(
+        [
+            "default-src 'none'",
+            "script-src 'unsafe-inline'",
+            "style-src 'unsafe-inline'",
+            " ".join(["img-src data:", *image_sources(request)]),
+            "connect-src 'none'",
+            "object-src 'none'",
+            "frame-src 'none'",
+            "base-uri 'none'",
+            "form-action 'none'",
+            "sandbox allow-scripts",
+        ]
+    )
+
+
 def protocol_last_updated(request, pk):
     protocol = get_object_or_404(
         Protocol,
@@ -91,18 +138,7 @@ def protocol_html(request, pk):
     content = _inject_resize_script(content)
     response = HttpResponse(content, content_type="text/html; charset=utf-8")
     response["X-Content-Type-Options"] = "nosniff"
-    response["Content-Security-Policy"] = (
-        "default-src 'none'; "
-        "script-src 'unsafe-inline'; "
-        "style-src 'unsafe-inline'; "
-        "img-src data:; "
-        "connect-src 'none'; "
-        "object-src 'none'; "
-        "frame-src 'none'; "
-        "base-uri 'none'; "
-        "form-action 'none'; "
-        "sandbox allow-scripts"
-    )
+    response["Content-Security-Policy"] = content_security_policy(request)
     response["Cache-Control"] = "no-store"
     return response
 
