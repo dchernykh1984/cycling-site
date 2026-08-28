@@ -19,7 +19,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from telegram_agent.channels import Channel
+from telegram_agent.channels import Channel, post_link
 
 _MAX_MESSAGE_CHARS = 2000
 # Below this a message cannot be an announcement. Measured over 1218 real messages from these six
@@ -48,6 +48,11 @@ class Message:
 
     text: str
     published: datetime.date
+    # Telegram's own number for the message, and the address that opens it. The number is what the
+    # model names when it says which message announced an event; the link is built here, where the
+    # chat is in hand, rather than left to the model, which cannot be trusted with an address.
+    id: int = 0
+    link: str = ""
 
 
 def worth_reading(text: str) -> bool:
@@ -178,21 +183,38 @@ def read_messages(client: Any, channel: Channel, recent_hours: int, max_posts: i
         _sit_out(exc.seconds)
         entity = entity_of(client, channel)
     try:
-        messages, capped = _collect(client, entity, recent_hours, max_posts)
+        messages, capped = _collect(client, entity, channel, recent_hours, max_posts)
     except FloodWaitError as exc:
         # Served once: a second FloodWait straight after the first means Telegram is not asking for
         # patience but for absence, and the channel is reported rather than hammered.
         _sit_out(exc.seconds)
         try:
-            messages, capped = _collect(client, entity, recent_hours, max_posts)
+            messages, capped = _collect(client, entity, channel, recent_hours, max_posts)
         except FloodWaitError as again:
             raise ChannelUnavailableError(f"Telegram asked to wait {again.seconds}s twice (flood limit)") from again
     return (getattr(entity, "title", "") or "").strip(), messages, capped
 
 
-def _collect(client: Any, entity: Any, recent_hours: int, max_posts: int) -> tuple[list[Message], bool]:
+def topic_id(item: Any) -> int | None:
+    """The forum topic a message sits in, or None when the chat is not a forum (pure, unit-tested).
+
+    Telegram spells this two ways in the same header: a message posted straight into a topic
+    carries the topic as ``reply_to_msg_id``, while a reply inside that topic carries the message
+    it answers there and the topic as ``reply_to_top_id``. Both are only meaningful when the header
+    says the chat is a forum -- in an ordinary chat ``reply_to_msg_id`` is just the quoted message.
+    """
+    reply = getattr(item, "reply_to", None)
+    if reply is None or not getattr(reply, "forum_topic", False):
+        return None
+    return getattr(reply, "reply_to_top_id", None) or getattr(reply, "reply_to_msg_id", None)
+
+
+def _collect(
+    client: Any, entity: Any, channel: Channel, recent_hours: int, max_posts: int
+) -> tuple[list[Message], bool]:
     """Messages newer than the window, newest first, and whether the safety net stopped the read."""
     oldest_wanted = datetime.datetime.now(datetime.UTC) - datetime.timedelta(hours=recent_hours)
+    chat_id = getattr(entity, "id", None)
     messages: list[Message] = []
     for item in client.iter_messages(entity):
         when = getattr(item, "date", None)
@@ -202,7 +224,15 @@ def _collect(client: Any, entity: Any, recent_hours: int, max_posts: int) -> tup
             return messages, False  # Telegram hands them back newest first: everything below is older
         text = " ".join((getattr(item, "message", "") or "").split())
         if worth_reading(text):
-            messages.append(Message(text=text[:_MAX_MESSAGE_CHARS], published=when.date()))
+            number = int(getattr(item, "id", 0) or 0)
+            messages.append(
+                Message(
+                    text=text[:_MAX_MESSAGE_CHARS],
+                    published=when.date(),
+                    id=number,
+                    link=post_link(channel.ref, number, topic_id(item), chat_id),
+                )
+            )
         if max_posts and len(messages) >= max_posts:
             return messages, True
     return messages, False
@@ -245,8 +275,9 @@ def channel_text(channel: Channel, messages: list[Message], recent_hours: int, t
     """One batch of a channel's messages as the text the model reads (pure, unit-tested).
 
     Every message carries the date it was published: that is what turns an announcement's "this
-    Saturday" into a real date. No links are included -- an announcement in a private channel has
-    no address the public could open.
+    Saturday" into a real date, and its own number, which is how the model says afterwards which
+    message an event was announced in. The addresses themselves stay out of the prompt -- the link
+    is built from the number in code, so the model has nothing to copy, shorten or invent.
     """
     # A public group is named to the model; an invite hash or internal id is not -- the model has
     # no business seeing a credential-like string it could echo into a description.
@@ -258,5 +289,5 @@ def channel_text(channel: Channel, messages: list[Message], recent_hours: int, t
         lines.append(f"This community is based in: {channel.city}")
     lines.append(f"Today is {today.isoformat()}. Messages published in the last {recent_hours} hours:")
     for message in messages:
-        lines.append(f"\n--- published {message.published.isoformat()}\n{message.text}")
+        lines.append(f"\n--- message {message.id}, published {message.published.isoformat()}\n{message.text}")
     return "\n".join(lines)

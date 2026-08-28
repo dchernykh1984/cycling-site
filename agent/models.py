@@ -24,6 +24,9 @@ class Candidate:
     date_end: str | None = None
     description: str = ""
     source_url: str = ""  # link to the announcement (-> url_announcement)
+    # Which message announced it, for sources that are message streams rather than pages: the
+    # Telegram agent turns this into the link to that one post. Empty everywhere else.
+    source_message_id: int | None = None
     url_route: str = ""  # link to the route / GPS track, e.g. a Strava segment (-> url_route)
     url_registration: str = ""  # link to the registration / signup page (-> url_registration)
     event_type_id: int | None = None

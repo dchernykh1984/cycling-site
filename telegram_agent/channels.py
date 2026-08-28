@@ -85,3 +85,33 @@ def parse_channels(text: str) -> list[Channel]:
         seen.add(ref.lower())
         channels.append(Channel(ref=ref, hint=hint, city=city))
     return channels
+
+
+def post_link(ref: str, message_id: int, topic_id: int | None = None, chat_id: int | None = None) -> str:
+    """The address of one message, as Telegram itself would copy it.
+
+    A public channel or group has a handle, and its posts are addressed by it. A private one has
+    no public address at all -- but Telegram still gives every member the internal form,
+    ``t.me/c/<id>/<message>``, which is what a member pastes when they quote a post. That is the
+    link this agent publishes for a private source: it opens the post for anyone in the chat, and
+    shows nothing to anyone else.
+
+    A forum's topics sit between the chat and the message (``/<topic>/<message>``); without the
+    topic the link still resolves, but Telegram opens the chat rather than the post.
+
+    Returns "" when there is nothing to build from -- an invite-hash ref whose chat id was never
+    read, or a message with no number.
+    """
+    if not message_id:
+        return ""
+    if ref.startswith("@"):
+        base = f"https://t.me/{ref[1:]}"
+    elif ref.startswith("c/"):
+        base = f"https://t.me/{ref}"
+    elif chat_id:
+        # An invite ref names no chat; the id read when the channel was opened does.
+        base = f"https://t.me/c/{chat_id}"
+    else:
+        return ""
+    tail = f"{topic_id}/{message_id}" if topic_id else str(message_id)
+    return f"{base}/{tail}"

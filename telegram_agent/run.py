@@ -182,7 +182,10 @@ def _run(
                     f"{' '.join(raw.split())[:400]}",
                     flush=True,
                 )
-            found.extend(credit_source(_scrubbed(_with_channel_city(c, channel)), label) for c in parsed)
+            by_id = {message.id: message for message in batch}
+            found.extend(
+                _with_post_link(credit_source(_scrubbed(_with_channel_city(c, channel)), label), by_id) for c in parsed
+            )
         return found
 
     def city_of(candidate: Candidate) -> int | None:
@@ -205,12 +208,26 @@ def _run(
     return summary(report)
 
 
-def _scrubbed(candidate: Candidate) -> Candidate:
-    """Strip anything that would point back at the channel the announcement was read in.
+def _with_post_link(candidate: Candidate, messages: dict[int, fetch.Message]) -> Candidate:
+    """Point the event's announcement link at the post it was announced in.
 
-    The model is told not to write these, and this makes it so regardless -- in the URL fields AND
-    in the text: a t.me link pasted into a description would disclose the private source just as
-    surely as one in source_url.
+    The model names the message; the address is built here, from what Telegram gave when the
+    channel was read. An event whose message the model did not name, or whose channel has no
+    linkable address, keeps no link at all -- which is what it had before this existed.
+    """
+    message = messages.get(candidate.source_message_id or 0)
+    if message is None or not message.link:
+        return candidate
+    return replace(candidate, source_url=message.link)
+
+
+def _scrubbed(candidate: Candidate) -> Candidate:
+    """Strip every link the model wrote back to Telegram, in the URL fields AND in the text.
+
+    The model is told not to write these, and this makes it so regardless. What replaces them is
+    not nothing: the announcement link is rebuilt afterwards from the message the model named
+    (:func:`_with_post_link`), so an event points at the post it came from rather than at whatever
+    address the model copied out of a message.
     """
     registration = candidate.url_registration if "t.me/" not in candidate.url_registration else ""
     unlink = lambda text: TME_LINK.sub("", text)  # noqa: E731 -- six fields, one rule

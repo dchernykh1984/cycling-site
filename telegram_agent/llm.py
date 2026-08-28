@@ -27,6 +27,7 @@ _SYSTEM = (
     "rides, runs, hikes, walks, ascents, races, group outings. "
     'Return ONLY a JSON array; each item: {"title": ' + _LOC + ', "date_start": "YYYY-MM-DD", '
     '"date_end": "YYYY-MM-DD"|null, "description": ' + _LOC + ', "url_registration": str, '
+    '"source_message_id": int, '
     '"event_type_id": int|null, '
     '"discipline_ids": [int], "country": str, "region": ' + _LOC + ', "city": ' + _LOC + ", "
     '"venue": ' + _LOC + "}. "
@@ -69,6 +70,12 @@ _SYSTEM = (
     "country is the country's NAME as people write it, in Russian -- "
     '"Kazakhstan" spelled out, never a code like "KZ" or "RU": the site matches geography by name, '
     "and a code puts the event on the calendar with no place at all. "
+    "\n\n"
+    "WHICH MESSAGE. Every message is introduced by a line reading '--- message <number>, published "
+    "<date>'. Put that number in source_message_id for the message that ANNOUNCES the event -- the "
+    "one a reader would need to see, not a reply about it. The site turns the number into a link "
+    "to that post; give the number only, never build an address yourself. If several messages "
+    "announce the same event, name the first one that gives the day and the meeting place. "
     "\n\n"
     "NEVER NAME THE SOURCE YOURSELF. These messages come from private channels and closed "
     "communities. Do not name the channel, do not link it, and do not write any 'source' or "
