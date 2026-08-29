@@ -9,7 +9,7 @@ candidates (the pipeline dedups downstream, so a race repeated across chunks is 
 
 from __future__ import annotations
 
-_LINKS_MARKER = "\n\nLinks on the page:\n"  # must match agent.fetch._with_links
+from agent.links import LINKS_MARKER as _LINKS_MARKER
 
 
 def split_text(text: str, max_chars: int) -> list[str]:

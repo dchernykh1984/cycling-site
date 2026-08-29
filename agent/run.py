@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from agent import chunk, enrich, fetch, geo, links, llm, locations, pipeline, sources
@@ -65,6 +66,14 @@ def _summary(report: RunReport) -> str:
     return "\n".join(lines)
 
 
+def _with_own_link(candidate: Candidate, page_text: str) -> Candidate:
+    """Fill an empty announcement link from the page's own list of links, by the event's name."""
+    if candidate.source_url:
+        return candidate
+    found = links.link_for_title(candidate.title, links.labelled_links(page_text))
+    return replace(candidate, source_url=found) if found else candidate
+
+
 def _extract_candidates(
     text: str, source: sources.Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, config: Config
 ) -> list:
@@ -82,6 +91,10 @@ def _extract_candidates(
         is_listing = source.kind == "aggregator" or not links.announces_one_event(source_url)
         fallback_url = "" if is_listing else source_url
         parsed = pipeline.parse_candidates(raw, fallback_url, taxonomy)
+        # The model sometimes returns nothing for source_url even though the page lists the race
+        # under its own name. The list is right there in the text it was given, so read it back
+        # rather than publish an event with no way to reach its announcement.
+        parsed = [_with_own_link(candidate, piece) for candidate in parsed]
         # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
         # declining -- surface the raw reply so the two are told apart without another run.
         if not parsed and raw.strip() not in ("", "[]"):

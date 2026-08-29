@@ -324,7 +324,12 @@ def test_report_records_the_per_source_extraction_count():
     assert report.extracted == [("cal", 2)]
 
 
-def _extract_with(kind: str, reply: str, url: str = "https://bike-events.ru/index.php?season=S2026"):
+def _extract_with(
+    kind: str,
+    reply: str,
+    url: str = "https://bike-events.ru/index.php?season=S2026",
+    page_text: str = "page text",
+):
     """Run agent.run._extract_candidates against a stubbed model reply and return the candidates."""
     from unittest.mock import patch
 
@@ -344,7 +349,7 @@ def _extract_with(kind: str, reply: str, url: str = "https://bike-events.ru/inde
         dry_run=True,
     )
     with patch("agent.llm.extract_raw", return_value=reply):
-        return run._extract_candidates("page text", source, "", KnownEvents(), Taxonomy(), config)
+        return run._extract_candidates(page_text, source, "", KnownEvents(), Taxonomy(), config)
 
 
 _ONE_EVENT_NO_LINK = '[{"title": "Dark Race", "date_start": "2026-09-26"}]'
@@ -490,3 +495,24 @@ def test_a_capped_source_reports_exactly_its_budget():
     deep = _src("https://deep.example")
     report, _ = _run([deep], {deep.fetch_url: _candidates("Deep", 9)}, max_per_source=4)
     assert report.proposed_by_source == {deep.fetch_url: 4}
+
+
+def test_an_event_named_on_the_page_gets_that_page_link_when_the_model_gives_none():
+    """The list of links is in the text the model read; the answer can be taken from it."""
+    from agent.links import LINKS_MARKER
+
+    page = (
+        "Autumn calendar"
+        + LINKS_MARKER
+        + "Dark Race - https://velogearance.ru/tg26/\nRegistration - https://velogearance.ru/signup/"
+    )
+    (candidate,) = _extract_with("organizer", _ONE_EVENT_NO_LINK, "https://velogearance.ru/", page_text=page)
+    assert candidate.source_url == "https://velogearance.ru/tg26/"
+
+
+def test_nothing_is_invented_when_the_page_names_no_such_race():
+    from agent.links import LINKS_MARKER
+
+    page = "Autumn calendar" + LINKS_MARKER + "Some other race - https://velogearance.ru/other/"
+    (candidate,) = _extract_with("organizer", _ONE_EVENT_NO_LINK, "https://velogearance.ru/", page_text=page)
+    assert candidate.source_url == ""

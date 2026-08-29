@@ -79,7 +79,9 @@ when everything is on the table; they never mean "skip this one."
   link only when the event genuinely has no web page, and even then link the specific post, never a
   channel's main page. The fetched text lists the page's real links under **"Links on the page"** --
   choose `source_url`, `url_route` and `url_registration` **only** from those real links, never type
-  a URL from memory or guess one. If none of the real links is a proper event page, leave the field
+  a URL from memory or guess one. On a Telegram feed each post is headed by `--- post <address>`;
+  that address is the post's own and is what to use when the post links no event page of its own.
+  If none of the real links is a proper event page, leave the field
   empty for the reviewer rather than inventing one.
 - **Put links in their own fields.** The route / GPS-track link -- a Strava or RideWithGPS route, a
   `.gpx`/`.kml` file, or a route.eduha track-editor link -- goes in `url_route`, and the registration
