@@ -21,6 +21,7 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 from bs4 import BeautifulSoup
 
 from agent.geo import is_blocked_ip
+from agent.links import LINKS_MARKER
 from agent.models import Source
 
 _UA = "Mozilla/5.0 (compatible; UniversalBicycleTeam-EventsAgent/1.0)"
@@ -167,7 +168,7 @@ def _with_links(text: str, anchors, base_url: str, limit: int = _MAX_LINKS, max_
     links = _labelled_links(anchors, base_url, limit)
     body = text[:max_chars]
     if links:
-        body += "\n\nLinks on the page:\n" + "\n".join(links)
+        body += LINKS_MARKER + "\n".join(links)
     return body
 
 

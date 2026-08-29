@@ -124,3 +124,72 @@ def announces_one_event(url: str) -> bool:
     if path.strip("/") == "":
         return False
     return True
+
+
+#: How the fetched text introduces the page's own links. One definition, shared by the module that
+#: writes the block (agent.fetch), the one that splits it off (agent.chunk) and the one that reads
+#: it back (below).
+LINKS_MARKER = "\n\nLinks on the page:\n"
+
+# What is written per link: "<anchor text> - <url>". The label may itself contain " - ", so the URL
+# is taken from the end rather than the line split in two.
+_LINK_LINE = re.compile(r"^(?P<label>.*?)\s+-\s+(?P<url>https?://\S+)$")
+_WORD = re.compile(r"[^\w]+", re.UNICODE)
+
+#: A name this short identifies nothing -- "Race" and "Cup" label navigation on half the pages
+#: there are, and matching them would hand an event the wrong link.
+_MIN_NAME_CHARS = 8
+#: Overlap demanded when one name merely contains the other rather than equalling it: the shared
+#: part has to be long enough to be the race's name and not a common word inside a longer one.
+_MIN_SHARED_CHARS = 12
+
+
+def labelled_links(text: str) -> list[tuple[str, str]]:
+    """The `(label, url)` pairs the fetched text lists at its end."""
+    marker = text.rfind(LINKS_MARKER)
+    if marker == -1:
+        return []
+    pairs = []
+    for line in text[marker + len(LINKS_MARKER) :].splitlines():
+        match = _LINK_LINE.match(line.strip())
+        if match:
+            pairs.append((match.group("label").strip(), match.group("url")))
+    return pairs
+
+
+#: Cyrillic yo -> ye. The same race is written both ways on the same page, and the two spellings
+#: must compare equal. Written as code points because this file stays ASCII.
+_FOLD = {0x451: 0x435, 0x401: 0x415}
+
+
+def _normalized(value: str) -> str:
+    """Case, punctuation and spacing removed, so two spellings of one race name compare equal."""
+    return " ".join(_WORD.sub(" ", (value or "").translate(_FOLD)).casefold().split())
+
+
+def link_for_title(title: str, links: list[tuple[str, str]]) -> str:
+    """The page's own link for the event called ``title``, or "" when nothing clearly matches.
+
+    A calendar or a forum lists each race as a link whose text is the race's name; when the model
+    leaves the announcement link empty, that list still holds the answer and can be read without
+    asking it again. Matching is deliberately narrow -- an exact name, or one name wholly inside
+    the other with enough text in common to mean something -- because a wrong link is worse than
+    none: it sends the reader confidently to another race.
+    """
+    wanted = _normalized(title)
+    if len(wanted) < _MIN_NAME_CHARS:
+        return ""
+    candidates = []
+    for label, url in links:
+        found = _normalized(label)
+        if not found or not announces_one_event(url):
+            continue
+        if found == wanted:
+            return url
+        shorter, longer = sorted((found, wanted), key=len)
+        if shorter in longer and len(shorter) >= _MIN_SHARED_CHARS:
+            candidates.append((len(shorter), url))
+    if not candidates:
+        return ""
+    # The longest overlap is the most specific match; ties keep the page's own order.
+    return max(candidates, key=lambda pair: pair[0])[1]
