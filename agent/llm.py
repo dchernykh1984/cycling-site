@@ -75,8 +75,10 @@ _KIND_GUIDANCE = {
     ),
     "tg_public": (
         "This is the recent post feed of a public TELEGRAM channel; extract real upcoming "
-        "competitions from the posts. Prefer the organizer's own event page for source_url when a "
-        "post links one; otherwise use the specific post link."
+        "competitions from the posts. Each post begins with a line reading '--- post <address>' -- "
+        "that address opens this one post and nothing else. Prefer the organizer's own event page "
+        "for source_url when a post links one; otherwise use the address of the post the event was "
+        "announced in, copied from its '--- post' line. Never use the channel's own address."
     ),
 }
 

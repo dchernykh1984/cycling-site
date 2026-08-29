@@ -294,15 +294,46 @@ def fetch_url(url: str, timeout: int = 20) -> str:
     return _with_links(soup.get_text(" ", strip=True), soup.find_all("a", href=True), url)
 
 
+def telegram_posts(soup) -> list[str]:
+    """Each post of a t.me/s/<channel> feed, headed by its own address (pure, unit-tested).
+
+    The model is told to link the specific post an event was announced in, and until now it had no
+    way to: the feed was flattened into text and the one thing that identifies a post -- the
+    permalink Telegram puts on its date -- was thrown away with the rest of the markup. Events came
+    out with no link at all, or with the channel's whole feed standing in for an announcement.
+
+    A post whose address Telegram did not render is still handed over, without a header: its text
+    may still be the announcement, and losing the event would cost more than losing the link.
+    """
+    posts = []
+    for message in soup.select(".tgme_widget_message"):
+        body = message.select_one(".tgme_widget_message_text")
+        if body is None:
+            continue
+        text = body.get_text(" ", strip=True)
+        posts.append(f"--- post {_post_url(message)}\n{text}" if _post_url(message) else text)
+    return posts
+
+
+def _post_url(message) -> str:
+    """The address of one post: the id Telegram writes on the message, else its date's link."""
+    ref = (message.get("data-post") or "").strip("/")
+    if ref:
+        return f"https://t.me/{ref}"
+    date_link = message.select_one("a.tgme_widget_message_date")
+    return (date_link.get("href") or "").strip() if date_link else ""
+
+
 def fetch_source(source: Source) -> str:
     """Return readable text for a website or public Telegram channel (via the t.me/s/ preview)."""
     if not source.fetch_url:
         raise ValueError("source is not fetchable")
     soup = BeautifulSoup(_get_with_fallback(source.fetch_url), "html.parser")
     if source.kind == "tg_public":
-        posts = soup.select(".tgme_widget_message_text")
-        text = "\n\n".join(post.get_text(" ", strip=True) for post in posts)
-        anchors = [anchor for post in posts for anchor in post.find_all("a", href=True)]
+        text = "\n\n".join(telegram_posts(soup))
+        anchors = [
+            anchor for body in soup.select(".tgme_widget_message_text") for anchor in body.find_all("a", href=True)
+        ]
     else:
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
