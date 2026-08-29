@@ -134,7 +134,28 @@ LINKS_MARKER = "\n\nLinks on the page:\n"
 # What is written per link: "<anchor text> - <url>". The label may itself contain " - ", so the URL
 # is taken from the end rather than the line split in two.
 _LINK_LINE = re.compile(r"^(?P<label>.*?)\s+-\s+(?P<url>https?://\S+)$")
-_WORD = re.compile(r"[^\w]+", re.UNICODE)
+_WORD = re.compile(r"[^\w]+")
+
+#: Words that mark a link as a way to *do* something about a race rather than the page announcing
+#: it -- "Register for the Alpine Race" names the race and is still not its announcement. Such a
+#: link is used only when nothing better names the race. Cyrillic entries are code points because
+#: this file stays ASCII: registraciya, zayavka, rezultaty, protokol, raspisanie.
+_ACTION_WORDS = frozenset(
+    {
+        "registration",
+        "register",
+        "signup",
+        "entry",
+        "entries",
+        "results",
+        "startlist",
+        "".join(chr(c) for c in (0x440, 0x435, 0x433, 0x438, 0x441, 0x442, 0x440, 0x430, 0x446, 0x438, 0x44F)),
+        "".join(chr(c) for c in (0x437, 0x430, 0x44F, 0x432, 0x43A, 0x430)),
+        "".join(chr(c) for c in (0x440, 0x435, 0x437, 0x443, 0x43B, 0x44C, 0x442, 0x430, 0x442, 0x44B)),
+        "".join(chr(c) for c in (0x43F, 0x440, 0x43E, 0x442, 0x43E, 0x43A, 0x43E, 0x43B)),
+        "".join(chr(c) for c in (0x440, 0x430, 0x441, 0x43F, 0x438, 0x441, 0x430, 0x43D, 0x438, 0x435)),
+    }
+)
 
 #: A name this short identifies nothing -- "Race" and "Cup" label navigation on half the pages
 #: there are, and matching them would hand an event the wrong link.
@@ -184,12 +205,17 @@ def link_for_title(title: str, links: list[tuple[str, str]]) -> str:
         found = _normalized(label)
         if not found or not announces_one_event(url):
             continue
+        # Ranked, not returned outright: an exact name beats a longer label that merely contains
+        # it, and a plain name beats "Register for <race>" whichever way it matched.
+        plain = not (set(found.split()) - set(wanted.split())) & _ACTION_WORDS
         if found == wanted:
-            return url
+            candidates.append((2, plain, len(found), url))
+            continue
         shorter, longer = sorted((found, wanted), key=len)
         if shorter in longer and len(shorter) >= _MIN_SHARED_CHARS:
-            candidates.append((len(shorter), url))
+            candidates.append((1, plain, len(shorter), url))
     if not candidates:
         return ""
-    # The longest overlap is the most specific match; ties keep the page's own order.
-    return max(candidates, key=lambda pair: pair[0])[1]
+    # Best rank, then a label that only names the race, then the longest overlap -- the most
+    # specific match. Ties keep the page's own order, which is how max() breaks them.
+    return max(candidates, key=lambda found: found[:3])[3]
