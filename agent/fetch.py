@@ -32,6 +32,9 @@ _MAX_LINK_LABEL = 80  # anchor text is a race name, not prose -- enough to ident
 # links -- and proportionally more page text -- so the model sees the name/date next to each of the
 # nearest upcoming events instead of only the top of the page.
 _AGGREGATOR_MAX_LINKS = 200
+# No practical cap for the code-side list: it costs no prompt room, and a page with more links than
+# this is a page whose links are not worth reading anyway.
+_ALL_LINKS = 5000
 _AGGREGATOR_MAX_CHARS = 30000
 _SKIP_PREFIXES = ("#", "javascript:", "mailto:", "tel:")
 # Telegram serves the same content on these alias domains; t.me has gone NXDOMAIN, so fall back.
@@ -327,6 +330,18 @@ def _post_url(message) -> str:
 
 def fetch_source(source: Source) -> str:
     """Return readable text for a website or public Telegram channel (via the t.me/s/ preview)."""
+    return source_text_and_links(source)[0]
+
+
+def source_text_and_links(source: Source) -> tuple[str, list[tuple[str, str]]]:
+    """The text the model reads, and EVERY link the page carries.
+
+    Two different consumers, two different budgets. The prompt gets a capped excerpt of the links,
+    because a forum front page carries a hundred and forty of them and most are navigation. The
+    code that later matches an event to its own page has no such budget, and needs the ones the
+    excerpt left out: on forum.velomania.ru the races sit at positions 138-140 of 145, so an event
+    whose link is right there on the page came out with no link at all.
+    """
     if not source.fetch_url:
         raise ValueError("source is not fetchable")
     soup = BeautifulSoup(_get_with_fallback(source.fetch_url), "html.parser")
@@ -347,4 +362,5 @@ def fetch_source(source: Source) -> str:
         limit, max_chars = _AGGREGATOR_MAX_LINKS, _AGGREGATOR_MAX_CHARS
     else:
         limit, max_chars = _MAX_LINKS, _MAX_CHARS
-    return _with_links(text, anchors, source.fetch_url, limit, max_chars)
+    every_link = _named_links(anchors, source.fetch_url, _ALL_LINKS)
+    return _with_links(text, anchors, source.fetch_url, limit, max_chars), every_link
