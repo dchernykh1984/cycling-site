@@ -50,8 +50,26 @@ class TestPickingTheLink:
         assert got == "https://forum.velomania.ru/calendar.php?do=getinfo&e=885"
 
     def test_a_longer_anchor_still_matches_the_title_inside_it(self):
-        links = [("Registration for GUBAHA DOWNHILL RACE 2026", "https://example.ru/gubaha")]
+        links = [("The GUBAHA DOWNHILL RACE 2026 announcement", "https://example.ru/gubaha")]
         assert link_for_title("GUBAHA DOWNHILL RACE", links) == "https://example.ru/gubaha"
+
+    def test_the_page_that_names_the_race_beats_the_one_that_signs_you_up_for_it(self):
+        """ "Register for X" names X and is still not its announcement."""
+        links = [
+            ("Registration for GUBAHA DOWNHILL RACE", "https://example.ru/signup"),
+            ("GUBAHA DOWNHILL RACE", "https://example.ru/race"),
+        ]
+        assert link_for_title("GUBAHA DOWNHILL RACE", links) == "https://example.ru/race"
+
+    def test_a_signup_link_is_still_better_than_no_link_when_nothing_else_names_the_race(self):
+        links = [("Registration for GUBAHA DOWNHILL RACE", "https://example.ru/signup")]
+        assert link_for_title("GUBAHA DOWNHILL RACE", links) == "https://example.ru/signup"
+
+    def test_a_race_whose_own_name_is_the_action_word_is_not_penalised(self):
+        """Some races really are called that; the word only counts against a label when the title
+        does not have it too."""
+        links = [("Zabeg Results Race 2026", "https://example.ru/results-race")]
+        assert link_for_title("Zabeg Results Race 2026", links) == "https://example.ru/results-race"
 
     def test_the_most_specific_match_wins(self):
         links = [
