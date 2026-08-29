@@ -66,16 +66,38 @@ def _summary(report: RunReport) -> str:
     return "\n".join(lines)
 
 
-def _with_own_link(candidate: Candidate, page_text: str) -> Candidate:
-    """Fill an empty announcement link from the page's own list of links, by the event's name."""
+def _reader(page_links: dict[str, list[tuple[str, str]]]):
+    """Read a source, remembering every link its page carried for the matching step later."""
+
+    def read(source: sources.Source) -> str:
+        text, found = fetch.source_text_and_links(source)
+        page_links[source.ref] = found
+        return text
+
+    return read
+
+
+def _with_own_link(candidate: Candidate, page_text: str, page_links: list[tuple[str, str]]) -> Candidate:
+    """Fill an empty announcement link from the page's own list of links, by the event's name.
+
+    Matched against every link the page carries, not the excerpt the prompt was given: the excerpt
+    is capped to keep the prompt readable, and the race is as likely to be below the cap as above
+    it. Falls back to the links quoted in the text when the caller has no list of its own.
+    """
     if candidate.source_url:
         return candidate
-    found = links.link_for_title(candidate.title, links.labelled_links(page_text))
+    found = links.link_for_title(candidate.title, page_links or links.labelled_links(page_text))
     return replace(candidate, source_url=found) if found else candidate
 
 
 def _extract_candidates(
-    text: str, source: sources.Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, config: Config
+    text: str,
+    source: sources.Source,
+    guidance: str,
+    known: KnownEvents,
+    taxonomy: Taxonomy,
+    config: Config,
+    page_links: list[tuple[str, str]] | None = None,
 ) -> list:
     """Extract candidates from a source; aggregators are read in line-aligned chunks (agent.chunk)."""
     pieces = chunk.split_source_text(text, _AGGREGATOR_CHUNK_CHARS) if source.kind == "aggregator" else [text]
@@ -94,7 +116,7 @@ def _extract_candidates(
         # The model sometimes returns nothing for source_url even though the page lists the race
         # under its own name. The list is right there in the text it was given, so read it back
         # rather than publish an event with no way to reach its announcement.
-        parsed = [_with_own_link(candidate, piece) for candidate in parsed]
+        parsed = [_with_own_link(candidate, piece, page_links or []) for candidate in parsed]
         # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
         # declining -- surface the raw reply so the two are told apart without another run.
         if not parsed and raw.strip() not in ("", "[]"):
@@ -145,8 +167,12 @@ def main() -> int:
     tree = client.location_tree()
     cities = locations.flatten_cities(tree)
 
+    # Every link each source's page carried, learned while it was read; the prompt only ever sees
+    # a capped excerpt of these (agent.fetch.source_text_and_links).
+    page_links: dict[str, list[tuple[str, str]]] = {}
+
     def extract(text: str, source: sources.Source) -> list:
-        return _extract_candidates(text, source, guidance, known, taxonomy, config)
+        return _extract_candidates(text, source, guidance, known, taxonomy, config, page_links.get(source.ref))
 
     def enrich_candidate(candidate: Candidate) -> Candidate:
         """Fetch the event's own page and let the LLM refine it; keep the original on any failure."""
@@ -185,7 +211,7 @@ def main() -> int:
     report = pipeline.run_pipeline(
         parsed_sources,
         known,
-        fetch=fetch.fetch_source,
+        fetch=_reader(page_links),
         extract=extract,
         create=create,
         max_events=config.max_events,
