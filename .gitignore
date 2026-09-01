@@ -29,8 +29,10 @@ Session.vim
 
 # ===== AI agents =====
 
-# Claude Code (Anthropic)
-.claude/
+# Claude Code (Anthropic). The shared context -- CLAUDE.md, skills, hooks, permissions --
+# is committed on purpose, so a fresh session starts knowing how this project works.
+# Only the per-machine permission cache stays out.
+.claude/settings.local.json
 
 # Cursor
 .cursor/
