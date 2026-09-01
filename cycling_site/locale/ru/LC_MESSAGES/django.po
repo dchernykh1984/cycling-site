@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-01 20:30+0500\n"
+"POT-Creation-Date: 2026-09-01 20:47+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -26,9 +26,25 @@ msgstr ""
 "Сначала добавьте адрес электронной почты и пароль, иначе вам будет нечем "
 "войти."
 
-#: accounts/models.py:106
+#: accounts/models.py:14
+msgid "Guest"
+msgstr "Гость"
+
+#: accounts/models.py:15 accounts/models.py:109
 msgid "Participant"
 msgstr "Участник"
+
+#: accounts/models.py:16
+msgid "Organizer"
+msgstr "Организатор"
+
+#: accounts/models.py:17 cycling_site/templates/base.html:131
+msgid "Admin"
+msgstr "Администратор"
+
+#: accounts/models.py:18
+msgid "Owner"
+msgstr "Владелец"
 
 #: accounts/templates/account/signup.html:4
 msgid "Signup"
@@ -299,7 +315,7 @@ msgstr "Это ваш единственный способ входа. Снач
 msgid "Connect"
 msgstr "Подключить"
 
-#: accounts/templates/accounts/profile.html:158 accounts/views.py:273
+#: accounts/templates/accounts/profile.html:158 accounts/views.py:314
 msgid "Role"
 msgstr "Роль"
 
@@ -583,11 +599,23 @@ msgstr ""
 msgid "Send request"
 msgstr "Отправить запрос"
 
-#: accounts/views.py:278
+#: accounts/views.py:283
+msgid "Please wait a few minutes before sending another message."
+msgstr ""
+"Пожалуйста, подождите несколько минут перед отправкой следующего сообщения."
+
+#: accounts/views.py:299
+msgid ""
+"Sorry, we could not send your message right now. Please try again later."
+msgstr ""
+"Извините, сейчас не получилось отправить ваше сообщение. Пожалуйста, "
+"попробуйте позже."
+
+#: accounts/views.py:319
 msgid "Why you need it"
 msgstr "Зачем она вам"
 
-#: accounts/views.py:280
+#: accounts/views.py:321
 msgid ""
 "Tell us what you plan to do with this role, and how to reach you if we have "
 "questions."
@@ -595,31 +623,19 @@ msgstr ""
 "Расскажите, что вы планируете делать с этой ролью и как с вами связаться, "
 "если у нас появятся вопросы."
 
-#: accounts/views.py:318 accounts/views.py:398
-msgid "Please wait a few minutes before sending another message."
-msgstr ""
-"Пожалуйста, подождите несколько минут перед отправкой следующего сообщения."
-
-#: accounts/views.py:345 accounts/views.py:428
-msgid ""
-"Sorry, we could not send your message right now. Please try again later."
-msgstr ""
-"Извините, сейчас не получилось отправить ваше сообщение. Пожалуйста, "
-"попробуйте позже."
-
-#: accounts/views.py:347
+#: accounts/views.py:370
 msgid "Your request has been sent. We will get back to you."
 msgstr "Запрос отправлен. Мы вернёмся к вам с ответом."
 
-#: accounts/views.py:354
+#: accounts/views.py:377
 msgid "Subject"
 msgstr "Тема"
 
-#: accounts/views.py:359
+#: accounts/views.py:382
 msgid "Message"
 msgstr "Сообщение"
 
-#: accounts/views.py:361
+#: accounts/views.py:384
 msgid ""
 "Please tell us how to reach you (e.g. email or messenger) and describe your "
 "question or problem in detail."
@@ -627,7 +643,7 @@ msgstr ""
 "Пожалуйста, укажите, как с вами связаться (например, email или мессенджер), "
 "и подробно опишите ваш вопрос или проблему."
 
-#: accounts/views.py:430
+#: accounts/views.py:423
 msgid "Your message has been sent to the site owners."
 msgstr "Ваше сообщение отправлено владельцам сайта."
 
@@ -727,8 +743,8 @@ msgstr "Дата окончания не может быть раньше дат
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:203 calendar_app/views.py:1138
-#: calendar_app/views.py:1255
+#: calendar_app/forms.py:203 calendar_app/views.py:1145
+#: calendar_app/views.py:1253
 msgid "This location is not available."
 msgstr "Эта локация недоступна."
 
@@ -1701,7 +1717,7 @@ msgstr "в.д."
 msgid "W"
 msgstr "з.д."
 
-#: calendar_app/views.py:1372
+#: calendar_app/views.py:1370
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
@@ -1710,41 +1726,41 @@ msgstr ""
 "администратор."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/views.py:1384
+#: calendar_app/views.py:1382
 msgid "Please provide a reason for rejection."
 msgstr "Пожалуйста, укажите причину отказа."
 
-#: calendar_app/views.py:1412 calendar_app/views.py:1432 knowledge/views.py:164
+#: calendar_app/views.py:1410 calendar_app/views.py:1430 knowledge/views.py:164
 #: news/views.py:244
 msgid "Invalid submission."
 msgstr "Некорректная отправка."
 
-#: calendar_app/views.py:1450
+#: calendar_app/views.py:1448
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Вы уже пожаловались на это событие; модератор его проверит."
 
-#: calendar_app/views.py:1452
+#: calendar_app/views.py:1450
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Спасибо. Ваша жалоба отправлена модераторам."
 
-#: calendar_app/views.py:1471
+#: calendar_app/views.py:1469
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Жалоба снята; событие убрано из очереди модерации."
 
-#: calendar_app/views.py:1535
+#: calendar_app/views.py:1533
 msgid "Only a rejected competition can be resubmitted."
 msgstr ""
 "На повторное рассмотрение можно отправить только отклонённое соревнование."
 
-#: calendar_app/views.py:1537
+#: calendar_app/views.py:1535
 msgid "Your competition was sent for review again."
 msgstr "Соревнование отправлено на повторное рассмотрение."
 
-#: calendar_app/views.py:1560
+#: calendar_app/views.py:1558
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Токен хронометража пересоздан. Прежний токен больше не работает."
 
-#: calendar_app/views.py:1571
+#: calendar_app/views.py:1569
 msgid ""
 "Timing token deleted. Timing tools can no longer access this competition."
 msgstr ""
@@ -1880,10 +1896,6 @@ msgstr "Поиск"
 #: cycling_site/templates/base.html:103
 msgid "Switch theme"
 msgstr "Сменить тему"
-
-#: cycling_site/templates/base.html:131
-msgid "Admin"
-msgstr "Администратор"
 
 #: cycling_site/templates/base.html:158
 msgid "Close"
