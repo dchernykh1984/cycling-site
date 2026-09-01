@@ -260,6 +260,47 @@ class ApiTokenRegenerateView(LoginRequiredMixin, View):
         return redirect("account_profile")
 
 
+def _mail_the_owners(request, subject: str, body: str, *, what: str) -> bool:
+    """Send one message to the site owners, throttled per user. True when it went out.
+
+    The slot is reserved with a conditional UPDATE *before* the send rather than checked and then
+    written: concurrent POSTs from one person would all read the same stale timestamp and each fire
+    a mail. Losing that race means being throttled, which is the point.
+
+    On a mail-server failure the reservation is rolled back, so a transient outage does not lock
+    somebody out for the whole cooldown, and the caller is told to re-render its form.
+    """
+    user = request.user
+    now = timezone.now()
+    cutoff = now - timedelta(seconds=_RESEND_COOLDOWN_SECONDS)
+    previous_sent_at = user.last_mail_action_at
+    reserved = (
+        User.objects.filter(pk=user.pk)
+        .filter(Q(last_mail_action_at__isnull=True) | Q(last_mail_action_at__lt=cutoff))
+        .update(last_mail_action_at=now)
+    )
+    if not reserved:
+        messages.error(request, gettext("Please wait a few minutes before sending another message."))
+        return False
+    user.last_mail_action_at = now
+    try:
+        send_mail(
+            # Collapse any whitespace so a value carried into the subject cannot inject headers.
+            subject=" ".join(subject.split()),
+            message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.DEFAULT_FROM_EMAIL],
+            fail_silently=False,
+        )
+    except Exception:
+        logger.exception("Failed to send %s email for user %s", what, user.pk)
+        User.objects.filter(pk=user.pk, last_mail_action_at=now).update(last_mail_action_at=previous_sent_at)
+        user.last_mail_action_at = previous_sent_at
+        messages.error(request, gettext("Sorry, we could not send your message right now. Please try again later."))
+        return False
+    return True
+
+
 class RequestRoleForm(forms.Form):
     """Which role somebody is asking for, and why.
 
@@ -309,18 +350,6 @@ class RequestRoleView(ParticipantRequiredMixin, View):
         form = RequestRoleForm(request.POST, current_role=user.role)
         if not form.is_valid():
             return render(request, self.template_name, {"form": form})
-        now = timezone.now()
-        cutoff = now - timedelta(seconds=_RESEND_COOLDOWN_SECONDS)
-        previous_sent_at = user.last_mail_action_at
-        reserved = (
-            User.objects.filter(pk=user.pk)
-            .filter(Q(last_mail_action_at__isnull=True) | Q(last_mail_action_at__lt=cutoff))
-            .update(last_mail_action_at=now)
-        )
-        if not reserved:
-            messages.error(request, gettext("Please wait a few minutes before sending another message."))
-            return render(request, self.template_name, {"form": form})
-        user.last_mail_action_at = now
         cd = form.cleaned_data
         wanted = dict(User.Role.choices)[cd["role"]]
         # Internal notification, always English like the other owner mail.
@@ -330,22 +359,11 @@ class RequestRoleView(ParticipantRequiredMixin, View):
             f"Registered email: {user.email}\n"
             f"Current role: {user.get_role_display()}\n"
             f"Requested role: {wanted}\n"
-            f"Sent: {now:%Y-%m-%d %H:%M %Z}\n\n"
+            f"Sent: {timezone.now():%Y-%m-%d %H:%M %Z}\n\n"
             f"Reason:\n{cd['reason']}\n"
         )
-        try:
-            send_mail(
-                subject=f"Role request: {user.get_username()} -> {wanted}",
-                message=body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[settings.DEFAULT_FROM_EMAIL],
-                fail_silently=False,
-            )
-        except Exception:
-            logger.exception("Failed to send role-request email for user %s", user.pk)
-            User.objects.filter(pk=user.pk, last_mail_action_at=now).update(last_mail_action_at=previous_sent_at)
-            user.last_mail_action_at = previous_sent_at
-            messages.error(request, gettext("Sorry, we could not send your message right now. Please try again later."))
+        sent = _mail_the_owners(request, f"Role request: {user.get_username()} -> {wanted}", body, what="role-request")
+        if not sent:
             return render(request, self.template_name, {"form": form})
         messages.success(request, gettext("Your request has been sent. We will get back to you."))
         return redirect("account_profile")
@@ -384,23 +402,6 @@ class ContactOwnersView(ParticipantRequiredMixin, View):
         if not form.is_valid():
             return render(request, self.template_name, {"form": form})
         user = request.user
-        now = timezone.now()
-        cutoff = now - timedelta(seconds=_RESEND_COOLDOWN_SECONDS)
-        previous_sent_at = user.last_mail_action_at
-        # Atomically reserve the send slot *before* sending. A plain check-then-send-then-save
-        # is a TOCTOU race: concurrent POSTs from one participant+ would all read the stale
-        # timestamp and each fire an email. This conditional UPDATE lets only one request flip
-        # the timestamp; the losers get reserved=0 and are throttled. Reuses the same
-        # timestamp/cooldown as the confirmation-email resend (participant+ never use that flow).
-        reserved = (
-            User.objects.filter(pk=user.pk)
-            .filter(Q(last_mail_action_at__isnull=True) | Q(last_mail_action_at__lt=cutoff))
-            .update(last_mail_action_at=now)
-        )
-        if not reserved:
-            messages.error(request, gettext("Please wait a few minutes before sending another message."))
-            return render(request, self.template_name, {"form": form})
-        user.last_mail_action_at = now
         cd = form.cleaned_data
         # Collapse any whitespace/newlines in the subject so it can't inject email headers.
         subject_line = " ".join(cd["subject"].split())
@@ -410,25 +411,11 @@ class ContactOwnersView(ParticipantRequiredMixin, View):
             f"User: {user.get_username()}\n"
             f"Registered email: {user.email}\n"
             f"Role: {user.get_role_display()}\n"
-            f"Sent: {now:%Y-%m-%d %H:%M %Z}\n\n"
+            f"Sent: {timezone.now():%Y-%m-%d %H:%M %Z}\n\n"
             f"Subject: {subject_line}\n\n"
             f"Message:\n{cd['message']}\n"
         )
-        try:
-            send_mail(
-                subject=f"Site contact: {subject_line}",
-                message=body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[settings.DEFAULT_FROM_EMAIL],
-                fail_silently=False,
-            )
-        except Exception:
-            # A mail-server failure must not 500 the user; log it and release the slot we
-            # reserved so a transient failure does not lock them out for the whole cooldown.
-            logger.exception("Failed to send contact-owners email for user %s", user.pk)
-            User.objects.filter(pk=user.pk, last_mail_action_at=now).update(last_mail_action_at=previous_sent_at)
-            user.last_mail_action_at = previous_sent_at
-            messages.error(request, gettext("Sorry, we could not send your message right now. Please try again later."))
+        if not _mail_the_owners(request, f"Site contact: {subject_line}", body, what="contact-owners"):
             return render(request, self.template_name, {"form": form})
         messages.success(request, gettext("Your message has been sent to the site owners."))
         return redirect("account_profile")
