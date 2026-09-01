@@ -170,7 +170,19 @@
             </div>
             {% if user.get_role_rank >= 1 %}
             <div class="card-footer">
-                <a href="{% url 'account_request_role' %}" class="btn btn-sm btn-outline-primary">{% trans "Request a role" %}</a>
+                {% comment %}
+                The same cooldown as the contact button, because both write to the same mailbox
+                through the same reservation: an enabled-looking button that answers "wait a few
+                minutes" is worse than one that says how long is left.
+                {% endcomment %}
+                <a id="role-btn"
+                   href="{% url 'account_request_role' %}"
+                   class="btn btn-sm btn-outline-primary{% if contact_cooldown_seconds %} disabled{% endif %}"
+                   {% if contact_cooldown_seconds %}aria-disabled="true" tabindex="-1"{% endif %}
+                   data-cooldown="{{ contact_cooldown_seconds }}"
+                   data-label="{% trans 'Request a role' %}">
+                    {% trans "Request a role" %}
+                </a>
                 <span class="small text-muted ms-2">{% trans "Including a lower one." %}</span>
             </div>
             {% endif %}
@@ -192,8 +204,10 @@
             </div>
         </div>
         <script>
-        (function () {
-            var btn = document.getElementById('contact-btn');
+        // Both buttons write to the same mailbox through the same reservation, so both count the
+        // same seconds down.
+        ['contact-btn', 'role-btn'].forEach(function (id) {
+            var btn = document.getElementById(id);
             if (!btn) return;
             var remaining = parseInt(btn.dataset.cooldown, 10);
             if (!remaining || remaining <= 0) return;
@@ -215,7 +229,7 @@
                     btn.textContent = label + ' (' + fmt(remaining) + ')';
                 }
             }, 1000);
-        })();
+        });
         </script>
         {% endif %}
 
