@@ -23,7 +23,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -c \"import json,subprocess,sys,pathlib; p=json.load(sys.stdin).get('tool_input',{}).get('file_path',''); sys.exit(0) if not p.endswith('.py') else None; ruff=pathlib.Path('.venv/bin/ruff'); subprocess.run([str(ruff) if ruff.exists() else 'ruff','format','--quiet',p],check=False)\""
+            "command": "python3 -c \"import json,os,subprocess,sys,pathlib; p=json.load(sys.stdin).get('tool_input',{}).get('file_path',''); path=pathlib.Path(p).resolve() if p else None; root=pathlib.Path.cwd().resolve(); ok=bool(path) and path.suffix=='.py' and root in path.parents; ruff=root/'.venv/bin/ruff'; subprocess.run([str(ruff) if ruff.exists() else 'ruff','format','--quiet',str(path)],check=False) if ok else None\""
           }
         ]
       }
