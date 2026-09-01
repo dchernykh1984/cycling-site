@@ -50,6 +50,7 @@ FORM_MODULES = (
 FORM_TARGETS = {
     "accounts.views.ContactOwnersForm": None,
     "accounts.views.ProfileEditForm": None,
+    "accounts.views.RequestRoleForm": None,
     "calendar_app.forms.AddCompetitionCommentForm": CompetitionComment,
     "calendar_app.forms.CompetitionFilterForm": None,
     "calendar_app.forms.CompetitionMaterialForm": CompetitionMaterial,

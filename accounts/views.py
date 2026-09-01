@@ -105,6 +105,16 @@ class ProfileEditForm(forms.ModelForm):
         }
 
 
+def role_ladder(user) -> list[dict]:
+    """Every role the site has, weakest first, with the reader's own marked.
+
+    A person cannot see what they are missing -- or what they could give up -- from a single line
+    saying "Role: Participant", so the profile shows the whole ladder and where they stand on it.
+    """
+    labels = dict(User.Role.choices)
+    return [{"value": role, "label": labels[role], "is_current": role == user.role} for role in User.ROLE_HIERARCHY]
+
+
 class ProfileView(TemplateView):
     template_name = "accounts/profile.html"
 
@@ -128,6 +138,7 @@ class ProfileView(TemplateView):
         context["resend_cooldown_seconds"] = cooldown_remaining
         # The contact-owners button shares the same timestamp/cooldown (issue #122).
         context["contact_cooldown_seconds"] = cooldown_remaining
+        context["roles"] = role_ladder(user)
         from knowledge.models import DraftSubmission
 
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
@@ -246,6 +257,97 @@ class ApiTokenRegenerateView(LoginRequiredMixin, View):
             return redirect_to_profile_for_email_confirmation(request)
         user.api_token = uuid.uuid4()
         user.save(update_fields=["api_token"])
+        return redirect("account_profile")
+
+
+class RequestRoleForm(forms.Form):
+    """Which role somebody is asking for, and why.
+
+    The choices leave out the role they already hold and include the ones below it: stepping down
+    is a real request -- an organizer who has stopped running races would rather not keep the
+    buttons that go with it.
+    """
+
+    role = forms.ChoiceField(
+        choices=(),
+        label=gettext_lazy("Role"),
+        widget=forms.RadioSelect,
+    )
+    reason = forms.CharField(
+        max_length=5000,
+        label=gettext_lazy("Why you need it"),
+        help_text=gettext_lazy(
+            "Tell us what you plan to do with this role, and how to reach you if we have questions."
+        ),
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 6, "maxlength": 5000}),
+    )
+
+    def __init__(self, *args, current_role: str = "", **kwargs):
+        super().__init__(*args, **kwargs)
+        labels = dict(User.Role.choices)
+        # `self.fields` is typed as the base Field, which knows nothing of choices; the local
+        # binding is what tells mypy which field this is.
+        role_field: forms.ChoiceField = self.fields["role"]  # type: ignore[assignment]
+        role_field.choices = [(role, labels[role]) for role in User.ROLE_HIERARCHY if role != current_role]
+
+
+class RequestRoleView(ParticipantRequiredMixin, View):
+    """Ask the owners for a different role.
+
+    Nothing is granted here: the request is an email to the same mailbox the contact form writes
+    to, and a human decides. It shares that form's cooldown as well as its mailbox -- one person
+    firing off a burst of mail is the thing being throttled, whichever form they use.
+    """
+
+    template_name = "accounts/request_role.html"
+
+    def get(self, request):
+        return render(request, self.template_name, {"form": RequestRoleForm(current_role=request.user.role)})
+
+    def post(self, request):
+        user = request.user
+        form = RequestRoleForm(request.POST, current_role=user.role)
+        if not form.is_valid():
+            return render(request, self.template_name, {"form": form})
+        now = timezone.now()
+        cutoff = now - timedelta(seconds=_RESEND_COOLDOWN_SECONDS)
+        previous_sent_at = user.last_mail_action_at
+        reserved = (
+            User.objects.filter(pk=user.pk)
+            .filter(Q(last_mail_action_at__isnull=True) | Q(last_mail_action_at__lt=cutoff))
+            .update(last_mail_action_at=now)
+        )
+        if not reserved:
+            messages.error(request, gettext("Please wait a few minutes before sending another message."))
+            return render(request, self.template_name, {"form": form})
+        user.last_mail_action_at = now
+        cd = form.cleaned_data
+        wanted = dict(User.Role.choices)[cd["role"]]
+        # Internal notification, always English like the other owner mail.
+        body = (
+            f"A registered site user asks for a different role.\n\n"
+            f"User: {user.get_username()}\n"
+            f"Registered email: {user.email}\n"
+            f"Current role: {user.get_role_display()}\n"
+            f"Requested role: {wanted}\n"
+            f"Sent: {now:%Y-%m-%d %H:%M %Z}\n\n"
+            f"Reason:\n{cd['reason']}\n"
+        )
+        try:
+            send_mail(
+                subject=f"Role request: {user.get_username()} -> {wanted}",
+                message=body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[settings.DEFAULT_FROM_EMAIL],
+                fail_silently=False,
+            )
+        except Exception:
+            logger.exception("Failed to send role-request email for user %s", user.pk)
+            User.objects.filter(pk=user.pk, last_mail_action_at=now).update(last_mail_action_at=previous_sent_at)
+            user.last_mail_action_at = previous_sent_at
+            messages.error(request, gettext("Sorry, we could not send your message right now. Please try again later."))
+            return render(request, self.template_name, {"form": form})
+        messages.success(request, gettext("Your request has been sent. We will get back to you."))
         return redirect("account_profile")
 
 
