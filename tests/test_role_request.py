@@ -162,3 +162,39 @@ class RoleNamesAreTranslatedTests(TestCase):
         )
         self.assertIn("Requested role: Admin", mail.outbox[0].body)
         self.assertIn("Current role: Organizer", mail.outbox[0].body)
+
+
+class RequestButtonCooldownTests(TestCase):
+    """The role button and the contact button share a mailbox, a reservation and a countdown."""
+
+    def setUp(self):
+        self.user = _user("cooling_down")
+        self.client.force_login(self.user)
+
+    def _profile(self):
+        return self.client.get(in_language(reverse("account_profile"), "en")).content.decode()
+
+    def test_a_fresh_user_sees_an_enabled_button(self):
+        body = self._profile()
+        self.assertIn('id="role-btn"', body)
+        self.assertNotIn(
+            'id="role-btn"\n                   href="/en/accounts/role-request/"\n'
+            '                   class="btn btn-sm btn-outline-primary disabled"',
+            body,
+        )
+
+    def test_after_sending_the_button_is_disabled_with_the_time_left(self):
+        self.client.post(
+            in_language(reverse("account_request_role"), "en"),
+            {"role": User.Role.ORGANIZER, "reason": "Just sent one."},
+        )
+        body = self._profile()
+        self.assertRegex(body, r'id="role-btn"[\s\S]{0,400}?disabled')
+        self.assertRegex(body, r'id="role-btn"[\s\S]{0,400}?data-cooldown="[1-9]')
+
+    def test_the_contact_button_is_held_by_the_same_send(self):
+        self.client.post(
+            in_language(reverse("account_request_role"), "en"),
+            {"role": User.Role.ORGANIZER, "reason": "Just sent one."},
+        )
+        self.assertRegex(self._profile(), r'id="contact-btn"[\s\S]{0,400}?disabled')
