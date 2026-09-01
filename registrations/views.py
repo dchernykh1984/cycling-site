@@ -694,7 +694,10 @@ class ExportParticipantsCSVView(LoginRequiredMixin, View):
                 "City/Cities",
                 "Category",
                 "Team",
-                competition.additional_info_field_label,
+                # The organizer's own wording when there is one, and the English default otherwise:
+                # every other header in this file is English, and a script that reads the export
+                # should not see the column rename itself with the exporter's interface language.
+                competition.additional_info_label.strip() or "Additional info",
                 "Approved",
                 "Paid",
                 "Rejected",
