@@ -104,6 +104,18 @@
     <option value="strava" {% if mode == "strava" %}selected{% endif %}>{% trans "Strava link" %}</option>
   </select>
   {% endwith %}
+  <div class="mt-2" style="max-width: 320px;">
+    <label class="form-label small" for="addinfo_label">{% trans "What to call this field" %}</label>
+    <input type="text" name="additional_info_label" id="addinfo_label" maxlength="100"
+           class="form-control form-control-sm"
+           value="{{ reg_form.additional_info_label.value|default:'' }}"
+           placeholder="{% trans 'Additional info' %}">
+    {% comment %}
+    No quotes inside the string: Django's {% trans %} does not take escaped ones, and the message
+    ended up truncated at the first backslash in the catalogue.
+    {% endcomment %}
+    <div class="form-text small">{% trans "Shown to riders in place of the default name -- for example: Bike type, or Transfer preference. Leave empty to keep the default." %}</div>
+  </div>
   <div class="form-check mt-2">
     <input class="form-check-input" type="checkbox" name="show_additional_info_in_list" id="show_addinfo_list"
            {% if reg_form.show_additional_info_in_list.value %}checked{% endif %}>

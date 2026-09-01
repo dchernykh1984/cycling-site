@@ -238,6 +238,11 @@ class RegistrationSettingsForm(forms.Form):
     )
     show_additional_info_in_list = forms.BooleanField(required=False, initial=True)
     additional_info_required = forms.BooleanField(required=False, initial=False)
+    additional_info_label = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "maxlength": "100"}),
+    )
     relay_enabled = forms.BooleanField(required=False)
     relay_max_members = forms.IntegerField(
         required=False,

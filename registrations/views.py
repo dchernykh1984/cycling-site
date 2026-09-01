@@ -694,7 +694,7 @@ class ExportParticipantsCSVView(LoginRequiredMixin, View):
                 "City/Cities",
                 "Category",
                 "Team",
-                "Additional info",
+                competition.additional_info_field_label,
                 "Approved",
                 "Paid",
                 "Rejected",
