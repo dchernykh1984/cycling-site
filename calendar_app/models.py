@@ -194,6 +194,11 @@ class Competition(index.Indexed, models.Model):
     # Whether filling the additional-info field is mandatory at registration. Only meaningful
     # when the field is shown (mode != none); existing competitions default to optional.
     additional_info_required = models.BooleanField(default=False)
+    # What the additional-info field is called on the registration form and in the participant
+    # list. Organizers collect very different things in it -- a bike type, a transfer preference,
+    # a shirt size -- and "Additional info" tells the rider none of that. One string rather than
+    # three: the organizer writes the wording they use with their own riders.
+    additional_info_label = models.CharField(max_length=100, blank=True)
 
     relay_enabled = models.BooleanField(default=False)
     relay_max_members = models.PositiveIntegerField(default=10)
@@ -347,6 +352,19 @@ class Competition(index.Indexed, models.Model):
     def show_additional_info_field(self) -> bool:
         """Whether the registration form shows the additional-info field at all."""
         return self.additional_info_mode != self.AdditionalInfoMode.NONE
+
+    @property
+    def additional_info_field_label(self) -> str:
+        """What to call the additional-info field, in the reader's language when we chose it.
+
+        The organizer's own wording wins when there is one; otherwise the built-in name, which
+        depends on what the field collects.
+        """
+        from django.utils.translation import gettext
+
+        if self.additional_info_label.strip():
+            return self.additional_info_label.strip()
+        return gettext("Strava link") if self.additional_info_is_strava else gettext("Additional info")
 
     @property
     def additional_info_is_strava(self) -> bool:

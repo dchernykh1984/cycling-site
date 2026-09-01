@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 21:58+0500\n"
+"POT-Creation-Date: 2026-09-01 20:18+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -150,7 +150,7 @@ msgstr "Болдырмау"
 
 #: accounts/templates/accounts/profile.html:4
 #: accounts/templates/accounts/profile.html:9
-#: cycling_site/templates/base.html:126
+#: cycling_site/templates/base.html:127
 msgid "Profile"
 msgstr "Профиль"
 
@@ -168,7 +168,7 @@ msgid "Role"
 msgstr "Рол"
 
 #: accounts/templates/accounts/profile.html:57
-#: calendar_app/templates/calendar_app/_registration_fields.html:251
+#: calendar_app/templates/calendar_app/_registration_fields.html:264
 #: calendar_app/templates/calendar_app/moderate.html:138
 #: locations/templates/locations/locations_map_page.html:76
 #: registrations/templates/registrations/_participant_row.html:4
@@ -220,9 +220,8 @@ msgid "City"
 msgstr "Қала"
 
 #: accounts/templates/accounts/profile.html:72
-#: accounts/templates/accounts/profile_edit.html:61
+#: accounts/templates/accounts/profile_edit.html:61 calendar_app/models.py:367
 #: calendar_app/templates/calendar_app/_registration_fields.html:104
-#: registrations/forms.py:42 registrations/forms.py:130
 #: registrations/tests.py:582
 msgid "Strava link"
 msgstr "Strava сілтемесі"
@@ -510,7 +509,7 @@ msgid "API docs (Swagger)"
 msgstr "API кужаттамасы (Swagger)"
 
 #: accounts/templates/accounts/profile.html:383
-#: cycling_site/templates/base.html:137
+#: cycling_site/templates/base.html:138
 msgid "Log out"
 msgstr "Шыгу"
 
@@ -683,39 +682,39 @@ msgstr "Аяқталу күні басталу күнінен бұрын бол�
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:203 calendar_app/views.py:1003
-#: calendar_app/views.py:1207
+#: calendar_app/forms.py:203 calendar_app/views.py:1020
+#: calendar_app/views.py:1225
 msgid "This location is not available."
 msgstr "Бұл локация қолжетімді емес."
 
-#: calendar_app/forms.py:272 calendar_app/tests.py:1302
+#: calendar_app/forms.py:277 calendar_app/tests.py:1302
 #, python-format
 msgid "Category name is too long: at most %(limit_value)d characters."
 msgstr "Санат атауы тым ұзын: ең көбі %(limit_value)d таңба."
 
-#: calendar_app/forms.py:288
+#: calendar_app/forms.py:293
 msgctxt "photo or video material"
 msgid "Name"
 msgstr "Атауы"
 
-#: calendar_app/forms.py:304 calendar_app/forms.py:315
+#: calendar_app/forms.py:309 calendar_app/forms.py:320
 msgid "Link"
 msgstr "Сілтеме"
 
-#: calendar_app/forms.py:306
+#: calendar_app/forms.py:311
 msgid "Give this material a name."
 msgstr "Бұл материалдың атауын жазыңыз."
 
-#: calendar_app/forms.py:307
+#: calendar_app/forms.py:312
 msgid "Add a link to this material."
 msgstr "Бұл материалға сілтеме қосыңыз."
 
-#: calendar_app/forms.py:351 calendar_app/tests.py:1639 knowledge/forms.py:44
+#: calendar_app/forms.py:356 calendar_app/tests.py:1639 knowledge/forms.py:44
 #: knowledge/tests.py:910 news/forms.py:113 news/forms.py:126 news/tests.py:692
 msgid "Write a comment..."
 msgstr "Пікір жазыңыз..."
 
-#: calendar_app/forms.py:378
+#: calendar_app/forms.py:383
 msgid "Optional: what looks wrong?"
 msgstr "Міндетті емес: не дұрыс емес?"
 
@@ -747,16 +746,21 @@ msgid "Dates, start points and results on the Universal Bicycle Team calendar."
 msgstr ""
 "Күндер, старт нүктелері және нәтижелер Universal Bicycle Team күнтізбесінде."
 
-#: calendar_app/models.py:258
+#: calendar_app/models.py:263
 #, python-format
 msgid "Disciplines: %(kinds)s."
 msgstr "Пәндер: %(kinds)s."
 
-#: calendar_app/models.py:259
+#: calendar_app/models.py:264
 msgid ""
 "Details, start point and results on the Universal Bicycle Team calendar."
 msgstr ""
 "Толығырақ, старт нүктесі және нәтижелер Universal Bicycle Team күнтізбесінде."
+
+#: calendar_app/models.py:367
+#: calendar_app/templates/calendar_app/_registration_fields.html:112
+msgid "Additional info"
+msgstr "Қосымша ақпарат"
 
 #: calendar_app/templates/calendar_app/_direction_filter.html:11
 #: calendar_app/templates/calendar_app/_disciplines_field.html:18
@@ -907,79 +911,91 @@ msgstr "Көрсетілмесін"
 msgid "Free-form input"
 msgstr "Еркін енгізу"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:110
+#: calendar_app/templates/calendar_app/_registration_fields.html:108
+msgid "What to call this field"
+msgstr "Бұл өрісті қалай атау керек"
+
+#: calendar_app/templates/calendar_app/_registration_fields.html:118
+msgid ""
+"Shown to riders in place of the default name -- for example: Bike type, or "
+"Transfer preference. Leave empty to keep the default."
+msgstr ""
+"Қатысушыларға әдепкі атаудың орнына көрсетіледі — мысалы: Велосипед түрі "
+"немесе Трансфер бойынша қалау. Әдепкі атауды сақтау үшін бос қалдырыңыз."
+
+#: calendar_app/templates/calendar_app/_registration_fields.html:123
 msgid "Show this info in the participant list"
 msgstr "Бұл ақпаратты тіркелгендер тізімінде көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:115
+#: calendar_app/templates/calendar_app/_registration_fields.html:128
 msgid "Require this field at registration"
 msgstr "Тіркелу кезінде бұл өрісті міндетті ету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:124
+#: calendar_app/templates/calendar_app/_registration_fields.html:137
 msgid "Allow relay / team registration"
 msgstr "Эстафета / командық тіркелуге рұқсат"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:128
+#: calendar_app/templates/calendar_app/_registration_fields.html:141
 msgid "Max members per team"
 msgstr "Командадағы макс. қатысушы"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:148
+#: calendar_app/templates/calendar_app/_registration_fields.html:161
 msgid "Display settings"
 msgstr "Көрсету баптаулары"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:163
+#: calendar_app/templates/calendar_app/_registration_fields.html:176
 msgid "Show unapproved in list"
 msgstr "Расталмағандарды тізімде көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:170
+#: calendar_app/templates/calendar_app/_registration_fields.html:183
 msgid "Show unpaid in list"
 msgstr "Төлем жасамағандарды тізімде көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:177
+#: calendar_app/templates/calendar_app/_registration_fields.html:190
 msgid "Show approval column"
 msgstr "Растау бағанын көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:184
+#: calendar_app/templates/calendar_app/_registration_fields.html:197
 msgid "Show payment column"
 msgstr "Төлем бағанын көрсету"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:224
+#: calendar_app/templates/calendar_app/_registration_fields.html:237
 msgid "Categories"
 msgstr "Санаттар"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:226
+#: calendar_app/templates/calendar_app/_registration_fields.html:239
 msgid "Add category"
 msgstr "Санат қосу"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:260
+#: calendar_app/templates/calendar_app/_registration_fields.html:273
 msgid "From year"
 msgstr "Жылдан бастап"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:260
+#: calendar_app/templates/calendar_app/_registration_fields.html:273
 msgid "From date"
 msgstr "Күнінен бастап"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:263
+#: calendar_app/templates/calendar_app/_registration_fields.html:276
 msgid "To year"
 msgstr "Жылға дейін"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:263
+#: calendar_app/templates/calendar_app/_registration_fields.html:276
 msgid "To date"
 msgstr "Күніне дейін"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:268
+#: calendar_app/templates/calendar_app/_registration_fields.html:281
 msgid "Laps"
 msgstr "Айналым"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:270
+#: calendar_app/templates/calendar_app/_registration_fields.html:283
 msgid "Bib from"
 msgstr "Нөмір бастап"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:272
+#: calendar_app/templates/calendar_app/_registration_fields.html:285
 msgid "Bib to"
 msgstr "Нөмір дейін"
 
-#: calendar_app/templates/calendar_app/_registration_fields.html:274
+#: calendar_app/templates/calendar_app/_registration_fields.html:287
 msgid "Max participants"
 msgstr "Қатысушылар саны"
 
@@ -994,7 +1010,7 @@ msgstr "Көрініс"
 #: calendar_app/templates/calendar_app/list.html:7
 #: calendar_app/templates/calendar_app/map.html:4
 #: calendar_app/templates/calendar_app/map.html:16
-#: cycling_site/templates/base.html:78
+#: cycling_site/templates/base.html:79
 msgid "Calendar"
 msgstr "Кунтiзбе"
 
@@ -1004,7 +1020,7 @@ msgstr "Тізім"
 
 #: calendar_app/templates/calendar_app/_view_switcher.html:17
 #: cycling_site/templates/_map_layers.html:22
-#: cycling_site/templates/base.html:83
+#: cycling_site/templates/base.html:84
 #: locations/templates/locations/location_form.html:13
 #: locations/templates/locations/locations_map_page.html:4
 #: locations/templates/locations/locations_map_page.html:14
@@ -1208,7 +1224,7 @@ msgstr "Хабарлама"
 #: calendar_app/templates/calendar_app/detail.html:172
 #: calendar_app/templates/calendar_app/detail.html:205
 #: calendar_app/templates/calendar_app/list.html:192
-#: cycling_site/templates/base.html:144
+#: cycling_site/templates/base.html:145
 #: registrations/templates/registrations/register.html:4
 #: registrations/templates/registrations/register.html:13
 #: registrations/templates/registrations/register.html:207
@@ -1413,7 +1429,7 @@ msgid "Submit comment"
 msgstr "Пікірді жіберу"
 
 #: calendar_app/templates/calendar_app/detail.html:383
-#: cycling_site/templates/base.html:143
+#: cycling_site/templates/base.html:144
 #: knowledge/templates/knowledge/knowledge_article_detail.html:100
 #: news/templates/news/article_detail.html:105
 #: news/templates/news/news_page.html:111
@@ -1542,7 +1558,6 @@ msgstr "Жасырылған"
 
 #: calendar_app/templates/calendar_app/list.html:188
 #: registrations/templates/registrations/_participant_row.html:9
-#: registrations/templates/registrations/_participant_table_head.html:10
 msgid "Info"
 msgstr "Ақпарат"
 
@@ -1612,63 +1627,63 @@ msgstr "Жіберу"
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."
 
-#: calendar_app/views.py:734
+#: calendar_app/views.py:750
 msgid "N"
 msgstr "с.е."
 
-#: calendar_app/views.py:734
+#: calendar_app/views.py:750
 msgid "S"
 msgstr "о.е."
 
-#: calendar_app/views.py:735
+#: calendar_app/views.py:751
 msgid "E"
 msgstr "ш.б."
 
-#: calendar_app/views.py:735
+#: calendar_app/views.py:751
 msgid "W"
 msgstr "б.б."
 
-#: calendar_app/views.py:1324
+#: calendar_app/views.py:1342
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
 msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/views.py:1336
+#: calendar_app/views.py:1354
 msgid "Please provide a reason for rejection."
 msgstr "Қабылданбау себебін көрсетіңіз."
 
-#: calendar_app/views.py:1364 calendar_app/views.py:1384 knowledge/views.py:164
+#: calendar_app/views.py:1382 calendar_app/views.py:1402 knowledge/views.py:164
 #: news/views.py:244
 msgid "Invalid submission."
 msgstr "Жарамсыз жіберу."
 
-#: calendar_app/views.py:1402
+#: calendar_app/views.py:1420
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Сіз бұл іс-шараға шағым жасап қойдыңыз; модератор оны тексереді."
 
-#: calendar_app/views.py:1404
+#: calendar_app/views.py:1422
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Рахмет. Сіздің шағымыңыз модераторларға жіберілді."
 
-#: calendar_app/views.py:1423
+#: calendar_app/views.py:1441
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Шағым алынып тасталды; іс-шара модерация кезегінен шығарылды."
 
-#: calendar_app/views.py:1487
+#: calendar_app/views.py:1505
 msgid "Only a rejected competition can be resubmitted."
 msgstr "Тек қабылданбаған жарысты қайта жіберуге болады."
 
-#: calendar_app/views.py:1489
+#: calendar_app/views.py:1507
 msgid "Your competition was sent for review again."
 msgstr "Жарыс қайта қарауға жіберілді."
 
-#: calendar_app/views.py:1512
+#: calendar_app/views.py:1530
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Хронометраж токені қайта жасалды. Бұрынғы токен енді жұмыс істемейді."
 
-#: calendar_app/views.py:1523
+#: calendar_app/views.py:1541
 msgid ""
 "Timing token deleted. Timing tools can no longer access this competition."
 msgstr ""
@@ -1771,51 +1786,51 @@ msgstr ""
 "хаттамалар және білім қоры."
 
 #: cycling_site/templates/base.html:43 cycling_site/templates/base.html:44
-#: cycling_site/templates/base.html:75
+#: cycling_site/templates/base.html:76
 #: news/templates/news/article_detail.html:16
 #: news/templates/news/news_list.html:4 news/templates/news/news_list.html:9
 #: search/templates/search/search.html:51
 msgid "News"
 msgstr "Жаналыктар"
 
-#: cycling_site/templates/base.html:66
+#: cycling_site/templates/base.html:67
 msgid "Cycling"
 msgstr "Велоспорт"
 
-#: cycling_site/templates/base.html:69
+#: cycling_site/templates/base.html:70
 msgid "Toggle navigation"
 msgstr "Мәзір"
 
-#: cycling_site/templates/base.html:88
+#: cycling_site/templates/base.html:89
 msgid "Knowledge Base"
 msgstr "Бiлiм кiтапханасы"
 
-#: cycling_site/templates/base.html:93
+#: cycling_site/templates/base.html:94
 msgid "About"
 msgstr "Бiз туралы"
 
-#: cycling_site/templates/base.html:97 search/templates/search/search.html:4
+#: cycling_site/templates/base.html:98 search/templates/search/search.html:4
 #: search/templates/search/search.html:9 search/templates/search/search.html:16
 msgid "Search"
 msgstr "Iздеу"
 
-#: cycling_site/templates/base.html:102
+#: cycling_site/templates/base.html:103
 msgid "Switch theme"
 msgstr "Такырыпты ауыстыру"
 
-#: cycling_site/templates/base.html:130
+#: cycling_site/templates/base.html:131
 msgid "Admin"
 msgstr "Акiмшi"
 
-#: cycling_site/templates/base.html:157
+#: cycling_site/templates/base.html:158
 msgid "Close"
 msgstr "Жабу"
 
-#: cycling_site/templates/base.html:167
+#: cycling_site/templates/base.html:168
 msgid "Cycling events"
 msgstr "Велоспорт жарыстары"
 
-#: cycling_site/templates/base.html:170
+#: cycling_site/templates/base.html:171
 #, python-format
 msgid ""
 "Found a bug or have a suggestion? <a href=\"%(url)s\" target=\"_blank\" "
@@ -1824,12 +1839,12 @@ msgstr ""
 "Қате таптыңыз ба немесе ұсыныс бар ма? <a href=\"%(url)s\" target=\"_blank\" "
 "rel=\"noopener\">GitHub-та тапсырма жасаңыз</a>."
 
-#: cycling_site/templates/base.html:173 home/templates/home/privacy_page.html:4
+#: cycling_site/templates/base.html:174 home/templates/home/privacy_page.html:4
 #: home/templates/home/privacy_page.html:9
 msgid "Privacy Policy"
 msgstr "Құпиялылық саясаты"
 
-#: cycling_site/templates/base.html:174 home/templates/home/terms_page.html:4
+#: cycling_site/templates/base.html:175 home/templates/home/terms_page.html:4
 #: home/templates/home/terms_page.html:9
 msgid "Terms of Use"
 msgstr "Пайдалану шарттары"
@@ -2686,10 +2701,6 @@ msgstr "Толық экран"
 #: protocols/templates/protocols/detail.html:104
 msgid "Update history"
 msgstr "Жаңарту тарихы"
-
-#: registrations/forms.py:42 registrations/forms.py:130
-msgid "Additional info"
-msgstr "Қосымша ақпарат"
 
 #: registrations/templates/registrations/_participant_row.html:6
 #: registrations/templates/registrations/_participant_table_head.html:7
