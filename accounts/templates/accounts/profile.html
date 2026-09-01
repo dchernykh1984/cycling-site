@@ -52,7 +52,6 @@
         <div class="card mb-4">
             <div class="card-body">
                 <p class="mb-1"><strong>{% trans "Email" %}:</strong> {{ user.email }}</p>
-                <p class="mb-1"><strong>{% trans "Role" %}:</strong> {{ user.get_role_display }}</p>
                 {% if user.first_name or user.last_name %}
                 <p class="mb-1"><strong>{% trans "Name" %}:</strong> {{ user.first_name }} {{ user.last_name }}</p>
                 {% endif %}
@@ -147,6 +146,34 @@
                     {% endfor %}
                 </div>
             </div>
+        </div>
+
+        {% comment %}
+        The whole ladder, not just the rung the reader is on: "Role: Participant" says nothing
+        about what else exists, what it would allow, or that stepping down is possible at all.
+        {% endcomment %}
+        <div class="card mb-4" id="role">
+            <div class="card-header">{% trans "Role" %}</div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    {% for role in roles %}
+                    <li class="mb-1">
+                        {% if role.is_current %}
+                        <strong>{{ role.label }}</strong>
+                        <span class="badge bg-secondary ms-1">{% trans "your role" %}</span>
+                        {% else %}
+                        <span class="text-muted">{{ role.label }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% if user.get_role_rank >= 1 %}
+            <div class="card-footer">
+                <a href="{% url 'account_request_role' %}" class="btn btn-sm btn-outline-primary">{% trans "Request a role" %}</a>
+                <span class="small text-muted ms-2">{% trans "Including a lower one." %}</span>
+            </div>
+            {% endif %}
         </div>
 
         {% if user.get_role_rank >= 1 %}

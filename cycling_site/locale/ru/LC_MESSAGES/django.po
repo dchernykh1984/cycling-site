@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-01 20:23+0500\n"
+"POT-Creation-Date: 2026-09-01 20:30+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -57,7 +57,7 @@ msgid "Sign up using a passkey"
 msgstr "Зарегистрироваться с помощью ключа доступа"
 
 #: accounts/templates/accounts/_preference_pickers.html:12
-#: accounts/templates/accounts/profile.html:77
+#: accounts/templates/accounts/profile.html:76
 msgid "Preferred directions and disciplines"
 msgstr "Предпочитаемые направления и дисциплины"
 
@@ -87,7 +87,7 @@ msgid "Prefilled into the calendar filter when you open it."
 msgstr "Подставляется в фильтр календаря при открытии."
 
 #: accounts/templates/accounts/_preference_pickers.html:39
-#: accounts/templates/accounts/profile.html:83
+#: accounts/templates/accounts/profile.html:82
 msgid "Preferred locations"
 msgstr "Предпочитаемые локации"
 
@@ -111,9 +111,9 @@ msgstr "Поиск..."
 # issue #122 - contact site owners
 #: accounts/templates/accounts/contact_owners.html:4
 #: accounts/templates/accounts/contact_owners.html:9
-#: accounts/templates/accounts/profile.html:155
-#: accounts/templates/accounts/profile.html:163
-#: accounts/templates/accounts/profile.html:164 accounts/tests.py:1432
+#: accounts/templates/accounts/profile.html:183
+#: accounts/templates/accounts/profile.html:191
+#: accounts/templates/accounts/profile.html:192 accounts/tests.py:1432
 msgid "Contact site owners"
 msgstr "Связь с владельцами сайта"
 
@@ -131,6 +131,7 @@ msgstr "Отправить сообщение"
 
 #: accounts/templates/accounts/contact_owners.html:33
 #: accounts/templates/accounts/profile_edit.html:72
+#: accounts/templates/accounts/request_role.html:38
 #: calendar_app/templates/calendar_app/edit.html:225
 #: calendar_app/templates/calendar_app/submit.html:162
 #: home/templates/home/home_edit.html:117
@@ -163,11 +164,7 @@ msgstr "Отправить письмо ещё раз"
 msgid "Email"
 msgstr "Email"
 
-#: accounts/templates/accounts/profile.html:55
-msgid "Role"
-msgstr "Роль"
-
-#: accounts/templates/accounts/profile.html:57
+#: accounts/templates/accounts/profile.html:56
 #: calendar_app/templates/calendar_app/_registration_fields.html:264
 #: calendar_app/templates/calendar_app/moderate.html:138
 #: locations/templates/locations/locations_map_page.html:76
@@ -176,7 +173,7 @@ msgstr "Роль"
 msgid "Name"
 msgstr "Имя"
 
-#: accounts/templates/accounts/profile.html:60
+#: accounts/templates/accounts/profile.html:59
 #: accounts/templates/accounts/profile_edit.html:25
 #: registrations/templates/registrations/_participant_row.html:5
 #: registrations/templates/registrations/_participant_table_head.html:6
@@ -184,13 +181,13 @@ msgstr "Имя"
 msgid "Gender"
 msgstr "Пол"
 
-#: accounts/templates/accounts/profile.html:63
+#: accounts/templates/accounts/profile.html:62
 #: accounts/templates/accounts/profile_edit.html:41
 #: registrations/templates/registrations/register.html:148
 msgid "Date of birth"
 msgstr "Дата рождения"
 
-#: accounts/templates/accounts/profile.html:66
+#: accounts/templates/accounts/profile.html:65
 #: accounts/templates/accounts/profile_edit.html:47
 #: registrations/templates/registrations/_participant_row.html:7
 #: registrations/templates/registrations/_participant_table_head.html:8
@@ -198,7 +195,7 @@ msgstr "Дата рождения"
 msgid "Team"
 msgstr "Команда"
 
-#: accounts/templates/accounts/profile.html:69
+#: accounts/templates/accounts/profile.html:68
 #: accounts/templates/accounts/profile_edit.html:54
 #: calendar_app/templates/calendar_app/_location_cascade.html:21
 #: calendar_app/templates/calendar_app/_location_filter.html:29
@@ -219,14 +216,14 @@ msgstr "Команда"
 msgid "City"
 msgstr "Город"
 
-#: accounts/templates/accounts/profile.html:72
+#: accounts/templates/accounts/profile.html:71
 #: accounts/templates/accounts/profile_edit.html:61 calendar_app/models.py:367
 #: calendar_app/templates/calendar_app/_registration_fields.html:104
 #: registrations/tests.py:582
 msgid "Strava link"
 msgstr "Ссылка на Strava"
 
-#: accounts/templates/accounts/profile.html:89
+#: accounts/templates/accounts/profile.html:88
 #: accounts/templates/accounts/profile_edit.html:4
 #: accounts/templates/accounts/profile_edit.html:9
 #: registrations/templates/registrations/register.html:28
@@ -234,11 +231,11 @@ msgstr "Ссылка на Strava"
 msgid "Edit profile"
 msgstr "Редактировать профиль"
 
-#: accounts/templates/accounts/profile.html:99
+#: accounts/templates/accounts/profile.html:98
 msgid "Sign-in methods"
 msgstr "Способы входа"
 
-#: accounts/templates/accounts/profile.html:102
+#: accounts/templates/accounts/profile.html:101
 msgid ""
 "You can use any of these to sign in to this account. Connect several so that "
 "losing one does not lock you out."
@@ -246,85 +243,103 @@ msgstr ""
 "Любым из них можно войти в этот аккаунт. Подключите несколько, чтобы потеря "
 "одного не закрыла вам доступ."
 
-#: accounts/templates/accounts/profile.html:107
+#: accounts/templates/accounts/profile.html:106
 msgid "Email and password"
 msgstr "Email и пароль"
 
-#: accounts/templates/accounts/profile.html:110
+#: accounts/templates/accounts/profile.html:109
 msgid "No email address, so signing in with a password is not possible yet."
 msgstr ""
 "Адрес электронной почты не указан, поэтому вход по паролю пока невозможен."
 
-#: accounts/templates/accounts/profile.html:113
+#: accounts/templates/accounts/profile.html:112
 msgid "Password not set."
 msgstr "Пароль не задан."
 
-#: accounts/templates/accounts/profile.html:115
+#: accounts/templates/accounts/profile.html:114
 msgid "Ready to use."
 msgstr "Готово к использованию."
 
-#: accounts/templates/accounts/profile.html:119
+#: accounts/templates/accounts/profile.html:118
 #, fuzzy
 #| msgid "Add article"
 msgid "Add email"
 msgstr "Добавить статью"
 
-#: accounts/templates/accounts/profile.html:121
+#: accounts/templates/accounts/profile.html:120
 msgid "Set password"
 msgstr "Задать пароль"
 
-#: accounts/templates/accounts/profile.html:123
+#: accounts/templates/accounts/profile.html:122
 #, fuzzy
 #| msgid "Save changes"
 msgid "Change password"
 msgstr "Сохранить изменения"
 
-#: accounts/templates/accounts/profile.html:132
+#: accounts/templates/accounts/profile.html:131
 msgid "Connected."
 msgstr "Подключено."
 
-#: accounts/templates/accounts/profile.html:134
+#: accounts/templates/accounts/profile.html:133
 msgid "Not connected."
 msgstr "Не подключено."
 
-#: accounts/templates/accounts/profile.html:139
-#: accounts/templates/accounts/profile.html:142
+#: accounts/templates/accounts/profile.html:138
+#: accounts/templates/accounts/profile.html:141
 #, fuzzy
 #| msgid "Discipline"
 msgid "Disconnect"
 msgstr "Дисциплина"
 
-#: accounts/templates/accounts/profile.html:142
+#: accounts/templates/accounts/profile.html:141
 msgid "This is your only way to sign in. Add another one first."
 msgstr "Это ваш единственный способ входа. Сначала добавьте другой."
 
-#: accounts/templates/accounts/profile.html:145
+#: accounts/templates/accounts/profile.html:144
 msgid "Connect"
 msgstr "Подключить"
 
-#: accounts/templates/accounts/profile.html:157
+#: accounts/templates/accounts/profile.html:158 accounts/views.py:273
+msgid "Role"
+msgstr "Роль"
+
+#: accounts/templates/accounts/profile.html:165
+msgid "your role"
+msgstr "ваша роль"
+
+#: accounts/templates/accounts/profile.html:175
+#: accounts/templates/accounts/request_role.html:4
+#: accounts/templates/accounts/request_role.html:9
+msgid "Request a role"
+msgstr "Запросить роль"
+
+#: accounts/templates/accounts/profile.html:176
+msgid "Including a lower one."
+msgstr "В том числе более низкую."
+
+#: accounts/templates/accounts/profile.html:185
 msgid ""
 "Have a question or a request? Send a message to the people who run the site."
 msgstr "Есть вопрос или просьба? Напишите тем, кто управляет сайтом."
 
-#: accounts/templates/accounts/profile.html:200
+#: accounts/templates/accounts/profile.html:228
 msgid "Appearance"
 msgstr "Внешний вид"
 
-#: accounts/templates/accounts/profile.html:202
+#: accounts/templates/accounts/profile.html:230
 msgid "Theme"
 msgstr "Тема"
 
-#: accounts/templates/accounts/profile.html:210
+#: accounts/templates/accounts/profile.html:238
 msgid "My registrations"
 msgstr "Мои регистрации"
 
-#: accounts/templates/accounts/profile.html:216
-#: accounts/templates/accounts/profile.html:264
+#: accounts/templates/accounts/profile.html:244
+#: accounts/templates/accounts/profile.html:292
 msgid "Competition"
 msgstr "Соревнование"
 
-#: accounts/templates/accounts/profile.html:217 knowledge/models.py:266
+#: accounts/templates/accounts/profile.html:245 knowledge/models.py:266
 #: knowledge/templates/knowledge/add_article.html:30
 #: knowledge/templates/knowledge/edit_article.html:29
 #: knowledge/templates/knowledge/submission_detail.html:31
@@ -333,65 +348,65 @@ msgstr "Соревнование"
 msgid "Category"
 msgstr "Категория"
 
-#: accounts/templates/accounts/profile.html:218
-#: accounts/templates/accounts/profile.html:265
-#: accounts/templates/accounts/profile.html:325
+#: accounts/templates/accounts/profile.html:246
+#: accounts/templates/accounts/profile.html:293
+#: accounts/templates/accounts/profile.html:353
 msgid "Date"
 msgstr "Дата"
 
-#: accounts/templates/accounts/profile.html:219
-#: accounts/templates/accounts/profile.html:266
-#: accounts/templates/accounts/profile.html:326
+#: accounts/templates/accounts/profile.html:247
+#: accounts/templates/accounts/profile.html:294
+#: accounts/templates/accounts/profile.html:354
 #: locations/templates/locations/locations_map_page.html:77
 msgid "Status"
 msgstr "Статус"
 
-#: accounts/templates/accounts/profile.html:230
-#: accounts/templates/accounts/profile.html:277
+#: accounts/templates/accounts/profile.html:258
+#: accounts/templates/accounts/profile.html:305
 #: registrations/templates/registrations/_participant_row.html:17
 #: registrations/templates/registrations/_participant_table_head.html:13
 msgid "Rejected"
 msgstr "Отклонено"
 
-#: accounts/templates/accounts/profile.html:236
-#: accounts/templates/accounts/profile.html:282
+#: accounts/templates/accounts/profile.html:264
+#: accounts/templates/accounts/profile.html:310
 #: registrations/templates/registrations/_participant_row.html:11
 #: registrations/templates/registrations/_participant_table_head.html:11
 msgid "Approved"
 msgstr "Одобрено"
 
-#: accounts/templates/accounts/profile.html:238
-#: accounts/templates/accounts/profile.html:284
+#: accounts/templates/accounts/profile.html:266
+#: accounts/templates/accounts/profile.html:312
 #: news/templates/news/news_page.html:75
 msgid "Pending"
 msgstr "На рассмотрении"
 
-#: accounts/templates/accounts/profile.html:242
+#: accounts/templates/accounts/profile.html:270
 #: registrations/templates/registrations/_participant_row.html:14
 #: registrations/templates/registrations/_participant_table_head.html:12
 msgid "Paid"
 msgstr "Оплачено"
 
-#: accounts/templates/accounts/profile.html:244
+#: accounts/templates/accounts/profile.html:272
 msgid "Not paid"
 msgstr "Не оплачено"
 
-#: accounts/templates/accounts/profile.html:255
+#: accounts/templates/accounts/profile.html:283
 msgid "No registrations yet."
 msgstr "Регистраций пока нет."
 
 # Pending/rejected competitions + profile (issue #180)
-#: accounts/templates/accounts/profile.html:258
+#: accounts/templates/accounts/profile.html:286
 msgid "Events I submitted"
 msgstr "Добавленные мной события"
 
-#: accounts/templates/accounts/profile.html:267
+#: accounts/templates/accounts/profile.html:295
 #: locations/templates/locations/locations_map_page.html:78
 #: registrations/templates/registrations/_participant_table_head.html:13
 msgid "Actions"
 msgstr "Действия"
 
-#: accounts/templates/accounts/profile.html:289
+#: accounts/templates/accounts/profile.html:317
 #: calendar_app/templates/calendar_app/edit.html:14
 #: calendar_app/templates/calendar_app/moderate.html:111
 #: locations/templates/locations/locations_map_page.html:90
@@ -402,15 +417,15 @@ msgid "Edit"
 msgstr "Редактировать"
 
 # Reject -> edit -> resubmit flow (#200)
-#: accounts/templates/accounts/profile.html:293
+#: accounts/templates/accounts/profile.html:321
 msgid "Resubmit"
 msgstr "Переподать"
 
-#: accounts/templates/accounts/profile.html:297
+#: accounts/templates/accounts/profile.html:325
 msgid "Delete this competition?"
 msgstr "Удалить это соревнование?"
 
-#: accounts/templates/accounts/profile.html:299
+#: accounts/templates/accounts/profile.html:327
 #: calendar_app/templates/calendar_app/detail.html:340
 #: calendar_app/templates/calendar_app/detail.html:361
 #: knowledge/templates/knowledge/knowledge_article_detail.html:56
@@ -424,22 +439,22 @@ msgid "Delete"
 msgstr "Удалить"
 
 # Pending/rejected competitions + profile (issue #180)
-#: accounts/templates/accounts/profile.html:308
+#: accounts/templates/accounts/profile.html:336
 msgid "You have not submitted any events yet."
 msgstr "Вы пока не добавили ни одного события."
 
-#: accounts/templates/accounts/profile.html:311
+#: accounts/templates/accounts/profile.html:339
 msgid "My submissions"
 msgstr "Мои материалы"
 
-#: accounts/templates/accounts/profile.html:314
+#: accounts/templates/accounts/profile.html:342
 #: knowledge/templates/knowledge/knowledge_index_page.html:21
 #: knowledge/templates/knowledge/submit.html:4
 #: knowledge/templates/knowledge/submit.html:9
 msgid "Submit article"
 msgstr "Отправить статью"
 
-#: accounts/templates/accounts/profile.html:322
+#: accounts/templates/accounts/profile.html:350
 #: calendar_app/templates/calendar_app/edit.html:37
 #: calendar_app/templates/calendar_app/edit.html:50
 #: calendar_app/templates/calendar_app/edit.html:63
@@ -455,26 +470,26 @@ msgstr "Отправить статью"
 msgid "Title"
 msgstr "Заголовок"
 
-#: accounts/templates/accounts/profile.html:323
+#: accounts/templates/accounts/profile.html:351
 #: calendar_app/templates/calendar_app/detail.html:54
 #: calendar_app/templates/calendar_app/list.html:151
 #: calendar_app/templates/calendar_app/list.html:177
 msgid "Type"
 msgstr "Тип"
 
-#: accounts/templates/accounts/profile.html:324
+#: accounts/templates/accounts/profile.html:352
 msgid "Language"
 msgstr "Язык"
 
-#: accounts/templates/accounts/profile.html:354
+#: accounts/templates/accounts/profile.html:382
 msgid "No submissions yet."
 msgstr "Подано материалов пока нет."
 
-#: accounts/templates/accounts/profile.html:358
+#: accounts/templates/accounts/profile.html:386
 msgid "API access"
 msgstr "Доступ к API"
 
-#: accounts/templates/accounts/profile.html:361
+#: accounts/templates/accounts/profile.html:389
 msgid ""
 "Use this token to authenticate API requests: <code>Authorization: Bearer "
 "&lt;token&gt;</code>"
@@ -482,31 +497,31 @@ msgstr ""
 "Используйте этот токен для аутентификации API-запросов: <code>Authorization: "
 "Bearer &lt;token&gt;</code>"
 
-#: accounts/templates/accounts/profile.html:366
+#: accounts/templates/accounts/profile.html:394
 #: calendar_app/templates/calendar_app/detail.html:255
 msgid "Copy"
 msgstr "Копировать"
 
-#: accounts/templates/accounts/profile.html:369
+#: accounts/templates/accounts/profile.html:397
 #: calendar_app/templates/calendar_app/detail.html:281
 msgid "No token yet. Generate one below."
 msgstr "Токен ещё не создан. Сгенерируйте его ниже."
 
-#: accounts/templates/accounts/profile.html:374
+#: accounts/templates/accounts/profile.html:402
 #: calendar_app/templates/calendar_app/detail.html:260
 msgid "Regenerate token"
 msgstr "Пересоздать токен"
 
-#: accounts/templates/accounts/profile.html:374
+#: accounts/templates/accounts/profile.html:402
 #: calendar_app/templates/calendar_app/detail.html:284
 msgid "Generate token"
 msgstr "Создать токен"
 
-#: accounts/templates/accounts/profile.html:377
+#: accounts/templates/accounts/profile.html:405
 msgid "API docs (Swagger)"
 msgstr "Документация API (Swagger)"
 
-#: accounts/templates/accounts/profile.html:383
+#: accounts/templates/accounts/profile.html:411
 #: cycling_site/templates/base.html:138
 msgid "Log out"
 msgstr "Выйти"
@@ -556,15 +571,55 @@ msgstr "Настройки календаря по умолчанию"
 msgid "Save"
 msgstr "Сохранить"
 
-#: accounts/views.py:255
+#: accounts/templates/accounts/request_role.html:10
+msgid ""
+"Nothing changes automatically: your request goes to the people who run the "
+"site, and one of them decides."
+msgstr ""
+"Ничего не меняется автоматически: запрос уходит людям, которые ведут сайт, и "
+"решение принимает человек."
+
+#: accounts/templates/accounts/request_role.html:37
+msgid "Send request"
+msgstr "Отправить запрос"
+
+#: accounts/views.py:278
+msgid "Why you need it"
+msgstr "Зачем она вам"
+
+#: accounts/views.py:280
+msgid ""
+"Tell us what you plan to do with this role, and how to reach you if we have "
+"questions."
+msgstr ""
+"Расскажите, что вы планируете делать с этой ролью и как с вами связаться, "
+"если у нас появятся вопросы."
+
+#: accounts/views.py:318 accounts/views.py:398
+msgid "Please wait a few minutes before sending another message."
+msgstr ""
+"Пожалуйста, подождите несколько минут перед отправкой следующего сообщения."
+
+#: accounts/views.py:345 accounts/views.py:428
+msgid ""
+"Sorry, we could not send your message right now. Please try again later."
+msgstr ""
+"Извините, сейчас не получилось отправить ваше сообщение. Пожалуйста, "
+"попробуйте позже."
+
+#: accounts/views.py:347
+msgid "Your request has been sent. We will get back to you."
+msgstr "Запрос отправлен. Мы вернёмся к вам с ответом."
+
+#: accounts/views.py:354
 msgid "Subject"
 msgstr "Тема"
 
-#: accounts/views.py:260
+#: accounts/views.py:359
 msgid "Message"
 msgstr "Сообщение"
 
-#: accounts/views.py:262
+#: accounts/views.py:361
 msgid ""
 "Please tell us how to reach you (e.g. email or messenger) and describe your "
 "question or problem in detail."
@@ -572,19 +627,7 @@ msgstr ""
 "Пожалуйста, укажите, как с вами связаться (например, email или мессенджер), "
 "и подробно опишите ваш вопрос или проблему."
 
-#: accounts/views.py:299
-msgid "Please wait a few minutes before sending another message."
-msgstr ""
-"Пожалуйста, подождите несколько минут перед отправкой следующего сообщения."
-
-#: accounts/views.py:329
-msgid ""
-"Sorry, we could not send your message right now. Please try again later."
-msgstr ""
-"Извините, сейчас не получилось отправить ваше сообщение. Пожалуйста, "
-"попробуйте позже."
-
-#: accounts/views.py:331
+#: accounts/views.py:430
 msgid "Your message has been sent to the site owners."
 msgstr "Ваше сообщение отправлено владельцам сайта."
 
@@ -684,8 +727,8 @@ msgstr "Дата окончания не может быть раньше дат
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:203 calendar_app/views.py:1136
-#: calendar_app/views.py:1253
+#: calendar_app/forms.py:203 calendar_app/views.py:1138
+#: calendar_app/views.py:1255
 msgid "This location is not available."
 msgstr "Эта локация недоступна."
 
@@ -1658,7 +1701,7 @@ msgstr "в.д."
 msgid "W"
 msgstr "з.д."
 
-#: calendar_app/views.py:1370
+#: calendar_app/views.py:1372
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
@@ -1667,41 +1710,41 @@ msgstr ""
 "администратор."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/views.py:1382
+#: calendar_app/views.py:1384
 msgid "Please provide a reason for rejection."
 msgstr "Пожалуйста, укажите причину отказа."
 
-#: calendar_app/views.py:1410 calendar_app/views.py:1430 knowledge/views.py:164
+#: calendar_app/views.py:1412 calendar_app/views.py:1432 knowledge/views.py:164
 #: news/views.py:244
 msgid "Invalid submission."
 msgstr "Некорректная отправка."
 
-#: calendar_app/views.py:1448
+#: calendar_app/views.py:1450
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Вы уже пожаловались на это событие; модератор его проверит."
 
-#: calendar_app/views.py:1450
+#: calendar_app/views.py:1452
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Спасибо. Ваша жалоба отправлена модераторам."
 
-#: calendar_app/views.py:1469
+#: calendar_app/views.py:1471
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Жалоба снята; событие убрано из очереди модерации."
 
-#: calendar_app/views.py:1533
+#: calendar_app/views.py:1535
 msgid "Only a rejected competition can be resubmitted."
 msgstr ""
 "На повторное рассмотрение можно отправить только отклонённое соревнование."
 
-#: calendar_app/views.py:1535
+#: calendar_app/views.py:1537
 msgid "Your competition was sent for review again."
 msgstr "Соревнование отправлено на повторное рассмотрение."
 
-#: calendar_app/views.py:1558
+#: calendar_app/views.py:1560
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Токен хронометража пересоздан. Прежний токен больше не работает."
 
-#: calendar_app/views.py:1569
+#: calendar_app/views.py:1571
 msgid ""
 "Timing token deleted. Timing tools can no longer access this competition."
 msgstr ""
