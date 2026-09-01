@@ -116,3 +116,28 @@ class LabelOnThePageTests(TestCase):
         response = self.client.get(url)
         self.assertContains(response, "Bike type")
         self.assertNotContains(response, ">Info<")
+
+
+class LabelInTheExportTests(TestCase):
+    """The CSV is read by scripts as well as people, so its header does not follow the interface."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.organizer = User.objects.create_user(
+            username="export_organizer", email="e@example.com", password="Pass1234!", role=User.Role.ORGANIZER
+        )
+
+    def _header(self, competition):
+        self.client.force_login(self.organizer)
+        url = in_language(reverse("registrations:export_csv", args=[competition.pk]), "ru")
+        return self.client.get(url).content.decode("utf-8-sig").splitlines()[0]
+
+    def test_the_organizers_wording_reaches_the_file(self):
+        competition = _competition(submitted_by=self.organizer, additional_info_label="Bike type")
+        self.assertIn("Bike type", self._header(competition))
+
+    def test_without_one_the_header_stays_english_whatever_the_page_language(self):
+        competition = _competition(submitted_by=self.organizer)
+        header = self._header(competition)
+        self.assertIn("Additional info", header)
+        self.assertIn("First name", header)
