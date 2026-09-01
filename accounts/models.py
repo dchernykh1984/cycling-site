@@ -4,15 +4,18 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
 
 
 class User(AbstractUser):  # type: ignore[django-manager-missing]
     class Role(models.TextChoices):
-        GUEST = "guest", "Guest"
-        PARTICIPANT = "participant", "Participant"
-        ORGANIZER = "organizer", "Organizer"
-        ADMIN = "admin", "Admin"
-        OWNER = "owner", "Owner"
+        # Translated because the profile now names every role to the reader; the owner
+        # notifications force English back when they build their body.
+        GUEST = "guest", _("Guest")
+        PARTICIPANT = "participant", _("Participant")
+        ORGANIZER = "organizer", _("Organizer")
+        ADMIN = "admin", _("Admin")
+        OWNER = "owner", _("Owner")
 
     role = models.CharField(
         max_length=20,

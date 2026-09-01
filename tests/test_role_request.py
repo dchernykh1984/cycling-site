@@ -8,7 +8,7 @@ the request goes to the owners as mail -- nothing is granted automatically.
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from accounts.models import User
 from accounts.views import role_ladder
@@ -136,3 +136,29 @@ class RequestRoleTests(TestCase):
         self.user.refresh_from_db()
         self.assertIsNotNone(self.user.last_mail_action_at)
         self.assertGreaterEqual(self.user.last_mail_action_at, before)
+
+
+class RoleNamesAreTranslatedTests(TestCase):
+    """The profile names every role to the reader, so the names follow the reader's language --
+    while the owners' mail stays English whatever the sender was browsing in."""
+
+    def setUp(self):
+        self.user = _user("translator", role=User.Role.ORGANIZER)
+        self.client.force_login(self.user)
+
+    def test_the_ladder_speaks_the_pages_language(self):
+        from django.utils.translation import gettext
+
+        for locale in ("ru", "en"):
+            with self.subTest(locale=locale):
+                page = self.client.get(in_language(reverse("account_profile"), locale))
+                with translation.override(locale):
+                    self.assertContains(page, gettext("Organizer"))
+
+    def test_the_owner_mail_is_english_even_from_a_russian_page(self):
+        self.client.post(
+            in_language(reverse("account_request_role"), "ru"),
+            {"role": User.Role.ADMIN, "reason": "Because."},
+        )
+        self.assertIn("Requested role: Admin", mail.outbox[0].body)
+        self.assertIn("Current role: Organizer", mail.outbox[0].body)

@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-01 20:30+0500\n"
+"POT-Creation-Date: 2026-09-01 20:47+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -26,9 +26,25 @@ msgstr ""
 "Алдымен электрондық пошта мекенжайы мен құпиясөзді қосыңыз, әйтпесе кіретін "
 "тәсіліңіз қалмайды."
 
-#: accounts/models.py:106
+#: accounts/models.py:14
+msgid "Guest"
+msgstr "Қонақ"
+
+#: accounts/models.py:15 accounts/models.py:109
 msgid "Participant"
 msgstr "Қатысушы"
+
+#: accounts/models.py:16
+msgid "Organizer"
+msgstr "Ұйымдастырушы"
+
+#: accounts/models.py:17 cycling_site/templates/base.html:131
+msgid "Admin"
+msgstr "Әкімші"
+
+#: accounts/models.py:18
+msgid "Owner"
+msgstr "Иесі"
 
 #: accounts/templates/account/signup.html:4
 msgid "Signup"
@@ -300,7 +316,7 @@ msgstr "Бұл сіздің жалғыз кіру тәсіліңіз. Алдым
 msgid "Connect"
 msgstr "Қосу"
 
-#: accounts/templates/accounts/profile.html:158 accounts/views.py:273
+#: accounts/templates/accounts/profile.html:158 accounts/views.py:314
 msgid "Role"
 msgstr "Рол"
 
@@ -584,11 +600,22 @@ msgstr ""
 msgid "Send request"
 msgstr "Сұранысты жіберу"
 
-#: accounts/views.py:278
+#: accounts/views.py:283
+msgid "Please wait a few minutes before sending another message."
+msgstr "Келесі хабарламаны жіберер алдында бірнеше минут күте тұрыңыз."
+
+#: accounts/views.py:299
+msgid ""
+"Sorry, we could not send your message right now. Please try again later."
+msgstr ""
+"Кешіріңіз, қазір хабарламаңызды жіберу мүмкін болмады. Кейінірек қайталап "
+"көріңіз."
+
+#: accounts/views.py:319
 msgid "Why you need it"
 msgstr "Ол сізге не үшін қажет"
 
-#: accounts/views.py:280
+#: accounts/views.py:321
 msgid ""
 "Tell us what you plan to do with this role, and how to reach you if we have "
 "questions."
@@ -596,30 +623,19 @@ msgstr ""
 "Осы рөлмен не істеуді жоспарлап отырғаныңызды және сұрақтар туындаса сізбен "
 "қалай байланысуға болатынын жазыңыз."
 
-#: accounts/views.py:318 accounts/views.py:398
-msgid "Please wait a few minutes before sending another message."
-msgstr "Келесі хабарламаны жіберер алдында бірнеше минут күте тұрыңыз."
-
-#: accounts/views.py:345 accounts/views.py:428
-msgid ""
-"Sorry, we could not send your message right now. Please try again later."
-msgstr ""
-"Кешіріңіз, қазір хабарламаңызды жіберу мүмкін болмады. Кейінірек қайталап "
-"көріңіз."
-
-#: accounts/views.py:347
+#: accounts/views.py:370
 msgid "Your request has been sent. We will get back to you."
 msgstr "Сұраныс жіберілді. Біз сізге жауап береміз."
 
-#: accounts/views.py:354
+#: accounts/views.py:377
 msgid "Subject"
 msgstr "Тақырып"
 
-#: accounts/views.py:359
+#: accounts/views.py:382
 msgid "Message"
 msgstr "Хабарлама"
 
-#: accounts/views.py:361
+#: accounts/views.py:384
 msgid ""
 "Please tell us how to reach you (e.g. email or messenger) and describe your "
 "question or problem in detail."
@@ -627,7 +643,7 @@ msgstr ""
 "Өзіңізбен қалай байланысуға болатынын (мысалы, email немесе мессенджер) "
 "көрсетіп, сұрағыңыз бен мәселеңізді толық сипаттаңыз."
 
-#: accounts/views.py:430
+#: accounts/views.py:423
 msgid "Your message has been sent to the site owners."
 msgstr "Хабарламаңыз сайт иелеріне жіберілді."
 
@@ -725,8 +741,8 @@ msgstr "Аяқталу күні басталу күнінен бұрын бол�
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:203 calendar_app/views.py:1138
-#: calendar_app/views.py:1255
+#: calendar_app/forms.py:203 calendar_app/views.py:1145
+#: calendar_app/views.py:1253
 msgid "This location is not available."
 msgstr "Бұл локация қолжетімді емес."
 
@@ -1699,47 +1715,47 @@ msgstr "ш.б."
 msgid "W"
 msgstr "б.б."
 
-#: calendar_app/views.py:1372
+#: calendar_app/views.py:1370
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
 msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/views.py:1384
+#: calendar_app/views.py:1382
 msgid "Please provide a reason for rejection."
 msgstr "Қабылданбау себебін көрсетіңіз."
 
-#: calendar_app/views.py:1412 calendar_app/views.py:1432 knowledge/views.py:164
+#: calendar_app/views.py:1410 calendar_app/views.py:1430 knowledge/views.py:164
 #: news/views.py:244
 msgid "Invalid submission."
 msgstr "Жарамсыз жіберу."
 
-#: calendar_app/views.py:1450
+#: calendar_app/views.py:1448
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Сіз бұл іс-шараға шағым жасап қойдыңыз; модератор оны тексереді."
 
-#: calendar_app/views.py:1452
+#: calendar_app/views.py:1450
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Рахмет. Сіздің шағымыңыз модераторларға жіберілді."
 
-#: calendar_app/views.py:1471
+#: calendar_app/views.py:1469
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Шағым алынып тасталды; іс-шара модерация кезегінен шығарылды."
 
-#: calendar_app/views.py:1535
+#: calendar_app/views.py:1533
 msgid "Only a rejected competition can be resubmitted."
 msgstr "Тек қабылданбаған жарысты қайта жіберуге болады."
 
-#: calendar_app/views.py:1537
+#: calendar_app/views.py:1535
 msgid "Your competition was sent for review again."
 msgstr "Жарыс қайта қарауға жіберілді."
 
-#: calendar_app/views.py:1560
+#: calendar_app/views.py:1558
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Хронометраж токені қайта жасалды. Бұрынғы токен енді жұмыс істемейді."
 
-#: calendar_app/views.py:1571
+#: calendar_app/views.py:1569
 msgid ""
 "Timing token deleted. Timing tools can no longer access this competition."
 msgstr ""
@@ -1873,10 +1889,6 @@ msgstr "Iздеу"
 #: cycling_site/templates/base.html:103
 msgid "Switch theme"
 msgstr "Такырыпты ауыстыру"
-
-#: cycling_site/templates/base.html:131
-msgid "Admin"
-msgstr "Акiмшi"
 
 #: cycling_site/templates/base.html:158
 msgid "Close"

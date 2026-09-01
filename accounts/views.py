@@ -13,7 +13,7 @@ from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import gettext, gettext_lazy
 from django.views import View
 from django.views.generic import TemplateView
@@ -351,17 +351,19 @@ class RequestRoleView(ParticipantRequiredMixin, View):
         if not form.is_valid():
             return render(request, self.template_name, {"form": form})
         cd = form.cleaned_data
-        wanted = dict(User.Role.choices)[cd["role"]]
-        # Internal notification, always English like the other owner mail.
-        body = (
-            f"A registered site user asks for a different role.\n\n"
-            f"User: {user.get_username()}\n"
-            f"Registered email: {user.email}\n"
-            f"Current role: {user.get_role_display()}\n"
-            f"Requested role: {wanted}\n"
-            f"Sent: {timezone.now():%Y-%m-%d %H:%M %Z}\n\n"
-            f"Reason:\n{cd['reason']}\n"
-        )
+        # Internal notification, always English -- the owners read it, not the sender, and the role
+        # names follow the active language now that the profile shows them.
+        with translation.override("en"):
+            wanted = dict(User.Role.choices)[cd["role"]]
+            body = (
+                f"A registered site user asks for a different role.\n\n"
+                f"User: {user.get_username()}\n"
+                f"Registered email: {user.email}\n"
+                f"Current role: {user.get_role_display()}\n"
+                f"Requested role: {wanted}\n"
+                f"Sent: {timezone.now():%Y-%m-%d %H:%M %Z}\n\n"
+                f"Reason:\n{cd['reason']}\n"
+            )
         sent = _mail_the_owners(request, f"Role request: {user.get_username()} -> {wanted}", body, what="role-request")
         if not sent:
             return render(request, self.template_name, {"form": form})
@@ -406,15 +408,16 @@ class ContactOwnersView(ParticipantRequiredMixin, View):
         # Collapse any whitespace/newlines in the subject so it can't inject email headers.
         subject_line = " ".join(cd["subject"].split())
         # The owner notification is internal and always English (not the sender's UI language).
-        body = (
-            f"New message from a registered site user.\n\n"
-            f"User: {user.get_username()}\n"
-            f"Registered email: {user.email}\n"
-            f"Role: {user.get_role_display()}\n"
-            f"Sent: {timezone.now():%Y-%m-%d %H:%M %Z}\n\n"
-            f"Subject: {subject_line}\n\n"
-            f"Message:\n{cd['message']}\n"
-        )
+        with translation.override("en"):
+            body = (
+                f"New message from a registered site user.\n\n"
+                f"User: {user.get_username()}\n"
+                f"Registered email: {user.email}\n"
+                f"Role: {user.get_role_display()}\n"
+                f"Sent: {timezone.now():%Y-%m-%d %H:%M %Z}\n\n"
+                f"Subject: {subject_line}\n\n"
+                f"Message:\n{cd['message']}\n"
+            )
         if not _mail_the_owners(request, f"Site contact: {subject_line}", body, what="contact-owners"):
             return render(request, self.template_name, {"form": form})
         messages.success(request, gettext("Your message has been sent to the site owners."))
