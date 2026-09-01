@@ -337,37 +337,53 @@ def counts_for_bib(reg, competition) -> bool:
     return not (competition.require_payment and not reg.is_paid)
 
 
-def _number_rows(rows, start, counts):
-    """Pair each row with its number: ``start`` upward for counting rows, ``None`` else."""
+def _number_rows(rows, start, counts, taken):
+    """Pair each row with its number: from ``start`` upward, skipping numbers already handed out.
+
+    ``taken`` is the set of numbers this event has already given to earlier sections, and it is
+    updated as numbers are used. Skipping is what keeps two categories sharing a range -- both
+    written as 61-120, which is how an organizer says "the men are the 61 to 120 block" -- from
+    handing the same number to two riders: the first category fills the block from its start and
+    the next continues after it.
+    """
     numbered = []
-    next_number = start
+    candidate = start
     for reg in rows:
-        if counts(reg):
-            numbered.append((next_number, reg))
-            next_number += 1
-        else:
+        if not counts(reg):
             numbered.append((None, reg))
+            continue
+        while candidate in taken:
+            candidate += 1
+        numbered.append((candidate, reg))
+        taken.add(candidate)
+        candidate += 1
     return numbered
 
 
 def build_participant_groups(registrations, categories, counts=None):
     """Group registrations into per-category sections with bib-range numbering.
 
-    ``categories`` is the ordered list of category objects to render as sections. A row's
-    number is the category's ``bib_from`` (default 1) plus its position among counting
-    rows in that category, so the first counting registrant gets ``bib_from``. ``counts``
-    (default: everyone) decides which rows get a number; non-counting rows get ``None`` and
-    do not advance the numbering. Registrations with no category form a trailing section
-    numbered from 1, and categories with no registrations are omitted.
+    ``categories`` is the ordered list of category objects to render as sections. A row's number
+    starts at the category's ``bib_from`` (default 1) and counts up, but **never repeats a number
+    already given out in this event**: a number another section took is skipped. Two categories
+    written with the same range therefore share it in order -- the first fills it from the start,
+    the next carries on where that one stopped -- while a category whose range sits somewhere else
+    entirely still begins exactly at its own ``bib_from``.
+
+    ``counts`` (default: everyone) decides which rows get a number; non-counting rows get ``None``
+    and do not consume one. Registrations with no category form a trailing section numbered from 1
+    (skipping what is taken, like any other), and categories with no registrations are omitted --
+    an empty category reserves nothing, because a number belongs to a rider, not to a section.
     """
     if counts is None:
         counts = lambda reg: True  # noqa: E731
     buckets: dict[int | None, list] = defaultdict(list)
     for reg in registrations:
         buckets[reg.category_id].append(reg)
+    taken: set[int] = set()
 
     def _section(category, rows, start):
-        numbered = _number_rows(rows, start, counts)
+        numbered = _number_rows(rows, start, counts, taken)
         shown = sum(1 for number, _ in numbered if number is not None)
         return {"category": category, "count": shown, "rows": numbered}
 
