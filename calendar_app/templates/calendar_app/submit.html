@@ -4,6 +4,11 @@
 {% block title %}{% trans "Submit competition" %}{% endblock %}
 
 {% block content %}
+{% if clone_source %}
+<div class="alert alert-info">
+  {% blocktrans with title=clone_source.title %}Copied from "{{ title }}". Everything is filled in except the dates -- set them and save to create a new event.{% endblocktrans %}
+</div>
+{% endif %}
 {{ locations_data|json_script:"locations-data" }}
 <div class="row justify-content-center">
   <div class="col-md-9 col-lg-8">
@@ -147,7 +152,7 @@
           </div>
         </div>
         <div class="card-body collapse" id="reg-collapse">
-          {% include "calendar_app/_registration_fields.html" with reg_form=reg_form mode_locked=False categories_json="[]" %}
+          {% include "calendar_app/_registration_fields.html" with reg_form=reg_form mode_locked=False categories_json=categories_json|default:"[]" %}
         </div>
       </div>
       {% endif %}

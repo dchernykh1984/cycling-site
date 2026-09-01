@@ -922,6 +922,92 @@ def _save_materials(formset, comp):
         position += 1
 
 
+def _competition_initial(comp, *, with_dates: bool = True, with_results: bool = True) -> dict:
+    """The submit form's fields, filled from an existing competition.
+
+    Shared by editing (which wants everything) and cloning (which wants the shape of the event
+    without the parts that belong to the edition being copied).
+    """
+    initial = {
+        "title_ru": comp.title_ru or "",
+        "title_kk": comp.title_kk or "",
+        "title_en": comp.title_en or "",
+        "description_ru": comp.description_ru or "",
+        "description_kk": comp.description_kk or "",
+        "description_en": comp.description_en or "",
+        "event_types": list(comp.event_types.values_list("pk", flat=True)),
+        "disciplines": list(comp.disciplines.values_list("pk", flat=True)),
+        "location": comp.location_id,
+        "url_announcement": comp.url_announcement,
+        "url_registration": comp.url_registration,
+        "url_route": comp.url_route,
+        "url_regulations": comp.url_regulations,
+    }
+    if with_dates:
+        initial["date_start"] = comp.date_start
+        initial["date_end"] = comp.date_end
+    if with_results:
+        initial["url_results"] = comp.url_results
+    return initial
+
+
+def _registration_initial(comp) -> dict:
+    """The registration settings of an existing competition, as form initial data."""
+    return {
+        "registration_enabled": comp.registration_enabled,
+        "registration_mode": comp.registration_mode,
+        "birth_date_mode": comp.birth_date_mode,
+        "require_approval": comp.require_approval,
+        "require_payment": comp.require_payment,
+        "allow_multiple_registrations": comp.allow_multiple_registrations,
+        "registration_deadline": comp.registration_deadline,
+        "max_participants": comp.max_participants,
+        "show_unapproved_in_list": comp.show_unapproved_in_list,
+        "show_unpaid_in_list": comp.show_unpaid_in_list,
+        "show_approval_status_col": comp.show_approval_status_col,
+        "show_payment_status_col": comp.show_payment_status_col,
+        "additional_info_mode": comp.additional_info_mode,
+        "additional_info_label": comp.additional_info_label,
+        "show_additional_info_in_list": comp.show_additional_info_in_list,
+        "additional_info_required": comp.additional_info_required,
+        "relay_enabled": comp.relay_enabled,
+        "relay_max_members": comp.relay_max_members,
+    }
+
+
+def _category_rows(comp, birth_date_mode: str = "") -> list[dict]:
+    """A competition's registration categories in the shape the category editor reads.
+
+    Birth bounds are dates in the database and either a date or a bare year in the editor, which is
+    what birth_date_mode decides. Pass one to redraw the form the way it was just submitted, when
+    the organizer changed that setting and the page is being re-rendered with their error.
+    """
+    from registrations.models import RegistrationCategory
+
+    by_date = (birth_date_mode or comp.birth_date_mode) == "date"
+
+    def bound(value):
+        if value is None:
+            return None
+        return value.isoformat() if by_date else str(value.year)
+
+    return [
+        {**row, "birth_from": bound(row["birth_from"]), "birth_to": bound(row["birth_to"])}
+        for row in RegistrationCategory.objects.filter(competition=comp, is_deleted=False).values(
+            "id",
+            "name",
+            "male",
+            "female",
+            "birth_from",
+            "birth_to",
+            "laps",
+            "bib_from",
+            "bib_to",
+            "max_participants",
+        )
+    ]
+
+
 class SubmitCompetitionView(ParticipantRequiredMixin, View):
     template_name = "calendar_app/submit.html"
 
@@ -934,9 +1020,38 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
             "locations_data": _get_locations_data(user),
         }
 
+    def _clone_source(self, request):
+        """The competition being copied, when the page was opened from a Clone button.
+
+        Only somebody who may edit that event may copy it: its description, its categories and its
+        registration settings are as much its content as its title.
+        """
+        pk = request.GET.get("clone")
+        if not pk or not pk.isdigit():
+            return None
+        from registrations.views import can_manage_or_own
+
+        comp = get_object_or_404(Competition, pk=int(pk), is_deleted=False)
+        if not can_manage_or_own(request.user, comp):
+            raise PermissionDenied
+        return comp
+
     def get(self, request):
-        form = SubmitCompetitionForm(user=request.user)
-        reg_form = RegistrationSettingsForm()
+        import json
+
+        source = self._clone_source(request)
+        if source is None:
+            form = SubmitCompetitionForm(user=request.user)
+            reg_form = RegistrationSettingsForm()
+            categories_json = "[]"
+        else:
+            # Everything but the parts that belong to the edition being copied: the dates are what
+            # the organizer is here to change, and last year's results are not this year's.
+            form = SubmitCompetitionForm(
+                initial=_competition_initial(source, with_dates=False, with_results=False), user=request.user
+            )
+            reg_form = RegistrationSettingsForm(initial=_registration_initial(source))
+            categories_json = json.dumps(_category_rows(source))
         return render(
             request,
             self.template_name,
@@ -944,6 +1059,9 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 "form": form,
                 "reg_form": reg_form,
                 "is_organizer_plus": self._is_organizer_plus(request.user),
+                "clone_source": source,
+                "categories_json": categories_json,
+                "initial_location_id": (source.location_id or "") if source else "",
                 **self._discipline_context(request.user, form),
             },
         )
@@ -1045,74 +1163,11 @@ class EditCompetitionView(View):
 
     def get(self, request, pk):
         comp = self._get_competition_or_403(request, pk)
-        form = SubmitCompetitionForm(
-            initial={
-                "title_ru": comp.title_ru or "",
-                "title_kk": comp.title_kk or "",
-                "title_en": comp.title_en or "",
-                "description_ru": comp.description_ru or "",
-                "description_kk": comp.description_kk or "",
-                "description_en": comp.description_en or "",
-                "event_types": list(comp.event_types.values_list("pk", flat=True)),
-                "disciplines": list(comp.disciplines.values_list("pk", flat=True)),
-                "location": comp.location_id,
-                "date_start": comp.date_start,
-                "date_end": comp.date_end,
-                "url_announcement": comp.url_announcement,
-                "url_registration": comp.url_registration,
-                "url_route": comp.url_route,
-                "url_regulations": comp.url_regulations,
-                "url_results": comp.url_results,
-            },
-            user=request.user,
-        )
-        reg_form = RegistrationSettingsForm(
-            initial={
-                "registration_enabled": comp.registration_enabled,
-                "registration_mode": comp.registration_mode,
-                "birth_date_mode": comp.birth_date_mode,
-                "require_approval": comp.require_approval,
-                "require_payment": comp.require_payment,
-                "allow_multiple_registrations": comp.allow_multiple_registrations,
-                "registration_deadline": comp.registration_deadline,
-                "max_participants": comp.max_participants,
-                "show_unapproved_in_list": comp.show_unapproved_in_list,
-                "show_unpaid_in_list": comp.show_unpaid_in_list,
-                "show_approval_status_col": comp.show_approval_status_col,
-                "show_payment_status_col": comp.show_payment_status_col,
-                "additional_info_mode": comp.additional_info_mode,
-                "additional_info_label": comp.additional_info_label,
-                "show_additional_info_in_list": comp.show_additional_info_in_list,
-                "additional_info_required": comp.additional_info_required,
-                "relay_enabled": comp.relay_enabled,
-                "relay_max_members": comp.relay_max_members,
-            }
-        )
+        form = SubmitCompetitionForm(initial=_competition_initial(comp), user=request.user)
+        reg_form = RegistrationSettingsForm(initial=_registration_initial(comp))
         import json
 
-        from registrations.models import RegistrationCategory
-
-        categories = list(
-            RegistrationCategory.objects.filter(competition=comp, is_deleted=False).values(
-                "id",
-                "name",
-                "male",
-                "female",
-                "birth_from",
-                "birth_to",
-                "laps",
-                "bib_from",
-                "bib_to",
-                "max_participants",
-            )
-        )
-        for c in categories:
-            if c["birth_from"]:
-                c["birth_from"] = (
-                    c["birth_from"].isoformat() if comp.birth_date_mode == "date" else str(c["birth_from"].year)
-                )
-            if c["birth_to"]:
-                c["birth_to"] = c["birth_to"].isoformat() if comp.birth_date_mode == "date" else str(c["birth_to"].year)
+        categories = _category_rows(comp)
         disc_ctx = {
             **_discipline_picker_context(form),
             "locations_data": _get_locations_data(request.user),
@@ -1144,32 +1199,7 @@ class EditCompetitionView(View):
             if not _validate_deadline(form, reg_form, cd["date_start"], cd.get("date_end")):
                 import json as _json
 
-                from registrations.models import RegistrationCategory
-
-                _cats = list(
-                    RegistrationCategory.objects.filter(competition=comp, is_deleted=False).values(
-                        "id",
-                        "name",
-                        "male",
-                        "female",
-                        "birth_from",
-                        "birth_to",
-                        "laps",
-                        "bib_from",
-                        "bib_to",
-                        "max_participants",
-                    )
-                )
-                _birth_mode = reg_form.cleaned_data.get("birth_date_mode") or comp.birth_date_mode
-                for _c in _cats:
-                    if _c["birth_from"]:
-                        _c["birth_from"] = (
-                            _c["birth_from"].isoformat() if _birth_mode == "date" else str(_c["birth_from"].year)
-                        )
-                    if _c["birth_to"]:
-                        _c["birth_to"] = (
-                            _c["birth_to"].isoformat() if _birth_mode == "date" else str(_c["birth_to"].year)
-                        )
+                _cats = _category_rows(comp, reg_form.cleaned_data.get("birth_date_mode"))
                 return render(
                     request,
                     self.template_name,
