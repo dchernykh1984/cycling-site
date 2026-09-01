@@ -54,6 +54,12 @@ ssh $RENDER_SSH 'cat > /var/media/<folder>/<name>.jpg' < local.jpg
 Downscale first -- a 4000 px product photo helps nobody -- and check the file answers 200 over HTTP
 before referencing it.
 
+## Backups, and testing a migration against real data
+
+`make-backup` style tooling in the README writes `backup/<timestamp>/db.dump`. Restoring one into a
+scratch database locally is the way to try a migration, a data fix or a bulk edit against the real
+shape of the data before running it on production. Do that whenever a change touches many rows.
+
 ## Logs
 
 `/opt/render/project/src/logs/django.log` on the instance holds the application log of the *current*

@@ -48,6 +48,12 @@ Locally: `.venv/bin/python -m pytest -n 10 -q --ignore=tests/e2e` for the unit s
 A red `audit` job usually means a new CVE in a dependency rather than anything you wrote: bump the
 patch release (`uv lock --upgrade-package "django==6.0.8"`), re-export requirements, run the suite.
 
+## Migrations
+
+A model change needs `makemigrations`, the migration committed with the change, and a moment's
+thought about whether it is safe on live data. `manage.py makemigrations --check --dry-run` is what
+CI effectively asks; run it before opening the pull request.
+
 ## Every change carries its tests
 
 A bug fix gets a regression test that fails without the fix: a Django unit test for backend

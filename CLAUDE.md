@@ -23,12 +23,16 @@ universalbicycle.team.
 
 | Skill | What it covers |
 | --- | --- |
+| `working-with-the-maintainer` | how they work, what to ask first, what the default task shape is |
 | `shipping-changes` | branches, commits, review cycles, the pipeline, what CI runs |
 | `site-content` | publishing and editing articles, news and events on the live site |
 | `production-access` | reaching production: shell, database, media, logs |
 | `events-agents` | the three import agents, their schedules, their logs |
+| `calendar-curation` | filling and fixing the calendar by hand |
 | `locations` | the four-level geography tree and the rules that keep it clean |
 | `translations` | three locales, gettext, and the traps in this repo |
+| `search-visibility` | per-language URLs, sitemap, structured data, feeds, IndexNow |
+| `protocols` | how a results file is served, and what may appear inside one |
 
 ## Quick facts
 
