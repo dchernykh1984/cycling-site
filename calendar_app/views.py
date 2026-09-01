@@ -1036,6 +1036,22 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
             raise PermissionDenied
         return comp
 
+    def _error_context(self, request, form, reg_form, is_organizer: bool) -> dict:
+        """The page as the organizer left it, when their submission did not go through.
+
+        The categories go back as they were posted: they live in a hidden field the JavaScript
+        editor owns, so a re-render that forgets them silently empties the list -- which is a whole
+        set of categories to retype after cloning an event that had eight of them.
+        """
+        return {
+            "form": form,
+            "reg_form": reg_form,
+            "is_organizer_plus": is_organizer,
+            "categories_json": request.POST.get("categories_json") or "[]",
+            "initial_location_id": form["location"].value() or "",
+            **self._discipline_context(request.user, form),
+        }
+
     def get(self, request):
         import json
 
@@ -1073,16 +1089,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
         if form.is_valid() and (not is_organizer or reg_form.is_valid()):
             cd = form.cleaned_data
             if is_organizer and not _validate_deadline(form, reg_form, cd["date_start"], cd.get("date_end")):
-                return render(
-                    request,
-                    self.template_name,
-                    {
-                        "form": form,
-                        "reg_form": reg_form,
-                        "is_organizer_plus": is_organizer,
-                        **self._discipline_context(request.user, form),
-                    },
-                )
+                return render(request, self.template_name, self._error_context(request, form, reg_form, is_organizer))
             try:
                 # Resolve, lock and re-validate the location, then save the competition in one
                 # transaction so a concurrent delete/level-change of the venue can't bind this
@@ -1138,16 +1145,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 form.add_error("location", _("This location is not available."))
             else:
                 return redirect("calendar_list")
-        return render(
-            request,
-            self.template_name,
-            {
-                "form": form,
-                "reg_form": reg_form,
-                "is_organizer_plus": is_organizer,
-                **self._discipline_context(request.user, form),
-            },
-        )
+        return render(request, self.template_name, self._error_context(request, form, reg_form, is_organizer))
 
 
 class EditCompetitionView(View):

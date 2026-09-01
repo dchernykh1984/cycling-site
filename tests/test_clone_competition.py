@@ -147,3 +147,34 @@ class CloneButtonTests(TestCase):
 
     def test_a_reader_does_not(self):
         self.assertNotContains(self._detail(), f"?clone={self.competition.pk}")
+
+
+class SubmissionErrorTests(TestCase):
+    """A rejected submission has to come back with what the organizer typed still in it."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.organizer = User.objects.create_user(
+            username="retry_organizer", email="r@example.com", password="Pass1234!", role=User.Role.ORGANIZER
+        )
+
+    def test_the_categories_survive_a_failed_save(self):
+        self.client.force_login(self.organizer)
+        categories = json.dumps([{"name": "Women 2011-1991", "female": True, "laps": 2}])
+        response = self.client.post(
+            in_language(reverse("calendar_submit"), "en"),
+            {
+                "title_ru": "",  # no title -- the form comes back with an error
+                "categories_json": categories,
+                "registration_enabled": "on",
+                "birth_date_mode": "year",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.context["categories_json"]), json.loads(categories))
+        self.assertContains(response, "Women 2011-1991")
+
+    def test_an_empty_editor_stays_empty_rather_than_breaking_the_page(self):
+        self.client.force_login(self.organizer)
+        response = self.client.post(in_language(reverse("calendar_submit"), "en"), {"title_ru": ""})
+        self.assertEqual(response.context["categories_json"], "[]")
