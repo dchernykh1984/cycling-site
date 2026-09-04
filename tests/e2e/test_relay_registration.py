@@ -305,4 +305,5 @@ def test_relay_registration_appears_in_user_profile(
     page.wait_for_url(f"{live_server.url}/ru/competitions/{relay_competition.pk}/participants/")
 
     page.goto(f"{live_server.url}/ru/accounts/profile/")
-    expect(page.locator("text=Relay Race")).to_be_visible()
+    # An entry still open shows twice on the profile: as a card and as a row of the table below.
+    expect(page.locator("table >> text=Relay Race")).to_be_visible()
