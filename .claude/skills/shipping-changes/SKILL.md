@@ -42,6 +42,15 @@ already has a home elsewhere.
 with coverage (the gate is 90%), and a dependency audit. `e2e.yml` runs Playwright on five
 browser/device combinations. All nine checks must be green before you report the work done.
 
+Read that verdict from the rollup rather than from `gh pr checks`. The per-check status the latter
+reports lags, and can still say `pending` long after a job has finished -- on a pipeline this wide
+that reads like a hung check, and waiting on it wastes the time it appears to be saving:
+
+```bash
+gh pr view <n> --json statusCheckRollup \
+  --jq '[.statusCheckRollup[] | {name:(.name//.context), s:(.conclusion//.state)}]'
+```
+
 Locally: `.venv/bin/python -m pytest -n 10 -q --ignore=tests/e2e` for the unit suite, and
 `.venv/bin/python -m pytest tests/e2e -q` when the change touches templates or JavaScript.
 
