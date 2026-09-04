@@ -176,7 +176,9 @@ class ProfileView(TemplateView):
 
         rows = list(
             user.competition_registrations.filter(competition__is_deleted=False)
-            .select_related("competition", "category")
+            # An organizer's rights are decided by the event's submitter, so that row travels with
+            # the event -- otherwise the permission check fetches it once per registration.
+            .select_related("competition", "competition__submitted_by", "category")
             .order_by("-registered_at")
         )
         for reg in rows:

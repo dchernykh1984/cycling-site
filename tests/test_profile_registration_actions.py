@@ -8,7 +8,9 @@ and delete views themselves apply, so the profile never offers a button the serv
 
 import datetime
 
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -126,3 +128,50 @@ class ProfileRegistrationActionsTests(TestCase):
             self.assertIn(translation.gettext("Actions"), [h.strip() for h in headers])
         self.assertEqual(len(re.findall(r"<td", table.split("</thead>")[1])), len(headers))
         self.assertNotContains(response, reverse("registrations:edit_registration", args=[comp.pk, reg.pk]))
+
+
+class ProfileRegistrationQueryCountTests(TestCase):
+    """Deciding who may edit must not cost a query per row.
+
+    An organizer's rights depend on who submitted the event, so the check touches
+    ``competition.submitted_by``; without that row travelling with the registrations query the
+    profile fetched it once per registration.
+    """
+
+    def _organizer_with(self, count, username):
+        organizer = _make_user(username, role=User.Role.ORGANIZER)
+        for n in range(count):
+            comp = Competition.objects.create(
+                title_ru=f"Race {n}",
+                date_start=datetime.date.today() + datetime.timedelta(days=30 + n),
+                status=Competition.Status.APPROVED,
+                registration_enabled=True,
+                registration_mode=Competition.RegistrationMode.FREE,
+                birth_date_mode="year",
+                submitted_by=organizer,
+            )
+            CompetitionRegistration.objects.create(
+                competition=comp,
+                user=organizer,
+                first_name="Denis",
+                last_name="Test",
+                birth_date=datetime.date(1990, 1, 1),
+                gender="M",
+            )
+        return organizer
+
+    def _queries_for(self, user):
+        self.client.force_login(user)
+        self.client.get(reverse("account_profile"))  # warm any per-session queries
+        with CaptureQueriesContext(connection) as captured:
+            response = self.client.get(reverse("account_profile"))
+        self.assertEqual(response.status_code, 200)
+        return len(captured.captured_queries), list(response.context["registrations"])
+
+    def test_the_query_count_does_not_grow_with_the_number_of_registrations(self):
+        few, rows_few = self._queries_for(self._organizer_with(1, "organizer_one"))
+        many, rows_many = self._queries_for(self._organizer_with(6, "organizer_six"))
+        self.assertEqual(len(rows_few), 1)
+        self.assertEqual(len(rows_many), 6)
+        self.assertTrue(all(row.can_edit for row in rows_many))
+        self.assertEqual(few, many, "the profile queries once per registration")
