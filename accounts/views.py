@@ -144,7 +144,14 @@ class ProfileView(TemplateView):
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
         if self.request.user.is_authenticated:
             # Hide registrations whose competition was soft-deleted (issue #161).
-            context["registrations"] = self._registrations_with_actions(self.request.user)
+            rows = self._registrations_with_actions(self.request.user)
+            context["registrations"] = rows
+            # The entries still worth acting on, nearest race first: everything else is history
+            # and belongs in the table below, where it is read rather than edited.
+            context["active_registrations"] = sorted(
+                (reg for reg in rows if reg.can_edit and reg.competition.is_registration_open(ignore_limit=True)),
+                key=lambda reg: reg.competition.date_start,
+            )
             from django.db.models import Case, IntegerField, Value, When
 
             from calendar_app.models import Competition
