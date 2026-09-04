@@ -2,8 +2,9 @@
 
 The profile listed the reader's entries with no way to act on them: to change a name or cancel a
 place they had to open the event, then the participant list, then find their own row. The two
-buttons are the same ones that row carries, and they appear on the same rule -- the one the edit
-and delete views themselves apply, so the profile never offers a button the server refuses.
+buttons live in the cards above the table, and they appear on the rule the edit and delete views
+themselves apply, so the profile never offers a button the server refuses. The table below them is
+the archive -- every entry the reader ever made, read rather than edited.
 """
 
 import datetime
@@ -112,22 +113,21 @@ class ProfileRegistrationActionsTests(TestCase):
         reg = self._registration(comp, user=organizer)
         self.assertTrue(self._row(self._profile(organizer), reg).can_edit)
 
-    def test_the_row_keeps_its_shape_when_nobody_may_touch_it(self):
-        """The column header still stands, so the cells below it stay under the right heading."""
+    def test_the_archive_table_carries_no_buttons_at_all(self):
+        """Everything actionable is in the cards; the table is for reading, and stays narrow."""
         import re
 
-        from django.utils import translation
-
-        comp = self._competition(registration_enabled=False)
+        comp = self._competition()
         reg = self._registration(comp)
         response = self._profile()
         html = response.content.decode()
         table = re.search(r"<table[^>]*>.*?</table>", html, flags=re.S).group(0)
-        headers = re.findall(r"<th[^>]*>(.*?)</th>", table, flags=re.S)
         with translation.override("ru"):
-            self.assertIn(translation.gettext("Actions"), [h.strip() for h in headers])
-        self.assertEqual(len(re.findall(r"<td", table.split("</thead>")[1])), len(headers))
-        self.assertNotContains(response, reverse("registrations:edit_registration", args=[comp.pk, reg.pk]))
+            self.assertNotIn(translation.gettext("Actions"), table)
+        self.assertNotIn("btn", table)
+        # The entry is editable -- so its buttons must be somewhere, just not in the table.
+        self.assertTrue(self._row(response, reg).can_edit)
+        self.assertContains(response, reverse("registrations:edit_registration", args=[comp.pk, reg.pk]))
 
 
 class ActiveRegistrationsSectionTests(TestCase):

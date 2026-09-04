@@ -114,7 +114,7 @@ def test_self_only_registration_appears_in_profile(page: Page, live_server, orga
     page.wait_for_url(f"{live_server.url}/ru/competitions/{comp.pk}/participants/")
 
     _go_profile(page, live_server)
-    expect(page.locator("text=Profile Test Race")).to_be_visible()
+    expect(page.locator("table >> text=Profile Test Race")).to_be_visible()
 
 
 # ---------------------------------------------------------------------------
@@ -141,7 +141,7 @@ def test_free_mode_registration_appears_in_profile(page: Page, live_server, orga
     page.wait_for_url(f"{live_server.url}/ru/competitions/{comp.pk}/participants/")
 
     _go_profile(page, live_server)
-    expect(page.locator("text=Profile Test Race")).to_be_visible()
+    expect(page.locator("table >> text=Profile Test Race")).to_be_visible()
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +173,7 @@ def test_relay_registration_appears_in_profile(page: Page, live_server, organize
     assert reg.user == rider
 
     _go_profile(page, live_server)
-    expect(page.locator("text=Profile Test Race")).to_be_visible()
+    expect(page.locator("table >> text=Profile Test Race")).to_be_visible()
 
 
 # ---------------------------------------------------------------------------
@@ -192,8 +192,8 @@ def test_approval_required_registration_shows_pending_in_profile(page: Page, liv
     inject_session(page, live_server, rider)
 
     _go_profile(page, live_server)
-    expect(page.locator("text=Profile Test Race")).to_be_visible()
-    expect(page.locator(".badge.bg-warning")).to_be_visible()
+    expect(page.locator("table >> text=Profile Test Race")).to_be_visible()
+    expect(page.locator(".card .badge.bg-warning").first).to_be_visible()
 
 
 # ---------------------------------------------------------------------------
@@ -212,8 +212,8 @@ def test_payment_required_registration_shows_pending_in_profile(page: Page, live
     inject_session(page, live_server, rider)
 
     _go_profile(page, live_server)
-    expect(page.locator("text=Profile Test Race")).to_be_visible()
-    expect(page.locator(".badge.bg-warning")).to_be_visible()
+    expect(page.locator("table >> text=Profile Test Race")).to_be_visible()
+    expect(page.locator(".card .badge.bg-warning").first).to_be_visible()
 
 
 # ---------------------------------------------------------------------------
@@ -232,8 +232,8 @@ def test_approved_registration_shows_approved_badge_in_profile(page: Page, live_
     inject_session(page, live_server, rider)
 
     _go_profile(page, live_server)
-    expect(page.locator("text=Profile Test Race")).to_be_visible()
-    expect(page.locator(".badge.bg-success")).to_be_visible()
+    expect(page.locator("table >> text=Profile Test Race")).to_be_visible()
+    expect(page.locator(".card .badge.bg-success").first).to_be_visible()
 
 
 # ---------------------------------------------------------------------------
@@ -263,7 +263,7 @@ def test_competition_title_links_to_detail_page(page: Page, live_server, organiz
     inject_session(page, live_server, rider)
 
     _go_profile(page, live_server)
-    link = page.get_by_role("link", name="Profile Test Race")
+    link = page.locator("table").get_by_role("link", name="Profile Test Race")
     expect(link).to_have_attribute("href", f"/ru/calendar/{comp.pk}/")
     link.click()
     page.wait_for_url(f"{live_server.url}/ru/calendar/{comp.pk}/")
@@ -286,7 +286,7 @@ def test_deleted_competition_registration_hidden(page: Page, live_server, organi
 
 @pytest.mark.django_db(transaction=True)
 def test_edit_from_the_profile_opens_the_registration_form(page: Page, live_server, organizer, db):
-    """The profile's Edit button lands on the same page the participant list's Edit lands on."""
+    """The card's Edit button lands on the same page the participant list's Edit lands on."""
     comp = Competition.objects.create(
         title_ru="Profile Edit RU",
         title_en="Profile Edit",
@@ -314,7 +314,7 @@ def test_edit_from_the_profile_opens_the_registration_form(page: Page, live_serv
 
     inject_session(page, live_server, rider)
     page.goto(f"{live_server.url}{PROFILE_PATH}")
-    edit = page.locator(f"a[href$='/participants/{reg.pk}/edit/']")
+    edit = page.locator(f".card a[href$='/participants/{reg.pk}/edit/']")
     expect(edit).to_be_visible()
     edit.click()
     expect(page).to_have_url(f"{live_server.url}/ru/competitions/{comp.pk}/participants/{reg.pk}/edit/")
