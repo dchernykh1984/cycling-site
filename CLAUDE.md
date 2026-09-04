@@ -18,6 +18,9 @@ universalbicycle.team.
 - Commit messages are **one line**, no body, and never mention Claude or co-authorship.
 - Source files are **ASCII only** (a pre-commit hook enforces it for python, markdown, yaml, toml,
   shell and json). Russian belongs in translation catalogues and in the agents' guidance files.
+- Write files as **UTF-8**. A PowerShell redirect, `Set-Content` or `Out-File` defaults to UTF-16,
+  and the ASCII hook then rejects a file whose text looks perfectly plain in an editor -- the bytes
+  are the problem, not the characters. `file <path>` says which encoding you actually wrote.
 
 ## Where the details live
 
