@@ -2,19 +2,19 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-04 06:59+0500\n"
+"POT-Creation-Date: 2026-09-04 17:18+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: accounts/access.py:9
 msgid ""
-"Please confirm your email address to activate your account. Until your email"
-" is confirmed, you can view the site but cannot submit, register, comment, "
+"Please confirm your email address to activate your account. Until your email "
+"is confirmed, you can view the site but cannot submit, register, comment, "
 "contact site owners, or use API features."
 msgstr ""
-"Пожалуйста, подтвердите e-mail, чтобы активировать аккаунт. До подтверждения"
-" e-mail вы можете просматривать сайт, но не можете отправлять материалы, "
+"Пожалуйста, подтвердите e-mail, чтобы активировать аккаунт. До подтверждения "
+"e-mail вы можете просматривать сайт, но не можете отправлять материалы, "
 "регистрироваться на старты, комментировать, писать владельцам сайта или "
 "пользоваться API."
 
@@ -65,8 +65,8 @@ msgid ""
 "If you use Gmail and the confirmation email does not arrive, please try "
 "registering with a non-Gmail address."
 msgstr ""
-"Если вы используете Gmail и письмо с подтверждением не приходит — попробуйте"
-" зарегистрироваться с адресом не на Gmail."
+"Если вы используете Gmail и письмо с подтверждением не приходит — попробуйте "
+"зарегистрироваться с адресом не на Gmail."
 
 #: accounts/templates/account/signup.html:42
 msgid "Sign up using a passkey"
@@ -158,8 +158,7 @@ msgstr "Отправить сообщение"
 #: knowledge/templates/knowledge/submit.html:48
 #: locations/templates/locations/location_form.html:145
 #: news/templates/news/article_form.html:140
-#: news/templates/news/article_form.html:142
-#: news/templates/news/submit.html:37
+#: news/templates/news/article_form.html:142 news/templates/news/submit.html:37
 #: registrations/templates/registrations/edit_registration.html:29
 #: registrations/templates/registrations/manual_add.html:89
 #: registrations/templates/registrations/register.html:209
@@ -254,8 +253,8 @@ msgstr "Способы входа"
 
 #: accounts/templates/accounts/profile.html:101
 msgid ""
-"You can use any of these to sign in to this account. Connect several so that"
-" losing one does not lock you out."
+"You can use any of these to sign in to this account. Connect several so that "
+"losing one does not lock you out."
 msgstr ""
 "Любым из них можно войти в этот аккаунт. Подключите несколько, чтобы потеря "
 "одного не закрыла вам доступ."
@@ -316,7 +315,7 @@ msgstr "Это ваш единственный способ входа. Снач
 msgid "Connect"
 msgstr "Подключить"
 
-#: accounts/templates/accounts/profile.html:158 accounts/views.py:314
+#: accounts/templates/accounts/profile.html:158 accounts/views.py:329
 msgid "Role"
 msgstr "Роль"
 
@@ -353,7 +352,7 @@ msgid "My registrations"
 msgstr "Мои регистрации"
 
 #: accounts/templates/accounts/profile.html:259
-#: accounts/templates/accounts/profile.html:307
+#: accounts/templates/accounts/profile.html:325
 msgid "Competition"
 msgstr "Соревнование"
 
@@ -367,64 +366,57 @@ msgid "Category"
 msgstr "Категория"
 
 #: accounts/templates/accounts/profile.html:261
-#: accounts/templates/accounts/profile.html:308
-#: accounts/templates/accounts/profile.html:368
+#: accounts/templates/accounts/profile.html:326
+#: accounts/templates/accounts/profile.html:386
 msgid "Date"
 msgstr "Дата"
 
 #: accounts/templates/accounts/profile.html:262
-#: accounts/templates/accounts/profile.html:309
-#: accounts/templates/accounts/profile.html:369
+#: accounts/templates/accounts/profile.html:327
+#: accounts/templates/accounts/profile.html:387
 #: locations/templates/locations/locations_map_page.html:77
 msgid "Status"
 msgstr "Статус"
 
-#: accounts/templates/accounts/profile.html:273
-#: accounts/templates/accounts/profile.html:320
-#: registrations/templates/registrations/_participant_row.html:17
-#: registrations/templates/registrations/_participant_table_head.html:13
-msgid "Rejected"
-msgstr "Отклонено"
-
-#: accounts/templates/accounts/profile.html:279
-#: accounts/templates/accounts/profile.html:325
-#: registrations/templates/registrations/_participant_row.html:11
-#: registrations/templates/registrations/_participant_table_head.html:11
-msgid "Approved"
-msgstr "Одобрено"
-
-#: accounts/templates/accounts/profile.html:281
-#: accounts/templates/accounts/profile.html:327
-#: news/templates/news/news_page.html:75
-msgid "Pending"
-msgstr "На рассмотрении"
-
-#: accounts/templates/accounts/profile.html:285
-#: registrations/templates/registrations/_participant_row.html:14
-#: registrations/templates/registrations/_participant_table_head.html:12
-msgid "Paid"
-msgstr "Оплачено"
-
-#: accounts/templates/accounts/profile.html:287
-msgid "Not paid"
-msgstr "Не оплачено"
-
-#: accounts/templates/accounts/profile.html:298
-msgid "No registrations yet."
-msgstr "Регистраций пока нет."
-
-# Pending/rejected competitions + profile (issue #180)
-#: accounts/templates/accounts/profile.html:301
-msgid "Events I submitted"
-msgstr "Добавленные мной события"
-
-#: accounts/templates/accounts/profile.html:310
+#: accounts/templates/accounts/profile.html:263
+#: accounts/templates/accounts/profile.html:328
 #: locations/templates/locations/locations_map_page.html:78
 #: registrations/templates/registrations/_participant_table_head.html:13
 msgid "Actions"
 msgstr "Действия"
 
-#: accounts/templates/accounts/profile.html:332
+#: accounts/templates/accounts/profile.html:274
+#: accounts/templates/accounts/profile.html:338
+#: registrations/templates/registrations/_participant_row.html:17
+#: registrations/templates/registrations/_participant_table_head.html:13
+msgid "Rejected"
+msgstr "Отклонено"
+
+#: accounts/templates/accounts/profile.html:280
+#: accounts/templates/accounts/profile.html:343
+#: registrations/templates/registrations/_participant_row.html:11
+#: registrations/templates/registrations/_participant_table_head.html:11
+msgid "Approved"
+msgstr "Одобрено"
+
+#: accounts/templates/accounts/profile.html:282
+#: accounts/templates/accounts/profile.html:345
+#: news/templates/news/news_page.html:75
+msgid "Pending"
+msgstr "На рассмотрении"
+
+#: accounts/templates/accounts/profile.html:286
+#: registrations/templates/registrations/_participant_row.html:14
+#: registrations/templates/registrations/_participant_table_head.html:12
+msgid "Paid"
+msgstr "Оплачено"
+
+#: accounts/templates/accounts/profile.html:288
+msgid "Not paid"
+msgstr "Не оплачено"
+
+#: accounts/templates/accounts/profile.html:301
+#: accounts/templates/accounts/profile.html:350
 #: calendar_app/templates/calendar_app/edit.html:14
 #: calendar_app/templates/calendar_app/moderate.html:111
 #: locations/templates/locations/locations_map_page.html:90
@@ -434,16 +426,35 @@ msgstr "Действия"
 msgid "Edit"
 msgstr "Редактировать"
 
+#: accounts/templates/accounts/profile.html:304
+#: registrations/templates/registrations/_participant_row.html:61
+msgid "Cancel your registration?"
+msgstr "Отменить свою заявку?"
+
+#: accounts/templates/accounts/profile.html:306
+#: registrations/templates/registrations/_participant_row.html:63
+msgid "Cancel registration"
+msgstr "Отменить заявку"
+
+#: accounts/templates/accounts/profile.html:316
+msgid "No registrations yet."
+msgstr "Регистраций пока нет."
+
+# Pending/rejected competitions + profile (issue #180)
+#: accounts/templates/accounts/profile.html:319
+msgid "Events I submitted"
+msgstr "Добавленные мной события"
+
 # Reject -> edit -> resubmit flow (#200)
-#: accounts/templates/accounts/profile.html:336
+#: accounts/templates/accounts/profile.html:354
 msgid "Resubmit"
 msgstr "Переподать"
 
-#: accounts/templates/accounts/profile.html:340
+#: accounts/templates/accounts/profile.html:358
 msgid "Delete this competition?"
 msgstr "Удалить это соревнование?"
 
-#: accounts/templates/accounts/profile.html:342
+#: accounts/templates/accounts/profile.html:360
 #: calendar_app/templates/calendar_app/detail.html:340
 #: calendar_app/templates/calendar_app/detail.html:361
 #: knowledge/templates/knowledge/knowledge_article_detail.html:56
@@ -457,22 +468,22 @@ msgid "Delete"
 msgstr "Удалить"
 
 # Pending/rejected competitions + profile (issue #180)
-#: accounts/templates/accounts/profile.html:351
+#: accounts/templates/accounts/profile.html:369
 msgid "You have not submitted any events yet."
 msgstr "Вы пока не добавили ни одного события."
 
-#: accounts/templates/accounts/profile.html:354
+#: accounts/templates/accounts/profile.html:372
 msgid "My submissions"
 msgstr "Мои материалы"
 
-#: accounts/templates/accounts/profile.html:357
+#: accounts/templates/accounts/profile.html:375
 #: knowledge/templates/knowledge/knowledge_index_page.html:21
 #: knowledge/templates/knowledge/submit.html:4
 #: knowledge/templates/knowledge/submit.html:9
 msgid "Submit article"
 msgstr "Отправить статью"
 
-#: accounts/templates/accounts/profile.html:365
+#: accounts/templates/accounts/profile.html:383
 #: calendar_app/templates/calendar_app/edit.html:37
 #: calendar_app/templates/calendar_app/edit.html:50
 #: calendar_app/templates/calendar_app/edit.html:63
@@ -488,58 +499,58 @@ msgstr "Отправить статью"
 msgid "Title"
 msgstr "Заголовок"
 
-#: accounts/templates/accounts/profile.html:366
+#: accounts/templates/accounts/profile.html:384
 #: calendar_app/templates/calendar_app/detail.html:54
 #: calendar_app/templates/calendar_app/list.html:151
 #: calendar_app/templates/calendar_app/list.html:177
 msgid "Type"
 msgstr "Тип"
 
-#: accounts/templates/accounts/profile.html:367
+#: accounts/templates/accounts/profile.html:385
 msgid "Language"
 msgstr "Язык"
 
-#: accounts/templates/accounts/profile.html:397
+#: accounts/templates/accounts/profile.html:415
 msgid "No submissions yet."
 msgstr "Подано материалов пока нет."
 
-#: accounts/templates/accounts/profile.html:401
+#: accounts/templates/accounts/profile.html:419
 msgid "API access"
 msgstr "Доступ к API"
 
-#: accounts/templates/accounts/profile.html:404
+#: accounts/templates/accounts/profile.html:422
 msgid ""
 "Use this token to authenticate API requests: <code>Authorization: Bearer "
 "&lt;token&gt;</code>"
 msgstr ""
-"Используйте этот токен для аутентификации API-запросов: <code>Authorization:"
-" Bearer &lt;token&gt;</code>"
+"Используйте этот токен для аутентификации API-запросов: <code>Authorization: "
+"Bearer &lt;token&gt;</code>"
 
-#: accounts/templates/accounts/profile.html:409
+#: accounts/templates/accounts/profile.html:427
 #: calendar_app/templates/calendar_app/detail.html:255
 msgid "Copy"
 msgstr "Копировать"
 
-#: accounts/templates/accounts/profile.html:412
+#: accounts/templates/accounts/profile.html:430
 #: calendar_app/templates/calendar_app/detail.html:281
 msgid "No token yet. Generate one below."
 msgstr "Токен ещё не создан. Сгенерируйте его ниже."
 
-#: accounts/templates/accounts/profile.html:417
+#: accounts/templates/accounts/profile.html:435
 #: calendar_app/templates/calendar_app/detail.html:260
 msgid "Regenerate token"
 msgstr "Пересоздать токен"
 
-#: accounts/templates/accounts/profile.html:417
+#: accounts/templates/accounts/profile.html:435
 #: calendar_app/templates/calendar_app/detail.html:284
 msgid "Generate token"
 msgstr "Создать токен"
 
-#: accounts/templates/accounts/profile.html:420
+#: accounts/templates/accounts/profile.html:438
 msgid "API docs (Swagger)"
 msgstr "Документация API (Swagger)"
 
-#: accounts/templates/accounts/profile.html:426
+#: accounts/templates/accounts/profile.html:444
 #: cycling_site/templates/base.html:138
 msgid "Log out"
 msgstr "Выйти"
@@ -594,30 +605,30 @@ msgid ""
 "Nothing changes automatically: your request goes to the people who run the "
 "site, and one of them decides."
 msgstr ""
-"Ничего не меняется автоматически: запрос уходит людям, которые ведут сайт, и"
-" решение принимает человек."
+"Ничего не меняется автоматически: запрос уходит людям, которые ведут сайт, и "
+"решение принимает человек."
 
 #: accounts/templates/accounts/request_role.html:37
 msgid "Send request"
 msgstr "Отправить запрос"
 
-#: accounts/views.py:283
+#: accounts/views.py:298
 msgid "Please wait a few minutes before sending another message."
 msgstr ""
 "Пожалуйста, подождите несколько минут перед отправкой следующего сообщения."
 
-#: accounts/views.py:299
+#: accounts/views.py:314
 msgid ""
 "Sorry, we could not send your message right now. Please try again later."
 msgstr ""
 "Извините, сейчас не получилось отправить ваше сообщение. Пожалуйста, "
 "попробуйте позже."
 
-#: accounts/views.py:319
+#: accounts/views.py:334
 msgid "Why you need it"
 msgstr "Зачем она вам"
 
-#: accounts/views.py:321
+#: accounts/views.py:336
 msgid ""
 "Tell us what you plan to do with this role, and how to reach you if we have "
 "questions."
@@ -625,19 +636,19 @@ msgstr ""
 "Расскажите, что вы планируете делать с этой ролью и как с вами связаться, "
 "если у нас появятся вопросы."
 
-#: accounts/views.py:370
+#: accounts/views.py:385
 msgid "Your request has been sent. We will get back to you."
 msgstr "Запрос отправлен. Мы вернёмся к вам с ответом."
 
-#: accounts/views.py:377
+#: accounts/views.py:392
 msgid "Subject"
 msgstr "Тема"
 
-#: accounts/views.py:382
+#: accounts/views.py:397
 msgid "Message"
 msgstr "Сообщение"
 
-#: accounts/views.py:384
+#: accounts/views.py:399
 msgid ""
 "Please tell us how to reach you (e.g. email or messenger) and describe your "
 "question or problem in detail."
@@ -645,7 +656,7 @@ msgstr ""
 "Пожалуйста, укажите, как с вами связаться (например, email или мессенджер), "
 "и подробно опишите ваш вопрос или проблему."
 
-#: accounts/views.py:423
+#: accounts/views.py:438
 msgid "Your message has been sent to the site owners."
 msgstr "Ваше сообщение отправлено владельцам сайта."
 
@@ -753,8 +764,7 @@ msgstr "Эта локация недоступна."
 #: calendar_app/forms.py:277 calendar_app/tests.py:1302
 #, python-format
 msgid "Category name is too long: at most %(limit_value)d characters."
-msgstr ""
-"Название категории слишком длинное: не более %(limit_value)d символов."
+msgstr "Название категории слишком длинное: не более %(limit_value)d символов."
 
 #: calendar_app/forms.py:293
 msgctxt "photo or video material"
@@ -774,8 +784,7 @@ msgid "Add a link to this material."
 msgstr "Укажите ссылку на материал."
 
 #: calendar_app/forms.py:356 calendar_app/tests.py:1639 knowledge/forms.py:44
-#: knowledge/tests.py:910 news/forms.py:113 news/forms.py:126
-#: news/tests.py:692
+#: knowledge/tests.py:910 news/forms.py:113 news/forms.py:126 news/tests.py:692
 msgid "Write a comment..."
 msgstr "Напишите комментарий..."
 
@@ -807,8 +816,7 @@ msgid "From %(start)s to %(end)s."
 msgstr "С %(start)s по %(end)s."
 
 #: calendar_app/listing_seo.py:44
-msgid ""
-"Dates, start points and results on the Universal Bicycle Team calendar."
+msgid "Dates, start points and results on the Universal Bicycle Team calendar."
 msgstr "Даты, точки старта и результаты в календаре Universal Bicycle Team."
 
 #: calendar_app/models.py:263
@@ -906,8 +914,7 @@ msgstr "Нажмите на карту, чтобы поставить точку
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:62
 msgid ""
-"Your proposed venue is usable right away and will be reviewed by a "
-"moderator."
+"Your proposed venue is usable right away and will be reviewed by a moderator."
 msgstr "Предложенную локацию можно использовать сразу, её проверит модератор."
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:3
@@ -1075,7 +1082,7 @@ msgstr "Вид"
 #: calendar_app/templates/calendar_app/_view_switcher.html:11
 #: calendar_app/templates/calendar_app/calendar.html:4
 #: calendar_app/templates/calendar_app/calendar.html:7
-#: calendar_app/templates/calendar_app/calendar.html:21
+#: calendar_app/templates/calendar_app/calendar.html:27
 #: calendar_app/templates/calendar_app/list.html:7
 #: calendar_app/templates/calendar_app/map.html:4
 #: calendar_app/templates/calendar_app/map.html:16
@@ -1097,12 +1104,12 @@ msgstr "Список"
 msgid "Map"
 msgstr "Карта"
 
-#: calendar_app/templates/calendar_app/calendar.html:26
+#: calendar_app/templates/calendar_app/calendar.html:32
 #: calendar_app/templates/calendar_app/map.html:21
 msgid "Filters"
 msgstr "Фильтры"
 
-#: calendar_app/templates/calendar_app/calendar.html:30
+#: calendar_app/templates/calendar_app/calendar.html:36
 #: calendar_app/templates/calendar_app/list.html:18
 #: calendar_app/templates/calendar_app/map.html:25
 #: calendar_app/templates/calendar_app/submit.html:4
@@ -1110,7 +1117,7 @@ msgstr "Фильтры"
 msgid "Submit competition"
 msgstr "Добавить соревнование"
 
-#: calendar_app/templates/calendar_app/calendar.html:32
+#: calendar_app/templates/calendar_app/calendar.html:38
 #: calendar_app/templates/calendar_app/list.html:20
 #: calendar_app/templates/calendar_app/map.html:27
 #: calendar_app/templates/calendar_app/moderate.html:4
@@ -1118,17 +1125,17 @@ msgid "Moderation"
 msgstr "Модерация"
 
 # Favorite events (issue #183)
-#: calendar_app/templates/calendar_app/calendar.html:51
+#: calendar_app/templates/calendar_app/calendar.html:57
 #: calendar_app/templates/calendar_app/list.html:49
 #: calendar_app/templates/calendar_app/map.html:55
 msgid "Only favorites"
 msgstr "Только избранные"
 
-#: calendar_app/templates/calendar_app/calendar.html:65
+#: calendar_app/templates/calendar_app/calendar.html:71
 msgid "Month"
 msgstr "Месяц"
 
-#: calendar_app/templates/calendar_app/calendar.html:69
+#: calendar_app/templates/calendar_app/calendar.html:75
 #: registrations/templates/registrations/manual_add.html:27
 #: registrations/templates/registrations/manual_add.html:40
 #: registrations/templates/registrations/manual_add.html:60
@@ -1140,81 +1147,82 @@ msgstr "Месяц"
 msgid "Year"
 msgstr "Год"
 
-#: calendar_app/templates/calendar_app/calendar.html:79
+#: calendar_app/templates/calendar_app/calendar.html:85
 msgid "Nearest competitions"
 msgstr "Ближайшие соревнования"
 
-#: calendar_app/templates/calendar_app/calendar.html:89
+#: calendar_app/templates/calendar_app/calendar.html:95
 msgid "All competitions as a list"
 msgstr "Все соревнования списком"
 
-#: calendar_app/templates/calendar_app/calendar.html:91
+#: calendar_app/templates/calendar_app/calendar.html:97
 msgid "Subscribe in your calendar (.ics)"
 msgstr "Подписаться в своем календаре (.ics)"
 
-#: calendar_app/templates/calendar_app/calendar.html:93
+#: calendar_app/templates/calendar_app/calendar.html:99
 msgid "New competitions (RSS)"
 msgstr "Новые соревнования (RSS)"
 
-#: calendar_app/templates/calendar_app/calendar.html:101
+#: calendar_app/templates/calendar_app/calendar.html:107
 msgid "Competitions by city"
 msgstr "Соревнования по городам"
 
-#: calendar_app/templates/calendar_app/calendar.html:107
+#: calendar_app/templates/calendar_app/calendar.html:113
 msgid "Competitions by discipline"
 msgstr "Соревнования по дисциплинам"
 
-#: calendar_app/templates/calendar_app/calendar.html:122
+#: calendar_app/templates/calendar_app/calendar.html:128
+#: tests/test_calendar_toolbar.py:79
 msgid "January"
 msgstr "Январь"
 
-#: calendar_app/templates/calendar_app/calendar.html:122
+#: calendar_app/templates/calendar_app/calendar.html:128
 msgid "February"
 msgstr "Февраль"
 
-#: calendar_app/templates/calendar_app/calendar.html:122
+#: calendar_app/templates/calendar_app/calendar.html:128
 msgid "March"
 msgstr "Март"
 
-#: calendar_app/templates/calendar_app/calendar.html:123
+#: calendar_app/templates/calendar_app/calendar.html:129
 msgid "April"
 msgstr "Апрель"
 
-#: calendar_app/templates/calendar_app/calendar.html:123
+#: calendar_app/templates/calendar_app/calendar.html:129
 msgid "May"
 msgstr "Май"
 
-#: calendar_app/templates/calendar_app/calendar.html:123
+#: calendar_app/templates/calendar_app/calendar.html:129
 msgid "June"
 msgstr "Июнь"
 
-#: calendar_app/templates/calendar_app/calendar.html:124
+#: calendar_app/templates/calendar_app/calendar.html:130
 msgid "July"
 msgstr "Июль"
 
-#: calendar_app/templates/calendar_app/calendar.html:124
+#: calendar_app/templates/calendar_app/calendar.html:130
 msgid "August"
 msgstr "Август"
 
-#: calendar_app/templates/calendar_app/calendar.html:124
+#: calendar_app/templates/calendar_app/calendar.html:130
 msgid "September"
 msgstr "Сентябрь"
 
-#: calendar_app/templates/calendar_app/calendar.html:125
+#: calendar_app/templates/calendar_app/calendar.html:131
 msgid "October"
 msgstr "Октябрь"
 
-#: calendar_app/templates/calendar_app/calendar.html:125
+#: calendar_app/templates/calendar_app/calendar.html:131
 msgid "November"
 msgstr "Ноябрь"
 
-#: calendar_app/templates/calendar_app/calendar.html:125
+#: calendar_app/templates/calendar_app/calendar.html:131
 msgid "December"
 msgstr "Декабрь"
 
-#: calendar_app/templates/calendar_app/calendar.html:205
-#: tests/test_calendar_toolbar.py:20 tests/test_calendar_toolbar.py:27
-#: tests/test_calendar_toolbar.py:34
+#: calendar_app/templates/calendar_app/calendar.html:211
+#: tests/test_calendar_toolbar.py:32 tests/test_calendar_toolbar.py:39
+#: tests/test_calendar_toolbar.py:46
 msgid "Today"
 msgstr "Сегодня"
 
@@ -1386,8 +1394,7 @@ msgid "Live"
 msgstr "Прямой эфир"
 
 #: calendar_app/templates/calendar_app/detail.html:236
-#: calendar_app/templates/calendar_app/edit.html:160
-#: calendar_app/tests.py:3937
+#: calendar_app/templates/calendar_app/edit.html:160 calendar_app/tests.py:3937
 msgid "Additional materials"
 msgstr "Дополнительные материалы"
 
@@ -1397,8 +1404,7 @@ msgstr "Токен системы хронометража"
 
 #: calendar_app/templates/calendar_app/detail.html:258
 msgid ""
-"Regenerate the timing token? The current token will stop working "
-"immediately."
+"Regenerate the timing token? The current token will stop working immediately."
 msgstr ""
 "Пересоздать токен хронометража? Текущий токен сразу перестанет работать."
 
@@ -1598,8 +1604,7 @@ msgstr "Ссылка на внешнюю регистрацию"
 msgid ""
 "Links to photo and video coverage. Each one needs both a name and a link."
 msgstr ""
-"Ссылки на фото- и видеоматериалы. У каждого должны быть и название, и "
-"ссылка."
+"Ссылки на фото- и видеоматериалы. У каждого должны быть и название, и ссылка."
 
 #: calendar_app/templates/calendar_app/edit.html:187
 #: calendar_app/templates/calendar_app/edit.html:191
@@ -1726,8 +1731,8 @@ msgstr ""
 msgid "Submit"
 msgstr "Отправить"
 
-#: calendar_app/tests.py:670 calendar_app/tests.py:683
-#: cycling_site/forms.py:18 news/tests.py:582
+#: calendar_app/tests.py:670 calendar_app/tests.py:683 cycling_site/forms.py:18
+#: news/tests.py:582
 #, python-format
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Значение должно содержать не более %(limit_value)d символов."
@@ -1761,8 +1766,8 @@ msgstr ""
 msgid "Please provide a reason for rejection."
 msgstr "Пожалуйста, укажите причину отказа."
 
-#: calendar_app/views.py:1449 calendar_app/views.py:1469
-#: knowledge/views.py:164 news/views.py:244
+#: calendar_app/views.py:1449 calendar_app/views.py:1469 knowledge/views.py:164
+#: news/views.py:244
 msgid "Invalid submission."
 msgstr "Некорректная отправка."
 
@@ -1871,8 +1876,7 @@ msgstr "Страницы"
 
 #: cycling_site/templates/_pagination.html:15
 #: news/templates/news/news_index_page.html:54
-#: news/templates/news/news_list.html:82
-#: search/templates/search/search.html:89
+#: news/templates/news/news_list.html:82 search/templates/search/search.html:89
 msgid "Previous"
 msgstr "Назад"
 
@@ -1882,16 +1886,15 @@ msgstr "Перейти на страницу"
 
 #: cycling_site/templates/_pagination.html:41
 #: news/templates/news/news_index_page.html:66
-#: news/templates/news/news_list.html:90
-#: search/templates/search/search.html:93
+#: news/templates/news/news_list.html:90 search/templates/search/search.html:93
 msgid "Next"
 msgstr "Вперёд"
 
 #: cycling_site/templates/base.html:18 cycling_site/templates/base.html:34
 msgid ""
-"Calendar of endurance sport events -- cycling, running, cross-country skiing"
-" -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and"
-" a knowledge base."
+"Calendar of endurance sport events -- cycling, running, cross-country skiing "
+"-- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and "
+"a knowledge base."
 msgstr ""
 "Календарь соревнований по циклическим видам спорта — велоспорт, бег, лыжные "
 "гонки — в Казахстане, Кыргызстане, России и других странах. Анонсы, "
@@ -1922,8 +1925,7 @@ msgid "About"
 msgstr "О нас"
 
 #: cycling_site/templates/base.html:98 search/templates/search/search.html:4
-#: search/templates/search/search.html:9
-#: search/templates/search/search.html:16
+#: search/templates/search/search.html:9 search/templates/search/search.html:16
 msgid "Search"
 msgstr "Поиск"
 
@@ -1948,8 +1950,7 @@ msgstr ""
 "Нашли баг или есть предложение? <a href=\"%(url)s\" target=\"_blank\" "
 "rel=\"noopener\">Создайте задачу на GitHub</a>."
 
-#: cycling_site/templates/base.html:174
-#: home/templates/home/privacy_page.html:4
+#: cycling_site/templates/base.html:174 home/templates/home/privacy_page.html:4
 #: home/templates/home/privacy_page.html:9
 msgid "Privacy Policy"
 msgstr "Политика конфиденциальности"
@@ -2044,8 +2045,8 @@ msgstr "Какие данные мы собираем"
 
 #: home/templates/home/privacy_page.html:15
 msgid ""
-"<strong>Account data.</strong> When you register we store your email address"
-" and a cryptographic hash of your password (never the password itself). You "
+"<strong>Account data.</strong> When you register we store your email address "
+"and a cryptographic hash of your password (never the password itself). You "
 "may optionally add your name, date of birth, gender, city, team, a link to "
 "your Strava profile, and your preferred sports and locations, so that forms "
 "are pre-filled for you."
@@ -2058,8 +2059,8 @@ msgstr ""
 
 #: home/templates/home/privacy_page.html:16
 msgid ""
-"<strong>Sign-in through Google, GitHub or Strava.</strong> If you use one of"
-" these buttons, we receive only your identifier with that service and your "
+"<strong>Sign-in through Google, GitHub or Strava.</strong> If you use one of "
+"these buttons, we receive only your identifier with that service and your "
 "name, which we use to create or sign in to your account. From Strava we "
 "receive your athlete identifier and name only: we do not request access to "
 "your activities, routes, segments or any training data, and we never see "
@@ -2067,21 +2068,21 @@ msgid ""
 msgstr ""
 "<strong>Вход через Google, GitHub или Strava.</strong> Если вы пользуетесь "
 "одной из этих кнопок, мы получаем только ваш идентификатор в этом сервисе и "
-"имя — их мы используем, чтобы создать аккаунт или войти в него. Из Strava мы"
-" получаем только идентификатор спортсмена и имя: мы не запрашиваем доступ к "
+"имя — их мы используем, чтобы создать аккаунт или войти в него. Из Strava мы "
+"получаем только идентификатор спортсмена и имя: мы не запрашиваем доступ к "
 "вашим тренировкам, маршрутам, сегментам и любым тренировочным данным и "
 "никогда их не видим."
 
 #: home/templates/home/privacy_page.html:17
 msgid ""
 "<strong>Race registration data.</strong> When you register for an event we "
-"store the details the organizer requires: name, date of birth, gender, city,"
-" team, category, and an optional free-text field (some organizers use it for"
-" a link to your Strava profile)."
+"store the details the organizer requires: name, date of birth, gender, city, "
+"team, category, and an optional free-text field (some organizers use it for "
+"a link to your Strava profile)."
 msgstr ""
-"<strong>Данные регистрации на старт.</strong> При регистрации на мероприятие"
-" мы сохраняем сведения, которые требует организатор: имя, дату рождения, "
-"пол, город, команду, категорию и необязательное текстовое поле (некоторые "
+"<strong>Данные регистрации на старт.</strong> При регистрации на мероприятие "
+"мы сохраняем сведения, которые требует организатор: имя, дату рождения, пол, "
+"город, команду, категорию и необязательное текстовое поле (некоторые "
 "организаторы используют его для ссылки на профиль в Strava)."
 
 #: home/templates/home/privacy_page.html:18
@@ -2101,8 +2102,8 @@ msgid ""
 "server logs. We do not use advertising or analytics trackers, and there is "
 "no third-party tracking code on the site."
 msgstr ""
-"<strong>Технические данные.</strong> Сессионная cookie, которая держит вас в"
-" системе, cookie с выбранным языком и темой оформления, а также обычные "
+"<strong>Технические данные.</strong> Сессионная cookie, которая держит вас в "
+"системе, cookie с выбранным языком и темой оформления, а также обычные "
 "журналы сервера. Мы не используем рекламные и аналитические трекеры, "
 "стороннего кода слежения на сайте нет."
 
@@ -2137,10 +2138,10 @@ msgid ""
 msgstr ""
 "Спортивные результаты публичны по своей природе. В стартовых и итоговых "
 "протоколах отображаются имена участников и те сведения, которые организатор "
-"решил опубликовать: город, команда, категория. Организатор мероприятия видит"
-" данные регистрации тех, кто на него записался. Ваш адрес электронной почты "
-"никогда не публикуется. Оставленные вами комментарии публичны и показываются"
-" с вашим именем."
+"решил опубликовать: город, команда, категория. Организатор мероприятия видит "
+"данные регистрации тех, кто на него записался. Ваш адрес электронной почты "
+"никогда не публикуется. Оставленные вами комментарии публичны и показываются "
+"с вашим именем."
 
 #: home/templates/home/privacy_page.html:27
 msgid "What we never do"
@@ -2149,8 +2150,8 @@ msgstr "Чего мы не делаем никогда"
 #: home/templates/home/privacy_page.html:28
 msgid ""
 "We do not sell, rent or trade your data. We do not use it for advertising "
-"and we do not use it to train machine-learning or AI models. We do not share"
-" it with anyone except the service providers listed below and the organizer "
+"and we do not use it to train machine-learning or AI models. We do not share "
+"it with anyone except the service providers listed below and the organizer "
 "of an event you personally registered for."
 msgstr ""
 "Мы не продаём, не сдаём в аренду и не обмениваем ваши данные. Мы не "
@@ -2165,14 +2166,14 @@ msgstr "Поставщики услуг"
 
 #: home/templates/home/privacy_page.html:31
 msgid ""
-"The site runs on a commercial hosting platform and uses an email provider to"
-" deliver service messages; both process data solely on our behalf. Map tiles"
-" are loaded from OpenStreetMap, and some interface libraries are loaded from"
-" public content delivery networks, which means those services see your IP "
+"The site runs on a commercial hosting platform and uses an email provider to "
+"deliver service messages; both process data solely on our behalf. Map tiles "
+"are loaded from OpenStreetMap, and some interface libraries are loaded from "
+"public content delivery networks, which means those services see your IP "
 "address as part of serving the request."
 msgstr ""
-"Сайт работает на коммерческой хостинг-платформе и использует почтовый сервис"
-" для доставки служебных писем; оба обрабатывают данные исключительно по "
+"Сайт работает на коммерческой хостинг-платформе и использует почтовый сервис "
+"для доставки служебных писем; оба обрабатывают данные исключительно по "
 "нашему поручению. Тайлы карт загружаются из OpenStreetMap, а часть "
 "интерфейсных библиотек — из публичных сетей доставки контента, поэтому эти "
 "сервисы видят ваш IP-адрес при обработке запроса."
@@ -2185,8 +2186,8 @@ msgstr "Хранение и удаление"
 msgid ""
 "We keep your data while your account exists. You can edit or clear most of "
 "it yourself in your profile at any time, and you can disconnect a linked "
-"Google, GitHub or Strava account from that service's settings. If you ask us"
-" to delete your account, we remove your personal data, including any "
+"Google, GitHub or Strava account from that service's settings. If you ask us "
+"to delete your account, we remove your personal data, including any "
 "identifier and name received from Strava. Published results of past events "
 "may be kept for historical accuracy in the same way they appear in ordinary "
 "sport protocols."
@@ -2196,8 +2197,8 @@ msgstr ""
 "аккаунт Google, GitHub или Strava — отключить в настройках соответствующего "
 "сервиса. Если вы попросите удалить аккаунт, мы удалим ваши персональные "
 "данные, включая идентификатор и имя, полученные из Strava. Опубликованные "
-"результаты прошедших мероприятий могут сохраняться для исторической точности"
-" — так же, как они существуют в обычных спортивных протоколах."
+"результаты прошедших мероприятий могут сохраняться для исторической точности "
+"— так же, как они существуют в обычных спортивных протоколах."
 
 #: home/templates/home/privacy_page.html:36
 msgid "Your rights"
@@ -2220,8 +2221,8 @@ msgstr "Контакты"
 #: home/templates/home/terms_page.html:41
 #, python-format
 msgid ""
-"Use the <a href=\"%(contact_url)s\">contact form</a> to reach the people who"
-" run this site."
+"Use the <a href=\"%(contact_url)s\">contact form</a> to reach the people who "
+"run this site."
 msgstr ""
 "Свяжитесь с теми, кто ведёт этот сайт, через <a "
 "href=\"%(contact_url)s\">форму обратной связи</a>."
@@ -2234,15 +2235,14 @@ msgid "Changes"
 msgstr "Сохранить изменения"
 
 #: home/templates/home/privacy_page.html:46
-msgid ""
-"If this policy changes we will update the date at the top of this page."
+msgid "If this policy changes we will update the date at the top of this page."
 msgstr "Если политика изменится, мы обновим дату вверху этой страницы."
 
 #: home/templates/home/terms_page.html:12
 msgid ""
 "Universal Bicycle Team is a free, non-commercial website for the amateur "
-"cycling and running community. It publishes a calendar of amateur events and"
-" lets athletes register for them. By using the site you accept these terms."
+"cycling and running community. It publishes a calendar of amateur events and "
+"lets athletes register for them. By using the site you accept these terms."
 msgstr ""
 "Universal Bicycle Team — бесплатный некоммерческий сайт для любительского "
 "сообщества велосипедистов и бегунов. Он публикует календарь любительских "
@@ -2256,8 +2256,8 @@ msgstr "Ваш аккаунт"
 #: home/templates/home/terms_page.html:15
 msgid ""
 "Please give accurate details when you register, and keep your password to "
-"yourself: anything done from your account is treated as done by you. Tell us"
-" if you believe someone else has access to it. Some actions, such as "
+"yourself: anything done from your account is treated as done by you. Tell us "
+"if you believe someone else has access to it. Some actions, such as "
 "submitting events or leaving comments, require a confirmed email address."
 msgstr ""
 "Пожалуйста, указывайте достоверные данные при регистрации и никому не "
@@ -2273,19 +2273,19 @@ msgstr "Мероприятия и контент, который вы публи
 #: home/templates/home/terms_page.html:18
 msgid ""
 "Organizers and participants may submit events, comments and files. Submit "
-"only information you have the right to publish, and make it accurate: dates,"
-" locations, distances and links. Submitted events are reviewed before they "
+"only information you have the right to publish, and make it accurate: dates, "
+"locations, distances and links. Submitted events are reviewed before they "
 "appear in the public calendar, and we may edit, decline or remove anything "
 "that is inaccurate, misleading, unlawful, offensive or spam. You keep the "
 "rights to what you publish and give us permission to display it on the site."
 msgstr ""
 "Организаторы и участники могут добавлять мероприятия, комментарии и файлы. "
 "Публикуйте только те сведения, на которые у вас есть право, и следите за их "
-"точностью: даты, места, дистанции и ссылки. Добавленные мероприятия проходят"
-" проверку перед публикацией в общем календаре, и мы вправе отредактировать, "
+"точностью: даты, места, дистанции и ссылки. Добавленные мероприятия проходят "
+"проверку перед публикацией в общем календаре, и мы вправе отредактировать, "
 "отклонить или удалить всё, что неточно, вводит в заблуждение, незаконно, "
-"оскорбительно или является спамом. Права на опубликованное остаются за вами,"
-" а нам вы даёте разрешение показывать его на сайте."
+"оскорбительно или является спамом. Права на опубликованное остаются за вами, "
+"а нам вы даёте разрешение показывать его на сайте."
 
 #: home/templates/home/terms_page.html:20
 msgid "Registering for an event"
@@ -2296,8 +2296,8 @@ msgid ""
 "We are an information and registration platform, not the organizer. The "
 "event itself — its rules, safety, timing, entry fees, refunds, cancellation "
 "and results — is the responsibility of the organizer who published it. Your "
-"registration details are passed to that organizer so they can run the event."
-" Taking part in sporting events carries risk; assess your own health and "
+"registration details are passed to that organizer so they can run the event. "
+"Taking part in sporting events carries risk; assess your own health and "
 "preparation, and follow the organizer's rules."
 msgstr ""
 "Мы — информационная и регистрационная платформа, а не организатор. За само "
@@ -2320,8 +2320,8 @@ msgid ""
 msgstr ""
 "Не пытайтесь взломать сайт, нарушить его работу или массово собирать с него "
 "данные автоматическими средствами. Не выдавайте себя за других людей и не "
-"регистрируйте их без согласия. Пользуйтесь API сайта через документированный"
-" интерфейс и в пределах установленных нами ограничений."
+"регистрируйте их без согласия. Пользуйтесь API сайта через документированный "
+"интерфейс и в пределах установленных нами ограничений."
 
 #: home/templates/home/terms_page.html:26
 msgid "Availability and liability"
@@ -2367,8 +2367,8 @@ msgid ""
 "The <a href=\"%(privacy_url)s\">Privacy Policy</a> explains what data we "
 "collect and how to have it removed."
 msgstr ""
-"<a href=\"%(privacy_url)s\">Политика конфиденциальности</a> объясняет, какие"
-" данные мы собираем и как их удалить."
+"<a href=\"%(privacy_url)s\">Политика конфиденциальности</a> объясняет, какие "
+"данные мы собираем и как их удалить."
 
 #: home/templates/home/terms_page.html:45
 msgid "If these terms change we will update the date at the top of this page."
@@ -2388,13 +2388,12 @@ msgstr "Добро пожаловать на ваш новый сайт Wagtail!
 
 #: home/templates/home/welcome_page.html:28
 msgid ""
-"Please feel free to <a "
-"href=\"https://github.com/wagtail/wagtail/wiki/Slack\">join our community on"
-" Slack</a>, or get started with one of the links below."
+"Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/"
+"Slack\">join our community on Slack</a>, or get started with one of the "
+"links below."
 msgstr ""
-"Присоединяйтесь к нашему <a "
-"href=\"https://github.com/wagtail/wagtail/wiki/Slack\">сообществу в "
-"Slack</a> или начните с одной из ссылок ниже."
+"Присоединяйтесь к нашему <a href=\"https://github.com/wagtail/wagtail/wiki/"
+"Slack\">сообществу в Slack</a> или начните с одной из ссылок ниже."
 
 #: home/templates/home/welcome_page.html:35
 msgid "Wagtail Documentation"
@@ -2456,8 +2455,8 @@ msgstr "Английский"
 
 #: knowledge/models.py:234
 msgid ""
-"This article isn't available in your selected language, so it's shown in its"
-" original language."
+"This article isn't available in your selected language, so it's shown in its "
+"original language."
 msgstr ""
 "Эта статья недоступна на выбранном вами языке и показана на языке оригинала."
 
@@ -2841,14 +2840,6 @@ msgstr "Причина (необязательно)"
 #: registrations/templates/registrations/_participant_row.html:51
 msgid "Confirm reject"
 msgstr "Подтвердить отказ"
-
-#: registrations/templates/registrations/_participant_row.html:61
-msgid "Cancel your registration?"
-msgstr "Отменить свою заявку?"
-
-#: registrations/templates/registrations/_participant_row.html:63
-msgid "Cancel registration"
-msgstr "Отменить заявку"
 
 #: registrations/templates/registrations/edit_registration.html:4
 #: registrations/templates/registrations/edit_registration.html:13

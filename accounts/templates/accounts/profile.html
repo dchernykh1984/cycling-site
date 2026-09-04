@@ -257,6 +257,7 @@
                         <th>{% trans "Category" %}</th>
                         <th>{% trans "Date" %}</th>
                         <th>{% trans "Status" %}</th>
+                        <th>{% trans "Actions" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -284,6 +285,22 @@
                             <span class="badge bg-warning text-dark">{% trans "Not paid" %}</span>
                             {% endif %}
                             {% endif %}
+                            {% endif %}
+                        </td>
+                        {% comment %}Same two buttons as the participant list, on the same rule: the
+                        view marks a row editable only when the edit and delete views would allow
+                        it. Edit opens that event's own edit page, exactly as it does from the
+                        participant list.{% endcomment %}
+                        <td class="text-nowrap">
+                            {% if reg.can_edit %}
+                            <a href="{% url 'registrations:edit_registration' reg.competition.pk reg.pk %}"
+                               class="btn btn-outline-secondary btn-sm">{% trans "Edit" %}</a>
+                            <form method="post" action="{% url 'registrations:delete_registration' reg.competition.pk reg.pk %}"
+                                  class="d-inline"
+                                  onsubmit="return confirm('{% trans "Cancel your registration?" %}')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">{% trans "Cancel registration" %}</button>
+                            </form>
                             {% endif %}
                         </td>
                     </tr>
