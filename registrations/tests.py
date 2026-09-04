@@ -30,7 +30,9 @@ def make_user(username, role=User.Role.PARTICIPANT, **kwargs):
 def make_competition(title="Test Race", status=Competition.Status.APPROVED, **kwargs):
     defaults = {
         "title_ru": title,
-        "date_start": datetime.date(2026, 7, 1),
+        # Dated from the day the suite runs. An event with no deadline of its own closes once it
+        # has been ridden, so a fixed date would drift into the past and shut every fixture here.
+        "date_start": datetime.date.today() + datetime.timedelta(days=30),
         "status": status,
     }
     defaults.update(kwargs)

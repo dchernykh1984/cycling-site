@@ -325,7 +325,13 @@ class Competition(index.Indexed, models.Model):
             return False
         if self.status != self.Status.APPROVED:
             return False
-        if self.registration_deadline and self.registration_deadline < timezone.now():
+        if self.registration_deadline:
+            if self.registration_deadline < timezone.now():
+                return False
+        # An event with no deadline of its own used to keep taking entries years after it was
+        # ridden. It closes when the race is over instead -- and not a moment earlier, because a
+        # start can be in the evening, so the window stands all through the final day.
+        elif timezone.localdate() > (self.date_end or self.date_start):
             return False
         return True if ignore_limit else not self.is_limit_reached()
 
