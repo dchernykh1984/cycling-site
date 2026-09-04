@@ -144,11 +144,7 @@ class ProfileView(TemplateView):
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
         if self.request.user.is_authenticated:
             # Hide registrations whose competition was soft-deleted (issue #161).
-            context["registrations"] = (
-                self.request.user.competition_registrations.filter(competition__is_deleted=False)
-                .select_related("competition", "category")
-                .order_by("-registered_at")
-            )
+            context["registrations"] = self._registrations_with_actions(self.request.user)
             from django.db.models import Case, IntegerField, Value, When
 
             from calendar_app.models import Competition
@@ -167,6 +163,25 @@ class ProfileView(TemplateView):
                 .order_by("_approved_last", "-date_start")
             )
         return context
+
+    @staticmethod
+    def _registrations_with_actions(user):
+        """The reader's own entries, each carrying whether they may still edit or cancel it.
+
+        The profile offers the same two buttons as the participant list, so it asks the same two
+        questions the edit and delete views ask before they act -- rather than a second rule that
+        can drift away from them and offer a button the server then refuses.
+        """
+        from registrations.views import can_manage, can_self_edit
+
+        rows = list(
+            user.competition_registrations.filter(competition__is_deleted=False)
+            .select_related("competition", "category")
+            .order_by("-registered_at")
+        )
+        for reg in rows:
+            reg.can_edit = can_manage(user, reg.competition) or can_self_edit(user, reg.competition, reg)
+        return rows
 
 
 class ProfileEditView(LoginRequiredMixin, View):

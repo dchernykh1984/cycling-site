@@ -282,3 +282,41 @@ def test_deleted_competition_registration_hidden(page: Page, live_server, organi
     _go_profile(page, live_server)
     expect(page.locator("text=Profile Test Race")).to_have_count(0)
     expect(page.locator(f"a[href='/ru/calendar/{comp.pk}/']")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_edit_from_the_profile_opens_the_registration_form(page: Page, live_server, organizer, db):
+    """The profile's Edit button lands on the same page the participant list's Edit lands on."""
+    comp = Competition.objects.create(
+        title_ru="Profile Edit RU",
+        title_en="Profile Edit",
+        date_start=UPCOMING,
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        registration_enabled=True,
+        registration_mode=Competition.RegistrationMode.FREE,
+    )
+    rider = User.objects.create_user(
+        username="e2e_profile_rider",
+        email="e2e_profile_rider@test.local",
+        password="testpass123!",
+        role=User.Role.PARTICIPANT,
+    )
+    reg = CompetitionRegistration.objects.create(
+        competition=comp,
+        user=rider,
+        first_name="Denis",
+        last_name="Chernykh",
+        city="Almaty",
+        birth_date=datetime.date(1984, 1, 1),
+        gender="M",
+    )
+
+    inject_session(page, live_server, rider)
+    page.goto(f"{live_server.url}{PROFILE_PATH}")
+    edit = page.locator(f"a[href$='/participants/{reg.pk}/edit/']")
+    expect(edit).to_be_visible()
+    edit.click()
+    expect(page).to_have_url(f"{live_server.url}/ru/competitions/{comp.pk}/participants/{reg.pk}/edit/")
+    # The rider's own entry, loaded into the same form the participant list opens.
+    expect(page.locator("input[name='first_name']")).to_have_value("Denis")
