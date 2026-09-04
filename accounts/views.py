@@ -186,7 +186,9 @@ class ProfileView(TemplateView):
             # An organizer's rights are decided by the event's submitter, so that row travels with
             # the event -- otherwise the permission check fetches it once per registration.
             .select_related("competition", "competition__submitted_by", "category")
-            .order_by("-registered_at")
+            # By the race, newest first: the reader is looking up how a start went, not when they
+            # happened to fill the form in.
+            .order_by("-competition__date_start", "-registered_at")
         )
         for reg in rows:
             reg.can_edit = can_manage(user, reg.competition) or can_self_edit(user, reg.competition, reg)

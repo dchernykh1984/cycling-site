@@ -218,6 +218,109 @@ class ActiveRegistrationsSectionTests(TestCase):
         self.assertIn(reg.pk, [r.pk for r in response.context["registrations"]])
 
 
+class ProfileRegistrationTableTests(TestCase):
+    """The archive below the cards: what happened, when the race was, and nothing that scrolls."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.rider = _make_user("table_rider")
+        cls.url = reverse("account_profile")
+
+    def _race(self, day, **kwargs):
+        return Competition.objects.create(
+            title_ru="Race",
+            date_start=day,
+            status=Competition.Status.APPROVED,
+            registration_enabled=True,
+            registration_mode=Competition.RegistrationMode.FREE,
+            birth_date_mode="year",
+            **kwargs,
+        )
+
+    def _entry(self, competition, **kwargs):
+        defaults = {
+            "competition": competition,
+            "user": self.rider,
+            "first_name": "Denis",
+            "last_name": "Test",
+            "birth_date": datetime.date(1990, 1, 1),
+            "gender": "M",
+        }
+        defaults.update(kwargs)
+        return CompetitionRegistration.objects.create(**defaults)
+
+    def _table(self):
+        import re
+
+        self.client.force_login(self.rider)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        return response, re.search(r"<table[^>]*>.*?</table>", response.content.decode(), flags=re.S).group(0)
+
+    def test_the_date_shown_is_the_race_not_the_day_the_form_was_filled_in(self):
+        comp = self._race(datetime.date.today() - datetime.timedelta(days=400))
+        reg = self._entry(comp)
+        _response, table = self._table()
+        self.assertIn(comp.date_start.strftime("%d.%m.%Y"), table)
+        self.assertNotIn(reg.registered_at.strftime("%d.%m.%Y"), table)
+
+    def test_the_most_recent_race_comes_first(self):
+        old = self._entry(self._race(datetime.date.today() - datetime.timedelta(days=800)))
+        recent = self._entry(self._race(datetime.date.today() - datetime.timedelta(days=10)))
+        response, _table = self._table()
+        self.assertEqual([r.pk for r in response.context["registrations"]][:2], [recent.pk, old.pk])
+
+    def test_the_category_column_is_gone(self):
+        from registrations.models import RegistrationCategory
+
+        comp = self._race(datetime.date.today() - datetime.timedelta(days=10))
+        category = RegistrationCategory.objects.create(competition=comp, name="Masters 40+")
+        self._entry(comp, category=category)
+        _response, table = self._table()
+        self.assertNotIn("Masters 40+", table)
+        with translation.override("ru"):
+            self.assertNotIn(translation.gettext("Category"), table)
+
+    def test_a_confirmed_entry_shows_no_badge(self):
+        self._entry(self._race(datetime.date.today() - datetime.timedelta(days=10)), is_approved=True)
+        _response, table = self._table()
+        self.assertNotIn("badge", table)
+
+    def test_a_rejected_entry_still_says_so(self):
+        comp = self._race(datetime.date.today() - datetime.timedelta(days=10))
+        self._entry(comp, is_rejected=True, rejection_note="No slot")
+        _response, table = self._table()
+        with translation.override("ru"):
+            self.assertIn(translation.gettext("Rejected"), table)
+        self.assertIn("No slot", table)
+
+    def test_an_entry_still_waiting_says_so(self):
+        comp = self._race(datetime.date.today() + datetime.timedelta(days=10), require_approval=True)
+        self._entry(comp, is_approved=False)
+        _response, table = self._table()
+        with translation.override("ru"):
+            self.assertIn(translation.gettext("Pending"), table)
+
+    def test_an_unpaid_entry_says_so(self):
+        comp = self._race(datetime.date.today() + datetime.timedelta(days=10), require_payment=True)
+        self._entry(comp, is_paid=False)
+        _response, table = self._table()
+        with translation.override("ru"):
+            self.assertIn(translation.gettext("Not paid"), table)
+
+    def test_the_participant_list_still_dates_a_row_by_its_registration(self):
+        """Only the profile changed: on the event's own list the sign-up date is the useful one.
+
+        That column belongs to whoever runs the event, so the check reads it as the organizer.
+        """
+        organizer = _make_user("list_organizer", role=User.Role.ORGANIZER)
+        comp = self._race(datetime.date.today() + datetime.timedelta(days=10), submitted_by=organizer)
+        reg = self._entry(comp)
+        self.client.force_login(organizer)
+        response = self.client.get(reverse("registrations:participant_list", args=[comp.pk]))
+        self.assertContains(response, reg.registered_at.strftime("%d.%m.%Y"))
+
+
 class ProfileRegistrationQueryCountTests(TestCase):
     """Deciding who may edit must not cost a query per row.
 
