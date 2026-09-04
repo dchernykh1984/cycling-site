@@ -247,6 +247,49 @@
             </div>
         </div>
 
+        {% if active_registrations %}
+        <h2 class="h5 mb-1">{% trans "Active registrations" %}</h2>
+        <p class="text-muted small mb-3">{% trans "Registration is still open: these entries can be changed or cancelled." %}</p>
+        <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+            {% for reg in active_registrations %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                            <a href="{% url 'competition_detail' reg.competition.pk %}" class="fw-semibold">{{ reg.competition.title }}</a>
+                            <span class="text-nowrap text-muted small">{{ reg.competition.date_start|date:"d.m.Y" }}</span>
+                        </div>
+                        {% if reg.category %}<div class="text-muted small">{{ reg.category.name }}</div>{% endif %}
+                        <div class="mt-2">
+                            {% if reg.is_approved %}
+                            <span class="badge bg-success">{% trans "Approved" %}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{% trans "Pending" %}</span>
+                            {% endif %}
+                            {% if reg.competition.require_payment %}
+                            {% if reg.is_paid %}
+                            <span class="badge bg-success">{% trans "Paid" %}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{% trans "Not paid" %}</span>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <a href="{% url 'registrations:edit_registration' reg.competition.pk reg.pk %}"
+                               class="btn btn-outline-secondary btn-sm">{% trans "Edit" %}</a>
+                            <form method="post" action="{% url 'registrations:delete_registration' reg.competition.pk reg.pk %}"
+                                  onsubmit="return confirm('{% trans "Cancel your registration?" %}')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">{% trans "Cancel registration" %}</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <h2 class="h5 mb-3">{% trans "My registrations" %}</h2>
         {% if registrations %}
         <div class="table-responsive mb-3">

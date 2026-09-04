@@ -12,7 +12,7 @@ from django.db import connection
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from accounts.models import User
 from calendar_app.models import Competition
@@ -128,6 +128,94 @@ class ProfileRegistrationActionsTests(TestCase):
             self.assertIn(translation.gettext("Actions"), [h.strip() for h in headers])
         self.assertEqual(len(re.findall(r"<td", table.split("</thead>")[1])), len(headers))
         self.assertNotContains(response, reverse("registrations:edit_registration", args=[comp.pk, reg.pk]))
+
+
+class ActiveRegistrationsSectionTests(TestCase):
+    """The cards above the table: the entries a rider can still act on, nearest race first."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.rider = _make_user("card_rider")
+        cls.url = reverse("account_profile")
+
+    def _race(self, days_ahead, **kwargs):
+        return Competition.objects.create(
+            title_ru=f"Race in {days_ahead}",
+            date_start=datetime.date.today() + datetime.timedelta(days=days_ahead),
+            status=Competition.Status.APPROVED,
+            registration_enabled=True,
+            registration_mode=Competition.RegistrationMode.FREE,
+            birth_date_mode="year",
+            **kwargs,
+        )
+
+    def _entry(self, competition, user=None):
+        return CompetitionRegistration.objects.create(
+            competition=competition,
+            user=user or self.rider,
+            first_name="Denis",
+            last_name="Test",
+            birth_date=datetime.date(1990, 1, 1),
+            gender="M",
+        )
+
+    def _profile(self, user=None):
+        self.client.force_login(user or self.rider)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        return response
+
+    def test_an_open_entry_gets_a_card_with_both_buttons(self):
+        comp = self._race(20)
+        reg = self._entry(comp)
+        response = self._profile()
+        self.assertEqual([r.pk for r in response.context["active_registrations"]], [reg.pk])
+        self.assertContains(response, reverse("registrations:edit_registration", args=[comp.pk, reg.pk]))
+        self.assertContains(response, reverse("registrations:delete_registration", args=[comp.pk, reg.pk]))
+
+    def test_the_card_carries_the_date_of_the_race(self):
+        comp = self._race(20)
+        self._entry(comp)
+        self.assertContains(self._profile(), comp.date_start.strftime("%d.%m.%Y"))
+
+    def test_the_nearest_race_comes_first(self):
+        far = self._entry(self._race(60))
+        near = self._entry(self._race(3))
+        response = self._profile()
+        self.assertEqual([r.pk for r in response.context["active_registrations"]], [near.pk, far.pk])
+
+    def test_a_ridden_race_leaves_the_section(self):
+        """Registration closes the day after the race, so its entry is history, not a card."""
+        comp = self._race(-1)
+        self._entry(comp)
+        self.assertEqual(list(self._profile().context["active_registrations"]), [])
+
+    def test_a_closed_deadline_leaves_the_section(self):
+        comp = self._race(20, registration_deadline=timezone.now() - datetime.timedelta(hours=1))
+        self._entry(comp)
+        self.assertEqual(list(self._profile().context["active_registrations"]), [])
+
+    def test_a_manager_does_not_collect_cards_for_races_already_ridden(self):
+        """Manager rights outlive the window; the section is about what is still ahead."""
+        organizer = _make_user("card_organizer", role=User.Role.ORGANIZER)
+        old = self._race(-30, submitted_by=organizer)
+        self._entry(old, user=organizer)
+        soon = self._race(10, submitted_by=organizer)
+        current = self._entry(soon, user=organizer)
+        response = self._profile(organizer)
+        self.assertEqual([r.pk for r in response.context["active_registrations"]], [current.pk])
+
+    def test_no_section_when_nothing_is_open(self):
+        with translation.override("ru"):
+            heading = translation.gettext("Active registrations")
+        self._entry(self._race(-5))
+        self.assertNotContains(self._profile(), heading)
+
+    def test_the_entry_still_shows_in_the_table_below(self):
+        comp = self._race(-5)
+        reg = self._entry(comp)
+        response = self._profile()
+        self.assertIn(reg.pk, [r.pk for r in response.context["registrations"]])
 
 
 class ProfileRegistrationQueryCountTests(TestCase):
