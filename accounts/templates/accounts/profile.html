@@ -250,7 +250,9 @@
         {% if active_registrations %}
         <h2 class="h5 mb-1">{% trans "Active registrations" %}</h2>
         <p class="text-muted small mb-3">{% trans "Registration is still open: these entries can be changed or cancelled." %}</p>
-        <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+        {% comment %}One card per row: the profile's content column is about 550px wide, and two cards
+        across it leave each title wrapping over five lines with the buttons stacked underneath.{% endcomment %}
+        <div class="row row-cols-1 g-3 mb-4">
             {% for reg in active_registrations %}
             <div class="col">
                 <div class="card h-100">
