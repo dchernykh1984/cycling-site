@@ -12,6 +12,12 @@
 <style>
   #calendar { min-height: 500px; }
   .fc-event { cursor: pointer; }
+  /* The toolbar row carries the month picker as well as prev/next/Today. The chunk holding them
+     is a plain block, so without this the picker drops onto a line of its own instead of sitting
+     beside the buttons; and on a phone the row is wider than the screen, which without the
+     wrapping would scroll the whole page sideways. */
+  .fc .fc-header-toolbar { flex-wrap: wrap; row-gap: .5rem; }
+  .fc .fc-toolbar-chunk { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
 </style>
 {% endblock %}
 
@@ -243,7 +249,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var toolbar = document.querySelector('#calendar .fc-toolbar-chunk');
     if (toolbar) {
       picker.classList.remove('mb-2');
-      picker.classList.add('ms-2');
       toolbar.appendChild(picker);
     }
   }
