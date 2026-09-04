@@ -57,6 +57,20 @@
   </div>
 </div>
 
+{% comment %}The month picker starts here and is moved into the grid's own toolbar, next to Today,
+once FullCalendar has drawn it. If the grid never draws -- no scripts, a failed CDN -- the picker
+stays where it is, which is where a reader looking for the controls would expect it.{% endcomment %}
+<div id="calendar-month-picker" class="d-flex gap-1 align-items-center mb-2">
+  <label class="visually-hidden" for="calendar-month-select">{% trans "Month" %}</label>
+  <select id="calendar-month-select" class="form-select form-select-sm w-auto">
+    {% for number, name in calendar_months %}<option value="{{ number }}">{{ name }}</option>{% endfor %}
+  </select>
+  <label class="visually-hidden" for="calendar-year-select">{% trans "Year" %}</label>
+  <select id="calendar-year-select" class="form-select form-select-sm w-auto">
+    {% for year in calendar_years %}<option value="{{ year }}">{{ year }}</option>{% endfor %}
+  </select>
+</div>
+
 <div id="calendar"></div>
 
 {% if upcoming %}
@@ -155,6 +169,30 @@ document.addEventListener('DOMContentLoaded', function () {
   // The location tree is fetched, so the cascade answers for itself only once it arrives.
   document.addEventListener('location-filter-ready', updateSwitcherLinks);
 
+  // --- month picker ---
+  // Read before the grid is built: FullCalendar reports the month it lands on through datesSet,
+  // which fires during render, and the picker has to be there to answer.
+  var picker = document.getElementById('calendar-month-picker');
+  var monthEl = document.getElementById('calendar-month-select');
+  var yearEl = document.getElementById('calendar-year-select');
+
+  // Follow the grid: prev, next and Today all move it, and the picker must not claim otherwise.
+  function syncPicker(date) {
+    if (!monthEl || !yearEl) return;
+    monthEl.value = String(date.getMonth() + 1);
+    var year = date.getFullYear();
+    if (!yearEl.querySelector('option[value="' + year + '"]')) {
+      // The list covers the events the site holds; the arrows can still walk past either end.
+      var before = year < Number(yearEl.options[0].value) ? yearEl.options[0] : null;
+      yearEl.add(new Option(year, year), before);
+    }
+    yearEl.value = String(year);
+  }
+
+  function gotoPickedMonth() {
+    calendar.gotoDate(new Date(Number(yearEl.value), Number(monthEl.value) - 1, 1));
+  }
+
   // --- FullCalendar ---
   var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
     initialView: 'dayGridMonth',
@@ -178,6 +216,9 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(successCallback)
         .catch(failureCallback);
     },
+    datesSet: function (info) {
+      syncPicker(info.view.currentStart);
+    },
     eventClick: function (info) {
       if (info.event.url) {
         info.jsEvent.preventDefault();
@@ -194,6 +235,18 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   calendar.render();
+
+  if (monthEl && yearEl) {
+    monthEl.addEventListener('change', gotoPickedMonth);
+    yearEl.addEventListener('change', gotoPickedMonth);
+    // The left chunk of the toolbar is prev, next and Today; the picker belongs beside them.
+    var toolbar = document.querySelector('#calendar .fc-toolbar-chunk');
+    if (toolbar) {
+      picker.classList.remove('mb-2');
+      picker.classList.add('ms-2');
+      toolbar.appendChild(picker);
+    }
+  }
 
   // Called by the filter partials whenever any multi-select changes.
   window.onCalendarFilterChange = function () {

@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-04 06:56+0500\n"
+"POT-Creation-Date: 2026-09-04 06:59+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -744,8 +744,8 @@ msgstr "Аяқталу күні басталу күнінен бұрын бол�
 msgid "Please choose a city for the new venue."
 msgstr ""
 
-#: calendar_app/forms.py:203 calendar_app/views.py:1145
-#: calendar_app/views.py:1253
+#: calendar_app/forms.py:203 calendar_app/views.py:1184
+#: calendar_app/views.py:1292
 msgid "This location is not available."
 msgstr "Бұл локация қолжетімді емес."
 
@@ -1121,79 +1121,97 @@ msgstr "Модерация"
 msgid "Only favorites"
 msgstr "Тек таңдаулылар"
 
-#: calendar_app/templates/calendar_app/calendar.html:64
+#: calendar_app/templates/calendar_app/calendar.html:65
+msgid "Month"
+msgstr "Ай"
+
+#: calendar_app/templates/calendar_app/calendar.html:69
+#: registrations/templates/registrations/manual_add.html:27
+#: registrations/templates/registrations/manual_add.html:40
+#: registrations/templates/registrations/manual_add.html:60
+#: registrations/templates/registrations/manual_add.html:99
+#: registrations/templates/registrations/register.html:40
+#: registrations/templates/registrations/register.html:53
+#: registrations/templates/registrations/register.html:73
+#: registrations/templates/registrations/register.html:219
+msgid "Year"
+msgstr "Жыл"
+
+#: calendar_app/templates/calendar_app/calendar.html:79
 msgid "Nearest competitions"
 msgstr "Жақын жарыстар"
 
-#: calendar_app/templates/calendar_app/calendar.html:74
+#: calendar_app/templates/calendar_app/calendar.html:89
 msgid "All competitions as a list"
 msgstr "Барлык жарыстар тизими"
 
-#: calendar_app/templates/calendar_app/calendar.html:76
+#: calendar_app/templates/calendar_app/calendar.html:91
 msgid "Subscribe in your calendar (.ics)"
 msgstr "Оз кунтизбенизге жазылу (.ics)"
 
-#: calendar_app/templates/calendar_app/calendar.html:78
+#: calendar_app/templates/calendar_app/calendar.html:93
 msgid "New competitions (RSS)"
 msgstr "Жана жарыстар (RSS)"
 
-#: calendar_app/templates/calendar_app/calendar.html:86
+#: calendar_app/templates/calendar_app/calendar.html:101
 msgid "Competitions by city"
 msgstr "Калалар бойынша жарыстар"
 
-#: calendar_app/templates/calendar_app/calendar.html:92
+#: calendar_app/templates/calendar_app/calendar.html:107
 msgid "Competitions by discipline"
 msgstr "Пандер бойынша жарыстар"
 
-#: calendar_app/templates/calendar_app/calendar.html:107
+#: calendar_app/templates/calendar_app/calendar.html:122
 msgid "January"
 msgstr "Қаңтар"
 
-#: calendar_app/templates/calendar_app/calendar.html:107
+#: calendar_app/templates/calendar_app/calendar.html:122
 msgid "February"
 msgstr "Ақпан"
 
-#: calendar_app/templates/calendar_app/calendar.html:107
+#: calendar_app/templates/calendar_app/calendar.html:122
 msgid "March"
 msgstr "Наурыз"
 
-#: calendar_app/templates/calendar_app/calendar.html:108
+#: calendar_app/templates/calendar_app/calendar.html:123
 msgid "April"
 msgstr "Сәуір"
 
-#: calendar_app/templates/calendar_app/calendar.html:108
+#: calendar_app/templates/calendar_app/calendar.html:123
 msgid "May"
 msgstr "Мамыр"
 
-#: calendar_app/templates/calendar_app/calendar.html:108
+#: calendar_app/templates/calendar_app/calendar.html:123
 msgid "June"
 msgstr "Маусым"
 
-#: calendar_app/templates/calendar_app/calendar.html:109
+#: calendar_app/templates/calendar_app/calendar.html:124
 msgid "July"
 msgstr "Шілде"
 
-#: calendar_app/templates/calendar_app/calendar.html:109
+#: calendar_app/templates/calendar_app/calendar.html:124
 msgid "August"
 msgstr "Тамыз"
 
-#: calendar_app/templates/calendar_app/calendar.html:109
+#: calendar_app/templates/calendar_app/calendar.html:124
 msgid "September"
 msgstr "Қыркүйек"
 
-#: calendar_app/templates/calendar_app/calendar.html:110
+#: calendar_app/templates/calendar_app/calendar.html:125
 msgid "October"
 msgstr "Қазан"
 
-#: calendar_app/templates/calendar_app/calendar.html:110
+#: calendar_app/templates/calendar_app/calendar.html:125
 msgid "November"
 msgstr "Қараша"
 
-#: calendar_app/templates/calendar_app/calendar.html:110
+#: calendar_app/templates/calendar_app/calendar.html:125
 msgid "December"
 msgstr "Желтоқсан"
 
-#: calendar_app/templates/calendar_app/calendar.html:166
+#: calendar_app/templates/calendar_app/calendar.html:205
+#: tests/test_calendar_toolbar.py:20 tests/test_calendar_toolbar.py:27
+#: tests/test_calendar_toolbar.py:34
 msgid "Today"
 msgstr "Бүгін"
 
@@ -1712,63 +1730,63 @@ msgstr "Жіберу"
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."
 
-#: calendar_app/views.py:750
+#: calendar_app/views.py:789
 msgid "N"
 msgstr "с.е."
 
-#: calendar_app/views.py:750
+#: calendar_app/views.py:789
 msgid "S"
 msgstr "о.е."
 
-#: calendar_app/views.py:751
+#: calendar_app/views.py:790
 msgid "E"
 msgstr "ш.б."
 
-#: calendar_app/views.py:751
+#: calendar_app/views.py:790
 msgid "W"
 msgstr "б.б."
 
-#: calendar_app/views.py:1370
+#: calendar_app/views.py:1409
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
 msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/views.py:1382
+#: calendar_app/views.py:1421
 msgid "Please provide a reason for rejection."
 msgstr "Қабылданбау себебін көрсетіңіз."
 
-#: calendar_app/views.py:1410 calendar_app/views.py:1430
+#: calendar_app/views.py:1449 calendar_app/views.py:1469
 #: knowledge/views.py:164 news/views.py:244
 msgid "Invalid submission."
 msgstr "Жарамсыз жіберу."
 
-#: calendar_app/views.py:1448
+#: calendar_app/views.py:1487
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Сіз бұл іс-шараға шағым жасап қойдыңыз; модератор оны тексереді."
 
-#: calendar_app/views.py:1450
+#: calendar_app/views.py:1489
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Рахмет. Сіздің шағымыңыз модераторларға жіберілді."
 
-#: calendar_app/views.py:1469
+#: calendar_app/views.py:1508
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Шағым алынып тасталды; іс-шара модерация кезегінен шығарылды."
 
-#: calendar_app/views.py:1533
+#: calendar_app/views.py:1572
 msgid "Only a rejected competition can be resubmitted."
 msgstr "Тек қабылданбаған жарысты қайта жіберуге болады."
 
-#: calendar_app/views.py:1535
+#: calendar_app/views.py:1574
 msgid "Your competition was sent for review again."
 msgstr "Жарыс қайта қарауға жіберілді."
 
-#: calendar_app/views.py:1558
+#: calendar_app/views.py:1597
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Хронометраж токені қайта жасалды. Бұрынғы токен енді жұмыс істемейді."
 
-#: calendar_app/views.py:1569
+#: calendar_app/views.py:1608
 msgid ""
 "Timing token deleted. Timing tools can no longer access this competition."
 msgstr ""
@@ -2867,17 +2885,6 @@ msgstr "Команда мүшелері"
 #: registrations/templates/registrations/register.html:218
 msgid "Full name"
 msgstr "Аты-жөні"
-
-#: registrations/templates/registrations/manual_add.html:27
-#: registrations/templates/registrations/manual_add.html:40
-#: registrations/templates/registrations/manual_add.html:60
-#: registrations/templates/registrations/manual_add.html:99
-#: registrations/templates/registrations/register.html:40
-#: registrations/templates/registrations/register.html:53
-#: registrations/templates/registrations/register.html:73
-#: registrations/templates/registrations/register.html:219
-msgid "Year"
-msgstr "Жыл"
 
 #: registrations/templates/registrations/manual_add.html:74
 #: registrations/templates/registrations/register.html:87

@@ -365,6 +365,43 @@ def upcoming_competitions(limit: int = 20) -> list[Competition]:
     )
 
 
+#: The month names the picker offers. They are the same twelve strings the grid's own title is
+#: built from, so a reader never sees two spellings of the same month on one page.
+MONTH_NAMES = (
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
+
+
+def calendar_year_choices() -> list[int]:
+    """Every year the month picker can jump to.
+
+    The grid opens on the current month and moves one month per click, so reaching a race from
+    six years ago meant seventy clicks on `prev`. The list spans the events the site actually
+    holds, and always contains the current year -- an empty calendar still offers this one.
+    """
+    from django.db.models import Max, Min
+
+    bounds = Competition.objects.filter(
+        status=Competition.Status.APPROVED,
+        is_deleted=False,
+        is_hidden=False,
+    ).aggregate(first=Min("date_start"), last=Max("date_start"), last_end=Max("date_end"))
+    years = [timezone.localdate().year]
+    years += [when.year for when in bounds.values() if when]
+    return list(range(min(years), max(years) + 1))
+
+
 class CalendarView(DefaultFilterRedirectMixin, TemplateView):
     template_name = "calendar_app/calendar.html"
 
@@ -382,6 +419,8 @@ class CalendarView(DefaultFilterRedirectMixin, TemplateView):
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
         context["only_favorite"] = _only_favorite_requested(self.request)
+        context["calendar_months"] = list(enumerate((_(name) for name in MONTH_NAMES), start=1))
+        context["calendar_years"] = calendar_year_choices()
         return context
 
 
