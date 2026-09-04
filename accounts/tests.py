@@ -406,7 +406,9 @@ class ProfileRegistrationListTests(TestCase):
 
         defaults = {
             "title_ru": "Race",
-            "date_start": datetime.date(2026, 9, 1),
+            # Ahead of the suite's run day: the profile shows an entry's full state on its card,
+            # and a card is only drawn while the race is still to come.
+            "date_start": datetime.date.today() + datetime.timedelta(days=30),
             "status": self.Competition.Status.APPROVED,
             "registration_enabled": True,
             "registration_mode": self.Competition.RegistrationMode.FREE,
