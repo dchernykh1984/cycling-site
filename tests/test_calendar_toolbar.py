@@ -77,6 +77,9 @@ class MonthPickerTests(TestCase):
             with self.subTest(language=language):
                 with translation.override(language):
                     expected = translation.gettext("January")
+                if language != "en":
+                    # A month name the catalogue never learned would come back as the source.
+                    self.assertNotEqual(expected, "January")
                 response = self.client.get(in_language(reverse("calendar"), language))
                 self.assertContains(response, f'<option value="1">{expected}</option>', html=True)
 
