@@ -161,6 +161,9 @@ document.addEventListener('DOMContentLoaded', function () {
     locale: '{{ CURRENT_LANGUAGE }}',
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
     titleFormat: function(date) { return FC_MONTHS[date.start.month] + ' ' + date.start.year; },
+    // FullCalendar's own bundle labels this button in lower case and has no Kazakh at all,
+    // so the label comes from our catalogue like every other word on the page.
+    buttonText: { today: '{% trans "Today" %}' },
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
