@@ -7,6 +7,8 @@ had one indistinguishable page instead of one per city and per discipline. "Race
 shape of the query people type, and this is what answers it.
 """
 
+from collections import Counter
+
 from django.utils.translation import gettext as _
 
 #: Every discipline whose English name starts this way is a category's leftovers bin -- "Other
@@ -52,6 +54,16 @@ def describe_filters(*, locations, disciplines, event_types, count, date_from=No
     return title, " ".join([f"{title}.", *parts])
 
 
+def _by_weight(queryset, counts, limit):
+    """The places holding the most races first, so a limit keeps the ones worth a page.
+
+    Tree order decided this before, which on a calendar of two hundred towns meant the block under
+    the calendar was filled by whichever region happens to sit first in the tree while Astana fell
+    off the end.
+    """
+    return sorted(queryset, key=lambda node: (-counts.get(node.path, 0), node.name or ""))[:limit]
+
+
 def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
     """The filtered lists worth offering as pages of their own: regions, cities, disciplines.
 
@@ -83,17 +95,21 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
         is_deleted=False,
         date_start__gte=today,
     )
-    city_paths = published.filter(location__isnull=False).values_list("location__path", flat=True)
-    # A venue sits at depth 4; its city is the first three path steps.
+    # A venue sits at depth 4; its city is the first three path steps and its region the first two.
+    # Counting the paths here rather than asking the database per node keeps this to one query and
+    # gives the ordering below something to sort on.
     step = Location.steplen
-    city_keys = {path[: step * 3] for path in city_paths if len(path) >= step * 3}
+    city_paths = list(published.filter(location__isnull=False).values_list("location__path", flat=True))
+    city_counts = Counter(path[: step * 3] for path in city_paths if len(path) >= step * 3)
+    region_counts = Counter(key[: step * 2] for key, races in city_counts.items() for _ in range(races))
+    city_keys = set(city_counts)
     # The catch-all city ("Other city") is a bucket for events whose town nobody wrote down, not a
     # place anybody searches for. It is hidden in the tree for exactly that reason, and hidden nodes
     # have no business being offered as a page of their own.
-    places = list(
-        Location.objects.filter(depth=3, path__in=city_keys, is_deleted=False, is_hidden=False).order_by("path")[
-            :limit_places
-        ]
+    places = _by_weight(
+        Location.objects.filter(depth=3, path__in=city_keys, is_deleted=False, is_hidden=False),
+        city_counts,
+        limit_places,
     )
     kinds = list(
         Discipline.objects.exclude(name_en__startswith=CATCH_ALL_DISCIPLINE_PREFIX)
@@ -111,10 +127,9 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
         .filter(events__gt=0)
         .order_by("-events", "pk")[:limit_kinds]
     )
-    region_keys = {key[: step * 2] for key in city_keys}
-    regions = list(
-        Location.objects.filter(depth=2, path__in=region_keys, is_deleted=False, is_hidden=False).order_by("path")[
-            :limit_regions
-        ]
+    regions = _by_weight(
+        Location.objects.filter(depth=2, path__in=set(region_counts), is_deleted=False, is_hidden=False),
+        region_counts,
+        limit_regions,
     )
     return regions, places, kinds
