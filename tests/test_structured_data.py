@@ -5,13 +5,14 @@ event never qualifies for the rich result that shows a date and a place under th
 """
 
 import datetime
+import html
 import json
 import re
 
 from django.test import TestCase
 
 from calendar_app.models import Competition, Discipline, DisciplineCategory
-from locations.models import add_location_child
+from locations.models import Location, add_location_child
 
 
 def _competition(title="Race", **kwargs):
@@ -135,3 +136,55 @@ class NewsArticleMarkupTests(TestCase):
         data = _article_payload(self.client, article.get_absolute_url())
         self.assertEqual(data["@type"], "NewsArticle")
         self.assertIn("datePublished", data)
+
+
+class EventRegionTests(TestCase):
+    """The region in an event's address.
+
+    A start in a village carries a name nobody outside the district recognises, and the address
+    named only that village and the country. The region is the word that ties such an event to the
+    city its riders come from -- and the one a search engine matches on.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        from locations.models import add_location_child
+
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan", name_en="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region", name_en="Almaty region")
+        village = add_location_child(region, name="Kyrbaltabay", name_ru="Kyrbaltabay", name_en="Kyrbaltabay")
+        cls.venue = add_location_child(village, name="UBT TT", name_ru="UBT TT", name_en="UBT TT")
+        cls.comp = Competition.objects.create(
+            title_ru="Time trial",
+            title_en="Time trial",
+            date_start=datetime.date.today() + datetime.timedelta(days=20),
+            status=Competition.Status.APPROVED,
+            location=cls.venue,
+        )
+
+    def _address(self, competition):
+        from calendar_app.seo import sports_event
+
+        raw = html.unescape(sports_event(competition, "https://example.org"))
+        return json.loads(raw)["location"]["address"]
+
+    def test_the_region_travels_with_the_address(self):
+        address = self._address(self.comp)
+        self.assertEqual(address["addressRegion"], "Almaty region")
+        self.assertEqual(address["addressLocality"], "Kyrbaltabay")
+        self.assertEqual(address["addressCountry"], "Kazakhstan")
+
+    def test_a_venue_hung_straight_off_a_city_still_has_no_region_to_give(self):
+        """Three levels above a venue is country, region, city; two is country and city."""
+        from locations.models import add_location_child
+
+        country = Location.objects.get(depth=1, name_ru="Kazakhstan")
+        city = add_location_child(country, name="Astana", name_ru="Astana", name_en="Astana")
+        venue = add_location_child(city, name="Park", name_ru="Park", name_en="Park")
+        comp = Competition.objects.create(
+            title_ru="Park race",
+            date_start=datetime.date.today() + datetime.timedelta(days=21),
+            status=Competition.Status.APPROVED,
+            location=venue,
+        )
+        self.assertNotIn("addressRegion", self._address(comp))

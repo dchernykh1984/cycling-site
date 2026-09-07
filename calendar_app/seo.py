@@ -42,11 +42,17 @@ def sports_event(competition, base_url: str) -> str:
         place: dict = {"@type": "Place", "name": location.name}
         address = [node.name for node in location.get_ancestors() if node.name]
         if address:
-            place["address"] = {
+            postal = {
                 "@type": "PostalAddress",
                 "addressLocality": address[-1],
                 "addressCountry": address[0],
             }
+            # The region sits between the country and the town: "Almaty region" for a start in a
+            # village nobody outside the area has heard of. Leaving it out threw away the one word
+            # that ties such an event to the city its riders come from.
+            if len(address) >= 3:
+                postal["addressRegion"] = address[-2]
+            place["address"] = postal
         if location.lat is not None and location.lng is not None:
             place["geo"] = {
                 "@type": "GeoCoordinates",
