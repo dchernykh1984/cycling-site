@@ -2,15 +2,15 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-04 19:14+0500\n"
+"POT-Creation-Date: 2026-09-07 13:31+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: accounts/access.py:9
 msgid ""
-"Please confirm your email address to activate your account. Until your email "
-"is confirmed, you can view the site but cannot submit, register, comment, "
+"Please confirm your email address to activate your account. Until your email"
+" is confirmed, you can view the site but cannot submit, register, comment, "
 "contact site owners, or use API features."
 msgstr ""
 "Аккаунтыңызды белсендіру үшін e-mail мекенжайыңызды растаңыз. E-mail "
@@ -158,7 +158,8 @@ msgstr "Хабарлама жіберу"
 #: knowledge/templates/knowledge/submit.html:48
 #: locations/templates/locations/location_form.html:145
 #: news/templates/news/article_form.html:140
-#: news/templates/news/article_form.html:142 news/templates/news/submit.html:37
+#: news/templates/news/article_form.html:142
+#: news/templates/news/submit.html:37
 #: registrations/templates/registrations/edit_registration.html:29
 #: registrations/templates/registrations/manual_add.html:89
 #: registrations/templates/registrations/register.html:209
@@ -253,8 +254,8 @@ msgstr "Кіру тәсілдері"
 
 #: accounts/templates/accounts/profile.html:101
 msgid ""
-"You can use any of these to sign in to this account. Connect several so that "
-"losing one does not lock you out."
+"You can use any of these to sign in to this account. Connect several so that"
+" losing one does not lock you out."
 msgstr ""
 "Осы тәсілдердің кез келгенімен бұл тіркелгіге кіруге болады. Біреуін "
 "жоғалтқанда қол жеткізу жабылмауы үшін бірнешеуін қосыңыз."
@@ -266,8 +267,8 @@ msgstr "Email және құпиясөз"
 #: accounts/templates/accounts/profile.html:109
 msgid "No email address, so signing in with a password is not possible yet."
 msgstr ""
-"Электрондық пошта мекенжайы көрсетілмеген, сондықтан құпиясөзбен кіру әзірге "
-"мүмкін емес."
+"Электрондық пошта мекенжайы көрсетілмеген, сондықтан құпиясөзбен кіру әзірге"
+" мүмкін емес."
 
 #: accounts/templates/accounts/profile.html:112
 msgid "Password not set."
@@ -360,35 +361,35 @@ msgstr ""
 "Тіркелу әлі ашық: бұл өтінімдерді өзгертуге немесе олардан бас тартуға "
 "болады."
 
-#: accounts/templates/accounts/profile.html:268
-#: accounts/templates/accounts/profile.html:360
+#: accounts/templates/accounts/profile.html:271
+#: accounts/templates/accounts/profile.html:363
 #: registrations/templates/registrations/_participant_row.html:11
 #: registrations/templates/registrations/_participant_table_head.html:11
 msgid "Approved"
 msgstr "Бекітілді"
 
-#: accounts/templates/accounts/profile.html:270
-#: accounts/templates/accounts/profile.html:320
-#: accounts/templates/accounts/profile.html:362
+#: accounts/templates/accounts/profile.html:273
+#: accounts/templates/accounts/profile.html:323
+#: accounts/templates/accounts/profile.html:365
 #: news/templates/news/news_page.html:75
 #: tests/test_profile_registration_actions.py:302
 msgid "Pending"
 msgstr "Қарастырылуда"
 
-#: accounts/templates/accounts/profile.html:274
+#: accounts/templates/accounts/profile.html:277
 #: registrations/templates/registrations/_participant_row.html:14
 #: registrations/templates/registrations/_participant_table_head.html:12
 msgid "Paid"
 msgstr "Төленді"
 
-#: accounts/templates/accounts/profile.html:276
-#: accounts/templates/accounts/profile.html:322
+#: accounts/templates/accounts/profile.html:279
+#: accounts/templates/accounts/profile.html:325
 #: tests/test_profile_registration_actions.py:309
 msgid "Not paid"
 msgstr "Төленбеді"
 
-#: accounts/templates/accounts/profile.html:282
-#: accounts/templates/accounts/profile.html:367
+#: accounts/templates/accounts/profile.html:285
+#: accounts/templates/accounts/profile.html:370
 #: calendar_app/templates/calendar_app/edit.html:14
 #: calendar_app/templates/calendar_app/moderate.html:111
 #: locations/templates/locations/locations_map_page.html:90
@@ -398,55 +399,55 @@ msgstr "Төленбеді"
 msgid "Edit"
 msgstr "Өңдеу"
 
-#: accounts/templates/accounts/profile.html:284
+#: accounts/templates/accounts/profile.html:287
 #: registrations/templates/registrations/_participant_row.html:61
 msgid "Cancel your registration?"
 msgstr "Тіркелуіңізден бас тартасыз ба?"
 
-#: accounts/templates/accounts/profile.html:286
+#: accounts/templates/accounts/profile.html:289
 #: registrations/templates/registrations/_participant_row.html:63
 msgid "Cancel registration"
 msgstr "Тіркелуден бас тарту"
 
-#: accounts/templates/accounts/profile.html:296
+#: accounts/templates/accounts/profile.html:299
 msgid "My registrations"
 msgstr "Менің тіркелулерім"
 
-#: accounts/templates/accounts/profile.html:302
-#: accounts/templates/accounts/profile.html:342
+#: accounts/templates/accounts/profile.html:305
+#: accounts/templates/accounts/profile.html:345
 msgid "Competition"
 msgstr "Жарыс"
 
-#: accounts/templates/accounts/profile.html:303
-#: accounts/templates/accounts/profile.html:343
-#: accounts/templates/accounts/profile.html:403
+#: accounts/templates/accounts/profile.html:306
+#: accounts/templates/accounts/profile.html:346
+#: accounts/templates/accounts/profile.html:406
 msgid "Date"
 msgstr "Күні"
 
-#: accounts/templates/accounts/profile.html:317
-#: accounts/templates/accounts/profile.html:355
+#: accounts/templates/accounts/profile.html:320
+#: accounts/templates/accounts/profile.html:358
 #: registrations/templates/registrations/_participant_row.html:17
 #: registrations/templates/registrations/_participant_table_head.html:13
 #: tests/test_profile_registration_actions.py:294
 msgid "Rejected"
 msgstr "Қабылданбады"
 
-#: accounts/templates/accounts/profile.html:333
+#: accounts/templates/accounts/profile.html:336
 msgid "No registrations yet."
 msgstr "Тіркелулер жоқ."
 
 # Pending/rejected competitions + profile (issue #180)
-#: accounts/templates/accounts/profile.html:336
+#: accounts/templates/accounts/profile.html:339
 msgid "Events I submitted"
 msgstr "Мен қосқан іс-шаралар"
 
-#: accounts/templates/accounts/profile.html:344
-#: accounts/templates/accounts/profile.html:404
+#: accounts/templates/accounts/profile.html:347
+#: accounts/templates/accounts/profile.html:407
 #: locations/templates/locations/locations_map_page.html:77
 msgid "Status"
 msgstr "Күйі"
 
-#: accounts/templates/accounts/profile.html:345
+#: accounts/templates/accounts/profile.html:348
 #: locations/templates/locations/locations_map_page.html:78
 #: registrations/templates/registrations/_participant_table_head.html:13
 #: tests/test_profile_registration_actions.py:126
@@ -454,15 +455,15 @@ msgid "Actions"
 msgstr "Әрекеттер"
 
 # Reject -> edit -> resubmit flow (#200)
-#: accounts/templates/accounts/profile.html:371
+#: accounts/templates/accounts/profile.html:374
 msgid "Resubmit"
 msgstr "Қайта жіберу"
 
-#: accounts/templates/accounts/profile.html:375
+#: accounts/templates/accounts/profile.html:378
 msgid "Delete this competition?"
 msgstr "Бұл жарысты жою керек пе?"
 
-#: accounts/templates/accounts/profile.html:377
+#: accounts/templates/accounts/profile.html:380
 #: calendar_app/templates/calendar_app/detail.html:340
 #: calendar_app/templates/calendar_app/detail.html:361
 #: knowledge/templates/knowledge/knowledge_article_detail.html:56
@@ -476,22 +477,22 @@ msgid "Delete"
 msgstr "Жою"
 
 # Pending/rejected competitions + profile (issue #180)
-#: accounts/templates/accounts/profile.html:386
+#: accounts/templates/accounts/profile.html:389
 msgid "You have not submitted any events yet."
 msgstr "Сіз әзірге бірде-бір іс-шара қоспадыңыз."
 
-#: accounts/templates/accounts/profile.html:389
+#: accounts/templates/accounts/profile.html:392
 msgid "My submissions"
 msgstr "Менiн материалдарым"
 
-#: accounts/templates/accounts/profile.html:392
+#: accounts/templates/accounts/profile.html:395
 #: knowledge/templates/knowledge/knowledge_index_page.html:21
 #: knowledge/templates/knowledge/submit.html:4
 #: knowledge/templates/knowledge/submit.html:9
 msgid "Submit article"
 msgstr "Мақала жіберу"
 
-#: accounts/templates/accounts/profile.html:400
+#: accounts/templates/accounts/profile.html:403
 #: calendar_app/templates/calendar_app/edit.html:37
 #: calendar_app/templates/calendar_app/edit.html:50
 #: calendar_app/templates/calendar_app/edit.html:63
@@ -507,26 +508,26 @@ msgstr "Мақала жіберу"
 msgid "Title"
 msgstr "Атауы"
 
-#: accounts/templates/accounts/profile.html:401
+#: accounts/templates/accounts/profile.html:404
 #: calendar_app/templates/calendar_app/detail.html:54
 #: calendar_app/templates/calendar_app/list.html:151
 #: calendar_app/templates/calendar_app/list.html:177
 msgid "Type"
 msgstr "Түрі"
 
-#: accounts/templates/accounts/profile.html:402
+#: accounts/templates/accounts/profile.html:405
 msgid "Language"
 msgstr "Тіл"
 
-#: accounts/templates/accounts/profile.html:432
+#: accounts/templates/accounts/profile.html:435
 msgid "No submissions yet."
 msgstr "Материалдар жоқ."
 
-#: accounts/templates/accounts/profile.html:436
+#: accounts/templates/accounts/profile.html:439
 msgid "API access"
 msgstr "API кiруi"
 
-#: accounts/templates/accounts/profile.html:439
+#: accounts/templates/accounts/profile.html:442
 msgid ""
 "Use this token to authenticate API requests: <code>Authorization: Bearer "
 "&lt;token&gt;</code>"
@@ -534,31 +535,31 @@ msgstr ""
 "API сурауларын растау ушiн осы токендi пайдаланыныз: <code>Authorization: "
 "Bearer &lt;token&gt;</code>"
 
-#: accounts/templates/accounts/profile.html:444
+#: accounts/templates/accounts/profile.html:447
 #: calendar_app/templates/calendar_app/detail.html:255
 msgid "Copy"
 msgstr "Көшіру"
 
-#: accounts/templates/accounts/profile.html:447
+#: accounts/templates/accounts/profile.html:450
 #: calendar_app/templates/calendar_app/detail.html:281
 msgid "No token yet. Generate one below."
 msgstr "Токен алi жок. Томенде жасаныз."
 
-#: accounts/templates/accounts/profile.html:452
+#: accounts/templates/accounts/profile.html:455
 #: calendar_app/templates/calendar_app/detail.html:260
 msgid "Regenerate token"
 msgstr "Токендi жаналау"
 
-#: accounts/templates/accounts/profile.html:452
+#: accounts/templates/accounts/profile.html:455
 #: calendar_app/templates/calendar_app/detail.html:284
 msgid "Generate token"
 msgstr "Токен жасау"
 
-#: accounts/templates/accounts/profile.html:455
+#: accounts/templates/accounts/profile.html:458
 msgid "API docs (Swagger)"
 msgstr "API кужаттамасы (Swagger)"
 
-#: accounts/templates/accounts/profile.html:461
+#: accounts/templates/accounts/profile.html:464
 #: cycling_site/templates/base.html:138
 msgid "Log out"
 msgstr "Шыгу"
@@ -750,7 +751,8 @@ msgstr "Қолданылмайтын файл түрі. Рұқсат етілг�
 
 #: calendar_app/forms.py:150
 msgid "Description is too large. Use fewer or smaller inline images."
-msgstr "Сипаттама тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
+msgstr ""
+"Сипаттама тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
 
 #: calendar_app/forms.py:180 calendar_app/tests.py:522
 msgid "End date cannot be before start date."
@@ -788,7 +790,8 @@ msgid "Add a link to this material."
 msgstr "Бұл материалға сілтеме қосыңыз."
 
 #: calendar_app/forms.py:356 calendar_app/tests.py:1706 knowledge/forms.py:44
-#: knowledge/tests.py:910 news/forms.py:113 news/forms.py:126 news/tests.py:692
+#: knowledge/tests.py:910 news/forms.py:113 news/forms.py:126
+#: news/tests.py:692
 msgid "Write a comment..."
 msgstr "Пікір жазыңыз..."
 
@@ -820,7 +823,8 @@ msgid "From %(start)s to %(end)s."
 msgstr "%(start)s бастап %(end)s дейін."
 
 #: calendar_app/listing_seo.py:44
-msgid "Dates, start points and results on the Universal Bicycle Team calendar."
+msgid ""
+"Dates, start points and results on the Universal Bicycle Team calendar."
 msgstr ""
 "Күндер, старт нүктелері және нәтижелер Universal Bicycle Team күнтізбесінде."
 
@@ -833,7 +837,8 @@ msgstr "Пәндер: %(kinds)s."
 msgid ""
 "Details, start point and results on the Universal Bicycle Team calendar."
 msgstr ""
-"Толығырақ, старт нүктесі және нәтижелер Universal Bicycle Team күнтізбесінде."
+"Толығырақ, старт нүктесі және нәтижелер Universal Bicycle Team "
+"күнтізбесінде."
 
 #: calendar_app/models.py:373
 #: calendar_app/templates/calendar_app/_registration_fields.html:112
@@ -917,7 +922,8 @@ msgstr "Нүктені белгілеу үшін картаны басыңыз �
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:62
 msgid ""
-"Your proposed venue is usable right away and will be reviewed by a moderator."
+"Your proposed venue is usable right away and will be reviewed by a "
+"moderator."
 msgstr "Ұсынылған орынды бірден қолдануға болады, оны модератор тексереді."
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:3
@@ -1396,7 +1402,8 @@ msgid "Live"
 msgstr "Тікелей эфир"
 
 #: calendar_app/templates/calendar_app/detail.html:236
-#: calendar_app/templates/calendar_app/edit.html:160 calendar_app/tests.py:4004
+#: calendar_app/templates/calendar_app/edit.html:160
+#: calendar_app/tests.py:4004
 msgid "Additional materials"
 msgstr "Қосымша материалдар"
 
@@ -1406,7 +1413,8 @@ msgstr "Хронометраж жүйесінің токені"
 
 #: calendar_app/templates/calendar_app/detail.html:258
 msgid ""
-"Regenerate the timing token? The current token will stop working immediately."
+"Regenerate the timing token? The current token will stop working "
+"immediately."
 msgstr ""
 "Хронометраж токенін қайта жасау керек пе? Ағымдағы токен бірден жұмысын "
 "тоқтатады."
@@ -1735,8 +1743,8 @@ msgstr ""
 msgid "Submit"
 msgstr "Жіберу"
 
-#: calendar_app/tests.py:670 calendar_app/tests.py:683 cycling_site/forms.py:18
-#: news/tests.py:582
+#: calendar_app/tests.py:670 calendar_app/tests.py:683
+#: cycling_site/forms.py:18 news/tests.py:582
 #, python-format
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."
@@ -1768,8 +1776,8 @@ msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен
 msgid "Please provide a reason for rejection."
 msgstr "Қабылданбау себебін көрсетіңіз."
 
-#: calendar_app/views.py:1449 calendar_app/views.py:1469 knowledge/views.py:164
-#: news/views.py:244
+#: calendar_app/views.py:1449 calendar_app/views.py:1469
+#: knowledge/views.py:164 news/views.py:244
 msgid "Invalid submission."
 msgstr "Жарамсыз жіберу."
 
@@ -1845,24 +1853,35 @@ msgstr "Модерациялауыңызды күтуде"
 msgid "Events awaiting approval"
 msgstr "Бекітуді күтіп тұрған іс-шаралар"
 
-#: cycling_site/templates/_moderation_banner.html:10
+#: cycling_site/templates/_moderation_banner.html:13
+msgid ""
+"Approve an event when it is clear what the race is and where to go. Check "
+"the venue on the map and that the dates, distances and links are real -- an "
+"invented start point is worse than no event at all."
+msgstr ""
+"Қандай жарыс екені және қайда бару керегі түсінікті болса, старттты "
+"мақұлдаңыз. Орынды картадан тексеріңіз, күндер, қашықтықтар мен сілтемелер "
+"шын екеніне көз жеткізіңіз: ойдан шығарылған старт нүктесі оқиғаның мүлде "
+"болмағанынан да жаман."
+
+#: cycling_site/templates/_moderation_banner.html:14
 msgid "Locations awaiting approval"
 msgstr "Бекітуді күтіп тұрған локациялар"
 
-#: cycling_site/templates/_moderation_banner.html:11
+#: cycling_site/templates/_moderation_banner.html:15
 msgid "Article submissions awaiting review"
 msgstr "Тексеруді күтіп тұрған мақала өтінімдері"
 
-#: cycling_site/templates/_moderation_banner.html:12
+#: cycling_site/templates/_moderation_banner.html:16
 msgid "News submissions awaiting review"
 msgstr "Тексеруді күтіп тұрған жаңалық өтінімдері"
 
-#: cycling_site/templates/_moderation_banner.html:13
+#: cycling_site/templates/_moderation_banner.html:17
 #, python-format
 msgid "Registrations awaiting approval for \"%(title)s\""
 msgstr "«%(title)s» үшін бекітуді күтіп тұрған тіркелулер"
 
-#: cycling_site/templates/_moderation_banner.html:16
+#: cycling_site/templates/_moderation_banner.html:20
 msgid "Review"
 msgstr "Қарау"
 
@@ -1875,7 +1894,8 @@ msgstr "Беттер"
 
 #: cycling_site/templates/_pagination.html:15
 #: news/templates/news/news_index_page.html:54
-#: news/templates/news/news_list.html:82 search/templates/search/search.html:89
+#: news/templates/news/news_list.html:82
+#: search/templates/search/search.html:89
 msgid "Previous"
 msgstr "Артка"
 
@@ -1885,18 +1905,19 @@ msgstr "Бетке өту"
 
 #: cycling_site/templates/_pagination.html:41
 #: news/templates/news/news_index_page.html:66
-#: news/templates/news/news_list.html:90 search/templates/search/search.html:93
+#: news/templates/news/news_list.html:90
+#: search/templates/search/search.html:93
 msgid "Next"
 msgstr "Алга"
 
 #: cycling_site/templates/base.html:18 cycling_site/templates/base.html:34
 msgid ""
-"Calendar of endurance sport events -- cycling, running, cross-country skiing "
-"-- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and "
-"a knowledge base."
+"Calendar of endurance sport events -- cycling, running, cross-country skiing"
+" -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and"
+" a knowledge base."
 msgstr ""
-"Циклдік спорт түрлері бойынша жарыстар күнтізбесі — велоспорт, жүгіру, шаңғы "
-"жарысы — Қазақстанда, Қырғызстанда, Ресейде және басқа елдерде. Анонстар, "
+"Циклдік спорт түрлері бойынша жарыстар күнтізбесі — велоспорт, жүгіру, шаңғы"
+" жарысы — Қазақстанда, Қырғызстанда, Ресейде және басқа елдерде. Анонстар, "
 "хаттамалар және білім қоры."
 
 #: cycling_site/templates/base.html:43 cycling_site/templates/base.html:44
@@ -1924,7 +1945,8 @@ msgid "About"
 msgstr "Бiз туралы"
 
 #: cycling_site/templates/base.html:98 search/templates/search/search.html:4
-#: search/templates/search/search.html:9 search/templates/search/search.html:16
+#: search/templates/search/search.html:9
+#: search/templates/search/search.html:16
 msgid "Search"
 msgstr "Iздеу"
 
@@ -1946,10 +1968,11 @@ msgid ""
 "Found a bug or have a suggestion? <a href=\"%(url)s\" target=\"_blank\" "
 "rel=\"noopener\">Open an issue on GitHub</a>."
 msgstr ""
-"Қате таптыңыз ба немесе ұсыныс бар ма? <a href=\"%(url)s\" target=\"_blank\" "
-"rel=\"noopener\">GitHub-та тапсырма жасаңыз</a>."
+"Қате таптыңыз ба немесе ұсыныс бар ма? <a href=\"%(url)s\" target=\"_blank\""
+" rel=\"noopener\">GitHub-та тапсырма жасаңыз</a>."
 
-#: cycling_site/templates/base.html:174 home/templates/home/privacy_page.html:4
+#: cycling_site/templates/base.html:174
+#: home/templates/home/privacy_page.html:4
 #: home/templates/home/privacy_page.html:9
 msgid "Privacy Policy"
 msgstr "Құпиялылық саясаты"
@@ -2034,10 +2057,10 @@ msgid ""
 "collects, why we collect it, and how you can have it removed. The site is a "
 "free, non-commercial project for the amateur cycling and running community."
 msgstr ""
-"Бұл саясат Universal Bicycle Team сайты қандай дербес деректерді жинайтынын, "
-"оларды не үшін жинайтынымызды және оларды қалай жойдыруға болатынын "
-"түсіндіреді. Сайт — велосипедшілер мен жүгірушілердің әуесқой қауымдастығына "
-"арналған тегін коммерциялық емес жоба."
+"Бұл саясат Universal Bicycle Team сайты қандай дербес деректерді жинайтынын,"
+" оларды не үшін жинайтынымызды және оларды қалай жойдыруға болатынын "
+"түсіндіреді. Сайт — велосипедшілер мен жүгірушілердің әуесқой қауымдастығына"
+" арналған тегін коммерциялық емес жоба."
 
 #: home/templates/home/privacy_page.html:14
 msgid "What we collect"
@@ -2045,23 +2068,23 @@ msgstr "Біз қандай деректерді жинаймыз"
 
 #: home/templates/home/privacy_page.html:15
 msgid ""
-"<strong>Account data.</strong> When you register we store your email address "
-"and a cryptographic hash of your password (never the password itself). You "
+"<strong>Account data.</strong> When you register we store your email address"
+" and a cryptographic hash of your password (never the password itself). You "
 "may optionally add your name, date of birth, gender, city, team, a link to "
 "your Strava profile, and your preferred sports and locations, so that forms "
 "are pre-filled for you."
 msgstr ""
 "<strong>Тіркелгі деректері.</strong> Тіркелген кезде біз сіздің электрондық "
 "пошта мекенжайыңызды және құпиясөздің криптографиялық хэшін сақтаймыз "
-"(құпиясөздің өзі ешқашан сақталмайды). Қаласаңыз, атыңызды, туған күніңізді, "
-"жынысыңызды, қалаңызды, командаңызды, Strava профиліне сілтемені, сондай-ақ "
-"таңдаулы спорт түрлері мен локацияларды қоса аласыз — формалар автоматты "
+"(құпиясөздің өзі ешқашан сақталмайды). Қаласаңыз, атыңызды, туған күніңізді,"
+" жынысыңызды, қалаңызды, командаңызды, Strava профиліне сілтемені, сондай-ақ"
+" таңдаулы спорт түрлері мен локацияларды қоса аласыз — формалар автоматты "
 "толтырылуы үшін."
 
 #: home/templates/home/privacy_page.html:16
 msgid ""
-"<strong>Sign-in through Google, GitHub or Strava.</strong> If you use one of "
-"these buttons, we receive only your identifier with that service and your "
+"<strong>Sign-in through Google, GitHub or Strava.</strong> If you use one of"
+" these buttons, we receive only your identifier with that service and your "
 "name, which we use to create or sign in to your account. From Strava we "
 "receive your athlete identifier and name only: we do not request access to "
 "your activities, routes, segments or any training data, and we never see "
@@ -2070,16 +2093,16 @@ msgstr ""
 "<strong>Google, GitHub немесе Strava арқылы кіру.</strong> Осы түймелердің "
 "бірін пайдалансаңыз, біз тек сол қызметтегі идентификаторыңызды және "
 "атыңызды аламыз — оларды тіркелгі жасау немесе оған кіру үшін қолданамыз. "
-"Strava-дан біз тек спортшы идентификаторы мен атын аламыз: жаттығуларыңызға, "
-"бағыттарыңызға, сегменттеріңізге және кез келген жаттығу деректеріне қол "
+"Strava-дан біз тек спортшы идентификаторы мен атын аламыз: жаттығуларыңызға,"
+" бағыттарыңызға, сегменттеріңізге және кез келген жаттығу деректеріне қол "
 "жеткізуді сұрамаймыз және оларды ешқашан көрмейміз."
 
 #: home/templates/home/privacy_page.html:17
 msgid ""
 "<strong>Race registration data.</strong> When you register for an event we "
-"store the details the organizer requires: name, date of birth, gender, city, "
-"team, category, and an optional free-text field (some organizers use it for "
-"a link to your Strava profile)."
+"store the details the organizer requires: name, date of birth, gender, city,"
+" team, category, and an optional free-text field (some organizers use it for"
+" a link to your Strava profile)."
 msgstr ""
 "<strong>Жарысқа тіркелу деректері.</strong> Іс-шараға тіркелген кезде біз "
 "ұйымдастырушы талап ететін мәліметтерді сақтаймыз: аты-жөні, туған күні, "
@@ -2151,8 +2174,8 @@ msgstr "Біз ешқашан не істемейміз"
 #: home/templates/home/privacy_page.html:28
 msgid ""
 "We do not sell, rent or trade your data. We do not use it for advertising "
-"and we do not use it to train machine-learning or AI models. We do not share "
-"it with anyone except the service providers listed below and the organizer "
+"and we do not use it to train machine-learning or AI models. We do not share"
+" it with anyone except the service providers listed below and the organizer "
 "of an event you personally registered for."
 msgstr ""
 "Біз деректеріңізді сатпаймыз, жалға бермейміз және айырбастамаймыз. Оларды "
@@ -2167,10 +2190,10 @@ msgstr "Қызмет жеткізушілер"
 
 #: home/templates/home/privacy_page.html:31
 msgid ""
-"The site runs on a commercial hosting platform and uses an email provider to "
-"deliver service messages; both process data solely on our behalf. Map tiles "
-"are loaded from OpenStreetMap, and some interface libraries are loaded from "
-"public content delivery networks, which means those services see your IP "
+"The site runs on a commercial hosting platform and uses an email provider to"
+" deliver service messages; both process data solely on our behalf. Map tiles"
+" are loaded from OpenStreetMap, and some interface libraries are loaded from"
+" public content delivery networks, which means those services see your IP "
 "address as part of serving the request."
 msgstr ""
 "Сайт коммерциялық хостинг платформасында жұмыс істейді және қызметтік "
@@ -2188,8 +2211,8 @@ msgstr "Сақтау және жою"
 msgid ""
 "We keep your data while your account exists. You can edit or clear most of "
 "it yourself in your profile at any time, and you can disconnect a linked "
-"Google, GitHub or Strava account from that service's settings. If you ask us "
-"to delete your account, we remove your personal data, including any "
+"Google, GitHub or Strava account from that service's settings. If you ask us"
+" to delete your account, we remove your personal data, including any "
 "identifier and name received from Strava. Published results of past events "
 "may be kept for historical accuracy in the same way they appear in ordinary "
 "sport protocols."
@@ -2198,9 +2221,9 @@ msgstr ""
 "уақытта профильде өзіңіз өзгерте немесе тазарта аласыз, ал байланыстырылған "
 "Google, GitHub немесе Strava тіркелгісін сол қызметтің параметрлерінде "
 "ажырата аласыз. Тіркелгіні жоюды сұрасаңыз, біз дербес деректеріңізді, оның "
-"ішінде Strava-дан алынған идентификатор мен атты жоямыз. Өткен іс-шаралардың "
-"жарияланған нәтижелері тарихи дәлдік үшін сақталуы мүмкін — кәдімгі спорттық "
-"хаттамалардағы сияқты."
+"ішінде Strava-дан алынған идентификатор мен атты жоямыз. Өткен іс-шаралардың"
+" жарияланған нәтижелері тарихи дәлдік үшін сақталуы мүмкін — кәдімгі "
+"спорттық хаттамалардағы сияқты."
 
 #: home/templates/home/privacy_page.html:36
 msgid "Your rights"
@@ -2223,8 +2246,8 @@ msgstr "Байланыс"
 #: home/templates/home/terms_page.html:41
 #, python-format
 msgid ""
-"Use the <a href=\"%(contact_url)s\">contact form</a> to reach the people who "
-"run this site."
+"Use the <a href=\"%(contact_url)s\">contact form</a> to reach the people who"
+" run this site."
 msgstr ""
 "Осы сайтты жүргізетін адамдармен <a href=\"%(contact_url)s\">кері байланыс "
 "формасы</a> арқылы хабарласыңыз."
@@ -2237,14 +2260,15 @@ msgid "Changes"
 msgstr "Өзгерістерді сақтау"
 
 #: home/templates/home/privacy_page.html:46
-msgid "If this policy changes we will update the date at the top of this page."
+msgid ""
+"If this policy changes we will update the date at the top of this page."
 msgstr "Егер саясат өзгерсе, біз осы беттің жоғарысындағы күнді жаңартамыз."
 
 #: home/templates/home/terms_page.html:12
 msgid ""
 "Universal Bicycle Team is a free, non-commercial website for the amateur "
-"cycling and running community. It publishes a calendar of amateur events and "
-"lets athletes register for them. By using the site you accept these terms."
+"cycling and running community. It publishes a calendar of amateur events and"
+" lets athletes register for them. By using the site you accept these terms."
 msgstr ""
 "Universal Bicycle Team — велосипедшілер мен жүгірушілердің әуесқой "
 "қауымдастығына арналған тегін коммерциялық емес сайт. Ол әуесқой іс-шаралар "
@@ -2258,14 +2282,14 @@ msgstr "Сіздің тіркелгіңіз"
 #: home/templates/home/terms_page.html:15
 msgid ""
 "Please give accurate details when you register, and keep your password to "
-"yourself: anything done from your account is treated as done by you. Tell us "
-"if you believe someone else has access to it. Some actions, such as "
+"yourself: anything done from your account is treated as done by you. Tell us"
+" if you believe someone else has access to it. Some actions, such as "
 "submitting events or leaving comments, require a confirmed email address."
 msgstr ""
 "Тіркелу кезінде дұрыс деректерді көрсетіңіз және құпиясөзіңізді ешкімге "
 "айтпаңыз: тіркелгіңізден жасалғанның бәрі сіз жасаған деп саналады. Оған "
-"басқа біреу қол жеткізді деп ойласаңыз, бізге хабарлаңыз. Кейбір әрекеттер — "
-"мысалы, іс-шара қосу және пікір қалдыру — расталған электрондық пошта "
+"басқа біреу қол жеткізді деп ойласаңыз, бізге хабарлаңыз. Кейбір әрекеттер —"
+" мысалы, іс-шара қосу және пікір қалдыру — расталған электрондық пошта "
 "мекенжайын талап етеді."
 
 #: home/templates/home/terms_page.html:17
@@ -2275,18 +2299,18 @@ msgstr "Сіз жариялайтын іс-шаралар мен мазмұн"
 #: home/templates/home/terms_page.html:18
 msgid ""
 "Organizers and participants may submit events, comments and files. Submit "
-"only information you have the right to publish, and make it accurate: dates, "
-"locations, distances and links. Submitted events are reviewed before they "
+"only information you have the right to publish, and make it accurate: dates,"
+" locations, distances and links. Submitted events are reviewed before they "
 "appear in the public calendar, and we may edit, decline or remove anything "
 "that is inaccurate, misleading, unlawful, offensive or spam. You keep the "
 "rights to what you publish and give us permission to display it on the site."
 msgstr ""
 "Ұйымдастырушылар мен қатысушылар іс-шаралар, пікірлер мен файлдар қоса "
 "алады. Тек жариялауға құқығыңыз бар мәліметтерді қосыңыз және олардың "
-"дәлдігін қадағалаңыз: күндер, орындар, қашықтықтар және сілтемелер. Қосылған "
-"іс-шаралар жалпы күнтізбеде жарияланар алдында тексеруден өтеді, ал біз дәл "
-"емес, жаңылыстыратын, заңсыз, қорлайтын немесе спам болып табылатын нәрсені "
-"өңдеуге, қабылдамауға немесе жоюға құқылымыз. Жарияланғанға құқықтар сізде "
+"дәлдігін қадағалаңыз: күндер, орындар, қашықтықтар және сілтемелер. Қосылған"
+" іс-шаралар жалпы күнтізбеде жарияланар алдында тексеруден өтеді, ал біз дәл"
+" емес, жаңылыстыратын, заңсыз, қорлайтын немесе спам болып табылатын нәрсені"
+" өңдеуге, қабылдамауға немесе жоюға құқылымыз. Жарияланғанға құқықтар сізде "
 "қалады, ал бізге оны сайтта көрсетуге рұқсат бересіз."
 
 #: home/templates/home/terms_page.html:20
@@ -2298,8 +2322,8 @@ msgid ""
 "We are an information and registration platform, not the organizer. The "
 "event itself — its rules, safety, timing, entry fees, refunds, cancellation "
 "and results — is the responsibility of the organizer who published it. Your "
-"registration details are passed to that organizer so they can run the event. "
-"Taking part in sporting events carries risk; assess your own health and "
+"registration details are passed to that organizer so they can run the event."
+" Taking part in sporting events carries risk; assess your own health and "
 "preparation, and follow the organizer's rules."
 msgstr ""
 "Біз — ақпараттық және тіркеу платформасымыз, ұйымдастырушы емеспіз. Іс-"
@@ -2307,8 +2331,8 @@ msgstr ""
 "жарналары, қайтарымдар, тоқтатылуы және нәтижелері үшін — оны жариялаған "
 "ұйымдастырушы жауап береді. Тіркелу деректеріңіз іс-шараны өткізу үшін сол "
 "ұйымдастырушыға беріледі. Спорттық іс-шараларға қатысу тәуекелмен "
-"байланысты: денсаулығыңыз бен дайындығыңызды бағалаңыз және ұйымдастырушының "
-"ережелерін сақтаңыз."
+"байланысты: денсаулығыңыз бен дайындығыңызды бағалаңыз және ұйымдастырушының"
+" ережелерін сақтаңыз."
 
 #: home/templates/home/terms_page.html:23
 msgid "Acceptable use"
@@ -2343,8 +2367,8 @@ msgid ""
 msgstr ""
 "Сайт «қалай бар солай» және тегін ұсынылады. Оның жұмыс істеуі мен "
 "мәліметтердің дұрыстығы үшін бар күшімізді саламыз, бірақ оның үнемі "
-"қолжетімді, толық және қатесіз болуына кепілдік бере алмаймыз және осы жерде "
-"жарияланған ақпарат негізінде қабылданған шешімдер үшін жауап бермейміз. "
+"қолжетімді, толық және қатесіз болуына кепілдік бере алмаймыз және осы жерде"
+" жарияланған ақпарат негізінде қабылданған шешімдер үшін жауап бермейміз. "
 "Күнтізбе жазбалары ұйымдастырушылардан және ашық дереккөздерден жиналады, "
 "сондықтан старт орнына бармас немесе жарна төлемес бұрын мәліметтерді "
 "ұйымдастырушының өз бетінде тексеріңіз."
@@ -2392,9 +2416,9 @@ msgstr "Жаңа Wagtail сайтыңызға қош келдіңіз!"
 
 #: home/templates/home/welcome_page.html:28
 msgid ""
-"Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/"
-"Slack\">join our community on Slack</a>, or get started with one of the "
-"links below."
+"Please feel free to <a "
+"href=\"https://github.com/wagtail/wagtail/wiki/Slack\">join our community on"
+" Slack</a>, or get started with one of the links below."
 msgstr ""
 "Біздің <a href=\"https://github.com/wagtail/wagtail/wiki/Slack\">Slack "
 "қауымдастығымызға</a> қосылыңыз немесе төмендегі сілтемелерден бастаңыз."
@@ -2459,8 +2483,8 @@ msgstr "Ағылшын тілі"
 
 #: knowledge/models.py:234
 msgid ""
-"This article isn't available in your selected language, so it's shown in its "
-"original language."
+"This article isn't available in your selected language, so it's shown in its"
+" original language."
 msgstr ""
 "Бұл мақала сіз таңдаған тілде қолжетімсіз, сондықтан түпнұсқа тілінде "
 "көрсетілген."
@@ -2679,8 +2703,8 @@ msgid ""
 "The deepest selected level is the parent. Leave Country empty to create a "
 "country, Region empty to create a region, City empty to create a city."
 msgstr ""
-"Ең терең таңдалған деңгей аталық болады. Ел құру үшін «Ел» өрісін, өңір құру "
-"үшін «Өңір» өрісін, қала құру үшін «Қала» өрісін бос қалдырыңыз."
+"Ең терең таңдалған деңгей аталық болады. Ел құру үшін «Ел» өрісін, өңір құру"
+" үшін «Өңір» өрісін, қала құру үшін «Қала» өрісін бос қалдырыңыз."
 
 #: locations/templates/locations/location_form.html:88
 msgid ""

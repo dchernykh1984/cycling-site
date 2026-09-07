@@ -197,3 +197,45 @@ class NewsSubmissionModerationViewTests(TestCase):
         self.client.force_login(self.participant)
         response = self.client.get(reverse("news_index"))
         self.assertNotContains(response, reverse("news_submission_approve", args=[self.submission.pk]))
+
+
+class ModerationRuleTests(TestCase):
+    """What the banner tells a moderator who has never approved an event before.
+
+    The count alone says nothing about the standard being applied, and the standard is not
+    obvious: a new moderator cannot guess how much checking is expected of them.
+    """
+
+    def setUp(self):
+        self.organizer = _user("rule_organizer@example.com", User.Role.ORGANIZER)
+        self.client.force_login(self.organizer)
+
+    def _rule(self, language="ru"):
+        from django.utils import translation
+
+        with translation.override(language):
+            return translation.gettext(
+                "Approve an event when it is clear what the race is and where to go. Check the venue "
+                "on the map and that the dates, distances and links are real -- an invented start "
+                "point is worse than no event at all."
+            )
+
+    def test_the_rule_stands_next_to_the_count(self):
+        _comp("Pending one", status=Competition.Status.PENDING_APPROVAL)
+        response = self.client.get(reverse("calendar"))
+        self.assertContains(response, self._rule(), html=False)
+
+    def test_no_events_to_review_means_no_rule(self):
+        _comp("Approved one", status=Competition.Status.APPROVED)
+        response = self.client.get(reverse("calendar"))
+        self.assertNotContains(response, self._rule(), html=False)
+
+    def test_the_rule_is_translated_everywhere(self):
+        _comp("Pending one", status=Competition.Status.PENDING_APPROVAL)
+        for language in ("ru", "kk", "en"):
+            with self.subTest(language=language):
+                rule = self._rule(language)
+                if language != "en":
+                    self.assertNotIn("Approve an event", rule)
+                response = self.client.get(f"/{language}/calendar/")
+                self.assertContains(response, rule, html=False)
