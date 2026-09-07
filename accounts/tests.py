@@ -1377,7 +1377,7 @@ class ContactOwnersViewTests(TestCase):
         self.client.force_login(user)
         self.assertRedirects(self.client.post(self.url, {"subject": "a", "message": "b"}), reverse("account_profile"))
         self.assertEqual(len(mail.outbox), 1)
-        User.objects.filter(pk=user.pk).update(last_mail_action_at=timezone.now() - datetime.timedelta(seconds=601))
+        User.objects.filter(pk=user.pk).update(last_mail_action_at=timezone.now() - datetime.timedelta(seconds=61))
         self.assertRedirects(self.client.post(self.url, {"subject": "c", "message": "d"}), reverse("account_profile"))
         self.assertEqual(len(mail.outbox), 2)
 
@@ -1520,7 +1520,7 @@ class OptionalEmailVerificationTests(TestCase):
 class SignupConfirmationRateLimitTests(TestCase):
     """The shared mail cooldown (last_mail_action_at) must also cover the first confirmation
     email allauth sends at signup, otherwise a fresh guest could immediately resend a second
-    one and bypass the 10-minute limit."""
+    one and bypass the wait entirely."""
 
     def test_signup_stamps_last_mail_action_at(self):
         self.client.post(
@@ -2009,3 +2009,59 @@ class SigninProvidersListTests(TestCase):
     @override_settings(SOCIALACCOUNT_PROVIDERS={"strava": {}, "made_up": {}})
     def test_an_unknown_provider_still_gets_a_readable_name(self):
         self.assertEqual(dict(signin_providers())["made_up"], "Made_up")
+
+
+class MailCooldownTests(TestCase):
+    """How long a reader waits before the site will send anything on their behalf again.
+
+    One timestamp governs every outgoing mail -- the confirmation to their own inbox, a message to
+    the owners, a role request -- and the wait is a minute. Ten minutes was long enough to strand
+    somebody who cannot use the site until the confirmation arrives.
+    """
+
+    def setUp(self):
+        self.user = make_user("cooldown_user", role=User.Role.PARTICIPANT)
+        self.client.force_login(self.user)
+
+    def _stamp(self, seconds_ago):
+        User.objects.filter(pk=self.user.pk).update(
+            last_mail_action_at=timezone.now() - datetime.timedelta(seconds=seconds_ago)
+        )
+
+    def test_a_confirmation_can_be_asked_for_again_after_a_minute(self):
+        self._stamp(61)
+        with patch.object(EmailAddress, "send_confirmation") as mock_send:
+            self.client.post(reverse("account_resend_confirmation"))
+        mock_send.assert_called_once()
+
+    def test_a_confirmation_asked_for_twice_inside_the_minute_goes_out_once(self):
+        self._stamp(30)
+        with patch.object(EmailAddress, "send_confirmation") as mock_send:
+            self.client.post(reverse("account_resend_confirmation"))
+        mock_send.assert_not_called()
+
+    def test_the_owners_can_be_written_to_again_after_a_minute(self):
+        self._stamp(61)
+        self.client.post(reverse("account_contact_owners"), {"subject": "Hello", "message": "Anybody there?"})
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_the_owners_are_not_written_to_twice_inside_the_minute(self):
+        self._stamp(30)
+        response = self.client.post(
+            reverse("account_contact_owners"), {"subject": "Hello", "message": "Anybody there?"}
+        )
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(response.status_code, 200)
+
+    def test_the_button_counts_down_from_a_minute(self):
+        self._stamp(20)
+        context = self.client.get(reverse("account_profile")).context
+        self.assertGreater(context["resend_cooldown_seconds"], 0)
+        self.assertLessEqual(context["resend_cooldown_seconds"], 40)
+        self.assertEqual(context["contact_cooldown_seconds"], context["resend_cooldown_seconds"])
+
+    def test_no_countdown_before_the_first_mail(self):
+        User.objects.filter(pk=self.user.pk).update(last_mail_action_at=None)
+        context = self.client.get(reverse("account_profile")).context
+        self.assertEqual(context["resend_cooldown_seconds"], 0)
+        self.assertEqual(context["contact_cooldown_seconds"], 0)
