@@ -67,3 +67,81 @@ class FilteredListMetaTests(TestCase):
     def test_an_unfiltered_list_keeps_the_site_wide_text(self):
         """Nothing of its own to say, so it must not invent something."""
         self.assertNotIn("Almaty", _title(self._get()))
+
+
+class LandingFacetsTests(TestCase):
+    """Which cities and disciplines are worth offering as a page of their own.
+
+    The block under the calendar is what a reader and a crawler both walk into the calendar
+    through, and it used to carry two kinds of entry nobody searches for: the tree's catch-all city
+    and each category's leftovers bin.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        from calendar_app.models import Competition
+        from locations.models import Location, add_location_child
+
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        cls.city = add_location_child(country.get_children()[0], name="Almaty", name_ru="Almaty")
+        cls.other_city = add_location_child(
+            region, name="Other city", name_ru="Other city", name_en="Other city", is_hidden=True
+        )
+        venue = add_location_child(cls.city, name="Republic Square", name_ru="Republic Square")
+        other_venue = add_location_child(cls.other_city, name="Somewhere", name_ru="Somewhere")
+
+        category = DisciplineCategory.objects.create(name="Road", name_ru="Road", name_en="Road")
+        cls.real = Discipline.objects.create(
+            name="Road race", name_ru="Road race", name_en="Road race", category=category
+        )
+        cls.bin = Discipline.objects.create(
+            name="Other (Road Cycling)",
+            name_ru="Drugoe",
+            name_en="Other (Road Cycling)",
+            category=category,
+        )
+        for location, discipline in ((venue, cls.real), (other_venue, cls.bin)):
+            comp = Competition.objects.create(
+                title_ru="Race",
+                date_start=datetime.date.today() + datetime.timedelta(days=10),
+                status=Competition.Status.APPROVED,
+                location=location,
+            )
+            comp.disciplines.add(discipline)
+        cls.Location = Location
+
+    def _facets(self):
+        from calendar_app.listing_seo import landing_filters
+
+        places, kinds = landing_filters()
+        return [p.pk for p in places], [k.pk for k in kinds]
+
+    def test_the_catch_all_city_is_not_offered_as_a_place(self):
+        places, _kinds = self._facets()
+        self.assertIn(self.city.pk, places)
+        self.assertNotIn(self.other_city.pk, places)
+
+    def test_a_categorys_leftovers_bin_is_not_offered_as_a_discipline(self):
+        _places, kinds = self._facets()
+        self.assertIn(self.real.pk, kinds)
+        self.assertNotIn(self.bin.pk, kinds)
+
+    def test_the_calendar_page_offers_neither(self):
+        response = self.client.get(reverse("calendar"))
+        html = response.content.decode()
+        self.assertIn(f"location={self.city.pk}", html)
+        self.assertNotIn(f"location={self.other_city.pk}", html)
+        self.assertNotIn(f"discipline={self.bin.pk}", html)
+
+    def test_every_leftovers_bin_the_catalogue_holds_is_recognised(self):
+        """The marker is the English name, so a renamed bin would slip back into the block."""
+        from calendar_app.listing_seo import CATCH_ALL_DISCIPLINE_PREFIX
+
+        bins = Discipline.objects.filter(name_en__startswith=CATCH_ALL_DISCIPLINE_PREFIX)
+        self.assertIn(self.bin, bins)
+        for discipline in Discipline.objects.exclude(pk__in=bins.values("pk")):
+            self.assertFalse(
+                (discipline.name_en or "").startswith("Other "),
+                f"{discipline.name_en} looks like a bin but is not matched",
+            )
