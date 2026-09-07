@@ -293,3 +293,49 @@ class RegionFacetTests(TestCase):
     def test_the_region_reaches_the_sitemap(self):
         html = self.client.get("/sitemap-calendar-filters.xml").content.decode()
         self.assertIn(f"location={self.region.pk}", html)
+
+
+class EmptyFilterValueTests(TestCase):
+    """A parameter with nothing in it is not a filter.
+
+    A cleared select and a stale link both send "?location=", which is no id at all. Read as a
+    filter it emptied the page -- every event excluded by an empty set of places -- and told the
+    view it was looking at a landing page.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        from locations.models import add_location_child
+
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        city = add_location_child(region, name="Almaty", name_ru="Almaty")
+        venue = add_location_child(city, name="Republic Square", name_ru="Republic Square")
+        today = datetime.date.today()
+        cls.soon = Competition.objects.create(
+            title_ru="Soon race",
+            date_start=today + datetime.timedelta(days=10),
+            status=Competition.Status.APPROVED,
+            location=venue,
+        )
+        cls.autumn = Competition.objects.create(
+            title_ru="Autumn race",
+            date_start=today + datetime.timedelta(days=120),
+            status=Competition.Status.APPROVED,
+            location=venue,
+        )
+
+    def _rows(self, url):
+        return [c.pk for c in self.client.get(url).context["competitions"]]
+
+    def test_an_empty_place_still_lists_the_events(self):
+        self.assertIn(self.soon.pk, self._rows(f"{reverse('calendar_list')}?location="))
+
+    def test_an_empty_place_is_not_taken_for_a_landing_page(self):
+        """No filter means the plain list, which stops thirty days out."""
+        self.assertNotIn(self.autumn.pk, self._rows(f"{reverse('calendar_list')}?location="))
+
+    def test_junk_in_the_parameter_is_ignored_the_same_way(self):
+        rows = self._rows(f"{reverse('calendar_list')}?location=abc&discipline=")
+        self.assertIn(self.soon.pk, rows)
+        self.assertNotIn(self.autumn.pk, rows)
