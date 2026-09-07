@@ -339,3 +339,61 @@ class EmptyFilterValueTests(TestCase):
         rows = self._rows(f"{reverse('calendar_list')}?location=abc&discipline=")
         self.assertIn(self.soon.pk, rows)
         self.assertNotIn(self.autumn.pk, rows)
+
+
+class FacetsLeadSomewhereTests(TestCase):
+    """A facet is only worth offering when the page behind it has something on it.
+
+    The list starts at today, but the facets were chosen from every published event ever held, so a
+    town whose races are all in the past was linked under the calendar and listed in the sitemap --
+    and answered with an empty page. Five of six facets sampled on production did exactly that.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        from locations.models import add_location_child
+
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        cls.live_city = add_location_child(region, name="Almaty", name_ru="Almaty")
+        cls.spent_city = add_location_child(region, name="Kaskelen", name_ru="Kaskelen")
+        category = DisciplineCategory.objects.create(name="Road", name_ru="Road", name_en="Road")
+        cls.live_kind = Discipline.objects.create(
+            name="Road race", name_ru="Road race", name_en="Road race", category=category
+        )
+        cls.spent_kind = Discipline.objects.create(
+            name="Criterium", name_ru="Criterium", name_en="Criterium", category=category
+        )
+        today = datetime.date.today()
+        for city, kind, day in (
+            (cls.live_city, cls.live_kind, today + datetime.timedelta(days=30)),
+            (cls.spent_city, cls.spent_kind, today - datetime.timedelta(days=30)),
+        ):
+            venue = add_location_child(city, name="Start", name_ru="Start")
+            comp = Competition.objects.create(
+                title_ru="Race", date_start=day, status=Competition.Status.APPROVED, location=venue
+            )
+            comp.disciplines.add(kind)
+
+    def _facets(self):
+        from calendar_app.listing_seo import landing_filters
+
+        regions, places, kinds = landing_filters()
+        return [r.pk for r in regions], [p.pk for p in places], [k.pk for k in kinds]
+
+    def test_a_town_whose_races_are_over_is_not_offered(self):
+        _regions, places, _kinds = self._facets()
+        self.assertIn(self.live_city.pk, places)
+        self.assertNotIn(self.spent_city.pk, places)
+
+    def test_a_discipline_nobody_is_racing_any_more_is_not_offered(self):
+        _regions, _places, kinds = self._facets()
+        self.assertIn(self.live_kind.pk, kinds)
+        self.assertNotIn(self.spent_kind.pk, kinds)
+
+    def test_the_link_the_calendar_offers_leads_to_a_list_with_something_on_it(self):
+        html = self.client.get(reverse("calendar")).content.decode()
+        self.assertIn(f"location={self.live_city.pk}", html)
+        self.assertNotIn(f"location={self.spent_city.pk}", html)
+        rows = self.client.get(f"{reverse('calendar_list')}?location={self.live_city.pk}").context["competitions"]
+        self.assertTrue(list(rows))

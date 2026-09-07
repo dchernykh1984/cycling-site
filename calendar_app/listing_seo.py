@@ -65,12 +65,21 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
     asked. The list filter walks a node's descendants, so a region page needs no new plumbing.
     """
     from django.db.models import Count, Q
+    from django.utils import timezone
 
     from locations.models import Location
 
     from .models import Competition, Discipline
 
-    published = Competition.objects.filter(status=Competition.Status.APPROVED, is_hidden=False, is_deleted=False)
+    # Only what the page behind the link will actually show. The list starts at today, so a town
+    # whose races are all in the past leads to an empty page -- and five of the six facets sampled
+    # on production did exactly that, advertised in the sitemap and linked under the calendar.
+    published = Competition.objects.filter(
+        status=Competition.Status.APPROVED,
+        is_hidden=False,
+        is_deleted=False,
+        date_start__gte=timezone.localdate(),
+    )
     city_paths = published.filter(location__isnull=False).values_list("location__path", flat=True)
     # A venue sits at depth 4; its city is the first three path steps.
     step = Location.steplen
@@ -92,6 +101,7 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
                     competitions__status=Competition.Status.APPROVED,
                     competitions__is_hidden=False,
                     competitions__is_deleted=False,
+                    competitions__date_start__gte=timezone.localdate(),
                 ),
             )
         )
