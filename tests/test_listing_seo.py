@@ -114,7 +114,7 @@ class LandingFacetsTests(TestCase):
     def _facets(self):
         from calendar_app.listing_seo import landing_filters
 
-        places, kinds = landing_filters()
+        _regions, places, kinds = landing_filters()
         return [p.pk for p in places], [k.pk for k in kinds]
 
     def test_the_catch_all_city_is_not_offered_as_a_place(self):
@@ -241,3 +241,48 @@ class FacetedListSpanTests(TestCase):
     def test_a_city_page_does_not_claim_a_date_range_it_no_longer_has(self):
         html = self.client.get(f"{reverse('calendar_list')}?location={self.city.pk}").content.decode()
         self.assertNotIn(" to ", _description(html))
+
+
+class RegionFacetTests(TestCase):
+    """Regions as pages of their own.
+
+    A start at a village called Kyrbaltabay is invisible to anyone typing "races near Almaty". The
+    region page gathers that village with the towns around it into the page that answers the
+    question people actually ask.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        from locations.models import add_location_child
+
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        cls.region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        cls.empty_region = add_location_child(country, name="Empty region", name_ru="Empty region")
+        village = add_location_child(cls.region, name="Kyrbaltabay", name_ru="Kyrbaltabay")
+        venue = add_location_child(village, name="UBT TT", name_ru="UBT TT")
+        cls.comp = Competition.objects.create(
+            title_ru="Time trial",
+            date_start=datetime.date.today() + datetime.timedelta(days=20),
+            status=Competition.Status.APPROVED,
+            location=venue,
+        )
+
+    def test_a_region_holding_events_is_offered(self):
+        from calendar_app.listing_seo import landing_filters
+
+        regions, _places, _kinds = landing_filters()
+        self.assertIn(self.region.pk, [r.pk for r in regions])
+        self.assertNotIn(self.empty_region.pk, [r.pk for r in regions])
+
+    def test_the_calendar_links_the_region(self):
+        html = self.client.get(reverse("calendar")).content.decode()
+        self.assertIn(f"location={self.region.pk}", html)
+
+    def test_the_region_page_gathers_the_villages_below_it(self):
+        response = self.client.get(f"{reverse('calendar_list')}?location={self.region.pk}")
+        self.assertIn(self.comp.pk, [c.pk for c in response.context["competitions"]])
+        self.assertIn("Almaty region", _title(response.content.decode()))
+
+    def test_the_region_reaches_the_sitemap(self):
+        html = self.client.get("/sitemap-calendar-filters.xml").content.decode()
+        self.assertIn(f"location={self.region.pk}", html)

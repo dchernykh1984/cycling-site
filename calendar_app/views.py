@@ -410,7 +410,8 @@ class CalendarView(DefaultFilterRedirectMixin, TemplateView):
         context["upcoming"] = upcoming_competitions()
         # Links to the filtered lists worth being pages of their own, so a crawler (and a reader
         # scanning for their own city) can reach them without building a filter first.
-        places, kinds = landing_filters(limit_places=24, limit_kinds=12)
+        regions, places, kinds = landing_filters(limit_places=24, limit_kinds=12, limit_regions=12)
+        context["landing_regions"] = regions
         context["landing_places"] = places
         context["landing_kinds"] = kinds
         context["event_types"] = EventType.objects.all()

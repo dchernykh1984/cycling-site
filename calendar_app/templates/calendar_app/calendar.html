@@ -99,8 +99,14 @@ stays where it is, which is where a reader looking for the controls would expect
 </section>
 {% endif %}
 
-{% if landing_places or landing_kinds %}
+{% if landing_regions or landing_places or landing_kinds %}
 <section class="mt-4 small">
+  {% if landing_regions %}
+  <p class="mb-1">
+    <span class="text-muted">{% trans "Competitions by region" %}:</span>
+    {% for region in landing_regions %}<a href="{% url 'calendar_list' %}?location={{ region.pk }}">{{ region.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+  </p>
+  {% endif %}
   {% if landing_places %}
   <p class="mb-1">
     <span class="text-muted">{% trans "Competitions by city" %}:</span>
