@@ -521,13 +521,18 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
         form = CompetitionFilterForm(self.request.GET or None)
         today = timezone.localdate()
         date_from = today
+        # A filter counts only when it names something. "?location=" -- a cleared select, a stale
+        # link -- carries a value that is no id at all, and reading it as a filter both empties the
+        # page and drops the date window from it.
+        chosen = {
+            name: _parse_int_ids(self.request.GET.getlist(name))
+            for name in ("location", "discipline", "discipline_category", "event_type")
+        }
         # The unfiltered list is a "what is on soon" page, so it stops thirty days out. A list
         # filtered down to one city or one discipline is a page about that city -- and two rows of
         # it is not a page about anything, so the whole season ahead stands. An explicit date_to
         # from the reader still wins over both.
-        faceted = any(
-            self.request.GET.getlist(name) for name in ("location", "discipline", "discipline_category", "event_type")
-        )
+        faceted = any(chosen.values())
         date_to = None if faceted else today + datetime.timedelta(days=30)
 
         is_manager = _can_manage_any_competition(self.request.user)
@@ -552,9 +557,8 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
             self.request.GET.getlist("discipline"),
             self.request.GET.getlist("discipline_category"),
         )
-        location_ids = self.request.GET.getlist("location")
-        if location_ids:
-            qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
+        if chosen["location"]:
+            qs = qs.filter(location_id__in=_location_descendant_pks(chosen["location"]))
         qs = _apply_favorite_filter(qs, self.request)
 
         qs = qs.filter(date_start__gte=date_from)
