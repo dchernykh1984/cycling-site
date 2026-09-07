@@ -40,19 +40,17 @@ def sports_event(competition, base_url: str) -> str:
     location = competition.location
     if location is not None:
         place: dict = {"@type": "Place", "name": location.name}
-        address = [node.name for node in location.get_ancestors() if node.name]
-        if address:
-            postal = {
-                "@type": "PostalAddress",
-                "addressLocality": address[-1],
-                "addressCountry": address[0],
-            }
-            # The region sits between the country and the town: "Almaty region" for a start in a
-            # village nobody outside the area has heard of. Leaving it out threw away the one word
-            # that ties such an event to the city its riders come from.
-            if len(address) >= 3:
-                postal["addressRegion"] = address[-2]
-            place["address"] = postal
+        # Read the chain by depth rather than by position: country, region, city. A node whose
+        # name is empty drops out of the list, and counting from the end would then hand the
+        # region's name to the country -- an address that is wrong rather than merely incomplete.
+        named = {node.depth: node.name for node in location.get_ancestors() if node.name}
+        postal = {
+            key: named[depth]
+            for key, depth in (("addressCountry", 1), ("addressRegion", 2), ("addressLocality", 3))
+            if depth in named
+        }
+        if postal:
+            place["address"] = {"@type": "PostalAddress", **postal}
         if location.lat is not None and location.lng is not None:
             place["geo"] = {
                 "@type": "GeoCoordinates",
