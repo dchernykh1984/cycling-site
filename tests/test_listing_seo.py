@@ -145,3 +145,46 @@ class LandingFacetsTests(TestCase):
                 (discipline.name_en or "").startswith("Other "),
                 f"{discipline.name_en} looks like a bin but is not matched",
             )
+
+
+class FilteredHeadingTests(TestCase):
+    """The heading of a filtered list says what it is filtered by.
+
+    Every one of the hundred filter pages in the sitemap carried the same h1 -- "Competitions" --
+    so the page a reader landed on from search never named the thing they had searched for.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        from locations.models import add_location_child
+
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        cls.city = add_location_child(region, name="Almaty", name_ru="Almaty")
+        venue = add_location_child(cls.city, name="Republic Square", name_ru="Republic Square")
+        Competition.objects.create(
+            title_ru="Race",
+            date_start=datetime.date.today() + datetime.timedelta(days=10),
+            status=Competition.Status.APPROVED,
+            location=venue,
+        )
+
+    def _h1(self, url):
+        html = self.client.get(url).content.decode()
+        return re.sub(r"\s+", " ", re.search(r"<h1[^>]*>(.*?)</h1>", html, re.S).group(1)).strip()
+
+    def test_a_place_names_itself_in_the_heading(self):
+        heading = self._h1(f"{reverse('calendar_list')}?location={self.city.pk}")
+        self.assertIn("Almaty", heading)
+
+    def test_the_unfiltered_list_keeps_the_plain_word(self):
+        from django.utils import translation
+
+        with translation.override("ru"):
+            plain = translation.gettext("Competitions")
+        self.assertEqual(self._h1(reverse("calendar_list")), plain)
+
+    def test_the_heading_matches_the_title_tag(self):
+        html = self.client.get(f"{reverse('calendar_list')}?location={self.city.pk}").content.decode()
+        heading = re.sub(r"\s+", " ", re.search(r"<h1[^>]*>(.*?)</h1>", html, re.S).group(1)).strip()
+        self.assertIn(heading, _title(html))
