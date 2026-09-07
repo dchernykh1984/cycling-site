@@ -9,6 +9,13 @@ shape of the query people type, and this is what answers it.
 
 from django.utils.translation import gettext as _
 
+#: Every discipline whose English name starts this way is a category's leftovers bin -- "Other
+#: (Road Cycling)", "Other (Running)". They are useful when an organizer's own wording fits nothing
+#: else, and useless as a landing page: nobody searches for "other road cycling". The English name
+#: is the one the seed data set, so it is the stable side to match on; the test below pins every
+#: bin the catalogue currently holds.
+CATCH_ALL_DISCIPLINE_PREFIX = "Other ("
+
 
 def _names(model, ids, limit=3):
     if not ids:
@@ -63,11 +70,17 @@ def landing_filters(limit_places=60, limit_kinds=40):
     # A venue sits at depth 4; its city is the first three path steps.
     step = Location.steplen
     city_keys = {path[: step * 3] for path in city_paths if len(path) >= step * 3}
+    # The catch-all city ("Other city") is a bucket for events whose town nobody wrote down, not a
+    # place anybody searches for. It is hidden in the tree for exactly that reason, and hidden nodes
+    # have no business being offered as a page of their own.
     places = list(
-        Location.objects.filter(depth=3, path__in=city_keys, is_deleted=False).order_by("path")[:limit_places]
+        Location.objects.filter(depth=3, path__in=city_keys, is_deleted=False, is_hidden=False).order_by("path")[
+            :limit_places
+        ]
     )
     kinds = list(
-        Discipline.objects.annotate(
+        Discipline.objects.exclude(name_en__startswith=CATCH_ALL_DISCIPLINE_PREFIX)
+        .annotate(
             events=Count(
                 "competitions",
                 filter=Q(
