@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-07 13:31+0500\n"
+"POT-Creation-Date: 2026-09-07 13:40+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -316,7 +316,7 @@ msgstr "Это ваш единственный способ входа. Снач
 msgid "Connect"
 msgstr "Подключить"
 
-#: accounts/templates/accounts/profile.html:158 accounts/views.py:340
+#: accounts/templates/accounts/profile.html:158 accounts/views.py:349
 msgid "Role"
 msgstr "Роль"
 
@@ -617,23 +617,23 @@ msgstr ""
 msgid "Send request"
 msgstr "Отправить запрос"
 
-#: accounts/views.py:309
+#: accounts/views.py:318
 msgid "Please wait a few minutes before sending another message."
 msgstr ""
 "Пожалуйста, подождите несколько минут перед отправкой следующего сообщения."
 
-#: accounts/views.py:325
+#: accounts/views.py:334
 msgid ""
 "Sorry, we could not send your message right now. Please try again later."
 msgstr ""
 "Извините, сейчас не получилось отправить ваше сообщение. Пожалуйста, "
 "попробуйте позже."
 
-#: accounts/views.py:345
+#: accounts/views.py:354
 msgid "Why you need it"
 msgstr "Зачем она вам"
 
-#: accounts/views.py:347
+#: accounts/views.py:356
 msgid ""
 "Tell us what you plan to do with this role, and how to reach you if we have "
 "questions."
@@ -641,19 +641,19 @@ msgstr ""
 "Расскажите, что вы планируете делать с этой ролью и как с вами связаться, "
 "если у нас появятся вопросы."
 
-#: accounts/views.py:396
+#: accounts/views.py:405
 msgid "Your request has been sent. We will get back to you."
 msgstr "Запрос отправлен. Мы вернёмся к вам с ответом."
 
-#: accounts/views.py:403
+#: accounts/views.py:412
 msgid "Subject"
 msgstr "Тема"
 
-#: accounts/views.py:408
+#: accounts/views.py:417
 msgid "Message"
 msgstr "Сообщение"
 
-#: accounts/views.py:410
+#: accounts/views.py:419
 msgid ""
 "Please tell us how to reach you (e.g. email or messenger) and describe your "
 "question or problem in detail."
@@ -661,7 +661,7 @@ msgstr ""
 "Пожалуйста, укажите, как с вами связаться (например, email или мессенджер), "
 "и подробно опишите ваш вопрос или проблему."
 
-#: accounts/views.py:449
+#: accounts/views.py:458
 msgid "Your message has been sent to the site owners."
 msgstr "Ваше сообщение отправлено владельцам сайта."
 
@@ -1859,13 +1859,18 @@ msgid "Events awaiting approval"
 msgstr "События, ожидающие одобрения"
 
 #: cycling_site/templates/_moderation_banner.html:13
+#: tests/test_moderation_banner.py:218
+#| msgid ""
+#| "Approve an event when it is clear what the race is and where to go. Check "
+#| "the venue on the map and that the dates, distances and links are real -- an "
+#| "invented start point is worse than no event at all."
 msgid ""
 "Approve an event when it is clear what the race is and where to go. Check "
-"the venue on the map and that the dates, distances and links are real -- an "
+"the venue on the map and that the dates, distances and links are real. An "
 "invented start point is worse than no event at all."
 msgstr ""
 "Одобряйте старт, когда понятно, что это за гонка и куда ехать. Проверьте "
-"место на карте и то, что даты, дистанции и ссылки настоящие: выдуманная "
+"место на карте и то, что даты, дистанции и ссылки настоящие. Выдуманная "
 "точка старта хуже, чем отсутствие события."
 
 #: cycling_site/templates/_moderation_banner.html:14

@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-07 13:31+0500\n"
+"POT-Creation-Date: 2026-09-07 13:40+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -317,7 +317,7 @@ msgstr "Бұл сіздің жалғыз кіру тәсіліңіз. Алдым
 msgid "Connect"
 msgstr "Қосу"
 
-#: accounts/templates/accounts/profile.html:158 accounts/views.py:340
+#: accounts/templates/accounts/profile.html:158 accounts/views.py:349
 msgid "Role"
 msgstr "Рол"
 
@@ -620,22 +620,22 @@ msgstr ""
 msgid "Send request"
 msgstr "Сұранысты жіберу"
 
-#: accounts/views.py:309
+#: accounts/views.py:318
 msgid "Please wait a few minutes before sending another message."
 msgstr "Келесі хабарламаны жіберер алдында бірнеше минут күте тұрыңыз."
 
-#: accounts/views.py:325
+#: accounts/views.py:334
 msgid ""
 "Sorry, we could not send your message right now. Please try again later."
 msgstr ""
 "Кешіріңіз, қазір хабарламаңызды жіберу мүмкін болмады. Кейінірек қайталап "
 "көріңіз."
 
-#: accounts/views.py:345
+#: accounts/views.py:354
 msgid "Why you need it"
 msgstr "Ол сізге не үшін қажет"
 
-#: accounts/views.py:347
+#: accounts/views.py:356
 msgid ""
 "Tell us what you plan to do with this role, and how to reach you if we have "
 "questions."
@@ -643,19 +643,19 @@ msgstr ""
 "Осы рөлмен не істеуді жоспарлап отырғаныңызды және сұрақтар туындаса сізбен "
 "қалай байланысуға болатынын жазыңыз."
 
-#: accounts/views.py:396
+#: accounts/views.py:405
 msgid "Your request has been sent. We will get back to you."
 msgstr "Сұраныс жіберілді. Біз сізге жауап береміз."
 
-#: accounts/views.py:403
+#: accounts/views.py:412
 msgid "Subject"
 msgstr "Тақырып"
 
-#: accounts/views.py:408
+#: accounts/views.py:417
 msgid "Message"
 msgstr "Хабарлама"
 
-#: accounts/views.py:410
+#: accounts/views.py:419
 msgid ""
 "Please tell us how to reach you (e.g. email or messenger) and describe your "
 "question or problem in detail."
@@ -663,7 +663,7 @@ msgstr ""
 "Өзіңізбен қалай байланысуға болатынын (мысалы, email немесе мессенджер) "
 "көрсетіп, сұрағыңыз бен мәселеңізді толық сипаттаңыз."
 
-#: accounts/views.py:449
+#: accounts/views.py:458
 msgid "Your message has been sent to the site owners."
 msgstr "Хабарламаңыз сайт иелеріне жіберілді."
 
@@ -1854,14 +1854,19 @@ msgid "Events awaiting approval"
 msgstr "Бекітуді күтіп тұрған іс-шаралар"
 
 #: cycling_site/templates/_moderation_banner.html:13
+#: tests/test_moderation_banner.py:218
+#| msgid ""
+#| "Approve an event when it is clear what the race is and where to go. Check "
+#| "the venue on the map and that the dates, distances and links are real -- an "
+#| "invented start point is worse than no event at all."
 msgid ""
 "Approve an event when it is clear what the race is and where to go. Check "
-"the venue on the map and that the dates, distances and links are real -- an "
+"the venue on the map and that the dates, distances and links are real. An "
 "invented start point is worse than no event at all."
 msgstr ""
 "Қандай жарыс екені және қайда бару керегі түсінікті болса, старттты "
 "мақұлдаңыз. Орынды картадан тексеріңіз, күндер, қашықтықтар мен сілтемелер "
-"шын екеніне көз жеткізіңіз: ойдан шығарылған старт нүктесі оқиғаның мүлде "
+"шын екеніне көз жеткізіңіз. Ойдан шығарылған старт нүктесі оқиғаның мүлде "
 "болмағанынан да жаман."
 
 #: cycling_site/templates/_moderation_banner.html:14

@@ -216,7 +216,7 @@ class ModerationRuleTests(TestCase):
         with translation.override(language):
             return translation.gettext(
                 "Approve an event when it is clear what the race is and where to go. Check the venue "
-                "on the map and that the dates, distances and links are real -- an invented start "
+                "on the map and that the dates, distances and links are real. An invented start "
                 "point is worse than no event at all."
             )
 
