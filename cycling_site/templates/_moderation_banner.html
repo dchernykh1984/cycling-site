@@ -9,7 +9,7 @@
                 {% if task.kind == "events" %}{% trans "Events awaiting approval" %}: {{ task.count }}
                 {% comment %}The rule a new moderator has no way to guess. It lives next to the count
                 because that is where they are when they decide.{% endcomment %}
-                <div class="small text-muted mt-1">{% trans "Approve an event when it is clear what the race is and where to go. Check the venue on the map and that the dates, distances and links are real. An invented start point is worse than no event at all." %}</div>
+                <span class="d-block small text-muted mt-1">{% trans "Approve an event when it is clear what the race is and where to go. Check the venue on the map and that the dates, distances and links are real. An invented start point is worse than no event at all." %}</span>
                 {% elif task.kind == "locations" %}{% trans "Locations awaiting approval" %}: {{ task.count }}
                 {% elif task.kind == "articles" %}{% trans "Article submissions awaiting review" %}: {{ task.count }}
                 {% elif task.kind == "news" %}{% trans "News submissions awaiting review" %}: {{ task.count }}
