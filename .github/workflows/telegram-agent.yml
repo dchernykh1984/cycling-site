@@ -2,10 +2,12 @@ name: telegram-agent
 
 on:
   schedule:
-    # 00:17 UTC daily -- after the events agent (22:17) and the Instagram agent (23:17), so this one
-    # sees everything they just proposed; still finishes before the model's 01:00 UTC peak window
-    # (2x pricing), and off the round minute to dodge cron congestion.
-    - cron: "17 0 * * *"
+    # 13:17 UTC daily -- after the events agent (11:17, Mondays and Fridays) and the Instagram agent
+    # (12:17), so this one sees everything they just proposed. Chat announcements are short notice,
+    # so this agent keeps its nightly cadence. The hour leaves 11 hours before the model's next peak
+    # window (01:00-04:00 UTC, 2x pricing) -- the margin GitHub's cron drift needs -- and sits after
+    # the other peak (06:00-10:00 UTC). Off the round minute to dodge cron congestion.
+    - cron: "17 13 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
