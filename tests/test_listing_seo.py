@@ -242,6 +242,13 @@ class FacetedListSpanTests(TestCase):
         html = self.client.get(f"{reverse('calendar_list')}?location={self.city.pk}").content.decode()
         self.assertNotIn(" to ", _description(html))
 
+    def test_the_open_end_leaves_the_date_field_empty_rather_than_saying_none(self):
+        """The upper bound is gone, not set to the word Python prints for nothing."""
+        html = self.client.get(f"{reverse('calendar_list')}?location={self.city.pk}").content.decode()
+        field = re.search(r'<input[^>]+name="date_to"[^>]*>', html).group(0)
+        self.assertIn('value=""', field)
+        self.assertNotIn("None", field)
+
 
 class RegionFacetTests(TestCase):
     """Regions as pages of their own.
