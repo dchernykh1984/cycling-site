@@ -12,7 +12,7 @@ import re
 from django.test import TestCase
 
 from calendar_app.models import Competition, Discipline, DisciplineCategory
-from locations.models import Location, add_location_child
+from locations.models import add_location_child
 
 
 def _competition(title="Race", **kwargs):
@@ -174,17 +174,44 @@ class EventRegionTests(TestCase):
         self.assertEqual(address["addressLocality"], "Kyrbaltabay")
         self.assertEqual(address["addressCountry"], "Kazakhstan")
 
-    def test_a_venue_hung_straight_off_a_city_still_has_no_region_to_give(self):
-        """Three levels above a venue is country, region, city; two is country and city."""
-        from locations.models import add_location_child
+    def test_every_level_of_the_chain_lands_in_its_own_field(self):
+        """The tree is four levels deep by construction: country, region, city, venue."""
+        address = self._address(self.comp)
+        self.assertEqual(
+            address,
+            {
+                "@type": "PostalAddress",
+                "addressCountry": "Kazakhstan",
+                "addressRegion": "Almaty region",
+                "addressLocality": "Kyrbaltabay",
+            },
+        )
 
-        country = Location.objects.get(depth=1, name_ru="Kazakhstan")
-        city = add_location_child(country, name="Astana", name_ru="Astana", name_en="Astana")
-        venue = add_location_child(city, name="Park", name_ru="Park", name_en="Park")
+
+class AddressByDepthTests(TestCase):
+    """The address is read off the tree by level, not by counting from the end of a list.
+
+    A node whose name is blank drops out of that list, and counting positions then hands the
+    region's name to the country -- an address that is wrong rather than merely short.
+    """
+
+    def _address(self, competition):
+        from calendar_app.seo import sports_event
+
+        return json.loads(html.unescape(sports_event(competition, "https://example.org")))["location"]["address"]
+
+    def test_a_blank_region_leaves_the_country_alone(self):
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan", name_en="Kazakhstan")
+        region = add_location_child(country, name="", name_ru="", name_en="")
+        city = add_location_child(region, name="Almaty", name_ru="Almaty", name_en="Almaty")
+        venue = add_location_child(city, name="Square", name_ru="Square", name_en="Square")
         comp = Competition.objects.create(
-            title_ru="Park race",
-            date_start=datetime.date.today() + datetime.timedelta(days=21),
+            title_ru="Race",
+            date_start=datetime.date.today() + datetime.timedelta(days=7),
             status=Competition.Status.APPROVED,
             location=venue,
         )
-        self.assertNotIn("addressRegion", self._address(comp))
+        address = self._address(comp)
+        self.assertEqual(address["addressCountry"], "Kazakhstan")
+        self.assertEqual(address["addressLocality"], "Almaty")
+        self.assertNotIn("addressRegion", address)
