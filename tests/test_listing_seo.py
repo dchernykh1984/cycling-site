@@ -397,3 +397,50 @@ class FacetsLeadSomewhereTests(TestCase):
         self.assertNotIn(f"location={self.spent_city.pk}", html)
         rows = self.client.get(f"{reverse('calendar_list')}?location={self.live_city.pk}").context["competitions"]
         self.assertTrue(list(rows))
+
+
+class FacetOrderTests(TestCase):
+    """Which places survive the limit.
+
+    The block under the calendar shows two dozen towns and the sitemap sixty; the tree holds more.
+    Cutting by tree order let whichever region sits first in the tree fill the block while a city
+    with a dozen races fell off the end.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        from locations.models import add_location_child
+
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        cls.quiet_region = add_location_child(country, name="A region", name_ru="A region")
+        cls.busy_region = add_location_child(country, name="Z region", name_ru="Z region")
+        cls.quiet_city = add_location_child(cls.quiet_region, name="A town", name_ru="A town")
+        cls.busy_city = add_location_child(cls.busy_region, name="Z town", name_ru="Z town")
+        today = datetime.date.today()
+        for city, races in ((cls.quiet_city, 1), (cls.busy_city, 4)):
+            venue = add_location_child(city, name="Start", name_ru="Start")
+            for n in range(races):
+                Competition.objects.create(
+                    title_ru=f"Race {n}",
+                    date_start=today + datetime.timedelta(days=10 + n),
+                    status=Competition.Status.APPROVED,
+                    location=venue,
+                )
+
+    def test_the_busiest_town_comes_first(self):
+        from calendar_app.listing_seo import landing_filters
+
+        _regions, places, _kinds = landing_filters()
+        self.assertEqual([p.pk for p in places][:2], [self.busy_city.pk, self.quiet_city.pk])
+
+    def test_a_limit_keeps_the_busiest_rather_than_the_first_in_the_tree(self):
+        from calendar_app.listing_seo import landing_filters
+
+        _regions, places, _kinds = landing_filters(limit_places=1)
+        self.assertEqual([p.pk for p in places], [self.busy_city.pk])
+
+    def test_regions_are_weighed_by_the_races_below_them(self):
+        from calendar_app.listing_seo import landing_filters
+
+        regions, _places, _kinds = landing_filters(limit_regions=1)
+        self.assertEqual([r.pk for r in regions], [self.busy_region.pk])
