@@ -26,7 +26,10 @@ from accounts.access import (
 )
 from accounts.models import User
 
-_RESEND_COOLDOWN_SECONDS = 600  # 10 minutes
+# One minute. Long enough to stop a double click and a button that fires twice, short enough
+# that a reader waiting on a confirmation -- which locks them out of the site until it
+# arrives -- is not left staring at a disabled button.
+_RESEND_COOLDOWN_SECONDS = 60
 logger = logging.getLogger(__name__)
 
 
