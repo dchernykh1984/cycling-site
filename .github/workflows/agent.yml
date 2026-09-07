@@ -6,8 +6,16 @@ name: events-agent
 # repository owner so nobody else can spend the LLM/API budget.
 on:
   schedule:
-    - cron: "17 22 * * *" # daily 22:17 UTC (03:17 Almaty); off-peak so the whole run finishes before
-    # DeepSeek's 01:00 UTC peak window (2x pricing), and off the round minute to dodge cron congestion
+    # Mondays and Fridays, 11:17 UTC (16:17 Almaty). Websites announce their races weeks ahead, so
+    # reading them twice a week costs nothing in lead time -- and this is the expensive agent: it
+    # reads 27 sources and runs 20-40 minutes, against 1-4 minutes for the Telegram and Instagram
+    # ones. Friday catches what appeared during the week, Monday what appeared over the weekend.
+    #
+    # 11:17 UTC leaves 13 hours before the model's next peak window (01:00-04:00 UTC, 2x pricing).
+    # GitHub starts a cron when it has capacity -- our own runs have drifted five hours on a bad
+    # day -- so the slot is chosen for that drift, not for the nominal minute. It also sits after
+    # the 06:00-10:00 peak and before the US-afternoon rush that makes the drift worst.
+    - cron: "17 11 * * 1,5"
   workflow_dispatch:
     inputs:
       dry_run:
