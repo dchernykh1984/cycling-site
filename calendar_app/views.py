@@ -520,7 +520,14 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
         form = CompetitionFilterForm(self.request.GET or None)
         today = timezone.localdate()
         date_from = today
-        date_to = today + datetime.timedelta(days=30)
+        # The unfiltered list is a "what is on soon" page, so it stops thirty days out. A list
+        # filtered down to one city or one discipline is a page about that city -- and two rows of
+        # it is not a page about anything, so the whole season ahead stands. An explicit date_to
+        # from the reader still wins over both.
+        faceted = any(
+            self.request.GET.getlist(name) for name in ("location", "discipline", "discipline_category", "event_type")
+        )
+        date_to = None if faceted else today + datetime.timedelta(days=30)
 
         is_manager = _can_manage_any_competition(self.request.user)
         qs = (
@@ -549,7 +556,10 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
             qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
         qs = _apply_favorite_filter(qs, self.request)
 
-        qs = qs.filter(date_start__gte=date_from, date_start__lte=date_to).order_by("date_start")
+        qs = qs.filter(date_start__gte=date_from)
+        if date_to is not None:
+            qs = qs.filter(date_start__lte=date_to)
+        qs = qs.order_by("date_start")
         paginator = Paginator(qs, 20)
         page = paginator.get_page(self.request.GET.get("page", 1))
         context["competitions"] = page

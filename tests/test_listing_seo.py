@@ -188,3 +188,56 @@ class FilteredHeadingTests(TestCase):
         html = self.client.get(f"{reverse('calendar_list')}?location={self.city.pk}").content.decode()
         heading = re.sub(r"\s+", " ", re.search(r"<h1[^>]*>(.*?)</h1>", html, re.S).group(1)).strip()
         self.assertIn(heading, _title(html))
+
+
+class FacetedListSpanTests(TestCase):
+    """How far ahead a filtered list looks.
+
+    The plain list is a "what is on soon" page and stops thirty days out. A page about one city
+    cannot: on production the Almaty page showed two events, which is not a page about Almaty.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        from locations.models import add_location_child
+
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        cls.city = add_location_child(region, name="Almaty", name_ru="Almaty")
+        venue = add_location_child(cls.city, name="Republic Square", name_ru="Republic Square")
+        today = datetime.date.today()
+        cls.soon = Competition.objects.create(
+            title_ru="Soon race",
+            date_start=today + datetime.timedelta(days=10),
+            status=Competition.Status.APPROVED,
+            location=venue,
+        )
+        cls.autumn = Competition.objects.create(
+            title_ru="Autumn race",
+            date_start=today + datetime.timedelta(days=120),
+            status=Competition.Status.APPROVED,
+            location=venue,
+        )
+
+    def _rows(self, url):
+        return [c.pk for c in self.client.get(url).context["competitions"]]
+
+    def test_a_city_page_reaches_past_the_next_month(self):
+        rows = self._rows(f"{reverse('calendar_list')}?location={self.city.pk}")
+        self.assertIn(self.soon.pk, rows)
+        self.assertIn(self.autumn.pk, rows)
+
+    def test_the_plain_list_still_stops_at_thirty_days(self):
+        rows = self._rows(reverse("calendar_list"))
+        self.assertIn(self.soon.pk, rows)
+        self.assertNotIn(self.autumn.pk, rows)
+
+    def test_a_date_the_reader_asked_for_still_wins(self):
+        end = (datetime.date.today() + datetime.timedelta(days=20)).isoformat()
+        rows = self._rows(f"{reverse('calendar_list')}?location={self.city.pk}&date_to={end}")
+        self.assertIn(self.soon.pk, rows)
+        self.assertNotIn(self.autumn.pk, rows)
+
+    def test_a_city_page_does_not_claim_a_date_range_it_no_longer_has(self):
+        html = self.client.get(f"{reverse('calendar_list')}?location={self.city.pk}").content.decode()
+        self.assertNotIn(" to ", _description(html))
