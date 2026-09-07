@@ -29,6 +29,18 @@ def favicon_redirect(request):
     return redirect(static("favicon.ico"))
 
 
+def touch_icon_redirect(request):
+    """iOS asks the site root for /apple-touch-icon.png before it reads the page's own <link>.
+
+    Both spellings are probed, the precomposed one first, and both were answering 404 -- a dozen a
+    day in the log, and a phone saving the site to its home screen got the page's screenshot rather
+    than the team's mark. Resolved lazily, like the favicon, for the hashed static names.
+    """
+    from django.templatetags.static import static
+
+    return redirect(static("apple-touch-icon.png"))
+
+
 def indexnow_key_file(request, key):
     """`/<key>.txt`, which is how Bing, Yandex and Seznam verify that whoever submits URLs for
     this host controls it. Any other name is a 404, so the file exists only for the real key."""
@@ -82,6 +94,8 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("documents/", include(wagtaildocs_urls)),
     path("i18n/set_language/", accounts_set_language, name="set_language"),
     path("favicon.ico", favicon_redirect, name="favicon"),
+    path("apple-touch-icon.png", touch_icon_redirect, name="apple_touch_icon"),
+    path("apple-touch-icon-precomposed.png", touch_icon_redirect, name="apple_touch_icon_precomposed"),
     path("robots.txt", robots_txt, name="robots_txt"),
     re_path(
         r"^(?P<key>[A-Za-z0-9\-]{8,128})\.txt$",
