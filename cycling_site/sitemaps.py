@@ -100,8 +100,12 @@ class CalendarFilterSitemap(Sitemap):
     def items(self):
         from calendar_app.listing_seo import landing_filters
 
-        places, kinds = landing_filters()
-        return [("location", place.pk) for place in places] + [("discipline", kind.pk) for kind in kinds]
+        regions, places, kinds = landing_filters()
+        return (
+            [("location", region.pk) for region in regions]
+            + [("location", place.pk) for place in places]
+            + [("discipline", kind.pk) for kind in kinds]
+        )
 
     def location(self, item):
         parameter, pk = item

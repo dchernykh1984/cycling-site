@@ -52,12 +52,17 @@ def describe_filters(*, locations, disciplines, event_types, count, date_from=No
     return title, " ".join([f"{title}.", *parts])
 
 
-def landing_filters(limit_places=60, limit_kinds=40):
-    """The filtered lists worth offering as pages of their own.
+def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
+    """The filtered lists worth offering as pages of their own: regions, cities, disciplines.
 
     A city with no events is not a page about anything, so only places and disciplines that
     actually hold competitions are listed. Cities rather than the whole tree: "competitions in
     Almaty" is the query people type, "competitions in Kazakhstan" is what the calendar already is.
+
+    Regions earn their own row because a village is not a search term. A start at Kyrbaltabay is
+    invisible to anyone typing "races near Almaty", while the region page gathers that village
+    together with Talgar, Yesik and Kaskelen into one page that answers the question actually
+    asked. The list filter walks a node's descendants, so a region page needs no new plumbing.
     """
     from django.db.models import Count, Q
 
@@ -93,4 +98,10 @@ def landing_filters(limit_places=60, limit_kinds=40):
         .filter(events__gt=0)
         .order_by("-events", "pk")[:limit_kinds]
     )
-    return places, kinds
+    region_keys = {key[: step * 2] for key in city_keys}
+    regions = list(
+        Location.objects.filter(depth=2, path__in=region_keys, is_deleted=False, is_hidden=False).order_by("path")[
+            :limit_regions
+        ]
+    )
+    return regions, places, kinds

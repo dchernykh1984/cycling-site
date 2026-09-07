@@ -40,12 +40,12 @@ class LandingFilterTests(TestCase):
         competition.disciplines.set([cls.discipline])
 
     def test_only_places_that_hold_events_are_offered(self):
-        places, _kinds = landing_filters()
+        _regions, places, _kinds = landing_filters()
         self.assertIn(self.city, places)
         self.assertNotIn(self.empty_city, places)
 
     def test_only_disciplines_that_hold_events_are_offered(self):
-        _places, kinds = landing_filters()
+        _regions, _places, kinds = landing_filters()
         self.assertIn(self.discipline, kinds)
         self.assertNotIn(self.unused, kinds)
 
