@@ -2,11 +2,12 @@ name: instagram-agent
 
 on:
   schedule:
-    # 23:17 UTC daily -- an hour after the events agent, so the two never overlap and this one sees
-    # the events that one just proposed. Outside the windows where the model bills double
-    # (09:00-12:00 and 14:00-18:00 Beijing time = 01:00-04:00 and 06:00-10:00 UTC), and off the
-    # round minute to dodge cron congestion.
-    - cron: "17 23 * * *"
+    # 12:17 UTC daily -- an hour after the events agent, so on the days that one runs the two never
+    # overlap and this one sees what it just proposed. Club posts are short notice, so this agent
+    # keeps its nightly cadence. The hour leaves 12 hours before the model's next peak window
+    # (01:00-04:00 UTC, 2x pricing), which is the margin GitHub's cron drift actually needs, and
+    # sits after the other peak (06:00-10:00 UTC). Off the round minute to dodge cron congestion.
+    - cron: "17 12 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
