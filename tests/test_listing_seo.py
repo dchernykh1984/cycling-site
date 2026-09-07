@@ -84,7 +84,7 @@ class LandingFacetsTests(TestCase):
 
         country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
         region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
-        cls.city = add_location_child(country.get_children()[0], name="Almaty", name_ru="Almaty")
+        cls.city = add_location_child(region, name="Almaty", name_ru="Almaty")
         cls.other_city = add_location_child(
             region, name="Other city", name_ru="Other city", name_en="Other city", is_hidden=True
         )
