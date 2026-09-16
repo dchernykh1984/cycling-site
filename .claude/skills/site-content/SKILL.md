@@ -1,6 +1,6 @@
 ---
 name: site-content
-description: Publishing and editing what readers see - knowledge articles, news and events - on the live site. Covers the admin API, the three locales, images, and the traps in the markup.
+description: Publishing and editing what readers see - knowledge articles, news and events - on the live site. Covers the API and who may edit what through it, the three locales, images, and the traps in the markup.
 ---
 
 # Site content
@@ -24,6 +24,37 @@ Run that from the production shell (see `production-access`) so the token never 
 - `POST /api/v1/knowledge/` -- one article per locale, each with its own slug and URL.
 - `PATCH /api/v1/knowledge/{id}` -- partial update; send only what changes.
 - `POST /api/v1/news/` and `/api/v1/competitions/` follow the same shape.
+
+## Who may edit an event through the API
+
+The recipe above uses an administrator's token because that is the account you act through. It is
+not the rule: **an organizer edits their own events through the API without anyone's help.** The
+check on `PATCH`, `DELETE` and `resubmit` is ownership, not rank -- `submitted_by` is the author,
+and the author passes whatever their role is. Rank is asked for once, on creation, where ORGANIZER
+or higher is required. Whoever could create the event can go on editing it.
+
+Any confirmed account gets a token from its own profile, the **API access** card: *Generate token*,
+then `Authorization: Bearer <token>`. The button waits until the email is confirmed.
+
+- `POST /api/v1/competitions/` -- ORGANIZER or above. A non-admin's event arrives
+  `pending_approval`, as it does from the site.
+- `PATCH /api/v1/competitions/{id}` -- the author or an admin. Send only what changes.
+- `DELETE /api/v1/competitions/{id}` -- the same rule; the row is soft-deleted.
+- `POST /api/v1/competitions/{id}/resubmit` -- the same rule, and only from `rejected`; anything
+  else answers 409.
+
+Where an organizer is stopped:
+
+- **Someone else's event.** Ownership and moderation are different things: an organizer who may
+  approve an event on the site still cannot edit it through the API. An event they are allowed to
+  see answers 403; one that is pending or hidden and not theirs answers 404, so the API never
+  confirms that an invisible event exists.
+- **`is_hidden`.** Admins only -- "Only admins can change visibility".
+- **`status`.** Not a field of the patch. It moves on its own: re-pointing a published event at
+  geography still under review sends it back to `pending_approval`, because publishing it would
+  publish that branch too and then it could never be rejected (see `locations`).
+- **`location_id`.** It has to be a depth-4 venue that still exists when the write lands; a node
+  removed or moved underneath the request answers 409.
 
 ## Three locales, every time
 
