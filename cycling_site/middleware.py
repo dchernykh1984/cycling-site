@@ -4,6 +4,7 @@ from django.http import Http404
 from django.middleware.locale import LocaleMiddleware
 from django.shortcuts import render
 from django.utils import translation
+from django.utils.cache import add_never_cache_headers
 from django.utils.translation import check_for_language, get_language_from_path
 
 
@@ -84,7 +85,12 @@ class SiteLocaleMiddleware(LocaleMiddleware):
             # part, so an iPhone that was sent to /en/ once goes on sending itself there long after
             # the reader has chosen Russian, until the cache is cleared by hand. Two readers have
             # reported exactly that. The choice is made per request; it must not be stored.
-            response.headers["Cache-Control"] = "no-store"
+            #
+            # Django's own never-cache headers rather than a hand-written "no-store": they say the
+            # same thing in every dialect a cache might read -- no-cache, must-revalidate, private
+            # and an Expires in the past alongside it -- and a browser this stubborn is exactly the
+            # reader that needs to be told twice.
+            add_never_cache_headers(response)
         return response
 
     @staticmethod
