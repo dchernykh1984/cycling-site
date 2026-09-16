@@ -7,7 +7,9 @@ keeps redirects while honouring "Vary: Cookie" only in part, so an iPhone sent t
 sending itself there after the reader had chosen Russian, until the cache was cleared by hand.
 """
 
-from pathlib import Path
+import importlib
+import tempfile
+from unittest import mock
 
 from django.conf import settings
 from django.test import Client, TestCase
@@ -69,6 +71,23 @@ class LanguageCookieFlagsTests(TestCase):
         self.assertEqual(cookie["samesite"], "Lax")
 
     def test_production_sends_it_only_over_https(self):
-        """The site is HTTPS-only there, and this cookie had been the exception."""
-        source = (Path(settings.BASE_DIR) / "cycling_site" / "settings" / "prod.py").read_text(encoding="utf-8")
-        self.assertIn("LANGUAGE_COOKIE_SECURE = True", source)
+        """The site is HTTPS-only there, and this cookie had been the exception.
+
+        The production module is loaded and asked for the value, rather than its text searched for
+        the line: a setting that has been commented out, or overwritten further down the file,
+        reads the same to a grep and differently to Django.
+        """
+        with tempfile.TemporaryDirectory() as logs:
+            # The module makes its log directory as it loads, so it is pointed somewhere disposable
+            # rather than allowed to leave one in the checkout.
+            env = {
+                "SECRET_KEY": "test-only",
+                "DATABASE_URL": "sqlite://:memory:",
+                "VIRTUAL_HOST": "example.com",
+                "LOG_DIR": logs,
+            }
+            with mock.patch.dict("os.environ", env, clear=False):
+                prod = importlib.import_module("cycling_site.settings.prod")
+                importlib.reload(prod)
+        self.assertIs(prod.LANGUAGE_COOKIE_SECURE, True)
+        self.assertIs(prod.SESSION_COOKIE_SECURE, True)
