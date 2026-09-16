@@ -21,13 +21,15 @@ class LanguageRedirectCacheTests(TestCase):
         response = Client(HTTP_ACCEPT_LANGUAGE=EN_PHONE).get("/")
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], "/en/")
-        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertIn("no-store", response["Cache-Control"])
+        self.assertIn("no-cache", response["Cache-Control"])
+        self.assertIn("Expires", response)
 
     def test_it_holds_for_a_deeper_address_too(self):
         response = Client(HTTP_ACCEPT_LANGUAGE=EN_PHONE).get("/calendar/")
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], "/en/calendar/")
-        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertIn("no-store", response["Cache-Control"])
 
     def test_a_page_that_names_its_own_language_is_left_cacheable(self):
         """/en/ answers the same to everyone who asks for it, so it keeps whatever caching it had."""
