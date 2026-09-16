@@ -217,3 +217,34 @@ def test_authenticated_user_locale_persists_across_pages(page: Page, live_server
 
     page.goto(f"{live_server.url}/")
     expect(page.locator(".navbar-brand")).to_contain_text("NavKK")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_english_phone_keeps_the_russian_it_was_asked_for(page: Page, live_server, owner, site_content_multilingual):
+    """The device, not the fixture: an English browser that has never seen this site.
+
+    Every other test here starts with django_language=ru already in the jar (conftest sets it for
+    the whole suite), so this is the only one that walks the path a real phone walks.
+    """
+    inject_session(page, live_server, owner)
+    page.context.clear_cookies(name="django_language")
+    page.set_extra_http_headers({"Accept-Language": "en-US,en;q=0.9"})
+
+    page.goto(f"{live_server.url}/")
+    expect(page).to_have_url(f"{live_server.url}/en/")
+    expect(page.locator(".navbar-brand")).to_contain_text("NavEN")
+
+    switch_locale(page, "ru")
+    expect(page).to_have_url(f"{live_server.url}/ru/")
+    expect(page.locator(".navbar-brand")).to_contain_text("NavRU")
+
+    # Re-opening the bare link is what a reader does with a message or a bookmark.
+    page.goto(f"{live_server.url}/")
+    expect(page).to_have_url(f"{live_server.url}/ru/")
+    expect(page.locator(".navbar-brand")).to_contain_text("NavRU")
+
+    # And the choice survives a browser that forgets the cookie, because the profile holds it.
+    page.context.clear_cookies(name="django_language")
+    page.goto(f"{live_server.url}/")
+    expect(page).to_have_url(f"{live_server.url}/ru/")
+    expect(page.locator(".navbar-brand")).to_contain_text("NavRU")
