@@ -1,3 +1,5 @@
+from urllib.parse import urlsplit
+
 from django.http import Http404
 from django.middleware.locale import LocaleMiddleware
 from django.shortcuts import render
@@ -73,4 +75,24 @@ class SiteLocaleMiddleware(LocaleMiddleware):
     def process_response(self, request, response):
         if request.path_info.startswith(self.LANGUAGE_FREE_PREFIXES):
             return response
-        return super().process_response(request, response)
+        response = super().process_response(request, response)
+        if self._is_language_redirect(request, response):
+            # An address with no language of its own answers differently to every reader: the same
+            # "/" sends one person to /ru/ and the next to /en/, off their cookie, their profile and
+            # their Accept-Language. Carrying no cache directive at all, it is fair game for a
+            # browser's heuristics -- and Safari keeps redirects and honours "Vary: Cookie" only in
+            # part, so an iPhone that was sent to /en/ once goes on sending itself there long after
+            # the reader has chosen Russian, until the cache is cleared by hand. Two readers have
+            # reported exactly that. The choice is made per request; it must not be stored.
+            response.headers["Cache-Control"] = "no-store"
+        return response
+
+    @staticmethod
+    def _is_language_redirect(request, response) -> bool:
+        """Whether this response is the redirect that picks a language for an address without one."""
+        if response.status_code not in (301, 302):
+            return False
+        if get_language_from_path(request.path_info):
+            return False
+        location = response.headers.get("Location", "")
+        return bool(get_language_from_path(urlsplit(location).path))
