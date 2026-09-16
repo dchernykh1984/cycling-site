@@ -75,3 +75,18 @@ class ReaderSignedInOnAnEnglishPhoneTests(TestCase):
         response = client.get("/en/calendar/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["request"].LANGUAGE_CODE, "en")
+
+
+class LinksBackHomeTests(TestCase):
+    """A link the site prints for itself must name the language the reader is already reading in.
+
+    The navbar has done this for a while; the two error pages still sent people to a bare "/",
+    which is the one address whose answer depends on who is asking -- the redirect at the heart of
+    this bug. A reader who mistypes a URL should not have to be re-sorted into a language.
+    """
+
+    def test_the_not_found_page_offers_a_home_that_names_a_language(self):
+        response = _phone().get("/en/no-such-page/")
+        self.assertEqual(response.status_code, 404)
+        # The button itself, not just any /en/ link -- the navbar carries one of those too.
+        self.assertContains(response, '<a href="/en/" class="btn btn-primary">', status_code=404)
