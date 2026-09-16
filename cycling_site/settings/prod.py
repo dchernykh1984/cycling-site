@@ -29,6 +29,9 @@ CSRF_TRUSTED_ORIGINS = [f"https://{_h}" for _h in ALLOWED_HOSTS]
 # https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/#https
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+# The language cookie travels the same HTTPS-only site as those two and had no reason to be the
+# exception: sent without Secure, it is the first thing a privacy-minded browser refuses to keep.
+LANGUAGE_COOKIE_SECURE = True
 
 # HTTPS hardening (review #5). CodeRed terminates TLS and forwards the original
 # scheme via X-Forwarded-Proto, so trust that header and redirect any HTTP request

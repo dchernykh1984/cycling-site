@@ -292,6 +292,10 @@ WAGTAIL_ALLOW_UNICODE_SLUGS = False
 
 # Persist the language cookie across browser sessions (one year).
 LANGUAGE_COOKIE_AGE = 365 * 24 * 60 * 60
+# Django leaves this cookie without SameSite, which made it the only one the site sets with no
+# restriction at all -- the session and CSRF cookies both carry Lax. A reader's language is as much
+# theirs as their session, and a browser tightening up on unmarked cookies drops it first.
+LANGUAGE_COOKIE_SAMESITE = "Lax"
 
 # Search
 # https://docs.wagtail.org/en/stable/topics/search/backends.html

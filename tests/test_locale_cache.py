@@ -7,7 +7,11 @@ keeps redirects while honouring "Vary: Cookie" only in part, so an iPhone sent t
 sending itself there after the reader had chosen Russian, until the cache was cleared by hand.
 """
 
+from pathlib import Path
+
+from django.conf import settings
 from django.test import Client, TestCase
+from django.urls import reverse
 
 EN_PHONE = "en-US,en;q=0.9"
 
@@ -44,3 +48,25 @@ class LanguageRedirectCacheTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login/", response["Location"])
         self.assertNotIn("no-store", response.get("Cache-Control", ""))
+
+
+class LanguageCookieFlagsTests(TestCase):
+    """The cookie that remembers a guest's language, and how it is marked.
+
+    It was the only cookie the site set with neither Secure nor SameSite, while the session and
+    CSRF cookies carried both. For a reader who is not signed in it is the only memory of the
+    choice they made, so a browser dropping it silently undoes the switch.
+    """
+
+    def test_the_cookie_is_marked_the_way_the_others_are(self):
+        response = Client(HTTP_ACCEPT_LANGUAGE=EN_PHONE).post(
+            reverse("set_language"), {"language": "ru", "next": "/en/"}
+        )
+        cookie = response.cookies[settings.LANGUAGE_COOKIE_NAME]
+        self.assertEqual(cookie.value, "ru")
+        self.assertEqual(cookie["samesite"], "Lax")
+
+    def test_production_sends_it_only_over_https(self):
+        """The site is HTTPS-only there, and this cookie had been the exception."""
+        source = (Path(settings.BASE_DIR) / "cycling_site" / "settings" / "prod.py").read_text(encoding="utf-8")
+        self.assertIn("LANGUAGE_COOKIE_SECURE = True", source)
