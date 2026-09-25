@@ -1,48 +1,59 @@
 """Read an Instagram account's recent posts. Network I/O, coverage-omitted.
 
-Only what a logged-out browser is served: the profile endpoint the web client itself calls, which
-answers with the account's public metadata and its most recent posts. Nothing is posted, no account
-is logged in, and one request per account per run is all a run makes.
+Through Meta's own Graph API, using the `business_discovery` edge: one professional account asks
+for another professional account's public posts, which is the documented way to do this and the
+only one left. The endpoint a logged-out browser used to be served
+(`/api/v1/users/web_profile_info/`) now answers `401 {"require_login": true}` to everybody -- it
+did so on every nightly run for three weeks before this was written -- and the public profile page
+is a script shell carrying no posts at all, so there is nothing to fall back to.
 
-The request is made with curl rather than Python's own client, and that is not incidental: measured
-side by side on the same machines in the same minute, curl was answered every time and urllib was
-refused every time with HTTP 429. Same address, same headers, same account -- what gets turned away
-is the client itself.
+What that costs: credentials. A run needs an Instagram Business or Creator account of our own
+(IG_GRAPH_USER_ID) and a long-lived token for it (IG_GRAPH_TOKEN). Without them this reader says so
+plainly rather than making a request that cannot succeed.
+
+The token is sent as an Authorization header, never in the query string: curl quotes the URL back
+in its own error text, and a token in the URL would be printed into a public build log the first
+time DNS hiccuped.
 
 Two things this deliberately does not do. It does not follow pagination -- a night's worth of
-announcements fits in the page Instagram returns, and asking for more is what turns a polite reader
-into something that gets blocked. And it does not touch accounts that are not professional: those
-answer with nothing useful, which the caller reports rather than retries.
+announcements fits in the first page, and asking for more is what turns a polite reader into
+something that gets blocked. And it does not retry: a second attempt from the same machine, seconds
+later, is the same request and gets the same answer.
 
-The parsing (:func:`posts_from_profile`, :func:`account_text`) is kept separate from the request so
-it can be unit-tested against a recorded reply.
+The parsing (:func:`posts_from_business_discovery`, :func:`account_text`) is kept separate from the
+request so it can be unit-tested against a recorded reply.
 """
 
 from __future__ import annotations
 
 import datetime
 import json
+import re
 import shutil
 import subprocess
 import tempfile
+import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
 
 from instagram_agent.accounts import Account
 
-_PROFILE_URL = "https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
-# The web client identifies itself with this application id; without it the endpoint answers with
-# the logged-out shell instead of the profile.
-_WEB_APP_ID = "936619743392459"
-_USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
-)
+_GRAPH_HOST = "https://graph.facebook.com"
+# Pinned rather than floating: Meta supports a version for about two years and changes field shapes
+# between them, so a run should keep reading the same shape until somebody chooses to move it.
+# IG_GRAPH_VERSION overrides it without a code change when that day comes.
+DEFAULT_GRAPH_VERSION = "v21.0"
+_USER_AGENT = "universalbicycle.team events agent"
 _TIMEOUT = 30
 _MAX_CAPTION_CHARS = 2000
 
 # Instagram fails to serialize some professional accounts and answers 400 quoting this asset. It is
 # a fault on their side, has nothing to do with the request, and clears up on its own.
 _THEIR_BUG = "ig_business_category_subvertical"
+
+# A permalink is the only place the post's own id appears in a business_discovery reply. Reels and
+# IGTV items carry their own prefix; the shortcode is what matters and /p/ resolves to all of them.
+_SHORTCODE = re.compile(r"/(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)")
 
 
 class AccountUnavailableError(Exception):
@@ -63,44 +74,43 @@ class Post:
         return f"https://www.instagram.com/p/{self.shortcode}/"
 
 
-def _caption_of(node: dict) -> str:
-    edges = (node.get("edge_media_to_caption") or {}).get("edges") or []
-    for edge in edges:
-        text = ((edge or {}).get("node") or {}).get("text") or ""
-        if text.strip():
-            return text.strip()[:_MAX_CAPTION_CHARS]
-    return ""
+def posts_from_business_discovery(payload: dict) -> list[Post]:
+    """The posts in a business_discovery reply, newest first. Anything malformed is skipped.
 
-
-def posts_from_profile(payload: dict) -> list[Post]:
-    """The posts in a profile reply, newest first. Anything malformed is skipped, not raised.
-
-    Instagram returns pinned posts ahead of the rest whatever their age, so the reply is not in date
-    order: an account with a pinned post from May opens with it. Sorting here is what makes "the
-    newest N posts" mean that, instead of spending the budget on whatever the club pinned.
+    Sorted here because the reply is not in date order: Instagram returns pinned posts ahead of the
+    rest whatever their age, so an account with a pinned post from May opens with it and "the newest
+    N posts" would otherwise mean "whatever the club pinned, plus a few".
     """
-    user = ((payload or {}).get("data") or {}).get("user") or {}
-    edges = (user.get("edge_owner_to_timeline_media") or {}).get("edges") or []
+    discovery = (payload or {}).get("business_discovery") or {}
+    media = (discovery.get("media") or {}).get("data") or []
     posts: list[Post] = []
-    for edge in edges:
-        node = (edge or {}).get("node") or {}
-        shortcode, taken_at = node.get("shortcode"), node.get("taken_at_timestamp")
-        if not shortcode or not isinstance(taken_at, (int, float)):
+    for node in media:
+        if not isinstance(node, dict):
             continue
+        found = _SHORTCODE.search(str(node.get("permalink") or ""))
+        published = _published_on(node.get("timestamp"))
+        if not found or published is None:
+            continue
+        caption = str(node.get("caption") or "").strip()[:_MAX_CAPTION_CHARS]
         posts.append(
             Post(
-                shortcode=str(shortcode),
-                caption=_caption_of(node),
-                published=datetime.datetime.fromtimestamp(taken_at, datetime.UTC).date(),
-                is_video=bool(node.get("is_video")),
+                shortcode=found.group(1),
+                caption=caption,
+                published=published,
+                is_video=str(node.get("media_type") or "").upper() == "VIDEO",
             )
         )
     return sorted(posts, key=lambda post: post.published, reverse=True)
 
 
-def is_professional(payload: dict) -> bool:
-    user = ((payload or {}).get("data") or {}).get("user") or {}
-    return bool(user.get("is_professional_account") or user.get("is_business_account"))
+def _published_on(stamp: object) -> datetime.date | None:
+    """The date out of Graph's timestamp ("2026-09-24T17:05:00+0000"), or None if it is not one."""
+    if not isinstance(stamp, str):
+        return None
+    try:
+        return datetime.datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%S%z").date()
+    except ValueError:
+        return None
 
 
 def account_text(account: Account, posts: list[Post], recent_days: int, today: datetime.date) -> str:
@@ -123,8 +133,8 @@ def account_text(account: Account, posts: list[Post], recent_days: int, today: d
     return "\n".join(lines)
 
 
-def _request(url: str) -> tuple[int, str]:
-    """GET the url with curl, returning (status, body).
+def _request(url: str, token: str) -> tuple[int, str]:
+    """GET the url with curl, returning (status, body). The token travels as a header.
 
     With curl, and not Python's own client, for a reason worth keeping: measured side by side on the
     same runners in the same minute, curl was answered 3 times out of 3 and urllib refused 3 out of
@@ -152,7 +162,7 @@ def _request(url: str) -> tuple[int, str]:
                 "--header",
                 f"User-Agent: {_USER_AGENT}",
                 "--header",
-                f"X-IG-App-ID: {_WEB_APP_ID}",
+                f"Authorization: Bearer {token}",
                 "--header",
                 "Accept-Language: en-US,en;q=0.9",
                 url,
@@ -162,29 +172,44 @@ def _request(url: str) -> tuple[int, str]:
             timeout=_TIMEOUT + 10,
         )
         if finished.returncode != 0:
-            raise AccountUnavailableError(f"curl failed: {finished.stderr.strip() or finished.returncode}")
+            said = _without_secrets(finished.stderr.strip(), token) or finished.returncode
+            raise AccountUnavailableError(f"curl failed: {said}")
         status = int(finished.stdout.strip() or 0)
         return status, body_file.read_text(encoding="utf-8", errors="replace")
 
 
-def _get_once(url: str) -> dict:
+def _without_secrets(text: str, token: str) -> str:
+    """Never let the token reach a log. Build logs for this repository are public."""
+    return text.replace(token, "<token>") if token else text
+
+
+def _get_once(url: str, token: str) -> dict:
     """Fetch once, turning every failure into AccountUnavailableError with why it failed.
 
     Once, and never again in the same run: a second attempt from the same machine, seconds later,
     is the same request and gets the same answer. Tomorrow's run starts fresh.
     """
-    status, body = _request(url)
-    if status == 200:
+    status, body = _request(url, token)
+    payload: dict = {}
+    if body:
         try:
-            return json.loads(body)
+            payload = json.loads(body)
         except ValueError as exc:
-            raise AccountUnavailableError(f"the reply was not JSON: {exc}") from exc
+            if status == 200:
+                raise AccountUnavailableError(f"the reply was not JSON: {exc}") from exc
+            payload = {}
+    # Graph answers a refusal as JSON with its own message, which says far more than the status --
+    # "Unsupported get request" is what an account that is not professional looks like.
+    said = (payload.get("error") or {}).get("message") if isinstance(payload, dict) else None
+    if status == 200 and not said:
+        return payload
     if _THEIR_BUG in body:
         raise AccountUnavailableError(
             f"HTTP {status}: Instagram could not serialize this account (its own error, not the "
             f"request); it usually clears up on its own"
         )
-    raise AccountUnavailableError(f"HTTP {status}{_hint_for(status)}")
+    detail = f": {_without_secrets(str(said), token)}" if said else _hint_for(status)
+    raise AccountUnavailableError(f"HTTP {status}{detail}")
 
 
 def _hint_for(status: int) -> str:
@@ -195,18 +220,37 @@ def _hint_for(status: int) -> str:
     return ""
 
 
-def fetch_posts(account: Account) -> list[Post]:
+def business_discovery_url(user_id: str, username: str, version: str, limit: int) -> str:
+    """The one request a run makes for an account.
+
+    Field expansion in a single call is not a nicety here: Graph refuses to serve the media ids a
+    business_discovery reply hands back if you ask for them separately, so what is not nested in
+    this URL cannot be fetched at all afterwards.
+    """
+    fields = (
+        f"business_discovery.username({username})"
+        f"{{username,media_count,media.limit({max(limit, 1)})"
+        f"{{caption,timestamp,permalink,media_type}}}}"
+    )
+    return f"{_GRAPH_HOST}/{version}/{urllib.parse.quote(user_id)}?{urllib.parse.urlencode({'fields': fields})}"
+
+
+def fetch_posts(account: Account, user_id: str, token: str, version: str, limit: int) -> list[Post]:
     """The account's recent posts. Raises AccountUnavailableError with why, rather than returning [].
 
     An empty list is a real answer (an account that has posted nothing lately) and must not be
     confused with an account that could not be read at all.
     """
-    payload = _get_once(_PROFILE_URL.format(username=account.username))
-    user = ((payload or {}).get("data") or {}).get("user")
-    if not user:
-        raise AccountUnavailableError("no profile in the reply")
-    if user.get("is_private"):
-        raise AccountUnavailableError("the account is private")
-    if not is_professional(payload):
-        raise AccountUnavailableError("not a professional account, so its posts are not readable")
-    return posts_from_profile(payload)
+    if not token or not user_id:
+        raise AccountUnavailableError(
+            "no Graph API credentials: set IG_GRAPH_USER_ID and IG_GRAPH_TOKEN. Instagram closed "
+            "the logged-out endpoint this reader used before, so there is no way round them"
+        )
+    payload = _get_once(business_discovery_url(user_id, account.username, version, limit), token)
+    discovery = (payload or {}).get("business_discovery")
+    if not discovery:
+        raise AccountUnavailableError(
+            "no business_discovery in the reply, which is what Graph returns for an account that "
+            "is not professional, has been renamed, or is age-gated"
+        )
+    return posts_from_business_discovery(payload)

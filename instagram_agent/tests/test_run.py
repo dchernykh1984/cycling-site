@@ -8,6 +8,7 @@ from agent import locations
 from agent.models import Candidate, KnownEvents, RunReport
 from agent.pipeline import run_pipeline
 from instagram_agent.accounts import Account
+from instagram_agent.config import Config
 from instagram_agent.run import _with_account_city, as_source, read_account, selected, summary
 
 TODAY = datetime.date(2026, 8, 1)
@@ -72,16 +73,37 @@ def test_an_account_without_a_city_leaves_the_candidate_alone():
     assert _with_account_city(_candidate(), Account("ubtalmaty")).city == ""
 
 
+def _config(**overrides):
+    """A run's settings, with only the ones a test cares about spelled out."""
+    settings = dict(
+        site_base_url="https://example.test",
+        api_token="t",
+        llm_api_key="k",
+        llm_base_url="https://llm.test",
+        llm_model="deepseek-chat",
+        max_events=10,
+        recent_days=21,
+        max_posts=10,
+        dry_run=True,
+        graph_user_id="17841400000000000",
+        graph_token="EAAG-token",
+        graph_version="v21.0",
+    )
+    settings.update(overrides)
+    return Config(**settings)
+
+
 def test_reading_an_account_keeps_only_the_newest_posts():
     """The post limit is what keeps a chatty account from filling the prompt with a fortnight."""
     import instagram_agent.fetch as fetch_module
     from instagram_agent.fetch import Post
 
     posts = [Post(f"Sc{n}", f"post number {n}", datetime.date(2026, 7, 31)) for n in range(6)]
+    config = _config(max_posts=2)
     original = fetch_module.fetch_posts
     try:
-        fetch_module.fetch_posts = lambda account: posts
-        text = read_account(Account("ubtalmaty"), recent_days=21, max_posts=2, today=TODAY)
+        fetch_module.fetch_posts = lambda account, user_id, token, version, limit: posts
+        text = read_account(Account("ubtalmaty"), config, TODAY)
     finally:
         fetch_module.fetch_posts = original
     assert "post number 0" in text and "post number 1" in text
