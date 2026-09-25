@@ -82,10 +82,16 @@ def as_source(account: Account) -> Source:
     )
 
 
-def read_account(account: Account, recent_days: int, max_posts: int, today: datetime.date) -> str:
+def read_account(account: Account, config: insta_config.Config, today: datetime.date) -> str:
     """The account's recent posts as prompt text. Raises AccountUnavailableError when it cannot be read."""
-    posts = fetch.fetch_posts(account)
-    return fetch.account_text(account, posts[:max_posts], recent_days, today)
+    posts = fetch.fetch_posts(
+        account,
+        config.graph_user_id,
+        config.graph_token,
+        config.graph_version,
+        config.max_posts,
+    )
+    return fetch.account_text(account, posts[: config.max_posts], config.recent_days, today)
 
 
 def _what_the_site_knows(client: SiteApiClient) -> tuple[KnownEvents, Taxonomy, list]:
@@ -145,7 +151,7 @@ def _run(
     by_ref = {as_source(account).ref: account for account in accounts}
 
     def fetch_source(source: Source) -> str:
-        return read_account(by_ref[source.ref], config.recent_days, config.max_posts, today)
+        return read_account(by_ref[source.ref], config, today)
 
     def extract(text: str, source: Source) -> list[Candidate]:
         account = by_ref[source.ref]

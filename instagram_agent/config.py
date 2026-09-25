@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agent.config import ConfigError, _flag
+from instagram_agent.fetch import DEFAULT_GRAPH_VERSION
 
 # A club feed carries a couple of announcements a week, so a run that proposes more than this is
 # reading something wrong -- a cap here keeps that from reaching the moderation queue in bulk.
@@ -35,6 +36,12 @@ class Config:
     recent_days: int
     max_posts: int
     dry_run: bool
+    # Meta's Graph API, the only way left to read an account (see instagram_agent/fetch.py). The
+    # id is our own professional account; the token is its long-lived access token, which expires
+    # about every 60 days and has to be replaced -- a run says so plainly when it has gone stale.
+    graph_user_id: str
+    graph_token: str
+    graph_version: str
     # The one account this run reads. Each account gets a job of its own, so a refused address
     # costs that account and no other; empty means read every enabled account (a local run).
     only_account: str = ""
@@ -56,6 +63,9 @@ def from_env(env: dict[str, str]) -> Config:
         recent_days=_whole_number(env.get("INSTAGRAM_RECENT_DAYS"), _DEFAULT_RECENT_DAYS, "INSTAGRAM_RECENT_DAYS"),
         max_posts=_whole_number(env.get("INSTAGRAM_MAX_POSTS"), _DEFAULT_MAX_POSTS, "INSTAGRAM_MAX_POSTS"),
         dry_run=_flag(env.get("INSTAGRAM_DRY_RUN")),
+        graph_user_id=(env.get("IG_GRAPH_USER_ID") or "").strip(),
+        graph_token=(env.get("IG_GRAPH_TOKEN") or "").strip(),
+        graph_version=(env.get("IG_GRAPH_VERSION") or "").strip() or DEFAULT_GRAPH_VERSION,
         only_account=(env.get("INSTAGRAM_ACCOUNT") or "").strip().lstrip("@"),
     )
 
