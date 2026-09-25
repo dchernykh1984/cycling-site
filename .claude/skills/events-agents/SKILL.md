@@ -11,7 +11,7 @@ a service account. Everything they propose lands as `pending_approval` for a hum
 | Agent | Reads | Schedule (UTC) |
 | --- | --- | --- |
 | `agent/` (events) | web calendars, organizer sites, public Telegram feeds via `t.me/s/` | 22:17 daily |
-| `instagram_agent/` | club accounts listed in `instagram_accounts.yaml` | 23:17 daily |
+| `instagram_agent/` | club accounts listed in `instagram_accounts.yaml`, via Meta's Graph API | 23:17 daily |
 | `telegram_agent/` | private channels and member-only groups, over MTProto | 00:17 daily |
 
 **Never start one without being asked.** Each run spends money at the LLM provider. When the
@@ -25,6 +25,14 @@ available when a source is being read badly: it can name where the race pages li
 which link to take.
 
 `telegram_channels.yaml` and `instagram_accounts.yaml` do the same for the other two.
+
+## Instagram needs credentials
+
+Instagram closed the logged-out endpoint the agent used to read, so it now goes through Meta's
+Graph API (`business_discovery`) and needs `IG_GRAPH_USER_ID` and `IG_GRAPH_TOKEN` as repository
+secrets. Without them every account reports "no Graph API credentials" and the run proposes nothing.
+The token is long-lived but expires about every 60 days; `Session has expired` in a run summary
+means it needs reissuing, not that anything is broken. `instagram_agent/README.md` has the setup.
 
 ## Reading a run
 

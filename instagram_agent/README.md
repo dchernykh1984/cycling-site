@@ -14,9 +14,9 @@ detection those feed, the location tree, and the API they post through.
    every run.
 2. Asks the site API for what it already knows: approved, its own pending, anything deleted, and
    its own rejected events with reasons.
-3. Reads the account's recent posts with `curl`: only what a logged-out browser is served, one
-   request, no retry. An account that cannot be read -- private, personal (not Business/Creator),
-   renamed, or refused this time -- is reported with the reason.
+3. Reads the account's recent posts through Meta's Graph API (`business_discovery`) with `curl`:
+   one request, no retry. An account that cannot be read -- personal rather than Business/Creator,
+   renamed, age-gated, or refused this time -- is reported with the reason.
 4. An LLM (DeepSeek by default) is given each post **with the date it was published** and asked for
    the rides being announced.
 5. Turns the meeting place the post names into a point (OpenStreetMap's Nominatim) and looks for a
@@ -27,6 +27,32 @@ detection those feed, the location tree, and the API they post through.
    status `pending_approval`), placing each event on the location tree like the events agent does.
 
 The agent is **stateless**: the site itself is its memory.
+
+## Credentials
+
+Reading anything needs Meta's Graph API, and there is no way round it: the endpoint this agent used
+before (`/api/v1/users/web_profile_info/`, what a logged-out browser was served) now answers
+`401 {"require_login": true}` to everybody, and the public profile page carries no posts at all. It
+failed that way on every nightly run for three weeks before this was changed.
+
+`business_discovery` is Meta's documented way for one professional account to read another
+professional account's public posts, without that account's permission. To use it we need:
+
+| Secret | What it is |
+| --- | --- |
+| `IG_GRAPH_USER_ID` | the id of **our own** Instagram Business/Creator account |
+| `IG_GRAPH_TOKEN` | a long-lived access token for it |
+| `IG_GRAPH_VERSION` | optional; pins the API version, default in `fetch.py` |
+
+Getting them, once: convert (or create) an Instagram account to Business/Creator, connect it to a
+Facebook Page, create an app at developers.facebook.com, and issue a token carrying
+`instagram_basic`, `instagram_manage_insights` and `pages_read_engagement`. Reading accounts that
+are not our own generally needs the app reviewed and live rather than in development mode.
+
+Two things will bite later. The token **expires about every 60 days** and has to be reissued -- when
+it has, a run says `Session has expired` in its summary rather than failing silently. And the target
+account must itself be professional and public; a personal account returns no `business_discovery`
+at all, which the reader reports in those words.
 
 ## What it takes and what it leaves
 
