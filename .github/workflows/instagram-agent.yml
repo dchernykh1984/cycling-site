@@ -92,6 +92,13 @@ jobs:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
+          # Instagram closed the logged-out endpoint this agent used to read; these are Meta's own
+          # Graph API credentials for our professional account, which is the only way left. The
+          # token is long-lived but not permanent -- it expires about every 60 days, and a run says
+          # so in its summary when it has.
+          IG_GRAPH_USER_ID: ${{ secrets.IG_GRAPH_USER_ID }}
+          IG_GRAPH_TOKEN: ${{ secrets.IG_GRAPH_TOKEN }}
+          IG_GRAPH_VERSION: ${{ secrets.IG_GRAPH_VERSION }}
           INSTAGRAM_ACCOUNT: ${{ matrix.account }}
           INSTAGRAM_MAX_EVENTS: ${{ github.event.inputs.max_events || '10' }}
           INSTAGRAM_MAX_POSTS: ${{ github.event.inputs.max_posts || '10' }}
