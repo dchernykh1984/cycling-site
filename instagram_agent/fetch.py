@@ -77,9 +77,10 @@ class Post:
 def posts_from_business_discovery(payload: dict) -> list[Post]:
     """The posts in a business_discovery reply, newest first. Anything malformed is skipped.
 
-    Sorted here because the reply is not in date order: Instagram returns pinned posts ahead of the
-    rest whatever their age, so an account with a pinned post from May opens with it and "the newest
-    N posts" would otherwise mean "whatever the club pinned, plus a few".
+    Sorted here rather than trusted: the old web endpoint hoisted pinned posts above everything
+    else whatever their age, and whether Graph does the same is not something this code should
+    have to know. Sorting costs nothing on a page of ten and makes "the newest N posts" mean that
+    however the reply happens to be ordered.
     """
     discovery = (payload or {}).get("business_discovery") or {}
     media = (discovery.get("media") or {}).get("data") or []
