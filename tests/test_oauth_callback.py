@@ -88,6 +88,21 @@ class AddressSentToTheProviderTests(TestCase):
                     uri = self._redirect_uri(provider, code)
                     self.assertEqual(urllib.parse.urlsplit(uri).path, f"/accounts/{provider}/login/callback/")
 
+    def test_the_language_free_entry_point_works(self):
+        """The one the buttons now point at.
+
+        Moving the provider routes out from under the language prefix moved the sign-in entry
+        point with them: {% provider_login_url %} reverses to /accounts/<provider>/login/ now, and
+        that is the address every "Sign in with" button posts to. If it did not answer, sign-in
+        would be broken for everybody -- which is the failure this whole change exists to end.
+        """
+        for provider in PROVIDERS:
+            with self.subTest(provider=provider):
+                response = self.client.post(f"/accounts/{provider}/login/", {"process": "login"})
+                self.assertIn(response.status_code, (301, 302))
+                uri = urllib.parse.parse_qs(urllib.parse.urlsplit(response["Location"]).query)["redirect_uri"][0]
+                self.assertEqual(urllib.parse.urlsplit(uri).path, f"/accounts/{provider}/login/callback/")
+
     def test_signing_in_from_different_languages_sends_one_and_the_same_address(self):
         """This is the bug itself: three languages used to mean three unregistered addresses."""
         for provider in PROVIDERS:
