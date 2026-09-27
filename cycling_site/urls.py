@@ -1,3 +1,4 @@
+from allauth.urls import build_provider_urlpatterns
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
@@ -144,6 +145,23 @@ urlpatterns += i18n_patterns(
     path("", include(wagtail_urls)),  # must be last
     prefix_default_language=True,
 )
+
+
+# The address an OAuth provider sends the reader back to, without a language prefix.
+#
+# It has to be one fixed address. Google and GitHub compare the redirect_uri against a list typed
+# into their console by hand and refuse anything else -- so with the provider routes living only
+# under i18n_patterns, allauth reversed /ru/..., /kk/... or /en/... depending on the reader's
+# language, and each of the three was a URL nobody had registered. Sign-in failed for everybody
+# with "Error 400: redirect_uri_mismatch". (Strava kept working, which hid it: Strava validates
+# the callback *domain*, not the path.)
+#
+# Registered after i18n_patterns on purpose. Django builds its reverse map by walking urlpatterns
+# backwards, so the last route registered under a name is the one reverse() returns -- which is
+# what makes allauth build the language-free callback here. The prefixed routes above still
+# resolve, so confirmation links already sitting in people's inboxes keep working; this only
+# changes which of them is generated.
+urlpatterns += [path("accounts/", include(build_provider_urlpatterns()))]
 
 
 if settings.DEBUG:  # pragma: no cover - dev-only static serving; tests force DEBUG=False
