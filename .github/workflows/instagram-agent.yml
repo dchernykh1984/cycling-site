@@ -98,7 +98,9 @@ jobs:
           # so in its summary when it has.
           IG_GRAPH_USER_ID: ${{ secrets.IG_GRAPH_USER_ID }}
           IG_GRAPH_TOKEN: ${{ secrets.IG_GRAPH_TOKEN }}
-          IG_GRAPH_VERSION: ${{ secrets.IG_GRAPH_VERSION }}
+          # A variable, not a secret: the Graph API version is public, and hiding it in secrets
+          # would mean nobody could see which one a run used without editing the workflow.
+          IG_GRAPH_VERSION: ${{ vars.IG_GRAPH_VERSION }}
           INSTAGRAM_ACCOUNT: ${{ matrix.account }}
           INSTAGRAM_MAX_EVENTS: ${{ github.event.inputs.max_events || '10' }}
           INSTAGRAM_MAX_POSTS: ${{ github.event.inputs.max_posts || '10' }}
