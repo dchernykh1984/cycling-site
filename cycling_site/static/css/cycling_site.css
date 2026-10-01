@@ -284,6 +284,39 @@ html {
     .participant-list-table td.reg-actions::before {
         content: none;
     }
+    /* The category heading used to be the only element here without a border, so in a column of
+       bordered cards it read as less important than the rows it introduces. Inverted into a solid
+       band it becomes the heaviest thing on the screen; sticking it under the navbar answers the
+       other half of the problem, that ten cards down nobody remembers which category they are in.
+
+       Inverted rather than coloured because this palette has no accent to borrow -- --bs-primary
+       is #1a1a1a. The two variables below swap with the theme, so one rule gives a white band in
+       the dark theme and a near-black one in the light theme, each with legible text. */
+    .participant-category {
+        position: sticky;
+        /* Set from the navbar's measured height (cycling_site.js); the fallback is what it
+           measures at every width except the narrowest, where the brand wraps to two lines. */
+        top: var(--ubt-sticky-top, 88px);
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin: 1.5rem calc(-1 * var(--bs-gutter-x, 1.5rem) / 2) 0.85rem;
+        padding: 0.55rem 0.9rem;
+        background: var(--bs-emphasis-color);
+        color: var(--bs-body-bg);
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+    }
+    .participant-category .badge {
+        background: var(--bs-body-bg) !important;
+        color: var(--bs-emphasis-color) !important;
+        font-size: 0.78rem;
+    }
 }
 
 /* Content images stay within their column so large uploads (e.g. the home-page logo) never

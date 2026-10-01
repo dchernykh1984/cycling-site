@@ -46,7 +46,7 @@
 
 {% if participant_groups %}
 {% for group in participant_groups %}
-<h2 class="h5 mt-4 mb-2" id="cat-{% if group.category %}{{ group.category.pk }}{% else %}none{% endif %}">
+<h2 class="h5 participant-category mt-4 mb-2" id="cat-{% if group.category %}{{ group.category.pk }}{% else %}none{% endif %}">
   {% if group.category %}{{ group.category.name }}{% else %}{% trans "No category" %}{% endif %}
   <span class="badge bg-secondary">{{ group.count }}{% if group.category.max_participants %}/{{ group.category.max_participants }}{% endif %}</span>
 </h2>

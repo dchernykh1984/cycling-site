@@ -43,4 +43,25 @@
             }
         });
     });
+
+    // The sticky category band on the participant list has to stop below the navbar, which is
+    // itself sticky. Its height is not a constant: at the narrowest widths the brand wraps to a
+    // second line and it grows from 88px to 128px, which would leave the band hidden behind it.
+    // Measuring is the only honest way; the CSS carries a fallback for when this never runs.
+    function syncStickyOffset() {
+        var nav = document.querySelector('nav.navbar');
+        if (!nav) {
+            return;
+        }
+        var height = Math.round(nav.getBoundingClientRect().height);
+        document.documentElement.style.setProperty('--ubt-sticky-top', height + 'px');
+    }
+
+    syncStickyOffset();
+    // Again once the document is parsed (in case this script ever moves above the navbar) and
+    // once the web font has landed, since that is what changes the brand's line count.
+    document.addEventListener('DOMContentLoaded', syncStickyOffset);
+    window.addEventListener('load', syncStickyOffset);
+    window.addEventListener('resize', syncStickyOffset);
+    window.addEventListener('orientationchange', syncStickyOffset);
 }());
