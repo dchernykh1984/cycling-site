@@ -57,11 +57,14 @@
         document.documentElement.style.setProperty('--ubt-sticky-top', height + 'px');
     }
 
-    syncStickyOffset();
-    // Again once the document is parsed (in case this script ever moves above the navbar) and
-    // once the web font has landed, since that is what changes the brand's line count.
-    document.addEventListener('DOMContentLoaded', syncStickyOffset);
-    window.addEventListener('load', syncStickyOffset);
-    window.addEventListener('resize', syncStickyOffset);
-    window.addEventListener('orientationchange', syncStickyOffset);
+    // Only the participant list has a band to offset, so no other page pays for the listeners.
+    if (document.querySelector('.participant-category')) {
+        syncStickyOffset();
+        // Again once the document is parsed (in case this script ever moves above the navbar)
+        // and once the web font has landed, since that is what changes the brand's line count.
+        document.addEventListener('DOMContentLoaded', syncStickyOffset);
+        window.addEventListener('load', syncStickyOffset);
+        window.addEventListener('resize', syncStickyOffset);
+        window.addEventListener('orientationchange', syncStickyOffset);
+    }
 }());

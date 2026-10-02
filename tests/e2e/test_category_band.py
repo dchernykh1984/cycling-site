@@ -9,14 +9,14 @@ answer ten cards down: which category am I reading?
 import datetime
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page, ViewportSize, expect
 
 from calendar_app.models import Competition
 from registrations.models import CompetitionRegistration, RegistrationCategory
 from tests.e2e.conftest import UPCOMING, inject_session
 
-PHONE = {"width": 390, "height": 844}
-NARROW = {"width": 320, "height": 568}
+PHONE: ViewportSize = {"width": 390, "height": 844}
+NARROW: ViewportSize = {"width": 320, "height": 568}
 
 
 def _competition_with_two_categories(organizer):
@@ -111,6 +111,17 @@ def test_the_offset_follows_the_navbar_when_it_grows(page: Page, live_server, or
         "() => getComputedStyle(document.documentElement).getPropertyValue('--ubt-sticky-top').trim()"
     )
     assert offset == f"{measured}px", f"offset {offset!r} does not match the navbar's {measured}px"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_page_without_a_band_is_not_measured(page: Page, live_server, organizer):
+    """The script ships site-wide; only the one page that needs the offset should pay for it."""
+    page.set_viewport_size(PHONE)
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/ru/calendar/list/")
+    page.wait_for_timeout(200)
+    offset = page.evaluate("() => document.documentElement.style.getPropertyValue('--ubt-sticky-top')")
+    assert offset == "", f"a page with no category band still published an offset: {offset!r}"
 
 
 @pytest.mark.django_db(transaction=True)
