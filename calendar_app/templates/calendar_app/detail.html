@@ -183,20 +183,20 @@
       {% endif %}
       {% if competition.url_results %}
       <a href="{{ competition.url_results }}" target="_blank" rel="noopener"
-         class="btn btn-outline-secondary">{% trans "Results" %}</a>
+         class="btn btn-primary fw-semibold competition-result-link">{% trans "Results" %}</a>
       {% elif competition.file_results %}
       <a href="{{ competition.file_results.url }}" target="_blank" rel="noopener"
-         class="btn btn-outline-secondary">{% trans "Results" %}</a>
+         class="btn btn-primary fw-semibold competition-result-link">{% trans "Results" %}</a>
       {% endif %}
     </div>
     {% endif %}
 
     {% if protocols %}
     <div class="mt-4 pt-3 mb-4 border-top">
-      <h2 class="mb-3 h5">{% trans "Protocols" %}</h2>
+      <h2 class="mb-3 h4 fw-bold">{% trans "Protocols" %}</h2>
       <div class="d-flex flex-wrap gap-2">
         {% for protocol in protocols %}
-        <a href="{% url 'protocol_detail' protocol.pk %}" class="btn btn-outline-primary btn-sm">
+        <a href="{% url 'protocol_detail' protocol.pk %}" class="btn btn-primary fw-semibold competition-result-link">
           {% if protocol.protocol_type == "absolute" %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}
           {% if protocol.stage_label %}&mdash; {{ protocol.stage_label }}{% endif %}
           {% if protocol.is_live %}<span class="badge bg-danger ms-1">{% trans "Live" %}</span>{% endif %}
