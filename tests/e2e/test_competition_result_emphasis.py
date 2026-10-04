@@ -26,7 +26,8 @@ def _contrast(first, second):
 
 def _appearance(link):
     return link.evaluate(
-        "el => { const s = getComputedStyle(el); return {fill: s.backgroundColor, text: s.color,"
+        "async el => { await Promise.all(el.getAnimations().map(a => a.finished));"
+        " const s = getComputedStyle(el); return {fill: s.backgroundColor, text: s.color,"
         " weight: parseInt(s.fontWeight), body: getComputedStyle(document.body).backgroundColor}; }"
     )
 
