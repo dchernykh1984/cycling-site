@@ -79,7 +79,7 @@ def test_published_result_links_are_filled_bold_and_legible(
             assert style["fill"] != "rgba(0, 0, 0, 0)", (theme, state, style)
             assert _contrast(style["fill"], style["body"]) >= 3, (theme, state, style)
             assert _contrast(style["text"], style["fill"]) >= 4.5, (theme, state, style)
-            assert style["weight"] >= 600
+            assert style["weight"] >= 700
         box = link.bounding_box()
         assert box is not None
         assert box["x"] >= -1 and box["x"] + box["width"] <= page.evaluate("window.innerWidth") + 1

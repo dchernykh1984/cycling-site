@@ -93,6 +93,14 @@ body > main {
     border-color: #ea868f !important;
 }
 
+/* Lux's weight utilities use lighter values; make the published results explicitly bold. */
+.competition-result-link {
+    --bs-btn-font-weight: 700;
+}
+.competition-protocol-heading {
+    font-weight: 700;
+}
+
 /* Event results keep a visible fill against Lux's dark page, including hover and focus. */
 [data-bs-theme="dark"] .competition-result-link {
     --bs-btn-color: #000;
