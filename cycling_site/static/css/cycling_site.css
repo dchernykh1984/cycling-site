@@ -93,6 +93,20 @@ body > main {
     border-color: #ea868f !important;
 }
 
+/* Event results keep a visible fill against Lux's dark page, including hover and focus. */
+[data-bs-theme="dark"] .competition-result-link {
+    --bs-btn-color: #000;
+    --bs-btn-bg: #6ea8fe;
+    --bs-btn-border-color: #6ea8fe;
+    --bs-btn-hover-color: #000;
+    --bs-btn-hover-bg: #8bb9ff;
+    --bs-btn-hover-border-color: #8bb9ff;
+    --bs-btn-active-color: #000;
+    --bs-btn-active-bg: #8bb9ff;
+    --bs-btn-active-border-color: #8bb9ff;
+    --bs-btn-focus-shadow-rgb: 110, 168, 254;
+}
+
 /* Dark theme: radio and checkbox inputs */
 [data-bs-theme="dark"] .form-check-input {
     background-color: #2c3034 !important;
