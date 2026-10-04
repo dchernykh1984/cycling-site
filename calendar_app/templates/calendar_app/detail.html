@@ -130,6 +130,95 @@
     </div>
     {% endif %}
 
+    {% if competition.url_registration %}
+    <div class="mb-4">
+      <a href="{{ competition.url_registration }}" target="_blank" rel="noopener"
+         class="btn btn-primary">{% trans "Register" %}</a>
+    </div>
+    {% endif %}
+
+    {% if competition.registration_enabled and competition.status == 'approved' %}
+    <div class="mt-4 pt-3 mb-4 border-top">
+      <h2 class="h5">{% trans "Registration" %}</h2>
+      <p class="text-muted small">{% trans "Registered" %}: {{ competition.qualified_count }}</p>
+      {% if competition.is_registration_open %}
+        {% if not already_registered or competition.allow_multiple_registrations %}
+        <a href="{% url 'registrations:register' competition.pk %}" class="btn btn-success btn-sm">
+          {% trans "Register" %}
+        </a>
+        {% else %}
+        <span class="badge bg-success">{% trans "You are registered" %}</span>
+        {% endif %}
+      {% else %}
+      <span class="badge bg-secondary">{% trans "Registration closed" %}</span>
+      {% endif %}
+      <a href="{% url 'registrations:participant_list' competition.pk %}" class="btn btn-outline-secondary btn-sm ms-2">
+        {% trans "Participant list" %} →
+      </a>
+    </div>
+    {% endif %}
+
+    {% if competition.url_announcement or competition.file_announcement or competition.url_route or competition.file_route or competition.url_regulations or competition.file_regulations or competition.url_results or competition.file_results %}
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      {% if competition.url_route %}
+      <a href="{{ competition.url_route }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Route" %}</a>
+      {% elif competition.file_route %}
+      <a href="{{ competition.file_route.url }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Route" %}</a>
+      {% endif %}
+      {% if competition.url_announcement %}
+      <a href="{{ competition.url_announcement }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Announcement" %}</a>
+      {% elif competition.file_announcement %}
+      <a href="{{ competition.file_announcement.url }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Announcement" %}</a>
+      {% endif %}
+      {% if competition.url_regulations %}
+      <a href="{{ competition.url_regulations }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Regulations" %}</a>
+      {% elif competition.file_regulations %}
+      <a href="{{ competition.file_regulations.url }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Regulations" %}</a>
+      {% endif %}
+      {% if competition.url_results %}
+      <a href="{{ competition.url_results }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Results" %}</a>
+      {% elif competition.file_results %}
+      <a href="{{ competition.file_results.url }}" target="_blank" rel="noopener"
+         class="btn btn-outline-secondary">{% trans "Results" %}</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if protocols %}
+    <div class="mt-4 pt-3 mb-4 border-top">
+      <h2 class="mb-3 h5">{% trans "Protocols" %}</h2>
+      <div class="d-flex flex-wrap gap-2">
+        {% for protocol in protocols %}
+        <a href="{% url 'protocol_detail' protocol.pk %}" class="btn btn-outline-primary btn-sm">
+          {% if protocol.protocol_type == "absolute" %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}
+          {% if protocol.stage_label %}&mdash; {{ protocol.stage_label }}{% endif %}
+          {% if protocol.is_live %}<span class="badge bg-danger ms-1">{% trans "Live" %}</span>{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if materials %}
+    <div class="mt-4 pt-3 mb-4 border-top">
+      <h2 class="mb-3 h5">{% trans "Additional materials" %}</h2>
+      <div class="d-flex flex-wrap gap-2">
+        {% for material in materials %}
+        <a href="{{ material.url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+          {{ material.title }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     {% if competition.description %}
     {# Description is sanitized rich HTML on save (forms + API), so render as-is. #}
     <div class="mb-4 competition-description">{{ competition.description|safe }}</div>
@@ -154,92 +243,6 @@
     </div>
     {% elif already_reported %}
     <div class="mb-4 text-muted small">{% trans "You have reported this event; a moderator will review it." %}</div>
-    {% endif %}
-
-    {% if competition.url_announcement or competition.file_announcement or competition.url_registration or competition.url_route or competition.file_route or competition.url_regulations or competition.file_regulations or competition.url_results or competition.file_results %}
-    <div class="d-flex flex-wrap gap-2 mb-4">
-      {% if competition.url_announcement %}
-      <a href="{{ competition.url_announcement }}" target="_blank" rel="noopener"
-         class="btn btn-outline-secondary">{% trans "Announcement" %}</a>
-      {% elif competition.file_announcement %}
-      <a href="{{ competition.file_announcement.url }}" target="_blank" rel="noopener"
-         class="btn btn-outline-secondary">{% trans "Announcement" %}</a>
-      {% endif %}
-      {% if competition.url_registration %}
-      <a href="{{ competition.url_registration }}" target="_blank" rel="noopener"
-         class="btn btn-primary">{% trans "Register" %}</a>
-      {% endif %}
-      {% if competition.url_route %}
-      <a href="{{ competition.url_route }}" target="_blank" rel="noopener"
-         class="btn btn-outline-secondary">{% trans "Route" %}</a>
-      {% elif competition.file_route %}
-      <a href="{{ competition.file_route.url }}" target="_blank" rel="noopener"
-         class="btn btn-outline-secondary">{% trans "Route" %}</a>
-      {% endif %}
-      {% if competition.url_regulations %}
-      <a href="{{ competition.url_regulations }}" target="_blank" rel="noopener"
-         class="btn btn-outline-secondary">{% trans "Regulations" %}</a>
-      {% elif competition.file_regulations %}
-      <a href="{{ competition.file_regulations.url }}" target="_blank" rel="noopener"
-         class="btn btn-outline-secondary">{% trans "Regulations" %}</a>
-      {% endif %}
-      {% if competition.url_results %}
-      <a href="{{ competition.url_results }}" target="_blank" rel="noopener"
-         class="btn btn-outline-secondary">{% trans "Results" %}</a>
-      {% elif competition.file_results %}
-      <a href="{{ competition.file_results.url }}" target="_blank" rel="noopener"
-         class="btn btn-outline-secondary">{% trans "Results" %}</a>
-      {% endif %}
-    </div>
-    {% endif %}
-
-    {% if competition.registration_enabled and competition.status == 'approved' %}
-    <div class="mt-4 pt-3 border-top">
-      <h2 class="h5">{% trans "Registration" %}</h2>
-      <p class="text-muted small">{% trans "Registered" %}: {{ competition.qualified_count }}</p>
-      {% if competition.is_registration_open %}
-        {% if not already_registered or competition.allow_multiple_registrations %}
-        <a href="{% url 'registrations:register' competition.pk %}" class="btn btn-success btn-sm">
-          {% trans "Register" %}
-        </a>
-        {% else %}
-        <span class="badge bg-success">{% trans "You are registered" %}</span>
-        {% endif %}
-      {% else %}
-      <span class="badge bg-secondary">{% trans "Registration closed" %}</span>
-      {% endif %}
-      <a href="{% url 'registrations:participant_list' competition.pk %}" class="btn btn-outline-secondary btn-sm ms-2">
-        {% trans "Participant list" %} →
-      </a>
-    </div>
-    {% endif %}
-
-    {% if protocols %}
-    <div class="mt-4 pt-3 border-top">
-      <h2 class="mb-3 h5">{% trans "Protocols" %}</h2>
-      <div class="d-flex flex-wrap gap-2">
-        {% for protocol in protocols %}
-        <a href="{% url 'protocol_detail' protocol.pk %}" class="btn btn-outline-primary btn-sm">
-          {% if protocol.protocol_type == "absolute" %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}
-          {% if protocol.stage_label %}&mdash; {{ protocol.stage_label }}{% endif %}
-          {% if protocol.is_live %}<span class="badge bg-danger ms-1">{% trans "Live" %}</span>{% endif %}
-        </a>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    {% if materials %}
-    <div class="mt-4 pt-3 border-top">
-      <h2 class="mb-3 h5">{% trans "Additional materials" %}</h2>
-      <div class="d-flex flex-wrap gap-2">
-        {% for material in materials %}
-        <a href="{{ material.url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
-          {{ material.title }}
-        </a>
-        {% endfor %}
-      </div>
-    </div>
     {% endif %}
 
     {% if show_upload_token %}
