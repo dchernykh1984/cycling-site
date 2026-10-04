@@ -113,6 +113,14 @@ body > main {
     --bs-btn-active-bg: #8bb9ff;
     --bs-btn-active-border-color: #8bb9ff;
     --bs-btn-focus-shadow-rgb: 110, 168, 254;
+    background-color: var(--bs-btn-bg);
+}
+[data-bs-theme="dark"] .competition-result-link:hover,
+[data-bs-theme="dark"] .competition-result-link:focus-visible {
+    background-color: var(--bs-btn-hover-bg);
+}
+[data-bs-theme="dark"] .competition-result-link:active {
+    background-color: var(--bs-btn-active-bg);
 }
 
 /* Dark theme: radio and checkbox inputs */
