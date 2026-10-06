@@ -151,6 +151,19 @@
       </div>
 
       <div class="mb-3">
+        <label class="form-label fw-semibold" for="{{ form.preview_image.id_for_label }}">{% trans "Link preview image" %}</label>
+        {% if competition.preview_image %}
+        <div class="mb-2">
+          <img src="{{ competition.preview_image.url }}" alt="" width="120" height="120"
+               style="width:120px;height:auto;object-fit:contain" class="border rounded">
+        </div>
+        {% endif %}
+        {{ form.preview_image }}
+        {% if form.preview_image.errors %}<div class="text-danger small mt-1">{% for e in form.preview_image.errors %}{{ e }}{% endfor %}</div>{% endif %}
+        <div class="form-text">{% trans "Shown when somebody pastes a link to this event into a chat. Upload it before the link goes round: messengers remember the first picture they saw for a long time." %}</div>
+      </div>
+
+      <div class="mb-3">
         <label class="form-label fw-semibold" for="{{ form.url_registration.id_for_label }}">{% trans "External registration link" %}</label>
         {{ form.url_registration }}
         {% if form.url_registration.errors %}<div class="text-danger small mt-1">{% for e in form.url_registration.errors %}{{ e }}{% endfor %}</div>{% endif %}

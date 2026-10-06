@@ -688,6 +688,29 @@ def _can_manage_token(user, competition) -> bool:
     )
 
 
+def _preview_image_tags(request, competition) -> dict:
+    """What a chat should show for this event, if it brought a picture of its own.
+
+    An empty dict when it did not: the page then falls back to the site mark, which is what every
+    event showed before. The size travels with the URL so a messenger can lay the card out without
+    downloading the file.
+    """
+    image = getattr(competition, "preview_image", None)
+    if not image:
+        return {}
+    try:
+        width, height = image.width, image.height
+    except (OSError, ValueError):
+        # The row points at a file that is no longer on disk; the site mark is a better answer
+        # than a broken picture.
+        return {}
+    return {
+        "og_image": request.build_absolute_uri(image.url),
+        "og_image_width": width,
+        "og_image_height": height,
+    }
+
+
 class CompetitionDetailView(View):
     def get(self, request, pk):
         from registrations.views import can_manage
@@ -780,6 +803,9 @@ class CompetitionDetailView(View):
             "meta_title": competition.title,
             "meta_description": competition.search_summary(),
             "og_type": "article",
+            # The picture a chat shows for this event. Absolute, because the messenger fetching it
+            # has nothing to resolve a relative path against.
+            **_preview_image_tags(request, competition),
             "structured_data": sports_event(competition, f"{request.scheme}://{request.get_host()}"),
         }
         # Resolve the map pin: a venue with its own coordinates, else the nearest visible ancestor
@@ -1170,7 +1196,8 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         url_results=cd.get("url_results", ""),
                         submitted_by=request.user,
                     )
-                    for fname in ("file_announcement", "file_route", "file_regulations", "file_results"):
+                    uploads = ("file_announcement", "file_route", "file_regulations", "file_results", "preview_image")
+                    for fname in uploads:
                         f = cd.get(fname)
                         if f:
                             setattr(comp, fname, f)
@@ -1280,7 +1307,8 @@ class EditCompetitionView(View):
             comp.url_route = cd.get("url_route", "")
             comp.url_regulations = cd.get("url_regulations", "")
             comp.url_results = cd.get("url_results", "")
-            for fname in ("file_announcement", "file_route", "file_regulations", "file_results"):
+            uploads = ("file_announcement", "file_route", "file_regulations", "file_results", "preview_image")
+            for fname in uploads:
                 f = cd.get(fname)
                 if f:
                     setattr(comp, fname, f)
