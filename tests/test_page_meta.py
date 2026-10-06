@@ -131,3 +131,19 @@ class CompetitionMetaTests(TestCase):
         self.comp.save()
         self.assertIn("Almaty", _meta(self._html(), "description"))
         self.assertIsInstance(venue, Location)
+
+
+class SocialImageTests(TestCase):
+    """What a chat shows when a link is pasted: the site mark, unless a page brings its own."""
+
+    def test_a_page_without_one_falls_back_to_the_site_mark(self):
+        html = self.client.get(reverse("calendar")).content.decode()
+        self.assertTrue((_prop(html, "og:image") or "").endswith("apple-touch-icon.png"))
+        self.assertEqual(_prop(html, "og:image:width"), "180")
+        self.assertEqual(_prop(html, "og:image:height"), "180")
+
+    def test_the_declared_size_lets_a_messenger_lay_the_card_out_unseen(self):
+        """Without these a chat has to fetch the file before it can draw anything."""
+        html = self.client.get(reverse("calendar")).content.decode()
+        for prop in ("og:image:width", "og:image:height"):
+            self.assertIsNotNone(_prop(html, prop), f"{prop} is missing")
