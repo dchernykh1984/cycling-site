@@ -137,6 +137,11 @@ class Competition(index.Indexed, models.Model):
     file_regulations = models.FileField(upload_to="competitions/regulations/", blank=True)
     file_route = models.FileField(upload_to="competitions/routes/", blank=True)
     file_results = models.FileField(upload_to="competitions/results/", blank=True)
+    # The picture a chat shows when somebody pastes a link to this event. Optional: without one the
+    # page falls back to the site mark, which is what every event showed before. Whatever is
+    # uploaded is re-encoded and bounded on the way in (calendar_app.preview_image), so what lands
+    # here is always a plain image of a predictable size with no camera metadata on it.
+    preview_image = models.ImageField(upload_to="competitions/preview/", blank=True)
     # Secret credential for the offline timing tools. Nullable so a manager can delete it (revoke
     # all timing access) if it leaks; a new one is minted by the regenerate action.
     upload_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, null=True, blank=True)
