@@ -7,13 +7,18 @@ began with blank lines.
 """
 
 import datetime
+import io
 import re
+import tempfile
+from pathlib import Path
 
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.html import escape
 from django.utils.translation import gettext
 from django.utils.translation import override as translation_override
+from PIL import Image
 
 from calendar_app.models import Competition
 from tests.language_urls import in_language
@@ -147,3 +152,45 @@ class SocialImageTests(TestCase):
         html = self.client.get(reverse("calendar")).content.decode()
         for prop in ("og:image:width", "og:image:height"):
             self.assertIsNotNone(_prop(html, prop), f"{prop} is missing")
+
+
+# Uploads here write real files; keep them out of the checkout, as the protocol tests do.
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class CompetitionSocialImageTests(TestCase):
+    """An event with a poster of its own should show it, not the site mark, in a chat."""
+
+    def setUp(self):
+        self.comp = _competition("Preview Race", date_start=datetime.date(2026, 10, 4))
+
+    def _html(self):
+        return self.client.get(self.comp.get_absolute_url()).content.decode()
+
+    @staticmethod
+    def _png(size=(600, 400)):
+        buffer = io.BytesIO()
+        Image.new("RGB", size, "red").save(buffer, format="PNG")
+        return SimpleUploadedFile("poster.png", buffer.getvalue(), content_type="image/png")
+
+    def test_an_event_without_one_still_shows_the_site_mark(self):
+        self.assertTrue((_prop(self._html(), "og:image") or "").endswith("apple-touch-icon.png"))
+
+    def test_an_event_with_one_shows_it_instead(self):
+        self.comp.preview_image = self._png()
+        self.comp.save(update_fields=["preview_image"])
+        image = _prop(self._html(), "og:image")
+        self.assertIn("competitions/preview/", image)
+        self.assertTrue(image.startswith("http"), f"a chat cannot resolve {image!r}")
+
+    def test_the_size_it_declares_is_the_size_of_the_file(self):
+        self.comp.preview_image = self._png((640, 480))
+        self.comp.save(update_fields=["preview_image"])
+        html = self._html()
+        self.assertEqual(_prop(html, "og:image:width"), "640")
+        self.assertEqual(_prop(html, "og:image:height"), "480")
+
+    def test_a_row_pointing_at_a_missing_file_falls_back_rather_than_breaking(self):
+        """Media can go missing; a chat should then get the site mark, not a dead link."""
+        self.comp.preview_image = self._png()
+        self.comp.save(update_fields=["preview_image"])
+        Path(self.comp.preview_image.path).unlink()
+        self.assertTrue((_prop(self._html(), "og:image") or "").endswith("apple-touch-icon.png"))

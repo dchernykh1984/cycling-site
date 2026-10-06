@@ -19,6 +19,8 @@ from .models import (
     Discipline,
     EventType,
 )
+from .preview_image import PreviewImageError
+from .preview_image import normalise as normalise_preview
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
@@ -123,6 +125,11 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     file_regulations = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
     url_results = _url_field()
     file_results = forms.FileField(required=False, widget=forms.FileInput(attrs={"class": "form-control"}))
+    # The picture a chat shows when somebody pastes a link to this event. Optional; without one the
+    # page falls back to the site mark.
+    preview_image = forms.ImageField(
+        required=False, widget=forms.FileInput(attrs={"class": "form-control", "accept": "image/*"})
+    )
 
     _MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
     _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = frozenset(
@@ -170,6 +177,21 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
 
     def clean_file_results(self):
         return self._validate_file(self.cleaned_data.get("file_results"))
+
+    def clean_preview_image(self):
+        """Bound it, then rewrite it: what is stored is never the bytes that were uploaded.
+
+        Returns a file ready to assign to the model, so the views keep treating this like any
+        other upload. See calendar_app.preview_image for why re-encoding is the point.
+        """
+        uploaded = self._validate_file(self.cleaned_data.get("preview_image"))
+        if not uploaded:
+            return uploaded
+        try:
+            normalised, _width, _height = normalise_preview(uploaded)
+        except PreviewImageError as exc:
+            raise forms.ValidationError(str(exc)) from exc
+        return normalised
 
     def clean(self):
         cleaned_data = super().clean()
