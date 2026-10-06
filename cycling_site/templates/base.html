@@ -31,7 +31,21 @@
     <meta property="og:title" content="{% firstof meta_title page.seo_title page.title %}" />
     <meta property="og:description" content="{% if description %}{{ description }}{% else %}{% trans 'Calendar of endurance sport events -- cycling, running, cross-country skiing -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base.' %}{% endif %}" />
     <meta property="og:url" content="{% firstof canonical_url request.build_absolute_uri %}" />
+    {% comment %}
+    The picture a chat shows when somebody pastes a link. A page may carry its own -- an event with
+    a poster uploaded to it -- and everything else falls back to the site mark, which is what every
+    page used to show. Width and height are declared so a messenger can lay the card out without
+    downloading the file first.
+    {% endcomment %}
+    {% if og_image %}
+    <meta property="og:image" content="{{ og_image }}" />
+    {% if og_image_width %}<meta property="og:image:width" content="{{ og_image_width }}" />{% endif %}
+    {% if og_image_height %}<meta property="og:image:height" content="{{ og_image_height }}" />{% endif %}
+    {% else %}
     <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'apple-touch-icon.png' %}" />
+    <meta property="og:image:width" content="180" />
+    <meta property="og:image:height" content="180" />
+    {% endif %}
     <meta name="twitter:card" content="summary" />
     {% comment %}
     Declared site-wide so a reader that follows a link into any page still finds the feeds, and so
