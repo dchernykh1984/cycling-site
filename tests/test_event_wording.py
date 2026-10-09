@@ -25,6 +25,7 @@ RENAMED = (
     "Prefilled when you register for an event.",
     "Choose one or more disciplines \u2014 an event can belong to several.",
     "Only a rejected event can be resubmitted.",
+    "Prefilled into the registration field for events that collect Strava links.",
 )
 
 
