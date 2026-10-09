@@ -1178,8 +1178,8 @@ msgid "Events by city"
 msgstr "Мероприятия по городам"
 
 #: calendar_app/templates/calendar_app/calendar.html:119
-msgid "Competitions by discipline"
-msgstr "Соревнования по дисциплинам"
+msgid "Events by discipline"
+msgstr "Мероприятия по дисциплинам"
 
 #: calendar_app/templates/calendar_app/calendar.html:134
 #: tests/test_calendar_toolbar.py:79
