@@ -1123,8 +1123,8 @@ msgstr "Фильтры"
 #: calendar_app/templates/calendar_app/map.html:25
 #: calendar_app/templates/calendar_app/submit.html:4
 #: calendar_app/templates/calendar_app/submit.html:15
-msgid "Submit competition"
-msgstr "Добавить соревнование"
+msgid "Submit event"
+msgstr "Добавить мероприятие"
 
 #: calendar_app/templates/calendar_app/calendar.html:38
 #: calendar_app/templates/calendar_app/list.html:24
