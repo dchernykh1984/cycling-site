@@ -9,7 +9,11 @@ from django.test import SimpleTestCase
 from django.utils.translation import gettext
 from django.utils.translation import override as translation_override
 
-RENAMED = ("Submit event",)
+RENAMED = (
+    "Submit event",
+    "Event list",
+    "All events as a list",
+)
 
 
 class EventWordingTests(SimpleTestCase):
