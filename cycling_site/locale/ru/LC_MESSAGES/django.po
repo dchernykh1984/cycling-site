@@ -1712,10 +1712,10 @@ msgstr "Предложенные локации"
 
 #: calendar_app/templates/calendar_app/moderate.html:161
 msgid ""
-"Reject this venue? Competitions using it will fall back to the city's other "
+"Reject this venue? Events using it will fall back to the city's other "
 "location."
 msgstr ""
-"Отклонить эту локацию? Соревнования на ней перейдут на «Другую локацию» "
+"Отклонить эту локацию? Мероприятия на ней перейдут на «Другую локацию» "
 "города."
 
 #: calendar_app/templates/calendar_app/moderate.html:161

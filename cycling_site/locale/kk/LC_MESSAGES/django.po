@@ -1713,10 +1713,10 @@ msgstr "Ұсынылған орындар"
 
 #: calendar_app/templates/calendar_app/moderate.html:161
 msgid ""
-"Reject this venue? Competitions using it will fall back to the city's other "
+"Reject this venue? Events using it will fall back to the city's other "
 "location."
 msgstr ""
-"Бұл орынды қабылдамау керек пе? Ондағы жарыстар қаланың «Басқа орнына» "
+"Бұл орынды қабылдамау керек пе? Ондағы іс-шаралар қаланың «Басқа орнына» "
 "ауысады."
 
 #: calendar_app/templates/calendar_app/moderate.html:161
