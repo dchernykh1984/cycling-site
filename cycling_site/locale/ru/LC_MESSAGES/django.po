@@ -1684,8 +1684,8 @@ msgid "No competitions found for the selected period."
 msgstr "Соревнования за выбранный период не найдены."
 
 #: calendar_app/templates/calendar_app/moderate.html:9
-msgid "Competition moderation"
-msgstr "Модерация соревнований"
+msgid "Event moderation"
+msgstr "Модерация мероприятий"
 
 #: calendar_app/templates/calendar_app/moderate.html:11
 #: calendar_app/templates/calendar_app/moderate.html:83
@@ -1699,8 +1699,8 @@ msgid "Submitted by"
 msgstr "Добавлено"
 
 #: calendar_app/templates/calendar_app/moderate.html:73
-msgid "No competitions pending approval."
-msgstr "Нет соревнований на рассмотрении."
+msgid "No events pending approval."
+msgstr "Нет мероприятий на рассмотрении."
 
 #: calendar_app/templates/calendar_app/moderate.html:82
 msgid "Reported events"
