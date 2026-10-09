@@ -1486,11 +1486,11 @@ msgstr "Қабылданбау себебі"
 msgid "Confirm rejection"
 msgstr "Қабылдамауды растау"
 
-#: calendar_app/templates/calendar_app/detail.html:319
+#: calendar_app/templates/calendar_app/detail.html:320
 #: calendar_app/templates/calendar_app/edit.html:4
 #: calendar_app/templates/calendar_app/edit.html:18
-msgid "Edit competition"
-msgstr "Жарысты өңдеу"
+msgid "Edit event"
+msgstr "Іс-шараны өңдеу"
 
 #: calendar_app/templates/calendar_app/detail.html:322
 msgid "Clone"

@@ -1486,11 +1486,11 @@ msgstr "Причина отказа"
 msgid "Confirm rejection"
 msgstr "Подтвердить отклонение"
 
-#: calendar_app/templates/calendar_app/detail.html:319
+#: calendar_app/templates/calendar_app/detail.html:320
 #: calendar_app/templates/calendar_app/edit.html:4
 #: calendar_app/templates/calendar_app/edit.html:18
-msgid "Edit competition"
-msgstr "Редактировать соревнование"
+msgid "Edit event"
+msgstr "Редактировать мероприятие"
 
 #: calendar_app/templates/calendar_app/detail.html:322
 msgid "Clone"
