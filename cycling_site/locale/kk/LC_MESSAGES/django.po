@@ -2650,11 +2650,11 @@ msgstr "Локацияны өз ішіне орналастыруға болма
 
 #: locations/forms.py:67 locations/views.py:332
 msgid ""
-"This location has nested locations or competitions, so its level cannot be "
+"This location has nested locations or events, so its level cannot be "
 "changed."
 msgstr ""
-"Бұл локацияда кірістірілген локациялар немесе жарыстар бар, сондықтан оның "
-"деңгейін өзгерту мүмкін емес."
+"Бұл локацияда кірістірілген локациялар немесе іс-шаралар бар, сондықтан оның"
+" деңгейін өзгерту мүмкін емес."
 
 #: locations/forms.py:74 locations/views.py:108
 msgid "System fallback locations must remain hidden."

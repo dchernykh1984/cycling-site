@@ -64,7 +64,7 @@ class LocationForm(forms.Form):
         new_depth = parent.depth + 1 if parent is not None else 1
         if new_depth != self.instance.depth and location_subtree_is_nonempty(self.instance):
             raise forms.ValidationError(
-                _("This location has nested locations or competitions, so its level cannot be changed.")
+                _("This location has nested locations or events, so its level cannot be changed.")
             )
         return parent
 
