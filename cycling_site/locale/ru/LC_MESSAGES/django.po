@@ -1174,8 +1174,8 @@ msgid "Events by region"
 msgstr "Мероприятия по регионам"
 
 #: calendar_app/templates/calendar_app/calendar.html:113
-msgid "Competitions by city"
-msgstr "Соревнования по городам"
+msgid "Events by city"
+msgstr "Мероприятия по городам"
 
 #: calendar_app/templates/calendar_app/calendar.html:119
 msgid "Competitions by discipline"
