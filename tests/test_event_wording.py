@@ -9,6 +9,7 @@ from django.test import SimpleTestCase
 from django.utils.translation import gettext
 from django.utils.translation import override as translation_override
 
+# The em dash is escaped because source files in this repository are ASCII only.
 RENAMED = (
     "Submit event",
     "Event list",
@@ -22,6 +23,7 @@ RENAMED = (
     "Are you sure you want to delete this event?",
     "Delete this event?",
     "Prefilled when you register for an event.",
+    "Choose one or more disciplines \u2014 an event can belong to several.",
 )
 
 

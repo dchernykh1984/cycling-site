@@ -854,9 +854,9 @@ msgid "Discipline"
 msgstr "Дисциплина"
 
 #: calendar_app/templates/calendar_app/_disciplines_field.html:15
-msgid "Choose one or more disciplines — a competition can belong to several."
+msgid "Choose one or more disciplines — an event can belong to several."
 msgstr ""
-"Выберите одну или несколько дисциплин — соревнование может относиться к "
+"Выберите одну или несколько дисциплин — мероприятие может относиться к "
 "нескольким."
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:6
