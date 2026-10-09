@@ -11,6 +11,7 @@ from django.utils.translation import override as translation_override
 
 # The em dash is escaped because source files in this repository are ASCII only.
 RENAMED = (
+    "Event",
     "Events",
     "Submit event",
     "Event list",
