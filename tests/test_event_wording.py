@@ -33,6 +33,7 @@ RENAMED = (
     "This location cannot be rejected: approved locations or a published event are inside it.",
     "Events recently added to the Universal Bicycle Team calendar.",
     "Reject this venue? Events using it will fall back to the city's other location.",
+    "Events by region",
 )
 
 

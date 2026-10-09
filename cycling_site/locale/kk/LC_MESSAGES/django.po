@@ -1170,8 +1170,8 @@ msgstr "Жаңа іс-шаралар (RSS)"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
 #| msgid "Competitions by city"
-msgid "Competitions by region"
-msgstr "Аймақтар бойынша жарыстар"
+msgid "Events by region"
+msgstr "Аймақтар бойынша іс-шаралар"
 
 #: calendar_app/templates/calendar_app/calendar.html:113
 msgid "Competitions by city"
