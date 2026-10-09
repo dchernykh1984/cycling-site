@@ -26,6 +26,7 @@ RENAMED = (
     "Choose one or more disciplines \u2014 an event can belong to several.",
     "Only a rejected event can be resubmitted.",
     "Prefilled into the registration field for events that collect Strava links.",
+    "Reject this place? Everything nested inside it is removed too, and events there lose their location.",
 )
 
 

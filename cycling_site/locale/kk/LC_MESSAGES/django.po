@@ -1721,11 +1721,11 @@ msgstr ""
 
 #: calendar_app/templates/calendar_app/moderate.html:161
 msgid ""
-"Reject this place? Everything nested inside it is removed too, and "
-"competitions there lose their location."
+"Reject this place? Everything nested inside it is removed too, and events "
+"there lose their location."
 msgstr ""
-"Бұл орынды қабылдамау керек пе? Ішіндегінің бәрі де жойылады, ондағы "
-"жарыстар орынсыз қалады."
+"Бұл орынды қабылдамау керек пе? Ішіндегінің бәрі де жойылады, ондағы іс-"
+"шаралар орынсыз қалады."
 
 #: calendar_app/templates/calendar_app/moderate.html:172
 msgid "No locations pending approval."

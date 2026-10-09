@@ -1720,10 +1720,10 @@ msgstr ""
 
 #: calendar_app/templates/calendar_app/moderate.html:161
 msgid ""
-"Reject this place? Everything nested inside it is removed too, and "
-"competitions there lose their location."
+"Reject this place? Everything nested inside it is removed too, and events "
+"there lose their location."
 msgstr ""
-"Отклонить это место? Всё вложенное в него тоже удалится, а соревнования там "
+"Отклонить это место? Всё вложенное в него тоже удалится, а мероприятия там "
 "останутся без локации."
 
 #: calendar_app/templates/calendar_app/moderate.html:172

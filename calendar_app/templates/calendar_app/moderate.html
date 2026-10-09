@@ -156,7 +156,7 @@ admin edits, deletes, comments, or dismisses the report. Only admins+ get this s
             <button type="submit" class="btn btn-success btn-sm py-0 px-2">{% trans "Approve" %}</button>
           </form>
           <form method="post" action="{% url 'location_reject' loc.pk %}" class="d-inline"
-                onsubmit="return confirm('{% if loc.depth == 4 %}{% trans "Reject this venue? Competitions using it will fall back to the city's other location." %}{% else %}{% trans "Reject this place? Everything nested inside it is removed too, and competitions there lose their location." %}{% endif %}')">
+                onsubmit="return confirm('{% if loc.depth == 4 %}{% trans "Reject this venue? Competitions using it will fall back to the city's other location." %}{% else %}{% trans "Reject this place? Everything nested inside it is removed too, and events there lose their location." %}{% endif %}')">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">{% trans "Reject" %}</button>
           </form>
