@@ -150,7 +150,7 @@ class LandingFacetsTests(TestCase):
 class FilteredHeadingTests(TestCase):
     """The heading of a filtered list says what it is filtered by.
 
-    Every one of the hundred filter pages in the sitemap carried the same h1 -- "Competitions" --
+    Every one of the hundred filter pages in the sitemap carried the same h1 -- "Events" --
     so the page a reader landed on from search never named the thing they had searched for.
     """
 
@@ -181,7 +181,7 @@ class FilteredHeadingTests(TestCase):
         from django.utils import translation
 
         with translation.override("ru"):
-            plain = translation.gettext("Competitions")
+            plain = translation.gettext("Events")
         self.assertEqual(self._h1(reverse("calendar_list")), plain)
 
     def test_the_heading_matches_the_title_tag(self):
