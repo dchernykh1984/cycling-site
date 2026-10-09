@@ -16,6 +16,8 @@ RENAMED = (
     "Nearest events",
     "New events (RSS)",
     "New events",
+    "Event moderation",
+    "No events pending approval.",
 )
 
 
