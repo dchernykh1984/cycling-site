@@ -1449,8 +1449,8 @@ msgid "Access token for the offline timing system:"
 msgstr "Токен доступа для офлайн-системы хронометража:"
 
 #: calendar_app/templates/calendar_app/detail.html:291
-msgid "This competition is hidden from public view."
-msgstr "Это соревнование скрыто от публичного просмотра."
+msgid "This event is hidden from public view."
+msgstr "Это мероприятие скрыто от публичного просмотра."
 
 #: calendar_app/templates/calendar_app/detail.html:299
 #: calendar_app/templates/calendar_app/moderate.html:49

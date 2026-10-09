@@ -18,6 +18,7 @@ RENAMED = (
     "New events",
     "Event moderation",
     "No events pending approval.",
+    "This event is hidden from public view.",
 )
 
 
