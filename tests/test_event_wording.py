@@ -29,6 +29,7 @@ RENAMED = (
     "Reject this place? Everything nested inside it is removed too, and events there lose their location.",
     "Timing token deleted. Timing tools can no longer access this event.",
     "This location has nested locations or events, so its level cannot be changed.",
+    "Cannot delete a location that still has nested locations or events.",
 )
 
 

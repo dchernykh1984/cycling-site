@@ -2735,10 +2735,9 @@ msgid "Read article"
 msgstr "Мақаланы оқу"
 
 #: locations/views.py:96
-msgid ""
-"Cannot delete a location that still has nested locations or competitions."
+msgid "Cannot delete a location that still has nested locations or events."
 msgstr ""
-"Кірістірілген локациялары немесе жарыстары бар локацияны жою мүмкін емес."
+"Кірістірілген локациялары немесе іс-шаралары бар локацияны жою мүмкін емес."
 
 #: locations/views.py:193
 msgid "The selected parent location is no longer available."

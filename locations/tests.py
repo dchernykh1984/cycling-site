@@ -772,7 +772,7 @@ class LocationDeleteViewTests(TestCase):
 
     def test_delete_blocked_message_is_localized(self):
         # The "cannot delete" message renders in English under en and is translated under ru.
-        msg_en = "Cannot delete a location that still has nested locations or competitions."
+        msg_en = "Cannot delete a location that still has nested locations or events."
         self.client.force_login(self.admin)
         country, _, _ = _make_tree()
         en = self.client.post(
