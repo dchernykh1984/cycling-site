@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Submit competition" %}{% endblock %}
+{% block title %}{% trans "Submit event" %}{% endblock %}
 
 {% block content %}
 {% if clone_source %}
@@ -12,7 +12,7 @@
 {{ locations_data|json_script:"locations-data" }}
 <div class="row justify-content-center">
   <div class="col-md-9 col-lg-8">
-    <h1 class="mb-4">{% trans "Submit competition" %}</h1>
+    <h1 class="mb-4">{% trans "Submit event" %}</h1>
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
 

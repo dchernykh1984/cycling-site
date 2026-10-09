@@ -22,7 +22,7 @@
       </button>
       {% include "calendar_app/_view_switcher.html" with active_view="map" %}
       {% if request.user.is_authenticated %}
-      <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm">{% trans "Submit competition" %}</a>
+      <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm">{% trans "Submit event" %}</a>
       {% if request.user.is_superuser or request.user.role == 'organizer' or request.user.role == 'admin' or request.user.role == 'owner' %}
       <a href="{% url 'calendar_moderate' %}" class="btn btn-outline-warning btn-sm">{% trans "Moderation" %}</a>
       {% endif %}

@@ -1122,8 +1122,8 @@ msgstr "Сүзгілер"
 #: calendar_app/templates/calendar_app/map.html:25
 #: calendar_app/templates/calendar_app/submit.html:4
 #: calendar_app/templates/calendar_app/submit.html:15
-msgid "Submit competition"
-msgstr "Жарыс қосу"
+msgid "Submit event"
+msgstr "Іс-шара қосу"
 
 #: calendar_app/templates/calendar_app/calendar.html:38
 #: calendar_app/templates/calendar_app/list.html:24
