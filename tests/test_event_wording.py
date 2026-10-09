@@ -5,6 +5,8 @@ change: miss the catalogue and the page quietly serves the English source to a R
 reader, which no other test would notice. The list grows as the sweep goes on.
 """
 
+from pathlib import Path
+
 from django.test import SimpleTestCase
 from django.utils.translation import gettext
 from django.utils.translation import override as translation_override
@@ -49,3 +51,22 @@ class EventWordingTests(SimpleTestCase):
             for lang in ("ru", "kk"):
                 with self.subTest(msgid=msgid, lang=lang), translation_override(lang):
                     self.assertNotEqual(gettext(msgid), msgid, "missing from the catalogue")
+
+
+# "sorevnovanie" -- the Russian for a competition, escaped because sources here are ASCII only.
+COMPETITION_RU = "\u0441\u043e\u0440\u0435\u0432\u043d\u043e\u0432\u0430\u043d"
+
+
+class NoCompetitionWordingLeftTests(SimpleTestCase):
+    def test_no_russian_string_calls_an_entry_a_competition(self):
+        """The sweep above is only worth doing once; this keeps the word from drifting back.
+
+        A real race is still a race, and an announcement written by an organizer may say so --
+        that is content, which lives in model columns, not here. This covers the interface.
+        """
+        import polib
+        from django.conf import settings
+
+        path = Path(settings.BASE_DIR) / "cycling_site" / "locale" / "ru" / "LC_MESSAGES" / "django.po"
+        offenders = [e.msgid for e in polib.pofile(str(path)) if not e.obsolete and COMPETITION_RU in e.msgstr.lower()]
+        self.assertEqual(offenders, [])
