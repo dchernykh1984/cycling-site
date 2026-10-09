@@ -109,7 +109,7 @@ stays where it is, which is where a reader looking for the controls would expect
   {% endif %}
   {% if landing_places %}
   <p class="mb-1">
-    <span class="text-muted">{% trans "Competitions by city" %}:</span>
+    <span class="text-muted">{% trans "Events by city" %}:</span>
     {% for place in landing_places %}<a href="{% url 'calendar_list' %}?location={{ place.pk }}">{{ place.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
   </p>
   {% endif %}
