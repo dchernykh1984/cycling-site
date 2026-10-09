@@ -1614,7 +1614,7 @@ class ResubmitCompetitionView(LoginRequiredMixin, View):
         except ValueError:
             messages.error(request, _("Only a rejected event can be resubmitted."))
         else:
-            messages.success(request, _("Your competition was sent for review again."))
+            messages.success(request, _("Your event was sent for review again."))
         return redirect("competition_detail", pk=pk)
 
 

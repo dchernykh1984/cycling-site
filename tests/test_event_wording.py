@@ -37,6 +37,7 @@ RENAMED = (
     "Events by city",
     "Events by discipline",
     "No events found for the selected period.",
+    "Your event was sent for review again.",
 )
 
 

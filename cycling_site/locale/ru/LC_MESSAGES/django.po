@@ -1802,8 +1802,8 @@ msgstr ""
 "На повторное рассмотрение можно отправить только отклонённое мероприятие."
 
 #: calendar_app/views.py:1585
-msgid "Your competition was sent for review again."
-msgstr "Соревнование отправлено на повторное рассмотрение."
+msgid "Your event was sent for review again."
+msgstr "Мероприятие отправлено на повторное рассмотрение."
 
 #: calendar_app/views.py:1608
 msgid "Timing token regenerated. The previous token no longer works."

@@ -1800,8 +1800,8 @@ msgid "Only a rejected event can be resubmitted."
 msgstr "Тек қабылданбаған іс-шараны қайта жіберуге болады."
 
 #: calendar_app/views.py:1585
-msgid "Your competition was sent for review again."
-msgstr "Жарыс қайта қарауға жіберілді."
+msgid "Your event was sent for review again."
+msgstr "Іс-шара қайта қарауға жіберілді."
 
 #: calendar_app/views.py:1608
 msgid "Timing token regenerated. The previous token no longer works."
