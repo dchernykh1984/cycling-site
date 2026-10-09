@@ -703,8 +703,8 @@ msgid "New events"
 msgstr "Новые мероприятия"
 
 #: calendar_app/feeds.py:148
-msgid "Competitions recently added to the Universal Bicycle Team calendar."
-msgstr "Соревнования, недавно добавленные в календарь Universal Bicycle Team."
+msgid "Events recently added to the Universal Bicycle Team calendar."
+msgstr "Мероприятия, недавно добавленные в календарь Universal Bicycle Team."
 
 #: calendar_app/forms.py:66
 #: calendar_app/templates/calendar_app/_event_type_filter.html:8

@@ -31,6 +31,7 @@ RENAMED = (
     "This location has nested locations or events, so its level cannot be changed.",
     "Cannot delete a location that still has nested locations or events.",
     "This location cannot be rejected: approved locations or a published event are inside it.",
+    "Events recently added to the Universal Bicycle Team calendar.",
 )
 
 
