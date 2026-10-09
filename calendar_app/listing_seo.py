@@ -2,7 +2,7 @@
 
 The filtered list has always been server-rendered: `/calendar/list/?location=2` returns the matching
 events as plain HTML. What it lacked was any sign of what it holds -- every filter combination
-carried the same title ("Competition list") and the same site-wide description, so a search engine
+carried the same title ("Event list") and the same site-wide description, so a search engine
 had one indistinguishable page instead of one per city and per discipline. "Races in Almaty" is the
 shape of the query people type, and this is what answers it.
 """

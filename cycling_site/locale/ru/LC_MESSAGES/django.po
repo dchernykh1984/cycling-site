@@ -1161,8 +1161,8 @@ msgid "Nearest competitions"
 msgstr "Ближайшие соревнования"
 
 #: calendar_app/templates/calendar_app/calendar.html:95
-msgid "All competitions as a list"
-msgstr "Все соревнования списком"
+msgid "All events as a list"
+msgstr "Все мероприятия списком"
 
 #: calendar_app/templates/calendar_app/calendar.html:97
 msgid "Subscribe in your calendar (.ics)"
@@ -1639,8 +1639,8 @@ msgid "Set up registration on our site"
 msgstr "Настроить регистрацию на нашем сайте"
 
 #: calendar_app/templates/calendar_app/list.html:4
-msgid "Competition list"
-msgstr "Список соревнований"
+msgid "Event list"
+msgstr "Список мероприятий"
 
 #: calendar_app/templates/calendar_app/list.html:35
 #: calendar_app/templates/calendar_app/map.html:40
