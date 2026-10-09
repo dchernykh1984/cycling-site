@@ -2753,11 +2753,11 @@ msgstr "Орын қарауға ұсынылды."
 
 #: locations/views.py:242
 msgid ""
-"This location cannot be rejected: approved locations or a published "
-"competition are inside it."
+"This location cannot be rejected: approved locations or a published event "
+"are inside it."
 msgstr ""
 "Бұл орынды қабылдамауға болмайды: ішінде мақұлданған орындар немесе "
-"жарияланған жарыс бар."
+"жарияланған іс-шара бар."
 
 #: locations/views.py:245
 msgid "This location proposal is no longer pending."
