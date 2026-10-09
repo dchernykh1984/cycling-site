@@ -1799,8 +1799,8 @@ msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Шағым алынып тасталды; іс-шара модерация кезегінен шығарылды."
 
 #: calendar_app/views.py:1583
-msgid "Only a rejected competition can be resubmitted."
-msgstr "Тек қабылданбаған жарысты қайта жіберуге болады."
+msgid "Only a rejected event can be resubmitted."
+msgstr "Тек қабылданбаған іс-шараны қайта жіберуге болады."
 
 #: calendar_app/views.py:1585
 msgid "Your competition was sent for review again."

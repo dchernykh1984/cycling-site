@@ -1801,9 +1801,9 @@ msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Жалоба снята; событие убрано из очереди модерации."
 
 #: calendar_app/views.py:1583
-msgid "Only a rejected competition can be resubmitted."
+msgid "Only a rejected event can be resubmitted."
 msgstr ""
-"На повторное рассмотрение можно отправить только отклонённое соревнование."
+"На повторное рассмотрение можно отправить только отклонённое мероприятие."
 
 #: calendar_app/views.py:1585
 msgid "Your competition was sent for review again."
