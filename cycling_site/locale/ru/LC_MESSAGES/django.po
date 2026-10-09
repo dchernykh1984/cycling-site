@@ -1157,8 +1157,8 @@ msgid "Year"
 msgstr "Год"
 
 #: calendar_app/templates/calendar_app/calendar.html:85
-msgid "Nearest competitions"
-msgstr "Ближайшие соревнования"
+msgid "Nearest events"
+msgstr "Ближайшие мероприятия"
 
 #: calendar_app/templates/calendar_app/calendar.html:95
 msgid "All events as a list"
