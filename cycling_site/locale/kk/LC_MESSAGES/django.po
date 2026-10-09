@@ -1808,10 +1808,9 @@ msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Хронометраж токені қайта жасалды. Бұрынғы токен енді жұмыс істемейді."
 
 #: calendar_app/views.py:1619
-msgid ""
-"Timing token deleted. Timing tools can no longer access this competition."
+msgid "Timing token deleted. Timing tools can no longer access this event."
 msgstr ""
-"Хронометраж токені жойылды. Хронометраж құралдары бұл жарысқа енді қол "
+"Хронометраж токені жойылды. Хронометраж құралдары бұл іс-шараға енді қол "
 "жеткізе алмайды."
 
 #: cycling_site/richtext.py:24
