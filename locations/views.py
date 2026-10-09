@@ -329,7 +329,7 @@ class LocationEditView(LoginRequiredMixin, View):
             except LocationConflictError:
                 form.add_error(
                     "parent",
-                    _("This location has nested locations or competitions, so its level cannot be changed."),
+                    _("This location has nested locations or events, so its level cannot be changed."),
                 )
             else:
                 messages.success(request, _("Location saved."))

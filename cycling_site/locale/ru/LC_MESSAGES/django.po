@@ -2649,10 +2649,10 @@ msgstr "Локацию нельзя поместить внутрь самой �
 
 #: locations/forms.py:67 locations/views.py:332
 msgid ""
-"This location has nested locations or competitions, so its level cannot be "
+"This location has nested locations or events, so its level cannot be "
 "changed."
 msgstr ""
-"У этой локации есть вложенные локации или соревнования, поэтому её уровень "
+"У этой локации есть вложенные локации или мероприятия, поэтому её уровень "
 "нельзя изменить."
 
 #: locations/forms.py:74 locations/views.py:108
