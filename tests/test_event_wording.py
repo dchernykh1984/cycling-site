@@ -20,6 +20,7 @@ RENAMED = (
     "No events pending approval.",
     "This event is hidden from public view.",
     "Are you sure you want to delete this event?",
+    "Delete this event?",
 )
 
 

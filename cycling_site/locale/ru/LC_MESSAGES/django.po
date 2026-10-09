@@ -456,8 +456,8 @@ msgid "Resubmit"
 msgstr "Переподать"
 
 #: accounts/templates/accounts/profile.html:378
-msgid "Delete this competition?"
-msgstr "Удалить это соревнование?"
+msgid "Delete this event?"
+msgstr "Удалить это мероприятие?"
 
 #: accounts/templates/accounts/profile.html:380
 #: calendar_app/templates/calendar_app/detail.html:340

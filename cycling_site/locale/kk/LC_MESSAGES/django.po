@@ -460,8 +460,8 @@ msgid "Resubmit"
 msgstr "Қайта жіберу"
 
 #: accounts/templates/accounts/profile.html:378
-msgid "Delete this competition?"
-msgstr "Бұл жарысты жою керек пе?"
+msgid "Delete this event?"
+msgstr "Бұл іс-шараны жою керек пе?"
 
 #: accounts/templates/accounts/profile.html:380
 #: calendar_app/templates/calendar_app/detail.html:340
