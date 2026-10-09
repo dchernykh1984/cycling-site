@@ -1486,7 +1486,7 @@ msgstr "Қабылданбау себебі"
 msgid "Confirm rejection"
 msgstr "Қабылдамауды растау"
 
-#: calendar_app/templates/calendar_app/detail.html:320
+#: calendar_app/templates/calendar_app/detail.html:321
 #: calendar_app/templates/calendar_app/edit.html:4
 #: calendar_app/templates/calendar_app/edit.html:18
 msgid "Edit event"

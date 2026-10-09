@@ -361,6 +361,19 @@ class CompetitionDetailViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertIn(self._token(), response.content.decode())
 
+    def test_the_token_block_lists_every_timing_client(self):
+        """A referee who only has a phone has to find the Android one from here too."""
+        self.client.force_login(self.owner)
+        page = self.client.get(self.url).content.decode()
+        for repo in (
+            "StartProtocolMakerPython",
+            "FinishProtocolGeneratorPython",
+            "ChronometerPython",
+            "ChronometerAndroid",
+        ):
+            with self.subTest(repo=repo):
+                self.assertIn(f"https://github.com/dchernykh1984/{repo}", page)
+
     def test_token_hidden_from_unrelated_organizer(self):
         # An organizer who did NOT submit this competition must not see its upload token.
         organizer = _make_user("org@example.com", User.Role.ORGANIZER)
