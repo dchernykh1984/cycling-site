@@ -13,6 +13,7 @@ RENAMED = (
     "Submit event",
     "Event list",
     "All events as a list",
+    "Nearest events",
 )
 
 
