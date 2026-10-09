@@ -586,8 +586,8 @@ msgstr "Әйел"
 
 #: accounts/templates/accounts/profile_edit.html:51
 #: accounts/templates/accounts/profile_edit.html:58
-msgid "Prefilled when you register for a competition."
-msgstr "Жарысқа тіркелу кезінде автоматты түрде толтырылады."
+msgid "Prefilled when you register for an event."
+msgstr "Іс-шараға тіркелу кезінде автоматты түрде толтырылады."
 
 #: accounts/templates/accounts/profile_edit.html:66
 msgid ""

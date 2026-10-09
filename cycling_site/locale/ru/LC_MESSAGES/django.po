@@ -582,8 +582,8 @@ msgstr "Женский"
 
 #: accounts/templates/accounts/profile_edit.html:51
 #: accounts/templates/accounts/profile_edit.html:58
-msgid "Prefilled when you register for a competition."
-msgstr "Подставится при регистрации на соревнование."
+msgid "Prefilled when you register for an event."
+msgstr "Подставится при регистрации на мероприятие."
 
 #: accounts/templates/accounts/profile_edit.html:66
 msgid ""
