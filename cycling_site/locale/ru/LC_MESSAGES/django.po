@@ -1170,8 +1170,8 @@ msgstr "Новые мероприятия (RSS)"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
 #| msgid "Competitions by city"
-msgid "Competitions by region"
-msgstr "Соревнования по регионам"
+msgid "Events by region"
+msgstr "Мероприятия по регионам"
 
 #: calendar_app/templates/calendar_app/calendar.html:113
 msgid "Competitions by city"
