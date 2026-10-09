@@ -2754,11 +2754,11 @@ msgstr "Локация предложена на рассмотрение."
 
 #: locations/views.py:242
 msgid ""
-"This location cannot be rejected: approved locations or a published "
-"competition are inside it."
+"This location cannot be rejected: approved locations or a published event "
+"are inside it."
 msgstr ""
 "Эту локацию нельзя отклонить: внутри есть одобренные локации или "
-"опубликованное соревнование."
+"опубликованное мероприятие."
 
 #: locations/views.py:245
 msgid "This location proposal is no longer pending."

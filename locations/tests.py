@@ -913,7 +913,7 @@ class LocationsMapLocaleTests(TestCase):
             "System fallback locations cannot be moved.",
             "System fallback locations must remain hidden.",
             "This location proposal is no longer pending.",
-            "This location cannot be rejected: approved locations or a published competition are inside it.",
+            "This location cannot be rejected: approved locations or a published event are inside it.",
         )
         for lang in ("ru", "kk"):
             with translation.override(lang):

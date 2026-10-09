@@ -239,7 +239,7 @@ class LocationRejectView(LoginRequiredMixin, View):
         except LocationInUseError:
             messages.error(
                 request,
-                _("This location cannot be rejected: approved locations or a published competition are inside it."),
+                _("This location cannot be rejected: approved locations or a published event are inside it."),
             )
         except LocationConflictError:
             messages.error(request, _("This location proposal is no longer pending."))
