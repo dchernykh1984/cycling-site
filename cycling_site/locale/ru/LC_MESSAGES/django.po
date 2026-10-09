@@ -1676,8 +1676,8 @@ msgid "Info"
 msgstr "Информация"
 
 #: calendar_app/templates/calendar_app/list.html:209
-msgid "No competitions found for the selected period."
-msgstr "Соревнования за выбранный период не найдены."
+msgid "No events found for the selected period."
+msgstr "Мероприятия за выбранный период не найдены."
 
 #: calendar_app/templates/calendar_app/moderate.html:9
 msgid "Event moderation"
