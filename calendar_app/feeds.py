@@ -144,7 +144,7 @@ class NewCompetitionsFeed(Feed):
     not "what is on next month" (the ICS feed answers that) but "what has been added".
     """
 
-    title = _("New competitions")
+    title = _("New events")
     description = _("Competitions recently added to the Universal Bicycle Team calendar.")
     item_count = 30
 

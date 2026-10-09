@@ -14,6 +14,8 @@ RENAMED = (
     "Event list",
     "All events as a list",
     "Nearest events",
+    "New events (RSS)",
+    "New events",
 )
 
 

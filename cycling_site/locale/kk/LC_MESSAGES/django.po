@@ -705,8 +705,8 @@ msgstr "Кіріспе тым ұзын (ең көбі %(limit)d таңба)."
 #: calendar_app/feeds.py:147
 #: calendar_app/templates/calendar_app/calendar.html:8
 #: calendar_app/templates/calendar_app/list.html:8
-msgid "New competitions"
-msgstr "Жана жарыстар"
+msgid "New events"
+msgstr "Жаңа іс-шаралар"
 
 #: calendar_app/feeds.py:148
 msgid "Competitions recently added to the Universal Bicycle Team calendar."
@@ -1168,8 +1168,8 @@ msgid "Subscribe in your calendar (.ics)"
 msgstr "Оз кунтизбенизге жазылу (.ics)"
 
 #: calendar_app/templates/calendar_app/calendar.html:99
-msgid "New competitions (RSS)"
-msgstr "Жана жарыстар (RSS)"
+msgid "New events (RSS)"
+msgstr "Жаңа іс-шаралар (RSS)"
 
 #: calendar_app/templates/calendar_app/calendar.html:107
 #| msgid "Competitions by city"
