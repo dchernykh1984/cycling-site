@@ -145,7 +145,7 @@ class NewCompetitionsFeed(Feed):
     """
 
     title = _("New events")
-    description = _("Competitions recently added to the Universal Bicycle Team calendar.")
+    description = _("Events recently added to the Universal Bicycle Team calendar.")
     item_count = 30
 
     def link(self):

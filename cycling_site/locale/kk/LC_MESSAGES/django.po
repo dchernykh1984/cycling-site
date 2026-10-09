@@ -706,8 +706,8 @@ msgid "New events"
 msgstr "Жаңа іс-шаралар"
 
 #: calendar_app/feeds.py:148
-msgid "Competitions recently added to the Universal Bicycle Team calendar."
-msgstr "Universal Bicycle Team кунтизбесине жакында косылган жарыстар."
+msgid "Events recently added to the Universal Bicycle Team calendar."
+msgstr "Universal Bicycle Team күнтізбесіне жақында қосылған іс-шаралар."
 
 #: calendar_app/forms.py:66
 #: calendar_app/templates/calendar_app/_event_type_filter.html:8
