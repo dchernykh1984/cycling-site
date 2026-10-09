@@ -337,7 +337,7 @@
       </form>
       {% endif %}
       <form method="post" action="{% url 'competition_delete' competition.pk %}" class="d-inline"
-            onsubmit="return confirm('{% trans "Are you sure you want to delete this competition?" %}')">
+            onsubmit="return confirm('{% trans "Are you sure you want to delete this event?" %}')">
         {% csrf_token %}
         <button type="submit" class="btn btn-outline-danger btn-sm">{% trans "Delete" %}</button>
       </form>
