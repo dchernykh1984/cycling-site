@@ -1515,8 +1515,8 @@ msgid "Hide"
 msgstr "Жасыру"
 
 #: calendar_app/templates/calendar_app/detail.html:338
-msgid "Are you sure you want to delete this competition?"
-msgstr "Бұл жарысты жойғыңыз келетінін растайсыз ба?"
+msgid "Are you sure you want to delete this event?"
+msgstr "Бұл іс-шараны жойғыңыз келетінін растайсыз ба?"
 
 #: calendar_app/templates/calendar_app/detail.html:348
 #: knowledge/templates/knowledge/knowledge_article_detail.html:63
