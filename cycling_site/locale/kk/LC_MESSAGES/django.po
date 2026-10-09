@@ -279,20 +279,18 @@ msgid "Ready to use."
 msgstr "Пайдалануға дайын."
 
 #: accounts/templates/accounts/profile.html:118
-#, fuzzy
 #| msgid "Add article"
 msgid "Add email"
-msgstr "Мақала қосу"
+msgstr "E-mail қосу"
 
 #: accounts/templates/accounts/profile.html:120
 msgid "Set password"
 msgstr "Құпиясөз орнату"
 
 #: accounts/templates/accounts/profile.html:122
-#, fuzzy
 #| msgid "Save changes"
 msgid "Change password"
-msgstr "Өзгерістерді сақтау"
+msgstr "Құпия сөзді өзгерту"
 
 #: accounts/templates/accounts/profile.html:131
 msgid "Connected."
@@ -304,10 +302,9 @@ msgstr "Қосылмаған."
 
 #: accounts/templates/accounts/profile.html:138
 #: accounts/templates/accounts/profile.html:141
-#, fuzzy
 #| msgid "Discipline"
 msgid "Disconnect"
-msgstr "Пән"
+msgstr "Ажырату"
 
 #: accounts/templates/accounts/profile.html:141
 msgid "This is your only way to sign in. Add another one first."
@@ -685,7 +682,7 @@ msgstr "Тақырып тым ұзын (ең көбі %(limit)d таңба)."
 
 #: api/endpoints/content.py:162 api/endpoints/content.py:180
 msgid "Unknown locale."
-msgstr ""
+msgstr "Белгісіз локаль."
 
 #: api/endpoints/content.py:164 api/endpoints/content.py:182
 msgid "A title is required."
@@ -760,7 +757,7 @@ msgstr "Аяқталу күні басталу күнінен бұрын бол�
 
 #: calendar_app/forms.py:193
 msgid "Please choose a city for the new venue."
-msgstr ""
+msgstr "Жаңа өткізу орны үшін қала таңдаңыз."
 
 #: calendar_app/forms.py:203 calendar_app/views.py:1195
 #: calendar_app/views.py:1303
@@ -2052,10 +2049,9 @@ msgstr "Бетті өңдеу"
 
 #: home/templates/home/privacy_page.html:10
 #: home/templates/home/terms_page.html:10
-#, fuzzy
 #| msgid "Last name"
 msgid "Last updated"
-msgstr "Тегі"
+msgstr "Жаңартылған"
 
 #: home/templates/home/privacy_page.html:12
 msgid ""
@@ -2260,10 +2256,9 @@ msgstr ""
 
 #: home/templates/home/privacy_page.html:45
 #: home/templates/home/terms_page.html:44
-#, fuzzy
 #| msgid "Save changes"
 msgid "Changes"
-msgstr "Өзгерістерді сақтау"
+msgstr "Өзгерістер"
 
 #: home/templates/home/privacy_page.html:46
 msgid ""
@@ -2997,3 +2992,32 @@ msgstr "Беттер"
 #: search/templates/search/search.html:98
 msgid "No results found"
 msgstr "Ештенiе табылмады"
+
+#: calendar_app/preview_image.py:56
+msgid "The image is too large to process."
+msgstr "Сурет өңдеу үшін тым үлкен."
+
+#: calendar_app/preview_image.py:58
+msgid "This file is not an image we can read."
+msgstr "Бұл файл біз оқи алатын сурет емес."
+
+#: calendar_app/preview_image.py:66
+msgid "The image is too small: at least %(size)d pixels on the longer side."
+msgstr ""
+"Сурет тым кішкентай: ұзын жағы бойынша кемінде %(size)d пиксель керек."
+
+#: calendar_app/templates/calendar_app/edit.html:154
+#: calendar_app/templates/calendar_app/submit.html:140
+msgid "Link preview image"
+msgstr "Сілтеме алдын ала қарау суреті"
+
+#: calendar_app/templates/calendar_app/edit.html:163
+#: calendar_app/templates/calendar_app/submit.html:143
+msgid ""
+"Shown when somebody pastes a link to this event into a chat. Upload it "
+"before the link goes round: messengers remember the first picture they saw "
+"for a long time."
+msgstr ""
+"Біреу осы іс-шараға сілтемені чатқа жапсырғанда көрсетіледі. Сілтеме "
+"тарағанға дейін жүктеңіз: мессенджерлер бірінші көрген суретті ұзақ есте "
+"сақтайды."
