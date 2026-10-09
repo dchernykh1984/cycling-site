@@ -39,7 +39,7 @@ def describe_filters(*, locations, disciplines, event_types, count, date_from=No
     kinds = _names(Discipline, disciplines)
     types = _names(EventType, event_types)
 
-    subject = ", ".join(kinds) if kinds else (", ".join(types) if types else _("Competitions"))
+    subject = ", ".join(kinds) if kinds else (", ".join(types) if types else _("Events"))
     title = subject
     if places:
         title = _("%(subject)s in %(place)s") % {"subject": subject, "place": ", ".join(places)}

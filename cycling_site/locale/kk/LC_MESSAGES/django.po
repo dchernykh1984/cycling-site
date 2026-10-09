@@ -801,8 +801,8 @@ msgstr "Міндетті емес: не дұрыс емес?"
 #: calendar_app/templates/calendar_app/edit.html:12
 #: calendar_app/templates/calendar_app/list.html:18
 #: search/templates/search/search.html:21 tests/test_listing_seo.py:184
-msgid "Competitions"
-msgstr "Жарыстар"
+msgid "Events"
+msgstr "Іс-шаралар"
 
 #: calendar_app/listing_seo.py:43
 #, python-format
