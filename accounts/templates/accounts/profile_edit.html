@@ -48,14 +48,14 @@
                 {{ form.team.errors }}
                 <input type="text" name="team" value="{{ form.team.value|default:'' }}"
                        class="form-control{% if form.team.errors %} is-invalid{% endif %}">
-                <div class="form-text">{% trans "Prefilled when you register for a competition." %}</div>
+                <div class="form-text">{% trans "Prefilled when you register for an event." %}</div>
             </div>
             <div class="mb-3">
                 <label class="form-label">{% trans "City" %}</label>
                 {{ form.city.errors }}
                 <input type="text" name="city" value="{{ form.city.value|default:'' }}"
                        class="form-control{% if form.city.errors %} is-invalid{% endif %}">
-                <div class="form-text">{% trans "Prefilled when you register for a competition." %}</div>
+                <div class="form-text">{% trans "Prefilled when you register for an event." %}</div>
             </div>
             <div class="mb-3">
                 <label class="form-label">{% trans "Strava link" %}</label>
