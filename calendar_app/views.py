@@ -1648,5 +1648,5 @@ class DeleteUploadTokenView(LoginRequiredMixin, View):
             raise PermissionDenied
         competition.upload_token = None
         competition.save(update_fields=["upload_token"])
-        messages.success(request, _("Timing token deleted. Timing tools can no longer access this competition."))
+        messages.success(request, _("Timing token deleted. Timing tools can no longer access this event."))
         return redirect("competition_detail", pk=pk)

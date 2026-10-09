@@ -27,6 +27,7 @@ RENAMED = (
     "Only a rejected event can be resubmitted.",
     "Prefilled into the registration field for events that collect Strava links.",
     "Reject this place? Everything nested inside it is removed too, and events there lose their location.",
+    "Timing token deleted. Timing tools can no longer access this event.",
 )
 
 
