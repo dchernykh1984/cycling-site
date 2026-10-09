@@ -2514,6 +2514,55 @@ class ParticipantsAPITest(TestCase, ApiTestMixin):
         resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
         self.assertEqual(len(resp.json()["participants"]), 2)
 
+    def test_unpaid_excluded_by_default_when_payment_required(self):
+        """An old copy of the timing tools cannot tell paid from unpaid, so it keeps the old list."""
+        self.comp.require_payment = True
+        self.comp.save(update_fields=["require_payment"])
+        _registration(self.comp, is_paid=True)
+        _registration(self.comp, is_paid=False, first_name="Unpaid")
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}")
+        self.assertEqual(len(resp.json()["participants"]), 1)
+
+    def test_unpaid_returned_when_asked_for(self):
+        self.comp.require_payment = True
+        self.comp.save(update_fields=["require_payment"])
+        _registration(self.comp, is_paid=True)
+        _registration(self.comp, is_paid=False, first_name="Unpaid")
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}&include_unpaid=true")
+        data = resp.json()
+        self.assertEqual(len(data["participants"]), 2)
+        self.assertTrue(data["require_payment"])
+        by_name = {p["first_name"]: p for p in data["participants"]}
+        self.assertFalse(by_name["Unpaid"]["is_paid"])
+        self.assertTrue(by_name["Ivan"]["is_paid"])
+
+    def test_asking_for_unpaid_changes_nothing_where_payment_is_not_required(self):
+        """The flag widens one filter; it must not let through anything else."""
+        _registration(self.comp, is_paid=False)
+        _registration(self.comp, is_paid=True)
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}&include_unpaid=true")
+        data = resp.json()
+        self.assertEqual(len(data["participants"]), 2)
+        self.assertFalse(data["require_payment"])
+
+    def test_approval_still_filters_when_unpaid_are_asked_for(self):
+        """Two gates, one flag: paying is not the same as being let in."""
+        self.comp.require_approval = True
+        self.comp.require_payment = True
+        self.comp.save(update_fields=["require_approval", "require_payment"])
+        _registration(self.comp, is_approved=True, is_paid=False, first_name="Unpaid")
+        _registration(self.comp, is_approved=False, is_paid=False, first_name="Unapproved")
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}&include_unpaid=true")
+        names = [p["first_name"] for p in resp.json()["participants"]]
+        self.assertEqual(names, ["Unpaid"])
+
+    def test_a_rejected_entry_is_never_returned_even_with_the_flag(self):
+        self.comp.require_payment = True
+        self.comp.save(update_fields=["require_payment"])
+        _registration(self.comp, is_paid=False, is_rejected=True, first_name="Rejected")
+        resp = self.get(f"/api/v1/participants/?competition_token={self.comp.upload_token}&include_unpaid=true")
+        self.assertEqual(resp.json()["participants"], [])
+
     def test_returns_all_groups_even_without_participants(self):
         # Groups (categories) are returned in full so the offline timing tools can sync the group
         # list even before anyone registers for a given group.
