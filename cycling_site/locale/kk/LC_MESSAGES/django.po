@@ -1962,7 +1962,7 @@ msgstr "Жабу"
 
 #: cycling_site/templates/base.html:168
 msgid "Cycling events"
-msgstr "Велоспорт жарыстары"
+msgstr "Велоспорт іс-шаралары"
 
 #: cycling_site/templates/base.html:171
 #, python-format

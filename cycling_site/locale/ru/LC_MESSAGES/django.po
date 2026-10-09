@@ -1965,7 +1965,7 @@ msgstr "Закрыть"
 
 #: cycling_site/templates/base.html:168
 msgid "Cycling events"
-msgstr "Соревнования по велоспорту"
+msgstr "Мероприятия по велоспорту"
 
 #: cycling_site/templates/base.html:171
 #, python-format
