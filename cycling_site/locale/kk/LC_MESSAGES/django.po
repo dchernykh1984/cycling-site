@@ -1178,8 +1178,8 @@ msgid "Events by city"
 msgstr "Қалалар бойынша іс-шаралар"
 
 #: calendar_app/templates/calendar_app/calendar.html:119
-msgid "Competitions by discipline"
-msgstr "Пандер бойынша жарыстар"
+msgid "Events by discipline"
+msgstr "Пәндер бойынша іс-шаралар"
 
 #: calendar_app/templates/calendar_app/calendar.html:134
 #: tests/test_calendar_toolbar.py:79

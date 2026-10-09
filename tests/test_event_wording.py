@@ -35,6 +35,7 @@ RENAMED = (
     "Reject this venue? Events using it will fall back to the city's other location.",
     "Events by region",
     "Events by city",
+    "Events by discipline",
 )
 
 
