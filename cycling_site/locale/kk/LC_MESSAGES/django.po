@@ -1918,9 +1918,9 @@ msgid ""
 " -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and"
 " a knowledge base."
 msgstr ""
-"Циклдік спорт түрлері бойынша жарыстар күнтізбесі — велоспорт, жүгіру, шаңғы"
-" жарысы — Қазақстанда, Қырғызстанда, Ресейде және басқа елдерде. Анонстар, "
-"хаттамалар және білім қоры."
+"Циклдік спорт түрлері бойынша іс-шаралар күнтізбесі — велоспорт, жүгіру, "
+"шаңғы жарысы — Қазақстанда, Қырғызстанда, Ресейде және басқа елдерде. "
+"Анонстар, хаттамалар және білім қоры."
 
 #: cycling_site/templates/base.html:43 cycling_site/templates/base.html:44
 #: cycling_site/templates/base.html:76
