@@ -588,10 +588,10 @@ msgstr "Іс-шараға тіркелу кезінде автоматты тү�
 
 #: accounts/templates/accounts/profile_edit.html:66
 msgid ""
-"Prefilled into the registration field for competitions that collect Strava "
-"links."
+"Prefilled into the registration field for events that collect Strava links."
 msgstr ""
-"Strava сілтемелерін жинайтын жарыстардың тіркеу өрісіне алдын ала қойылады."
+"Strava сілтемелерін жинайтын іс-шаралардың тіркеу өрісіне алдын ала "
+"қойылады."
 
 #: accounts/templates/accounts/profile_edit.html:69
 msgid "Calendar defaults"

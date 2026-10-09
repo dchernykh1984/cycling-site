@@ -584,11 +584,10 @@ msgstr "Подставится при регистрации на меропри
 
 #: accounts/templates/accounts/profile_edit.html:66
 msgid ""
-"Prefilled into the registration field for competitions that collect Strava "
-"links."
+"Prefilled into the registration field for events that collect Strava links."
 msgstr ""
-"Подставляется в поле регистрации для соревнований, которые собирают ссылки "
-"на Strava."
+"Подставляется в поле регистрации для мероприятий, которые собирают ссылки на"
+" Strava."
 
 #: accounts/templates/accounts/profile_edit.html:69
 msgid "Calendar defaults"
