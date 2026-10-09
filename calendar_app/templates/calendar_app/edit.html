@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Edit competition" %} — {{ competition.title }}{% endblock %}
+{% block title %}{% trans "Edit event" %} — {{ competition.title }}{% endblock %}
 
 {% block content %}
 {{ locations_data|json_script:"locations-data" }}
@@ -15,7 +15,7 @@
       </ol>
     </nav>
 
-    <h1 class="mb-4">{% trans "Edit competition" %}</h1>
+    <h1 class="mb-4">{% trans "Edit event" %}</h1>
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
 

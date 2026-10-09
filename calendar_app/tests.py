@@ -332,6 +332,20 @@ class CompetitionDetailViewTests(TestCase):
         response = self.client.get(reverse("competition_detail", args=[self.pending.pk]))
         self.assertEqual(response.status_code, 404)
 
+    def test_the_edit_button_is_translated_in_every_locale(self):
+        """The calendar carries hikes and rides, not only races, so the button says "event".
+
+        Renaming the msgid is the half of that change a test can hold on to: miss the catalogue
+        and the Russian page quietly serves the English source instead.
+        """
+        self.client.force_login(self.owner)
+        for lang in ("ru", "kk"):
+            with self.subTest(lang=lang), translation_override(lang):
+                label = gettext("Edit event")
+                self.assertNotEqual(label, "Edit event", "no translation in the catalogue")
+                response = self.client.get(in_language(self.url, lang))
+                self.assertContains(response, label)
+
     def test_token_hidden_from_anonymous(self):
         response = self.client.get(self.url)
         self.assertNotIn(self._token(), response.content.decode())
