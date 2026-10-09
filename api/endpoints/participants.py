@@ -60,10 +60,19 @@ class ParticipantsResponseOut(Schema):
 
 
 @router.get("/", response=ParticipantsResponseOut, auth=None, summary="Get participants by competition token")
-def get_participants(request, competition_token: str):
+def get_participants(request, competition_token: str, include_unpaid: bool = False):
     """
     Returns the participant list for a competition identified by its upload/competition token.
     This endpoint is used by StartProtocolMaker to fetch registered participants.
+
+    ``include_unpaid`` brings back the people who have signed up but not paid yet. They used to be
+    dropped here, which left a referee at the start line unable to see that a third of the entry
+    list was outstanding -- on the one event that charges today, 13 of 34. It is opt-in rather
+    than the new default because a client that does not ask for them cannot tell them apart:
+    every copy of the timing tools already in the field would start listing unpaid riders as if
+    they had paid, which is worse than not listing them at all. Each participant carries
+    ``is_paid`` and the competition carries ``require_payment``, so a client that does ask has
+    everything it needs to mark them.
     """
     try:
         competition = Competition.objects.get(upload_token=competition_token)
@@ -76,7 +85,7 @@ def get_participants(request, competition_token: str):
     qs = competition.registrations.filter(is_rejected=False).select_related("category", "team")
     if competition.require_approval:
         qs = qs.filter(is_approved=True)
-    if competition.require_payment:
+    if competition.require_payment and not include_unpaid:
         qs = qs.filter(is_paid=True)
 
     participant_list = list(qs)
