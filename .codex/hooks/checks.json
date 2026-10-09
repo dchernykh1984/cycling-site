@@ -1,0 +1,5 @@
+{
+  "files": "\\.(py|ya?ml|md|toml|sh|json)$",
+  "exclude": "^(uv\\.lock|.*/migrations/.*|agent/guidance\\.md|events_sources\\.yaml|instagram_agent/guidance\\.md|instagram_accounts\\.yaml|telegram_agent/guidance\\.md|telegram_channels\\.yaml)$",
+  "format": "\\.py$"
+}

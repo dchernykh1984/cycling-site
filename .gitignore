@@ -34,6 +34,9 @@ Session.vim
 # Only the per-machine permission cache stays out.
 .claude/settings.local.json
 
+# Codex (OpenAI). AGENTS.md, .agents/skills/ and .codex/ are committed for the same reason
+# as the Claude ones: a fresh session should start knowing how this project works.
+
 # Cursor
 .cursor/
 
