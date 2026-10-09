@@ -278,20 +278,18 @@ msgid "Ready to use."
 msgstr "Готово к использованию."
 
 #: accounts/templates/accounts/profile.html:118
-#, fuzzy
 #| msgid "Add article"
 msgid "Add email"
-msgstr "Добавить статью"
+msgstr "Добавить e-mail"
 
 #: accounts/templates/accounts/profile.html:120
 msgid "Set password"
 msgstr "Задать пароль"
 
 #: accounts/templates/accounts/profile.html:122
-#, fuzzy
 #| msgid "Save changes"
 msgid "Change password"
-msgstr "Сохранить изменения"
+msgstr "Изменить пароль"
 
 #: accounts/templates/accounts/profile.html:131
 msgid "Connected."
@@ -303,10 +301,9 @@ msgstr "Не подключено."
 
 #: accounts/templates/accounts/profile.html:138
 #: accounts/templates/accounts/profile.html:141
-#, fuzzy
 #| msgid "Discipline"
 msgid "Disconnect"
-msgstr "Дисциплина"
+msgstr "Отвязать"
 
 #: accounts/templates/accounts/profile.html:141
 msgid "This is your only way to sign in. Add another one first."
@@ -683,7 +680,7 @@ msgstr "Заголовок слишком длинный (максимум %(lim
 
 #: api/endpoints/content.py:162 api/endpoints/content.py:180
 msgid "Unknown locale."
-msgstr ""
+msgstr "Неизвестная локаль."
 
 #: api/endpoints/content.py:164 api/endpoints/content.py:182
 msgid "A title is required."
@@ -759,7 +756,7 @@ msgstr "Дата окончания не может быть раньше дат
 
 #: calendar_app/forms.py:193
 msgid "Please choose a city for the new venue."
-msgstr ""
+msgstr "Выберите город для нового места проведения."
 
 #: calendar_app/forms.py:203 calendar_app/views.py:1195
 #: calendar_app/views.py:1303
@@ -2056,10 +2053,9 @@ msgstr "Редактировать страницу"
 
 #: home/templates/home/privacy_page.html:10
 #: home/templates/home/terms_page.html:10
-#, fuzzy
 #| msgid "Last name"
 msgid "Last updated"
-msgstr "Фамилия"
+msgstr "Обновлено"
 
 #: home/templates/home/privacy_page.html:12
 msgid ""
@@ -2261,10 +2257,9 @@ msgstr ""
 
 #: home/templates/home/privacy_page.html:45
 #: home/templates/home/terms_page.html:44
-#, fuzzy
 #| msgid "Save changes"
 msgid "Changes"
-msgstr "Сохранить изменения"
+msgstr "Изменения"
 
 #: home/templates/home/privacy_page.html:46
 msgid ""
@@ -2998,3 +2993,33 @@ msgstr "Страницы"
 #: search/templates/search/search.html:98
 msgid "No results found"
 msgstr "Ничего не найдено"
+
+#: calendar_app/preview_image.py:56
+msgid "The image is too large to process."
+msgstr "Картинка слишком большая для обработки."
+
+#: calendar_app/preview_image.py:58
+msgid "This file is not an image we can read."
+msgstr "Этот файл не похож на картинку, которую мы умеем читать."
+
+#: calendar_app/preview_image.py:66
+msgid "The image is too small: at least %(size)d pixels on the longer side."
+msgstr ""
+"Картинка слишком маленькая: нужно не меньше %(size)d пикселей по длинной "
+"стороне."
+
+#: calendar_app/templates/calendar_app/edit.html:154
+#: calendar_app/templates/calendar_app/submit.html:140
+msgid "Link preview image"
+msgstr "Картинка для превью ссылки"
+
+#: calendar_app/templates/calendar_app/edit.html:163
+#: calendar_app/templates/calendar_app/submit.html:143
+msgid ""
+"Shown when somebody pastes a link to this event into a chat. Upload it "
+"before the link goes round: messengers remember the first picture they saw "
+"for a long time."
+msgstr ""
+"Показывается, когда кто-то вставляет ссылку на это мероприятие в чат. "
+"Загрузите её до того, как ссылка разойдётся: мессенджеры надолго запоминают "
+"первую увиденную картинку."
