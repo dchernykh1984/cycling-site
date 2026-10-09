@@ -412,8 +412,8 @@ msgstr "Менің тіркелулерім"
 
 #: accounts/templates/accounts/profile.html:305
 #: accounts/templates/accounts/profile.html:345
-msgid "Competition"
-msgstr "Жарыс"
+msgid "Event"
+msgstr "Іс-шара"
 
 #: accounts/templates/accounts/profile.html:306
 #: accounts/templates/accounts/profile.html:346

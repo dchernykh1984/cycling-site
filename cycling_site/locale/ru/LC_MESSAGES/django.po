@@ -408,8 +408,8 @@ msgstr "Мои регистрации"
 
 #: accounts/templates/accounts/profile.html:305
 #: accounts/templates/accounts/profile.html:345
-msgid "Competition"
-msgstr "Соревнование"
+msgid "Event"
+msgstr "Мероприятие"
 
 #: accounts/templates/accounts/profile.html:306
 #: accounts/templates/accounts/profile.html:346
