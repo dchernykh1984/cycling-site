@@ -93,7 +93,7 @@ class LocationDeleteView(LoginRequiredMixin, View):
         try:
             soft_delete_location(location)
         except LocationConflictError:
-            messages.error(request, _("Cannot delete a location that still has nested locations or competitions."))
+            messages.error(request, _("Cannot delete a location that still has nested locations or events."))
         return redirect(_safe_return_url(request, "/"))
 
 
