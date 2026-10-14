@@ -3657,6 +3657,23 @@ class LiveStatsApiTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["stats"]["place_abs"], "DSQ")
 
+    def test_participant_pack_fields_survive_upload_and_public_read(self):
+        pack_stats = {
+            "gap_prev_pack_abs": "+0:35.1",
+            "gap_next_pack_abs": "-1:04.2",
+            "qty_prev_pack_abs": "100",
+            "qty_next_pack_abs": "1",
+        }
+        self.stats["12"].update(pack_stats)
+        self.assertEqual(self._upload().status_code, 200)
+        response = self.client.get(f"/api/v1/live-stats/{self.comp.pk}/12")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["stats"], self.stats["12"])
+        # A new snapshot omits a missing neighbour; no old pack value may survive.
+        self.assertEqual(self._upload(stats={"12": {"place_abs": "1", "laps": "4/7"}}).status_code, 200)
+        response = self.client.get(f"/api/v1/live-stats/{self.comp.pk}/12")
+        self.assertEqual(response.json()["stats"], {"place_abs": "1", "laps": "4/7"})
+
     def test_upload_replaces_whole_snapshot(self):
         self._upload()
         self._upload(stats={"99": {"place_abs": "1"}})

@@ -5,6 +5,11 @@ mapping each competitor's bib to an opaque ``string -> string`` dict of stats (p
 ...). The site stores it verbatim -- it neither parses nor hardcodes the individual keys, so new
 stats can be added later with no site change -- and serves one bib's dict via a public GET for an
 approved, visible competition. The Garmin field polls that GET by competition id + bib.
+
+Participant packs use four absolute-statistics keys: gap_prev_pack_abs / gap_next_pack_abs
+(signed time to the nearest member of the neighbouring pack) and qty_prev_pack_abs /
+qty_next_pack_abs (its size). FinishProtocolGenerator chains consecutive riders with gaps
+at most the configured threshold (10 seconds by default); missing neighbours omit the keys.
 """
 
 from datetime import datetime
