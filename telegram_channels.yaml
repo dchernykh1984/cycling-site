@@ -55,4 +55,6 @@ channels:
   - url: "@cyclingtourismalmaty"
     hint: "Group (~60 members)."
     city: "Almaty"
+  - url: "@open_ride_kg"
+    hint: "Open Ride KG: cycling announcements only, without discussions."
   # "RideBikes Казахстан" was listed without a handle -- add its @handle here when it is known.
