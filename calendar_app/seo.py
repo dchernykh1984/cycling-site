@@ -8,6 +8,7 @@ including the venue's exact coordinates.
 
 import json
 
+from django.urls import reverse
 from django.utils.html import escape
 
 
@@ -59,10 +60,16 @@ def sports_event(competition, base_url: str) -> str:
             }
         data["location"] = place
 
-    if competition.url_registration:
+    # Registration run on this site has no URL field: the page that takes the entry is the offer.
+    # It wins over an external link the same way it does in the events list.
+    if competition.is_registration_open():
+        offer_url = f"{base_url}{reverse('registrations:register', args=[competition.pk])}"
+    else:
+        offer_url = competition.url_registration
+    if offer_url:
         data["offers"] = {
             "@type": "Offer",
-            "url": competition.url_registration,
+            "url": offer_url,
             "availability": "https://schema.org/InStock",
         }
 

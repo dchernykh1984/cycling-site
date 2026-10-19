@@ -10,6 +10,8 @@ import json
 import re
 
 from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
 
 from calendar_app.models import Competition, Discipline, DisciplineCategory
 from locations.models import add_location_child
@@ -81,6 +83,24 @@ class SportsEventMarkupTests(TestCase):
     def test_a_registration_link_becomes_an_offer(self):
         comp = _competition("Open race", url_registration="https://example.com/signup")
         self.assertEqual(_payload(self.client, comp)["offers"]["url"], "https://example.com/signup")
+
+    def test_registration_open_on_this_site_becomes_an_offer(self):
+        comp = _competition("Signs up here", registration_enabled=True)
+        url = _payload(self.client, comp)["offers"]["url"]
+        self.assertTrue(url.startswith("http"), url)
+        self.assertTrue(url.endswith(reverse("registrations:register", args=[comp.pk])), url)
+
+    def test_closed_registration_on_this_site_is_no_offer(self):
+        comp = _competition(
+            "Closed here",
+            registration_enabled=True,
+            registration_deadline=timezone.now() - datetime.timedelta(days=1),
+        )
+        self.assertNotIn("offers", _payload(self.client, comp))
+
+    def test_registration_on_this_site_wins_over_an_external_link(self):
+        comp = _competition("Both", registration_enabled=True, url_registration="https://example.com/signup")
+        self.assertNotEqual(_payload(self.client, comp)["offers"]["url"], "https://example.com/signup")
 
     def test_a_title_carrying_markup_cannot_break_out_of_the_block(self):
         comp = _competition("Race </script><b>x")
