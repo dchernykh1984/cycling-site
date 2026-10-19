@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from calendar_app.models import Competition
+from tests.language_urls import in_language
 
 LIST_URL = reverse("calendar_list")
 
@@ -60,6 +61,11 @@ class ListSiteRegistrationTests(TestCase):
     def test_an_external_link_is_still_offered(self):
         _event("Elsewhere", url_registration="https://example.com/signup")
         self.assertContains(self.client.get(LIST_URL), 'href="https://example.com/signup"')
+
+    def test_the_link_keeps_the_reader_in_their_language(self):
+        comp = _event("Signs up here", registration_enabled=True)
+        response = self.client.get(in_language(LIST_URL, "kk"))
+        self.assertContains(response, f'href="{in_language(_register_url(comp), "kk")}"')
 
     def test_rows_without_a_limit_cost_no_extra_queries(self):
         """Asking an event whether it is open must not become one query per row."""
