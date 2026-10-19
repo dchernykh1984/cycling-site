@@ -47,7 +47,7 @@ class ListSiteRegistrationTests(TestCase):
         self.assertNotContains(self.client.get(LIST_URL), _register_url(comp))
 
     def test_a_full_event_is_not_linked(self):
-        """ "Open" means the event would take the entry: a full one would not."""
+        """An open window is not enough: a full event would not take the entry."""
         comp = _event("Full here", registration_enabled=True, max_participants=0)
         self.assertNotContains(self.client.get(LIST_URL), _register_url(comp))
 
