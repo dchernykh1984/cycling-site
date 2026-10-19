@@ -190,7 +190,11 @@
             <a href="{{ comp.url_announcement }}" target="_blank" rel="noopener"
                class="btn btn-sm btn-outline-secondary">{% trans "Info" %}</a>
             {% endif %}
-            {% if comp.url_registration %}
+            {% if comp.pk in registration_open_ids %}
+            {# Entries taken here win over an external link: the organizer switched them on. #}
+            <a href="{% url 'registrations:register' comp.pk %}"
+               class="btn btn-sm btn-primary">{% trans "Register" %}</a>
+            {% elif comp.url_registration %}
             <a href="{{ comp.url_registration }}" target="_blank" rel="noopener"
                class="btn btn-sm btn-primary">{% trans "Register" %}</a>
             {% endif %}

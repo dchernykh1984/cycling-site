@@ -571,6 +571,12 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
         # Pass the evaluated page rows (not the sliced queryset) so the star lookup reuses them
         # instead of re-running the paginated query as an IN subquery.
         context["favorited_ids"] = _favorited_ids(self.request, list(page))
+        # Registration run on this site has no URL field for the row to show, so the row asks the
+        # event. Only rows that take entries here are asked: with a participant limit the check
+        # counts registrations, and the other rows would pay that query for nothing.
+        context["registration_open_ids"] = {
+            comp.pk for comp in page if comp.registration_enabled and comp.is_registration_open()
+        }
         context["only_favorite"] = _only_favorite_requested(self.request)
         context["filter_form"] = form
         context["date_from"] = date_from
