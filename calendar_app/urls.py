@@ -25,6 +25,12 @@ urlpatterns = [
     path("<int:pk>/favorite/toggle/", views.ToggleFavoriteView.as_view(), name="competition_toggle_favorite"),
     path("<int:pk>/report/", views.ReportCompetitionView.as_view(), name="competition_report"),
     path("<int:pk>/report/dismiss/", views.DismissReportsView.as_view(), name="competition_dismiss_reports"),
+    path("<int:pk>/invite/<uuid:key>/", views.AcceptInviteView.as_view(), name="competition_invite"),
+    path(
+        "<int:pk>/invite/regenerate/",
+        views.RegenerateInviteKeyView.as_view(),
+        name="competition_regenerate_invite",
+    ),
     path(
         "<int:pk>/token/regenerate/",
         views.RegenerateUploadTokenView.as_view(),

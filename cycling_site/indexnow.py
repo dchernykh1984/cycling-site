@@ -106,7 +106,10 @@ def submit_object(obj) -> None:
 
 def _competition_is_public(competition) -> bool:
     return (
-        competition.status == competition.Status.APPROVED and not competition.is_hidden and not competition.is_deleted
+        competition.status == competition.Status.APPROVED
+        and not competition.is_hidden
+        and not competition.invite_only
+        and not competition.is_deleted
     )
 
 

@@ -293,6 +293,30 @@
     <div class="alert alert-warning py-2 mt-3">{% trans "This event is hidden from public view." %}</div>
     {% endif %}
 
+    {% if competition.invite_only %}
+    <div class="alert alert-info py-2 mt-3">{% trans "This event is by invitation: only the people its organizer invited can see it." %}</div>
+    {% endif %}
+
+    {% if invite_url %}
+    <div class="mt-3 pt-3 border-top">
+      <h2 class="h6 text-muted mb-2">{% trans "Invitation link" %}</h2>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <code class="user-select-all text-break" id="invite-url">{{ invite_url }}</code>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                onclick="navigator.clipboard.writeText(document.getElementById('invite-url').textContent)">
+          {% trans "Copy" %}
+        </button>
+        {% trans "Replace the invitation link? The current link will stop working; people already invited keep access." as replace_confirm %}
+        <form method="post" action="{% url 'competition_regenerate_invite' competition.pk %}" class="d-inline"
+              onsubmit="return confirm('{{ replace_confirm|escapejs }}')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-warning btn-sm">{% trans "Replace link" %}</button>
+        </form>
+      </div>
+      <div class="text-muted small mt-1">{% trans "Anyone who opens this link while signed in will see the event everywhere on the site. Send it only to the people you invite." %}</div>
+    </div>
+    {% endif %}
+
     {% if can_moderate %}
     <div class="mt-3 d-flex flex-wrap gap-2 align-items-start">
       <form method="post" action="{% url 'competition_approve' competition.pk %}" class="d-inline">

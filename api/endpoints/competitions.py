@@ -185,7 +185,11 @@ def _require_owner_or_admin(user, competition: Competition) -> None:
 
 def _require_visible_or_404(user, competition: Competition) -> None:
     is_privileged = _is_owner(user, competition) or is_admin(user)
-    if not is_privileged and (competition.status != Competition.Status.APPROVED or competition.is_hidden):
+    # An invite-only event is not served to invitees here: the API is read by tools and agents,
+    # and what an invitation opens is the site, for the person who accepted it (issue #313).
+    if not is_privileged and (
+        competition.status != Competition.Status.APPROVED or competition.is_hidden or competition.invite_only
+    ):
         raise HttpError(404, "Competition not found")
 
 
@@ -323,7 +327,7 @@ def _listable_by(qs, user, deleted: bool):
         return qs if is_admin(user) else qs.filter(submitted_by=user)
     if is_admin(user):
         return qs
-    visible = Q(status=Competition.Status.APPROVED, is_hidden=False)
+    visible = Q(status=Competition.Status.APPROVED, is_hidden=False, invite_only=False)
     if getattr(user, "is_authenticated", False):
         visible |= Q(submitted_by=user)
     return qs.filter(visible)

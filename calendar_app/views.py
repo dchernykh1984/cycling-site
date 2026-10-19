@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -44,12 +44,14 @@ from .models import (
     Competition,
     CompetitionComment,
     CompetitionFavorite,
+    CompetitionInvite,
     CompetitionReport,
     Discipline,
     DisciplineCategory,
     EventType,
 )
 from .seo import sports_event
+from .visibility import can_review, can_see, is_admin_plus, listed_for, manages
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 _ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
@@ -342,7 +344,7 @@ class DefaultFilterRedirectMixin:
         return super().get(request, *args, **kwargs)
 
 
-def upcoming_competitions(limit: int = 20) -> list[Competition]:
+def upcoming_competitions(user, limit: int = 20) -> list[Competition]:
     """The next events, as plain rows.
 
     The grid draws itself from JSON after the page loads, so a crawler that does not run
@@ -352,11 +354,7 @@ def upcoming_competitions(limit: int = 20) -> list[Competition]:
     """
     today = timezone.localdate()
     return list(
-        Competition.objects.filter(
-            status=Competition.Status.APPROVED,
-            is_deleted=False,
-            is_hidden=False,
-        )
+        listed_for(Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False), user)
         # A stage race that started yesterday and ends on Sunday is still ahead of the reader,
         # and dropping it the morning after day one is how a multi-day event disappears mid-race.
         .filter(Q(date_start__gte=today) | Q(date_end__gte=today))
@@ -396,6 +394,7 @@ def calendar_year_choices() -> list[int]:
         status=Competition.Status.APPROVED,
         is_deleted=False,
         is_hidden=False,
+        invite_only=False,
     ).aggregate(first=Min("date_start"), last=Max("date_start"), last_end=Max("date_end"))
     years = [timezone.localdate().year]
     years += [when.year for when in bounds.values() if when]
@@ -407,7 +406,7 @@ class CalendarView(DefaultFilterRedirectMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["upcoming"] = upcoming_competitions()
+        context["upcoming"] = upcoming_competitions(self.request.user)
         # Links to the filtered lists worth being pages of their own, so a crawler (and a reader
         # scanning for their own city) can reach them without building a filter first.
         regions, places, kinds = landing_filters(limit_places=24, limit_kinds=12, limit_regions=12)
@@ -459,14 +458,12 @@ class CalendarEventsAPIView(View):
     def get(self, request):
         from django.db.models import Q
 
-        is_manager = _can_manage_any_competition(request.user)
         qs = (
             Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False)
             .prefetch_related("event_types")
             .prefetch_related("disciplines__category")
         )
-        if not is_manager:
-            qs = qs.filter(is_hidden=False)
+        qs = listed_for(qs, request.user)
         start = (request.GET.get("start") or "")[:10]
         end = (request.GET.get("end") or "")[:10]
         if start and end:
@@ -542,8 +539,7 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
             .prefetch_related("event_types")
             .prefetch_related("disciplines__category")
         )
-        if not is_manager:
-            qs = qs.filter(is_hidden=False)
+        qs = listed_for(qs, self.request.user)
 
         if form.is_valid():
             if form.cleaned_data.get("date_from"):
@@ -629,15 +625,13 @@ class CalendarMapAPIView(View):
     """
 
     def get(self, request):
-        is_manager = _can_manage_any_competition(request.user)
         qs = Competition.objects.filter(
             status=Competition.Status.APPROVED,
             is_deleted=False,
             location__isnull=False,
             location__is_deleted=False,
         ).select_related("location")
-        if not is_manager:
-            qs = qs.filter(is_hidden=False)
+        qs = listed_for(qs, request.user)
         date_from = _parse_date(request.GET.get("date_from"), None)
         date_to = _parse_date(request.GET.get("date_to"), None)
         if date_from:
@@ -730,15 +724,17 @@ class CompetitionDetailView(View):
         if competition.is_deleted:
             raise Http404
         is_manager = can_manage(request.user, competition)
-        can_moderate = _is_organizer_plus(request.user)
         is_author = request.user.is_authenticated and request.user == competition.submitted_by
+        # Any organizer moderates -- except an invite-only event, which is for the people who may
+        # edit it, so only admins and up review it (see visibility.can_review).
+        can_moderate = _is_organizer_plus(request.user) and (not competition.invite_only or is_admin_plus(request.user))
         if competition.status != Competition.Status.APPROVED:
-            # A not-yet-approved competition is visible to moderators (any organizer+) and to its
-            # author (so they can track their submission and read a rejection reason); everyone
-            # else gets a 404. Approve/reject buttons stay moderator-only (see can_moderate below).
-            if not (can_moderate or is_author):
+            # A not-yet-approved competition is visible to its moderators and to its author (so
+            # they can track their submission and read a rejection reason); everyone else gets a
+            # 404. Approve/reject buttons stay moderator-only (see can_moderate below).
+            if not can_review(request.user, competition):
                 raise Http404
-        elif competition.is_hidden and not is_manager:
+        elif not can_see(request.user, competition):
             raise Http404
         protocols = competition.protocols.all()
         # upload_token is a secret credential: only show it to the submitter or to users
@@ -762,7 +758,11 @@ class CompetitionDetailView(View):
         )
         # Reporting (issue #233): a confirmed user can flag a public event as inaccurate. Only
         # offered on approved, non-hidden events (the only ones the wider public can see).
-        is_public = competition.status == Competition.Status.APPROVED and not competition.is_hidden
+        is_public = (
+            competition.status == Competition.Status.APPROVED
+            and not competition.is_hidden
+            and not competition.invite_only
+        )
         can_report = is_public and _can_report(request.user)
         already_reported = (
             request.user.is_authenticated
@@ -837,7 +837,15 @@ class CompetitionDetailView(View):
             lng_dir = _("E") if lng >= 0 else _("W")
             ctx["location_lat_display"] = f"{abs(lat):.6f}\u00b0 {lat_dir}"
             ctx["location_lng_display"] = f"{abs(lng):.6f}\u00b0 {lng_dir}"
-        return render(request, "calendar_app/detail.html", ctx)
+        if competition.invite_only and is_manager:
+            ctx["invite_url"] = request.build_absolute_uri(
+                reverse("competition_invite", args=[competition.pk, competition.invite_key])
+            )
+        response = render(request, "calendar_app/detail.html", ctx)
+        if competition.invite_only:
+            # Only people let in ever reach this page, but say it plainly in case a crawler does.
+            response["X-Robots-Tag"] = "noindex"
+        return response
 
 
 def _validate_deadline(form, reg_form, date_start, date_end):
@@ -1028,6 +1036,7 @@ def _competition_initial(comp, *, with_dates: bool = True, with_results: bool = 
         "url_registration": comp.url_registration,
         "url_route": comp.url_route,
         "url_regulations": comp.url_regulations,
+        "invite_only": comp.invite_only,
     }
     if with_dates:
         initial["date_start"] = comp.date_start
@@ -1201,6 +1210,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         url_regulations=cd.get("url_regulations", ""),
                         url_results=cd.get("url_results", ""),
                         submitted_by=request.user,
+                        invite_only=is_organizer and cd.get("invite_only", False),
                     )
                     uploads = ("file_announcement", "file_route", "file_regulations", "file_results", "preview_image")
                     for fname in uploads:
@@ -1268,6 +1278,7 @@ class EditCompetitionView(View):
                 "material_formset": _material_formset(request, comp),
                 "categories_json": json.dumps(categories),
                 "mode_locked": comp.registration_mode_locked,
+                "is_organizer_plus": _is_organizer_plus(request.user),
                 **disc_ctx,
             },
         )
@@ -1295,6 +1306,7 @@ class EditCompetitionView(View):
                         "material_formset": material_formset,
                         "categories_json": _json.dumps(_cats),
                         "mode_locked": comp.registration_mode_locked,
+                        "is_organizer_plus": _is_organizer_plus(request.user),
                         **_discipline_picker_context(form),
                         "locations_data": _get_locations_data(request.user),
                         "initial_location_id": form["location"].value() or "",
@@ -1322,6 +1334,8 @@ class EditCompetitionView(View):
             # editing their own submission is a participant (#200) -- mirror the submit view.
             is_org = _is_organizer_plus(request.user)
             _apply_registration_settings(comp, reg_form, is_org)
+            if is_org:
+                comp.invite_only = cd.get("invite_only", False)
             try:
                 # Resolve, lock and re-validate the location, then save in one transaction so a
                 # concurrent delete/level-change of the venue can't bind this competition to a
@@ -1374,6 +1388,7 @@ class EditCompetitionView(View):
                 "material_formset": material_formset,
                 "categories_json": json.dumps(categories, default=str),
                 "mode_locked": comp.registration_mode_locked,
+                "is_organizer_plus": _is_organizer_plus(request.user),
                 **disc_ctx,
             },
         )
@@ -1398,7 +1413,7 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
             competitions = [
                 comp
                 for comp in competitions
-                if comp.location_id is None or chain_is_approved(comp.location.get_parent())
+                if (comp.location_id is None or chain_is_approved(comp.location.get_parent())) and not comp.invite_only
             ]
         context["competitions"] = competitions
         context["reject_form"] = RejectCompetitionForm()
@@ -1450,6 +1465,8 @@ class ApproveCompetitionView(OrganizerRequiredMixin, View):
         from locations.models import LocationPendingError
 
         comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
+        if not can_review(request.user, comp):
+            raise Http404
         try:
             comp.approve(reviewer=request.user)
         except LocationPendingError:
@@ -1463,6 +1480,8 @@ class ApproveCompetitionView(OrganizerRequiredMixin, View):
 class RejectCompetitionView(OrganizerRequiredMixin, View):
     def post(self, request, pk):
         comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
+        if not can_review(request.user, comp):
+            raise Http404
         form = RejectCompetitionForm(request.POST)
         if not form.is_valid():
             # A rejection reason is required, so an empty one is refused rather than silently
@@ -1478,14 +1497,10 @@ class RejectCompetitionView(OrganizerRequiredMixin, View):
 
 class AddCompetitionCommentView(ParticipantRequiredMixin, View):
     def post(self, request, competition_pk):
-        from django.http import Http404
-
-        from registrations.views import can_manage as _can_manage
-
         competition = get_object_or_404(
             Competition, pk=competition_pk, status=Competition.Status.APPROVED, is_deleted=False
         )
-        if competition.is_hidden and not _can_manage(request.user, competition):
+        if not can_see(request.user, competition):
             raise Http404
         form = AddCompetitionCommentForm(request.POST)
         if form.is_valid():
@@ -1510,7 +1525,12 @@ class ReportCompetitionView(ParticipantRequiredMixin, View):
 
     def post(self, request, pk):
         competition = get_object_or_404(
-            Competition, pk=pk, status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False
+            Competition,
+            pk=pk,
+            status=Competition.Status.APPROVED,
+            is_deleted=False,
+            is_hidden=False,
+            invite_only=False,
         )
         form = ReportCompetitionForm(request.POST)
         if not form.is_valid():
@@ -1567,12 +1587,8 @@ class ToggleFavoriteView(LoginRequiredMixin, View):
     """
 
     def post(self, request, pk):
-        from django.http import Http404
-
-        from registrations.views import can_manage as _can_manage
-
         competition = get_object_or_404(Competition, pk=pk, status=Competition.Status.APPROVED, is_deleted=False)
-        if competition.is_hidden and not _can_manage(request.user, competition):
+        if not can_see(request.user, competition):
             raise Http404
         favorite, created = CompetitionFavorite.objects.get_or_create(user=request.user, competition=competition)
         if not created:
@@ -1633,6 +1649,37 @@ class CompetitionHideView(LoginRequiredMixin, View):
             raise PermissionDenied
         competition.is_hidden = not competition.is_hidden
         competition.save(update_fields=["is_hidden"])
+        return redirect("competition_detail", pk=pk)
+
+
+class AcceptInviteView(LoginRequiredMixin, View):
+    """The invitation link of an invite-only event (issue #313).
+
+    Signing in is required -- an anonymous visitor is sent to the login page and brought back here --
+    because the invitation is kept against the account, which is what makes the event show up for
+    that person everywhere afterwards. The link then sends them on to the event's own address, so the
+    key does not linger in the address bar to be copied, shown or forwarded.
+    """
+
+    def get(self, request, pk, key):
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+        if competition.invite_only:
+            if competition.invite_key != key:
+                # A stale or mistyped link says nothing about whether the event exists.
+                raise Http404
+            CompetitionInvite.objects.get_or_create(competition=competition, user=request.user)
+        return redirect("competition_detail", pk=pk)
+
+
+class RegenerateInviteKeyView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        competition = get_object_or_404(Competition, pk=pk, is_deleted=False, invite_only=True)
+        if not manages(request.user, competition):
+            raise PermissionDenied
+        competition.regenerate_invite_key()
+        messages.success(
+            request, _("Invitation link replaced. The old link no longer works; people already invited keep access.")
+        )
         return redirect("competition_detail", pk=pk)
 
 

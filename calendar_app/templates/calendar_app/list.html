@@ -170,6 +170,7 @@
             {{ comp.title }}
           </a>
           {% if is_manager and comp.is_hidden %}<span class="badge bg-warning text-dark ms-1">{% trans "Hidden" %}</span>{% endif %}
+          {% if comp.invite_only %}<span class="badge bg-info text-dark ms-1">{% trans "By invitation" %}</span>{% endif %}
         </td>
         <td data-label="{% trans 'Dates' %}">
           {{ comp.date_start|date:"d.m.Y" }}

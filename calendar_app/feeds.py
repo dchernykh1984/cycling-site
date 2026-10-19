@@ -30,7 +30,10 @@ MAX_EVENTS = 1000
 def filtered_competitions(request: HttpRequest) -> list[Competition]:
     """Public events matching the filters in the query string, nearest first."""
     qs = (
-        Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False)
+        # Read by calendar apps with no session, so an invite-only event never rides along.
+        Competition.objects.filter(
+            status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False, invite_only=False
+        )
         .select_related("location")
         .prefetch_related("disciplines")
     )
@@ -157,6 +160,7 @@ class NewCompetitionsFeed(Feed):
                 status=Competition.Status.APPROVED,
                 is_deleted=False,
                 is_hidden=False,
+                invite_only=False,
                 # Postgres sorts NULLs first in a descending order, so an event approved before
                 # the timestamp existed would head the feed of what is new.
                 approved_at__isnull=False,

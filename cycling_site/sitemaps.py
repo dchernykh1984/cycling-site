@@ -69,7 +69,7 @@ class CompetitionSitemap(Sitemap):
 
     def items(self):
         return Competition.objects.filter(
-            status=Competition.Status.APPROVED, is_hidden=False, is_deleted=False
+            status=Competition.Status.APPROVED, is_hidden=False, invite_only=False, is_deleted=False
         ).order_by("-date_start", "pk")
 
     def location(self, obj):

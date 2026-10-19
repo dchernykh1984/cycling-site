@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from calendar_app.models import Competition
+from calendar_app.visibility import can_see
 
 from .models import Protocol
 
@@ -102,14 +103,23 @@ def content_security_policy(request) -> str:
     )
 
 
-def protocol_last_updated(request, pk):
+def _published_protocol(request, pk) -> Protocol:
+    """A protocol of a published event, or 404 -- including for an invite-only event the reader
+    has not been let into, whose results are as private as its page (issue #313)."""
     protocol = get_object_or_404(
-        Protocol,
+        Protocol.objects.select_related("competition__submitted_by"),
         pk=pk,
         competition__status=Competition.Status.APPROVED,
         competition__is_hidden=False,
         competition__is_deleted=False,
     )
+    if protocol.competition.invite_only and not can_see(request.user, protocol.competition):
+        raise Http404
+    return protocol
+
+
+def protocol_last_updated(request, pk):
+    protocol = _published_protocol(request, pk)
     return JsonResponse(
         {
             "last_updated": protocol.last_updated.isoformat(),
@@ -121,13 +131,7 @@ def protocol_last_updated(request, pk):
 
 @xframe_options_sameorigin
 def protocol_html(request, pk):
-    protocol = get_object_or_404(
-        Protocol,
-        pk=pk,
-        competition__status=Competition.Status.APPROVED,
-        competition__is_hidden=False,
-        competition__is_deleted=False,
-    )
+    protocol = _published_protocol(request, pk)
     if not protocol.html_file:
         raise Http404
     try:
@@ -144,13 +148,7 @@ def protocol_html(request, pk):
 
 
 def protocol_detail(request, pk):
-    protocol = get_object_or_404(
-        Protocol,
-        pk=pk,
-        competition__status=Competition.Status.APPROVED,
-        competition__is_hidden=False,
-        competition__is_deleted=False,
-    )
+    protocol = _published_protocol(request, pk)
     versions = protocol.versions.all()[:_MAX_VERSIONS]
     return render(
         request,

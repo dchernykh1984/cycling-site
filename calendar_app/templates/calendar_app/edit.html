@@ -75,7 +75,7 @@
       </div>
 
       {% for field in form %}
-        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "disciplines" and field.html_name != "location" and field.html_name|slice:":10" != "new_venue_" and field.html_name != "preview_image" %}
+        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "disciplines" and field.html_name != "location" and field.html_name|slice:":10" != "new_venue_" and field.html_name != "preview_image" and field.html_name != "invite_only" %}
         <div class="mb-3">
           <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
             {{ field.label }}{% if field.field.required %} *{% endif %}
@@ -218,6 +218,14 @@
         </div>
       </template>
       <button type="button" class="btn btn-sm btn-outline-primary mb-4" id="add-material-btn">+ {% trans "Add material" %}</button>
+
+      {% if is_organizer_plus %}
+      <div class="form-check mb-4">
+        {{ form.invite_only }}
+        <label class="form-check-label fw-semibold" for="{{ form.invite_only.id_for_label }}">{% trans "Invite-only event" %}</label>
+        <div class="form-text">{% trans "Only the people who may edit it, and everyone who opens its invitation link while signed in, will see it. The link appears on the event page once it is saved." %}</div>
+      </div>
+      {% endif %}
 
       <div class="card mb-4">
         <div class="card-header d-flex align-items-center gap-2">

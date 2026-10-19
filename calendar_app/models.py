@@ -213,6 +213,14 @@ class Competition(index.Indexed, models.Model):
 
     is_hidden = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
+    # Invite-only (issue #313): published, but only to the people who may edit it and to everyone
+    # who has opened its invitation link while signed in. Not the same as is_hidden, which takes an
+    # event down for everybody; the two combine, and a hidden event stays hidden from invitees too.
+    invite_only = models.BooleanField(default=False, db_index=True)
+    # The secret in the invitation link. Issued when the event first becomes invite-only rather than
+    # by a column default: a default is evaluated once for every existing row in the migration, and
+    # one key shared by every old event would open each of them with any other's link.
+    invite_key = models.UUIDField(null=True, blank=True, editable=False)
 
     search_fields: ClassVar[list] = [
         index.SearchField("title_ru"),
@@ -239,12 +247,22 @@ class Competition(index.Indexed, models.Model):
         # every write -- the single choke point covering the organizer form, the API, Django
         # admin and Wagtail snippets (see _DESCRIPTION_FIELDS for the __dict__ rationale).
         sanitize_rich_text_columns(self, _DESCRIPTION_FIELDS, update_fields=kwargs.get("update_fields"))
+        if self.invite_only and self.invite_key is None:
+            self.invite_key = uuid.uuid4()
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = {*update_fields, "invite_key"}
         super().save(*args, **kwargs)
 
     def get_absolute_url(self) -> str:
         """Where this competition lives. Needed by the sitemap, and by anything that has a
         competition in hand and wants to link to it without knowing the URL layout."""
         return reverse("competition_detail", kwargs={"pk": self.pk})
+
+    def regenerate_invite_key(self) -> None:
+        """Issue a new invitation link. The old one stops working; people already let in stay in."""
+        self.invite_key = uuid.uuid4()
+        self.save(update_fields=["invite_key"])
 
     def search_summary(self) -> str:
         """One sentence about this event, for the page's meta description.
@@ -555,6 +573,32 @@ class CompetitionFavorite(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user} favorites {self.competition}"
+
+
+class CompetitionInvite(models.Model):
+    """Somebody let into an invite-only event: they opened its link while signed in (issue #313).
+
+    One row per (competition, user). It outlives a new link, so issuing one to stop a leaked link
+    spreading does not throw out the people who were already invited.
+    """
+
+    objects: ClassVar[models.Manager["CompetitionInvite"]]
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="invites")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="competition_invites",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Competition invite"
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(fields=["competition", "user"], name="uniq_competition_invite"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user} invited to {self.competition}"
 
 
 class CompetitionReport(models.Model):

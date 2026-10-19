@@ -130,6 +130,8 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     preview_image = forms.ImageField(
         required=False, widget=forms.FileInput(attrs={"class": "form-control", "accept": "image/*"})
     )
+    # Offered to organizers and up; the views ignore it from anyone else (issue #313).
+    invite_only = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
 
     _MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
     _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = frozenset(

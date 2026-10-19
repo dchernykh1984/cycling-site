@@ -14,24 +14,15 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from accounts.access import ParticipantRequiredMixin
-from accounts.models import User
 from calendar_app.models import Competition
+from calendar_app.visibility import can_see, manages
 
 from .forms import EditRegistrationForm, RegistrationForm
 from .models import CompetitionRegistration, RegistrationCategory, Team, check_duplicate
 
 
 def can_manage(user, competition) -> bool:
-    if not user.is_authenticated:
-        return False
-    if user.is_superuser:
-        return True
-    rank = user.get_role_rank()
-    if rank >= User.ROLE_HIERARCHY.index(User.Role.ADMIN):
-        return True
-    if rank >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER):
-        return user == competition.submitted_by
-    return False
+    return manages(user, competition)
 
 
 def can_manage_or_own(user, competition) -> bool:
@@ -76,7 +67,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
 
     def get(self, request, pk):
         competition = self._get_competition(pk)
-        if competition.is_hidden and not can_manage(request.user, competition):
+        if not can_see(request.user, competition):
             raise Http404
         if competition.status != Competition.Status.APPROVED and not can_manage(request.user, competition):
             raise Http404
@@ -158,7 +149,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
 
     def post(self, request, pk):  # noqa: C901
         competition = self._get_competition(pk)
-        if competition.is_hidden and not can_manage(request.user, competition):
+        if not can_see(request.user, competition):
             raise Http404
         if competition.status != Competition.Status.APPROVED and not can_manage(request.user, competition):
             raise Http404
@@ -408,7 +399,7 @@ class ParticipantListView(TemplateView):
         user = self.request.user
         is_manager = can_manage(user, competition)
 
-        if competition.is_hidden and not is_manager:
+        if not can_see(user, competition):
             raise Http404
         if competition.status != Competition.Status.APPROVED and not is_manager:
             raise Http404
@@ -764,6 +755,7 @@ class CityAutocompleteView(View):
             CompetitionRegistration.objects.filter(
                 competition__status=Competition.Status.APPROVED,
                 competition__is_hidden=False,
+                competition__invite_only=False,
                 competition__is_deleted=False,
                 is_rejected=False,
             )

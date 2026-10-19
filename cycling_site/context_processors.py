@@ -30,7 +30,11 @@ def moderation_tasks(request):
 
     # Events: organizer+ can approve/reject pending competitions on the moderation page.
     if is_organizer_plus:
-        events = Competition.objects.filter(status=Competition.Status.PENDING_APPROVAL, is_deleted=False).count()
+        # An invite-only event waits for admins, not for every organizer (issue #313).
+        only_public = {} if is_admin_plus else {"invite_only": False}
+        events = Competition.objects.filter(
+            status=Competition.Status.PENDING_APPROVAL, is_deleted=False, **only_public
+        ).count()
         if events:
             tasks.append({"kind": "events", "count": events, "url": reverse("calendar_moderate")})
 

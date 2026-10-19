@@ -92,6 +92,7 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
     published = Competition.objects.filter(
         status=Competition.Status.APPROVED,
         is_hidden=False,
+        invite_only=False,
         is_deleted=False,
         date_start__gte=today,
     )
@@ -119,6 +120,7 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
                 filter=Q(
                     competitions__status=Competition.Status.APPROVED,
                     competitions__is_hidden=False,
+                    competitions__invite_only=False,
                     competitions__is_deleted=False,
                     competitions__date_start__gte=today,
                 ),

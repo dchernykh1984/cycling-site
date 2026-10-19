@@ -39,3 +39,8 @@ class FormFieldsDrawnOnceTests(TestCase):
         for name, html in self._pages():
             with self.subTest(page=name):
                 self.assertEqual(html.count('name="preview_image"'), 1)
+
+    def test_the_invite_only_tick_appears_once(self):
+        for name, html in self._pages():
+            with self.subTest(page=name):
+                self.assertEqual(html.count('name="invite_only"'), 1)
