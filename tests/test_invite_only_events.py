@@ -315,3 +315,27 @@ class FormTests(_Cast):
         self.assertContains(self.client.get(reverse("calendar_submit")), 'name="invite_only"')
         self.as_(self.stranger)
         self.assertNotContains(self.client.get(reverse("calendar_submit")), 'name="invite_only"')
+
+
+class TranslationTests(TestCase):
+    MSGIDS = (
+        "Invite-only event",
+        "Only the people who may edit it, and everyone who opens its invitation link while signed in, will see "
+        "it. The link appears on the event page once it is saved.",
+        "This event is by invitation: only the people its organizer invited can see it.",
+        "Invitation link",
+        "Replace the invitation link? The current link will stop working; people already invited keep access.",
+        "Replace link",
+        "Anyone who opens this link while signed in will see the event everywhere on the site. Send it only to "
+        "the people you invite.",
+        "By invitation",
+        "Invitation link replaced. The old link no longer works; people already invited keep access.",
+    )
+
+    def test_every_new_string_is_translated(self):
+        from django.utils.translation import gettext, override
+
+        for msgid in self.MSGIDS:
+            for lang in ("ru", "kk"):
+                with self.subTest(msgid=msgid[:30], lang=lang), override(lang):
+                    self.assertNotEqual(gettext(msgid), msgid)
