@@ -100,7 +100,8 @@ class SportsEventMarkupTests(TestCase):
 
     def test_registration_on_this_site_wins_over_an_external_link(self):
         comp = _competition("Both", registration_enabled=True, url_registration="https://example.com/signup")
-        self.assertNotEqual(_payload(self.client, comp)["offers"]["url"], "https://example.com/signup")
+        url = _payload(self.client, comp)["offers"]["url"]
+        self.assertTrue(url.endswith(reverse("registrations:register", args=[comp.pk])), url)
 
     def test_a_title_carrying_markup_cannot_break_out_of_the_block(self):
         comp = _competition("Race </script><b>x")
