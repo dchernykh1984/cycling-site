@@ -7,12 +7,12 @@ the active date range / event type / direction+discipline (and location where pr
 {% endcomment %}
 <div class="btn-group btn-group-sm" role="group" aria-label="{% trans 'View' %}">
   <a href="{% url 'calendar' %}" id="view-link-calendar"
-     class="btn {% if active_view == 'calendar' %}btn-secondary active{% else %}btn-outline-secondary{% endif %}"
+     class="btn btn-outline-secondary{% if active_view == 'calendar' %} active{% endif %}"
      {% if active_view == 'calendar' %}aria-current="page"{% endif %}>{% trans "Calendar" %}</a>
   <a href="{% url 'calendar_list' %}" id="view-link-list"
-     class="btn {% if active_view == 'list' %}btn-secondary active{% else %}btn-outline-secondary{% endif %}"
+     class="btn btn-outline-secondary{% if active_view == 'list' %} active{% endif %}"
      {% if active_view == 'list' %}aria-current="page"{% endif %}>{% trans "List" %}</a>
   <a href="{% url 'calendar_map' %}" id="view-link-map"
-     class="btn {% if active_view == 'map' %}btn-secondary active{% else %}btn-outline-secondary{% endif %}"
+     class="btn btn-outline-secondary{% if active_view == 'map' %} active{% endif %}"
      {% if active_view == 'map' %}aria-current="page"{% endif %}>{% trans "Map" %}</a>
 </div>
