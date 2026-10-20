@@ -258,8 +258,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // this weekend or this season.
   function shiftRange(step) {
     var start = calendar.view.currentStart;
+    // From that week's Saturday: on a Sunday "this weekend" is the Sunday alone, and a week on
+    // from it would be the next Sunday and Monday.
+    var fromSaturday = (start.getDay() + 1) % 7;
     var from = rangeKind === 'weekend'
-      ? new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7 * step)
+      ? new Date(start.getFullYear(), start.getMonth(), start.getDate() - fromSaturday + 7 * step)
       : new Date(start.getFullYear() + step, 0, 1);
     var to = rangeKind === 'weekend'
       ? new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1)
