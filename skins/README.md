@@ -1,8 +1,9 @@
 # Skins
 
 Every folder here is a skin a reader can pick from the list behind the moon/sun button in the
-navbar (and on their profile). The folder name is the skin's key: profiles and cookies store it, so
-**never rename a folder**. Deleting one is safe -- whoever had picked it gets the default skin
+navbar (and on their profile). The folder name is the skin's key -- at most 32 characters, the
+size of the profile field that stores it. Profiles and cookies keep it, so **never rename a
+folder**. Deleting one is safe -- whoever had picked it gets the default skin
 (`DEFAULT_SKIN` in `cycling_site/settings/base.py`, the light one) until they pick again.
 
 `light` and `dark` are the site's own themes and the two base modes every other skin builds on.

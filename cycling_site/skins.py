@@ -40,6 +40,12 @@ class Skin:
 
 
 def _load(folder) -> Skin:
+    from accounts.models import User
+
+    # The key is what a profile stores; a longer one would be offered and then fail to save.
+    longest = User._meta.get_field("theme").max_length or 0
+    if len(folder.name) > longest:
+        raise ValueError(f"{folder.name}: a key is at most {longest} characters")
     manifest = json.loads((folder / "manifest.json").read_text())
     skin = Skin(key=folder.name, mode=manifest["mode"], order=manifest["order"], names=manifest["name"])
     if skin.mode not in MODES:

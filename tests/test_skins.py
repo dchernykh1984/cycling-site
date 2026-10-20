@@ -35,8 +35,8 @@ class RegistryTests(TestCase):
         self.assertLess(html.index("skins/light/skin"), html.index("skins/dark/skin"))
 
 
-def _folder(tmp_path, manifest, css=True):
-    folder = tmp_path / "custom"
+def _folder(tmp_path, manifest, css=True, key="custom"):
+    folder = tmp_path / key
     folder.mkdir()
     (folder / "manifest.json").write_text(json.dumps(manifest))
     if css:
@@ -65,6 +65,12 @@ def test_a_folder_loads_as_a_skin_keyed_by_its_name(tmp_path):
 def test_a_broken_skin_is_refused_with_the_reason(tmp_path, manifest, css, complaint):
     with pytest.raises(ValueError, match=complaint):
         skins._load(_folder(tmp_path, manifest, css))
+
+
+def test_a_key_fits_the_profile_field_or_the_folder_is_refused(tmp_path):
+    assert skins._load(_folder(tmp_path, GOOD, key="k" * 32)).key == "k" * 32
+    with pytest.raises(ValueError, match="at most 32 characters"):
+        skins._load(_folder(tmp_path, GOOD, key="k" * 33))
 
 
 def test_the_hook_escapes_cyrillic_once_and_then_passes(tmp_path):
