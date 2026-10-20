@@ -406,6 +406,22 @@ def calendar_year_choices() -> list[int]:
     return list(range(min(years), max(years) + 1))
 
 
+def calendar_date_words() -> dict:
+    """Month and weekday names the calendar script writes dates with, in the reader's language.
+
+    FullCalendar leans on the browser's Intl for these, and browsers do not agree on Kazakh: some
+    write "2026 M10 1 THU" for a day heading. Django's own catalogues do, so the script borrows
+    them -- months in the form a date takes (the Russian genitive), weekdays from Monday.
+    """
+    from django.utils.formats import date_format
+
+    monday = datetime.date(2001, 1, 1)
+    return {
+        "months": [date_format(datetime.date(2001, month, 1), "E") for month in range(1, 13)],
+        "weekdays": [date_format(monday + datetime.timedelta(days=day), "l") for day in range(7)],
+    }
+
+
 class CalendarView(DefaultFilterRedirectMixin, TemplateView):
     template_name = "calendar_app/calendar.html"
 
@@ -426,6 +442,7 @@ class CalendarView(DefaultFilterRedirectMixin, TemplateView):
         context["only_favorite"] = _only_favorite_requested(self.request)
         context["calendar_months"] = list(enumerate((_(name) for name in MONTH_NAMES), start=1))
         context["calendar_years"] = calendar_year_choices()
+        context["calendar_date_words"] = calendar_date_words()
         return context
 
 

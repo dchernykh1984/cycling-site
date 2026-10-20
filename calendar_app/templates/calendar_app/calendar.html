@@ -82,6 +82,7 @@ stays where it is, which is where a reader looking for the controls would expect
 </div>
 
 <div id="calendar"></div>
+{{ calendar_date_words|json_script:"calendar-date-words" }}
 
 {% if upcoming %}
 <section class="mt-4">
@@ -141,6 +142,14 @@ var FC_MONTHS = [
 ];
 document.addEventListener('DOMContentLoaded', function () {
   var eventsUrl = '{% url "calendar_events_api" %}';
+
+  // "3 октября, суббота" from Django's own month and weekday names (see calendar_date_words):
+  // FullCalendar would ask the browser, and browsers write Kazakh dates as "2026 M10 3 SAT".
+  var DATE_WORDS = JSON.parse(document.getElementById('calendar-date-words').textContent);
+  function dayLabel(year, month, day) {
+    var weekday = (new Date(year, month, day).getDay() + 6) % 7;
+    return day + ' ' + DATE_WORDS.months[month] + ', ' + DATE_WORDS.weekdays[weekday];
+  }
 
   // The event-type, direction/discipline and location multi-selects are provided by
   // their partials, which run on DOMContentLoaded (before this handler) and expose
@@ -239,6 +248,12 @@ document.addEventListener('DOMContentLoaded', function () {
       right: '',
     },
     height: 'auto',
+    // A busy Saturday holds twenty events; a cell that grows to fit them all stretches the month
+    // over several screens on a phone. Three, then "+17" -- a number with no word, since the
+    // bundled "+17 more" is English in every language and is cut off in a narrow cell anyway.
+    dayMaxEvents: 3,
+    moreLinkContent: function (arg) { return '+' + arg.num; },
+    dayPopoverFormat: function (arg) { return dayLabel(arg.date.year, arg.date.month, arg.date.day); },
     events: function (fetchInfo, successCallback, failureCallback) {
       var params = new URLSearchParams({start: fetchInfo.startStr, end: fetchInfo.endStr});
       appendFilterParams(params, 'direction');
