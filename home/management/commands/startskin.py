@@ -10,11 +10,10 @@ from cycling_site import skins
 
 STYLESHEET = """/* {key}: what this skin changes. It is on the page only while the skin is chosen.
 
-   Built on the {mode} mode: everything in skins/{mode}/skin.css applies first, so start by
-   overriding its variables, then restyle anything else. */
+   Built on the {mode} mode: Bootstrap's {mode} colours and skins/{mode}/skin.css apply first;
+   restyle anything below. skins/README.md lists what else a skin can bring. */
 
 :root[data-skin="{key}"] {{
-    /* --skin-accent: #fc6104; */
 }}
 """
 
