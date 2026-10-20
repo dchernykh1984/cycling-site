@@ -356,6 +356,23 @@ class FormTests(_Cast):
         self.client.post(reverse("calendar_submit"), self._payload())
         self.assertFalse(Competition.objects.get(title_ru="Form ride").invite_only)
 
+    def _edit(self, user, event, **extra):
+        self.as_(user)
+        payload = {"title_ru": f"{event.title_ru} edited", "date_start": f"{event.date_start:%Y-%m-%d}"}
+        payload.update(extra)
+        self.client.post(reverse("competition_edit", args=[event.pk]), payload)
+        event.refresh_from_db()
+        # The edit must have gone through, or the flag assertion below would pass for nothing.
+        self.assertTrue(event.title_ru.endswith(" edited"), "the edit was refused")
+        return event
+
+    def test_an_organizer_can_open_an_event_up_again(self):
+        self.assertFalse(self._edit(self.author, self.private).invite_only)
+
+    def test_a_participant_author_cannot_change_it(self):
+        own = _event("Participant ride", submitted_by=self.stranger)
+        self.assertFalse(self._edit(self.stranger, own, invite_only="on").invite_only)
+
     def test_the_tick_is_offered_to_organizers_only(self):
         self.as_(self.author)
         self.assertContains(self.client.get(reverse("calendar_submit")), 'name="invite_only"')
