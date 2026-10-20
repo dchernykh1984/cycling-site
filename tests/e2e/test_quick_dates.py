@@ -132,3 +132,12 @@ def test_the_links_follow_the_range_on_screen(page: Page, live_server):
     expect(link).to_have_attribute("href", re.compile(r"date_from=2026-10-31&date_to=2026-11-01"))
     page.locator(".fc-dayGridMonth-button").click()
     expect(link).not_to_have_attribute("href", re.compile(r"date_from"))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_date_changed_by_hand_on_the_map_unlights_the_button(page: Page, live_server):
+    page.goto(f"{live_server.url}/ru/calendar/map/")
+    page.locator('[data-quick-dates="season"]').click()
+    expect(page.locator('[data-quick-dates="season"].active')).to_have_count(1)
+    page.evaluate("document.getElementById('map-date-to')._flatpickr.setDate('2026-06-30', true)")
+    expect(page.locator("[data-quick-dates].active")).to_have_count(0)
