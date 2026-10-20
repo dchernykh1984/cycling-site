@@ -3575,3 +3575,7 @@ msgstr "Бастапқы хаттама"
 #: protocols/templates/protocols/_document.html
 msgid "Search the protocol"
 msgstr "Хаттама бойынша іздеу"
+
+#: calendar_app/templates/calendar_app/calendar.html:257
+msgid "Earlier days of the month"
+msgstr "Айдың өткен күндері"
