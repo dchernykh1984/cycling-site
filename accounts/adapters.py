@@ -30,6 +30,16 @@ class AccountAdapter(DefaultAccountAdapter):
             user.save(update_fields=["role"])
 
 
+def user_display(user) -> str:
+    """How allauth names a member back to them -- "Successfully signed in as ...", and its emails.
+
+    allauth's default is the username, which here is an internal handle nobody chose: members sign
+    in by email, and it was showing a lowercased "denis" to a member whose profile says Denis
+    Chernykh. The name from the profile comes first, then the address they sign in with.
+    """
+    return user.get_full_name().strip() or user.email or user.get_username()
+
+
 def strava_profile_url(account) -> str:
     """Public Strava profile URL of a just-authenticated athlete.
 
