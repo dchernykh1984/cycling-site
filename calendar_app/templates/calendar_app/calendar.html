@@ -69,6 +69,8 @@
   </div>
 </div>
 
+{% include "calendar_app/_quick_dates.html" %}
+
 {% comment %}The month picker starts here and is moved into the grid's own toolbar, next to Today,
 once FullCalendar has drawn it. If the grid never draws -- no scripts, a failed CDN -- the picker
 stays where it is, which is where a reader looking for the controls would expect it.{% endcomment %}
@@ -232,7 +234,70 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function gotoPickedMonth() {
-    calendar.gotoDate(new Date(Number(yearEl.value), Number(monthEl.value) - 1, 1));
+    calendar.changeView(monthView, new Date(Number(yearEl.value), Number(monthEl.value) - 1, 1));
+  }
+
+  // A quick range is a list of exactly those days: the weekend, or the season. "Month" is the
+  // month view again, on today. The range also travels to the list and the map, like a date range
+  // picked there would.
+  function dayAfter(isoDay) {
+    var p = isoDay.split('-');
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]) + 1);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  var rangeKind = null;  // 'weekend' or 'season' while a quick range is on screen
+  window.onQuickDates = function (kind, range) {
+    pendingQuick = kind;
+    rangeKind = kind === 'month' ? null : kind;
+    if (kind === 'month') calendar.changeView(monthView, new Date());
+    else calendar.changeView(kind === 'weekend' ? 'listWeekend' : 'listSeason', {start: range.from, end: dayAfter(range.to)});
+    sessionStorage.setItem('cal_date_from', range.from);
+    sessionStorage.setItem('cal_date_to', range.to);
+    updateSwitcherLinks();
+  };
+
+  // FullCalendar pages a range set this way by nothing at all, so the arrows and Today are taken
+  // over while one is on screen: the weekend moves a week, the season a year, Today goes back to
+  // this weekend or this season.
+  function shiftRange(step) {
+    var start = calendar.view.currentStart;
+    var from = rangeKind === 'weekend'
+      ? new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7 * step)
+      : new Date(start.getFullYear() + step, 0, 1);
+    var to = rangeKind === 'weekend'
+      ? new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1)
+      : new Date(from.getFullYear(), 11, 31);
+    var iso = function (d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
+    calendar.changeView(calendar.view.type, {start: iso(from), end: dayAfter(iso(to))});
+  }
+  document.addEventListener('click', function (e) {
+    if (!rangeKind) return;
+    var button = e.target.closest && e.target.closest('#calendar .fc-prev-button, #calendar .fc-next-button, #calendar .fc-today-button');
+    if (!button) return;
+    e.stopPropagation();
+    if (button.classList.contains('fc-today-button')) {
+      document.querySelector('[data-quick-dates="' + rangeKind + '"]').click();
+      return;
+    }
+    shiftRange(button.classList.contains('fc-next-button') ? 1 : -1);
+  }, true);
+
+  // "24-25 октября" for a range; the month and year for a month.
+  function titleOf(arg) {
+    var start = arg.start;
+    var end = arg.end ? arg.end.marker : null;  // the last day shown, inclusive
+    var isMonth = start.day === 1 && (!end || (end.getUTCMonth() === start.month && end.getUTCDate() >= 28));
+    if (isMonth) return FC_MONTHS[start.month] + ' ' + start.year;
+    // The season is the calendar year, and its title is the year.
+    if (start.month === 0 && start.day === 1 && end.getUTCMonth() === 11 && end.getUTCDate() === 31) return String(start.year);
+    var to = end.getUTCDate() + ' ' + DATE_WORDS.months[end.getUTCMonth()];
+    if (end.getUTCFullYear() !== start.year) to += ' ' + end.getUTCFullYear();
+    if (end.getUTCMonth() === start.month && end.getUTCFullYear() === start.year) {
+      return end.getUTCDate() === start.day ? to : start.day + '–' + to;
+    }
+    return start.day + ' ' + DATE_WORDS.months[start.month] + ' – ' + to;
   }
 
   // --- Month as a grid or as a list of days ---
@@ -246,6 +311,10 @@ document.addEventListener('DOMContentLoaded', function () {
   try { savedView = localStorage.getItem(VIEW_KEY); } catch (e) { /* storage blocked */ }
   var isPhone = window.matchMedia('(max-width: 767.98px)').matches;
   var currentView = VIEWS.indexOf(savedView) >= 0 ? savedView : (isPhone ? 'listMonth' : 'dayGridMonth');
+  // The month view the reader last chose, which "Month" and the month picker return to from a
+  // quick range (shown as a list of its own, listWeekend or listSeason).
+  var monthView = currentView;
+  var pendingQuick = null;
 
   // In the list a multi-day race is one row on its first day with the day it ends -- not the same
   // row on every day it runs, which repeated a three-day triathlon three times. A day whose only
@@ -311,10 +380,11 @@ document.addEventListener('DOMContentLoaded', function () {
     initialView: currentView,
     locale: '{{ CURRENT_LANGUAGE }}',
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
-    titleFormat: function(date) { return FC_MONTHS[date.start.month] + ' ' + date.start.year; },
+    titleFormat: titleOf,
+    views: { listWeekend: { type: 'list' }, listSeason: { type: 'list' } },
     // FullCalendar's own bundle labels this button in lower case and has no Kazakh at all,
     // so the label comes from our catalogue like every other word on the page.
-    buttonText: { today: '{% trans "Today" %}', dayGridMonth: '{% trans "Month" %}', listMonth: '{% trans "List" %}' },
+    buttonText: { today: '{% trans "Today" %}', dayGridMonth: '{% trans "Grid" %}', listMonth: '{% trans "List" %}' },
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
@@ -343,10 +413,17 @@ document.addEventListener('DOMContentLoaded', function () {
     datesSet: function (info) {
       syncPicker(info.view.currentStart);
       showPast = false;
-      if (info.view.type !== currentView) {
-        currentView = info.view.type;
-        try { localStorage.setItem(VIEW_KEY, currentView); } catch (e) { /* storage blocked */ }
+      if (VIEWS.indexOf(info.view.type) >= 0) {
+        rangeKind = null;
+        monthView = info.view.type;
+        if (monthView !== currentView) {
+          currentView = monthView;
+          try { localStorage.setItem(VIEW_KEY, currentView); } catch (e) { /* storage blocked */ }
+        }
       }
+      // Paging away from a quick range leaves it: the button stops being lit.
+      window.markQuickDates(pendingQuick);
+      pendingQuick = null;
       tidyListSoon();
     },
     eventsSet: tidyListSoon,
@@ -362,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var titleEl = info.el.querySelector('.fc-event-title, .fc-list-event-title a');
         if (titleEl) titleEl.insertAdjacentHTML('afterbegin', '<span aria-hidden="true">★ </span>');
       }
-      if (info.view.type === 'listMonth') {
+      if (info.view.type.indexOf('list') === 0) {
         info.el.dataset.eventId = info.event.id;
         // An all-day end is exclusive: a race over 2-4 October ends at midnight on the 5th.
         var last = info.event.end && new Date(info.event.end.getTime() - 864e5);
