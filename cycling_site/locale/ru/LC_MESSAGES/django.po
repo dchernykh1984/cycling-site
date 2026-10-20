@@ -3593,3 +3593,7 @@ msgstr "Сезон"
 #: calendar_app/templates/calendar_app/calendar.html:353
 msgid "Grid"
 msgstr "Сетка"
+
+#: calendar_app/templates/calendar_app/_filter_chips.html:11
+msgid "Remove filter"
+msgstr "Убрать фильтр"

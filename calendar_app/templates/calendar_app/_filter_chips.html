@@ -1,0 +1,72 @@
+{% load i18n %}
+{% comment %}The filters in force as chips under the quick dates, each with a cross that lifts it
+(issue #330). On a phone the panel is folded away behind one button, and without these nobody could
+tell why the calendar shows what it shows. Each chip names one kind of filter by its deepest choice
+-- "City: Almaty", not three chips for country, region and city -- and its cross clears that kind
+through its own "All" box, so the filter redraws the page exactly as a hand on the box would.{% endcomment %}
+<div class="d-flex flex-wrap gap-1 mb-2 d-lg-none filter-chips" id="filter-chips"></div>
+<script>
+(function () {
+  var ALL_LABEL = '{% trans "All" %}';
+  var REMOVE_LABEL = '{% trans "Remove filter" %}';
+
+  function levelOf(button) { return Number((button.id.match(/-btn-(\d+)$/) || [])[1] || 0); }
+
+  function addChip(box, text, lift) {
+    var chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'btn btn-sm btn-light border rounded-pill filter-chip';
+    chip.setAttribute('aria-label', REMOVE_LABEL + ': ' + text);
+    chip.appendChild(document.createTextNode(text + ' '));
+    var cross = document.createElement('span');
+    cross.setAttribute('aria-hidden', 'true');
+    cross.textContent = '×';
+    chip.appendChild(cross);
+    chip.addEventListener('click', lift);
+    box.appendChild(chip);
+  }
+
+  function liftCascade(group) {
+    var all = document.querySelector('#' + group + '-menu-1 .mf-all');
+    if (!all) return;
+    all.checked = false;
+    all.dispatchEvent(new Event('change', {bubbles: true}));
+  }
+
+  window.renderFilterChips = function () {
+    var box = document.getElementById('filter-chips');
+    if (!box) return;
+    box.innerHTML = '';
+    var deepest = {};
+    document.querySelectorAll('#filter-panel .dropdown > button[id*="-btn-"]').forEach(function (button) {
+      var text = button.querySelector('.mf-text');
+      if (!text || button.disabled || text.textContent.trim() === ALL_LABEL) return;
+      var group = button.id.replace(/-btn-\d+$/, '');
+      if (!deepest[group] || levelOf(button) > levelOf(deepest[group])) deepest[group] = button;
+    });
+    Object.keys(deepest).forEach(function (group) {
+      var button = deepest[group];
+      var column = button.closest('.dropdown').parentElement;
+      var label = column && column.querySelector('.form-label');
+      var text = (label ? label.textContent.trim() + ': ' : '') + button.querySelector('.mf-text').textContent.trim();
+      addChip(box, text, function () { liftCascade(group); });
+    });
+    var favourite = document.querySelector('#filter-panel input[type="checkbox"][id$="favorite-filter"]');
+    if (favourite && favourite.checked) {
+      var favouriteLabel = document.querySelector('label[for="' + favourite.id + '"]');
+      addChip(box, favouriteLabel ? favouriteLabel.textContent.trim() : '★', function () {
+        favourite.checked = false;
+        favourite.dispatchEvent(new Event('change', {bubbles: true}));
+      });
+    }
+  };
+
+  function soon() { window.setTimeout(window.renderFilterChips, 0); }
+  document.addEventListener('DOMContentLoaded', function () {
+    soon();
+    var panel = document.getElementById('filter-panel');
+    if (panel) panel.addEventListener('change', soon);
+  });
+  document.addEventListener('location-filter-ready', soon);
+}());
+</script>
