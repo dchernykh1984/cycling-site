@@ -16,6 +16,7 @@
     window.toggleTheme = function () {
         var next = getTheme() === 'light' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-bs-theme', next);
+        document.documentElement.setAttribute('data-skin', next);
         updateThemeIcon();
 
         if (document.body.dataset.authenticated === 'true') {
@@ -28,7 +29,8 @@
                 body: JSON.stringify({theme: next})
             });
         } else {
-            localStorage.setItem('theme', next);
+            // A cookie, not the browser's storage: the server draws the page in the guest's skin.
+            document.cookie = 'skin=' + next + ';path=/;max-age=31536000;samesite=lax';
         }
     };
 

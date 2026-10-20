@@ -7,6 +7,10 @@ from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 
+def default_skin() -> str:
+    return settings.DEFAULT_SKIN
+
+
 class User(AbstractUser):  # type: ignore[django-manager-missing]
     class Role(models.TextChoices):
         # Translated because the profile now names every role to the reader; the owner
@@ -28,11 +32,8 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         MALE = "M", "Male"
         FEMALE = "F", "Female"
 
-    theme = models.CharField(
-        max_length=10,
-        choices=[("light", "Light"), ("dark", "Dark")],
-        default="light",
-    )
+    # The key of a skin under skins/ (cycling_site/skins.py); the folders are the choices.
+    theme = models.CharField(max_length=32, default=default_skin)
     preferred_language = models.CharField(
         max_length=10,
         blank=True,

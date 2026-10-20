@@ -10,7 +10,7 @@ anonymous users and plain participants, so it stays cheap on the hot path of eve
 from django.db.models import Count, Q
 from django.urls import reverse
 
-from cycling_site.skins import base_stylesheets
+from cycling_site import skins as skin_registry
 
 
 def moderation_tasks(request):
@@ -107,4 +107,10 @@ def setup_hint(request):
 
 
 def skins(request):
-    return {"skin_stylesheets": base_stylesheets()}
+    skin = skin_registry.chosen(request)
+    return {
+        "skin": skin,
+        "skins": list(skin_registry.registry().values()),
+        "skin_stylesheets": skin_registry.stylesheets(skin),
+        "skin_modes": {key: s.mode for key, s in skin_registry.registry().items()},
+    }

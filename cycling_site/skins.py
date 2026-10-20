@@ -19,6 +19,8 @@ from django.utils.translation import get_language
 SKINS_DIR = settings.BASE_DIR / "skins"
 MODES = ("light", "dark")
 LANGUAGES = ("ru", "kk", "en")
+# Where a guest's choice is kept: the server has to know it before it renders the page.
+COOKIE = "skin"
 
 
 @dataclass(frozen=True)
@@ -57,5 +59,21 @@ def registry() -> dict[str, Skin]:
     return {skin.key: skin for skin in skins}
 
 
-def base_stylesheets() -> list[str]:
-    return [registry()[mode].stylesheet for mode in MODES]
+def stylesheets(skin: Skin) -> list[str]:
+    """The light and dark rules, always; a skin of its own after them, only while it is chosen."""
+    base = [registry()[mode].stylesheet for mode in MODES]
+    return base if skin.key in MODES else [*base, skin.stylesheet]
+
+
+def resolve(key) -> Skin:
+    """The skin a stored key names; a key no folder answers to any more falls back to the default."""
+    skins = registry()
+    return skins.get(key) or skins[settings.DEFAULT_SKIN]
+
+
+def chosen(request) -> Skin:
+    """The skin this request is drawn in: a member's profile, a guest's cookie."""
+    user = getattr(request, "user", None)
+    if user is not None and user.is_authenticated:
+        return resolve(user.theme)
+    return resolve(request.COOKIES.get(COOKIE))

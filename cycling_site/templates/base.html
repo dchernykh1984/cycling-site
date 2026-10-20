@@ -1,7 +1,7 @@
 {% load static i18n wagtailcore_tags wagtailuserbar home_tags knowledge_tags locations_tags news_tags seo_tags %}
 {% get_current_language as CURRENT_LANGUAGE %}
 <!DOCTYPE html>
-<html lang="{{ CURRENT_LANGUAGE }}"{% if request.user.is_authenticated %} data-bs-theme="{{ request.user.theme }}"{% endif %}>
+<html lang="{{ CURRENT_LANGUAGE }}" data-bs-theme="{{ skin.mode }}" data-skin="{{ skin.key }}">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -57,9 +57,12 @@
     {% if request.in_preview_panel %}
     <base target="_blank">
     {% endif %}
-    {# Apply stored theme for anonymous users before CSS to prevent flash #}
-    {% if not request.user.is_authenticated %}
-    <script>(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-bs-theme',t);}());</script>
+    {% comment %}A guest's choice used to live in the browser's storage, out of the server's sight. Carry
+    it over into the cookie once, before the stylesheets load, so the page never flashes the default.
+    Only light or dark can be there: they are the keys equal to their own mode.{% endcomment %}
+    {% if not request.user.is_authenticated and not request.COOKIES.skin %}
+    {{ skin_modes|json_script:"skin-modes" }}
+    <script>(function(){var t=localStorage.getItem('theme'),modes=JSON.parse(document.getElementById('skin-modes').textContent);if(modes[t]!==t)return;document.cookie='skin='+t+';path=/;max-age=31536000;samesite=lax';document.documentElement.setAttribute('data-skin',t);document.documentElement.setAttribute('data-bs-theme',modes[t]);}());</script>
     {% endif %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/lux/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="{% static 'css/cycling_site.css' %}">

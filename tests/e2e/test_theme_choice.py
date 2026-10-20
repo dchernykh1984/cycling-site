@@ -25,3 +25,40 @@ def test_a_signed_in_choice_is_saved_and_kept_on_the_next_page(page: Page, live_
 
     page.goto(f"{live_server.url}/{language}/calendar/list/")
     expect(page.locator("html")).to_have_attribute("data-bs-theme", "dark")
+
+
+def _skin_cookie(page):
+    return next((c["value"] for c in page.context.cookies() if c["name"] == "skin"), None)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_guests_old_choice_in_the_browser_is_carried_over_to_the_cookie(page: Page, live_server):
+    page.add_init_script("localStorage.setItem('theme', 'dark')")
+    page.goto(f"{live_server.url}/ru/news/")
+    expect(page.locator("html")).to_have_attribute("data-bs-theme", "dark")
+    expect(page.locator("html")).to_have_attribute("data-skin", "dark")
+    assert _skin_cookie(page) == "dark"
+
+    # From now on the server draws it: the carrying-over script is no longer on the page.
+    page.goto(f"{live_server.url}/ru/calendar/list/")
+    expect(page.locator("html")).to_have_attribute("data-skin", "dark")
+    expect(page.locator("#skin-modes")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_an_old_value_no_skin_answers_to_is_ignored(page: Page, live_server):
+    page.add_init_script("localStorage.setItem('theme', 'retired-skin')")
+    page.goto(f"{live_server.url}/ru/news/")
+    expect(page.locator("html")).to_have_attribute("data-skin", "light")
+    expect(page.locator("html")).to_have_attribute("data-bs-theme", "light")
+    assert _skin_cookie(page) is None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_guests_choice_is_kept_on_the_next_page(page: Page, live_server):
+    page.goto(f"{live_server.url}/ru/news/")
+    open_navbar_if_collapsed(page)
+    page.locator("nav button[onclick='toggleTheme()']").click()
+    assert _skin_cookie(page) == "dark"
+    page.goto(f"{live_server.url}/ru/calendar/list/")
+    expect(page.locator("html")).to_have_attribute("data-skin", "dark")

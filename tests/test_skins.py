@@ -23,8 +23,11 @@ class RegistryTests(TestCase):
                 self.assertEqual(dark.name, dark.names[lang])
         self.assertEqual(dark.names["en"], "Dark")
 
-    def test_the_base_stylesheets_are_light_then_dark(self):
-        self.assertEqual(skins.base_stylesheets(), ["skins/light/skin.css", "skins/dark/skin.css"])
+    def test_light_and_dark_are_always_on_the_page_and_a_skin_of_its_own_only_when_chosen(self):
+        base = ["skins/light/skin.css", "skins/dark/skin.css"]
+        self.assertEqual(skins.stylesheets(skins.registry()["dark"]), base)
+        own = skins.Skin(key="custom", mode="dark", order=30, names={})
+        self.assertEqual(skins.stylesheets(own), [*base, "skins/custom/skin.css"])
 
     def test_every_page_links_them(self):
         html = self.client.get("/ru/privacy/").content.decode()

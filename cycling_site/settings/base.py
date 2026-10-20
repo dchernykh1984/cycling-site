@@ -249,6 +249,10 @@ WAGTAIL_CONTENT_LANGUAGES = [
 # all datetimes render in it. The DB still stores UTC (USE_TZ).
 TIME_ZONE = "Asia/Almaty"
 
+# The skin (skins/<key>/) of a first visit and of a new member; also what a stored key falls back to
+# once its folder is gone.
+DEFAULT_SKIN = "light"
+
 USE_I18N = True
 
 USE_TZ = True

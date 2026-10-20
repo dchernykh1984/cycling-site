@@ -25,6 +25,7 @@ from accounts.access import (
     redirect_to_profile_for_email_confirmation,
 )
 from accounts.models import User
+from cycling_site.skins import registry
 
 # One minute. Long enough to stop a double click and a button that fires twice, short enough
 # that a reader waiting on a confirmation -- which locks them out of the site until it
@@ -470,8 +471,8 @@ class ThemeUpdateView(LoginRequiredMixin, View):
             data = json.loads(request.body)
         except (json.JSONDecodeError, ValueError):
             return JsonResponse({"error": "invalid JSON"}, status=400)
-        theme = data.get("theme", "light")
-        if theme not in ("light", "dark"):
+        theme = data.get("theme") if isinstance(data, dict) else None
+        if not isinstance(theme, str) or theme not in registry():
             return JsonResponse({"error": "invalid theme"}, status=400)
         request.user.theme = theme
         request.user.save(update_fields=["theme"])
