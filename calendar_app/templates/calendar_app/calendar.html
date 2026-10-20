@@ -488,6 +488,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
   calendar.render();
 
+  // A link to a weekend or a season -- what Share hands out after a quick range -- opens on that
+  // range, as a list, not on the month around it. The button lights only for this weekend or this
+  // season; a link to another one still pages by weekends or by years.
+  (function () {
+    var p = new URLSearchParams(window.location.search);
+    var df = p.get('date_from');
+    var dt = p.get('date_to');
+    if (!df || !dt) return;
+    var parts = df.split('-');
+    var from = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    var kind = null;
+    if (df.slice(5) === '01-01' && dt === df.slice(0, 4) + '-12-31') kind = 'season';
+    else if ((from.getDay() === 6 && dt === dayAfter(df)) || (from.getDay() === 0 && dt === df)) kind = 'weekend';
+    if (!kind) return;
+    window.onQuickDates(kind, {from: df, to: dt});
+    window.markQuickDates(window.quickDatesKindOf(df, dt));
+  }());
+
   if (monthEl && yearEl) {
     monthEl.addEventListener('change', gotoPickedMonth);
     yearEl.addEventListener('change', gotoPickedMonth);
