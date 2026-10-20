@@ -31,11 +31,7 @@
       {% include "_share_button.html" %}
     </div>
     <div class="d-flex gap-2 align-items-center flex-wrap">
-      <button class="btn btn-outline-secondary btn-sm d-lg-none" type="button"
-              data-bs-toggle="collapse" data-bs-target="#filter-panel"
-              aria-expanded="false" aria-controls="filter-panel">
-        {% trans "Filters" %}
-      </button>
+      {% include "calendar_app/_filter_toggle.html" %}
       {% include "calendar_app/_view_switcher.html" with active_view="calendar" %}
       {% if request.user.is_authenticated %}
       <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm">{% trans "Submit event" %}</a>
@@ -47,9 +43,9 @@
   </div>
 </div>
 
-<div class="card mb-3">
-  <div class="card-body py-2">
-    <div id="filter-panel" class="collapse d-lg-block">
+<div id="filter-panel" class="collapse d-lg-block">
+  <div class="card mb-3">
+    <div class="card-body py-2">
       {% include "calendar_app/_filter_multiselect_js.html" %}
       <div class="row g-2 align-items-end">
         {% include "calendar_app/_event_type_filter.html" %}

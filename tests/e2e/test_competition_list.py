@@ -6,13 +6,14 @@ import pytest
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, expect
 
-from tests.e2e.conftest import AROUND_UPCOMING, UPCOMING
+from tests.e2e.conftest import AROUND_UPCOMING, UPCOMING, open_filter_panel
 
 
 @pytest.mark.django_db(transaction=True)
 def test_filter_form_has_no_apply_button(page: Page, live_server):
     """The 'Apply' button was removed; filters submit on change instead."""
     page.goto(f"{live_server.url}/ru/calendar/list/")
+    open_filter_panel(page)
     # There should be a Reset link but no submit/apply button inside the filter form
     filter_form = page.locator("#filter-form")
     expect(filter_form).to_be_visible()
@@ -23,6 +24,7 @@ def test_filter_form_has_no_apply_button(page: Page, live_server):
 def test_date_filter_auto_submits(page: Page, live_server, approved_competition):
     """Changing the date_from input auto-submits and reflects the new value in the URL."""
     page.goto(f"{live_server.url}/ru/calendar/list/")
+    open_filter_panel(page)
     typed = f"{UPCOMING:%Y-%m-%d}"
     page.locator("input[name=date_from]").fill(typed)
     # The change handler auto-submits; on webkit the navigation it triggers can interrupt the
@@ -43,6 +45,7 @@ def test_reset_link_clears_filters(page: Page, live_server):
     """The Reset link navigates to the plain list URL."""
     # Any value will do -- the test is that Reset drops the parameter, not what it held.
     page.goto(f"{live_server.url}/ru/calendar/list/?date_from={UPCOMING:%Y-%m-%d}")
+    open_filter_panel(page)
     # The Reset link lives inside the filter form (the header has a view switcher that
     # also points at the list URL), so scope the selector to the form.
     page.locator("#filter-form a[href*='calendar/list']").click()
@@ -82,6 +85,7 @@ def test_list_table_fits_without_horizontal_scroll(page: Page, live_server, orga
 
     page.set_viewport_size({"width": 800, "height": 900})
     page.goto(f"{live_server.url}/ru/calendar/list/?{AROUND_UPCOMING}")
+    open_filter_panel(page)
     expect(page.locator(".table-responsive")).to_be_visible()
     overflow = page.evaluate(
         "() => { const el = document.querySelector('.table-responsive'); return el.scrollWidth - el.clientWidth; }"
@@ -96,6 +100,7 @@ def test_list_table_stacks_into_cards_on_mobile(page: Page, live_server, approve
     hidden, every cell carries a data-label, and the page has no horizontal scroll."""
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(f"{live_server.url}/ru/calendar/list/?{AROUND_UPCOMING}")
+    open_filter_panel(page)
     # The table still renders (one approved competition in range), but as stacked cards: the
     # header row is hidden and each cell exposes its column name via data-label.
     expect(page.locator(".calendar-list-table")).to_be_visible()

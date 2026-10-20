@@ -83,9 +83,9 @@ def inject_session(page, live_server, user):
 
 
 def open_filter_panel(page) -> None:
-    """Expand the filter panel if it is collapsed (mobile layout hides it by default).
+    """Expand the filter panel if it is collapsed (a phone folds it away on the calendar, list and map).
 
-    No-op on pages whose filters are always visible (e.g. the list view has no collapse toggle).
+    No-op where the panel is already open: on a wide screen, or once opened earlier in the visit.
     """
     toggle = page.locator("button[data-bs-target='#filter-panel']")
     if toggle.count() == 0:
