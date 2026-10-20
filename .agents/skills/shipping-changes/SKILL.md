@@ -44,7 +44,10 @@ the form's hint text says what the tests pin.
 
 `ci.yml` runs pre-commit (ruff, mypy, ASCII check, requirements export), commitizen, the unit tests
 with coverage (the gate is 90%), and a dependency audit. `e2e.yml` runs Playwright on five
-browser/device combinations. All nine checks must be green before you report the work done.
+browser/device combinations, and once more in desktop Chromium for every skin under `skins/` but
+light (`E2E_SKIN`). `visual.yml` compares screenshots of the light and dark themes with the base
+branch (`tests/visual/run.py`); only the maintainer's `visual-change-approved` label lets a
+difference through. Every check must be green before you report the work done.
 
 Read that verdict from the rollup rather than from `gh pr checks`. The per-check status the latter
 reports lags, and can still say `pending` long after a job has finished -- on a pipeline this wide
