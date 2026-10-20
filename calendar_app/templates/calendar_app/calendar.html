@@ -243,14 +243,28 @@ document.addEventListener('DOMContentLoaded', function () {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
   var rangeKind = null;  // 'weekend' or 'season' while a quick range is on screen
+  // A quick range hands its dates on to Share and to the List and Map links, and takes them back
+  // once the reader pages away from it; otherwise those links kept a weekend no longer on screen.
+  var quickDatesStored = false;
+  function storeDates(from, to) {
+    try {
+      if (from) {
+        sessionStorage.setItem('cal_date_from', from);
+        sessionStorage.setItem('cal_date_to', to);
+      } else {
+        sessionStorage.removeItem('cal_date_from');
+        sessionStorage.removeItem('cal_date_to');
+      }
+    } catch (e) { /* storage blocked */ }
+    quickDatesStored = Boolean(from);
+    updateSwitcherLinks();
+  }
   window.onQuickDates = function (kind, range) {
     pendingQuick = kind;
     rangeKind = kind === 'month' ? null : kind;
     if (kind === 'month') calendar.changeView(monthView, new Date());
     else calendar.changeView(kind === 'weekend' ? 'listWeekend' : 'listSeason', {start: range.from, end: dayAfter(range.to)});
-    sessionStorage.setItem('cal_date_from', range.from);
-    sessionStorage.setItem('cal_date_to', range.to);
-    updateSwitcherLinks();
+    storeDates(range.from, range.to);
   };
 
   // FullCalendar pages a range set this way by nothing at all, so the arrows and Today are taken
@@ -422,6 +436,12 @@ document.addEventListener('DOMContentLoaded', function () {
           currentView = monthView;
           try { localStorage.setItem(VIEW_KEY, currentView); } catch (e) { /* storage blocked */ }
         }
+      }
+      if (rangeKind) {
+        var end = info.view.currentEnd;
+        storeDates(isoDate(info.view.currentStart), isoDate(new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1)));
+      } else if (quickDatesStored && !pendingQuick) {
+        storeDates(null);
       }
       // Paging away from a quick range leaves it: the button stops being lit.
       window.markQuickDates(pendingQuick);
