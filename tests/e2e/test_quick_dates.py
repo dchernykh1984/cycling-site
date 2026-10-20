@@ -44,12 +44,12 @@ def test_weekend_shows_the_weekend_as_a_list(page: Page, live_server, weekend_ri
 
 @pytest.mark.django_db(transaction=True)
 def test_the_arrow_moves_to_the_next_weekend(page: Page, live_server):
-    page.goto(f"{live_server.url}/ru/calendar/")
+    page.clock.set_fixed_time(datetime.datetime(2026, 10, 21, 12, 0))
+    page.goto(f"{live_server.url}/en/calendar/")
     page.locator('[data-quick-dates="weekend"]').click()
-    expect(page.locator(".fc-listWeekend-view")).to_be_visible()
-    following = _weekend()[0] + datetime.timedelta(days=7)
+    expect(page.locator(".fc-toolbar-title")).to_have_text("24\u201325 October")
     page.locator(".fc-next-button").click()
-    expect(page.locator(".fc-toolbar-title")).to_contain_text(f"{following.day}")
+    expect(page.locator(".fc-toolbar-title")).to_have_text("31 October \u2013 1 November")
     # Paging away from this weekend: the button no longer claims it.
     expect(page.locator('[data-quick-dates="weekend"].active')).to_have_count(0)
 
