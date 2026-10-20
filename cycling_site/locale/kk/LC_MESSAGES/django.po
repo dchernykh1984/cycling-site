@@ -3165,3 +3165,7 @@ msgstr "Бөлісу"
 
 msgid "Link copied"
 msgstr "Сілтеме көшірілді"
+
+#: calendar_app/templates/calendar_app/calendar.html:257
+msgid "Earlier days of the month"
+msgstr "Айдың өткен күндері"

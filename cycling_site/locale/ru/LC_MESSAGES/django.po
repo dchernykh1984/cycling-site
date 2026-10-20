@@ -3168,3 +3168,7 @@ msgstr "Поделиться"
 
 msgid "Link copied"
 msgstr "Ссылка скопирована"
+
+#: calendar_app/templates/calendar_app/calendar.html:257
+msgid "Earlier days of the month"
+msgstr "Прошедшие дни месяца"
