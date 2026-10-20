@@ -1,0 +1,13 @@
+{% load i18n %}
+{% comment %}The share button next to a page's heading (issue #327). share_url, when given, is what is
+shared -- an invite-only event's invitation link; without it the page's address is, or whatever the
+page's window.shareUrl() builds. The handler lives in static/js/cycling_site.js. On a narrow screen
+only the icon shows, so the button stays beside the heading instead of being pushed into a menu.{% endcomment %}
+<button type="button" class="btn btn-sm btn-outline-secondary share-btn d-inline-flex align-items-center gap-1 flex-shrink-0"
+        {% if share_url %}data-share-url="{{ share_url }}"{% endif %}
+        data-copied-label="{% trans 'Link copied' %}" aria-label="{% trans 'Share' %}" title="{% trans 'Share' %}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.5 2.5 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5"/>
+    </svg>
+    <span class="share-label d-none d-sm-inline">{% trans "Share" %}</span>
+</button>

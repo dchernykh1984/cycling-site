@@ -23,7 +23,10 @@
          style="max-height:400px; object-fit:cover;" alt="{{ article.title }}">
     {% endif %}
 
-    <h1 class="mb-2">{{ article.title }}</h1>
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <h1 class="mb-0">{{ article.title }}</h1>
+      {% if not article.is_hidden %}{% include "_share_button.html" %}{% endif %}
+    </div>
 
     <div class="text-muted small mb-4 d-flex gap-3 flex-wrap">
       <span>{{ article.published_at|date:"d.m.Y" }}</span>

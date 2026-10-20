@@ -14,7 +14,10 @@
     {% comment %}A filtered list is a page about a city or a discipline, and the heading is the
     first thing that says so -- to a reader who arrived from search as much as to the crawler that
     put them there. Without a filter there is nothing to name, and the plain word stands.{% endcomment %}
-    <h1 class="mb-0">{% if meta_title %}{{ meta_title }}{% else %}{% trans "Events" %}{% endif %}</h1>
+    <div class="d-flex align-items-center gap-2">
+      <h1 class="mb-0">{% if meta_title %}{{ meta_title }}{% else %}{% trans "Events" %}{% endif %}</h1>
+      {% include "_share_button.html" %}
+    </div>
     <div class="d-flex gap-2 flex-wrap">
       {% include "calendar_app/_view_switcher.html" with active_view="list" %}
       {% if request.user.is_authenticated %}
@@ -118,6 +121,14 @@
         params.forEach(function (value, key) { addInput(key, value); });
       }
       window.onCalendarFilterChange = function () { syncFilterInputs(); updateSwitcherLinks(); form.submit(); };
+      // The share button hands out the list as filtered, without the reader's favourites, the page
+      // they scrolled to, or the reset marker.
+      window.shareUrl = function () {
+        var params = new URLSearchParams(window.location.search);
+        ['favorite', 'page', 'reset'].forEach(function (k) { params.delete(k); });
+        var qs = params.toString();
+        return window.location.origin + window.location.pathname + (qs ? '?' + qs : '');
+      };
       document.addEventListener('DOMContentLoaded', function () { syncFilterInputs(); updateSwitcherLinks(); });
       document.addEventListener('location-filter-ready', function () { syncFilterInputs(); updateSwitcherLinks(); });
 

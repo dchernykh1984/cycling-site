@@ -6,7 +6,10 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-10 col-lg-8">
-    <h1 class="mb-2">{% trans "Privacy Policy" %}</h1>
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <h1 class="mb-0">{% trans "Privacy Policy" %}</h1>
+      {% include "_share_button.html" %}
+    </div>
     <p class="text-muted small mb-4">{% trans "Last updated" %}: 2026-07-25</p>
 
     <p>{% blocktrans %}This policy explains what personal data the Universal Bicycle Team website collects, why we collect it, and how you can have it removed. The site is a free, non-commercial project for the amateur cycling and running community.{% endblocktrans %}</p>

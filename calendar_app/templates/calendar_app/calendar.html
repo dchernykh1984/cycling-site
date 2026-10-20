@@ -24,7 +24,10 @@
 {% block content %}
 <div class="row mb-3">
   <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1 class="mb-0">{% trans "Calendar" %}</h1>
+    <div class="d-flex align-items-center gap-2">
+      <h1 class="mb-0">{% trans "Calendar" %}</h1>
+      {% include "_share_button.html" %}
+    </div>
     <div class="d-flex gap-2 align-items-center flex-wrap">
       <button class="btn btn-outline-secondary btn-sm d-lg-none" type="button"
               data-bs-toggle="collapse" data-bs-target="#filter-panel"
@@ -152,6 +155,21 @@ document.addEventListener('DOMContentLoaded', function () {
     var favEl = document.getElementById('favorite-filter');
     if (favEl && favEl.checked) params.set('favorite', '1');
   }
+
+  // The share button hands out this calendar as it is filtered now, dates included -- "the running
+  // races in Almaty this year" is the point of sharing it. Not "only favourites": somebody else's
+  // favourites mean nothing to whoever opens the link.
+  window.shareUrl = function () {
+    var params = new URLSearchParams();
+    appendFilterParams(params, 'discipline_category');
+    params.delete('favorite');
+    var df = sessionStorage.getItem('cal_date_from');
+    var dt = sessionStorage.getItem('cal_date_to');
+    if (df) params.set('date_from', df);
+    if (dt) params.set('date_to', dt);
+    var qs = params.toString();
+    return window.location.origin + window.location.pathname + (qs ? '?' + qs : '');
+  };
 
   // Keep the List/Map switcher links in sync with the current filters + date range.
   function updateSwitcherLinks() {

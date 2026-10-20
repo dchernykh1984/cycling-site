@@ -4,11 +4,14 @@
 {% block title %}{% if site_content.page_title %}{{ site_content.page_title }}{% else %}{{ page.title }}{% endif %}{% endblock %}
 
 {% block content %}
-{% if request.user.role == 'owner' %}
-<div class="d-flex justify-content-end mb-4">
+{% comment %}The home page has no heading of its own -- the owner writes it -- so its share button sits
+in the top row, beside the owner's edit button.{% endcomment %}
+<div class="d-flex justify-content-end gap-2 mb-4">
+  {% include "_share_button.html" %}
+  {% if request.user.role == 'owner' %}
   <a href="{% url 'home_edit' %}" class="btn btn-sm btn-outline-secondary">{% trans "Edit page" %}</a>
+  {% endif %}
 </div>
-{% endif %}
 {% if site_content.body %}
 <div class="home-body">{{ site_content.body|safe }}</div>
 {% endif %}

@@ -68,3 +68,28 @@
         window.addEventListener('orientationchange', syncStickyOffset);
     }
 }());
+
+// Share buttons (issue #327). A page may pass the address to share in data-share-url (an event's
+// invitation link, say) or define window.shareUrl() to build it from what is on screen (the
+// calendar's filters); otherwise the page's own address is shared. Phones get their own share
+// sheet; where there is none, the link is copied and the button says so for a moment.
+(function () {
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('.share-btn');
+        if (!btn) return;
+        var url = btn.dataset.shareUrl || (window.shareUrl ? window.shareUrl() : window.location.href);
+        var title = btn.dataset.shareTitle || document.title;
+        if (navigator.share) {
+            navigator.share({ title: title, url: url }).catch(function () { /* closed by the reader */ });
+            return;
+        }
+        if (!navigator.clipboard) return;
+        navigator.clipboard.writeText(url).then(function () {
+            var label = btn.querySelector('.share-label');
+            if (!label) return;
+            var idle = label.textContent;
+            label.textContent = btn.dataset.copiedLabel;
+            setTimeout(function () { label.textContent = idle; }, 2000);
+        });
+    });
+}());

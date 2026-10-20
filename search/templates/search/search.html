@@ -6,7 +6,10 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-10 col-lg-8">
-        <h1 class="mb-4">{% trans "Search" %}</h1>
+        <div class="d-flex align-items-center gap-2 mb-4">
+          <h1 class="mb-0">{% trans "Search" %}</h1>
+          {% include "_share_button.html" %}
+        </div>
 
         <form action="{% url 'search' %}" method="get" class="mb-4">
             <div class="input-group">

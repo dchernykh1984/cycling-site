@@ -13,7 +13,10 @@
 {% block content %}
 <div class="row mb-3">
   <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1 class="mb-0">{% trans "Calendar" %}</h1>
+    <div class="d-flex align-items-center gap-2">
+      <h1 class="mb-0">{% trans "Calendar" %}</h1>
+      {% include "_share_button.html" %}
+    </div>
     <div class="d-flex gap-2 align-items-center flex-wrap">
       <button class="btn btn-outline-secondary btn-sm d-lg-none" type="button"
               data-bs-toggle="collapse" data-bs-target="#filter-panel"
@@ -93,6 +96,17 @@ document.addEventListener('DOMContentLoaded', function () {
     if (window.applyDirectionParams) window.applyDirectionParams(params, directionParam);
     if (favEl && favEl.checked) params.set('favorite', '1');
   }
+
+  // The share button hands out the map as it is filtered now (see calendar.html), carrying a
+  // location filter that arrived from the list or the calendar, without the reader's favourites.
+  window.shareUrl = function () {
+    var params = new URLSearchParams();
+    appendFilters(params, 'discipline_category');
+    params.delete('favorite');
+    window.appendIdsParam(params, 'location', new URLSearchParams(window.location.search).getAll('location'));
+    var qs = params.toString();
+    return window.location.origin + window.location.pathname + (qs ? '?' + qs : '');
+  };
 
   function updateSwitcherLinks() {
     var params = new URLSearchParams();

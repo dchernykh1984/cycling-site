@@ -11,7 +11,10 @@
 <div class="row mb-3">
     <div class="col-12 d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div>
-            <h1 class="mb-0">{% trans "Map" %}</h1>
+            <div class="d-flex align-items-center gap-2 mb-0">
+              <h1 class="mb-0">{% trans "Map" %}</h1>
+              {% include "_share_button.html" %}
+            </div>
             {% if page.intro %}
             <div class="richtext mt-2">{{ page.intro|richtext }}</div>
             {% endif %}

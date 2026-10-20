@@ -716,6 +716,21 @@ def _preview_image_tags(request, competition) -> dict:
     }
 
 
+def _share_url(request, competition, *, is_public: bool, invite_url: str | None) -> str | None:
+    """What an event page's share button hands out (issue #327), or None for no button.
+
+    The page's own address when anybody can open it. For an invite-only event, its invitation link
+    -- ``invite_url`` is only there for the people who may edit it, who could as well make it public.
+    A hidden or not-yet-approved event, or an invitee, gets no button: the link would open for nobody
+    it was sent to.
+    """
+    if is_public:
+        return request.build_absolute_uri(competition.get_absolute_url())
+    if competition.invite_only and competition.status == Competition.Status.APPROVED and not competition.is_hidden:
+        return invite_url
+    return None
+
+
 class CompetitionDetailView(View):
     def get(self, request, pk):
         from registrations.views import can_manage
@@ -846,6 +861,7 @@ class CompetitionDetailView(View):
             ctx["invite_url"] = request.build_absolute_uri(
                 reverse("competition_invite", args=[competition.pk, competition.invite_key])
             )
+        ctx["share_url"] = _share_url(request, competition, is_public=is_public, invite_url=ctx.get("invite_url"))
         response = render(request, "calendar_app/detail.html", ctx)
         if competition.invite_only:
             # Only people let in ever reach this page, but say it plainly in case a crawler does.
