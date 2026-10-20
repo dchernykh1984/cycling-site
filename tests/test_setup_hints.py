@@ -58,6 +58,18 @@ class SignedOutTests(TestCase):
     def test_not_on_the_sign_in_page_itself(self):
         self.assertNotContains(self.client.get(reverse("account_login")), 'id="setup-hint"')
 
+    def test_not_on_the_continue_with_a_service_step_either(self):
+        """allauth names these pages after the service, so a list of route names would miss them."""
+        from accounts.views import signin_providers
+
+        providers = [pid for pid, _ in signin_providers()]
+        self.assertTrue(providers, "no sign-in services configured, so nothing would be checked")
+        for pid in providers:
+            with self.subTest(provider=pid):
+                response = self.client.get(reverse(f"{pid}_login"))
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, 'id="setup-hint"')
+
     def test_the_next_address_survives_filters(self):
         response = self.client.get(f"{LIST}?date_from=2026-01-01&discipline=3")
         self.assertIn("date_from%3D2026-01-01%26discipline%3D3", response.context["setup_hint"]["login_url"])

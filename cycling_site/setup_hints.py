@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.urls import reverse
 
 #: Hints a member may turn off, in the order they are offered.
@@ -42,15 +43,18 @@ def _url_name(request) -> str:
 def _quiet_here(request) -> bool:
     """Pages where a hint would only repeat the page.
 
-    Sign-in, sign-up and the profile: the hint would point at the page it is on. The race entry
-    form: it already names what the profile is missing, right above its own button.
+    Everything under accounts/ -- sign-in, sign-up, the profile, and the "continue with Google" step
+    of each sign-in service: the hint would ask to sign in someone who is signing in, or point at the
+    page it is on. Matched by path rather than by route names, because allauth names the service
+    pages after the service (google_login, strava_login...) and a new service must not slip past.
+    The race entry form: it already names what the profile is missing, right above its button.
     """
     match = getattr(request, "resolver_match", None)
     if match is None:
         return False
-    return (match.url_name or "").startswith(
-        ("account_", "socialaccount_")
-    ) or match.view_name == "registrations:register"
+    first, _, rest = (match.route or "").partition("/")
+    route = rest if first in {code for code, _ in settings.LANGUAGES} else match.route or ""
+    return route.startswith("accounts/") or match.view_name == "registrations:register"
 
 
 def _has_preferences(user) -> bool:
