@@ -47,6 +47,11 @@ def test_a_guests_old_choice_in_the_browser_is_carried_over_to_the_cookie(page: 
     expect(page.locator("html")).to_have_attribute("data-bs-theme", "dark")
     expect(page.locator("html")).to_have_attribute("data-skin", "dark")
     assert _skin_cookie(page) == "dark"
+    # The chooser was drawn for light; on this very page it already shows dark.
+    chooser = page.locator("nav .skin-select")
+    expect(chooser.locator(".skin-icon")).to_have_text("\u2600")
+    expect(chooser.locator("[data-skin-key='dark']")).to_have_class(re.compile(r"\bactive\b"))
+    expect(chooser.locator("[data-skin-key='light']")).not_to_have_class(re.compile(r"\bactive\b"))
 
     # From now on the server draws it: the carrying-over script is no longer on the page.
     page.goto(f"{live_server.url}/ru/calendar/list/")

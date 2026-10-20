@@ -28,17 +28,28 @@
         }
         document.documentElement.setAttribute('data-skin', key);
         document.documentElement.setAttribute('data-bs-theme', mode);
-        // Every chooser on the page (navbar, profile) shows the new choice.
+        showSkin(key, mode);
+    });
+
+    // Every chooser on the page (navbar, profile) shows the skin the page is in.
+    function showSkin(key, mode) {
         document.querySelectorAll('.skin-select').forEach(function (chooser) {
             chooser.querySelector('.skin-icon').innerHTML = mode === 'dark' ? '&#9728;' : '&#9790;';
-            var name = chooser.querySelector('.skin-name');
-            if (name) name.textContent = item.textContent;
-            chooser.querySelectorAll('[data-skin-key]').forEach(function (other) {
-                var on = other.dataset.skinKey === key;
-                other.classList.toggle('active', on);
-                if (on) other.setAttribute('aria-current', 'true'); else other.removeAttribute('aria-current');
+            chooser.querySelectorAll('[data-skin-key]').forEach(function (item) {
+                var on = item.dataset.skinKey === key;
+                item.classList.toggle('active', on);
+                if (on) item.setAttribute('aria-current', 'true'); else item.removeAttribute('aria-current');
+                var name = chooser.querySelector('.skin-name');
+                if (on && name) name.textContent = item.textContent;
             });
         });
+    }
+
+    // The server drew the choosers for the skin it knew of; on a guest's first visit after the
+    // switch to the cookie, the early script in base.html has since moved the page to their old one.
+    document.addEventListener('DOMContentLoaded', function () {
+        var root = document.documentElement;
+        showSkin(root.getAttribute('data-skin'), root.getAttribute('data-bs-theme'));
     });
 
     // Mark current section's nav-link as active based on the URL path
