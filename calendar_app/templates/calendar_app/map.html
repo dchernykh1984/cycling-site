@@ -127,8 +127,9 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // fitView=true re-centers/zooms onto the matching markers (first load only). On later filter
-  // changes we pass false so the user's current pan/zoom stays put while only the markers update.
+  // fitView=true picks the first view (first load only): Almaty when anything there matches,
+  // else the matching markers. On later filter changes we pass false so the user's current
+  // pan/zoom stays put while only the markers update.
   function refresh(fitView) {
     var params = new URLSearchParams();
     appendFilters(params, 'direction');
@@ -163,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Filter changes update markers in place without moving the map (fitView=false); only the
-  // initial load fits the view to the matching markers.
+  // initial load picks the view.
   window.onCalendarFilterChange = function () { refresh(false); };
   [dfEl, dtEl].forEach(function (el) {
     el.addEventListener('change', function () {
