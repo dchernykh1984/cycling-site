@@ -177,3 +177,13 @@ def test_a_location_filter_brought_along_fits_every_marker(page: Page, live_serv
     expect(page.locator(".leaflet-marker-icon")).to_have_count(2)
     page.wait_for_function("() => window.calendarMap.getBounds().contains([51.169392, 71.449074])")
     assert _shows(page, 43.238949, 76.889709)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_an_empty_location_param_is_no_filter(page: Page, live_server, organizer):
+    _competition_at(organizer, "Almaty", "43.238949", "76.889709")
+    _competition_at(organizer, "Astana", "51.169392", "71.449074")
+    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}&location=")
+    expect(page.locator(".leaflet-marker-icon")).to_have_count(2)
+    page.wait_for_function("() => window.calendarMap.getZoom() >= 8")
+    assert not _shows(page, 51.169392, 71.449074)
