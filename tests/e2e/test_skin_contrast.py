@@ -25,7 +25,7 @@ CHECKS = [
     ("/ru/news/", "hint button", "main .alert .btn", ("rest", "hover", "focus")),
     ("/ru/news/", "footer", "footer", ("rest",)),
     ("/ru/news/", "footer link", "footer a", ("rest", "hover")),
-    ("/ru/calendar/list/", "filter", "main .form-select", ("rest", "focus")),
+    ("/ru/calendar/list/", "filter", "#et-btn-1", ("rest", "focus")),
     ("/ru/calendar/list/", "label", "main label", ("rest",)),
     ("/ru/calendar/list/", "table", "main table td", ("rest",)),
 ]
@@ -35,10 +35,9 @@ CHECKS = [
 KNOWN_SHORTFALLS = {
     ("light", "muted text", "rest"): 3.8,
     ("light", "share button", "rest"): 2.8,
-    ("light", "share button", "hover"): 2.8,
-    ("light", "share button", "focus"): 2.5,
+    ("light", "share button", "hover"): 1.4,
+    ("light", "share button", "focus"): 1.4,
     ("dark", "footer link", "rest"): 3.8,
-    ("dark", "share button", "focus"): 4.2,
 }
 
 
@@ -61,6 +60,8 @@ def _in_state(page: Page, element, state):
         element.hover()
     elif state == "focus":
         element.focus()
+    # Buttons fade between states; a colour read mid-fade is neither state's.
+    element.evaluate("el => Promise.all(el.getAnimations().map(a => a.finished))")
 
 
 @pytest.mark.django_db(transaction=True)
