@@ -40,13 +40,10 @@ def test_the_month_picker_sits_next_to_today_and_moves_the_grid(page: Page, live
     """A race six years back used to be seventy clicks away; the picker is one."""
     page.goto(f"{live_server.url}/ru/calendar/")
     expect(page.locator(".fc")).to_be_visible()
+    expect(page.locator('#date-nav [data-date-nav="today"]')).to_be_visible()
 
-    left = page.locator(".fc-toolbar-chunk").first
-    expect(left.locator(".fc-today-button")).to_be_visible()
-    expect(left.locator("#calendar-month-picker")).to_be_visible()
-
-    month = page.locator("#calendar-month-select")
-    year = page.locator("#calendar-year-select")
+    month = page.locator("#date-nav-month")
+    year = page.locator("#date-nav-year")
     today = datetime.date.today()
     # The picker opens on the month the grid opened on.
     expect(month).to_have_value(str(today.month))
@@ -60,7 +57,7 @@ def test_the_month_picker_sits_next_to_today_and_moves_the_grid(page: Page, live
     expect(title).to_contain_text(str(today.year))
 
     # And the grid moves the picker back.
-    page.locator(".fc-next-button").click()
+    page.locator('#date-nav [data-date-nav="1"]').click()
     expect(month).to_have_value(str(target + 1))
 
 
@@ -69,11 +66,11 @@ def test_the_picker_follows_the_grid_past_the_years_it_lists(page: Page, live_se
     """An empty calendar lists this year alone -- the arrows can still walk out of it."""
     page.goto(f"{live_server.url}/ru/calendar/")
     expect(page.locator(".fc")).to_be_visible()
-    year = page.locator("#calendar-year-select")
+    year = page.locator("#date-nav-year")
     today = datetime.date.today()
     steps = 13
     for _ in range(steps):
-        page.locator(".fc-prev-button").click()
+        page.locator('#date-nav [data-date-nav="-1"]').click()
     landed = (today.year * 12 + today.month - 1 - steps) // 12
     expect(year).to_have_value(str(landed))
 
@@ -99,10 +96,34 @@ def test_the_picker_shares_the_row_with_the_buttons(page: Page, live_server):
     page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{live_server.url}/ru/calendar/")
     expect(page.locator(".fc")).to_be_visible()
-    today = page.locator(".fc-today-button").bounding_box()
-    picker = page.locator("#calendar-month-picker").bounding_box()
+    today = page.locator('#date-nav [data-date-nav="today"]').bounding_box()
+    picker = page.locator("#date-nav-month").bounding_box()
     assert today and picker
     assert picker["x"] > today["x"], "the picker should follow the Today button"
     # Same line: the two boxes overlap vertically.
     assert picker["y"] < today["y"] + today["height"]
     assert today["y"] < picker["y"] + picker["height"]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_switching_tabs_moves_none_of_the_controls(page: Page, live_server):
+    """Calendar, list and map share one header: a tap on a tab must not make the buttons jump."""
+    page.set_viewport_size({"width": 390, "height": 844})
+    controls = (
+        "#filter-toggle",
+        "#view-link-calendar",
+        "#view-link-list",
+        "#view-link-map",
+        '[data-quick-dates="weekend"]',
+        '#date-nav [data-date-nav="-1"]',
+        '#date-nav [data-date-nav="today"]',
+        "#date-nav-month",
+        "#date-nav-year",
+    )
+    boxes = {}
+    for path in ("/ru/calendar/", "/ru/calendar/list/", "/ru/calendar/map/"):
+        page.goto(f"{live_server.url}{path}")
+        expect(page.locator("#date-nav")).to_be_visible()
+        boxes[path] = [page.locator(selector).bounding_box() for selector in controls]
+    calendar, listing, mapping = boxes.values()
+    assert calendar == listing == mapping, boxes

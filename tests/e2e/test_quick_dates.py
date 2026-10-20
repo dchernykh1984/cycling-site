@@ -48,7 +48,7 @@ def test_the_arrow_moves_to_the_next_weekend(page: Page, live_server):
     page.goto(f"{live_server.url}/en/calendar/")
     page.locator('[data-quick-dates="weekend"]').click()
     expect(page.locator(".fc-toolbar-title")).to_have_text("24\u201325 October")
-    page.locator(".fc-next-button").click()
+    page.locator('#date-nav [data-date-nav="1"]').click()
     expect(page.locator(".fc-toolbar-title")).to_have_text("31 October \u2013 1 November")
     # Paging away from this weekend: the button no longer claims it.
     expect(page.locator('[data-quick-dates="weekend"].active')).to_have_count(0)
@@ -125,9 +125,9 @@ def test_on_a_sunday_the_arrow_moves_to_the_next_saturday_and_sunday(page: Page,
     page.goto(f"{live_server.url}/en/calendar/")
     page.locator('[data-quick-dates="weekend"]').click()
     expect(page.locator(".fc-toolbar-title")).to_have_text("25 October")
-    page.locator(".fc-next-button").click()
+    page.locator('#date-nav [data-date-nav="1"]').click()
     expect(page.locator(".fc-toolbar-title")).to_have_text("31 October \u2013 1 November")
-    page.locator(".fc-prev-button").click()
+    page.locator('#date-nav [data-date-nav="-1"]').click()
     expect(page.locator(".fc-toolbar-title")).to_have_text("24\u201325 October")
 
 
@@ -138,7 +138,7 @@ def test_the_links_follow_the_range_on_screen(page: Page, live_server):
     page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{live_server.url}/en/calendar/")
     page.locator('[data-quick-dates="weekend"]').click()
-    page.locator(".fc-next-button").click()
+    page.locator('#date-nav [data-date-nav="1"]').click()
     link = page.locator("#view-link-list")
     expect(link).to_have_attribute("href", re.compile(r"date_from=2026-10-31&date_to=2026-11-01"))
     page.locator(".fc-dayGridMonth-button").click()
@@ -169,7 +169,7 @@ def test_month_on_the_month_already_shown_lets_go_on_the_next_page(page: Page, l
     page.goto(f"{live_server.url}/en/calendar/")
     page.locator('[data-quick-dates="month"]').click()
     expect(page.locator('[data-quick-dates="month"].active')).to_have_count(1)
-    page.locator(".fc-next-button").click()
+    page.locator('#date-nav [data-date-nav="1"]').click()
     expect(page.locator("[data-quick-dates].active")).to_have_count(0)
     expect(page.locator("#view-link-list")).not_to_have_attribute("href", re.compile(r"date_from"))
 
@@ -182,7 +182,7 @@ def test_a_shared_weekend_link_opens_on_that_weekend(page: Page, live_server):
     expect(page.locator(".fc-toolbar-title")).to_have_text("1\u20132 May")
     # Not this weekend, so the button stays dark; the arrows still page by weekends.
     expect(page.locator("[data-quick-dates].active")).to_have_count(0)
-    page.locator(".fc-next-button").click()
+    page.locator('#date-nav [data-date-nav="1"]').click()
     expect(page.locator(".fc-toolbar-title")).to_have_text("8\u20139 May")
 
 

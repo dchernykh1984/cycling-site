@@ -12,10 +12,9 @@
 <style>
   #calendar { min-height: 500px; }
   .fc-event { cursor: pointer; }
-  /* The toolbar row carries the month picker as well as prev/next/Today. The chunk holding them
-     is a plain block, so without this the picker drops onto a line of its own instead of sitting
-     beside the buttons; and on a phone the row is wider than the screen, which without the
-     wrapping would scroll the whole page sideways. */
+  /* The grid's own toolbar holds the title and the Grid/List switch; the arrows, Today and the
+     month picker are the row above it, shared with the list and the map. On a phone the toolbar is
+     wider than the screen, which without the wrapping would scroll the whole page sideways. */
   .fc .fc-header-toolbar { flex-wrap: wrap; row-gap: .5rem; }
   .fc .fc-toolbar-chunk { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
   /* Every event is all-day, so the list's time column only ever held an empty cell. */
@@ -43,6 +42,10 @@
   </div>
 </div>
 
+{% include "calendar_app/_quick_dates.html" %}
+{% include "calendar_app/_date_nav.html" %}
+{% include "calendar_app/_filter_chips.html" %}
+
 <div id="filter-panel" class="collapse d-lg-block">
   <div class="card mb-3">
     <div class="card-body py-2">
@@ -65,22 +68,6 @@
   </div>
 </div>
 
-{% include "calendar_app/_quick_dates.html" %}
-{% include "calendar_app/_filter_chips.html" %}
-
-{% comment %}The month picker starts here and is moved into the grid's own toolbar, next to Today,
-once FullCalendar has drawn it. If the grid never draws -- no scripts, a failed CDN -- the picker
-stays where it is, which is where a reader looking for the controls would expect it.{% endcomment %}
-<div id="calendar-month-picker" class="d-flex gap-1 align-items-center mb-2">
-  <label class="visually-hidden" for="calendar-month-select">{% trans "Month" %}</label>
-  <select id="calendar-month-select" class="form-select form-select-sm w-auto">
-    {% for number, name in calendar_months %}<option value="{{ number }}">{{ name }}</option>{% endfor %}
-  </select>
-  <label class="visually-hidden" for="calendar-year-select">{% trans "Year" %}</label>
-  <select id="calendar-year-select" class="form-select form-select-sm w-auto">
-    {% for year in calendar_years %}<option value="{{ year }}">{{ year }}</option>{% endfor %}
-  </select>
-</div>
 
 <div id="calendar"></div>
 {{ calendar_date_words|json_script:"calendar-date-words" }}
@@ -211,27 +198,10 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('location-filter-ready', updateSwitcherLinks);
 
   // --- month picker ---
-  // Read before the grid is built: FullCalendar reports the month it lands on through datesSet,
-  // which fires during render, and the picker has to be there to answer.
-  var picker = document.getElementById('calendar-month-picker');
-  var monthEl = document.getElementById('calendar-month-select');
-  var yearEl = document.getElementById('calendar-year-select');
-
-  // Follow the grid: prev, next and Today all move it, and the picker must not claim otherwise.
+  // Follow the grid: the arrows, Today and the quick ranges all move it, and the picker in the row
+  // above (_date_nav.html) must not claim otherwise.
   function syncPicker(date) {
-    if (!monthEl || !yearEl) return;
-    monthEl.value = String(date.getMonth() + 1);
-    var year = date.getFullYear();
-    if (!yearEl.querySelector('option[value="' + year + '"]')) {
-      // The list covers the events the site holds; the arrows can still walk past either end.
-      var before = year < Number(yearEl.options[0].value) ? yearEl.options[0] : null;
-      yearEl.add(new Option(year, year), before);
-    }
-    yearEl.value = String(year);
-  }
-
-  function gotoPickedMonth() {
-    calendar.changeView(monthView, new Date(Number(yearEl.value), Number(monthEl.value) - 1, 1));
+    if (window.syncDateNav) window.syncDateNav(date);
   }
 
   // A quick range is a list of exactly those days: the weekend, or the season. "Month" is the
@@ -267,9 +237,9 @@ document.addEventListener('DOMContentLoaded', function () {
     storeDates(range.from, range.to);
   };
 
-  // FullCalendar pages a range set this way by nothing at all, so the arrows and Today are taken
-  // over while one is on screen: the weekend moves a week, the season a year, Today goes back to
-  // this weekend or this season.
+  // FullCalendar pages a range set this way by nothing at all, so while one is on screen the
+  // arrows move it themselves: the weekend a week, the season a year, and Today goes back to this
+  // weekend or this season.
   function shiftRange(step) {
     var start = calendar.view.currentStart;
     // From that week's Saturday: on a Sunday "this weekend" is the Sunday alone, and a week on
@@ -283,17 +253,19 @@ document.addEventListener('DOMContentLoaded', function () {
       : new Date(from.getFullYear(), 11, 31);
     calendar.changeView(calendar.view.type, {start: isoDate(from), end: dayAfter(isoDate(to))});
   }
-  document.addEventListener('click', function (e) {
-    if (!rangeKind) return;
-    var button = e.target.closest && e.target.closest('#calendar .fc-prev-button, #calendar .fc-next-button, #calendar .fc-today-button');
-    if (!button) return;
-    e.stopPropagation();
-    if (button.classList.contains('fc-today-button')) {
-      document.querySelector('[data-quick-dates="' + rangeKind + '"]').click();
-      return;
+  // The row of arrows, Today and the month picker above the grid (_date_nav.html).
+  window.onDateNav = function (action) {
+    if (action.today) {
+      if (rangeKind) document.querySelector('[data-quick-dates="' + rangeKind + '"]').click();
+      else calendar.today();
+    } else if (action.step) {
+      if (rangeKind) shiftRange(action.step);
+      else if (action.step > 0) calendar.next();
+      else calendar.prev();
+    } else {
+      calendar.changeView(monthView, new Date(action.year, action.month, 1));
     }
-    shiftRange(button.classList.contains('fc-next-button') ? 1 : -1);
-  }, true);
+  };
 
   // "24-25 октября" for a range; the month and year for a month.
   function titleOf(arg) {
@@ -404,12 +376,12 @@ document.addEventListener('DOMContentLoaded', function () {
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
     titleFormat: titleOf,
     views: { listWeekend: { type: 'list' }, listSeason: { type: 'list' } },
-    // FullCalendar's own bundle labels this button in lower case and has no Kazakh at all,
-    // so the label comes from our catalogue like every other word on the page.
-    buttonText: { today: '{% trans "Today" %}', dayGridMonth: '{% trans "Grid" %}', listMonth: '{% trans "List" %}' },
+    // FullCalendar's own bundle has no Kazakh at all, so the labels come from our catalogue like
+    // every other word on the page.
+    buttonText: { dayGridMonth: '{% trans "Grid" %}', listMonth: '{% trans "List" %}' },
     headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
+      left: 'title',
+      center: '',
       right: 'dayGridMonth,listMonth',
     },
     // The list's day headings and empty month, in the site's words rather than the browser's.
@@ -505,17 +477,6 @@ document.addEventListener('DOMContentLoaded', function () {
     window.onQuickDates(kind, {from: df, to: dt});
     window.markQuickDates(window.quickDatesKindOf(df, dt));
   }());
-
-  if (monthEl && yearEl) {
-    monthEl.addEventListener('change', gotoPickedMonth);
-    yearEl.addEventListener('change', gotoPickedMonth);
-    // The left chunk of the toolbar is prev, next and Today; the picker belongs beside them.
-    var toolbar = document.querySelector('#calendar .fc-toolbar-chunk');
-    if (toolbar) {
-      picker.classList.remove('mb-2');
-      toolbar.appendChild(picker);
-    }
-  }
 
   // Called by the filter partials whenever any multi-select changes.
   window.onCalendarFilterChange = function () {
