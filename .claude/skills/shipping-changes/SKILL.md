@@ -69,6 +69,20 @@ A bug fix gets a regression test that fails without the fix: a Django unit test 
 behaviour, a Playwright test in `tests/e2e/` for anything a person sees in a browser. Name tests
 after the behaviour, not the function.
 
+## Setup hints stay current
+
+The line under the menu that tells a reader what to set up (`cycling_site/setup_hints.py`, issue
+#319) is part of a feature, not decoration. When a change:
+
+- **makes a feature depend on something the member sets up** -- a new preference, new profile data,
+  a new sign-in requirement -- add a hint for it, in its place in the order, with its translations
+  and a test;
+- **removes such a dependency, moves the setting, or changes how "set up" is checked** -- update or
+  remove the hint in the same pull request.
+
+Hints are about setting the site up, one at a time. They are not a channel for announcing new
+features: a line that changes every week gets closed by reflex, which defeats the ones that matter.
+
 ## Opening the pull request
 
 `gh pr create --base main` with a body that explains what was wrong, what changed, and what is

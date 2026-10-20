@@ -15,6 +15,10 @@ so, once, in a single line under the menu:
 The first that applies is shown, never two. A signed-in member may turn each reminder off for good,
 one by one; it takes a deliberate click and a confirmation, because a hint closed by reflex is how
 someone in Almaty ends up wondering why the calendar is full of races in Spain.
+
+Keep this list in step with the site: a feature that starts depending on something the member sets
+up gets a hint here, and one that stops depending on it loses its hint (see the shipping-changes
+skill, "Setup hints stay current").
 """
 
 from __future__ import annotations
