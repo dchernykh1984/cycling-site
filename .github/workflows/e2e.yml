@@ -88,3 +88,70 @@ jobs:
           name: playwright-traces-${{ matrix.browser }}-${{ matrix.device || 'desktop' }}
           path: test-results/
           retention-days: 7
+
+  # Every skin but light, the default the jobs above already run in: the same suite, once per skin,
+  # in desktop Chromium. A skin added under skins/ joins the list by itself.
+  skins:
+    runs-on: ubuntu-latest
+    outputs:
+      keys: ${{ steps.list.outputs.keys }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: list
+        run: echo "keys=$(find skins -mindepth 1 -maxdepth 1 -type d ! -name light -printf '%f\n' | sort | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+
+  e2e-skin:
+    needs: skins
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        skin: ${{ fromJSON(needs.skins.outputs.keys) }}
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost/cycling_site_test
+      E2E_SKIN: ${{ matrix.skin }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up PostgreSQL
+        run: |
+          for attempt in 1 2 3; do
+            sudo systemctl start postgresql && break
+            echo "Attempt $attempt failed, retrying in 5s..."
+            sleep 5
+          done
+          sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
+          sudo -u postgres psql -c "ALTER SYSTEM SET max_connections = 200;"
+          sudo systemctl restart postgresql
+          timeout 30 bash -c 'until pg_isready -h localhost -U postgres; do sleep 1; done'
+          sudo -u postgres createdb cycling_site_test
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Install Playwright browser
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run E2E tests in the ${{ matrix.skin }} skin
+        run: >
+          uv run pytest tests/e2e/
+          --browser chromium
+          --tracing=retain-on-failure
+          --no-cov
+          -v
+          --tb=short
+
+      - name: Upload Playwright trace on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces-skin-${{ matrix.skin }}
+          path: test-results/
+          retention-days: 7

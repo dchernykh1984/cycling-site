@@ -30,6 +30,17 @@ _FORTNIGHT = datetime.timedelta(days=14)
 AROUND_UPCOMING = f"date_from={UPCOMING - _FORTNIGHT:%Y-%m-%d}&date_to={UPCOMING + _FORTNIGHT:%Y-%m-%d}"
 
 
+# The skin the whole suite runs in (e2e.yml runs it once per skin). Only the starting point: new
+# members and first-time guests get it, and the tests that pick a skin still pick freely.
+E2E_SKIN = os.environ.get("E2E_SKIN")
+
+
+@pytest.fixture(autouse=True)
+def skin_under_test(settings):
+    if E2E_SKIN:
+        settings.DEFAULT_SKIN = E2E_SKIN
+
+
 @pytest.fixture(autouse=True)
 def default_language_cookie(page, live_server):
     """Force Russian locale for every e2e test via the django_language cookie.
