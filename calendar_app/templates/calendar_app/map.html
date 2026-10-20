@@ -79,6 +79,8 @@ document.addEventListener('DOMContentLoaded', function () {
   var favEl = document.getElementById('map-favorite-filter');
 
   var DEFAULT_CENTER = [48.0, 68.0], DEFAULT_ZOOM = 5;  // Kazakhstan/Central Asia overview
+  // Almaty and the places its riders go out to: Kaskelen to Issyk, Shymbulak to Konaev.
+  var HOME_AREA = L.latLngBounds([43.05, 76.55], [43.90, 77.45]);
   var map = L.map('calendar-map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
   window.calendarMap = map;  // exposed for e2e/debugging
   _addMapLayers(map);
@@ -145,8 +147,14 @@ document.addEventListener('DOMContentLoaded', function () {
           bounds.push([loc.lat, loc.lng]);
         });
         if (fitView) {
-          // Fit to the matching markers; keep the default overview when nothing matches.
-          if (bounds.length) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 12});
+          // Most readers ride around Almaty, so the map opens on it when anything there matches:
+          // which corner of the city a ride starts in is the question, not which country. A
+          // location filter brought from the list or the calendar, or nothing near Almaty, fits
+          // the matching markers instead; nothing at all keeps the default overview.
+          var home = !new URLSearchParams(window.location.search).has('location')
+            && bounds.some(function (b) { return HOME_AREA.contains(b); });
+          if (home) map.fitBounds(HOME_AREA);
+          else if (bounds.length) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 12});
           else map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
         }
       })
