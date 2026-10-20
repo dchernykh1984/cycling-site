@@ -31,6 +31,7 @@
 </div>
 
 {% include "calendar_app/_quick_dates.html" with server_today=True %}
+{% include "calendar_app/_date_nav.html" with from_selector='#map-date-from' to_selector='#map-date-to' %}
 {% include "calendar_app/_filter_chips.html" %}
 
 <div id="filter-panel" class="collapse d-lg-block">
