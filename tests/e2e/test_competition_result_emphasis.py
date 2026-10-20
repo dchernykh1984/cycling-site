@@ -1,7 +1,6 @@
 """Published results stand out in both themes, on desktop and mobile."""
 
 import datetime
-import re
 
 import pytest
 from django.urls import reverse
@@ -9,32 +8,23 @@ from django.utils.translation import gettext, override
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import CompetitionMaterial
+from cycling_site.skins import registry
 from protocols.models import Protocol
 from tests.e2e.conftest import UPCOMING
+from tests.e2e.contrast import drawn, ratio
 from tests.language_urls import in_language
-
-
-def _contrast(first, second):
-    def luminance(colour):
-        channels = [int(value) / 255 for value in re.findall(r"\d+", colour)[:3]]
-        linear = [value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4 for value in channels]
-        return sum(value * weight for value, weight in zip(linear, (0.2126, 0.7152, 0.0722), strict=True))
-
-    lighter, darker = sorted((luminance(first), luminance(second)), reverse=True)
-    return (lighter + 0.05) / (darker + 0.05)
 
 
 def _appearance(link):
     return link.evaluate(
         "async el => { await Promise.all(el.getAnimations().map(a => a.finished));"
-        " const s = getComputedStyle(el); return {fill: s.backgroundColor, text: s.color,"
-        " weight: parseInt(s.fontWeight), body: getComputedStyle(document.body).backgroundColor}; }"
+        " const s = getComputedStyle(el); return {fill: s.backgroundColor, weight: parseInt(s.fontWeight)}; }"
     )
 
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("language", ["ru", "kk", "en"])
-@pytest.mark.parametrize("theme", ["light", "dark"])
+@pytest.mark.parametrize("theme", list(registry()))
 @pytest.mark.parametrize("source", ["url", "file"])
 def test_published_result_links_are_filled_bold_and_legible(
     page: Page, live_server, approved_competition, language, theme, source
@@ -53,8 +43,10 @@ def test_published_result_links_are_filled_bold_and_legible(
     final = Protocol.objects.create(competition=comp, protocol_type="group", is_live=False)
     CompetitionMaterial.objects.create(competition=comp, title="Photos", url="https://example.com/photos")
 
+    host = live_server.url.split("//")[1].split(":")[0]
+    page.context.add_cookies([{"name": "skin", "value": theme, "domain": host, "path": "/"}])
     page.goto(f"{live_server.url}/{language}/calendar/{comp.pk}/")
-    page.evaluate("theme => document.documentElement.setAttribute('data-bs-theme', theme)", theme)
+    expect(page.locator("html")).to_have_attribute("data-skin", theme)
     with override(language):
         heading = page.get_by_role("heading", name=gettext("Protocols"), exact=True)
         materials_heading = page.get_by_role("heading", name=gettext("Additional materials"), exact=True)
@@ -78,8 +70,9 @@ def test_published_result_links_are_filled_bold_and_legible(
                 link.focus()
             style = _appearance(link)
             assert style["fill"] != "rgba(0, 0, 0, 0)", (theme, state, style)
-            assert _contrast(style["fill"], style["body"]) >= 3, (theme, state, style)
-            assert _contrast(style["text"], style["fill"]) >= 4.5, (theme, state, style)
+            fill = drawn(link, "fill")
+            assert ratio(fill, drawn(link, "fill-beneath")) >= 3, (theme, state, style)
+            assert ratio(drawn(link, "text"), fill) >= 4.5, (theme, state, style)
             assert style["weight"] >= 700
         box = link.bounding_box()
         assert box is not None

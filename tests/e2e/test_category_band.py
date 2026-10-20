@@ -12,8 +12,10 @@ import pytest
 from playwright.sync_api import Page, ViewportSize, expect
 
 from calendar_app.models import Competition
+from cycling_site.skins import registry
 from registrations.models import CompetitionRegistration, RegistrationCategory
 from tests.e2e.conftest import UPCOMING, inject_session
+from tests.e2e.contrast import drawn, legibility, ratio
 
 PHONE: ViewportSize = {"width": 390, "height": 844}
 NARROW: ViewportSize = {"width": 320, "height": 568}
@@ -44,44 +46,28 @@ def _competition_with_two_categories(organizer):
     return comp
 
 
-def _open(page, live_server, organizer, comp, theme, viewport=PHONE):
+def _open(page, live_server, organizer, comp, skin, viewport=PHONE):
+    """The participant list in a whole skin, as the organizer who chose it sees it."""
+    organizer.theme = skin
+    organizer.save(update_fields=["theme"])
     page.set_viewport_size(viewport)
     inject_session(page, live_server, organizer)
     page.goto(f"{live_server.url}/ru/competitions/{comp.pk}/participants/")
-    page.evaluate("theme => document.documentElement.setAttribute('data-bs-theme', theme)", theme)
     return page.locator(".participant-category").first
 
 
-def _rgb(page, locator, prop):
-    return locator.evaluate(f"el => getComputedStyle(el).{prop}")
-
-
-def _luminance(colour):
-    """Rough perceived lightness of an "rgb(r, g, b)" string, 0..255."""
-    parts = [int(n) for n in colour.replace("rgba", "rgb").split("(")[1].split(")")[0].split(",")[:3]]
-    return 0.299 * parts[0] + 0.587 * parts[1] + 0.114 * parts[2]
-
-
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize("theme", ["light", "dark"])
-def test_the_band_is_filled_and_legible_in_both_themes(page: Page, live_server, organizer, theme):
+@pytest.mark.parametrize("skin", list(registry()))
+def test_the_band_is_filled_and_legible_in_every_skin(page: Page, live_server, organizer, skin):
     """Inverted against the page, whichever way round the page happens to be."""
     comp = _competition_with_two_categories(organizer)
-    band = _open(page, live_server, organizer, comp, theme)
+    band = _open(page, live_server, organizer, comp, skin)
     expect(band).to_be_visible()
 
-    background = _rgb(page, band, "backgroundColor")
-    text = _rgb(page, band, "color")
-    page_background = page.evaluate("() => getComputedStyle(document.body).backgroundColor")
-
-    assert "rgba(0, 0, 0, 0)" not in background, f"the band has no fill in the {theme} theme"
-    # The band must read against the page, and its own text against the band.
-    assert abs(_luminance(background) - _luminance(page_background)) > 90, (
-        f"band {background} is too close to the page {page_background} in the {theme} theme"
-    )
-    assert abs(_luminance(background) - _luminance(text)) > 90, (
-        f"band text {text} is too close to its own fill {background} in the {theme} theme"
-    )
+    # The band must stand out from the page, and its own text read against the band.
+    fill, page_beneath = drawn(band, "fill"), drawn(band, "fill-beneath")
+    assert ratio(fill, page_beneath) >= 3, f"band {fill} is too close to the page {page_beneath} in {skin}"
+    assert legibility(band) >= 4.5, f"band text is too close to its own fill {fill} in {skin}"
 
 
 @pytest.mark.django_db(transaction=True)
