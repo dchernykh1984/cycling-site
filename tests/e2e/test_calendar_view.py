@@ -36,7 +36,7 @@ def test_the_reader_switches_the_view_and_it_is_kept(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_the_month_picker_sits_next_to_today_and_moves_the_grid(page: Page, live_server):
+def test_the_month_picker_moves_the_grid_and_follows_it(page: Page, live_server):
     """A race six years back used to be seventy clicks away; the picker is one."""
     page.goto(f"{live_server.url}/ru/calendar/")
     expect(page.locator(".fc")).to_be_visible()
@@ -76,18 +76,18 @@ def test_the_picker_follows_the_grid_past_the_years_it_lists(page: Page, live_se
 
 
 @pytest.mark.django_db(transaction=True)
-def test_the_toolbar_does_not_widen_the_page(page: Page, live_server):
-    """The picker joined a row that was already nearly the width of a phone screen.
+@pytest.mark.parametrize("path", ("/ru/calendar/", "/ru/calendar/list/", "/ru/calendar/map/"))
+def test_no_tab_scrolls_sideways_on_a_phone(page: Page, live_server, path):
+    """The rows above the content are nearly the width of a phone screen and must wrap.
 
-    Unwrapped, the toolbar measured 456px inside a 388px container on a Pixel 7 and took the whole
-    document out to 468px in a 412px screen: every page scrolled sideways from the calendar on.
+    Unwrapped, the calendar's toolbar once measured 456px inside a 388px container on a Pixel 7 and
+    took the whole document out to 468px in a 412px screen: every page scrolled sideways.
     """
-    page.goto(f"{live_server.url}/ru/calendar/")
-    expect(page.locator(".fc")).to_be_visible()
-    widths = page.evaluate(
-        "() => {const t = document.querySelector('.fc-header-toolbar'); return [t.scrollWidth, t.clientWidth];}"
-    )
-    assert widths[0] <= widths[1], f"the toolbar overflows: {widths[0]}px in {widths[1]}px"
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}{path}")
+    expect(page.locator("#date-nav")).to_be_visible()
+    widths = page.evaluate("() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]")
+    assert widths[0] <= widths[1], f"the page overflows: {widths[0]}px in {widths[1]}px"
 
 
 @pytest.mark.django_db(transaction=True)
