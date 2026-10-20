@@ -20,7 +20,9 @@
 
         if (document.body.dataset.authenticated === 'true') {
             var csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
-            fetch('/accounts/theme/', {
+            // From the template: the address carries the reader's language prefix, and the bare one
+            // answers a POST with a redirect that drops the request body.
+            fetch(document.body.dataset.themeUrl, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
                 body: JSON.stringify({theme: next})

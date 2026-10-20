@@ -68,7 +68,7 @@
     <link rel="apple-touch-icon" href="{% static 'apple-touch-icon.png' %}">
     {% block extra_css %}{% endblock %}
 </head>
-<body data-authenticated="{{ request.user.is_authenticated|yesno:'true,false' }}">
+<body data-authenticated="{{ request.user.is_authenticated|yesno:'true,false' }}" data-theme-url="{% url 'account_theme' %}">
     {% wagtailuserbar %}
 
     <nav class="navbar navbar-expand-lg sticky-top shadow-sm bg-body-tertiary">
