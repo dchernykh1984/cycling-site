@@ -73,3 +73,16 @@ def test_today_brings_the_map_back_to_the_month_ahead(page: Page, live_server):
     page.locator('#date-nav [data-date-nav="today"]').click()
     expect(page.locator("#map-date-from")).to_have_value(f"{_today():%Y-%m-%d}")
     expect(page.locator('[data-quick-dates="month"].active')).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_today_gives_a_filtered_list_back_its_whole_season(page: Page, live_server, race_event_type):
+    """A list about one kind of event opens on the season ahead; Today must not cut it to 30 days."""
+    page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race_event_type.pk}")
+    expect(page.locator('#filter-form input[name="date_to"]')).to_have_value("")
+    page.locator('#date-nav [data-date-nav="1"]').click()
+    expect(page).to_have_url(re.compile("date_to=2"))
+    page.locator('#date-nav [data-date-nav="today"]').click()
+    expect(page).not_to_have_url(re.compile("date_to=2"))
+    expect(page.locator('#filter-form input[name="date_to"]')).to_have_value("")
+    expect(page.locator('#filter-form input[name="date_from"]')).to_have_value(f"{_today():%Y-%m-%d}")
