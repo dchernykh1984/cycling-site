@@ -128,6 +128,23 @@ class WhoSeesTheEventTests(_Cast):
         self.assertEqual(self.client.get(reverse("competition_detail", args=[self.private.pk])).status_code, 404)
 
 
+class UpcomingRowsTests(_Cast):
+    """The rows under the calendar grid: the reader's invitations, never a taken-down event."""
+
+    def _rows(self):
+        return self.client.get(reverse("calendar")).context["upcoming"]
+
+    def test_an_invitee_finds_the_event_there(self):
+        self.as_(self.invitee)
+        self.assertIn(self.private, self._rows())
+
+    def test_a_hidden_event_stays_out_even_for_an_admin(self):
+        self.public.is_hidden = True
+        self.public.save(update_fields=["is_hidden"])
+        self.as_(self.admin)
+        self.assertNotIn(self.public, self._rows())
+
+
 class InvitationLinkTests(_Cast):
     def _link(self, key=None):
         return reverse("competition_invite", args=[self.private.pk, key or self.private.invite_key])
