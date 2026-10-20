@@ -29,8 +29,9 @@ The count is read from the filter partials whenever anything inside the panel ch
     if (!button) return;
     var count = window.countActiveFilters();
     button.querySelector('.filter-count').textContent = count ? ' (' + count + ')' : '';
-    button.classList.toggle('btn-secondary', count > 0);
-    button.classList.toggle('btn-outline-secondary', count === 0);
+    // Lit the way the view switcher lights its tab: the same outline button, so the skin draws
+    // the same border and the button keeps its width.
+    button.classList.toggle('active', count > 0);
   };
   function soon() { window.setTimeout(window.refreshFilterCount, 0); }
 
