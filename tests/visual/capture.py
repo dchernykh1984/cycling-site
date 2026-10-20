@@ -17,8 +17,9 @@ DEVICES = {
     "iphone15": ("webkit", "iPhone 15"),
 }
 # Painted over on both sides before comparing: the map tiles come from the network and change on
-# their own.
-ALWAYS_MASKED = (".leaflet-tile-pane",)
+# their own; Wagtail's floating admin button is Wagtail's, not a theme's, and its icon's edge has
+# rendered a few pixels apart on WebKit. "host >>> inner" looks inside the host's shadow root.
+ALWAYS_MASKED = (".leaflet-tile-pane", "wagtail-userbar >>> .w-userbar")
 # Changes this branch makes on purpose, kept as narrow as the change. shortcut: the list is edited
 # by hand, empty it once the change has landed on main.
 ALLOWED_CHANGES = (
@@ -165,7 +166,12 @@ OVERFLOWS = "document.documentElement.scrollWidth > document.documentElement.cli
 
 def _rects(page: Page, selectors):
     return page.evaluate(
-        """sels => sels.flatMap(s => [...document.querySelectorAll(s)]).map(el => {
+        """sels => sels.flatMap(s => {
+            const [host, inner] = s.split(' >>> ');
+            if (!inner) return [...document.querySelectorAll(s)];
+            return [...document.querySelectorAll(host)]
+                .flatMap(h => h.shadowRoot ? [...h.shadowRoot.querySelectorAll(inner)] : []);
+        }).map(el => {
             const r = el.getBoundingClientRect();
             return [r.left + scrollX, r.top + scrollY, r.right + scrollX, r.bottom + scrollY];
         }).filter(r => r[2] > r[0] && r[3] > r[1])""",
