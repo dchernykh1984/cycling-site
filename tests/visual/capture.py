@@ -22,11 +22,7 @@ DEVICES = {
 ALWAYS_MASKED = (".leaflet-tile-pane", "wagtail-userbar >>> .w-userbar")
 # Changes this branch makes on purpose, kept as narrow as the change. shortcut: the list is edited
 # by hand, empty it once the change has landed on main.
-ALLOWED_CHANGES = (
-    # The profile's theme row: the switch said "Light" in English, the list names the skin.
-    ".card-body:has(> button[onclick='toggleTheme()'])",
-    ".card-body:has(> .skin-select)",
-)
+ALLOWED_CHANGES: tuple[str, ...] = ()
 
 
 # A guest who has never picked a theme: no cookie, nothing in the browser's storage.
