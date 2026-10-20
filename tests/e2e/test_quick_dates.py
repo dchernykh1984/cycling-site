@@ -89,6 +89,17 @@ def test_the_lists_default_range_lights_month(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_month_stays_lit_when_the_reader_is_a_day_behind_the_site(page: Page, live_server):
+    """The list counts from the site's day, not the browser's: late evening west of Almaty."""
+    from django.utils import timezone
+
+    yesterday = timezone.localdate() - datetime.timedelta(days=1)
+    page.clock.set_fixed_time(datetime.datetime(yesterday.year, yesterday.month, yesterday.day, 22, 0))
+    page.goto(f"{live_server.url}/ru/calendar/list/?reset=1")
+    expect(page.locator('[data-quick-dates="month"].active')).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_the_map_fills_its_date_fields(page: Page, live_server):
     page.goto(f"{live_server.url}/ru/calendar/map/")
     page.locator('[data-quick-dates="season"]').click()
