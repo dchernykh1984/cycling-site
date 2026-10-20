@@ -142,6 +142,11 @@ class Competition(index.Indexed, models.Model):
     # uploaded is re-encoded and bounded on the way in (calendar_app.preview_image), so what lands
     # here is always a plain image of a predictable size with no camera metadata on it.
     preview_image = models.ImageField(upload_to="competitions/preview/", blank=True)
+    # The line a chat shows under the title when somebody pastes a link to this event -- the
+    # meeting time and place, say, which the generated summary cannot know. Optional, translated
+    # like the title; without it the page keeps describing itself with search_summary(). Bounded
+    # because a chat shows a line or two and cuts the rest.
+    preview_text = models.CharField(max_length=200, blank=True)
     # Secret credential for the offline timing tools. Nullable so a manager can delete it (revoke
     # all timing access) if it leaks; a new one is minted by the regenerate action.
     upload_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, null=True, blank=True)

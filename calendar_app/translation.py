@@ -20,4 +20,4 @@ class DisciplineTranslationOptions(TranslationOptions):
 
 @register(Competition)
 class CompetitionTranslationOptions(TranslationOptions):
-    fields = ("title", "description")
+    fields = ("title", "description", "preview_text")
