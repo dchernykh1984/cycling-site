@@ -1,27 +1,43 @@
 # Skins
 
 Every folder here is a skin a reader can pick from the list behind the moon/sun button in the
-navbar (and on their profile). The folder name is the skin's key -- at most 32 characters, the
-size of the profile field that stores it. Profiles and cookies keep it, so **never rename a
-folder**. Deleting one is safe -- whoever had picked it gets the default skin
-(`DEFAULT_SKIN` in `cycling_site/settings/base.py`, the light one) until they pick again.
+navbar (and on their profile). A skin can change the whole look of the site, desktop and phone:
+its colours and fonts, any rule of its stylesheet, and the markup itself -- any template of the
+site can be replaced by the skin's own copy. Readers who did not pick the skin never see any of it.
 
-`light` and `dark` are the site's own themes and the two base modes every other skin builds on.
+`light` and `dark` are the site's own themes. They are also the two base modes every other skin
+builds on, and they do not change without the maintainer (see "Checks" below).
+
+## Starting a skin
+
+```
+.venv/bin/python manage.py startskin ubt --mode light
+```
+
+creates `skins/ubt/` with a manifest and an empty stylesheet, already valid. The folder name is the
+skin's key: lowercase letters, digits and dashes, at most 32 characters. Profiles and cookies store
+it, so **never rename a folder**. Deleting one is safe: whoever had picked it gets the default skin
+(`DEFAULT_SKIN` in `cycling_site/settings/base.py`, the light one) until they pick again.
 
 ## What a skin is
 
 ```
 skins/<key>/
     manifest.json   name in three languages, the mode it builds on, its place in the list
-    skin.css        what it changes
+    skin.css        its stylesheet
+    skin.js         optional: behaviour of its own
+    templates/      optional: its own copies of the site's templates
+    fonts/          optional: its font files and their licence
 ```
 
-`manifest.json`:
+Only `manifest.json` and `skin.css` are required.
+
+### manifest.json
 
 ```json
 {
   "name": {"ru": "...", "kk": "...", "en": "..."},
-  "mode": "dark",
+  "mode": "light",
   "order": 30
 }
 ```
@@ -29,32 +45,88 @@ skins/<key>/
 - `name` -- shown in the list in the reader's language; all three are required. Write the Russian
   and Kazakh names as they read: the pre-commit hook rewrites them as `\uXXXX` escapes (the
   repository keeps json files ASCII), fails once, and the second commit goes through.
-- `mode` -- `light` or `dark`. The page gets Bootstrap's colour mode and everything in
-  `skins/<mode>/skin.css`; the skin then changes only what it means to.
+- `mode` -- `light` or `dark`: Bootstrap's colour mode for the page, and everything in
+  `skins/<mode>/skin.css` applies before the skin's own stylesheet.
 - `order` -- position in the list; light is 10, dark is 20.
 
-`skin.css` holds the skin's own values under its own key:
+### skin.css
+
+Any CSS. It is on the page only while the skin is chosen, after Bootstrap (the Lux theme), the
+site's stylesheet and the mode's stylesheet, so it wins any tie. Picking a skin of its own reloads
+the page once to bring it in.
+
+A skin on the dark mode can start from the variables the dark mode paints with; they are listed,
+with what each paints, at the top of `skins/dark/skin.css`:
 
 ```css
 :root[data-skin="<key>"] {
     --skin-accent: #fc6104;
-    --skin-on-accent: #fff;
+    --skin-on-accent: #000;
 }
 ```
 
-The variables the dark mode paints with, and what each of them paints, are listed at the top of
-`skins/dark/skin.css`. Bootstrap's page-wide variables (`--bs-body-bg`, `--bs-body-color`, ...) can
-be set the same way; the Lux theme paints buttons with fixed colours, so a skin cannot recolour them
-yet -- more variables (buttons, fonts, the skin's own templates) come with the next step of #324.
+### templates/
 
-A skin's stylesheet is on the page only while that skin is chosen, so picking it from the list
-reloads the page once.
+A file at `skins/<key>/templates/<path>` replaces the site's template at the same `<path>`, for
+readers of this skin only. To change a page, find its template -- `cycling_site/templates/` holds
+the shared ones (`base.html` is the frame of every page), each app keeps its own under
+`<app>/templates/` -- copy it into the skin at the same path and edit the copy. What a template
+can show is what its original uses; new data on a page is a change to the site's core, for the
+maintainer.
 
-## Checking a skin
+Two things to keep in a copy:
 
-- `.venv/bin/python -m pytest tests/test_skins.py -n 0` -- every folder loads: manifest complete,
-  mode valid, `skin.css` present, names escaped.
+- **The parts the site's tests work through.** The whole browser test suite runs in every skin
+  (see "Checks"), so a button or a field it can no longer find fails it -- the failure names the
+  missing element.
+- **Translations.** Keep `{% trans %}` / `{% blocktrans %}` around the text; a new phrase needs its
+  Russian and Kazakh in the translation catalogues, which is the maintainer's part.
+
+When the maintainer later changes a template the skin has copied, the copy does not change with
+it; the tests running in the skin show where it fell behind.
+
+### skin.js and fonts/
+
+`skin.js` is loaded after the site's own script, only while the skin is chosen.
+
+A font of the skin's own goes into `fonts/` with its licence (`LICENSE...` or `OFL.txt`), and its
+`@font-face` family is named `skin-<key>-<role>` -- `skin-ubt-heading`, `skin-ubt-body` -- so two
+skins never mean each other's font:
+
+```css
+@font-face {
+    font-family: "skin-ubt-heading";
+    src: url("fonts/heading.woff2") format("woff2");
+}
+```
+
+## Looking at a skin locally
+
+A database of its own, filled with sample events, news, registrations and accounts:
+
+```
+createdb skins_demo
+export DATABASE_URL=postgres://localhost/skins_demo
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py shell < tests/visual/seed.py
+.venv/bin/python manage.py runserver
+```
+
+Then pick the skin from the list. Signed-in pages: sign in as `member_light@example.com` (a
+participant) or `admin_light@example.com` (an admin), password `visual-pass-1`.
+
+## Checks
+
+On every pull request, and locally:
+
+- `.venv/bin/python -m pytest tests/test_skins.py -n 0` -- every folder is a valid skin: manifest
+  complete, key short enough, names escaped, fonts named for the skin, present and licensed.
+- `E2E_SKIN=<key> .venv/bin/python -m pytest tests/e2e` -- the whole browser suite with the skin
+  as everyone's starting skin, including `test_skin_contrast.py`: text at least 4.5:1 against what
+  it is drawn on (3:1 for large text), at rest, under the pointer and in focus. CI runs this for
+  every skin in its own job.
 - `.venv/bin/python tests/visual/run.py` -- screenshots of the branch against `origin/main` in the
-  light and dark themes; any pixel that moved fails. CI runs the same check on every pull request
-  ("Light and dark unchanged"); a deliberate change to light or dark goes through only with the
-  `visual-change-approved` label, which the maintainer sets.
+  light and dark themes; any pixel that moved fails. A skin of its own never touches them, so this
+  only fails when something shared changed. CI runs it as "Light and dark unchanged"; a deliberate
+  change to light or dark goes through only with the `visual-change-approved` label, which the
+  maintainer sets.
