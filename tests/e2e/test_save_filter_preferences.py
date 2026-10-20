@@ -58,3 +58,19 @@ def test_with_always_save_a_change_on_the_calendar_is_kept(page: Page, live_serv
     page.locator("#et-btn-1").click()
     page.locator(f"#et-menu-1 input.mf-item[value='{race.pk}']").check()
     assert _saved_types(member) == {race.pk}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_with_always_save_reset_clears_the_saved_filter(page: Page, live_server):
+    race = EventType.objects.get(name_en="Race")
+    member = _member(autosave_filters=True)
+    member.preferred_event_types.add(race)
+    inject_session(page, live_server, member)
+    page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race.pk}")
+    page.wait_for_load_state("load")
+    page.locator("a[href*='reset=1']").click()
+    page.wait_for_url(re.compile(r"reset=1"))
+    deadline = time.monotonic() + 10
+    while member.preferred_event_types.exists() and time.monotonic() < deadline:
+        time.sleep(0.2)
+    assert not member.preferred_event_types.exists()

@@ -18,20 +18,21 @@ cut off with the page.{% endcomment %}
   var url = '{% url "account_save_filters" %}';
   var csrf = '{{ csrf_token }}';
 
-  window.saveFilterToPreferences = function () {
+  // ``empty`` saves the filters this page has as cleared, without reading the widgets.
+  window.saveFilterToPreferences = function (empty) {
     var params = new URLSearchParams();
     var scope = [];
     if (window.getEventTypeFilterIds) {
       scope.push('event_type');
-      window.appendIdsParam(params, 'event_type', window.getEventTypeFilterIds());
+      if (!empty) window.appendIdsParam(params, 'event_type', window.getEventTypeFilterIds());
     }
     if (window.applyDirectionParams) {
       scope.push('direction');
-      window.applyDirectionParams(params, 'discipline_category');
+      if (!empty) window.applyDirectionParams(params, 'discipline_category');
     }
     if (window.getLocationFilterIds) {
       scope.push('location');
-      window.appendIdsParam(params, 'location', window.getLocationFilterIds());
+      if (!empty) window.appendIdsParam(params, 'location', window.getLocationFilterIds());
     }
     params.set('scope', scope.join(','));
     return fetch(url, {
@@ -63,6 +64,14 @@ cut off with the page.{% endcomment %}
       if (pageHandler) return pageHandler.apply(this, arguments);
     };
   });
+  {% if request.user.autosave_filters %}
+  // Reset is a link, not a filter change, so it never reaches the handler above. Clearing the
+  // filter is still a state of the search, and with "always save" on it is saved like any other.
+  // Delegated: this script can run before the link is parsed.
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('a[href*="reset=1"]')) window.saveFilterToPreferences(true);
+  });
+  {% endif %}
 }());
 </script>
 {% endif %}
