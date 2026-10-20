@@ -54,12 +54,30 @@ inputs keep the saved values if JavaScript is off; the JS replaces them on load/
   <div id="pref-loc-inputs">{% for id in pref_location_ids %}<input type="hidden" name="preferred_locations" value="{{ id }}">{% endfor %}</div>
 </div>
 
+<div class="mb-3">
+  <label class="form-label">{% trans "Preferred event types" %}</label>
+  <div class="row g-2">
+    <div class="col-sm-6">
+      <div class="dropdown">
+        <button class="form-select form-select-sm text-start" type="button" id="pe-btn-1"
+                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+          <span class="mf-text text-muted">{% trans "All" %}</span>
+        </button>
+        <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="pe-menu-1"></ul>
+      </div>
+    </div>
+  </div>
+  <div id="pref-et-inputs">{% for id in pref_event_type_ids %}<input type="hidden" name="preferred_event_types" value="{{ id }}">{% endfor %}</div>
+</div>
+
 {{ categories_json|json_script:"pref-categories-data" }}
 {{ disciplines_json|json_script:"pref-disciplines-data" }}
 {{ locations_data|json_script:"pref-locations-data" }}
 {{ pref_direction_ids|json_script:"pref-direction-ids" }}
 {{ pref_discipline_ids|json_script:"pref-discipline-ids" }}
 {{ pref_location_ids|json_script:"pref-location-ids" }}
+{{ event_types_json|json_script:"pref-event-types-data" }}
+{{ pref_event_type_ids|json_script:"pref-event-type-ids" }}
 
 {% include "calendar_app/_filter_multiselect_js.html" %}
 <script>
@@ -151,5 +169,17 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   function syncLoc() { syncInputs('pref-loc-inputs', 'preferred_locations', loc.effectivePks()); }
   syncLoc();
+
+  // Event types (mirrors _event_type_filter.html): one level, no parents.
+  var eventTypes = j('pref-event-types-data');
+  var prefEt = j('pref-event-type-ids').map(String);
+  var et = window.MultiSelectCascade({
+    levels: [{ btn: document.getElementById('pe-btn-1'), menu: document.getElementById('pe-menu-1') }],
+    nodesUnder: function () { return eventTypes.map(function (e) { return { pk: e.pk, name: e.name }; }); },
+    restoreChains: function () { return prefEt.map(function (id) { return [{ depth: 1, pk: id }]; }); },
+    searchable: true, labels: LABELS, onChange: syncEt
+  });
+  function syncEt() { syncInputs('pref-et-inputs', 'preferred_event_types', et.effectivePks()); }
+  syncEt();
 });
 </script>

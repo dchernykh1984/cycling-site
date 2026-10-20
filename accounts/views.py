@@ -107,7 +107,7 @@ class ProfileEditForm(forms.ModelForm):
             "preferred_directions": forms.MultipleHiddenInput,
             "preferred_disciplines": forms.MultipleHiddenInput,
             "preferred_locations": forms.MultipleHiddenInput,
-            "preferred_event_types": forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
+            "preferred_event_types": forms.MultipleHiddenInput,
             "autosave_filters": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
@@ -210,7 +210,12 @@ class ProfileEditView(LoginRequiredMixin, View):
         plus the pre-checked ids taken from the FORM (issue #229). Reading from the bound form (not
         the DB) keeps the user's in-progress selection when an unrelated field fails validation and
         the page is re-rendered, exactly as the plain text fields do."""
-        from calendar_app.views import _categories_for_locale, _disciplines_for_locale, _get_locations_data
+        from calendar_app.views import (
+            _categories_for_locale,
+            _disciplines_for_locale,
+            _event_types_for_locale,
+            _get_locations_data,
+        )
 
         def ids(field_name):
             out = []
@@ -228,6 +233,8 @@ class ProfileEditView(LoginRequiredMixin, View):
             "pref_direction_ids": ids("preferred_directions"),
             "pref_discipline_ids": ids("preferred_disciplines"),
             "pref_location_ids": ids("preferred_locations"),
+            "event_types_json": _event_types_for_locale(),
+            "pref_event_type_ids": ids("preferred_event_types"),
         }
 
     def get(self, request):
