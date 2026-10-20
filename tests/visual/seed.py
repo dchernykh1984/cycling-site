@@ -27,7 +27,7 @@ from knowledge.models import KnowledgeArticle
 from locations.models import Location
 from news.models import NewsArticle
 from protocols.models import Protocol
-from registrations.models import CompetitionRegistration
+from registrations.models import CompetitionRegistration, RegistrationCategory
 
 TODAY = timezone.localdate()
 NOON = timezone.make_aware(datetime.datetime.combine(TODAY, datetime.time(12, 0)))
@@ -93,6 +93,19 @@ for first, last in (("Aigerim", "Sadykova"), ("Ivan", "Petrov"), ("Timur", "Beko
     CompetitionRegistration.objects.create(
         competition=upcoming, first_name=first, last_name=last, birth_date=datetime.date(1990, 5, 1), gender="M"
     )
+# Categories long enough that a phone scrolls through each, so the sticky category band has a
+# page to stick on.
+for order, name in enumerate(("Elite", "Masters", "Juniors"), start=1):
+    category = RegistrationCategory.objects.create(competition=upcoming, name=name, order=order)
+    for n in range(8):
+        CompetitionRegistration.objects.create(
+            competition=upcoming,
+            category=category,
+            first_name=f"Rider{n}",
+            last_name=f"{name}{n}",
+            birth_date=datetime.date(1980 + n, 1, 1),
+            gender="M",
+        )
 finished = event("Tien Shan Trail", -3, kind=1, url_results="https://example.com/results")
 Protocol.objects.create(competition=finished, protocol_type="absolute", is_live=False)
 Protocol.objects.create(competition=finished, protocol_type="group", is_live=True, stage_label="Stage 2")

@@ -84,6 +84,20 @@ def _scroll_under_sticky_bar(page: Page):
     page.evaluate("new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
 
 
+def _scroll_under_category_band(page: Page):
+    """Scroll into the second category, whose band should then stick under the navbar."""
+    band = page.locator(".participant-category").nth(1)
+    expect(band).to_be_visible()
+    page.evaluate(
+        "el => window.scrollTo({top: el.getBoundingClientRect().top + scrollY + 150, behavior: 'instant'})",
+        band.element_handle(),
+    )
+    page.evaluate("new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
+    nav_bottom = page.evaluate("document.querySelector('nav.navbar').getBoundingClientRect().bottom")
+    band_top = band.evaluate("el => el.getBoundingClientRect().top")
+    assert abs(band_top - nav_bottom) < 2, f"the band is at {band_top}, the navbar ends at {nav_bottom}"
+
+
 def _open_phone_menu(page: Page):
     page.locator(".navbar-toggler").click()
     page.locator(".navbar-collapse.show").wait_for(state="visible")
@@ -131,7 +145,17 @@ def cases(pages):
         ("list-type-filter", "/ru/calendar/list/", None, None, _open_type_filter, ("desktop",), True),
         ("hover-nav", "/ru/calendar/list/", None, None, _hover_nav_link, ("desktop",), False),
         ("keyboard-focus", "/ru/calendar/list/", None, None, _keyboard_focus, ("desktop",), False),
-        ("sticky-bar", "/ru/calendar/list/", None, None, _scroll_under_sticky_bar, None, False),
+        ("sticky-navbar", "/ru/calendar/list/", None, None, _scroll_under_sticky_bar, None, False),
+        (
+            "sticky-category",
+            f"/ru/competitions/{upcoming}/participants/",
+            None,
+            None,
+            _scroll_under_category_band,
+            # The band sticks only in the phone layout (cycling_site.css, below the md breakpoint).
+            ("pixel7", "iphone15"),
+            False,
+        ),
         ("phone-menu", "/ru/", None, None, _open_phone_menu, ("pixel7", "iphone15"), False),
     ]
 
