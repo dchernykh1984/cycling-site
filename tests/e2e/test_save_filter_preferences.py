@@ -7,7 +7,6 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from accounts.models import User
-from calendar_app.models import EventType
 from tests.e2e.conftest import inject_session
 
 
@@ -28,8 +27,8 @@ def _saved_types(user, timeout=10.0):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_the_button_saves_the_filter_and_the_next_visit_opens_with_it(page: Page, live_server):
-    race = EventType.objects.get(name_en="Race")
+def test_the_button_saves_the_filter_and_the_next_visit_opens_with_it(page: Page, live_server, race_event_type):
+    race = race_event_type
     member = _member()
     inject_session(page, live_server, member)
     page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race.pk}")
@@ -44,8 +43,8 @@ def test_the_button_saves_the_filter_and_the_next_visit_opens_with_it(page: Page
 
 
 @pytest.mark.django_db(transaction=True)
-def test_with_always_save_a_change_on_the_calendar_is_kept(page: Page, live_server):
-    race = EventType.objects.get(name_en="Race")
+def test_with_always_save_a_change_on_the_calendar_is_kept(page: Page, live_server, race_event_type):
+    race = race_event_type
     member = _member(autosave_filters=True)
     inject_session(page, live_server, member)
     page.goto(f"{live_server.url}/ru/calendar/?reset=1")
@@ -61,8 +60,8 @@ def test_with_always_save_a_change_on_the_calendar_is_kept(page: Page, live_serv
 
 
 @pytest.mark.django_db(transaction=True)
-def test_with_always_save_reset_clears_the_saved_filter(page: Page, live_server):
-    race = EventType.objects.get(name_en="Race")
+def test_with_always_save_reset_clears_the_saved_filter(page: Page, live_server, race_event_type):
+    race = race_event_type
     member = _member(autosave_filters=True)
     member.preferred_event_types.add(race)
     inject_session(page, live_server, member)
