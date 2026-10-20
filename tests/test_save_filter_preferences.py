@@ -138,3 +138,22 @@ class FilterButtonTests(_Member):
         for name in self.PAGES:
             with self.subTest(page=name):
                 self.assertNotContains(self._page(name), "saveFilterToPreferences")
+
+
+class TranslationTests(TestCase):
+    MSGIDS = (
+        "Preferred event types",
+        "Always save the calendar filter into these preferences",
+        "Every change you make to the filter on the calendar, list or map is kept here, and the calendar opens "
+        "with it next time.",
+        "Save filter to my preferences",
+        "Saved to your preferences",
+    )
+
+    def test_every_new_string_is_translated(self):
+        from django.utils.translation import gettext, override
+
+        for msgid in self.MSGIDS:
+            for lang in ("ru", "kk"):
+                with self.subTest(msgid=msgid[:30], lang=lang), override(lang):
+                    self.assertNotEqual(gettext(msgid), msgid)

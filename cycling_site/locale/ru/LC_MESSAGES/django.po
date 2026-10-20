@@ -3078,13 +3078,6 @@ msgstr ""
 "город, избранное и регистрация на старты в один клик."
 
 msgid ""
-"Choose your sports and places in your profile, and the calendar, list and "
-"map will open with only them."
-msgstr ""
-"Выберите в личном кабинете свои виды спорта и места — и календарь, список и "
-"карта будут открываться только с ними."
-
-msgid ""
 "Add your name, gender and date of birth to your profile: race entries will "
 "be filled in for you."
 msgstr ""
@@ -3135,3 +3128,30 @@ msgstr ""
 
 msgid "Confirm"
 msgstr "Подтвердить"
+
+msgid ""
+"Choose your sports, event types and places in your profile, or save the "
+"filter with its button, and the calendar, list and map will open with them."
+msgstr ""
+"Выберите в личном кабинете свои виды спорта, типы мероприятий и места — или "
+"сохраните фильтр кнопкой рядом с ним, — и календарь, список и карта будут "
+"открываться с ними."
+
+msgid "Preferred event types"
+msgstr "Предпочитаемые типы мероприятий"
+
+msgid "Always save the calendar filter into these preferences"
+msgstr "Всегда сохранять фильтр календаря в эти предпочтения"
+
+msgid ""
+"Every change you make to the filter on the calendar, list or map is kept "
+"here, and the calendar opens with it next time."
+msgstr ""
+"Каждое изменение фильтра в календаре, списке или на карте сохраняется здесь,"
+" и в следующий раз календарь откроется с ним."
+
+msgid "Save filter to my preferences"
+msgstr "Сохранить фильтр в мои предпочтения"
+
+msgid "Saved to your preferences"
+msgstr "Сохранено в предпочтения"

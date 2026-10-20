@@ -192,7 +192,8 @@ class TranslationTests(TestCase):
     MSGIDS = (
         "Sign in, and the calendar fits you: only your sports and your city, favourites, and entering races "
         "in one click.",
-        "Choose your sports and places in your profile, and the calendar, list and map will open with only them.",
+        "Choose your sports, event types and places in your profile, or save the filter with its button, and the "
+        "calendar, list and map will open with them.",
         "Add your name, gender and date of birth to your profile: race entries will be filled in for you.",
         "Your account has only one way to sign in. Add a second one, so losing it does not lock you out.",
         "Add your Strava profile link: races that ask for it will take it from your entry.",

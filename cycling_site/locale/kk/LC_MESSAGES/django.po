@@ -3075,13 +3075,6 @@ msgstr ""
 "қалаңыз, таңдаулылар және стартқа бір басумен тіркелу."
 
 msgid ""
-"Choose your sports and places in your profile, and the calendar, list and "
-"map will open with only them."
-msgstr ""
-"Жеке кабинетте спорт түрлеріңіз бен орындарыңызды таңдаңыз — күнтізбе, тізім"
-" және карта тек солармен ашылады."
-
-msgid ""
 "Add your name, gender and date of birth to your profile: race entries will "
 "be filled in for you."
 msgstr ""
@@ -3132,3 +3125,30 @@ msgstr ""
 
 msgid "Confirm"
 msgstr "Растау"
+
+msgid ""
+"Choose your sports, event types and places in your profile, or save the "
+"filter with its button, and the calendar, list and map will open with them."
+msgstr ""
+"Жеке кабинетте спорт түрлеріңізді, іс-шара түрлерін және орындарды таңдаңыз "
+"— немесе сүзгіні оның батырмасымен сақтаңыз — сонда күнтізбе, тізім және "
+"карта солармен ашылады."
+
+msgid "Preferred event types"
+msgstr "Таңдаулы іс-шара түрлері"
+
+msgid "Always save the calendar filter into these preferences"
+msgstr "Күнтізбе сүзгісін әрдайым осы баптауларға сақтау"
+
+msgid ""
+"Every change you make to the filter on the calendar, list or map is kept "
+"here, and the calendar opens with it next time."
+msgstr ""
+"Күнтізбедегі, тізімдегі немесе картадағы сүзгінің әр өзгерісі осында "
+"сақталады, келесі жолы күнтізбе сонымен ашылады."
+
+msgid "Save filter to my preferences"
+msgstr "Сүзгіні баптауларыма сақтау"
+
+msgid "Saved to your preferences"
+msgstr "Баптауларға сақталды"
