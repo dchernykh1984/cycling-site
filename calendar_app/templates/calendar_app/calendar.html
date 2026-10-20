@@ -267,10 +267,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var to = rangeKind === 'weekend'
       ? new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1)
       : new Date(from.getFullYear(), 11, 31);
-    var iso = function (d) {
-      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    };
-    calendar.changeView(calendar.view.type, {start: iso(from), end: dayAfter(iso(to))});
+    calendar.changeView(calendar.view.type, {start: isoDate(from), end: dayAfter(isoDate(to))});
   }
   document.addEventListener('click', function (e) {
     if (!rangeKind) return;
@@ -325,16 +322,21 @@ document.addEventListener('DOMContentLoaded', function () {
   // is still on shows under today's heading, since its own first day is folded away.
   var EARLIER_LABEL = '{% trans "Earlier days of the month" %}';
   var showPast = false;
-  function isoToday() {
-    var d = new Date();
+  function isoDate(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
+  function isoToday() { return isoDate(new Date()); }
   function tidyList() {
     var body = document.querySelector('#calendar .fc-list-table tbody');
     if (!body) return;
     var oldToggle = body.querySelector('.fc-list-past-toggle');
     if (oldToggle) oldToggle.remove();
     var today = isoToday();
+    // Only the month that holds today folds: a past month, a past weekend or the season are read
+    // whole, and folding them left a page with nothing but the button.
+    var view = calendar.view;
+    var foldPast = !showPast && view.type === 'listMonth'
+      && isoDate(view.currentStart) <= today && today < isoDate(view.currentEnd);
     var seen = {};
     var folded = {};
     var heading = null;
@@ -345,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (heading) heading.hidden = !headingHasRows;
         heading = row;
         headingHasRows = false;
-        past = !showPast && (row.dataset.date || '') < today;
+        past = foldPast && (row.dataset.date || '') < today;
         return;
       }
       var id = row.dataset.eventId;
