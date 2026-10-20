@@ -85,3 +85,19 @@ class PreviewTextFormTests(TestCase):
         response = self.client.post(reverse("calendar_submit"), self._payload(preview_text_ru="x" * (limit + 1)))
         self.assertTrue(response.context["form"].errors["preview_text_ru"])
         self.assertFalse(Competition.objects.filter(title_ru="Saturday ride").exists())
+
+
+class PreviewTextAdminTests(TestCase):
+    """Moderators edit events in the Wagtail admin too; the line has to be reachable there."""
+
+    def test_the_admin_offers_every_language(self):
+        from calendar_app.wagtail_hooks import CompetitionViewSet
+
+        def field_names(panels):
+            for panel in panels:
+                yield from field_names(getattr(panel, "children", []))
+                if getattr(panel, "field_name", None):
+                    yield panel.field_name
+
+        names = set(field_names(CompetitionViewSet.panels))
+        self.assertTrue({"preview_text_ru", "preview_text_kk", "preview_text_en"} <= names)

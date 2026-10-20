@@ -94,6 +94,10 @@ class CompetitionViewSet(SnippetViewSet):
             [FieldPanel("description_ru"), FieldPanel("description_kk"), FieldPanel("description_en")],
             heading="Description",
         ),
+        MultiFieldPanel(
+            [FieldPanel("preview_text_ru"), FieldPanel("preview_text_kk"), FieldPanel("preview_text_en")],
+            heading="Link preview text",
+        ),
         FieldPanel("event_types"),
         FieldPanel("disciplines"),
         FieldPanel("location"),
