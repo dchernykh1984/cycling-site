@@ -18,6 +18,8 @@
      wrapping would scroll the whole page sideways. */
   .fc .fc-header-toolbar { flex-wrap: wrap; row-gap: .5rem; }
   .fc .fc-toolbar-chunk { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+  /* Every event is all-day, so the list's time column only ever held an empty cell. */
+  .fc .fc-list-event-time { display: none; }
 </style>
 {% endblock %}
 
@@ -233,20 +235,62 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.gotoDate(new Date(Number(yearEl.value), Number(monthEl.value) - 1, 1));
   }
 
+  // --- Month as a grid or as a list of days ---
+  // A phone opens on the list: seven columns of one-word titles on a 390px screen read as noise.
+  // The grid is a tap away, and whichever the reader picks is kept for next time. The choice is
+  // made once, on load -- a phone fires "resize" whenever its address bar slides away, and a view
+  // that switched on resize is what made the earlier phone list jump about.
+  var VIEW_KEY = 'calendarView';
+  var VIEWS = ['dayGridMonth', 'listMonth'];
+  var savedView = null;
+  try { savedView = localStorage.getItem(VIEW_KEY); } catch (e) { /* storage blocked */ }
+  var isPhone = window.matchMedia('(max-width: 767.98px)').matches;
+  var currentView = VIEWS.indexOf(savedView) >= 0 ? savedView : (isPhone ? 'listMonth' : 'dayGridMonth');
+
+  // In the list a multi-day race is one row on its first day with the day it ends -- not the same
+  // row on every day it runs, which repeated a three-day triathlon three times. A day whose only
+  // rows were such repeats loses its heading too.
+  function tidyList() {
+    var body = document.querySelector('#calendar .fc-list-table tbody');
+    if (!body) return;
+    var seen = {};
+    var heading = null;
+    var headingHasRows = false;
+    Array.prototype.forEach.call(body.rows, function (row) {
+      if (row.classList.contains('fc-list-day')) {
+        if (heading) heading.hidden = !headingHasRows;
+        heading = row;
+        headingHasRows = false;
+        return;
+      }
+      var id = row.dataset.eventId;
+      row.hidden = Boolean(id && seen[id]);
+      if (id) seen[id] = true;
+      if (!row.hidden) headingHasRows = true;
+    });
+    if (heading) heading.hidden = !headingHasRows;
+  }
+  function tidyListSoon() { window.setTimeout(tidyList, 0); }
+
   // --- FullCalendar ---
   var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-    initialView: 'dayGridMonth',
+    initialView: currentView,
     locale: '{{ CURRENT_LANGUAGE }}',
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
     titleFormat: function(date) { return FC_MONTHS[date.start.month] + ' ' + date.start.year; },
     // FullCalendar's own bundle labels this button in lower case and has no Kazakh at all,
     // so the label comes from our catalogue like every other word on the page.
-    buttonText: { today: '{% trans "Today" %}' },
+    buttonText: { today: '{% trans "Today" %}', dayGridMonth: '{% trans "Month" %}', listMonth: '{% trans "List" %}' },
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
-      right: '',
+      right: 'dayGridMonth,listMonth',
     },
+    // The list's day headings and empty month, in the site's words rather than the browser's.
+    listDayFormat: function (arg) { return dayLabel(arg.date.year, arg.date.month, arg.date.day); },
+    listDaySideFormat: false,
+    allDayText: '',
+    noEventsContent: '{% trans "No events found for the selected period." %}',
     height: 'auto',
     // A busy Saturday holds twenty events; a cell that grows to fit them all stretches the month
     // over several screens on a phone. Three, then "+17" -- a number with no word, since the
@@ -264,7 +308,13 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     datesSet: function (info) {
       syncPicker(info.view.currentStart);
+      if (info.view.type !== currentView) {
+        currentView = info.view.type;
+        try { localStorage.setItem(VIEW_KEY, currentView); } catch (e) { /* storage blocked */ }
+      }
+      tidyListSoon();
     },
+    eventsSet: tidyListSoon,
     eventClick: function (info) {
       if (info.event.url) {
         info.jsEvent.preventDefault();
@@ -274,8 +324,22 @@ document.addEventListener('DOMContentLoaded', function () {
     eventDidMount: function (info) {
       // Mark the user's favorites with a leading star (see CalendarEventsAPIView extendedProps).
       if (info.event.extendedProps.favorite) {
-        var titleEl = info.el.querySelector('.fc-event-title');
+        var titleEl = info.el.querySelector('.fc-event-title, .fc-list-event-title a');
         if (titleEl) titleEl.insertAdjacentHTML('afterbegin', '<span aria-hidden="true">★ </span>');
+      }
+      if (info.view.type === 'listMonth') {
+        info.el.dataset.eventId = info.event.id;
+        // An all-day end is exclusive: a race over 2-4 October ends at midnight on the 5th.
+        var last = info.event.end && new Date(info.event.end.getTime() - 864e5);
+        if (last && last > info.event.start) {
+          var cell = info.el.querySelector('.fc-list-event-title');
+          if (cell) {
+            var until = document.createElement('span');
+            until.className = 'text-muted ms-1 fc-list-event-until';
+            until.textContent = '\u2013 ' + last.getDate() + ' ' + DATE_WORDS.months[last.getMonth()];
+            cell.appendChild(until);
+          }
+        }
       }
     },
   });

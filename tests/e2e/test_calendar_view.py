@@ -7,20 +7,32 @@ from playwright.sync_api import Page, expect
 
 
 @pytest.mark.django_db(transaction=True)
-def test_calendar_shows_month_grid_by_default(page: Page, live_server):
-    """Calendar must open in dayGridMonth view on both desktop and mobile."""
+def test_a_wide_screen_opens_on_the_month_grid(page: Page, live_server):
+    page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{live_server.url}/ru/calendar/")
-    expect(page.locator(".fc")).to_be_visible()
     expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
 
 
 @pytest.mark.django_db(transaction=True)
-def test_calendar_has_no_view_toggle_button(page: Page, live_server):
-    """The right headerToolbar section must have no view-switch buttons."""
+def test_a_phone_opens_on_the_list_of_days(page: Page, live_server):
+    """Seven columns of one-word titles on a 390px screen read as noise (issue #330)."""
+    page.set_viewport_size({"width": 390, "height": 844})
     page.goto(f"{live_server.url}/ru/calendar/")
-    expect(page.locator(".fc")).to_be_visible()
-    # headerToolbar right is '' - the last toolbar chunk must contain no fc-button
-    expect(page.locator(".fc-header-toolbar .fc-toolbar-chunk:last-child .fc-button")).to_have_count(0)
+    expect(page.locator(".fc-listMonth-view")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_reader_switches_the_view_and_it_is_kept(page: Page, live_server):
+    """Chosen once and remembered -- never switched by the page on its own (the address bar of a
+    phone sliding away fires a resize, and a view that followed resizes jumped about)."""
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}/ru/calendar/")
+    page.locator(".fc-dayGridMonth-button").click()
+    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
+    page.set_viewport_size({"width": 390, "height": 700})
+    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
+    page.reload()
+    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
 
 
 @pytest.mark.django_db(transaction=True)
