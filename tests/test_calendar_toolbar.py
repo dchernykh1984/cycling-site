@@ -1,8 +1,9 @@
-"""The controls around the calendar grid.
+"""The controls around the calendar grid, and the row of them the list and the map share.
 
-FullCalendar draws its own toolbar and labels the buttons from its own bundle -- which spells
-`today` in lower case and carries no Kazakh at all. The labels a reader sees have to come from
-our catalogue instead, and the test asserts against `gettext`, never against a pasted word.
+The arrows, Today and the month picker are our own row above the grid (_date_nav.html); FullCalendar's
+toolbar keeps the title and the Grid/List switch. FullCalendar labels its buttons from its own
+bundle, which carries no Kazakh at all, so every label a reader sees comes from our catalogue, and
+the tests assert against `gettext`, never against a pasted word.
 """
 
 import datetime

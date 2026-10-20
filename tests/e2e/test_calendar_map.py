@@ -94,7 +94,7 @@ def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organiz
     # Changing a filter must update the markers in place without resetting the user's pan/zoom.
     _mapped_competition(organizer)  # 90 days out, Almaty
     page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}")
-    expect(page.locator(".leaflet-marker-icon")).to_have_count(1)  # initial load fits to the marker
+    expect(page.locator(".leaflet-marker-icon")).to_have_count(1)  # initial load opens on Almaty
     # User pans/zooms somewhere specific.
     page.wait_for_function("() => window.calendarMap")
     page.evaluate("() => window.calendarMap.setView([50.0, 60.0], 6)")
