@@ -8,6 +8,7 @@ from tests.e2e.contrast import drawn, painted, ratio
 PAGE = """<body style="margin:0;background:#000">
 <p id="faint" style="color:rgba(255,255,255,0.1)">faint</p>
 <div style="background:rgba(255,255,255,0.5)"><p id="on-half">text</p></div>
+<p id="shadow" style="color:transparent;text-shadow:0 0 0 rgb(10, 20, 30)">drawn as a shadow</p>
 </body>"""
 
 
@@ -42,3 +43,9 @@ def test_any_format_the_browser_reads_comes_out_as_srgb(black_page, colour, expe
 def test_a_colour_the_browser_cannot_read_is_an_error_not_a_pass(black_page):
     with pytest.raises(Error, match="unknown colour format"):
         painted(black_page, "not-a-colour")
+
+
+@pytest.mark.django_db
+def test_text_drawn_as_its_own_shadow_reads_as_the_shadow_colour(black_page):
+    # How Bootstrap shows a focused select's text in Firefox.
+    assert drawn(black_page.locator("#shadow")) == [10, 20, 30]

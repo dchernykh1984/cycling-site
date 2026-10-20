@@ -10,6 +10,13 @@ from playwright.sync_api import Locator, Page
 
 _PAINT = """
 (el, what) => {
+  // Text drawn as a shadow: Bootstrap hides a focused select's text in Firefox (color: transparent)
+  // and paints it with an unblurred, unshifted text-shadow instead.
+  const textColour = (style) => {
+    const shadow = style.textShadow.match(/^(.*\\))\\s+0px\\s+0px\\s+0px$/);
+    const clear = style.color === 'transparent' || /,\\s*0\\)$/.test(style.color);
+    return clear && shadow ? shadow[1] : style.color;
+  };
   const g = document.createElement('canvas').getContext('2d', {willReadFrequently: true});
   g.canvas.width = g.canvas.height = 1;
   const paint = (value) => {
@@ -28,7 +35,7 @@ _PAINT = """
     if (what === 'fill-beneath' && node === el) break;
     paint(getComputedStyle(node).backgroundColor);
   }
-  if (what === 'text') paint(getComputedStyle(el).color);
+  if (what === 'text') paint(textColour(getComputedStyle(el)));
   if (what.startsWith('colour:')) paint(what.slice(7));
   return Array.from(g.getImageData(0, 0, 1, 1).data.slice(0, 3));
 }
