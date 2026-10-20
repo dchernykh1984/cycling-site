@@ -5,6 +5,9 @@
 
 {% block body_class %}template-404{% endblock %}
 
+{% comment %}A page that is not there is no place to ask the reader to set anything up.{% endcomment %}
+{% block setup_hint %}{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-md-8 col-lg-6 text-center">

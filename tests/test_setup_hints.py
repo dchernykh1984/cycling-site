@@ -58,6 +58,13 @@ class SignedOutTests(TestCase):
     def test_not_on_the_sign_in_page_itself(self):
         self.assertNotContains(self.client.get(reverse("account_login")), 'id="setup-hint"')
 
+    def test_not_on_a_page_that_is_not_there(self):
+        for url in ("/ru/no-such-page/", reverse("competition_detail", args=[999999])):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 404)
+                self.assertNotContains(response, 'id="setup-hint"', status_code=404)
+
     def test_not_on_the_continue_with_a_service_step_either(self):
         """allauth names these pages after the service, so a list of route names would miss them."""
         from accounts.views import signin_providers
