@@ -108,3 +108,18 @@ def test_the_earlier_days_open_with_one_tap(page: Page, live_server, earlier_and
     expect(page.locator(".fc-list-day:visible").first).to_have_attribute("data-date", f"{FIRST:%Y-%m-%d}")
     expect(page.locator(".fc-list-event:visible", has_text="Earlier ride")).to_have_count(1)
     expect(page.locator(".fc-list-past-toggle")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_past_month_is_read_whole(page: Page, live_server, organizer):
+    """Only the month holding today folds; a month gone by would otherwise show just the button."""
+    Competition.objects.create(
+        title_ru="Last month ride",
+        date_start=FIRST - datetime.timedelta(days=10),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+    )
+    _open_list(page, live_server)
+    page.locator(".fc-prev-button").click()
+    expect(page.locator(".fc-list-event:visible", has_text="Last month ride")).to_have_count(1)
+    expect(page.locator(".fc-list-past-toggle")).to_have_count(0)
