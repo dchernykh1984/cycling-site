@@ -2,8 +2,10 @@
 
 import json
 
+import pytest
 from PIL import Image
 
+from tests.visual import run
 from tests.visual.compare import compare
 
 
@@ -43,3 +45,20 @@ def test_a_mask_in_css_pixels_covers_a_phone_screenshot_of_denser_pixels(tmp_pat
     before = _side(tmp_path / "a", masked=[(4, 4, 6, 6)], scale=2)
     after = _side(tmp_path / "b", pixel=(10, 10), masked=[(4, 4, 6, 6)], scale=2)
     assert compare(before, after, tmp_path / "diff") == []
+
+
+def test_differences_fail_unless_the_label_lets_them_through(tmp_path):
+    assert run.report([], 5, tmp_path, approved=False) == 0
+    assert run.report(["shot.png: differs"], 5, tmp_path, approved=False) == 1
+    assert run.report(["shot.png: differs"], 5, tmp_path, approved=True) == 0
+
+
+def test_a_run_that_breaks_before_comparing_fails_even_with_the_label(tmp_path, monkeypatch):
+    def broken(*args, **kwargs):
+        raise RuntimeError("migrate failed")
+
+    monkeypatch.setattr(run.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setattr(run, "start_side", broken)
+    monkeypatch.setattr(run.sys, "argv", ["run.py", "--out", str(tmp_path), "--approved", "true"])
+    with pytest.raises(RuntimeError, match="migrate failed"):
+        run.main()

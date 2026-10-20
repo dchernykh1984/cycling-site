@@ -111,6 +111,12 @@ def main():
     parser.add_argument("--devices", default=",".join(DEVICES))
     parser.add_argument("--cases", default="", help="comma-separated case names; all when empty")
     parser.add_argument("--dump", help="a pg_dump file to restore under the seed on both sides")
+    parser.add_argument(
+        "--approved",
+        type=lambda value: value == "true",
+        default=False,
+        help="'true' lets differences through (the visual-change-approved label); errors still fail",
+    )
     args = parser.parse_args()
     out = args.out.resolve()
     devices = tuple(args.devices.split(","))
@@ -137,11 +143,25 @@ def main():
             server.wait(timeout=30)
         subprocess.run(["git", "worktree", "remove", "--force", str(base_source)], cwd=REPO, check=False)
 
-    if problems:
-        print(f"{len(problems)} of {shots} screenshots differ (pictures in {out / 'diff'}):")
-        print("\n".join(f"  {problem}" for problem in problems))
-        sys.exit(1)
-    print(f"All {shots} screenshots match.")
+    sys.exit(report(problems, shots, out, args.approved))
+
+
+def report(problems, shots, out, approved) -> int:
+    """The exit code of a comparison that ran to the end.
+
+    Only here can the label let anything through: a run that broke before comparing -- a failed
+    migration, a page that did not load, content that was not there -- raises before this point and
+    fails whatever the label says.
+    """
+    if not problems:
+        print(f"All {shots} screenshots match.")
+        return 0
+    print(f"{len(problems)} of {shots} screenshots differ (pictures in {out / 'diff'}):")
+    print("\n".join(f"  {problem}" for problem in problems))
+    if approved:
+        print("::warning::Light or dark changed; let through by the visual-change-approved label.")
+        return 0
+    return 1
 
 
 # Chromium now and then rasterises a whole batch of text a few levels of grey apart (seen on the

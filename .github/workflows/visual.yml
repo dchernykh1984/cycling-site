@@ -49,14 +49,10 @@ jobs:
         run: uv run playwright install --with-deps chromium webkit
 
       - name: Compare with ${{ github.base_ref }}
-        run: |
-          if uv run python tests/visual/run.py --base-ref "${{ github.event.pull_request.base.sha }}" --out visual-out; then
-            exit 0
-          elif [ "$APPROVED" = "true" ]; then
-            echo "::warning::Light or dark changed; let through by the visual-change-approved label."
-          else
-            exit 1
-          fi
+        # The label lets found differences through, never a run that failed before comparing.
+        run: >
+          uv run python tests/visual/run.py --base-ref "${{ github.event.pull_request.base.sha }}"
+          --out visual-out --approved "$APPROVED"
 
       - name: Upload the differences
         if: always()
