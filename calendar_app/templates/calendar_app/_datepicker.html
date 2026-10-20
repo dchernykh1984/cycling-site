@@ -5,19 +5,6 @@ remains.{% endcomment %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
 {% if CURRENT_LANGUAGE != 'en' %}<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ru.js"></script>{% endif %}
-<style>
-  [data-bs-theme="dark"] .flatpickr-calendar { background: #2c3034; color: #dee2e6; box-shadow: 0 3px 13px rgba(0, 0, 0, .6); }
-  [data-bs-theme="dark"] .flatpickr-calendar.arrowTop::before, [data-bs-theme="dark"] .flatpickr-calendar.arrowTop::after { border-bottom-color: #2c3034; }
-  [data-bs-theme="dark"] .flatpickr-calendar.arrowBottom::before, [data-bs-theme="dark"] .flatpickr-calendar.arrowBottom::after { border-top-color: #2c3034; }
-  [data-bs-theme="dark"] .flatpickr-months .flatpickr-month, [data-bs-theme="dark"] .flatpickr-weekday { background: #2c3034; color: #adb5bd; }
-  [data-bs-theme="dark"] .flatpickr-months .flatpickr-prev-month svg, [data-bs-theme="dark"] .flatpickr-months .flatpickr-next-month svg { fill: #dee2e6; }
-  [data-bs-theme="dark"] .flatpickr-current-month input.cur-year, [data-bs-theme="dark"] .flatpickr-monthDropdown-months { background: #2c3034; color: #dee2e6; }
-  [data-bs-theme="dark"] .flatpickr-day { color: #dee2e6; }
-  [data-bs-theme="dark"] .flatpickr-day:hover, [data-bs-theme="dark"] .flatpickr-day.prevMonthDay:hover, [data-bs-theme="dark"] .flatpickr-day.nextMonthDay:hover { background: #495057; border-color: #495057; }
-  [data-bs-theme="dark"] .flatpickr-day.today { border-color: #6ea8fe; }
-  [data-bs-theme="dark"] .flatpickr-day.selected { background: #6ea8fe; border-color: #6ea8fe; color: #000; }
-  [data-bs-theme="dark"] .flatpickr-day.flatpickr-disabled, [data-bs-theme="dark"] .flatpickr-day.prevMonthDay, [data-bs-theme="dark"] .flatpickr-day.nextMonthDay { color: #6c757d; }
-</style>
 <script>
   (function () {
     if (!window.flatpickr) return;

@@ -20,6 +20,7 @@
     --skin-danger: #ea868f; /* outline danger buttons */
     --skin-menu-hover-bg: #343a40; /* a navbar menu item under the pointer */
     --skin-map-bg: #374151; /* the map before its tiles arrive */
+    --skin-popup-shadow: rgba(0, 0, 0, .6); /* the shadow under the date picker */
 }
 
 /* Dark theme: make navbar-brand and nav-links readable (Lux sets dark colors that don't adapt) */
@@ -202,3 +203,18 @@
     background-color: var(--skin-field-bg);
     border-color: var(--skin-field-border);
 }
+
+/* Dark theme: the date picker of the list and map filters (flatpickr, calendar_app/_datepicker.html) */
+/* :root lifts these one step above flatpickr's own rules, which the page loads after this file:
+   when they lived in the template they came last and won the ties. */
+[data-bs-theme="dark"]:root .flatpickr-calendar { background: var(--skin-field-bg); color: var(--skin-field-color); box-shadow: 0 3px 13px var(--skin-popup-shadow); }
+[data-bs-theme="dark"]:root .flatpickr-calendar.arrowTop::before, [data-bs-theme="dark"]:root .flatpickr-calendar.arrowTop::after { border-bottom-color: var(--skin-field-bg); }
+[data-bs-theme="dark"]:root .flatpickr-calendar.arrowBottom::before, [data-bs-theme="dark"]:root .flatpickr-calendar.arrowBottom::after { border-top-color: var(--skin-field-bg); }
+[data-bs-theme="dark"]:root .flatpickr-months .flatpickr-month, [data-bs-theme="dark"]:root .flatpickr-weekday { background: var(--skin-field-bg); color: var(--skin-muted); }
+[data-bs-theme="dark"]:root .flatpickr-months .flatpickr-prev-month svg, [data-bs-theme="dark"]:root .flatpickr-months .flatpickr-next-month svg { fill: var(--skin-field-color); }
+[data-bs-theme="dark"]:root .flatpickr-current-month input.cur-year, [data-bs-theme="dark"]:root .flatpickr-monthDropdown-months { background: var(--skin-field-bg); color: var(--skin-field-color); }
+[data-bs-theme="dark"]:root .flatpickr-day { color: var(--skin-field-color); }
+[data-bs-theme="dark"]:root .flatpickr-day:hover, [data-bs-theme="dark"]:root .flatpickr-day.prevMonthDay:hover, [data-bs-theme="dark"]:root .flatpickr-day.nextMonthDay:hover { background: var(--skin-field-border); border-color: var(--skin-field-border); }
+[data-bs-theme="dark"]:root .flatpickr-day.today { border-color: var(--skin-accent); }
+[data-bs-theme="dark"]:root .flatpickr-day.selected { background: var(--skin-accent); border-color: var(--skin-accent); color: var(--skin-on-accent); }
+[data-bs-theme="dark"]:root .flatpickr-day.flatpickr-disabled, [data-bs-theme="dark"]:root .flatpickr-day.prevMonthDay, [data-bs-theme="dark"]:root .flatpickr-day.nextMonthDay { color: var(--skin-faint); }
