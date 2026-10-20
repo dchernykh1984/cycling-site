@@ -172,3 +172,29 @@ def test_month_on_the_month_already_shown_lets_go_on_the_next_page(page: Page, l
     page.locator(".fc-next-button").click()
     expect(page.locator("[data-quick-dates].active")).to_have_count(0)
     expect(page.locator("#view-link-list")).not_to_have_attribute("href", re.compile(r"date_from"))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_shared_weekend_link_opens_on_that_weekend(page: Page, live_server):
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{live_server.url}/en/calendar/?date_from=2027-05-01&date_to=2027-05-02")
+    expect(page.locator(".fc-listWeekend-view")).to_be_visible()
+    expect(page.locator(".fc-toolbar-title")).to_have_text("1\u20132 May")
+    # Not this weekend, so the button stays dark; the arrows still page by weekends.
+    expect(page.locator("[data-quick-dates].active")).to_have_count(0)
+    page.locator(".fc-next-button").click()
+    expect(page.locator(".fc-toolbar-title")).to_have_text("8\u20139 May")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_shared_season_link_opens_on_that_season(page: Page, live_server):
+    page.goto(f"{live_server.url}/en/calendar/?date_from=2025-01-01&date_to=2025-12-31")
+    expect(page.locator(".fc-listSeason-view")).to_be_visible()
+    expect(page.locator(".fc-toolbar-title")).to_have_text("2025")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_any_other_range_in_the_link_leaves_the_month(page: Page, live_server):
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{live_server.url}/en/calendar/?date_from=2027-05-03&date_to=2027-05-20")
+    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
