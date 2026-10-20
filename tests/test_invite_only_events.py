@@ -128,6 +128,35 @@ class WhoSeesTheEventTests(_Cast):
         self.assertEqual(self.client.get(reverse("competition_detail", args=[self.private.pk])).status_code, 404)
 
 
+class MapTests(_Cast):
+    """The calendar map pins an event the same way the list shows it."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        from locations.models import add_location_child
+
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        region = add_location_child(country, name="Almaty", name_ru="Almaty")
+        city = add_location_child(region, name="Almaty city", name_ru="Almaty city")
+        venue = add_location_child(city, name="Medeu", name_ru="Medeu", lat="43.157800", lng="77.057000")
+        cls.private.location = venue
+        cls.private.save(update_fields=["location"])
+
+    def _map(self):
+        return json.dumps(self.client.get(reverse("calendar_map_api")).json())
+
+    def test_pinned_for_an_invitee(self):
+        self.as_(self.invitee)
+        self.assertIn("Private ride", self._map())
+
+    def test_not_pinned_for_anyone_else(self):
+        for user in (self.stranger, None):
+            with self.subTest(user=getattr(user, "username", "anonymous")):
+                self.as_(user)
+                self.assertNotIn("Private ride", self._map())
+
+
 class UpcomingRowsTests(_Cast):
     """The rows under the calendar grid: the reader's invitations, never a taken-down event."""
 
