@@ -9,5 +9,7 @@ class HomeConfig(AppConfig):
         # IndexNow spans several apps (events, news, knowledge), so it is wired once from here
         # rather than three times from each of them.
         from cycling_site.indexnow import connect_signals
+        from cycling_site.skins import connect_autoreload
 
         connect_signals()
+        connect_autoreload()

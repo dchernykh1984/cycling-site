@@ -2,10 +2,13 @@
 
 import pathlib
 import tempfile
+from unittest import mock
 
+from django.conf import settings
 from django.test import TestCase
 
 from accounts.models import User
+from cycling_site import skins
 from cycling_site.skins import COOKIE
 from tests.skin_fixtures import trial_skin
 
@@ -48,3 +51,24 @@ class SkinTemplateTests(TestCase):
             html = self.client.get(self.page).content.decode()
             self.assertIn("skins/trial/skin.css", html)
             self.assertIn("skins/trial/skin.js", html)
+
+
+class DevelopmentReloadTests(TestCase):
+    """runserver picks up an edited skin template without a restart."""
+
+    def test_the_skins_folder_is_watched(self):
+        reloader = mock.Mock()
+        skins.watch_skin_templates(reloader)
+        reloader.watch_dir.assert_called_once_with(settings.SKINS_DIR, "**/templates/**/*")
+
+    def test_an_edited_skin_template_clears_the_template_cache_instead_of_restarting(self):
+        edited = settings.SKINS_DIR / "ubt" / "templates" / "base.html"
+        with mock.patch("django.template.autoreload.reset_loaders") as reset:
+            self.assertTrue(skins.reset_on_skin_template(None, edited))
+        reset.assert_called_once()
+
+    def test_anything_else_is_left_to_django(self):
+        for path in (settings.SKINS_DIR / "ubt" / "skin.css", settings.BASE_DIR / "home" / "models.py"):
+            with self.subTest(path=path), mock.patch("django.template.autoreload.reset_loaders") as reset:
+                self.assertIsNone(skins.reset_on_skin_template(None, path))
+                reset.assert_not_called()

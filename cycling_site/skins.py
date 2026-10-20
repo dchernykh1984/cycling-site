@@ -153,3 +153,26 @@ class SkinCachedLoader(CachedLoader):
 
     def cache_key(self, template_name, skip=None):
         return f"{current_skin.get() or ''}:{super().cache_key(template_name, skip)}"
+
+
+# runserver reloads a changed template only from the folders the loaders always read; a skin's
+# templates are read per request, so without these a designer would restart it after every edit.
+def watch_skin_templates(sender, **kwargs):
+    sender.watch_dir(settings.SKINS_DIR, "**/templates/**/*")
+
+
+def reset_on_skin_template(sender, file_path, **kwargs):
+    from django.template.autoreload import reset_loaders
+
+    root = settings.SKINS_DIR
+    if root in file_path.parents and "templates" in file_path.relative_to(root).parts:
+        reset_loaders()
+        return True  # The cache is cleared; there is no need to restart the server.
+    return None
+
+
+def connect_autoreload():
+    from django.utils.autoreload import autoreload_started, file_changed
+
+    autoreload_started.connect(watch_skin_templates, dispatch_uid="skins-watch")
+    file_changed.connect(reset_on_skin_template, dispatch_uid="skins-reset")
