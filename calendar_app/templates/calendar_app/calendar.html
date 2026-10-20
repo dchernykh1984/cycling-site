@@ -463,8 +463,10 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       if (info.view.type.indexOf('list') === 0) {
         info.el.dataset.eventId = info.event.id;
-        // An all-day end is exclusive: a race over 2-4 October ends at midnight on the 5th.
-        var last = info.event.end && new Date(info.event.end.getTime() - 864e5);
+        // An all-day end is exclusive: a race over 2-4 October ends at midnight on the 5th. The day
+        // before is counted in days, not in 24 hours, which fall a day short where clocks go forward.
+        var end = info.event.end;
+        var last = end && new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1);
         if (last && last > info.event.start) {
           var cell = info.el.querySelector('.fc-list-event-title');
           if (cell) {

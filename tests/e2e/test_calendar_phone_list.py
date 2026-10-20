@@ -123,3 +123,23 @@ def test_a_past_month_is_read_whole(page: Page, live_server, organizer):
     page.locator(".fc-prev-button").click()
     expect(page.locator(".fc-list-event:visible", has_text="Last month ride")).to_have_count(1)
     expect(page.locator(".fc-list-past-toggle")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_end_day_holds_where_clocks_go_forward(browser, live_server, organizer):
+    """Europe moves its clocks on 28 March 2027; a race over the 27th-28th still ends on the 28th."""
+    Competition.objects.create(
+        title_en="Spring race",
+        title_ru="Spring race",
+        date_start=datetime.date(2027, 3, 27),
+        date_end=datetime.date(2027, 3, 28),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+    )
+    context = browser.new_context(timezone_id="Europe/Berlin", viewport={"width": 390, "height": 844})
+    page = context.new_page()
+    page.clock.set_fixed_time(datetime.datetime(2027, 3, 20, 12, 0))
+    page.goto(f"{live_server.url}/en/calendar/")
+    row = page.locator(".fc-list-event:visible", has_text="Spring race")
+    expect(row.locator(".fc-list-event-until")).to_have_text("\u2013 28 March")
+    context.close()
