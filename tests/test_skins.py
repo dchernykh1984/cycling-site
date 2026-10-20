@@ -3,6 +3,7 @@
 import json
 
 import pytest
+from django.conf import settings
 from django.test import TestCase
 from django.utils.translation import override
 
@@ -89,6 +90,44 @@ def test_the_hook_fails_on_broken_json(tmp_path):
 
 
 def test_the_real_manifests_are_already_escaped():
-    for folder in skins.SKINS_DIR.iterdir():
+    for folder in settings.SKINS_DIR.iterdir():
         if folder.is_dir():
             assert escape_manifests([str(folder / "manifest.json")]) == 0, folder
+
+
+FACE = "@font-face {{ font-family: '{family}'; src: url('fonts/heading.woff2') format('woff2'); }}"
+
+
+def _with_font(tmp_path, family="skin-custom-heading", file=True, licence=True):
+    folder = _folder(tmp_path, GOOD)
+    (folder / "skin.css").write_text(FACE.format(family=family))
+    (folder / "fonts").mkdir()
+    if file:
+        (folder / "fonts" / "heading.woff2").write_bytes(b"woff2")
+    if licence:
+        (folder / "fonts" / "OFL.txt").write_text("SIL Open Font License")
+    return folder
+
+
+def test_a_skin_may_bring_its_own_font(tmp_path):
+    assert skins._load(_with_font(tmp_path)).key == "custom"
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "complaint"),
+    [
+        ({"family": "Heading"}, "is named skin-custom-<role>"),
+        ({"file": False}, "no font file fonts/heading.woff2"),
+        ({"licence": False}, "needs the fonts' licence"),
+    ],
+)
+def test_a_font_must_be_named_for_the_skin_present_and_licensed(tmp_path, kwargs, complaint):
+    with pytest.raises(ValueError, match=complaint):
+        skins._load(_with_font(tmp_path, **kwargs))
+
+
+def test_a_skin_with_a_script_says_so(tmp_path):
+    folder = _folder(tmp_path, GOOD)
+    assert not skins._load(folder).has_script
+    (folder / "skin.js").write_text("")
+    assert skins._load(folder).has_script

@@ -266,10 +266,13 @@ STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
 
+# One folder per skin (cycling_site/skins.py, skins/README.md).
+SKINS_DIR = BASE_DIR / "skins"
+
 STATICFILES_DIRS = [
     PROJECT_DIR / "static",
     # The skins a reader picks from (cycling_site/skins.py), served as static/skins/<key>/.
-    ("skins", BASE_DIR / "skins"),
+    ("skins", SKINS_DIR),
 ]
 
 STATIC_ROOT = BASE_DIR / "static"

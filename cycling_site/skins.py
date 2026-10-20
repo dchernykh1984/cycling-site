@@ -11,12 +11,12 @@ built on a mode starts from that mode's rules.
 
 import functools
 import json
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, replace
 
 from django.conf import settings
 from django.utils.translation import get_language
 
-SKINS_DIR = settings.BASE_DIR / "skins"
 MODES = ("light", "dark")
 LANGUAGES = ("ru", "kk", "en")
 # Where a guest's choice is kept: the server has to know it before it renders the page.
@@ -29,6 +29,8 @@ class Skin:
     mode: str
     order: int
     names: dict
+    # skins/<key>/skin.js, when the skin brings behaviour of its own.
+    has_script: bool = False
 
     @property
     def name(self) -> str:
@@ -37,6 +39,10 @@ class Skin:
     @property
     def stylesheet(self) -> str:
         return f"skins/{self.key}/skin.css"
+
+    @property
+    def script(self) -> str:
+        return f"skins/{self.key}/skin.js"
 
 
 def _load(folder) -> Skin:
@@ -55,13 +61,38 @@ def _load(folder) -> Skin:
         raise ValueError(f"{folder.name}: no name in {', '.join(missing)}")
     if not (folder / "skin.css").is_file():
         raise ValueError(f"{folder.name}: no skin.css")
-    return skin
+    _check_fonts(folder)
+    return replace(skin, has_script=(folder / "skin.js").is_file())
+
+
+FONT_FACE = re.compile(r"@font-face\s*{([^}]*)}", re.IGNORECASE)
+FAMILY = re.compile(r"font-family\s*:\s*['\"]?([^;'\"]+)", re.IGNORECASE)
+URL = re.compile(r"url\(\s*['\"]?([^)'\"]+)", re.IGNORECASE)
+
+
+def _check_fonts(folder) -> None:
+    """A skin's own fonts: named for the skin, present in the folder, and under a licence.
+
+    The prefix keeps two designers' "Heading" from ever meaning each other's font.
+    """
+    faces = FONT_FACE.findall((folder / "skin.css").read_text())
+    for face in faces:
+        found = FAMILY.search(face)
+        family = found.group(1).strip() if found else ""
+        if not family.startswith(f"skin-{folder.name}-"):
+            raise ValueError(f"{folder.name}: a font of its own is named skin-{folder.name}-<role>, not {family!r}")
+        for url in URL.findall(face):
+            if not url.startswith(("data:", "http:", "https:")) and not (folder / url).is_file():
+                raise ValueError(f"{folder.name}: no font file {url}")
+    if faces and not any((folder / "fonts").glob("*LICEN[CS]E*")) and not any((folder / "fonts").glob("OFL*")):
+        raise ValueError(f"{folder.name}: fonts/ needs the fonts' licence (LICENSE or OFL.txt)")
 
 
 @functools.cache
 def registry() -> dict[str, Skin]:
     """Every skin by key, in the order the list shows them."""
-    skins = sorted((_load(folder) for folder in SKINS_DIR.iterdir() if folder.is_dir()), key=lambda s: s.order)
+    folders = settings.SKINS_DIR.iterdir()
+    skins = sorted((_load(folder) for folder in folders if folder.is_dir()), key=lambda s: s.order)
     return {skin.key: skin for skin in skins}
 
 
