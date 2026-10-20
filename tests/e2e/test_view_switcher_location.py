@@ -12,7 +12,7 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.e2e.conftest import AROUND_UPCOMING
+from tests.e2e.conftest import AROUND_UPCOMING, open_filter_panel
 
 # The fixtures are dated from the day the suite runs (conftest.UPCOMING), so the range that has to
 # contain them is built the same way rather than pinned to a month that eventually passes.
@@ -35,6 +35,7 @@ def test_location_filter_survives_map_round_trip_to_list(
     """List (filtered by KZ) -> Map -> List keeps the KZ-only result set."""
     kz = location_tree["kz"].pk
     page.goto(f"{live_server.url}/ru/calendar/list/?location={kz}&{_DATES}")
+    open_filter_panel(page)
     expect(page.locator("body")).to_contain_text("KZ Race")
     expect(page.locator("body")).not_to_contain_text("RU Race")
 
@@ -58,6 +59,7 @@ def test_location_checkbox_restored_after_map_round_trip(page: Page, live_server
     """After List -> Map -> List the country checkbox is still checked (filter visibly retained)."""
     kz = location_tree["kz"].pk
     page.goto(f"{live_server.url}/ru/calendar/list/?location={kz}&{_DATES}")
+    open_filter_panel(page)
     expect(page.locator("#view-link-map")).to_have_attribute("href", re.compile(rf"location={kz}"))
     with page.expect_navigation():
         page.click("#view-link-map")
