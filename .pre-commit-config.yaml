@@ -33,6 +33,13 @@ repos:
 
   - repo: local
     hooks:
+      # Runs before the ASCII check below, so a skin's names in Russian and Kazakh reach it escaped.
+      - id: escape-skin-manifests
+        name: escape non-ASCII text in skin manifests
+        language: system
+        entry: python3 scripts/escape_skin_manifests.py
+        files: ^skins/[^/]+/manifest\.json$
+
       - id: no-non-ascii
         name: no non-ASCII characters
         language: pygrep

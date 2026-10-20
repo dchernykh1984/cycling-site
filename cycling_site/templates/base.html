@@ -63,6 +63,7 @@
     {% endif %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/lux/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="{% static 'css/cycling_site.css' %}">
+    {% for stylesheet in skin_stylesheets %}<link rel="stylesheet" href="{% static stylesheet %}">{% endfor %}
     <link rel="icon" href="{% static 'favicon.ico' %}" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'favicon-32.png' %}">
     <link rel="apple-touch-icon" href="{% static 'apple-touch-icon.png' %}">

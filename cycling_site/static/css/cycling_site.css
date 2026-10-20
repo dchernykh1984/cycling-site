@@ -18,79 +18,9 @@ body > main {
     text-transform: none;
 }
 
-/* Dark theme: make navbar-brand and nav-links readable (Lux sets dark colors that don't adapt) */
-[data-bs-theme="dark"] .navbar-brand {
-    color: #fff;
-}
-[data-bs-theme="dark"] .navbar-brand:hover {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-[data-bs-theme="dark"] .navbar .nav-link {
-    color: rgba(255, 255, 255, 0.8);
-}
-[data-bs-theme="dark"] .navbar .nav-link:hover {
-    color: #fff;
-}
-
-/* Active nav link — bold + primary color in light, white in dark */
+/* Active nav link: bold; its colour comes from the skin (skins/light, skins/dark) */
 .navbar .nav-link.active {
     font-weight: 700;
-}
-[data-bs-theme="light"] .navbar .nav-link.active {
-    color: var(--bs-primary) !important;
-}
-[data-bs-theme="dark"] .navbar .nav-link.active {
-    color: #fff !important;
-}
-
-/* Dark theme: form inputs — explicit colors so they contrast with page bg */
-[data-bs-theme="dark"] .form-select,
-[data-bs-theme="dark"] .form-control {
-    background-color: #2c3034 !important;
-    color: #dee2e6 !important;
-    border-color: #495057 !important;
-}
-[data-bs-theme="dark"] .form-select:disabled,
-[data-bs-theme="dark"] .form-control:disabled {
-    background-color: #212529 !important;
-    color: #6c757d !important;
-}
-
-/* Dark theme: outline buttons — direct color overrides beat Lux's hardcoded values */
-[data-bs-theme="dark"] .btn-outline-primary {
-    color: #6ea8fe !important;
-    border-color: #6ea8fe !important;
-    background-color: transparent !important;
-}
-[data-bs-theme="dark"] .btn-outline-primary:hover,
-[data-bs-theme="dark"] .btn-outline-primary:focus,
-[data-bs-theme="dark"] .btn-outline-primary:active {
-    color: #000 !important;
-    background-color: #6ea8fe !important;
-    border-color: #6ea8fe !important;
-}
-[data-bs-theme="dark"] .btn-outline-secondary {
-    color: #adb5bd !important;
-    border-color: #adb5bd !important;
-    background-color: transparent !important;
-}
-[data-bs-theme="dark"] .btn-outline-secondary:hover,
-[data-bs-theme="dark"] .btn-outline-secondary:active {
-    color: #000 !important;
-    background-color: #adb5bd !important;
-    border-color: #adb5bd !important;
-}
-[data-bs-theme="dark"] .btn-outline-danger {
-    color: #ea868f !important;
-    border-color: #ea868f !important;
-    background-color: transparent !important;
-}
-[data-bs-theme="dark"] .btn-outline-danger:hover,
-[data-bs-theme="dark"] .btn-outline-danger:active {
-    color: #000 !important;
-    background-color: #ea868f !important;
-    border-color: #ea868f !important;
 }
 
 /* Lux's weight utilities use lighter values; make the published results explicitly bold. */
@@ -99,69 +29,6 @@ body > main {
 }
 .competition-protocol-heading {
     font-weight: 700;
-}
-
-/* Event results keep a visible fill against Lux's dark page, including hover and focus. */
-[data-bs-theme="dark"] .competition-result-link {
-    --bs-btn-color: #000;
-    --bs-btn-bg: #6ea8fe;
-    --bs-btn-border-color: #6ea8fe;
-    --bs-btn-hover-color: #000;
-    --bs-btn-hover-bg: #8bb9ff;
-    --bs-btn-hover-border-color: #8bb9ff;
-    --bs-btn-active-color: #000;
-    --bs-btn-active-bg: #8bb9ff;
-    --bs-btn-active-border-color: #8bb9ff;
-    --bs-btn-focus-shadow-rgb: 110, 168, 254;
-    background-color: var(--bs-btn-bg);
-}
-[data-bs-theme="dark"] .competition-result-link:hover,
-[data-bs-theme="dark"] .competition-result-link:focus-visible {
-    background-color: var(--bs-btn-hover-bg);
-}
-[data-bs-theme="dark"] .competition-result-link:active {
-    background-color: var(--bs-btn-active-bg);
-}
-
-/* Dark theme: radio and checkbox inputs */
-[data-bs-theme="dark"] .form-check-input {
-    background-color: #2c3034 !important;
-    border-color: #495057 !important;
-}
-[data-bs-theme="dark"] .form-check-input:checked {
-    background-color: #6ea8fe !important;
-    border-color: #6ea8fe !important;
-}
-
-/* Dark theme: dropdown menus in navbar */
-[data-bs-theme="dark"] .navbar .dropdown-menu {
-    background-color: #2c3034;
-    border-color: #495057;
-}
-[data-bs-theme="dark"] .navbar .dropdown-menu .dropdown-item {
-    color: #dee2e6;
-}
-[data-bs-theme="dark"] .navbar .dropdown-menu .dropdown-item:hover {
-    background-color: #343a40;
-    color: #fff;
-}
-
-/* Dark theme: input-group-text (labels inside input groups) */
-[data-bs-theme="dark"] .input-group-text {
-    background-color: var(--bs-secondary-bg);
-    color: var(--bs-body-color);
-    border-color: var(--bs-border-color);
-}
-
-/* Dark theme: cards (Lux hardcodes white background) */
-[data-bs-theme="dark"] .card {
-    background-color: var(--bs-body-bg);
-    border-color: var(--bs-border-color);
-}
-[data-bs-theme="dark"] .card-header,
-[data-bs-theme="dark"] .card-footer {
-    background-color: var(--bs-secondary-bg);
-    border-color: var(--bs-border-color);
 }
 
 /* Offset scrollIntoView and anchor jumps by the sticky navbar height so elements
@@ -388,60 +255,10 @@ main img {
     white-space: nowrap;
 }
 
-/* Dark theme: prevent Bootstrap from darkening Leaflet tile images */
-[data-bs-theme="dark"] .leaflet-container {
-    background: #374151;
-}
-[data-bs-theme="dark"] .leaflet-tile {
-    filter: none !important;
-}
-
 /* Protocol iframe wrapper (for Phase 9) */
 .protocol-iframe-wrapper {
     width: 100%;
     overflow-x: auto;
-}
-
-/* Dark theme: Quill rich-text editor (used in frontend editing forms) */
-[data-bs-theme="dark"] .ql-toolbar,
-[data-bs-theme="dark"] .ql-container {
-    background-color: #2c3034;
-    color: #dee2e6;
-    border-color: #495057 !important;
-}
-[data-bs-theme="dark"] .ql-editor {
-    color: #dee2e6;
-    background-color: #2c3034;
-    caret-color: #dee2e6;
-}
-[data-bs-theme="dark"] .ql-editor.ql-blank::before {
-    color: #6c757d;
-}
-[data-bs-theme="dark"] .ql-toolbar .ql-stroke {
-    stroke: #adb5bd;
-}
-[data-bs-theme="dark"] .ql-toolbar .ql-fill {
-    fill: #adb5bd;
-}
-[data-bs-theme="dark"] .ql-toolbar .ql-picker-label,
-[data-bs-theme="dark"] .ql-toolbar .ql-picker-item {
-    color: #dee2e6;
-}
-[data-bs-theme="dark"] .ql-toolbar button:hover .ql-stroke,
-[data-bs-theme="dark"] .ql-toolbar .ql-active .ql-stroke {
-    stroke: #6ea8fe;
-}
-[data-bs-theme="dark"] .ql-toolbar button:hover .ql-fill,
-[data-bs-theme="dark"] .ql-toolbar .ql-active .ql-fill {
-    fill: #6ea8fe;
-}
-[data-bs-theme="dark"] .ql-toolbar .ql-active .ql-picker-label,
-[data-bs-theme="dark"] .ql-toolbar .ql-picker-label:hover {
-    color: #6ea8fe;
-}
-[data-bs-theme="dark"] .ql-toolbar .ql-picker-options {
-    background-color: #2c3034;
-    border-color: #495057;
 }
 
 /* Pager jump-to-page field: hide the number spinner arrows -- clicking them would fire the

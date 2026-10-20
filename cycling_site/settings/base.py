@@ -181,6 +181,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "cycling_site.context_processors.moderation_tasks",
                 "cycling_site.context_processors.setup_hint",
+                "cycling_site.context_processors.skins",
             ],
         },
     },
@@ -263,6 +264,8 @@ STATICFILES_FINDERS = [
 
 STATICFILES_DIRS = [
     PROJECT_DIR / "static",
+    # The skins a reader picks from (cycling_site/skins.py), served as static/skins/<key>/.
+    ("skins", BASE_DIR / "skins"),
 ]
 
 STATIC_ROOT = BASE_DIR / "static"

@@ -1,0 +1,8 @@
+/* The light mode: the rules that apply only to it. Most of the light look is Lux's own.
+
+   Selected by Bootstrap's colour mode rather than by this skin's key, so a skin built on the light
+   mode (manifest "mode": "light") starts from all of this and only changes what it means to. */
+
+[data-bs-theme="light"] .navbar .nav-link.active {
+    color: var(--bs-primary) !important;
+}

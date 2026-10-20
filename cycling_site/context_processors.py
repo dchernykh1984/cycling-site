@@ -10,6 +10,8 @@ anonymous users and plain participants, so it stays cheap on the hot path of eve
 from django.db.models import Count, Q
 from django.urls import reverse
 
+from cycling_site.skins import base_stylesheets
+
 
 def moderation_tasks(request):
     user = getattr(request, "user", None)
@@ -102,3 +104,7 @@ def setup_hint(request):
         return {}
     hint = current_hint(request)
     return {"setup_hint": hint} if hint else {}
+
+
+def skins(request):
+    return {"skin_stylesheets": base_stylesheets()}
