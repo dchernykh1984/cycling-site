@@ -12,9 +12,12 @@ built on a mode starts from that mode's rules.
 import functools
 import json
 import re
+from contextvars import ContextVar
 from dataclasses import dataclass, replace
 
 from django.conf import settings
+from django.template.loaders.cached import Loader as CachedLoader
+from django.template.loaders.filesystem import Loader as FilesystemLoader
 from django.utils.translation import get_language
 
 MODES = ("light", "dark")
@@ -114,3 +117,39 @@ def chosen(request) -> Skin:
     if user is not None and user.is_authenticated:
         return resolve(user.theme)
     return resolve(request.COOKIES.get(COOKIE))
+
+
+# The skin of the request being answered, for the template loaders below; None outside a request
+# (e-mails, management commands), which then get the site's own templates.
+current_skin: ContextVar[str | None] = ContextVar("current_skin", default=None)
+
+
+class SkinMiddleware:
+    """Tell the template loaders which skin this request is drawn in."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        token = current_skin.set(chosen(request).key)
+        try:
+            return self.get_response(request)
+        finally:
+            current_skin.reset(token)
+
+
+class SkinLoader(FilesystemLoader):
+    """skins/<key>/templates/ of the current skin: a template there replaces the site's own."""
+
+    def get_dirs(self):
+        key = current_skin.get()
+        if key is None or key in MODES:
+            return []
+        return [settings.SKINS_DIR / key / "templates"]
+
+
+class SkinCachedLoader(CachedLoader):
+    """Django's template cache, with one copy of a template per skin."""
+
+    def cache_key(self, template_name, skip=None):
+        return f"{current_skin.get() or ''}:{super().cache_key(template_name, skip)}"

@@ -161,6 +161,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "cycling_site.skins.SkinMiddleware",
     "cycling_site.middleware.LocaleFallbackMiddleware",
 ]
 
@@ -172,8 +173,19 @@ TEMPLATES = [
         "DIRS": [
             PROJECT_DIR / "templates",
         ],
-        "APP_DIRS": True,
         "OPTIONS": {
+            # A skin's own templates (skins/<key>/templates/) come first, for the reader who chose
+            # it; the cache keeps each skin's copy of a template apart.
+            "loaders": [
+                (
+                    "cycling_site.skins.SkinCachedLoader",
+                    [
+                        "cycling_site.skins.SkinLoader",
+                        "django.template.loaders.filesystem.Loader",
+                        "django.template.loaders.app_directories.Loader",
+                    ],
+                ),
+            ],
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
