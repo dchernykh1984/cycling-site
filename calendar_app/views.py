@@ -437,14 +437,21 @@ def calendar_date_words() -> dict:
     FullCalendar leans on the browser's Intl for these, and browsers do not agree on Kazakh: some
     write "2026 M10 1 THU" for a day heading. Django's own catalogues do, so the script borrows
     them -- months in the form a date takes (the Russian genitive), weekdays from Monday.
+
+    Inside a date Russian and Kazakh write both in lower case, while the catalogues give the
+    weekdays, and Kazakh the months too, capitalised as they stand alone.
+    English keeps its capitals.
     """
     from django.utils.formats import date_format
+    from django.utils.translation import get_language
 
     monday = datetime.date(2001, 1, 1)
-    return {
-        "months": [date_format(datetime.date(2001, month, 1), "E") for month in range(1, 13)],
-        "weekdays": [date_format(monday + datetime.timedelta(days=day), "l") for day in range(7)],
-    }
+    months = [date_format(datetime.date(2001, month, 1), "E") for month in range(1, 13)]
+    weekdays = [date_format(monday + datetime.timedelta(days=day), "l") for day in range(7)]
+    if not (get_language() or "").startswith("en"):
+        months = [month.lower() for month in months]
+        weekdays = [weekday.lower() for weekday in weekdays]
+    return {"months": months, "weekdays": weekdays}
 
 
 class CalendarView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateView):
