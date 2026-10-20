@@ -129,3 +129,51 @@ def test_map_filter_dropdown_renders_above_zoom_controls(page: Page, live_server
         " ctrl: zi(document.querySelector('.leaflet-top'))}; }"
     )
     assert z["menu"] > z["ctrl"], z
+
+
+def _competition_at(organizer, name, lat, lng):
+    loc = Location.add_root(name=name, name_ru=name, name_kk=name, name_en=name, lat=lat, lng=lng)
+    Competition.objects.create(
+        title_ru=f"Race in {name}",
+        date_start=UPCOMING,
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        location=loc,
+    )
+
+
+def _shows(page: Page, lat: float, lng: float) -> bool:
+    return page.evaluate(f"() => window.calendarMap.getBounds().contains([{lat}, {lng}])")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_map_opens_on_almaty_when_something_is_on_there(page: Page, live_server, organizer):
+    """Which corner of Almaty a ride starts in is the question, not which country."""
+    _competition_at(organizer, "Almaty", "43.238949", "76.889709")
+    _competition_at(organizer, "Astana", "51.169392", "71.449074")
+    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}")
+    expect(page.locator(".leaflet-marker-icon")).to_have_count(2)
+    page.wait_for_function("() => window.calendarMap.getZoom() >= 8")
+    assert _shows(page, 43.238949, 76.889709)
+    assert _shows(page, 43.87, 77.07)  # Konaev, out at the reservoir
+    assert not _shows(page, 51.169392, 71.449074)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_with_nothing_near_almaty_the_map_fits_what_there_is(page: Page, live_server, organizer):
+    _competition_at(organizer, "Astana", "51.169392", "71.449074")
+    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}")
+    expect(page.locator(".leaflet-marker-icon")).to_have_count(1)
+    page.wait_for_function("() => window.calendarMap.getBounds().contains([51.169392, 71.449074])")
+    assert not _shows(page, 43.238949, 76.889709)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_location_filter_brought_along_fits_every_marker(page: Page, live_server, organizer):
+    """The map draws every place whatever the filter, so it must not hide the chosen one."""
+    _competition_at(organizer, "Almaty", "43.238949", "76.889709")
+    _competition_at(organizer, "Astana", "51.169392", "71.449074")
+    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}&location=1")
+    expect(page.locator(".leaflet-marker-icon")).to_have_count(2)
+    page.wait_for_function("() => window.calendarMap.getBounds().contains([51.169392, 71.449074])")
+    assert _shows(page, 43.238949, 76.889709)
