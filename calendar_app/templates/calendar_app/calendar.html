@@ -385,7 +385,13 @@ document.addEventListener('DOMContentLoaded', function () {
       button.type = 'button';
       button.className = 'btn btn-link btn-sm px-0';
       button.textContent = EARLIER_LABEL + ' (' + hiddenCount + ')';
-      button.addEventListener('click', function () { showPast = true; tidyList(); });
+      button.addEventListener('click', function () {
+        showPast = true;
+        tidyList();
+        // The button is gone; focus goes to the first event it opened.
+        var first = document.querySelector('#calendar .fc-list-event:not([hidden]) a');
+        if (first) first.focus();
+      });
       cell.appendChild(button);
     }
   }

@@ -22,7 +22,14 @@ through its own "All" box, so the filter redraws the page exactly as a hand on t
     cross.setAttribute('aria-hidden', 'true');
     cross.textContent = '×';
     chip.appendChild(cross);
-    chip.addEventListener('click', lift);
+    chip.addEventListener('click', function () {
+      lift();
+      // The chip is gone once the chips redraw; focus moves on to the next one, or to the button.
+      window.setTimeout(function () {
+        var next = document.querySelector('#filter-chips .filter-chip') || document.getElementById('filter-toggle');
+        if (next) next.focus();
+      }, 0);
+    });
     box.appendChild(chip);
   }
 
