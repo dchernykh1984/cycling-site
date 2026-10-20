@@ -60,3 +60,12 @@ def test_the_favourites_chip_unticks_the_box(page: Page, live_server, superuser)
     chip.click()
     page.wait_for_url(lambda url: "favorite" not in url)
     expect(page.locator("#filter-chips .filter-chip")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_after_the_cross_the_keyboard_lands_on_the_filters_button(page: Page, live_server, race_event_type):
+    page.set_viewport_size(PHONE)
+    page.goto(f"{live_server.url}/en/calendar/?event_type={race_event_type.pk}")
+    page.locator("#filter-chips .filter-chip").focus()
+    page.keyboard.press("Enter")
+    expect(page.locator("#filter-toggle")).to_be_focused()
