@@ -6,7 +6,7 @@ from ninja import Query, Router, Schema, Status
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
-from api.schemas import LocalizedStr, LocalizedTitle, Url, localize_field
+from api.schemas import LocalizedPreviewText, LocalizedStr, LocalizedTitle, Url, localize_field
 from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline, EventType
 from locations.models import (
     Location,
@@ -27,6 +27,8 @@ router = Router(tags=["competitions"])
 class CompetitionIn(Schema):
     title: LocalizedTitle
     description: LocalizedStr = LocalizedStr()
+    # The line a chat shows under a pasted link; empty keeps the generated summary (#318).
+    preview_text: LocalizedPreviewText = LocalizedPreviewText()
     event_type_ids: list[int] = []  # noqa: RUF012
     discipline_ids: list[int] = []  # noqa: RUF012
     location_id: int | None = None
@@ -42,6 +44,7 @@ class CompetitionIn(Schema):
 class CompetitionPatchIn(Schema):
     title: LocalizedTitle | None = None
     description: LocalizedStr | None = None
+    preview_text: LocalizedPreviewText | None = None
     event_type_ids: list[int] | None = None
     discipline_ids: list[int] | None = None
     location_id: int | None = None
@@ -59,6 +62,7 @@ class CompetitionOut(Schema):
     id: int
     title: LocalizedStr
     description: LocalizedStr
+    preview_text: LocalizedStr
     event_type_ids: list[int]
     discipline_ids: list[int]
     location_id: int | None
@@ -98,6 +102,10 @@ class CompetitionOut(Schema):
     @staticmethod
     def resolve_description(obj: Competition) -> LocalizedStr:
         return localize_field(obj, "description")
+
+    @staticmethod
+    def resolve_preview_text(obj: Competition) -> LocalizedStr:
+        return localize_field(obj, "preview_text")
 
     @staticmethod
     def resolve_discipline_ids(obj: Competition) -> list[int]:
@@ -285,7 +293,7 @@ def _apply_patch_fields(competition: Competition, data: dict, user) -> list[str]
     """
     update_fields: list[str] = []
     for field, value in data.items():
-        if isinstance(value, dict) and field in ("title", "description"):
+        if isinstance(value, dict) and field in ("title", "description", "preview_text"):
             loc = LocalizedStr(**value)
             if field == "description":
                 _validate_description_length(loc)
@@ -402,6 +410,7 @@ def create_competition(request, payload: CompetitionIn):
     _apply_localized(competition, "title", payload.title)
     # Descriptions are sanitized centrally in Competition.save().
     _apply_localized(competition, "description", payload.description)
+    _apply_localized(competition, "preview_text", payload.preview_text)
 
     for field in (
         "date_start",

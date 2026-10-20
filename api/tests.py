@@ -3959,6 +3959,7 @@ class RequestLengthLimitTests(ApiTestMixin, TestCase):
         for model, field in ((Competition, "title"), (Location, "name")):
             with self.subTest(model=model.__name__, field=field):
                 self.assertEqual(schemas.MAX_TITLE_LENGTH, model._meta.get_field(field).max_length)
+        self.assertEqual(schemas.MAX_PREVIEW_TEXT_LENGTH, Competition._meta.get_field("preview_text").max_length)
 
 
 class LocationNameLengthTests(ApiTestMixin, TestCase):
@@ -4161,3 +4162,45 @@ class CompetitionEventTypesApiTests(TestCase, ApiTestMixin):
             user=self.reader,
         ).json()
         self.assertEqual(len(rows), 1)
+
+
+class CompetitionPreviewTextApiTests(TestCase, ApiTestMixin):
+    """The link preview line travels through the API like the title does (issue #318)."""
+
+    def setUp(self):
+        self.admin = _user("preview_adm", role=User.Role.ADMIN)
+
+    def _payload(self, **kwargs):
+        payload = {"title": {"ru": "Ride RU", "kk": "", "en": ""}, "date_start": "2026-07-01"}
+        payload.update(kwargs)
+        return payload
+
+    def _create(self, **kwargs):
+        return self.post("/api/v1/competitions/", self._payload(**kwargs), user=self.admin)
+
+    def test_creating_with_one_keeps_every_language(self):
+        line = {"ru": "Meet 6:15", "kk": "Meet 6:15 kk", "en": "Meet 6:15 en"}
+        resp = self._create(preview_text=line)
+        self.assertEqual(resp.status_code, 201, resp.content[:300])
+        self.assertEqual(resp.json()["preview_text"], line)
+        competition = Competition.objects.get(pk=resp.json()["id"])
+        self.assertEqual(competition.preview_text_kk, "Meet 6:15 kk")
+
+    def test_creating_without_one_leaves_it_empty(self):
+        """Optional, like the description: an agent that knows nothing about it changes nothing."""
+        resp = self._create()
+        self.assertEqual(resp.status_code, 201, resp.content[:300])
+        self.assertEqual(Competition.objects.get(pk=resp.json()["id"]).preview_text_ru or "", "")
+
+    def test_patching_replaces_it(self):
+        pk = self._create(preview_text={"ru": "Meet 6:15"}).json()["id"]
+        resp = self.patch(f"/api/v1/competitions/{pk}", {"preview_text": {"ru": "Meet 7:00"}}, user=self.admin)
+        self.assertEqual(resp.status_code, 200, resp.content[:300])
+        self.assertEqual(Competition.objects.get(pk=pk).preview_text_ru, "Meet 7:00")
+
+    def test_a_line_longer_than_the_column_is_a_422_not_a_500(self):
+        from api import schemas
+
+        resp = self._create(preview_text={"ru": "x" * (schemas.MAX_PREVIEW_TEXT_LENGTH + 1)})
+        self.assertEqual(resp.status_code, 422, resp.content[:300])
+        self.assertFalse(Competition.objects.filter(title_ru="Ride RU").exists())

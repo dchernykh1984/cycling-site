@@ -20,8 +20,11 @@ from pydantic import Field
 MAX_URL_LENGTH = 200
 # calendar_app.Competition.title and locations.Location.name, the two this bounds.
 MAX_TITLE_LENGTH = 255
+# calendar_app.Competition.preview_text, the line a chat shows under a pasted link (#318).
+MAX_PREVIEW_TEXT_LENGTH = 200
 Url = Annotated[str, Field(max_length=MAX_URL_LENGTH)]
 Title = Annotated[str, Field(max_length=MAX_TITLE_LENGTH)]
+PreviewText = Annotated[str, Field(max_length=MAX_PREVIEW_TEXT_LENGTH)]
 
 
 class LocalizedStr(Schema):
@@ -38,6 +41,14 @@ class LocalizedTitle(LocalizedStr):
     ru: Title = ""
     kk: Title = ""
     en: Title = ""
+
+
+class LocalizedPreviewText(LocalizedStr):
+    """An event's link preview line, every locale bounded like the column behind it."""
+
+    ru: PreviewText = ""
+    kk: PreviewText = ""
+    en: PreviewText = ""
 
 
 def localize_field(obj: Any, field: str) -> LocalizedStr:
