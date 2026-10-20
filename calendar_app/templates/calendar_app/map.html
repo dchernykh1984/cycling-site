@@ -30,7 +30,7 @@
   </div>
 </div>
 
-{% include "calendar_app/_quick_dates.html" %}
+{% include "calendar_app/_quick_dates.html" with server_today=True %}
 {% include "calendar_app/_filter_chips.html" %}
 
 <div id="filter-panel" class="collapse d-lg-block">

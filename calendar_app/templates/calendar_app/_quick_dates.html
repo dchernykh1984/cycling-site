@@ -3,7 +3,12 @@
 month ahead and the season. "When can I ride this weekend" is the question people bring from the
 chats, and it should not take two date fields to ask. Each page decides what a range does to it --
 the list and the map fill their own date fields, the calendar shows the range as a list -- through
-window.onQuickDates(kind, range); this partial only draws the buttons and works out the dates.{% endcomment %}
+window.onQuickDates(kind, range); this partial only draws the buttons and works out the dates.
+
+The list and the map include it with server_today: their date fields default to the site's own day
+(Asia/Almaty), so their ranges count from that day too -- counted from the browser's, "Month" went
+unlit every evening for a reader a few hours west, the default no longer being "today + 30".
+The calendar counts from the browser's day, as FullCalendar itself does.{% endcomment %}
 <div class="d-flex flex-wrap gap-1 mb-2 quick-dates" role="group" aria-label="{% trans 'Dates' %}">
   <button type="button" class="btn btn-sm btn-outline-secondary" data-quick-dates="weekend">{% trans "Weekend" %}</button>
   <button type="button" class="btn btn-sm btn-outline-secondary" data-quick-dates="month">{% trans "Month" %}</button>
@@ -20,8 +25,9 @@ window.onQuickDates(kind, range); this partial only draws the buttons and works 
   // lasts (a Sunday reader still has today), else the next; the month is the thirty days ahead, the
   // list's own default; the season is the calendar year -- the riding season here runs April to
   // November, but in winter everybody is on a trainer, so the whole year it is.
+  {% if server_today %}var BASE_DAY = '{% now "Y-m-d" %}'.split('-');{% else %}var BASE_DAY = null;{% endif %}
   window.quickDateRange = function (kind, today) {
-    today = today || new Date();
+    today = today || (BASE_DAY ? new Date(+BASE_DAY[0], BASE_DAY[1] - 1, +BASE_DAY[2]) : new Date());
     today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     if (kind === 'weekend') {
       var day = today.getDay();  // 0 Sunday .. 6 Saturday
