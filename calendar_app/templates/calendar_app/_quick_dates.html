@@ -23,7 +23,7 @@ The calendar counts from the browser's day, as FullCalendar itself does.{% endco
 
   // {from, to}, both days included, in the reader's own calendar. The weekend is this one while it
   // lasts (a Sunday reader still has today), else the next; the month is the thirty days ahead, the
-  // list's own default; the season is the calendar year -- the riding season here runs April to
+  // unfiltered list's own default; the season is the calendar year -- the riding season here runs April to
   // November, but in winter everybody is on a trainer, so the whole year it is.
   {% if server_today %}var BASE_DAY = '{% now "Y-m-d" %}'.split('-');{% else %}var BASE_DAY = null;{% endif %}
   window.quickDateRange = function (kind, today) {
@@ -64,8 +64,12 @@ The calendar counts from the browser's day, as FullCalendar itself does.{% endco
     [[fromEl, range.from], [toEl, range.to]].forEach(function (pair) {
       var el = pair[0];
       if (!el) return;
-      if (el._flatpickr) el._flatpickr.setDate(pair[1], false);
-      else el.value = pair[1];
+      if (el._flatpickr) {
+        if (pair[1]) el._flatpickr.setDate(pair[1], false);
+        else el._flatpickr.clear(false);
+      } else {
+        el.value = pair[1];
+      }
     });
     if (toEl) toEl.dispatchEvent(new Event('change', {bubbles: true}));
   };

@@ -5,8 +5,10 @@
 On the list and the map it drives the page's two date fields (from_selector, to_selector) through
 window.setDateFields from _quick_dates.html, included before it, and each page answers the change as
 it already does: the list reloads, the map redraws. The arrows keep the shape on screen -- a weekend
-moves a week, a season a year, anything else a calendar month -- and Today goes back to the page's
-own default, the thirty days ahead.
+moves a week, a season a year, anything else a calendar month. Today goes back to the page's own
+default: on the map the thirty days ahead; on the list (today_clears) the fields are emptied and the
+server picks, since a list about a city or a discipline defaults to the whole season ahead and
+thirty days would cut that page short.
 
 The calendar passes no selectors and answers through window.onDateNav(action) itself, where action
 is {step: -1 or 1}, {today: true} or {year, month}; it keeps the pickers in step with what it shows
@@ -44,6 +46,7 @@ through window.syncDateNav(date).{% endcomment %}
 (function () {
   var FROM = '{{ from_selector|escapejs }}';
   var TO = '{{ to_selector|escapejs }}';
+  var TODAY_CLEARS = {{ today_clears|yesno:"true,false" }};
 
   function iso(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -100,7 +103,7 @@ through window.syncDateNav(date).{% endcomment %}
   }
   function act(action) {
     if (!fromEl) { if (window.onDateNav) window.onDateNav(action); return; }
-    if (action.today) go(window.quickDateRange('month'));
+    if (action.today) go(TODAY_CLEARS ? {from: '', to: ''} : window.quickDateRange('month'));
     else if (action.step) go(window.dateNavStep(fromEl.value, toEl.value, action.step));
     else go(wholeMonth(action.year, action.month));
   }
