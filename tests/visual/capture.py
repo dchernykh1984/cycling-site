@@ -149,21 +149,24 @@ def _rects(page: Page, selectors):
     )
 
 
-def _context(playwright, device, base_url, now):
+def _browser(playwright, device):
     engine, options = DEVICES[device]
     if isinstance(options, str):
         options = playwright.devices[options]
-    browser = getattr(playwright, engine).launch()
+    return getattr(playwright, engine).launch(), options
+
+
+def _open(browser, options, base_url, data, now, theme, visitor, path) -> Page:
+    """A page as this visitor sees it in this theme, in a context of its own.
+
+    A fresh context per shot: cookies could be cleared between shots, but the browser's storage
+    could not, and a first visit would inherit the theme an earlier shot stored there.
+    """
+    host = base_url.split("//")[1].split(":")[0]
     context = browser.new_context(**options, timezone_id="Asia/Almaty", locale="ru-RU", base_url=base_url)
     # As in the e2e suite: two servers and a browser share a small CI runner.
     context.set_default_timeout(60_000)
     context.set_default_navigation_timeout(60_000)
-    return browser, context
-
-
-def _open(context, host, data, now, theme, visitor, path) -> Page:
-    """A page as this visitor sees it in this theme."""
-    context.clear_cookies()
     cookies = [{"name": "django_language", "value": "ru", "domain": host, "path": "/"}]
     if visitor != FIRST_VISIT:
         cookies.append({"name": "skin", "value": theme, "domain": host, "path": "/"})
@@ -178,6 +181,9 @@ def _open(context, host, data, now, theme, visitor, path) -> Page:
         page.add_init_script(f"localStorage.setItem('theme', '{theme}')")
     page.goto(path, wait_until="networkidle")
     page.evaluate("document.fonts.ready.then(() => true)")
+    if visitor == FIRST_VISIT:
+        stored = page.evaluate("[localStorage.getItem('theme'), document.cookie.includes('skin=')]")
+        assert stored == [None, False], f"a first visit found a stored choice: {stored}"
     return page
 
 
@@ -200,14 +206,13 @@ def _shots(data, devices, only, wanted):
 
 def capture(base_url, data, out_dir, now, devices=tuple(DEVICES), only=(), wanted=None):
     """Take every shot into out_dir/<device>/<theme>/<case>.png; return what compare.py needs."""
-    host = base_url.split("//")[1].split(":")[0]
     meta = {}
     browsers = {}
     with sync_playwright() as playwright:
         for device, theme, (name, path, visitor, check, state, _, full_page) in _shots(data, devices, only, wanted):
             if device not in browsers:
-                browsers[device] = _context(playwright, device, base_url, now)
-            page = _open(browsers[device][1], host, data, now, theme, visitor, path)
+                browsers[device] = _browser(playwright, device)
+            page = _open(*browsers[device], base_url, data, now, theme, visitor, path)
             try:
                 if check:
                     check(page)
@@ -225,7 +230,7 @@ def capture(base_url, data, out_dir, now, devices=tuple(DEVICES), only=(), wante
                 # Masks are in CSS pixels; a phone's screenshot has two or three image pixels to each.
                 "scale": page.evaluate("devicePixelRatio"),
             }
-            page.close()
+            page.context.close()
         for browser, _ in browsers.values():
             browser.close()
     pathlib.Path(out_dir, "meta.json").write_text(json.dumps(meta, indent=1))
