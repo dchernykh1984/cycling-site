@@ -250,7 +250,7 @@ class MachineChannelsTests(_Cast):
         self.assertNotIn("Private ride", listing)
         self.assertEqual(self.client.get(f"/api/v1/competitions/{self.private.pk}/").status_code, 404)
 
-    def test_structured_offers_and_landing_counts_skip_it(self):
+    def test_landing_pages_skip_it(self):
         from calendar_app.listing_seo import landing_filters
 
         regions, places, kinds = landing_filters()
