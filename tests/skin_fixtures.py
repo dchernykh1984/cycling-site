@@ -46,4 +46,3 @@ def trial_skin(root, *, mode="dark", css="", script=None, templates=None):
             yield
         finally:
             _reset_caches()
-    _reset_caches()
