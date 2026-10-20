@@ -1,0 +1,60 @@
+{% load i18n %}
+{% comment %}The one button that opens the filters on a phone (issue #330), with the number of filters
+in force: "Filters (2)". Below the lg breakpoint the panel (#filter-panel, the whole card) is folded
+away and the button is all there is; on a wide screen the panel stays open and the button hides.
+The count is read from the filter partials whenever anything inside the panel changes.{% endcomment %}
+<button class="btn btn-outline-secondary btn-sm d-lg-none" type="button" id="filter-toggle"
+        data-bs-toggle="collapse" data-bs-target="#filter-panel"
+        aria-expanded="false" aria-controls="filter-panel">
+  {% trans "Filters" %}<span class="filter-count"></span>
+</button>
+<script>
+(function () {
+  // How many kinds of filter narrow the page now: type, direction or discipline, place, favourites.
+  window.countActiveFilters = function () {
+    var count = 0;
+    if (window.getEventTypeFilterIds && window.getEventTypeFilterIds().length) count += 1;
+    if (window.applyDirectionParams) {
+      var params = new URLSearchParams();
+      window.applyDirectionParams(params, 'direction');
+      if (params.toString()) count += 1;
+    }
+    if (window.getLocationFilterIds && window.getLocationFilterIds().length) count += 1;
+    var favourite = document.querySelector('#filter-panel input[type="checkbox"][id$="favorite-filter"]');
+    if (favourite && favourite.checked) count += 1;
+    return count;
+  };
+  window.refreshFilterCount = function () {
+    var button = document.getElementById('filter-toggle');
+    if (!button) return;
+    var count = window.countActiveFilters();
+    button.querySelector('.filter-count').textContent = count ? ' (' + count + ')' : '';
+    button.classList.toggle('btn-secondary', count > 0);
+    button.classList.toggle('btn-outline-secondary', count === 0);
+  };
+  function soon() { window.setTimeout(window.refreshFilterCount, 0); }
+
+  // An opened panel stays open for the rest of the visit: the list reloads on every choice, and a
+  // panel folding shut after each tick sent the reader back to the button for the next one.
+  var OPEN_KEY = 'filtersOpen';
+  function remember(open) {
+    try { if (open) sessionStorage.setItem(OPEN_KEY, '1'); else sessionStorage.removeItem(OPEN_KEY); } catch (e) { /* storage blocked */ }
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    soon();
+    var panel = document.getElementById('filter-panel');
+    if (!panel) return;
+    panel.addEventListener('change', soon);
+    panel.addEventListener('show.bs.collapse', function (e) { if (e.target === panel) remember(true); });
+    panel.addEventListener('hide.bs.collapse', function (e) { if (e.target === panel) remember(false); });
+    var open = false;
+    try { open = sessionStorage.getItem(OPEN_KEY) === '1'; } catch (e) { /* storage blocked */ }
+    if (open) {
+      panel.classList.add('show');
+      var button = document.getElementById('filter-toggle');
+      if (button) button.setAttribute('aria-expanded', 'true');
+    }
+  });
+  document.addEventListener('location-filter-ready', soon);
+}());
+</script>

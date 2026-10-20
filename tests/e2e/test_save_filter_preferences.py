@@ -7,7 +7,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from accounts.models import User
-from tests.e2e.conftest import inject_session
+from tests.e2e.conftest import inject_session, open_filter_panel
 
 
 def _member(**extra):
@@ -32,6 +32,7 @@ def test_the_button_saves_the_filter_and_the_next_visit_opens_with_it(page: Page
     member = _member()
     inject_session(page, live_server, member)
     page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race.pk}")
+    open_filter_panel(page)
 
     button = page.locator("#save-filter-btn")
     button.click()
@@ -39,6 +40,7 @@ def test_the_button_saves_the_filter_and_the_next_visit_opens_with_it(page: Page
     assert _saved_types(member) == {race.pk}
 
     page.goto(f"{live_server.url}/ru/calendar/list/")
+    open_filter_panel(page)
     expect(page).to_have_url(re.compile(rf"event_type={race.pk}"))
 
 
@@ -66,6 +68,7 @@ def test_with_always_save_reset_clears_the_saved_filter(page: Page, live_server,
     member.preferred_event_types.add(race)
     inject_session(page, live_server, member)
     page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race.pk}")
+    open_filter_panel(page)
     page.wait_for_load_state("load")
     page.locator("a[href*='reset=1']").click()
     page.wait_for_url(re.compile(r"reset=1"))

@@ -150,5 +150,6 @@ def test_a_comma_joined_location_filters_the_same_as_separate_parameters(
     kz = wide_tree["kz"].pk
     by = wide_tree["by"].pk
     page.goto(f"{live_server.url}{_LIST_URL}?location={kz},{by}&{_DATES}")
+    open_filter_panel(page)
     expect(page.locator("body")).to_contain_text("KZ Race")
     expect(page.locator("body")).not_to_contain_text("RU Race")
