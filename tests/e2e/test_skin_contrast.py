@@ -42,16 +42,18 @@ KNOWN_SHORTFALLS = {
 
 
 @pytest.fixture
-def pages_with_content(db, organizer):
+def pages_with_content(db, organizer, race_event_type):
+    """A news item and an event, and an event type so the type filter is live rather than disabled."""
     from news.models import NewsArticle
 
     NewsArticle.objects.create(title="Contrast news", intro="An intro in muted text.", body="<p>Body</p>")
-    Competition.objects.create(
+    race = Competition.objects.create(
         title_ru="Contrast race",
         date_start=datetime.date.today() + datetime.timedelta(days=3),
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
     )
+    race.event_types.add(race_event_type)
 
 
 def _in_state(page: Page, element, state):
@@ -78,6 +80,8 @@ def test_text_is_readable_in_this_skin(page: Page, live_server, pages_with_conte
             continue
         element = page.locator(selector).first
         expect(element).to_be_visible()
+        # WCAG leaves a disabled control out; one that should be live but is not is a broken fixture.
+        expect(element).to_be_enabled()
         for state in states:
             _in_state(page, element, state)
             value = legibility(element)
