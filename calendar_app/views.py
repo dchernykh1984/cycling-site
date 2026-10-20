@@ -431,6 +431,14 @@ class ListingIndexMixin:
         return response
 
 
+def month_picker_choices() -> dict:
+    """The months and years the calendar's month picker offers, and the list's and map's with it."""
+    return {
+        "calendar_months": list(enumerate((_(name) for name in MONTH_NAMES), start=1)),
+        "calendar_years": calendar_year_choices(),
+    }
+
+
 def calendar_date_words() -> dict:
     """Month and weekday names the calendar script writes dates with, in the reader's language.
 
@@ -473,8 +481,7 @@ class CalendarView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateView):
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
         context["only_favorite"] = _only_favorite_requested(self.request)
-        context["calendar_months"] = list(enumerate((_(name) for name in MONTH_NAMES), start=1))
-        context["calendar_years"] = calendar_year_choices()
+        context.update(month_picker_choices())
         context["calendar_date_words"] = calendar_date_words()
         return context
 
@@ -571,6 +578,7 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context.update(month_picker_choices())
         form = CompetitionFilterForm(self.request.GET or None)
         today = timezone.localdate()
         date_from = today
@@ -661,6 +669,7 @@ class CalendarMapView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateVie
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.index_context(context)
+        context.update(month_picker_choices())
         today = timezone.localdate()
         context["date_from"] = _parse_date(self.request.GET.get("date_from"), today)
         context["date_to"] = _parse_date(self.request.GET.get("date_to"), today + datetime.timedelta(days=30))
