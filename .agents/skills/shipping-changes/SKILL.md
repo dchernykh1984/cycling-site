@@ -36,6 +36,10 @@ Look for: a case the code gets wrong (nulls, ordering, empty input), behaviour t
 docstring, a test that asserts the implementation rather than the behaviour, and duplication that
 already has a home elsewhere.
 
+For a new field a person fills in, also ask who reads it before readers do (a moderator who never
+sees it cannot reject it), and what each locale shows when only one was filled; then check that
+the form's hint text says what the tests pin.
+
 ## The pipeline
 
 `ci.yml` runs pre-commit (ruff, mypy, ASCII check, requirements export), commitizen, the unit tests
