@@ -160,3 +160,15 @@ def test_a_date_changed_by_hand_on_the_map_unlights_the_button(page: Page, live_
         }"""
     )
     expect(page.locator("[data-quick-dates].active")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_month_on_the_month_already_shown_lets_go_on_the_next_page(page: Page, live_server):
+    """Month on the month already on screen changes no range; paging on must still leave it."""
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{live_server.url}/en/calendar/")
+    page.locator('[data-quick-dates="month"]').click()
+    expect(page.locator('[data-quick-dates="month"].active')).to_have_count(1)
+    page.locator(".fc-next-button").click()
+    expect(page.locator("[data-quick-dates].active")).to_have_count(0)
+    expect(page.locator("#view-link-list")).not_to_have_attribute("href", re.compile(r"date_from"))
