@@ -116,3 +116,13 @@ class PublicPagesTests(TestCase):
         for name in ("account_profile", "account_profile_edit", "calendar_submit"):
             with self.subTest(page=name):
                 self.assertNotContains(self.client.get(reverse(name)), BUTTON)
+
+
+class TranslationTests(TestCase):
+    def test_the_button_is_translated(self):
+        from django.utils.translation import gettext, override
+
+        for msgid in ("Share", "Link copied"):
+            for lang in ("ru", "kk"):
+                with self.subTest(msgid=msgid, lang=lang), override(lang):
+                    self.assertNotEqual(gettext(msgid), msgid)
