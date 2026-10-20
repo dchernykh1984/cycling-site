@@ -34,6 +34,8 @@
   </div>
 </div>
 
+{% include "calendar_app/_quick_dates.html" %}
+
 <div class="card mb-3">
   <div class="card-body py-2">
     <div id="filter-panel" class="collapse d-lg-block">
@@ -158,6 +160,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // initial load fits the view to the matching markers.
   window.onCalendarFilterChange = function () { refresh(false); };
   [dfEl, dtEl].forEach(function (el) { el.addEventListener('change', function () { refresh(false); }); });
+  // A quick range fills the two date fields, which redraw the map themselves.
+  window.onQuickDates = function (kind, range) { window.setDateFields(dfEl, dtEl, range); };
+  window.markQuickDates(window.quickDatesKindOf(dfEl.value, dtEl.value));
   if (favEl) favEl.addEventListener('change', function () { refresh(false); });
   refresh(true);
 });
