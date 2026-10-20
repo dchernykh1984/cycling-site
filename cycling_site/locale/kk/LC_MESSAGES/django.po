@@ -3152,3 +3152,10 @@ msgstr "Сүзгіні баптауларыма сақтау"
 
 msgid "Saved to your preferences"
 msgstr "Баптауларға сақталды"
+
+msgid ""
+"The calendar, list and map open with these filters. A field left at 'All' "
+"narrows nothing."
+msgstr ""
+"Күнтізбе, тізім және карта осы сүзгілермен ашылады. «Барлығы» мәні тұрған "
+"өріс ештеңені шектемейді."

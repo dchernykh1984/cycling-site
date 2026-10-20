@@ -3155,3 +3155,10 @@ msgstr "Сохранить фильтр в мои предпочтения"
 
 msgid "Saved to your preferences"
 msgstr "Сохранено в предпочтения"
+
+msgid ""
+"The calendar, list and map open with these filters. A field left at 'All' "
+"narrows nothing."
+msgstr ""
+"Календарь, список и карта открываются с этими фильтрами. Поле со значением "
+"«Все» ничего не ограничивает."

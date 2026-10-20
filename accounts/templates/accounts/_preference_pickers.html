@@ -8,10 +8,10 @@ preferred_locations) that post with the surrounding profile form. Server-rendere
 inputs keep the saved values if JavaScript is off; the JS replaces them on load/change.
 {% endcomment %}
 
-<div class="mb-3">
-  <label class="form-label">{% trans "Preferred directions and disciplines" %}</label>
+<div class="mb-4">
+  <label class="form-label fw-semibold mb-1">{% trans "Preferred directions and disciplines" %}</label>
   <div class="row g-2">
-    <div class="col-sm-6">
+    <div class="col-6">
       <div class="dropdown">
         <button class="form-select form-select-sm text-start" type="button" id="pd-btn-1"
                 data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
@@ -20,7 +20,7 @@ inputs keep the saved values if JavaScript is off; the JS replaces them on load/
         <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="pd-menu-1"></ul>
       </div>
     </div>
-    <div class="col-sm-6">
+    <div class="col-6">
       <div class="dropdown">
         <button class="form-select form-select-sm text-start" type="button" id="pd-btn-2"
                 data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" disabled>
@@ -30,16 +30,15 @@ inputs keep the saved values if JavaScript is off; the JS replaces them on load/
       </div>
     </div>
   </div>
-  <div class="form-text">{% trans "Prefilled into the calendar filter when you open it." %}</div>
   <div id="pref-dir-inputs">{% for id in pref_direction_ids %}<input type="hidden" name="preferred_directions" value="{{ id }}">{% endfor %}</div>
   <div id="pref-disc-inputs">{% for id in pref_discipline_ids %}<input type="hidden" name="preferred_disciplines" value="{{ id }}">{% endfor %}</div>
 </div>
 
-<div class="mb-3">
-  <label class="form-label">{% trans "Preferred locations" %}</label>
+<div class="mb-4">
+  <label class="form-label fw-semibold mb-1">{% trans "Preferred locations" %}</label>
   <div class="row g-2">
     {% for lvl in "1234" %}
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-6">
       <div class="dropdown">
         <button class="form-select form-select-sm text-start" type="button" id="pl-btn-{{ lvl }}"
                 data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"{% if not forloop.first %} disabled{% endif %}>
@@ -50,14 +49,13 @@ inputs keep the saved values if JavaScript is off; the JS replaces them on load/
     </div>
     {% endfor %}
   </div>
-  <div class="form-text">{% trans "Prefilled into the calendar filter when you open it." %}</div>
   <div id="pref-loc-inputs">{% for id in pref_location_ids %}<input type="hidden" name="preferred_locations" value="{{ id }}">{% endfor %}</div>
 </div>
 
-<div class="mb-3">
-  <label class="form-label">{% trans "Preferred event types" %}</label>
+<div class="mb-4">
+  <label class="form-label fw-semibold mb-1">{% trans "Preferred event types" %}</label>
   <div class="row g-2">
-    <div class="col-sm-6">
+    <div class="col-6">
       <div class="dropdown">
         <button class="form-select form-select-sm text-start" type="button" id="pe-btn-1"
                 data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">

@@ -148,6 +148,7 @@ class TranslationTests(TestCase):
         "with it next time.",
         "Save filter to my preferences",
         "Saved to your preferences",
+        "The calendar, list and map open with these filters. A field left at 'All' narrows nothing.",
     )
 
     def test_every_new_string_is_translated(self):

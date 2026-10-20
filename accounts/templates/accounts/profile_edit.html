@@ -66,12 +66,15 @@
                 <div class="form-text">{% trans "Prefilled into the registration field for events that collect Strava links." %}</div>
             </div>
             <hr>
-            <h2 class="h5 mb-3" id="calendar-defaults">{% trans "Calendar defaults" %}</h2>
+            <h2 class="h5 mb-1" id="calendar-defaults">{% trans "Calendar defaults" %}</h2>
+            <p class="text-muted small mb-3">{% trans "The calendar, list and map open with these filters. A field left at 'All' narrows nothing." %}</p>
             {% include "accounts/_preference_pickers.html" %}
-            <div class="form-check mb-3">
-                {{ form.autosave_filters }}
-                <label class="form-check-label" for="{{ form.autosave_filters.id_for_label }}">{% trans "Always save the calendar filter into these preferences" %}</label>
-                <div class="form-text">{% trans "Every change you make to the filter on the calendar, list or map is kept here, and the calendar opens with it next time." %}</div>
+            <div class="border rounded p-3 mb-4">
+                <div class="form-check mb-1">
+                    {{ form.autosave_filters }}
+                    <label class="form-check-label fw-semibold" for="{{ form.autosave_filters.id_for_label }}">{% trans "Always save the calendar filter into these preferences" %}</label>
+                </div>
+                <div class="form-text mb-0">{% trans "Every change you make to the filter on the calendar, list or map is kept here, and the calendar opens with it next time." %}</div>
             </div>
             <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
             <a href="{% url 'account_profile' %}" class="btn btn-outline-secondary ms-2">{% trans "Cancel" %}</a>
