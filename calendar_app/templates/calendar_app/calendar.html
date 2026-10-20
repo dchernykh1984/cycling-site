@@ -250,25 +250,59 @@ document.addEventListener('DOMContentLoaded', function () {
   // In the list a multi-day race is one row on its first day with the day it ends -- not the same
   // row on every day it runs, which repeated a three-day triathlon three times. A day whose only
   // rows were such repeats loses its heading too.
+  //
+  // The current month starts at today: on the 20th nobody opens a phone calendar to read the 1st.
+  // The days already gone fold behind one line that opens them. A race that began before today and
+  // is still on shows under today's heading, since its own first day is folded away.
+  var EARLIER_LABEL = '{% trans "Earlier days of the month" %}';
+  var showPast = false;
+  function isoToday() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
   function tidyList() {
     var body = document.querySelector('#calendar .fc-list-table tbody');
     if (!body) return;
+    var oldToggle = body.querySelector('.fc-list-past-toggle');
+    if (oldToggle) oldToggle.remove();
+    var today = isoToday();
     var seen = {};
+    var folded = {};
     var heading = null;
     var headingHasRows = false;
+    var past = false;
     Array.prototype.forEach.call(body.rows, function (row) {
       if (row.classList.contains('fc-list-day')) {
         if (heading) heading.hidden = !headingHasRows;
         heading = row;
         headingHasRows = false;
+        past = !showPast && (row.dataset.date || '') < today;
         return;
       }
       var id = row.dataset.eventId;
+      if (past) {
+        row.hidden = true;
+        if (id) folded[id] = true;
+        return;
+      }
       row.hidden = Boolean(id && seen[id]);
       if (id) seen[id] = true;
       if (!row.hidden) headingHasRows = true;
     });
     if (heading) heading.hidden = !headingHasRows;
+    var hiddenCount = Object.keys(folded).filter(function (id) { return !seen[id]; }).length;
+    if (hiddenCount) {
+      var toggle = body.insertRow(0);
+      toggle.className = 'fc-list-past-toggle';
+      var cell = toggle.insertCell(0);
+      cell.colSpan = 3;
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn btn-link btn-sm px-0';
+      button.textContent = EARLIER_LABEL + ' (' + hiddenCount + ')';
+      button.addEventListener('click', function () { showPast = true; tidyList(); });
+      cell.appendChild(button);
+    }
   }
   function tidyListSoon() { window.setTimeout(tidyList, 0); }
 
@@ -308,6 +342,7 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     datesSet: function (info) {
       syncPicker(info.view.currentStart);
+      showPast = false;
       if (info.view.type !== currentView) {
         currentView = info.view.type;
         try { localStorage.setItem(VIEW_KEY, currentView); } catch (e) { /* storage blocked */ }

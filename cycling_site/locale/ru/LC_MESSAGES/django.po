@@ -3577,3 +3577,7 @@ msgstr "Исходный протокол"
 #: protocols/templates/protocols/_document.html
 msgid "Search the protocol"
 msgstr "Поиск по протоколу"
+
+#: calendar_app/templates/calendar_app/calendar.html:257
+msgid "Earlier days of the month"
+msgstr "Прошедшие дни месяца"
