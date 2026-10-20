@@ -138,6 +138,55 @@ class CompetitionMetaTests(TestCase):
         self.assertIsInstance(venue, Location)
 
 
+class CompetitionPreviewTextTests(TestCase):
+    """What a chat shows under the title of a pasted event link (issue #318).
+
+    The generated summary cannot know when and where riders meet, so an organizer may write that
+    line themselves. Search engines keep the summary: the line is written for a chat, not a result.
+    """
+
+    def _html(self, comp, language="ru"):
+        return self.client.get(
+            in_language(comp.get_absolute_url(), language), HTTP_ACCEPT_LANGUAGE=language
+        ).content.decode()
+
+    def test_without_one_a_chat_shows_the_summary(self):
+        comp = _competition("Saturday ride")
+        html = self._html(comp)
+        self.assertEqual(_prop(html, "og:description"), _meta(html, "description"))
+
+    def test_with_one_a_chat_shows_it(self):
+        comp = _competition("Saturday ride", preview_text_ru="Meet 6:15, start 6:30 at the bike shop")
+        self.assertEqual(_prop(self._html(comp), "og:description"), "Meet 6:15, start 6:30 at the bike shop")
+
+    def test_search_engines_still_read_the_summary(self):
+        comp = _competition("Saturday ride", preview_text_ru="Meet 6:15, start 6:30 at the bike shop")
+        description = _meta(self._html(comp), "description")
+        self.assertNotIn("Meet 6:15", description)
+        self.assertIn("Saturday ride", description)
+
+    def test_each_language_shows_its_own_line(self):
+        comp = _competition(
+            "Saturday ride",
+            preview_text_ru="Russian line",
+            preview_text_kk="Kazakh line",
+            preview_text_en="English line",
+        )
+        for language, expected in (("ru", "Russian line"), ("kk", "Kazakh line"), ("en", "English line")):
+            with self.subTest(language=language):
+                self.assertEqual(_prop(self._html(comp, language), "og:description"), expected)
+
+    def test_a_missing_language_falls_back_like_the_title(self):
+        comp = _competition("Saturday ride", preview_text_ru="Russian line")
+        for language in ("kk", "en"):
+            with self.subTest(language=language):
+                self.assertEqual(_prop(self._html(comp, language), "og:description"), "Russian line")
+
+    def test_the_line_is_escaped_inside_the_tag(self):
+        comp = _competition("Saturday ride", preview_text_ru='Meet at "Giant" & go')
+        self.assertEqual(_prop(self._html(comp), "og:description"), escape('Meet at "Giant" & go'))
+
+
 class SocialImageTests(TestCase):
     """What a chat shows when a link is pasted: the site mark, unless a page brings its own."""
 

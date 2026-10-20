@@ -855,6 +855,10 @@ class CompetitionDetailView(View):
             # about it, instead of the one site-wide line every page used to carry.
             "meta_title": competition.title,
             "meta_description": competition.search_summary(),
+            # What a chat shows under the title: the organizer's own line when they wrote one (the
+            # meeting time and place, which the summary cannot know), else the summary above. Read
+            # through the translated field, so a missing language falls back like the title does.
+            "og_description": competition.preview_text,
             "og_type": "article",
             # The picture a chat shows for this event. Absolute, because the messenger fetching it
             # has nothing to resolve a relative path against.
