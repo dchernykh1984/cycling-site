@@ -105,3 +105,16 @@ def test_a_range_picked_on_the_calendar_travels_to_the_list(page: Page, live_ser
     saturday, sunday = _weekend()
     expect(page.locator('input[name="date_from"]')).to_have_value(f"{saturday:%Y-%m-%d}")
     expect(page.locator('input[name="date_to"]')).to_have_value(f"{sunday:%Y-%m-%d}")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_on_a_sunday_the_arrow_moves_to_the_next_saturday_and_sunday(page: Page, live_server):
+    """On a Sunday "this weekend" is the Sunday alone; a week on is still a Saturday and a Sunday."""
+    page.clock.set_fixed_time(datetime.datetime(2026, 10, 25, 12, 0))
+    page.goto(f"{live_server.url}/en/calendar/")
+    page.locator('[data-quick-dates="weekend"]').click()
+    expect(page.locator(".fc-toolbar-title")).to_have_text("25 October")
+    page.locator(".fc-next-button").click()
+    expect(page.locator(".fc-toolbar-title")).to_have_text("31 October \u2013 1 November")
+    page.locator(".fc-prev-button").click()
+    expect(page.locator(".fc-toolbar-title")).to_have_text("24\u201325 October")
