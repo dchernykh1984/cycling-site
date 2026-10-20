@@ -62,4 +62,7 @@ def test_without_a_share_sheet_the_link_is_copied(page: Page, live_server):
     button = page.locator(".share-btn")
     button.click()
     assert page.evaluate("window.__copied").endswith("/ru/news/")
-    expect(button.locator(".share-label")).to_have_text(button.get_attribute("data-copied-label") or "")
+    label = button.locator(".share-label")
+    expect(label).to_have_text(button.get_attribute("data-copied-label") or "")
+    # Seen, not only set: on a phone the button is an icon, and the word has to appear beside it.
+    expect(label).to_be_visible()

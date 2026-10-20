@@ -89,7 +89,14 @@
             if (!label) return;
             var idle = label.textContent;
             label.textContent = btn.dataset.copiedLabel;
-            setTimeout(function () { label.textContent = idle; }, 2000);
+            // A narrow screen shows the icon alone; the confirmation must show there too, or a phone
+            // without a share sheet copies the link without a word.
+            var hidden = label.classList.contains('d-none');
+            label.classList.remove('d-none');
+            setTimeout(function () {
+                label.textContent = idle;
+                if (hidden) label.classList.add('d-none');
+            }, 2000);
         });
     });
 }());
