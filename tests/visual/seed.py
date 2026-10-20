@@ -6,7 +6,9 @@ the site's time zone, so the month grid, the 30-day list and the map always have
 run.py makes sure both sides are seeded on the same day. Every stamp the database would otherwise
 take from the clock is pinned, so the two sides differ only in the code that renders them.
 
-Writes the session cookies of the signed-in visitors to the path in VISUAL_SESSIONS.
+Writes the session cookies of the signed-in visitors to the path in VISUAL_SESSIONS, when set.
+Without it the seed simply fills a local database to look at a skin in (skins/README.md); every
+seeded account signs in with the password in PASSWORD.
 """
 
 import datetime
@@ -157,18 +159,19 @@ for model in apps.get_models():
         model._default_manager.all().update(**stamps)
 User.objects.update(last_login=NOON, date_joined=NOON)
 
-with pathlib.Path(os.environ["VISUAL_SESSIONS"]).open("w") as out:
-    json.dump(
-        {
-            "today": TODAY.isoformat(),
-            "sessions": sessions,
-            "pages": {
-                "upcoming": upcoming.pk,
-                "finished": finished.pk,
-                "venue": venue.pk,
-                "news": news[0].get_absolute_url(),
-                "guide": guide.get_absolute_url(),
+if "VISUAL_SESSIONS" in os.environ:
+    with pathlib.Path(os.environ["VISUAL_SESSIONS"]).open("w") as out:
+        json.dump(
+            {
+                "today": TODAY.isoformat(),
+                "sessions": sessions,
+                "pages": {
+                    "upcoming": upcoming.pk,
+                    "finished": finished.pk,
+                    "venue": venue.pk,
+                    "news": news[0].get_absolute_url(),
+                    "guide": guide.get_absolute_url(),
+                },
             },
-        },
-        out,
-    )
+            out,
+        )
