@@ -29,9 +29,12 @@ class TodayButtonTests(TestCase):
         for language in ("ru", "kk", "en"):
             with self.subTest(language=language):
                 with translation.override(language):
-                    expected = translation.gettext("Today")
+                    today, grid, listing = (translation.gettext(word) for word in ("Today", "Grid", "List"))
                 response = self.client.get(in_language(reverse("calendar"), language))
-                self.assertContains(response, f"buttonText: {{ today: '{expected}' }}")
+                self.assertContains(
+                    response,
+                    f"buttonText: {{ today: '{today}', dayGridMonth: '{grid}', listMonth: '{listing}' }}",
+                )
 
     def test_the_label_starts_with_a_capital_letter(self):
         for language in ("ru", "kk", "en"):
