@@ -32,10 +32,24 @@ def manages(user, competition) -> bool:
     return bool(user.is_authenticated and user.get_role_rank() >= _ORGANIZER_RANK and user == competition.submitted_by)
 
 
-def is_invited(user, competition) -> bool:
-    from calendar_app.models import CompetitionInvite
+def _let_in(user) -> Q:
+    """Events this signed-in user was let into: by opening the link, or by being registered.
 
-    return bool(user.is_authenticated and CompetitionInvite.objects.filter(competition=competition, user=user).exists())
+    A registration counts because an event can turn invite-only after people signed up for it while
+    it was public, and its own riders must not lose the page of the race they are entered in.
+    """
+    from calendar_app.models import CompetitionInvite
+    from registrations.models import CompetitionRegistration
+
+    invited = CompetitionInvite.objects.filter(user=user).values("competition_id")
+    registered = CompetitionRegistration.objects.filter(user=user, is_rejected=False).values("competition_id")
+    return Q(pk__in=invited) | Q(pk__in=registered)
+
+
+def is_invited(user, competition) -> bool:
+    from calendar_app.models import Competition
+
+    return bool(user.is_authenticated and Competition.objects.filter(_let_in(user), pk=competition.pk).exists())
 
 
 def can_see(user, competition) -> bool:
@@ -67,9 +81,7 @@ def listed_for(qs: QuerySet, user) -> QuerySet:
     qs = qs.filter(is_hidden=False)
     let_in = Q(invite_only=False)
     if user.is_authenticated:
-        from calendar_app.models import CompetitionInvite
-
-        let_in |= Q(pk__in=CompetitionInvite.objects.filter(user=user).values("competition_id"))
+        let_in |= _let_in(user)
         if user.get_role_rank() >= _ORGANIZER_RANK:
             let_in |= Q(submitted_by=user)
     return qs.filter(let_in)

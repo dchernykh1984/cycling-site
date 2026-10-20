@@ -128,6 +128,40 @@ class WhoSeesTheEventTests(_Cast):
         self.assertEqual(self.client.get(reverse("competition_detail", args=[self.private.pk])).status_code, 404)
 
 
+class RegisteredRidersTests(_Cast):
+    """An event can turn invite-only after people signed up for it while it was public."""
+
+    def _register(self, user, **kwargs):
+        from registrations.models import CompetitionRegistration
+
+        return CompetitionRegistration.objects.create(
+            competition=self.public,
+            user=user,
+            first_name="Rider",
+            last_name="Test",
+            birth_date=datetime.date(1990, 1, 1),
+            gender="M",
+            **kwargs,
+        )
+
+    def _go_private(self):
+        self.public.invite_only = True
+        self.public.save(update_fields=["invite_only"])
+
+    def test_a_registered_rider_keeps_the_page_and_the_list_row(self):
+        self._register(self.stranger)
+        self._go_private()
+        self.as_(self.stranger)
+        self.assertEqual(self.client.get(reverse("competition_detail", args=[self.public.pk])).status_code, 200)
+        self.assertIn("Public race", self.client.get(reverse("calendar_list")).content.decode())
+
+    def test_a_rejected_registration_lets_nobody_in(self):
+        self._register(self.stranger, is_rejected=True)
+        self._go_private()
+        self.as_(self.stranger)
+        self.assertEqual(self.client.get(reverse("competition_detail", args=[self.public.pk])).status_code, 404)
+
+
 class MapTests(_Cast):
     """The calendar map pins an event the same way the list shows it."""
 
