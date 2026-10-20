@@ -69,6 +69,6 @@ class DevelopmentReloadTests(TestCase):
 
     def test_anything_else_is_left_to_django(self):
         for path in (settings.SKINS_DIR / "ubt" / "skin.css", settings.BASE_DIR / "home" / "models.py"):
-            with self.subTest(path=path), mock.patch("django.template.autoreload.reset_loaders") as reset:
+            with self.subTest(path=str(path)), mock.patch("django.template.autoreload.reset_loaders") as reset:
                 self.assertIsNone(skins.reset_on_skin_template(None, path))
                 reset.assert_not_called()
