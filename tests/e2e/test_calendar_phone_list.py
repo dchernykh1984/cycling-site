@@ -143,3 +143,11 @@ def test_the_end_day_holds_where_clocks_go_forward(browser, live_server, organiz
     row = page.locator(".fc-list-event:visible", has_text="Spring race")
     expect(row.locator(".fc-list-event-until")).to_have_text("\u2013 28 March")
     context.close()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_opening_the_earlier_days_keeps_the_keyboard_in_the_list(page: Page, live_server, earlier_and_today):
+    _open_list(page, live_server)
+    page.locator(".fc-list-past-toggle button").focus()
+    page.keyboard.press("Enter")
+    expect(page.locator("#calendar .fc-list-event a:focus")).to_have_count(1)
