@@ -30,6 +30,8 @@
   </div>
 </div>
 
+{% include "calendar_app/_quick_dates.html" %}
+
 <div class="card mb-4">
   <div class="card-body">
     <form method="get" id="filter-form" class="row g-2 align-items-end">
@@ -136,6 +138,14 @@
       form.querySelectorAll('.js-date-filter').forEach(function (el) {
         el.addEventListener('change', function () { form.submit(); });
       });
+      // A quick range fills the two date fields, which submit the form themselves.
+      var dateFrom = form.querySelector('input[name="date_from"]');
+      var dateTo = form.querySelector('input[name="date_to"]');
+      window.onQuickDates = function (kind, range) { window.setDateFields(dateFrom, dateTo, range); };
+      document.addEventListener('DOMContentLoaded', function () {
+        window.markQuickDates(window.quickDatesKindOf(dateFrom.value, dateTo.value));
+      });
+
       // Auto-submit the favorites toggle too.
       var favEl = form.querySelector('#favorite-filter');
       if (favEl) favEl.addEventListener('change', function () { form.submit(); });
