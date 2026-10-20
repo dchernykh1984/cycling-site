@@ -37,11 +37,6 @@ html {
     scroll-padding-top: 70px;
 }
 
-/* Theme toggle button */
-#theme-toggle {
-    min-width: 2.2rem;
-}
-
 /* Richtext content */
 .richtext img {
     max-width: 100%;

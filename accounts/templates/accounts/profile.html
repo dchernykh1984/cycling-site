@@ -240,10 +240,7 @@
             <div class="card-header">{% trans "Appearance" %}</div>
             <div class="card-body d-flex align-items-center gap-3">
                 <span>{% trans "Theme" %}:</span>
-                <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">
-                    <span class="theme-icon">&#9790;</span>
-                    <span class="theme-label"></span>
-                </button>
+                {% include "_skin_select.html" with with_name=True %}
             </div>
         </div>
 

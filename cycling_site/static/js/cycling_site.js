@@ -1,40 +1,45 @@
 (function () {
-    function getTheme() {
-        return document.documentElement.getAttribute('data-bs-theme') || 'light';
-    }
-
-    function updateThemeIcon() {
-        var theme = getTheme();
-        document.querySelectorAll('.theme-icon').forEach(function (el) {
-            el.innerHTML = theme === 'dark' ? '&#9728;' : '&#9790;';
-        });
-        document.querySelectorAll('.theme-label').forEach(function (el) {
-            el.textContent = theme === 'dark' ? ' Dark' : ' Light';
-        });
-    }
-
-    window.toggleTheme = function () {
-        var next = getTheme() === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-bs-theme', next);
-        document.documentElement.setAttribute('data-skin', next);
-        updateThemeIcon();
-
-        if (document.body.dataset.authenticated === 'true') {
-            var csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
-            // From the template: the address carries the reader's language prefix, and the bare one
-            // answers a POST with a redirect that drops the request body.
-            fetch(document.body.dataset.themeUrl, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
-                body: JSON.stringify({theme: next})
-            });
-        } else {
+    // The skin chooser (_skin_select.html), in the navbar and on the profile.
+    function saveSkin(key) {
+        if (document.body.dataset.authenticated !== 'true') {
             // A cookie, not the browser's storage: the server draws the page in the guest's skin.
-            document.cookie = 'skin=' + next + ';path=/;max-age=31536000;samesite=lax';
+            document.cookie = 'skin=' + key + ';path=/;max-age=31536000;samesite=lax';
+            return Promise.resolve();
         }
-    };
+        var csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+        // From the template: the address carries the reader's language prefix, and the bare one
+        // answers a POST with a redirect that drops the request body.
+        return fetch(document.body.dataset.themeUrl, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify({theme: key})
+        });
+    }
 
-    document.addEventListener('DOMContentLoaded', updateThemeIcon);
+    document.addEventListener('click', function (event) {
+        var item = event.target.closest('.skin-select [data-skin-key]');
+        if (!item) return;
+        var key = item.dataset.skinKey, mode = item.dataset.mode;
+        var saved = saveSkin(key);
+        if (item.dataset.reload) {
+            // Its stylesheet is not on this page; the next one carries it.
+            saved.then(function () { location.reload(); });
+            return;
+        }
+        document.documentElement.setAttribute('data-skin', key);
+        document.documentElement.setAttribute('data-bs-theme', mode);
+        // Every chooser on the page (navbar, profile) shows the new choice.
+        document.querySelectorAll('.skin-select').forEach(function (chooser) {
+            chooser.querySelector('.skin-icon').innerHTML = mode === 'dark' ? '&#9728;' : '&#9790;';
+            var name = chooser.querySelector('.skin-name');
+            if (name) name.textContent = item.textContent;
+            chooser.querySelectorAll('[data-skin-key]').forEach(function (other) {
+                var on = other.dataset.skinKey === key;
+                other.classList.toggle('active', on);
+                if (on) other.setAttribute('aria-current', 'true'); else other.removeAttribute('aria-current');
+            });
+        });
+    });
 
     // Mark current section's nav-link as active based on the URL path
     document.addEventListener('DOMContentLoaded', function () {

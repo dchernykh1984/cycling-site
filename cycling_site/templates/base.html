@@ -114,10 +114,7 @@
                     </li>
                 </ul>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-outline-secondary"
-                        onclick="toggleTheme()" title="{% trans 'Switch theme' %}">
-                        <span class="theme-icon">&#9790;</span>
-                    </button>
+                    {% include "_skin_select.html" %}
                     {% get_available_languages as available_languages %}
                     {% for lang_code, lang_name in available_languages %}
                     {% if lang_code == CURRENT_LANGUAGE %}
