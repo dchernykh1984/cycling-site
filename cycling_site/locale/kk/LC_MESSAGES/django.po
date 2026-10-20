@@ -3181,3 +3181,7 @@ msgstr "Жыл"
 #: calendar_app/templates/calendar_app/calendar.html:353
 msgid "Grid"
 msgstr "Тор"
+
+#: calendar_app/templates/calendar_app/_filter_chips.html:11
+msgid "Remove filter"
+msgstr "Сүзгіні алып тастау"
