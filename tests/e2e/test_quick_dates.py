@@ -118,3 +118,17 @@ def test_on_a_sunday_the_arrow_moves_to_the_next_saturday_and_sunday(page: Page,
     expect(page.locator(".fc-toolbar-title")).to_have_text("31 October \u2013 1 November")
     page.locator(".fc-prev-button").click()
     expect(page.locator(".fc-toolbar-title")).to_have_text("24\u201325 October")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_links_follow_the_range_on_screen(page: Page, live_server):
+    """Paged to the next weekend, the List link carries it; back on the month, it carries none."""
+    page.clock.set_fixed_time(datetime.datetime(2026, 10, 21, 12, 0))
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{live_server.url}/en/calendar/")
+    page.locator('[data-quick-dates="weekend"]').click()
+    page.locator(".fc-next-button").click()
+    link = page.locator("#view-link-list")
+    expect(link).to_have_attribute("href", re.compile(r"date_from=2026-10-31&date_to=2026-11-01"))
+    page.locator(".fc-dayGridMonth-button").click()
+    expect(link).not_to_have_attribute("href", re.compile(r"date_from"))
