@@ -24,6 +24,11 @@ PREVIEW_IMAGE_STRINGS = (
     "Link preview image",
     "Shown when somebody pastes a link to this event into a chat. Upload it before the "
     "link goes round: messengers remember the first picture they saw for a long time.",
+    # And with the link preview text (#318).
+    "Link preview text",
+    "The line a chat shows under the title when somebody pastes a link to this event; about 80 "
+    "characters fit. For example: meet at 6:15, start at 6:30, Giant bike shop on Abay 47. Leave it "
+    "empty to show the date and the place.",
 )
 
 

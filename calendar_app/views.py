@@ -1078,6 +1078,10 @@ def _competition_initial(comp, *, with_dates: bool = True, with_results: bool = 
         "description_ru": comp.description_ru or "",
         "description_kk": comp.description_kk or "",
         "description_en": comp.description_en or "",
+        # Copied by a clone too: a weekly ride keeps its meeting point from one week to the next.
+        "preview_text_ru": comp.preview_text_ru or "",
+        "preview_text_kk": comp.preview_text_kk or "",
+        "preview_text_en": comp.preview_text_en or "",
         "event_types": list(comp.event_types.values_list("pk", flat=True)),
         "disciplines": list(comp.disciplines.values_list("pk", flat=True)),
         "location": comp.location_id,
@@ -1255,6 +1259,9 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         description_ru=cd.get("description_ru", ""),
                         description_kk=cd.get("description_kk", ""),
                         description_en=cd.get("description_en", ""),
+                        preview_text_ru=cd.get("preview_text_ru", ""),
+                        preview_text_kk=cd.get("preview_text_kk", ""),
+                        preview_text_en=cd.get("preview_text_en", ""),
                         location=location,
                         date_start=cd["date_start"],
                         date_end=cd.get("date_end"),
@@ -1372,6 +1379,9 @@ class EditCompetitionView(View):
             comp.description_ru = cd.get("description_ru", "")
             comp.description_kk = cd.get("description_kk", "")
             comp.description_en = cd.get("description_en", "")
+            comp.preview_text_ru = cd.get("preview_text_ru", "")
+            comp.preview_text_kk = cd.get("preview_text_kk", "")
+            comp.preview_text_en = cd.get("preview_text_en", "")
             comp.date_start = cd["date_start"]
             comp.date_end = cd.get("date_end")
             comp.url_announcement = cd.get("url_announcement", "")

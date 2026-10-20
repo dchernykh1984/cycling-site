@@ -48,6 +48,15 @@ def _url_field() -> forms.URLField:
     )
 
 
+def _preview_text_field() -> forms.CharField:
+    """One locale of the link preview line, bounded by the column behind it."""
+    return forms.CharField(
+        required=False,
+        max_length=Competition._meta.get_field("preview_text").max_length,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+
+
 class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     def __init__(self, *args, user=None, **kwargs):
         # The submitting user is needed to validate location ownership (issue #111).
@@ -62,6 +71,10 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     description_ru = forms.CharField(required=False, widget=forms.HiddenInput())
     description_kk = forms.CharField(required=False, widget=forms.HiddenInput())
     description_en = forms.CharField(required=False, widget=forms.HiddenInput())
+    # The line a chat shows under the title of a pasted link, per locale like the title (#318).
+    preview_text_ru = _preview_text_field()
+    preview_text_kk = _preview_text_field()
+    preview_text_en = _preview_text_field()
     # A start can be more than one thing at once -- a race with a kids race inside it, an open
     # mass start that also holds a professional field -- so the types are a set, like disciplines.
     event_types: forms.ModelMultipleChoiceField[EventType] = forms.ModelMultipleChoiceField(

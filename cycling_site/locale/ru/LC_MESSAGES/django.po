@@ -3467,3 +3467,27 @@ msgstr "Страницы"
 #: search/templates/search/search.html:101
 msgid "No results found"
 msgstr "Ничего не найдено"
+
+#: calendar_app/templates/calendar_app/edit.html:48
+#: calendar_app/templates/calendar_app/submit.html:45
+msgid "Link preview text"
+msgstr "Текст для превью ссылки"
+
+#: calendar_app/templates/calendar_app/edit.html:51
+#: calendar_app/templates/calendar_app/submit.html:48
+msgid ""
+"The line a chat shows under the title when somebody pastes a link to this "
+"event; only about the first 80 characters show, and the chat cuts off the "
+"rest. For example: meet at 6:15, start at 6:30, by the main entrance. Leave "
+"it empty to show the date and the place. Write it before the link goes round:"
+" messengers remember the text they first saw for a long time."
+msgstr ""
+"Строка, которую чат показывает под названием, когда кто-то вставляет ссылку "
+"на это мероприятие; видны примерно первые 80 символов, остальное чат обрежет."
+" Например: сбор в 6:15, старт в 6:30, у главного входа. Если оставить пустым,"
+" покажутся дата и место. Напишите её до того, как ссылку разошлют: "
+"мессенджеры надолго запоминают первый увиденный текст."
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "How a link to this event looks in a chat"
+msgstr "Так ссылка на событие выглядит в чате"

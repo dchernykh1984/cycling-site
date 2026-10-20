@@ -44,6 +44,12 @@
               {{ form.description_ru }}
               {% if form.description_ru.errors %}<div class="text-danger small mt-1">{% for e in form.description_ru.errors %}{{ e }}{% endfor %}</div>{% endif %}
             </div>
+            <div class="mt-3">
+              <label class="form-label fw-semibold" for="{{ form.preview_text_ru.id_for_label }}">{% trans "Link preview text" %}</label>
+              {{ form.preview_text_ru }}
+              {% if form.preview_text_ru.errors %}<div class="text-danger small mt-1">{% for e in form.preview_text_ru.errors %}{{ e }}{% endfor %}</div>{% endif %}
+              <div class="form-text">{% trans "The line a chat shows under the title when somebody pastes a link to this event; about 80 characters fit. For example: meet at 6:15, start at 6:30, Giant bike shop on Abay 47. Leave it empty to show the date and the place." %}</div>
+            </div>
           </div>
           <div class="tab-pane fade" id="tab-kk" role="tabpanel">
             <div class="mb-3">
@@ -56,6 +62,12 @@
               <div id="quill-desc-kk" class="quill-editor" data-target="id_description_kk" data-init="init-desc-kk"></div>
               {{ form.description_kk }}
               {% if form.description_kk.errors %}<div class="text-danger small mt-1">{% for e in form.description_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+            <div class="mt-3">
+              <label class="form-label fw-semibold" for="{{ form.preview_text_kk.id_for_label }}">{% trans "Link preview text" %}</label>
+              {{ form.preview_text_kk }}
+              {% if form.preview_text_kk.errors %}<div class="text-danger small mt-1">{% for e in form.preview_text_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
+              <div class="form-text">{% trans "The line a chat shows under the title when somebody pastes a link to this event; about 80 characters fit. For example: meet at 6:15, start at 6:30, Giant bike shop on Abay 47. Leave it empty to show the date and the place." %}</div>
             </div>
           </div>
           <div class="tab-pane fade" id="tab-en" role="tabpanel">
@@ -70,12 +82,18 @@
               {{ form.description_en }}
               {% if form.description_en.errors %}<div class="text-danger small mt-1">{% for e in form.description_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
             </div>
+            <div class="mt-3">
+              <label class="form-label fw-semibold" for="{{ form.preview_text_en.id_for_label }}">{% trans "Link preview text" %}</label>
+              {{ form.preview_text_en }}
+              {% if form.preview_text_en.errors %}<div class="text-danger small mt-1">{% for e in form.preview_text_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
+              <div class="form-text">{% trans "The line a chat shows under the title when somebody pastes a link to this event; about 80 characters fit. For example: meet at 6:15, start at 6:30, Giant bike shop on Abay 47. Leave it empty to show the date and the place." %}</div>
+            </div>
           </div>
         </div>
       </div>
 
       {% for field in form %}
-        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "disciplines" and field.html_name != "location" and field.html_name|slice:":10" != "new_venue_" and field.html_name != "preview_image" and field.html_name != "invite_only" %}
+        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "disciplines" and field.html_name != "location" and field.html_name|slice:":10" != "new_venue_" and field.html_name != "preview_image" and field.html_name|slice:":13" != "preview_text_" and field.html_name != "invite_only" %}
         <div class="mb-3">
           <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
             {{ field.label }}{% if field.field.required %} *{% endif %}

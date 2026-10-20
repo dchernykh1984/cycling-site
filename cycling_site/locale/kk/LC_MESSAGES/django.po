@@ -3465,3 +3465,27 @@ msgstr "Беттер"
 #: search/templates/search/search.html:101
 msgid "No results found"
 msgstr "Ештенiе табылмады"
+
+#: calendar_app/templates/calendar_app/edit.html:48
+#: calendar_app/templates/calendar_app/submit.html:45
+msgid "Link preview text"
+msgstr "Сілтеме алдын ала қарау мәтіні"
+
+#: calendar_app/templates/calendar_app/edit.html:51
+#: calendar_app/templates/calendar_app/submit.html:48
+msgid ""
+"The line a chat shows under the title when somebody pastes a link to this "
+"event; only about the first 80 characters show, and the chat cuts off the "
+"rest. For example: meet at 6:15, start at 6:30, by the main entrance. Leave "
+"it empty to show the date and the place. Write it before the link goes round:"
+" messengers remember the text they first saw for a long time."
+msgstr ""
+"Біреу осы іс-шараға сілтемені чатқа жапсырғанда атауының астында көрсетілетін"
+" жол; алғашқы 80-ге жуық таңба ғана көрінеді, қалғанын чат қиып тастайды. "
+"Мысалы: жиналу 6:15-те, старт 6:30-да, басты кіреберіс жанында. Бос "
+"қалдырсаңыз, күні мен орны көрсетіледі. Сілтеме таралмас бұрын жазыңыз: "
+"мессенджерлер алғаш көрген мәтінді ұзақ есте сақтайды."
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "How a link to this event looks in a chat"
+msgstr "Оқиғаға сілтеме чатта осылай көрінеді"
