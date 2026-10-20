@@ -9,7 +9,7 @@ which a crawler sees on every page, out of search results.{% endcomment %}
     <span class="flex-grow-1">
         {% if setup_hint.key == "sign_in" %}{% trans "Sign in, and the calendar fits you: only your sports and your city, favourites, and entering races in one click." %}
         {% elif setup_hint.key == "confirm_email" %}{% trans "Confirm your email address: until then you cannot enter races, add events or comment. Look for the letter in your inbox, or send it again from your profile." %}
-        {% elif setup_hint.key == "preferences" %}{% trans "Choose your sports and places in your profile, and the calendar, list and map will open with only them." %}
+        {% elif setup_hint.key == "preferences" %}{% trans "Choose your sports, event types and places in your profile, or save the filter with its button, and the calendar, list and map will open with them." %}
         {% elif setup_hint.key == "registration_data" %}{% trans "Add your name, gender and date of birth to your profile: race entries will be filled in for you." %}
         {% elif setup_hint.key == "signin_methods" %}{% trans "Your account has only one way to sign in. Add a second one, so losing it does not lock you out." %}
         {% elif setup_hint.key == "strava" %}{% trans "Add your Strava profile link: races that ask for it will take it from your entry." %}

@@ -324,6 +324,7 @@ def _user_filter_default_params(user) -> list:
     ]
     pairs += [("discipline", pk) for pk in discipline_ids]
     pairs += [("location", pk) for pk in user.preferred_locations.values_list("pk", flat=True)]
+    pairs += [("event_type", pk) for pk in user.preferred_event_types.values_list("pk", flat=True)]
     return pairs
 
 

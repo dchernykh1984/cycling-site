@@ -53,6 +53,7 @@
         </div>
       </div>
       {% endif %}
+        {% include "calendar_app/_save_filter.html" %}
       <div class="col-sm-12 col-md-2 d-flex gap-2">
         {# ?reset=1 makes the request non-empty so the saved-preference default redirect is skipped -- #}
         {# Reset must reach the unfiltered view, not bounce back to the user's defaults (issue #229). #}

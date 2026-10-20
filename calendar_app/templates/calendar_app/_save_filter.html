@@ -1,0 +1,68 @@
+{% load i18n %}
+{% comment %}Save the filter into the member's preferences (issue #322): a button, or -- when the member
+ticked "always save" in the profile -- on every change, and then the button is not shown.
+
+What is sent is read from the filter widgets themselves, and "scope" names the filters this page has:
+the map has no location filter, so saving from it leaves the saved places alone. The request uses
+keepalive because the list page navigates the moment a filter changes, and a plain request would be
+cut off with the page.{% endcomment %}
+{% if request.user.is_authenticated %}
+{% if not request.user.autosave_filters %}
+<div class="col-auto">
+  <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="save-filter-btn"
+          data-saved-label="{% trans 'Saved to your preferences' %}">{% trans "Save filter to my preferences" %}</button>
+</div>
+{% endif %}
+<script>
+(function () {
+  var url = '{% url "account_save_filters" %}';
+  var csrf = '{{ csrf_token }}';
+
+  window.saveFilterToPreferences = function () {
+    var params = new URLSearchParams();
+    var scope = [];
+    if (window.getEventTypeFilterIds) {
+      scope.push('event_type');
+      window.appendIdsParam(params, 'event_type', window.getEventTypeFilterIds());
+    }
+    if (window.applyDirectionParams) {
+      scope.push('direction');
+      window.applyDirectionParams(params, 'discipline_category');
+    }
+    if (window.getLocationFilterIds) {
+      scope.push('location');
+      window.appendIdsParam(params, 'location', window.getLocationFilterIds());
+    }
+    params.set('scope', scope.join(','));
+    return fetch(url, {
+      method: 'POST',
+      body: params,
+      headers: {'X-CSRFToken': csrf},
+      credentials: 'same-origin',
+      keepalive: true
+    });
+  };
+
+  var btn = document.getElementById('save-filter-btn');
+  var idleLabel = btn ? btn.textContent : '';
+  if (btn) {
+    btn.addEventListener('click', function () {
+      window.saveFilterToPreferences().then(function (r) {
+        if (r.ok) { btn.textContent = btn.dataset.savedLabel; btn.disabled = true; }
+      });
+    });
+  }
+
+  // Every page sets up its own onCalendarFilterChange while it loads; wrap it once they all have.
+  // With "always save" on, each change is saved; otherwise a change makes the button live again --
+  // the calendar and the map do not reload, so "saved" would go on claiming an older filter.
+  window.addEventListener('load', function () {
+    var pageHandler = window.onCalendarFilterChange;
+    window.onCalendarFilterChange = function () {
+      {% if request.user.autosave_filters %}window.saveFilterToPreferences();{% else %}if (btn) { btn.textContent = idleLabel; btn.disabled = false; }{% endif %}
+      if (pageHandler) return pageHandler.apply(this, arguments);
+    };
+  });
+}());
+</script>
+{% endif %}

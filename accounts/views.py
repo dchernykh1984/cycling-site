@@ -98,6 +98,8 @@ class ProfileEditForm(forms.ModelForm):
             "preferred_directions",
             "preferred_disciplines",
             "preferred_locations",
+            "preferred_event_types",
+            "autosave_filters",
         ]
         widgets: ClassVar[dict] = {
             "birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
@@ -105,6 +107,8 @@ class ProfileEditForm(forms.ModelForm):
             "preferred_directions": forms.MultipleHiddenInput,
             "preferred_disciplines": forms.MultipleHiddenInput,
             "preferred_locations": forms.MultipleHiddenInput,
+            "preferred_event_types": forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
+            "autosave_filters": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
 
@@ -513,3 +517,33 @@ class DismissHintView(LoginRequiredMixin, View):
         ):
             nxt = "/"
         return redirect(nxt)
+
+
+class SaveFilterPreferencesView(LoginRequiredMixin, View):
+    """Save the calendar filter as it stands into the member's preferences (issue #322).
+
+    Posted by the filter's own "save" button, or on every change when the member asked for that.
+    ``scope`` names the filters the page actually has, and only those are written: the map has no
+    location filter -- the map is the location -- and saving from it must not wipe the saved places.
+    An empty filter inside the scope is saved as empty: that is the state of the search.
+    """
+
+    def post(self, request):
+        from calendar_app.models import Discipline, DisciplineCategory, EventType
+        from calendar_app.views import _parse_int_ids
+        from locations.models import Location
+
+        user = request.user
+        scope = set(request.POST.get("scope", "").split(","))
+
+        def chosen(name):
+            return _parse_int_ids(request.POST.getlist(name))
+
+        if "event_type" in scope:
+            user.preferred_event_types.set(EventType.objects.filter(pk__in=chosen("event_type")))
+        if "direction" in scope:
+            user.preferred_directions.set(DisciplineCategory.objects.filter(pk__in=chosen("discipline_category")))
+            user.preferred_disciplines.set(Discipline.objects.filter(pk__in=chosen("discipline")))
+        if "location" in scope:
+            user.preferred_locations.set(Location.objects.filter(pk__in=chosen("location"), is_deleted=False))
+        return JsonResponse({"saved": True})

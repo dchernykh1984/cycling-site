@@ -55,7 +55,10 @@ def _quiet_here(request) -> bool:
 
 def _has_preferences(user) -> bool:
     return (
-        user.preferred_directions.exists() or user.preferred_disciplines.exists() or user.preferred_locations.exists()
+        user.preferred_directions.exists()
+        or user.preferred_disciplines.exists()
+        or user.preferred_locations.exists()
+        or user.preferred_event_types.exists()
     )
 
 

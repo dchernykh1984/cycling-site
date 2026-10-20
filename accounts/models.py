@@ -61,6 +61,12 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         "calendar_app.Discipline", blank=True, related_name="preferring_users"
     )
     preferred_locations = models.ManyToManyField("locations.Location", blank=True, related_name="preferring_users")
+    # The calendar filter's event type, kept like the rest of it (issue #322).
+    preferred_event_types: models.ManyToManyField = models.ManyToManyField(
+        "calendar_app.EventType", blank=True, related_name="preferring_users"
+    )
+    # Save the calendar filter into the preferences whenever it changes, instead of on request.
+    autosave_filters = models.BooleanField(default=False)
     # Setup hints (issue #319) this member asked never to see again. A list of hint keys rather than a
     # flag, so turning one reminder off does not silence the next one.
     dismissed_hints = models.JSONField(default=list, blank=True)

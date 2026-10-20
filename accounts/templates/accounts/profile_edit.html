@@ -68,6 +68,23 @@
             <hr>
             <h2 class="h5 mb-3" id="calendar-defaults">{% trans "Calendar defaults" %}</h2>
             {% include "accounts/_preference_pickers.html" %}
+            <div class="mb-3">
+                <label class="form-label">{% trans "Preferred event types" %}</label>
+                <div class="d-flex flex-wrap gap-3">
+                    {% for choice in form.preferred_event_types %}
+                    <div class="form-check">
+                        {{ choice.tag }}
+                        <label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="form-text">{% trans "Prefilled into the calendar filter when you open it." %}</div>
+            </div>
+            <div class="form-check mb-3">
+                {{ form.autosave_filters }}
+                <label class="form-check-label" for="{{ form.autosave_filters.id_for_label }}">{% trans "Always save the calendar filter into these preferences" %}</label>
+                <div class="form-text">{% trans "Every change you make to the filter on the calendar, list or map is kept here, and the calendar opens with it next time." %}</div>
+            </div>
             <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
             <a href="{% url 'account_profile' %}" class="btn btn-outline-secondary ms-2">{% trans "Cancel" %}</a>
         </form>
