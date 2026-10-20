@@ -228,18 +228,25 @@ class MachineChannelsTests(_Cast):
     """Read by crawlers, feed readers and calendar apps -- never carry an invite-only event."""
 
     def test_sitemap(self):
-        self.assertNotIn(f"/calendar/{self.private.pk}/", self.client.get(reverse("sitemap")).content.decode())
+        body = self.client.get(reverse("sitemap_section", args=["competitions"])).content.decode()
+        self.assertIn(f"/calendar/{self.public.pk}/", body, "the sitemap lists nothing at all")
+        self.assertNotIn(f"/calendar/{self.private.pk}/", body)
 
     def test_rss(self):
-        self.assertNotIn("Private ride", self.client.get(reverse("calendar_rss")).content.decode())
+        body = self.client.get(reverse("calendar_rss")).content.decode()
+        self.assertIn("Public race", body, "the feed carries nothing at all")
+        self.assertNotIn("Private ride", body)
 
     def test_ics_subscription_even_for_an_invitee(self):
         self.as_(self.invitee)
-        self.assertNotIn("Private ride", self.client.get(reverse("calendar_ics")).content.decode())
+        body = self.client.get(reverse("calendar_ics")).content.decode()
+        self.assertIn("Public race", body, "the calendar carries nothing at all")
+        self.assertNotIn("Private ride", body)
 
     def test_public_api_even_for_an_invitee(self):
         self.as_(self.invitee)
         listing = self.client.get("/api/v1/competitions/").content.decode()
+        self.assertIn("Public race", listing, "the API lists nothing at all")
         self.assertNotIn("Private ride", listing)
         self.assertEqual(self.client.get(f"/api/v1/competitions/{self.private.pk}/").status_code, 404)
 
