@@ -389,11 +389,11 @@ MONTH_NAMES = (
 
 
 def calendar_year_choices() -> list[int]:
-    """Every year the month picker can jump to.
+    """Every year the month picker can jump to, on the calendar, the list and the map alike.
 
-    The grid opens on the current month and moves one month per click, so reaching a race from
-    six years ago meant seventy clicks on `prev`. The list spans the events the site actually
-    holds, and always contains the current year -- an empty calendar still offers this one.
+    The arrows move one month per click, so reaching a race from six years ago meant seventy clicks
+    on `prev`. The years span the events the site actually holds, and always include the current
+    one -- an empty calendar still offers this year.
     """
     from django.db.models import Max, Min
 
