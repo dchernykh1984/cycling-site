@@ -139,5 +139,13 @@ def test_a_date_changed_by_hand_on_the_map_unlights_the_button(page: Page, live_
     page.goto(f"{live_server.url}/ru/calendar/map/")
     page.locator('[data-quick-dates="season"]').click()
     expect(page.locator('[data-quick-dates="season"].active')).to_have_count(1)
-    page.evaluate("document.getElementById('map-date-to')._flatpickr.setDate('2026-06-30', true)")
+    # A phone keeps the native date input; a wide screen hands it to flatpickr.
+    page.evaluate(
+        """() => {
+            const el = document.getElementById('map-date-to');
+            if (el._flatpickr) { el._flatpickr.setDate('2026-06-30', true); return; }
+            el.value = '2026-06-30';
+            el.dispatchEvent(new Event('change', {bubbles: true}));
+        }"""
+    )
     expect(page.locator("[data-quick-dates].active")).to_have_count(0)
