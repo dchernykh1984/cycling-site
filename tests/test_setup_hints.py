@@ -192,7 +192,7 @@ class TranslationTests(TestCase):
     MSGIDS = (
         "Sign in, and the calendar fits you: only your sports and your city, favourites, and entering races "
         "in one click.",
-        "Choose your sports, event types and places in your profile, or save the filter with its button, and the "
+        "Choose your sports, event types and places in your profile or straight from the calendar filter, and the "
         "calendar, list and map will open with them.",
         "Add your name, gender and date of birth to your profile: race entries will be filled in for you.",
         "Your account has only one way to sign in. Add a second one, so losing it does not lock you out.",
