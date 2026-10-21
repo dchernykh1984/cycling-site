@@ -29,10 +29,12 @@ restored, locally or onto production.
 
 1. **Given** `scripts/backup.sh` (`--production` for the live site), **Then** a timestamped backup
    holds the database dump and the media files (pulled over SSH from the Render disk).
-2. **Given** `scripts/restore.sh`, **Then** a backup is restored into a scratch or local database
-   (schema reset, then restore, then migrate); a live host is restored in two passes (database while
-   suspended, media once running).
-3. **Given** a change touching many rows, **Then** it is tried first against a restored backup.
+2. **Given** `scripts/restore.sh`, **Then** a backup is restored into the local database, or onto
+   production with `--production-restore` (schema reset, then restore, then migrate); a live host is
+   restored in two passes -- the database while the service is suspended, then the media
+   (`--media-only`) once it runs again.
+3. **Given** a change touching many rows, **Then** the practice is to try it first against a
+   restored backup in a scratch database (the `production-access` skill).
 
 ### Story 3 -- Look into production (P2)
 
@@ -49,7 +51,8 @@ restored, locally or onto production.
 
 ## Functional Requirements
 
-- **FR-OPS-001**: Secrets and hosts come from the environment, never from the repository.
+- **FR-OPS-001**: Secrets come from the environment, never from the repository; so do the hosts,
+  apart from the site's own names listed under "Local assumptions".
 - **FR-OPS-002**: Dependencies are locked with uv; `requirements.txt` is exported from the lock.
 
 ## Key Entities
