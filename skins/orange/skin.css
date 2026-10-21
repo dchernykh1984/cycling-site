@@ -448,6 +448,21 @@ main .ubt-hero h1::after { display: none; }
 .dropdown-item { border-radius: 8px; text-transform: none; letter-spacing: normal; }
 .ubt-account .ubt-icon { width: 1.1em; height: 1.1em; }
 .ubt-account-email { max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Below 1400 px the navbar has no room for the address: the button keeps its icon, and screen readers
+   still hear the address (Bootstrap's visually-hidden, as a rule, so the markup stays as it is). */
+@media (min-width: 992px) and (max-width: 1399.98px) {
+    .ubt-account-email {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+    }
+}
 
 @media (max-width: 991.98px) {
     .ubt-navbar .navbar-collapse { padding: 0.75rem 0 0.5rem; }
