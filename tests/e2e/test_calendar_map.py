@@ -185,8 +185,9 @@ def test_a_reader_from_elsewhere_gets_every_marker(page: Page, live_server, orga
     astana = _competition_at(organizer, "Astana", *map(str, ASTANA))
     page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}&location={astana.pk}")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(2)
-    page.wait_for_function(f"() => window.calendarMap.getBounds().contains([{ASTANA[0]}, {ASTANA[1]}])")
-    assert _shows(page, *ALMATY)
+    page.wait_for_function(
+        f"() => [{list(ASTANA)}, {list(ALMATY)}].every(p => window.calendarMap.getBounds().contains(p))"
+    )
 
 
 @pytest.mark.django_db(transaction=True)
@@ -195,5 +196,7 @@ def test_a_guest_with_no_place_gets_every_marker(page: Page, live_server, organi
     _competition_at(organizer, "Astana", *map(str, ASTANA))
     page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}&location=")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(2)
-    page.wait_for_function(f"() => window.calendarMap.getBounds().contains([{ASTANA[0]}, {ASTANA[1]}])")
-    assert _shows(page, *ALMATY)
+    # Both at once: on a phone the fit is animated, and halfway through only one may be in view.
+    page.wait_for_function(
+        f"() => [{list(ASTANA)}, {list(ALMATY)}].every(p => window.calendarMap.getBounds().contains(p))"
+    )
