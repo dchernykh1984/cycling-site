@@ -1,11 +1,12 @@
 """A skin's own templates (skins/<key>/templates/) replace the site's for whoever chose the skin."""
 
 import pathlib
+import shutil
 import tempfile
 from unittest import mock
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from accounts.models import User
 from cycling_site import skins
@@ -51,6 +52,25 @@ class SkinTemplateTests(TestCase):
             html = self.client.get(self.page).content.decode()
             self.assertIn("skins/trial/skin.css", html)
             self.assertIn("skins/trial/skin.js", html)
+
+
+class SuiteSkinTests(TestCase):
+    """The trial skin works whichever skin the suite runs in, a designer's included."""
+
+    def test_the_suite_s_own_skin_survives_the_trial_skin(self):
+        real = pathlib.Path(tempfile.mkdtemp())
+        for base in ("light", "dark"):
+            shutil.copytree(settings.SKINS_DIR / base, real / base)
+        (real / "review-own").mkdir()
+        (real / "review-own" / "manifest.json").write_text(
+            '{"name": {"ru": "R", "kk": "K", "en": "E"}, "mode": "light", "order": 30}'
+        )
+        (real / "review-own" / "skin.css").write_text("")
+        with override_settings(SKINS_DIR=real, DEFAULT_SKIN="review-own"):
+            with trial_skin(pathlib.Path(tempfile.mkdtemp())):
+                response = self.client.get("/ru/news/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-skin="review-own"')
 
 
 class DevelopmentReloadTests(TestCase):

@@ -26,8 +26,10 @@ def _reset_caches():
 @contextmanager
 def trial_skin(root, *, mode="dark", css="", script=None, templates=None):
     """Serve light, dark and a "trial" skin from root while the block runs."""
-    for base in skins.MODES:
-        shutil.copytree(settings.SKINS_DIR / base, root / base)
+    # The base modes, and the skin the suite runs in (E2E_SKIN): the default has to stay a skin
+    # the registry knows, or every page would fail to resolve it.
+    for kept in {*skins.MODES, settings.DEFAULT_SKIN} - {"trial"}:
+        shutil.copytree(settings.SKINS_DIR / kept, root / kept)
     folder = root / "trial"
     folder.mkdir()
     manifest = {"name": TRIAL_NAMES, "mode": mode, "order": 30}
