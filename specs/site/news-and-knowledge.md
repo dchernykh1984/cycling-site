@@ -12,10 +12,10 @@ site
 
 ## Overview
 
-Two libraries of rich-text articles, each in Russian, Kazakh and English: news (dated, with an
-optional cover image and intro) and knowledge-base articles (with a category and tags). Admins
-write and manage them directly; any confirmed member may submit a draft for review; members
-comment.
+Two libraries of rich-text articles: news, each item carrying its title, intro and body in Russian,
+Kazakh and English, with an optional cover image; and knowledge-base articles, each written in one
+language (its locale) with a category and tags. Admins write and manage them directly; any confirmed
+member may submit a draft for review; members comment.
 
 ## User Scenarios
 
@@ -25,15 +25,16 @@ comment.
    page shows its title, cover, body and comments (author shown by full name when set, never by
    e-mail).
 2. **Given** the knowledge index, **Then** articles are listed; an article is reached by an ASCII
-   slug under the index; opening one written in another language serves the original with a banner
-   saying so.
+   slug under the index; opened at another language's address, it is served in its own language
+   with a banner saying so and a link to search.
 3. **Given** search, **Then** news and knowledge articles are found by their text.
 
 ### Story 2 -- Write and manage (P1)
 
 1. **Given** an admin, **Then** they create and edit articles on the site (not in the Wagtail admin)
-   with a bundled Quill editor -- formatting, text colour, alignment, images with size and float --
-   in a tab per language; a server-side error opens the tab of the language that failed.
+   with a bundled Quill editor -- formatting, text colour, alignment, images with size and float. A
+   news item is edited in a tab per language, and a server-side error opens the tab of the language
+   that failed; a knowledge article is written in the one language chosen for it.
 2. **Given** an admin, **Then** they may hide an article (404 for others, visible to admins), unhide
    it, delete it (soft), and set tags and category (knowledge).
 
@@ -57,8 +58,9 @@ comment.
 
 - Bodies are sanitised on every save, inline images kept; an over-long body is a translated form
   error, not a server error.
-- Slugs are ASCII even for a Cyrillic title, unique, within their maximum length, and never collide
-  with the knowledge service URLs (submit, add, submissions, articles).
+- Knowledge-article and Wagtail page slugs are ASCII even for a Cyrillic title; knowledge slugs are
+  unique, within their maximum length, and never collide with the knowledge service URLs (submit,
+  add, submissions, articles).
 - A page's meta description is drawn from the article: the news intro first, else its body, flattened
   to prose and cut on a word.
 
