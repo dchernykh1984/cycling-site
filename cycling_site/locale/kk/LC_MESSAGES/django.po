@@ -1860,7 +1860,7 @@ msgstr "Жіберу"
 #: calendar_app/templatetags/calendar_tags.py:44
 #, python-format
 msgid "your time: %(time)s"
-msgstr "сізде: %(time)s"
+msgstr "сіздің уақытыңыз: %(time)s"
 
 #: calendar_app/tests.py:706 calendar_app/tests.py:719
 #: cycling_site/forms.py:18 news/tests.py:582
