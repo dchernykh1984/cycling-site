@@ -36,6 +36,7 @@ universalbicycle.team.
 | `translations` | three locales, gettext, and the traps in this repo |
 | `search-visibility` | per-language URLs, sitemap, structured data, feeds, IndexNow |
 | `protocols` | how a results file is served, and what may appear inside one |
+| `skins` | the look of the site: light and dark kept as they are, designers' skins, their checks |
 
 ## Quick facts
 
