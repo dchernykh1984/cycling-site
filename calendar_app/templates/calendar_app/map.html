@@ -65,6 +65,7 @@
 </div>
 
 <div id="calendar-map"></div>
+{{ map_home_area|json_script:"map-home-area" }}
 {% endblock %}
 
 {% block extra_js %}
@@ -78,8 +79,8 @@ document.addEventListener('DOMContentLoaded', function () {
   var favEl = document.getElementById('map-favorite-filter');
 
   var DEFAULT_CENTER = [48.0, 68.0], DEFAULT_ZOOM = 5;  // Kazakhstan/Central Asia overview
-  // Almaty and the places its riders go out to: Kaskelen to Issyk, Shymbulak to Konaev.
-  var HOME_AREA = L.latLngBounds([43.05, 76.55], [43.90, 77.45]);
+  // The reader's home area from settings.MAP_HOME_AREAS (see map_home_area), or null.
+  var HOME_AREA = JSON.parse(document.getElementById('map-home-area').textContent);
   var map = L.map('calendar-map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
   window.calendarMap = map;  // exposed for e2e/debugging
   _addMapLayers(map);
@@ -126,8 +127,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // fitView=true picks the first view (first load only): Almaty, or the matching markers under a
-  // location filter. On later filter changes we pass false so the user's current
+  // fitView=true picks the first view (first load only): the reader's home area, or the matching
+  // markers. On later filter changes we pass false so the user's current
   // pan/zoom stays put while only the markers update.
   function refresh(fitView) {
     var params = new URLSearchParams();
@@ -147,12 +148,10 @@ document.addEventListener('DOMContentLoaded', function () {
           bounds.push([loc.lat, loc.lng]);
         });
         if (fitView) {
-          // Most readers ride around Almaty, so the map opens on it -- even in a week with nothing
-          // there, rather than jumping out to a continent because of one race in Amsterdam; the
-          // rest is a zoom away. Only a location filter brought from the list or the calendar fits
-          // the matching markers instead (an empty `location=` is no filter, as the list reads it).
-          var home = !new URLSearchParams(window.location.search).getAll('location').some(Boolean);
-          if (home) map.fitBounds(HOME_AREA);
+          // A reader whose places lie in a configured area gets that area -- even in a week with
+          // nothing there, rather than a continent because of one race in Amsterdam; the rest is a
+          // zoom away. Anyone else gets the matching markers.
+          if (HOME_AREA) map.fitBounds(HOME_AREA);
           else if (bounds.length) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 12});
           else map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
         }

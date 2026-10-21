@@ -269,6 +269,15 @@ TIME_ZONE = "Asia/Almaty"
 # once its folder is gone.
 DEFAULT_SKIN = "orange"
 
+# The view the map opens on for a reader whose places all lie in one of these areas -- the places
+# in the location filter, which a member's saved preferences fill in on a fresh visit. A city and
+# the places its riders go out to, as (south, west) and (north, east) corners. Anyone else gets
+# the map fitted to the events on it. A region is a line here, not a value in the code (#330).
+MAP_HOME_AREAS = {
+    # Kaskelen to Issyk, Shymbulak to Konaev.
+    "almaty": ((43.05, 76.55), (43.90, 77.45)),
+}
+
 USE_I18N = True
 
 USE_TZ = True

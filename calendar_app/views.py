@@ -437,6 +437,30 @@ def end_of_month(day: datetime.date) -> datetime.date:
     return day.replace(day=monthrange(day.year, day.month)[1])
 
 
+def map_home_area(location_ids) -> list | None:
+    """The corners of the area in settings.MAP_HOME_AREAS that holds every chosen place, if one does.
+
+    A place counts by its own point; one without coordinates says nothing. No place, a place outside
+    every area, or places in two areas -- the map fits its events instead.
+    """
+    from django.conf import settings
+
+    from locations.models import Location
+
+    points = [
+        (float(lat), float(lng))
+        for lat, lng in Location.objects.filter(pk__in=location_ids, lat__isnull=False, lng__isnull=False).values_list(
+            "lat", "lng"
+        )
+    ]
+    if not points:
+        return None
+    for (south, west), (north, east) in settings.MAP_HOME_AREAS.values():
+        if all(south <= lat <= north and west <= lng <= east for lat, lng in points):
+            return [[south, west], [north, east]]
+    return None
+
+
 def month_picker_choices() -> dict:
     """The words and years the period row above the calendar, the list and the map is built from."""
     return {
@@ -683,6 +707,7 @@ class CalendarMapView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateVie
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
         context["only_favorite"] = _only_favorite_requested(self.request)
+        context["map_home_area"] = map_home_area(_parse_int_ids(self.request.GET.getlist("location")))
         return context
 
 
