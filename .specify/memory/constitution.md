@@ -27,7 +27,8 @@ rather than inventing it.
 
 ### II. Some decisions belong to the maintainer
 
-Only the maintainer merges a pull request, and only when asked in the message being answered.
+A pull request is merged by the maintainer, or by an agent only when the maintainer asks for it in
+the message being answered.
 Approved events are theirs: changing one -- its links, location or dates -- needs their explicit
 go-ahead. The events agents spend money on every run and are started only on request. The light
 and dark themes are kept as they are; a deliberate change to them passes only with the
@@ -45,10 +46,12 @@ the dependency audit -- is green before work is reported done.
 ### IV. The reader's language, in the address
 
 Everything a reader sees exists in every language the site offers -- today Russian, Kazakh and
-English; another one is added through settings and translation catalogues, not code. Every
-reader-facing URL carries its language prefix (`/ru/`, `/kk/`, `/en/`); machine-facing ones
-(`/api/v1/`, admin, media, sitemap, robots) do not. Source files are ASCII and UTF-8; text in the
-site's languages lives in the translation catalogues and in the agents' guidance files.
+English. New code reads the languages from settings rather than naming them one by one, so that a
+further language needs settings, catalogues and data, not code; where code still names them, the
+specifications list it (principle VI). Every reader-facing URL carries its language prefix (`/ru/`,
+`/kk/`, `/en/`); machine-facing ones (`/api/v1/`, admin, media, sitemap, robots) do not. Source
+files are ASCII and UTF-8; text in the site's languages lives in the translation catalogues and in
+the agents' guidance files.
 
 ### V. Small, complete, reviewable changes
 
@@ -81,8 +84,8 @@ place and sport:
 
 - Stack: Django 6 with Wagtail 7, PostgreSQL, Bootstrap 5.3 with the Bootswatch Lux theme,
   Python 3.13 (CI), dependencies locked with uv and exported to `requirements.txt`.
-- Hosting: Render, behind Cloudflare. Production data is restored locally only into scratch
-  databases.
+- Hosting: Render, behind Cloudflare. A change touching many rows is tried first on a production
+  backup restored into a local scratch database.
 - The look of the site is split into skins (`skins/`): designers own their skins; a change to the
   site that breaks a skin does not merge until the skin is green again.
 
