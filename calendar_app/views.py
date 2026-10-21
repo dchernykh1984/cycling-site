@@ -462,7 +462,6 @@ class CalendarView(DefaultFilterRedirectMixin, TemplateView):
         context["disciplines_json"] = _disciplines_for_locale()
         context["only_favorite"] = _only_favorite_requested(self.request)
         context.update(month_picker_choices())
-        context["calendar_date_words"] = calendar_date_words()
         return context
 
 

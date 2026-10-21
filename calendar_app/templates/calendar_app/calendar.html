@@ -69,7 +69,6 @@
 
 
 <div id="calendar"></div>
-{{ calendar_date_words|json_script:"calendar-date-words" }}
 
 {% if upcoming %}
 <section class="mt-4">
@@ -124,7 +123,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // "3 октября, суббота" from Django's own month and weekday names (see calendar_date_words):
   // FullCalendar would ask the browser, and browsers write Kazakh dates as "2026 M10 3 SAT".
-  var DATE_WORDS = JSON.parse(document.getElementById('calendar-date-words').textContent);
+  // Read from the period row's copy (_period_nav.html), the one the page carries.
+  var DATE_WORDS = JSON.parse(document.getElementById('period-date-words').textContent);
   function dayLabel(year, month, day) {
     var weekday = (new Date(year, month, day).getDay() + 6) % 7;
     return day + ' ' + DATE_WORDS.months[month] + ', ' + DATE_WORDS.weekdays[weekday];
