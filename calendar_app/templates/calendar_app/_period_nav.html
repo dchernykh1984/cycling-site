@@ -1,0 +1,292 @@
+{% load i18n %}
+{% comment %}The period on screen, said in words, and the way about it -- one row, the same above the
+calendar, the list and the map (issue #330), so switching tabs moves nothing and keeps the period.
+
+Four kinds: today and tomorrow, the weekend, the week (Monday to Sunday) and the calendar month;
+a year is reached by tapping the year in the label. The label always says what is shown ("Октябрь
+2026", "24-25 октября 2026", "2026, весь год"), the arrows step by the kind on screen, and Today
+goes to the same kind around today. Tapping the month opens the twelve months with their own year
+arrows: paging the years there changes nothing until a month is picked, so a reader looking for
+next March does not drag the calendar through every month on the way. The current month starts
+at today, as the calendar's own list does: the days already gone are not what anybody opens it for.
+
+Each page answers a change through window.onPeriodChange({kind, from, to}) -- the list and the map
+fill their date fields (from_selector, to_selector) and reload or redraw, the calendar changes its
+view -- and tells the row what it shows through window.periodNav.show(from, to). The list and the map
+count from the site's own day (server_today), the day their defaults are counted from; the calendar
+from the browser's, as FullCalendar itself does.{% endcomment %}
+<style>
+  /* Its own quiet look rather than the skin's small capitals: the row is read, not just pressed, and
+     a label in capitals spelt "ВЫХОДНЫЕ" wider than its button. As wide as a phone everywhere. */
+  .period-nav { margin-bottom: .75rem; max-width: 30rem; letter-spacing: normal; }
+  .period-nav button { font: inherit; letter-spacing: normal; text-transform: none; color: inherit; }
+  .period-nav button:focus-visible { outline: 2px solid #2c3e50; outline-offset: 2px; }
+  .period-kinds {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    border: 1px solid #adb5bd; border-radius: .5rem; overflow: hidden;
+  }
+  .period-kind { height: 2.75rem; padding: 0 .125rem; border: 0; background: transparent; font-size: .875rem; line-height: 1.15; }
+  .period-kind + .period-kind { border-left: 1px solid #dee2e6; }
+  .period-kind:hover { background: #f1f3f5; }
+  .period-nav .period-kind.active { background: #2c3e50; color: #fff; }
+  .period-b { border: 1px solid #adb5bd; border-radius: .5rem; background: transparent; }
+  .period-b:hover { background: #f1f3f5; }
+  .period-nav .period-b.active { background: #2c3e50; border-color: #2c3e50; color: #fff; }
+  .period-row { display: flex; align-items: center; gap: .5rem; margin-top: .5rem; }
+  .period-arrow { width: 2.75rem; height: 2.75rem; flex: none; padding: 0; font-size: 1.375rem; line-height: 1; }
+  .period-nav .period-small { height: 2.25rem; padding: 0 .875rem; font-size: .875rem; }
+  .period-pair { display: inline-flex; }
+  .period-pair .period-b:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  .period-pair .period-b + .period-b { border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  .period-label { flex: 1; min-width: 0; text-align: center; font-size: 1.125rem; font-weight: 500; }
+  .period-nav .period-tap { border: 0; background: none; padding: 0 .1em; border-bottom: 1px dashed currentColor; cursor: pointer; }
+  .period-hint {
+    margin-top: .5rem; font-size: .75rem; color: #6c757d; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .period-pop { border: 1px solid #dee2e6; border-radius: .75rem; padding: .5rem; margin-top: .5rem; background: #f8f9fa; }
+  .period-pop-head { display: flex; align-items: center; justify-content: space-between; }
+  .period-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .375rem; margin-top: .5rem; }
+  .period-nav .period-tile { padding: .375rem 0; font-size: .875rem; }
+</style>
+<div class="period-nav" id="period-nav">
+  <div class="period-kinds" role="group" aria-label="{% trans 'Dates' %}">
+    <button type="button" class="period-kind" data-period-kind="days">{% trans "Today and tomorrow" %}</button>
+    <button type="button" class="period-kind" data-period-kind="weekend">{% trans "Weekend" %}</button>
+    <button type="button" class="period-kind" data-period-kind="week">{% trans "Week" %}</button>
+    <button type="button" class="period-kind" data-period-kind="month">{% trans "Month" %}</button>
+  </div>
+  <div class="period-row">
+    <button type="button" class="period-b period-arrow" data-period-step="-1" aria-label="{% trans 'Previous' %}">&larr;</button>
+    <div class="period-label" id="period-label" aria-live="polite"></div>
+    <button type="button" class="period-b period-arrow" data-period-step="1" aria-label="{% trans 'Next' %}">&rarr;</button>
+  </div>
+  {% comment %}Today sits at the left on every tab; a page may add controls of its own at the right
+  (#period-extra: the calendar's Grid/List switch).{% endcomment %}
+  <div class="d-flex justify-content-between align-items-center gap-2 mt-2">
+    <button type="button" class="period-b period-small" data-period-today>{% trans "Today" %}</button>
+    <div id="period-extra"></div>
+  </div>
+  <div class="period-pop" id="period-pop" hidden></div>
+  <div class="period-hint" id="period-hint"></div>
+</div>
+{{ calendar_date_words|json_script:"period-date-words" }}
+{{ calendar_months|json_script:"period-months" }}
+{{ calendar_years|json_script:"period-years" }}
+<script>
+(function () {
+  var WORDS = JSON.parse(document.getElementById('period-date-words').textContent);
+  var MONTHS = JSON.parse(document.getElementById('period-months').textContent).map(function (m) { return m[1]; });
+  var YEARS = JSON.parse(document.getElementById('period-years').textContent);
+  var WHOLE_YEAR = '{% trans "whole year" %}';
+  var FROM_DAY = '{% trans "from %s" %}';
+  var PREVIOUS = '{% trans "Previous" %}';
+  var NEXT = '{% trans "Next" %}';
+  // What the arrows do right now, and that the month and the year can be tapped.
+  var HINTS = {
+    days: '{% trans "Arrows: by day" %}',
+    weekend: '{% trans "Arrows: by weekend" %}',
+    week: '{% trans "Arrows: by week" %}',
+    month: '{% trans "Arrows: by month" %}',
+    year: '{% trans "Arrows: by year" %}',
+  };
+  var TAP_HINT = '{% trans "tap the month or year" %}';
+  var FROM = '{{ from_selector|escapejs }}';
+  var TO = '{{ to_selector|escapejs }}';
+  {% if server_today %}var BASE = '{% now "Y-m-d" %}'.split('-');{% else %}var BASE = null;{% endif %}
+
+  function today() {
+    var d = BASE ? new Date(Number(BASE[0]), Number(BASE[1]) - 1, Number(BASE[2])) : new Date();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  function iso(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function parse(value) {
+    var p = (value || '').split('-');
+    return p.length === 3 ? new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])) : null;
+  }
+  function add(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  function same(a, b) { return Boolean(a && b) && a.getTime() === b.getTime(); }
+  function lastOfMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
+
+  // The days a kind covers around a given day, both included.
+  function rangeOf(kind, day) {
+    if (kind === 'days') return [day, add(day, 1)];
+    if (kind === 'weekend') {
+      // This weekend while it lasts: on a Sunday that is the Sunday alone.
+      if (day.getDay() === 0) return [day, day];
+      var saturday = add(day, 6 - day.getDay());
+      return [saturday, add(saturday, 1)];
+    }
+    if (kind === 'week') {
+      var monday = add(day, -((day.getDay() + 6) % 7));
+      return [monday, add(monday, 6)];
+    }
+    if (kind === 'year') return [new Date(day.getFullYear(), 0, 1), new Date(day.getFullYear(), 11, 31)];
+    var first = new Date(day.getFullYear(), day.getMonth(), 1);
+    var last = lastOfMonth(day);
+    var now = today();
+    return [now >= first && now <= last ? now : first, last];
+  }
+
+  // Which kind a pair of dates is, so a range that came in a link or from the date fields is named.
+  function kindOf(from, to) {
+    if (!from) return 'month';
+    if (!to) return 'open';
+    var now = today();
+    if (same(to, lastOfMonth(from)) && (from.getDate() === 1 || same(from, now))) return 'month';
+    if (from.getMonth() === 0 && from.getDate() === 1 && to.getMonth() === 11 && to.getDate() === 31
+        && from.getFullYear() === to.getFullYear()) return 'year';
+    if (from.getDay() === 1 && same(to, add(from, 6))) return 'week';
+    if ((from.getDay() === 6 && same(to, add(from, 1))) || (from.getDay() === 0 && same(to, from))) return 'weekend';
+    if (same(to, add(from, 1))) return 'days';
+    return 'custom';
+  }
+
+  var state = {kind: 'month', from: rangeOf('month', today())[0], to: rangeOf('month', today())[1]};
+  var pop = null;
+  var popYear = state.from.getFullYear();
+
+  function tap(what, text) {
+    return '<button type="button" class="period-tap" data-period-pick="' + what + '">' + text + '</button>';
+  }
+  function dayAndMonth(d) { return d.getDate() + ' ' + tap('month', WORDS.months[d.getMonth()]); }
+  function label() {
+    var from = state.from;
+    var to = state.to;
+    var year = tap('year', String(from.getFullYear()));
+    if (state.kind === 'month') {
+      var name = MONTHS[from.getMonth()];
+      return tap('month', name.charAt(0).toUpperCase() + name.slice(1)) + ' ' + year;
+    }
+    if (state.kind === 'year') return year + ', ' + WHOLE_YEAR;
+    if (state.kind === 'open') return FROM_DAY.replace('%s', dayAndMonth(from) + ' ' + year);
+    var end = tap('year', String(to.getFullYear()));
+    if (same(from, to)) return dayAndMonth(from) + ' ' + year;
+    if (from.getFullYear() !== to.getFullYear()) {
+      return dayAndMonth(from) + ' ' + year + ' – ' + dayAndMonth(to) + ' ' + end;
+    }
+    if (from.getMonth() === to.getMonth()) return from.getDate() + '–' + dayAndMonth(to) + ' ' + year;
+    return from.getDate() + ' ' + WORDS.months[from.getMonth()] + ' – ' + dayAndMonth(to) + ' ' + year;
+  }
+  function popup() {
+    if (pop === 'month') {
+      var html = '<div class="period-pop-head">'
+        + '<button type="button" class="period-b period-arrow" data-pop-year="-1" aria-label="' + PREVIOUS + '">&larr;</button>'
+        + '<span class="fw-semibold">' + popYear + '</span>'
+        + '<button type="button" class="period-b period-arrow" data-pop-year="1" aria-label="' + NEXT + '">&rarr;</button>'
+        + '</div><div class="period-grid">';
+      MONTHS.forEach(function (name, i) {
+        var on = state.kind === 'month' && state.from.getFullYear() === popYear && state.from.getMonth() === i;
+        html += '<button type="button" class="period-b period-tile' + (on ? ' active' : '') + '" data-pop-month="' + i + '">'
+          + name.slice(0, 3) + '</button>';
+      });
+      return html + '</div>';
+    }
+    var years = YEARS.slice();
+    if (years.indexOf(state.from.getFullYear()) < 0) years.push(state.from.getFullYear());
+    years.sort();
+    var grid = '<div class="period-grid">';
+    years.forEach(function (y) {
+      var on = state.kind === 'year' && state.from.getFullYear() === y;
+      grid += '<button type="button" class="period-b period-tile' + (on ? ' active' : '') + '" data-pop-pick-year="' + y + '">' + y + '</button>';
+    });
+    return grid + '</div>';
+  }
+  function render() {
+    document.querySelectorAll('#period-nav [data-period-kind]').forEach(function (button) {
+      var on = button.dataset.periodKind === state.kind;
+      button.classList.toggle('active', on);
+      button.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    document.getElementById('period-label').innerHTML = label();
+    document.getElementById('period-hint').textContent = (HINTS[state.kind] || HINTS.month) + ' \u00b7 ' + TAP_HINT;
+    var box = document.getElementById('period-pop');
+    box.hidden = !pop;
+    box.innerHTML = pop ? popup() : '';
+  }
+
+  function go(kind, day) {
+    var range = rangeOf(kind, day);
+    state = {kind: kind, from: range[0], to: range[1]};
+    pop = null;
+    render();
+    if (window.onPeriodChange) window.onPeriodChange({kind: kind, from: iso(range[0]), to: iso(range[1])});
+  }
+  function step(n) {
+    var from = state.from;
+    if (state.kind === 'days') go('days', add(from, n));
+    // From that week's Saturday: a Sunday alone is "this weekend", and a week on is still Sat-Sun.
+    else if (state.kind === 'weekend') go('weekend', add(from, -((from.getDay() + 1) % 7) + 7 * n));
+    else if (state.kind === 'week') go('week', add(from, 7 * n));
+    else if (state.kind === 'year') go('year', new Date(from.getFullYear() + n, 0, 1));
+    else go('month', new Date(from.getFullYear(), from.getMonth() + n, 1));
+  }
+
+  window.periodNav = {
+    rangeOf: function (kind, day) { return rangeOf(kind, day).map(iso); },
+    kindOf: function (from, to) { return kindOf(parse(from), parse(to)); },
+    // What the page shows now, as two ISO days (the second may be empty: open-ended).
+    show: function (from, to) {
+      var f = parse(from) || today();
+      var t = parse(to);
+      state = {kind: kindOf(parse(from), t), from: f, to: t};
+      if (state.kind === 'month' && !parse(from)) state.to = lastOfMonth(f);
+      render();
+    },
+  };
+
+  // Fill a pair of date fields, through flatpickr where it took the field over, and announce it.
+  window.setDateFields = function (fromEl, toEl, range) {
+    [[fromEl, range.from], [toEl, range.to]].forEach(function (pair) {
+      var el = pair[0];
+      if (!el) return;
+      if (el._flatpickr) {
+        if (pair[1]) el._flatpickr.setDate(pair[1], false);
+        else el._flatpickr.clear(false);
+      } else {
+        el.value = pair[1];
+      }
+    });
+    if (toEl) toEl.dispatchEvent(new Event('change', {bubbles: true}));
+  };
+
+  var nav = document.getElementById('period-nav');
+  nav.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.periodKind) go(b.dataset.periodKind, today());
+    else if (b.dataset.periodStep) step(Number(b.dataset.periodStep));
+    else if (b.hasAttribute('data-period-today')) {
+      go(['days', 'weekend', 'week', 'month'].indexOf(state.kind) >= 0 ? state.kind : 'month', today());
+    } else if (b.dataset.periodPick) {
+      pop = pop === b.dataset.periodPick ? null : b.dataset.periodPick;
+      popYear = state.from.getFullYear();
+      render();
+    } else if (b.dataset.popYear) {
+      popYear += Number(b.dataset.popYear);
+      render();
+    } else if (b.dataset.popMonth) {
+      go('month', new Date(popYear, Number(b.dataset.popMonth), 1));
+    } else if (b.dataset.popPickYear) {
+      go('year', new Date(Number(b.dataset.popPickYear), 0, 1));
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && pop) { pop = null; render(); }
+  });
+  render();
+
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!FROM || !TO) return;
+    var fromEl = document.querySelector(FROM);
+    var toEl = document.querySelector(TO);
+    if (!fromEl || !toEl) return;
+    window.periodNav.show(fromEl.value, toEl.value);
+    [fromEl, toEl].forEach(function (el) {
+      el.addEventListener('change', function () { window.periodNav.show(fromEl.value, toEl.value); });
+    });
+  });
+}());
+</script>

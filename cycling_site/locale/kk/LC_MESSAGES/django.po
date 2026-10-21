@@ -3595,3 +3595,44 @@ msgstr "Тор"
 #: calendar_app/templates/calendar_app/_filter_chips.html:11
 msgid "Remove filter"
 msgstr "Сүзгіні алып тастау"
+
+#: calendar_app/templates/calendar_app/_period_nav.html:43
+msgid "Today and tomorrow"
+msgstr "Бүгін және ертең"
+
+#: calendar_app/templates/calendar_app/_period_nav.html:45
+msgid "Week"
+msgstr "Апта"
+
+#: calendar_app/templates/calendar_app/_period_nav.html:62
+msgid "whole year"
+msgstr "толық жыл"
+
+#: calendar_app/templates/calendar_app/_period_nav.html:63
+#, python-format
+msgid "from %s"
+msgstr "%s бастап"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "Arrows: by day"
+msgstr "Көрсеткілер: күн бойынша"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "Arrows: by weekend"
+msgstr "Көрсеткілер: демалыс бойынша"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "Arrows: by week"
+msgstr "Көрсеткілер: апта бойынша"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "Arrows: by month"
+msgstr "Көрсеткілер: ай бойынша"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "Arrows: by year"
+msgstr "Көрсеткілер: жыл бойынша"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "tap the month or year"
+msgstr "айды не жылды басыңыз"
