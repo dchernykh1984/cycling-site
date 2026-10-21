@@ -875,10 +875,8 @@ def _validate_deadline(form, reg_form, date_start, date_end):
     if not deadline:
         return True
     max_date = date_end if date_end else date_start
-    # deadline is a datetime; its calendar day in the zone the form read it in is the day typed,
-    # which is the day at the event's place.
-    deadline_date = timezone.localtime(deadline).date() if timezone.is_aware(deadline) else deadline.date()
-    if deadline_date > max_date:
+    # The wall-clock typed, so its day is the day at the event's place.
+    if deadline.date() > max_date:
         label = "date end" if date_end else "date start"
         reg_form.add_error(
             "registration_deadline",
@@ -905,12 +903,8 @@ def _apply_registration_settings(comp, reg_form, is_organizer_plus):
         False if effective_mode == "self_only" else cd.get("allow_multiple_registrations", False)
     )
     deadline = cd.get("registration_deadline")
-    if deadline:
-        # The form read the typed wall-clock in the reader's zone; the organizer meant the event's
-        # (issue #344), so the location has to be set before this runs.
-        typed = timezone.make_naive(deadline) if timezone.is_aware(deadline) else deadline
-        deadline = typed.replace(tzinfo=comp.timezone)
-    comp.registration_deadline = deadline
+    # The wall-clock typed, at the event's place (issue #344): the location has to be set first.
+    comp.registration_deadline = deadline.replace(tzinfo=comp.timezone) if deadline else None
     comp.max_participants = cd.get("max_participants")
     comp.show_unapproved_in_list = cd.get("show_unapproved_in_list", False) if comp.require_approval else False
     comp.show_unpaid_in_list = cd.get("show_unpaid_in_list", False) if comp.require_payment else False

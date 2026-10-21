@@ -112,6 +112,16 @@ class DeadlineTypedInTheEventsZoneTests(TestCase):
         self.client.post(reverse("calendar_submit"), self._payload())
         self._assert_tokyo_1430(Competition.objects.get(title_ru="Tokyo Race"))
 
+    def test_a_time_the_readers_zone_skips_is_still_a_time_at_the_place(self):
+        # Clocks in Berlin jump from 02:00 to 03:00 on 29 March 2026; in Tokyo 02:30 is an ordinary time.
+        self.client.cookies["tz"] = "Europe/Berlin"
+        self.client.post(
+            reverse("calendar_submit"),
+            self._payload(date_start="2026-03-29", registration_deadline="2026-03-29T02:30"),
+        )
+        comp = Competition.objects.get(title_ru="Tokyo Race")
+        self.assertEqual(comp.registration_deadline, datetime.datetime(2026, 3, 29, 2, 30, tzinfo=TOKYO))
+
     def test_edit_reads_the_deadline_in_the_zone_of_the_new_place(self):
         comp = Competition.objects.create(
             title_ru="Tokyo Race",
