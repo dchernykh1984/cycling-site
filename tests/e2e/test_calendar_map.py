@@ -160,12 +160,14 @@ def test_the_map_opens_on_almaty_when_something_is_on_there(page: Page, live_ser
 
 
 @pytest.mark.django_db(transaction=True)
-def test_with_nothing_near_almaty_the_map_fits_what_there_is(page: Page, live_server, organizer):
+def test_with_nothing_near_almaty_the_map_still_opens_on_almaty(page: Page, live_server, organizer):
+    """One race in Astana must not throw the reader out to the whole country; it is a zoom away."""
     _competition_at(organizer, "Astana", "51.169392", "71.449074")
     page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(1)
-    page.wait_for_function("() => window.calendarMap.getBounds().contains([51.169392, 71.449074])")
-    assert not _shows(page, 43.238949, 76.889709)
+    page.wait_for_function("() => window.calendarMap.getZoom() >= 8")
+    assert _shows(page, 43.238949, 76.889709)
+    assert not _shows(page, 51.169392, 71.449074)
 
 
 @pytest.mark.django_db(transaction=True)
