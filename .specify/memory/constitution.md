@@ -1,17 +1,19 @@
 <!--
 Sync Impact Report
 - Version: none -> 1.0.0 (first constitution, issue #337)
-- Principles: all added, drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills
-  and .agents/skills, which stay the detailed runtime guidance.
+- Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
+  .agents/skills, which stay the detailed runtime guidance; VI set by the maintainer (no local or
+  sport-specific hardcoding).
 - Templates: plan-template.md's "Constitution Check" gate reads these principles; no template
   needed changes.
 -->
 
 # cycling-site Constitution
 
-cycling-site is a calendar of endurance-sport events -- cycling, running, skiing, hiking --
-across Kazakhstan, Kyrgyzstan, Russia and beyond, with a knowledge base, news, race registration,
-refereeing and live protocols, served at universalbicycle.team in Russian, Kazakh and English.
+cycling-site is a calendar of timed-sport events -- races, rides, runs and their kin -- with a
+knowledge base, news, race registration, refereeing and live protocols, served at
+universalbicycle.team in Russian, Kazakh and English. It began with events in Kazakhstan,
+Kyrgyzstan and Russia; it is meant for everyone.
 
 ## Core Principles
 
@@ -40,12 +42,13 @@ Coverage stays at 90% or above, and every check of the pipeline -- unit tests, p
 browser suite on five browsers and devices and once per skin, the light/dark screenshot comparison,
 the dependency audit -- is green before work is reported done.
 
-### IV. Three languages, every reader's address in one
+### IV. The reader's language, in the address
 
-Everything a reader sees exists in Russian, Kazakh and English. Every reader-facing URL carries
-its language prefix (`/ru/`, `/kk/`, `/en/`); machine-facing ones (`/api/v1/`, admin, media,
-sitemap, robots) do not. Source files are ASCII and UTF-8; Russian and Kazakh text lives in the
-translation catalogues and in the agents' guidance files.
+Everything a reader sees exists in every language the site offers -- today Russian, Kazakh and
+English; another one is added through settings and translation catalogues, not code. Every
+reader-facing URL carries its language prefix (`/ru/`, `/kk/`, `/en/`); machine-facing ones
+(`/api/v1/`, admin, media, sitemap, robots) do not. Source files are ASCII and UTF-8; text in the
+site's languages lives in the translation catalogues and in the agents' guidance files.
 
 ### V. Small, complete, reviewable changes
 
@@ -54,6 +57,25 @@ mentioning the assistant that wrote it. Work is reviewed in cycles -- three by d
 finding fixed in a commit of its own. Pull requests are merged by rebase so every commit survives
 on a linear history. A change finishes every part it touches -- callers, tests, translations,
 setup hints, documentation, specifications -- and adds nothing nobody asked for.
+
+### VI. Built for anyone, anywhere, in any timed sport
+
+The site starts as a small team's calendar in Almaty, Kazakhstan, but is built so that a person in
+any country, following any sport where time is kept -- on wheels, skis, skates or foot, on road,
+trail or water -- finds it just as natural to use. So the code assumes as little as it can about
+place and sport:
+
+- Places, sports, disciplines, event types, languages, time zones, map services and the like are
+  data or configuration, not branches in the code. A new country, sport or language should need a
+  row or a setting, not a release.
+- Nothing local is written into the code as a default the rest of the world must live with -- not a
+  city, a country, a currency, a time zone, a provider or a unit. Where a local choice is needed
+  today, it sits in one named setting and the specification records it.
+- Examples in issues, specifications and conversations (a sport, a city, a race) explain the idea;
+  they are not values to copy into the code.
+- Where the code still assumes a place or a sport, the area's file in `specs/site/` lists it under
+  "Local assumptions", and a change touching that code removes the assumption rather than adding
+  another.
 
 ## Constraints
 
