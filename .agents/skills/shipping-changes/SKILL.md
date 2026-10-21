@@ -80,6 +80,13 @@ A bug fix gets a regression test that fails without the fix: a Django unit test 
 behaviour, a Playwright test in `tests/e2e/` for anything a person sees in a browser. Name tests
 after the behaviour, not the function.
 
+## Specifications stay current
+
+A change that alters behaviour described in `specs/site/` updates that file in the same pull request;
+a feature with its own issue carries its `specs/<issue>-<name>/` folder. Review cycles check both,
+and check that nothing local or sport-specific was written into the code (constitution, principle
+VI). See the `specs` skill.
+
 ## Setup hints stay current
 
 The line under the menu that tells a reader what to set up (`cycling_site/setup_hints.py`, issue
