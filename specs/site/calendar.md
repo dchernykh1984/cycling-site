@@ -43,7 +43,7 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 ### Story 2 -- Filter (P1)
 
 1. **Given** the filters, **Then** a reader can choose several event types, directions and
-   disciplines, and favorites only, on every view; several countries / regions / cities / venues on
+   disciplines on every view, and a signed-in member also "favorites only"; several countries / regions / cities / venues on
    the grid and the list; a date range on the list and the map. A level whose every option is ticked
    is sent as its parent, and ids travel comma-joined, so a wide selection stays a short address.
 2. **Given** several values of one filter, **Then** an event matching any of them is shown, once.
@@ -79,9 +79,10 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 
 ## Functional Requirements
 
-- **FR-CAL-001**: Every listing (grid feed, list, map, upcoming rows, search) shows only approved,
-  undeleted events the reader may see: hidden events only to admins and up; invite-only events
-  only to those let in (`calendar_app/visibility.py`, see [events](events.md)).
+- **FR-CAL-001**: Every listing shows only approved, undeleted events the reader may see, and
+  invite-only events only to those let in (`calendar_app/visibility.py`, see [events](events.md)).
+  Hidden events appear to admins and up in the grid, the list and the map, but never in the
+  upcoming rows under the grid or in search, whoever asks.
 - **FR-CAL-002**: The events API behind the grid returns approved events overlapping the requested
   range, including multi-day events that started before it, each with its page address.
 - **FR-CAL-003**: Filters: location (multi, includes descendants), event type (multi), direction
