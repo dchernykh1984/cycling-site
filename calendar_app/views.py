@@ -853,8 +853,8 @@ class CompetitionDetailView(View):
             "report_form": ReportCompetitionForm() if can_report else None,
             "open_reports": open_reports,
             "can_dismiss_reports": bool(open_reports),
-            # What a search engine and a chat preview read: the event's own name and a sentence
-            # about it, instead of the one site-wide line every page used to carry.
+            # What a search engine reads: the event's own name and a sentence about it, instead of
+            # the one site-wide line every page used to carry. A chat reads og_description below.
             "meta_title": competition.title,
             "meta_description": competition.search_summary(),
             # What a chat shows under the title: the organizer's own line in the page's language
