@@ -11,6 +11,7 @@ import re
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from calendar_app.models import Competition, Discipline, DisciplineCategory
 from locations.models import add_location_child
@@ -193,7 +194,7 @@ class FilteredHeadingTests(TestCase):
 class FacetedListSpanTests(TestCase):
     """How far ahead a filtered list looks.
 
-    The plain list is a "what is on soon" page and stops thirty days out. A page about one city
+    The plain list is a "what is on soon" page and stops at the end of this month. A page about one city
     cannot: on production the Almaty page showed two events, which is not a page about Almaty.
     """
 
@@ -208,7 +209,7 @@ class FacetedListSpanTests(TestCase):
         today = datetime.date.today()
         cls.soon = Competition.objects.create(
             title_ru="Soon race",
-            date_start=today + datetime.timedelta(days=10),
+            date_start=today,
             status=Competition.Status.APPROVED,
             location=venue,
         )
@@ -227,7 +228,7 @@ class FacetedListSpanTests(TestCase):
         self.assertIn(self.soon.pk, rows)
         self.assertIn(self.autumn.pk, rows)
 
-    def test_the_plain_list_still_stops_at_thirty_days(self):
+    def test_the_plain_list_stops_at_the_end_of_the_month(self):
         rows = self._rows(reverse("calendar_list"))
         self.assertIn(self.soon.pk, rows)
         self.assertNotIn(self.autumn.pk, rows)
@@ -314,7 +315,7 @@ class EmptyFilterValueTests(TestCase):
         today = datetime.date.today()
         cls.soon = Competition.objects.create(
             title_ru="Soon race",
-            date_start=today + datetime.timedelta(days=10),
+            date_start=today,
             status=Competition.Status.APPROVED,
             location=venue,
         )
@@ -332,7 +333,7 @@ class EmptyFilterValueTests(TestCase):
         self.assertIn(self.soon.pk, self._rows(f"{reverse('calendar_list')}?location="))
 
     def test_an_empty_place_is_not_taken_for_a_landing_page(self):
-        """No filter means the plain list, which stops thirty days out."""
+        """No filter means the plain list, which stops at the end of this month."""
         self.assertNotIn(self.autumn.pk, self._rows(f"{reverse('calendar_list')}?location="))
 
     def test_junk_in_the_parameter_is_ignored_the_same_way(self):
@@ -444,3 +445,24 @@ class FacetOrderTests(TestCase):
 
         regions, _places, _kinds = landing_filters(limit_regions=1)
         self.assertEqual([r.pk for r in regions], [self.busy_region.pk])
+
+
+class PlainListSpanTests(TestCase):
+    """The plain list and the map open on the rest of this month, the period the calendar opens on."""
+
+    def test_the_list_and_the_map_default_to_the_end_of_this_month(self):
+        from calendar_app.views import end_of_month
+
+        today = timezone.localdate()
+        for name in ("calendar_list", "calendar_map"):
+            with self.subTest(page=name):
+                context = self.client.get(reverse(name)).context
+                self.assertEqual(context["date_from"], today)
+                self.assertEqual(context["date_to"], end_of_month(today))
+
+    def test_the_end_of_the_month_is_its_last_day(self):
+        from calendar_app.views import end_of_month
+
+        self.assertEqual(end_of_month(datetime.date(2026, 2, 10)), datetime.date(2026, 2, 28))
+        self.assertEqual(end_of_month(datetime.date(2028, 2, 29)), datetime.date(2028, 2, 29))
+        self.assertEqual(end_of_month(datetime.date(2026, 12, 31)), datetime.date(2026, 12, 31))
