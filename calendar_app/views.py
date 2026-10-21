@@ -1,6 +1,7 @@
 import datetime
 import json
 import uuid
+from calendar import monthrange
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -408,7 +409,7 @@ def calendar_year_choices() -> list[int]:
 
 def end_of_month(day: datetime.date) -> datetime.date:
     """The last day of the month `day` falls in."""
-    return (day.replace(day=28) + datetime.timedelta(days=4)).replace(day=1) - datetime.timedelta(days=1)
+    return day.replace(day=monthrange(day.year, day.month)[1])
 
 
 def month_picker_choices() -> dict:
