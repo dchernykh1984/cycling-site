@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 15:58+0500\n"
+"POT-Creation-Date: 2026-10-21 16:23+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -217,7 +217,7 @@ msgstr "Команда"
 #: calendar_app/templates/calendar_app/_location_cascade.html:21
 #: calendar_app/templates/calendar_app/_location_filter.html:29
 #: calendar_app/templates/calendar_app/list.html:172
-#: calendar_app/templates/calendar_app/list.html:199 locations/models.py:286
+#: calendar_app/templates/calendar_app/list.html:199 locations/models.py:285
 #: locations/templates/locations/location_form.html:106
 #: registrations/templates/registrations/_participant_row.html:8
 #: registrations/templates/registrations/_participant_table_head.html:9
@@ -346,7 +346,7 @@ msgid "Theme"
 msgstr "Такырып"
 
 #: accounts/templates/accounts/profile.html:251
-#: tests/test_profile_registration_actions.py:210
+#: tests/test_profile_registration_actions.py:211
 msgid "Active registrations"
 msgstr "Белсенді тіркелулер"
 
@@ -367,7 +367,7 @@ msgstr "Бекітілді"
 #: accounts/templates/accounts/profile.html:320
 #: accounts/templates/accounts/profile.html:362
 #: news/templates/news/news_page.html:75
-#: tests/test_profile_registration_actions.py:302
+#: tests/test_profile_registration_actions.py:303
 msgid "Pending"
 msgstr "Қарастырылуда"
 
@@ -379,7 +379,7 @@ msgstr "Төленді"
 
 #: accounts/templates/accounts/profile.html:276
 #: accounts/templates/accounts/profile.html:322
-#: tests/test_profile_registration_actions.py:309
+#: tests/test_profile_registration_actions.py:310
 msgid "Not paid"
 msgstr "Төленбеді"
 
@@ -423,7 +423,7 @@ msgstr "Күні"
 #: accounts/templates/accounts/profile.html:355
 #: registrations/templates/registrations/_participant_row.html:17
 #: registrations/templates/registrations/_participant_table_head.html:13
-#: tests/test_profile_registration_actions.py:294
+#: tests/test_profile_registration_actions.py:295
 msgid "Rejected"
 msgstr "Қабылданбады"
 
@@ -445,7 +445,7 @@ msgstr "Күйі"
 #: accounts/templates/accounts/profile.html:345
 #: locations/templates/locations/locations_map_page.html:81
 #: registrations/templates/registrations/_participant_table_head.html:13
-#: tests/test_profile_registration_actions.py:126
+#: tests/test_profile_registration_actions.py:127
 msgid "Actions"
 msgstr "Әрекеттер"
 
@@ -728,19 +728,19 @@ msgstr "Жаңа іс-шаралар"
 msgid "Events recently added to the Universal Bicycle Team calendar."
 msgstr "Universal Bicycle Team күнтізбесіне жақында қосылған іс-шаралар."
 
-#: calendar_app/forms.py:68
+#: calendar_app/forms.py:70
 #: calendar_app/templates/calendar_app/_event_type_filter.html:8
 msgid "Event type"
 msgstr "Іс-шара түрі"
 
-#: calendar_app/forms.py:69 calendar_app/tests.py:3899
+#: calendar_app/forms.py:71 calendar_app/tests.py:3876
 msgid ""
 "Choose one or more types - an event can be a race and a kids race at once."
 msgstr ""
 "Бір немесе бірнеше түрін таңдаңыз — старт бір мезгілде жарыс та, балалар "
 "жарысы да бола алады."
 
-#: calendar_app/forms.py:76
+#: calendar_app/forms.py:78
 #: calendar_app/templates/calendar_app/_disciplines_field.html:14
 #: calendar_app/templates/calendar_app/detail.html:61
 #: calendar_app/templates/calendar_app/list.html:169
@@ -748,70 +748,70 @@ msgstr ""
 msgid "Disciplines"
 msgstr "Пәндер"
 
-#: calendar_app/forms.py:111
+#: calendar_app/forms.py:113
 msgid "Date start"
 msgstr "Басталу күні"
 
-#: calendar_app/forms.py:116
+#: calendar_app/forms.py:118
 msgid "Date end"
 msgstr "Аяқталу күні"
 
-#: calendar_app/forms.py:145
+#: calendar_app/forms.py:147
 msgid "File size must not exceed 10 MB."
 msgstr "Файл өлшемі 10 МБ-тан аспауы керек."
 
-#: calendar_app/forms.py:149
+#: calendar_app/forms.py:151
 #, python-format
 msgid "Unsupported file type. Allowed: %(allowed)s."
 msgstr "Қолданылмайтын файл түрі. Рұқсат етілген: %(allowed)s."
 
-#: calendar_app/forms.py:159
+#: calendar_app/forms.py:161
 msgid "Description is too large. Use fewer or smaller inline images."
 msgstr ""
 "Сипаттама тым үлкен. Суреттерді азайтыңыз немесе өлшемін кішірейтіңіз."
 
-#: calendar_app/forms.py:204 calendar_app/tests.py:558
+#: calendar_app/forms.py:206 calendar_app/tests.py:558
 msgid "End date cannot be before start date."
 msgstr "Аяқталу күні басталу күнінен бұрын болмауы керек."
 
-#: calendar_app/forms.py:217
+#: calendar_app/forms.py:219
 msgid "Please choose a city for the new venue."
 msgstr "Жаңа өткізу орны үшін қала таңдаңыз."
 
-#: calendar_app/forms.py:227 calendar_app/views.py:1271
-#: calendar_app/views.py:1385
+#: calendar_app/forms.py:229 calendar_app/views.py:1265
+#: calendar_app/views.py:1379
 msgid "This location is not available."
 msgstr "Бұл локация қолжетімді емес."
 
-#: calendar_app/forms.py:301 calendar_app/tests.py:1405
+#: calendar_app/forms.py:314 calendar_app/tests.py:1405
 #, python-format
 msgid "Category name is too long: at most %(limit_value)d characters."
 msgstr "Санат атауы тым ұзын: ең көбі %(limit_value)d таңба."
 
-#: calendar_app/forms.py:317
+#: calendar_app/forms.py:330
 msgctxt "photo or video material"
 msgid "Name"
 msgstr "Атауы"
 
-#: calendar_app/forms.py:333 calendar_app/forms.py:344
+#: calendar_app/forms.py:346 calendar_app/forms.py:357
 msgid "Link"
 msgstr "Сілтеме"
 
-#: calendar_app/forms.py:335
+#: calendar_app/forms.py:348
 msgid "Give this material a name."
 msgstr "Бұл материалдың атауын жазыңыз."
 
-#: calendar_app/forms.py:336
+#: calendar_app/forms.py:349
 msgid "Add a link to this material."
 msgstr "Бұл материалға сілтеме қосыңыз."
 
-#: calendar_app/forms.py:380 calendar_app/tests.py:1742 knowledge/forms.py:44
+#: calendar_app/forms.py:393 calendar_app/tests.py:1721 knowledge/forms.py:44
 #: knowledge/tests.py:910 news/forms.py:113 news/forms.py:126
 #: news/tests.py:692
 msgid "Write a comment..."
 msgstr "Пікір жазыңыз..."
 
-#: calendar_app/forms.py:407
+#: calendar_app/forms.py:420
 msgid "Optional: what looks wrong?"
 msgstr "Міндетті емес: не дұрыс емес?"
 
@@ -893,14 +893,14 @@ msgstr "Бір немесе бірнеше пәнді таңдаңыз — іс-
 #: calendar_app/templates/calendar_app/_location_filter.html:39
 #: calendar_app/templates/calendar_app/detail.html:113
 #: calendar_app/templates/calendar_app/list.html:173
-#: calendar_app/templates/calendar_app/list.html:200 locations/models.py:292
+#: calendar_app/templates/calendar_app/list.html:200 locations/models.py:291
 msgid "Location"
 msgstr "Орын"
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:9
 #: calendar_app/templates/calendar_app/_location_filter.html:9
 #: calendar_app/templates/calendar_app/list.html:170
-#: calendar_app/templates/calendar_app/list.html:197 locations/models.py:284
+#: calendar_app/templates/calendar_app/list.html:197 locations/models.py:283
 #: locations/templates/locations/location_form.html:93
 msgid "Country"
 msgstr "Ел"
@@ -908,13 +908,13 @@ msgstr "Ел"
 #: calendar_app/templates/calendar_app/_location_cascade.html:15
 #: calendar_app/templates/calendar_app/_location_filter.html:19
 #: calendar_app/templates/calendar_app/list.html:171
-#: calendar_app/templates/calendar_app/list.html:198 locations/models.py:285
+#: calendar_app/templates/calendar_app/list.html:198 locations/models.py:284
 #: locations/templates/locations/location_form.html:100
 msgid "Region"
 msgstr "Өлке"
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:27
-#: locations/models.py:287
+#: locations/models.py:286
 msgid "Venue"
 msgstr "Орын"
 
@@ -1434,7 +1434,7 @@ msgstr "Тікелей эфир"
 
 #: calendar_app/templates/calendar_app/detail.html:216
 #: calendar_app/templates/calendar_app/edit.html:173
-#: calendar_app/tests.py:4040 tests/e2e/test_competition_result_emphasis.py:52
+#: calendar_app/tests.py:4017 tests/e2e/test_competition_result_emphasis.py:52
 msgid "Additional materials"
 msgstr "Қосымша материалдар"
 
@@ -1857,7 +1857,7 @@ msgstr ""
 msgid "Submit"
 msgstr "Жіберу"
 
-#: calendar_app/templatetags/calendar_tags.py:41
+#: calendar_app/templatetags/calendar_tags.py:44
 #, python-format
 msgid "your time: %(time)s"
 msgstr "сізде: %(time)s"
@@ -1884,43 +1884,43 @@ msgstr "ш.б."
 msgid "W"
 msgstr "б.б."
 
-#: calendar_app/views.py:1505
+#: calendar_app/views.py:1499
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
 msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/views.py:1519
+#: calendar_app/views.py:1513
 msgid "Please provide a reason for rejection."
 msgstr "Қабылданбау себебін көрсетіңіз."
 
-#: calendar_app/views.py:1543 calendar_app/views.py:1568
+#: calendar_app/views.py:1537 calendar_app/views.py:1562
 #: knowledge/views.py:164 news/views.py:244
 msgid "Invalid submission."
 msgstr "Жарамсыз жіберу."
 
-#: calendar_app/views.py:1586
+#: calendar_app/views.py:1580
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Сіз бұл іс-шараға шағым жасап қойдыңыз; модератор оны тексереді."
 
-#: calendar_app/views.py:1588
+#: calendar_app/views.py:1582
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Рахмет. Сіздің шағымыңыз модераторларға жіберілді."
 
-#: calendar_app/views.py:1607
+#: calendar_app/views.py:1601
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Шағым алынып тасталды; іс-шара модерация кезегінен шығарылды."
 
-#: calendar_app/views.py:1667
+#: calendar_app/views.py:1661
 msgid "Only a rejected event can be resubmitted."
 msgstr "Тек қабылданбаған іс-шараны қайта жіберуге болады."
 
-#: calendar_app/views.py:1669
+#: calendar_app/views.py:1663
 msgid "Your event was sent for review again."
 msgstr "Іс-шара қайта қарауға жіберілді."
 
-#: calendar_app/views.py:1711
+#: calendar_app/views.py:1705
 msgid ""
 "Invitation link replaced. The old link no longer works; people already "
 "invited keep access."
@@ -1928,11 +1928,11 @@ msgstr ""
 "Шақыру сілтемесі ауыстырылды. Ескі сілтеме енді жұмыс істемейді; бұрын "
 "шақырылғандардың қолжетімділігі сақталды."
 
-#: calendar_app/views.py:1723
+#: calendar_app/views.py:1717
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Хронометраж токені қайта жасалды. Бұрынғы токен енді жұмыс істемейді."
 
-#: calendar_app/views.py:1734
+#: calendar_app/views.py:1728
 msgid "Timing token deleted. Timing tools can no longer access this event."
 msgstr ""
 "Хронометраж токені жойылды. Хронометраж құралдары бұл іс-шараға енді қол "
@@ -2340,14 +2340,15 @@ msgstr ""
 #: home/templates/home/privacy_page.html:22
 msgid ""
 "<strong>Technical data.</strong> A session cookie that keeps you signed in, "
-"cookies remembering your chosen language and colour theme, and ordinary "
-"server logs. We do not use advertising or analytics trackers, and there is "
-"no third-party tracking code on the site."
+"cookies remembering your chosen language and colour theme and your browser's"
+" time zone, and ordinary server logs. We do not use advertising or analytics"
+" trackers, and there is no third-party tracking code on the site."
 msgstr ""
 "<strong>Техникалық деректер.</strong> Сізді жүйеде ұстайтын сеанс cookie "
-"файлы, таңдалған тіл мен түс тақырыбын есте сақтайтын cookie файлдары және "
-"кәдімгі сервер журналдары. Біз жарнамалық және аналитикалық трекерлерді "
-"пайдаланбаймыз, сайтта үшінші тараптың бақылау коды жоқ."
+"файлы, таңдалған тіл мен түс тақырыбын және браузеріңіздің уақыт белдеуін "
+"есте сақтайтын cookie файлдары және кәдімгі сервер журналдары. Біз "
+"жарнамалық және аналитикалық трекерлерді пайдаланбаймыз, сайтта үшінші "
+"тараптың бақылау коды жоқ."
 
 #: home/templates/home/privacy_page.html:24
 msgid "Why we use it"
@@ -2714,7 +2715,7 @@ msgstr "Өз тіліңізде ұқсас мақаланы іздеу"
 #: knowledge/templates/knowledge/submission_detail.html:31
 #: knowledge/templates/knowledge/submit.html:33
 #: registrations/templates/registrations/register.html:157
-#: tests/test_profile_registration_actions.py:282
+#: tests/test_profile_registration_actions.py:283
 msgid "Category"
 msgstr "Санат"
 
@@ -2896,7 +2897,7 @@ msgstr "Apple Карталар"
 msgid "OpenStreetMap"
 msgstr "OpenStreetMap"
 
-#: locations/models.py:68
+#: locations/models.py:67
 msgid "Other location"
 msgstr "Басқа орын"
 
