@@ -1,11 +1,14 @@
 """An event's time zone comes from its place, a reader's from their browser (issue #344)."""
 
 import datetime
+import re
 from unittest import mock
 from zoneinfo import ZoneInfo
 
 from django.test import TestCase
+from django.urls import reverse
 
+from accounts.models import User
 from calendar_app.models import Competition
 from locations.models import Location, timezone_of
 
@@ -73,3 +76,60 @@ class RegistrationClosesByTheEventsDayTests(TestCase):
         nowhere = Location.add_root(name_ru="Nowhere", name_en="Nowhere")
         # 20:00 UTC on the 1st is the 2nd in the site's default zone, but still the 1st in UTC.
         self.assertTrue(self._open_without_deadline(nowhere, datetime.datetime(2026, 9, 1, 20, 0, tzinfo=datetime.UTC)))
+
+
+class DeadlineTypedInTheEventsZoneTests(TestCase):
+    def setUp(self):
+        *_, self.venue = _tree()
+        self.organizer = User.objects.create_user(
+            username="tz_org@example.com", email="tz_org@example.com", role=User.Role.ORGANIZER
+        )
+        self.client.force_login(self.organizer)
+        # The organizer's browser is in Moscow; the race is in Tokyo.
+        self.client.cookies["tz"] = "Europe/Moscow"
+
+    def _payload(self, **extra):
+        return {
+            "title_ru": "Tokyo Race",
+            "date_start": "2026-09-01",
+            "location": str(self.venue.pk),
+            "registration_enabled": "on",
+            "registration_mode": "free",
+            "birth_date_mode": "year",
+            "registration_deadline": "2026-09-01T14:30",
+            "categories_json": "[]",
+            **extra,
+        }
+
+    def _assert_tokyo_1430(self, comp):
+        self.assertEqual(comp.registration_deadline, datetime.datetime(2026, 9, 1, 14, 30, tzinfo=TOKYO))
+
+    def test_submit_reads_the_deadline_in_the_events_zone(self):
+        self.client.post(reverse("calendar_submit"), self._payload())
+        self._assert_tokyo_1430(Competition.objects.get(title_ru="Tokyo Race"))
+
+    def test_edit_reads_the_deadline_in_the_zone_of_the_new_place(self):
+        comp = Competition.objects.create(
+            title_ru="Tokyo Race",
+            date_start=datetime.date(2026, 9, 1),
+            status=Competition.Status.APPROVED,
+            submitted_by=self.organizer,
+        )
+        self.client.post(reverse("competition_edit", args=[comp.pk]), self._payload())
+        comp.refresh_from_db()
+        self._assert_tokyo_1430(comp)
+
+    def test_edit_form_shows_the_deadline_as_typed(self):
+        comp = Competition.objects.create(
+            title_ru="Tokyo Race",
+            date_start=datetime.date(2026, 9, 1),
+            status=Competition.Status.APPROVED,
+            submitted_by=self.organizer,
+            location=self.venue,
+            registration_enabled=True,
+            registration_deadline=datetime.datetime(2026, 9, 1, 14, 30, tzinfo=TOKYO),
+        )
+        html = self.client.get(reverse("competition_edit", args=[comp.pk])).content.decode()
+        self.assertEqual(
+            re.search(r'name="registration_deadline"[^>]*value="([^"]*)"', html).group(1), "2026-09-01T14:30"
+        )

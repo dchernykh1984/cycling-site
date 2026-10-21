@@ -875,7 +875,8 @@ def _validate_deadline(form, reg_form, date_start, date_end):
     if not deadline:
         return True
     max_date = date_end if date_end else date_start
-    # deadline is a datetime; compare its calendar day (in the active timezone) to the event date.
+    # deadline is a datetime; its calendar day in the zone the form read it in is the day typed,
+    # which is the day at the event's place.
     deadline_date = timezone.localtime(deadline).date() if timezone.is_aware(deadline) else deadline.date()
     if deadline_date > max_date:
         label = "date end" if date_end else "date start"
@@ -904,9 +905,11 @@ def _apply_registration_settings(comp, reg_form, is_organizer_plus):
         False if effective_mode == "self_only" else cd.get("allow_multiple_registrations", False)
     )
     deadline = cd.get("registration_deadline")
-    # The datetime-local field yields a naive datetime; interpret it in the active timezone.
-    if deadline and timezone.is_naive(deadline):
-        deadline = timezone.make_aware(deadline)
+    if deadline:
+        # The form read the typed wall-clock in the reader's zone; the organizer meant the event's
+        # (issue #344), so the location has to be set before this runs.
+        typed = timezone.make_naive(deadline) if timezone.is_aware(deadline) else deadline
+        deadline = typed.replace(tzinfo=comp.timezone)
     comp.registration_deadline = deadline
     comp.max_participants = cd.get("max_participants")
     comp.show_unapproved_in_list = cd.get("show_unapproved_in_list", False) if comp.require_approval else False
@@ -1076,7 +1079,12 @@ def _registration_initial(comp) -> dict:
         "require_approval": comp.require_approval,
         "require_payment": comp.require_payment,
         "allow_multiple_registrations": comp.allow_multiple_registrations,
-        "registration_deadline": comp.registration_deadline,
+        # As the organizer typed it: the wall-clock at the event's place (issue #344).
+        "registration_deadline": (
+            timezone.localtime(comp.registration_deadline, comp.timezone).replace(tzinfo=None)
+            if comp.registration_deadline
+            else None
+        ),
         "max_participants": comp.max_participants,
         "show_unapproved_in_list": comp.show_unapproved_in_list,
         "show_unpaid_in_list": comp.show_unpaid_in_list,
@@ -1354,7 +1362,6 @@ class EditCompetitionView(View):
             # Registration config (enable, categories, ...) stays organizer-only even when the author
             # editing their own submission is a participant (#200) -- mirror the submit view.
             is_org = _is_organizer_plus(request.user)
-            _apply_registration_settings(comp, reg_form, is_org)
             if is_org:
                 comp.invite_only = cd.get("invite_only", False)
             try:
@@ -1366,6 +1373,8 @@ class EditCompetitionView(View):
                     comp.location = lock_competition_location(
                         location, request.user, is_admin=_can_manage_any_competition(request.user)
                     )
+                    # After the location: the deadline is read in the zone of the event's place.
+                    _apply_registration_settings(comp, reg_form, is_org)
                     _unpublish_if_geography_is_pending(comp, request.user)
                     comp.save()
                     comp.disciplines.set(cd.get("disciplines") or [])
