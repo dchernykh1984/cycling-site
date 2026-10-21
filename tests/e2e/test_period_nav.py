@@ -285,3 +285,13 @@ def test_the_picker_takes_the_keyboard(page: Page, live_server):
     page.locator('#period-label [data-period-pick="month"]').focus()
     page.keyboard.press("Enter")
     expect(page.locator("#period-pop button:focus")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_tap_elsewhere_closes_the_picker(page: Page, live_server):
+    """A phone has no Escape key."""
+    _calendar(page, live_server)
+    page.locator('#period-label [data-period-pick="month"]').click()
+    expect(page.locator("#period-pop")).to_be_visible()
+    page.locator("h1").click()
+    expect(page.locator("#period-pop")).to_be_hidden()

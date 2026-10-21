@@ -298,6 +298,11 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && pop) { pop = null; render(); }
   });
+  // A tap anywhere else closes the picker: a phone has no Escape key. The path, not the target: the
+  // button tapped inside the row is often redrawn, and gone from the page, by the time this runs.
+  document.addEventListener('click', function (e) {
+    if (pop && e.composedPath().indexOf(nav) < 0) { pop = null; render(); }
+  });
   render();
 
   document.addEventListener('DOMContentLoaded', function () {
