@@ -1,0 +1,17 @@
+# Hex colours that were in the site's templates when scripts/check_template_colours.py came in.
+# One "path #hex" per line. Kept so the hook does not fail on them; moving one into a skin variable
+# means dropping its line here -- the hook fails on a line whose colour is gone.
+# Google's own logo colours on the sign-in button are the brand's, not the skin's, and stay.
+calendar_app/templates/calendar_app/_location_cascade.html #0d6efd
+cycling_site/templates/allauth/elements/provider.html #34a853
+cycling_site/templates/allauth/elements/provider.html #4285f4
+cycling_site/templates/allauth/elements/provider.html #ea4335
+cycling_site/templates/allauth/elements/provider.html #fbbc05
+cycling_site/templates/allauth/layouts/entrance.html #86b7fe
+cycling_site/templates/allauth/layouts/manage.html #86b7fe
+cycling_site/templates/includes/rich_text_editor.html #fff
+home/templates/home/welcome_page.html #231f20
+home/templates/home/welcome_page.html #ddd
+home/templates/home/welcome_page.html #fff
+locations/templates/locations/location_form.html #6c757d
+locations/templates/locations/location_form.html #adb5bd
