@@ -126,8 +126,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // fitView=true picks the first view (first load only): Almaty when anything there matches,
-  // else the matching markers. On later filter changes we pass false so the user's current
+  // fitView=true picks the first view (first load only): Almaty, or the matching markers under a
+  // location filter. On later filter changes we pass false so the user's current
   // pan/zoom stays put while only the markers update.
   function refresh(fitView) {
     var params = new URLSearchParams();
@@ -147,13 +147,11 @@ document.addEventListener('DOMContentLoaded', function () {
           bounds.push([loc.lat, loc.lng]);
         });
         if (fitView) {
-          // Most readers ride around Almaty, so the map opens on it when anything there matches:
-          // which corner of the city a ride starts in is the question, not which country. A
-          // location filter brought from the list or the calendar, or nothing near Almaty, fits
-          // the matching markers instead; nothing at all keeps the default overview.
-          // An empty `location=` is no filter at all (as the list reads it).
-          var home = !new URLSearchParams(window.location.search).getAll('location').some(Boolean)
-            && bounds.some(function (b) { return HOME_AREA.contains(b); });
+          // Most readers ride around Almaty, so the map opens on it -- even in a week with nothing
+          // there, rather than jumping out to a continent because of one race in Amsterdam; the
+          // rest is a zoom away. Only a location filter brought from the list or the calendar fits
+          // the matching markers instead (an empty `location=` is no filter, as the list reads it).
+          var home = !new URLSearchParams(window.location.search).getAll('location').some(Boolean);
           if (home) map.fitBounds(HOME_AREA);
           else if (bounds.length) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 12});
           else map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
