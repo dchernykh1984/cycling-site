@@ -26,17 +26,25 @@ activated by a middleware.
 
 1. `locations.models.timezone_of(location)` -> `ZoneInfo`: the location's own coordinates, else the
    nearest ancestor's, else UTC.
-2. `Competition.timezone` (cached property) calls it; `is_registration_open` uses
+2. `Competition.timezone` (a plain property, not cached: the edit view moves an event and then reads
+   its zone) calls it; `is_registration_open` uses
    `timezone.localdate(timezone=self.timezone)`.
-3. `calendar_app.views`: the deadline the form parsed in the reader's zone is turned back into the
-   wall-clock typed and made aware in the event's zone, after the location is known (the edit view
-   now applies registration settings once the location is set). The edit form's initial value is
-   the deadline as wall-clock in the event's zone.
-4. `cycling_site.middleware.ReaderTimezoneMiddleware`: activates the `tz` cookie's zone, if valid.
+3. `calendar_app.forms.WallClockDateTimeField` returns the deadline as typed, without a zone (read
+   as UTC, so an hour the reader's own zone skips is not refused); `calendar_app.views` gives it the
+   event's zone once the location is known (the edit view now applies registration settings after
+   setting the location). The edit form's initial value is the deadline as wall-clock in the
+   event's zone.
+4. `cycling_site.middleware.ReaderTimezoneMiddleware`: activates the `tz` cookie's zone, if valid,
+   and keeps it as `request.reader_timezone` (None when not known).
    `base.html`: a one-line script stores `Intl.DateTimeFormat().resolvedOptions().timeZone` in the
    cookie when it differs.
 5. `calendar_tags.event_time`: the deadline in the event's zone with its offset, and in the
-   reader's when the offsets differ.
+   reader's when it is known and the offsets differ.
+
+## Cost
+
+`tzfpy` keeps its polygons in memory: about 43 MB more resident memory per process, measured on
+macOS; a lookup then takes well under a microsecond.
 
 ## Out of scope
 
