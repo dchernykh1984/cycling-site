@@ -30,8 +30,7 @@
   </div>
 </div>
 
-{% include "calendar_app/_quick_dates.html" with server_today=True %}
-{% include "calendar_app/_date_nav.html" with from_selector='#map-date-from' to_selector='#map-date-to' %}
+{% include "calendar_app/_period_nav.html" with from_selector='#map-date-from' to_selector='#map-date-to' server_today=True %}
 {% include "calendar_app/_filter_chips.html" %}
 
 <div id="filter-panel" class="collapse d-lg-block">
@@ -167,16 +166,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // Filter changes update markers in place without moving the map (fitView=false); only the
   // initial load picks the view.
   window.onCalendarFilterChange = function () { refresh(false); };
-  [dfEl, dtEl].forEach(function (el) {
-    el.addEventListener('change', function () {
-      refresh(false);
-      // Dates typed by hand light the quick button they match, or none.
-      window.markQuickDates(window.quickDatesKindOf(dfEl.value, dtEl.value));
-    });
-  });
-  // A quick range fills the two date fields, which redraw the map themselves.
-  window.onQuickDates = function (kind, range) { window.setDateFields(dfEl, dtEl, range); };
-  window.markQuickDates(window.quickDatesKindOf(dfEl.value, dtEl.value));
+  [dfEl, dtEl].forEach(function (el) { el.addEventListener('change', function () { refresh(false); }); });
+  // A period from the row above fills the two date fields, which redraw the map themselves.
+  window.onPeriodChange = function (period) { window.setDateFields(dfEl, dtEl, period); };
   if (favEl) favEl.addEventListener('change', function () { refresh(false); });
   refresh(true);
 });

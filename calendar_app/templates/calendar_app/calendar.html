@@ -12,9 +12,9 @@
 <style>
   #calendar { min-height: 500px; }
   .fc-event { cursor: pointer; }
-  /* The grid's own toolbar holds the title and the Grid/List switch; the arrows, Today and the
-     month picker are the row above it, shared with the list and the map. On a phone the toolbar is
-     wider than the screen, which without the wrapping would scroll the whole page sideways. */
+  /* The grid's own toolbar holds only the Grid/List switch: the period, its arrows and Today are
+     the row above it, shared with the list and the map (_period_nav.html). Kept wrapping, so the
+     toolbar can never take the page wider than a phone screen. */
   .fc .fc-header-toolbar { flex-wrap: wrap; row-gap: .5rem; }
   .fc .fc-toolbar-chunk { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
   /* Every event is all-day, so the list's time column only ever held an empty cell. */
@@ -42,8 +42,7 @@
   </div>
 </div>
 
-{% include "calendar_app/_quick_dates.html" %}
-{% include "calendar_app/_date_nav.html" %}
+{% include "calendar_app/_period_nav.html" %}
 {% include "calendar_app/_filter_chips.html" %}
 
 <div id="filter-panel" class="collapse d-lg-block">
@@ -120,14 +119,6 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js"></script>
 <script>
-// Server-side month names for the active locale — avoids inconsistent kk
-// support in browser Intl implementations that produce "M06" instead of "Маусым".
-var FC_MONTHS = [
-  "{% trans 'January' %}", "{% trans 'February' %}", "{% trans 'March' %}",
-  "{% trans 'April' %}",   "{% trans 'May' %}",      "{% trans 'June' %}",
-  "{% trans 'July' %}",    "{% trans 'August' %}",   "{% trans 'September' %}",
-  "{% trans 'October' %}", "{% trans 'November' %}", "{% trans 'December' %}"
-];
 document.addEventListener('DOMContentLoaded', function () {
   var eventsUrl = '{% url "calendar_events_api" %}';
 
@@ -183,104 +174,37 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Persist date range from the URL (supports switching from list view). The filter
-  // dropdowns restore themselves from ?event_type=/?discipline=/?location= params.
-  (function () {
-    var p = new URLSearchParams(window.location.search);
-    var df = p.get('date_from');
-    var dt = p.get('date_to');
-    if (df) sessionStorage.setItem('cal_date_from', df);
-    if (dt) sessionStorage.setItem('cal_date_to', dt);
-    updateSwitcherLinks();
-  }());
-
   // The location tree is fetched, so the cascade answers for itself only once it arrives.
   document.addEventListener('location-filter-ready', updateSwitcherLinks);
 
-  // --- month picker ---
-  // Follow the grid: the arrows, Today and the quick ranges all move it, and the picker in the row
-  // above (_date_nav.html) must not claim otherwise.
-  function syncPicker(date) {
-    if (window.syncDateNav) window.syncDateNav(date);
-  }
-
-  // A quick range is a list of exactly those days: the weekend, or the season. "Month" is the
-  // month view again, on today. The range also travels to the list and the map, like a date range
-  // picked there would.
+  // --- The period ---
+  // The row above the grid (_period_nav.html) asks for a period: a month is the month view the
+  // reader chose, grid or list; any other period is a list of exactly those days.
   function dayAfter(isoDay) {
     var p = isoDay.split('-');
     var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]) + 1);
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
-  var rangeKind = null;  // 'weekend' or 'season' while a quick range is on screen
-  // A quick range hands its dates on to Share and to the List and Map links, and takes them back
-  // once the reader pages away from it; otherwise those links kept a weekend no longer on screen.
-  var quickDatesStored = false;
+  // The days a listRange view shows. FullCalendar asks for them each time it works out the view's
+  // dates: handing a range to changeView instead fetched the events of the range before it when
+  // the view stayed a list -- the next year opened on last year's events, the year after on none.
+  var listRange = null;
+  function showRange(from, to) {
+    listRange = {start: from, end: dayAfter(to)};
+    calendar.changeView('listRange', from);
+  }
+  window.onPeriodChange = function (period) {
+    if (period.kind === 'month') calendar.changeView(monthView, period.from);
+    else showRange(period.from, period.to);
+  };
+  // The period on screen travels to Share and to the List and Map links, so the other tabs open
+  // on the same days.
   function storeDates(from, to) {
     try {
-      if (from) {
-        sessionStorage.setItem('cal_date_from', from);
-        sessionStorage.setItem('cal_date_to', to);
-      } else {
-        sessionStorage.removeItem('cal_date_from');
-        sessionStorage.removeItem('cal_date_to');
-      }
+      sessionStorage.setItem('cal_date_from', from);
+      sessionStorage.setItem('cal_date_to', to);
     } catch (e) { /* storage blocked */ }
-    quickDatesStored = Boolean(from);
     updateSwitcherLinks();
-  }
-  window.onQuickDates = function (kind, range) {
-    pendingQuick = kind;
-    rangeKind = kind === 'month' ? null : kind;
-    if (kind === 'month') calendar.changeView(monthView, new Date());
-    else calendar.changeView(kind === 'weekend' ? 'listWeekend' : 'listSeason', {start: range.from, end: dayAfter(range.to)});
-    storeDates(range.from, range.to);
-  };
-
-  // FullCalendar pages a range set this way by nothing at all, so while one is on screen the
-  // arrows move it themselves: the weekend a week, the season a year, and Today goes back to this
-  // weekend or this season.
-  function shiftRange(step) {
-    var start = calendar.view.currentStart;
-    // From that week's Saturday: on a Sunday "this weekend" is the Sunday alone, and a week on
-    // from it would be the next Sunday and Monday.
-    var fromSaturday = (start.getDay() + 1) % 7;
-    var from = rangeKind === 'weekend'
-      ? new Date(start.getFullYear(), start.getMonth(), start.getDate() - fromSaturday + 7 * step)
-      : new Date(start.getFullYear() + step, 0, 1);
-    var to = rangeKind === 'weekend'
-      ? new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1)
-      : new Date(from.getFullYear(), 11, 31);
-    calendar.changeView(calendar.view.type, {start: isoDate(from), end: dayAfter(isoDate(to))});
-  }
-  // The row of arrows, Today and the month picker above the grid (_date_nav.html).
-  window.onDateNav = function (action) {
-    if (action.today) {
-      if (rangeKind) document.querySelector('[data-quick-dates="' + rangeKind + '"]').click();
-      else calendar.today();
-    } else if (action.step) {
-      if (rangeKind) shiftRange(action.step);
-      else if (action.step > 0) calendar.next();
-      else calendar.prev();
-    } else {
-      calendar.changeView(monthView, new Date(action.year, action.month, 1));
-    }
-  };
-
-  // "24-25 октября" for a range; the month and year for a month.
-  function titleOf(arg) {
-    var start = arg.start;
-    var end = arg.end ? arg.end.marker : null;  // the last day shown, inclusive
-    var isMonth = start.day === 1 && (!end || (end.getUTCMonth() === start.month && end.getUTCDate() >= 28));
-    if (isMonth) return FC_MONTHS[start.month] + ' ' + start.year;
-    // The season is the calendar year, and its title is the year.
-    if (start.month === 0 && start.day === 1 && end.getUTCMonth() === 11 && end.getUTCDate() === 31) return String(start.year);
-    var to = end.getUTCDate() + ' ' + DATE_WORDS.months[end.getUTCMonth()];
-    if (end.getUTCFullYear() !== start.year) to += ' ' + end.getUTCFullYear();
-    if (end.getUTCMonth() === start.month && end.getUTCFullYear() === start.year) {
-      return end.getUTCDate() === start.day ? to : start.day + '–' + to;
-    }
-    return start.day + ' ' + DATE_WORDS.months[start.month] + ' – ' + to;
   }
 
   // --- Month as a grid or as a list of days ---
@@ -294,10 +218,17 @@ document.addEventListener('DOMContentLoaded', function () {
   try { savedView = localStorage.getItem(VIEW_KEY); } catch (e) { /* storage blocked */ }
   var isPhone = window.matchMedia('(max-width: 767.98px)').matches;
   var currentView = VIEWS.indexOf(savedView) >= 0 ? savedView : (isPhone ? 'listMonth' : 'dayGridMonth');
-  // The month view the reader last chose, which "Month" and the month picker return to from a
-  // quick range (shown as a list of its own, listWeekend or listSeason).
+  // The month view the reader last chose, which a month returns to from any other period (shown
+  // as a list of its own, listRange).
   var monthView = currentView;
-  var pendingQuick = null;
+  function markMonthView() {
+    var type = calendar ? calendar.view.type : currentView;
+    document.querySelectorAll('[data-month-view]').forEach(function (button) {
+      var on = button.dataset.monthView === type;
+      button.classList.toggle('active', on);
+      button.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
 
   // In the list a multi-day race is one row on its first day with the day it ends -- not the same
   // row on every day it runs, which repeated a three-day triathlon three times. A day whose only
@@ -374,16 +305,11 @@ document.addEventListener('DOMContentLoaded', function () {
     initialView: currentView,
     locale: '{{ CURRENT_LANGUAGE }}',
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
-    titleFormat: titleOf,
-    views: { listWeekend: { type: 'list' }, listSeason: { type: 'list' } },
+    views: { listRange: { type: 'list', visibleRange: function () { return listRange; } } },
     // FullCalendar's own bundle has no Kazakh at all, so the labels come from our catalogue like
     // every other word on the page.
-    buttonText: { dayGridMonth: '{% trans "Grid" %}', listMonth: '{% trans "List" %}' },
-    headerToolbar: {
-      left: 'title',
-      center: '',
-      right: 'dayGridMonth,listMonth',
-    },
+    // The period and the Grid/List switch live in the row above (_period_nav.html).
+    headerToolbar: false,
     // The list's day headings and empty month, in the site's words rather than the browser's.
     listDayFormat: function (arg) { return dayLabel(arg.date.year, arg.date.month, arg.date.day); },
     listDaySideFormat: false,
@@ -405,25 +331,25 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(failureCallback);
     },
     datesSet: function (info) {
-      syncPicker(info.view.currentStart);
       showPast = false;
+      var start = info.view.currentStart;
+      var end = info.view.currentEnd;
+      var from = isoDate(start);
+      var to = isoDate(new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1));
       if (VIEWS.indexOf(info.view.type) >= 0) {
-        rangeKind = null;
         monthView = info.view.type;
         if (monthView !== currentView) {
           currentView = monthView;
           try { localStorage.setItem(VIEW_KEY, currentView); } catch (e) { /* storage blocked */ }
         }
+        // The month, named as the row names it: the current one from today.
+        var month = window.periodNav.rangeOf('month', start);
+        from = month[0];
+        to = month[1];
       }
-      if (rangeKind) {
-        var end = info.view.currentEnd;
-        storeDates(isoDate(info.view.currentStart), isoDate(new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1)));
-      } else if (quickDatesStored && !pendingQuick) {
-        storeDates(null);
-      }
-      // Paging away from a quick range leaves it: the button stops being lit.
-      window.markQuickDates(pendingQuick);
-      pendingQuick = null;
+      window.periodNav.show(from, to);
+      storeDates(from, to);
+      markMonthView();
       tidyListSoon();
     },
     eventsSet: tidyListSoon,
@@ -459,23 +385,38 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   calendar.render();
+  window.calendarFC = calendar;  // exposed for e2e/debugging, like the map's window.calendarMap
 
-  // A link to a weekend or a season -- what Share hands out after a quick range -- opens on that
-  // range, as a list, not on the month around it. The button lights only for this weekend or this
-  // season; a link to another one still pages by weekends or by years.
+  // Grid or list for a month, in the period row beside Today. From another period it opens the
+  // month that period starts in.
+  (function () {
+    var extra = document.getElementById('period-extra');
+    if (!extra) return;
+    var group = document.createElement('div');
+    group.className = 'period-pair';
+    group.setAttribute('role', 'group');
+    [['dayGridMonth', '{% trans "Grid" %}'], ['listMonth', '{% trans "List" %}']].forEach(function (pair) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'period-b period-small';
+      button.dataset.monthView = pair[0];
+      button.textContent = pair[1];
+      button.addEventListener('click', function () { calendar.changeView(pair[0], calendar.view.currentStart); });
+      group.appendChild(button);
+    });
+    extra.appendChild(group);
+    markMonthView();
+  }());
+
+  // A link with dates -- from Share, or from the list and the map -- opens on that period.
   (function () {
     var p = new URLSearchParams(window.location.search);
-    var df = p.get('date_from');
-    var dt = p.get('date_to');
-    if (!df || !dt) return;
-    var parts = df.split('-');
-    var from = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-    var kind = null;
-    if (df.slice(5) === '01-01' && dt === df.slice(0, 4) + '-12-31') kind = 'season';
-    else if ((from.getDay() === 6 && dt === dayAfter(df)) || (from.getDay() === 0 && dt === df)) kind = 'weekend';
-    if (!kind) return;
-    window.onQuickDates(kind, {from: df, to: dt});
-    window.markQuickDates(window.quickDatesKindOf(df, dt));
+    var from = p.get('date_from');
+    var to = p.get('date_to');
+    if (!from) return;
+    var kind = window.periodNav.kindOf(from, to);
+    if (kind === 'month' || kind === 'open') calendar.changeView(monthView, from);
+    else showRange(from, to);
   }());
 
   // Called by the filter partials whenever any multi-select changes.
