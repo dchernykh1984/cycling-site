@@ -2,7 +2,7 @@ import datetime
 import json
 
 from django.db import IntegrityError, transaction
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext
@@ -1467,7 +1467,7 @@ class EditCompetitionViewTests(TestCase):
         import re
 
         self.comp.registration_enabled = True
-        self.comp.registration_deadline = timezone.make_aware(datetime.datetime(2026, 9, 1, 14, 30))
+        self.comp.registration_deadline = timezone.make_aware(datetime.datetime(2026, 9, 1, 14, 30), self.comp.timezone)
         self.comp.save()
         self.client.login(username="edit_org@example.com", password="password123")
         resp = self.client.get(in_language(self.url, "ru"), HTTP_ACCEPT_LANGUAGE="ru")
@@ -1624,29 +1624,8 @@ class EditCompetitionViewTests(TestCase):
         )
         self.comp.refresh_from_db()
         self.assertIsNotNone(self.comp.registration_deadline)
-        local = timezone.localtime(self.comp.registration_deadline)
+        local = timezone.localtime(self.comp.registration_deadline, self.comp.timezone)
         self.assertEqual((local.date(), local.hour, local.minute), (datetime.date(2026, 9, 1), 14, 30))
-
-    @override_settings(TIME_ZONE="Asia/Almaty")
-    def test_deadline_interpreted_in_business_timezone_not_utc(self):
-        # Under a non-UTC business tz, datetime-local "14:30" is local wall time (Astana, UTC+5)
-        # = 09:30 UTC, not 14:30 UTC -- the field must not be silently treated as UTC.
-        self.client.login(username="edit_org@example.com", password="password123")
-        self.client.post(
-            self.url,
-            {
-                "title_ru": "Editable Race",
-                "date_start": "2026-09-01",
-                "registration_enabled": "on",
-                "registration_mode": "free",
-                "birth_date_mode": "year",
-                "registration_deadline": "2026-09-01T14:30",
-                "categories_json": "[]",
-            },
-        )
-        self.comp.refresh_from_db()
-        utc = self.comp.registration_deadline.astimezone(datetime.UTC)
-        self.assertEqual((utc.hour, utc.minute), (9, 30))
 
 
 class CompetitionCommentTests(TestCase):
@@ -2957,15 +2936,13 @@ class RegistrationDeadlineMigrationTests(TestCase):
         importlib.import_module(f"{self.APP}.migrations.0018_shift_date_deadlines_to_end_of_day")._forward(apps, None)
 
     def test_forward_shifts_legacy_midnight_deadline_to_end_of_day(self):
-        # The runtime helper computes the expected value, cross-checking the migration's own
-        # (deliberately self-contained) copy of the same transform.
-        from calendar_app.registration_deadline import date_only_to_end_of_day
-
+        # The migration reckoned the old date-only deadlines in Asia/Almaty (UTC+5): midnight UTC on
+        # the 1st was the 1st there, so registration stays open until 23:59:59 that day.
         midnight_utc = datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC)
         comp = _make_competition("Midnight", registration_deadline=midnight_utc)
         self._forward()
         comp.refresh_from_db()
-        self.assertEqual(comp.registration_deadline, date_only_to_end_of_day(midnight_utc))
+        self.assertEqual(comp.registration_deadline, datetime.datetime(2026, 9, 1, 18, 59, 59, tzinfo=datetime.UTC))
 
     def test_forward_leaves_real_time_deadline_untouched(self):
         afternoon = datetime.datetime(2026, 9, 1, 14, 30, tzinfo=datetime.UTC)

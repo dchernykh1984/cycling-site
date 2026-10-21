@@ -1,8 +1,8 @@
 # cycling-site
 
-A Wagtail-based website for organizing cycling competitions, publishing news,
-maintaining a knowledge base, and (in the future) running an online judge for
-results processing.
+A Wagtail-based website: a calendar of events in any sport where time is kept -- cycling,
+running, skiing, triathlon and the rest -- with race registration, live results protocols, news and
+a knowledge base, in several languages.
 
 ## Prerequisites
 
@@ -95,6 +95,14 @@ WhiteNoise. DNS is managed by Cloudflare, with the apex `universalbicycle.team` 
 the canonical host and `www` redirecting to it.
 
 Live site: <https://universalbicycle.team>.
+
+## Specifications
+
+The site is built spec-first with [Spec Kit](https://github.com/github/spec-kit). Every area of the
+site is described as it works today in [`specs/site/`](specs/site/); a new feature gets its own
+specification, plan and tasks in `specs/<issue>-<short-name>/` before it is built; the principles
+every plan is checked against are the [constitution](.specify/memory/constitution.md). How to work
+with them -- from Claude Code or Codex -- is in [`specs/README.md`](specs/README.md).
 
 ## REST API
 

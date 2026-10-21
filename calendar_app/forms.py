@@ -1,8 +1,10 @@
+import datetime
 import json
 from typing import ClassVar
 
 from django import forms
 from django.db.models import Field
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
@@ -227,6 +229,17 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
             self.add_error("location", _("This location is not available."))
 
 
+class WallClockDateTimeField(forms.DateTimeField):
+    """A date and time as typed, without a zone: it is the zone of the event's place, known only once
+    the place is (issue #344). Read as UTC, which has no skipped or repeated hours, so a time that
+    does not exist in the reader's own zone is not refused on their account."""
+
+    def to_python(self, value):
+        with timezone.override(datetime.UTC):
+            result = super().to_python(value)
+        return result.replace(tzinfo=None) if result else result
+
+
 class RegistrationSettingsForm(forms.Form):
     registration_enabled = forms.BooleanField(required=False)
     registration_mode = forms.ChoiceField(
@@ -242,7 +255,7 @@ class RegistrationSettingsForm(forms.Form):
     require_approval = forms.BooleanField(required=False)
     require_payment = forms.BooleanField(required=False)
     allow_multiple_registrations = forms.BooleanField(required=False)
-    registration_deadline = forms.DateTimeField(
+    registration_deadline = WallClockDateTimeField(
         required=False,
         # <input type="datetime-local"> submits/expects "YYYY-MM-DDTHH:MM" (no seconds).
         input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"],

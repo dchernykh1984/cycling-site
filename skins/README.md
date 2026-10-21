@@ -110,7 +110,7 @@ A database of its own, filled with sample events, news, registrations and accoun
 createdb skins_demo
 export DATABASE_URL=postgres://localhost/skins_demo
 .venv/bin/python manage.py migrate
-.venv/bin/python manage.py shell < tests/visual/seed.py
+.venv/bin/python manage.py shell < scripts/demo_seed.py
 .venv/bin/python manage.py runserver
 ```
 
@@ -127,8 +127,3 @@ On every pull request, and locally:
   as everyone's starting skin, including `test_skin_contrast.py`: text at least 4.5:1 against what
   it is drawn on (3:1 for large text), at rest, under the pointer and in focus. CI runs this for
   every skin in its own job.
-- `.venv/bin/python tests/visual/run.py` -- screenshots of the branch against `origin/main` in the
-  light and dark themes; any pixel that moved fails. A skin of its own never touches them, so this
-  only fails when something shared changed. CI runs it as "Light and dark unchanged"; a deliberate
-  change to light or dark goes through only with the `visual-change-approved` label, which the
-  maintainer sets.

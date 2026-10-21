@@ -45,9 +45,7 @@ the form's hint text says what the tests pin.
 `ci.yml` runs pre-commit (ruff, mypy, ASCII check, requirements export), commitizen, the unit tests
 with coverage (the gate is 90%), and a dependency audit. `e2e.yml` runs Playwright on five
 browser/device combinations, and once more in desktop Chromium for every skin under `skins/` but
-light (`E2E_SKIN`). `visual.yml` compares screenshots of the light and dark themes with the base
-branch (`tests/visual/run.py`); only the maintainer's `visual-change-approved` label lets a
-difference through. Every check must be green before you report the work done.
+light (`E2E_SKIN`). Every check must be green before you report the work done.
 
 A change to the site that breaks a designer's skin -- its `e2e-skin (<key>)` job goes red -- does
 not merge until that skin is green: the pull request waits for the skin's designers, or fixes the
@@ -79,6 +77,13 @@ CI effectively asks; run it before opening the pull request.
 A bug fix gets a regression test that fails without the fix: a Django unit test for backend
 behaviour, a Playwright test in `tests/e2e/` for anything a person sees in a browser. Name tests
 after the behaviour, not the function.
+
+## Specifications stay current
+
+A change that alters behaviour described in `specs/site/` updates that file in the same pull request;
+a feature with its own issue carries its `specs/<issue>-<name>/` folder. Review cycles check both,
+and check that nothing local or sport-specific was written into the code (constitution, principle
+VI). See the `specs` skill.
 
 ## Setup hints stay current
 

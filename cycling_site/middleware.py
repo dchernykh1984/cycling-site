@@ -1,9 +1,10 @@
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.http import Http404
 from django.middleware.locale import LocaleMiddleware
 from django.shortcuts import render
-from django.utils import translation
+from django.utils import timezone, translation
 from django.utils.cache import add_never_cache_headers
 from django.utils.translation import check_for_language, get_language_from_path
 
@@ -102,3 +103,24 @@ class SiteLocaleMiddleware(LocaleMiddleware):
             return False
         location = response.headers.get("Location", "")
         return bool(get_language_from_path(urlsplit(location).path))
+
+
+class ReaderTimezoneMiddleware:
+    """Show times in the reader's own zone (issue #344).
+
+    The page's script stores the browser's IANA zone in a ``tz`` cookie; until it has (the very first
+    page, a crawler) or when the value is not a zone, the site's ``TIME_ZONE`` stands.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        try:
+            request.reader_timezone = ZoneInfo(request.COOKIES.get("tz", ""))
+        except (ZoneInfoNotFoundError, ValueError):
+            request.reader_timezone = None  # not known: a time is then shown once, where it happens
+            timezone.deactivate()
+        else:
+            timezone.activate(request.reader_timezone)
+        return self.get_response(request)

@@ -50,6 +50,7 @@ telepath==0.3.1
 typing-extensions==4.16.0
 typing-inspection==0.4.2
 tzdata==2026.4 ; sys_platform == 'win32'
+tzfpy==2.1.1
 urllib3==2.8.0
 wagtail==7.4.3
 wagtail-localize==1.13.1

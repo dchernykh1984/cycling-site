@@ -42,6 +42,11 @@ with each accepted finding as its own commit, then the pipeline driven green -- 
 come with the change, all three locales come with the change, and commit messages are one line with
 no co-authorship line.
 
+A feature with an issue of its own starts as a specification and a plan in `specs/<issue>-<name>/`
+that the maintainer reviews before code is written; every change keeps `specs/site/` true (the
+`specs` skill). Nothing local or sport-specific is written into the code: the site is meant for
+anyone, anywhere, in any timed sport.
+
 ## Data work
 
 Some tasks are edits to live content rather than code: fixing an announcement, merging duplicate

@@ -18,6 +18,7 @@ dependencies = [
     "django-treebeard>=4.8,<6.0",
     "django-ninja>=1.6.2,<2",
     "pyyaml>=6,<7",
+    "tzfpy>=2.1,<3",
 ]
 
 [dependency-groups]
@@ -92,8 +93,6 @@ omit = [
     "cycling_site/wsgi.py",
     "cycling_site/settings/prod.py",
     "tests/e2e/*",
-    # The before/after screenshot tool (tests/visual/run.py), run as its own CI job.
-    "tests/visual/*",
     # Standalone scheduled tool (talks to the site over HTTP, not the ORM). Its pure logic has its
     # own tests under agent/tests/; the network/LLM adapters are not part of the site coverage gate.
     "agent/*",

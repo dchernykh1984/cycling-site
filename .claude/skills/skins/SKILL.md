@@ -13,9 +13,6 @@ this file is what an agent needs on top of it.
 - **`skins/light` and `skins/dark` are the maintainer's.** They like them as they are. Their
   colours, their rules, and anything shared that changes how they look (`cycling_site.css`, a
   shared template, Bootstrap/Lux) do not change without the maintainer asking for it.
-  `visual.yml` ("Light and dark unchanged") fails on any pixel that moved; only the maintainer
-  puts the `visual-change-approved` label on a pull request. Never add it yourself, and never
-  widen the masks in `tests/visual/capture.py` to make a difference go away.
 - **Every other folder belongs to the designers who made it.** Their markup, CSS and script are
   theirs to shape. Touch a designer's skin only to keep it working after a change to the site
   (below), and keep such a fix in a commit of its own.
@@ -63,9 +60,6 @@ view's context or anything the browser tests rely on:
   short; they are kept, not fixed, and a designer's skin gets no such allowance. The helper
   (`tests/e2e/contrast.py`) reads colours as drawn and refuses filters, blend modes and background
   images rather than guess.
-- `tests/visual/run.py` -- the before/after screenshots behind `visual.yml`. Locally:
-  `.venv/bin/python tests/visual/run.py --out tmp/visual-out` (about ten minutes; `--devices` and
-  `--cases` narrow it, `--dump backup/<ts>/db.dump` runs it over a production backup).
 - `tests/skin_fixtures.py` -- `trial_skin()` builds a throwaway skin in a temporary folder for
   tests; no sample skin is committed, since it would appear in every reader's list.
 - A local database to look at a skin in: `skins/README.md`, "Looking at a skin locally".

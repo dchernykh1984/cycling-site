@@ -1,0 +1,113 @@
+<!--
+Sync Impact Report
+- Version: none -> 1.0.0 (first constitution, issue #337); 1.0.0 -> 1.1.0: principle IV makes the
+  three languages a deliberate choice; principle VI lets the maintainer accept a local assumption.
+  1.1.0 -> 1.2.0: the light/dark screenshot comparison is retired (it guarded the skins refactoring,
+  issue #324); principles II and III no longer name it.
+- Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
+  .agents/skills, which stay the detailed runtime guidance; VI set by the maintainer (no local or
+  sport-specific hardcoding).
+- Templates: plan-template.md's "Constitution Check" gate reads these principles; no template
+  needed changes.
+-->
+
+# cycling-site Constitution
+
+cycling-site is a calendar of timed-sport events -- races, rides, runs and their kin -- with a
+knowledge base, news, race registration, refereeing and live protocols, served at
+universalbicycle.team in Russian, Kazakh and English. It began with events in Kazakhstan,
+Kyrgyzstan and Russia; it is meant for everyone.
+
+## Core Principles
+
+### I. Facts come from their source
+
+Announcements, articles and event data carry only what their source says. When a source is
+contradictory, it is transcribed and the contradiction named, never tidied into a guess.
+Coordinates and venues are looked up, never recalled from memory. A specification describes the
+behaviour the code and its tests show; where that is unknown, it says so (`NEEDS CLARIFICATION`)
+rather than inventing it.
+
+### II. Some decisions belong to the maintainer
+
+A pull request is merged by the maintainer, or by an agent only when the maintainer asks for it in
+the message being answered.
+Approved events are theirs: changing one -- its links, location or dates -- needs their explicit
+go-ahead. The events agents spend money on every run and are started only on request. The light
+and dark themes are kept as they are unless the maintainer asks for a change.
+
+### III. Every change carries its tests (NON-NEGOTIABLE)
+
+A behaviour change ships with the tests that pin it: a Django unit test for backend behaviour, a
+Playwright test under `tests/e2e/` for anything a person sees in a browser. A bug fix gets a
+regression test that fails without the fix. Tests are named after the behaviour, not the function.
+Coverage stays at 90% or above, and every check of the pipeline -- unit tests, pre-commit, the
+browser suite on five browsers and devices and once per skin, the dependency audit -- is green
+before work is reported done.
+
+### IV. The reader's language, in the address
+
+Everything a reader sees exists in every language the site offers: Russian for its audience,
+English for everyone else, Kazakh out of respect for Kazakhstan. The three are a deliberate choice
+and a fourth is not planned -- it would mean translating every event and article -- so code may
+name the three where that is simpler. Every reader-facing URL carries its language prefix (`/ru/`,
+`/kk/`, `/en/`); machine-facing ones (`/api/v1/`, admin, media, sitemap, robots) do not. Source
+files are ASCII and UTF-8; text in the site's languages lives in the translation catalogues and in
+the agents' guidance files.
+
+### V. Small, complete, reviewable changes
+
+Each atomic change is one commit with a one-line message in the commitizen types, never
+mentioning the assistant that wrote it. Work is reviewed in cycles -- three by default -- each
+finding fixed in a commit of its own. Pull requests are merged by rebase so every commit survives
+on a linear history. A change finishes every part it touches -- callers, tests, translations,
+setup hints, documentation, specifications -- and adds nothing nobody asked for.
+
+### VI. Built for anyone, anywhere, in any timed sport
+
+The site starts as a small team's calendar in Almaty, Kazakhstan, but is built so that a person in
+any country, following any sport where time is kept -- on wheels, skis, skates or foot, on road,
+trail or water -- finds it just as natural to use. So the code assumes as little as it can about
+place and sport:
+
+- Places, sports, disciplines, event types, time zones, map services and the like are data or
+  configuration, not branches in the code. A new country or sport should need a row or a setting,
+  not a release. (Languages are the exception the maintainer chose -- principle IV.)
+- Nothing local is written into the code as a default the rest of the world must live with -- not a
+  city, a country, a currency, a time zone, a provider or a unit. Where a local choice is needed
+  today, it sits in one named setting and the specification records it.
+- Examples in issues, specifications and conversations (a sport, a city, a race) explain the idea;
+  they are not values to copy into the code.
+- Where the code still assumes a place or a sport, the area's file in `specs/site/` lists it under
+  "Local assumptions", and a change touching that code removes the assumption rather than adding
+  another -- unless the maintainer marked it **Accepted**.
+
+## Constraints
+
+- Stack: Django 6 with Wagtail 7, PostgreSQL, Bootstrap 5.3 with the Bootswatch Lux theme,
+  Python 3.13 (CI), dependencies locked with uv and exported to `requirements.txt`.
+- Hosting: Render, behind Cloudflare. A change touching many rows is tried first on a production
+  backup restored into a local scratch database.
+- The look of the site is split into skins (`skins/`): designers own their skins; a change to the
+  site that breaks a skin does not merge until the skin is green again.
+
+## Development Workflow
+
+- A feature with its own GitHub issue gets a specification in `specs/<issue>-<short-name>/`
+  (`spec.md`, then `plan.md` and `tasks.md`), made with the Spec Kit skills (`/speckit-specify`,
+  `/speckit-clarify`, `/speckit-plan`, `/speckit-tasks`, `/speckit-analyze`, `/speckit-implement`).
+  The maintainer reviews the specification and the plan before implementation starts.
+- `specs/site/` describes the site as it works today, one file per area. A change that alters an
+  area's behaviour updates its file in the same pull request.
+- A bug fix or a small change needs no specification of its own, but still updates `specs/site/`
+  when it changes described behaviour.
+
+## Governance
+
+This constitution states the principles; `CLAUDE.md`, `AGENTS.md` and the skills they list hold
+the detail and are kept consistent with it. The maintainer amends it through a pull request that
+bumps the version -- MAJOR for a principle removed or redefined, MINOR for one added or materially
+expanded, PATCH for wording -- and updates the Last Amended date. Plans check themselves against
+it in their "Constitution Check".
+
+**Version**: 1.2.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-21
