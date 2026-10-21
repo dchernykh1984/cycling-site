@@ -36,12 +36,16 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   .period-nav .period-b.active { background: var(--bs-emphasis-color); border-color: var(--bs-emphasis-color); color: var(--bs-body-bg); }
   .period-row { display: flex; align-items: center; gap: .5rem; margin-top: .5rem; }
   .period-arrow { width: 2.75rem; height: 2.75rem; flex: none; padding: 0; font-size: 1.375rem; line-height: 1; }
-  .period-nav .period-small { height: 2.25rem; padding: 0 .875rem; font-size: .875rem; }
+  /* 44px like every control a finger has to hit (the interface skill), the small ones too. */
+  .period-nav .period-small { height: 2.75rem; padding: 0 .875rem; font-size: .875rem; }
   .period-pair { display: inline-flex; }
   .period-pair .period-b:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
   .period-pair .period-b + .period-b { border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
   .period-label { flex: 1; min-width: 0; text-align: center; font-size: 1.125rem; font-weight: 500; }
-  .period-nav .period-tap { border: 0; background: none; padding: 0 .1em; border-bottom: 1px dashed currentColor; cursor: pointer; }
+  .period-nav .period-tap {
+    min-height: 2.75rem; border: 0; background: none; padding: 0 .1em; cursor: pointer; vertical-align: middle;
+    text-decoration: underline dashed; text-decoration-thickness: 1px; text-underline-offset: .3em;
+  }
   .period-hint {
     margin-top: .5rem; font-size: .75rem; color: var(--bs-body-color); text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
