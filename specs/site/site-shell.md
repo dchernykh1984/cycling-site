@@ -38,12 +38,14 @@ legal pages and a link to report a bug.
 
 ### Story 3 -- Setup hints (P2, issue #319)
 
-1. **Given** a signed-out reader, **Then** every page except the sign-in pages and 404 asks them to
-   sign in and brings them back afterwards; it cannot be closed and is not quoted by search engines.
+1. **Given** a signed-out reader, **Then** every page except the account pages (sign-in, sign-up,
+   the "continue with a service" steps) and a missing page asks them to sign in and brings them back
+   afterwards; it cannot be closed and is not quoted by search engines.
 2. **Given** a member, **Then** one hint at a time names the next thing to set up, in this order: an
    unconfirmed e-mail first (cannot be closed), then calendar preferences (only on the calendar,
    list and map), then the data a race entry needs, then a second way to sign in, then Strava;
-   nothing once everything is set, and nothing on the profile pages.
+   nothing once everything is set; members get none on the account pages (profile, sign-in methods
+   and the like) or on the race entry form, which says itself what is missing.
 3. **Given** a member turns a hint off (after confirming), **Then** the next one appears; an unknown
    hint is not stored and a foreign return address is not followed.
 
@@ -92,7 +94,12 @@ legal pages and a link to report a bug.
 
 Where the code still assumes a place, a brand or a sport (constitution, principle VI):
 
-- The default language is Russian (`LANGUAGE_CODE`); the offered languages are a setting.
+- The default language is Russian (`LANGUAGE_CODE`). The offered languages are a setting, but the
+  three of them are also written into the code one by one: the forms, templates and API schemas
+  name each `*_ru` / `*_kk` / `*_en` field (`calendar_app/forms.py`, `news/forms.py`,
+  `home/forms.py`, `locations/forms.py`, `api/schemas.py` and their templates), and helpers loop over
+  a literal `("ru", "kk", "en")` (`api/endpoints/content.py`, `locations/models.py`,
+  `cycling_site/skins.py`). A fourth language would need changes in each.
 - The fallback page description names countries and sports ("cycling, running, cross-country skiing
   -- in Kazakhstan, Kyrgyzstan, Russia and beyond", `base.html`), and the navbar falls back to
   "Cycling" and the footer to "Cycling events" when the site content has no title.
