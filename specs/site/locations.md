@@ -41,8 +41,10 @@ places, and lets managers maintain the tree.
 
 ### Story 3 -- Maintain the tree (P2)
 
-1. **Given** a participant, **Then** they may propose a venue only; an organizer a venue, region or
-   city; an admin any node, approved directly, including countries.
+1. **Given** a participant, **Then** they may propose a venue only, which waits for approval; an
+   organizer's venue is approved at once (unless its city is pending), while a region or city they
+   create is a proposal; an admin creates any node, approved directly, and only admins create
+   countries.
 2. **Given** an admin, **Then** they may edit names (per language), move a node (a level change only
    when it has no children and no events; never under its own descendant), hide it (twice restores),
    and soft-delete it -- refused while active descendants or events depend on it; the catch-all can be
