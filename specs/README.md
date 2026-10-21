@@ -36,9 +36,9 @@ sport -- the local assumptions.
 
 ### `specs/<issue>-<short-name>/`: a feature
 
-A feature with its own GitHub issue gets a folder named after the issue: `specs/337-spec-kit/`,
-`specs/324-skins/`. The number is the issue's, so the spec, the branch (`337-...`) and the issue
-point at each other.
+A feature with its own GitHub issue gets a folder named after the issue -- for example
+`specs/337-spec-driven-development/`, the issue that introduced all this. The number is the issue's,
+so the spec, the branch (`337-spec-driven-development`) and the issue point at each other.
 
 ## The workflow
 
