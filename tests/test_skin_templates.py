@@ -1,6 +1,7 @@
 """A skin's own templates (skins/<key>/templates/) replace the site's for whoever chose the skin."""
 
 import pathlib
+import re
 import shutil
 import tempfile
 from unittest import mock
@@ -52,6 +53,23 @@ class SkinTemplateTests(TestCase):
             html = self.client.get(self.page).content.decode()
             self.assertIn("skins/trial/skin.css", html)
             self.assertIn("skins/trial/skin.js", html)
+
+
+class ChooserReloadTests(TestCase):
+    """Light and dark switch in place; going into or out of a skin of its own reloads the page."""
+
+    def _reloading(self):
+        html = self.client.get("/ru/news/").content.decode()
+        return set(re.findall(r'data-skin-key="([^"]+)"[^>]*data-reload="1"', html))
+
+    def test_from_light_only_the_skin_of_its_own_reloads(self):
+        with trial_skin(pathlib.Path(tempfile.mkdtemp())):
+            self.assertEqual(self._reloading(), {"trial"})
+
+    def test_from_a_skin_of_its_own_every_choice_reloads(self):
+        with trial_skin(pathlib.Path(tempfile.mkdtemp())):
+            self.client.cookies[COOKIE] = "trial"
+            self.assertEqual(self._reloading(), {"light", "dark", "trial"})
 
 
 class SuiteSkinTests(TestCase):

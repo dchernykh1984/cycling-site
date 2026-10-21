@@ -40,6 +40,11 @@ class Skin:
         return self.names.get((get_language() or "")[:2]) or self.names["en"]
 
     @property
+    def is_base(self) -> bool:
+        """Light or dark: always on the page, so switching between them needs no reload."""
+        return self.key in MODES
+
+    @property
     def stylesheet(self) -> str:
         return f"skins/{self.key}/skin.css"
 

@@ -1,8 +1,9 @@
 {% load i18n %}
 {% comment %}The skin chooser (cycling_site/skins.py): every folder under skins/, in one list. The
 button is the one the light/dark switch was, moon or sun by the skin's mode, so the navbar keeps its
-width; with_name adds the skin's name beside it (the profile). A skin whose stylesheet is not on the
-page yet -- anything but light and dark -- reloads it once saved.{% endcomment %}
+width; with_name adds the skin's name beside it (the profile). Light and dark switch in place; going
+into or out of any other skin reloads the page once saved, since its stylesheet, script and
+templates come and go with it.{% endcomment %}
 <div class="dropdown skin-select">
   <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false"
     aria-label="{% trans 'Theme' %}" title="{% trans 'Switch theme' %}">
@@ -11,7 +12,7 @@ page yet -- anything but light and dark -- reloads it once saved.{% endcomment %
   <ul class="dropdown-menu dropdown-menu-end">
     {% for choice in skins %}
     <li><button class="dropdown-item{% if choice.key == skin.key %} active{% endif %}" type="button"
-      data-skin-key="{{ choice.key }}" data-mode="{{ choice.mode }}"{% if choice.stylesheet not in skin_stylesheets %} data-reload="1"{% endif %}
+      data-skin-key="{{ choice.key }}" data-mode="{{ choice.mode }}"{% if not skin.is_base or not choice.is_base %} data-reload="1"{% endif %}
       {% if choice.key == skin.key %}aria-current="true"{% endif %}>{{ choice.name }}</button></li>
     {% endfor %}
   </ul>

@@ -22,7 +22,7 @@
         var key = item.dataset.skinKey, mode = item.dataset.mode;
         var saved = saveSkin(key);
         if (item.dataset.reload) {
-            // Its stylesheet is not on this page; the next one carries it.
+            // A skin of its own is coming or going: its stylesheet, script and templates with it.
             saved.then(function () { location.reload(); });
             return;
         }
