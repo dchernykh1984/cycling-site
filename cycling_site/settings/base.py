@@ -162,6 +162,7 @@ MIDDLEWARE = [
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "cycling_site.skins.SkinMiddleware",
+    "cycling_site.middleware.ReaderTimezoneMiddleware",
     "cycling_site.middleware.LocaleFallbackMiddleware",
 ]
 
@@ -256,9 +257,9 @@ WAGTAIL_CONTENT_LANGUAGES = [
     ("en", "English"),
 ]
 
-# Business timezone for the Kazakhstan cycling community: naive datetimes the organizer types
-# into the datetime-local registration-deadline control are wall-clock time in this zone, and
-# all datetimes render in it. The DB still stores UTC (USE_TZ).
+# The zone for a reader whose browser has not reported one yet (the first page, a crawler); everyone
+# else gets their own, and an event's deadline is read in the zone of its place (issue #344). The DB
+# stores UTC (USE_TZ).
 TIME_ZONE = "Asia/Almaty"
 
 # The skin (skins/<key>/) of a first visit and of a new member; also what a stored key falls back to

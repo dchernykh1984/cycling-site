@@ -5,11 +5,14 @@ import re
 from unittest import mock
 from zoneinfo import ZoneInfo
 
-from django.test import TestCase
+from django.http import HttpResponse
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import User
 from calendar_app.models import Competition
+from cycling_site.middleware import ReaderTimezoneMiddleware
 from locations.models import Location, timezone_of
 
 TOKYO = ZoneInfo("Asia/Tokyo")
@@ -133,3 +136,43 @@ class DeadlineTypedInTheEventsZoneTests(TestCase):
         self.assertEqual(
             re.search(r'name="registration_deadline"[^>]*value="([^"]*)"', html).group(1), "2026-09-01T14:30"
         )
+
+
+class ReaderTimezoneMiddlewareTests(TestCase):
+    def _zone_for(self, cookie):
+        seen = {}
+
+        def view(request):
+            seen["zone"] = timezone.get_current_timezone_name()
+            return HttpResponse()
+
+        request = RequestFactory().get("/")
+        if cookie is not None:
+            request.COOKIES["tz"] = cookie
+        ReaderTimezoneMiddleware(view)(request)
+        timezone.deactivate()
+        return seen["zone"]
+
+    def test_the_browsers_zone_is_activated(self):
+        self.assertEqual(self._zone_for("America/Argentina/Buenos_Aires"), "America/Argentina/Buenos_Aires")
+
+    def test_no_or_a_bad_zone_leaves_the_sites_default(self):
+        default = timezone.get_default_timezone_name()
+        for cookie in (None, "", "Nope/Zone", "../../etc/passwd", "zone.tab"):
+            with self.subTest(cookie=cookie):
+                self.assertEqual(self._zone_for(cookie), default)
+
+    def test_a_reader_sees_a_comment_time_in_their_zone(self):
+        from calendar_app.models import CompetitionComment
+
+        author = User.objects.create_user(username="c@example.com", email="c@example.com")
+        comp = Competition.objects.create(
+            title_ru="R", date_start=datetime.date(2026, 9, 1), status=Competition.Status.APPROVED
+        )
+        comment = CompetitionComment.objects.create(competition=comp, author=author, body="hi")
+        CompetitionComment.objects.filter(pk=comment.pk).update(
+            created_at=datetime.datetime(2026, 9, 1, 12, 0, tzinfo=datetime.UTC)
+        )
+        self.client.cookies["tz"] = "Asia/Tokyo"
+        html = self.client.get(reverse("competition_detail", args=[comp.pk])).content.decode()
+        self.assertIn("01.09.2026 21:00", html)
