@@ -53,8 +53,9 @@ and protocols with the event's upload token. The API has no language prefix.
 ### Edge Cases
 
 - No token where one is needed: 422; an unknown or malformed token: 401; an event not approved: 401.
-- Every request string and list is bounded (items, item length, device id, body size kept under 2
-  MB); an over-long value is a 422 with the limit named, not a server error.
+- Every request string and list is bounded, and the error names the limit instead of failing on
+  the server: an over-long content field (a link, a name, a description) is a 422; a device stream
+  over its limits (items, item length, device id, body kept under 2 MB) is a 400.
 - The event listing gives admins everything; anyone else gets approved events that are neither
   hidden nor invite-only, plus their own submissions; deleted events only on request, to an admin
   (all) or a signed-in author (their own).
