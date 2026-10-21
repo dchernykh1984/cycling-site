@@ -80,3 +80,12 @@ def test_text_over_a_background_picture_is_an_error_not_a_pass(black_page):
     # White text, white picture under it: the colours alone would say 21:1.
     with pytest.raises(Error, match="cannot judge contrast through a background image"):
         legibility(black_page.locator("#on-image"))
+
+
+@pytest.mark.django_db
+def test_the_body_background_goes_to_the_canvas_outside_the_body_s_opacity(page: Page):
+    page.set_content('<body style="margin:0;background:#000;color:#fff;opacity:0.5"><p id="t">half white</p></body>')
+    text = page.locator("#t")
+    # The canvas stays black; only the text fades, to grey: about 5.3:1, not a grey-on-grey 4.1.
+    assert drawn(text, "fill") == [0, 0, 0]
+    assert 5.2 < legibility(text) < 5.4

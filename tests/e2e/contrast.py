@@ -60,15 +60,28 @@ _PAINT = """
     const style = getComputedStyle(chain[i]);
     const group = canvas();
     group.drawImage(g.canvas, 0, 0);
-    paint(group, style.backgroundColor);
+    if (chain[i] !== root) paint(group, style.backgroundColor);
     render(i + 1, group);
     g.globalAlpha = parseFloat(style.opacity);
     g.drawImage(group.canvas, 0, 0);
     g.globalAlpha = 1;
   };
+  // The document's canvas takes the root's background -- or the body's, when the root has none
+  // (CSS Backgrounds 2.11.2) -- and paints it under everything, outside any element's opacity.
+  const clear = (value) => {
+    const c = canvas();
+    c.fillStyle = value;
+    c.fillRect(0, 0, 1, 1);
+    return c.getImageData(0, 0, 1, 1).data[3] === 0;
+  };
+  const rootStyle = getComputedStyle(document.documentElement);
+  const body = document.body;
+  const root = body && clear(rootStyle.backgroundColor) && rootStyle.backgroundImage === 'none'
+    ? body : document.documentElement;
   const g = canvas();
-  // A page with no background of its own shows the canvas, white.
+  // A canvas nobody painted is white.
   paint(g, '#ffffff');
+  paint(g, getComputedStyle(root).backgroundColor);
   render(0, g);
   return Array.from(g.getImageData(0, 0, 1, 1).data.slice(0, 3));
 }
