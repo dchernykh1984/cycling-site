@@ -274,7 +274,9 @@ class CompetitionListViewTests(TestCase):
         today = timezone.localdate()
         for i in range(25):
             _make_competition(f"Race {i:02d}", date_start=today + datetime.timedelta(days=i + 1))
-        html = self.client.get(reverse("calendar_list")).content.decode()
+        # Twenty-five days need not fit in what is left of this month, the list's default.
+        span = {"date_to": (today + datetime.timedelta(days=30)).isoformat()}
+        html = self.client.get(reverse("calendar_list"), span).content.decode()
         self.assertIn('name="page"', html)
         self.assertIn('type="number"', html)
         self.assertIn("page-jump", html)  # CSS hook that hides the spinner arrows
@@ -283,7 +285,9 @@ class CompetitionListViewTests(TestCase):
         today = timezone.localdate()
         for i in range(25):
             _make_competition(f"Race {i:02d}", date_start=today + datetime.timedelta(days=i + 1))
-        response = self.client.get(reverse("calendar_list"), {"page": 2})
+        response = self.client.get(
+            reverse("calendar_list"), {"page": 2, "date_to": (today + datetime.timedelta(days=30)).isoformat()}
+        )
         self.assertEqual(response.context["competitions"].number, 2)
 
     def test_date_range_filter(self):
@@ -3953,9 +3957,9 @@ class SeveralEventTypesFilterTests(TestCase):
         self.race = EventType.objects.get(name_en="Race")
         self.kids = EventType.objects.get(name_en="Kids Race")
         self.professional = EventType.objects.get(name_en="Professional Race")
-        # The list shows what is still to come, so these sit in the future rather than on the
-        # helper's default date.
-        soon = timezone.localdate() + datetime.timedelta(days=30)
+        # The list shows the rest of this month, so these sit on today rather than on the helper's
+        # default date.
+        soon = timezone.localdate()
         self.both = _make_competition("Race with a kids race", date_start=soon, event_types=[self.race, self.kids])
         self.plain = _make_competition("Plain race", date_start=soon, event_types=[self.race])
         self.elite = _make_competition("Elite only", date_start=soon, event_types=[self.professional])

@@ -406,6 +406,11 @@ def calendar_year_choices() -> list[int]:
     return list(range(min(years), max(years) + 1))
 
 
+def end_of_month(day: datetime.date) -> datetime.date:
+    """The last day of the month `day` falls in."""
+    return (day.replace(day=28) + datetime.timedelta(days=4)).replace(day=1) - datetime.timedelta(days=1)
+
+
 def month_picker_choices() -> dict:
     """The words and years the period row above the calendar, the list and the map is built from."""
     return {
@@ -563,12 +568,12 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
             name: _parse_int_ids(self.request.GET.getlist(name))
             for name in ("location", "discipline", "discipline_category", "event_type")
         }
-        # The unfiltered list is a "what is on soon" page, so it stops thirty days out. A list
-        # filtered down to one city or one discipline is a page about that city -- and two rows of
-        # it is not a page about anything, so the whole season ahead stands. An explicit date_to
-        # from the reader still wins over both.
+        # The unfiltered list is a "what is on soon" page: the rest of this month, the period the
+        # calendar and the map open on too (issue #330). A list filtered down to one city or one
+        # discipline is a page about that city -- and two rows of it is not a page about anything,
+        # so the whole season ahead stands. An explicit date_to from the reader still wins over both.
         faceted = any(chosen.values())
-        date_to = None if faceted else today + datetime.timedelta(days=30)
+        date_to = None if faceted else end_of_month(today)
 
         is_manager = _can_manage_any_competition(self.request.user)
         qs = (
@@ -644,7 +649,7 @@ class CalendarMapView(DefaultFilterRedirectMixin, TemplateView):
         context.update(month_picker_choices())
         today = timezone.localdate()
         context["date_from"] = _parse_date(self.request.GET.get("date_from"), today)
-        context["date_to"] = _parse_date(self.request.GET.get("date_to"), today + datetime.timedelta(days=30))
+        context["date_to"] = _parse_date(self.request.GET.get("date_to"), end_of_month(today))
         context["event_types_json"] = _event_types_for_locale()
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
