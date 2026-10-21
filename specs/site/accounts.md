@@ -81,8 +81,9 @@ once; confirming the address unlocks everything that writes.
 
 ### Edge Cases
 
-- An unverified member (guest) can open the profile, but sees a minimal cabinet: profile data and
-  the confirmation block only.
+- An unverified member (guest) can open the profile, but sees a minimal cabinet: profile data, the
+  confirmation block, the sign-in methods and the role ladder (without the request button); the
+  contact, appearance, registrations, submitted events, submissions and API sections are hidden.
 - Anything that writes -- submitting, registering, commenting, contacting the owners, the API --
   sends a guest to their profile with a message asking to confirm the address.
 - A member's public name never exposes their e-mail; where a name is shown to them (the sign-in
@@ -106,8 +107,10 @@ once; confirming the address unlocks everything that writes.
   and the role request; the slot is reserved before sending and released on failure.
 - **FR-ACC-007**: Strava sign-in requests read-only scope only.
 - **FR-ACC-008**: The profile lists the member's own submitted events (those needing attention
-  first) and their registrations, with approval and payment badges as their event requires;
-  registrations of other users, of events deleted, or not tied to a user are not shown.
+  first) and their registrations: open entries as cards with approval and payment badges as their
+  event requires, and every entry in a table below that marks only the rejected, waiting and unpaid
+  ones (see [registrations](registrations.md)); registrations of other users, of deleted events, or
+  not tied to a user are not shown.
 - **FR-ACC-009**: A member's chosen interface language is remembered when they switch language.
 - **FR-ACC-010**: Every form and API request string is length-bounded or validated elsewhere
   (`tests/test_input_length_limits.py` keeps the registry complete).
