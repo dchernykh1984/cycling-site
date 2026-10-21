@@ -9,7 +9,7 @@ content, legal pages), `search/`
 `tests/test_share_button.py`, `tests/test_language_switch.py`, `tests/test_locale_cache.py`,
 `tests/test_page_meta.py`, `tests/test_favicon.py`, `search/tests.py`,
 `tests/test_template_comments.py`, `tests/e2e/test_home_page.py`, `test_header.py`, `test_locale.py`,
-`test_setup_hints.py`, `test_share_button.py`
+`test_setup_hints.py`, `test_share_button.py`, `test_reader_timezone.py`
 **Related**: [accounts](accounts.md), [skins](skins.md), [search visibility](search-visibility.md)
 
 ## Overview
@@ -66,6 +66,10 @@ legal pages and a link to report a bug.
 
 ### Edge Cases
 
+- Times are shown in the reader's zone, and the server's "today" is theirs: the page's script keeps
+  the browser's zone in a `tz` cookie and `ReaderTimezoneMiddleware` activates it. Until the
+  browser has reported one (the first page, a crawler, a feed reader), or when the cookie is not a
+  zone, the site's `TIME_ZONE` setting is used (issue #344).
 - A missing page answers 404 with the site's template in every language, offering a link home that
   names a language; an address without a language is sent to one first.
 - Server errors are mailed to the admins when not in debug; media is served in production and a

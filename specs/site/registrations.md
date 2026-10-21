@@ -6,6 +6,7 @@
 **Tests**: `registrations/tests.py`, `tests/test_profile_registration_actions.py`,
 `tests/test_bib_numbers.py`, `tests/test_additional_info_label.py`,
 `tests/test_list_site_registration.py`, `calendar_app/tests.py` (registration open/limits),
+`calendar_app/test_timezones.py`,
 `tests/e2e/test_participant_list.py`, `test_relay_registration.py`, `test_profile_registrations.py`,
 `test_registration_category_filter.py`
 **Related**: [events](events.md), [accounts](accounts.md), [API](api.md) (participants for the
@@ -65,9 +66,12 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 ### Edge Cases
 
 - Registration is open only for an approved event with registration enabled, before its deadline
-  (date and time in Asia/Almaty), or without a deadline until the end of the event's last day, and
-  below the overall and per-category limits; a full field still lets its riders edit their entries.
+  (date and time at the event's place), or without a deadline until the end of the event's last day
+  there, and below the overall and per-category limits; a full field still lets its riders edit
+  their entries.
 - A manager keeps the entry buttons after the deadline.
+- The event page shows the deadline in the event's zone with its UTC offset, and again in the
+  reader's zone when the two offsets differ at that moment (issue #344).
 - A pending event takes no entries: its registration form and its participant list are 404 to
   everyone but its managers, and registration stays closed even for them until it is approved.
 - Relay member names are escaped on save and never rendered as HTML.
@@ -104,7 +108,6 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 Where the code still assumes a place, a brand or a sport (constitution, principle VI):
 
 - **Accepted** (maintainer, 2026-10-21: Strava is the sport's de facto standard; a general tracker connector may come later, not as a fix). The additional-info field knows one service by name: a Strava link (`AdditionalInfoMode.STRAVA`).
-- Deadlines are reckoned in `Asia/Almaty` whatever the event's place (`calendar_app/registration_deadline.py`).
 - Payment is a yes/no flag; no currency or amount is modelled, so nothing local is assumed there.
 
 ## Open Questions

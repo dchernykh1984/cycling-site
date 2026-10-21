@@ -6,7 +6,8 @@
 `registrations/views.py` (`can_manage`, `can_manage_or_own`), `cycling_site/context_processors.py`
 (moderation banner)
 **Tests**: `calendar_app/tests.py` (model, submit, moderation, detail, edit, comments, reports,
-materials, upload token, rich description, several event types), `tests/test_invite_only_events.py`,
+materials, upload token, rich description, several event types), `calendar_app/test_timezones.py`,
+`tests/test_invite_only_events.py`,
 `tests/test_clone_competition.py`, `tests/test_preview_image.py`,
 `tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
 `tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/e2e/test_competition_form.py`,
@@ -65,7 +66,7 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 ### Story 3 -- Keep it current (P2)
 
 1. **Given** the author or a manager, **Then** they may edit the event (fields prefilled, the
-   registration deadline in the business time zone, Asia/Almaty), delete it, and manage its
+   registration deadline as the wall-clock at the event's place, issue #344), delete it, and manage its
    materials (named links in order; rows half filled are refused without losing the rest of the
    edit; script URLs refused).
 2. **Given** a manager, **Then** they may hide an event (taken down: visible to admins in listings
@@ -96,6 +97,9 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 
 ### Edge Cases
 
+- An event's time zone is worked out from its place on every use (`Competition.timezone`,
+  `locations.models.timezone_of`): the venue's coordinates, else the nearest place above it that has
+  them, else UTC. Nothing about it is stored, so moving an event moves its zone.
 - Registration closes at its deadline or, without one, at the end of the event's last day; the
   overall and per-category limits close it too (see [registrations](registrations.md)).
 - A preview image is normalised: an enormous one is scaled down keeping its shape, a tiny one or a
@@ -136,8 +140,6 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 
 Where the code still assumes a place, a brand or a sport (constitution, principle VI):
 
-- Registration deadlines are entered and read in a constant `BUSINESS_TZ = Asia/Almaty`
-  (`calendar_app/registration_deadline.py`), not in the event's own zone.
 - The map-link services offered on an event page are a fixed list in code (`locations/maps.py`):
   2GIS, Yandex, Google, Apple, OpenStreetMap.
 - **Accepted** (maintainer, 2026-10-21: the three languages are deliberate and a fourth is not planned -- it would mean translating every event and article, beside which naming the three in code costs nothing). Russian is the base language of an event: its Russian title is required, the Kazakh and English
