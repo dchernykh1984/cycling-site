@@ -4198,6 +4198,17 @@ class CompetitionPreviewTextApiTests(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200, resp.content[:300])
         self.assertEqual(Competition.objects.get(pk=pk).preview_text_ru, "Meet 7:00")
 
+    def test_patching_one_language_clears_the_others(self):
+        """The whole field is replaced, as with title: a PATCH with only ru empties kk and en."""
+        line = {"ru": "Meet 6:15", "kk": "Meet 6:15 kk", "en": "Meet 6:15 en"}
+        pk = self._create(preview_text=line).json()["id"]
+        resp = self.patch(f"/api/v1/competitions/{pk}", {"preview_text": {"ru": "Meet 7:00"}}, user=self.admin)
+        self.assertEqual(resp.status_code, 200, resp.content[:300])
+        competition = Competition.objects.get(pk=pk)
+        self.assertEqual(competition.preview_text_ru, "Meet 7:00")
+        self.assertEqual(competition.preview_text_kk or "", "")
+        self.assertEqual(competition.preview_text_en or "", "")
+
     def test_a_line_longer_than_the_column_is_a_422_not_a_500(self):
         from api import schemas
 
