@@ -77,7 +77,7 @@ and an IndexNow notice whenever something is published.
 
 Where the code still assumes a place, a brand or a sport (constitution, principle VI):
 
-- Filtered-list descriptions name the brand in code ("... on the Universal Bicycle Team calendar",
+- **Accepted** (maintainer, 2026-10-21: the brand in code does not matter). Filtered-list descriptions name the brand in code ("... on the Universal Bicycle Team calendar",
   `calendar_app/listing_seo.py`).
 - IndexNow is chosen because Yandex honours it; that choice suits any audience and assumes nothing.
 

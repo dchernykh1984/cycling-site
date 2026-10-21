@@ -1,6 +1,7 @@
 <!--
 Sync Impact Report
-- Version: none -> 1.0.0 (first constitution, issue #337)
+- Version: none -> 1.0.0 (first constitution, issue #337); 1.0.0 -> 1.1.0: principle IV makes the
+  three languages a deliberate choice; principle VI lets the maintainer accept a local assumption.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
   .agents/skills, which stay the detailed runtime guidance; VI set by the maintainer (no local or
   sport-specific hardcoding).
@@ -45,10 +46,10 @@ the dependency audit -- is green before work is reported done.
 
 ### IV. The reader's language, in the address
 
-Everything a reader sees exists in every language the site offers -- today Russian, Kazakh and
-English. New code reads the languages from settings rather than naming them one by one, so that a
-further language needs settings, catalogues and data, not code; where code still names them, the
-specifications list it (principle VI). Every reader-facing URL carries its language prefix (`/ru/`,
+Everything a reader sees exists in every language the site offers: Russian for its audience,
+English for everyone else, Kazakh out of respect for Kazakhstan. The three are a deliberate choice
+and a fourth is not planned -- it would mean translating every event and article -- so code may
+name the three where that is simpler. Every reader-facing URL carries its language prefix (`/ru/`,
 `/kk/`, `/en/`); machine-facing ones (`/api/v1/`, admin, media, sitemap, robots) do not. Source
 files are ASCII and UTF-8; text in the site's languages lives in the translation catalogues and in
 the agents' guidance files.
@@ -68,9 +69,9 @@ any country, following any sport where time is kept -- on wheels, skis, skates o
 trail or water -- finds it just as natural to use. So the code assumes as little as it can about
 place and sport:
 
-- Places, sports, disciplines, event types, languages, time zones, map services and the like are
-  data or configuration, not branches in the code. A new country, sport or language should need a
-  row or a setting, not a release.
+- Places, sports, disciplines, event types, time zones, map services and the like are data or
+  configuration, not branches in the code. A new country or sport should need a row or a setting,
+  not a release. (Languages are the exception the maintainer chose -- principle IV.)
 - Nothing local is written into the code as a default the rest of the world must live with -- not a
   city, a country, a currency, a time zone, a provider or a unit. Where a local choice is needed
   today, it sits in one named setting and the specification records it.
@@ -78,7 +79,7 @@ place and sport:
   they are not values to copy into the code.
 - Where the code still assumes a place or a sport, the area's file in `specs/site/` lists it under
   "Local assumptions", and a change touching that code removes the assumption rather than adding
-  another.
+  another -- unless the maintainer marked it **Accepted**.
 
 ## Constraints
 
@@ -108,4 +109,4 @@ bumps the version -- MAJOR for a principle removed or redefined, MINOR for one a
 expanded, PATCH for wording -- and updates the Last Amended date. Plans check themselves against
 it in their "Constitution Check".
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-21
+**Version**: 1.1.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-21

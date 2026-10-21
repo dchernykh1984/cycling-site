@@ -140,9 +140,9 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   (`calendar_app/registration_deadline.py`), not in the event's own zone.
 - The map-link services offered on an event page are a fixed list in code (`locations/maps.py`):
   2GIS, Yandex, Google, Apple, OpenStreetMap.
-- Russian is the base language of an event: its Russian title is required, the Kazakh and English
+- **Accepted** (maintainer, 2026-10-21: the three languages are deliberate and a fourth is not planned -- it would mean translating every event and article, beside which naming the three in code costs nothing). Russian is the base language of an event: its Russian title is required, the Kazakh and English
   ones optional (`calendar_app/forms.py`).
-- An event page's meta description ends with the brand written in code ("Details, start point and
+- **Accepted** (maintainer, 2026-10-21: the brand in code does not matter). An event page's meta description ends with the brand written in code ("Details, start point and
   results on the Universal Bicycle Team calendar.", `calendar_app/models.py`).
 
 ## Open Questions

@@ -75,7 +75,7 @@ behind the moon/sun button.
 
 ## Local assumptions
 
-- A manifest must name its skin in exactly Russian, Kazakh and English: the list is a constant in
+- **Accepted** (maintainer, 2026-10-21: the three languages are deliberate and a fourth is not planned -- it would mean translating every event and article, beside which naming the three in code costs nothing). A manifest must name its skin in exactly Russian, Kazakh and English: the list is a constant in
   `cycling_site/skins.py` (`LANGUAGES`), not the site's `LANGUAGES` setting.
 
 ## Open Questions

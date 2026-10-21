@@ -103,7 +103,7 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 
 Where the code still assumes a place, a brand or a sport (constitution, principle VI):
 
-- The additional-info field knows one service by name: a Strava link (`AdditionalInfoMode.STRAVA`).
+- **Accepted** (maintainer, 2026-10-21: Strava is the sport's de facto standard; a general tracker connector may come later, not as a fix). The additional-info field knows one service by name: a Strava link (`AdditionalInfoMode.STRAVA`).
 - Deadlines are reckoned in `Asia/Almaty` whatever the event's place (`calendar_app/registration_deadline.py`).
 - Payment is a yes/no flag; no currency or amount is modelled, so nothing local is assumed there.
 

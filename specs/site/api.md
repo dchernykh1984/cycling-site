@@ -79,8 +79,8 @@ and protocols with the event's upload token. The API has no language prefix.
 
 ## Local assumptions
 
-- The API's title describes it as a "cycling portal" (`api/router.py`), though it serves every sport.
-- The request and response schemas name each language's field (`api/schemas.py`), and the content
+- **Accepted** (maintainer, 2026-10-21: the brand in code does not matter). The API's title describes it as a "cycling portal" (`api/router.py`), though it serves every sport.
+- **Accepted** (maintainer, 2026-10-21: the three languages are deliberate and a fourth is not planned -- it would mean translating every event and article, beside which naming the three in code costs nothing). The request and response schemas name each language's field (`api/schemas.py`), and the content
   endpoints accept the literal locales `("ru", "kk", "en")` (`api/endpoints/content.py`).
 
 ## Open Questions

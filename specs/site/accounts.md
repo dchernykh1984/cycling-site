@@ -126,7 +126,7 @@ once; confirming the address unlocks everything that writes.
 
 Where the code still assumes a place, a brand or a sport (constitution, principle VI):
 
-- Strava is the one activity-tracking service the profile knows: a "Strava link" field, filled from
+- **Accepted** (maintainer, 2026-10-21: Strava is the sport's de facto standard; a general tracker connector may come later, not as a fix). Strava is the one activity-tracking service the profile knows: a "Strava link" field, filled from
   a Strava sign-in (`accounts/adapters.py`), and a setup hint asking for it. Other trackers
   (Garmin Connect, Polar, Suunto and the like) have no place yet.
 - The sign-in providers (Google, GitHub, Strava) come from settings, which is as it should be.

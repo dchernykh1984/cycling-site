@@ -86,7 +86,7 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   picker open over Central Asia (`[48.0, 68.0]`, zoom 5) when there is nothing to fit to.
 - The map-link services are a fixed list in code (`locations/maps.py`); which services suit a
   country is not configurable.
-- The catch-all venue is named by looping over a literal `("ru", "kk", "en")`
+- **Accepted** (maintainer, 2026-10-21: the three languages are deliberate and a fourth is not planned -- it would mean translating every event and article, beside which naming the three in code costs nothing). The catch-all venue is named by looping over a literal `("ru", "kk", "en")`
   (`locations/models.py`), and the location form names each language's field.
 
 ## Open Questions

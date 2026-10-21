@@ -109,7 +109,7 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   `calendar_app/templates/calendar_app/map.html`) when there is nothing to fit to.
 - "Today", the upcoming window and the 30-day span are reckoned in the site's `TIME_ZONE`
   (`Asia/Almaty`), one zone for every reader.
-- The iCalendar subscription names the brand and host in code (`calendar_app/feeds.py`:
+- **Accepted** (maintainer, 2026-10-21: the brand in code does not matter). The iCalendar subscription names the brand and host in code (`calendar_app/feeds.py`:
   `Universal Bicycle Team`, `@universalbicycle.team`) rather than from the site's settings.
 
 ## Open Questions

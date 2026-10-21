@@ -95,7 +95,7 @@ legal pages and a link to report a bug.
 
 Where the code still assumes a place, a brand or a sport (constitution, principle VI):
 
-- The default language is Russian (`LANGUAGE_CODE`). The offered languages are a setting, but the
+- **Accepted** (maintainer, 2026-10-21: the three languages are deliberate and a fourth is not planned -- it would mean translating every event and article, beside which naming the three in code costs nothing). The default language is Russian (`LANGUAGE_CODE`). The offered languages are a setting, but the
   three of them are also written into the code one by one: the forms, templates and API schemas
   name each `*_ru` / `*_kk` / `*_en` field (`calendar_app/forms.py`, `news/forms.py`,
   `home/forms.py`, `locations/forms.py`, `api/schemas.py` and their templates), and helpers loop over
