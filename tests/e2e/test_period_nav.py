@@ -277,3 +277,21 @@ def test_the_current_month_travels_as_no_dates(page: Page, live_server):
     expect(page.locator("#view-link-list")).to_have_attribute(
         "href", re.compile(r"date_from=2026-11-01&date_to=2026-11-30")
     )
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_picker_takes_the_keyboard(page: Page, live_server):
+    _calendar(page, live_server)
+    page.locator('#period-label [data-period-pick="month"]').focus()
+    page.keyboard.press("Enter")
+    expect(page.locator("#period-pop button:focus")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_tap_elsewhere_closes_the_picker(page: Page, live_server):
+    """A phone has no Escape key."""
+    _calendar(page, live_server)
+    page.locator('#period-label [data-period-pick="month"]').click()
+    expect(page.locator("#period-pop")).to_be_visible()
+    page.locator("h1").click()
+    expect(page.locator("#period-pop")).to_be_hidden()
