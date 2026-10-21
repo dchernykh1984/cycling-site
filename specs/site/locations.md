@@ -27,7 +27,9 @@ places, and lets managers maintain the tree.
    on the mini-map; a participant's proposal waits for approval, an organizer's is approved -- unless
    the city above it is itself still pending.
 3. **Given** the start point is unknown, **Then** the event is attached to the city's hidden
-   catch-all venue ("Other location", named in every language), which carries no point of its own.
+   catch-all venue ("Other location", named in every language). The map pins it at its city and it
+   offers no map links, even if a point was given to it; keeping it without one is a rule of
+   curation (the `locations` skill), not something the code enforces.
 
 ### Story 2 -- Approve geography (P1)
 
@@ -49,8 +51,9 @@ places, and lets managers maintain the tree.
    when it has no children and no events; never under its own descendant), hide it (twice restores),
    and soft-delete it -- refused while active descendants or events depend on it; the catch-all can be
    neither moved, unhidden nor deleted.
-3. **Given** the map page, **Then** a visitor sees markers for places with points; a manager also
-   sees a paginated, filterable hierarchy table with edit/hide/delete actions that keep the filter.
+3. **Given** the map page, **Then** a visitor sees markers for places with points; a participant
+   and up also gets an "add a location" button; an admin also sees a paginated, filterable hierarchy
+   table with edit/hide/delete actions that keep the filter, and an edit link in marker popups.
 
 ### Edge Cases
 
@@ -83,6 +86,8 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   picker open over Central Asia (`[48.0, 68.0]`, zoom 5) when there is nothing to fit to.
 - The map-link services are a fixed list in code (`locations/maps.py`); which services suit a
   country is not configurable.
+- The catch-all venue is named by looping over a literal `("ru", "kk", "en")`
+  (`locations/models.py`), and the location form names each language's field.
 
 ## Open Questions
 
