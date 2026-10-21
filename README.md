@@ -1,8 +1,8 @@
 # cycling-site
 
-A Wagtail-based website for organizing cycling competitions, publishing news,
-maintaining a knowledge base, and (in the future) running an online judge for
-results processing.
+A Wagtail-based website: a calendar of events in any sport where time is kept -- cycling,
+running, skiing, triathlon and the rest -- with race registration, live results protocols, news and
+a knowledge base, in several languages.
 
 ## Prerequisites
 
