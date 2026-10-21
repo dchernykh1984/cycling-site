@@ -31,7 +31,8 @@ and protocols with the event's upload token. The API has no language prefix.
    regions and cities are always proposed (organizer and up), countries created by admins only;
    updating and deleting is admin and up.
 4. **Given** news, **Then** admins create, update and soft-delete articles; **given** the knowledge
-   base, members manage their own drafts and admins publish articles; texts per language.
+   base, members manage their own drafts and admins publish articles (a news item carries every
+   language, a knowledge article its one).
 5. **Given** disciplines and event types, **Then** they can be listed with their names per language.
 
 ### Story 2 -- The timing tools exchange race data (P1)
@@ -40,17 +41,23 @@ and protocols with the event's upload token. The API has no language prefix.
    (only entries that count, category ids included, relay member names), uploads and fetches start
    lists, group-start times, finish times and remote control-point times per device, and uploads
    protocols.
-2. **Given** two devices write the same stream, **Then** a compare-and-set on `client_revision`
-   keeps one from overwriting the other unseen.
-3. **Given** a live-stats snapshot, **Then** it is stored per event, and one competitor's live stats
-   are read by event and bib.
+2. **Given** a device uploads its stream, **Then** it carries the `client_revision` it is at: an
+   older revision, or a different snapshot at the same revision, is refused with 409; an identical
+   re-send or a newer revision replaces the stored one, and the stored revision is echoed back so a
+   device that lost its state can resume.
+3. **Given** the finish-protocol generator posts a live-stats snapshot (each bib mapped to an opaque
+   set of named values), **Then** the site stores it as it is, without interpreting the keys, and
+   anyone may read one bib's values for an approved, visible event -- which is how a watch data
+   field (Garmin Connect IQ) shows a rider their place and gaps.
 
 ### Edge Cases
 
 - No token where one is needed: 422; an unknown or malformed token: 401; an event not approved: 401.
 - Every request string and list is bounded (items, item length, device id, body size kept under 2
   MB); an over-long value is a 422 with the limit named, not a server error.
-- Hidden, deleted and invite-only events are not served to the public listing, whoever asks.
+- The event listing gives admins everything; anyone else gets approved events that are neither
+  hidden nor invite-only, plus their own submissions; deleted events only on request, to an admin
+  (all) or a signed-in author (their own).
 
 ## Functional Requirements
 
@@ -58,7 +65,8 @@ and protocols with the event's upload token. The API has no language prefix.
   `/event-types/`, `/participants/`, `/protocols/`, `/start-list/`, `/group-times/`,
   `/finish-times/`, `/remote-points/`, `/live-stats/`.
 - **FR-API-002**: Personal tokens belong to participants and up (generated on the profile); the
-  upload token belongs to an event and is managed by its managers (see [events](events.md)).
+  upload token belongs to an event and is managed by its managers and its author (see
+  [events](events.md)).
 - **FR-API-003**: Writes keep the same rules as the site: roles, moderation, sanitising, soft delete,
   audit (the audit log records the token's member).
 
@@ -71,6 +79,8 @@ and protocols with the event's upload token. The API has no language prefix.
 ## Local assumptions
 
 - The API's title describes it as a "cycling portal" (`api/router.py`), though it serves every sport.
+- The request and response schemas name each language's field (`api/schemas.py`), and the content
+  endpoints accept the literal locales `("ru", "kk", "en")` (`api/endpoints/content.py`).
 
 ## Open Questions
 
