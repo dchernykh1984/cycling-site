@@ -386,8 +386,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var last = end && new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1);
         if (last && last > info.event.start) {
           var cell = info.el.querySelector('.fc-list-event-title');
-          // Firefox mounts the same row twice; the end day goes in once.
-          if (cell && !cell.querySelector('.fc-list-event-until')) {
+          if (cell) {
             var until = document.createElement('span');
             until.className = 'ms-1 fc-list-event-until';
             until.textContent = '\u2013 ' + last.getDate() + ' ' + DATE_WORDS.months[last.getMonth()];
