@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function () {
           var cell = info.el.querySelector('.fc-list-event-title');
           if (cell) {
             var until = document.createElement('span');
-            until.className = 'text-muted ms-1 fc-list-event-until';
+            until.className = 'ms-1 fc-list-event-until';
             until.textContent = '\u2013 ' + last.getDate() + ' ' + DATE_WORDS.months[last.getMonth()];
             cell.appendChild(until);
           }
