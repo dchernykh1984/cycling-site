@@ -38,7 +38,9 @@ def _wait_for_text(*texts):
 
 
 def _month_has_events(page: Page):
-    expect(page.locator(".fc-event").first).to_be_visible()
+    # A visible one: on a phone the month opens as a list of days with the days already gone folded
+    # away (#330), so the first event in the page may be a hidden one.
+    expect(page.locator(".fc-event:visible").first).to_be_visible()
 
 
 def _map_has_markers(page: Page):
