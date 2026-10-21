@@ -1,6 +1,7 @@
 import datetime
 import json
 import uuid
+from calendar import monthrange
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -433,7 +434,7 @@ class ListingIndexMixin:
 
 def end_of_month(day: datetime.date) -> datetime.date:
     """The last day of the month `day` falls in."""
-    return (day.replace(day=28) + datetime.timedelta(days=4)).replace(day=1) - datetime.timedelta(days=1)
+    return day.replace(day=monthrange(day.year, day.month)[1])
 
 
 def month_picker_choices() -> dict:
@@ -488,7 +489,6 @@ class CalendarView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateView):
         context["disciplines_json"] = _disciplines_for_locale()
         context["only_favorite"] = _only_favorite_requested(self.request)
         context.update(month_picker_choices())
-        context["calendar_date_words"] = calendar_date_words()
         return context
 
 
