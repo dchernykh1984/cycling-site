@@ -333,6 +333,19 @@
     </div>
     {% endif %}
 
+    {% comment %}What a chat will show for this event's link, for the people who can change it or
+    approve it: the preview line lives only in a meta tag, and a line nobody sees is a line nobody
+    checks -- an author could put a link or an advert there after approval.{% endcomment %}
+    {% if can_edit or can_moderate %}
+    <div class="card mt-3" id="link-preview">
+      <div class="card-body py-2">
+        <div class="small">{% trans "How a link to this event looks in a chat" %}</div>
+        <div class="fw-semibold">{{ competition.title }}</div>
+        <div>{% if og_description %}{{ og_description }}{% else %}{{ meta_description }}{% endif %}</div>
+      </div>
+    </div>
+    {% endif %}
+
     {% if can_moderate %}
     <div class="mt-3 d-flex flex-wrap gap-2 align-items-start">
       <form method="post" action="{% url 'competition_approve' competition.pk %}" class="d-inline">

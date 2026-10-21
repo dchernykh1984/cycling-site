@@ -250,3 +250,47 @@ class CompetitionSocialImageTests(TestCase):
         self.comp.save(update_fields=["preview_image"])
         Path(self.comp.preview_image.path).unlink()
         self.assertTrue((_prop(self._html(), "og:image") or "").endswith("og-default.png"))
+
+
+class LinkPreviewOnThePageTests(TestCase):
+    """The preview line lives in a meta tag; whoever can change or approve the event sees it on the page."""
+
+    def setUp(self):
+        from accounts.models import User
+
+        self.author = User.objects.create_user(
+            username="author@example.com", email="author@example.com", password="pw-123456", role=User.Role.ORGANIZER
+        )
+        self.moderator = User.objects.create_user(
+            username="mod@example.com", email="mod@example.com", password="pw-123456", role=User.Role.ADMIN
+        )
+
+    def _page(self, comp, user=None):
+        if user:
+            self.client.force_login(user)
+        return self.client.get(in_language(comp.get_absolute_url(), "ru"), HTTP_ACCEPT_LANGUAGE="ru").content.decode()
+
+    def test_the_author_sees_the_line_a_chat_will_show(self):
+        comp = _competition("Saturday ride", preview_text_ru="Meet 6:15 at the bike shop", submitted_by=self.author)
+        html = self._page(comp, self.author)
+        self.assertIn('id="link-preview"', html)
+        self.assertIn("Meet 6:15 at the bike shop", html.split('id="link-preview"')[1])
+
+    def test_a_moderator_sees_it_before_approving(self):
+        comp = _competition(
+            "Saturday ride",
+            preview_text_ru="Meet 6:15 at the bike shop",
+            submitted_by=self.author,
+            status=Competition.Status.PENDING_APPROVAL,
+        )
+        html = self._page(comp, self.moderator)
+        self.assertIn("Meet 6:15 at the bike shop", html.split('id="link-preview"')[1])
+
+    def test_without_a_line_it_shows_the_summary_the_chat_falls_back_to(self):
+        comp = _competition("Saturday ride", submitted_by=self.author)
+        html = self._page(comp, self.author)
+        self.assertIn(_meta(html, "description"), html.split('id="link-preview"')[1])
+
+    def test_a_reader_does_not_see_the_block(self):
+        comp = _competition("Saturday ride", preview_text_ru="Meet 6:15 at the bike shop", submitted_by=self.author)
+        self.assertNotIn('id="link-preview"', self._page(comp))
