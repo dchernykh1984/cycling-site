@@ -2,7 +2,8 @@
 
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21
-**Code**: `api/` (`router.py`, `auth.py`, `schemas.py`, `endpoints/`), django-ninja under `/api/v1/`
+**Code**: `api/` (`router.py`, `auth.py`, `schemas.py`), `api/endpoints/`; django-ninja, served at
+`/api/v1/`
 **Tests**: `api/tests.py`, `registrations/tests.py` (participants), `protocols/tests.py`,
 `tests/test_input_length_limits.py`, `tests/e2e/test_api_to_front.py`
 **Related**: [events](events.md), [locations](locations.md), [news and knowledge](news-and-knowledge.md),
