@@ -79,19 +79,19 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   var WORDS = JSON.parse(document.getElementById('period-date-words').textContent);
   var MONTHS = JSON.parse(document.getElementById('period-months').textContent).map(function (m) { return m[1]; });
   var YEARS = JSON.parse(document.getElementById('period-years').textContent);
-  var WHOLE_YEAR = '{% trans "whole year" %}';
-  var FROM_DAY = '{% trans "from %s" %}';
-  var PREVIOUS = '{% trans "Previous" %}';
-  var NEXT = '{% trans "Next" %}';
+  var WHOLE_YEAR = '{% filter escapejs %}{% trans "whole year" %}{% endfilter %}';
+  var FROM_DAY = '{% filter escapejs %}{% trans "from %s" %}{% endfilter %}';
+  var PREVIOUS = '{% filter escapejs %}{% trans "Previous" %}{% endfilter %}';
+  var NEXT = '{% filter escapejs %}{% trans "Next" %}{% endfilter %}';
   // What the arrows do right now, and that the month and the year can be tapped.
   var HINTS = {
-    days: '{% trans "Arrows: by day" %}',
-    weekend: '{% trans "Arrows: by weekend" %}',
-    week: '{% trans "Arrows: by week" %}',
-    month: '{% trans "Arrows: by month" %}',
-    year: '{% trans "Arrows: by year" %}',
+    days: '{% filter escapejs %}{% trans "Arrows: by day" %}{% endfilter %}',
+    weekend: '{% filter escapejs %}{% trans "Arrows: by weekend" %}{% endfilter %}',
+    week: '{% filter escapejs %}{% trans "Arrows: by week" %}{% endfilter %}',
+    month: '{% filter escapejs %}{% trans "Arrows: by month" %}{% endfilter %}',
+    year: '{% filter escapejs %}{% trans "Arrows: by year" %}{% endfilter %}',
   };
-  var TAP_HINT = '{% trans "tap the month or year" %}';
+  var TAP_HINT = '{% filter escapejs %}{% trans "tap the month or year" %}{% endfilter %}';
   var FROM = '{{ from_selector|escapejs }}';
   var TO = '{{ to_selector|escapejs }}';
   {% if server_today %}var BASE = '{% now "Y-m-d" %}'.split('-');{% else %}var BASE = null;{% endif %}
