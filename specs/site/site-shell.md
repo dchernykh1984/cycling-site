@@ -14,8 +14,8 @@ content, legal pages), `search/`
 
 ## Overview
 
-Every page shares one frame: a sticky navbar (site title, News, Calendar, Map, Knowledge Base,
-About when it exists, Search, the skin chooser, the three language buttons, sign-in or the member's
+Every page shares one frame: a sticky navbar (site title, News, Calendar, Map and About when their
+pages exist, Knowledge Base, Search, the skin chooser, the three language buttons, sign-in or the member's
 menu), a banner of moderation tasks for moderators, one setup hint, the page, and a footer with the
 legal pages and a link to report a bug.
 
@@ -60,8 +60,9 @@ legal pages and a link to report a bug.
 
 ### Story 5 -- Search (P3)
 
-1. **Given** a query, **Then** visible events, news and knowledge articles are found; hidden and
-   deleted ones are not; a bad or out-of-range page number does not fail.
+1. **Given** a query, **Then** it finds published pages in the reader's language, approved events,
+   news, knowledge articles written in the reader's language, and locations; hidden and deleted ones
+   are not found; a bad or out-of-range page number does not fail.
 
 ### Edge Cases
 
