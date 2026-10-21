@@ -39,7 +39,7 @@ arrive.
 - Unknown token: 401; no token: 422; an event not approved: 401; wrong protocol type, wrong content
   type or an over-size file: 400; GET on the upload endpoint: 405.
 - A protocol of an event that is not approved, hidden or deleted -- its page, its file and its
-  last-updated hash -- is 404.
+  last-updated hash -- is 404; a protocol of an invite-only event is 404 to anyone not let in.
 
 ## Functional Requirements
 
