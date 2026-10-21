@@ -275,12 +275,20 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     else if (b.hasAttribute('data-period-today')) {
       go(['days', 'weekend', 'week', 'month'].indexOf(state.kind) >= 0 ? state.kind : 'month', today());
     } else if (b.dataset.periodPick) {
-      pop = pop === b.dataset.periodPick ? null : b.dataset.periodPick;
+      var what = b.dataset.periodPick;
+      pop = pop === what ? null : what;
       popYear = state.from.getFullYear();
       render();
+      // The tapped button was redrawn with the label; keyboard focus moves into the picker, or back
+      // onto the month or year it was opened from.
+      var target = pop ? nav.querySelector('#period-pop .active, #period-pop button')
+        : nav.querySelector('#period-label [data-period-pick="' + what + '"]');
+      if (target) target.focus();
     } else if (b.dataset.popYear) {
       popYear += Number(b.dataset.popYear);
       render();
+      var arrow = nav.querySelector('#period-pop [data-pop-year="' + b.dataset.popYear + '"]');
+      if (arrow) arrow.focus();
     } else if (b.dataset.popMonth) {
       go('month', new Date(popYear, Number(b.dataset.popMonth), 1));
     } else if (b.dataset.popPickYear) {
