@@ -83,7 +83,9 @@ Two things to keep in a copy:
   Russian and Kazakh in the translation catalogues, which is the maintainer's part.
 
 When the maintainer later changes a template the skin has copied, the copy does not change with
-it; the tests running in the skin show where it fell behind.
+it; the tests running in the skin show where it fell behind. A change that turns a skin's tests red
+is not merged until the skin is green again: either its designers fix the skin, or the same pull
+request fixes it.
 
 ### skin.js and fonts/
 

@@ -49,6 +49,10 @@ light (`E2E_SKIN`). `visual.yml` compares screenshots of the light and dark them
 branch (`tests/visual/run.py`); only the maintainer's `visual-change-approved` label lets a
 difference through. Every check must be green before you report the work done.
 
+A change to the site that breaks a designer's skin -- its `e2e-skin (<key>)` job goes red -- does
+not merge until that skin is green: the pull request waits for the skin's designers, or fixes the
+skin itself (`skins/<key>/`) in a commit of its own.
+
 Read that verdict from the rollup rather than from `gh pr checks`. The per-check status the latter
 reports lags, and can still say `pending` long after a job has finished -- on a pipeline this wide
 that reads like a hung check, and waiting on it wastes the time it appears to be saving:
