@@ -8,10 +8,11 @@ from zoneinfo import ZoneInfo
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from accounts.models import User
 from calendar_app.models import Competition
+from calendar_app.templatetags.calendar_tags import event_time
 from cycling_site.middleware import ReaderTimezoneMiddleware
 from locations.models import Location, timezone_of
 
@@ -176,3 +177,41 @@ class ReaderTimezoneMiddlewareTests(TestCase):
         self.client.cookies["tz"] = "Asia/Tokyo"
         html = self.client.get(reverse("competition_detail", args=[comp.pk])).content.decode()
         self.assertIn("01.09.2026 21:00", html)
+
+
+class EventTimeTagTests(TestCase):
+    MOMENT = datetime.datetime(2026, 9, 1, 14, 30, tzinfo=TOKYO)
+
+    def test_one_time_when_the_offsets_match(self):
+        with timezone.override(ZoneInfo("Asia/Seoul")):  # also UTC+9
+            self.assertEqual(event_time(self.MOMENT, TOKYO), "01.09.2026 14:30 (UTC+9)")
+
+    def test_both_times_when_the_offsets_differ(self):
+        with timezone.override(ZoneInfo("Asia/Kolkata")), translation.override("en"):
+            self.assertEqual(
+                event_time(self.MOMENT, TOKYO),
+                "01.09.2026 14:30 (UTC+9) &middot; your time: 01.09.2026 11:00 (UTC+5:30)",
+            )
+
+    def test_a_zone_west_of_greenwich_and_utc_itself(self):
+        with timezone.override(ZoneInfo("UTC")), translation.override("en"):
+            shown = event_time(self.MOMENT, ZoneInfo("America/Sao_Paulo"))
+        self.assertEqual(shown, "01.09.2026 02:30 (UTC-3) &middot; your time: 01.09.2026 05:30 (UTC)")
+
+    def test_the_event_page_shows_the_deadline(self):
+        *_, venue = _tree()
+        comp = Competition.objects.create(
+            title_ru="R",
+            date_start=datetime.date(2026, 9, 1),
+            status=Competition.Status.APPROVED,
+            location=venue,
+            registration_enabled=True,
+            registration_deadline=self.MOMENT,
+        )
+        self.client.cookies["tz"] = "Asia/Tokyo"
+        html = self.client.get(reverse("competition_detail", args=[comp.pk])).content.decode()
+        self.assertIn("01.09.2026 14:30 (UTC+9)</p>", html)
+        self.client.cookies["tz"] = "Europe/Moscow"
+        html = self.client.get(reverse("competition_detail", args=[comp.pk])).content.decode()
+        self.assertIn("01.09.2026 14:30 (UTC+9) &middot;", html)
+        self.assertIn("01.09.2026 08:30 (UTC+3)", html)
