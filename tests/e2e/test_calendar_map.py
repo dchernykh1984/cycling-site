@@ -94,7 +94,7 @@ def test_map_keeps_its_view_when_filters_change(page: Page, live_server, organiz
     # Changing a filter must update the markers in place without resetting the user's pan/zoom.
     _mapped_competition(organizer)  # 90 days out, Almaty
     page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}")
-    expect(page.locator(".leaflet-marker-icon")).to_have_count(1)  # initial load opens on Almaty
+    expect(page.locator(".leaflet-marker-icon")).to_have_count(1)  # initial load fits to the marker
     # User pans/zooms somewhere specific.
     page.wait_for_function("() => window.calendarMap")
     page.evaluate("() => window.calendarMap.setView([50.0, 60.0], 6)")
@@ -140,52 +140,60 @@ def _competition_at(organizer, name, lat, lng):
         status=Competition.Status.APPROVED,
         location=loc,
     )
+    return loc
 
 
 def _shows(page: Page, lat: float, lng: float) -> bool:
     return page.evaluate(f"() => window.calendarMap.getBounds().contains([{lat}, {lng}])")
 
 
+ALMATY = (43.238949, 76.889709)
+ASTANA = (51.169392, 71.449074)
+
+
 @pytest.mark.django_db(transaction=True)
-def test_the_map_opens_on_almaty_when_something_is_on_there(page: Page, live_server, organizer):
-    """Which corner of Almaty a ride starts in is the question, not which country."""
-    _competition_at(organizer, "Almaty", "43.238949", "76.889709")
-    _competition_at(organizer, "Astana", "51.169392", "71.449074")
-    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}")
+def test_a_reader_from_almaty_gets_almaty_and_its_surroundings(page: Page, live_server, organizer):
+    """Which corner of the city a ride starts in is the question, not which country."""
+    almaty = _competition_at(organizer, "Almaty", *map(str, ALMATY))
+    _competition_at(organizer, "Astana", *map(str, ASTANA))
+    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}&location={almaty.pk}")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(2)
     page.wait_for_function("() => window.calendarMap.getZoom() >= 8")
-    assert _shows(page, 43.238949, 76.889709)
+    assert _shows(page, *ALMATY)
     assert _shows(page, 43.87, 77.07)  # Konaev, out at the reservoir
-    assert not _shows(page, 51.169392, 71.449074)
+    assert not _shows(page, *ASTANA)
 
 
 @pytest.mark.django_db(transaction=True)
-def test_with_nothing_near_almaty_the_map_still_opens_on_almaty(page: Page, live_server, organizer):
+def test_with_nothing_on_in_almaty_its_reader_still_gets_almaty(page: Page, live_server, organizer):
     """One race in Astana must not throw the reader out to the whole country; it is a zoom away."""
-    _competition_at(organizer, "Astana", "51.169392", "71.449074")
-    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}")
+    almaty = Location.add_root(
+        name="Almaty", name_ru="Almaty", name_kk="Almaty", name_en="Almaty", lat=str(ALMATY[0]), lng=str(ALMATY[1])
+    )
+    _competition_at(organizer, "Astana", *map(str, ASTANA))
+    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}&location={almaty.pk}")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(1)
     page.wait_for_function("() => window.calendarMap.getZoom() >= 8")
-    assert _shows(page, 43.238949, 76.889709)
-    assert not _shows(page, 51.169392, 71.449074)
+    assert _shows(page, *ALMATY)
+    assert not _shows(page, *ASTANA)
 
 
 @pytest.mark.django_db(transaction=True)
-def test_a_location_filter_brought_along_fits_every_marker(page: Page, live_server, organizer):
-    """The map draws every place whatever the filter, so it must not hide the chosen one."""
-    _competition_at(organizer, "Almaty", "43.238949", "76.889709")
-    _competition_at(organizer, "Astana", "51.169392", "71.449074")
-    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}&location=1")
+def test_a_reader_from_elsewhere_gets_every_marker(page: Page, live_server, organizer):
+    """No area is set up for Astana: the map fits what is on, as it always did."""
+    _competition_at(organizer, "Almaty", *map(str, ALMATY))
+    astana = _competition_at(organizer, "Astana", *map(str, ASTANA))
+    page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}&location={astana.pk}")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(2)
-    page.wait_for_function("() => window.calendarMap.getBounds().contains([51.169392, 71.449074])")
-    assert _shows(page, 43.238949, 76.889709)
+    page.wait_for_function(f"() => window.calendarMap.getBounds().contains([{ASTANA[0]}, {ASTANA[1]}])")
+    assert _shows(page, *ALMATY)
 
 
 @pytest.mark.django_db(transaction=True)
-def test_an_empty_location_param_is_no_filter(page: Page, live_server, organizer):
-    _competition_at(organizer, "Almaty", "43.238949", "76.889709")
-    _competition_at(organizer, "Astana", "51.169392", "71.449074")
+def test_a_guest_with_no_place_gets_every_marker(page: Page, live_server, organizer):
+    _competition_at(organizer, "Almaty", *map(str, ALMATY))
+    _competition_at(organizer, "Astana", *map(str, ASTANA))
     page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}&location=")
     expect(page.locator(".leaflet-marker-icon")).to_have_count(2)
-    page.wait_for_function("() => window.calendarMap.getZoom() >= 8")
-    assert not _shows(page, 51.169392, 71.449074)
+    page.wait_for_function(f"() => window.calendarMap.getBounds().contains([{ASTANA[0]}, {ASTANA[1]}])")
+    assert _shows(page, *ALMATY)
