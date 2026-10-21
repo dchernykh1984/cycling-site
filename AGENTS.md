@@ -37,6 +37,7 @@ universalbicycle.team.
 | `search-visibility` | per-language URLs, sitemap, structured data, feeds, IndexNow |
 | `protocols` | how a results file is served, and what may appear inside one |
 | `skins` | the look of the site: light and dark kept as they are, designers' skins, their checks |
+| `specs` | spec-driven development: the constitution, `specs/site/`, a feature from issue to spec, plan and code |
 
 ## Quick facts
 
