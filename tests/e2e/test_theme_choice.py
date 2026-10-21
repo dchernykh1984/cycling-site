@@ -119,3 +119,22 @@ def test_the_list_opens_from_the_old_switch_and_agrees_with_the_profile(page: Pa
     expect(page.locator("main .skin-select .skin-name")).to_have_text(other.names["ru"])
     expect(navbar.locator(".skin-icon")).to_have_text(ICON[other.mode])
     expect(navbar.locator(f"[data-skin-key='{other.key}']")).to_have_class(re.compile(r"\bactive\b"))
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("where", ["nav", "main"])
+def test_the_open_list_stays_on_the_screen(page: Page, live_server, where):
+    member = User.objects.create_user(
+        username="e2e_themer", email="e2e_themer@test.local", password="testpass123!", role=User.Role.PARTICIPANT
+    )
+    inject_session(page, live_server, member)
+    page.goto(f"{live_server.url}/ru/accounts/profile/")
+    open_navbar_if_collapsed(page)
+    chooser = page.locator(f"{where} .skin-select")
+    chooser.locator("> button").click()
+    menu = chooser.locator(".dropdown-menu")
+    expect(menu).to_be_visible()
+    box = menu.bounding_box()
+    assert box is not None
+    width = page.evaluate("document.documentElement.clientWidth")
+    assert box["x"] >= 0 and box["x"] + box["width"] <= width, (box, width)

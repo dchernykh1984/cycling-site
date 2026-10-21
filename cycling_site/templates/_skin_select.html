@@ -9,7 +9,10 @@ templates come and go with it.{% endcomment %}
     aria-label="{% trans 'Theme' %}" title="{% trans 'Switch theme' %}">
     <span class="skin-icon">{% if skin.mode == "dark" %}&#9728;{% else %}&#9790;{% endif %}</span>{% if with_name %} <span class="skin-name">{{ skin.name }}</span>{% endif %}
   </button>
-  <ul class="dropdown-menu dropdown-menu-end">
+  {% comment %}In the navbar the menu hangs from the button's right edge only where the button sits on
+  the right (lg and up); in the folded phone menu and on the profile the button is at the left, and a
+  right-aligned menu would run off the screen.{% endcomment %}
+  <ul class="dropdown-menu{% if not with_name %} dropdown-menu-lg-end{% endif %}">
     {% for choice in skins %}
     <li><button class="dropdown-item{% if choice.key == skin.key %} active{% endif %}" type="button"
       data-skin-key="{{ choice.key }}" data-mode="{{ choice.mode }}"{% if not skin.is_base or not choice.is_base %} data-reload="1"{% endif %}
