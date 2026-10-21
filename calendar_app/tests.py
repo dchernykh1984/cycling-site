@@ -2932,15 +2932,13 @@ class RegistrationDeadlineMigrationTests(TestCase):
         importlib.import_module(f"{self.APP}.migrations.0018_shift_date_deadlines_to_end_of_day")._forward(apps, None)
 
     def test_forward_shifts_legacy_midnight_deadline_to_end_of_day(self):
-        # The runtime helper computes the expected value, cross-checking the migration's own
-        # (deliberately self-contained) copy of the same transform.
-        from calendar_app.registration_deadline import date_only_to_end_of_day
-
+        # The migration reckoned the old date-only deadlines in Asia/Almaty (UTC+5): midnight UTC on
+        # the 1st was the 1st there, so registration stays open until 23:59:59 that day.
         midnight_utc = datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC)
         comp = _make_competition("Midnight", registration_deadline=midnight_utc)
         self._forward()
         comp.refresh_from_db()
-        self.assertEqual(comp.registration_deadline, date_only_to_end_of_day(midnight_utc))
+        self.assertEqual(comp.registration_deadline, datetime.datetime(2026, 9, 1, 18, 59, 59, tzinfo=datetime.UTC))
 
     def test_forward_leaves_real_time_deadline_untouched(self):
         afternoon = datetime.datetime(2026, 9, 1, 14, 30, tzinfo=datetime.UTC)
