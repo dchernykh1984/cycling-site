@@ -5,7 +5,12 @@ from playwright.sync_api import Error, Page
 
 from tests.e2e.contrast import drawn, legibility, painted, ratio
 
-PAGE = """<body style="margin:0;background:#000">
+# A 1x1 white SVG as a background picture.
+WHITE_PICTURE = (
+    "data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221%22>"
+    "<rect width=%221%22 height=%221%22 fill=%22white%22/></svg>"
+)
+PAGE = f"""<body style="margin:0;background:#000">
 <p id="faint" style="color:rgba(255,255,255,0.1)">faint</p>
 <div style="background:rgba(255,255,255,0.5)"><p id="on-half">text</p></div>
 <p id="shadow" style="color:transparent;text-shadow:0 0 0 rgb(10, 20, 30)">drawn as a shadow</p>
@@ -14,6 +19,7 @@ PAGE = """<body style="margin:0;background:#000">
   <div style="opacity:0.1"><p id="in-faded" style="color:#000">text in a faded block</p></div>
   <p id="filtered" style="color:#000;filter:blur(1px)">blurred</p>
 </div>
+<p id="on-image" style="color:#fff;background-image:url('{WHITE_PICTURE}')">white on a white picture</p>
 </body>"""
 
 
@@ -67,3 +73,10 @@ def test_opacity_on_the_text_or_an_ancestor_fades_it_into_its_backdrop(black_pag
 def test_a_way_of_drawing_a_flat_colour_cannot_stand_for_is_an_error(black_page):
     with pytest.raises(Error, match="cannot judge contrast through filter"):
         drawn(black_page.locator("#filtered"))
+
+
+@pytest.mark.django_db
+def test_text_over_a_background_picture_is_an_error_not_a_pass(black_page):
+    # White text, white picture under it: the colours alone would say 21:1.
+    with pytest.raises(Error, match="cannot judge contrast through a background image"):
+        legibility(black_page.locator("#on-image"))

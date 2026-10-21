@@ -5,7 +5,7 @@ beneath it -- the element's ancestors, from the page down -- and the pixel read 
 colour after transparency -- of the colour itself and the opacity of the element and its
 ancestors -- is blended in, and after any format (rgb, oklch, a wide-gamut color()) is brought
 into sRGB. A colour the browser cannot read, or a way of drawing a flat colour cannot stand for
-(filters, blend modes, gradients), is an error, never a pass.
+(filters, blend modes, background images), is an error, never a pass.
 """
 
 from playwright.sync_api import Locator, Page
@@ -40,7 +40,10 @@ _PAINT = """
     const unsupported = [
       style.filter !== 'none' && 'filter: ' + style.filter,
       style.mixBlendMode !== 'normal' && 'mix-blend-mode: ' + style.mixBlendMode,
-      /gradient\\(/.test(style.backgroundImage) && 'a gradient background',
+      // A select's arrow is the one image allowed: drawn once, in padding kept clear of the text.
+      style.backgroundImage !== 'none'
+        && !(node.matches('.form-select') && style.backgroundRepeat.startsWith('no-repeat'))
+        && 'a background image (' + style.backgroundImage.slice(0, 60) + ')',
     ].find(Boolean);
     if (unsupported) throw new Error('cannot judge contrast through ' + unsupported + ' on ' + node.tagName);
   }
