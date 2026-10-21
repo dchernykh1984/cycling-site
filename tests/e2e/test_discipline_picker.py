@@ -42,7 +42,10 @@ def _tick(page: Page, menu: str, value) -> None:
         return
     box.click()
     if not box.is_checked():
-        page.locator(f"{menu} li.mf-item-row:has(input.mf-item[value='{value}']) span").click()
+        # The missed click can also close the menu (seen on iPhone: the label "is not visible"); reopen it.
+        _open(page, menu.replace("-menu-", "-btn-"), menu)
+        if not box.is_checked():
+            page.locator(f"{menu} li.mf-item-row:has(input.mf-item[value='{value}']) span").click()
     expect(box).to_be_checked()
 
 
