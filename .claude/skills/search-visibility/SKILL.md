@@ -32,6 +32,10 @@ alternates for all three languages plus `x-default`, Open Graph and Twitter tags
 `calendar_app/listing_seo.py` does it for a filtered calendar, which is what makes
 `?location=<id>` a page about a city rather than a copy of the calendar.
 
+Chats read Open Graph, not the description: `og_description` in the context, when set, becomes
+`og:description` -- an event's own preview line in the page's language (#318) -- while search
+engines keep reading `meta description`. Without `og_description` both carry the same text.
+
 Structured data: `SportsEvent` on an event (`calendar_app/seo.py`), `Article` / `NewsArticle` on
 knowledge and news (`cycling_site/summaries.py`). Both are escaped so a title containing `</script>`
 cannot break out.
