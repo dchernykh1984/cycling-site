@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var group = document.createElement('div');
     group.className = 'period-pair';
     group.setAttribute('role', 'group');
-    [['dayGridMonth', '{% trans "Grid" %}'], ['listMonth', '{% trans "List" %}']].forEach(function (pair) {
+    [['dayGridMonth', '{% filter escapejs %}{% trans "Grid" %}{% endfilter %}'], ['listMonth', '{% filter escapejs %}{% trans "List" %}{% endfilter %}']].forEach(function (pair) {
       var button = document.createElement('button');
       button.type = 'button';
       button.className = 'period-b period-small';
