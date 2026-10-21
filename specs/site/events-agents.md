@@ -14,8 +14,9 @@ holds the operating detail
 
 Three scheduled jobs read announcements -- web calendars and organizer sites, Instagram club
 accounts, Telegram channels and groups -- ask a language model to extract concrete upcoming events,
-and propose them to the site through the API as a service account. Everything they propose waits
-for a human to approve it.
+and propose them to the site through the API as a service account. Every event they propose waits
+for a human to approve it; so do the regions and cities they add, while a new venue under an
+approved city follows the API's rule for the account's role (see [API](api.md)).
 
 ## User Scenarios
 
@@ -25,8 +26,8 @@ for a human to approve it.
    text are extracted with titles, descriptions and places in every site language, placed on the
    location tree, checked against everything the site knows, and proposed as pending.
 2. **Given** a date shown only in an image, **Then** the event is left out rather than guessed; links
-   are taken only from the page's real links, and coordinates only when the text gives them or a
-   geocoder finds them.
+   are taken only from the page's real links; coordinates come from the text, from the first point of
+   a GPS track the page links to, or -- for Instagram posts -- from geocoding the address given.
 3. **Given** the maintainer reads a run, **Then** its summary names every proposed event with link
    and place, every skipped candidate with its reason, and per-source counts.
 
@@ -38,8 +39,10 @@ for a human to approve it.
 
 ### Story 3 -- No duplicates (P2)
 
-1. **Given** a candidate matching an existing event -- by name across scripts (Cyrillic folded to
-   Latin), date and place -- or a soft-deleted one, **Then** it is not proposed again.
+1. **Given** a candidate matching an existing or soft-deleted event, **Then** it is not proposed
+   again. A match is any of: enough shared title words, a shared rare word, or words equal after
+   transliteration (Cyrillic to Latin) and merging -- and always a start within a few days and, when
+   both are known, the same city.
 2. **Given** a venue already on the tree under another spelling, **Then** it is reused rather than
    added again.
 
@@ -53,8 +56,8 @@ for a human to approve it.
 
 ## Functional Requirements
 
-- **FR-AGT-001**: Agents propose only through the API and only as pending; they never approve, edit
-  an approved event, or delete.
+- **FR-AGT-001**: Agents only read and create through the API (events, locations, a city's
+  catch-all venue); they never update, approve or delete anything.
 - **FR-AGT-002**: A run is started by the schedule or on the maintainer's request only; every run
   costs money at the language-model provider.
 - **FR-AGT-003**: The model never supplies a URL or a date of its own: links come from the page,
