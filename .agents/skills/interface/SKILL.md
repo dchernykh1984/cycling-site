@@ -1,6 +1,6 @@
 ---
 name: interface
-description: How a page on this site should look and behave for the person using it - mobile layout first, content before controls, nothing that jumps, choices that are kept, words with every icon, tap targets, text that fits in ru/kk/en, contrast and accessibility in every skin - and the checks that hold each rule. Read before changing a template, a stylesheet, a layout or anything a reader taps.
+description: How a page on this site should look and behave for the person using it - the qualities and named patterns of its look, mobile layout first, content before controls, nothing that jumps, choices that are kept, words with every icon, tap targets, text that fits in ru/kk/en, contrast and accessibility in every skin - and the checks that hold each rule. Read before changing a template, a stylesheet, a layout or anything a reader taps.
 ---
 
 # Interface
@@ -60,6 +60,46 @@ anything that loads.
 13. **The look belongs to the skin.** Colours, fonts and radii come from the skin's variables
     (`--bs-*`, `--skin-*`); the site's templates give structure and words. Light and dark are the
     maintainer's and do not change without them; a designer's skin is its designers'.
+
+## Look
+
+"Make it look like Strava" is not something a template can follow or a reviewer can check. What
+the sports sites we looked at have in common is described here instead, as qualities with a
+measure and as patterns with a name. The values -- colours, fonts, radii, spacing -- are the
+skin's (principle 13); this section is about what any skin draws.
+
+### Qualities
+
+| Quality | What it means | How to tell |
+| --- | --- | --- |
+| **Calm** | Neutral surfaces; colour is kept for meaning -- the event's type, its sport, what is "ours" -- and for the one main action. | At most one filled button per view; every colour on screen can be named for what it means. |
+| **Readable at arm's length** | In a list, the date, the sport and the title are what the eye lands on; everything else is quieter. | Squint test: blur a 375px screenshot -- date, sport and title still stand apart from the rest. |
+| **Clear type** | Few sizes, set apart by weight and size together; dates and times in figures of equal width, so columns of them line up. | At most two font families and five text sizes on a page. |
+| **Even rhythm** | One spacing scale, one radius, one way of building each pattern; edges line up down the page. | The same pattern looks the same on every page it appears; no one-off margins in a template. |
+| **Dense, not crowded** | A phone screen carries several events, each still easy to tap. | At 375px, at least three events are visible below the header on the first screen of a list. |
+
+### Patterns
+
+Each pattern has a name to use in review ("this wants the event card"), the sites where we saw it
+(the calendar redesign report, October 2026) and where it lives or will live here.
+
+| Pattern | What it is | Seen at | Here |
+| --- | --- | --- | --- |
+| **Event card** | Date block on the left, sport icon, title, one line of place (and organiser), one action on the right; the whole card opens the event. | BikeReg (date at the left, type label, organiser's logo), Orgeo (square sport icon), RussiaRunning (large cards with date and city) | #331 |
+| **Day header** | A list grouped by day under a quiet header ("Sat, 24 October"); a multi-day race is one row with its range. | Zwift (day headers on a phone) | list view, #330 |
+| **Quick periods** | One row of segments: today and tomorrow, weekend, week, month. | Meetup, Eventbrite ("Today / Tomorrow / This weekend") | `_period_nav.html`, #330 |
+| **View switch** | Segments for list, month, map; the one on screen marked, all the same size. | BikeReg (list / map switch) | `_view_switcher.html` |
+| **Filter button with a count** | One button on a phone, "Filters (2)", instead of a row of drop-downs. | BikeReg, Zwift ("Filter events" at the bottom of the screen), RussiaRunning, Miles Republic ("Filters 11") | `_filter_toggle.html`, #330 |
+| **Filter chips** | The filters in force as chips in one line, each removed with a tap. | Meetup (filters as chips in one line) | `_filter_chips.html`, #330 |
+| **"+N more"** | A month cell shows at most three events and a count of the rest. | the calendar library's own day limit | month grid, #330 |
+| **Sport icon with its name** | A square icon from one icon set, always with the sport's name beside it or as its label. | Orgeo (square icons), Strava (an icon on every activity) | #331 |
+| **Organiser** | "by ..." under the title, and a filter for one's own club. | Meetup ("by ..."), BikeReg (organiser's logo), Strava (club events) | #336 |
+| **Status badge** | A small badge for what is time-limited or open: registration open, closing in N days. | Orgeo (days left to register), Eventbrite ("Sales end soon") | not planned yet |
+| **Time first for a ride** | The meeting time large, the pace or group as a badge. | Zwift (time first, group badge), Strava (start point, pace groups) | the time stays free text in the announcement (the maintainer's choice); the link preview carries it (#318) |
+| **Subscribe and add to calendar** | Subscription to the filtered calendar and "add to my calendar" near the top, not in the footer. | Orgeo (sync with the phone's calendar, RSS) | #333 |
+
+A pattern not in this table gets a name, a row here and a partial of its own before it appears on a
+second page.
 
 ## Rules and their checks
 
