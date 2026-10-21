@@ -28,8 +28,8 @@ description: Spec-driven development in this repository (issue #337) - where the
 2. `speckit-specify` with `SPECIFY_FEATURE_DIRECTORY=specs/<issue>-<short-name>` -- name the folder
    after the issue yourself; Spec Kit would otherwise number it on from the folders already there.
    The branch is named the same way (`<issue>-<short-name>`).
-3. `speckit-clarify` when the request leaves real choices open. The maintainer's habit is to answer
-   questions in Russian in one batch; put them to the maintainer rather than guessing.
+3. `speckit-clarify` when the request leaves real choices open: put the questions to the maintainer
+   (who writes in Russian) rather than guessing the answers.
 4. `speckit-plan`; its Constitution Check must pass or justify each exception.
 5. **Stop for review.** The maintainer reviews the spec and the plan (and may have another agent
    review them, with findings in a file such as `tmp/review.txt`) before any code is written.
