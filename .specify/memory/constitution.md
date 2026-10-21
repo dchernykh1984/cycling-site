@@ -2,6 +2,8 @@
 Sync Impact Report
 - Version: none -> 1.0.0 (first constitution, issue #337); 1.0.0 -> 1.1.0: principle IV makes the
   three languages a deliberate choice; principle VI lets the maintainer accept a local assumption.
+  1.1.0 -> 1.2.0: the light/dark screenshot comparison is retired (it guarded the skins refactoring,
+  issue #324); principles II and III no longer name it.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
   .agents/skills, which stay the detailed runtime guidance; VI set by the maintainer (no local or
   sport-specific hardcoding).
@@ -32,8 +34,7 @@ A pull request is merged by the maintainer, or by an agent only when the maintai
 the message being answered.
 Approved events are theirs: changing one -- its links, location or dates -- needs their explicit
 go-ahead. The events agents spend money on every run and are started only on request. The light
-and dark themes are kept as they are; a deliberate change to them passes only with the
-`visual-change-approved` label, which the maintainer sets.
+and dark themes are kept as they are unless the maintainer asks for a change.
 
 ### III. Every change carries its tests (NON-NEGOTIABLE)
 
@@ -41,8 +42,8 @@ A behaviour change ships with the tests that pin it: a Django unit test for back
 Playwright test under `tests/e2e/` for anything a person sees in a browser. A bug fix gets a
 regression test that fails without the fix. Tests are named after the behaviour, not the function.
 Coverage stays at 90% or above, and every check of the pipeline -- unit tests, pre-commit, the
-browser suite on five browsers and devices and once per skin, the light/dark screenshot comparison,
-the dependency audit -- is green before work is reported done.
+browser suite on five browsers and devices and once per skin, the dependency audit -- is green
+before work is reported done.
 
 ### IV. The reader's language, in the address
 
@@ -109,4 +110,4 @@ bumps the version -- MAJOR for a principle removed or redefined, MINOR for one a
 expanded, PATCH for wording -- and updates the Last Amended date. Plans check themselves against
 it in their "Constitution Check".
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-21
+**Version**: 1.2.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-21

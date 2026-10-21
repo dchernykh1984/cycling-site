@@ -20,8 +20,8 @@ restored, locally or onto production.
 ### Story 1 -- Ship a change (P1)
 
 1. **Given** a pull request, **Then** CI runs pre-commit (ruff, mypy, ASCII, requirements export),
-   commitizen, the unit tests with coverage of 90% or more, the dependency audit, the browser suite on
-   five browser/device combinations and once per skin, and the light/dark screenshot comparison.
+   commitizen, the unit tests with coverage of 90% or more, the dependency audit, and the browser
+   suite on five browser/device combinations and once per skin.
 2. **Given** a merge to `main`, **Then** Render deploys it, running `migrate` as a pre-deploy step;
    configuration comes from environment variables set on Render.
 

@@ -3,11 +3,11 @@
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21
 **Code**: `skins/`, `cycling_site/skins.py`, `cycling_site/templates/_skin_select.html`,
-`cycling_site/static/js/cycling_site.js`, `home/management/commands/startskin.py`, `tests/visual/`
+`cycling_site/static/js/cycling_site.js`, `home/management/commands/startskin.py`,
+`scripts/demo_seed.py`
 **Tests**: `tests/test_skins.py`, `tests/test_skin_choice.py`, `tests/test_skin_templates.py`,
-`tests/test_startskin.py`, `tests/test_visual_compare.py`, `tests/e2e/test_theme_choice.py`,
-`test_skin_of_its_own.py`, `test_skin_contrast.py`, `test_contrast_helper.py`; CI `visual.yml` and the
-`e2e-skin` jobs
+`tests/test_startskin.py`, `tests/e2e/test_theme_choice.py`, `test_skin_of_its_own.py`,
+`test_skin_contrast.py`, `test_contrast_helper.py`; CI `e2e-skin` jobs
 **Related**: [accounts](accounts.md), [site shell](site-shell.md); `skins/README.md` for designers and
 the `skins` skill for agents (issue #324)
 
@@ -42,10 +42,7 @@ behind the moon/sun button.
 
 ### Story 3 -- Nothing breaks unnoticed (P1)
 
-1. **Given** a pull request, **Then** CI compares screenshots of light and dark with the base branch
-   pixel for pixel (any take of the base against any take of the branch, up to three retakes); only
-   the maintainer's `visual-change-approved` label lets a difference through, never a run that broke.
-2. **Given** every skin but light, **Then** the whole browser suite runs again with it as the
+1. **Given** every skin but light, **Then** the whole browser suite runs again with it as the
    starting skin, including the contrast check; a change that turns a skin red does not merge until
    the skin is green again.
 

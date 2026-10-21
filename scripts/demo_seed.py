@@ -1,26 +1,17 @@
-"""Content for the before/after screenshots: the same rows on both sides of the comparison.
+"""Demo content for a local database, to look at a skin in (skins/README.md).
 
 Run inside a freshly migrated database with ``manage.py shell``; the migrations already bring the
 event types, disciplines, the location tree and the Wagtail pages. Dates are counted from today in
-the site's time zone, so the month grid, the 30-day list and the map always have something on them;
-run.py makes sure both sides are seeded on the same day. Every stamp the database would otherwise
-take from the clock is pinned, so the two sides differ only in the code that renders them.
-
-Writes the session cookies of the signed-in visitors to the path in VISUAL_SESSIONS, when set.
-Without it the seed simply fills a local database to look at a skin in (skins/README.md); every
-seeded account signs in with the password in PASSWORD.
+the site's time zone, so the month grid, the 30-day list and the map always have something on them.
+Every seeded account signs in with the password in PASSWORD.
 """
 
 import datetime
-import json
-import os
-import pathlib
 import uuid
 
 from allauth.account.models import EmailAddress
 from django.apps import apps
 from django.db import models
-from django.test import Client
 from django.utils import timezone
 
 from accounts.models import User
@@ -33,7 +24,7 @@ from registrations.models import CompetitionRegistration, RegistrationCategory
 
 TODAY = timezone.localdate()
 NOON = timezone.make_aware(datetime.datetime.combine(TODAY, datetime.time(12, 0)))
-PASSWORD = "visual-pass-1"
+PASSWORD = "visual-pass-1"  # noqa: S105 -- demo accounts in a local database only
 
 
 def day(offset):
@@ -140,12 +131,6 @@ guide = KnowledgeArticle.objects.create(
 for comp in Competition.objects.all():
     Competition.objects.filter(pk=comp.pk).update(upload_token=uuid.UUID(int=comp.pk), approved_at=NOON)
 
-sessions = {}
-for name in visitors:
-    client = Client()
-    client.force_login(User.objects.get(username=name))
-    sessions[name] = client.cookies["sessionid"].value
-
 for model in apps.get_models():
     stamps = {
         field.name: NOON
@@ -158,20 +143,3 @@ for model in apps.get_models():
     if stamps:
         model._default_manager.all().update(**stamps)
 User.objects.update(last_login=NOON, date_joined=NOON)
-
-if "VISUAL_SESSIONS" in os.environ:
-    with pathlib.Path(os.environ["VISUAL_SESSIONS"]).open("w") as out:
-        json.dump(
-            {
-                "today": TODAY.isoformat(),
-                "sessions": sessions,
-                "pages": {
-                    "upcoming": upcoming.pk,
-                    "finished": finished.pk,
-                    "venue": venue.pk,
-                    "news": news[0].get_absolute_url(),
-                    "guide": guide.get_absolute_url(),
-                },
-            },
-            out,
-        )
