@@ -49,14 +49,15 @@ list groups riders by category with start numbers; the timing apps fetch the sam
    delete, add entries by hand (free mode only), edit any entry, and export a CSV.
 2. **Given** the participant list, **Then** riders are grouped by category, each group numbered from
    its category's bib range (from 1 by default); uncategorised riders come last; the total and the
-   limit stand by the title; approve/reject and paid columns appear only when the event requires
-   them.
+   limit stand by the title; a manager gets approve/reject and paid columns only when the event
+   requires approval or payment.
 
 ### Story 4 -- Read the field (P2)
 
-1. **Given** anyone (a visitor included), **Then** the public list shows the entries that count:
-   not rejected, and approved/paid when the event requires it; the additional-info column only when
-   the organizer chose to show it.
+1. **Given** anyone (a visitor included), **Then** the public list leaves out rejected entries, and
+   -- where the event requires approval or payment -- unapproved or unpaid ones unless the organizer
+   chose to show them; approval and payment status columns, and the additional-info column, appear
+   to the public only when the organizer turned them on.
 2. **Given** a phone, **Then** the list stacks into cards with a sticky category band under the
    navbar.
 
@@ -66,7 +67,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
   (date and time in Asia/Almaty), or without a deadline until the end of the event's last day, and
   below the overall and per-category limits; a full field still lets its riders edit their entries.
 - A manager keeps the entry buttons after the deadline.
-- A pending event's registration form and participant list are 404, except to its managers.
+- A pending event's registration form is 404 to everyone; its participant list is 404 except to
+  its managers.
 - Relay member names are escaped on save and never rendered as HTML.
 - The city autocomplete suggests only cities of entries that count in approved, visible events.
 
