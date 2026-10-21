@@ -44,6 +44,8 @@ anything that loads.
    filters (#322) come back next visit. Making someone choose twice reads as "it lost my filter".
 7. **Narrow by default, delete nothing.** Show what is near first and fold the rest ("N more in
    other countries", #332) rather than removing it: a newcomer may well travel to a race abroad.
+   What counts as near is never written into a template or a view -- no fixed Almaty: a region, a
+   city or a club comes from the reader's preferences or from a setting the maintainer can change.
 8. **Words with every icon and every colour.** An arrow, an icon or a colour never carries meaning
    alone: next to it is visible text, or at least an `aria-label`. A `title` is not enough -- a
    phone never shows it and screen readers do not reliably read it.
@@ -155,11 +157,12 @@ fix waits for them, and `visual.yml` ("Light and dark unchanged") will say so.
 ## Running the checks
 
 ```
-.venv/bin/python -m pytest tests/e2e/test_interface_rules.py -n 8
-.venv/bin/python -m pytest tests/e2e/test_interface_rules.py -n 8 --device "Pixel 7"
-E2E_SKIN=dark .venv/bin/python -m pytest tests/e2e/test_interface_rules.py -n 8
+.venv/bin/python -m pytest tests/e2e/test_interface_rules.py -n 8 --reuse-db
+.venv/bin/python -m pytest tests/e2e/test_interface_rules.py -n 8 --reuse-db --device "Pixel 7"
+E2E_SKIN=dark .venv/bin/python -m pytest tests/e2e/test_interface_rules.py -n 8 --reuse-db
 pre-commit run no-hex-colours-in-templates --all-files
 ```
 
+`--reuse-db` keeps the test database between runs: creating it costs about 50 seconds a start.
 The test sets its phone (375px, 320px for sideways scroll) and desktop widths itself; CI runs it in
 every browser job and, via the `e2e-skin` jobs, in every skin.
