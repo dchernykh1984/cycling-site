@@ -57,9 +57,6 @@
     {% if request.in_preview_panel %}
     <base target="_blank">
     {% endif %}
-    {% comment %}The reader's own time zone, for the times the server writes into the next page (issue
-    #344). An IANA name is cookie-safe as it is; the server would not decode a percent-encoded one.{% endcomment %}
-    <script>(function(){try{var z=Intl.DateTimeFormat().resolvedOptions().timeZone,m=document.cookie.match(/(?:^|; )tz=([^;]*)/);if(z&&(!m||m[1]!==z))document.cookie='tz='+z+';path=/;max-age=31536000;samesite=lax';}catch(e){}}());</script>
     {% comment %}A guest's choice used to live in the browser's storage, out of the server's sight. Carry
     it over into the cookie once, before the stylesheets load, so the page never flashes the default.
     Only light or dark can be there: they are the keys equal to their own mode.{% endcomment %}

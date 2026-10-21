@@ -1,4 +1,15 @@
 (function () {
+    // The reader's own time zone, for the times the server writes into the pages that follow (issue
+    // #344). Here rather than in base.html, so a skin with its own copy of base.html keeps it. An IANA
+    // name is cookie-safe as it is; the server would not decode a percent-encoded one.
+    try {
+        var zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        var stored = document.cookie.match(/(?:^|; )tz=([^;]*)/);
+        if (zone && (!stored || stored[1] !== zone)) {
+            document.cookie = 'tz=' + zone + ';path=/;max-age=31536000;samesite=lax';
+        }
+    } catch (e) { /* no Intl: the site's default zone stands */ }
+
     // The skin chooser (_skin_select.html), in the navbar and on the profile.
     function saveSkin(key) {
         if (document.body.dataset.authenticated !== 'true') {
