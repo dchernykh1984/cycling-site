@@ -340,6 +340,15 @@ class Competition(index.Indexed, models.Model):
         self.approved_at = None
         self.save(update_fields=["status", "rejection_reason", "approved_by", "approved_at"])
 
+    @property
+    def timezone(self):
+        """The zone at the event's place, worked out from its location on each use (issue #344).
+
+        Not cached: the edit view moves an event to another place and then reads its zone."""
+        from locations.models import timezone_of
+
+        return timezone_of(self.location)
+
     def is_registration_open(self, ignore_limit: bool = False) -> bool:
         # ``ignore_limit`` lets callers ask only "is the window still open by deadline" -- e.g. a
         # registration owner editing an existing entry already holds a slot, so a full competition
@@ -353,8 +362,9 @@ class Competition(index.Indexed, models.Model):
                 return False
         # An event with no deadline of its own used to keep taking entries years after it was
         # ridden. It closes when the race is over instead -- and not a moment earlier, because a
-        # start can be in the evening, so the window stands all through the final day.
-        elif timezone.localdate() > (self.date_end or self.date_start):
+        # start can be in the evening, so the window stands all through the final day -- the day
+        # at the event's place, not the reader's.
+        elif timezone.localdate(timezone=self.timezone) > (self.date_end or self.date_start):
             return False
         return True if ignore_limit else not self.is_limit_reached()
 
