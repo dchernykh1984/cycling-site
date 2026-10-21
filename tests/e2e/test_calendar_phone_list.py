@@ -141,6 +141,9 @@ def test_the_end_day_holds_where_clocks_go_forward(browser, live_server, organiz
     page.clock.set_fixed_time(datetime.datetime(2027, 3, 20, 12, 0))
     page.goto(f"{live_server.url}/en/calendar/")
     row = page.locator(".fc-list-event:visible", has_text="Spring race")
+    # The race has a row on each of its two days until the list folds the second one away, a beat
+    # after the rows are drawn; judge the end day on the one row left.
+    expect(row).to_have_count(1)
     expect(row.locator(".fc-list-event-until")).to_have_text("\u2013 28 March")
     context.close()
 
