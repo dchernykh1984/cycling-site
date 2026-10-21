@@ -1,6 +1,8 @@
 import threading
 from typing import ClassVar
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import tzfpy
 from django.apps import apps
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -530,6 +532,32 @@ def nearest_visible_ancestor_with_coords(loc, by_path, step):
             return anc
         path = path[:-step]
     return None
+
+
+def timezone_of(loc) -> ZoneInfo:
+    """The time zone at ``loc``: from its own coordinates, else from the nearest place above it that
+    has them (venue -> city -> region -> country), else UTC (issue #344). Worked out on every call
+    from the polygons ``tzfpy`` ships, so nothing is stored and nothing goes over the network."""
+    point = None
+    if loc is not None:
+        if loc.lat is not None and loc.lng is not None:
+            point = (loc.lat, loc.lng)
+        else:
+            step = Location.steplen
+            ancestors = [loc.path[:end] for end in range(len(loc.path) - step, 0, -step)]
+            point = (
+                Location.objects.filter(path__in=ancestors, lat__isnull=False, lng__isnull=False)
+                .order_by("-depth")
+                .values_list("lat", "lng")
+                .first()
+            )
+    if point is None:
+        return ZoneInfo("UTC")
+    try:
+        # tzfpy takes longitude first.
+        return ZoneInfo(tzfpy.get_tz(float(point[1]), float(point[0])))
+    except (ZoneInfoNotFoundError, ValueError):  # no answer, or a zone this host's tzdata lacks
+        return ZoneInfo("UTC")
 
 
 def map_display_node(loc, by_path, step):
