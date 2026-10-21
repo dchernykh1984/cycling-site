@@ -176,18 +176,22 @@ class CompetitionPreviewTextTests(TestCase):
             with self.subTest(language=language):
                 self.assertEqual(_prop(self._html(comp, language), "og:description"), expected)
 
-    def test_a_missing_language_falls_back_like_the_title(self):
+    def test_a_language_left_empty_shows_the_date_and_place_in_that_language(self):
+        """As the form's hint says: no Russian line in a Kazakh chat, but the summary in Kazakh."""
         comp = _competition("Saturday ride", preview_text_ru="Russian line")
         for language in ("kk", "en"):
             with self.subTest(language=language):
-                self.assertEqual(_prop(self._html(comp, language), "og:description"), "Russian line")
+                html = self._html(comp, language)
+                self.assertEqual(_prop(html, "og:description"), _meta(html, "description"))
+                self.assertNotIn("Russian line", _prop(html, "og:description"))
 
-    def test_the_fallback_also_covers_what_the_form_saves(self):
-        """The form stores an untouched tab as an empty string, not as NULL; that must fall back too."""
+    def test_so_does_a_tab_the_form_saved_empty(self):
+        """The form stores an untouched tab as an empty string, not as NULL."""
         comp = _competition("Saturday ride", preview_text_ru="Russian line", preview_text_kk="", preview_text_en="")
         for language in ("kk", "en"):
             with self.subTest(language=language):
-                self.assertEqual(_prop(self._html(comp, language), "og:description"), "Russian line")
+                html = self._html(comp, language)
+                self.assertEqual(_prop(html, "og:description"), _meta(html, "description"))
 
     def test_the_line_is_escaped_inside_the_tag(self):
         comp = _competition("Saturday ride", preview_text_ru='Meet at "Giant" & go')

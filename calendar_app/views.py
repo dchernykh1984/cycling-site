@@ -14,8 +14,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme, urlencode
+from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
+from modeltranslation.utils import build_localized_fieldname
 
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
@@ -855,10 +857,12 @@ class CompetitionDetailView(View):
             # about it, instead of the one site-wide line every page used to carry.
             "meta_title": competition.title,
             "meta_description": competition.search_summary(),
-            # What a chat shows under the title: the organizer's own line when they wrote one (the
-            # meeting time and place, which the summary cannot know), else the summary above. Read
-            # through the translated field, so a missing language falls back like the title does.
-            "og_description": competition.preview_text,
+            # What a chat shows under the title: the organizer's own line in the page's language
+            # when they wrote one (the meeting time and place, which the summary cannot know), else
+            # the summary above, in that same language. The language's own column, not the
+            # translated field: its fallback put a Russian line into a Kazakh chat, where the form
+            # promises the date and the place.
+            "og_description": getattr(competition, build_localized_fieldname("preview_text", get_language()), ""),
             "og_type": "article",
             # The picture a chat shows for this event. Absolute, because the messenger fetching it
             # has nothing to resolve a relative path against.
