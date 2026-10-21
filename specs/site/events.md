@@ -18,9 +18,9 @@ materials, upload token, rich description, several event types), `tests/test_inv
 ## Overview
 
 Anyone confirmed can propose an event; organizers publish directly and moderate everyone else's.
-An event's page gathers what a rider needs -- dates, place with map links, registration,
-documents, results, materials, description, discussion -- in that order. The site calls every
-entry an "event" (in Russian "meropriyatie"), never a "competition", whatever its kind.
+An event's page gathers what a rider needs -- dates, the place with a map and map links,
+registration, documents, results and materials, then the description and the discussion. The site
+calls every entry an "event" whatever its kind -- in Russian "meropriyatie", never "sorevnovanie".
 
 ## User Scenarios
 
@@ -28,12 +28,13 @@ entry an "event" (in Russian "meropriyatie"), never a "competition", whatever it
 
 1. **Given** a participant submits the form, **Then** the event is created **pending approval**;
    an organizer's submission is published at once.
-2. **Given** the form, **Then** it takes a title in ru/kk/en, a rich-text description (sanitised,
+2. **Given** the form, **Then** it takes a title (required in Russian, optional in Kazakh and
+   English), a rich-text description (sanitised,
    size-limited, edited with a bundled Quill editor), dates (the end not before the start),
    several event types (optional), several disciplines, a location from the tree or a new venue
-   proposed in a city (see [locations](locations.md)), links and files for announcement,
-   regulations, route and results (files: PDF, Office documents, GPX, KML, ZIP or images, up to
-   10 MB), and a preview image for link previews.
+   proposed in a city (see [locations](locations.md)), a registration link, links and files for
+   announcement, regulations, route and results (files: PDF, Office documents, GPX, KML, ZIP or
+   images, up to 10 MB), and a preview image for link previews.
 3. **Given** an invalid field -- a missing title or date, a link longer than its column, an end
    before the start, an over-long category name -- **Then** the form comes back with a translated
    field error, never a server error, and keeps what was entered.
@@ -50,8 +51,10 @@ entry an "event" (in Russian "meropriyatie"), never a "competition", whatever it
    possible from the event's own page; a rejection needs a reason.
 2. **Given** an event is rejected, **Then** its author sees the reason and its history and may edit
    and resubmit it, returning it to pending; history accumulates across rounds.
-3. **Given** an event uses a location still awaiting approval, **Then** only admins see it in the
-   queue; approving the event approves its proposed venue.
+3. **Given** an event's venue was proposed with it under an approved city, **Then** approving the
+   event approves the venue too. **Given** the geography above the venue is itself still pending,
+   **Then** only admins see the event in the queue, an organizer cannot approve it, and an admin's
+   approval approves the branch with it (see [locations](locations.md)).
 4. **Given** a pending event, **Then** its page is visible only to its author (without actions) and
    to moderators (with actions); it has no star, comments or registration.
 5. **Given** there is something to moderate, **Then** a banner under the menu tells each moderator
@@ -64,14 +67,16 @@ entry an "event" (in Russian "meropriyatie"), never a "competition", whatever it
    materials (named links in order; rows half filled are refused without losing the rest of the
    edit; script URLs refused).
 2. **Given** a manager, **Then** they may hide an event (taken down: visible to admins in listings
-   and to its managers on its page) and see and regenerate or delete its upload token, which the
-   timing apps use to send results (see [API](api.md)).
+   and to its managers on its page).
+3. **Given** a manager or the event's author, **Then** they see its upload token and may regenerate
+   or delete it; the timing apps use it to send results (see [API](api.md)).
 
 ### Story 4 -- Report and discuss (P3)
 
 1. **Given** a participant reads a published event, **Then** they may comment (line breaks kept; no
    author e-mail exposed) and report it as inaccurate (reason optional); a second open report by
-   the same member is ignored; the event stays public.
+   the same member is ignored, reporting again after a dismissal is allowed, and the event stays
+   public; pending and hidden events cannot be reported.
 2. **Given** an admin, **Then** reported events appear once in the queue with their reports, and
    dismissing clears them; organizers do not see reports.
 
@@ -103,9 +108,10 @@ entry an "event" (in Russian "meropriyatie"), never a "competition", whatever it
 - **FR-EVT-001**: Statuses: pending approval, approved, rejected; approving twice or approving a
   rejected event is refused; resubmitting works only from rejected.
 - **FR-EVT-002**: Who may: submit -- participant and up; publish directly, moderate, enable
-  registration, make invite-only -- organizer and up; manage (edit, hide, token, materials, see
-  invitation link) -- admins and up, or the event's author while an organizer; edit, delete,
-  resubmit -- managers and the author whatever their role; dismiss reports -- admins and up.
+  registration, make invite-only -- organizer and up. A *manager* of an event is an admin or above,
+  or its author while an organizer. Hide, see the invitation link and replace it -- managers;
+  edit (materials included), delete, resubmit, see and manage the upload token -- managers and the
+  author whatever their role; dismiss reports -- admins and up.
 - **FR-EVT-003**: Deleting is soft (`is_deleted`); a deleted event is seen by nobody.
 - **FR-EVT-004**: Who sees a published event: everybody, unless it is hidden (managers on its page,
   admins in listings) or invite-only (managers, invitees, registered riders whose entry is not
@@ -131,8 +137,10 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   (`calendar_app/registration_deadline.py`), not in the event's own zone.
 - The map-link services offered on an event page are a fixed list in code (`locations/maps.py`):
   2GIS, Yandex, Google, Apple, OpenStreetMap.
-- An event's generated description names the brand in code ("... on the Universal Bicycle Team
-  calendar", `calendar_app/models.py`).
+- Russian is the base language of an event: its Russian title is required, the Kazakh and English
+  ones optional (`calendar_app/forms.py`).
+- An event page's meta description ends with the brand written in code ("Details, start point and
+  results on the Universal Bicycle Team calendar.", `calendar_app/models.py`).
 
 ## Open Questions
 
