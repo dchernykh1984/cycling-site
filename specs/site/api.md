@@ -23,10 +23,12 @@ and protocols with the event's upload token. The API has no language prefix.
 1. **Given** a `Authorization: Bearer <api token>` header, **Then** the request acts as that active
    member; reads also work without a token, as a visitor.
 2. **Given** an organizer creates an event through the API, **Then** it waits for review; an admin's
-   is created approved -- unless its geography is still pending. The event's author may update,
-   resubmit after rejection and soft-delete it; descriptions are sanitised and size-limited.
+   is created approved -- unless its geography is still pending. The event's author or an admin may
+   update it, resubmit it after rejection and soft-delete it; only an admin may hide or unhide it;
+   descriptions are sanitised and size-limited.
 3. **Given** locations, **Then** the tree can be read; an organizer may get or create a city's
-   catch-all venue; a venue is created approved by an organizer, proposed by a participant;
+   catch-all venue; a venue is created approved by an organizer and proposed by a participant;
+   regions and cities are always proposed (organizer and up), countries created by admins only;
    updating and deleting is admin and up.
 4. **Given** news, **Then** admins create, update and soft-delete articles; **given** the knowledge
    base, members manage their own drafts and admins publish articles; texts per language.
