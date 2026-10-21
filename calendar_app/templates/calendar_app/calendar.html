@@ -19,6 +19,10 @@
   .fc .fc-toolbar-chunk { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
   /* Every event is all-day, so the list's time column only ever held an empty cell. */
   .fc .fc-list-event-time { display: none; }
+  /* The list's day headings and its own buttons in the skin's text colour on the skin's own
+     surface: FullCalendar's translucent grey under the dark skin's grey links came out 2.3:1. */
+  .fc .fc-list-day-cushion { background: var(--bs-tertiary-bg); }
+  .fc .fc-list-day-text, .fc .fc-list-day-side-text, .fc-list-past-toggle .btn-link { color: var(--bs-body-color); }
 </style>
 {% endblock %}
 
