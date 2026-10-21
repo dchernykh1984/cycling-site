@@ -1899,7 +1899,7 @@ msgstr "Беттер"
 #: news/templates/news/news_list.html:82
 #: search/templates/search/search.html:89
 msgid "Previous"
-msgstr "Артка"
+msgstr "Артқа"
 
 #: cycling_site/templates/_pagination.html:34
 msgid "Go to page"
@@ -1910,7 +1910,7 @@ msgstr "Бетке өту"
 #: news/templates/news/news_list.html:90
 #: search/templates/search/search.html:93
 msgid "Next"
-msgstr "Алга"
+msgstr "Алға"
 
 #: cycling_site/templates/base.html:18 cycling_site/templates/base.html:34
 msgid ""
