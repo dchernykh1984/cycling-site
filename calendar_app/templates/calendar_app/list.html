@@ -31,8 +31,7 @@
   </div>
 </div>
 
-{% include "calendar_app/_quick_dates.html" with server_today=True %}
-{% include "calendar_app/_date_nav.html" with from_selector='#filter-form input[name=date_from]' to_selector='#filter-form input[name=date_to]' today_clears=True %}
+{% include "calendar_app/_period_nav.html" with from_selector='#filter-form input[name=date_from]' to_selector='#filter-form input[name=date_to]' server_today=True %}
 {% include "calendar_app/_filter_chips.html" %}
 
 <div id="filter-panel" class="collapse d-lg-block">
@@ -142,13 +141,10 @@
       form.querySelectorAll('.js-date-filter').forEach(function (el) {
         el.addEventListener('change', function () { form.submit(); });
       });
-      // A quick range fills the two date fields, which submit the form themselves.
+      // A period from the row above fills the two date fields, which submit the form themselves.
       var dateFrom = form.querySelector('input[name="date_from"]');
       var dateTo = form.querySelector('input[name="date_to"]');
-      window.onQuickDates = function (kind, range) { window.setDateFields(dateFrom, dateTo, range); };
-      document.addEventListener('DOMContentLoaded', function () {
-        window.markQuickDates(window.quickDatesKindOf(dateFrom.value, dateTo.value));
-      });
+      window.onPeriodChange = function (period) { window.setDateFields(dateFrom, dateTo, period); };
 
       // Auto-submit the favorites toggle too.
       var favEl = form.querySelector('#favorite-filter');

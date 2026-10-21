@@ -120,7 +120,7 @@ def test_a_past_month_is_read_whole(page: Page, live_server, organizer):
         status=Competition.Status.APPROVED,
     )
     _open_list(page, live_server)
-    page.locator('#date-nav [data-date-nav="-1"]').click()
+    page.locator('[data-period-step="-1"]').click()
     expect(page.locator(".fc-list-event:visible", has_text="Last month ride")).to_have_count(1)
     expect(page.locator(".fc-list-past-toggle")).to_have_count(0)
 

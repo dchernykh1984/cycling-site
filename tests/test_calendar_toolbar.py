@@ -1,12 +1,12 @@
-"""The controls around the calendar grid, and the row of them the list and the map share.
+"""The period row above the calendar, the list and the map (_period_nav.html).
 
-The arrows, Today and the month picker are our own row above the grid (_date_nav.html); FullCalendar's
-toolbar keeps the title and the Grid/List switch. FullCalendar labels its buttons from its own
-bundle, which carries no Kazakh at all, so every label a reader sees comes from our catalogue, and
-the tests assert against `gettext`, never against a pasted word.
+The arrows, Today, the kinds of period, the month picker and the calendar's Grid/List switch are
+our own; FullCalendar's toolbar is gone. Its bundle carries no Kazakh at all, so every label a reader
+sees comes from our catalogue, and the tests assert against `gettext`, never against a pasted word.
 """
 
 import datetime
+import json
 import re
 
 from django.test import TestCase
@@ -19,10 +19,10 @@ from locations.models import add_location_child
 from tests.language_urls import in_language
 
 
-def _option_values(html, select_id):
-    """The values a select offers, in the order the page lists them."""
-    block = re.search(rf'<select id="{select_id}".*?</select>', html, flags=re.S)
-    return re.findall(r'<option value="([^"]+)"', block.group(0)) if block else []
+def _json_script(html, element_id):
+    """The data a page hands its script through Django's json_script."""
+    block = re.search(rf'<script id="{element_id}" type="application/json">(.*?)</script>', html, flags=re.S)
+    return json.loads(block.group(1)) if block else None
 
 
 class TodayButtonTests(TestCase):
@@ -32,8 +32,8 @@ class TodayButtonTests(TestCase):
                 with translation.override(language):
                     today, grid, listing = (translation.gettext(word) for word in ("Today", "Grid", "List"))
                 response = self.client.get(in_language(reverse("calendar"), language))
-                self.assertContains(response, f'data-date-nav="today">{today}</button>')
-                self.assertContains(response, f"buttonText: {{ dayGridMonth: '{grid}', listMonth: '{listing}' }}")
+                self.assertContains(response, f"data-period-today>{today}</button>")
+                self.assertContains(response, f"['dayGridMonth', '{grid}'], ['listMonth', '{listing}']")
 
     def test_the_label_starts_with_a_capital_letter(self):
         for language in ("ru", "kk", "en"):
@@ -43,9 +43,29 @@ class TodayButtonTests(TestCase):
 
     def test_the_russian_and_kazakh_labels_are_not_the_english_source(self):
         """A missing or fuzzy catalogue entry silently serves the English string."""
+        words = (
+            "Today",
+            "Grid",
+            "List",
+            "Today and tomorrow",
+            "Weekend",
+            "Week",
+            "Month",
+            "whole year",
+            "from %s",
+            "Arrows: by day",
+            "Arrows: by weekend",
+            "Arrows: by week",
+            "Arrows: by month",
+            "Arrows: by year",
+            "tap the month or year",
+            "Remove filter",
+            "Earlier days of the month",
+        )
         for language in ("ru", "kk"):
-            with self.subTest(language=language), translation.override(language):
-                self.assertNotEqual(translation.gettext("Today"), "Today")
+            for word in words:
+                with self.subTest(language=language, word=word), translation.override(language):
+                    self.assertNotEqual(translation.gettext(word), word)
 
 
 class MonthPickerTests(TestCase):
@@ -68,19 +88,13 @@ class MonthPickerTests(TestCase):
             **kwargs,
         )
 
-    def test_the_page_offers_twelve_months_and_a_year(self):
-        response = self.client.get(reverse("calendar"))
-        html = response.content.decode()
-        self.assertEqual(_option_values(html, "date-nav-month"), [str(n) for n in range(1, 13)])
-        self.assertIn(str(self.today.year), _option_values(html, "date-nav-year"))
-
-    def test_the_list_and_the_map_offer_the_same_picker(self):
+    def test_every_tab_offers_twelve_months_and_this_year(self):
         """The three tabs move through time alike (issue #330)."""
-        for name in ("calendar_list", "calendar_map"):
+        for name in ("calendar", "calendar_list", "calendar_map"):
             with self.subTest(page=name):
                 html = self.client.get(reverse(name)).content.decode()
-                self.assertEqual(_option_values(html, "date-nav-month"), [str(n) for n in range(1, 13)])
-                self.assertIn(str(self.today.year), _option_values(html, "date-nav-year"))
+                self.assertEqual([n for n, _ in _json_script(html, "period-months")], list(range(1, 13)))
+                self.assertIn(self.today.year, _json_script(html, "period-years"))
 
     def test_the_months_are_named_in_the_readers_language(self):
         for language in ("ru", "kk", "en"):
@@ -90,8 +104,8 @@ class MonthPickerTests(TestCase):
                 if language != "en":
                     # A month name the catalogue never learned would come back as the source.
                     self.assertNotEqual(expected, "January")
-                response = self.client.get(in_language(reverse("calendar"), language))
-                self.assertContains(response, f'<option value="1">{expected}</option>', html=True)
+                html = self.client.get(in_language(reverse("calendar"), language)).content.decode()
+                self.assertEqual(_json_script(html, "period-months")[0], [1, expected])
 
     def test_the_years_reach_back_to_the_oldest_event(self):
         self._race(self.today - datetime.timedelta(days=365 * 6))

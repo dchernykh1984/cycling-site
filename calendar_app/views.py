@@ -407,10 +407,11 @@ def calendar_year_choices() -> list[int]:
 
 
 def month_picker_choices() -> dict:
-    """The months and years the calendar's month picker offers, and the list's and map's with it."""
+    """The words and years the period row above the calendar, the list and the map is built from."""
     return {
         "calendar_months": list(enumerate((_(name) for name in MONTH_NAMES), start=1)),
         "calendar_years": calendar_year_choices(),
+        "calendar_date_words": calendar_date_words(),
     }
 
 

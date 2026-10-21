@@ -3188,3 +3188,44 @@ msgstr "Сетка"
 #: calendar_app/templates/calendar_app/_filter_chips.html:11
 msgid "Remove filter"
 msgstr "Убрать фильтр"
+
+#: calendar_app/templates/calendar_app/_period_nav.html:43
+msgid "Today and tomorrow"
+msgstr "Сегодня и завтра"
+
+#: calendar_app/templates/calendar_app/_period_nav.html:45
+msgid "Week"
+msgstr "Неделя"
+
+#: calendar_app/templates/calendar_app/_period_nav.html:62
+msgid "whole year"
+msgstr "весь год"
+
+#: calendar_app/templates/calendar_app/_period_nav.html:63
+#, python-format
+msgid "from %s"
+msgstr "с %s"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "Arrows: by day"
+msgstr "Стрелки: по дням"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "Arrows: by weekend"
+msgstr "Стрелки: по выходным"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "Arrows: by week"
+msgstr "Стрелки: по неделям"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "Arrows: by month"
+msgstr "Стрелки: по месяцам"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "Arrows: by year"
+msgstr "Стрелки: по годам"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "tap the month or year"
+msgstr "нажмите на месяц или год"
