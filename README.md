@@ -96,6 +96,14 @@ the canonical host and `www` redirecting to it.
 
 Live site: <https://universalbicycle.team>.
 
+## Specifications
+
+The site is built spec-first with [Spec Kit](https://github.com/github/spec-kit). Every area of the
+site is described as it works today in [`specs/site/`](specs/site/); a new feature gets its own
+specification, plan and tasks in `specs/<issue>-<short-name>/` before it is built; the principles
+every plan is checked against are the [constitution](.specify/memory/constitution.md). How to work
+with them -- from Claude Code or Codex -- is in [`specs/README.md`](specs/README.md).
+
 ## REST API
 
 The site exposes a REST API at `/api/v1/`. It supports admin CRUD for
