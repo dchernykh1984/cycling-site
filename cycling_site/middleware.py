@@ -117,7 +117,10 @@ class ReaderTimezoneMiddleware:
 
     def __call__(self, request):
         try:
-            timezone.activate(ZoneInfo(request.COOKIES.get("tz", "")))
+            request.reader_timezone = ZoneInfo(request.COOKIES.get("tz", ""))
         except (ZoneInfoNotFoundError, ValueError):
+            request.reader_timezone = None  # not known: a time is then shown once, where it happens
             timezone.deactivate()
+        else:
+            timezone.activate(request.reader_timezone)
         return self.get_response(request)

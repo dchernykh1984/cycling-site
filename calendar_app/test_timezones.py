@@ -2,6 +2,7 @@
 
 import datetime
 import re
+from types import SimpleNamespace
 from unittest import mock
 from zoneinfo import ZoneInfo
 
@@ -192,21 +193,29 @@ class ReaderTimezoneMiddlewareTests(TestCase):
 class EventTimeTagTests(TestCase):
     MOMENT = datetime.datetime(2026, 9, 1, 14, 30, tzinfo=TOKYO)
 
+    def _shown_to(self, reader_zone, event_zone=TOKYO):
+        with translation.override("en"):
+            return event_time({"request": SimpleNamespace(reader_timezone=reader_zone)}, self.MOMENT, event_zone)
+
     def test_one_time_when_the_offsets_match(self):
-        with timezone.override(ZoneInfo("Asia/Seoul")):  # also UTC+9
-            self.assertEqual(event_time(self.MOMENT, TOKYO), "01.09.2026 14:30 (UTC+9)")
+        self.assertEqual(self._shown_to(ZoneInfo("Asia/Seoul")), "01.09.2026 14:30 (UTC+9)")  # also UTC+9
 
     def test_both_times_when_the_offsets_differ(self):
-        with timezone.override(ZoneInfo("Asia/Kolkata")), translation.override("en"):
-            self.assertEqual(
-                event_time(self.MOMENT, TOKYO),
-                "01.09.2026 14:30 (UTC+9) &middot; your time: 01.09.2026 11:00 (UTC+5:30)",
-            )
+        self.assertEqual(
+            self._shown_to(ZoneInfo("Asia/Kolkata")),
+            "01.09.2026 14:30 (UTC+9) &middot; your time: 01.09.2026 11:00 (UTC+5:30)",
+        )
 
     def test_a_zone_west_of_greenwich_and_utc_itself(self):
-        with timezone.override(ZoneInfo("UTC")), translation.override("en"):
-            shown = event_time(self.MOMENT, ZoneInfo("America/Sao_Paulo"))
-        self.assertEqual(shown, "01.09.2026 02:30 (UTC-3) &middot; your time: 01.09.2026 05:30 (UTC)")
+        self.assertEqual(
+            self._shown_to(ZoneInfo("UTC"), ZoneInfo("America/Sao_Paulo")),
+            "01.09.2026 02:30 (UTC-3) &middot; your time: 01.09.2026 05:30 (UTC)",
+        )
+
+    def test_one_time_while_the_readers_zone_is_unknown(self):
+        # Not the site's default zone passed off as the reader's: it may be nowhere near them.
+        with timezone.override(ZoneInfo("Asia/Kolkata")):
+            self.assertEqual(self._shown_to(None), "01.09.2026 14:30 (UTC+9)")
 
     def test_the_event_page_shows_the_deadline(self):
         *_, venue = _tree()
@@ -218,8 +227,10 @@ class EventTimeTagTests(TestCase):
             registration_enabled=True,
             registration_deadline=self.MOMENT,
         )
+        url = reverse("competition_detail", args=[comp.pk])
+        self.assertIn("01.09.2026 14:30 (UTC+9)</p>", self.client.get(url).content.decode())  # zone not known yet
         self.client.cookies["tz"] = "Asia/Tokyo"
-        html = self.client.get(reverse("competition_detail", args=[comp.pk])).content.decode()
+        html = self.client.get(url).content.decode()
         self.assertIn("01.09.2026 14:30 (UTC+9)</p>", html)
         self.client.cookies["tz"] = "Europe/Moscow"
         html = self.client.get(reverse("competition_detail", args=[comp.pk])).content.decode()

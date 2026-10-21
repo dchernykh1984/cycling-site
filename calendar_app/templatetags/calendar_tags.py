@@ -24,15 +24,18 @@ def _utc_offset(moment) -> str:
     return f"UTC{'+' if minutes > 0 else '-'}{hours}" + (f":{rest:02d}" if rest else "")
 
 
-@register.simple_tag
-def event_time(moment, event_zone):
+@register.simple_tag(takes_context=True)
+def event_time(context, moment, event_zone):
     """A moment bound to an event's place (issue #344): in the event's zone with its offset, and
-    again in the reader's when the two offsets differ at that moment."""
+    again in the reader's when their browser has told it and the two offsets differ at that moment."""
     if moment is None:
         return ""
     there = timezone.localtime(moment, event_zone)
     shown = f"{date_format(there, 'd.m.Y H:i')} ({_utc_offset(there)})"
-    here = timezone.localtime(moment)
+    reader_zone = getattr(context.get("request"), "reader_timezone", None)
+    if reader_zone is None:
+        return shown
+    here = timezone.localtime(moment, reader_zone)
     if here.utcoffset() == there.utcoffset():
         return shown
     return format_html(
