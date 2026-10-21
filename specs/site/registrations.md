@@ -23,8 +23,9 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 
 1. **Given** registration is open, **When** a participant opens the form, **Then** team, city and
    birth date come prefilled from their profile (birth date in ISO form whatever the language).
-2. **Given** self-only mode, **Then** a rider registers only themselves, needs a complete profile,
-   and their identity fields are locked to the profile; **given** free mode, **Then** any person can
+2. **Given** self-only mode, **Then** a rider registers only themselves, needs a gender and a birth
+   date in their profile, and their identity fields (names, birth, gender) are locked to the
+   profile; **given** free mode, **Then** any person can
    be entered by name and birth year/date.
 3. **Given** the same rider (self-only: the same account; free: the same name, case-insensitive, and
    birth year) is entered twice, **Then** the second entry is refused, unless the event allows
@@ -67,8 +68,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
   (date and time in Asia/Almaty), or without a deadline until the end of the event's last day, and
   below the overall and per-category limits; a full field still lets its riders edit their entries.
 - A manager keeps the entry buttons after the deadline.
-- A pending event's registration form is 404 to everyone; its participant list is 404 except to
-  its managers.
+- A pending event takes no entries: its registration form and its participant list are 404 to
+  everyone but its managers, and registration stays closed even for them until it is approved.
 - Relay member names are escaped on save and never rendered as HTML.
 - The city autocomplete suggests only cities of entries that count in approved, visible events.
 
