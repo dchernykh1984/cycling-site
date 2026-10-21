@@ -265,3 +265,15 @@ def test_on_a_saturday_today_and_tomorrow_stays_itself(page: Page, live_server):
     expect(page.locator('[data-period-kind="days"]')).to_have_attribute("aria-pressed", "true")
     _step(page, 1)
     expect(_label(page)).to_have_text("25\u201326 October 2026")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_current_month_travels_as_no_dates(page: Page, live_server):
+    """Written out it would pin today: a link shared on the 21st kept opening on the 21st."""
+    _calendar(page, live_server)
+    expect(page.locator("#view-link-list")).not_to_have_attribute("href", re.compile("date_from"))
+    assert "date_from" not in page.evaluate("window.shareUrl()")
+    _step(page, 1)
+    expect(page.locator("#view-link-list")).to_have_attribute(
+        "href", re.compile(r"date_from=2026-11-01&date_to=2026-11-30")
+    )
