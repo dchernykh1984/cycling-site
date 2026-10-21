@@ -92,7 +92,9 @@ def open_filter_panel(page) -> None:
     panel = page.locator("#filter-panel")
     if not panel.is_visible():
         toggle.click()
-        panel.wait_for(state="visible")
+        # Visible already as it starts to unfold; wait for the unfolding to end, or a click lands on a
+        # control that is still moving (seen on iPhone: "clicking the checkbox did not change its state").
+        page.locator("#filter-panel.show:not(.collapsing)").wait_for(state="visible")
 
 
 def open_navbar_if_collapsed(page) -> None:
