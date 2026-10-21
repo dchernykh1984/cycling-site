@@ -198,11 +198,18 @@ document.addEventListener('DOMContentLoaded', function () {
     else showRange(period.from, period.to);
   };
   // The period on screen travels to Share and to the List and Map links, so the other tabs open
-  // on the same days.
+  // on the same days. The current month travels as no dates at all: it is every page's default,
+  // and written out it would pin today -- a link shared on the 20th still opening on the 20th days
+  // later, as a range rather than the month.
   function storeDates(from, to) {
     try {
-      sessionStorage.setItem('cal_date_from', from);
-      sessionStorage.setItem('cal_date_to', to);
+      if (from) {
+        sessionStorage.setItem('cal_date_from', from);
+        sessionStorage.setItem('cal_date_to', to);
+      } else {
+        sessionStorage.removeItem('cal_date_from');
+        sessionStorage.removeItem('cal_date_to');
+      }
     } catch (e) { /* storage blocked */ }
     updateSwitcherLinks();
   }
@@ -348,7 +355,9 @@ document.addEventListener('DOMContentLoaded', function () {
         to = month[1];
       }
       window.periodNav.show(from, to);
-      storeDates(from, to);
+      var current = window.periodNav.rangeOf('month', new Date());
+      if (from === current[0] && to === current[1]) storeDates(null);
+      else storeDates(from, to);
       markMonthView();
       tidyListSoon();
     },
