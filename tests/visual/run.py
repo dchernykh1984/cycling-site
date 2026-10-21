@@ -12,6 +12,7 @@ Needs a PostgreSQL server the current user can create databases on (--db-url nam
 
 import argparse
 import datetime
+import itertools
 import json
 import os
 import pathlib
@@ -164,13 +165,15 @@ def report(problems, shots, out, approved) -> int:
     return 1
 
 
-# Chromium now and then rasterises a whole batch of text a few levels of grey apart (seen on the
-# emulated Pixel 7). Such a shot is taken again on both sides; only a difference that survives
-# every retry is reported. A real change is in every attempt, however small.
-RETRIES = 2
+# Chromium now and then rasterises text a few levels of grey apart (seen on the emulated Pixel 7),
+# and a side can keep doing it shot after shot. Such a shot is taken again on both sides, and it
+# matches when any take of the base equals any take of the branch, pixel for pixel. A real change is
+# in every take of the branch, however small, so no pairing can hide it.
+RETRIES = 3
 
 
 def _photograph_and_compare(sides, out, now, devices, only):
+    takes = {side: [out / side] for side in sides}
     for side, (base_url, data) in sides.items():
         capture(base_url, data, out / side, now, devices, only)
     shots = len(json.loads((out / "after" / "meta.json").read_text()))
@@ -185,8 +188,15 @@ def _photograph_and_compare(sides, out, now, devices, only):
             retry_dir = out / f"{side}-retry{attempt}"
             shutil.rmtree(retry_dir, ignore_errors=True)
             capture(base_url, data, retry_dir, now, devices, only, wanted)
+            takes[side].append(retry_dir)
+        unmatched = set(wanted)
+        for before, after in itertools.product(takes["before"], takes["after"]):
+            scratch = out / "diff-scratch"
+            shutil.rmtree(scratch, ignore_errors=True)
+            unmatched &= {problem.split(":")[0] for problem in compare(before, after, scratch, wanted)}
         shutil.rmtree(out / "diff", ignore_errors=True)
-        problems = compare(out / f"before-retry{attempt}", out / f"after-retry{attempt}", out / "diff")
+        latest = compare(takes["before"][-1], takes["after"][-1], out / "diff", unmatched)
+        problems = latest
     return problems, shots
 
 

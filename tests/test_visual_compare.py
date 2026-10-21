@@ -62,3 +62,37 @@ def test_a_run_that_breaks_before_comparing_fails_even_with_the_label(tmp_path, 
     monkeypatch.setattr(run.sys, "argv", ["run.py", "--out", str(tmp_path), "--approved", "true"])
     with pytest.raises(RuntimeError, match="migrate failed"):
         run.main()
+
+
+def _fake_capture(pixels):
+    """capture() stand-in: each call on a side draws that side's next take of one screenshot."""
+
+    def capture(base_url, data, out_dir, *args):
+        out_dir.mkdir(parents=True, exist_ok=True)
+        image = Image.new("RGB", (20, 20), "white")
+        pixel = pixels[base_url].pop(0)
+        if pixel:
+            image.putpixel(pixel, (0, 0, 0))
+        image.save(out_dir / "shot.png")
+        (out_dir / "meta.json").write_text(
+            json.dumps({"shot.png": {"masked": [], "offset": [0, 0], "overflows": False, "scale": 1}})
+        )
+
+    return capture
+
+
+def _run(tmp_path, monkeypatch, before, after):
+    monkeypatch.setattr(run, "capture", _fake_capture({"b": list(before), "a": list(after)}))
+    sides = {"before": ("b", {}), "after": ("a", {})}
+    problems, _ = run._photograph_and_compare(sides, tmp_path, None, (), ())
+    return problems
+
+
+def test_a_noisy_take_on_either_side_matches_through_any_other_take(tmp_path, monkeypatch):
+    # The base renders one way, the branch flips between two: the branch's second take matches.
+    assert _run(tmp_path, monkeypatch, [None] * 4, [(1, 1), None, (1, 1), (1, 1)]) == []
+
+
+def test_a_change_in_every_take_of_the_branch_is_reported(tmp_path, monkeypatch):
+    problems = _run(tmp_path, monkeypatch, [None] * 4, [(1, 1)] * 4)
+    assert problems == ["shot.png: differs in (1, 1, 2, 2)"]

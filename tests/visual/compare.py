@@ -14,12 +14,15 @@ def _blank(image, rects, offset, scale):
         draw.rectangle(box, fill=(255, 0, 255))
 
 
-def compare(before_dir, after_dir, diff_dir):
-    """Return a list of human-readable problems; empty when the two sets match."""
+def compare(before_dir, after_dir, diff_dir, names=None):
+    """Return a list of human-readable problems; empty when the two sets match.
+
+    names, when given, limits the comparison to those screenshots.
+    """
     before_meta = json.loads(pathlib.Path(before_dir, "meta.json").read_text())
     after_meta = json.loads(pathlib.Path(after_dir, "meta.json").read_text())
     problems = []
-    for name in sorted(set(before_meta) | set(after_meta)):
+    for name in sorted(names if names is not None else set(before_meta) | set(after_meta)):
         if name not in before_meta or name not in after_meta:
             problems.append(f"{name}: taken on one side only")
             continue
