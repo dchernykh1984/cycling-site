@@ -146,6 +146,12 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   }
 
   var state = {kind: 'month', from: rangeOf('month', today())[0], to: rangeOf('month', today())[1]};
+  // The kind the reader last picked, kept for the visit: some ranges belong to two kinds (on a
+  // Saturday "today and tomorrow" is also the weekend), and a page that reloads with the dates must
+  // not swap the reader's choice -- and the arrows' step -- for the other one.
+  var PICKED_KEY = 'periodKind';
+  var picked = null;
+  try { picked = sessionStorage.getItem(PICKED_KEY); } catch (e) { /* storage blocked */ }
   var pop = null;
   var popYear = state.from.getFullYear();
 
@@ -210,6 +216,8 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
 
   function go(kind, day) {
     var range = rangeOf(kind, day);
+    picked = kind;
+    try { sessionStorage.setItem(PICKED_KEY, kind); } catch (e) { /* storage blocked */ }
     state = {kind: kind, from: range[0], to: range[1]};
     pop = null;
     render();
@@ -232,7 +240,12 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     show: function (from, to) {
       var f = parse(from) || today();
       var t = parse(to);
-      state = {kind: kindOf(parse(from), t), from: f, to: t};
+      var kind = kindOf(parse(from), t);
+      if (picked && picked !== kind && t) {
+        var range = rangeOf(picked, f);
+        if (same(range[0], f) && same(range[1], t)) kind = picked;
+      }
+      state = {kind: kind, from: f, to: t};
       if (state.kind === 'month' && !parse(from)) state.to = lastOfMonth(f);
       render();
     },

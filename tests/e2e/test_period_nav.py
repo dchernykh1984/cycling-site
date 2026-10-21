@@ -254,3 +254,14 @@ def test_kazakh_names_the_period_in_kazakh(page: Page, live_server):
     page.goto(f"{live_server.url}/kk/calendar/")
     expect(_label(page)).not_to_have_text(re.compile("October|M10"))
     expect(_label(page)).to_contain_text("2026")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_on_a_saturday_today_and_tomorrow_stays_itself(page: Page, live_server):
+    """Saturday and Sunday are also the weekend; the reader's pick and its one-day step must hold."""
+    _calendar(page, live_server, clock=datetime.datetime(2026, 10, 24, 12, 0))
+    _kind(page, "days")
+    expect(_label(page)).to_have_text("24\u201325 October 2026")
+    expect(page.locator('[data-period-kind="days"]')).to_have_attribute("aria-pressed", "true")
+    _step(page, 1)
+    expect(_label(page)).to_have_text("25\u201326 October 2026")
