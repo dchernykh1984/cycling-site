@@ -27,11 +27,12 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 ### Story 1 -- Propose an event (P1)
 
 1. **Given** a participant submits the form, **Then** the event is created **pending approval**;
-   an organizer's submission is published at once.
+   an organizer's submission is published at once -- unless it stands on a city or region still
+   awaiting approval, when it waits too.
 2. **Given** the form, **Then** it takes a title (required in Russian, optional in Kazakh and
-   English), a rich-text description (sanitised,
-   size-limited, edited with a bundled Quill editor), dates (the end not before the start),
-   several event types (optional), several disciplines, a location from the tree or a new venue
+   English), a rich-text description (sanitised, size-limited, edited with a bundled Quill editor),
+   a start date and an optional end date (not before the start), several event types and several
+   disciplines (both optional), a location from the tree or a new venue
    proposed in a city (see [locations](locations.md)), a registration link, links and files for
    announcement, regulations, route and results (files: PDF, Office documents, GPX, KML, ZIP or
    images, up to 10 MB), and a preview image for link previews.
@@ -55,8 +56,9 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    event approves the venue too. **Given** the geography above the venue is itself still pending,
    **Then** only admins see the event in the queue, an organizer cannot approve it, and an admin's
    approval approves the branch with it (see [locations](locations.md)).
-4. **Given** a pending event, **Then** its page is visible only to its author (without actions) and
-   to moderators (with actions); it has no star, comments or registration.
+4. **Given** a pending event, **Then** its page is visible only to its author and to moderators;
+   moderators -- an organizer author included -- get approve and reject on it; it has no star,
+   comments or registration.
 5. **Given** there is something to moderate, **Then** a banner under the menu tells each moderator
    how many items wait for them and where, counting only what they may act on.
 
@@ -67,7 +69,7 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    materials (named links in order; rows half filled are refused without losing the rest of the
    edit; script URLs refused).
 2. **Given** a manager, **Then** they may hide an event (taken down: visible to admins in listings
-   and to its managers on its page).
+   and to its managers on its page) and show it again, and delete its comments.
 3. **Given** a manager or the event's author, **Then** they see its upload token and may regenerate
    or delete it; the timing apps use it to send results (see [API](api.md)).
 
@@ -109,7 +111,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
   rejected event is refused; resubmitting works only from rejected.
 - **FR-EVT-002**: Who may: submit -- participant and up; publish directly, moderate, enable
   registration, make invite-only -- organizer and up. A *manager* of an event is an admin or above,
-  or its author while an organizer. Hide, see the invitation link and replace it -- managers;
+  or its author while an organizer. Hide and unhide, delete comments, see the invitation link and
+  replace it -- managers;
   edit (materials included), delete, resubmit, see and manage the upload token -- managers and the
   author whatever their role; dismiss reports -- admins and up.
 - **FR-EVT-003**: Deleting is soft (`is_deleted`); a deleted event is seen by nobody.
