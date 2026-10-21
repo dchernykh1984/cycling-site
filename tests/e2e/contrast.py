@@ -2,8 +2,10 @@
 
 The browser does the colour work. Each colour is painted onto a 1x1 canvas over the backgrounds
 beneath it -- the element's ancestors, from the page down -- and the pixel read back: that is the
-colour after transparency is blended in and after any format (rgb, oklch, a wide-gamut color())
-is brought into sRGB. A colour the browser cannot read is an error, never a pass.
+colour after transparency -- of the colour itself and the opacity of the element and its
+ancestors -- is blended in, and after any format (rgb, oklch, a wide-gamut color()) is brought
+into sRGB. A colour the browser cannot read, or a way of drawing a flat colour cannot stand for
+(filters, blend modes, gradients), is an error, never a pass.
 """
 
 from playwright.sync_api import Locator, Page
@@ -17,9 +19,12 @@ _PAINT = """
     const clear = style.color === 'transparent' || /,\\s*0\\)$/.test(style.color);
     return clear && shadow ? shadow[1] : style.color;
   };
-  const g = document.createElement('canvas').getContext('2d', {willReadFrequently: true});
-  g.canvas.width = g.canvas.height = 1;
-  const paint = (value) => {
+  const canvas = () => {
+    const g = document.createElement('canvas').getContext('2d', {willReadFrequently: true});
+    g.canvas.width = g.canvas.height = 1;
+    return g;
+  };
+  const paint = (g, value) => {
     g.fillStyle = '#010203';
     g.fillStyle = value;
     if (g.fillStyle === '#010203' && value.replace(/\\s/g, '') !== 'rgb(1,2,3)') {
@@ -27,16 +32,41 @@ _PAINT = """
     }
     g.fillRect(0, 0, 1, 1);
   };
-  // A page with no background of its own shows the canvas, white.
-  paint('#ffffff');
   const chain = [];
   for (let node = el; node; node = node.parentElement) chain.unshift(node);
   for (const node of chain) {
-    if (what === 'fill-beneath' && node === el) break;
-    paint(getComputedStyle(node).backgroundColor);
+    const style = getComputedStyle(node);
+    // What a flat colour cannot stand for: refuse rather than report a contrast nobody sees.
+    const unsupported = [
+      style.filter !== 'none' && 'filter: ' + style.filter,
+      style.mixBlendMode !== 'normal' && 'mix-blend-mode: ' + style.mixBlendMode,
+      /gradient\\(/.test(style.backgroundImage) && 'a gradient background',
+    ].find(Boolean);
+    if (unsupported) throw new Error('cannot judge contrast through ' + unsupported + ' on ' + node.tagName);
   }
-  if (what === 'text') paint(textColour(getComputedStyle(el)));
-  if (what.startsWith('colour:')) paint(what.slice(7));
+  const last = what === 'fill-beneath' ? chain.length - 1 : chain.length;
+  // Paint chain[i] and everything drawn on it over what g already holds. An element's opacity
+  // blends its whole group -- background, children, text -- with what lies beneath, as a browser
+  // composites it: the group is drawn on a canvas of its own, then laid over at that opacity.
+  const render = (i, g) => {
+    if (i === last) {
+      if (what === 'text') paint(g, textColour(getComputedStyle(el)));
+      if (what.startsWith('colour:')) paint(g, what.slice(7));
+      return;
+    }
+    const style = getComputedStyle(chain[i]);
+    const group = canvas();
+    group.drawImage(g.canvas, 0, 0);
+    paint(group, style.backgroundColor);
+    render(i + 1, group);
+    g.globalAlpha = parseFloat(style.opacity);
+    g.drawImage(group.canvas, 0, 0);
+    g.globalAlpha = 1;
+  };
+  const g = canvas();
+  // A page with no background of its own shows the canvas, white.
+  paint(g, '#ffffff');
+  render(0, g);
   return Array.from(g.getImageData(0, 0, 1, 1).data.slice(0, 3));
 }
 """

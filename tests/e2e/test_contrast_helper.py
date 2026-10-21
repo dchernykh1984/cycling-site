@@ -3,12 +3,17 @@
 import pytest
 from playwright.sync_api import Error, Page
 
-from tests.e2e.contrast import drawn, painted, ratio
+from tests.e2e.contrast import drawn, legibility, painted, ratio
 
 PAGE = """<body style="margin:0;background:#000">
 <p id="faint" style="color:rgba(255,255,255,0.1)">faint</p>
 <div style="background:rgba(255,255,255,0.5)"><p id="on-half">text</p></div>
 <p id="shadow" style="color:transparent;text-shadow:0 0 0 rgb(10, 20, 30)">drawn as a shadow</p>
+<div style="background:#fff">
+  <p id="faded" style="color:#000;opacity:0.1">faded text</p>
+  <div style="opacity:0.1"><p id="in-faded" style="color:#000">text in a faded block</p></div>
+  <p id="filtered" style="color:#000;filter:blur(1px)">blurred</p>
+</div>
 </body>"""
 
 
@@ -49,3 +54,16 @@ def test_a_colour_the_browser_cannot_read_is_an_error_not_a_pass(black_page):
 def test_text_drawn_as_its_own_shadow_reads_as_the_shadow_colour(black_page):
     # How Bootstrap shows a focused select's text in Firefox.
     assert drawn(black_page.locator("#shadow")) == [10, 20, 30]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("element", ["#faded", "#in-faded"])
+def test_opacity_on_the_text_or_an_ancestor_fades_it_into_its_backdrop(black_page, element):
+    # Black on white reads 21:1 by its colours; at a tenth of its opacity it is barely there.
+    assert legibility(black_page.locator(element)) < 1.4
+
+
+@pytest.mark.django_db
+def test_a_way_of_drawing_a_flat_colour_cannot_stand_for_is_an_error(black_page):
+    with pytest.raises(Error, match="cannot judge contrast through filter"):
+        drawn(black_page.locator("#filtered"))
