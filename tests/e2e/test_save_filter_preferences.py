@@ -53,9 +53,7 @@ def test_with_always_save_a_change_on_the_calendar_is_kept(page: Page, live_serv
     expect(page.locator("#save-filter-btn")).to_have_count(0)
     page.wait_for_load_state("load")
 
-    filter_toggle = page.locator("[data-bs-target='#filter-panel']")
-    if filter_toggle.is_visible():
-        filter_toggle.click()
+    open_filter_panel(page)
     page.locator("#et-btn-1").click()
     page.locator(f"#et-menu-1 input.mf-item[value='{race.pk}']").check()
     assert _saved_types(member) == {race.pk}
