@@ -193,7 +193,7 @@ class ProfileView(TemplateView):
             user.competition_registrations.filter(competition__is_deleted=False)
             # An organizer's rights are decided by the event's submitter, so that row travels with
             # the event -- otherwise the permission check fetches it once per registration.
-            .select_related("competition", "competition__submitted_by", "category")
+            .select_related("competition", "competition__submitted_by", "competition__location", "category")
             # By the race, newest first: the reader is looking up how a start went, not when they
             # happened to fill the form in.
             .order_by("-competition__date_start", "-registered_at")

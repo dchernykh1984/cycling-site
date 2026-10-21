@@ -17,6 +17,7 @@ from django.utils import timezone, translation
 
 from accounts.models import User
 from calendar_app.models import Competition
+from locations.models import Location
 from registrations.models import CompetitionRegistration
 
 
@@ -340,6 +341,8 @@ class ProfileRegistrationQueryCountTests(TestCase):
                 registration_mode=Competition.RegistrationMode.FREE,
                 birth_date_mode="year",
                 submitted_by=organizer,
+                # A place, so that the registration window -- reckoned in the zone there -- reads it.
+                location=Location.add_root(name_ru=f"{username} {n}", lat="35.689500", lng="139.691700"),
             )
             CompetitionRegistration.objects.create(
                 competition=comp,
