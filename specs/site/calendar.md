@@ -29,17 +29,23 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    the grid (the years reach from the oldest to the furthest visible event, at least this year).
 2. **Given** the list view, **Then** it shows upcoming events (not past ones) for the next 30 days,
    a page at a time with numbered pages, a jump-to-page field, and filters kept across pages;
-   with a location, discipline or event type chosen, the whole season ahead is shown instead.
-3. **Given** the map view, **Then** each location with coordinates gets a marker listing its events
-   with links; several events at one place share one marker.
-4. **Given** any of the three, **Then** a switcher moves between them keeping the filters.
+   with a location, direction, discipline or event type chosen, the whole season ahead is shown
+   instead; an explicit date range wins over both.
+3. **Given** the map view, **Then** events of the next 30 days (or the chosen range) are pinned:
+   each location with coordinates gets a marker listing its events with links; several events at
+   one place share one marker.
+4. **Given** any of the three, **Then** a switcher moves between them keeping the filters; the map,
+   which has no location filter of its own, carries the incoming location filter through its links,
+   and a chosen date range is remembered for the browser session.
 5. **Given** the grid page, **Then** it also links upcoming and running events in plain HTML so
    crawlers can follow them (finished events are not advertised as upcoming).
 
 ### Story 2 -- Filter (P1)
 
-1. **Given** the filters, **Then** a reader can choose several countries/regions/cities/venues, event
-   types, directions and disciplines, a date range, and favorites only.
+1. **Given** the filters, **Then** a reader can choose several event types, directions and
+   disciplines, and favorites only, on every view; several countries / regions / cities / venues on
+   the grid and the list; a date range on the list and the map. A level whose every option is ticked
+   is sent as its parent, and ids travel comma-joined, so a wide selection stays a short address.
 2. **Given** several values of one filter, **Then** an event matching any of them is shown, once.
 3. **Given** a direction and a discipline both chosen, **Then** they are OR-ed; a location includes
    everything beneath it in the tree.
@@ -70,7 +76,6 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
   unresolvable or deleted locations are skipped.
 - The location tree the filters cascade over is loaded from its own cacheable endpoint, not
   embedded in every calendar page.
-- Long filter combinations keep the address within limits (`test_filter_url_length.py`).
 
 ## Functional Requirements
 
@@ -81,9 +86,9 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
   range, including multi-day events that started before it, each with its page address.
 - **FR-CAL-003**: Filters: location (multi, includes descendants), event type (multi), direction
   (multi), discipline (multi), date from/to, favorites; comma-joined values are accepted.
-- **FR-CAL-004**: The list shows direction, country, region and city columns, and links a
-  registration form on the site while it is open and not full, before any external registration
-  link; a full or closed one is not linked.
+- **FR-CAL-004**: The list shows each event's title, dates, types, directions, disciplines,
+  country, region, city, venue and links; it links the registration form on the site while it is
+  open and not full, before any external registration link; a full or closed form is not linked.
 - **FR-CAL-005**: Feeds and subscriptions never carry hidden, unapproved or invite-only events.
 - **FR-CAL-006**: Calendar labels (Today, months) are translated in every language.
 
