@@ -1,0 +1,139 @@
+# Site Specification: An event's life (submit, review, edit, report, invite)
+
+**Status**: Baseline -- describes the site as it works today
+**Verified against**: `main` on 2026-10-21
+**Code**: `calendar_app/` (models, forms, views, `visibility.py`, `preview_image.py`),
+`registrations/views.py` (`can_manage`, `can_manage_or_own`), `cycling_site/context_processors.py`
+(moderation banner)
+**Tests**: `calendar_app/tests.py` (model, submit, moderation, detail, edit, comments, reports,
+materials, upload token, rich description, several event types), `tests/test_invite_only_events.py`,
+`tests/test_clone_competition.py`, `tests/test_preview_image.py`,
+`tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
+`tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/e2e/test_competition_form.py`,
+`test_competition_materials.py`, `test_description_editor.py`, `test_resubmit.py`,
+`test_pending_moderation.py`, `test_invite_only_events.py`, `test_competition_link_order.py`
+**Related**: [calendar](calendar.md), [registrations](registrations.md), [protocols](protocols.md),
+[locations](locations.md), [events agents](events-agents.md)
+
+## Overview
+
+Anyone confirmed can propose an event; organizers publish directly and moderate everyone else's.
+An event's page gathers what a rider needs -- dates, place with map links, registration,
+documents, results, materials, description, discussion -- in that order. The site calls every
+entry an "event" (in Russian "meropriyatie"), never a "competition", whatever its kind.
+
+## User Scenarios
+
+### Story 1 -- Propose an event (P1)
+
+1. **Given** a participant submits the form, **Then** the event is created **pending approval**;
+   an organizer's submission is published at once.
+2. **Given** the form, **Then** it takes a title in ru/kk/en, a rich-text description (sanitised,
+   size-limited, edited with a bundled Quill editor), dates (the end not before the start),
+   several event types (optional), several disciplines, a location from the tree or a new venue
+   proposed in a city (see [locations](locations.md)), links and files for announcement,
+   regulations, route and results (files: PDF, Office documents, GPX, KML, ZIP or images, up to
+   10 MB), and a preview image for link previews.
+3. **Given** an invalid field -- a missing title or date, a link longer than its column, an end
+   before the start, an over-long category name -- **Then** the form comes back with a translated
+   field error, never a server error, and keeps what was entered.
+4. **Given** an organizer, **Then** they may also enable registration on the site, choose its mode
+   and options (see [registrations](registrations.md)), and make the event invite-only;
+   participants are not offered these.
+5. **Given** someone who may edit an event, **Then** "copy" opens the form filled from it --
+   registration settings and categories included, dates and last year's results not.
+
+### Story 2 -- Review (P1)
+
+1. **Given** an organizer or above, **Then** the moderation page lists pending events (and, for
+   admins, pending locations and reported events); approving or rejecting is also
+   possible from the event's own page; a rejection needs a reason.
+2. **Given** an event is rejected, **Then** its author sees the reason and its history and may edit
+   and resubmit it, returning it to pending; history accumulates across rounds.
+3. **Given** an event uses a location still awaiting approval, **Then** only admins see it in the
+   queue; approving the event approves its proposed venue.
+4. **Given** a pending event, **Then** its page is visible only to its author (without actions) and
+   to moderators (with actions); it has no star, comments or registration.
+5. **Given** there is something to moderate, **Then** a banner under the menu tells each moderator
+   how many items wait for them and where, counting only what they may act on.
+
+### Story 3 -- Keep it current (P2)
+
+1. **Given** the author or a manager, **Then** they may edit the event (fields prefilled, the
+   registration deadline in the business time zone, Asia/Almaty), delete it, and manage its
+   materials (named links in order; rows half filled are refused without losing the rest of the
+   edit; script URLs refused).
+2. **Given** a manager, **Then** they may hide an event (taken down: visible to admins in listings
+   and to its managers on its page) and see and regenerate or delete its upload token, which the
+   timing apps use to send results (see [API](api.md)).
+
+### Story 4 -- Report and discuss (P3)
+
+1. **Given** a participant reads a published event, **Then** they may comment (line breaks kept; no
+   author e-mail exposed) and report it as inaccurate (reason optional); a second open report by
+   the same member is ignored; the event stays public.
+2. **Given** an admin, **Then** reported events appear once in the queue with their reports, and
+   dismissing clears them; organizers do not see reports.
+
+### Story 5 -- Invite-only events (P3, issue #313)
+
+1. **Given** an organizer marks an event invite-only, **Then** a key is issued and only the people
+   who may edit it, those who opened its invitation link while signed in, and its registered
+   riders see it -- in lists, the grid, the map, search and on its page.
+2. **Given** the invitation link, **Then** it asks to sign in first, lets the reader in, and drops
+   the key from the address; a wrong key says nothing; a new link shuts the old one but keeps those
+   already in.
+3. **Given** an invite-only event, **Then** the sitemap, feeds, iCalendar, public API and landing
+   pages never carry it, and its page asks not to be indexed; while it waits for review only
+   admins review it.
+
+### Edge Cases
+
+- Registration closes at its deadline or, without one, at the end of the event's last day; the
+  overall and per-category limits close it too (see [registrations](registrations.md)).
+- A preview image is normalised: an enormous one is scaled down keeping its shape, a tiny one or a
+  non-image refused, camera metadata stripped, transparency kept as PNG, photos stored as JPEG.
+- The event page lists registration, documents, protocols and materials before the description;
+  uploaded documents follow the same order and a URL takes precedence over a file.
+- Map links on the event page (2GIS, Yandex, Google, Apple, OpenStreetMap) appear only for a venue
+  with its own point; they open in a new tab.
+
+## Functional Requirements
+
+- **FR-EVT-001**: Statuses: pending approval, approved, rejected; approving twice or approving a
+  rejected event is refused; resubmitting works only from rejected.
+- **FR-EVT-002**: Who may: submit -- participant and up; publish directly, moderate, enable
+  registration, make invite-only -- organizer and up; manage (edit, hide, token, materials, see
+  invitation link) -- admins and up, or the event's author while an organizer; edit, delete,
+  resubmit -- managers and the author whatever their role; dismiss reports -- admins and up.
+- **FR-EVT-003**: Deleting is soft (`is_deleted`); a deleted event is seen by nobody.
+- **FR-EVT-004**: Who sees a published event: everybody, unless it is hidden (managers on its page,
+  admins in listings) or invite-only (managers, invitees, registered riders whose entry is not
+  rejected).
+- **FR-EVT-005**: Rich descriptions are sanitised on save and in the admin; translations do not leak
+  across locales on save.
+- **FR-EVT-006**: Redirects after moderation follow only a safe `next`, never downgrading https.
+
+## Key Entities
+
+- **Competition** (event): titles and descriptions per locale, dates, status and rejection history,
+  author, location, event types, disciplines, document links/files, preview image, registration
+  settings, upload token, hidden / deleted / invite-only flags and invite key.
+- **CompetitionInvite**: a member let in by the invitation link.
+- **CompetitionComment**, **CompetitionReport** (open or dismissed), **CompetitionMaterial**
+  (ordered named link).
+
+## Local assumptions
+
+Where the code still assumes a place, a brand or a sport (constitution, principle VI):
+
+- Registration deadlines are entered and read in a constant `BUSINESS_TZ = Asia/Almaty`
+  (`calendar_app/registration_deadline.py`), not in the event's own zone.
+- The map-link services offered on an event page are a fixed list in code (`locations/maps.py`):
+  2GIS, Yandex, Google, Apple, OpenStreetMap.
+- An event's generated description names the brand in code ("... on the Universal Bicycle Team
+  calendar", `calendar_app/models.py`).
+
+## Open Questions
+
+- None known.

@@ -1,0 +1,87 @@
+# Site Specification: Geography (locations and the map)
+
+**Status**: Baseline -- describes the site as it works today
+**Verified against**: `main` on 2026-10-21
+**Code**: `locations/` (models, views, `maps.py`), the location cascade in
+`calendar_app/templates/calendar_app/_location_cascade.html` and `_location_filter.html`
+**Tests**: `locations/tests.py`, `locations/test_maps.py`, `calendar_app/tests.py` (location proposals
+in the event form, map resolution), `tests/e2e/test_location_cascade.py`, `test_locations_map.py`,
+`test_location_proposal.py`, `test_location_filter.py`
+**Related**: [events](events.md), [calendar](calendar.md); the `locations` skill holds the rules for
+keeping the tree clean by hand
+
+## Overview
+
+Every event sits on a four-level tree: country, region, city (any settlement), venue -- the actual
+start point. Members propose new places; admins approve geography. A public map page shows the
+places, and lets managers maintain the tree.
+
+## User Scenarios
+
+### Story 1 -- Place an event (P1)
+
+1. **Given** the event form, **Then** a cascade of country, region and city selects (each filled
+   after the one above) offers the city's real venues and a mini-map of existing venues; picking a
+   marker selects that venue.
+2. **Given** a city without the right venue, **Then** the member may propose a new one with a point
+   on the mini-map; a participant's proposal waits for approval, an organizer's is approved -- unless
+   the city above it is itself still pending.
+3. **Given** the start point is unknown, **Then** the event is attached to the city's hidden
+   catch-all venue ("Other location", named in every language), which carries no point of its own.
+
+### Story 2 -- Approve geography (P1)
+
+1. **Given** an admin, **Then** pending locations are listed for moderation and may be approved or
+   rejected; approving also approves pending ancestors; approving a city approves its catch-all.
+2. **Given** an organizer approves an event on a pending branch, **Then** the geography stays
+   pending and the approval is refused until an admin approves the branch.
+3. **Given** a proposed city is rejected, **Then** its branch is dropped and its events are moved to
+   the "other location" -- refused when a published event or registrations or an approved location
+   still depend on it.
+
+### Story 3 -- Maintain the tree (P2)
+
+1. **Given** a participant, **Then** they may propose a venue only; an organizer a venue, region or
+   city; an admin any node, approved directly, including countries.
+2. **Given** an admin, **Then** they may edit names (per language), move a node (a level change only
+   when it has no children and no events; never under its own descendant), hide it (twice restores),
+   and soft-delete it -- refused while active descendants or events depend on it; the catch-all can be
+   neither moved, unhidden nor deleted.
+3. **Given** the map page, **Then** a visitor sees markers for places with points; a manager also
+   sees a paginated, filterable hierarchy table with edit/hide/delete actions that keep the filter.
+
+### Edge Cases
+
+- A hidden node is never a marker; a hidden venue resolves to its city's point, or the region's.
+- New nodes sort after the real ones and before the catch-all; ties fall back to creation order.
+- Concurrent tree mutations are serialised so a node is never orphaned or nested too deep.
+- Map links (2GIS, Yandex, Google, Apple, OpenStreetMap, with local brand names) appear only for a
+  venue with its own point -- never for a city, region, country, catch-all or hidden venue.
+
+## Functional Requirements
+
+- **FR-LOC-001**: Exactly four levels; an event attaches at a venue (depth 4); nothing nests under a
+  venue.
+- **FR-LOC-002**: Approving or rejecting geography is admin and up only; event moderation (organizer
+  and up) never approves geography on its own.
+- **FR-LOC-003**: Pending locations are visible only to their proposer and to admins.
+- **FR-LOC-004**: Deletion is soft; redirects after an action follow only a same-origin `next`.
+
+## Key Entities
+
+- **Location**: tree node with names per language, coordinates (optional), hidden / deleted flags,
+  sort order; the catch-all mapping (**LocationFallback**) per city.
+- **LocationProposal**: a pending node, its proposer and status.
+
+## Local assumptions
+
+Where the code still assumes a place, a brand or a sport (constitution, principle VI):
+
+- The location cascade's mini-map, the locations map page and the location form's coordinate
+  picker open over Central Asia (`[48.0, 68.0]`, zoom 5) when there is nothing to fit to.
+- The map-link services are a fixed list in code (`locations/maps.py`); which services suit a
+  country is not configurable.
+
+## Open Questions
+
+- None known.
