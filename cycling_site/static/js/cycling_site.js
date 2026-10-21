@@ -34,7 +34,7 @@
     // Every chooser on the page (navbar, profile) shows the skin the page is in.
     function showSkin(key, mode) {
         document.querySelectorAll('.skin-select').forEach(function (chooser) {
-            chooser.querySelector('.skin-icon').innerHTML = mode === 'dark' ? '&#9728;' : '&#9790;';
+            chooser.querySelector('.skin-icon').innerHTML = mode === 'dark' ? '&#9790;' : '&#9728;';
             chooser.querySelectorAll('[data-skin-key]').forEach(function (item) {
                 var on = item.dataset.skinKey === key;
                 item.classList.toggle('active', on);

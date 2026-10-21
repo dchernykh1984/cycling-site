@@ -10,7 +10,8 @@ from accounts.models import User
 from cycling_site.skins import registry
 from tests.e2e.conftest import inject_session, open_navbar_if_collapsed
 
-ICON = {"light": "\u263e", "dark": "\u2600"}
+# The icon shows the mode the page is in: a sun in light, a moon in dark.
+ICON = {"light": "\u2600", "dark": "\u263e"}
 
 
 def _start():
@@ -64,7 +65,7 @@ def test_a_guests_old_choice_in_the_browser_is_carried_over_to_the_cookie(page: 
     assert _skin_cookie(page) == "dark"
     # The chooser was drawn for light; on this very page it already shows dark.
     chooser = page.locator("nav .skin-select")
-    expect(chooser.locator(".skin-icon")).to_have_text("\u2600")
+    expect(chooser.locator(".skin-icon")).to_have_text(ICON["dark"])
     expect(chooser.locator("[data-skin-key='dark']")).to_have_class(re.compile(r"\bactive\b"))
     expect(chooser.locator("[data-skin-key='light']")).not_to_have_class(re.compile(r"\bactive\b"))
 
