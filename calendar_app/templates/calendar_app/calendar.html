@@ -12,17 +12,12 @@
 <style>
   #calendar { min-height: 500px; }
   .fc-event { cursor: pointer; }
-  /* The grid's own toolbar holds only the Grid/List switch: the period, its arrows and Today are
-     the row above it, shared with the list and the map (_period_nav.html). Kept wrapping, so the
-     toolbar can never take the page wider than a phone screen. */
-  .fc .fc-header-toolbar { flex-wrap: wrap; row-gap: .5rem; }
-  .fc .fc-toolbar-chunk { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
   /* Every event is all-day, so the list's time column only ever held an empty cell. */
   .fc .fc-list-event-time { display: none; }
   /* The list's day headings and its own buttons in the skin's text colour on the skin's own
      surface: FullCalendar's translucent grey under the dark skin's grey links came out 2.3:1. */
   .fc .fc-list-day-cushion { background: var(--bs-tertiary-bg); }
-  .fc .fc-list-day-text, .fc .fc-list-day-side-text, .fc-list-past-toggle .btn-link { color: var(--bs-body-color); }
+  .fc .fc-list-day-text, .fc .fc-list-day-side-text { color: var(--bs-body-color); }
 </style>
 {% endblock %}
 
@@ -180,8 +175,9 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('location-filter-ready', updateSwitcherLinks);
 
   // --- The period ---
-  // The row above the grid (_period_nav.html) asks for a period: a month is the month view the
-  // reader chose, grid or list; any other period is a list of exactly those days.
+  // The row above the grid (_period_nav.html) asks for a period: a month is the month grid, on
+  // every screen; any other period is a list of exactly those days. The list of a month's days is
+  // the List tab's on a phone, so the calendar has no second "List" of its own.
   function dayAfter(isoDay) {
     var p = isoDay.split('-');
     var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]) + 1);
@@ -196,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.changeView('listRange', from);
   }
   window.onPeriodChange = function (period) {
-    if (period.kind === 'month') calendar.changeView(monthView, period.from);
+    if (period.kind === 'month') calendar.changeView('dayGridMonth', period.from);
     else showRange(period.from, period.to);
   };
   // The period on screen travels to Share and to the List and Map links, so the other tabs open
@@ -216,108 +212,43 @@ document.addEventListener('DOMContentLoaded', function () {
     updateSwitcherLinks();
   }
 
-  // --- Month as a grid or as a list of days ---
-  // A phone opens on the list: seven columns of one-word titles on a 390px screen read as noise.
-  // The grid is a tap away, and whichever the reader picks is kept for next time. The choice is
-  // made once, on load -- a phone fires "resize" whenever its address bar slides away, and a view
-  // that switched on resize is what made the earlier phone list jump about.
-  var VIEW_KEY = 'calendarView';
-  var VIEWS = ['dayGridMonth', 'listMonth'];
-  var savedView = null;
-  try { savedView = localStorage.getItem(VIEW_KEY); } catch (e) { /* storage blocked */ }
-  var isPhone = window.matchMedia('(max-width: 767.98px)').matches;
-  var currentView = VIEWS.indexOf(savedView) >= 0 ? savedView : (isPhone ? 'listMonth' : 'dayGridMonth');
-  // The month view the reader last chose, which a month returns to from any other period (shown
-  // as a list of its own, listRange).
-  var monthView = currentView;
-  function markMonthView() {
-    var type = calendar ? calendar.view.type : currentView;
-    document.querySelectorAll('[data-month-view]').forEach(function (button) {
-      var on = button.dataset.monthView === type;
-      button.classList.toggle('active', on);
-      button.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-  }
-
   // In the list a multi-day race is one row on its first day with the day it ends -- not the same
   // row on every day it runs, which repeated a three-day triathlon three times. A day whose only
   // rows were such repeats loses its heading too.
-  //
-  // The current month starts at today: on the 20th nobody opens a phone calendar to read the 1st.
-  // The days already gone fold behind one line that opens them. A race that began before today and
-  // is still on shows under today's heading, since its own first day is folded away.
-  var EARLIER_LABEL = '{% trans "Earlier days of the month" %}';
-  var showPast = false;
   function isoDate(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
-  function isoToday() { return isoDate(new Date()); }
   function tidyList() {
     var body = document.querySelector('#calendar .fc-list-table tbody');
     if (!body) return;
-    var oldToggle = body.querySelector('.fc-list-past-toggle');
-    if (oldToggle) oldToggle.remove();
-    var today = isoToday();
-    // Only the month that holds today folds: a past month, a past weekend or the season are read
-    // whole, and folding them left a page with nothing but the button.
-    var view = calendar.view;
-    var foldPast = !showPast && view.type === 'listMonth'
-      && isoDate(view.currentStart) <= today && today < isoDate(view.currentEnd);
     var seen = {};
-    var folded = {};
     var heading = null;
     var headingHasRows = false;
-    var past = false;
     Array.prototype.forEach.call(body.rows, function (row) {
       if (row.classList.contains('fc-list-day')) {
         if (heading) heading.hidden = !headingHasRows;
         heading = row;
         headingHasRows = false;
-        past = foldPast && (row.dataset.date || '') < today;
         return;
       }
       var id = row.dataset.eventId;
-      if (past) {
-        row.hidden = true;
-        if (id) folded[id] = true;
-        return;
-      }
       row.hidden = Boolean(id && seen[id]);
       if (id) seen[id] = true;
       if (!row.hidden) headingHasRows = true;
     });
     if (heading) heading.hidden = !headingHasRows;
-    var hiddenCount = Object.keys(folded).filter(function (id) { return !seen[id]; }).length;
-    if (hiddenCount) {
-      var toggle = body.insertRow(0);
-      toggle.className = 'fc-list-past-toggle';
-      var cell = toggle.insertCell(0);
-      cell.colSpan = 3;
-      var button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'btn btn-link btn-sm px-0';
-      button.textContent = EARLIER_LABEL + ' (' + hiddenCount + ')';
-      button.addEventListener('click', function () {
-        showPast = true;
-        tidyList();
-        // The button is gone; focus goes to the first event it opened.
-        var first = document.querySelector('#calendar .fc-list-event:not([hidden]) a');
-        if (first) first.focus();
-      });
-      cell.appendChild(button);
-    }
   }
   function tidyListSoon() { window.setTimeout(tidyList, 0); }
 
   // --- FullCalendar ---
   var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-    initialView: currentView,
+    initialView: 'dayGridMonth',
     locale: '{{ CURRENT_LANGUAGE }}',
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
     views: { listRange: { type: 'list', visibleRange: function () { return listRange; } } },
     // FullCalendar's own bundle has no Kazakh at all, so the labels come from our catalogue like
     // every other word on the page.
-    // The period and the Grid/List switch live in the row above (_period_nav.html).
+    // The period lives in the row above (_period_nav.html).
     headerToolbar: false,
     // The list's day headings and empty month, in the site's words rather than the browser's.
     listDayFormat: function (arg) { return dayLabel(arg.date.year, arg.date.month, arg.date.day); },
@@ -340,17 +271,11 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(failureCallback);
     },
     datesSet: function (info) {
-      showPast = false;
       var start = info.view.currentStart;
       var end = info.view.currentEnd;
       var from = isoDate(start);
       var to = isoDate(new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1));
-      if (VIEWS.indexOf(info.view.type) >= 0) {
-        monthView = info.view.type;
-        if (monthView !== currentView) {
-          currentView = monthView;
-          try { localStorage.setItem(VIEW_KEY, currentView); } catch (e) { /* storage blocked */ }
-        }
+      if (info.view.type === 'dayGridMonth') {
         // The month, named as the row names it: the current one from today.
         var month = window.periodNav.rangeOf('month', start);
         from = month[0];
@@ -360,7 +285,6 @@ document.addEventListener('DOMContentLoaded', function () {
       var current = window.periodNav.rangeOf('month', new Date());
       if (from === current[0] && to === current[1]) storeDates(null);
       else storeDates(from, to);
-      markMonthView();
       tidyListSoon();
     },
     eventsSet: tidyListSoon,
@@ -398,27 +322,6 @@ document.addEventListener('DOMContentLoaded', function () {
   calendar.render();
   window.calendarFC = calendar;  // exposed for e2e/debugging, like the map's window.calendarMap
 
-  // Grid or list for a month, in the period row beside Today. From another period it opens the
-  // month that period starts in.
-  (function () {
-    var extra = document.getElementById('period-extra');
-    if (!extra) return;
-    var group = document.createElement('div');
-    group.className = 'period-pair';
-    group.setAttribute('role', 'group');
-    [['dayGridMonth', '{% filter escapejs %}{% trans "Grid" %}{% endfilter %}'], ['listMonth', '{% filter escapejs %}{% trans "List" %}{% endfilter %}']].forEach(function (pair) {
-      var button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'period-b period-small';
-      button.dataset.monthView = pair[0];
-      button.textContent = pair[1];
-      button.addEventListener('click', function () { calendar.changeView(pair[0], calendar.view.currentStart); });
-      group.appendChild(button);
-    });
-    extra.appendChild(group);
-    markMonthView();
-  }());
-
   // A link with dates -- from Share, or from the list and the map -- opens on that period.
   (function () {
     var p = new URLSearchParams(window.location.search);
@@ -426,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var to = p.get('date_to');
     if (!from) return;
     var kind = window.periodNav.kindOf(from, to);
-    if (kind === 'month' || kind === 'open') calendar.changeView(monthView, from);
+    if (kind === 'month' || kind === 'open') calendar.changeView('dayGridMonth', from);
     else showRange(from, to);
   }());
 
