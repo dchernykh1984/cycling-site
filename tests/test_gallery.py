@@ -163,6 +163,19 @@ class CreateAlbumTests(GalleryTestCase):
         self.assertEqual(album.date, datetime.date(2026, 7, 12))
         self.assertEqual(album.competition, race)
 
+    def test_only_public_events_are_offered(self):
+        from gallery.forms import AlbumForm
+
+        day = datetime.date(2026, 9, 6)
+        approved = Competition.Status.APPROVED
+        public = Competition.objects.create(title_ru="Open race", date_start=day, status=approved)
+        private = Competition.objects.create(title_ru="Club only", date_start=day, status=approved, invite_only=True)
+        hidden = Competition.objects.create(title_ru="Taken down", date_start=day, status=approved, is_hidden=True)
+        offered = set(AlbumForm().fields["competition"].queryset)
+        self.assertIn(public, offered)
+        self.assertNotIn(private, offered)
+        self.assertNotIn(hidden, offered)
+
     def test_a_typed_title_wins_over_the_event(self):
         race = Competition.objects.create(
             title_ru="Giro", date_start=datetime.date(2026, 8, 2), status=Competition.Status.APPROVED

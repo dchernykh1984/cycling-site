@@ -48,8 +48,10 @@ class AlbumForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Only events anybody may see: an album is public, and it takes its event's title -- an
+        # invite-only or hidden event's name would surface in the gallery and the sitemap.
         self.fields["competition"].queryset = Competition.objects.filter(
-            status=Competition.Status.APPROVED, is_deleted=False
+            status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False, invite_only=False
         ).order_by("-date_start", "pk")
 
     def clean(self):
