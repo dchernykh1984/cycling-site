@@ -334,6 +334,12 @@ class GalleryPageTests(GalleryTestCase):
         self.client.force_login(self.admin)
         self.assertEqual(self.client.get(album.get_absolute_url()).status_code, 200)
 
+    def test_a_hidden_album_offers_no_share_button(self):
+        album = self._album(is_hidden=True)
+        photo = self._photo(album)
+        self.client.force_login(self.admin)
+        self.assertNotContains(self.client.get(photo.get_absolute_url()), "share-btn")
+
     def test_a_photo_page_steps_through_the_album(self):
         album = self._album()
         first, second = self._photo(album, sort_order=1), self._photo(album, sort_order=2)
