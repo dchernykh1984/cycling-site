@@ -23,7 +23,9 @@ anything that loads.
 
 ## Principles
 
-1. **Phone first.** Lay a page out at 375px, make sure it still works at 320px, then let it grow. A
+1. **Phone first.** Design a page for phones 360px wide and up, then let it grow. On the narrowest
+   phones (320px) only one thing is asked: nothing is cut off or spills over -- past the screen's
+   edge or a button's frame. A
    seven-column month grid spread October over about five phone screens with titles cut to a few
    letters; a list by days reads. On a wide screen the grid can stay -- as a choice.
 2. **Content before controls.** The first screen shows events. On a phone the filters fold behind
@@ -59,16 +61,18 @@ anything that loads.
 10. **Three languages, the longest first.** Size a control for its longest label, usually Kazakh;
     a word cut off only shows in the language nobody checked.
     - A group of buttons that belong together -- the period kinds, the view switch -- stays in one
-      row at every width from 320px up; it never folds into a second row.
+      row at every width from 360px up; it never folds into a second row.
     - Inside a button the words take at most two lines, spaced at least 1.2 apart, at least 8px
       from the frame at the sides and 4px above and below; the button grows to hold them, and the
       buttons of a row share a height.
     - When a label would need a third line, or come closer to the frame than that, in any language
-      at 320px, shorten the words (in all three catalogues) and make the type smaller -- for every
+      at 360px, shorten the words (in all three catalogues) and make the type smaller -- for every
       button of the row at once, so the row stays even, and never below 12px, the smallest label
       size in Apple's and Google's type scales. The 12px floor is for type made smaller to fit; it
       does not reach labels a skin sets small on purpose (Lux's 10px capitals). "Today and
       tomorrow" took a third line in Kazakh and English at 320px and was cut off.
+    - At 320px the room around the words is not asked for: a label only must not be cut off or
+      spill over its frame.
 11. **Readable in every skin, in every state.** Text at least 4.5:1 against what it is drawn on
     (3:1 for large text) at rest, under the pointer and in focus -- a button that is readable at
     rest can turn white on pale grey when hovered (1.49:1 on the view tabs in light). A control's
@@ -129,8 +133,8 @@ second page.
 | The period is named in words on every tab. | `test_the_period_is_named_in_words` |
 | Every control in the shared header is at least 44x44px on a phone. | `test_every_control_is_big_enough_to_tap_on_a_phone` |
 | Nothing scrolls sideways, from 320px up. | `test_no_tab_scrolls_sideways`, `test_calendar_view.py` |
-| A group of buttons that belong together stays in one row, from 320px up. | `test_a_button_group_stays_in_one_row` |
-| Every label fits its control in ru, kk and en, from 320px up: at most two lines, spaced at least 1.2, at least 8px from the frame at the sides and 4px above and below. | `test_every_label_fits_its_control` |
+| A group of buttons that belong together stays in one row, from 360px up. | `test_a_button_group_stays_in_one_row` |
+| Every label fits its control in ru, kk and en, from 360px up: at most two lines, spaced at least 1.2, at least 8px from the frame at the sides and 4px above and below; at 320px nothing is cut off or spills over its frame. | `test_every_label_fits_its_control` |
 | Every control has words: visible text or `aria-label`. | `test_every_control_says_what_it_does` |
 | No hex colour in a template outside `skins/`. | pre-commit `no-hex-colours-in-templates` |
 | Text at least 4.5:1 (3:1 large) in every skin, at rest, under the pointer and in focus. | `test_skin_contrast.py`, `test_the_header_is_readable_in_this_skin` |
@@ -188,5 +192,5 @@ pre-commit run no-hex-colours-in-templates --all-files
 ```
 
 `--reuse-db` keeps the test database between runs: creating it costs about 50 seconds a start.
-The test sets its phone (375px, 320px for sideways scroll) and desktop widths itself; CI runs it in
-every browser job and, via the `e2e-skin` jobs, in every skin.
+The test sets its phone (360px; 320px for what is cut off or spills over) and desktop widths
+itself; CI runs it in every browser job and, via the `e2e-skin` jobs, in every skin.
