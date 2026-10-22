@@ -47,7 +47,7 @@ class TodayButtonTests(TestCase):
             "Today",
             "Grid",
             "List",
-            "Today and tomorrow",
+            "Today\u2013tomorrow",
             "Weekend",
             "Week",
             "Month",
