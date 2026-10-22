@@ -25,9 +25,9 @@ COMMENTS = re.compile(
     re.DOTALL | re.MULTILINE,
 )
 # 3, 4, 6 or 8 hex digits, but not a link to an anchor (href="#add", data-bs-target="#bad", a URL's
-# /#abc) or a character reference (&#123;).
+# /#abc, a template tag's {% url 'x' %}#add or {{ link }}#abc) or a character reference (&#123;).
 HEX = re.compile(
-    r"(?<!href=[\"'])(?<!target=[\"'])(?<![&\w/])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])"
+    r"(?<!href=[\"'])(?<!target=[\"'])(?<!%\})(?<!\}\})(?<![&\w/])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])"
 )
 
 
