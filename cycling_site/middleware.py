@@ -124,3 +124,22 @@ class ReaderTimezoneMiddleware:
         else:
             timezone.activate(request.reader_timezone)
         return self.get_response(request)
+
+
+class NoindexAccountPagesMiddleware:
+    """Keep the account pages -- sign-in, sign-up, password reset, the profile -- out of search.
+
+    They are the same few forms in three languages, with nothing a search should lead to, and an
+    engine was filing /ru/accounts/signup/ among duplicates. Sent as a header, so it holds whatever
+    template draws the page.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        match = getattr(request, "resolver_match", None)
+        if match and (match.url_name or "").startswith(("account_", "socialaccount_")):
+            response.setdefault("X-Robots-Tag", "noindex")
+        return response
