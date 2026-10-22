@@ -3599,8 +3599,8 @@ msgid "Remove filter"
 msgstr "Убрать фильтр"
 
 #: calendar_app/templates/calendar_app/_period_nav.html:43
-msgid "Today and tomorrow"
-msgstr "Сегодня и завтра"
+msgid "Today tomorrow"
+msgstr "Сегодня завтра"
 
 #: calendar_app/templates/calendar_app/_period_nav.html:45
 msgid "Week"
