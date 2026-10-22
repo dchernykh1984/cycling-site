@@ -349,6 +349,13 @@ INDEXNOW_KEY = env("INDEXNOW_KEY", default="")
 GOOGLE_SITE_VERIFICATION = env("GOOGLE_SITE_VERIFICATION", default="")
 YANDEX_VERIFICATION = env("YANDEX_VERIFICATION", default="")
 
+# The organisation the home page describes to search engines (home/seo.py). ORGANIZATION_SAME_AS
+# lists its own profiles elsewhere -- Instagram, Telegram, Strava club -- comma separated; the
+# engines use them to tie those profiles to this site. Empty is fine: nothing is claimed then.
+ORGANIZATION_NAME = env("ORGANIZATION_NAME", default="")
+ORGANIZATION_AREA = env("ORGANIZATION_AREA", default="")
+ORGANIZATION_SAME_AS = env.list("ORGANIZATION_SAME_AS", default=[])
+
 # Allowed file extensions for documents in the document library.
 # This can be omitted to allow all files, but note that this may present a security risk
 # if untrusted users are allowed to upload files -

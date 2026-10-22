@@ -8,7 +8,9 @@ in the sitemap, the calendar's own views in it, and a date on every event entry.
 
 import json
 import re
+from pathlib import Path
 
+from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -57,3 +59,45 @@ class VerificationTagTests(TestCase):
     @override_settings(GOOGLE_SITE_VERIFICATION='x" /><script>alert(1)</script>')
     def test_a_value_cannot_inject_markup(self):
         self.assertNotIn("<script>alert(1)</script>", _home(self.client))
+
+
+class HomeOrganizationTests(TestCase):
+    def _graph(self, language="ru"):
+        for block in _json_ld(_home(self.client, language)):
+            if "@graph" in block:
+                return {node["@type"]: node for node in block["@graph"]}
+        self.fail("no organisation markup on the home page")
+
+    def test_the_home_page_names_a_sports_organization_and_a_website(self):
+        graph = self._graph()
+        self.assertIn("SportsOrganization", graph)
+        self.assertIn("WebSite", graph)
+
+    @override_settings(
+        ORGANIZATION_NAME="Universal Bicycle Team",
+        ORGANIZATION_AREA="Almaty",
+        ORGANIZATION_SAME_AS=["https://t.me/example", "javascript:alert(1)"],
+    )
+    def test_the_club_carries_what_the_settings_say_and_only_web_links(self):
+        club = self._graph()["SportsOrganization"]
+        self.assertEqual(club["name"], "Universal Bicycle Team")
+        self.assertEqual(club["areaServed"]["name"], "Almaty")
+        self.assertEqual(club["sameAs"], ["https://t.me/example"])
+
+    @override_settings(ORGANIZATION_AREA="", ORGANIZATION_SAME_AS=[])
+    def test_nothing_is_claimed_that_was_not_set(self):
+        club = self._graph()["SportsOrganization"]
+        self.assertNotIn("areaServed", club)
+        self.assertNotIn("sameAs", club)
+
+    def test_the_logo_is_an_absolute_address_of_a_file_that_exists(self):
+        logo = self._graph()["SportsOrganization"]["logo"]
+        self.assertTrue(logo.startswith("http"), logo)
+        self.assertTrue((Path(settings.BASE_DIR) / "cycling_site/static/logo-512.png").is_file())
+
+    def test_the_search_box_points_at_the_site_search(self):
+        action = self._graph()["WebSite"]["potentialAction"]
+        self.assertIn(f"{reverse('search')}?q={{search_term_string}}", action["target"]["urlTemplate"])
+
+    def test_the_website_states_its_language(self):
+        self.assertEqual(self._graph("kk")["WebSite"]["inLanguage"], "kk")

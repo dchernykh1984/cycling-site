@@ -3,6 +3,11 @@
 
 {% block title %}{% if site_content.page_title %}{{ site_content.page_title }}{% else %}{{ page.title }}{% endif %}{% endblock %}
 
+{% block extra_head %}
+{# Who runs the site and how to search it (home/seo.py), for search engines. #}
+{% if structured_data %}<script type="application/ld+json">{{ structured_data|safe }}</script>{% endif %}
+{% endblock %}
+
 {% block content %}
 {% comment %}UBT Almaty skin: the home page opens with the team's mark and the ways into the site -- the
 calendar first, then its list and map, news and the knowledge base -- before the owner's own text,

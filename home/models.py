@@ -76,6 +76,10 @@ class HomePage(AsciiSlugMixin, Page):
         # than get_language(), which Wagtail overrides to the page's own locale inside serve().
         lang = getattr(request, "LANGUAGE_CODE", None) or get_language()
         context["site_content"] = LocalizedSiteContent(SiteContent.load(), lang)
+        from home.seo import organization
+
+        site = self.get_site()
+        context["structured_data"] = organization(request, context["site_content"], site.site_name if site else "")
         return context
 
 
