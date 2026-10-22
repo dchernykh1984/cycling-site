@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "calendar_app",
     "protocols",
     "registrations",
+    "gallery",
     "modeltranslation",  # before apps it will translate and before django.contrib.admin
     "wagtail_localize",  # before wagtail.admin
     "wagtail_localize.locales",  # replaces wagtail.locales
@@ -343,6 +344,11 @@ SITE_BASE_URL = env("SITE_BASE_URL", default="http://localhost:8000")
 # IndexNow key: a random string we also serve at /<key>.txt, which is how Bing, Yandex and Seznam
 # check that whoever submits URLs for this host controls it. Empty means no submissions at all.
 INDEXNOW_KEY = env("INDEXNOW_KEY", default="")
+
+# Photo gallery uploads: how many files one form submission takes, and the largest file accepted.
+# Every photo is re-encoded on the way in (gallery/images.py), which is what bounds a batch.
+GALLERY_MAX_FILES_PER_UPLOAD = env.int("GALLERY_MAX_FILES_PER_UPLOAD", default=30)
+GALLERY_MAX_UPLOAD_MB = env.int("GALLERY_MAX_UPLOAD_MB", default=25)
 
 # Search Console and Yandex Webmaster prove that whoever adds the site controls it. Their "HTML tag"
 # method reads a meta tag from the home page; the value is the content attribute each console shows.

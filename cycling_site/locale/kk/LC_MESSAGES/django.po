@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 16:23+0500\n"
+"POT-Creation-Date: 2026-10-22 20:51+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -38,7 +38,8 @@ msgstr "Қатысушы"
 msgid "Organizer"
 msgstr "Ұйымдастырушы"
 
-#: accounts/models.py:21 cycling_site/templates/base.html:152
+#: accounts/models.py:21 cycling_site/templates/base.html:157
+#: skins/orange/templates/base.html:166
 msgid "Admin"
 msgstr "Әкімші"
 
@@ -129,7 +130,7 @@ msgstr "Iздеу..."
 #: accounts/templates/accounts/contact_owners.html:9
 #: accounts/templates/accounts/profile.html:196
 #: accounts/templates/accounts/profile.html:204
-#: accounts/templates/accounts/profile.html:205 accounts/tests.py:1434
+#: accounts/templates/accounts/profile.html:205 accounts/tests.py:1435
 msgid "Contact site owners"
 msgstr "Сайт иелерімен байланыс"
 
@@ -150,6 +151,7 @@ msgstr "Хабарлама жіберу"
 #: accounts/templates/accounts/request_role.html:38
 #: calendar_app/templates/calendar_app/edit.html:246
 #: calendar_app/templates/calendar_app/submit.html:175
+#: gallery/templates/gallery/album_form.html:90
 #: home/templates/home/home_edit.html:117
 #: knowledge/templates/knowledge/add_article.html:51
 #: knowledge/templates/knowledge/admin/approve_confirm.html:21
@@ -168,7 +170,7 @@ msgstr "Болдырмау"
 
 #: accounts/templates/accounts/profile.html:4
 #: accounts/templates/accounts/profile.html:9
-#: cycling_site/templates/base.html:148
+#: cycling_site/templates/base.html:153 skins/orange/templates/base.html:162
 msgid "Profile"
 msgstr "Профиль"
 
@@ -409,13 +411,15 @@ msgid "My registrations"
 msgstr "Менің тіркелулерім"
 
 #: accounts/templates/accounts/profile.html:302
-#: accounts/templates/accounts/profile.html:342
+#: accounts/templates/accounts/profile.html:342 gallery/forms.py:35
+#: gallery/models.py:36
 msgid "Event"
 msgstr "Іс-шара"
 
 #: accounts/templates/accounts/profile.html:303
 #: accounts/templates/accounts/profile.html:343
-#: accounts/templates/accounts/profile.html:403
+#: accounts/templates/accounts/profile.html:403 gallery/forms.py:30
+#: gallery/models.py:33
 msgid "Date"
 msgstr "Күні"
 
@@ -459,8 +463,9 @@ msgid "Delete this event?"
 msgstr "Бұл іс-шараны жою керек пе?"
 
 #: accounts/templates/accounts/profile.html:377
-#: calendar_app/templates/calendar_app/detail.html:372
-#: calendar_app/templates/calendar_app/detail.html:393
+#: calendar_app/templates/calendar_app/detail.html:384
+#: calendar_app/templates/calendar_app/detail.html:405
+#: gallery/templates/gallery/album_form.html:79
 #: knowledge/templates/knowledge/knowledge_article_detail.html:59
 #: knowledge/templates/knowledge/knowledge_article_detail.html:79
 #: locations/templates/locations/locations_map_page.html:106
@@ -495,7 +500,8 @@ msgstr "Мақала жіберу"
 #: calendar_app/templates/calendar_app/list.html:180
 #: calendar_app/templates/calendar_app/submit.html:34
 #: calendar_app/templates/calendar_app/submit.html:47
-#: calendar_app/templates/calendar_app/submit.html:60 knowledge/models.py:264
+#: calendar_app/templates/calendar_app/submit.html:60 gallery/forms.py:24
+#: gallery/models.py:32 knowledge/models.py:264
 #: knowledge/templates/knowledge/add_article.html:18
 #: knowledge/templates/knowledge/edit_article.html:17
 #: knowledge/templates/knowledge/submit.html:21 news/forms.py:39
@@ -511,6 +517,7 @@ msgid "Type"
 msgstr "Түрі"
 
 #: accounts/templates/accounts/profile.html:402
+#: skins/orange/templates/base.html:140
 msgid "Language"
 msgstr "Тіл"
 
@@ -531,23 +538,23 @@ msgstr ""
 "Bearer &lt;token&gt;</code>"
 
 #: accounts/templates/accounts/profile.html:444
-#: calendar_app/templates/calendar_app/detail.html:262
-#: calendar_app/templates/calendar_app/detail.html:313
+#: calendar_app/templates/calendar_app/detail.html:274
+#: calendar_app/templates/calendar_app/detail.html:325
 msgid "Copy"
 msgstr "Көшіру"
 
 #: accounts/templates/accounts/profile.html:447
-#: calendar_app/templates/calendar_app/detail.html:289
+#: calendar_app/templates/calendar_app/detail.html:301
 msgid "No token yet. Generate one below."
 msgstr "Токен алi жок. Томенде жасаныз."
 
 #: accounts/templates/accounts/profile.html:452
-#: calendar_app/templates/calendar_app/detail.html:267
+#: calendar_app/templates/calendar_app/detail.html:279
 msgid "Regenerate token"
 msgstr "Токендi жаналау"
 
 #: accounts/templates/accounts/profile.html:452
-#: calendar_app/templates/calendar_app/detail.html:292
+#: calendar_app/templates/calendar_app/detail.html:304
 msgid "Generate token"
 msgstr "Токен жасау"
 
@@ -556,7 +563,7 @@ msgid "API docs (Swagger)"
 msgstr "API кужаттамасы (Swagger)"
 
 #: accounts/templates/accounts/profile.html:461
-#: cycling_site/templates/base.html:159
+#: cycling_site/templates/base.html:164 skins/orange/templates/base.html:173
 msgid "Log out"
 msgstr "Шыгу"
 
@@ -618,6 +625,7 @@ msgstr ""
 
 #: accounts/templates/accounts/profile_edit.html:79
 #: calendar_app/templates/calendar_app/edit.html:245
+#: gallery/templates/gallery/album_form.html:89
 #: knowledge/templates/knowledge/edit_article.html:49
 #: locations/templates/locations/location_form.html:143
 #: registrations/templates/registrations/edit_registration.html:28
@@ -778,8 +786,8 @@ msgstr "Аяқталу күні басталу күнінен бұрын бол�
 msgid "Please choose a city for the new venue."
 msgstr "Жаңа өткізу орны үшін қала таңдаңыз."
 
-#: calendar_app/forms.py:229 calendar_app/views.py:1265
-#: calendar_app/views.py:1379
+#: calendar_app/forms.py:229 calendar_app/views.py:1292
+#: calendar_app/views.py:1406
 msgid "This location is not available."
 msgstr "Бұл локация қолжетімді емес."
 
@@ -819,7 +827,8 @@ msgstr "Міндетті емес: не дұрыс емес?"
 #: calendar_app/templates/calendar_app/detail.html:22
 #: calendar_app/templates/calendar_app/edit.html:12
 #: calendar_app/templates/calendar_app/list.html:19
-#: search/templates/search/search.html:24 tests/test_listing_seo.py:184
+#: search/templates/search/search.html:24
+#: skins/orange/templates/home/home_page.html:32 tests/test_listing_seo.py:184
 msgid "Events"
 msgstr "Іс-шаралар"
 
@@ -861,15 +870,15 @@ msgstr ""
 msgid "Additional info"
 msgstr "Қосымша ақпарат"
 
-#: calendar_app/preview_image.py:56
+#: calendar_app/preview_image.py:56 gallery/images.py:52
 msgid "The image is too large to process."
 msgstr "Сурет өңдеу үшін тым үлкен."
 
-#: calendar_app/preview_image.py:58
+#: calendar_app/preview_image.py:58 gallery/images.py:54
 msgid "This file is not an image we can read."
 msgstr "Бұл файл біз оқи алатын сурет емес."
 
-#: calendar_app/preview_image.py:66
+#: calendar_app/preview_image.py:66 gallery/images.py:59
 #, python-format
 msgid "The image is too small: at least %(size)d pixels on the longer side."
 msgstr ""
@@ -1133,21 +1142,26 @@ msgstr "Көрініс"
 #: calendar_app/templates/calendar_app/list.html:7
 #: calendar_app/templates/calendar_app/map.html:4
 #: calendar_app/templates/calendar_app/map.html:17
-#: cycling_site/templates/base.html:103
+#: cycling_site/templates/base.html:105 skins/orange/templates/base.html:112
+#: skins/orange/templates/base.html:213
+#: skins/orange/templates/home/home_page.html:33
 msgid "Calendar"
 msgstr "Кунтiзбе"
 
 #: calendar_app/templates/calendar_app/_view_switcher.html:14
+#: skins/orange/templates/home/home_page.html:34
 msgid "List"
 msgstr "Тізім"
 
 #: calendar_app/templates/calendar_app/_view_switcher.html:17
 #: cycling_site/templates/_map_layers.html:22
-#: cycling_site/templates/base.html:108
+#: cycling_site/templates/base.html:110
 #: locations/templates/locations/location_form.html:13
 #: locations/templates/locations/locations_map_page.html:4
 #: locations/templates/locations/locations_map_page.html:15
-#: locations/tests.py:905
+#: locations/tests.py:905 skins/orange/templates/base.html:117
+#: skins/orange/templates/base.html:214
+#: skins/orange/templates/home/home_page.html:35
 msgid "Map"
 msgstr "Карта"
 
@@ -1161,6 +1175,7 @@ msgstr "Сүзгілер"
 #: calendar_app/templates/calendar_app/map.html:28
 #: calendar_app/templates/calendar_app/submit.html:4
 #: calendar_app/templates/calendar_app/submit.html:15
+#: skins/orange/templates/home/home_page.html:25
 msgid "Submit event"
 msgstr "Іс-шара қосу"
 
@@ -1195,6 +1210,7 @@ msgid "Year"
 msgstr "Жыл"
 
 #: calendar_app/templates/calendar_app/calendar.html:89
+#: skins/orange/templates/home/home_page.html:23
 msgid "Nearest events"
 msgstr "Жақын іс-шаралар"
 
@@ -1352,10 +1368,11 @@ msgstr "Старт нүктесіне сілтеме"
 #: calendar_app/templates/calendar_app/list.html:210
 #: calendar_app/templates/calendar_app/list.html:213
 #: cycling_site/templates/_setup_hint.html:21
-#: cycling_site/templates/base.html:166
+#: cycling_site/templates/base.html:171
 #: registrations/templates/registrations/register.html:4
 #: registrations/templates/registrations/register.html:13
 #: registrations/templates/registrations/register.html:207
+#: skins/orange/templates/base.html:180
 msgid "Register"
 msgstr "Тiркелу"
 
@@ -1432,33 +1449,37 @@ msgstr "Топтық нәтижелер"
 msgid "Live"
 msgstr "Тікелей эфир"
 
-#: calendar_app/templates/calendar_app/detail.html:216
+#: calendar_app/templates/calendar_app/detail.html:217
+msgid "Photo albums"
+msgstr "Фотоальбомдар"
+
+#: calendar_app/templates/calendar_app/detail.html:228
 #: calendar_app/templates/calendar_app/edit.html:173
 #: calendar_app/tests.py:4017 tests/e2e/test_competition_result_emphasis.py:52
 msgid "Additional materials"
 msgstr "Қосымша материалдар"
 
-#: calendar_app/templates/calendar_app/detail.html:239
+#: calendar_app/templates/calendar_app/detail.html:251
 msgid "Report a problem"
 msgstr "Шағым жіберу"
 
-#: calendar_app/templates/calendar_app/detail.html:244
+#: calendar_app/templates/calendar_app/detail.html:256
 msgid "Tell the moderators what looks wrong (optional)"
 msgstr "Модераторларға не дұрыс емес екенін айтыңыз (міндетті емес)"
 
-#: calendar_app/templates/calendar_app/detail.html:246
+#: calendar_app/templates/calendar_app/detail.html:258
 msgid "Send report"
 msgstr "Шағымды жіберу"
 
-#: calendar_app/templates/calendar_app/detail.html:251
+#: calendar_app/templates/calendar_app/detail.html:263
 msgid "You have reported this event; a moderator will review it."
 msgstr "Сіз бұл іс-шараға шағым жасадыңыз; модератор оны тексереді."
 
-#: calendar_app/templates/calendar_app/detail.html:256
+#: calendar_app/templates/calendar_app/detail.html:268
 msgid "Timing system token"
 msgstr "Хронометраж жүйесінің токені"
 
-#: calendar_app/templates/calendar_app/detail.html:265
+#: calendar_app/templates/calendar_app/detail.html:277
 msgid ""
 "Regenerate the timing token? The current token will stop working "
 "immediately."
@@ -1466,7 +1487,7 @@ msgstr ""
 "Хронометраж токенін қайта жасау керек пе? Ағымдағы токен бірден жұмысын "
 "тоқтатады."
 
-#: calendar_app/templates/calendar_app/detail.html:270
+#: calendar_app/templates/calendar_app/detail.html:282
 msgid ""
 "Delete the timing token? Timing tools will lose access until you generate a "
 "new one."
@@ -1474,11 +1495,11 @@ msgstr ""
 "Хронометраж токенін жою керек пе? Жаңасын жасағанша хронометраж құралдары "
 "қолжетімсіз болады."
 
-#: calendar_app/templates/calendar_app/detail.html:272
+#: calendar_app/templates/calendar_app/detail.html:284
 msgid "Delete token"
 msgstr "Токенді жою"
 
-#: calendar_app/templates/calendar_app/detail.html:276
+#: calendar_app/templates/calendar_app/detail.html:288
 msgid ""
 "If this token leaks, anyone could later alter or delete the results — "
 "regenerate or delete it."
@@ -1486,26 +1507,26 @@ msgstr ""
 "Егер токен таралып кетсе, біреу кейін нәтижелерді өзгертуі немесе жоюы "
 "мүмкін — оны қайта жасаңыз немесе жойыңыз."
 
-#: calendar_app/templates/calendar_app/detail.html:279
+#: calendar_app/templates/calendar_app/detail.html:291
 msgid "Access token for the offline timing system:"
 msgstr "Офлайн хронометраж жүйесіне кіру токені:"
 
-#: calendar_app/templates/calendar_app/detail.html:299
+#: calendar_app/templates/calendar_app/detail.html:311
 msgid "This event is hidden from public view."
 msgstr "Бұл іс-шара жалпы көрінімнен жасырылған."
 
-#: calendar_app/templates/calendar_app/detail.html:303
+#: calendar_app/templates/calendar_app/detail.html:315
 msgid ""
 "This event is by invitation: only the people its organizer invited can see "
 "it."
 msgstr ""
 "Шақыру бойынша іс-шара: оны тек ұйымдастырушы шақырғандар ғана көреді."
 
-#: calendar_app/templates/calendar_app/detail.html:308
+#: calendar_app/templates/calendar_app/detail.html:320
 msgid "Invitation link"
 msgstr "Шақыру сілтемесі"
 
-#: calendar_app/templates/calendar_app/detail.html:315
+#: calendar_app/templates/calendar_app/detail.html:327
 msgid ""
 "Replace the invitation link? The current link will stop working; people "
 "already invited keep access."
@@ -1513,11 +1534,11 @@ msgstr ""
 "Шақыру сілтемесін ауыстыру керек пе? Ағымдағы сілтеме жұмыс істемей қалады; "
 "бұрын шақырылғандардың қолжетімділігі сақталады."
 
-#: calendar_app/templates/calendar_app/detail.html:319
+#: calendar_app/templates/calendar_app/detail.html:331
 msgid "Replace link"
 msgstr "Сілтемені ауыстыру"
 
-#: calendar_app/templates/calendar_app/detail.html:322
+#: calendar_app/templates/calendar_app/detail.html:334
 msgid ""
 "Anyone who opens this link while signed in will see the event everywhere on "
 "the site. Send it only to the people you invite."
@@ -1525,7 +1546,7 @@ msgstr ""
 "Сайтқа кіріп, осы сілтемені ашқан кез келген адам іс-шараны сайттың барлық "
 "жерінде көреді. Оны тек өзіңіз шақыратын адамдарға жіберіңіз."
 
-#: calendar_app/templates/calendar_app/detail.html:331
+#: calendar_app/templates/calendar_app/detail.html:343
 #: calendar_app/templates/calendar_app/moderate.html:49
 #: calendar_app/templates/calendar_app/moderate.html:158
 #: knowledge/templates/knowledge/knowledge_index_page.html:44
@@ -1536,7 +1557,7 @@ msgstr ""
 msgid "Approve"
 msgstr "Бекіту"
 
-#: calendar_app/templates/calendar_app/detail.html:334
+#: calendar_app/templates/calendar_app/detail.html:346
 #: calendar_app/templates/calendar_app/moderate.html:55
 #: calendar_app/templates/calendar_app/moderate.html:163
 #: knowledge/templates/knowledge/admin/reject_form.html:21
@@ -1549,93 +1570,93 @@ msgid "Reject"
 msgstr "Қабылдамау"
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/templates/calendar_app/detail.html:341
+#: calendar_app/templates/calendar_app/detail.html:353
 #: calendar_app/templates/calendar_app/moderate.html:63
 msgid "Rejection reason"
 msgstr "Қабылданбау себебі"
 
-#: calendar_app/templates/calendar_app/detail.html:343
+#: calendar_app/templates/calendar_app/detail.html:355
 #: calendar_app/templates/calendar_app/moderate.html:66
 msgid "Confirm rejection"
 msgstr "Қабылдамауды растау"
 
-#: calendar_app/templates/calendar_app/detail.html:351
+#: calendar_app/templates/calendar_app/detail.html:363
 #: calendar_app/templates/calendar_app/edit.html:4
 #: calendar_app/templates/calendar_app/edit.html:18 calendar_app/tests.py:344
 msgid "Edit event"
 msgstr "Іс-шараны өңдеу"
 
-#: calendar_app/templates/calendar_app/detail.html:354
+#: calendar_app/templates/calendar_app/detail.html:366
 msgid "Clone"
 msgstr "Клондау"
 
-#: calendar_app/templates/calendar_app/detail.html:358
+#: calendar_app/templates/calendar_app/detail.html:370
 msgid "Resubmit for review"
 msgstr "Қайта қарауға жіберу"
 
-#: calendar_app/templates/calendar_app/detail.html:365
+#: calendar_app/templates/calendar_app/detail.html:377
 #: knowledge/templates/knowledge/knowledge_article_detail.html:53
 #: locations/templates/locations/locations_map_page.html:99
 #: news/templates/news/article_detail.html:58
 msgid "Unhide"
 msgstr "Көрсету"
 
-#: calendar_app/templates/calendar_app/detail.html:365
+#: calendar_app/templates/calendar_app/detail.html:377
 #: knowledge/templates/knowledge/knowledge_article_detail.html:53
 #: locations/templates/locations/locations_map_page.html:99
 #: news/templates/news/article_detail.html:58
 msgid "Hide"
 msgstr "Жасыру"
 
-#: calendar_app/templates/calendar_app/detail.html:370
+#: calendar_app/templates/calendar_app/detail.html:382
 msgid "Are you sure you want to delete this event?"
 msgstr "Бұл іс-шараны жойғыңыз келетінін растайсыз ба?"
 
-#: calendar_app/templates/calendar_app/detail.html:380
+#: calendar_app/templates/calendar_app/detail.html:392
 #: knowledge/templates/knowledge/knowledge_article_detail.html:66
 #: news/templates/news/article_detail.html:71
 #: news/templates/news/news_page.html:65
 msgid "Comments"
 msgstr "Пікірлер"
 
-#: calendar_app/templates/calendar_app/detail.html:401
+#: calendar_app/templates/calendar_app/detail.html:413
 #: knowledge/templates/knowledge/knowledge_article_detail.html:87
 #: news/templates/news/article_detail.html:92
 #: news/templates/news/news_page.html:91
 msgid "No comments yet. Be the first!"
 msgstr "Пікірлер жоқ. Бірінші болыңыз!"
 
-#: calendar_app/templates/calendar_app/detail.html:407
+#: calendar_app/templates/calendar_app/detail.html:419
 #: knowledge/templates/knowledge/knowledge_article_detail.html:93
 #: news/templates/news/article_detail.html:98
 #: news/templates/news/news_page.html:97
 msgid "Add a comment"
 msgstr "Пікір қосу"
 
-#: calendar_app/templates/calendar_app/detail.html:411
+#: calendar_app/templates/calendar_app/detail.html:423
 #: knowledge/templates/knowledge/knowledge_article_detail.html:97
 #: news/templates/news/article_detail.html:102
 #: news/templates/news/news_page.html:104
 msgid "Submit comment"
 msgstr "Пікірді жіберу"
 
-#: calendar_app/templates/calendar_app/detail.html:417
+#: calendar_app/templates/calendar_app/detail.html:429
 #: cycling_site/templates/_setup_hint.html:20
-#: cycling_site/templates/base.html:165
+#: cycling_site/templates/base.html:170
 #: knowledge/templates/knowledge/knowledge_article_detail.html:103
 #: news/templates/news/article_detail.html:108
-#: news/templates/news/news_page.html:111
+#: news/templates/news/news_page.html:111 skins/orange/templates/base.html:179
 msgid "Log in"
 msgstr "Кiру"
 
-#: calendar_app/templates/calendar_app/detail.html:417
+#: calendar_app/templates/calendar_app/detail.html:429
 #: knowledge/templates/knowledge/knowledge_article_detail.html:103
 #: news/templates/news/article_detail.html:108
 #: news/templates/news/news_page.html:112
 msgid "to leave a comment."
 msgstr "пікір қалдыру үшін."
 
-#: calendar_app/templates/calendar_app/detail.html:420
+#: calendar_app/templates/calendar_app/detail.html:432
 #: knowledge/templates/knowledge/knowledge_article_detail.html:106
 #: news/templates/news/article_detail.html:111
 msgid "Commenting is available to verified participants."
@@ -1677,6 +1698,7 @@ msgstr "Ағымдағы файл"
 #: calendar_app/templates/calendar_app/edit.html:123
 #: calendar_app/templates/calendar_app/edit.html:135
 #: calendar_app/templates/calendar_app/edit.html:147
+#: gallery/templates/gallery/photo.html:28
 msgid "Download"
 msgstr "Жүктеп алу"
 
@@ -1772,7 +1794,9 @@ msgstr "Сілтемелер"
 msgid "In favorites"
 msgstr "Таңдаулыларда"
 
-#: calendar_app/templates/calendar_app/list.html:185 locations/forms.py:21
+#: calendar_app/templates/calendar_app/list.html:185 gallery/models.py:50
+#: gallery/templates/gallery/albums.html:32
+#: gallery/templates/gallery/gallery.html:35 locations/forms.py:21
 #: locations/templates/locations/location_form.html:136
 #: locations/templates/locations/locations_map_page.html:89
 #: news/templates/news/news_list.html:59
@@ -1868,59 +1892,59 @@ msgstr "сіздің уақытыңыз: %(time)s"
 msgid "Ensure this value has at most %(limit_value)d characters."
 msgstr "Бұл мәнде ең көбі %(limit_value)d таңба болуы керек."
 
-#: calendar_app/views.py:856
+#: calendar_app/views.py:883
 msgid "N"
 msgstr "с.е."
 
-#: calendar_app/views.py:856
+#: calendar_app/views.py:883
 msgid "S"
 msgstr "о.е."
 
-#: calendar_app/views.py:857
+#: calendar_app/views.py:884
 msgid "E"
 msgstr "ш.б."
 
-#: calendar_app/views.py:857
+#: calendar_app/views.py:884
 msgid "W"
 msgstr "б.б."
 
-#: calendar_app/views.py:1499
+#: calendar_app/views.py:1526
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
 msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."
 
 # Pending/rejected competitions + profile (issue #180)
-#: calendar_app/views.py:1513
+#: calendar_app/views.py:1540
 msgid "Please provide a reason for rejection."
 msgstr "Қабылданбау себебін көрсетіңіз."
 
-#: calendar_app/views.py:1537 calendar_app/views.py:1562
+#: calendar_app/views.py:1564 calendar_app/views.py:1589
 #: knowledge/views.py:164 news/views.py:244
 msgid "Invalid submission."
 msgstr "Жарамсыз жіберу."
 
-#: calendar_app/views.py:1580
+#: calendar_app/views.py:1607
 msgid "You have already reported this event; a moderator will review it."
 msgstr "Сіз бұл іс-шараға шағым жасап қойдыңыз; модератор оны тексереді."
 
-#: calendar_app/views.py:1582
+#: calendar_app/views.py:1609
 msgid "Thank you. Your report has been sent to the moderators."
 msgstr "Рахмет. Сіздің шағымыңыз модераторларға жіберілді."
 
-#: calendar_app/views.py:1601
+#: calendar_app/views.py:1628
 msgid "Report dismissed; the event was cleared from the moderation queue."
 msgstr "Шағым алынып тасталды; іс-шара модерация кезегінен шығарылды."
 
-#: calendar_app/views.py:1661
+#: calendar_app/views.py:1688
 msgid "Only a rejected event can be resubmitted."
 msgstr "Тек қабылданбаған іс-шараны қайта жіберуге болады."
 
-#: calendar_app/views.py:1663
+#: calendar_app/views.py:1690
 msgid "Your event was sent for review again."
 msgstr "Іс-шара қайта қарауға жіберілді."
 
-#: calendar_app/views.py:1705
+#: calendar_app/views.py:1732
 msgid ""
 "Invitation link replaced. The old link no longer works; people already "
 "invited keep access."
@@ -1928,11 +1952,11 @@ msgstr ""
 "Шақыру сілтемесі ауыстырылды. Ескі сілтеме енді жұмыс істемейді; бұрын "
 "шақырылғандардың қолжетімділігі сақталды."
 
-#: calendar_app/views.py:1717
+#: calendar_app/views.py:1744
 msgid "Timing token regenerated. The previous token no longer works."
 msgstr "Хронометраж токені қайта жасалды. Бұрынғы токен енді жұмыс істемейді."
 
-#: calendar_app/views.py:1728
+#: calendar_app/views.py:1755
 msgid "Timing token deleted. Timing tools can no longer access this event."
 msgstr ""
 "Хронометраж токені жойылды. Хронометраж құралдары бұл іс-шараға енді қол "
@@ -2020,6 +2044,7 @@ msgid "Pagination"
 msgstr "Беттер"
 
 #: cycling_site/templates/_pagination.html:15
+#: gallery/templates/gallery/photo.html:24
 #: news/templates/news/news_index_page.html:54
 #: news/templates/news/news_list.html:85
 #: search/templates/search/search.html:92
@@ -2031,6 +2056,7 @@ msgid "Go to page"
 msgstr "Бетке өту"
 
 #: cycling_site/templates/_pagination.html:41
+#: gallery/templates/gallery/photo.html:25
 #: news/templates/news/news_index_page.html:66
 #: news/templates/news/news_list.html:93
 #: search/templates/search/search.html:96
@@ -2134,7 +2160,9 @@ msgstr "Бөлісу"
 msgid "Switch theme"
 msgstr "Такырыпты ауыстыру"
 
-#: cycling_site/templates/base.html:18 cycling_site/templates/base.html:34
+#: cycling_site/templates/base.html:18 cycling_site/templates/base.html:39
+#: skins/orange/templates/base.html:18 skins/orange/templates/base.html:39
+#: skins/orange/templates/home/home_page.html:21
 msgid ""
 "Calendar of endurance sport events -- cycling, running, cross-country skiing"
 " -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and"
@@ -2144,45 +2172,64 @@ msgstr ""
 "шаңғы жарысы — Қазақстанда, Қырғызстанда, Ресейде және басқа елдерде. "
 "Анонстар, хаттамалар және білім қоры."
 
-#: cycling_site/templates/base.html:58 cycling_site/templates/base.html:59
-#: cycling_site/templates/base.html:100
+#: cycling_site/templates/base.html:64 cycling_site/templates/base.html:65
+#: cycling_site/templates/base.html:102
 #: news/templates/news/article_detail.html:16
 #: news/templates/news/news_list.html:4 news/templates/news/news_list.html:10
-#: search/templates/search/search.html:54
+#: search/templates/search/search.html:54 skins/orange/templates/base.html:64
+#: skins/orange/templates/base.html:65 skins/orange/templates/base.html:109
+#: skins/orange/templates/base.html:212
+#: skins/orange/templates/home/home_page.html:36
 msgid "News"
 msgstr "Жаналыктар"
 
-#: cycling_site/templates/base.html:91
+#: cycling_site/templates/base.html:93 skins/orange/templates/base.html:99
+#: skins/orange/templates/base.html:207
 msgid "Cycling"
 msgstr "Велоспорт"
 
-#: cycling_site/templates/base.html:94
+#: cycling_site/templates/base.html:96 skins/orange/templates/base.html:103
 msgid "Toggle navigation"
 msgstr "Мәзір"
 
-#: cycling_site/templates/base.html:113
+#: cycling_site/templates/base.html:115 skins/orange/templates/base.html:122
+#: skins/orange/templates/base.html:215
+#: skins/orange/templates/home/home_page.html:38
 msgid "Knowledge Base"
 msgstr "Бiлiм кiтапханасы"
 
 #: cycling_site/templates/base.html:118
+#: gallery/templates/gallery/album_form.html:10
+#: gallery/templates/gallery/albums.html:14
+#: gallery/templates/gallery/gallery.html:15
+#: gallery/templates/gallery/photo.html:10 gallery/views.py:54
+#: skins/orange/templates/base.html:125 skins/orange/templates/base.html:216
+#: skins/orange/templates/home/home_page.html:39
+msgid "Gallery"
+msgstr "Галерея"
+
+#: cycling_site/templates/base.html:123 skins/orange/templates/base.html:130
+#: skins/orange/templates/base.html:217
 msgid "About"
 msgstr "Бiз туралы"
 
-#: cycling_site/templates/base.html:122 search/templates/search/search.html:4
+#: cycling_site/templates/base.html:127 search/templates/search/search.html:4
 #: search/templates/search/search.html:10
-#: search/templates/search/search.html:19
+#: search/templates/search/search.html:19 skins/orange/templates/base.html:134
+#: skins/orange/templates/base.html:218
+#: skins/orange/templates/home/home_page.html:40
 msgid "Search"
 msgstr "Iздеу"
 
-#: cycling_site/templates/base.html:180
+#: cycling_site/templates/base.html:185 skins/orange/templates/base.html:194
 msgid "Close"
 msgstr "Жабу"
 
-#: cycling_site/templates/base.html:190
+#: cycling_site/templates/base.html:195 skins/orange/templates/base.html:208
 msgid "Cycling events"
 msgstr "Велоспорт іс-шаралары"
 
-#: cycling_site/templates/base.html:193
+#: cycling_site/templates/base.html:198 skins/orange/templates/base.html:222
 #, python-format
 msgid ""
 "Found a bug or have a suggestion? <a href=\"%(url)s\" target=\"_blank\" "
@@ -2191,16 +2238,222 @@ msgstr ""
 "Қате таптыңыз ба немесе ұсыныс бар ма? <a href=\"%(url)s\" target=\"_blank\""
 " rel=\"noopener\">GitHub-та тапсырма жасаңыз</a>."
 
-#: cycling_site/templates/base.html:196
+#: cycling_site/templates/base.html:201
 #: home/templates/home/privacy_page.html:4
 #: home/templates/home/privacy_page.html:10
+#: skins/orange/templates/base.html:225
 msgid "Privacy Policy"
 msgstr "Құпиялылық саясаты"
 
-#: cycling_site/templates/base.html:197 home/templates/home/terms_page.html:4
-#: home/templates/home/terms_page.html:10
+#: cycling_site/templates/base.html:202 home/templates/home/terms_page.html:4
+#: home/templates/home/terms_page.html:10 skins/orange/templates/base.html:226
 msgid "Terms of Use"
 msgstr "Пайдалану шарттары"
+
+#: gallery/forms.py:39
+msgid ""
+"Optional. The album is linked from the event page; an empty title and date "
+"are taken from it."
+msgstr ""
+"Міндетті емес. Альбом іс-шара бетінде көрсетіледі; бос атау мен күн одан "
+"алынады."
+
+#: gallery/forms.py:62
+msgid "Give the album a title, or pick the event it belongs to."
+msgstr "Альбом атауын жазыңыз немесе іс-шараны таңдаңыз."
+
+#: gallery/forms.py:64
+msgid "Give the album a date, or pick the event it belongs to."
+msgstr "Альбом күнін көрсетіңіз немесе іс-шараны таңдаңыз."
+
+#: gallery/forms.py:90 gallery/models.py:102
+msgid "Photos"
+msgstr "Фотосуреттер"
+
+#: gallery/forms.py:99
+#, python-format
+msgid "At most %(count)d photos at a time; upload the rest in another go."
+msgstr "Бір жолы %(count)d фотодан артық емес; қалғанын келесі жолы жүктеңіз."
+
+#: gallery/forms.py:105
+#, python-format
+msgid "Larger than %(size)d MB: %(names)s"
+msgstr "%(size)d МБ-тан үлкен: %(names)s"
+
+#: gallery/models.py:44 gallery/templates/gallery/album_form.html:66
+msgid "Cover photo"
+msgstr "Альбомның басты суреті"
+
+#: gallery/models.py:61 gallery/templates/gallery/album_form.html:22
+msgid "Album"
+msgstr "Альбом"
+
+#: gallery/models.py:62 gallery/templates/gallery/gallery.html:32
+msgid "Albums"
+msgstr "Альбомдар"
+
+#: gallery/models.py:92
+#| msgid "Location"
+msgid "Caption"
+msgstr "Қолтаңба"
+
+#: gallery/models.py:101
+msgid "Photo"
+msgstr "Фото"
+
+#: gallery/templates/gallery/album_form.html:4
+#: gallery/templates/gallery/album_form.html:14
+#: gallery/templates/gallery/gallery.html:22
+#| msgid "Edit article"
+msgid "Edit album"
+msgstr "Альбомды өңдеу"
+
+#: gallery/templates/gallery/album_form.html:4
+#: gallery/templates/gallery/album_form.html:14
+#: gallery/templates/gallery/albums.html:16
+#: gallery/templates/gallery/gallery.html:25
+#: gallery/templates/gallery/gallery.html:77
+msgid "New album"
+msgstr "Жаңа альбом"
+
+#: gallery/templates/gallery/album_form.html:43
+msgid "Hide the album until it is ready"
+msgstr "Альбом дайын болғанша жасыру"
+
+#: gallery/templates/gallery/album_form.html:52
+#: gallery/templates/gallery/gallery.html:70
+msgid "Upload photos"
+msgstr "Фотосуреттерді жүктеу"
+
+#: gallery/templates/gallery/album_form.html:55
+msgid "Choose photos or drop them here"
+msgstr "Фотосуреттерді таңдаңыз немесе осында сүйреп әкеліңіз"
+
+#: gallery/templates/gallery/album_form.html:56
+#, python-format
+msgid ""
+"Up to %(max_files)s photos at a time, up to %(max_mb)s MB each. JPEG, PNG or"
+" WebP."
+msgstr ""
+"Бір жолы %(max_files)s фотоға дейін, әрқайсысы %(max_mb)s МБ-қа дейін. JPEG,"
+" PNG немесе WebP."
+
+#: gallery/templates/gallery/album_form.html:67
+msgid ""
+"Click a photo to make it the album's cover: it is shown for the album in the"
+" list of albums and in links shared in chats."
+msgstr ""
+"Фотосуретті альбомның басты суреті ету үшін басыңыз: ол альбомдар тізімінде "
+"және чаттарда бөлісілген сілтемелерде көрсетіледі."
+
+#: gallery/templates/gallery/album_form.html:75
+#: gallery/templates/gallery/gallery.html:62
+#| msgid "Cover image"
+msgid "Cover"
+msgstr "Мұқаба"
+
+#: gallery/templates/gallery/album_form.html:95
+msgid "Delete this album and all its photos?"
+msgstr "Альбомды барлық фотосуреттерімен бірге жою керек пе?"
+
+#: gallery/templates/gallery/album_form.html:98
+#| msgid "Delete"
+msgid "Delete album"
+msgstr "Альбомды жою"
+
+#: gallery/templates/gallery/album_form.html:121
+#| msgid "selected"
+msgid "Selected files"
+msgstr "Таңдалған файлдар"
+
+#: gallery/templates/gallery/albums.html:10
+#: gallery/templates/gallery/gallery.html:14
+#| msgid "to leave a comment."
+msgid "our events & moments"
+msgstr "біздің оқиғалар мен сәттер"
+
+#: gallery/templates/gallery/albums.html:11 gallery/views.py:83
+msgid "All albums"
+msgstr "Барлық альбомдар"
+
+#: gallery/templates/gallery/albums.html:33
+#: gallery/templates/gallery/gallery.html:45
+#, python-format
+msgid "Photos: %(counter)s"
+msgstr "Фото: %(counter)s"
+
+#: gallery/templates/gallery/albums.html:42
+#: gallery/templates/gallery/gallery.html:76
+#| msgid "No articles yet."
+msgid "No albums yet."
+msgstr "Әзірге альбомдар жоқ."
+
+#: gallery/templates/gallery/gallery.html:15 tests/test_gallery.py:254
+#, python-format
+msgid "Gallery %(year)s"
+msgstr "Галерея %(year)s"
+
+#: gallery/templates/gallery/gallery.html:18
+msgid "training | racing | together"
+msgstr "жаттығу | жарыс | бірге"
+
+#: gallery/templates/gallery/gallery.html:37
+#| msgid "View"
+msgid "View more"
+msgstr "Тағы альбомдар"
+
+#: gallery/templates/gallery/gallery.html:47
+#| msgid "Event type"
+msgid "Event page"
+msgstr "Іс-шара беті"
+
+#: gallery/templates/gallery/gallery.html:69
+msgid "No photos in this album yet."
+msgstr "Бұл альбомда әзірге фотосуреттер жоқ."
+
+#: gallery/templates/gallery/photo.html:32
+msgid "This is the cover"
+msgstr "Басты сурет"
+
+#: gallery/templates/gallery/photo.html:36
+msgid "Make cover"
+msgstr "Басты ету"
+
+#: gallery/views.py:56
+#, python-format
+msgid "Photos from %(title)s, %(date)s."
+msgstr "Фотосуреттер: %(title)s, %(date)s."
+
+#: gallery/views.py:58 gallery/views.py:84
+msgid "Photos from our races, rides and training camps."
+msgstr "Біздің жарыстардан, велосапарлардан және жиындардан фотосуреттер."
+
+#: gallery/views.py:128
+#, python-format
+#| msgid "or upload file"
+msgid "Not uploaded: %(files)s"
+msgstr "Жүктелмеді: %(files)s"
+
+#: gallery/views.py:147
+msgid "Album created. Choose its cover photo below."
+msgstr "Альбом жасалды. Төменде басты суретті таңдаңыз."
+
+#: gallery/views.py:177
+#, python-format
+msgid "Photos uploaded: %(count)d."
+msgstr "Жүктелген фото: %(count)d."
+
+#: gallery/views.py:179
+msgid "Album saved."
+msgstr "Альбом сақталды."
+
+#: gallery/views.py:209
+msgid "Album deleted."
+msgstr "Альбом жойылды."
+
+#: gallery/views.py:221
+msgid "Cover photo changed."
+msgstr "Басты сурет өзгертілді."
 
 #: home/forms.py:37
 msgid "Navbar title (RU)"
@@ -2260,7 +2513,8 @@ msgstr "Мазмұны (EN)"
 msgid "Save changes"
 msgstr "Өзгерістерді сақтау"
 
-#: home/templates/home/home_page.html:13
+#: home/templates/home/home_page.html:18
+#: skins/orange/templates/home/home_page.html:49
 msgid "Edit page"
 msgstr "Бетті өңдеу"
 

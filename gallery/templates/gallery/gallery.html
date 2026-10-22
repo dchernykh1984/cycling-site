@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block content %}
+{% comment %}One album at a time: its year as the heading, the newest albums as tabs above the photos,
+"View more" for the rest. The navbar's "Gallery" opens the newest album; /gallery/albums/<pk>/ opens
+any other. Each card opens the photo's own page.{% endcomment %}
+<section class="gallery-page">
+  <header class="gallery-head">
+    <div class="gallery-head-main">
+      <p class="gallery-kicker">{% trans "our events & moments" %}</p>
+      <h1 class="gallery-title">{% if album %}{% blocktrans with year=album.date|date:"Y" %}Gallery {{ year }}{% endblocktrans %}{% else %}{% trans "Gallery" %}{% endif %}</h1>
+    </div>
+    <div class="gallery-head-side">
+      <p class="gallery-tagline">{% trans "training | racing | together" %}</p>
+      <div class="d-flex flex-wrap gap-2 justify-content-end">
+        {% include "_share_button.html" %}
+        {% if can_manage %}
+        <a href="{% url 'gallery_album_edit' album.pk %}" class="btn btn-sm btn-outline-secondary">{% include "gallery/_icons.html" with name="edit" %} {% trans "Edit album" %}</a>
+        {% endif %}
+        {% if can_create %}
+        <a href="{% url 'gallery_album_create' %}" class="btn btn-sm btn-primary">{% include "gallery/_icons.html" with name="plus" %} {% trans "New album" %}</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if tabs %}
+  <nav class="gallery-tabs" aria-label="{% trans 'Albums' %}">
+    {% for tab in tabs %}
+    <a class="gallery-tab{% if album and tab.pk == album.pk %} active{% endif %}" href="{{ tab.get_absolute_url }}"
+       {% if album and tab.pk == album.pk %}aria-current="page"{% endif %}>{{ tab.title }}{% if tab.is_hidden %} <span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>{% endif %}</a>
+    {% endfor %}
+    <a class="gallery-tab gallery-tab-more" href="{% url 'gallery_albums' %}">{% trans "View more" %} {% include "gallery/_icons.html" with name="arrow" %}</a>
+  </nav>
+  {% endif %}
+
+  {% if album %}
+  <div class="gallery-album-meta">
+    <h2 class="gallery-album-title">{{ album.title }}</h2>
+    <span>{{ album.date|date:"d.m.Y" }}</span>
+    <span>{% blocktrans with counter=photos.paginator.count %}Photos: {{ counter }}{% endblocktrans %}</span>
+    {% if album.competition %}
+    <a href="{{ album.competition.get_absolute_url }}">{% trans "Event page" %}</a>
+    {% endif %}
+  </div>
+
+  {% if photos %}
+  <div class="gallery-grid">
+    {% for photo in photos %}
+    <a class="gallery-card" href="{{ photo.get_absolute_url }}">
+      <img src="{{ photo.thumbnail.url }}" alt="{% if photo.caption %}{{ photo.caption }}{% else %}{{ album.title }}{% endif %}"
+           width="{{ photo.width }}" height="{{ photo.height }}" loading="lazy" decoding="async">
+      <span class="gallery-card-caption">
+        <span class="gallery-card-title">{% if photo.caption %}{{ photo.caption }}{% else %}{{ album.title }}{% endif %}</span>
+        <span class="gallery-card-date">{{ album.date|date:"d.m.Y" }}</span>
+      </span>
+      <span class="gallery-card-arrow">{% include "gallery/_icons.html" with name="arrow-circle" %}</span>
+      {% if can_manage and photo.pk == album.cover_photo.pk %}<span class="gallery-card-cover badge">{% trans "Cover" %}</span>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% include "_pagination.html" with page_obj=photos %}
+  {% else %}
+  <div class="gallery-empty">
+    <p class="mb-2">{% trans "No photos in this album yet." %}</p>
+    {% if can_manage %}<a href="{% url 'gallery_album_edit' album.pk %}" class="btn btn-primary">{% trans "Upload photos" %}</a>{% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="gallery-empty">
+    <p class="mb-2">{% trans "No albums yet." %}</p>
+    {% if can_create %}<a href="{% url 'gallery_album_create' %}" class="btn btn-primary">{% trans "New album" %}</a>{% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

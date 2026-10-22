@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block content %}
+<section class="gallery-page gallery-photo-page">
+  <nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'gallery_index' %}">{% trans "Gallery" %}</a></li>
+      <li class="breadcrumb-item"><a href="{{ album.get_absolute_url }}">{{ album.title }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ position }} / {{ total }}</li>
+    </ol>
+  </nav>
+
+  <figure class="gallery-photo">
+    <img src="{{ photo.image.url }}" alt="{% if photo.caption %}{{ photo.caption }}{% else %}{{ album.title }}{% endif %}"
+         width="{{ photo.width }}" height="{{ photo.height }}">
+    {% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}
+  </figure>
+
+  <div class="gallery-photo-bar">
+    <div class="d-flex gap-2">
+      {% if previous_id %}<a class="btn btn-outline-secondary" id="photo-prev" rel="prev" href="{% url 'gallery_photo' previous_id %}">{% include "gallery/_icons.html" with name="back" %} {% trans "Previous" %}</a>{% endif %}
+      {% if next_id %}<a class="btn btn-outline-secondary" id="photo-next" rel="next" href="{% url 'gallery_photo' next_id %}">{% trans "Next" %} {% include "gallery/_icons.html" with name="arrow" %}</a>{% endif %}
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary" href="{{ photo.image.url }}" download>{% include "gallery/_icons.html" with name="download" %} {% trans "Download" %}</a>
+      {% include "_share_button.html" %}
+      {% if can_manage %}
+      {% if photo.pk == album.cover_photo.pk %}
+      <span class="btn btn-success pe-none">{% include "gallery/_icons.html" with name="star" %} {% trans "This is the cover" %}</span>
+      {% else %}
+      <form method="post" action="{% url 'gallery_photo_cover' photo.pk %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">{% include "gallery/_icons.html" with name="star" %} {% trans "Make cover" %}</button>
+      </form>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+<script>
+// Arrow keys step through the album, as in any photo viewer.
+document.addEventListener('keydown', function (event) {
+  if (event.target.closest('input, textarea, select')) return;
+  var link = document.getElementById(event.key === 'ArrowLeft' ? 'photo-prev' : event.key === 'ArrowRight' ? 'photo-next' : '');
+  if (link) window.location.href = link.href;
+});
+</script>
+{% endblock %}

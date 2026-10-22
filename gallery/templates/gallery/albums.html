@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block content %}
+<section class="gallery-page">
+  <header class="gallery-head">
+    <div class="gallery-head-main">
+      <p class="gallery-kicker">{% trans "our events & moments" %}</p>
+      <h1 class="gallery-title">{% trans "All albums" %}</h1>
+    </div>
+    <div class="gallery-head-side">
+      <a href="{% url 'gallery_index' %}" class="btn btn-sm btn-outline-secondary">{% include "gallery/_icons.html" with name="back" %} {% trans "Gallery" %}</a>
+      {% if can_create %}
+      <a href="{% url 'gallery_album_create' %}" class="btn btn-sm btn-primary">{% include "gallery/_icons.html" with name="plus" %} {% trans "New album" %}</a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if albums %}
+  <div class="gallery-grid">
+    {% for item in albums %}
+    {% with cover=item.cover_photo %}
+    <a class="gallery-card gallery-album-card" href="{{ item.get_absolute_url }}">
+      {% if cover %}
+      <img src="{{ cover.thumbnail.url }}" alt="{{ item.title }}" width="{{ cover.width }}" height="{{ cover.height }}" loading="lazy" decoding="async">
+      {% else %}
+      <span class="gallery-card-blank">{% include "gallery/_icons.html" with name="image" %}</span>
+      {% endif %}
+      <span class="gallery-card-caption">
+        <span class="gallery-card-title">{{ item.title }}{% if item.is_hidden %} <span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>{% endif %}</span>
+        <span class="gallery-card-date">{{ item.date|date:"d.m.Y" }} &middot; {% blocktrans with counter=item.photo_count %}Photos: {{ counter }}{% endblocktrans %}</span>
+      </span>
+      <span class="gallery-card-arrow">{% include "gallery/_icons.html" with name="arrow-circle" %}</span>
+    </a>
+    {% endwith %}
+    {% endfor %}
+  </div>
+  {% include "_pagination.html" with page_obj=albums %}
+  {% else %}
+  <div class="gallery-empty"><p class="mb-0">{% trans "No albums yet." %}</p></div>
+  {% endif %}
+</section>
+{% endblock %}

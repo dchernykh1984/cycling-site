@@ -376,3 +376,191 @@ main .competition-description ul, main .competition-description ol {
     background-color: #1b1f24;
     color: #fff;
 }
+
+/* Photo gallery (gallery/templates/gallery/). Neutral here, painted from the theme's own colours;
+   a skin restyles it with the same class names. */
+.gallery-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin-bottom: 1rem;
+}
+.gallery-kicker {
+    margin: 0 0 0.25rem;
+    padding-left: 0.6rem;
+    border-left: 3px solid var(--bs-primary);
+    color: var(--bs-secondary-color);
+    letter-spacing: 0.06em;
+}
+.gallery-title { margin: 0; }
+.gallery-head-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+.gallery-tagline { margin: 0; color: var(--bs-secondary-color); letter-spacing: 0.08em; }
+.gallery-tabs {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    margin-bottom: 1.25rem;
+    padding: 0.25rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 999px;
+    scrollbar-width: thin;
+}
+.gallery-tab {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    color: var(--bs-body-color);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.gallery-tab:hover { background: var(--bs-tertiary-bg); color: var(--bs-emphasis-color); }
+.gallery-tab.active { background: var(--bs-emphasis-color); color: var(--bs-body-bg); }
+.gallery-tab-more { margin-left: auto; }
+.gallery-album-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 1rem;
+    margin-bottom: 1rem;
+    color: var(--bs-secondary-color);
+}
+.gallery-album-title { margin: 0; font-size: 1.25rem; color: var(--bs-emphasis-color); }
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+.gallery-card {
+    position: relative;
+    display: block;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: var(--bs-tertiary-bg);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    color: #fff;
+    text-decoration: none;
+}
+main .gallery-card img {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+.gallery-card:hover img, .gallery-card:focus-visible img { transform: scale(1.04); }
+.gallery-card-caption {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.7rem 3.75rem 0.7rem 1rem;
+    background: rgba(17, 17, 17, 0.62);
+    color: #fff;
+}
+.gallery-card-title {
+    font-size: 1.15rem;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gallery-card-date { font-size: 0.8rem; opacity: 0.9; }
+.gallery-card-arrow { position: absolute; right: 1rem; bottom: 0.8rem; color: #fff; }
+.gallery-card-arrow .gallery-icon { width: 2.25rem; height: 2.25rem; }
+.gallery-card-cover { position: absolute; top: 0.6rem; left: 0.6rem; background: #fff; color: #111; }
+.gallery-card-blank {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--bs-secondary-color);
+}
+.gallery-card-blank .gallery-icon { width: 3rem; height: 3rem; }
+.gallery-empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    border: 1px dashed var(--bs-border-color);
+    border-radius: 0.5rem;
+    color: var(--bs-secondary-color);
+}
+.gallery-photo { margin: 0 0 1rem; text-align: center; }
+main .gallery-photo img {
+    max-height: 78vh;
+    width: auto;
+    max-width: 100%;
+    border-radius: 0.5rem;
+}
+.gallery-photo figcaption { margin-top: 0.5rem; color: var(--bs-secondary-color); }
+.gallery-photo-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem; }
+.gallery-dropzone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1.5rem 1rem;
+    border: 2px dashed var(--bs-border-color);
+    border-radius: 0.5rem;
+    text-align: center;
+    cursor: pointer;
+}
+.gallery-dropzone .gallery-icon { width: 2.25rem; height: 2.25rem; color: var(--bs-secondary-color); }
+.gallery-dropzone-text { font-weight: 600; }
+.gallery-dropzone input[type="file"] { max-width: 28rem; margin-top: 0.5rem; }
+.gallery-pick-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+.gallery-pick { position: relative; }
+.gallery-pick-radio { position: absolute; opacity: 0; pointer-events: none; }
+.gallery-pick-photo {
+    position: relative;
+    display: block;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    outline: 3px solid transparent;
+    outline-offset: 2px;
+    cursor: pointer;
+}
+main .gallery-pick-photo img { width: 100%; height: 100%; max-width: none; object-fit: cover; }
+.gallery-pick-badge {
+    position: absolute;
+    top: 0.4rem;
+    left: 0.4rem;
+    display: none;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: var(--bs-emphasis-color);
+    color: var(--bs-body-bg);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.gallery-pick-badge .gallery-icon { width: 0.9rem; height: 0.9rem; }
+.gallery-pick-radio:checked + .gallery-pick-photo { outline-color: var(--bs-emphasis-color); }
+.gallery-pick-radio:checked + .gallery-pick-photo .gallery-pick-badge { display: inline-flex; }
+.gallery-pick-radio:focus-visible + .gallery-pick-photo { outline-color: var(--bs-primary); }
+.gallery-pick-delete { margin-top: 0.35rem; }
+.btn .gallery-icon { width: 1.1em; height: 1.1em; vertical-align: -0.15em; }
+@media (max-width: 575.98px) {
+    .gallery-head-side { align-items: flex-start; }
+    .gallery-tab-more { margin-left: 0; }
+}

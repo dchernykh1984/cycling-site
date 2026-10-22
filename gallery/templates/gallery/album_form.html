@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% if action == "edit" %}{% trans "Edit album" %}{% else %}{% trans "New album" %}{% endif %}{% endblock %}
+
+{% block content %}
+<section class="gallery-page gallery-form-page">
+  <nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'gallery_index' %}">{% trans "Gallery" %}</a></li>
+      {% if album %}<li class="breadcrumb-item"><a href="{{ album.get_absolute_url }}">{{ album.title }}</a></li>{% endif %}
+    </ol>
+  </nav>
+  <h1 class="mb-4">{% if action == "edit" %}{% trans "Edit album" %}{% else %}{% trans "New album" %}{% endif %}</h1>
+
+  <form method="post" enctype="multipart/form-data" id="album-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="h5 mb-3">{% trans "Album" %}</h2>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label" for="{{ form.competition.id_for_label }}">{{ form.competition.label }}</label>
+            {{ form.competition }}
+            <div class="form-text">{{ form.competition.help_text }}</div>
+            {% if form.competition.errors %}<div class="text-danger small mt-1">{{ form.competition.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-8">
+            <label class="form-label" for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+            {{ form.date }}
+            {% if form.date.errors %}<div class="text-danger small mt-1">{{ form.date.errors }}</div>{% endif %}
+          </div>
+          <div class="col-12">
+            <div class="form-check">
+              {{ form.is_hidden }}
+              <label class="form-check-label" for="{{ form.is_hidden.id_for_label }}">{% trans "Hide the album until it is ready" %}</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="h5 mb-3">{% trans "Upload photos" %}</h2>
+        <label class="gallery-dropzone" for="{{ upload.photos.id_for_label }}">
+          {% include "gallery/_icons.html" with name="image" %}
+          <span class="gallery-dropzone-text">{% trans "Choose photos or drop them here" %}</span>
+          <span class="form-text" id="photo-count">{% blocktrans %}Up to {{ max_files }} photos at a time, up to {{ max_mb }} MB each. JPEG, PNG or WebP.{% endblocktrans %}</span>
+          {{ upload.photos }}
+        </label>
+        {% if upload.photos.errors %}<div class="text-danger small mt-2">{{ upload.photos.errors }}</div>{% endif %}
+      </div>
+    </div>
+
+    {% if photos %}
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="h5 mb-1">{% trans "Cover photo" %}</h2>
+        <p class="text-muted small mb-3">{% trans "Click a photo to make it the album's cover: it is shown for the album in the list of albums and in links shared in chats." %}</p>
+        <div class="gallery-pick-grid">
+          {% for photo in photos %}
+          <div class="gallery-pick">
+            <input class="gallery-pick-radio" type="radio" name="cover" value="{{ photo.pk }}" id="cover-{{ photo.pk }}"
+                   {% if cover and photo.pk == cover.pk %}checked{% endif %}>
+            <label class="gallery-pick-photo" for="cover-{{ photo.pk }}">
+              <img src="{{ photo.thumbnail.url }}" alt="" loading="lazy">
+              <span class="gallery-pick-badge">{% include "gallery/_icons.html" with name="star" %} {% trans "Cover" %}</span>
+            </label>
+            <div class="form-check gallery-pick-delete">
+              <input class="form-check-input" type="checkbox" name="delete" value="{{ photo.pk }}" id="delete-{{ photo.pk }}">
+              <label class="form-check-label small" for="delete-{{ photo.pk }}">{% trans "Delete" %}</label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+      <a href="{% if album %}{{ album.get_absolute_url }}{% else %}{% url 'gallery_index' %}{% endif %}" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
+    </div>
+  </form>
+
+  {% if album %}
+  {% trans "Delete this album and all its photos?" as delete_confirm %}
+  <form method="post" action="{% url 'gallery_album_delete' album.pk %}" onsubmit="return confirm('{{ delete_confirm|escapejs }}')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Delete album" %}</button>
+  </form>
+  {% endif %}
+</section>
+<script>
+(function () {
+  // With an event picked and the title still empty, show the event's name as what will be used.
+  var event = document.getElementById('{{ form.competition.id_for_label }}');
+  var title = document.getElementById('{{ form.title.id_for_label }}');
+  if (event && title) {
+    var fallback = title.getAttribute('placeholder');
+    event.addEventListener('change', function () {
+      var label = event.options[event.selectedIndex].text;
+      var parts = label.split(' - ');
+      title.setAttribute('placeholder', event.value && parts.length > 1 ? parts.slice(1).join(' - ') : fallback);
+    });
+  }
+  // Say how many files are picked, so a big batch is not a guess.
+  var input = document.getElementById('{{ upload.photos.id_for_label }}');
+  var count = document.getElementById('photo-count');
+  if (input && count) {
+    var idle = count.textContent;
+    input.addEventListener('change', function () {
+      count.textContent = input.files.length ? '{{ _("Selected files")|escapejs }}: ' + input.files.length : idle;
+    });
+  }
+}());
+</script>
+{% endblock %}

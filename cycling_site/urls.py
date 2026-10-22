@@ -140,6 +140,7 @@ urlpatterns += i18n_patterns(
     path("locations/", include("locations.urls")),
     path("news/", include("news.urls")),
     path("calendar/", include("calendar_app.urls")),
+    path("gallery/", include("gallery.urls")),
     path("", include("protocols.urls")),
     path("", include("registrations.urls")),
     path("search/", search_views.search, name="search"),
