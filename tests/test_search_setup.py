@@ -30,17 +30,6 @@ def _json_ld(html):
     return [json.loads(block) for block in blocks]
 
 
-class JsonLdSerialisationTests(TestCase):
-    def test_a_closing_script_tag_cannot_end_the_block_and_the_json_stays_valid(self):
-        raw = dumps({"name": "Race </script><!-- & co"})
-        self.assertNotIn("</script>", raw)
-        self.assertNotIn("<!--", raw)
-        self.assertEqual(json.loads(raw)["name"], "Race </script><!-- & co")
-
-    def test_no_character_references_reach_the_block(self):
-        self.assertNotIn("&quot;", dumps({"a": 'say "hi"'}))
-
-
 class VerificationTagTests(TestCase):
     @override_settings(GOOGLE_SITE_VERIFICATION="g-token-123", YANDEX_VERIFICATION="y-token-456")
     def test_the_consoles_find_their_tags_on_the_home_page(self):
@@ -106,6 +95,17 @@ class HomeOrganizationTests(TestCase):
         self.assertEqual(self._graph("kk")["WebSite"]["inLanguage"], "kk")
 
 
+class JsonLdSerialisationTests(TestCase):
+    def test_a_closing_script_tag_cannot_end_the_block_and_the_json_stays_valid(self):
+        raw = dumps({"name": "Race </script><!-- & co"})
+        self.assertNotIn("</script>", raw)
+        self.assertNotIn("<!--", raw)
+        self.assertEqual(json.loads(raw)["name"], "Race </script><!-- & co")
+
+    def test_no_character_references_reach_the_block(self):
+        self.assertNotIn("&quot;", dumps({"a": 'say "hi"'}))
+
+
 class SitemapLanguagesTests(TestCase):
     def _section(self, name):
         response = self.client.get(reverse("sitemap_section", args=[name]))
@@ -152,3 +152,11 @@ class CompetitionLastmodTests(TestCase):
         )
         body = self.client.get(reverse("sitemap_section", args=["competitions"])).content.decode()
         self.assertIn(comp.get_absolute_url(), body)
+
+
+class DefaultShareImageTests(TestCase):
+    def test_the_file_is_the_size_the_page_declares(self):
+        from PIL import Image
+
+        with Image.open(Path(settings.BASE_DIR) / "cycling_site/static/og-default.png") as image:
+            self.assertEqual(image.size, (1200, 630))

@@ -97,7 +97,7 @@ class SocialTagsTests(TestCase):
     def test_a_page_carries_an_image_and_a_card_type(self):
         html = self.client.get(reverse("calendar")).content.decode()
         self.assertTrue((_prop(html, "og:image") or "").endswith(".png"))
-        self.assertEqual(_meta(html, "twitter:card"), "summary")
+        self.assertEqual(_meta(html, "twitter:card"), "summary_large_image")
 
 
 class CompetitionMetaTests(TestCase):
@@ -143,9 +143,9 @@ class SocialImageTests(TestCase):
 
     def test_a_page_without_one_falls_back_to_the_site_mark(self):
         html = self.client.get(reverse("calendar")).content.decode()
-        self.assertTrue((_prop(html, "og:image") or "").endswith("apple-touch-icon.png"))
-        self.assertEqual(_prop(html, "og:image:width"), "180")
-        self.assertEqual(_prop(html, "og:image:height"), "180")
+        self.assertTrue((_prop(html, "og:image") or "").endswith("og-default.png"))
+        self.assertEqual(_prop(html, "og:image:width"), "1200")
+        self.assertEqual(_prop(html, "og:image:height"), "630")
 
     def test_the_declared_size_lets_a_messenger_lay_the_card_out_unseen(self):
         """Without these a chat has to fetch the file before it can draw anything."""
@@ -172,7 +172,7 @@ class CompetitionSocialImageTests(TestCase):
         return SimpleUploadedFile("poster.png", buffer.getvalue(), content_type="image/png")
 
     def test_an_event_without_one_still_shows_the_site_mark(self):
-        self.assertTrue((_prop(self._html(), "og:image") or "").endswith("apple-touch-icon.png"))
+        self.assertTrue((_prop(self._html(), "og:image") or "").endswith("og-default.png"))
 
     def test_an_event_with_one_shows_it_instead(self):
         self.comp.preview_image = self._png()
@@ -193,4 +193,4 @@ class CompetitionSocialImageTests(TestCase):
         self.comp.preview_image = self._png()
         self.comp.save(update_fields=["preview_image"])
         Path(self.comp.preview_image.path).unlink()
-        self.assertTrue((_prop(self._html(), "og:image") or "").endswith("apple-touch-icon.png"))
+        self.assertTrue((_prop(self._html(), "og:image") or "").endswith("og-default.png"))
