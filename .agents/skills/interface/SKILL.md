@@ -48,7 +48,9 @@ One page for every device, no separate version for phones or tablets.
    selected plainly selected: its fill or frame stands out from the unselected ones by at least
    3:1 (WCAG 1.4.11), not by a heavier word alone, and a screen reader is told (`aria-current`,
    `aria-pressed`).
-   - Why: a reader who cannot tell what is shown does not trust an empty day.
+   - Why: a reader who cannot tell what is shown does not trust an empty day. Stricter than WCAG
+     1.4.11 on purpose: it measures a state against the colours next to it, this rule against the
+     unselected neighbour too.
    - Example: "24-25 October 2026" above the list; the tab on screen filled, the others outlined.
    - Check: `test_the_period_is_named_in_words`, `test_what_is_selected_can_be_seen`.
 
