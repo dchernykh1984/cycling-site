@@ -45,7 +45,8 @@ anything that loads.
 7. **Narrow by default, delete nothing.** Show what is near first and fold the rest ("N more in
    other countries", #332) rather than removing it: a newcomer may well travel to a race abroad.
    What counts as near is never written into a template or a view -- no fixed Almaty: a region, a
-   city or a club comes from the reader's preferences or from a setting the maintainer can change.
+   city or a club comes from the reader's preferences or from a setting the maintainer can change
+   (the constitution's principle VI, the `specs` skill).
 8. **Words with every icon and every colour.** An arrow, an icon or a colour never carries meaning
    alone: next to it is visible text, or at least an `aria-label`. A `title` is not enough -- a
    phone never shows it and screen readers do not reliably read it.
@@ -149,10 +150,13 @@ everything in `reference.md`.
 
 `KNOWN` in `tests/e2e/test_interface_rules.py` and `scripts/template_colours_allowed.txt` list what
 broke a rule when the rule came in. Both only shrink: a new break fails, a fixed one is dropped from
-the list. They hold for light and dark only; a designer's skin gets no allowance.
+the list. A break in the site's own layout -- a size, a place, a sideways scroll -- is the site's,
+so its entry holds in every skin. A contrast entry names its skin and holds for light and dark only:
+a designer's skin gets no allowance for its own colours.
 
-Fixing an old break can change how light or dark look, and those two are the maintainer's: such a
-fix waits for them, and `visual.yml` ("Light and dark unchanged") will say so.
+Fixing an old break can change how light or dark look, and those two are the maintainer's
+(the constitution's principle II): such a fix waits for them. No check stops it any more -- the
+screenshot comparison of light and dark was retired -- so the pull request says it in words.
 
 ## Running the checks
 
