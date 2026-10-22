@@ -11,7 +11,7 @@ specs/
   site/                       the site as it works today, one file per area
     accounts.md  calendar.md  events.md  registrations.md  protocols.md  locations.md
     news-and-knowledge.md  site-shell.md  search-visibility.md  skins.md  api.md
-    events-agents.md  audit.md  operations.md
+    events-agents.md  audit.md  operations.md  gallery.md
   <issue>-<short-name>/       one feature, from its GitHub issue
     spec.md                   what and why, for the people who use it
     plan.md, research.md, data-model.md, contracts/, quickstart.md   how it will be built

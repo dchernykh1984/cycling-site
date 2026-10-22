@@ -14,7 +14,7 @@ materials, upload token, rich description, several event types), `calendar_app/t
 `test_competition_materials.py`, `test_description_editor.py`, `test_resubmit.py`,
 `test_pending_moderation.py`, `test_invite_only_events.py`, `test_competition_link_order.py`
 **Related**: [calendar](calendar.md), [registrations](registrations.md), [protocols](protocols.md),
-[locations](locations.md), [events agents](events-agents.md)
+[locations](locations.md), [events agents](events-agents.md), [gallery](gallery.md)
 
 ## Overview
 

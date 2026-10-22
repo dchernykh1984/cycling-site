@@ -38,8 +38,8 @@ and an IndexNow notice whenever something is published.
 ### Story 2 -- An engine finds the content (P1)
 
 1. **Given** `sitemap.xml`, **Then** it is an index of sections -- Wagtail pages, the calendar's
-   month, list and map views, knowledge, news, events (past ones stay, each dated by its approval),
-   calendar filter pages -- each entry once per language with its translations; nothing hidden,
+   month, list and map views and the gallery's index and album list, knowledge, news, events (past
+   ones stay, each dated by its approval), calendar filter pages, public photo albums -- each entry once per language with its translations; nothing hidden,
    unapproved or invite-only is offered.
 2. **Given** an event page, **Then** it carries `SportsEvent` data: machine-readable dates (no end
    date for a one-day race), absolute URL, the venue with coordinates and the full address chain,
