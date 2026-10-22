@@ -1,7 +1,8 @@
 {% load i18n %}
 {% comment %}The heading row of the calendar, the list and the map (issue #330): the heading, the share
-button at the right end of the row, and the tap zones of the header's buttons. One partial, so the
-three tabs cannot drift apart. `heading` is the text of the h1.{% endcomment %}
+button at the right end of the row -- with Add event beside it on a phone, for a member -- and the tap
+zones of the header's buttons. One partial, so the three tabs cannot drift apart. `heading` is the
+text of the h1.{% endcomment %}
 <style>
   /* The share button at the right end of the heading's row: it stands in one place on every tab,
      whatever the heading's length ("Calendar", "Events", a city's list). */
@@ -28,22 +29,37 @@ three tabs cannot drift apart. `heading` is the text of the h1.{% endcomment %}
       width: var(--calendar-icon-size, 2.75rem); height: var(--calendar-icon-size, 2.75rem); padding: 0; justify-content: center;
     }
   }
+  /* A member's Add event, on a phone: "+" beside Share, the same button, rather than a row of its own
+     above the events (content before controls). The wide screen keeps the worded button among the
+     controls. */
+  .calendar-heading .calendar-add {
+    width: var(--calendar-icon-size, 2.75rem); height: var(--calendar-icon-size, 2.75rem); padding: 0;
+    align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto;
+  }
+  @media (max-width: 991.98px) { .calendar-heading .calendar-add + .share-btn { margin-left: 0; } }
 </style>
 <div class="calendar-heading d-flex align-items-center gap-2">
   <h1 class="mb-0">{{ heading }}</h1>
+  {% if request.user.is_authenticated %}
+  <a href="{% url 'calendar_submit' %}" class="btn btn-sm btn-outline-secondary calendar-add d-inline-flex d-lg-none"
+     aria-label="{% trans 'Submit event' %}" title="{% trans 'Submit event' %}">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+  </a>
+  {% endif %}
   {% include "_share_button.html" %}
 </div>
 <script>
-// The share button centred on the middle of the heading's capitals, as an icon beside text is (SF
-// Symbols), not on the line box, which each skin pads differently. Measured, then moved by a
-// transform, so the row keeps its size.
+// The buttons beside the heading centred on the middle of its capitals, as an icon beside text is (SF
+// Symbols), not on the line box, which each skin pads differently. Measured on Share, then every one
+// moved by a transform, so the row keeps its size.
 (function () {
   var row = document.currentScript.previousElementSibling;
   var h1 = row.querySelector('h1');
   var button = row.querySelector('.share-btn');
   if (!h1 || !button) return;
+  var buttons = row.querySelectorAll('.btn');
   function centre() {
-    button.style.transform = '';
+    buttons.forEach(function (b) { b.style.transform = ''; });
     var style = getComputedStyle(h1);
     var context = document.createElement('canvas').getContext('2d');
     context.font = style.fontWeight + ' ' + style.fontSize + ' ' + style.fontFamily;
@@ -56,7 +72,8 @@ three tabs cannot drift apart. `heading` is the text of the h1.{% endcomment %}
     probe.remove();
     var box = button.getBoundingClientRect();
     var shift = baseline - cap / 2 - (box.top + box.height / 2);
-    if (Math.abs(shift) >= 0.5) button.style.transform = 'translateY(' + shift.toFixed(1) + 'px)';
+    if (Math.abs(shift) < 0.5) return;
+    buttons.forEach(function (b) { b.style.transform = 'translateY(' + shift.toFixed(1) + 'px)'; });
   }
   // The icon buttons as tall as the tabs (see the style above); the tabs come later in the page.
   function size() {
