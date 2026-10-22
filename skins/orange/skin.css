@@ -1090,3 +1090,79 @@ hr { border-color: var(--ubt-line); opacity: 1; }
 .badge.bg-success { background-color: #147a3f !important; color: #fff !important; }
 .badge.bg-warning { background-color: #ffd166 !important; color: var(--ubt-ink) !important; }
 .badge.bg-info { background-color: #cfe8f6 !important; color: #0b3a53 !important; }
+
+/* ------------------------------------------------------------------------------------------------
+   Photo gallery (gallery/templates/gallery/): orange tabs, the orange mark before the kicker,
+   cards with the album name and date on a dark band and a round arrow.
+   ------------------------------------------------------------------------------------------------ */
+.gallery-head { margin-bottom: 1.25rem; }
+.gallery-kicker {
+    border-left: 4px solid var(--ubt-orange);
+    color: var(--ubt-muted);
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+    text-transform: lowercase;
+}
+main h1.gallery-title {
+    font-size: clamp(2.2rem, 1.4rem + 3.2vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    padding-bottom: 0;
+}
+main h1.gallery-title::after { display: none; }
+.gallery-tagline { color: var(--ubt-muted); font-size: 1.05rem; letter-spacing: 0.1em; }
+.gallery-tabs {
+    background: var(--ubt-surface);
+    border: 1.5px solid var(--ubt-line-strong);
+    box-shadow: var(--ubt-shadow);
+}
+.gallery-tab {
+    padding: 0.45rem 1.15rem;
+    color: var(--ubt-ink);
+    font-size: 1.02rem;
+    flex: 1 0 auto;
+    justify-content: center;
+}
+.gallery-tab:hover { background: var(--ubt-orange-50); color: var(--ubt-ink); }
+.gallery-tab.active { background: var(--ubt-orange); color: var(--ubt-ink); box-shadow: 0 2px 8px rgba(255, 97, 0, 0.35); }
+.gallery-tab-more { flex: 0 0 auto; }
+.gallery-album-meta { color: var(--ubt-muted); }
+.gallery-album-title { font-family: var(--ubt-font-heading); color: var(--ubt-ink); }
+.gallery-album-meta a { color: var(--ubt-orange-ink); font-weight: 600; }
+.gallery-grid { gap: 1.5rem; }
+.gallery-card {
+    border-radius: var(--ubt-radius);
+    box-shadow: var(--ubt-shadow-hover);
+    background: var(--ubt-ink);
+}
+.gallery-card:focus-visible { outline: 3px solid var(--ubt-orange); outline-offset: 3px; }
+.gallery-card-caption { background: rgba(22, 24, 29, 0.6); padding-left: 1.25rem; }
+.gallery-card-title { font-family: var(--ubt-font-body); font-size: 1.35rem; font-weight: 400; letter-spacing: 0.03em; }
+.gallery-card-caption::before {
+    content: "";
+    position: absolute;
+    left: 0.65rem;
+    top: 0.8rem;
+    width: 3px;
+    height: 1.4rem;
+    border-radius: 2px;
+    background: var(--ubt-orange);
+}
+.gallery-card:hover .gallery-card-arrow { color: var(--ubt-orange); }
+.gallery-card-cover { background: var(--ubt-orange); color: var(--ubt-ink); }
+.gallery-empty { border-color: var(--ubt-line-strong); background: var(--ubt-surface); border-radius: var(--ubt-radius); }
+.gallery-photo img { box-shadow: var(--ubt-shadow-hover); border-radius: var(--ubt-radius) !important; }
+.gallery-dropzone { border-color: var(--ubt-line-strong); background: var(--ubt-orange-50); border-radius: var(--ubt-radius); }
+.gallery-dropzone:hover { border-color: var(--ubt-orange); }
+.gallery-dropzone .gallery-icon { color: var(--ubt-orange-ink); }
+.gallery-pick-photo { border-radius: var(--ubt-radius-sm); }
+.gallery-pick-radio:checked + .gallery-pick-photo { outline-color: var(--ubt-orange); }
+.gallery-pick-badge { background: var(--ubt-orange); color: var(--ubt-ink); }
+.competition-albums .btn { --bs-btn-bg: var(--ubt-surface); }
+
+/* Seven sections since the gallery: below 1400px the icons give way so the tools stay on one line. */
+.ubt-nav-tools .btn { white-space: nowrap; }
+@media (min-width: 992px) and (max-width: 1399.98px) {
+    .navbar .ubt-nav .nav-link .ubt-icon { display: none; }
+    .navbar .ubt-nav .nav-link { padding: 0.5rem 0.55rem !important; font-size: 0.92rem; }
+}

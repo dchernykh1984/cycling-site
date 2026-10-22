@@ -35,6 +35,7 @@ one the navbar already carries; nothing new is fetched for this page.{% endcomme
   <a class="ubt-tile" href="{% url 'news_index' %}">{% include "_ubt_icon.html" with name="news" %}<span>{% trans "News" %}</span></a>
   {% get_knowledge_index_url as knowledge_url %}
   {% if knowledge_url %}<a class="ubt-tile" href="{{ knowledge_url }}">{% include "_ubt_icon.html" with name="book" %}<span>{% trans "Knowledge Base" %}</span></a>{% endif %}
+  <a class="ubt-tile" href="{% url 'gallery_index' %}">{% include "_ubt_icon.html" with name="image" %}<span>{% trans "Gallery" %}</span></a>
   <a class="ubt-tile" href="{% url 'search' %}">{% include "_ubt_icon.html" with name="search" %}<span>{% trans "Search" %}</span></a>
 </nav>
 

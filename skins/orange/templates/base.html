@@ -114,6 +114,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% if knowledge_url %}{{ knowledge_url }}{% else %}#{% endif %}">{% include "_ubt_icon.html" with name="book" %}<span>{% trans "Knowledge Base" %}</span></a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'gallery_index' %}">{% include "_ubt_icon.html" with name="image" %}<span>{% trans "Gallery" %}</span></a>
+                    </li>
                     {% get_about_url as about_url %}
                     {% if about_url %}
                     <li class="nav-item">
@@ -203,6 +206,7 @@
                     <li><a href="{% url 'calendar' %}">{% trans "Calendar" %}</a></li>
                     {% if locations_map_url %}<li><a href="{{ locations_map_url }}">{% trans "Map" %}</a></li>{% endif %}
                     {% if knowledge_url %}<li><a href="{{ knowledge_url }}">{% trans "Knowledge Base" %}</a></li>{% endif %}
+                    <li><a href="{% url 'gallery_index' %}">{% trans "Gallery" %}</a></li>
                     {% if about_url %}<li><a href="{{ about_url }}">{% trans "About" %}</a></li>{% endif %}
                     <li><a href="{% url 'search' %}">{% trans "Search" %}</a></li>
                 </ul>
