@@ -32,7 +32,10 @@ anything that loads.
    banner, two date fields and seven drop-downs to reach the first event.
 3. **Say what is on screen.** The period in words ("24-25 October 2026", the period row from #330),
    the filters in force as chips. A reader who cannot tell what they are looking at does not trust
-   an empty day.
+   an empty day. What is selected -- the tab on screen, the period kind, a filter -- is plainly
+   selected: its fill or its frame stands out from the unselected ones by at least 3:1 (WCAG
+   1.4.11), not by a heavier word alone, and it says so to a screen reader (`aria-current`,
+   `aria-pressed`). On #343 the active tab got a white frame on white and looked like plain text.
 4. **The usual question takes one tap.** Quick periods -- today and tomorrow, the weekend, the week,
    the month (from #330) -- cover what people ask in the chat; a date picker is for everything else.
 5. **Nothing moves unless the reader moved it.** Sibling views (calendar, list, map) share their
@@ -55,9 +58,11 @@ anything that loads.
    people tapping on the move, where a missed tap on a period arrow pages the wrong way.
 10. **Three languages, the longest first.** Size a control for its longest label, usually Kazakh;
     a word cut off only shows in the language nobody checked.
-11. **Readable in every skin.** Text at least 4.5:1 against what it is drawn on (3:1 for large
-    text); a control's border, an icon and the focus ring at least 3:1 against their surroundings
-    (WCAG 1.4.11) -- an outline button's border is all that says it is a button.
+11. **Readable in every skin, in every state.** Text at least 4.5:1 against what it is drawn on
+    (3:1 for large text) at rest, under the pointer and in focus -- a button that is readable at
+    rest can turn white on pale grey when hovered (1.49:1 on the view tabs in light). A control's
+    border, an icon and the focus ring at least 3:1 against their surroundings (WCAG 1.4.11) -- an
+    outline button's border is all that says it is a button.
 12. **Few words, and the right ones.** A hint takes one line. A button says what happens ("Show 12
     events", "Reset"), not "OK". Labels use the reader's words ("Weekend"), not the database's.
 13. **The look belongs to the skin.** Colours, fonts and radii come from the skin's variables
@@ -99,6 +104,7 @@ Each pattern has a name to use in review ("this wants the event card"), the site
 | **Organiser** | "by ..." under the title, and a filter for one's own club. | Meetup ("by ..."), BikeReg (organiser's logo), Strava (club events) | #336 |
 | **Status badge** | A small badge for what is time-limited or open: registration open, closing in N days. | Orgeo (days left to register), Eventbrite ("Sales end soon") | not planned yet |
 | **Time first for a ride** | The meeting time large, the pace or group as a badge. | Zwift (time first, group badge), Strava (start point, pace groups) | the time stays free text in the announcement (the maintainer's choice); the link preview carries it (#318) |
+| **Page action** | What acts on the whole page -- share it, subscribe to it -- sits at the right edge of the heading's row, apart from the navigation (tabs, period), so the heading's length never moves it and a tap meant for a tab never shares. | Apple's and Google's design guides (actions at the trailing end of the top bar), Airbnb (Share and Save at the right of a listing's title) | `_share_button.html`; the phone layout is proposed to the maintainer |
 | **Subscribe and add to calendar** | Subscription to the filtered calendar and "add to my calendar" near the top, not in the footer. | Orgeo (sync with the phone's calendar, RSS) | #333 |
 
 A pattern not in this table gets a name, a row here and a partial of its own before it appears on a
@@ -115,13 +121,15 @@ second page.
 | Every label fits its control in ru, kk and en. | `test_every_label_fits_its_control` |
 | Every control has words: visible text or `aria-label`. | `test_every_control_says_what_it_does` |
 | No hex colour in a template outside `skins/`. | pre-commit `no-hex-colours-in-templates` |
-| Text at least 4.5:1 (3:1 large) in every skin. | `test_skin_contrast.py`, `test_the_header_is_readable_in_this_skin` |
+| Text at least 4.5:1 (3:1 large) in every skin, at rest, under the pointer and in focus. | `test_skin_contrast.py`, `test_the_header_is_readable_in_this_skin` |
+| A control's border at least 3:1 against what surrounds it. | `test_every_border_can_be_seen` |
+| What is selected stands out from the unselected by at least 3:1 in its fill or its frame, and carries `aria-current` or `aria-pressed`. | `test_what_is_selected_can_be_seen` |
 | An active button keeps the border of the inactive ones: `btn-outline-secondary active`, never `btn-secondary`. Lux draws `btn-secondary` with no border, so the active tab came out 4px narrower and moved its neighbours. | `test_the_active_tab_keeps_the_border_of_the_others` |
 | A hint takes one line. | `test_a_hint_takes_one_line` |
 | The period and the filters travel to the other tabs. | `test_the_period_and_the_filters_travel_to_the_other_tabs` |
 
-Not tested yet, judged in review: principles 2, 4, 7 and 12, the 3:1 for borders and icons, and
-everything in `reference.md`.
+Not tested yet, judged in review: principles 2, 4, 7 and 12, the 3:1 for icons and the focus
+ring, the patterns, and everything in `reference.md`.
 
 ## Before calling a page done
 
