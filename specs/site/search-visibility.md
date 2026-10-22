@@ -9,7 +9,8 @@
 **Tests**: `tests/test_language_urls.py`, `tests/test_sitemap.py`, `tests/test_structured_data.py`,
 `tests/test_listing_seo.py`, `tests/test_landing_pages.py`, `tests/test_indexnow.py`,
 `tests/test_page_meta.py`, `tests/test_feeds.py`, `tests/test_ics_feed.py`,
-`tests/test_locale_cache.py`, `tests/test_search_setup.py`
+`tests/test_locale_cache.py`, `tests/test_search_setup.py`, `tests/test_listing_index.py`,
+`tests/test_account_pages_noindex.py`, `tests/test_localized_links.py`
 **Related**: [calendar](calendar.md), [site shell](site-shell.md); the `search-visibility` skill holds
 the operational detail (issue #275)
 
@@ -66,6 +67,13 @@ and an IndexNow notice whenever something is published.
 2. **Given** the calendar, **Then** it links the places and disciplines that hold upcoming events,
    busiest first -- never a catch-all venue or a category's "other" bin, never one whose races are
    over; the same pages reach the sitemap.
+3. **Given** a calendar, list or map page, **Then** an engine indexes the page once: the plain page
+   and a list about one city, region or discipline name themselves canonical (a list opened on some
+   dates names the dateless list, its hreflang alternates follow; a later page of it is itself), and
+   every other combination of parameters -- dates on the grid or the map, several filters,
+   favourites, `reset` -- and any empty filtered list answer `X-Robots-Tag: noindex`, their links
+   still followed (`calendar_app/listing_seo.index_policy`). The plain pages stay indexable even
+   when empty: the sitemap lists them.
 
 ### Story 4 -- Engines hear about new pages (P2)
 
@@ -73,6 +81,16 @@ and an IndexNow notice whenever something is published.
    IndexNow in all three languages, whatever door it came through; pending and hidden events are not.
 2. **Given** no `INDEXNOW_KEY` or no base URL, **Then** nothing is sent; a refusal is logged, never
    raised; the key file at `/<key>.txt` serves the key and any other name is 404.
+
+### Edge Cases
+
+- The account pages (sign-in, sign-up, password reset, profile -- every `account_*` and
+  `socialaccount_*` route) answer `X-Robots-Tag: noindex`: the same forms in three languages, with
+  nothing a search should lead to.
+- A link an author wrote without a language (`/calendar/719/`) is shown with the reader's one
+  (`/ru/calendar/719/`) on event, news, knowledge and home pages, as the page is drawn
+  (`localized_links`); nothing stored changes, and addresses served without a language (media,
+  documents, the API, the sitemap) or already carrying one are left alone.
 
 ## Functional Requirements
 
