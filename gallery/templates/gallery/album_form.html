@@ -53,7 +53,7 @@
         <label class="gallery-dropzone" for="{{ upload.photos.id_for_label }}">
           {% include "gallery/_icons.html" with name="image" %}
           <span class="gallery-dropzone-text">{% trans "Choose photos or drop them here" %}</span>
-          <span class="form-text" id="photo-count">{% blocktrans %}Up to {{ max_files }} photos at a time, up to {{ max_mb }} MB each. JPEG, PNG or WebP.{% endblocktrans %}</span>
+          <span class="form-text" id="photo-count" data-max-files="{{ max_files }}" data-max-batch-mb="{{ max_batch_mb }}">{% blocktrans %}Up to {{ max_files }} photos and {{ max_batch_mb }} MB at a time, up to {{ max_mb }} MB each. JPEG, PNG or WebP.{% endblocktrans %}</span>
           {{ upload.photos }}
         </label>
         {% if upload.photos.errors %}<div class="text-danger small mt-2">{{ upload.photos.errors }}</div>{% endif %}
@@ -112,13 +112,29 @@
       title.setAttribute('placeholder', event.value && parts.length > 1 ? parts.slice(1).join(' - ') : fallback);
     });
   }
-  // Say how many files are picked, so a big batch is not a guess.
+  // Say how many files are picked, so a big batch is not a guess -- and stop a batch too big to send:
+  // past the site's limit Cloudflare refuses the request before the form can explain anything.
   var input = document.getElementById('{{ upload.photos.id_for_label }}');
   var count = document.getElementById('photo-count');
   if (input && count) {
     var idle = count.textContent;
+    var limit = Number(count.dataset.maxBatchMb) * 1024 * 1024;
+    var tooBig = function () {
+      var total = 0;
+      for (var i = 0; i < input.files.length; i++) total += input.files[i].size;
+      return total > limit;
+    };
     input.addEventListener('change', function () {
-      count.textContent = input.files.length ? '{{ _("Selected files")|escapejs }}: ' + input.files.length : idle;
+      if (tooBig()) {
+        count.textContent = '{{ _("Too much at once for one upload; pick fewer photos.")|escapejs }}';
+        count.classList.add('text-danger');
+      } else {
+        count.textContent = input.files.length ? '{{ _("Selected files")|escapejs }}: ' + input.files.length : idle;
+        count.classList.remove('text-danger');
+      }
+    });
+    input.form.addEventListener('submit', function (event) {
+      if (tooBig()) event.preventDefault();
     });
   }
 }());

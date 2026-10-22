@@ -89,6 +89,10 @@ def max_file_mb() -> int:
     return getattr(settings, "GALLERY_MAX_UPLOAD_MB", 25)
 
 
+def max_batch_mb() -> int:
+    return getattr(settings, "GALLERY_MAX_BATCH_MB", 90)
+
+
 def disk_reserve_mb() -> int:
     return getattr(settings, "GALLERY_DISK_RESERVE_MB", 200)
 
@@ -119,6 +123,10 @@ class PhotoUploadForm(forms.Form):
         if too_big:
             raise forms.ValidationError(
                 _("Larger than %(size)d MB: %(names)s") % {"size": max_file_mb(), "names": ", ".join(too_big)}
+            )
+        if sum(f.size for f in files) > max_batch_mb() * 1024 * 1024:
+            raise forms.ValidationError(
+                _("More than %(size)d MB at once; upload these photos in a few goes.") % {"size": max_batch_mb()}
             )
         # Originals are kept as they came, and the disk is the one every other upload uses too --
         # event posters, news pictures, protocols. The gallery never takes the last of it.

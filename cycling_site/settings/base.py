@@ -349,6 +349,9 @@ INDEXNOW_KEY = env("INDEXNOW_KEY", default="")
 # Every photo is re-encoded on the way in (gallery/images.py), which is what bounds a batch.
 GALLERY_MAX_FILES_PER_UPLOAD = env.int("GALLERY_MAX_FILES_PER_UPLOAD", default=30)
 GALLERY_MAX_UPLOAD_MB = env.int("GALLERY_MAX_UPLOAD_MB", default=25)
+# All the files of one submission together. Cloudflare in front of the site refuses a request over
+# 100 MB before it reaches us, with a bare error page; staying under it lets the form say so instead.
+GALLERY_MAX_BATCH_MB = env.int("GALLERY_MAX_BATCH_MB", default=90)
 # Free space the gallery always leaves on the media disk, which posters, news pictures and protocols
 # share with it: an upload that would cut into it is refused.
 GALLERY_DISK_RESERVE_MB = env.int("GALLERY_DISK_RESERVE_MB", default=200)

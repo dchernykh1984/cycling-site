@@ -233,6 +233,19 @@ class DiskReserveTests(GalleryTestCase):
         self.assertContains(response, refusal.replace("'", "&#x27;"))
 
 
+class BatchSizeTests(GalleryTestCase):
+    @override_settings(GALLERY_MAX_BATCH_MB=0)
+    def test_a_batch_over_the_limit_is_refused_whole(self):
+        album = self._album()
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("gallery_album_edit", args=[album.pk]),
+            {"title": album.title, "date": "2026-09-06", "photos": [_jpeg()]},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(album.photos.exists())
+
+
 class CoverTests(GalleryTestCase):
     def setUp(self):
         super().setUp()

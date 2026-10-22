@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
-from gallery.forms import AlbumForm, PhotoUploadForm, max_file_mb, max_files
+from gallery.forms import AlbumForm, PhotoUploadForm, max_batch_mb, max_file_mb, max_files
 from gallery.images import PhotoError, process
 from gallery.models import Album, Photo
 from gallery.permissions import can_create_album, can_manage_album
@@ -149,7 +149,14 @@ def album_create(request):
     return render(
         request,
         "gallery/album_form.html",
-        {"form": form, "upload": upload, "action": "create", "max_files": max_files(), "max_mb": max_file_mb()},
+        {
+            "form": form,
+            "upload": upload,
+            "action": "create",
+            "max_files": max_files(),
+            "max_mb": max_file_mb(),
+            "max_batch_mb": max_batch_mb(),
+        },
     )
 
 
@@ -190,6 +197,7 @@ def album_edit(request, pk):
             "action": "edit",
             "max_files": max_files(),
             "max_mb": max_file_mb(),
+            "max_batch_mb": max_batch_mb(),
         },
     )
 

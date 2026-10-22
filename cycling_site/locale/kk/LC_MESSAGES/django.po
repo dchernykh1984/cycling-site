@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-22 21:38+0500\n"
+"POT-Creation-Date: 2026-10-22 21:50+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -2259,29 +2259,34 @@ msgstr ""
 "Міндетті емес. Альбом іс-шара бетінде көрсетіледі; бос атау мен күн одан "
 "алынады."
 
-#: gallery/forms.py:64
+#: gallery/forms.py:66
 msgid "Give the album a title, or pick the event it belongs to."
 msgstr "Альбом атауын жазыңыз немесе іс-шараны таңдаңыз."
 
-#: gallery/forms.py:66
+#: gallery/forms.py:68
 msgid "Give the album a date, or pick the event it belongs to."
 msgstr "Альбом күнін көрсетіңіз немесе іс-шараны таңдаңыз."
 
-#: gallery/forms.py:104 gallery/models.py:102
+#: gallery/forms.py:110 gallery/models.py:102
 msgid "Photos"
 msgstr "Фотосуреттер"
 
-#: gallery/forms.py:113
+#: gallery/forms.py:119
 #, python-format
 msgid "At most %(count)d photos at a time; upload the rest in another go."
 msgstr "Бір жолы %(count)d фотодан артық емес; қалғанын келесі жолы жүктеңіз."
 
-#: gallery/forms.py:119
+#: gallery/forms.py:125
 #, python-format
 msgid "Larger than %(size)d MB: %(names)s"
 msgstr "%(size)d МБ-тан үлкен: %(names)s"
 
-#: gallery/forms.py:126
+#: gallery/forms.py:129
+#, python-format
+msgid "More than %(size)d MB at once; upload these photos in a few goes."
+msgstr "Бір жолы %(size)d МБ-тан артық; бұл фотоларды бірнеше рет жүктеңіз."
+
+#: gallery/forms.py:136 tests/test_gallery.py:232
 msgid ""
 "Not enough room left on the site's disk for these photos. Ask the owner to "
 "make room."
@@ -2339,11 +2344,11 @@ msgstr "Фотосуреттерді таңдаңыз немесе осында 
 #: gallery/templates/gallery/album_form.html:56
 #, python-format
 msgid ""
-"Up to %(max_files)s photos at a time, up to %(max_mb)s MB each. JPEG, PNG or"
-" WebP."
+"Up to %(max_files)s photos and %(max_batch_mb)s MB at a time, up to "
+"%(max_mb)s MB each. JPEG, PNG or WebP."
 msgstr ""
-"Бір жолы %(max_files)s фотоға дейін, әрқайсысы %(max_mb)s МБ-қа дейін. JPEG,"
-" PNG немесе WebP."
+"Бір жолы %(max_files)s фотоға және %(max_batch_mb)s МБ-қа дейін, әрқайсысы "
+"%(max_mb)s МБ-қа дейін. JPEG, PNG немесе WebP."
 
 #: gallery/templates/gallery/album_form.html:67
 msgid ""
@@ -2366,7 +2371,11 @@ msgstr "Альбомды барлық фотосуреттерімен бірг�
 msgid "Delete album"
 msgstr "Альбомды жою"
 
-#: gallery/templates/gallery/album_form.html:121
+#: gallery/templates/gallery/album_form.html:129
+msgid "Too much at once for one upload; pick fewer photos."
+msgstr "Бір жүктеуге тым көп; азырақ фото таңдаңыз."
+
+#: gallery/templates/gallery/album_form.html:132
 msgid "Selected files"
 msgstr "Таңдалған файлдар"
 
@@ -2390,7 +2399,7 @@ msgstr "Фото: %(counter)s"
 msgid "No albums yet."
 msgstr "Әзірге альбомдар жоқ."
 
-#: gallery/templates/gallery/gallery.html:15 tests/test_gallery.py:280
+#: gallery/templates/gallery/gallery.html:15 tests/test_gallery.py:295
 #, python-format
 msgid "Gallery %(year)s"
 msgstr "Галерея %(year)s"
@@ -2437,20 +2446,20 @@ msgstr "Жүктелмеді: %(files)s"
 msgid "Album created. Choose its cover photo below."
 msgstr "Альбом жасалды. Төменде басты суретті таңдаңыз."
 
-#: gallery/views.py:177
+#: gallery/views.py:184
 #, python-format
 msgid "Photos uploaded: %(count)d."
 msgstr "Жүктелген фото: %(count)d."
 
-#: gallery/views.py:179
+#: gallery/views.py:186
 msgid "Album saved."
 msgstr "Альбом сақталды."
 
-#: gallery/views.py:209
+#: gallery/views.py:217
 msgid "Album deleted."
 msgstr "Альбом жойылды."
 
-#: gallery/views.py:221
+#: gallery/views.py:229
 msgid "Cover photo changed."
 msgstr "Басты сурет өзгертілді."
 
