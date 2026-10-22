@@ -58,9 +58,9 @@ with a poster of its own still shows the poster.
 
 `sitemap.xml` is an **index**, generated per request from the database -- there is nothing to
 rebuild and no hook to fire when something is published. Sections: `wagtail`, `sections`, `knowledge`,
-`news`, `competitions` (paged at 500, `lastmod` = approval time) and `calendar-filters` (the city and discipline pages worth
-indexing). `wagtail` lists the default locale's pages under all three prefixes (Wagtail's own
-generator gave only `/ru/`); `sections` is the calendar's month, list and map views. Each section is `i18n = True` with `alternates` and `x_default`, so every entry appears
+`news`, `competitions` (paged at 500, `lastmod` = approval time), `calendar-filters` (the city and discipline pages worth
+indexing) and `gallery` (public photo albums). `wagtail` lists the default locale's pages under all three prefixes (Wagtail's own
+generator gave only `/ru/`); `sections` is the calendar's month, list and map views and the gallery's index and album list. Each section is `i18n = True` with `alternates` and `x_default`, so every entry appears
 once per language with links to its translations.
 
 ## Feeds

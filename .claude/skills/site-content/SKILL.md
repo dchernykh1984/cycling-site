@@ -111,3 +111,22 @@ An event's body carries a short description only: the start point belongs in the
 categories and the sport in their own structured fields. When a source announcement contradicts
 itself, transcribe what it says and flag the contradiction to the maintainer instead of resolving it
 yourself.
+
+## The photo gallery
+
+`/<lang>/gallery/` is the club's showcase: a few beautiful photos per race, ride or camp, chosen by
+the people who run the site. Only admins and the owner create albums, upload photos and pick covers;
+organizers and everybody else only look (`gallery/permissions.py`).
+
+- **Photos are kept as uploaded**, byte for byte -- never resized or re-compressed; only a 1000px
+  card thumbnail is derived. Do not "optimise" a photo before uploading it, and do not add a step
+  that shrinks the originals: the point of the gallery is that they are the real thing.
+- **Originals keep their metadata**, a phone's location included. Strip the location yourself when
+  the shot was taken somewhere private.
+- **The media disk is about 1 GB and shared** with event posters, news pictures and protocols. An
+  upload that would leave less than `GALLERY_DISK_RESERVE_MB` (200) free is refused. Check
+  `df -h /var/media` on the instance (see `production-access`) before a large upload.
+- An album may point at a public event (never an invite-only or hidden one); the event page then
+  lists it. There is no API for the gallery: albums are made on the site.
+
+The specification is `specs/site/gallery.md`.
