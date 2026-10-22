@@ -10,7 +10,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from gallery.forms import AlbumForm, PhotoUploadForm, max_batch_mb, max_file_mb, max_files
-from gallery.images import PhotoError, process
+from gallery.images import THUMB_SIDE, PhotoError, process
 from gallery.models import Album, Photo
 from gallery.permissions import can_create_album, can_manage_album
 
@@ -27,14 +27,19 @@ def _visible_album(request, pk) -> Album:
     return album
 
 
-def _share_image(request, album):
-    cover = album.cover_photo if album else None
-    if cover is None or not cover.thumbnail:
+def _share_image(request, photo):
+    """The picture a chat shows for a link: the thumbnail, never the original.
+
+    An original may be 25 MB, and messengers skip a preview image of more than a few megabytes --
+    the link would arrive bare. The thumbnail is the same shot, upright, at most THUMB_SIDE wide.
+    """
+    if photo is None or not photo.thumbnail:
         return {}
+    scale = min(1.0, THUMB_SIDE / max(photo.width, photo.height, 1))
     return {
-        "og_image": request.build_absolute_uri(cover.image.url),
-        "og_image_width": cover.width,
-        "og_image_height": cover.height,
+        "og_image": request.build_absolute_uri(photo.thumbnail.url),
+        "og_image_width": round(photo.width * scale),
+        "og_image_height": round(photo.height * scale),
     }
 
 
@@ -57,7 +62,7 @@ def _album_page(request, album):
             if album
             else _("Photos from our races, rides and training camps.")
         ),
-        **_share_image(request, album),
+        **_share_image(request, album.cover_photo if album else None),
     }
     return render(request, "gallery/gallery.html", context)
 
@@ -103,9 +108,7 @@ def photo_detail(request, pk):
             "next_id": ids[position + 1] if position + 1 < len(ids) else None,
             "can_manage": can_manage_album(request.user, album),
             "meta_title": f"{album.title} - {position + 1}/{len(ids)}",
-            "og_image": request.build_absolute_uri(photo.image.url),
-            "og_image_width": photo.width,
-            "og_image_height": photo.height,
+            **_share_image(request, photo),
         },
     )
 

@@ -296,7 +296,13 @@ class CoverTests(GalleryTestCase):
         self.album.cover = self.second
         self.album.save()
         html = self.client.get(self.album.get_absolute_url()).content.decode()
-        self.assertIn(self.second.image.url, html)
+        # The thumbnail: an original of many megabytes is more than a messenger takes for a preview.
+        self.assertIn(f'property="og:image" content="http://testserver{self.second.thumbnail.url}"', html)
+        self.assertNotIn(self.second.image.url, html)
+
+    def test_a_photo_link_shows_its_thumbnail_in_a_chat(self):
+        html = self.client.get(self.second.get_absolute_url()).content.decode()
+        self.assertIn(f'property="og:image" content="http://testserver{self.second.thumbnail.url}"', html)
 
 
 class GalleryPageTests(GalleryTestCase):
