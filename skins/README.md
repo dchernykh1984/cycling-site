@@ -17,7 +17,7 @@ builds on, and they do not change without the maintainer (see "Checks" below).
 creates `skins/ubt/` with a manifest and an empty stylesheet, already valid. The folder name is the
 skin's key: lowercase letters, digits and dashes, at most 32 characters. Profiles and cookies store
 it, so **never rename a folder**. Deleting one is safe: whoever had picked it gets the default skin
-(`DEFAULT_SKIN` in `cycling_site/settings/base.py`, the light one) until they pick again.
+(`DEFAULT_SKIN` in `cycling_site/settings/base.py`) until they pick again.
 
 ## What a skin is
 

@@ -30,7 +30,10 @@ behind the moon/sun button.
 3. **Given** a member, **Then** the choice is kept in their profile; **given** a guest, in a `skin`
    cookie (an old choice left in the browser's storage is carried over on the first visit).
 4. **Given** a key no folder answers to any more, **Then** the page is drawn in `DEFAULT_SKIN`
-   (light) and the stored choice is left as it is.
+   and the stored choice is left as it is.
+5. **Given** a first visit, or a new member, **Then** the site opens in `DEFAULT_SKIN`: UBT Almaty
+   (`orange`). Tests never rely on it -- each sets the skin it checks, the browser suite light
+   unless `E2E_SKIN` names another; making the default follow the most used skin is issue #347.
 
 ### Story 2 -- A designer adds a skin (P1)
 
@@ -72,6 +75,9 @@ behind the moon/sun button.
 
 ## Local assumptions
 
+- **Accepted** (maintainer, 2026-10-22: asked for UBT Almaty as the default). A first-time guest and a
+  new member, wherever they are, see the UBT Almaty skin -- the team's brand, an Almaty home page
+  -- because `DEFAULT_SKIN` is `orange`.
 - **Accepted** (maintainer, 2026-10-21: the three languages are deliberate and a fourth is not planned -- it would mean translating every event and article, beside which naming the three in code costs nothing). A manifest must name its skin in exactly Russian, Kazakh and English: the list is a constant in
   `cycling_site/skins.py` (`LANGUAGES`), not the site's `LANGUAGES` setting.
 

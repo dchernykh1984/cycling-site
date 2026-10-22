@@ -264,7 +264,7 @@ TIME_ZONE = "Asia/Almaty"
 
 # The skin (skins/<key>/) of a first visit and of a new member; also what a stored key falls back to
 # once its folder is gone.
-DEFAULT_SKIN = "light"
+DEFAULT_SKIN = "orange"
 
 USE_I18N = True
 
