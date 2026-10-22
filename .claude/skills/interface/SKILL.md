@@ -49,7 +49,8 @@ Meetup, Eventbrite and Zwift are built.
    an empty day. What is selected -- the tab on screen, the period kind, a filter -- is plainly
    selected: its fill or its frame stands out from the unselected ones by at least 3:1 (WCAG
    1.4.11), not by a heavier word alone, and it says so to a screen reader (`aria-current`,
-   `aria-pressed`). On #343 the active tab got a white frame on white and looked like plain text.
+   `aria-pressed`). In #343's first version the active tab got a white frame on white and looked
+   like plain text.
 4. **The usual question takes one tap.** Quick periods -- today and tomorrow, the weekend, the week,
    the month (from #330) -- cover what people ask in the chat; a date picker is for everything else.
 5. **Nothing moves unless the reader moved it.** Sibling views (calendar, list, map) share their
@@ -77,7 +78,7 @@ Meetup, Eventbrite and Zwift are built.
 10. **Three languages, the longest first.** Size a control for its longest label, usually Kazakh;
     a word cut off only shows in the language nobody checked.
     - A group of buttons that belong together -- the period kinds, the view switch -- stays in one
-      row at every width from 360px up; it never folds into a second row.
+      row on a phone (360px and up) and a desktop (1200px and up); it never folds into a second row.
     - Inside a button the words take at most two lines, spaced at least 1.2 apart, at least 8px
       from the frame at the sides and 4px above and below; the button grows to hold them, and the
       buttons of a row share a height.
@@ -85,8 +86,9 @@ Meetup, Eventbrite and Zwift are built.
       at 360px, shorten the words (in all three catalogues) and make the type smaller -- for every
       button of the row at once, so the row stays even, and never below 12px, the smallest label
       size in Apple's and Google's type scales. The 12px floor is for type made smaller to fit; it
-      does not reach labels a skin sets small on purpose (Lux's 10px capitals). "Today and
-      tomorrow" took a third line in Kazakh and English at 320px and was cut off.
+      does not reach labels a skin sets small on purpose (Lux's 10px capitals). Before #343 settled
+      on "Today tomorrow", "Today and tomorrow" took a third line in Kazakh and English at 320px and
+      was cut off.
     - At 320px the room around the words is not asked for: a label only must not be cut off or
       spill over its frame.
 11. **Readable in every skin, in every state.** Text at least 4.5:1 against what it is drawn on
@@ -115,7 +117,7 @@ skin's (principle 13); this section is about what any skin draws.
 
 | Quality | What it means | How to tell |
 | --- | --- | --- |
-| **Calm** | Neutral surfaces; colour is kept for meaning -- the event's type, its sport, what is "ours" -- and for the one main action. | At most one filled button per view; every colour on screen can be named for what it means. |
+| **Calm** | Neutral surfaces; colour is kept for meaning -- the event's type, its sport, what is "ours" -- and for the one main action. | At most one filled button for the main action per view -- a selected segment does not count; every colour on screen can be named for what it means. |
 | **Readable at arm's length** | In a list, the date, the sport and the title are what the eye lands on; everything else is quieter. | Squint test: blur a 360px screenshot -- date, sport and title still stand apart from the rest. |
 | **Clear type** | Few sizes, set apart by weight and size together; dates and times in figures of equal width, so columns of them line up. | At most two font families and five text sizes on a page. |
 | **Even rhythm** | One spacing scale, one radius, one way of building each pattern; edges line up down the page. | The same pattern looks the same on every page it appears; no one-off margins in a template. |
@@ -139,7 +141,7 @@ Each pattern has a name to use in review ("this wants the event card"), the site
 | **Organiser** | "by ..." under the title, and a filter for one's own club. | Meetup ("by ..."), BikeReg (organiser's logo), Strava (club events) | #336 |
 | **Status badge** | A small badge for what is time-limited or open: registration open, closing in N days. | Orgeo (days left to register), Eventbrite ("Sales end soon") | not planned yet |
 | **Time first for a ride** | The meeting time large, the pace or group as a badge. | Zwift (time first, group badge), Strava (start point, pace groups) | the time stays free text in the announcement (the maintainer's choice); the link preview carries it (#318) |
-| **Page action** | What acts on the whole page -- share it, subscribe to it -- sits at the right edge of the heading's row, apart from the navigation (tabs, period), so the heading's length never moves it and a tap meant for a tab never shares. | Apple's and Google's design guides (actions at the trailing end of the top bar), Airbnb (Share and Save at the right of a listing's title) | `_share_button.html`; the phone layout is proposed to the maintainer |
+| **Page action** | What acts on the whole page -- share it, subscribe to it -- sits at the right edge of the heading's row, apart from the navigation (tabs, period), so the heading's length never moves it and a tap meant for a tab never shares; it is centred on the middle of the heading's capital letters, as Apple centres its symbols beside text. | Apple's and Google's design guides (actions at the trailing end of the top bar), Airbnb (Share and Save at the right of a listing's title) | `_page_heading.html`, #343 |
 | **Subscribe and add to calendar** | Subscription to the filtered calendar and "add to my calendar" near the top, not in the footer. | Orgeo (sync with the phone's calendar, RSS) | #333 |
 
 A pattern not in this table gets a name, a row here and a partial of its own before it appears on a
@@ -164,8 +166,9 @@ second page.
 | A hint takes one line. | `test_a_hint_takes_one_line` |
 | The period and the filters travel to the other tabs. | `test_the_period_and_the_filters_travel_to_the_other_tabs` |
 
-Not tested yet, judged in review: principles 2, 4, 7 and 12, the 3:1 for icons and the focus
-ring, the patterns, and everything in `reference.md`.
+Not tested yet, judged in review: principles 2, 4, 7 and 12, the patterns, what is reachable only
+by hovering, and everything in `reference.md`. The Tab key and the focus ring are left out for now
+(principle 11).
 
 ## Before calling a page done
 
@@ -197,9 +200,10 @@ ring, the patterns, and everything in `reference.md`.
 
 `KNOWN` in `tests/e2e/test_interface_rules.py` and `scripts/template_colours_allowed.txt` list what
 broke a rule when the rule came in. Both only shrink: a new break fails, a fixed one is dropped from
-the list. A break in the site's own layout -- a size, a place, a sideways scroll -- is the site's,
-so its entry holds in every skin. A contrast entry names its skin and holds for light and dark only:
-a designer's skin gets no allowance for its own colours.
+the list. Each entry names its skin: a break the site's own templates cause is listed for every
+skin it shows in, a break a skin's own CSS causes only for that skin. A colour entry -- text, an
+icon, a boundary, a selection -- is allowed for light and dark only: a designer's skin gets no
+allowance for its own colours.
 
 Fixing an old break can change how light or dark look, and those two are the maintainer's
 (the constitution's principle II): such a fix waits for them. No check stops it any more -- the

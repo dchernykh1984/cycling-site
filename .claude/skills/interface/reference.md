@@ -11,7 +11,8 @@ say so. The points this site is most likely to miss:
 
 - **Keyboard.** Everything that works with a tap works with Tab, Enter and Space, in reading order
   (2.4.3), with a focus ring that is always visible (`:focus-visible`) and never hidden under a
-  sticky bar or an open panel (2.4.7, 2.4.11). `base.html` has no "skip to content" link yet; the
+  sticky bar or an open panel (2.4.7, 2.4.11). Not checked for now: the skill's principle 11 leaves
+  the Tab key and the focus ring out. `base.html` has no "skip to content" link yet; the
   first page-wide change to the header should add one -- it stays invisible until focused, so light
   and dark look the same.
 - **The right element.** A link goes somewhere (`<a href>`); a button does something on this page
