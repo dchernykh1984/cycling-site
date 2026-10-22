@@ -135,3 +135,42 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
         limit_regions,
     )
     return regions, places, kinds
+
+
+#: The filters a list page is about. One of them, with one value, is a page of its own: a city, a
+#: region or a discipline, the pages the sitemap offers (CalendarFilterSitemap).
+FACETS = ("location", "discipline")
+
+
+def index_policy(request, *, is_list: bool, count: int | None = None) -> tuple[str | None, bool]:
+    """What a search engine should do with a calendar page: ``(canonical path, noindex)``.
+
+    The plain page is itself. A list about one city, region or discipline is itself too, whatever
+    window of dates it was opened on -- the dates are where a reader happened to be, not another
+    page. Every other combination of parameters (dates on the grid or the map, several filters,
+    favourites, reset) is a view of a page rather than a page, and an empty list is not a page about
+    anything: those stay out of the index, while their links are still followed. Without this each
+    combination named itself canonical, and the engine was offered an endless supply of duplicates.
+    """
+    params = {key: [v for v in request.GET.getlist(key) if v.strip()] for key in request.GET}
+    params = {key: values for key, values in params.items() if values}
+    if not params:
+        # The plain page stays a page even on a quiet month: it is the one the sitemap lists.
+        return None, False
+    if count == 0:
+        return None, True
+    rest = set(params) - {"page"}
+    facet = next((key for key in FACETS if key in rest), None)
+    if (
+        is_list
+        and facet
+        and rest - {facet} <= {"date_from", "date_to"}
+        and len(params[facet]) == 1
+        and params[facet][0].isdigit()
+    ):
+        query = f"{facet}={params[facet][0]}"
+        page = params.get("page", [""])[0]
+        if page.isdigit() and int(page) > 1 and not rest & {"date_from", "date_to"}:
+            query += f"&page={page}"
+        return f"{request.path}?{query}", False
+    return None, True

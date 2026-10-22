@@ -18,7 +18,8 @@ def language_alternates(context):
     request = context.get("request")
     if request is None:
         return []
-    current = request.get_full_path()
+    # A page may name another address as the one it is (canonical_path): its alternates follow it.
+    current = context.get("canonical_path") or request.get_full_path()
     alternates = []
     for code, _name in settings.LANGUAGES:
         translated = translate_url(current, code)

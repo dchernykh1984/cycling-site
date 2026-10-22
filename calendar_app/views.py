@@ -39,7 +39,7 @@ from .forms import (
     ReportCompetitionForm,
     SubmitCompetitionForm,
 )
-from .listing_seo import describe_filters, landing_filters
+from .listing_seo import describe_filters, index_policy, landing_filters
 from .models import (
     Competition,
     CompetitionComment,
@@ -406,11 +406,35 @@ def calendar_year_choices() -> list[int]:
     return list(range(min(years), max(years) + 1))
 
 
-class CalendarView(DefaultFilterRedirectMixin, TemplateView):
+class ListingIndexMixin:
+    """Tell search engines which calendar pages are pages (listing_seo.index_policy).
+
+    The answer travels as an X-Robots-Tag header, not a meta tag, so a skin with its own base.html
+    cannot lose it.
+    """
+
+    is_list = False
+
+    def index_context(self, context, count=None):
+        canonical_path, noindex = index_policy(self.request, is_list=self.is_list, count=count)
+        if canonical_path:
+            context["canonical_path"] = canonical_path
+            context["canonical_url"] = self.request.build_absolute_uri(canonical_path)
+        context["robots_noindex"] = noindex
+
+    def render_to_response(self, context, **response_kwargs):
+        response = super().render_to_response(context, **response_kwargs)
+        if context.get("robots_noindex"):
+            response["X-Robots-Tag"] = "noindex"
+        return response
+
+
+class CalendarView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateView):
     template_name = "calendar_app/calendar.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        self.index_context(context)
         context["upcoming"] = upcoming_competitions(self.request.user)
         # Links to the filtered lists worth being pages of their own, so a crawler (and a reader
         # scanning for their own city) can reach them without building a filter first.
@@ -515,8 +539,9 @@ class CalendarEventsAPIView(View):
         return JsonResponse(events, safe=False)
 
 
-class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
+class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateView):
     template_name = "calendar_app/list.html"
+    is_list = True
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -600,14 +625,16 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
         if meta_title:
             context["meta_title"] = meta_title
             context["meta_description"] = meta_description
+        self.index_context(context, count=page.paginator.count)
         return context
 
 
-class CalendarMapView(DefaultFilterRedirectMixin, TemplateView):
+class CalendarMapView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateView):
     template_name = "calendar_app/map.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        self.index_context(context)
         today = timezone.localdate()
         context["date_from"] = _parse_date(self.request.GET.get("date_from"), today)
         context["date_to"] = _parse_date(self.request.GET.get("date_to"), today + datetime.timedelta(days=30))
