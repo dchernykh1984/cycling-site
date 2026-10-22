@@ -139,6 +139,8 @@ def _open(page: Page, live_server, viewport, lang, tab, query=""):
         # FullCalendar draws after the page loads; measured before that, the page was briefly wider.
         expect(page.locator(".fc-view")).to_be_visible()
     page.wait_for_load_state("networkidle")
+    # A skin's font arrives with font-display: swap; a label measured before it has the fallback's width.
+    page.evaluate("() => document.fonts.ready")
 
 
 def _controls(page: Page):
