@@ -70,6 +70,9 @@ class ListingIndexTests(TestCase):
         response = self.client.get(f"/ru/calendar/list/?location={self.city.pk}&page=2")
         self.assertNotIn("X-Robots-Tag", response)
         self.assertEqual(_canonical(response), f"http://testserver/ru/calendar/list/?location={self.city.pk}&page=2")
+        # Past the end the list shows its last page, and that is the page it says it is.
+        response = self.client.get(f"/ru/calendar/list/?location={self.city.pk}&page=999")
+        self.assertEqual(_canonical(response), f"http://testserver/ru/calendar/list/?location={self.city.pk}&page=2")
 
     def test_the_place_is_named_the_way_the_sitemap_names_it(self):
         response = self.client.get(f"/ru/calendar/list/?location=00{self.city.pk}")

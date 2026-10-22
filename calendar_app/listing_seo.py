@@ -142,7 +142,7 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
 FACETS = ("location", "discipline")
 
 
-def index_policy(request, *, is_list: bool, count: int | None = None) -> tuple[str | None, bool]:
+def index_policy(request, *, is_list: bool, count: int | None = None, page_number: int = 1) -> tuple[str | None, bool]:
     """What a search engine should do with a calendar page: ``(canonical path, noindex)``.
 
     The plain page is itself. A list about one city, region or discipline is itself too, whatever
@@ -151,6 +151,9 @@ def index_policy(request, *, is_list: bool, count: int | None = None) -> tuple[s
     favourites, reset) is a view of a page rather than a page, and an empty list is not a page about
     anything: those stay out of the index, while their links are still followed. Without this each
     combination named itself canonical, and the engine was offered an endless supply of duplicates.
+
+    ``page_number`` is the page of the list actually shown, which is not always the one asked for:
+    "?page=999" of a three-page list shows the third.
     """
     params = {key: [v for v in request.GET.getlist(key) if v.strip()] for key in request.GET}
     params = {key: values for key, values in params.items() if values}
@@ -170,8 +173,7 @@ def index_policy(request, *, is_list: bool, count: int | None = None) -> tuple[s
     ):
         # As a number, the form the sitemap writes it in: "?location=012" is the same page as "?location=12".
         query = f"{facet}={int(params[facet][0])}"
-        page = params.get("page", [""])[0]
-        if page.isdigit() and int(page) > 1 and not rest & {"date_from", "date_to"}:
-            query += f"&page={page}"
+        if page_number > 1 and not rest & {"date_from", "date_to"}:
+            query += f"&page={page_number}"
         return f"{request.path}?{query}", False
     return None, True

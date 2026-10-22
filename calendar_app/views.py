@@ -415,8 +415,8 @@ class ListingIndexMixin:
 
     is_list = False
 
-    def index_context(self, context, count=None):
-        canonical_path, noindex = index_policy(self.request, is_list=self.is_list, count=count)
+    def index_context(self, context, count=None, page_number=1):
+        canonical_path, noindex = index_policy(self.request, is_list=self.is_list, count=count, page_number=page_number)
         if canonical_path:
             context["canonical_path"] = canonical_path
             context["canonical_url"] = self.request.build_absolute_uri(canonical_path)
@@ -625,7 +625,7 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         if meta_title:
             context["meta_title"] = meta_title
             context["meta_description"] = meta_description
-        self.index_context(context, count=page.paginator.count)
+        self.index_context(context, count=page.paginator.count, page_number=page.number)
         return context
 
 
