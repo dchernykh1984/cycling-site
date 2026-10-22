@@ -88,9 +88,11 @@ One page for every device, no separate version for phones or tablets.
    - Check: review.
 
 8. **Words with every icon and every colour.** An icon, an arrow or a colour never carries meaning
-   alone: visible text beside it, or at least an `aria-label`. A `title` is not enough.
+   alone: visible text beside it, or an `aria-label` only where there are no words. Where there
+   are, the name a screen reader gets begins with them (WCAG 2.5.3). A `title` is not enough.
    - Why: a screen reader, and a reader who cannot tell colours apart, get nothing from a shape or
-     a hue; a phone never shows a `title`.
+     a hue; a phone never shows a `title`; an `aria-label` that says something else replaces what
+     is on screen, and a reader who speaks to the page says the visible words.
    - Example: the share icon is labelled "Share".
    - Check: `test_every_control_says_what_it_does`.
 
