@@ -227,8 +227,12 @@ _LABEL = """
     rects.push(...[...range.getClientRects()].filter(q => q.width > 1 && q.height > 1));
   }
   if (!rects.length) return null;
-  // The lines as drawn: how many, and how far apart (so a line-height of normal is read too).
-  const tops = [...new Set(rects.map(q => Math.round(q.top)))].sort((a, b) => a - b);
+  // The lines as drawn: how many, and how far apart (so a line-height of normal is read too). A
+  // line is told apart by its rounded top; the distance is taken from the exact tops, since 13px
+  // type spaced 1.2 sits 15.6px apart, which rounding would read as 15.
+  const rows = new Map();
+  for (const q of rects) { const k = Math.round(q.top); rows.set(k, Math.min(rows.get(k) ?? Infinity, q.top)); }
+  const tops = [...rows.keys()].sort((a, b) => a - b).map(k => rows.get(k));
   const lines = tops.length;
   const bw = parseFloat(s.borderLeftWidth) || 0, bt = parseFloat(s.borderTopWidth) || 0;
   const left = Math.min(...rects.map(q => q.left)), right = Math.max(...rects.map(q => q.right));
