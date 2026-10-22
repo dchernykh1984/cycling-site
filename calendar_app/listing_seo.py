@@ -168,7 +168,8 @@ def index_policy(request, *, is_list: bool, count: int | None = None) -> tuple[s
         and len(params[facet]) == 1
         and params[facet][0].isdigit()
     ):
-        query = f"{facet}={params[facet][0]}"
+        # As a number, the form the sitemap writes it in: "?location=012" is the same page as "?location=12".
+        query = f"{facet}={int(params[facet][0])}"
         page = params.get("page", [""])[0]
         if page.isdigit() and int(page) > 1 and not rest & {"date_from", "date_to"}:
             query += f"&page={page}"
