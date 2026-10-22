@@ -27,7 +27,7 @@ CHECKS = [
     ("/ru/news/", "footer link", "footer a", ("rest", "hover")),
     ("/ru/calendar/list/", "filter", "#et-btn-1", ("rest", "focus")),
     ("/ru/calendar/list/", "label", "main label", ("rest",)),
-    ("/ru/calendar/list/", "table", "main table td", ("rest",)),
+    ("/ru/calendar/list/", "list", "main :is(table td, .calendar-day-events li):visible", ("rest",)),
 ]
 
 # Where the site's own themes already fall short: kept as they are, since light and dark are not

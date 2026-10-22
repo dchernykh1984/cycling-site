@@ -1,4 +1,9 @@
-"""The month as a list of days, the way a phone opens it (issue #330)."""
+"""Lists of days (issue #330): the List tab on a phone, and a short period on the calendar.
+
+A phone reads the List tab by day -- the day, then the events that start on it -- where a wide
+screen keeps the table. The calendar itself is always the month grid; a period shorter than a month
+(a weekend, a week) is a list of exactly those days.
+"""
 
 import datetime
 
@@ -10,14 +15,13 @@ from calendar_app.models import Competition
 from calendar_app.views import calendar_date_words
 
 TODAY = datetime.date.today()
-# The current month opens at today; the first of the month is folded away behind a button.
-FIRST = TODAY.replace(day=1)
 
 
 @pytest.fixture
 def three_day_race(db, organizer):
     return Competition.objects.create(
         title_ru="Three day race",
+        title_kk="Three day race",
         date_start=TODAY,
         date_end=TODAY + datetime.timedelta(days=2),
         submitted_by=organizer,
@@ -25,104 +29,58 @@ def three_day_race(db, organizer):
     )
 
 
-def _open_list(page: Page, live_server, language="ru"):
+def _month_day(day, language="ru"):
+    with translation_override(language):
+        return f"{day.day} {calendar_date_words()['months'][day.month - 1]}"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_phone_reads_the_list_tab_by_day(page: Page, live_server, three_day_race):
+    """A table of ten columns does not read on a phone; the same rows by day do."""
     page.set_viewport_size({"width": 390, "height": 844})
-    page.goto(f"{live_server.url}/{language}/calendar/")
-    expect(page.locator(".fc-listMonth-view")).to_be_visible()
+    page.goto(f"{live_server.url}/ru/calendar/list/")
+    expect(page.locator(".calendar-days")).to_be_visible()
+    expect(page.locator(".calendar-list-table")).to_be_hidden()
+    expect(page.locator(".calendar-day").first).to_contain_text(_month_day(TODAY))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_wide_screen_keeps_the_table(page: Page, live_server, three_day_race):
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{live_server.url}/ru/calendar/list/")
+    expect(page.locator(".calendar-list-table")).to_be_visible()
+    expect(page.locator(".calendar-days")).to_be_hidden()
 
 
 @pytest.mark.django_db(transaction=True)
 def test_a_multi_day_race_is_one_row_with_the_day_it_ends(page: Page, live_server, three_day_race):
-    _open_list(page, live_server)
-    rows = page.locator(".fc-list-event:visible", has_text="Three day race")
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}/ru/calendar/list/")
+    rows = page.locator(".calendar-day-events li", has_text="Three day race")
     expect(rows).to_have_count(1)
-    last = TODAY + datetime.timedelta(days=2)
-    with translation_override("ru"):
-        month = calendar_date_words()["months"][last.month - 1]
-    expect(rows.first).to_contain_text(f"{last.day} {month}")
-
-
-@pytest.mark.django_db(transaction=True)
-def test_a_day_holding_only_a_repeat_loses_its_heading(page: Page, live_server, three_day_race):
-    """The race's second and third days had nothing else on them: no empty headings left behind."""
-    _open_list(page, live_server)
-    expect(page.locator(".fc-list-day:visible")).to_have_count(1)
+    expect(rows.first.locator(".calendar-day-until")).to_contain_text(_month_day(TODAY + datetime.timedelta(days=2)))
 
 
 @pytest.mark.django_db(transaction=True)
 def test_kazakh_day_headings_come_from_the_catalogue(page: Page, live_server, three_day_race):
     """Browsers write these as '2026 M10 1 THU'; the site's own names read as Kazakh."""
-    _open_list(page, live_server, "kk")
-    with translation_override("kk"):
-        words = calendar_date_words()
-    heading = page.locator(".fc-list-day:visible").first
-    expect(heading).to_contain_text(f"{TODAY.day} {words['months'][TODAY.month - 1]}")
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}/kk/calendar/list/")
+    heading = page.locator(".calendar-day").first
+    expect(heading).to_contain_text(_month_day(TODAY, "kk"))
     expect(heading).not_to_contain_text(" M")
 
 
 @pytest.mark.django_db(transaction=True)
-def test_the_list_has_no_empty_time_column(page: Page, live_server, three_day_race):
-    """Every event is all-day; the column used to say "all-day" in English on every row."""
-    _open_list(page, live_server)
-    expect(page.locator(".fc-list-event-time:visible")).to_have_count(0)
-    expect(page.locator(".fc-listMonth-view")).not_to_contain_text("all-day")
-
-
-@pytest.fixture
-def earlier_and_today(db, organizer):
-    if TODAY.day == 1:
-        pytest.skip("no earlier day in the month on the 1st")
-    for title, start, end in (
-        ("Earlier ride", FIRST, None),
-        ("Running since earlier", FIRST, TODAY + datetime.timedelta(days=1)),
-        ("Today ride", TODAY, None),
-    ):
-        Competition.objects.create(
-            title_ru=title,
-            date_start=start,
-            date_end=end,
-            submitted_by=organizer,
-            status=Competition.Status.APPROVED,
-        )
-
-
-@pytest.mark.django_db(transaction=True)
-def test_the_current_month_starts_at_today(page: Page, live_server, earlier_and_today):
-    """On the 20th nobody opens a phone calendar to read the 1st; the earlier days fold away."""
-    _open_list(page, live_server)
-    expect(page.locator(".fc-list-day:visible").first).to_have_attribute("data-date", f"{TODAY:%Y-%m-%d}")
-    expect(page.locator(".fc-list-event:visible", has_text="Earlier ride")).to_have_count(0)
-    expect(page.locator(".fc-list-past-toggle button")).to_contain_text("(1)")
-
-
-@pytest.mark.django_db(transaction=True)
-def test_a_race_still_running_shows_under_today(page: Page, live_server, earlier_and_today):
-    _open_list(page, live_server)
-    expect(page.locator(".fc-list-event:visible", has_text="Running since earlier")).to_have_count(1)
-
-
-@pytest.mark.django_db(transaction=True)
-def test_the_earlier_days_open_with_one_tap(page: Page, live_server, earlier_and_today):
-    _open_list(page, live_server)
-    page.locator(".fc-list-past-toggle button").click()
-    expect(page.locator(".fc-list-day:visible").first).to_have_attribute("data-date", f"{FIRST:%Y-%m-%d}")
-    expect(page.locator(".fc-list-event:visible", has_text="Earlier ride")).to_have_count(1)
-    expect(page.locator(".fc-list-past-toggle")).to_have_count(0)
-
-
-@pytest.mark.django_db(transaction=True)
-def test_a_past_month_is_read_whole(page: Page, live_server, organizer):
-    """Only the month holding today folds; a month gone by would otherwise show just the button."""
-    Competition.objects.create(
-        title_ru="Last month ride",
-        date_start=FIRST - datetime.timedelta(days=10),
-        submitted_by=organizer,
-        status=Competition.Status.APPROVED,
-    )
-    _open_list(page, live_server)
-    page.locator('[data-period-step="-1"]').click()
-    expect(page.locator(".fc-list-event:visible", has_text="Last month ride")).to_have_count(1)
-    expect(page.locator(".fc-list-past-toggle")).to_have_count(0)
+def test_a_week_on_the_calendar_shows_a_multi_day_race_once(page: Page, live_server, three_day_race):
+    """A short period on the calendar is a list of its days; a race running over several of them is
+    one row on its first day, and a day holding only a repeat loses its heading too."""
+    page.set_viewport_size({"width": 390, "height": 844})
+    end = TODAY + datetime.timedelta(days=6)
+    page.goto(f"{live_server.url}/ru/calendar/?date_from={TODAY:%Y-%m-%d}&date_to={end:%Y-%m-%d}")
+    rows = page.locator(".fc-list-event:visible", has_text="Three day race")
+    expect(rows).to_have_count(1)
+    expect(page.locator(".fc-list-day:visible")).to_have_count(1)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -139,18 +97,10 @@ def test_the_end_day_holds_where_clocks_go_forward(browser, live_server, organiz
     context = browser.new_context(timezone_id="Europe/Berlin", viewport={"width": 390, "height": 844})
     page = context.new_page()
     page.clock.set_fixed_time(datetime.datetime(2027, 3, 20, 12, 0))
-    page.goto(f"{live_server.url}/en/calendar/")
+    page.goto(f"{live_server.url}/en/calendar/?date_from=2027-03-22&date_to=2027-03-28")
     row = page.locator(".fc-list-event:visible", has_text="Spring race")
     # The race has a row on each of its two days until the list folds the second one away, a beat
     # after the rows are drawn; judge the end day on the one row left.
     expect(row).to_have_count(1)
     expect(row.locator(".fc-list-event-until")).to_have_text("\u2013 28 March")
     context.close()
-
-
-@pytest.mark.django_db(transaction=True)
-def test_opening_the_earlier_days_keeps_the_keyboard_in_the_list(page: Page, live_server, earlier_and_today):
-    _open_list(page, live_server)
-    page.locator(".fc-list-past-toggle button").focus()
-    page.keyboard.press("Enter")
-    expect(page.locator("#calendar .fc-list-event a:focus")).to_have_count(1)
