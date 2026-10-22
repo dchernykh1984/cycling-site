@@ -33,7 +33,8 @@
     <meta property="og:type" content="{% firstof og_type 'website' %}" />
     <meta property="og:site_name" content="{% if current_site and current_site.site_name %}{{ current_site.site_name }}{% endif %}" />
     <meta property="og:title" content="{% firstof meta_title page.seo_title page.title %}" />
-    <meta property="og:description" content="{% if description %}{{ description }}{% else %}{% trans 'Calendar of endurance sport events -- cycling, running, cross-country skiing -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base.' %}{% endif %}" />
+    {# og_description is the line a page wants a chat to show; search engines keep reading the description above. #}
+    <meta property="og:description" content="{% if og_description %}{{ og_description }}{% elif description %}{{ description }}{% else %}{% trans 'Calendar of endurance sport events -- cycling, running, cross-country skiing -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base.' %}{% endif %}" />
     <meta property="og:url" content="{% firstof canonical_url request.build_absolute_uri %}" />
     {% comment %}
     The picture a chat shows when somebody pastes a link. A page may carry its own -- an event with
