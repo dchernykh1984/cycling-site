@@ -7,8 +7,8 @@ skin. The widths are set here: a phone (360px) and a desktop (1280px) get every 
 phone (320px) and two tablets (768 and 1024px) only what scrolls sideways, is cut off or breaks.
 
 KNOWN lists what already broke a rule when the rule came in, and only so far: a new break fails.
-A layout break is the site's and is allowed in every skin; a colour break -- text, a border, a
-selected state -- only in light and dark.
+Each entry names its skin ("light|tap/phone/ru/list/#filter-toggle"). A colour break -- text, an
+icon, a boundary, a selection -- is allowed for light and dark only, whatever KNOWN says.
 """
 
 import datetime
@@ -81,11 +81,12 @@ KNOWN: set[str] = set()
 def _breaks(found):
     """The breaks that are not KNOWN for this skin.
 
-    A layout break is the site's own and is allowed in every skin; a contrast break is the skin's
-    colours, allowed only in light and dark -- a designer's skin gets no allowance for its own.
+    An entry holds for the skin it names. A colour break is allowed only in light and dark, the
+    maintainer's skins -- a designer's skin gets no allowance for its own colours.
     """
-    maintainers = settings.DEFAULT_SKIN in ("light", "dark")
-    return [item for item in found if item not in KNOWN or (item.startswith(COLOURS) and not maintainers)]
+    skin = settings.DEFAULT_SKIN
+    maintainers = skin in ("light", "dark")
+    return [item for item in found if f"{skin}|{item}" not in KNOWN or (item.startswith(COLOURS) and not maintainers)]
 
 
 def _open(page: Page, live_server, viewport, lang, tab, query=""):
