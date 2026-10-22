@@ -20,8 +20,9 @@ from tests.e2e.conftest import AROUND_UPCOMING
 from tests.e2e.contrast import drawn, is_large, legibility, ratio
 
 TABS = {"calendar": "/calendar/", "list": "/calendar/list/", "map": "/calendar/map/"}
-VIEWPORTS: dict[str, ViewportSize] = {"phone": {"width": 375, "height": 812}, "desktop": {"width": 1280, "height": 900}}
-# The narrowest width WCAG asks a page to reflow at (1.4.10); checked for sideways scroll only.
+VIEWPORTS: dict[str, ViewportSize] = {"phone": {"width": 360, "height": 780}, "desktop": {"width": 1280, "height": 900}}
+# The narrowest width WCAG asks a page to reflow at (1.4.10): the site is designed for 360px and up,
+# and at 320px only nothing may be cut off or spill over -- the screen's edge or a frame.
 NARROW: ViewportSize = {"width": 320, "height": 700}
 LANGUAGES = ("ru", "kk", "en")
 # What the three tabs share above their content: the title row with the switcher, and -- where a
@@ -163,16 +164,32 @@ _LABEL = """
 SIDE, END, LINES, SPACING = 8, 4, 2, 1.2
 
 
+def _label_faults(label, narrow):
+    """What is wrong with where a label's words sit; at 320px only what is cut off or spills over."""
+    if narrow:
+        return ["over the frame"] if label["framed"] and min(label["side"], label["end"]) < -0.5 else []
+    faults = []
+    if label["lines"] > LINES:
+        faults.append(f"{label['lines']} lines")
+    if label["lines"] > 1 and label["spacing"] < SPACING - 0.01:
+        faults.append(f"line spacing {label['spacing']:.2f}")
+    if label["framed"] and label["side"] < SIDE - 0.5:
+        faults.append(f"{label['side']:.0f}px from the frame at the side")
+    if label["framed"] and label["end"] < END - 0.5:
+        faults.append(f"{label['end']:.0f}px from the frame above or below")
+    return faults
+
+
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("viewport", [*VIEWPORTS, "narrow"])
 @pytest.mark.parametrize("lang", LANGUAGES)
 @pytest.mark.parametrize("tab", TABS)
 def test_every_label_fits_its_control(page: Page, live_server, viewport, lang, tab):
-    """Words stay inside their frame with room around them, in all three languages, down to 320px.
+    """Words stay inside their frame with room around them, in all three languages, from 360px up.
 
     Kazakh is usually the longest. At most two lines, spaced at least 1.2 apart; at least 8px from the
     frame at the sides and 4px above and below -- a word cut off, spilling out or touching the frame
-    reads as a broken button.
+    reads as a broken button. At 320px only what is cut off or spills over counts.
     """
     _open(page, live_server, viewport, lang, tab)
     found, details = [], []
@@ -181,17 +198,8 @@ def test_every_label_fits_its_control(page: Page, live_server, viewport, lang, t
         if label is None:
             continue
         key, name, scroll, client = (control.evaluate(_DESCRIBE)[k] for k in ("key", "name", "scroll", "client"))
-        faults = []
-        if scroll > client:
-            faults.append(f"{scroll}px in {client}px")
-        if label["lines"] > LINES:
-            faults.append(f"{label['lines']} lines")
-        if label["lines"] > 1 and label["spacing"] < SPACING - 0.01:
-            faults.append(f"line spacing {label['spacing']:.2f}")
-        if label["framed"] and label["side"] < SIDE - 0.5:
-            faults.append(f"{label['side']:.0f}px from the frame at the side")
-        if label["framed"] and label["end"] < END - 0.5:
-            faults.append(f"{label['end']:.0f}px from the frame above or below")
+        faults = [f"{scroll}px in {client}px"] if scroll > client else []
+        faults += _label_faults(label, viewport == "narrow")
         if faults:
             found.append(f"fits/{viewport}/{lang}/{tab}/{key}")
             details.append(f"{key} ({name!r}): " + ", ".join(faults))
@@ -209,7 +217,7 @@ _ROWS = """
 
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize("viewport", [*VIEWPORTS, "narrow"])
+@pytest.mark.parametrize("viewport", VIEWPORTS)
 @pytest.mark.parametrize("lang", LANGUAGES)
 @pytest.mark.parametrize("tab", TABS)
 def test_a_button_group_stays_in_one_row(page: Page, live_server, viewport, lang, tab):
