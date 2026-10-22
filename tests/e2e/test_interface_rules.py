@@ -493,7 +493,7 @@ def test_the_active_tab_keeps_the_border_of_the_others(page: Page, live_server, 
         "links => links.map(a => { const s = getComputedStyle(a);"
         " return [s.borderTopWidth, s.borderBottomWidth, s.borderTopStyle].join(' '); })"
     )
-    found = [f"border/{viewport}/{tab}"] if len(set(borders)) > 1 else []
+    found = [f"frame/{viewport}/{tab}"] if len(set(borders)) > 1 else []
     assert not _breaks(found), borders
 
 
