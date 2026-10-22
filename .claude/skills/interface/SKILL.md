@@ -142,7 +142,8 @@ One page for every device, no separate version for phones or tablets.
 
 12. **Few words, and the right ones.** A hint takes one line; a button says what happens; labels
     use the reader's words; two controls on one screen never share a name when they do different
-    things.
+    things; dates and times come in the reader's order and words -- the month in its Russian case,
+    the year first in Kazakh, the 24-hour clock, an en dash for a range.
     - Why: a reader acts on the words, and one name for two actions leads to the wrong place.
     - Example: "Show 12 events", not "OK"; "Weekend", not the database's term; a view switch
       inside the calendar is not called "List" next to a "List" tab.
