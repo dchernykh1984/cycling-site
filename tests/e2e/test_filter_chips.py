@@ -30,10 +30,10 @@ def test_the_cross_lifts_the_filter_on_the_list(page: Page, live_server, race_ev
 def test_the_cross_lifts_the_filter_on_the_calendar(page: Page, live_server, race_event_type):
     page.set_viewport_size(PHONE)
     page.goto(f"{live_server.url}/en/calendar/?event_type={race_event_type.pk}")
-    expect(page.locator("#filter-toggle")).to_contain_text("(1)")
+    expect(page.locator("#filter-toggle .filter-count")).to_have_text("1")
     page.locator("#filter-chips .filter-chip").click()
     expect(page.locator("#filter-chips .filter-chip")).to_have_count(0)
-    expect(page.locator("#filter-toggle")).not_to_contain_text("(")
+    expect(page.locator("#filter-toggle .filter-count")).to_be_hidden()
 
 
 @pytest.mark.django_db(transaction=True)
