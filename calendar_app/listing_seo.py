@@ -169,7 +169,8 @@ def index_policy(request, *, is_list: bool, count: int | None = None, page_numbe
         and facet
         and rest - {facet} <= {"date_from", "date_to"}
         and len(params[facet]) == 1
-        and params[facet][0].isdigit()
+        # isdecimal, not isdigit: a superscript two is a digit, and int() refuses it.
+        and params[facet][0].isdecimal()
     ):
         # As a number, the form the sitemap writes it in: "?location=012" is the same page as "?location=12".
         query = f"{facet}={int(params[facet][0])}"

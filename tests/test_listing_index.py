@@ -94,6 +94,11 @@ class ListingIndexTests(TestCase):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path)["X-Robots-Tag"], "noindex")
 
+    def test_a_number_int_cannot_read_is_no_place(self):
+        response = self.client.get("/ru/calendar/list/?location=%C2%B2")  # a superscript two
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["X-Robots-Tag"], "noindex")
+
     def test_a_cleared_filter_is_no_filter(self):
         # "?location=" is what a cleared select submits: the plain page, not a view of it.
         response = self.client.get("/ru/calendar/list/?location=")
