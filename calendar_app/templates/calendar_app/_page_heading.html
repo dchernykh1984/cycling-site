@@ -1,0 +1,51 @@
+{% load i18n %}
+{% comment %}The heading row of the calendar, the list and the map (issue #330): the heading, the share
+button at the right end of the row, and the tap zones of the header's buttons. One partial, so the
+three tabs cannot drift apart. `heading` is the text of the h1.{% endcomment %}
+<style>
+  /* The share button at the right end of the heading's row: it stands in one place on every tab,
+     whatever the heading's length ("Calendar", "Events", a city's list). */
+  .calendar-heading { flex: 1 1 auto; min-width: 0; }
+  .calendar-heading .share-btn { margin-left: auto; }
+  /* Every header button answers a tap across 44px (2.75rem), centred on it, whatever its drawn
+     height; the rows of buttons sit far enough apart that two zones never overlap. */
+  .calendar-header .btn { position: relative; }
+  .calendar-header .btn::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2.75rem; transform: translateY(-50%);
+  }
+  .calendar-header .calendar-controls { column-gap: .5rem; row-gap: .625rem; }
+</style>
+<div class="calendar-heading d-flex align-items-center gap-2">
+  <h1 class="mb-0">{{ heading }}</h1>
+  {% include "_share_button.html" %}
+</div>
+<script>
+// The share button centred on the middle of the heading's capitals, as an icon beside text is (SF
+// Symbols), not on the line box, which each skin pads differently. Measured, then moved by a
+// transform, so the row keeps its size.
+(function () {
+  var row = document.currentScript.previousElementSibling;
+  var h1 = row.querySelector('h1');
+  var button = row.querySelector('.share-btn');
+  if (!h1 || !button) return;
+  function centre() {
+    button.style.transform = '';
+    var style = getComputedStyle(h1);
+    var context = document.createElement('canvas').getContext('2d');
+    context.font = style.fontWeight + ' ' + style.fontSize + ' ' + style.fontFamily;
+    var cap = context.measureText('H').actualBoundingBoxAscent;
+    // A zero-height inline block sits on the baseline of the heading's first line.
+    var probe = document.createElement('span');
+    probe.style.cssText = 'display:inline-block;width:0;height:0';
+    h1.insertBefore(probe, h1.firstChild);
+    var baseline = probe.getBoundingClientRect().bottom;
+    probe.remove();
+    var box = button.getBoundingClientRect();
+    var shift = baseline - cap / 2 - (box.top + box.height / 2);
+    if (Math.abs(shift) >= 0.5) button.style.transform = 'translateY(' + shift.toFixed(1) + 'px)';
+  }
+  centre();
+  if (document.fonts) document.fonts.ready.then(centre);
+  window.addEventListener('resize', centre);
+}());
+</script>
