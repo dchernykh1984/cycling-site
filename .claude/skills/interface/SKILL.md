@@ -167,9 +167,9 @@ The values -- colours, fonts, radii, spacing -- are the skin's (principle 13).
 | --- | --- | --- |
 | **Calm** | Neutral surfaces; colour is kept for meaning -- the event's type, its sport, what is "ours" -- and for the one main action. | At most one filled button for the main action per view -- a selected segment does not count; every colour on screen can be named for what it means. |
 | **Readable at arm's length** | In a list, the date, the sport and the title are what the eye lands on; everything else is quieter. | Squint test: blur a 360px screenshot -- date, sport and title still stand apart from the rest. |
-| **Clear type** | Few sizes, set apart by weight and size together; dates and times in figures of equal width, so columns of them line up. | At most two font families and five text sizes on a page. |
+| **Clear type** | Few sizes, set apart by weight and size together; dates and times in figures of equal width, so columns of them line up. | At most two font families; every text size on the page can be named for its job: title, body, label, caption. |
 | **Even rhythm** | One spacing scale, one radius, one way of building each pattern; edges line up down the page. | The same pattern looks the same on every page it appears; no one-off margins in a template. |
-| **Dense, not crowded** | A phone screen carries several events, each still easy to tap. | At 360px, at least three events are visible below the header on the first screen of a list. |
+| **Dense, not crowded** | A phone screen carries several events, each still easy to tap. | At 360x640px, at least three events are visible below the header on the first screen of a list. |
 
 ### Patterns
 
