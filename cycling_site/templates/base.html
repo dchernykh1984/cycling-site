@@ -108,6 +108,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% if knowledge_url %}{{ knowledge_url }}{% else %}#{% endif %}">{% trans "Knowledge Base" %}</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'gallery_index' %}">{% trans "Gallery" %}</a>
+                    </li>
                     {% get_about_url as about_url %}
                     {% if about_url %}
                     <li class="nav-item">

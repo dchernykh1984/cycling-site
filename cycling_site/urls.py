@@ -15,6 +15,7 @@ from api.router import api as ninja_api
 from cycling_site.sitemaps import (
     CalendarFilterSitemap,
     CompetitionSitemap,
+    GalleryAlbumSitemap,
     KnowledgeArticleSitemap,
     NewsArticleSitemap,
     SectionPagesSitemap,
@@ -86,6 +87,7 @@ sitemaps = {
     "news": NewsArticleSitemap,
     "competitions": CompetitionSitemap,
     "calendar-filters": CalendarFilterSitemap,
+    "gallery": GalleryAlbumSitemap,
 }
 
 # Machine-facing addresses, and the ones a language prefix would only get in the way of: the API,

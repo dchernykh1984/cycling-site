@@ -313,3 +313,22 @@ class EventLinkTests(GalleryTestCase):
             title_ru="Quiet race", date_start=datetime.date(2026, 5, 17), status=Competition.Status.APPROVED
         )
         self.assertNotContains(self.client.get(race.get_absolute_url()), "competition-albums")
+
+
+class NavigationAndSitemapTests(GalleryTestCase):
+    def test_every_page_links_the_gallery(self):
+        html = self.client.get(reverse("calendar")).content.decode()
+        self.assertIn(reverse("gallery_index"), html)
+
+    def test_public_albums_are_in_the_sitemap_and_hidden_ones_are_not(self):
+        public = self._album("Public 2026")
+        hidden = self._album("Hidden 2026", is_hidden=True)
+        body = self.client.get(reverse("sitemap_section", args=["gallery"])).content.decode()
+        self.assertIn(public.get_absolute_url(), body)
+        self.assertNotIn(hidden.get_absolute_url(), body)
+
+    def test_the_gallery_strings_are_translated(self):
+        for locale in ("ru", "kk"):
+            with translation_override(locale):
+                for msgid in ("Gallery", "Cover photo", "Make cover", "New album", "View more"):
+                    self.assertNotEqual(gettext(msgid), msgid, f"{msgid!r} in {locale}")

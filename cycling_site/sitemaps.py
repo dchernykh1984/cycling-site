@@ -62,7 +62,7 @@ class SectionPagesSitemap(Sitemap):
     x_default = True
 
     def items(self):
-        return ["calendar", "calendar_list", "calendar_map"]
+        return ["calendar", "calendar_list", "calendar_map", "gallery_index", "gallery_albums"]
 
     def location(self, name):
         return reverse(name)
@@ -172,3 +172,24 @@ class CalendarFilterSitemap(Sitemap):
     def location(self, item):
         parameter, pk = item
         return f"{reverse('calendar_list')}?{parameter}={pk}"
+
+
+class GalleryAlbumSitemap(Sitemap):
+    """Every public photo album: the page a search for last year's race photos should land on."""
+
+    changefreq = "monthly"
+    priority = 0.5
+    i18n = True
+    alternates = True
+    x_default = True
+
+    def items(self):
+        from gallery.models import Album
+
+        return Album.objects.public().order_by("-date", "pk")
+
+    def location(self, album):
+        return album.get_absolute_url()
+
+    def lastmod(self, album):
+        return album.updated_at
