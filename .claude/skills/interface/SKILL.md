@@ -219,6 +219,13 @@ second page.
   controls far enough apart that those layers do not overlap.
 - A button that toggles says whether it is on: `aria-pressed` (a period kind) or `aria-expanded`
   (the filter panel), changed by the same script that changes its look.
+- A hover style sits under `@media (hover: hover)`: on a phone `:hover` sticks after a tap, and the
+  reader sees it as the control's new state.
+- Sibling views are links with `aria-current="page"`, not `role="tab"`: each is its own address,
+  and the tabs pattern is for panels on one page.
+- A font a skin brings must carry the Kazakh letters (U+04D8, U+0492, U+049A, U+04A2, U+04E8,
+  U+04B0, U+04AE, U+04BA, U+0406 and their lower case): without them the browser draws those
+  letters in another font, and the words change width unseen.
 - A new colour is a new skin variable: add it to `skins/light/skin.css` and `skins/dark/skin.css`,
   which belong to the maintainer -- ask first -- and then use `var(--skin-...)` in the template.
 - A new phrase needs its Russian and Kazakh (the `translations` skill); check the Kazakh fits.
