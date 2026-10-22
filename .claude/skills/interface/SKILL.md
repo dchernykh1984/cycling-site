@@ -57,7 +57,12 @@ anything that loads.
    neighbours. WCAG 2.2 AA asks for 24px (2.5.8); 44px (2.5.5, AAA) is a deliberate choice for
    people tapping on the move, where a missed tap on a period arrow pages the wrong way.
 10. **Three languages, the longest first.** Size a control for its longest label, usually Kazakh;
-    a word cut off only shows in the language nobody checked.
+    a word cut off only shows in the language nobody checked. A button's words take at most two
+    lines, spaced at least 1.2 apart, with at least 8px between them and the frame at the sides and
+    4px above and below; the button grows to hold them, and the buttons of one row share a height.
+    When a label still needs a third line or touches the frame at 320px in any language, shorten
+    the words in all three catalogues rather than the type -- "Today and tomorrow" became a
+    third line in Kazakh and English at 320px and was cut off.
 11. **Readable in every skin, in every state.** Text at least 4.5:1 against what it is drawn on
     (3:1 for large text) at rest, under the pointer and in focus -- a button that is readable at
     rest can turn white on pale grey when hovered (1.49:1 on the view tabs in light). A control's
@@ -118,7 +123,7 @@ second page.
 | The period is named in words on every tab. | `test_the_period_is_named_in_words` |
 | Every control in the shared header is at least 44x44px on a phone. | `test_every_control_is_big_enough_to_tap_on_a_phone` |
 | Nothing scrolls sideways, from 320px up. | `test_no_tab_scrolls_sideways`, `test_calendar_view.py` |
-| Every label fits its control in ru, kk and en. | `test_every_label_fits_its_control` |
+| Every label fits its control in ru, kk and en, from 320px up: at most two lines, spaced at least 1.2, at least 8px from the frame at the sides and 4px above and below. | `test_every_label_fits_its_control` |
 | Every control has words: visible text or `aria-label`. | `test_every_control_says_what_it_does` |
 | No hex colour in a template outside `skins/`. | pre-commit `no-hex-colours-in-templates` |
 | Text at least 4.5:1 (3:1 large) in every skin, at rest, under the pointer and in focus. | `test_skin_contrast.py`, `test_the_header_is_readable_in_this_skin` |
