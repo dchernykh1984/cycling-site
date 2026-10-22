@@ -64,6 +64,9 @@ def test_news_article_created_via_api_appears_on_front(page: Page, live_server, 
     expect(page.get_by_text("Telo novosti RU")).to_be_visible()
 
 
+RACE_DAY = datetime.date.today() + datetime.timedelta(days=7)
+
+
 @pytest.mark.django_db(transaction=True)
 def test_competition_created_via_api_appears_on_front(page: Page, live_server, api_admin):
     resp = _api_post(
@@ -72,12 +75,13 @@ def test_competition_created_via_api_appears_on_front(page: Page, live_server, a
         api_admin.api_token,
         {
             "title": {"ru": "E2E API Race RU", "kk": "E2E API Race KK", "en": "E2E API Race EN"},
-            # Default list range is today..today+30d, so pick a date inside it.
-            "date_start": (datetime.date.today() + datetime.timedelta(days=7)).isoformat(),
+            "date_start": RACE_DAY.isoformat(),
         },
     )
     assert resp.status == 201, resp.text()
 
-    # Admin-created competitions are auto-approved, so they show on the public list.
-    page.goto(f"{live_server.url}/ru/calendar/list/")
-    expect(page.get_by_text("E2E API Race RU")).to_be_visible()
+    # Admin-created competitions are auto-approved, so they show on the public list. The list opens
+    # on the rest of the month, which a week ahead can leave; ask for the race's day. The page holds
+    # the row twice -- the table and the phone's list of days -- and shows one of them.
+    page.goto(f"{live_server.url}/ru/calendar/list/?date_from={RACE_DAY}&date_to={RACE_DAY}")
+    expect(page.locator("a:visible", has_text="E2E API Race RU")).to_have_count(1)

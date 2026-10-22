@@ -468,6 +468,27 @@ def calendar_date_words() -> dict:
     return {"months": months, "weekdays": weekdays}
 
 
+def day_groups(rows) -> list[dict]:
+    """A list page's rows under their first day, for the list of days a phone shows (issue #330).
+
+    Each day is headed as the calendar heads it ("22 October, Thursday"), from the same catalogue
+    words; a race over several days stands once, on its first day, with the day it ends.
+    """
+    words = calendar_date_words()
+
+    def label(day):
+        return f"{day.day} {words['months'][day.month - 1]}"
+
+    groups: list[dict] = []
+    for comp in rows:
+        day = comp.date_start
+        if not groups or groups[-1]["date"] != day:
+            groups.append({"date": day, "label": f"{label(day)}, {words['weekdays'][day.weekday()]}", "rows": []})
+        until = label(comp.date_end) if comp.date_end and comp.date_end > day else ""
+        groups[-1]["rows"].append({"comp": comp, "until": until})
+    return groups
+
+
 class CalendarView(DefaultFilterRedirectMixin, TemplateView):
     template_name = "calendar_app/calendar.html"
 
@@ -631,6 +652,8 @@ class CompetitionListView(DefaultFilterRedirectMixin, TemplateView):
         paginator = Paginator(qs, 20)
         page = paginator.get_page(self.request.GET.get("page", 1))
         context["competitions"] = page
+        # The same rows by day, for a phone: a table of ten columns does not read on one.
+        context["days"] = day_groups(page)
         # Pass the evaluated page rows (not the sliced queryset) so the star lookup reuses them
         # instead of re-running the paginated query as an IN subquery.
         context["favorited_ids"] = _favorited_ids(self.request, list(page))

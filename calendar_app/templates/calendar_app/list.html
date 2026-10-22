@@ -8,6 +8,25 @@
 <link rel="alternate" type="application/rss+xml" title="{% trans 'New events' %}" href="{% url 'calendar_rss' %}" />
 {% endblock %}
 
+{% block extra_css %}
+<style>
+  /* The phone's list of days: each day a heading on the skin's own surface, its events below, each
+     row 44px or more to tap. Colours from the skin's variables. */
+  .calendar-day {
+    margin: 0; padding: .5rem .75rem; font-size: .875rem; font-weight: 600;
+    background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); border-top-width: 0;
+  }
+  .calendar-days .calendar-day:first-child { border-top-width: 1px; }
+  .calendar-day-events { margin: 0; }
+  .calendar-day-events li {
+    display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+    padding: .75rem; border: 1px solid var(--bs-border-color); border-top-width: 0;
+  }
+  .calendar-day-events li .btn { flex: none; }
+  .calendar-day-until { margin-left: .25rem; color: var(--bs-body-color); }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-3">
   <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 calendar-header">
@@ -154,7 +173,35 @@
 </div>
 
 {% if competitions %}
-<div class="table-responsive">
+{% comment %}A phone gets the events by day -- the day, then the events starting on it -- and a wide
+screen the table. The same rows and the same pages: one is shown, the other hidden by width, at the
+breakpoint where the filters fold away too.{% endcomment %}
+<div class="calendar-days d-lg-none">
+  {% for day in days %}
+  <h2 class="calendar-day">{{ day.label }}</h2>
+  <ul class="list-unstyled calendar-day-events">
+    {% for row in day.rows %}
+    <li>
+      <div>
+        {% if row.comp.pk in favorited_ids %}<span class="text-warning" aria-hidden="true">★</span> {% endif %}
+        <a href="{% url 'competition_detail' row.comp.pk %}">{{ row.comp.title }}</a>
+        {% if row.until %}<span class="calendar-day-until">– {{ row.until }}</span>{% endif %}
+        {% if is_manager and row.comp.is_hidden %}<span class="badge bg-warning text-dark ms-1">{% trans "Hidden" %}</span>{% endif %}
+        {% if row.comp.invite_only %}<span class="badge bg-info text-dark ms-1">{% trans "By invitation" %}</span>{% endif %}
+      </div>
+      {% comment %}Signing up from the list, as the table's links cell offers it: entries taken here
+      win over an external link.{% endcomment %}
+      {% if row.comp.pk in registration_open_ids %}
+      <a href="{% url 'registrations:register' row.comp.pk %}" class="btn btn-sm btn-primary">{% trans "Register" %}</a>
+      {% elif row.comp.url_registration %}
+      <a href="{{ row.comp.url_registration }}" target="_blank" rel="noopener" class="btn btn-sm btn-primary">{% trans "Register" %}</a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endfor %}
+</div>
+<div class="table-responsive d-none d-lg-block">
   <table class="table table-hover align-middle table-sm small calendar-list-table">
     <colgroup>
       <col style="width:14%">
