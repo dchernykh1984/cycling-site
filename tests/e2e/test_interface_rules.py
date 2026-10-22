@@ -348,7 +348,9 @@ _ROWS = """
 def test_a_button_group_stays_in_one_row(page: Page, live_server, viewport, lang, tab):
     """The period kinds and the view switch are read as one row; folded into two, they are a grid."""
     _open(page, live_server, viewport, lang, tab)
-    folded = [group for group in page.evaluate(_ROWS) if len(group["tops"]) > 1]
+    groups = page.evaluate(_ROWS)
+    assert groups, "the header has no button group to measure"
+    folded = [group for group in groups if len(group["tops"]) > 1]
     found = [f"row/{viewport}/{lang}/{tab}/{group['name']}" for group in folded]
     assert not _breaks(found), [f"{group['name']}: {len(group['tops'])} rows" for group in folded]
 
@@ -468,6 +470,7 @@ def test_what_is_selected_can_be_seen(page: Page, live_server, viewport, tab):
     found, details = [], []
     page.mouse.move(0, 0)
     selected = page.locator(HEADER).locator(":is([aria-current='page'], [aria-pressed='true'], .active):visible")
+    assert selected.count(), "nothing in the header is marked selected"
     for control in selected.all():
         key = control.evaluate(_DESCRIBE)["key"]
         if not control.evaluate(_TOLD):
