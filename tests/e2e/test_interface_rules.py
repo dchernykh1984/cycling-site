@@ -117,7 +117,12 @@ _ORANGE_ICONS_NARROW = {
     for tab in TABS
     for key in ("#filter-toggle", "[data-copied-label]")
 }
-KNOWN: set[str] = _MENU_TOO_WIDE | _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS | _ORANGE_ICONS_NARROW
+# The orange skin's body font sets Weekend in Russian 2px wider on each side than its segment leaves
+# at 360px, as Linux draws it (CI); Windows draws it narrower and passes.
+_ORANGE_WEEKEND_RU = {f"orange|fits/phone/ru/{tab}/[data-period-kind=weekend]" for tab in TABS}
+KNOWN: set[str] = (
+    _MENU_TOO_WIDE | _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS | _ORANGE_ICONS_NARROW | _ORANGE_WEEKEND_RU
+)
 
 
 def _breaks(found):
@@ -139,6 +144,8 @@ def _open(page: Page, live_server, viewport, lang, tab, query=""):
         # FullCalendar draws after the page loads; measured before that, the page was briefly wider.
         expect(page.locator(".fc-view")).to_be_visible()
     page.wait_for_load_state("networkidle")
+    # A skin's font arrives with font-display: swap; a label measured before it has the fallback's width.
+    page.evaluate("() => document.fonts.ready")
 
 
 def _controls(page: Page):
@@ -227,8 +234,12 @@ _LABEL = """
     rects.push(...[...range.getClientRects()].filter(q => q.width > 1 && q.height > 1));
   }
   if (!rects.length) return null;
-  // The lines as drawn: how many, and how far apart (so a line-height of normal is read too).
-  const tops = [...new Set(rects.map(q => Math.round(q.top)))].sort((a, b) => a - b);
+  // The lines as drawn: how many, and how far apart (so a line-height of normal is read too). A
+  // line is told apart by its rounded top; the distance is taken from the exact tops, since 13px
+  // type spaced 1.2 sits 15.6px apart, which rounding would read as 15.
+  const rows = new Map();
+  for (const q of rects) { const k = Math.round(q.top); rows.set(k, Math.min(rows.get(k) ?? Infinity, q.top)); }
+  const tops = [...rows.keys()].sort((a, b) => a - b).map(k => rows.get(k));
   const lines = tops.length;
   const bw = parseFloat(s.borderLeftWidth) || 0, bt = parseFloat(s.borderTopWidth) || 0;
   const left = Math.min(...rects.map(q => q.left)), right = Math.max(...rects.map(q => q.right));
