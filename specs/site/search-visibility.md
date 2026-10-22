@@ -4,11 +4,12 @@
 **Verified against**: `main` on 2026-10-21
 **Code**: `cycling_site/urls.py` (`i18n_patterns`), `cycling_site/middleware.py`,
 `cycling_site/sitemaps.py`, `cycling_site/indexnow.py`, `cycling_site/summaries.py`,
+`cycling_site/jsonld.py`, `cycling_site/context_processors.py` (`search_verification`), `home/seo.py`,
 `calendar_app/seo.py`, `calendar_app/listing_seo.py`, `calendar_app/feeds.py`, `base.html`
 **Tests**: `tests/test_language_urls.py`, `tests/test_sitemap.py`, `tests/test_structured_data.py`,
 `tests/test_listing_seo.py`, `tests/test_landing_pages.py`, `tests/test_indexnow.py`,
 `tests/test_page_meta.py`, `tests/test_feeds.py`, `tests/test_ics_feed.py`,
-`tests/test_locale_cache.py`
+`tests/test_locale_cache.py`, `tests/test_search_setup.py`
 **Related**: [calendar](calendar.md), [site shell](site-shell.md); the `search-visibility` skill holds
 the operational detail (issue #275)
 
@@ -35,15 +36,27 @@ and an IndexNow notice whenever something is published.
 
 ### Story 2 -- An engine finds the content (P1)
 
-1. **Given** `sitemap.xml`, **Then** it is an index of sections -- Wagtail pages, knowledge, news,
-   events (past ones stay), calendar filter pages -- each entry once per language with its
-   translations; nothing hidden, unapproved or invite-only is offered.
+1. **Given** `sitemap.xml`, **Then** it is an index of sections -- Wagtail pages, the calendar's
+   month, list and map views, knowledge, news, events (past ones stay, each dated by its approval),
+   calendar filter pages -- each entry once per language with its translations; nothing hidden,
+   unapproved or invite-only is offered.
 2. **Given** an event page, **Then** it carries `SportsEvent` data: machine-readable dates (no end
    date for a one-day race), absolute URL, the venue with coordinates and the full address chain,
    the sport from its disciplines, and an offer when registration is open here or linked elsewhere
    (registration here wins); markup in a title cannot break out of the block.
 3. **Given** a knowledge or news article, **Then** it carries `Article` / `NewsArticle` data with its
    language or date.
+4. **Given** the home page, **Then** it carries a `SportsOrganization` and a `WebSite` with a search
+   action: the club's name, logo, area and its profiles elsewhere, each from a setting
+   (`ORGANIZATION_NAME`, `ORGANIZATION_AREA`, `ORGANIZATION_SAME_AS`, https links only); what is not
+   set is not claimed.
+5. **Given** any structured data, **Then** it is JSON a search engine can parse as it stands --
+   `<`, `>` and `&` as JSON escapes (`cycling_site/jsonld.py`), never HTML character references,
+   which a script element does not decode.
+6. **Given** `GOOGLE_SITE_VERIFICATION` / `YANDEX_VERIFICATION`, **Then** every page carries the
+   ownership tag that console asks for; unset, none is written.
+7. **Given** a page with no picture of its own shared in a chat, **Then** it shows the wide
+   1200x630 site picture (`static/og-default.png`) as a large card.
 
 ### Story 3 -- A filtered calendar is a page of its own (P2)
 
@@ -80,6 +93,8 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 - **Accepted** (maintainer, 2026-10-21: the brand in code does not matter). Filtered-list descriptions name the brand in code ("... on the Universal Bicycle Team calendar",
   `calendar_app/listing_seo.py`).
 - IndexNow is chosen because Yandex honours it; that choice suits any audience and assumes nothing.
+- **Accepted** (maintainer, 2026-10-21: the brand in code does not matter). The default share picture and the home page's logo (`static/og-default.png`, `static/logo-512.png`)
+  are the Universal Bicycle Team mark, files rather than settings.
 
 ## Open Questions
 
