@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n calendar_tags %}
+{% load i18n calendar_tags seo_tags %}
 
 {% block extra_css %}
 {% if location_lat %}
@@ -225,7 +225,7 @@
 
     {% if competition.description %}
     {# Description is sanitized rich HTML on save (forms + API), so render as-is. #}
-    <div class="mb-4 competition-description">{{ competition.description|safe }}</div>
+    <div class="mb-4 competition-description">{{ competition.description|safe|localized_links }}</div>
     {% endif %}
 
     {% comment %}Report control (issue #233): a confirmed user flags an inaccurate event with an

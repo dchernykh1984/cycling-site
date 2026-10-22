@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n seo_tags %}
 
 {% block title %}{{ article.title }}{% endblock %}
 
@@ -36,7 +36,7 @@
       {% if article.published_by %}<span>{{ article.published_by.get_full_name|default:article.published_by.email }}</span>{% endif %}
     </div>
 
-    <div class="article-body richtext">{{ article.body|safe }}</div>
+    <div class="article-body richtext">{{ article.body|safe|localized_links }}</div>
 
     {% if article.is_hidden and can_edit %}
     <div class="alert alert-warning py-2 mt-3">{% trans "This article is hidden from public view." %}</div>
