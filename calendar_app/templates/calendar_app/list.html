@@ -14,10 +14,8 @@
     {% comment %}A filtered list is a page about a city or a discipline, and the heading is the
     first thing that says so -- to a reader who arrived from search as much as to the crawler that
     put them there. Without a filter there is nothing to name, and the plain word stands.{% endcomment %}
-    <div class="d-flex align-items-center gap-2">
-      <h1 class="mb-0">{% if meta_title %}{{ meta_title }}{% else %}{% trans "Events" %}{% endif %}</h1>
-      {% include "_share_button.html" %}
-    </div>
+    {% trans "Events" as events %}
+    {% include "calendar_app/_page_heading.html" with heading=meta_title|default:events %}
     <div class="d-flex gap-2 flex-wrap align-items-center">
       {% include "calendar_app/_filter_toggle.html" %}
       {% include "calendar_app/_view_switcher.html" with active_view="list" %}
