@@ -48,7 +48,9 @@ One page for every device, no separate version for phones or tablets.
    selected plainly selected: its fill or frame stands out from the unselected ones by at least
    3:1 (WCAG 1.4.11), not by a heavier word alone, and a screen reader is told (`aria-current`,
    `aria-pressed`).
-   - Why: a reader who cannot tell what is shown does not trust an empty day.
+   - Why: a reader who cannot tell what is shown does not trust an empty day. Stricter than WCAG
+     1.4.11 on purpose: it measures a state against the colours next to it, this rule against the
+     unselected neighbour too.
    - Example: "24-25 October 2026" above the list; the tab on screen filled, the others outlined.
    - Check: `test_the_period_is_named_in_words`, `test_what_is_selected_can_be_seen`.
 
@@ -68,10 +70,13 @@ One page for every device, no separate version for phones or tablets.
    - Check: `test_switching_tabs_moves_none_of_the_controls`,
      `test_the_active_tab_keeps_the_border_of_the_others`.
 
-6. **A choice is kept.** The period and the filters travel between sibling tabs and come back on
-   the next visit.
-   - Why: choosing twice reads as "it lost my filter".
-   - Example: the weekend picked on the list is the weekend on the map.
+6. **A choice is kept, and a link wins.** What a link names -- the period, the filters -- is what
+   opens, whatever was chosen before; a choice made on the page travels between sibling tabs and
+   stays for the visit; a filter the reader saved comes back on the next.
+   - Why: choosing twice reads as "it lost my filter", and a link that opens something else reads
+     as the wrong link.
+   - Example: the weekend picked on the list is the weekend on the map; a link to the weekend's
+     races opens the weekend for a reader who last looked at the month.
    - Check: `test_the_period_and_the_filters_travel_to_the_other_tabs`.
 
 7. **Narrow by default, delete nothing.** Show what is near first and fold the rest; never remove
@@ -83,9 +88,11 @@ One page for every device, no separate version for phones or tablets.
    - Check: review.
 
 8. **Words with every icon and every colour.** An icon, an arrow or a colour never carries meaning
-   alone: visible text beside it, or at least an `aria-label`. A `title` is not enough.
+   alone: visible text beside it, or an `aria-label` only where there are no words. Where there
+   are, the name a screen reader gets begins with them (WCAG 2.5.3). A `title` is not enough.
    - Why: a screen reader, and a reader who cannot tell colours apart, get nothing from a shape or
-     a hue; a phone never shows a `title`.
+     a hue; a phone never shows a `title`; an `aria-label` that says something else replaces what
+     is on screen, and a reader who speaks to the page says the visible words.
    - Example: the share icon is labelled "Share".
    - Check: `test_every_control_says_what_it_does`.
 
@@ -93,7 +100,9 @@ One page for every device, no separate version for phones or tablets.
    phone and a click across at least 24x24px on a desktop. The zone is centred on the control and
    the zones of neighbours do not overlap. Nothing that matters is reachable only by hovering.
    - Why: people tap on the move, and a missed tap does the wrong thing; a phone has no hover. WCAG
-     2.2 AA asks for 24px (2.5.8); 44px is 2.5.5 (AAA) and Apple's minimum for the iPhone and iPad.
+     2.2 AA asks for 24px (2.5.8); 44px is 2.5.5 (AAA) and Apple's minimum for the iPhone and
+     iPad; Material asks 48dp, and 44 is the site's choice. A link inside a sentence is exempt, as
+     2.5.8 exempts it.
    - Example: a slim 32px pill with an invisible 44px zone around it, rows far enough apart that
      the zones do not meet.
    - Check: `test_every_control_is_big_enough_to_tap`.
@@ -105,8 +114,9 @@ One page for every device, no separate version for phones or tablets.
       buttons of a row share a height.
     - When a label would need a third line, or come closer to the frame, in any language at 360px:
       shorten the words in all three catalogues and make the type smaller -- for the whole row,
-      never below 12px, the smallest label size in Apple's and Google's type scales. The floor is
-      for type made smaller to fit, not for labels a skin sets small on purpose.
+      never below 12px, one step above the smallest size in Apple's (11pt) and Google's (11sp)
+      type scales. The floor is for type made smaller to fit, not for labels a skin sets small on
+      purpose.
     - At 320px a label only must not be cut off or spill over its frame.
     - Why: a word cut off shows only in the language nobody checked; a row folded in two reads as
       a grid.
@@ -125,13 +135,15 @@ One page for every device, no separate version for phones or tablets.
     - Example: pale text that turns white on light grey under the pointer fails; a beige border
       around a "Filters" button passes.
     - Exception: moving through the controls with the Tab key, and the focus ring, are not checked
-      for now.
+      yet. Both are AA (2.4.7 Focus Visible, 2.4.11 Focus Not Obscured), so until they are, the
+      baseline in `reference.md` is AA less these two.
     - Check: `test_the_header_is_readable_in_this_skin`, `test_every_border_can_be_seen`,
       `test_skin_contrast.py`.
 
 12. **Few words, and the right ones.** A hint takes one line; a button says what happens; labels
     use the reader's words; two controls on one screen never share a name when they do different
-    things.
+    things; dates and times come in the reader's order and words -- the month in its Russian case,
+    the year first in Kazakh, the 24-hour clock, an en dash for a range.
     - Why: a reader acts on the words, and one name for two actions leads to the wrong place.
     - Example: "Show 12 events", not "OK"; "Weekend", not the database's term; a view switch
       inside the calendar is not called "List" next to a "List" tab.
@@ -155,9 +167,9 @@ The values -- colours, fonts, radii, spacing -- are the skin's (principle 13).
 | --- | --- | --- |
 | **Calm** | Neutral surfaces; colour is kept for meaning -- the event's type, its sport, what is "ours" -- and for the one main action. | At most one filled button for the main action per view -- a selected segment does not count; every colour on screen can be named for what it means. |
 | **Readable at arm's length** | In a list, the date, the sport and the title are what the eye lands on; everything else is quieter. | Squint test: blur a 360px screenshot -- date, sport and title still stand apart from the rest. |
-| **Clear type** | Few sizes, set apart by weight and size together; dates and times in figures of equal width, so columns of them line up. | At most two font families and five text sizes on a page. |
+| **Clear type** | Few sizes, set apart by weight and size together; dates and times in figures of equal width, so columns of them line up. | At most two font families; every text size on the page can be named for its job: title, body, label, caption. |
 | **Even rhythm** | One spacing scale, one radius, one way of building each pattern; edges line up down the page. | The same pattern looks the same on every page it appears; no one-off margins in a template. |
-| **Dense, not crowded** | A phone screen carries several events, each still easy to tap. | At 360px, at least three events are visible below the header on the first screen of a list. |
+| **Dense, not crowded** | A phone screen carries several events, each still easy to tap. | At 360x640px, at least three events are visible below the header on the first screen of a list. |
 
 ### Patterns
 
@@ -207,6 +219,13 @@ second page.
   controls far enough apart that those layers do not overlap.
 - A button that toggles says whether it is on: `aria-pressed` (a period kind) or `aria-expanded`
   (the filter panel), changed by the same script that changes its look.
+- A hover style sits under `@media (hover: hover)`: on a phone `:hover` sticks after a tap, and the
+  reader sees it as the control's new state.
+- Sibling views are links with `aria-current="page"`, not `role="tab"`: each is its own address,
+  and the tabs pattern is for panels on one page.
+- A font a skin brings must carry the Kazakh letters (U+04D8, U+0492, U+049A, U+04A2, U+04E8,
+  U+04B0, U+04AE, U+04BA, U+0406 and their lower case): without them the browser draws those
+  letters in another font, and the words change width unseen.
 - A new colour is a new skin variable: add it to `skins/light/skin.css` and `skins/dark/skin.css`,
   which belong to the maintainer -- ask first -- and then use `var(--skin-...)` in the template.
 - A new phrase needs its Russian and Kazakh (the `translations` skill); check the Kazakh fits.
