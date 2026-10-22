@@ -14,7 +14,9 @@ Photo albums at `/<lang>/gallery/`, linked from the navbar.
   thumbnail, upright and without metadata, is made for the cards. Files go under
   `MEDIA_ROOT/gallery/<album>/`; deleting a photo deletes its files.
 - **Limits**: `GALLERY_MAX_FILES_PER_UPLOAD` (30) and `GALLERY_MAX_UPLOAD_MB` (25), from the
-  environment. A file that is not an image is reported and the rest of the batch is kept. An upload
+  environment, and `GALLERY_MAX_BATCH_MB` (90) for one submission as a whole: Cloudflare refuses a
+  request over 100 MB, so the form stops a bigger batch before sending it. A file that is not an
+  image is reported and the rest of the batch is kept. An upload
   that would leave less than `GALLERY_DISK_RESERVE_MB` (200) free on the media disk -- shared with
   event posters, news pictures and protocols -- is refused.
 - **Pages**: `gallery_index` (newest album, others as tabs), `gallery_album`, `gallery_albums`

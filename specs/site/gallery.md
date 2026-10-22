@@ -4,7 +4,7 @@
 **Verified against**: `main` on 2026-10-22
 **Code**: `gallery/` (models, permissions, images, forms, views, templates, sitemap section in
 `cycling_site/sitemaps.py`), `calendar_app/templates/calendar_app/detail.html` (the event's albums)
-**Tests**: `tests/test_gallery.py`, `tests/e2e/test_navbar_fits.py`
+**Tests**: `tests/test_gallery.py`, `tests/e2e/test_gallery_upload.py`, `tests/e2e/test_navbar_fits.py`
 **Related**: [events](events.md), [site shell](site-shell.md), [search visibility](search-visibility.md);
 `gallery/README.md`; issue #349 (the wider gallery idea: bib numbers, external storage)
 
@@ -44,7 +44,9 @@ photos are kept exactly as they were taken, and only admins and the owner put th
 - The media disk is shared with event posters, news pictures and protocols: an upload that would
   leave less than `GALLERY_DISK_RESERVE_MB` (200) free is refused, so the gallery never takes the
   last of it. One submission takes at most `GALLERY_MAX_FILES_PER_UPLOAD` (30) files of at most
-  `GALLERY_MAX_UPLOAD_MB` (25) each; a file that is not a picture is reported and the rest kept.
+  `GALLERY_MAX_UPLOAD_MB` (25) each and `GALLERY_MAX_BATCH_MB` (90) together -- Cloudflare in front
+  of the site refuses a request over 100 MB with a bare page, so the form says "too much at once"
+  and does not send it; a file that is not a picture is reported and the rest kept.
 - A JPEG thumbnail is decoded at reduced size, so a 50-megapixel original does not cost hundreds of
   megabytes of memory; a picture of more than 120 megapixels is refused before decoding.
 

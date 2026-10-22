@@ -124,7 +124,8 @@ organizers and everybody else only look (`gallery/permissions.py`).
 - **Originals keep their metadata**, a phone's location included. Strip the location yourself when
   the shot was taken somewhere private.
 - **The media disk is about 1 GB and shared** with event posters, news pictures and protocols. An
-  upload that would leave less than `GALLERY_DISK_RESERVE_MB` (200) free is refused. Check
+  upload that would leave less than `GALLERY_DISK_RESERVE_MB` (200) free is refused, and one
+  submission takes at most 90 MB (`GALLERY_MAX_BATCH_MB`: Cloudflare refuses more). Check
   `df -h /var/media` on the instance (see `production-access`) before a large upload.
 - An album may point at a public event (never an invite-only or hidden one); the event page then
   lists it. There is no API for the gallery: albums are made on the site.
