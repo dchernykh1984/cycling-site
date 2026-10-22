@@ -70,10 +70,13 @@ One page for every device, no separate version for phones or tablets.
    - Check: `test_switching_tabs_moves_none_of_the_controls`,
      `test_the_active_tab_keeps_the_border_of_the_others`.
 
-6. **A choice is kept.** The period and the filters travel between sibling tabs and come back on
-   the next visit.
-   - Why: choosing twice reads as "it lost my filter".
-   - Example: the weekend picked on the list is the weekend on the map.
+6. **A choice is kept, and a link wins.** What a link names -- the period, the filters -- is what
+   opens, whatever was chosen before; a choice made on the page travels between sibling tabs and
+   stays for the visit; a filter the reader saved comes back on the next.
+   - Why: choosing twice reads as "it lost my filter", and a link that opens something else reads
+     as the wrong link.
+   - Example: the weekend picked on the list is the weekend on the map; a link to the weekend's
+     races opens the weekend for a reader who last looked at the month.
    - Check: `test_the_period_and_the_filters_travel_to_the_other_tabs`.
 
 7. **Narrow by default, delete nothing.** Show what is near first and fold the rest; never remove
