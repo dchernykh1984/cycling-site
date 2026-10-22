@@ -201,6 +201,25 @@ class CreateAlbumTests(GalleryTestCase):
         self.assertFalse(Album.objects.exists())
 
 
+class DiskReserveTests(GalleryTestCase):
+    def test_an_upload_that_would_eat_into_the_reserve_is_refused(self):
+        from unittest import mock
+
+        album = self._album()
+        self.client.force_login(self.admin)
+        nearly_full = shutil._ntuple_diskusage(total=10**9, used=10**9 - 150 * 1024 * 1024, free=150 * 1024 * 1024)
+        with mock.patch("gallery.forms.shutil.disk_usage", return_value=nearly_full):
+            response = self.client.post(
+                reverse("gallery_album_edit", args=[album.pk]),
+                {"title": album.title, "date": "2026-09-06", "photos": [_jpeg()]},
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(album.photos.exists())
+        with translation_override("ru"):
+            refusal = gettext("Not enough room left on the site's disk for these photos. Ask the owner to make room.")
+        self.assertContains(response, refusal.replace("'", "&#x27;"))
+
+
 class CoverTests(GalleryTestCase):
     def setUp(self):
         super().setUp()

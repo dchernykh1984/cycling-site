@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-22 20:51+0500\n"
+"POT-Creation-Date: 2026-10-22 21:38+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -411,14 +411,14 @@ msgid "My registrations"
 msgstr "Менің тіркелулерім"
 
 #: accounts/templates/accounts/profile.html:302
-#: accounts/templates/accounts/profile.html:342 gallery/forms.py:35
+#: accounts/templates/accounts/profile.html:342 gallery/forms.py:37
 #: gallery/models.py:36
 msgid "Event"
 msgstr "Іс-шара"
 
 #: accounts/templates/accounts/profile.html:303
 #: accounts/templates/accounts/profile.html:343
-#: accounts/templates/accounts/profile.html:403 gallery/forms.py:30
+#: accounts/templates/accounts/profile.html:403 gallery/forms.py:32
 #: gallery/models.py:33
 msgid "Date"
 msgstr "Күні"
@@ -500,7 +500,7 @@ msgstr "Мақала жіберу"
 #: calendar_app/templates/calendar_app/list.html:180
 #: calendar_app/templates/calendar_app/submit.html:34
 #: calendar_app/templates/calendar_app/submit.html:47
-#: calendar_app/templates/calendar_app/submit.html:60 gallery/forms.py:24
+#: calendar_app/templates/calendar_app/submit.html:60 gallery/forms.py:26
 #: gallery/models.py:32 knowledge/models.py:264
 #: knowledge/templates/knowledge/add_article.html:18
 #: knowledge/templates/knowledge/edit_article.html:17
@@ -870,15 +870,16 @@ msgstr ""
 msgid "Additional info"
 msgstr "Қосымша ақпарат"
 
-#: calendar_app/preview_image.py:56 gallery/images.py:52
+#: calendar_app/preview_image.py:56 gallery/images.py:62 gallery/images.py:68
 msgid "The image is too large to process."
 msgstr "Сурет өңдеу үшін тым үлкен."
 
-#: calendar_app/preview_image.py:58 gallery/images.py:54
+#: calendar_app/preview_image.py:58 gallery/images.py:64 gallery/images.py:66
+#: gallery/images.py:74
 msgid "This file is not an image we can read."
 msgstr "Бұл файл біз оқи алатын сурет емес."
 
-#: calendar_app/preview_image.py:66 gallery/images.py:59
+#: calendar_app/preview_image.py:66 gallery/images.py:70
 #, python-format
 msgid "The image is too small: at least %(size)d pixels on the longer side."
 msgstr ""
@@ -2250,7 +2251,7 @@ msgstr "Құпиялылық саясаты"
 msgid "Terms of Use"
 msgstr "Пайдалану шарттары"
 
-#: gallery/forms.py:39
+#: gallery/forms.py:41
 msgid ""
 "Optional. The album is linked from the event page; an empty title and date "
 "are taken from it."
@@ -2258,27 +2259,35 @@ msgstr ""
 "Міндетті емес. Альбом іс-шара бетінде көрсетіледі; бос атау мен күн одан "
 "алынады."
 
-#: gallery/forms.py:62
+#: gallery/forms.py:64
 msgid "Give the album a title, or pick the event it belongs to."
 msgstr "Альбом атауын жазыңыз немесе іс-шараны таңдаңыз."
 
-#: gallery/forms.py:64
+#: gallery/forms.py:66
 msgid "Give the album a date, or pick the event it belongs to."
 msgstr "Альбом күнін көрсетіңіз немесе іс-шараны таңдаңыз."
 
-#: gallery/forms.py:90 gallery/models.py:102
+#: gallery/forms.py:104 gallery/models.py:102
 msgid "Photos"
 msgstr "Фотосуреттер"
 
-#: gallery/forms.py:99
+#: gallery/forms.py:113
 #, python-format
 msgid "At most %(count)d photos at a time; upload the rest in another go."
 msgstr "Бір жолы %(count)d фотодан артық емес; қалғанын келесі жолы жүктеңіз."
 
-#: gallery/forms.py:105
+#: gallery/forms.py:119
 #, python-format
 msgid "Larger than %(size)d MB: %(names)s"
 msgstr "%(size)d МБ-тан үлкен: %(names)s"
+
+#: gallery/forms.py:126
+msgid ""
+"Not enough room left on the site's disk for these photos. Ask the owner to "
+"make room."
+msgstr ""
+"Сайт дискісінде бұл фотоларға орын жетпейді. Сайт иесінен орын босатуды "
+"сұраңыз."
 
 #: gallery/models.py:44 gallery/templates/gallery/album_form.html:66
 msgid "Cover photo"
@@ -2293,7 +2302,6 @@ msgid "Albums"
 msgstr "Альбомдар"
 
 #: gallery/models.py:92
-#| msgid "Location"
 msgid "Caption"
 msgstr "Қолтаңба"
 
@@ -2304,7 +2312,6 @@ msgstr "Фото"
 #: gallery/templates/gallery/album_form.html:4
 #: gallery/templates/gallery/album_form.html:14
 #: gallery/templates/gallery/gallery.html:22
-#| msgid "Edit article"
 msgid "Edit album"
 msgstr "Альбомды өңдеу"
 
@@ -2348,7 +2355,6 @@ msgstr ""
 
 #: gallery/templates/gallery/album_form.html:75
 #: gallery/templates/gallery/gallery.html:62
-#| msgid "Cover image"
 msgid "Cover"
 msgstr "Мұқаба"
 
@@ -2357,18 +2363,15 @@ msgid "Delete this album and all its photos?"
 msgstr "Альбомды барлық фотосуреттерімен бірге жою керек пе?"
 
 #: gallery/templates/gallery/album_form.html:98
-#| msgid "Delete"
 msgid "Delete album"
 msgstr "Альбомды жою"
 
 #: gallery/templates/gallery/album_form.html:121
-#| msgid "selected"
 msgid "Selected files"
 msgstr "Таңдалған файлдар"
 
 #: gallery/templates/gallery/albums.html:10
 #: gallery/templates/gallery/gallery.html:14
-#| msgid "to leave a comment."
 msgid "our events & moments"
 msgstr "біздің оқиғалар мен сәттер"
 
@@ -2384,11 +2387,10 @@ msgstr "Фото: %(counter)s"
 
 #: gallery/templates/gallery/albums.html:42
 #: gallery/templates/gallery/gallery.html:76
-#| msgid "No articles yet."
 msgid "No albums yet."
 msgstr "Әзірге альбомдар жоқ."
 
-#: gallery/templates/gallery/gallery.html:15 tests/test_gallery.py:254
+#: gallery/templates/gallery/gallery.html:15 tests/test_gallery.py:280
 #, python-format
 msgid "Gallery %(year)s"
 msgstr "Галерея %(year)s"
@@ -2398,12 +2400,10 @@ msgid "training | racing | together"
 msgstr "жаттығу | жарыс | бірге"
 
 #: gallery/templates/gallery/gallery.html:37
-#| msgid "View"
 msgid "View more"
 msgstr "Тағы альбомдар"
 
 #: gallery/templates/gallery/gallery.html:47
-#| msgid "Event type"
 msgid "Event page"
 msgstr "Іс-шара беті"
 
@@ -2430,7 +2430,6 @@ msgstr "Біздің жарыстардан, велосапарлардан жә
 
 #: gallery/views.py:128
 #, python-format
-#| msgid "or upload file"
 msgid "Not uploaded: %(files)s"
 msgstr "Жүктелмеді: %(files)s"
 

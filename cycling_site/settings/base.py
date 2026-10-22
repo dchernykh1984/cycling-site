@@ -349,6 +349,9 @@ INDEXNOW_KEY = env("INDEXNOW_KEY", default="")
 # Every photo is re-encoded on the way in (gallery/images.py), which is what bounds a batch.
 GALLERY_MAX_FILES_PER_UPLOAD = env.int("GALLERY_MAX_FILES_PER_UPLOAD", default=30)
 GALLERY_MAX_UPLOAD_MB = env.int("GALLERY_MAX_UPLOAD_MB", default=25)
+# Free space the gallery always leaves on the media disk, which posters, news pictures and protocols
+# share with it: an upload that would cut into it is refused.
+GALLERY_DISK_RESERVE_MB = env.int("GALLERY_DISK_RESERVE_MB", default=200)
 
 # Search Console and Yandex Webmaster prove that whoever adds the site controls it. Their "HTML tag"
 # method reads a meta tag from the home page; the value is the content attribute each console shows.

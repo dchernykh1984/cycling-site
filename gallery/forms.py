@@ -1,3 +1,5 @@
+import shutil
+from pathlib import Path
 from typing import ClassVar
 
 from django import forms
@@ -85,6 +87,18 @@ def max_file_mb() -> int:
     return getattr(settings, "GALLERY_MAX_UPLOAD_MB", 25)
 
 
+def disk_reserve_mb() -> int:
+    return getattr(settings, "GALLERY_DISK_RESERVE_MB", 200)
+
+
+def free_media_bytes() -> int:
+    """Free space on the disk MEDIA_ROOT is on, measured at its nearest folder that exists yet."""
+    path = Path(settings.MEDIA_ROOT)
+    while not path.exists() and path != path.parent:
+        path = path.parent
+    return shutil.disk_usage(path).free
+
+
 class PhotoUploadForm(forms.Form):
     photos = MultipleImageField(
         label=_("Photos"),
@@ -103,5 +117,12 @@ class PhotoUploadForm(forms.Form):
         if too_big:
             raise forms.ValidationError(
                 _("Larger than %(size)d MB: %(names)s") % {"size": max_file_mb(), "names": ", ".join(too_big)}
+            )
+        # Originals are kept as they came, and the disk is the one every other upload uses too --
+        # event posters, news pictures, protocols. The gallery never takes the last of it.
+        reserve = disk_reserve_mb() * 1024 * 1024
+        if files and free_media_bytes() - sum(f.size for f in files) < reserve:
+            raise forms.ValidationError(
+                _("Not enough room left on the site's disk for these photos. Ask the owner to make room.")
             )
         return files
