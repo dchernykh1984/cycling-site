@@ -102,6 +102,9 @@ Meetup, Eventbrite and Zwift are built.
     for now.
 12. **Few words, and the right ones.** A hint takes one line. A button says what happens ("Show 12
     events", "Reset"), not "OK". Labels use the reader's words ("Weekend"), not the database's.
+    One word, one action: two controls on one screen never share a name when they do different
+    things. The calendar's "List" button and the "List" tab stood side by side and led to different
+    places.
 13. **The look belongs to the skin.** Colours, fonts and radii come from the skin's variables
     (`--bs-*`, `--skin-*`); the site's templates give structure and words. Light and dark are the
     maintainer's and do not change without them; a designer's skin is its designers'.
