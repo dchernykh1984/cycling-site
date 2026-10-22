@@ -16,6 +16,8 @@ def _attributes(response):
     return re.search(r'data-skin="([^"]*)"', tag).group(1), re.search(r'data-bs-theme="([^"]*)"', tag).group(1)
 
 
+# The skin under test is set here, not taken from DEFAULT_SKIN, which is free to change.
+@override_settings(DEFAULT_SKIN="light")
 class ChosenSkinTests(TestCase):
     page = "/ru/privacy/"
 
@@ -56,6 +58,8 @@ class ChosenSkinTests(TestCase):
         self.assertNotContains(self.client.get(self.page), "localStorage.getItem('theme')")
 
 
+# The skin under test is set here, not taken from DEFAULT_SKIN, which is free to change.
+@override_settings(DEFAULT_SKIN="light")
 class SaveChoiceTests(TestCase):
     def setUp(self):
         self.member = User.objects.create_user(username="m", email="m@example.com", password="pw")

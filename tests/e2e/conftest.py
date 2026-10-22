@@ -30,15 +30,16 @@ _FORTNIGHT = datetime.timedelta(days=14)
 AROUND_UPCOMING = f"date_from={UPCOMING - _FORTNIGHT:%Y-%m-%d}&date_to={UPCOMING + _FORTNIGHT:%Y-%m-%d}"
 
 
-# The skin the whole suite runs in (e2e.yml runs it once per skin). Only the starting point: new
-# members and first-time guests get it, and the tests that pick a skin still pick freely.
-E2E_SKIN = os.environ.get("E2E_SKIN")
+# The skin the whole suite runs in (e2e.yml runs it once per skin), light unless E2E_SKIN names
+# another -- set here rather than taken from DEFAULT_SKIN, which is free to change. Only the
+# starting point: new members and first-time guests get it, and the tests that pick a skin still
+# pick freely.
+E2E_SKIN = os.environ.get("E2E_SKIN", "light")
 
 
 @pytest.fixture(autouse=True)
 def skin_under_test(settings):
-    if E2E_SKIN:
-        settings.DEFAULT_SKIN = E2E_SKIN
+    settings.DEFAULT_SKIN = E2E_SKIN
 
 
 @pytest.fixture(autouse=True)

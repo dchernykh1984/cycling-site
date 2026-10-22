@@ -1161,9 +1161,10 @@ class UserGenderBirthDateTests(TestCase):
 
 
 class ThemeFieldTests(TestCase):
-    def test_default_theme_is_light(self):
+    @override_settings(DEFAULT_SKIN="dark")
+    def test_a_new_member_starts_in_the_default_skin(self):
         user = make_user(username="theme_user")
-        self.assertEqual(user.theme, "light")
+        self.assertEqual(user.theme, "dark")
 
     def test_theme_can_be_set_to_dark(self):
         user = make_user(username="dark_user")

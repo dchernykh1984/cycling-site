@@ -9,7 +9,7 @@ at the other two; the bare path still works and redirects to whichever one the r
 import datetime
 import re
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import translation
 
@@ -137,6 +137,8 @@ class SitemapLanguageTests(TestCase):
         self.assertIn('hreflang="x-default"', body)
 
 
+# The light skin's own navbar markup, whatever DEFAULT_SKIN is at the time.
+@override_settings(DEFAULT_SKIN="light")
 class InternalLinkTests(TestCase):
     """Links the site writes for itself should land on a page, not on a redirect to one."""
 

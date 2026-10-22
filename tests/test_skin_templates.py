@@ -55,6 +55,8 @@ class SkinTemplateTests(TestCase):
             self.assertIn("skins/trial/skin.js", html)
 
 
+# The skin under test is set here, not taken from DEFAULT_SKIN, which is free to change.
+@override_settings(DEFAULT_SKIN="light")
 class ChooserReloadTests(TestCase):
     """Light and dark switch in place; going into or out of a skin of its own reloads the page."""
 
