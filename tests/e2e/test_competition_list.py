@@ -55,9 +55,9 @@ def test_reset_link_clears_filters(page: Page, live_server):
 
 @pytest.mark.django_db(transaction=True)
 def test_list_table_fits_without_horizontal_scroll(page: Page, live_server, organizer):
-    """At desktop/tablet width (above the mobile card breakpoint) the fixed-layout table must
-    never produce a horizontal scrollbar, even with all 10 columns filled with long titles /
-    location names."""
+    """At a wide screen's width (from the lg breakpoint, where the table replaces the list of
+    days) the fixed-layout table must never produce a horizontal scrollbar, even with all 10
+    columns filled with long titles / location names."""
 
     from calendar_app.models import Competition
     from locations.models import Location
@@ -83,7 +83,7 @@ def test_list_table_fits_without_horizontal_scroll(page: Page, live_server, orga
             url_registration="https://example.com/register",
         )
 
-    page.set_viewport_size({"width": 800, "height": 900})
+    page.set_viewport_size({"width": 1024, "height": 900})
     page.goto(f"{live_server.url}/ru/calendar/list/?{AROUND_UPCOMING}")
     open_filter_panel(page)
     expect(page.locator(".table-responsive")).to_be_visible()
@@ -94,18 +94,16 @@ def test_list_table_fits_without_horizontal_scroll(page: Page, live_server, orga
 
 
 @pytest.mark.django_db(transaction=True)
-def test_list_table_stacks_into_cards_on_mobile(page: Page, live_server, approved_competition):
+def test_list_reads_by_day_on_mobile(page: Page, live_server, approved_competition):
     """On a phone-width viewport the 10-column table would otherwise squash to one character
-    per line, so below the md breakpoint each row renders as a stacked card: the header row is
-    hidden, every cell carries a data-label, and the page has no horizontal scroll."""
+    per line, so below the lg breakpoint the list shows the events by day instead (issue #330):
+    the table is hidden, and the page has no horizontal scroll."""
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(f"{live_server.url}/ru/calendar/list/?{AROUND_UPCOMING}")
     open_filter_panel(page)
-    # The table still renders (one approved competition in range), but as stacked cards: the
-    # header row is hidden and each cell exposes its column name via data-label.
-    expect(page.locator(".calendar-list-table")).to_be_visible()
-    expect(page.locator(".calendar-list-table thead")).to_be_hidden()
-    expect(page.locator(".calendar-list-table td[data-label]").first).to_be_visible()
+    expect(page.locator(".calendar-days")).to_be_visible()
+    expect(page.locator(".calendar-day-events li").first).to_be_visible()
+    expect(page.locator(".calendar-list-table")).to_be_hidden()
     # No horizontal scroll anywhere on the page.
     overflow = page.evaluate("() => document.documentElement.scrollWidth - document.documentElement.clientWidth")
     assert overflow <= 1, f"mobile list page overflows horizontally by {overflow}px"

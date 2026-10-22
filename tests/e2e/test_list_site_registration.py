@@ -15,7 +15,8 @@ from tests.e2e.conftest import AROUND_UPCOMING
 @pytest.mark.django_db(transaction=True)
 def test_list_row_offers_registration_open_on_this_site(page: Page, live_server, competition_with_approval):
     page.goto(f"{live_server.url}/ru/calendar/list/?{AROUND_UPCOMING}")
-    row = page.locator("tr", has_text="E2E Approval Race RU")
+    # The table on a wide screen, the list of days on a phone: the row on screen.
+    row = page.locator(":is(tr, .calendar-day-events li):visible", has_text="E2E Approval Race RU")
     register = row.locator(f'a[href="/ru/competitions/{competition_with_approval.pk}/register/"]')
     expect(register).to_be_visible()
     register.click()

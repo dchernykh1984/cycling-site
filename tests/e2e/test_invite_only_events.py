@@ -49,7 +49,8 @@ def test_the_invitation_link_puts_the_event_on_the_guests_calendar(page: Page, l
     expect(page.locator("h1")).to_contain_text("E2E Private Ride")
 
     page.goto(list_url)
-    row = page.locator("tr", has_text="E2E Private Ride")
+    # The table on a wide screen, the list of days on a phone: the row on screen.
+    row = page.locator(":is(tr, .calendar-day-events li):visible", has_text="E2E Private Ride")
     expect(row).to_be_visible()
     expect(row.locator(".badge")).to_be_visible()
 
