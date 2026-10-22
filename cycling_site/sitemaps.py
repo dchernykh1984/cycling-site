@@ -186,7 +186,8 @@ class GalleryAlbumSitemap(Sitemap):
     def items(self):
         from gallery.models import Album
 
-        return Album.objects.public().order_by("-date", "pk")
+        # An album with no photos yet is an empty page; an engine files it as a soft 404.
+        return Album.objects.public().filter(photos__isnull=False).distinct().order_by("-date", "pk")
 
     def location(self, album):
         return album.get_absolute_url()

@@ -385,9 +385,15 @@ class NavigationAndSitemapTests(GalleryTestCase):
     def test_public_albums_are_in_the_sitemap_and_hidden_ones_are_not(self):
         public = self._album("Public 2026")
         hidden = self._album("Hidden 2026", is_hidden=True)
+        self._photo(public)
+        self._photo(hidden)
         body = self.client.get(reverse("sitemap_section", args=["gallery"])).content.decode()
         self.assertIn(public.get_absolute_url(), body)
         self.assertNotIn(hidden.get_absolute_url(), body)
+
+    def test_an_album_without_photos_is_not_in_the_sitemap(self):
+        empty = self._album(title="Still empty")
+        self.assertNotIn(empty.get_absolute_url(), self.client.get("/sitemap-gallery.xml").content.decode())
 
     def test_the_gallery_strings_are_translated(self):
         for locale in ("ru", "kk"):
