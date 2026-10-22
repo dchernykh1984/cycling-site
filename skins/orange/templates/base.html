@@ -15,6 +15,10 @@
     {# A page that can describe itself does; the fallback is for the ones that cannot. #}
     {% firstof meta_description page.search_description as description %}
     <meta name="description" content="{% if description %}{{ description }}{% else %}{% trans 'Calendar of endurance sport events -- cycling, running, cross-country skiing -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base.' %}{% endif %}" />
+    {% comment %}Site ownership for Google Search Console and Yandex Webmaster ("HTML tag" method), from
+    GOOGLE_SITE_VERIFICATION / YANDEX_VERIFICATION in the environment; absent when they are unset.{% endcomment %}
+    {% if GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ GOOGLE_SITE_VERIFICATION }}" />{% endif %}
+    {% if YANDEX_VERIFICATION %}<meta name="yandex-verification" content="{{ YANDEX_VERIFICATION }}" />{% endif %}
     <link rel="canonical" href="{% firstof canonical_url request.build_absolute_uri %}" />
     {% comment %}
     Each language is its own address, so each has to point at the other two -- otherwise the three

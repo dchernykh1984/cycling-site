@@ -114,3 +114,13 @@ def skins(request):
         "skin_stylesheets": skin_registry.stylesheets(skin),
         "skin_modes": {key: s.mode for key, s in skin_registry.registry().items()},
     }
+
+
+def search_verification(request):
+    """The meta tags Search Console and Yandex Webmaster look for (settings, from the environment)."""
+    from django.conf import settings
+
+    return {
+        "GOOGLE_SITE_VERIFICATION": getattr(settings, "GOOGLE_SITE_VERIFICATION", ""),
+        "YANDEX_VERIFICATION": getattr(settings, "YANDEX_VERIFICATION", ""),
+    }

@@ -195,6 +195,7 @@ TEMPLATES = [
                 "cycling_site.context_processors.moderation_tasks",
                 "cycling_site.context_processors.setup_hint",
                 "cycling_site.context_processors.skins",
+                "cycling_site.context_processors.search_verification",
             ],
         },
     },
@@ -341,6 +342,12 @@ SITE_BASE_URL = env("SITE_BASE_URL", default="http://localhost:8000")
 # IndexNow key: a random string we also serve at /<key>.txt, which is how Bing, Yandex and Seznam
 # check that whoever submits URLs for this host controls it. Empty means no submissions at all.
 INDEXNOW_KEY = env("INDEXNOW_KEY", default="")
+
+# Search Console and Yandex Webmaster prove that whoever adds the site controls it. Their "HTML tag"
+# method reads a meta tag from the home page; the value is the content attribute each console shows.
+# Empty leaves the tag out. This is the way in for whoever has the hosting but not the domain's DNS.
+GOOGLE_SITE_VERIFICATION = env("GOOGLE_SITE_VERIFICATION", default="")
+YANDEX_VERIFICATION = env("YANDEX_VERIFICATION", default="")
 
 # Allowed file extensions for documents in the document library.
 # This can be omitted to allow all files, but note that this may present a security risk
