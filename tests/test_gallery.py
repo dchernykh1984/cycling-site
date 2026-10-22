@@ -19,7 +19,7 @@ from PIL import Image
 
 from accounts.models import User
 from calendar_app.models import Competition
-from gallery.images import FULL_SIDE, THUMB_SIDE, PhotoError, process
+from gallery.images import THUMB_SIDE, PhotoError, process
 from gallery.models import Album, Photo
 
 MEDIA = tempfile.mkdtemp()
@@ -68,18 +68,28 @@ class GalleryTestCase(TestCase):
 
 
 class ImageProcessingTests(GalleryTestCase):
-    def test_a_large_photo_is_bounded_and_gets_a_thumbnail(self):
-        full, thumb = process(_jpeg(size=(5000, 3000)))
-        with Image.open(full) as image:
-            self.assertEqual(max(image.size), FULL_SIDE)
+    def test_the_photo_is_kept_byte_for_byte_and_gets_a_thumbnail(self):
+        upload = _jpeg(size=(5000, 3000), exif=True)
+        original, thumb = process(upload)
+        upload.seek(0)
+        self.assertEqual(original.read(), upload.read())
+        self.assertTrue(original.name.endswith(".jpg"))
         with Image.open(thumb) as image:
             self.assertEqual(max(image.size), THUMB_SIDE)
 
-    def test_camera_metadata_is_dropped_and_rotation_applied(self):
-        full, _ = process(_jpeg(size=(1200, 800), exif=True))
-        with Image.open(full) as image:
-            self.assertEqual(image.size, (800, 1200))
+    def test_the_thumbnail_is_turned_upright_and_carries_no_metadata(self):
+        _, thumb = process(_jpeg(size=(1200, 800), exif=True))
+        with Image.open(thumb) as image:
+            self.assertEqual(image.size, (667, 1000))
             self.assertNotIn(0x010F, image.getexif())
+
+    def test_a_png_keeps_its_format(self):
+        buffer = io.BytesIO()
+        Image.new("RGBA", (800, 600), (255, 0, 0, 128)).save(buffer, format="PNG")
+        original, thumb = process(SimpleUploadedFile("shot.png", buffer.getvalue(), content_type="image/png"))
+        self.assertTrue(original.name.endswith(".png"))
+        with Image.open(thumb) as image:
+            self.assertEqual(image.mode, "RGB")
 
     def test_a_file_that_is_not_an_image_is_refused(self):
         with self.assertRaises(PhotoError):

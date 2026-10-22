@@ -8,8 +8,9 @@ Photo albums at `/<lang>/gallery/`, linked from the navbar.
 - **Cover** ("main picture"): picked in the album form (click a photo) or with "Make cover" on a
   photo page. Until one is picked, the first photo stands in (`Album.cover_photo`). The cover is
   the album's card in "All albums" and the image a chat shows for the album link.
-- **Photos** are re-encoded on upload (`gallery/images.py`): EXIF dropped, rotation applied, the
-  photo bounded to 2400px and a 1000px thumbnail made for the cards. Files go under
+- **Photos** are kept as they were uploaded, byte for byte (`gallery/images.py`): JPEG, PNG or WebP,
+  checked to be a picture first. The photo page and "Download" serve that original; only a 1000px
+  thumbnail, upright and without metadata, is made for the cards. Files go under
   `MEDIA_ROOT/gallery/<album>/`; deleting a photo deletes its files.
 - **Limits**: `GALLERY_MAX_FILES_PER_UPLOAD` (30) and `GALLERY_MAX_UPLOAD_MB` (25), from the
   environment. A file that is not an image is reported and the rest of the batch is kept.
