@@ -3,19 +3,22 @@
 The three tabs are one page to a reader: switching between them must move nothing, every control
 must be big enough for a finger, say what it does, fit its words in all three languages and stay
 readable. Runs in the skin the suite runs in (E2E_SKIN; light by default), so e2e.yml checks every
-skin; a phone and a desktop width are set here, so each browser job checks both.
+skin. The widths are set here: a phone (360px) and a desktop (1280px) get every rule; the narrowest
+phone (320px) and two tablets (768 and 1024px) only what scrolls sideways, is cut off or breaks.
 
 KNOWN lists what already broke a rule when the rule came in, and only so far: a new break fails.
 A layout break is the site's and is allowed in every skin; a colour break -- text, a border, a
 selected state -- only in light and dark.
 """
 
+import datetime
 import re
 
 import pytest
 from django.conf import settings
 from playwright.sync_api import Page, ViewportSize, expect
 
+from calendar_app.models import Competition
 from tests.e2e.conftest import AROUND_UPCOMING
 from tests.e2e.contrast import drawn, is_large, legibility, ratio
 
@@ -24,14 +27,24 @@ VIEWPORTS: dict[str, ViewportSize] = {"phone": {"width": 360, "height": 780}, "d
 # The narrowest width WCAG asks a page to reflow at (1.4.10): the site is designed for 360px and up,
 # and at 320px only nothing may be cut off or spill over -- the screen's edge or a frame.
 NARROW: ViewportSize = {"width": 320, "height": 700}
+# Tablets are not a focus: held upright they get the phone layout, on their side the desktop one.
+TABLETS: dict[str, ViewportSize] = {
+    "tablet-upright": {"width": 768, "height": 1024},
+    "tablet-flat": {"width": 1024, "height": 768},
+}
+# The widths where only what scrolls sideways, is cut off or breaks into letters is checked.
+MINIMAL = ("narrow", *TABLETS)
+SIZES: dict[str, ViewportSize] = {**VIEWPORTS, "narrow": NARROW, **TABLETS}
 LANGUAGES = ("ru", "kk", "en")
 # What the three tabs share above their content: the title row with the switcher, and -- where a
 # page has them -- the period row and the chips of the filters in force.
 HEADER = "main .row:has(#view-link-calendar), #period-nav, #filter-chips"
 CONTROLS = ":is(a, button, select, input):visible"
-# Apple's and WCAG 2.5.5's smallest target for a finger.
-TAP = 44
-STATES = ("rest", "hover", "focus")
+# The smallest area a tap or a click must reach: Apple's and WCAG 2.5.5's for a finger, WCAG 2.5.8's
+# for a mouse.
+TAP = {"phone": 44, "desktop": 24}
+# The focus ring and the Tab key are left out for now (the skill's principle 11).
+STATES = ("rest", "hover")
 # Breaks that come from a skin's colours rather than from the site's layout.
 COLOURS = ("contrast/", "border/", "selected/")
 
@@ -76,7 +89,7 @@ def _breaks(found):
 
 
 def _open(page: Page, live_server, viewport, lang, tab, query=""):
-    page.set_viewport_size(NARROW if viewport == "narrow" else VIEWPORTS[viewport])
+    page.set_viewport_size(SIZES[viewport])
     page.goto(f"{live_server.url}/{lang}{TABS[tab]}{query}")
     expect(page.locator("#view-link-calendar")).to_be_visible()
     if tab == "calendar":
@@ -91,7 +104,7 @@ def _controls(page: Page):
 
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize("viewport", [*VIEWPORTS, "narrow"])
+@pytest.mark.parametrize("viewport", [*VIEWPORTS, *MINIMAL])
 @pytest.mark.parametrize("lang", LANGUAGES)
 @pytest.mark.parametrize("tab", TABS)
 def test_no_tab_scrolls_sideways(page: Page, live_server, viewport, lang, tab):
@@ -122,14 +135,38 @@ def test_switching_tabs_moves_none_of_the_controls(page: Page, live_server, view
     assert not _breaks(found), "\n".join(details)
 
 
+# How far a tap reaches: from the control's centre outwards, as long as the point still lands on it
+# (an invisible zone around a slim control counts; a neighbour's zone over it does not).
+_REACH = """
+(el) => {
+  const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+  const own = (px, py) => { const t = document.elementFromPoint(px, py); return !!t && (t === el || el.contains(t)); };
+  const out = (dx, dy) => { let n = 0; while (n < 40 && own(x + dx * (n + 1), y + dy * (n + 1))) n += 1; return n; };
+  return [out(-1, 0) + out(1, 0) + 1, out(0, -1) + out(0, 1) + 1];
+}
+"""
+
+
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("viewport", VIEWPORTS)
 @pytest.mark.parametrize("lang", LANGUAGES)
 @pytest.mark.parametrize("tab", TABS)
-def test_every_control_is_big_enough_to_tap_on_a_phone(page: Page, live_server, lang, tab):
-    _open(page, live_server, "phone", lang, tab)
-    small = [c for c in _controls(page) if c["width"] < TAP or c["height"] < TAP]
-    found = [f"tap/{lang}/{tab}/{c['key']}" for c in small]
-    assert not _breaks(found), [f"{c['key']}: {c['width']:.0f}x{c['height']:.0f}" for c in small]
+def test_every_control_is_big_enough_to_tap(page: Page, live_server, viewport, lang, tab):
+    """A tap reaches 44x44px on a phone and a click 24x24px on a desktop, however slim the control looks.
+
+    Measured where a tap lands, not by the frame: an invisible zone around a slim pill counts, and
+    a neighbour's zone lying over it shortens it.
+    """
+    _open(page, live_server, viewport, lang, tab)
+    page.mouse.move(0, 0)
+    least = TAP[viewport]
+    small = []
+    for control in page.locator(HEADER).locator(CONTROLS).all():
+        wide, high = control.evaluate(_REACH)
+        if wide < least or high < least:
+            small.append((control.evaluate(_DESCRIBE)["key"], wide, high))
+    found = [f"tap/{viewport}/{lang}/{tab}/{key}" for key, _, _ in small]
+    assert not _breaks(found), [f"{key}: reaches {wide}x{high}px, not {least}" for key, wide, high in small]
 
 
 # Where a control's words sit inside its frame: how many lines, how far from the frame, how far apart.
@@ -164,9 +201,9 @@ _LABEL = """
 SIDE, END, LINES, SPACING = 8, 4, 2, 1.2
 
 
-def _label_faults(label, narrow):
-    """What is wrong with where a label's words sit; at 320px only what is cut off or spills over."""
-    if narrow:
+def _label_faults(label, minimal):
+    """What is wrong with where a label's words sit; at 320px and on tablets only what spills over."""
+    if minimal:
         return ["over the frame"] if label["framed"] and min(label["side"], label["end"]) < -0.5 else []
     faults = []
     if label["lines"] > LINES:
@@ -181,7 +218,7 @@ def _label_faults(label, narrow):
 
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize("viewport", [*VIEWPORTS, "narrow"])
+@pytest.mark.parametrize("viewport", [*VIEWPORTS, *MINIMAL])
 @pytest.mark.parametrize("lang", LANGUAGES)
 @pytest.mark.parametrize("tab", TABS)
 def test_every_label_fits_its_control(page: Page, live_server, viewport, lang, tab):
@@ -189,7 +226,7 @@ def test_every_label_fits_its_control(page: Page, live_server, viewport, lang, t
 
     Kazakh is usually the longest. At most two lines, spaced at least 1.2 apart; at least 8px from the
     frame at the sides and 4px above and below -- a word cut off, spilling out or touching the frame
-    reads as a broken button. At 320px only what is cut off or spills over counts.
+    reads as a broken button. At 320px and on tablets only what is cut off or spills over counts.
     """
     _open(page, live_server, viewport, lang, tab)
     found, details = [], []
@@ -199,11 +236,54 @@ def test_every_label_fits_its_control(page: Page, live_server, viewport, lang, t
             continue
         key, name, scroll, client = (control.evaluate(_DESCRIBE)[k] for k in ("key", "name", "scroll", "client"))
         faults = [f"{scroll}px in {client}px"] if scroll > client else []
-        faults += _label_faults(label, viewport == "narrow")
+        faults += _label_faults(label, viewport in MINIMAL)
         if faults:
             found.append(f"fits/{viewport}/{lang}/{tab}/{key}")
             details.append(f"{key} ({name!r}): " + ", ".join(faults))
     assert not _breaks(found), "\n".join(details)
+
+
+# Words of four letters or more that a narrow column broke across lines: their pieces stand at more
+# than one height. A word the page hyphenates itself (a hyphen, a dash, a soft hyphen) is left out.
+_BROKEN = """
+() => {
+  const broken = [];
+  const walk = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT);
+  for (let node = walk.nextNode(); node && broken.length < 5; node = walk.nextNode()) {
+    if (!node.parentElement || !node.parentElement.offsetParent) continue;
+    for (const match of node.textContent.matchAll(/[^\\s\\-\u2010-\u2015\u00ad]{4,}/g)) {
+      const range = document.createRange();
+      range.setStart(node, match.index); range.setEnd(node, match.index + match[0].length);
+      const tops = new Set([...range.getClientRects()].filter(q => q.width > 0).map(q => Math.round(q.top)));
+      if (tops.size > 1) { broken.push(match[0]); if (broken.length >= 5) break; }
+    }
+  }
+  return broken;
+}
+"""
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("viewport", [*VIEWPORTS, *MINIMAL])
+@pytest.mark.parametrize("lang", LANGUAGES)
+@pytest.mark.parametrize("tab", TABS)
+def test_no_word_breaks_into_letters(page: Page, live_server, race_event_type, organizer, viewport, lang, tab):
+    """A column too narrow for its words breaks them a letter or two to a line; it reads as noise.
+
+    An event is on the page so that the list has rows to measure.
+    """
+    event = Competition.objects.create(
+        title_ru="Gran Fondo Alatau",
+        title_en="Gran Fondo Alatau",
+        submitted_by=organizer,
+        date_start=datetime.date.today() + datetime.timedelta(days=3),
+        status=Competition.Status.APPROVED,
+    )
+    event.event_types.add(race_event_type)
+    _open(page, live_server, viewport, lang, tab)
+    broken = page.evaluate(_BROKEN)
+    found = [f"letters/{viewport}/{lang}/{tab}"] if broken else []
+    assert not _breaks(found), f"words broken across lines: {broken}"
 
 
 # The top of each button in each group of the header; a group in one row has one top.
@@ -239,16 +319,17 @@ def test_every_control_says_what_it_does(page: Page, live_server, viewport, tab)
 
 
 def _in_state(page: Page, control, state):
-    """Put a control at rest, under the pointer or in focus, and wait for its fade to finish."""
+    """Put a control at rest or under the pointer, and wait for its fade to finish."""
     page.mouse.move(0, 0)
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
     if state == "hover":
         control.hover()
-    elif state == "focus":
-        control.focus()
     # A colour read mid-fade is neither state's.
     control.evaluate("el => Promise.all(el.getAnimations().map(a => a.finished))")
 
+
+# Whether a control shows words: an icon button whose label is hidden on a phone shows none.
+_WORDS = "el => !!el.innerText.trim()"
 
 _BORDER = (
     "el => { const s = getComputedStyle(el);"
@@ -266,12 +347,15 @@ def _frame(control):
 @pytest.mark.parametrize("viewport", VIEWPORTS)
 @pytest.mark.parametrize("tab", TABS)
 def test_the_header_is_readable_in_this_skin(page: Page, live_server, viewport, tab):
-    """The header's controls at rest, under the pointer and in focus, as test_skin_contrast.py measures."""
+    """The words of the header's controls at rest and under the pointer, as test_skin_contrast.py measures.
+
+    A control with no words (an icon alone) is test_every_border_can_be_seen's.
+    """
     _open(page, live_server, viewport, "ru", tab)
     skin = settings.DEFAULT_SKIN
     found, details = [], []
     for control in page.locator(HEADER).locator(CONTROLS).all():
-        if not control.is_enabled():
+        if not control.is_enabled() or not control.evaluate(_WORDS):
             continue
         key = control.evaluate(_DESCRIBE)["key"]
         for state in STATES:
@@ -288,24 +372,28 @@ def test_the_header_is_readable_in_this_skin(page: Page, live_server, viewport, 
 @pytest.mark.parametrize("viewport", VIEWPORTS)
 @pytest.mark.parametrize("tab", TABS)
 def test_every_border_can_be_seen(page: Page, live_server, viewport, tab):
-    """An outline button's border is all that says it is a button: 3:1 against what surrounds it.
+    """A control with no words is found by its outline: 3:1 against what surrounds it (WCAG 1.4.11).
 
-    A border drawn in the colour around it is no frame at all and is left out here; when it belongs
-    to a selected control, test_what_is_selected_can_be_seen catches it.
+    A field or a checkbox by its boundary, a button that is an icon alone by the icon. A control
+    with words is known by them, and its border may be as light as the skin draws it.
     """
     _open(page, live_server, viewport, "ru", tab)
     skin = settings.DEFAULT_SKIN
     found, details = [], []
     page.mouse.move(0, 0)
     for control in page.locator(HEADER).locator(CONTROLS).all():
-        frame = _frame(control)
-        if frame is None:
+        if control.evaluate(_WORDS):
             continue
-        value = ratio(frame, drawn(control, "fill-beneath"))
-        if 1.1 <= value < 3:
-            key = control.evaluate(_DESCRIBE)["key"]
+        key = control.evaluate(_DESCRIBE)["key"]
+        if control.evaluate("el => el.matches('input, select, textarea')"):
+            frame = _frame(control)
+            value = ratio(frame, drawn(control, "fill-beneath")) if frame else 1.0
+            what = "boundary"
+        else:
+            value, what = legibility(control), "icon"
+        if value < 3:
             found.append(f"border/{skin}/{viewport}/{tab}/{key}")
-            details.append(f"{key}: {value:.2f} < 3")
+            details.append(f"{key} ({what}): {value:.2f} < 3")
     assert not _breaks(found), f"in the {skin} skin: " + "; ".join(details)
 
 
