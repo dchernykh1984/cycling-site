@@ -1,12 +1,19 @@
 {% load i18n %}
 {% comment %}The heading row of the calendar, the list and the map (issue #330): the heading, the share
-button at the right end of the row. One partial, so the three tabs cannot drift apart. `heading` is
-the text of the h1.{% endcomment %}
+button at the right end of the row, and the tap zones of the header's buttons. One partial, so the
+three tabs cannot drift apart. `heading` is the text of the h1.{% endcomment %}
 <style>
   /* The share button at the right end of the heading's row: it stands in one place on every tab,
      whatever the heading's length ("Calendar", "Events", a city's list). */
   .calendar-heading { flex: 1 1 auto; min-width: 0; }
   .calendar-heading .share-btn { margin-left: auto; }
+  /* Every header button answers a tap across 44px (2.75rem), centred on it, whatever its drawn
+     height; the rows of buttons sit far enough apart that two zones never overlap. */
+  .calendar-header .btn { position: relative; }
+  .calendar-header .btn::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2.75rem; transform: translateY(-50%);
+  }
+  .calendar-header .calendar-controls { column-gap: .5rem; row-gap: .625rem; }
 </style>
 <div class="calendar-heading d-flex align-items-center gap-2">
   <h1 class="mb-0">{{ heading }}</h1>

@@ -28,10 +28,10 @@
 
 {% block content %}
 <div class="row mb-3">
-  <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 calendar-header">
     {% trans "Calendar" as heading %}
     {% include "calendar_app/_page_heading.html" with heading=heading %}
-    <div class="d-flex gap-2 align-items-center flex-wrap">
+    <div class="calendar-controls d-flex align-items-center flex-wrap">
       {% include "calendar_app/_filter_toggle.html" %}
       {% include "calendar_app/_view_switcher.html" with active_view="calendar" %}
       {% if request.user.is_authenticated %}
