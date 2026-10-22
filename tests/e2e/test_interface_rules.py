@@ -227,7 +227,9 @@ _LABEL = """
     rects.push(...[...range.getClientRects()].filter(q => q.width > 1 && q.height > 1));
   }
   if (!rects.length) return null;
-  const lines = new Set(rects.map(q => Math.round(q.top))).size;
+  // The lines as drawn: how many, and how far apart (so a line-height of normal is read too).
+  const tops = [...new Set(rects.map(q => Math.round(q.top)))].sort((a, b) => a - b);
+  const lines = tops.length;
   const bw = parseFloat(s.borderLeftWidth) || 0, bt = parseFloat(s.borderTopWidth) || 0;
   const left = Math.min(...rects.map(q => q.left)), right = Math.max(...rects.map(q => q.right));
   const top = Math.min(...rects.map(q => q.top)), bottom = Math.max(...rects.map(q => q.bottom));
@@ -238,7 +240,7 @@ _LABEL = """
     || (!!group && parseFloat(getComputedStyle(group).borderTopWidth) > 0);
   return {lines, framed, side: Math.min(left - r.left - bw, r.right - bw - right),
           end: Math.min(top - r.top - bt, r.bottom - bt - bottom),
-          spacing: parseFloat(s.lineHeight) / parseFloat(s.fontSize)};
+          spacing: lines > 1 ? (tops[1] - tops[0]) / parseFloat(s.fontSize) : 0};
 }
 """
 SIDE, END, LINES, SPACING = 8, 4, 2, 1.2
@@ -346,7 +348,9 @@ _ROWS = """
 def test_a_button_group_stays_in_one_row(page: Page, live_server, viewport, lang, tab):
     """The period kinds and the view switch are read as one row; folded into two, they are a grid."""
     _open(page, live_server, viewport, lang, tab)
-    folded = [group for group in page.evaluate(_ROWS) if len(group["tops"]) > 1]
+    groups = page.evaluate(_ROWS)
+    assert groups, "the header has no button group to measure"
+    folded = [group for group in groups if len(group["tops"]) > 1]
     found = [f"row/{viewport}/{lang}/{tab}/{group['name']}" for group in folded]
     assert not _breaks(found), [f"{group['name']}: {len(group['tops'])} rows" for group in folded]
 
@@ -368,7 +372,7 @@ def _in_state(page: Page, control, state):
     if state == "hover":
         control.hover()
     # A colour read mid-fade is neither state's.
-    control.evaluate("el => Promise.all(el.getAnimations().map(a => a.finished))")
+    control.evaluate("el => Promise.all(el.getAnimations().map(a => a.finished.catch(() => {})))")
 
 
 # Whether a control shows words: an icon button whose label is hidden on a phone shows none.
@@ -466,6 +470,7 @@ def test_what_is_selected_can_be_seen(page: Page, live_server, viewport, tab):
     found, details = [], []
     page.mouse.move(0, 0)
     selected = page.locator(HEADER).locator(":is([aria-current='page'], [aria-pressed='true'], .active):visible")
+    assert selected.count(), "nothing in the header is marked selected"
     for control in selected.all():
         key = control.evaluate(_DESCRIBE)["key"]
         if not control.evaluate(_TOLD):
@@ -493,7 +498,7 @@ def test_the_active_tab_keeps_the_border_of_the_others(page: Page, live_server, 
         "links => links.map(a => { const s = getComputedStyle(a);"
         " return [s.borderTopWidth, s.borderBottomWidth, s.borderTopStyle].join(' '); })"
     )
-    found = [f"border/{viewport}/{tab}"] if len(set(borders)) > 1 else []
+    found = [f"frame/{viewport}/{tab}"] if len(set(borders)) > 1 else []
     assert not _breaks(found), borders
 
 
