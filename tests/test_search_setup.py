@@ -101,3 +101,29 @@ class HomeOrganizationTests(TestCase):
 
     def test_the_website_states_its_language(self):
         self.assertEqual(self._graph("kk")["WebSite"]["inLanguage"], "kk")
+
+
+class SitemapLanguagesTests(TestCase):
+    def _section(self, name):
+        response = self.client.get(reverse("sitemap_section", args=[name]))
+        self.assertEqual(response.status_code, 200)
+        return response.content.decode()
+
+    def test_the_home_page_is_listed_in_every_language(self):
+        body = self._section("wagtail")
+        for language in ("ru", "kk", "en"):
+            self.assertRegex(body, rf"<loc>https?://[^<]+/{language}/</loc>")
+
+    def test_each_entry_names_its_translations(self):
+        body = self._section("wagtail")
+        self.assertIn('hreflang="kk"', body)
+        self.assertIn('hreflang="x-default"', body)
+
+    def test_the_calendar_views_are_listed_in_every_language(self):
+        body = self._section("sections")
+        for language in ("ru", "kk", "en"):
+            for path in ("calendar/", "calendar/list/", "calendar/map/"):
+                self.assertIn(f"/{language}/{path}</loc>", body)
+
+    def test_the_index_offers_the_new_section(self):
+        self.assertIn("sitemap-sections.xml", self.client.get(reverse("sitemap")).content.decode())

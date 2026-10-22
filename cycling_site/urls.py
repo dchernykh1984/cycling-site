@@ -17,6 +17,7 @@ from cycling_site.sitemaps import (
     CompetitionSitemap,
     KnowledgeArticleSitemap,
     NewsArticleSitemap,
+    SectionPagesSitemap,
     WagtailPagesSitemap,
 )
 from search import views as search_views
@@ -80,6 +81,7 @@ def serve_media(request, path):
 
 sitemaps = {
     "wagtail": WagtailPagesSitemap,
+    "sections": SectionPagesSitemap,
     "knowledge": KnowledgeArticleSitemap,
     "news": NewsArticleSitemap,
     "competitions": CompetitionSitemap,

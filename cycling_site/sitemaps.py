@@ -1,14 +1,71 @@
+import re
+
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
-from wagtail.contrib.sitemaps.sitemap_generator import Sitemap as WagtailSitemap
 
 from calendar_app.models import Competition
 from knowledge.models import KnowledgeArticle
 from news.models import NewsArticle
 
+# /ru/, /kk/ or /en/ at the start of a path.
+_LANGUAGE_PREFIX = re.compile(r"^/[a-z]{2}(?:-[a-z]+)?/")
 
-class WagtailPagesSitemap(WagtailSitemap):
-    """Sitemap covering all live, public Wagtail pages across all locales."""
+
+class WagtailPagesSitemap(Sitemap):
+    """The live, public Wagtail pages -- home, map, news, knowledge base -- in every language.
+
+    Wagtail's own generator lists a page at the one address its locale gives it, so the home page and
+    the section pages went into the sitemap as /ru/... only, while /kk/ and /en/ serve them too. Here
+    each page is listed once per language with the other two as alternates, the same as everything
+    else in the index. Only the default locale's tree is read: a translated copy of a page, should
+    one exist, is the same address under another prefix, not a page of its own.
+    """
+
+    changefreq = "weekly"
+    i18n = True
+    alternates = True
+    x_default = True
+
+    def items(self):
+        from wagtail.models import Locale, Page
+
+        pages = Page.objects.live().public().filter(depth__gt=1).order_by("path")
+        try:
+            pages = pages.filter(locale=Locale.get_default())
+        except Locale.DoesNotExist:
+            pass
+        return [page for page in pages.specific() if page.get_url()]
+
+    def location(self, page):
+        from django.utils.translation import get_language
+
+        # page.get_url() carries the page's own locale prefix (/ru/map/); the sitemap asks for the
+        # address in the language it is listing, so swap the prefix for that one.
+        path = _LANGUAGE_PREFIX.sub("/", page.get_url())
+        return f"/{get_language()}{path}"
+
+    def lastmod(self, page):
+        return page.last_published_at
+
+
+class SectionPagesSitemap(Sitemap):
+    """The calendar's own views, which are views rather than Wagtail pages and were in no sitemap.
+
+    The month grid, the list and the start-point map are where most visitors land; the city and
+    discipline lists (CalendarFilterSitemap) are only their filtered versions.
+    """
+
+    changefreq = "daily"
+    priority = 0.8
+    i18n = True
+    alternates = True
+    x_default = True
+
+    def items(self):
+        return ["calendar", "calendar_list", "calendar_map"]
+
+    def location(self, name):
+        return reverse(name)
 
 
 class KnowledgeArticleSitemap(Sitemap):
