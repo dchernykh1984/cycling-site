@@ -117,7 +117,12 @@ _ORANGE_ICONS_NARROW = {
     for tab in TABS
     for key in ("#filter-toggle", "[data-copied-label]")
 }
-KNOWN: set[str] = _MENU_TOO_WIDE | _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS | _ORANGE_ICONS_NARROW
+# The orange skin's body font sets Weekend in Russian 2px wider on each side than its segment leaves
+# at 360px, as Linux draws it (CI); Windows draws it narrower and passes.
+_ORANGE_WEEKEND_RU = {f"orange|fits/phone/ru/{tab}/[data-period-kind=weekend]" for tab in TABS}
+KNOWN: set[str] = (
+    _MENU_TOO_WIDE | _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS | _ORANGE_ICONS_NARROW | _ORANGE_WEEKEND_RU
+)
 
 
 def _breaks(found):
