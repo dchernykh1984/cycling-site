@@ -350,7 +350,7 @@ GOOGLE_SITE_VERIFICATION = env("GOOGLE_SITE_VERIFICATION", default="")
 YANDEX_VERIFICATION = env("YANDEX_VERIFICATION", default="")
 
 # The organisation the home page describes to search engines (home/seo.py). ORGANIZATION_SAME_AS
-# lists its own profiles elsewhere -- Instagram, Telegram, Strava club -- comma separated; the
+# lists its own profiles elsewhere -- a Telegram channel, a Strava club -- comma separated; the
 # engines use them to tie those profiles to this site. Empty is fine: nothing is claimed then.
 ORGANIZATION_NAME = env("ORGANIZATION_NAME", default="")
 ORGANIZATION_AREA = env("ORGANIZATION_AREA", default="")
