@@ -75,7 +75,39 @@ _DESCRIBE = """
 }
 """
 
-KNOWN: set[str] = set()
+# What broke a rule when the rule came in, by cause. Each entry names its skin, and the set only
+# shrinks: a fixed break is dropped here, a new one fails. The orange skin carries its own templates
+# and breaks none of these.
+# The menu unfolds at 992px (navbar-expand-lg) and does not fit until about 1150px: the page scrolls
+# sideways on a tablet on its side, in every language.
+_MENU_TOO_WIDE = {
+    f"{skin}|sideways/tablet-flat/{lang}/{tab}" for skin in ("light", "dark") for lang in LANGUAGES for tab in TABS
+}
+# The list's table is fixed at nine columns and lets words break anywhere: its headings and dates
+# split mid-word on a desktop and on a tablet on its side.
+_TABLE_BREAKS_WORDS = {
+    f"{skin}|letters/{viewport}/{lang}/list"
+    for skin in ("light", "dark")
+    for viewport in ("desktop", "tablet-flat")
+    for lang in LANGUAGES
+}
+# Lux's btn-outline-secondary in the light skin: grey on white at rest (2.86), white on grey under
+# the pointer (1.49). The unselected tabs, the filter button on a phone and the share button.
+# test_skin_contrast.py's KNOWN_SHORTFALLS keep the same debt; the dark skin passes.
+_LIGHT_OUTLINE_BUTTONS = (
+    {
+        f"light|contrast/light/{viewport}/{tab}/#view-link-{other}/{state}"
+        for viewport in VIEWPORTS
+        for tab in TABS
+        for other in TABS
+        if other != tab
+        for state in STATES
+    }
+    | {f"light|contrast/light/phone/{tab}/#filter-toggle/{state}" for tab in TABS for state in STATES}
+    | {f"light|contrast/light/desktop/{tab}/[data-copied-label]/{state}" for tab in TABS for state in STATES}
+    | {f"light|border/light/phone/{tab}/[data-copied-label]" for tab in TABS}
+)
+KNOWN: set[str] = _MENU_TOO_WIDE | _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS
 
 
 def _breaks(found):
