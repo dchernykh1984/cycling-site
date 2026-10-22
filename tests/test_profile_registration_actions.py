@@ -21,6 +21,13 @@ from locations.models import Location
 from registrations.models import CompetitionRegistration
 
 
+def _event_today():
+    """Today where an event without a place is: UTC (issue #344). The machine's own date is not it --
+    between midnight and five in Almaty the two are different days, and a test asking about
+    "yesterday's race" would ask about the wrong one."""
+    return timezone.localdate(timezone=datetime.UTC)
+
+
 def _make_user(username, role=User.Role.PARTICIPANT):
     return User.objects.create_user(username=username, email=f"{username}@example.com", password="Pass1234!", role=role)
 
@@ -34,7 +41,7 @@ class ProfileRegistrationActionsTests(TestCase):
     def _competition(self, **kwargs):
         defaults = {
             "title_ru": "Race",
-            "date_start": datetime.date.today() + datetime.timedelta(days=30),
+            "date_start": _event_today() + datetime.timedelta(days=30),
             "status": Competition.Status.APPROVED,
             "registration_enabled": True,
             "registration_mode": Competition.RegistrationMode.FREE,
@@ -142,7 +149,7 @@ class ActiveRegistrationsSectionTests(TestCase):
     def _race(self, days_ahead, **kwargs):
         return Competition.objects.create(
             title_ru=f"Race in {days_ahead}",
-            date_start=datetime.date.today() + datetime.timedelta(days=days_ahead),
+            date_start=_event_today() + datetime.timedelta(days=days_ahead),
             status=Competition.Status.APPROVED,
             registration_enabled=True,
             registration_mode=Competition.RegistrationMode.FREE,
@@ -259,22 +266,22 @@ class ProfileRegistrationTableTests(TestCase):
         return response, re.search(r"<table[^>]*>.*?</table>", response.content.decode(), flags=re.S).group(0)
 
     def test_the_date_shown_is_the_race_not_the_day_the_form_was_filled_in(self):
-        comp = self._race(datetime.date.today() - datetime.timedelta(days=400))
+        comp = self._race(_event_today() - datetime.timedelta(days=400))
         reg = self._entry(comp)
         _response, table = self._table()
         self.assertIn(comp.date_start.strftime("%d.%m.%Y"), table)
         self.assertNotIn(reg.registered_at.strftime("%d.%m.%Y"), table)
 
     def test_the_most_recent_race_comes_first(self):
-        old = self._entry(self._race(datetime.date.today() - datetime.timedelta(days=800)))
-        recent = self._entry(self._race(datetime.date.today() - datetime.timedelta(days=10)))
+        old = self._entry(self._race(_event_today() - datetime.timedelta(days=800)))
+        recent = self._entry(self._race(_event_today() - datetime.timedelta(days=10)))
         response, _table = self._table()
         self.assertEqual([r.pk for r in response.context["registrations"]][:2], [recent.pk, old.pk])
 
     def test_the_category_column_is_gone(self):
         from registrations.models import RegistrationCategory
 
-        comp = self._race(datetime.date.today() - datetime.timedelta(days=10))
+        comp = self._race(_event_today() - datetime.timedelta(days=10))
         category = RegistrationCategory.objects.create(competition=comp, name="Masters 40+")
         self._entry(comp, category=category)
         _response, table = self._table()
@@ -283,12 +290,12 @@ class ProfileRegistrationTableTests(TestCase):
             self.assertNotIn(translation.gettext("Category"), table)
 
     def test_a_confirmed_entry_shows_no_badge(self):
-        self._entry(self._race(datetime.date.today() - datetime.timedelta(days=10)), is_approved=True)
+        self._entry(self._race(_event_today() - datetime.timedelta(days=10)), is_approved=True)
         _response, table = self._table()
         self.assertNotIn("badge", table)
 
     def test_a_rejected_entry_still_says_so(self):
-        comp = self._race(datetime.date.today() - datetime.timedelta(days=10))
+        comp = self._race(_event_today() - datetime.timedelta(days=10))
         self._entry(comp, is_rejected=True, rejection_note="No slot")
         _response, table = self._table()
         with translation.override("ru"):
@@ -296,14 +303,14 @@ class ProfileRegistrationTableTests(TestCase):
         self.assertIn("No slot", table)
 
     def test_an_entry_still_waiting_says_so(self):
-        comp = self._race(datetime.date.today() + datetime.timedelta(days=10), require_approval=True)
+        comp = self._race(_event_today() + datetime.timedelta(days=10), require_approval=True)
         self._entry(comp, is_approved=False)
         _response, table = self._table()
         with translation.override("ru"):
             self.assertIn(translation.gettext("Pending"), table)
 
     def test_an_unpaid_entry_says_so(self):
-        comp = self._race(datetime.date.today() + datetime.timedelta(days=10), require_payment=True)
+        comp = self._race(_event_today() + datetime.timedelta(days=10), require_payment=True)
         self._entry(comp, is_paid=False)
         _response, table = self._table()
         with translation.override("ru"):
@@ -315,11 +322,11 @@ class ProfileRegistrationTableTests(TestCase):
         That column belongs to whoever runs the event, so the check reads it as the organizer.
         """
         organizer = _make_user("list_organizer", role=User.Role.ORGANIZER)
-        comp = self._race(datetime.date.today() + datetime.timedelta(days=10), submitted_by=organizer)
+        comp = self._race(_event_today() + datetime.timedelta(days=10), submitted_by=organizer)
         reg = self._entry(comp)
         self.client.force_login(organizer)
         response = self.client.get(reverse("registrations:participant_list", args=[comp.pk]))
-        self.assertContains(response, reg.registered_at.strftime("%d.%m.%Y"))
+        self.assertContains(response, timezone.localtime(reg.registered_at).strftime("%d.%m.%Y"))
 
 
 class ProfileRegistrationQueryCountTests(TestCase):
@@ -335,7 +342,7 @@ class ProfileRegistrationQueryCountTests(TestCase):
         for n in range(count):
             comp = Competition.objects.create(
                 title_ru=f"Race {n}",
-                date_start=datetime.date.today() + datetime.timedelta(days=30 + n),
+                date_start=_event_today() + datetime.timedelta(days=30 + n),
                 status=Competition.Status.APPROVED,
                 registration_enabled=True,
                 registration_mode=Competition.RegistrationMode.FREE,

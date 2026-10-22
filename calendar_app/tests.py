@@ -23,6 +23,13 @@ from locations.models import Location
 from tests.language_urls import in_language
 
 
+def _event_today():
+    """Today where an event without a place is: UTC (issue #344). The machine's own date is not it --
+    between midnight and five in Almaty the two are different days, and a test asking about
+    "yesterday's race" would ask about the wrong one."""
+    return timezone.localdate(timezone=datetime.UTC)
+
+
 def _make_user(email, role, is_staff=False):
     return User.objects.create_user(
         username=email,
@@ -1119,7 +1126,7 @@ class CompetitionIsRegistrationOpenTests(TestCase):
     def _make_open_comp(self, **kwargs):
         # Dated from the day the suite runs: a fixed date would drift into the past and, since an
         # event with no deadline closes once it is ridden, quietly turn every case below red.
-        kwargs.setdefault("date_start", datetime.date.today() + datetime.timedelta(days=30))
+        kwargs.setdefault("date_start", _event_today() + datetime.timedelta(days=30))
         return Competition.objects.create(
             title_ru="Open Race",
             status=Competition.Status.APPROVED,
@@ -1197,31 +1204,31 @@ class CompetitionWithoutDeadlineTests(TestCase):
         )
 
     def test_open_before_the_race(self):
-        self.assertTrue(self._race_on(datetime.date.today() + datetime.timedelta(days=1)).is_registration_open())
+        self.assertTrue(self._race_on(_event_today() + datetime.timedelta(days=1)).is_registration_open())
 
     def test_open_all_through_the_day_of_the_race(self):
         """A start can be in the evening, so the morning of the race is not too late."""
-        self.assertTrue(self._race_on(datetime.date.today()).is_registration_open())
+        self.assertTrue(self._race_on(_event_today()).is_registration_open())
 
     def test_closed_the_day_after(self):
-        self.assertFalse(self._race_on(datetime.date.today() - datetime.timedelta(days=1)).is_registration_open())
+        self.assertFalse(self._race_on(_event_today() - datetime.timedelta(days=1)).is_registration_open())
 
     def test_closed_years_after(self):
         self.assertFalse(self._race_on(datetime.date(2000, 1, 1)).is_registration_open())
 
     def test_a_stage_race_stays_open_until_its_last_day(self):
         comp = self._race_on(
-            datetime.date.today() - datetime.timedelta(days=2),
-            date_end=datetime.date.today(),
+            _event_today() - datetime.timedelta(days=2),
+            date_end=_event_today(),
         )
         self.assertTrue(comp.is_registration_open())
-        comp.date_end = datetime.date.today() - datetime.timedelta(days=1)
+        comp.date_end = _event_today() - datetime.timedelta(days=1)
         self.assertFalse(comp.is_registration_open())
 
     def test_an_explicit_deadline_still_decides_on_its_own(self):
         """An organizer who set a date meant it -- even one that outlives the race."""
         comp = self._race_on(
-            datetime.date.today() - datetime.timedelta(days=10),
+            _event_today() - datetime.timedelta(days=10),
             registration_deadline=timezone.now() + datetime.timedelta(days=5),
         )
         self.assertTrue(comp.is_registration_open())
@@ -1232,7 +1239,7 @@ class CompetitionWithoutDeadlineTests(TestCase):
         from registrations.views import can_self_edit
 
         rider = User.objects.create_user(username="late_rider", email="late@example.com", password="Pass1234!")
-        comp = self._race_on(datetime.date.today() - datetime.timedelta(days=1))
+        comp = self._race_on(_event_today() - datetime.timedelta(days=1))
         reg = CompetitionRegistration.objects.create(
             competition=comp,
             user=rider,
