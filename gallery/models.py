@@ -1,6 +1,6 @@
 """Photo albums: a named set of photos from a race, a ride or a camp, with one photo as its cover.
 
-An album is created by an organizer or an admin, may point at an event in the calendar (then the
+An album is created by an admin or the owner, may point at an event in the calendar (then the
 event page links to it), and has a cover the person managing it picks -- the photo shown for the
 album in the list of albums and in a link pasted into a chat. Until one is picked the first photo
 stands in, so an album with photos never shows an empty frame.
