@@ -49,7 +49,6 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   .period-row { display: flex; align-items: center; gap: .5rem; margin-top: .5rem; }
   .period-arrow { width: 2.75rem; height: 2.75rem; flex: none; padding: 0; font-size: 1.375rem; line-height: 1; }
   /* 44px like every control a finger has to hit (the interface skill), the small ones too. */
-  .period-nav .period-small { height: 2.75rem; padding: 0 .875rem; font-size: .875rem; }
   .period-label { flex: 1; min-width: 0; text-align: center; font-size: 1.125rem; font-weight: 500; }
   .period-nav .period-tap {
     min-height: 2.75rem; border: 0; background: none; padding: 0 .1em; cursor: pointer; vertical-align: middle;
@@ -75,10 +74,15 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     <button type="button" class="period-b period-arrow" data-period-step="-1" aria-label="{% trans 'Previous' %}">&larr;</button>
     <div class="period-label" id="period-label" aria-live="polite"></div>
     <button type="button" class="period-b period-arrow" data-period-step="1" aria-label="{% trans 'Next' %}">&rarr;</button>
-  </div>
-  {% comment %}Today sits at the left, in one place on every tab.{% endcomment %}
-  <div class="d-flex align-items-center gap-2 mt-2">
-    <button type="button" class="period-b period-small" data-period-today>{% trans "Today" %}</button>
+    {% comment %}Today beside the arrows it undoes, as a calendar with today's date on it -- the way
+    Google Calendar draws it on a phone -- rather than a row of its own. Its words are the label: "Today,
+    22 October".{% endcomment %}
+    <button type="button" class="period-b period-arrow" data-period-today aria-label="{% trans 'Today' %}" title="{% trans 'Today' %}">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>
+        <text x="12" y="18" font-size="8" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none" data-period-today-day>{% now "j" %}</text>
+      </svg>
+    </button>
   </div>
   <div class="period-pop" id="period-pop" hidden></div>
   <div class="period-hint" id="period-hint"></div>
@@ -316,6 +320,14 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     if (pop && e.composedPath().indexOf(nav) < 0) { pop = null; render(); }
   });
   render();
+
+  // Today's date on the calendar icon and in its label, from the same day the row counts from.
+  (function () {
+    var button = nav.querySelector('[data-period-today]');
+    var day = today();
+    button.querySelector('[data-period-today-day]').textContent = day.getDate();
+    button.setAttribute('aria-label', button.getAttribute('aria-label') + ', ' + day.getDate() + ' ' + WORDS.months[day.getMonth()]);
+  }());
 
   document.addEventListener('DOMContentLoaded', function () {
     if (!FROM || !TO) return;
