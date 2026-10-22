@@ -85,7 +85,9 @@ def _thumb_path(photo, filename):
 
 class Photo(models.Model):
     album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name="photos")
-    image = models.ImageField(upload_to=_original_path, width_field="width", height_field="height")
+    # The size as shown (gallery.images.process), set by whoever saves the photo; not read back from the
+    # file, whose pixels a phone may store lying on their side.
+    image = models.ImageField(upload_to=_original_path)
     thumbnail = models.ImageField(upload_to=_thumb_path)
     width = models.PositiveIntegerField(default=0)
     height = models.PositiveIntegerField(default=0)

@@ -59,8 +59,8 @@ class GalleryTestCase(TestCase):
         return Album.objects.create(title=title, date=date, **kwargs)
 
     def _photo(self, album, **kwargs):
-        full, thumb = process(_jpeg())
-        photo = Photo(album=album, **kwargs)
+        full, thumb, (width, height) = process(_jpeg())
+        photo = Photo(album=album, width=width, height=height, **kwargs)
         photo.image.save(full.name, full, save=False)
         photo.thumbnail.save(thumb.name, thumb, save=False)
         photo.save()
@@ -70,7 +70,7 @@ class GalleryTestCase(TestCase):
 class ImageProcessingTests(GalleryTestCase):
     def test_the_photo_is_kept_byte_for_byte_and_gets_a_thumbnail(self):
         upload = _jpeg(size=(5000, 3000), exif=True)
-        original, thumb = process(upload)
+        original, thumb, _size = process(upload)
         upload.seek(0)
         self.assertEqual(original.read(), upload.read())
         self.assertTrue(original.name.endswith(".jpg"))
@@ -78,7 +78,8 @@ class ImageProcessingTests(GalleryTestCase):
             self.assertEqual(max(image.size), THUMB_SIDE)
 
     def test_the_thumbnail_is_turned_upright_and_carries_no_metadata(self):
-        _, thumb = process(_jpeg(size=(1200, 800), exif=True))
+        _, thumb, size = process(_jpeg(size=(1200, 800), exif=True))
+        self.assertEqual(size, (800, 1200))  # the size as shown, turned like the picture
         with Image.open(thumb) as image:
             self.assertEqual(image.size, (667, 1000))
             self.assertNotIn(0x010F, image.getexif())
@@ -86,7 +87,8 @@ class ImageProcessingTests(GalleryTestCase):
     def test_a_png_keeps_its_format(self):
         buffer = io.BytesIO()
         Image.new("RGBA", (800, 600), (255, 0, 0, 128)).save(buffer, format="PNG")
-        original, thumb = process(SimpleUploadedFile("shot.png", buffer.getvalue(), content_type="image/png"))
+        original, thumb, size = process(SimpleUploadedFile("shot.png", buffer.getvalue(), content_type="image/png"))
+        self.assertEqual(size, (800, 600))
         self.assertTrue(original.name.endswith(".png"))
         with Image.open(thumb) as image:
             self.assertEqual(image.mode, "RGB")

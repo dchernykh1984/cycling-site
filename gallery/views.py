@@ -115,11 +115,11 @@ def _save_uploads(request, album, files) -> int:
     start = (album.photos.aggregate(top=Max("sort_order"))["top"] or 0) + 1
     for offset, uploaded in enumerate(files):
         try:
-            full, thumb = process(uploaded)
+            full, thumb, (width, height) = process(uploaded)
         except PhotoError as error:
             failed.append(f"{uploaded.name}: {error}")
             continue
-        photo = Photo(album=album, sort_order=start + offset, uploaded_by=request.user)
+        photo = Photo(album=album, sort_order=start + offset, uploaded_by=request.user, width=width, height=height)
         photo.image.save(full.name or "photo.jpg", full, save=False)
         photo.thumbnail.save(thumb.name or "photo.jpg", thumb, save=False)
         photo.save()

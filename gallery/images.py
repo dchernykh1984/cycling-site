@@ -52,12 +52,22 @@ def _thumbnail(uploaded) -> bytes:
         return buffer.getvalue()
 
 
-def process(uploaded) -> tuple[ContentFile, ContentFile]:
-    """Return (original, thumbnail) ready for the two ImageFields, or raise PhotoError."""
+#: EXIF orientations that turn the stored picture a quarter: what a phone does with a portrait shot.
+_QUARTER_TURNS = {5, 6, 7, 8}
+
+
+def process(uploaded) -> tuple[ContentFile, ContentFile, tuple[int, int]]:
+    """Return (original, thumbnail, size as shown) or raise PhotoError.
+
+    The size is the picture's upright one: a phone stores a portrait shot lying on its side with a
+    note to turn it, and every browser and chat obeys the note -- so the width and height the page
+    and a link preview announce must too.
+    """
     uploaded.seek(0)
     try:
         with Image.open(uploaded) as probe:  # reads the header only
             kind, size = probe.format, probe.size
+            turned = probe.getexif().get(0x0112) in _QUARTER_TURNS
     except Image.DecompressionBombError as exc:
         raise PhotoError(_("The image is too large to process.")) from exc
     except (UnidentifiedImageError, OSError, ValueError) as exc:
@@ -76,4 +86,5 @@ def process(uploaded) -> tuple[ContentFile, ContentFile]:
     uploaded.seek(0)
     stem = uuid.uuid4().hex[:16]
     original = ContentFile(uploaded.read(), name=f"{stem}.{FORMATS[kind]}")
-    return original, ContentFile(thumb, name=f"{stem}.jpg")
+    upright = (size[1], size[0]) if turned else size
+    return original, ContentFile(thumb, name=f"{stem}.jpg"), upright
