@@ -5,7 +5,17 @@ Calendar / List / Map segmented switcher (issue #107). The active view is passed
 filter state — each view's JS rewrites their href on filter change so switching keeps
 the active date range / event type / direction+discipline (and location where present).
 {% endcomment %}
-<div class="btn-group btn-group-sm" role="group" aria-label="{% trans 'View' %}">
+{% comment %}The tab on screen filled like the chosen period kind: an outline button's "active" is a frame of the
+   same colour as its neighbours' in Lux, so nothing told the three apart. Same border, same width.
+   Important because the dark skin paints every outline button with !important and orange's own
+   active rule is the stronger selector; both left the chosen tab within 1.25:1 of the others.{% endcomment %}
+<style>
+  .view-switcher .btn.active {
+    background: var(--bs-emphasis-color) !important; border-color: var(--bs-emphasis-color) !important;
+    color: var(--bs-body-bg) !important;
+  }
+</style>
+<div class="btn-group btn-group-sm view-switcher" role="group" aria-label="{% trans 'View' %}">
   <a href="{% url 'calendar' %}" id="view-link-calendar"
      class="btn btn-outline-secondary{% if active_view == 'calendar' %} active{% endif %}"
      {% if active_view == 'calendar' %}aria-current="page"{% endif %}>{% trans "Calendar" %}</a>

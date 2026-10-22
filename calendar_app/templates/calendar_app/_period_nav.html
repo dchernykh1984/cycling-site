@@ -19,19 +19,21 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   /* Its own quiet look rather than the skin's small capitals: the row is read, not just pressed, and
      a label in capitals spelt "ВЫХОДНЫЕ" wider than its button. As wide as a phone everywhere. The
      greys come from the skin's own Bootstrap variables, so a dark skin keeps the row readable. */
-  .period-nav { margin-bottom: .75rem; max-width: 30rem; letter-spacing: normal; }
+  /* A control's edge needs 3:1 against the page (WCAG 1.4.11); the skins' border colour is a hairline
+     for cards and tables, 1.16:1 in light, so the row draws its frames in the secondary text colour. */
+  .period-nav { --period-line: var(--bs-secondary-color); margin-bottom: .75rem; max-width: 30rem; letter-spacing: normal; }
   .period-nav button { font: inherit; letter-spacing: normal; text-transform: none; color: inherit; }
   .period-nav button:focus-visible { outline: 2px solid var(--bs-emphasis-color); outline-offset: 2px; }
   .period-kinds {
     display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-    border: 1px solid var(--bs-border-color); border-radius: .5rem; overflow: hidden;
+    border: 1px solid var(--period-line); border-radius: .5rem; overflow: hidden;
   }
   .period-kind { height: 2.75rem; padding: 0 .125rem; border: 0; background: transparent; font-size: .875rem; line-height: 1.15; }
-  .period-kind + .period-kind { border-left: 1px solid var(--bs-border-color); }
+  .period-kind + .period-kind { border-left: 1px solid var(--period-line); }
   .period-kind:hover { background: var(--bs-tertiary-bg); }
   /* The chosen one inverted from the skin's own text and page colours, so every skin draws it. */
   .period-nav .period-kind.active { background: var(--bs-emphasis-color); color: var(--bs-body-bg); }
-  .period-b { border: 1px solid var(--bs-border-color); border-radius: .5rem; background: transparent; }
+  .period-b { border: 1px solid var(--period-line); border-radius: .5rem; background: transparent; }
   .period-b:hover { background: var(--bs-tertiary-bg); }
   .period-nav .period-b.active { background: var(--bs-emphasis-color); border-color: var(--bs-emphasis-color); color: var(--bs-body-bg); }
   .period-row { display: flex; align-items: center; gap: .5rem; margin-top: .5rem; }
