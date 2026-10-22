@@ -295,3 +295,21 @@ class GalleryPageTests(GalleryTestCase):
         self.client.post(reverse("gallery_album_delete", args=[album.pk]))
         self.assertFalse(Album.objects.exists())
         self.assertFalse(path.exists())
+
+
+class EventLinkTests(GalleryTestCase):
+    def test_the_event_page_links_its_public_albums(self):
+        race = Competition.objects.create(
+            title_ru="Gran Fondo", date_start=datetime.date(2026, 5, 17), status=Competition.Status.APPROVED
+        )
+        public = self._album("Gran Fondo 2026", competition=race)
+        hidden = self._album("Gran Fondo draft", competition=race, is_hidden=True)
+        html = self.client.get(race.get_absolute_url()).content.decode()
+        self.assertIn(public.get_absolute_url(), html)
+        self.assertNotIn(hidden.get_absolute_url(), html)
+
+    def test_an_event_without_albums_has_no_album_block(self):
+        race = Competition.objects.create(
+            title_ru="Quiet race", date_start=datetime.date(2026, 5, 17), status=Competition.Status.APPROVED
+        )
+        self.assertNotContains(self.client.get(race.get_absolute_url()), "competition-albums")
