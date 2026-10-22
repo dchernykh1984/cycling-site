@@ -26,10 +26,10 @@ PREVIEW_IMAGE_STRINGS = (
     "link goes round: messengers remember the first picture they saw for a long time.",
     # And with the link preview text (#318).
     "Link preview text",
-    "The line a chat shows under the title when somebody pastes a link to this event; about 80 "
-    "characters fit. For example: meet at 6:15, start at 6:30, by the main entrance. Leave it empty to "
-    "show the date and the place. Write it before the link goes round: messengers remember the text they "
-    "first saw for a long time.",
+    "The line a chat shows under the title when somebody pastes a link to this event; only about the first "
+    "80 characters show, and the chat cuts off the rest. For example: meet at 6:15, start at 6:30, by the "
+    "main entrance. Leave it empty to show the date and the place. Write it before the link goes round: "
+    "messengers remember the text they first saw for a long time.",
     "How a link to this event looks in a chat",
 )
 
