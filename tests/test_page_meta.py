@@ -21,6 +21,7 @@ from django.utils.translation import override as translation_override
 from PIL import Image
 
 from calendar_app.models import Competition
+from cycling_site import skins
 from tests.language_urls import in_language
 
 DEFAULT_DESCRIPTION = (
@@ -196,6 +197,28 @@ class CompetitionPreviewTextTests(TestCase):
     def test_the_line_is_escaped_inside_the_tag(self):
         comp = _competition("Saturday ride", preview_text_ru='Meet at "Giant" & go')
         self.assertEqual(_prop(self._html(comp), "og:description"), escape('Meet at "Giant" & go'))
+
+
+class PreviewTextInEverySkinTests(TestCase):
+    """A skin may carry its own base.html, and the head lives there. A messenger's bot comes without
+    a cookie and gets the default skin, so a copy that forgot og_description hid the organizer's line
+    from every chat once that skin became the default (#350 made it orange)."""
+
+    TEXT = "Meet 6:15, start 6:30 by the main entrance"
+
+    def setUp(self):
+        self.url = in_language(_competition("Saturday ride", preview_text_ru=self.TEXT).get_absolute_url(), "ru")
+
+    def test_a_bot_without_a_cookie_gets_it(self):
+        html = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="ru").content.decode()
+        self.assertEqual(_prop(html, "og:description"), self.TEXT)
+
+    def test_every_skin_carries_it(self):
+        for key in skins.registry():
+            with self.subTest(skin=key):
+                self.client.cookies[skins.COOKIE] = key
+                html = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="ru").content.decode()
+                self.assertEqual(_prop(html, "og:description"), self.TEXT)
 
 
 class SocialImageTests(TestCase):
