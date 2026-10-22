@@ -14,6 +14,20 @@ three tabs cannot drift apart. `heading` is the text of the h1.{% endcomment %}
     content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2.75rem; transform: translateY(-50%);
   }
   .calendar-header .calendar-controls { column-gap: .5rem; row-gap: .625rem; }
+  /* On a phone the icon buttons -- Filters, and Share once its word is hidden -- are squares as tall
+     as the tabs, so the right-hand column reads as one size in every skin: --calendar-icon-size is
+     the tabs' height, measured below. Filters sits at the right end of the tabs' row, under Share. */
+  .calendar-header #filter-toggle {
+    width: var(--calendar-icon-size, 2.75rem); height: var(--calendar-icon-size, 2.75rem); padding: 0;
+    display: inline-flex; align-items: center; justify-content: center; margin-left: auto;
+  }
+  .calendar-header #filter-toggle .filter-count { position: absolute; top: -.4rem; right: -.4rem; font-size: .65rem; }
+  @media (max-width: 991.98px) { .calendar-header .calendar-controls { flex: 1 0 100%; } }
+  @media (max-width: 575.98px) {
+    .calendar-heading .share-btn {
+      width: var(--calendar-icon-size, 2.75rem); height: var(--calendar-icon-size, 2.75rem); padding: 0; justify-content: center;
+    }
+  }
 </style>
 <div class="calendar-heading d-flex align-items-center gap-2">
   <h1 class="mb-0">{{ heading }}</h1>
@@ -44,8 +58,17 @@ three tabs cannot drift apart. `heading` is the text of the h1.{% endcomment %}
     var shift = baseline - cap / 2 - (box.top + box.height / 2);
     if (Math.abs(shift) >= 0.5) button.style.transform = 'translateY(' + shift.toFixed(1) + 'px)';
   }
+  // The icon buttons as tall as the tabs (see the style above); the tabs come later in the page.
+  function size() {
+    var tabs = document.querySelector('.calendar-header .view-switcher');
+    if (tabs && tabs.offsetHeight) {
+      row.closest('.calendar-header').style.setProperty('--calendar-icon-size', tabs.offsetHeight + 'px');
+    }
+    centre();
+  }
   centre();
-  if (document.fonts) document.fonts.ready.then(centre);
-  window.addEventListener('resize', centre);
+  document.addEventListener('DOMContentLoaded', size);
+  if (document.fonts) document.fonts.ready.then(size);
+  window.addEventListener('resize', size);
 }());
 </script>

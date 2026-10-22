@@ -1,5 +1,7 @@
 """One button for the filters on a phone, with the number in force (issue #330)."""
 
+import re
+
 import pytest
 from playwright.sync_api import Page, ViewportSize, expect
 
@@ -31,14 +33,17 @@ def test_a_wide_screen_shows_the_filters_without_the_button(page: Page, live_ser
 def test_the_button_counts_the_filters_in_force(page: Page, live_server, race_event_type):
     page.set_viewport_size(PHONE)
     page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race_event_type.pk}")
-    expect(page.locator("#filter-toggle")).to_contain_text("(1)")
+    # The number on the icon, and in its words for a screen reader.
+    expect(page.locator("#filter-toggle .filter-count")).to_have_text("1")
+    expect(page.locator("#filter-toggle")).to_have_attribute("aria-label", re.compile(r"\(1\)$"))
 
 
 @pytest.mark.django_db(transaction=True)
 def test_no_filter_no_number(page: Page, live_server):
     page.set_viewport_size(PHONE)
     page.goto(f"{live_server.url}/ru/calendar/")
-    expect(page.locator("#filter-toggle")).not_to_contain_text("(")
+    expect(page.locator("#filter-toggle .filter-count")).to_be_hidden()
+    expect(page.locator("#filter-toggle")).not_to_have_attribute("aria-label", re.compile(r"\("))
 
 
 @pytest.mark.django_db(transaction=True)
