@@ -34,6 +34,10 @@ and an IndexNow notice whenever something is published.
    not a redirect.
 4. **Given** any page, **Then** it declares itself canonical, `hreflang` alternates for all three
    languages plus `x-default` (all absolute), Open Graph and Twitter tags, and the feeds.
+5. **Given** an event page, **Then** `og:description` -- the line a chat shows under a pasted
+   link -- is the event's preview text in the page's language, else the sentence about the event
+   (date and place) in that language; `meta description`, which search engines read, stays that
+   sentence whatever the preview text says (issue #318).
 
 ### Story 2 -- An engine finds the content (P1)
 

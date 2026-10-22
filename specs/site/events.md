@@ -8,7 +8,7 @@
 **Tests**: `calendar_app/tests.py` (model, submit, moderation, detail, edit, comments, reports,
 materials, upload token, rich description, several event types), `calendar_app/test_timezones.py`,
 `tests/test_invite_only_events.py`,
-`tests/test_clone_competition.py`, `tests/test_preview_image.py`,
+`tests/test_clone_competition.py`, `tests/test_preview_image.py`, `tests/test_preview_text_form.py`,
 `tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
 `tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/e2e/test_competition_form.py`,
 `test_competition_materials.py`, `test_description_editor.py`, `test_resubmit.py`,
@@ -36,7 +36,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    disciplines (both optional), a location from the tree or a new venue
    proposed in a city (see [locations](locations.md)), a registration link, links and files for
    announcement, regulations, route and results (files: PDF, Office documents, GPX, KML, ZIP or
-   images, up to 10 MB), and a preview image for link previews.
+   images, up to 10 MB), and for link previews an image and a line of text per language (up to
+   200 characters; a chat shows about the first 80 and cuts the rest, the form says so).
 3. **Given** an invalid field -- a missing title or date, a link longer than its column, an end
    before the start, an over-long category name -- **Then** the form comes back with a translated
    field error, never a server error, and keeps what was entered.
@@ -44,7 +45,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    and options (see [registrations](registrations.md)), and make the event invite-only;
    participants are not offered these.
 5. **Given** someone who may edit an event, **Then** "copy" opens the form filled from it --
-   registration settings and categories included, dates and last year's results not.
+   registration settings, categories and the link preview text included, dates and last year's
+   results not.
 
 ### Story 2 -- Review (P1)
 
@@ -73,6 +75,10 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    and to its managers on its page) and show it again, and delete its comments.
 3. **Given** a manager or the event's author, **Then** they see its upload token and may regenerate
    or delete it; the timing apps use it to send results (see [API](api.md)).
+4. **Given** someone who may edit or moderate an event, **Then** its page shows how a link to it
+   looks in a chat: the title and the preview text in the page's language, or the date and the
+   place when that language has none (issue #318). Nobody else sees the block; the line itself
+   lives only in a meta tag (see [search visibility](search-visibility.md)).
 
 ### Story 4 -- Report and discuss (P3)
 
@@ -130,7 +136,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 ## Key Entities
 
 - **Competition** (event): titles and descriptions per locale, dates, status and rejection history,
-  author, location, event types, disciplines, document links/files, preview image, registration
+  author, location, event types, disciplines, document links/files, preview image and preview text
+  per locale, registration
   settings, upload token, hidden / deleted / invite-only flags and invite key.
 - **CompetitionInvite**: a member let in by the invitation link.
 - **CompetitionComment**, **CompetitionReport** (open or dismissed), **CompetitionMaterial**
