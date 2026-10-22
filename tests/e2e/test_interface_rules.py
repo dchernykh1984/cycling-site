@@ -370,7 +370,7 @@ def _in_state(page: Page, control, state):
     if state == "hover":
         control.hover()
     # A colour read mid-fade is neither state's.
-    control.evaluate("el => Promise.all(el.getAnimations().map(a => a.finished))")
+    control.evaluate("el => Promise.all(el.getAnimations().map(a => a.finished.catch(() => {})))")
 
 
 # Whether a control shows words: an icon button whose label is hidden on a phone shows none.
