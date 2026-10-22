@@ -28,7 +28,14 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
     border: 1px solid var(--period-line); border-radius: .5rem; overflow: hidden;
   }
-  .period-kind { height: 2.75rem; padding: 0 .125rem; border: 0; background: transparent; font-size: .875rem; line-height: 1.15; }
+  /* Up to two lines (the interface skill): the button grows to hold them, the row shares the height, and
+     the words keep 8px from the frame at the sides and 4px above and below -- at 13px, the size at which
+     all four hold that at 360px in every language and skin. Under .period-nav, or
+     `.period-nav button { font: inherit }` wins and the kinds draw at 16px on a 24px line. */
+  .period-nav .period-kind {
+    min-height: 2.75rem; padding: .375rem .5rem; border: 0; background: transparent;
+    font-size: .8125rem; line-height: 1.2;
+  }
   .period-kind + .period-kind { border-left: 1px solid var(--period-line); }
   .period-kind:hover { background: var(--bs-tertiary-bg); }
   /* The chosen one inverted from the skin's own text and page colours, so every skin draws it. */
