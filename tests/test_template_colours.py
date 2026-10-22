@@ -25,6 +25,7 @@ def test_comments_anchors_and_character_references_are_not_colours():
         "{% comment %}issue #118{% endcomment %}{# issue #229 #}<!-- #fff -->/* #000 */\n"
         "  // issues #111, #113\n"
         "<a href='#add'>x</a><a href=\"#bad\"></a><a data-bs-target='#cafe'></a>&#123; https://example.com/#abc"
+        "{% url 'x' %}#add{{ link }}#abc"
     )
     assert colours(text) == []
 
