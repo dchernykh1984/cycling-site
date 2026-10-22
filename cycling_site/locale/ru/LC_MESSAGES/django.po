@@ -3232,8 +3232,8 @@ msgstr "весь год"
 
 #: calendar_app/templates/calendar_app/_period_nav.html:63
 #, python-format
-msgid "from %s"
-msgstr "с %s"
+msgid "from %%s"
+msgstr "с %%s"
 
 #: calendar_app/templates/calendar_app/_period_nav.html
 msgid "Arrows: by day"
