@@ -135,7 +135,8 @@ One page for every device, no separate version for phones or tablets.
     - Example: pale text that turns white on light grey under the pointer fails; a beige border
       around a "Filters" button passes.
     - Exception: moving through the controls with the Tab key, and the focus ring, are not checked
-      for now.
+      yet. Both are AA (2.4.7 Focus Visible, 2.4.11 Focus Not Obscured), so until they are, the
+      baseline in `reference.md` is AA less these two.
     - Check: `test_the_header_is_readable_in_this_skin`, `test_every_border_can_be_seen`,
       `test_skin_contrast.py`.
 
