@@ -36,12 +36,31 @@ Structured data: `SportsEvent` on an event (`calendar_app/seo.py`), `Article` / 
 knowledge and news (`cycling_site/summaries.py`). Both are escaped so a title containing `</script>`
 cannot break out.
 
+## Ownership and the club
+
+`GOOGLE_SITE_VERIFICATION` and `YANDEX_VERIFICATION` (environment, `.env.example`) put the "HTML
+tag" each console asks for into every page head -- the way to verify the site for whoever has the
+hosting but not the domain's DNS. Unset, no tag is written.
+
+The home page carries a `SportsOrganization` + `WebSite` graph (`home/seo.py`): name from
+`ORGANIZATION_NAME`, else the Wagtail site name; `ORGANIZATION_AREA`; `ORGANIZATION_SAME_AS` (comma
+separated, https only) for the club's own profiles; a `SearchAction` on the site search. A skin that
+copies `home/home_page.html` keeps the `extra_head` block that writes it.
+
+All JSON-LD goes through `cycling_site/jsonld.py`: `<`, `>` and `&` as JSON unicode escapes. Never
+`django.utils.html.escape()` -- a script element is raw text, `&quot;` is not decoded there, and the
+block stops being JSON for every engine. Tests parse the block as it stands, without unescaping.
+
+The default share image is `static/og-default.png` (1200x630, `summary_large_image`); an event
+with a poster of its own still shows the poster.
+
 ## Sitemap
 
 `sitemap.xml` is an **index**, generated per request from the database -- there is nothing to
-rebuild and no hook to fire when something is published. Sections: `wagtail`, `knowledge`, `news`,
-`competitions` (paged at 500) and `calendar-filters` (the city and discipline pages worth
-indexing). Each section is `i18n = True` with `alternates` and `x_default`, so every entry appears
+rebuild and no hook to fire when something is published. Sections: `wagtail`, `sections`, `knowledge`,
+`news`, `competitions` (paged at 500, `lastmod` = approval time) and `calendar-filters` (the city and discipline pages worth
+indexing). `wagtail` lists the default locale's pages under all three prefixes (Wagtail's own
+generator gave only `/ru/`); `sections` is the calendar's month, list and map views. Each section is `i18n = True` with `alternates` and `x_default`, so every entry appears
 once per language with links to its translations.
 
 ## Feeds
