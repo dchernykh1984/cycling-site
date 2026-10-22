@@ -31,14 +31,9 @@ def _payload(client, comp):
     html = client.get(comp.get_absolute_url()).content.decode()
     block = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)
     assert block is not None, "no JSON-LD on the page"
-    return json.loads(
-        block.group(1)
-        .replace("&quot;", '"')
-        .replace("&#x27;", "'")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&amp;", "&")
-    )
+    # Parsed as it stands: a browser does not decode character references inside a script element,
+    # so a block that only parses after unescaping is a block no search engine can read.
+    return json.loads(block.group(1))
 
 
 class SportsEventMarkupTests(TestCase):
@@ -108,21 +103,14 @@ class SportsEventMarkupTests(TestCase):
         html = self.client.get(comp.get_absolute_url()).content.decode()
         block = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)
         self.assertNotIn("<b>", block.group(1))
+        self.assertEqual(json.loads(block.group(1))["name"], "Race </script><b>x")
 
 
 def _article_payload(client, url):
     html = client.get(url).content.decode()
     block = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)
     assert block is not None, "no JSON-LD on the page"
-    raw = (
-        block.group(1)
-        .replace("&quot;", '"')
-        .replace("&#x27;", "'")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&amp;", "&")
-    )
-    return json.loads(raw)
+    return json.loads(block.group(1))
 
 
 class KnowledgeArticleMarkupTests(TestCase):

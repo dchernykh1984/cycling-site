@@ -45,9 +45,7 @@ def article_markup(
     page is, when it was written and in which language -- the last matters here because the same
     subject exists three times, once per locale, as separate articles.
     """
-    import json
-
-    from django.utils.html import escape
+    from cycling_site.jsonld import dumps
 
     data: dict = {
         "@context": "https://schema.org",
@@ -66,5 +64,5 @@ def article_markup(
         data["author"] = {"@type": "Person", "name": author}
     if language:
         data["inLanguage"] = language
-    # escape() keeps a "</script>" that reached a headline from ending the block early.
-    return escape(json.dumps(data, ensure_ascii=False))
+    # dumps() keeps a "</script>" that reached a headline from ending the block early, and the JSON valid.
+    return dumps(data)

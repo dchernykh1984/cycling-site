@@ -6,10 +6,9 @@ listing that shows a date and a place under the link. We hold every field it wan
 including the venue's exact coordinates.
 """
 
-import json
-
 from django.urls import reverse
-from django.utils.html import escape
+
+from cycling_site.jsonld import dumps
 
 
 def sports_event(competition, base_url: str) -> str:
@@ -73,5 +72,5 @@ def sports_event(competition, base_url: str) -> str:
             "availability": "https://schema.org/InStock",
         }
 
-    # escape() keeps a "</script>" that reached a title from ending the block early.
-    return escape(json.dumps(data, ensure_ascii=False))
+    # dumps() keeps a "</script>" that reached a title from ending the block early, and the JSON valid.
+    return dumps(data)
