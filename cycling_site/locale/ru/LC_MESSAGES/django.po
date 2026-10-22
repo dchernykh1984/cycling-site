@@ -3206,10 +3206,6 @@ msgstr "Страницы"
 msgid "No results found"
 msgstr "Ничего не найдено"
 
-#: calendar_app/templates/calendar_app/calendar.html:257
-msgid "Earlier days of the month"
-msgstr "Прошедшие дни месяца"
-
 #: calendar_app/templates/calendar_app/_quick_dates.html:8
 msgid "Weekend"
 msgstr "Выходные"
@@ -3217,10 +3213,6 @@ msgstr "Выходные"
 #: calendar_app/templates/calendar_app/_quick_dates.html:10
 msgid "Season"
 msgstr "Сезон"
-
-#: calendar_app/templates/calendar_app/calendar.html:353
-msgid "Grid"
-msgstr "Сетка"
 
 #: calendar_app/templates/calendar_app/_filter_chips.html:11
 msgid "Remove filter"

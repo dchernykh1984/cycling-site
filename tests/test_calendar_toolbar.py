@@ -1,6 +1,6 @@
 """The period row above the calendar, the list and the map (_period_nav.html).
 
-The arrows, Today, the kinds of period, the month picker and the calendar's Grid/List switch are
+The arrows, Today, the kinds of period and the month picker are
 our own; FullCalendar's toolbar is gone. Its bundle carries no Kazakh at all, so every label a reader
 sees comes from our catalogue, and the tests assert against `gettext`, never against a pasted word.
 """
@@ -30,10 +30,9 @@ class TodayButtonTests(TestCase):
         for language in ("ru", "kk", "en"):
             with self.subTest(language=language):
                 with translation.override(language):
-                    today, grid, listing = (translation.gettext(word) for word in ("Today", "Grid", "List"))
+                    today = translation.gettext("Today")
                 response = self.client.get(in_language(reverse("calendar"), language))
                 self.assertContains(response, f"data-period-today>{today}</button>")
-                self.assertContains(response, f"['dayGridMonth', '{grid}'], ['listMonth', '{listing}']")
 
     def test_the_label_starts_with_a_capital_letter(self):
         for language in ("ru", "kk", "en"):
@@ -45,8 +44,6 @@ class TodayButtonTests(TestCase):
         """A missing or fuzzy catalogue entry silently serves the English string."""
         words = (
             "Today",
-            "Grid",
-            "List",
             "Today tomorrow",
             "Weekend",
             "Week",
@@ -60,7 +57,6 @@ class TodayButtonTests(TestCase):
             "Arrows: by year",
             "tap the month or year",
             "Remove filter",
-            "Earlier days of the month",
         )
         for language in ("ru", "kk"):
             for word in words:

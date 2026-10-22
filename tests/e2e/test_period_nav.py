@@ -180,10 +180,10 @@ def test_the_list_and_map_links_carry_the_period(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_grid_from_another_period_opens_that_month(page: Page, live_server):
+def test_month_from_another_period_opens_the_grid(page: Page, live_server):
     _calendar(page, live_server)
     _kind(page, "week")
-    page.locator('[data-month-view="dayGridMonth"]').click()
+    _kind(page, "month")
     expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
     expect(_label(page)).to_have_text("October 2026")
 

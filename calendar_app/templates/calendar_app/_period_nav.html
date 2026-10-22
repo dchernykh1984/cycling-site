@@ -50,9 +50,6 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   .period-arrow { width: 2.75rem; height: 2.75rem; flex: none; padding: 0; font-size: 1.375rem; line-height: 1; }
   /* 44px like every control a finger has to hit (the interface skill), the small ones too. */
   .period-nav .period-small { height: 2.75rem; padding: 0 .875rem; font-size: .875rem; }
-  .period-pair { display: inline-flex; }
-  .period-pair .period-b:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-  .period-pair .period-b + .period-b { border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
   .period-label { flex: 1; min-width: 0; text-align: center; font-size: 1.125rem; font-weight: 500; }
   .period-nav .period-tap {
     min-height: 2.75rem; border: 0; background: none; padding: 0 .1em; cursor: pointer; vertical-align: middle;
@@ -79,11 +76,9 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     <div class="period-label" id="period-label" aria-live="polite"></div>
     <button type="button" class="period-b period-arrow" data-period-step="1" aria-label="{% trans 'Next' %}">&rarr;</button>
   </div>
-  {% comment %}Today sits at the left on every tab; a page may add controls of its own at the right
-  (#period-extra: the calendar's Grid/List switch).{% endcomment %}
-  <div class="d-flex justify-content-between align-items-center gap-2 mt-2">
+  {% comment %}Today sits at the left, in one place on every tab.{% endcomment %}
+  <div class="d-flex align-items-center gap-2 mt-2">
     <button type="button" class="period-b period-small" data-period-today>{% trans "Today" %}</button>
-    <div id="period-extra"></div>
   </div>
   <div class="period-pop" id="period-pop" hidden></div>
   <div class="period-hint" id="period-hint"></div>

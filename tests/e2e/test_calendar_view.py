@@ -12,25 +12,13 @@ def test_a_wide_screen_opens_on_the_month_grid(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_a_phone_opens_on_the_list_of_days(page: Page, live_server):
-    """Seven columns of one-word titles on a 390px screen read as noise (issue #330)."""
+def test_a_phone_opens_on_the_month_grid_too(page: Page, live_server):
+    """One calendar on every screen: the list of a month's days is the List tab's (issue #330), so
+    the calendar has no Grid/List switch of its own -- two "Lists" on one screen meant two things."""
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(f"{live_server.url}/ru/calendar/")
-    expect(page.locator(".fc-listMonth-view")).to_be_visible()
-
-
-@pytest.mark.django_db(transaction=True)
-def test_the_reader_switches_the_view_and_it_is_kept(page: Page, live_server):
-    """Chosen once and remembered -- never switched by the page on its own (the address bar of a
-    phone sliding away fires a resize, and a view that followed resizes jumped about)."""
-    page.set_viewport_size({"width": 390, "height": 844})
-    page.goto(f"{live_server.url}/ru/calendar/")
-    page.locator('[data-month-view="dayGridMonth"]').click()
     expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
-    page.set_viewport_size({"width": 390, "height": 700})
-    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
-    page.reload()
-    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
+    expect(page.locator("[data-month-view]")).to_have_count(0)
 
 
 @pytest.mark.django_db(transaction=True)
