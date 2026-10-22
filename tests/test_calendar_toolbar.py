@@ -49,7 +49,8 @@ class TodayButtonTests(TestCase):
             "Week",
             "Month",
             "whole year",
-            "from %s",
+            # A template's {% trans %} looks a "%" up doubled, so this is the key the page asks for.
+            "from %%s",
             "Arrows: by day",
             "Arrows: by weekend",
             "Arrows: by week",

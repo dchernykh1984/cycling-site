@@ -3602,8 +3602,8 @@ msgstr "толық жыл"
 
 #: calendar_app/templates/calendar_app/_period_nav.html:63
 #, python-format
-msgid "from %s"
-msgstr "%s бастап"
+msgid "from %%s"
+msgstr "%%s бастап"
 
 #: calendar_app/templates/calendar_app/_period_nav.html
 msgid "Arrows: by day"
