@@ -100,7 +100,9 @@ One page for every device, no separate version for phones or tablets.
    phone and a click across at least 24x24px on a desktop. The zone is centred on the control and
    the zones of neighbours do not overlap. Nothing that matters is reachable only by hovering.
    - Why: people tap on the move, and a missed tap does the wrong thing; a phone has no hover. WCAG
-     2.2 AA asks for 24px (2.5.8); 44px is 2.5.5 (AAA) and Apple's minimum for the iPhone and iPad.
+     2.2 AA asks for 24px (2.5.8); 44px is 2.5.5 (AAA) and Apple's minimum for the iPhone and
+     iPad; Material asks 48dp, and 44 is the site's choice. A link inside a sentence is exempt, as
+     2.5.8 exempts it.
    - Example: a slim 32px pill with an invisible 44px zone around it, rows far enough apart that
      the zones do not meet.
    - Check: `test_every_control_is_big_enough_to_tap`.
