@@ -132,6 +132,11 @@ class CompetitionSitemap(Sitemap):
     def location(self, obj):
         return obj.get_absolute_url()
 
+    def lastmod(self, obj):
+        # When the event went public. Competition keeps no edit time of its own, and the approval is
+        # the moment its page appeared; better a date than none, which leaves the crawler guessing.
+        return obj.approved_at
+
     def priority(self, obj):
         # An event still to come is the one worth crawling first; a finished one is an archive page.
         import datetime

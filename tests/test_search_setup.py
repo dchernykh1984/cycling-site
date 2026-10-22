@@ -6,6 +6,7 @@ the two consoles read, the home page saying whose site it is, every language of 
 in the sitemap, the calendar's own views in it, and a date on every event entry.
 """
 
+import datetime
 import json
 import re
 from pathlib import Path
@@ -13,7 +14,9 @@ from pathlib import Path
 from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
+from calendar_app.models import Competition
 from cycling_site.jsonld import dumps
 
 
@@ -127,3 +130,25 @@ class SitemapLanguagesTests(TestCase):
 
     def test_the_index_offers_the_new_section(self):
         self.assertIn("sitemap-sections.xml", self.client.get(reverse("sitemap")).content.decode())
+
+
+class CompetitionLastmodTests(TestCase):
+    def test_an_approved_event_carries_a_date(self):
+        comp = Competition.objects.create(
+            title_ru="Dated race",
+            date_start=datetime.date.today() + datetime.timedelta(days=5),
+            status=Competition.Status.APPROVED,
+            approved_at=timezone.make_aware(datetime.datetime(2026, 9, 1, 12, 0)),
+        )
+        body = self.client.get(reverse("sitemap_section", args=["competitions"])).content.decode()
+        entry = body[body.index(comp.get_absolute_url()) :].split("</url>")[0]
+        self.assertIn("<lastmod>2026-09-01", entry)
+
+    def test_an_event_without_an_approval_date_is_still_listed(self):
+        comp = Competition.objects.create(
+            title_ru="Undated race",
+            date_start=datetime.date.today() + datetime.timedelta(days=5),
+            status=Competition.Status.APPROVED,
+        )
+        body = self.client.get(reverse("sitemap_section", args=["competitions"])).content.decode()
+        self.assertIn(comp.get_absolute_url(), body)
