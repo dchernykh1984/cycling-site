@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static i18n knowledge_tags locations_tags %}
+{% load static i18n knowledge_tags locations_tags seo_tags %}
 
 {% block title %}{% if site_content.page_title %}{{ site_content.page_title }}{% else %}{{ page.title }}{% endif %}{% endblock %}
 
@@ -47,6 +47,6 @@ in the top row, beside the owner's edit button.{% endcomment %}
   {% endif %}
 </div>
 {% if site_content.body %}
-<div class="home-body">{{ site_content.body|safe }}</div>
+<div class="home-body">{{ site_content.body|safe|localized_links }}</div>
 {% endif %}
 {% endblock %}

@@ -6,6 +6,8 @@ from django.test import TestCase
 from django.utils import translation
 
 from calendar_app.models import Competition
+from cycling_site import skins
+from home.models import SiteContent
 from home.templatetags.seo_tags import localized_links
 
 
@@ -51,3 +53,13 @@ class LocalizedLinksOnPagesTests(TestCase):
         self.assertContains(self.client.get(f"/kk/calendar/{comp.pk}/"), 'href="/kk/calendar/719/"')
         comp.refresh_from_db()
         self.assertIn('href="/calendar/719/"', comp.description_ru)  # nothing stored changes
+
+    def test_the_home_page_text_links_in_the_page_language_in_every_skin(self):
+        content = SiteContent.load()
+        content.body_ru = '<p><a href="/calendar/">calendar</a></p>'
+        content.save()
+        for key in skins.registry():
+            with self.subTest(skin=key):
+                self.client.cookies[skins.COOKIE] = key
+                html = self.client.get("/ru/").content.decode()
+                self.assertRegex(html, r'class="home-body"><p><a href="/ru/calendar/"')
