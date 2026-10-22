@@ -21,13 +21,25 @@ take inside a pull request. How skins work and who owns them is the `skins` skil
 the four states of a view, forms and speed on a phone. Read it when building a page, a form or
 anything that loads.
 
+## Widths
+
+The site is one page for every device, with no separate version for phones or tablets -- as
+Meetup, Eventbrite and Zwift are built.
+
+- **Phone, from 360px: the main focus.** Every rule holds in full. The menu is folded and the
+  filters sit behind one button.
+  - **The narrowest phones, 320px.** Not a focus. Only one thing is checked: nothing is cut off or
+    spills over -- past the screen's edge or a button's frame.
+- **Desktop, from 1200px.** Every rule holds in full. The menu and the filter panel are open.
+  - **Tablets, 768-1199px.** Not a focus, checked minimally: nothing scrolls sideways, nothing is
+    cut off, no word breaks into letters. A tablet held upright (768px) gets the phone layout, one
+    turned on its side (1024px) the desktop one: the layout switches at 992px, Bootstrap's `lg`.
+
 ## Principles
 
-1. **Phone first.** Design a page for phones 360px wide and up, then let it grow. On the narrowest
-   phones (320px) only one thing is asked: nothing is cut off or spills over -- past the screen's
-   edge or a button's frame. A
-   seven-column month grid spread October over about five phone screens with titles cut to a few
-   letters; a list by days reads. On a wide screen the grid can stay -- as a choice.
+1. **Phone first.** Design a page for the phone first, then let it grow. A seven-column month grid
+   spread October over about five phone screens with titles cut to a few letters; a list by days
+   reads. On a wide screen the grid can stay -- as a choice.
 2. **Content before controls.** The first screen shows events. On a phone the filters fold behind
    one button that says how many are in force ("Filters (2)"), and the ones in force show as chips
    that remove themselves on a tap (both from #330). Before #330 a guest scrolled past a sign-in
@@ -55,9 +67,13 @@ anything that loads.
 8. **Words with every icon and every colour.** An arrow, an icon or a colour never carries meaning
    alone: next to it is visible text, or at least an `aria-label`. A `title` is not enough -- a
    phone never shows it and screen readers do not reliably read it.
-9. **Built for a finger.** Anything tappable is at least 44x44px on a phone, with room between
-   neighbours. WCAG 2.2 AA asks for 24px (2.5.8); 44px (2.5.5, AAA) is a deliberate choice for
-   people tapping on the move, where a missed tap on a period arrow pages the wrong way.
+9. **Built for a finger and a mouse.** Every control answers a tap across at least 44x44px on a
+   phone and a click across at least 24x24px on a desktop. How big it is drawn is the skin's
+   choice: a slim 32px pill with an invisible 44px zone around it is fine. The zone is centred on
+   the control and the zones of neighbours do not overlap -- rows of controls stand far enough
+   apart. Nothing that matters is reachable only by hovering: a phone has no hover. WCAG 2.2 AA
+   asks for 24px (2.5.8); 44px (2.5.5, AAA) is Apple's minimum for the iPhone and iPad, and our
+   deliberate choice for the phone, where people tap on the move.
 10. **Three languages, the longest first.** Size a control for its longest label, usually Kazakh;
     a word cut off only shows in the language nobody checked.
     - A group of buttons that belong together -- the period kinds, the view switch -- stays in one
@@ -74,10 +90,14 @@ anything that loads.
     - At 320px the room around the words is not asked for: a label only must not be cut off or
       spill over its frame.
 11. **Readable in every skin, in every state.** Text at least 4.5:1 against what it is drawn on
-    (3:1 for large text) at rest, under the pointer and in focus -- a button that is readable at
-    rest can turn white on pale grey when hovered (1.49:1 on the view tabs in light). A control's
-    border, an icon and the focus ring at least 3:1 against their surroundings (WCAG 1.4.11) -- an
-    outline button's border is all that says it is a button.
+    (3:1 for large text) at rest and under the pointer -- a button that is readable at rest can
+    turn white on pale grey when hovered (1.49:1 on the view tabs in light). A boundary needs 3:1
+    only where nothing else shows the control: a text field, a checkbox, a button that is an icon
+    alone -- then the icon itself needs 3:1. A button with words is known by its words: its border
+    needs no 3:1 and may be as light as the skin draws it, but it is not removed -- it shows where
+    to tap (WCAG 1.4.11 and its Understanding notes). What shows a selection needs 3:1 always.
+    Exception: moving through the controls with the Tab key, and the focus ring, are not checked
+    for now.
 12. **Few words, and the right ones.** A hint takes one line. A button says what happens ("Show 12
     events", "Reset"), not "OK". Labels use the reader's words ("Weekend"), not the database's.
 13. **The look belongs to the skin.** Colours, fonts and radii come from the skin's variables
@@ -96,10 +116,10 @@ skin's (principle 13); this section is about what any skin draws.
 | Quality | What it means | How to tell |
 | --- | --- | --- |
 | **Calm** | Neutral surfaces; colour is kept for meaning -- the event's type, its sport, what is "ours" -- and for the one main action. | At most one filled button per view; every colour on screen can be named for what it means. |
-| **Readable at arm's length** | In a list, the date, the sport and the title are what the eye lands on; everything else is quieter. | Squint test: blur a 375px screenshot -- date, sport and title still stand apart from the rest. |
+| **Readable at arm's length** | In a list, the date, the sport and the title are what the eye lands on; everything else is quieter. | Squint test: blur a 360px screenshot -- date, sport and title still stand apart from the rest. |
 | **Clear type** | Few sizes, set apart by weight and size together; dates and times in figures of equal width, so columns of them line up. | At most two font families and five text sizes on a page. |
 | **Even rhythm** | One spacing scale, one radius, one way of building each pattern; edges line up down the page. | The same pattern looks the same on every page it appears; no one-off margins in a template. |
-| **Dense, not crowded** | A phone screen carries several events, each still easy to tap. | At 375px, at least three events are visible below the header on the first screen of a list. |
+| **Dense, not crowded** | A phone screen carries several events, each still easy to tap. | At 360px, at least three events are visible below the header on the first screen of a list. |
 
 ### Patterns
 
@@ -131,14 +151,14 @@ second page.
 | --- | --- |
 | Sibling views include the same partial for each shared control -- `_view_switcher.html` and, from #330, `_period_nav.html`, `_filter_toggle.html`, `_filter_chips.html` -- and switching tabs moves no control. | `tests/e2e/test_interface_rules.py::test_switching_tabs_moves_none_of_the_controls` |
 | The period is named in words on every tab. | `test_the_period_is_named_in_words` |
-| Every control in the shared header is at least 44x44px on a phone. | `test_every_control_is_big_enough_to_tap_on_a_phone` |
-| Nothing scrolls sideways, from 320px up. | `test_no_tab_scrolls_sideways`, `test_calendar_view.py` |
+| Every control in the shared header answers a tap across 44x44px on a phone and 24x24px on a desktop; the zones of neighbours do not overlap. | `test_every_control_is_big_enough_to_tap` -- where a tap lands, not how big the frame is |
+| Nothing scrolls sideways, nothing is cut off, no word breaks into letters -- at 320, 768 and 1024px only these; at 360 and 1280px every rule. | `test_no_tab_scrolls_sideways`, `test_every_label_fits_its_control`, `test_calendar_view.py` |
 | A group of buttons that belong together stays in one row, from 360px up. | `test_a_button_group_stays_in_one_row` |
 | Every label fits its control in ru, kk and en, from 360px up: at most two lines, spaced at least 1.2, at least 8px from the frame at the sides and 4px above and below; at 320px nothing is cut off or spills over its frame. | `test_every_label_fits_its_control` |
 | Every control has words: visible text or `aria-label`. | `test_every_control_says_what_it_does` |
 | No hex colour in a template outside `skins/`. | pre-commit `no-hex-colours-in-templates` |
-| Text at least 4.5:1 (3:1 large) in every skin, at rest, under the pointer and in focus. | `test_skin_contrast.py`, `test_the_header_is_readable_in_this_skin` |
-| A control's border at least 3:1 against what surrounds it. | `test_every_border_can_be_seen` |
+| Text at least 4.5:1 (3:1 large) in every skin, at rest and under the pointer. | `test_skin_contrast.py`, `test_the_header_is_readable_in_this_skin` |
+| A control without words -- a field, a checkbox, an icon button -- has a boundary or an icon at least 3:1 against what surrounds it. | `test_every_border_can_be_seen` -- leaves out controls with visible words |
 | What is selected stands out from the unselected by at least 3:1 in its fill or its frame, and carries `aria-current` or `aria-pressed`. | `test_what_is_selected_can_be_seen` |
 | An active button keeps the border of the inactive ones: `btn-outline-secondary active`, never `btn-secondary`. Lux draws `btn-secondary` with no border, so the active tab came out 4px narrower and moved its neighbours. | `test_the_active_tab_keeps_the_border_of_the_others` |
 | A hint takes one line. | `test_a_hint_takes_one_line` |
@@ -149,11 +169,12 @@ ring, the patterns, and everything in `reference.md`.
 
 ## Before calling a page done
 
-- Open it at 375px and at 320px in `/kk/`: does anything scroll sideways, spill or get cut off?
+- Open it at 360, 768 and 1024px and at 320px in `/kk/`: does anything scroll sideways, spill or
+  get cut off?
 - Switch between its sibling tabs, and reload it: does anything move?
 - Turn two filters on and switch tabs: are the filters still in force?
-- Look at it in the dark skin, and tab through it with the keyboard: is the focus always visible,
-  and does every control say what it does and, if it toggles, whether it is on?
+- Look at it in the dark skin: does every control say what it does and, if it toggles, whether it
+  is on?
 - Empty it (a period with nothing on): does it say so and offer the next step?
 - Run the checks below.
 
@@ -164,6 +185,8 @@ ring, the patterns, and everything in `reference.md`.
   for it (the period row's `#period-extra`, from #330).
 - Measure, do not assume a size: Lux's `btn-sm` comes out 44px tall in the calendar's header, while
   the share button, styled on its own, is 36px. `2.75rem` is 44px at the browser's default 16px.
+- A slim control gets its 44px from an invisible layer around it, not by growing; keep rows of
+  controls far enough apart that those layers do not overlap.
 - A button that toggles says whether it is on: `aria-pressed` (favourite, a period kind) or
   `aria-expanded` (the filter panel), changed by the same script that changes its look.
 - A new colour is a new skin variable: add it to `skins/light/skin.css` and `skins/dark/skin.css`,
@@ -192,5 +215,6 @@ pre-commit run no-hex-colours-in-templates --all-files
 ```
 
 `--reuse-db` keeps the test database between runs: creating it costs about 50 seconds a start.
-The test sets its phone (360px; 320px for what is cut off or spills over) and desktop widths
-itself; CI runs it in every browser job and, via the `e2e-skin` jobs, in every skin.
+The test sets its widths itself -- 360 and 1280px for every rule; 320, 768 and 1024px for what
+scrolls sideways, is cut off or breaks into letters -- and CI runs it in every browser job and, via
+the `e2e-skin` jobs, in every skin.
