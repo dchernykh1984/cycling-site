@@ -114,8 +114,9 @@ One page for every device, no separate version for phones or tablets.
       buttons of a row share a height.
     - When a label would need a third line, or come closer to the frame, in any language at 360px:
       shorten the words in all three catalogues and make the type smaller -- for the whole row,
-      never below 12px, the smallest label size in Apple's and Google's type scales. The floor is
-      for type made smaller to fit, not for labels a skin sets small on purpose.
+      never below 12px, one step above the smallest size in Apple's (11pt) and Google's (11sp)
+      type scales. The floor is for type made smaller to fit, not for labels a skin sets small on
+      purpose.
     - At 320px a label only must not be cut off or spill over its frame.
     - Why: a word cut off shows only in the language nobody checked; a row folded in two reads as
       a grid.
