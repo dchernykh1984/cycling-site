@@ -48,6 +48,9 @@ _RESIZE_SCRIPT = (
     b'window.parent.postMessage(Object.assign({type:"protocol-loaded"},__META__),"*");}'
     b'if(document.readyState==="loading"){'
     b'document.addEventListener("DOMContentLoaded",l);}else{l();}'
+    # The page's script may start after this frame has already reported: it asks again.
+    b'window.addEventListener("message",function(e){'
+    b'if(e.source===window.parent&&e.data&&e.data.type==="protocol-measure")l();});'
     b"new MutationObserver(s).observe(document.documentElement,"
     b'{attributes:true,childList:true,subtree:true,attributeFilter:["style"]});'
     b"})();</script>"
