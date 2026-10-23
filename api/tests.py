@@ -4192,6 +4192,14 @@ class CompetitionPreviewTextApiTests(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 201, resp.content[:300])
         self.assertEqual(Competition.objects.get(pk=resp.json()["id"]).preview_text_ru or "", "")
 
+    def test_reading_one_language_preserves_empty_preview_translations(self):
+        line = {"ru": "Meet 6:15", "kk": "", "en": ""}
+        created = self._create(preview_text=line).json()
+        self.assertEqual(created["preview_text"], line)
+        response = self.get(f"/api/v1/competitions/{created['id']}", user=self.admin)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["preview_text"], line)
+
     def test_patching_replaces_it(self):
         pk = self._create(preview_text={"ru": "Meet 6:15"}).json()["id"]
         resp = self.patch(f"/api/v1/competitions/{pk}", {"preview_text": {"ru": "Meet 7:00"}}, user=self.admin)
@@ -4205,6 +4213,7 @@ class CompetitionPreviewTextApiTests(TestCase, ApiTestMixin):
         resp = self.patch(f"/api/v1/competitions/{pk}", {"preview_text": {"ru": "Meet 7:00"}}, user=self.admin)
         self.assertEqual(resp.status_code, 200, resp.content[:300])
         competition = Competition.objects.get(pk=pk)
+        self.assertEqual(resp.json()["preview_text"], {"ru": "Meet 7:00", "kk": "", "en": ""})
         self.assertEqual(competition.preview_text_ru, "Meet 7:00")
         self.assertEqual(competition.preview_text_kk or "", "")
         self.assertEqual(competition.preview_text_en or "", "")

@@ -27,7 +27,8 @@ and protocols with the event's upload token. The API has no language prefix.
    update it, resubmit it after rejection and soft-delete it; only an admin may hide or unhide it;
    descriptions are sanitised and size-limited. An event's link preview text is read and written
    per language like its title (up to 200 characters each; a PATCH carrying one language clears
-   the others), and left empty the chat shows the date and the place (issue #318).
+   the others). Reads preserve empty languages, so writing a response back keeps the chat's
+   date-and-place fallback in those languages (issue #318).
 3. **Given** locations, **Then** the tree can be read; an organizer may get or create a city's
    catch-all venue; a venue is created approved by an organizer and proposed by a participant;
    regions and cities are always proposed (organizer and up), countries created by admins only;

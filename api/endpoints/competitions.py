@@ -105,7 +105,13 @@ class CompetitionOut(Schema):
 
     @staticmethod
     def resolve_preview_text(obj: Competition) -> LocalizedStr:
-        return localize_field(obj, "preview_text")
+        # An empty locale means the chat uses its generated summary; a fallback here would
+        # turn an API read/write round trip into an unwanted translation.
+        return LocalizedStr(
+            ru=obj.preview_text_ru or "",
+            kk=obj.preview_text_kk or "",
+            en=obj.preview_text_en or "",
+        )
 
     @staticmethod
     def resolve_discipline_ids(obj: Competition) -> list[int]:
