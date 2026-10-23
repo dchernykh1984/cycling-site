@@ -65,6 +65,27 @@ with what each paints, at the top of `skins/dark/skin.css`:
 }
 ```
 
+### Protocols drawn from their data
+
+A protocol uploaded as a structured document (issue #310) is drawn by the site itself, in
+`protocols/static/protocols/protocol.css`, from the theme's Bootstrap variables -- so it already
+takes a skin's colours. To restyle it further, target these classes from `skin.css`:
+
+| Class | What it is |
+| --- | --- |
+| `.protocol-doc` | the whole protocol |
+| `.protocol-header`, `.protocol-footer` | lines above and below the tables |
+| `.protocol-field`, `.protocol-field--<key>` | one labelled line (`weather`, `referee`, ...) |
+| `.protocol-panel`, `.protocol-search`, `.protocol-groups`, `.protocol-toggle`, `.protocol-mode` | search, group chips, column switches, the full-table button |
+| `.protocol-table`, `.protocol-group-row` | a table and its row of column groups |
+| `.protocol-row`, `.protocol-row.status-<s>` | a competitor's row; `<s>` is `dnf`, `dns`, `dsq`, ... |
+| `.protocol-cell-sub` | a cell's second lines (gap, laps) |
+| `.protocol-note` | the always-visible note under a row (reasons for a DSQ) |
+| `.protocol-row-expand`, `.protocol-details` | the button and the row of columns that do not fit |
+
+Do not hide columns from a skin: which columns a phone shows is the protocol's choice (column
+priorities), and the header groups are recounted only for columns the script hides.
+
 ### templates/
 
 A file at `skins/<key>/templates/<path>` replaces the site's template at the same `<path>`, for

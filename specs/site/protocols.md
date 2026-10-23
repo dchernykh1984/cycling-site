@@ -2,18 +2,25 @@
 
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-23
-**Code**: `protocols/` (models, views), `protocols/static/protocols/protocol-live.js`, `api/endpoints/protocols.py`
-**Tests**: `protocols/tests.py`, `tests/test_protocol_images.py`,
-`tests/e2e/test_competition_result_emphasis.py`, `tests/e2e/test_protocol_live.py`, `api/tests.py`
+**Code**: `protocols/` (models, views, `protocols/document.py`, `protocols/rendering.py`),
+`protocols/static/protocols/`, `protocols/schema/protocol-document-v1.json`, `api/endpoints/protocols.py`
+**Tests**: `protocols/tests.py`, `tests/test_protocol_images.py`, `tests/test_protocol_document.py`,
+`tests/test_protocol_upload.py`, `tests/e2e/test_competition_result_emphasis.py`,
+`tests/e2e/test_protocol_live.py`, `tests/e2e/test_protocol_document.py`, `api/tests.py`
 (protocol endpoints)
 **Related**: [events](events.md), [API](api.md); the `protocols` skill holds the security detail
 
 ## Overview
 
-A protocol is an HTML results file made by the timing software and uploaded through the API with
-the event's upload token. The event page links its protocols; each opens on a page of its own that
-shows the file in a sandboxed frame and, while results are live, refreshes it as new uploads
-arrive.
+A protocol is what the timing software uploads through the API with the event's upload token: the
+HTML file it writes for itself, a structured document describing the results (issue #310), or both
+from one run. The event page links its protocols; each opens on a page of its own. A document is
+drawn by the site, in its own look, for a phone and a desktop and in every skin; HTML alone is shown
+as it was written, in a sandboxed frame. While results are live the page follows new uploads.
+
+The document describes itself -- sections, columns with their labels, roles and priorities, cells,
+header and footer lines, groups and column switches -- so a new column, header field or kind of
+table needs a change in the generator only; the site knows nothing of laps, attempts or referees.
 
 ## User Scenarios
 
@@ -26,6 +33,13 @@ arrive.
    kept as a version; the ten most recent versions are kept.
 3. **Given** a delete call for a type, **Then** that protocol and its versions are removed and its
    link leaves the event page.
+4. **Given** an upload with a structured document (`document`, JSON, schema 1), with or without the
+   HTML, **Then** the protocol holds exactly what that upload carried -- the last upload wins in both
+   directions -- and the call says which form is shown. A document that cannot be accepted is a 400
+   alone; sent with HTML, the HTML is stored and `document_error` says why.
+5. **Given** an upload that fails half-way (storage or database), **Then** the protocol keeps its
+   previous content and file and nothing new is left on disk; uploads of one event take turns, so
+   the protocol never mixes two uploads.
 
 ### Story 2 -- Read results (P1)
 
@@ -46,12 +60,26 @@ arrive.
    opens the protocol on a page of its own (where a browser has no fullscreen for a frame, the
    button opens that page).
 
+### Story 3 -- Read a drawn protocol on a phone (P1)
+
+1. **Given** a phone, **Then** each table shows its main columns (place, number, name, result, or
+   the document's priority 1; a table with none keeps its first three), the page never scrolls
+   sideways, and a button on each row (keyboard-reachable) opens the columns that do not fit.
+   Tablets show priority 1-2, desktops everything; "Full table" shows every column, scrolling
+   inside the table.
+2. **Given** a reader, **Then** they search by name or number, filter by the document's groups (in
+   every table, whatever its layout), and switch the document's toggled columns; notes such as the
+   reasons for a DSQ are always visible under their row.
+3. **Given** a live drawn protocol, **Then** a newer upload swaps in its tables and keeps the reader's
+   search, group and switches by their ids; a group that disappeared falls back to "All".
+4. **Given** a protocol in another language than the page, **Then** the page says which.
+
 ### Edge Cases
 
 - Unknown token: 401; no token: 422; an event not approved: 401; wrong protocol type, wrong content
-  type or an over-size file: 400; GET on the upload endpoint: 405.
-- A protocol of an event that is not approved, hidden or deleted -- its page, its file and its
-  last-updated hash -- is 404; a protocol of an invite-only event is 404 to anyone not let in.
+  type, an over-size file or neither a file nor a document: 400; GET on the upload endpoint: 405.
+- A protocol of an event that is not approved, hidden or deleted -- its page, its file, its fragment
+  and its last-updated hash -- is 404; a protocol of an invite-only event is 404 to anyone not let in.
 
 ## Functional Requirements
 
@@ -70,15 +98,28 @@ arrive.
   lands between the check and the load can neither be shown under another upload's flag nor end
   live early. Content in another form than the page reloads the page.
 - **FR-PRO-006**: The protocol page's link preview title is "<event> -- <kind of protocol>".
+- **FR-PRO-007**: The document's schema is `protocols/document.py`, exported to
+  `protocols/schema/protocol-document-v1.json` for the generators. Within a major version unknown
+  fields are ignored, an unknown section type is drawn by its shape, an unknown role means none; an
+  id used twice, a cell or a reference to something undeclared, or a non-http(s) link is refused.
+- **FR-PRO-008**: A document may hold at most 100 000 table cells (rows x columns over every table,
+  plus one per note), 200 columns and 5000 rows per table, 20 000 rows, 500 sections nested 3 deep.
+- **FR-PRO-009**: HTML lines of a document are sanitized and keep only pictures from this site or
+  inline (as FR-PRO-003); cell links are http(s), `nofollow noopener`.
+- **FR-PRO-010**: `protocols/<pk>/fragment/` returns the drawn document with the hash, live flag and
+  form of the row it was drawn from (`X-Protocol-*`); a protocol without a document answers empty.
 
 ## Key Entities
 
-- **Protocol**: event, type, HTML file, last updated, live flag, stage label.
-- **ProtocolVersion**: an earlier file of a protocol (ten kept).
+- **Protocol**: event, type, HTML file and/or structured document, last updated, live flag, stage
+  label, hash of the upload.
+- **ProtocolVersion**: an earlier upload of a protocol, its file and/or document (ten kept).
 
 ## Local assumptions
 
-- None known.
+- None known. A protocol document belongs to one language (`lang`), like a knowledge article: its
+  labels are the referee's, not translated (an exception to constitution principle IV, recorded
+  here).
 
 ## Open Questions
 
