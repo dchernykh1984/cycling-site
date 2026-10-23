@@ -163,3 +163,31 @@ def test_enter_in_an_empty_search_does_not_submit_the_album(page: Page, live_ser
     page.wait_for_load_state("networkidle")
     expect(page).to_have_url(live_server.url + "/ru/gallery/albums/new/")
     assert not Album.objects.exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_picking_an_event_fills_every_title_and_the_date_and_they_stay_editable(
+    page: Page, live_server, admin_user, gallery_event
+):
+    _open(page, live_server, admin_user)
+    page.locator("#gallery-event-query").fill("Gran Fondo")
+    page.get_by_role("option").filter(has_text="Gran Fondo").first.click()
+    expect(page.locator("#id_title_ru")).to_have_value("Gran Fondo")
+    expect(page.locator("#id_title_kk")).to_have_value("Gran Fondo KK")
+    expect(page.locator("#id_title_en")).to_have_value("Gran Fondo EN")
+    expect(page.locator("#id_date")).to_have_value(DAY.isoformat())
+    page.locator("#id_title_ru").fill("Gran Fondo: the best shots")
+    _save(page)
+    album = Album.objects.get()
+    titles = tuple(getattr(album, f"title_{language}") for language in ("ru", "en"))
+    assert (*titles, album.date) == ("Gran Fondo: the best shots", "Gran Fondo EN", DAY)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_title_typed_by_hand_survives_picking_an_event(page: Page, live_server, admin_user, gallery_event):
+    _open(page, live_server, admin_user)
+    page.locator("#id_title_ru").fill("My own title")
+    page.locator("#gallery-event-query").fill("Gran Fondo")
+    page.get_by_role("option").filter(has_text="Gran Fondo").first.click()
+    expect(page.locator("#id_title_ru")).to_have_value("My own title")
+    expect(page.locator("#id_title_kk")).to_have_value("Gran Fondo KK")

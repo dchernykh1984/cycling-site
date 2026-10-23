@@ -33,15 +33,29 @@
     });
   }
 
-  function select(event) {
+  // Picking an event fills the album's titles and date from it -- every language -- and they stay
+  // editable. A field the person already changed by hand keeps their text: only an empty one, or one
+  // still holding what the previous event put there, takes the new event's value.
+  // On the page's first draw nothing is written: an album being edited shows what it holds; the
+  // linked event's values are only remembered, so a title still equal to them follows a new pick.
+  function fill(field, text, write) {
+    if (!field) return;
+    if (write && (field.value === '' || field.value === field.dataset.filled)) field.value = text;
+    field.dataset.filled = text;
+  }
+
+  function select(event, picked) {
     value.value = event ? event.id : '';
     summary.replaceChildren();
     if (event) facts(summary, event);
     else summary.textContent = picker.dataset.none;
     clear.hidden = !event;
     ['ru', 'kk', 'en'].forEach(function (language) {
-      document.getElementById('id_title_' + language).placeholder = event ? event.titles[language] : '';
+      var title = document.getElementById('id_title_' + language);
+      title.placeholder = event ? event.titles[language] : '';
+      if (event) fill(title, event.titles[language], picked);
     });
+    if (event) fill(document.getElementById('id_date'), event.date, picked);
     input.value = '';
     status.textContent = '';
     close();
@@ -87,7 +101,7 @@
         button.setAttribute('role', 'option');
         button.setAttribute('aria-selected', String(String(event.id) === value.value));
         facts(button, event);
-        button.addEventListener('click', function () { select(event); input.focus(); close(); });
+        button.addEventListener('click', function () { select(event, true); input.focus(); close(); });
         menu.appendChild(button);
       });
       menu.hidden = options.length === 0;
@@ -114,7 +128,7 @@
       highlight(active < 0 && step < 0 ? options.length - 1 : active + step);
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      if (!menu.hidden && options.length) select(options[active < 0 ? 0 : active]);
+      if (!menu.hidden && options.length) select(options[active < 0 ? 0 : active], true);
     } else if (event.key === 'Escape' || event.key === 'Tab') close();
   });
   clear.addEventListener('click', function () { select(null); });

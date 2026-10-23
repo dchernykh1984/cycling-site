@@ -79,6 +79,7 @@ def describe_events(queryset):
                 "id": event.pk,
                 "title": event.title,
                 "titles": {language: getattr(event, f"title_{language}") or "" for language in ("ru", "kk", "en")},
+                "date": event.date_start.isoformat(),
                 "url": event.get_absolute_url(),
                 "details": [{"label": label, "value": value} for label, value in facts if value],
             }
