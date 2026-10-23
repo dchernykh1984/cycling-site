@@ -186,3 +186,16 @@ def test_fullscreen_button_has_a_name_and_the_protocol_opens_on_its_own(page: Pa
     expect(page.get_by_role("button", name=fullscreen)).to_be_visible()
     link = page.get_by_role("link", name=separately)
     expect(link).to_have_attribute("href", f"/ru/protocols/{protocol.pk}/html/?v={protocol.file_hash}")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_frame_grows_to_the_whole_protocol(page: Page, live_server, approved_competition):
+    protocol = Protocol(competition=approved_competition, protocol_type="absolute", is_live=False)
+    content = b'<html><body><div style="height: 2500px">Tall</div><p>Bottom line</p></body></html>'
+    protocol.html_file.save("protocol.html", ContentFile(content), save=False)
+    protocol.file_hash = hashlib.sha256(content).hexdigest()
+    protocol.save()
+    for _ in range(3):  # the frame may finish loading before or after the page script: both must size it
+        page.goto(f"{live_server.url}/ru/protocols/{protocol.pk}/")
+        expect(page.frame_locator("#protocol-frame").get_by_text("Bottom line")).to_be_attached()
+        page.wait_for_function("() => document.getElementById('protocol-frame').offsetHeight > 2500")

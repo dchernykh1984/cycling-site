@@ -61,6 +61,9 @@
     }
   });
 
+  // The frame may have loaded and reported its size before this script started listening.
+  frame.contentWindow.postMessage({ type: "protocol-measure" }, "*");
+
   var fsBtn = document.getElementById("fullscreen-btn");
   if (fsBtn) {
     fsBtn.addEventListener("click", function () {
