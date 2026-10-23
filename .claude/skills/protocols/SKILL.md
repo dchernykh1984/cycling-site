@@ -5,8 +5,27 @@ description: Race protocols - how an uploaded results file is served, why it is 
 
 # Protocols
 
-A protocol is an HTML results file produced by the timing software and uploaded through the API by
-a token the event carries. The site shows it on the event's page, inside an iframe.
+A protocol is what the timing software uploads through the API by a token the event carries: an HTML
+results file, a structured document, or both from one run. HTML alone is shown inside an iframe; a
+document is drawn by the site itself.
+
+## The structured document (issue #310)
+
+- Schema: `protocols/document.py` (pydantic), exported to
+  `protocols/schema/protocol-document-v1.json`; a test keeps the two equal. The generators
+  (FinishProtocolGeneratorPython, StravaProtocolGenerator) keep a copy of that file and check their
+  documents against it -- after changing the schema, copy it there too.
+- The site knows no sport: sections, columns (label, `role`, `priority`, `group`, `toggle`), cells
+  (`text`, `sub`, `url`, `strong`), rows (`group`, `status`, `note`), header/footer items, and the
+  `groups` and `toggles` registries. A new column or header line is a generator change only.
+- Compatibility: within schema 1 unknown fields are ignored and unknown section types drawn by their
+  shape. A breaking change is schema 2; the site refuses a major it does not know, and an upload
+  that also carried HTML falls back to it (`document_error`).
+- `protocols/rendering.py` turns the stored document into what the templates draw;
+  `protocol.css` / `protocol-doc.js` do the phone layout, search, group filter and toggles. The
+  limits (FR-PRO-008) bound what one upload costs to draw -- keep the cell budget when adding parts.
+- The upload switches a protocol in one transaction (event row locked, files written first under
+  new names, displaced files deleted on commit).
 
 ## It is somebody else's HTML on our domain
 

@@ -43,7 +43,8 @@ and protocols with the event's upload token. The API has no language prefix.
 1. **Given** the event's upload token (`competition_token`), **Then** a tool fetches the participants
    (only entries that count, category ids included, relay member names), uploads and fetches start
    lists, group-start times, finish times and remote control-point times per device, and uploads
-   protocols.
+   protocols -- an HTML file, a structured document (`protocols/schema/protocol-document-v1.json`),
+   or both from one run ([protocols](protocols.md)).
 2. **Given** a device uploads its stream, **Then** it carries the `client_revision` it is at: an
    older revision, or a different snapshot at the same revision, is refused with 409; an identical
    re-send or a newer revision replaces the stored one, and the stored revision is echoed back so a
