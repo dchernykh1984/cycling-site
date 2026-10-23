@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-22 21:50+0500\n"
+"POT-Creation-Date: 2026-10-23 16:13+0500\n"
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -3477,15 +3477,64 @@ msgid ""
 "The line a chat shows under the title when somebody pastes a link to this "
 "event; only about the first 80 characters show, and the chat cuts off the "
 "rest. For example: meet at 6:15, start at 6:30, by the main entrance. Leave "
-"it empty to show the date and the place. Write it before the link goes round:"
-" messengers remember the text they first saw for a long time."
+"it empty to show the date and the place. Write it before the link goes "
+"round: messengers remember the text they first saw for a long time."
 msgstr ""
-"Біреу осы іс-шараға сілтемені чатқа жапсырғанда атауының астында көрсетілетін"
-" жол; алғашқы 80-ге жуық таңба ғана көрінеді, қалғанын чат қиып тастайды. "
-"Мысалы: жиналу 6:15-те, старт 6:30-да, басты кіреберіс жанында. Бос "
-"қалдырсаңыз, күні мен орны көрсетіледі. Сілтеме таралмас бұрын жазыңыз: "
+"Біреу осы іс-шараға сілтемені чатқа жапсырғанда атауының астында "
+"көрсетілетін жол; алғашқы 80-ге жуық таңба ғана көрінеді, қалғанын чат қиып "
+"тастайды. Мысалы: жиналу 6:15-те, старт 6:30-да, басты кіреберіс жанында. "
+"Бос қалдырсаңыз, күні мен орны көрсетіледі. Сілтеме таралмас бұрын жазыңыз: "
 "мессенджерлер алғаш көрген мәтінді ұзақ есте сақтайды."
 
 #: calendar_app/templates/calendar_app/detail.html
 msgid "How a link to this event looks in a chat"
 msgstr "Оқиғаға сілтеме чатта осылай көрінеді"
+
+#: gallery/events.py:73
+#| msgid "Event type"
+msgid "Event types"
+msgstr "Іс-шара түрлері"
+
+#: gallery/templates/gallery/album_form.html:25
+#| msgid "Cycling events"
+msgid "Searching events..."
+msgstr "Іс-шаралар ізделуде..."
+
+#: gallery/templates/gallery/album_form.html:25
+#| msgid "No results found"
+msgid "No events found."
+msgstr "Іс-шаралар табылмады."
+
+#: gallery/templates/gallery/album_form.html:26
+msgid "More matches. Refine the search."
+msgstr "Сәйкестіктер көп. Іздеуді нақтылаңыз."
+
+#: gallery/templates/gallery/album_form.html:27
+msgid "Could not load events. Try again."
+msgstr "Іс-шаралар жүктелмеді. Қайталап көріңіз."
+
+#: gallery/templates/gallery/album_form.html:27
+#| msgid "No reported events."
+msgid "No linked event"
+msgstr "Іс-шараға байланыстырылмаған"
+
+#: gallery/templates/gallery/album_form.html:33
+msgid "Search by event name or year, in Cyrillic or Latin letters"
+msgstr "Іс-шараның атауы не жылы (кирилл немесе латын әріптері)"
+
+#: gallery/templates/gallery/album_form.html:35
+msgid ""
+"For an album without an event, leave this choice empty and enter its title "
+"and date."
+msgstr ""
+"Іс-шараға байланыстырылмаған альбом үшін бұл өрісті бос қалдырып, атауы мен "
+"күнін көрсетіңіз."
+
+#: gallery/templates/gallery/album_form.html:40
+#| msgid "Reported events"
+msgid "Remove event"
+msgstr "Іс-шараны алып тастау"
+
+#: gallery/views.py:45
+msgid "Search text is too long."
+msgstr "Іздеу сұрауы тым ұзын."

@@ -4,9 +4,11 @@ from typing import ClassVar
 
 from django import forms
 from django.conf import settings
+from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
 from calendar_app.models import Competition
+from gallery.events import public_events
 from gallery.models import Album
 
 
@@ -22,11 +24,23 @@ class AlbumForm(forms.ModelForm):
     23.10.2026 needs one choice instead of retyping. A title given by hand always wins.
     """
 
-    title = forms.CharField(
-        label=_("Title"),
+    title_ru = forms.CharField(
+        label=format_lazy("{} (RU)", _("Title")),
         max_length=200,
         required=False,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Gran Fondo 2026"}),
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    title_kk = forms.CharField(
+        label=format_lazy("{} (KK)", _("Title")),
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    title_en = forms.CharField(
+        label=format_lazy("{} (EN)", _("Title")),
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     date = forms.DateField(
         label=_("Date"),
@@ -37,33 +51,44 @@ class AlbumForm(forms.ModelForm):
         label=_("Event"),
         required=False,
         queryset=Competition.objects.none(),
-        widget=forms.Select(attrs={"class": "form-select"}),
+        widget=forms.HiddenInput(),
         help_text=_("Optional. The album is linked from the event page; an empty title and date are taken from it."),
     )
 
     class Meta:
         model = Album
-        fields = ("competition", "title", "date", "is_hidden")
+        fields = ("competition", "title_ru", "title_kk", "title_en", "date", "is_hidden")
         widgets: ClassVar[dict] = {"is_hidden": forms.CheckboxInput(attrs={"class": "form-check-input"})}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Only events anybody may see: an album is public, and it takes its event's title -- an
         # invite-only or hidden event's name would surface in the gallery and the sitemap.
-        self.fields["competition"].queryset = Competition.objects.filter(
-            status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False, invite_only=False
-        ).order_by("-date_start", "pk")
+        self.fields["competition"].queryset = public_events()
+
+    @property
+    def title_fields(self):
+        return [self[f"title_{language}"] for language in ("ru", "kk", "en")]
+
+    @property
+    def selected_event(self):
+        try:
+            return self.fields["competition"].clean(self["competition"].value())
+        except forms.ValidationError:
+            return None
 
     def clean(self):
         data = super().clean()
         competition = data.get("competition")
         if competition is not None:
-            if not data.get("title"):
-                data["title"] = competition.title
+            for language in ("ru", "kk", "en"):
+                field = f"title_{language}"
+                if not data.get(field) and field not in self.errors:
+                    data[field] = getattr(competition, field) or ""
             if not data.get("date"):
                 data["date"] = competition.date_start
-        if not data.get("title"):
-            self.add_error("title", _("Give the album a title, or pick the event it belongs to."))
+        if not any(data.get(f"title_{language}") for language in ("ru", "kk", "en")):
+            self.add_error("title_ru", _("Give the album a title, or pick the event it belongs to."))
         if not data.get("date"):
             self.add_error("date", _("Give the album a date, or pick the event it belongs to."))
         return data

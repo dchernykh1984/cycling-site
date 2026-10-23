@@ -436,6 +436,8 @@ main .competition-description ul, main .competition-description ol {
     color: var(--bs-secondary-color);
 }
 .gallery-album-title { margin: 0; font-size: 1.25rem; color: var(--bs-emphasis-color); }
+.gallery-event-options { max-height: 24rem; overflow-y: auto; }
+.gallery-event-options [role="option"] { text-align: start; overflow-wrap: anywhere; }
 .gallery-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));

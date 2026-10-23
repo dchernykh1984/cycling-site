@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-22 21:50+0500\n"
+"POT-Creation-Date: 2026-10-23 16:13+0500\n"
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -3479,15 +3479,64 @@ msgid ""
 "The line a chat shows under the title when somebody pastes a link to this "
 "event; only about the first 80 characters show, and the chat cuts off the "
 "rest. For example: meet at 6:15, start at 6:30, by the main entrance. Leave "
-"it empty to show the date and the place. Write it before the link goes round:"
-" messengers remember the text they first saw for a long time."
+"it empty to show the date and the place. Write it before the link goes "
+"round: messengers remember the text they first saw for a long time."
 msgstr ""
 "Строка, которую чат показывает под названием, когда кто-то вставляет ссылку "
-"на это мероприятие; видны примерно первые 80 символов, остальное чат обрежет."
-" Например: сбор в 6:15, старт в 6:30, у главного входа. Если оставить пустым,"
-" покажутся дата и место. Напишите её до того, как ссылку разошлют: "
-"мессенджеры надолго запоминают первый увиденный текст."
+"на это мероприятие; видны примерно первые 80 символов, остальное чат "
+"обрежет. Например: сбор в 6:15, старт в 6:30, у главного входа. Если "
+"оставить пустым, покажутся дата и место. Напишите её до того, как ссылку "
+"разошлют: мессенджеры надолго запоминают первый увиденный текст."
 
 #: calendar_app/templates/calendar_app/detail.html
 msgid "How a link to this event looks in a chat"
 msgstr "Так ссылка на событие выглядит в чате"
+
+#: gallery/events.py:73
+#| msgid "Event type"
+msgid "Event types"
+msgstr "Типы мероприятий"
+
+#: gallery/templates/gallery/album_form.html:25
+#| msgid "Cycling events"
+msgid "Searching events..."
+msgstr "Поиск мероприятий..."
+
+#: gallery/templates/gallery/album_form.html:25
+#| msgid "No results found"
+msgid "No events found."
+msgstr "Мероприятия не найдены."
+
+#: gallery/templates/gallery/album_form.html:26
+msgid "More matches. Refine the search."
+msgstr "Найдено больше совпадений. Уточните поиск."
+
+#: gallery/templates/gallery/album_form.html:27
+msgid "Could not load events. Try again."
+msgstr "Не удалось загрузить мероприятия. Попробуйте ещё раз."
+
+#: gallery/templates/gallery/album_form.html:27
+#| msgid "No reported events."
+msgid "No linked event"
+msgstr "Без мероприятия"
+
+#: gallery/templates/gallery/album_form.html:33
+msgid "Search by event name or year, in Cyrillic or Latin letters"
+msgstr "Поиск по названию или году, кириллицей или латиницей"
+
+#: gallery/templates/gallery/album_form.html:35
+msgid ""
+"For an album without an event, leave this choice empty and enter its title "
+"and date."
+msgstr ""
+"Для альбома без мероприятия оставьте это поле пустым и укажите название и "
+"дату."
+
+#: gallery/templates/gallery/album_form.html:40
+#| msgid "Reported events"
+msgid "Remove event"
+msgstr "Убрать мероприятие"
+
+#: gallery/views.py:45
+msgid "Search text is too long."
+msgstr "Поисковый запрос слишком длинный."

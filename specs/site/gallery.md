@@ -3,8 +3,10 @@
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-22
 **Code**: `gallery/` (models, permissions, images, forms, views, templates, sitemap section in
-`cycling_site/sitemaps.py`), `calendar_app/templates/calendar_app/detail.html` (the event's albums)
-**Tests**: `tests/test_gallery.py`, `tests/e2e/test_gallery_upload.py`, `tests/e2e/test_navbar_fits.py`
+`cycling_site/sitemaps.py`), `gallery/events.py`, `gallery/translation.py`,
+`calendar_app/templates/calendar_app/detail.html` (the event's albums)
+**Tests**: `tests/test_gallery.py`, `tests/test_gallery_localization.py`,
+`tests/e2e/test_gallery_upload.py`, `tests/e2e/test_gallery_event_picker.py`, `tests/e2e/test_navbar_fits.py`
 **Related**: [events](events.md), [site shell](site-shell.md), [search visibility](search-visibility.md);
 `gallery/README.md`; issue #349 (the wider gallery idea: bib numbers, external storage)
 
@@ -22,6 +24,10 @@ photos are kept exactly as they were taken, and only admins and the owner put th
    taken from an event they pick -- upload photos into it, pick its cover by clicking a photo (or
    "Make cover" on a photo's page), delete photos, hide the album while it is not ready, and delete
    it. Any admin may change any album, whoever created it.
+   Titles have ru / kk / en fields, at least one required without an event. Empty titles take
+   the event's actual translation in that language; a typed title wins. An empty date takes the
+   event's start date. "No linked event" is an explicit choice, and an existing link can be removed
+   without deleting the album or changing its titles.
 2. **Given** an organizer, a participant or a guest, **Then** they only look: the album form and
    every change answer 403 (or the sign-in page for a guest).
 3. **Given** an uploaded photo, **Then** it is kept byte for byte -- every pixel and its metadata --
@@ -35,6 +41,14 @@ photos are kept exactly as they were taken, and only admins and the owner put th
    with the arrow keys, and offers it to download as it was uploaded.
 2. **Given** an event with a public album, **Then** the event page lists it under "Photo albums".
 3. **Given** a link to an album pasted into a chat, **Then** the chat shows the album's cover.
+4. **Given** a linked public event, **Then** the album shows its localized name, start/end dates,
+   full visible location, event types, directions and disciplines, omitting missing facts and
+   the long description. If the event becomes hidden, deleted, unapproved or invite-only, the
+   facts and event link are no longer public.
+5. **Given** album titles and photo captions, **Then** pages, tabs, cards, photo pages and share
+   metadata use the address's language with the site's usual fallback. Forms and administration
+   expose each title; administration exposes each caption. Existing text becomes the RU value,
+   and no translation is invented.
 
 ### Edge Cases
 
@@ -58,16 +72,24 @@ photos are kept exactly as they were taken, and only admins and the owner put th
 - **FR-GAL-003**: Deleting a photo or an album deletes its files.
 - **FR-GAL-004**: Public albums are a sitemap section (`gallery`); the index and the list of albums
   are in `sections`.
+- **FR-GAL-005**: Album titles and photo captions are localized fields, as required by constitution
+  principle IV; introducing them preserves existing text.
+- **FR-GAL-006**: An album's optional event is selected with a keyboard-accessible searchable
+  control. It searches every title language and the event year, ignoring case and matching
+  Cyrillic and Latin transliterations (for example, Gran Fondo and its Cyrillic spelling).
+  Only public events are offered, only gallery editors may search, and at most 20 choices are
+  returned with a request to refine a broader query. The initial form does not load every event.
+- **FR-GAL-007**: The event selector and the album show the same localized event facts: name,
+  dates, location, types, directions and disciplines; no description. An album may have no event.
 
 ## Key Entities
 
-- **Album**: title, date, optional event, cover photo, hidden, created by.
-- **Photo**: album, original image (width, height), thumbnail, caption, order, uploaded by.
+- **Album**: title per locale, date, optional event, cover photo, hidden, created by.
+- **Photo**: album, original image (width, height), thumbnail, caption per locale, order, uploaded by.
 
 ## Local assumptions
 
 - The gallery's texts call the photos "our races, rides and training camps": the site's own club.
-- Album titles are one language, not three like an event's.
 
 ## Open Questions
 

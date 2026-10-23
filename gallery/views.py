@@ -4,11 +4,13 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Max
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET, require_POST
 
+from gallery.events import RESULT_LIMIT, describe_events, matching_ids, public_events
 from gallery.forms import AlbumForm, PhotoUploadForm, max_batch_mb, max_file_mb, max_files
 from gallery.images import THUMB_SIDE, PhotoError, process
 from gallery.models import Album, Photo
@@ -18,6 +20,36 @@ from gallery.permissions import can_create_album, can_manage_album
 TABS = 5
 PHOTOS_PER_PAGE = 48
 ALBUMS_PER_PAGE = 24
+
+
+def _selected_event(form):
+    event = form.selected_event
+    return describe_events(public_events().filter(pk=event.pk))[0] if event else None
+
+
+def _linked_event(album):
+    if album is None or album.competition_id is None:
+        return None
+    events = describe_events(public_events().filter(pk=album.competition_id))
+    return events[0] if events else None
+
+
+@login_required
+@require_GET
+@never_cache
+def event_choices(request):
+    if not can_create_album(request.user):
+        raise PermissionDenied
+    query = request.GET.get("q", "").strip()
+    if len(query) > 200:
+        return JsonResponse({"error": _("Search text is too long.")}, status=400)
+    ids = matching_ids(query)
+    return JsonResponse(
+        {
+            "results": describe_events(public_events().filter(pk__in=ids[:RESULT_LIMIT])),
+            "has_more": len(ids) > RESULT_LIMIT,
+        }
+    )
 
 
 def _visible_album(request, pk) -> Album:
@@ -56,6 +88,7 @@ def _album_page(request, album):
         "photos": photos,
         "can_create": can_create_album(request.user),
         "can_manage": album is not None and can_manage_album(request.user, album),
+        "linked_event": _linked_event(album),
         "meta_title": f"{_('Gallery')}: {album.title}" if album else _("Gallery"),
         "meta_description": (
             _("Photos from %(title)s, %(date)s.") % {"title": album.title, "date": f"{album.date:%d.%m.%Y}"}
@@ -156,6 +189,7 @@ def album_create(request):
             "form": form,
             "upload": upload,
             "action": "create",
+            "selected_event": _selected_event(form),
             "max_files": max_files(),
             "max_mb": max_file_mb(),
             "max_batch_mb": max_batch_mb(),
@@ -198,6 +232,7 @@ def album_edit(request, pk):
             "photos": album.photos.all(),
             "cover": album.cover_photo,
             "action": "edit",
+            "selected_event": _selected_event(form),
             "max_files": max_files(),
             "max_mb": max_file_mb(),
             "max_batch_mb": max_batch_mb(),
