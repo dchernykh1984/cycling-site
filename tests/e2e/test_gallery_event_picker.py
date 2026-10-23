@@ -191,3 +191,26 @@ def test_a_title_typed_by_hand_survives_picking_an_event(page: Page, live_server
     page.get_by_role("option").filter(has_text="Gran Fondo").first.click()
     expect(page.locator("#id_title_ru")).to_have_value("My own title")
     expect(page.locator("#id_title_kk")).to_have_value("Gran Fondo KK")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_switching_events_on_an_album_replaces_only_what_came_from_the_old_one(
+    page: Page, live_server, admin_user, gallery_event
+):
+    other = Competition.objects.create(
+        title_ru="Tour Alatau",
+        title_kk="Tour Alatau KK",
+        title_en="Tour Alatau EN",
+        date_start=DAY + datetime.timedelta(days=7),
+        status=Competition.Status.APPROVED,
+    )
+    album = Album.objects.create(
+        title_ru="Gran Fondo", title_kk="My Kazakh title", title_en="Gran Fondo EN", date=DAY, competition=gallery_event
+    )
+    _open(page, live_server, admin_user, f"/ru/gallery/albums/{album.pk}/edit/")
+    page.locator("#gallery-event-query").fill("Tour Alatau")
+    page.get_by_role("option").filter(has_text="Tour Alatau").first.click()
+    expect(page.locator("#id_title_ru")).to_have_value("Tour Alatau")
+    expect(page.locator("#id_title_kk")).to_have_value("My Kazakh title")
+    expect(page.locator("#id_title_en")).to_have_value("Tour Alatau EN")
+    expect(page.locator("#id_date")).to_have_value(other.date_start.isoformat())
