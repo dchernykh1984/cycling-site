@@ -3542,3 +3542,7 @@ msgstr "Іздеу сұрауы тым ұзын."
 #: protocols/templates/protocols/detail.html
 msgid "Could not update the results. Trying again in a minute."
 msgstr "Нәтижелерді жаңарту мүмкін болмады. Бір минуттан кейін қайталаймыз."
+
+#: protocols/templates/protocols/detail.html
+msgid "Open the protocol separately"
+msgstr "Хаттаманы бөлек ашу"

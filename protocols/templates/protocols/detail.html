@@ -34,9 +34,10 @@
     {% endif %}
     <div class="alert alert-warning mb-3" id="live-error" role="alert" hidden>{% trans "Could not update the results. Trying again in a minute." %}</div>
 
-    <div class="d-flex justify-content-end mb-1">
+    <div class="d-flex justify-content-end align-items-center gap-3 mb-1">
+      <a href="{% url 'protocol_html' protocol.pk %}?v={{ protocol.file_hash }}" target="_blank" rel="noopener" class="small" id="protocol-open-separately">{% trans "Open the protocol separately" %}</a>
       <button type="button" id="fullscreen-btn" class="btn btn-sm btn-outline-secondary px-2"
-              title="{% trans 'Fullscreen' %}">&#x26F6;</button>
+              title="{% trans 'Fullscreen' %}" aria-label="{% trans 'Fullscreen' %}">&#x26F6;</button>
     </div>
     <div id="protocol-wrap" style="overflow-x: auto; width: 100%; position: relative;"
          data-poll-url="{% url 'protocol_last_updated' protocol.pk %}"

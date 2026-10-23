@@ -174,3 +174,15 @@ def test_hiding_and_showing_the_tab_never_runs_two_polls_at_once(page: Page, liv
 
     assert page.evaluate("window.__polls") > 0
     assert page.evaluate("window.__maxInFlight") == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_fullscreen_button_has_a_name_and_the_protocol_opens_on_its_own(page: Page, live_server, approved_competition):
+    protocol = _live_protocol(approved_competition)
+    _open(page, live_server, protocol)
+    with override("ru"):
+        fullscreen = gettext("Fullscreen")
+        separately = gettext("Open the protocol separately")
+    expect(page.get_by_role("button", name=fullscreen)).to_be_visible()
+    link = page.get_by_role("link", name=separately)
+    expect(link).to_have_attribute("href", f"/ru/protocols/{protocol.pk}/html/?v={protocol.file_hash}")
