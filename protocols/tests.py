@@ -272,6 +272,11 @@ class ProtocolLastUpdatedTest(TestCase):
         response = self.client.get(f"/ru/api/protocols/{protocol.pk}/last_updated/")
         self.assertFalse(response.json()["is_live"])
 
+    def test_names_the_form_the_protocol_is_shown_in(self):
+        protocol = self._create_protocol()
+        response = self.client.get(f"/ru/api/protocols/{protocol.pk}/last_updated/")
+        self.assertEqual(response.json()["shown"], "html")
+
     def test_nonexistent_protocol_returns_404(self):
         response = self.client.get("/ru/api/protocols/99999/last_updated/")
         self.assertEqual(response.status_code, 404)
@@ -358,6 +363,23 @@ class ProtocolHtmlTest(TestCase):
         response = self.client.get(f"/ru/protocols/{protocol.pk}/html/")
         self.assertEqual(response.get("X-Frame-Options"), "SAMEORIGIN")
 
+    def test_frame_reports_the_upload_it_was_read_from(self):
+        protocol = self._create_protocol()
+        protocol.is_live = False
+        protocol.save(update_fields=["is_live"])
+        body = self.client.get(f"/ru/protocols/{protocol.pk}/html/").content.decode()
+        self.assertIn('type:"protocol-loaded"', body)
+        self.assertIn(f'"hash": "{protocol.file_hash}"', body)
+        self.assertIn('"is_live": false', body)
+        self.assertIn('"shown": "html"', body)
+
+    def test_frame_report_cannot_close_its_script(self):
+        from protocols.views import _inject_resize_script
+
+        body = _inject_resize_script(b"<body></body>", {"hash": "</script><b>", "is_live": True, "shown": "html"})
+        self.assertNotIn(b"</script><b>", body)
+        self.assertIn(b"\\u003c/script>", body)
+
     def test_protocol_without_file_returns_404(self):
         protocol = Protocol.objects.create(
             competition=self.competition,
@@ -443,6 +465,13 @@ class ProtocolDetailTest(TestCase):
         with override("en"):
             response = self.client.get(f"/en/protocols/{protocol.pk}/")
         self.assertContains(response, '<meta property="og:title" content="Test Race \u2014 Absolute results"')
+
+    def test_live_page_starts_from_the_shown_upload(self):
+        protocol = self._create_protocol(is_live=True)
+        response = self.client.get(f"/ru/protocols/{protocol.pk}/")
+        self.assertContains(response, f'data-hash="{protocol.file_hash}"')
+        self.assertContains(response, 'data-live="true"')
+        self.assertContains(response, 'data-format="html"')
 
     def test_non_live_shows_final_results(self):
         protocol = self._create_protocol(is_live=False)

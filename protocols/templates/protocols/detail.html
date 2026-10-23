@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% trans "Protocol" %} — {{ protocol.competition.title }}{% endblock %}
 
@@ -28,16 +28,25 @@
     </h2>
 
     {% if not protocol.is_live %}
-    <div class="alert alert-success mb-3" role="alert">{% trans "Final results" %}</div>
+    <div class="alert alert-success mb-3" role="status">{% trans "Final results" %}</div>
     {% else %}
-    <div class="alert alert-info mb-3" id="live-banner" role="alert">{% trans "Live — updating..." %}</div>
+    <div class="alert alert-info mb-3" id="live-banner" role="status">{% trans "Live — updating..." %}</div>
     {% endif %}
+    <div class="alert alert-warning mb-3" id="live-error" role="alert" hidden>{% trans "Could not update the results. Trying again in a minute." %}</div>
 
     <div class="d-flex justify-content-end mb-1">
       <button type="button" id="fullscreen-btn" class="btn btn-sm btn-outline-secondary px-2"
               title="{% trans 'Fullscreen' %}">&#x26F6;</button>
     </div>
-    <div id="protocol-wrap" style="overflow-x: auto; width: 100%;">
+    <div id="protocol-wrap" style="overflow-x: auto; width: 100%; position: relative;"
+         data-poll-url="{% url 'protocol_last_updated' protocol.pk %}"
+         data-html-url="{% url 'protocol_html' protocol.pk %}"
+         data-format="html"
+         data-hash="{{ state.hash }}"
+         data-live="{{ state.is_live|yesno:'true,false' }}"
+         data-interval="{{ poll_interval_ms }}"
+         data-load-timeout="{{ load_timeout_ms }}"
+         data-text-final="{% trans 'Final results' %}">
       <iframe id="protocol-frame"
         src="{% url 'protocol_html' protocol.pk %}?v={{ protocol.file_hash }}"
         sandbox="allow-scripts"
@@ -45,62 +54,7 @@
         title="{% trans 'Protocol' %}">
       </iframe>
     </div>
-    <script>
-    (function () {
-      var frame = document.getElementById('protocol-frame');
-      var wrap = document.getElementById('protocol-wrap');
-      window.addEventListener('message', function (e) {
-        if (!frame || e.source !== frame.contentWindow) return;
-        if (!e.data || e.data.type !== 'protocol-resize') return;
-        var h = e.data.h, w = e.data.w;
-        if (typeof h !== 'number' || typeof w !== 'number') return;
-        h = Math.min(Math.max(h, 0), 30000);
-        w = Math.min(Math.max(w, 0), 10000);
-        frame.style.height = h + 'px';
-        var containerW = wrap ? wrap.clientWidth : 0;
-        frame.style.width = Math.max(containerW, w) + 'px';
-      });
-      var fsBtn = document.getElementById('fullscreen-btn');
-      if (fsBtn) {
-        fsBtn.addEventListener('click', function () {
-          if (frame.requestFullscreen) { frame.requestFullscreen(); }
-          else if (frame.webkitRequestFullscreen) { frame.webkitRequestFullscreen(); }
-        });
-      }
-    }());
-    </script>
-
-    {% if protocol.is_live %}
-    <script>
-    (function () {
-      var lastHash = "{{ protocol.file_hash|escapejs }}";
-      var pollUrl = "{% url 'protocol_last_updated' protocol.pk %}";
-      var htmlBase = "{% url 'protocol_html' protocol.pk %}";
-
-      function poll() {
-        fetch(pollUrl)
-          .then(function (r) { return r.json(); })
-          .then(function (data) {
-            if (!data.is_live) {
-              var banner = document.getElementById('live-banner');
-              if (banner) {
-                banner.className = "alert alert-success mb-3";
-                banner.textContent = "{% trans 'Final results' %}";
-              }
-              return;
-            }
-            if (data.file_hash !== lastHash) {
-              lastHash = data.file_hash;
-              document.getElementById('protocol-frame').src = htmlBase + '?v=' + data.file_hash;
-            }
-            setTimeout(poll, 60000);
-          })
-          .catch(function () { setTimeout(poll, 60000); });
-      }
-      setTimeout(poll, 60000);
-    }());
-    </script>
-    {% endif %}
+    <script src="{% static 'protocols/protocol-live.js' %}" defer></script>
 
     {% if versions %}
     <div class="mt-4">

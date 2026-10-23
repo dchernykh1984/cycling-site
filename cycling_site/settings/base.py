@@ -338,6 +338,10 @@ WAGTAILSEARCH_BACKENDS = {
 WAGTAILADMIN_BASE_URL = "http://example.com"
 
 MAX_PROTOCOL_SIZE_MB = env.int("MAX_PROTOCOL_SIZE_MB", default=5)
+# How often an open live protocol asks whether a newer upload exists, and how long it waits for a
+# newer version to load before keeping the one on screen and trying again on the next round.
+PROTOCOL_POLL_INTERVAL_MS = env.int("PROTOCOL_POLL_INTERVAL_MS", default=60_000)
+PROTOCOL_LOAD_TIMEOUT_MS = env.int("PROTOCOL_LOAD_TIMEOUT_MS", default=20_000)
 
 SITE_BASE_URL = env("SITE_BASE_URL", default="http://localhost:8000")
 
