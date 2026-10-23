@@ -23,6 +23,12 @@
 aggregators:
   - url: https://bike-events.ru/index.php?season=S2026
     hint: "Multi-organizer cycling calendar (RU), races grouped by month; bump season=S<year> yearly; source_url must be each race's own organizer page."
+  # Year-specific calendar: replace the URL and year hint when the next edition is published.
+  - url: https://ilovesupersport.ru/blog/kalendar-startov-po-triatlonu-2026
+    hint: "Triathlon calendar for 2026, grouped by month. Extract upcoming dated entries, including
+      duathlon and related formats. Keep the calendar's stated year. Use each event's own page
+      from the real links as source_url, never this article. Ignore training offers and related
+      articles after the calendar."
   - url: https://begaem.com/blizhayshie-startyi-v-rossii
     hint: "Running calendar for Russia, grouped by month. Each row is a full date, the event name,
       the place, the distances and a link to the event's own site -- use that link as source_url.
@@ -60,6 +66,10 @@ organizers:
   - https://athletex.kz/
   - https://www.granfondo.com.kz/ru/
   - https://cycling.kz/ru/
+  - url: https://triathlon.org.kz/ru/event
+    hint: "Federation's upcoming-events list. Use each event's own page from the listed links as
+      source_url. Include open amateur or masters starts; skip elite-only events.
+      An empty upcoming list means there are no events to extract; do not substitute archive dates."
   - https://velosport.kg/
   - https://almaty-marathon.kz/
   - https://velorace.lovable.app/
