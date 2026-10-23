@@ -51,19 +51,23 @@
 .protocol-table .role-team {
   text-align: start;
 }
+/* Secondary lines keep the body colour (the theme's secondary grey falls short of 4.5:1 on light
+ * backgrounds) and stand back by size and style instead. */
 .protocol-cell-sub {
-  color: var(--bs-secondary-color);
+  color: var(--bs-body-color);
+  font-size: 0.8125em;
 }
 
 .protocol-row.status-dnf td,
 .protocol-row.status-dns td,
 .protocol-row.status-dsq td {
-  color: var(--bs-secondary-color);
+  font-style: italic;
 }
 .protocol-note td {
   text-align: start;
   font-size: 0.875em;
-  color: var(--bs-secondary-color);
+  font-style: italic;
+  color: var(--bs-body-color);
   border-top: 0;
   padding-top: 0;
 }
