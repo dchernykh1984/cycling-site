@@ -12,8 +12,9 @@
   "use strict";
 
   var wrap = document.getElementById("protocol-wrap");
+  if (!wrap) return;
+  // A protocol shown as HTML lives in a frame; one drawn from its document is part of the page.
   var frame = document.getElementById("protocol-frame");
-  if (!wrap || !frame) return;
 
   var banner = document.getElementById("live-banner");
   var error = document.getElementById("live-error");
@@ -40,7 +41,7 @@
   window.addEventListener("message", function (e) {
     var msg = e.data;
     if (!msg || typeof msg !== "object") return;
-    var fromCurrent = e.source === frame.contentWindow;
+    var fromCurrent = !!frame && e.source === frame.contentWindow;
     var fromPending = pending && e.source === pending.frame.contentWindow;
     if (!fromCurrent && !fromPending) return;
     if (msg.type === "protocol-resize") {
@@ -62,10 +63,10 @@
   });
 
   // The frame may have loaded and reported its size before this script started listening.
-  frame.contentWindow.postMessage({ type: "protocol-measure" }, "*");
+  if (frame) frame.contentWindow.postMessage({ type: "protocol-measure" }, "*");
 
   var fsBtn = document.getElementById("fullscreen-btn");
-  if (fsBtn) {
+  if (fsBtn && frame) {
     fsBtn.addEventListener("click", function () {
       // An iPhone has no fullscreen for a frame: open the protocol on its own instead. Where the
       // browser refuses the request, the "open separately" link next to the button does the same.
@@ -102,6 +103,35 @@
       next.src = data.htmlUrl + "?v=" + encodeURIComponent(hash);
       wrap.appendChild(next);
     });
+  }
+
+  // The drawn document: the response carries the state of the row it was drawn from, and a body
+  // only while the protocol still has a document -- an empty one with "html" means it no longer does.
+  function loadDocument() {
+    return fetch(data.fragmentUrl, { cache: "no-store" }).then(function (r) {
+      var hash = r.headers.get("X-Protocol-Hash");
+      var type = r.headers.get("Content-Type") || "";
+      if (!r.ok || hash === null || type.indexOf("text/html") !== 0) throw new Error("status " + r.status);
+      var meta = {
+        hash: hash,
+        isLive: r.headers.get("X-Protocol-Live") === "true",
+        format: r.headers.get("X-Protocol-Shown"),
+      };
+      if (meta.format !== pageFormat) return meta;
+      return r.text().then(function (html) {
+        var holder = document.createElement("div");
+        holder.innerHTML = html;
+        meta.root = holder.querySelector("#protocol-doc");
+        if (!meta.root) throw new Error("no document in the response");
+        return meta;
+      });
+    });
+  }
+
+  function swapDocument(loaded) {
+    var old = document.getElementById("protocol-doc");
+    old.replaceWith(loaded.root);
+    if (window.ProtocolDocument) window.ProtocolDocument.mount(loaded.root);
   }
 
   function swapIn(loaded) {
@@ -146,15 +176,17 @@
       })
       .then(function (meta) {
         if (meta.file_hash === shown.hash && meta.is_live === shown.isLive && meta.shown === pageFormat) return;
-        return loadHtml(meta.file_hash).then(function (loaded) {
+        var load = pageFormat === "document" ? loadDocument() : loadHtml(meta.file_hash);
+        return load.then(function (loaded) {
           if (loaded.format !== pageFormat) {
             // The protocol now takes another form: the server draws that page, not this one.
-            loaded.frame.remove();
+            if (loaded.frame) loaded.frame.remove();
             stopped = true;
             window.location.reload();
             return;
           }
-          swapIn(loaded);
+          if (pageFormat === "document") swapDocument(loaded);
+          else swapIn(loaded);
           shown = { hash: loaded.hash, isLive: loaded.isLive, format: loaded.format };
           if (!shown.isLive) finish();
         });
