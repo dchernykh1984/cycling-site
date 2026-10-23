@@ -1,6 +1,7 @@
 """An album's translated titles, optional event and event search across writing systems."""
 
 import datetime
+import json
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -103,3 +104,40 @@ def test_removing_an_event_keeps_the_album_and_its_titles(page: Page, live_serve
     album.refresh_from_db()
     assert album.competition_id is None
     assert album.title == "My album"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_escape_keeps_the_search_closed_when_a_late_response_arrives(
+    page: Page, live_server, admin_user, gallery_event
+):
+    payload = {
+        "results": [
+            {
+                "id": gallery_event.pk,
+                "title": "Gran Fondo",
+                "titles": {"ru": "Gran Fondo", "kk": "", "en": ""},
+                "details": [],
+            }
+        ],
+        "has_more": False,
+    }
+    # Hold an already-received response to reproduce Escape racing its asynchronous handling.
+    page.add_init_script(
+        "window.__searches = 0; var originalFetch = window.fetch;"
+        "window.fetch = function(url, options) {"
+        "if (!String(url).includes('/gallery/events/')) return originalFetch(url, options);"
+        "window.__searches++;"
+        "return new Promise(resolve => { window.__finishSearch = () => resolve({"
+        "ok: true, json: () => Promise.resolve(" + json.dumps(payload) + ")"
+        "}); }); };"
+    )
+    _open(page, live_server, admin_user)
+    query = page.locator("#gallery-event-query")
+    query.focus()
+    page.wait_for_function("window.__searches === 1")
+    query.fill("Gran")
+    page.wait_for_function("window.__searches === 2")
+    query.press("Escape")
+    page.evaluate("window.__finishSearch()")
+    expect(query).to_have_attribute("aria-expanded", "false")
+    expect(page.get_by_role("listbox")).not_to_be_visible()
