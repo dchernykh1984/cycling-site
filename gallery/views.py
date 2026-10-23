@@ -24,7 +24,8 @@ ALBUMS_PER_PAGE = 24
 
 def _selected_event(form):
     event = form.selected_event
-    return describe_events(public_events().filter(pk=event.pk))[0] if event else None
+    events = describe_events(public_events().filter(pk=event.pk)) if event else []
+    return events[0] if events else None
 
 
 def _linked_event(album):

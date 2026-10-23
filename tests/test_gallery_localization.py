@@ -249,6 +249,23 @@ class GalleryEventDetailsTests(TestCase):
         self.assertNotContains(response, 'id="gallery-linked-event"')
         self.assertNotContains(response, "City RU")
 
+    def test_an_event_hidden_during_form_rendering_does_not_break_the_album_editor(self):
+        from unittest.mock import PropertyMock, patch
+
+        from gallery.forms import AlbumForm
+
+        self.client.force_login(self.admin)
+
+        def selected_before_hiding():
+            self.event.is_hidden = True
+            self.event.save(update_fields=["is_hidden"])
+            return self.event
+
+        with patch.object(AlbumForm, "selected_event", new_callable=PropertyMock, side_effect=selected_before_hiding):
+            response = self.client.get(f"/ru/gallery/albums/{self.album.pk}/edit/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context["selected_event"])
+
 
 class ExistingGalleryTextMigrationTests(TransactionTestCase):
     def test_existing_titles_and_captions_survive_without_invented_translations(self):
