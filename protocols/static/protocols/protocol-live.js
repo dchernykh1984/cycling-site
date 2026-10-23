@@ -64,11 +64,15 @@
   var fsBtn = document.getElementById("fullscreen-btn");
   if (fsBtn) {
     fsBtn.addEventListener("click", function () {
-      if (frame.requestFullscreen) {
-        frame.requestFullscreen();
-      } else if (frame.webkitRequestFullscreen) {
-        frame.webkitRequestFullscreen();
+      // An iPhone has no fullscreen for a frame: open the protocol on its own instead. Where the
+      // browser refuses the request, the "open separately" link next to the button does the same.
+      var request = frame.requestFullscreen || frame.webkitRequestFullscreen;
+      if (!request) {
+        window.open(document.getElementById("protocol-open-separately").href, "_blank", "noopener");
+        return;
       }
+      var result = request.call(frame);
+      if (result && typeof result.catch === "function") result.catch(function () {});
     });
   }
 

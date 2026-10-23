@@ -466,6 +466,14 @@ class ProtocolDetailTest(TestCase):
             response = self.client.get(f"/en/protocols/{protocol.pk}/")
         self.assertContains(response, '<meta property="og:title" content="Test Race \u2014 Absolute results"')
 
+    def test_offers_the_protocol_on_its_own_page_and_names_the_fullscreen_button(self):
+        protocol = self._create_protocol()
+        with override("en"):
+            response = self.client.get(f"/en/protocols/{protocol.pk}/")
+        self.assertContains(response, f'href="/en/protocols/{protocol.pk}/html/?v={protocol.file_hash}"')
+        self.assertContains(response, "Open the protocol separately")
+        self.assertContains(response, 'aria-label="Fullscreen"')
+
     def test_live_page_starts_from_the_shown_upload(self):
         protocol = self._create_protocol(is_live=True)
         response = self.client.get(f"/ru/protocols/{protocol.pk}/")

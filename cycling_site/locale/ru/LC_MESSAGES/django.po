@@ -3544,3 +3544,7 @@ msgstr "Поисковый запрос слишком длинный."
 #: protocols/templates/protocols/detail.html
 msgid "Could not update the results. Trying again in a minute."
 msgstr "Не удалось обновить результаты. Повторим через минуту."
+
+#: protocols/templates/protocols/detail.html
+msgid "Open the protocol separately"
+msgstr "Открыть протокол отдельно"
