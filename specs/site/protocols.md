@@ -1,10 +1,11 @@
 # Site Specification: Results protocols
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-21
-**Code**: `protocols/` (models, views), `api/endpoints/protocols.py`
+**Verified against**: `main` on 2026-10-23
+**Code**: `protocols/` (models, views), `protocols/static/protocols/protocol-live.js`, `api/endpoints/protocols.py`
 **Tests**: `protocols/tests.py`, `tests/test_protocol_images.py`,
-`tests/e2e/test_competition_result_emphasis.py`, `api/tests.py` (protocol endpoints)
+`tests/e2e/test_competition_result_emphasis.py`, `tests/e2e/test_protocol_live.py`, `api/tests.py`
+(protocol endpoints)
 **Related**: [events](events.md), [API](api.md); the `protocols` skill holds the security detail
 
 ## Overview
@@ -30,9 +31,20 @@ arrive.
 
 1. **Given** an event with protocols, **Then** its page links them as filled, bold buttons that stay
    legible in every skin, at rest, on hover and in focus; a live protocol is marked "Live".
-2. **Given** a live protocol's page, **Then** it polls the protocol's last-updated hash and reloads
-   the frame when the hash changes; a final one shows the results without polling; the page lists
-   the update history.
+2. **Given** a live protocol's page, **Then** it asks every minute whether a newer upload exists
+   (`PROTOCOL_POLL_INTERVAL_MS`) and, when one does, loads it into a second, hidden frame; the frame
+   reports which upload it holds, whether that upload is live and the form it is shown in, and only
+   that report replaces the protocol on screen. A final upload ends the polling only once its own
+   content is on screen; a final one shows the results without polling; the page lists the update
+   history.
+3. **Given** a newer upload that fails to load (an error page, a broken connection, no report within
+   `PROTOCOL_LOAD_TIMEOUT_MS`), **Then** the results already on screen stay, the page says the
+   update failed, and the next round tries again -- final or not.
+4. **Given** a hidden browser tab, **Then** it does not poll; on return it checks at once, and never
+   runs two checks at the same time.
+5. **Given** the protocol page, **Then** the fullscreen button has an accessible name, and a link
+   opens the protocol on a page of its own (where a browser has no fullscreen for a frame, the
+   button opens that page).
 
 ### Edge Cases
 
@@ -53,6 +65,11 @@ arrive.
   deployment, not written down; nothing else is reachable.
 - **FR-PRO-004**: The polling address carries the reader's language prefix like every reader-facing
   address.
+- **FR-PRO-005**: The live page trusts only the state read with the content it applies: the framed
+  file carries the hash, the live flag and the form of the row it was read from, so an upload that
+  lands between the check and the load can neither be shown under another upload's flag nor end
+  live early. Content in another form than the page reloads the page.
+- **FR-PRO-006**: The protocol page's link preview title is "<event> -- <kind of protocol>".
 
 ## Key Entities
 

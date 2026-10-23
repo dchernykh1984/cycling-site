@@ -27,9 +27,16 @@ Consequences worth knowing before promising anything:
 
 ## Live results
 
-A protocol marked live is polled by the page: `/api/protocols/<pk>/last_updated/` returns the file
-hash, and the iframe is re-pointed when it changes. The polling URL is built with `{% url %}`, so
-it carries the language prefix like every other reader-facing address.
+A protocol marked live is polled by the page (`protocols/static/protocols/protocol-live.js`):
+`/api/protocols/<pk>/last_updated/` returns the file hash, the live flag and the form it is shown
+in. That answer is only a hint. A newer upload is loaded into a second, hidden frame, and the
+script `protocol_html` injects into every file reports back the hash, live flag and form of the row
+the file was read from (`protocol_state`). Only that report swaps the frame and ends live -- an
+upload landing between the two requests would otherwise be shown under the other one's flag, and a
+frame's `load` event fires for an error page too. No report within `PROTOCOL_LOAD_TIMEOUT_MS`
+keeps the old protocol on screen and retries next round, even when the hint said "final".
+The polling URL is built with `{% url %}`, so it carries the language prefix like every other
+reader-facing address.
 
 ## Versions
 
