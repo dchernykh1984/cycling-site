@@ -20,7 +20,10 @@ class Protocol(models.Model):
         related_name="protocols",
     )
     protocol_type = models.CharField(max_length=20, choices=ProtocolType.choices)
-    html_file = models.FileField(upload_to="protocols/")
+    # A protocol is the HTML file the timing software wrote, its structured document
+    # (protocols/document.py), or both from one run -- whatever the last upload carried.
+    html_file = models.FileField(upload_to="protocols/", blank=True)
+    document = models.JSONField(null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
     is_live = models.BooleanField(default=True)
     stage_label = models.CharField(max_length=200, blank=True)
@@ -41,7 +44,8 @@ class ProtocolVersion(models.Model):
         on_delete=models.CASCADE,
         related_name="versions",
     )
-    html_file = models.FileField(upload_to="protocol_versions/")
+    html_file = models.FileField(upload_to="protocol_versions/", blank=True)
+    document = models.JSONField(null=True, blank=True)
     saved_at = models.DateTimeField(auto_now_add=True)
     file_hash = models.CharField(max_length=64)
 
