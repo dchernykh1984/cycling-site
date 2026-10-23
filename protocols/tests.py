@@ -5,6 +5,7 @@ import tempfile
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
+from django.utils.translation import override
 
 from calendar_app.models import Competition
 from protocols.models import Protocol, ProtocolVersion
@@ -436,6 +437,12 @@ class ProtocolDetailTest(TestCase):
         protocol = self._create_protocol(is_live=True)
         response = self.client.get(f"/ru/protocols/{protocol.pk}/")
         self.assertContains(response, "poll")
+
+    def test_link_preview_names_the_event_and_the_protocol(self):
+        protocol = self._create_protocol()
+        with override("en"):
+            response = self.client.get(f"/en/protocols/{protocol.pk}/")
+        self.assertContains(response, '<meta property="og:title" content="Test Race \u2014 Absolute results"')
 
     def test_non_live_shows_final_results(self):
         protocol = self._create_protocol(is_live=False)

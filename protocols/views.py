@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils.translation import gettext
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from calendar_app.models import Competition
@@ -150,11 +151,14 @@ def protocol_html(request, pk):
 def protocol_detail(request, pk):
     protocol = _published_protocol(request, pk)
     versions = protocol.versions.all()[:_MAX_VERSIONS]
+    kind = gettext("Absolute results") if protocol.protocol_type == "absolute" else gettext("Group results")
     return render(
         request,
         "protocols/detail.html",
         {
             "protocol": protocol,
             "versions": versions,
+            # Without it a link to the protocol pasted into a chat previews with an empty title.
+            "meta_title": f"{protocol.competition.title} \u2014 {kind}",
         },
     )
