@@ -1,0 +1,499 @@
+{
+  "$defs": {
+    "CellObject": {
+      "properties": {
+        "strong": {
+          "default": false,
+          "title": "Strong",
+          "type": "boolean"
+        },
+        "sub": {
+          "default": [],
+          "items": {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Sub",
+          "type": "array"
+        },
+        "text": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Text",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "title": "CellObject",
+      "type": "object"
+    },
+    "Column": {
+      "properties": {
+        "align": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Align"
+        },
+        "group": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Group"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Label",
+          "type": "string"
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "maximum": 3,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Priority"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role"
+        },
+        "sub_label": {
+          "default": [],
+          "items": {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Sub Label",
+          "type": "array"
+        },
+        "toggle": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Toggle"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Column",
+      "type": "object"
+    },
+    "Generator": {
+      "properties": {
+        "name": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "title": "Generator",
+      "type": "object"
+    },
+    "Group": {
+      "properties": {
+        "id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Group",
+      "type": "object"
+    },
+    "Item": {
+      "description": "A line of the header or the footer: a labelled field, a plain line, or sanitized HTML.",
+      "properties": {
+        "html": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Html"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9_-]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        },
+        "type": {
+          "default": "field",
+          "maxLength": 2000,
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "title": "Item",
+      "type": "object"
+    },
+    "Row": {
+      "properties": {
+        "cells": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/CellObject"
+              }
+            ]
+          },
+          "default": {},
+          "title": "Cells",
+          "type": "object"
+        },
+        "group": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Group"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        }
+      },
+      "title": "Row",
+      "type": "object"
+    },
+    "Section": {
+      "properties": {
+        "columns": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Column"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "group": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Group"
+        },
+        "rows": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Row"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "sections": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Section"
+          },
+          "title": "Sections",
+          "type": "array"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "type": {
+          "default": "table",
+          "maxLength": 2000,
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "title": "Section",
+      "type": "object"
+    },
+    "Toggle": {
+      "properties": {
+        "default": {
+          "default": true,
+          "title": "Default",
+          "type": "boolean"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Toggle",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "footer": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Item"
+      },
+      "maxItems": 50,
+      "title": "Footer",
+      "type": "array"
+    },
+    "generator": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Generator"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "groups": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Group"
+      },
+      "maxItems": 500,
+      "title": "Groups",
+      "type": "array"
+    },
+    "header": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Item"
+      },
+      "maxItems": 50,
+      "title": "Header",
+      "type": "array"
+    },
+    "lang": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lang"
+    },
+    "schema": {
+      "title": "Schema",
+      "type": "integer"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/Section"
+      },
+      "title": "Sections",
+      "type": "array"
+    },
+    "title": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Title"
+    },
+    "toggles": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Toggle"
+      },
+      "maxItems": 20,
+      "title": "Toggles",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "sections"
+  ],
+  "title": "Document",
+  "type": "object"
+}
