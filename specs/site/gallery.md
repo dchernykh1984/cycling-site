@@ -26,8 +26,10 @@ photos are kept exactly as they were taken, and only admins and the owner put th
    it. Any admin may change any album, whoever created it.
    Titles have ru / kk / en fields, at least one required without an event. Empty titles take
    the event's actual translation in that language; a typed title wins. An empty date takes the
-   event's start date. "No linked event" is an explicit choice, and an existing link can be removed
-   without deleting the album or changing its titles.
+   event's start date. Picking an event fills the three title fields and the date in the form
+   straight away, and they stay editable; a field already changed by hand keeps its text. "No
+   linked event" is an explicit choice, and an existing link can be removed without deleting the
+   album or changing its titles.
 2. **Given** an organizer, a participant or a guest, **Then** they only look: the album form and
    every change answer 403 (or the sign-in page for a guest).
 3. **Given** an uploaded photo, **Then** it is kept byte for byte -- every pixel and its metadata --
