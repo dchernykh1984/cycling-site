@@ -12,6 +12,8 @@ from ninja.errors import HttpError
 from ninja.files import UploadedFile
 
 from calendar_app.models import Competition
+from protocols.document import DocumentError
+from protocols.document import parse as parse_document
 from protocols.models import Protocol, ProtocolVersion
 
 router = Router(tags=["protocols"])
@@ -34,6 +36,8 @@ def _competition_by_token(token: str) -> Competition:
 class ProtocolUploadOut(Schema):
     id: int
     file_hash: str
+    shown: str
+    document_error: str | None = None
 
 
 class ProtocolDeleteOut(Schema):
@@ -123,11 +127,32 @@ def _replace_protocol(competition: Competition, protocol_type: str, fields: dict
     return protocol
 
 
+def _read_document(document: UploadedFile) -> tuple[dict, bytes]:
+    """The accepted document and its bytes, or DocumentError saying what is wrong with it."""
+    content_type = getattr(document, "content_type", "") or ""
+    if content_type.split(";")[0].strip() != "application/json":
+        raise DocumentError("The document must be application/json")
+    if not (document.name or "").lower().endswith(".json"):
+        raise DocumentError("The document must have a .json extension")
+    max_mb = getattr(settings, "MAX_PROTOCOL_SIZE_MB", 5)
+    if document.size is None or document.size > max_mb * 1024 * 1024:
+        raise DocumentError(f"The document is too large (max {max_mb} MB)")
+    raw = document.read()
+    return parse_document(raw), raw
+
+
+def _content_hash(html: bytes | None, document: bytes | None) -> str:
+    # An HTML-only upload keeps the hash it always had: the file's own.
+    if document is None:
+        return hashlib.sha256(html or b"").hexdigest()
+    return hashlib.sha256(b"html\0" + (html or b"") + b"\0document\0" + document).hexdigest()
+
+
 @router.post(
     "/upload/",
     response=ProtocolUploadOut,
     auth=None,
-    summary="Upload protocol HTML file",
+    summary="Upload a protocol: its HTML file, its structured document, or both from one run",
 )
 def upload_protocol(
     request,
@@ -135,27 +160,50 @@ def upload_protocol(
     protocol_type: str = Form("absolute"),
     is_live: bool = Form(True),
     stage_label: str = Form(""),
-    html_file: UploadedFile = File(...),  # noqa: B008
+    html_file: UploadedFile | None = File(None),  # noqa: B008
+    document: UploadedFile | None = File(None),  # noqa: B008
 ):
     """
-    Upload an HTML protocol file for a competition.
-    Uses `competition_token` (the competition's upload token) for authentication.
-    Called by FinishProtocolGenerator.
+    Upload a competition's protocol, authenticated by `competition_token` (the event's upload token).
+
+    `html_file` is the HTML the timing software wrote; `document` is the structured protocol
+    (protocols/document.py, JSON Schema in protocols/schema/). The upload replaces whatever the
+    protocol held: a document is drawn by the site, HTML alone is shown as it is. Sent together they
+    are one run -- the document is shown and the HTML kept as the original. When a document comes
+    with HTML but cannot be accepted, the HTML is stored and `document_error` says why.
+    Called by FinishProtocolGenerator and StravaProtocolGenerator.
     """
     competition = _competition_by_token(competition_token)
 
     if protocol_type not in ("absolute", "group"):
         raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
+    if html_file is None and document is None:
+        raise HttpError(400, "Send html_file, document or both")
 
-    html = _read_html(html_file)
-    file_hash = hashlib.sha256(html[0]).hexdigest()
+    html = _read_html(html_file) if html_file is not None else None
+    parsed = raw_document = None
+    document_error = None
+    if document is not None:
+        try:
+            parsed, raw_document = _read_document(document)
+        except DocumentError as exc:
+            if html is None:
+                raise HttpError(400, str(exc)) from None
+            document_error = str(exc)
+
+    file_hash = _content_hash(html[0] if html else None, raw_document)
     protocol = _replace_protocol(
         competition,
         protocol_type,
-        {"is_live": is_live, "stage_label": stage_label, "file_hash": file_hash, "document": None},
+        {"is_live": is_live, "stage_label": stage_label, "file_hash": file_hash, "document": parsed},
         html,
     )
-    return {"id": protocol.pk, "file_hash": file_hash}
+    return {
+        "id": protocol.pk,
+        "file_hash": file_hash,
+        "shown": "document" if parsed is not None else "html",
+        "document_error": document_error,
+    }
 
 
 @router.post(
