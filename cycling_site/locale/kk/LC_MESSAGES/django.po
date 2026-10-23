@@ -3546,3 +3546,28 @@ msgstr "Нәтижелерді жаңарту мүмкін болмады. Бі�
 #: protocols/templates/protocols/detail.html
 msgid "Open the protocol separately"
 msgstr "Хаттаманы бөлек ашу"
+
+#: protocols/templates/protocols/_document.html
+#, python-format
+msgid "Protocol language: %(language)s"
+msgstr "Хаттама тілі: %(language)s"
+
+#: protocols/templates/protocols/_document.html
+msgid "Search by name or number"
+msgstr "Аты немесе нөмірі бойынша іздеу"
+
+#: protocols/templates/protocols/_document.html
+msgid "Groups"
+msgstr "Топтар"
+
+#: protocols/templates/protocols/_document.html
+msgid "Full table"
+msgstr "Толық кесте"
+
+#: protocols/templates/protocols/_document.html
+msgid "Details"
+msgstr "Толығырақ"
+
+#: protocols/templates/protocols/_document.html
+msgid "Original protocol"
+msgstr "Бастапқы хаттама"

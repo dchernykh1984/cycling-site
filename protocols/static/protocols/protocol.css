@@ -1,0 +1,124 @@
+/* A protocol drawn from its structured document (protocols/rendering.py).
+ *
+ * Colours come from the theme's own Bootstrap variables, so every skin draws it in its colours; a
+ * skin restyles it through the classes below (listed in skins/README.md). Hiding by priority and by
+ * toggle works only once protocol-doc.js has run (.protocol-js): without the script the whole table
+ * shows, and its header groups span exactly the columns under them. */
+
+.protocol-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.protocol-panel[hidden] {
+  display: none;
+}
+.protocol-search {
+  flex: 1 1 14rem;
+  max-width: 24rem;
+}
+.protocol-groups,
+.protocol-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.protocol-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.protocol-table {
+  margin-bottom: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.protocol-table th,
+.protocol-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+.protocol-table th {
+  font-weight: 700;
+}
+.protocol-table .align-start {
+  text-align: start;
+}
+.protocol-table .align-end {
+  text-align: end;
+}
+.protocol-table .role-name,
+.protocol-table .role-team {
+  text-align: start;
+}
+.protocol-cell-sub {
+  color: var(--bs-secondary-color);
+}
+
+.protocol-row.status-dnf td,
+.protocol-row.status-dns td,
+.protocol-row.status-dsq td {
+  color: var(--bs-secondary-color);
+}
+.protocol-note td {
+  text-align: start;
+  font-size: 0.875em;
+  color: var(--bs-secondary-color);
+  border-top: 0;
+  padding-top: 0;
+}
+
+.protocol-expand-col {
+  display: none;
+  width: 2.25rem;
+  padding-left: 0.125rem;
+  padding-right: 0.125rem;
+}
+.protocol-js .protocol-table.has-hidden .protocol-expand-col {
+  display: table-cell;
+}
+.protocol-row-expand {
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.25rem;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  line-height: 1;
+}
+.protocol-details td {
+  text-align: start;
+  background: var(--bs-tertiary-bg);
+}
+.protocol-details dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.125rem 0.75rem;
+  margin: 0;
+}
+.protocol-details dt {
+  font-weight: 700;
+}
+.protocol-details dd {
+  margin: 0;
+}
+
+.protocol-js .protocol-table .toggle-off,
+.protocol-row.is-filtered,
+.protocol-note.is-filtered,
+.protocol-details.is-filtered,
+.protocol-section.is-empty {
+  display: none;
+}
+
+@media (max-width: 1199.98px) {
+  .protocol-js:not(.protocol-full) .protocol-table .prio-3 {
+    display: none;
+  }
+}
+@media (max-width: 767.98px) {
+  .protocol-js:not(.protocol-full) .protocol-table .prio-2 {
+    display: none;
+  }
+}

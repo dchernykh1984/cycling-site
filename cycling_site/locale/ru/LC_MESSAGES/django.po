@@ -3548,3 +3548,28 @@ msgstr "Не удалось обновить результаты. Повтор�
 #: protocols/templates/protocols/detail.html
 msgid "Open the protocol separately"
 msgstr "Открыть протокол отдельно"
+
+#: protocols/templates/protocols/_document.html
+#, python-format
+msgid "Protocol language: %(language)s"
+msgstr "Язык протокола: %(language)s"
+
+#: protocols/templates/protocols/_document.html
+msgid "Search by name or number"
+msgstr "Поиск по имени или номеру"
+
+#: protocols/templates/protocols/_document.html
+msgid "Groups"
+msgstr "Группы"
+
+#: protocols/templates/protocols/_document.html
+msgid "Full table"
+msgstr "Вся таблица"
+
+#: protocols/templates/protocols/_document.html
+msgid "Details"
+msgstr "Подробнее"
+
+#: protocols/templates/protocols/_document.html
+msgid "Original protocol"
+msgstr "Исходный протокол"

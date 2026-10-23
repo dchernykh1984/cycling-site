@@ -3,6 +3,8 @@
 
 {% block title %}{% trans "Protocol" %} — {{ protocol.competition.title }}{% endblock %}
 
+{% block extra_css %}{% if doc %}<link rel="stylesheet" href="{% static 'protocols/protocol.css' %}">{% endif %}{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-12 col-lg-11">
@@ -34,6 +36,23 @@
     {% endif %}
     <div class="alert alert-warning mb-3" id="live-error" role="alert" hidden>{% trans "Could not update the results. Trying again in a minute." %}</div>
 
+    {% if doc %}
+    {% if protocol.html_file %}
+    <p class="small mb-2"><a href="{% url 'protocol_html' protocol.pk %}?v={{ protocol.file_hash }}" target="_blank" rel="noopener" id="protocol-original">{% trans "Original protocol" %}</a></p>
+    {% endif %}
+    <div id="protocol-wrap"
+         data-poll-url="{% url 'protocol_last_updated' protocol.pk %}"
+         data-fragment-url="{% url 'protocol_fragment' protocol.pk %}"
+         data-format="document"
+         data-hash="{{ state.hash }}"
+         data-live="{{ state.is_live|yesno:'true,false' }}"
+         data-interval="{{ poll_interval_ms }}"
+         data-load-timeout="{{ load_timeout_ms }}"
+         data-text-final="{% trans 'Final results' %}">
+      {% include "protocols/_document.html" %}
+    </div>
+    <script src="{% static 'protocols/protocol-doc.js' %}" defer></script>
+    {% else %}
     <div class="d-flex justify-content-end align-items-center gap-3 mb-1">
       <a href="{% url 'protocol_html' protocol.pk %}?v={{ protocol.file_hash }}" target="_blank" rel="noopener" class="small" id="protocol-open-separately">{% trans "Open the protocol separately" %}</a>
       <button type="button" id="fullscreen-btn" class="btn btn-sm btn-outline-secondary px-2"
@@ -55,6 +74,7 @@
         title="{% trans 'Protocol' %}">
       </iframe>
     </div>
+    {% endif %}
     <script src="{% static 'protocols/protocol-live.js' %}" defer></script>
 
     {% if versions %}

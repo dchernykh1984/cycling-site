@@ -1,0 +1,18 @@
+{% load i18n %}<div class="protocol-table-wrap">
+<table class="table table-sm protocol-table">
+  {% if section.title %}<caption class="visually-hidden">{{ section.title }}</caption>{% endif %}
+  <thead>
+    {% if table.header_groups %}<tr class="protocol-group-row"><th class="protocol-expand-col" aria-hidden="true"></th>{% for group in table.header_groups %}<th scope="colgroup" colspan="{{ group.colspan }}" data-cols="{{ group.cols }}">{{ group.label }}</th>{% endfor %}</tr>{% endif %}
+    <tr><th class="protocol-expand-col"><span class="visually-hidden">{% trans "Details" %}</span></th>{% for column in table.columns %}<th scope="col" class="prio-{{ column.priority }}{% if column.role_class %} role-{{ column.role_class }}{% endif %}{% if column.align %} align-{{ column.align }}{% endif %}" data-col="{{ column.index }}"{% if column.toggle %} data-toggle-id="{{ column.toggle }}"{% endif %}>{{ column.label }}{% for line in column.sub_label %}<br><small class="protocol-cell-sub">{{ line }}</small>{% endfor %}</th>{% endfor %}</tr>
+  </thead>
+  <tbody>
+  {% for row in table.rows %}
+    <tr class="protocol-row{% if row.status %} status-{{ row.status }}{% endif %}" id="row-{{ row.number }}" data-search="{{ row.search }}"{% if row.group %} data-group-id="{{ row.group }}"{% endif %}>
+      <td class="protocol-expand-col"><button type="button" class="protocol-row-expand" aria-expanded="false" aria-controls="row-{{ row.number }}-details" aria-label="{% trans 'Details' %}{% if row.who %}: {{ row.who }}{% endif %}" hidden><span aria-hidden="true">+</span></button></td>
+      {% for column, cell in row.cells %}<td class="prio-{{ column.priority }}{% if column.role_class %} role-{{ column.role_class }}{% endif %}{% if column.align %} align-{{ column.align }}{% endif %}" data-col="{{ column.index }}" data-label="{{ column.label }}"{% if column.toggle %} data-toggle-id="{{ column.toggle }}"{% endif %}>{% if cell.url %}<a href="{{ cell.url }}" rel="nofollow noopener" target="_blank">{% endif %}{% if cell.strong %}<strong>{{ cell.text }}</strong>{% else %}{{ cell.text }}{% endif %}{% if cell.url %}</a>{% endif %}{% for line in cell.sub %}<br><small class="protocol-cell-sub">{{ line }}</small>{% endfor %}</td>{% endfor %}
+    </tr>
+    {% if row.note %}<tr class="protocol-note" data-for="row-{{ row.number }}"><td colspan="{{ table.width }}">{% for line in row.note %}{{ line }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td></tr>{% endif %}
+  {% endfor %}
+  </tbody>
+</table>
+</div>

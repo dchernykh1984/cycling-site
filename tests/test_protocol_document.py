@@ -4,9 +4,14 @@ import json
 from pathlib import Path
 
 import pytest
+from django.core.files.base import ContentFile
+from django.test import Client
 
+from calendar_app.models import Competition
 from protocols import document as doc
+from protocols import rendering
 from protocols.document import DocumentError, parse
+from protocols.models import Protocol
 
 SCHEMA_FILE = Path(__file__).resolve().parent.parent / "protocols" / "schema" / "protocol-document-v1.json"
 
@@ -163,3 +168,219 @@ def test_budget_boundary():
 def test_budget_is_shared_by_every_table_of_the_document():
     with pytest.raises(DocumentError, match="112000 cells"):
         parse(_raw(sections=[_table(700, 80), {"type": "group", "sections": [_table(700, 80)]}]))
+
+
+# --------------------------------------------------------------------------- drawing it
+
+
+def _document(**fields) -> dict:
+    data = {
+        "schema": 1,
+        "lang": "ru",
+        "groups": [{"id": "M30", "label": "M30"}, {"id": "M40", "label": "M40"}],
+        "sections": [
+            {
+                "type": "table",
+                "title": "Overall",
+                "columns": [
+                    {"id": "place", "label": "Place", "role": "place"},
+                    {"id": "name", "label": "Name", "role": "name"},
+                    {"id": "result", "label": "Time", "role": "result"},
+                ],
+                "rows": [
+                    {"group": "M30", "cells": {"place": "1", "name": "Ann <script>x</script>", "result": "1:00"}},
+                    {"group": "M40", "cells": {"place": "2", "name": "Bob", "result": "1:01"}},
+                ],
+            }
+        ],
+    }
+    data.update(fields)
+    return parse(json.dumps(data).encode())
+
+
+@pytest.fixture
+def protocol(db, settings, tmp_path):
+    settings.MEDIA_ROOT = str(tmp_path)
+    competition = Competition.objects.create(
+        title_ru="Race", date_start="2026-01-01", status=Competition.Status.APPROVED
+    )
+    return Protocol.objects.create(
+        competition=competition, protocol_type="absolute", is_live=True, file_hash="h1", document=_document()
+    )
+
+
+def test_document_page_draws_tables_not_a_frame(client: Client, protocol):
+    body = client.get(f"/ru/protocols/{protocol.pk}/").content.decode()
+    assert 'id="protocol-doc"' in body
+    assert "<iframe" not in body
+    assert 'data-format="document"' in body
+    assert "protocol.css" in body
+    assert "Ann &lt;script&gt;x&lt;/script&gt;" in body
+    assert "<script>x</script>" not in body
+    assert 'id="protocol-original"' not in body
+
+
+def test_original_html_is_linked_only_when_it_came_with_the_document(client: Client, protocol):
+    protocol.html_file.save("p.html", ContentFile(b"<html><body>orig</body></html>"), save=True)
+    body = client.get(f"/ru/protocols/{protocol.pk}/").content.decode()
+    assert f'href="/ru/protocols/{protocol.pk}/html/?v=h1"' in body
+    assert 'id="protocol-original"' in body
+
+
+def test_rows_carry_their_group_whatever_the_columns(client: Client, protocol):
+    body = client.get(f"/ru/protocols/{protocol.pk}/").content.decode()
+    assert body.count('data-group-id="M30"') == 2  # the chip and the row
+    assert body.count('data-group-id="M40"') == 2
+
+
+def test_nested_sections_pass_their_group_down():
+    view = rendering.build(
+        _document(
+            groups=[{"id": "G"}],
+            sections=[
+                {"type": "group", "group": "G", "sections": [{"columns": [{"id": "a"}], "rows": [{"cells": {}}]}]}
+            ],
+        ),
+        [],
+    )
+    assert view["sections"][0]["sections"][0]["table"]["rows"][0]["group"] == "G"
+
+
+def test_a_table_without_priorities_keeps_its_first_columns_on_a_phone():
+    view = rendering.build(_document(sections=[{"columns": [{"id": f"c{i}"} for i in range(5)], "rows": []}]), [])
+    priorities = [c["priority"] for c in view["sections"][0]["table"]["columns"]]
+    assert priorities == [1, 1, 1, 2, 2]
+
+
+def test_primary_roles_default_to_priority_one_and_others_to_two():
+    view = rendering.build(_document(), [])
+    assert [c["priority"] for c in view["sections"][0]["table"]["columns"]] == [1, 1, 1]
+    view = rendering.build(
+        _document(sections=[{"columns": [{"id": "name", "role": "name"}, {"id": "team"}], "rows": []}]), []
+    )
+    assert [c["priority"] for c in view["sections"][0]["table"]["columns"]] == [1, 2]
+
+
+def test_search_looks_in_names_and_numbers_only_when_there_are_such_columns():
+    view = rendering.build(_document(), [])
+    assert view["sections"][0]["table"]["rows"][1]["search"] == "bob"
+    view = rendering.build(
+        _document(
+            sections=[
+                {
+                    "columns": [{"id": "a"}, {"id": "b"}],
+                    "rows": [{"cells": {"a": "X", "b": {"text": "Y", "sub": ["Z"]}}}],
+                }
+            ]
+        ),
+        [],
+    )
+    assert view["sections"][0]["table"]["rows"][0]["search"] == "x y z"
+
+
+def test_header_groups_merge_neighbouring_columns():
+    view = rendering.build(
+        _document(
+            sections=[
+                {
+                    "columns": [
+                        {"id": "p"},
+                        {"id": "l1", "group": "Lap 1"},
+                        {"id": "s1", "group": "Lap 1"},
+                        {"id": "r"},
+                    ],
+                    "rows": [],
+                }
+            ]
+        ),
+        [],
+    )
+    runs = view["sections"][0]["table"]["header_groups"]
+    assert [(r["label"], r["cols"]) for r in runs] == [("", "0"), ("Lap 1", "1 2"), ("", "3")]
+
+
+def test_html_items_keep_only_this_sites_pictures():
+    raw = {
+        "header": [
+            {
+                "type": "html",
+                "html": '<img src="https://evil.example/pixel.gif"><img src="http://testserver/media/logo.png">'
+                '<script>alert(1)</script><a href="javascript:x">j</a>',
+            }
+        ]
+    }
+    view = rendering.build(_document(**raw), ["http://testserver"])
+    html = view["header"][0]["html"]
+    assert "evil.example" not in html
+    assert "http://testserver/media/logo.png" in html
+    assert "<script" not in html
+    assert "javascript:" not in html
+
+
+def test_unknown_section_kinds_are_drawn_by_their_shape():
+    view = rendering.build(
+        _document(
+            sections=[
+                {
+                    "type": "bracket",
+                    "title": "Final",
+                    "sections": [{"type": "heat", "columns": [{"id": "a"}], "rows": []}],
+                }
+            ]
+        ),
+        [],
+    )
+    assert view["sections"][0]["table"] is None
+    assert view["sections"][0]["sections"][0]["table"] is not None
+
+
+def test_language_note_only_when_the_protocol_is_in_another_language(client: Client, protocol):
+    assert "protocol-language" not in client.get(f"/ru/protocols/{protocol.pk}/").content.decode()
+    assert "protocol-language" in client.get(f"/en/protocols/{protocol.pk}/").content.decode()
+
+
+def test_fragment_carries_the_state_of_the_row_it_was_drawn_from(client: Client, protocol):
+    response = client.get(f"/ru/protocols/{protocol.pk}/fragment/")
+    assert response.status_code == 200
+    assert response["X-Protocol-Hash"] == "h1"
+    assert response["X-Protocol-Live"] == "true"
+    assert response["X-Protocol-Shown"] == "document"
+    assert response["Cache-Control"] == "no-store"
+    assert 'id="protocol-doc"' in response.content.decode()
+    assert "<html" not in response.content.decode()
+
+
+def test_fragment_of_a_protocol_that_lost_its_document_is_empty_and_says_html(client: Client, protocol):
+    protocol.document = None
+    protocol.is_live = False
+    protocol.save()
+    response = client.get(f"/ru/protocols/{protocol.pk}/fragment/")
+    assert response.content == b""
+    assert response["X-Protocol-Shown"] == "html"
+    assert response["X-Protocol-Live"] == "false"
+
+
+@pytest.mark.parametrize("flag", ["is_hidden", "is_deleted"])
+def test_fragment_of_an_unpublished_event_is_404(client: Client, protocol, flag):
+    setattr(protocol.competition, flag, True)
+    protocol.competition.save()
+    assert client.get(f"/ru/protocols/{protocol.pk}/fragment/").status_code == 404
+
+
+def test_last_updated_says_the_protocol_is_shown_as_a_document(client: Client, protocol):
+    assert client.get(f"/ru/api/protocols/{protocol.pk}/last_updated/").json()["shown"] == "document"
+
+
+def test_notes_are_drawn_as_their_own_row(client: Client, protocol):
+    protocol.document = _document(
+        sections=[
+            {
+                "columns": [{"id": "place", "role": "place"}],
+                "rows": [{"status": "dsq", "note": "cut\nno chip", "cells": {"place": "DSQ"}}],
+            }
+        ]
+    )
+    protocol.save()
+    body = client.get(f"/ru/protocols/{protocol.pk}/").content.decode()
+    assert 'class="protocol-row status-dsq"' in body
+    assert '<tr class="protocol-note" data-for="row-1"><td colspan="2">cut<br>no chip</td></tr>' in body
