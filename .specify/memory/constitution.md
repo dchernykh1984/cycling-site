@@ -4,6 +4,8 @@ Sync Impact Report
   three languages a deliberate choice; principle VI lets the maintainer accept a local assumption.
   1.1.0 -> 1.2.0: the light/dark screenshot comparison is retired (it guarded the skins refactoring,
   issue #324); principles II and III no longer name it.
+  1.2.0 -> 1.3.0: principle IV requires localized reader-facing data fields by default, with
+  an explicit exception for documents that belong to one locale.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
   .agents/skills, which stay the detailed runtime guidance; VI set by the maintainer (no local or
   sport-specific hardcoding).
@@ -54,6 +56,12 @@ name the three where that is simpler. Every reader-facing URL carries its langua
 `/kk/`, `/en/`); machine-facing ones (`/api/v1/`, admin, media, sitemap, robots) do not. Source
 files are ASCII and UTF-8; text in the site's languages lives in the translation catalogues and in
 the agents' guidance files.
+
+Reader-facing names, titles, captions and descriptions have separate values for ru, kk and en
+by default, including the forms and administration tools that edit them. Existing text is kept
+when translations are introduced. A document such as a knowledge article may instead belong to
+one locale and appear only in that locale's listings. IDs, dates, numbers and URLs are not
+translated. Each area records any other exception in its specification.
 
 ### V. Small, complete, reviewable changes
 
@@ -110,4 +118,4 @@ bumps the version -- MAJOR for a principle removed or redefined, MINOR for one a
 expanded, PATCH for wording -- and updates the Last Amended date. Plans check themselves against
 it in their "Constitution Check".
 
-**Version**: 1.2.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-21
+**Version**: 1.3.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-23

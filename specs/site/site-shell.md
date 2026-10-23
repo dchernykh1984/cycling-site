@@ -89,6 +89,11 @@ legal pages and a link to report a bug.
   size/float and text colour kept.
 - **FR-SHL-004**: The navbar stays on top with a solid background while scrolling.
 - **FR-SHL-005**: Templates use no multi-line `{# #}` comments (they leak into pages).
+- **FR-SHL-006**: Reader-facing names, titles, captions and descriptions are localized data fields
+  by default, edited per ru / kk / en in forms and administration. Existing text survives their
+  introduction. A document such as a knowledge article may instead belong to one locale and be
+  listed only in it. IDs, dates, numbers and URLs are not translated; other exceptions are explicit
+  in the area's specification.
 
 ## Key Entities
 

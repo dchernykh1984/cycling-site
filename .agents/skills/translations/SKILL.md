@@ -8,6 +8,16 @@ description: Three locales, gettext catalogues and the traps that silently swall
 `ru` (default), `kk`, `en`. Interface strings live in gettext catalogues under
 `cycling_site/locale/<locale>/LC_MESSAGES/django.po`; content lives in per-locale model columns.
 
+## Data fields
+
+Localize reader-facing names, titles, captions and descriptions by default: non-page models use
+django-modeltranslation with ru / kk / en columns, and forms and administration expose each one.
+Preserve existing text in a data migration; read the active locale with the site's fallback and
+write the actual locale columns so a fallback is never copied into an empty translation.
+A document such as a knowledge article may instead belong to one locale and be listed only in
+that locale. IDs, dates, numbers and URLs are not translated. Record any other exception in the
+area's specification. A new field's review checks display, editing, migration and empty locales.
+
 ## Adding a string
 
 1. Wrap it: `{% trans "..." %}` in templates, `gettext` / `gettext_lazy` in Python. Source strings
