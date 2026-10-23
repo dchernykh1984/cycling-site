@@ -111,9 +111,9 @@
       event.preventDefault();
       if (menu.hidden) await load();
       highlight(active + (event.key === 'ArrowDown' ? 1 : -1));
-    } else if (event.key === 'Enter' && !menu.hidden && options.length) {
+    } else if (event.key === 'Enter') {
       event.preventDefault();
-      select(options[active < 0 ? 0 : active]);
+      if (!menu.hidden && options.length) select(options[active < 0 ? 0 : active]);
     } else if (event.key === 'Escape' || event.key === 'Tab') close();
   });
   clear.addEventListener('click', function () { select(null); });

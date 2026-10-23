@@ -141,3 +141,18 @@ def test_escape_keeps_the_search_closed_when_a_late_response_arrives(
     page.evaluate("window.__finishSearch()")
     expect(query).to_have_attribute("aria-expanded", "false")
     expect(page.get_by_role("listbox")).not_to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_enter_in_an_empty_search_does_not_submit_the_album(page: Page, live_server, admin_user):
+    _open(page, live_server, admin_user)
+    page.locator("#id_title_ru").fill("Draft waiting for an event")
+    page.locator("#id_date").fill(DAY.isoformat())
+    query = page.locator("#gallery-event-query")
+    query.fill("No such event")
+    message = page.locator("#gallery-event-picker").get_attribute("data-empty")
+    expect(page.locator("#gallery-event-status")).to_have_text(message or "")
+    query.press("Enter")
+    page.wait_for_load_state("networkidle")
+    expect(page).to_have_url(live_server.url + "/ru/gallery/albums/new/")
+    assert not Album.objects.exists()
