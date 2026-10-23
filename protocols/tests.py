@@ -93,7 +93,7 @@ class UploadProtocolTest(TestCase):
         response = self._post(protocol_type="invalid")
         self.assertEqual(response.status_code, 400)
 
-    def test_missing_html_file_returns_422(self):
+    def test_upload_without_html_or_document_returns_400(self):
         response = self.client.post(
             self.url,
             {
@@ -101,7 +101,8 @@ class UploadProtocolTest(TestCase):
                 "protocol_type": "absolute",
             },
         )
-        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("html_file, document or both", response.json()["detail"])
 
     def test_file_too_large_returns_400(self):
         large = SimpleUploadedFile("big.html", b"x" * (6 * 1024 * 1024), content_type="text/html")
