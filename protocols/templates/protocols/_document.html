@@ -1,0 +1,30 @@
+{% load i18n %}{% get_current_language as page_language %}
+<div class="protocol-doc" id="protocol-doc"{% if doc.lang %} lang="{{ doc.lang }}"{% endif %}>
+  {% if doc.language_note %}
+  <p class="protocol-language small text-body-secondary mb-2" lang="{{ page_language }}">{% blocktrans with language=doc.language_note %}Protocol language: {{ language }}{% endblocktrans %}</p>
+  {% endif %}
+  {% if doc.title and doc.title != protocol.competition.title %}<p class="protocol-doc-title h5">{{ doc.title }}</p>{% endif %}
+  {% if doc.header %}
+  <div class="protocol-header mb-3">{% for item in doc.header %}{% include "protocols/_item.html" %}{% endfor %}</div>
+  {% endif %}
+
+  <div class="protocol-panel mb-3" hidden lang="{{ page_language }}">
+    <input type="search" class="form-control form-control-sm protocol-search" placeholder="{% trans 'Search by name or number' %}" aria-label="{% trans 'Search by name or number' %}">
+    {% if doc.groups %}
+    <div class="protocol-groups" role="group" aria-label="{% trans 'Groups' %}">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-group-id="" aria-pressed="true">{% trans "All" %}</button>
+      {% for group in doc.groups %}<button type="button" class="btn btn-sm btn-outline-secondary" data-group-id="{{ group.id }}" aria-pressed="false" lang="{{ doc.lang|default:page_language }}">{{ group.label|default:group.id }}</button>{% endfor %}
+    </div>
+    {% endif %}
+    <div class="protocol-switches">
+      {% for toggle in doc.toggles %}<button type="button" class="btn btn-sm btn-outline-secondary protocol-toggle" data-toggle-id="{{ toggle.id }}" data-default="{{ toggle.default|yesno:'true,false' }}" aria-pressed="{{ toggle.default|yesno:'true,false' }}" lang="{{ doc.lang|default:page_language }}">{{ toggle.label|default:toggle.id }}</button>{% endfor %}
+      <button type="button" class="btn btn-sm btn-outline-secondary protocol-mode" aria-pressed="false">{% trans "Full table" %}</button>
+    </div>
+  </div>
+
+  {% for section in doc.sections %}{% include "protocols/_section.html" %}{% endfor %}
+
+  {% if doc.footer %}
+  <div class="protocol-footer mt-3">{% for item in doc.footer %}{% include "protocols/_item.html" %}{% endfor %}</div>
+  {% endif %}
+</div>

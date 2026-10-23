@@ -7,12 +7,14 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.utils.translation import gettext
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from calendar_app.models import Competition
 from calendar_app.visibility import can_see
 
+from . import rendering
 from .models import Protocol
 
 _MAX_VERSIONS = 10
@@ -64,7 +66,8 @@ def protocol_state(protocol: Protocol) -> dict:
     can land between asking whether anything changed and fetching the content, and the content then
     belongs to that newer upload, not to the one the question was answered about.
     """
-    return {"hash": protocol.file_hash, "is_live": protocol.is_live, "shown": "html"}
+    shown = "document" if protocol.document is not None else "html"
+    return {"hash": protocol.file_hash, "is_live": protocol.is_live, "shown": shown}
 
 
 def _inject_resize_script(content: bytes, state: dict) -> bytes:
@@ -151,6 +154,32 @@ def protocol_last_updated(request, pk):
     )
 
 
+def _state_headers(response: HttpResponse, state: dict) -> HttpResponse:
+    response["X-Protocol-Hash"] = state["hash"]
+    response["X-Protocol-Live"] = "true" if state["is_live"] else "false"
+    response["X-Protocol-Shown"] = state["shown"]
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+def protocol_fragment(request, pk):
+    """The drawn document alone, for a live page to swap in, with the state of the row it came from.
+
+    A protocol whose last upload carried no document answers with no body and says so in its
+    headers: the page then reloads into the form the protocol now takes.
+    """
+    protocol = _published_protocol(request, pk)
+    state = protocol_state(protocol)
+    body = ""
+    if state["shown"] == "document":
+        body = render_to_string(
+            "protocols/_document.html",
+            {"protocol": protocol, "doc": rendering.build(protocol.document, image_sources(request))},
+            request=request,
+        )
+    return _state_headers(HttpResponse(body, content_type="text/html; charset=utf-8"), state)
+
+
 @xframe_options_sameorigin
 def protocol_html(request, pk):
     protocol = _published_protocol(request, pk)
@@ -173,13 +202,16 @@ def protocol_detail(request, pk):
     protocol = _published_protocol(request, pk)
     versions = protocol.versions.all()[:_MAX_VERSIONS]
     kind = gettext("Absolute results") if protocol.protocol_type == "absolute" else gettext("Group results")
+    state = protocol_state(protocol)
+    doc = rendering.build(protocol.document, image_sources(request)) if state["shown"] == "document" else None
     return render(
         request,
         "protocols/detail.html",
         {
             "protocol": protocol,
             "versions": versions,
-            "state": protocol_state(protocol),
+            "state": state,
+            "doc": doc,
             # Without it a link to the protocol pasted into a chat previews with an empty title.
             "meta_title": f"{protocol.competition.title} \u2014 {kind}",
             "poll_interval_ms": settings.PROTOCOL_POLL_INTERVAL_MS,

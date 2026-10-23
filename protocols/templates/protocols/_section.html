@@ -1,0 +1,5 @@
+<section class="protocol-section" id="{{ section.anchor }}">
+  {% if section.title %}<h3 class="protocol-section-title h5 mt-3">{{ section.title }}</h3>{% endif %}
+  {% if section.table %}{% include "protocols/_table.html" with table=section.table %}{% endif %}
+  {% for section in section.sections %}{% include "protocols/_section.html" %}{% endfor %}
+</section>
