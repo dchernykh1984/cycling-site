@@ -1,8 +1,11 @@
 import hashlib
+import logging
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.db import transaction
 from django.utils.text import get_valid_filename
 from ninja import File, Form, Router, Schema
 from ninja.errors import HttpError
@@ -12,6 +15,7 @@ from calendar_app.models import Competition
 from protocols.models import Protocol, ProtocolVersion
 
 router = Router(tags=["protocols"])
+logger = logging.getLogger(__name__)
 
 _MAX_VERSIONS = 10
 
@@ -36,30 +40,16 @@ class ProtocolDeleteOut(Schema):
     deleted: bool
 
 
-@router.post(
-    "/upload/",
-    response=ProtocolUploadOut,
-    auth=None,
-    summary="Upload protocol HTML file",
-)
-def upload_protocol(  # noqa: C901
-    request,
-    competition_token: str = Form(...),
-    protocol_type: str = Form("absolute"),
-    is_live: bool = Form(True),
-    stage_label: str = Form(""),
-    html_file: UploadedFile = File(...),  # noqa: B008
-):
-    """
-    Upload an HTML protocol file for a competition.
-    Uses `competition_token` (the competition's upload token) for authentication.
-    Called by FinishProtocolGenerator.
-    """
-    competition = _competition_by_token(competition_token)
+def _delete_files(names: list) -> None:
+    for name in filter(None, names):
+        try:
+            default_storage.delete(name)
+        except OSError:
+            logger.warning("Could not delete the displaced protocol file %s", name, exc_info=True)
 
-    if protocol_type not in ("absolute", "group"):
-        raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
 
+def _read_html(html_file: UploadedFile) -> tuple[bytes, str]:
+    """The uploaded HTML and the name to store it under, or a 400 saying what is wrong with it."""
     content_type = getattr(html_file, "content_type", "") or ""
     media_type = content_type.split(";")[0].strip()
     if media_type != "text/html":
@@ -81,38 +71,90 @@ def upload_protocol(  # noqa: C901
     if not _c.lstrip()[:15].lower().startswith(b"<"):
         raise HttpError(400, "File does not appear to be valid HTML")
 
-    file_hash = hashlib.sha256(content).hexdigest()
     filename = get_valid_filename(html_file.name or "protocol.html")
     if not filename.lower().endswith(".html"):
         filename = filename + ".html"
+    return content, filename
 
-    protocol, _ = Protocol.objects.get_or_create(
-        competition=competition,
-        protocol_type=protocol_type,
+
+def _replace_protocol(competition: Competition, protocol_type: str, fields: dict, html: tuple[bytes, str] | None):
+    """Switch a protocol to one upload's content, all of it or nothing.
+
+    The new files are written under names of their own before anything else changes; the protocol,
+    its new version and the pruning of old versions then switch in one transaction, uploads of one
+    event taking turns on the event's row; the files they displace are deleted only once that
+    transaction has committed. Whatever fails on the way, the protocol keeps its previous content
+    and its file, and the new files are removed again.
+    """
+    saved: list[str] = []
+    try:
+        main_name = version_name = ""
+        if html is not None:
+            content, filename = html
+            main_name = default_storage.save(f"protocols/{filename}", ContentFile(content))
+            saved.append(main_name)
+            version_name = default_storage.save(f"protocol_versions/v_{filename}", ContentFile(content))
+            saved.append(version_name)
+        with transaction.atomic():
+            Competition.objects.select_for_update().get(pk=competition.pk)
+            protocol = (
+                Protocol.objects.select_for_update()
+                .filter(competition=competition, protocol_type=protocol_type)
+                .first()
+            ) or Protocol(competition=competition, protocol_type=protocol_type)
+            displaced = [protocol.html_file.name] if protocol.html_file else []
+            protocol.html_file = main_name
+            for field, value in fields.items():
+                setattr(protocol, field, value)
+            protocol.save()
+            ProtocolVersion.objects.create(
+                protocol=protocol,
+                file_hash=protocol.file_hash,
+                html_file=version_name,
+                document=protocol.document,
+            )
+            old = list(ProtocolVersion.objects.filter(protocol=protocol).order_by("-saved_at", "-pk")[_MAX_VERSIONS:])
+            displaced += [v.html_file.name for v in old if v.html_file]
+            ProtocolVersion.objects.filter(pk__in=[v.pk for v in old]).delete()
+            transaction.on_commit(lambda: _delete_files(displaced))
+    except BaseException:
+        _delete_files(saved)
+        raise
+    return protocol
+
+
+@router.post(
+    "/upload/",
+    response=ProtocolUploadOut,
+    auth=None,
+    summary="Upload protocol HTML file",
+)
+def upload_protocol(
+    request,
+    competition_token: str = Form(...),
+    protocol_type: str = Form("absolute"),
+    is_live: bool = Form(True),
+    stage_label: str = Form(""),
+    html_file: UploadedFile = File(...),  # noqa: B008
+):
+    """
+    Upload an HTML protocol file for a competition.
+    Uses `competition_token` (the competition's upload token) for authentication.
+    Called by FinishProtocolGenerator.
+    """
+    competition = _competition_by_token(competition_token)
+
+    if protocol_type not in ("absolute", "group"):
+        raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
+
+    html = _read_html(html_file)
+    file_hash = hashlib.sha256(html[0]).hexdigest()
+    protocol = _replace_protocol(
+        competition,
+        protocol_type,
+        {"is_live": is_live, "stage_label": stage_label, "file_hash": file_hash, "document": None},
+        html,
     )
-
-    if protocol.html_file:
-        protocol.html_file.delete(save=False)
-
-    protocol.is_live = is_live
-    protocol.stage_label = stage_label
-    protocol.file_hash = file_hash
-    protocol.html_file.save(filename, ContentFile(content), save=False)
-    protocol.save()
-
-    version = ProtocolVersion(protocol=protocol, file_hash=file_hash)
-    version.html_file.save(f"v_{filename}", ContentFile(content), save=True)
-
-    old_ids = list(
-        ProtocolVersion.objects.filter(protocol=protocol)
-        .order_by("-saved_at")
-        .values_list("pk", flat=True)[_MAX_VERSIONS:]
-    )
-    if old_ids:
-        for old in ProtocolVersion.objects.filter(pk__in=old_ids):
-            old.html_file.delete(save=False)
-        ProtocolVersion.objects.filter(pk__in=old_ids).delete()
-
     return {"id": protocol.pk, "file_hash": file_hash}
 
 
@@ -137,15 +179,17 @@ def delete_protocol(
     if protocol_type not in ("absolute", "group"):
         raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
 
-    protocol = Protocol.objects.filter(competition=competition, protocol_type=protocol_type).first()
-    if protocol is None:
-        return {"deleted": False}
-
-    # Remove the stored files (rows cascade), so nothing is orphaned on disk.
-    for version in protocol.versions.all():
-        if version.html_file:
-            version.html_file.delete(save=False)
-    if protocol.html_file:
-        protocol.html_file.delete(save=False)
-    protocol.delete()
+    with transaction.atomic():
+        Competition.objects.select_for_update().get(pk=competition.pk)
+        protocol = (
+            Protocol.objects.select_for_update().filter(competition=competition, protocol_type=protocol_type).first()
+        )
+        if protocol is None:
+            return {"deleted": False}
+        # Remove the stored files (rows cascade) once the rows are gone, so nothing is orphaned on disk.
+        files = [v.html_file.name for v in protocol.versions.all() if v.html_file]
+        if protocol.html_file:
+            files.append(protocol.html_file.name)
+        protocol.delete()
+        transaction.on_commit(lambda: _delete_files(files))
     return {"deleted": True}
