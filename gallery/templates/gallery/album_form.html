@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% if action == "edit" %}{% trans "Edit album" %}{% else %}{% trans "New album" %}{% endif %}{% endblock %}
 
@@ -21,17 +21,32 @@
       <div class="card-body">
         <h2 class="h5 mb-3">{% trans "Album" %}</h2>
         <div class="row g-3">
-          <div class="col-12">
-            <label class="form-label" for="{{ form.competition.id_for_label }}">{{ form.competition.label }}</label>
+          <div class="col-12" id="gallery-event-picker" data-url="{% url 'gallery_event_choices' %}"
+               data-loading="{% trans 'Searching events...' %}" data-empty="{% trans 'No events found.' %}"
+               data-more="{% trans 'More matches. Refine the search.' %}"
+               data-error="{% trans 'Could not load events. Try again.' %}" data-none="{% trans 'No linked event' %}">
+            <label class="form-label" for="gallery-event-query">{{ form.competition.label }}</label>
             {{ form.competition }}
-            <div class="form-text">{{ form.competition.help_text }}</div>
+            <input type="search" id="gallery-event-query" class="form-control" role="combobox"
+                   aria-autocomplete="list" aria-expanded="false" aria-controls="gallery-event-options"
+                   aria-describedby="gallery-event-help gallery-event-status" autocomplete="off"
+                   maxlength="200" placeholder="{% trans 'Search by event name or year, in Cyrillic or Latin letters' %}">
+            <div class="form-text" id="gallery-event-help">{{ form.competition.help_text }}
+              {% trans "For an album without an event, leave this choice empty and enter its title and date." %}
+            </div>
+            <div id="gallery-event-status" class="form-text" role="status"></div>
+            <div id="gallery-event-options" class="list-group gallery-event-options mt-2" role="listbox" hidden></div>
+            <div class="border rounded p-3 mt-2" id="gallery-selected-event"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="gallery-clear-event" hidden>{% trans "Remove event" %}</button>
             {% if form.competition.errors %}<div class="text-danger small mt-1">{{ form.competition.errors }}</div>{% endif %}
           </div>
-          <div class="col-md-8">
-            <label class="form-label" for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
-            {{ form.title }}
-            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors }}</div>{% endif %}
+          {% for field in form.title_fields %}
+          <div class="col-md-4">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors }}</div>{% endif %}
           </div>
+          {% endfor %}
           <div class="col-md-4">
             <label class="form-label" for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
             {{ form.date }}
@@ -99,19 +114,10 @@
   </form>
   {% endif %}
 </section>
+{{ selected_event|json_script:"gallery-selected-event-data" }}
+<script src="{% static 'gallery/event-picker.js' %}" defer></script>
 <script>
 (function () {
-  // With an event picked and the title still empty, show the event's name as what will be used.
-  var event = document.getElementById('{{ form.competition.id_for_label }}');
-  var title = document.getElementById('{{ form.title.id_for_label }}');
-  if (event && title) {
-    var fallback = title.getAttribute('placeholder');
-    event.addEventListener('change', function () {
-      var label = event.options[event.selectedIndex].text;
-      var parts = label.split(' - ');
-      title.setAttribute('placeholder', event.value && parts.length > 1 ? parts.slice(1).join(' - ') : fallback);
-    });
-  }
   // Say how many files are picked, so a big batch is not a guess -- and stop a batch too big to send:
   // past the site's limit Cloudflare refuses the request before the form can explain anything.
   var input = document.getElementById('{{ upload.photos.id_for_label }}');

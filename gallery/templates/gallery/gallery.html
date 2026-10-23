@@ -42,10 +42,21 @@ any other. Each card opens the photo's own page.{% endcomment %}
     <h2 class="gallery-album-title">{{ album.title }}</h2>
     <span>{{ album.date|date:"d.m.Y" }}</span>
     <span>{% blocktrans with counter=photos.paginator.count %}Photos: {{ counter }}{% endblocktrans %}</span>
-    {% if album.competition %}
-    <a href="{{ album.competition.get_absolute_url }}">{% trans "Event page" %}</a>
-    {% endif %}
   </div>
+  {% if linked_event %}
+  <section class="card mb-4" id="gallery-linked-event" aria-labelledby="gallery-linked-event-title">
+    <div class="card-body">
+      <h3 class="h5" id="gallery-linked-event-title"><a href="{{ linked_event.url }}">{{ linked_event.title }}</a></h3>
+      <dl class="row mb-0">
+        {% for fact in linked_event.details %}
+        <dt class="col-sm-3">{{ fact.label }}</dt>
+        <dd class="col-sm-9 text-break">{{ fact.value }}</dd>
+        {% endfor %}
+      </dl>
+      <a href="{{ linked_event.url }}">{% trans "Event page" %}</a>
+    </div>
+  </section>
+  {% endif %}
 
   {% if photos %}
   <div class="gallery-grid">

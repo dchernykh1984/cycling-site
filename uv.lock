@@ -409,6 +409,7 @@ version = "0.1.0"
 source = { virtual = "." }
 default-groups = "all"
 dependencies = [
+    { name = "anyascii" },
     { name = "dj-database-url" },
     { name = "django" },
     { name = "django-allauth", extra = ["socialaccount"] },
@@ -444,6 +445,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anyascii", specifier = ">=0.3.3,<1" },
     { name = "dj-database-url", specifier = ">=3.1.2,<4" },
     { name = "django", specifier = ">=5.2,<7.0" },
     { name = "django-allauth", extras = ["socialaccount"], specifier = ">=65.0,<66" },

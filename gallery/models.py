@@ -12,9 +12,10 @@ from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from modeltranslation.manager import MultilingualManager
 
 
-class AlbumQuerySet(models.QuerySet):
+class AlbumManager(MultilingualManager["Album"]):
     def public(self):
         return self.filter(is_hidden=False)
 
@@ -54,7 +55,7 @@ class Album(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects: ClassVar[AlbumQuerySet] = AlbumQuerySet.as_manager()  # type: ignore[assignment]
+    objects = AlbumManager()
 
     class Meta:
         ordering: ClassVar[list[str]] = ["-date", "-pk"]

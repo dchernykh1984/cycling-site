@@ -137,7 +137,7 @@ class CreateAlbumTests(GalleryTestCase):
         self.client.force_login(self.admin)
         response = self.client.post(
             reverse("gallery_album_create"),
-            {"title": "Gran Fondo 2026", "date": "2026-05-17", "photos": [_jpeg("a.jpg"), _jpeg("b.jpg")]},
+            {"title_ru": "Gran Fondo 2026", "date": "2026-05-17", "photos": [_jpeg("a.jpg"), _jpeg("b.jpg")]},
         )
         album = Album.objects.get()
         self.assertRedirects(response, reverse("gallery_album_edit", args=[album.pk]))
@@ -149,7 +149,7 @@ class CreateAlbumTests(GalleryTestCase):
     def test_the_first_photo_becomes_the_cover_until_another_is_picked(self):
         self.client.force_login(self.admin)
         self.client.post(
-            reverse("gallery_album_create"), {"title": "Road Race 2026", "date": "2026-06-01", "photos": [_jpeg()]}
+            reverse("gallery_album_create"), {"title_ru": "Road Race 2026", "date": "2026-06-01", "photos": [_jpeg()]}
         )
         album = Album.objects.get()
         self.assertEqual(album.cover, album.photos.first())
@@ -159,7 +159,7 @@ class CreateAlbumTests(GalleryTestCase):
             title_ru="UBT Giant Time Trial", date_start=datetime.date(2026, 7, 12), status=Competition.Status.APPROVED
         )
         self.client.force_login(self.admin)
-        self.client.post(reverse("gallery_album_create"), {"competition": race.pk, "title": "", "date": ""})
+        self.client.post(reverse("gallery_album_create"), {"competition": race.pk, "title_ru": "", "date": ""})
         album = Album.objects.get()
         self.assertEqual(album.title, "UBT Giant Time Trial")
         self.assertEqual(album.date, datetime.date(2026, 7, 12))
@@ -184,13 +184,13 @@ class CreateAlbumTests(GalleryTestCase):
         )
         self.client.force_login(self.admin)
         self.client.post(
-            reverse("gallery_album_create"), {"competition": race.pk, "title": "Giro d'Almaty", "date": ""}
+            reverse("gallery_album_create"), {"competition": race.pk, "title_ru": "Giro d'Almaty", "date": ""}
         )
         self.assertEqual(Album.objects.get().title, "Giro d'Almaty")
 
     def test_without_a_title_or_an_event_the_form_asks_for_one(self):
         self.client.force_login(self.admin)
-        response = self.client.post(reverse("gallery_album_create"), {"title": "", "date": "2026-06-01"})
+        response = self.client.post(reverse("gallery_album_create"), {"title_ru": "", "date": "2026-06-01"})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Album.objects.exists())
 
@@ -199,7 +199,7 @@ class CreateAlbumTests(GalleryTestCase):
         bad = SimpleUploadedFile("broken.jpg", b"nope", content_type="image/jpeg")
         response = self.client.post(
             reverse("gallery_album_create"),
-            {"title": "Camp 2026", "date": "2026-03-01", "photos": [_jpeg(), bad]},
+            {"title_ru": "Camp 2026", "date": "2026-03-01", "photos": [_jpeg(), bad]},
             follow=True,
         )
         self.assertEqual(Album.objects.get().photos.count(), 1)
@@ -210,7 +210,7 @@ class CreateAlbumTests(GalleryTestCase):
         self.client.force_login(self.admin)
         response = self.client.post(
             reverse("gallery_album_create"),
-            {"title": "Big", "date": "2026-03-01", "photos": [_jpeg(), _jpeg(), _jpeg()]},
+            {"title_ru": "Big", "date": "2026-03-01", "photos": [_jpeg(), _jpeg(), _jpeg()]},
         )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Album.objects.exists())
@@ -226,7 +226,7 @@ class DiskReserveTests(GalleryTestCase):
         with mock.patch("gallery.forms.shutil.disk_usage", return_value=nearly_full):
             response = self.client.post(
                 reverse("gallery_album_edit", args=[album.pk]),
-                {"title": album.title, "date": "2026-09-06", "photos": [_jpeg()]},
+                {"title_ru": album.title, "date": "2026-09-06", "photos": [_jpeg()]},
             )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(album.photos.exists())
@@ -242,7 +242,7 @@ class BatchSizeTests(GalleryTestCase):
         self.client.force_login(self.admin)
         response = self.client.post(
             reverse("gallery_album_edit", args=[album.pk]),
-            {"title": album.title, "date": "2026-09-06", "photos": [_jpeg()]},
+            {"title_ru": album.title, "date": "2026-09-06", "photos": [_jpeg()]},
         )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(album.photos.exists())
@@ -257,7 +257,7 @@ class CoverTests(GalleryTestCase):
         self.client.force_login(self.admin)
 
     def _edit(self, **data):
-        payload = {"title": self.album.title, "date": "2026-09-06", **data}
+        payload = {"title_ru": self.album.title, "date": "2026-09-06", **data}
         return self.client.post(reverse("gallery_album_edit", args=[self.album.pk]), payload)
 
     def test_without_a_pick_the_first_photo_stands_in(self):
@@ -404,5 +404,17 @@ class NavigationAndSitemapTests(GalleryTestCase):
     def test_the_gallery_strings_are_translated(self):
         for locale in ("ru", "kk"):
             with translation_override(locale):
-                for msgid in ("Gallery", "Cover photo", "Make cover", "New album", "View more"):
+                for msgid in (
+                    "Gallery",
+                    "Cover photo",
+                    "Make cover",
+                    "New album",
+                    "View more",
+                    "No linked event",
+                    "Remove event",
+                    "Searching events...",
+                    "No events found.",
+                    "More matches. Refine the search.",
+                    "Could not load events. Try again.",
+                ):
                     self.assertNotEqual(gettext(msgid), msgid, f"{msgid!r} in {locale}")

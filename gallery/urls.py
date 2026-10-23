@@ -4,6 +4,7 @@ from gallery import views
 
 urlpatterns = [
     path("", views.gallery_index, name="gallery_index"),
+    path("events/", views.event_choices, name="gallery_event_choices"),
     path("albums/", views.gallery_albums, name="gallery_albums"),
     path("albums/new/", views.album_create, name="gallery_album_create"),
     path("albums/<int:pk>/", views.gallery_album, name="gallery_album"),
