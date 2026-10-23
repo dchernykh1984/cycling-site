@@ -72,9 +72,10 @@
         (query && (row.dataset.search || "").indexOf(query) === -1) ||
         (state.group && row.dataset.groupId !== state.group);
       row.classList.toggle("is-filtered", !!out);
-      each(root, '[data-for="' + row.id + '"]', function (companion) {
-        companion.classList.toggle("is-filtered", !!out);
-      });
+      // A row's note and open details follow it directly.
+      for (var next = row.nextElementSibling; next && next.dataset.for === row.id; next = next.nextElementSibling) {
+        next.classList.toggle("is-filtered", !!out);
+      }
     });
     // Innermost sections first, so a section whose children all emptied out empties too.
     var sections = Array.prototype.slice.call(root.querySelectorAll(".protocol-section")).reverse();
