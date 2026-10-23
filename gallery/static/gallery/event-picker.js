@@ -10,6 +10,10 @@
   var options = [], active = -1, timer, controller;
 
   function close() {
+    clearTimeout(timer);
+    if (controller) controller.abort();
+    controller = null;
+    status.textContent = '';
     menu.hidden = true;
     input.setAttribute('aria-expanded', 'false');
     input.removeAttribute('aria-activedescendant');
@@ -45,6 +49,7 @@
   }
 
   function highlight(index) {
+    if (menu.hidden) return;
     var buttons = menu.querySelectorAll('[role="option"]');
     active = buttons.length ? (index + buttons.length) % buttons.length : -1;
     buttons.forEach(function (button, i) {
@@ -98,8 +103,6 @@
 
   input.addEventListener('focus', load);
   input.addEventListener('input', function () {
-    clearTimeout(timer);
-    if (controller) controller.abort();
     close();
     timer = setTimeout(load, 200);
   });
