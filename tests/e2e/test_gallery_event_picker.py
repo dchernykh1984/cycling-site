@@ -81,10 +81,17 @@ def test_an_album_without_an_event_keeps_three_titles(page: Page, live_server, a
 
 @pytest.mark.django_db(transaction=True)
 def test_the_event_can_be_picked_with_the_keyboard(page: Page, live_server, admin_user, gallery_event):
+    Competition.objects.create(
+        title_ru="Gran Fondo second",
+        date_start=DAY,
+        status=Competition.Status.APPROVED,
+    )
     _open(page, live_server, admin_user)
     query = page.locator("#gallery-event-query")
     query.fill(CYRILLIC_FONDO)
-    expect(page.get_by_role("option")).to_be_visible()
+    expect(page.get_by_role("option")).to_have_count(2)
+    query.press("ArrowUp")
+    expect(query).to_have_attribute("aria-activedescendant", "gallery-event-option-1")
     query.press("ArrowDown")
     expect(query).to_have_attribute("aria-activedescendant", "gallery-event-option-0")
     query.press("Enter")
