@@ -12,7 +12,9 @@ import re
 from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
-from django.utils.translation import get_language, get_language_info
+from django.utils.html import escape
+from django.utils.safestring import SafeString, mark_safe
+from django.utils.translation import get_language, get_language_info, gettext
 
 from cycling_site.sanitize import sanitize_rich_html
 
@@ -110,12 +112,65 @@ def _table(raw: dict, inherited_group: str | None, counter: list[int]) -> dict:
                 "who": " ".join(_cell_text(cells[c["index"]]) for c in columns if c["role"] in ("bib", "name")).strip(),
             }
         )
+    width = len(columns) + 1  # the column of row buttons
     return {
         "columns": columns,
         "header_groups": _header_groups(columns),
         "rows": rows,
-        "width": len(columns) + 1,  # the column of row buttons
+        "body": _body_html(columns, rows, width),
+        "width": width,
     }
+
+
+def _column_attrs(column: dict) -> str:
+    classes = f"prio-{column['priority']}"
+    if column["role_class"]:
+        classes += f" role-{column['role_class']}"
+    if column["align"]:
+        classes += f" align-{column['align']}"
+    attrs = f' class="{classes}" data-col="{column["index"]}" data-label="{escape(column["label"])}"'
+    if column["toggle"]:
+        attrs += f' data-toggle-id="{escape(column["toggle"])}"'
+    return attrs
+
+
+def _cell_html(cell: dict) -> str:
+    text: str = escape(cell["text"])
+    if cell["strong"]:
+        text = f"<strong>{text}</strong>"
+    if cell["url"]:
+        text = f'<a href="{escape(cell["url"])}" rel="nofollow noopener" target="_blank">{text}</a>'
+    return text + "".join(f'<br><small class="protocol-cell-sub">{escape(line)}</small>' for line in cell["sub"])
+
+
+def _body_html(columns: list[dict], rows: list[dict], width: int) -> SafeString:
+    """The table's rows as markup, built here rather than in a template loop.
+
+    A table may hold tens of thousands of cells (FR-PRO-008); a template tag per cell costs seconds
+    at that size, string joining a fraction of one. Every value is escaped on the way in.
+    """
+    attrs = [_column_attrs(c) for c in columns]
+    details = gettext("Details")
+    parts = []
+    for row in rows:
+        number = row["number"]
+        status = f" status-{row['status']}" if row["status"] else ""
+        group = f' data-group-id="{escape(row["group"])}"' if row["group"] else ""
+        label = escape(f"{details}: {row['who']}" if row["who"] else details)
+        parts.append(
+            f'<tr class="protocol-row{status}" id="row-{number}" data-search="{escape(row["search"])}"{group}>'
+            f'<td class="protocol-expand-col"><button type="button" class="protocol-row-expand" aria-expanded="false"'
+            f' aria-controls="row-{number}-details" aria-label="{label}" hidden><span aria-hidden="true">+</span>'
+            "</button></td>"
+        )
+        parts.extend(
+            f"<td{attr}>{_cell_html(cell)}</td>" for attr, (_column, cell) in zip(attrs, row["cells"], strict=True)
+        )
+        parts.append("</tr>")
+        if row["note"]:
+            note = "<br>".join(escape(line) for line in row["note"])
+            parts.append(f'<tr class="protocol-note" data-for="row-{number}"><td colspan="{width}">{note}</td></tr>')
+    return mark_safe("".join(parts))  # noqa: S308 -- every value above went through escape()
 
 
 def _sections(raw_sections: list[dict], inherited_group: str | None, prefix: str, counter: list[int]) -> list:
