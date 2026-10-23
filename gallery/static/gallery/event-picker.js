@@ -110,7 +110,8 @@
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       if (menu.hidden) await load();
-      highlight(active + (event.key === 'ArrowDown' ? 1 : -1));
+      var step = event.key === 'ArrowDown' ? 1 : -1;
+      highlight(active < 0 && step < 0 ? options.length - 1 : active + step);
     } else if (event.key === 'Enter') {
       event.preventDefault();
       if (!menu.hidden && options.length) select(options[active < 0 ? 0 : active]);
