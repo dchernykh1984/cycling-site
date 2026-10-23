@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from urllib.parse import urlsplit
 
@@ -43,20 +44,36 @@ _RESIZE_SCRIPT = (
     b'window.parent.postMessage({type:"protocol-resize",'
     b"h:document.documentElement.scrollHeight,"
     b'w:document.documentElement.scrollWidth},"*");}'
+    b"function l(){s();"
+    b'window.parent.postMessage(Object.assign({type:"protocol-loaded"},__META__),"*");}'
     b'if(document.readyState==="loading"){'
-    b'document.addEventListener("DOMContentLoaded",s);}else{s();}'
+    b'document.addEventListener("DOMContentLoaded",l);}else{l();}'
     b"new MutationObserver(s).observe(document.documentElement,"
     b'{attributes:true,childList:true,subtree:true,attributeFilter:["style"]});'
     b"})();</script>"
 )
 
 
-def _inject_resize_script(content: bytes) -> bytes:
+def protocol_state(protocol: Protocol) -> dict:
+    """What the reader is shown for a protocol, read off one row so the parts always agree.
+
+    The live page trusts only the state that arrives *with* the content it applies: a newer upload
+    can land between asking whether anything changed and fetching the content, and the content then
+    belongs to that newer upload, not to the one the question was answered about.
+    """
+    return {"hash": protocol.file_hash, "is_live": protocol.is_live, "shown": "html"}
+
+
+def _inject_resize_script(content: bytes, state: dict) -> bytes:
+    # The frame tells its parent which upload it is, so the parent confirms what it actually shows.
+    # A server error page carries no such script, which is how a failed reload is told apart.
+    meta = json.dumps(state).replace("<", "\\u003c").encode()
+    script = _RESIZE_SCRIPT.replace(b"__META__", meta)
     lower = content.lower()
     idx = lower.rfind(b"</body>")
     if idx != -1:
-        return content[:idx] + _RESIZE_SCRIPT + content[idx:]
-    return content + _RESIZE_SCRIPT
+        return content[:idx] + script + content[idx:]
+    return content + script
 
 
 def image_sources(request) -> list[str]:
@@ -126,6 +143,7 @@ def protocol_last_updated(request, pk):
             "last_updated": protocol.last_updated.isoformat(),
             "file_hash": protocol.file_hash,
             "is_live": protocol.is_live,
+            "shown": protocol_state(protocol)["shown"],
         }
     )
 
@@ -140,7 +158,7 @@ def protocol_html(request, pk):
     except OSError:
         raise Http404 from None
     content = _sanitize_protocol_html(content)
-    content = _inject_resize_script(content)
+    content = _inject_resize_script(content, protocol_state(protocol))
     response = HttpResponse(content, content_type="text/html; charset=utf-8")
     response["X-Content-Type-Options"] = "nosniff"
     response["Content-Security-Policy"] = content_security_policy(request)
@@ -158,7 +176,10 @@ def protocol_detail(request, pk):
         {
             "protocol": protocol,
             "versions": versions,
+            "state": protocol_state(protocol),
             # Without it a link to the protocol pasted into a chat previews with an empty title.
             "meta_title": f"{protocol.competition.title} \u2014 {kind}",
+            "poll_interval_ms": settings.PROTOCOL_POLL_INTERVAL_MS,
+            "load_timeout_ms": settings.PROTOCOL_LOAD_TIMEOUT_MS,
         },
     )
