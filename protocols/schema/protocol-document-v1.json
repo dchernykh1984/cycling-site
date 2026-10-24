@@ -10,8 +10,15 @@
         "sub": {
           "default": [],
           "items": {
-            "maxLength": 2000,
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/Line"
+              }
+            ]
           },
           "maxItems": 5,
           "title": "Sub",
@@ -82,7 +89,7 @@
         "priority": {
           "anyOf": [
             {
-              "maximum": 3,
+              "maximum": 9,
               "minimum": 1,
               "type": "integer"
             },
@@ -109,8 +116,15 @@
         "sub_label": {
           "default": [],
           "items": {
-            "maxLength": 2000,
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/Line"
+              }
+            ]
           },
           "maxItems": 5,
           "title": "Sub Label",
@@ -251,6 +265,37 @@
         }
       },
       "title": "Item",
+      "type": "object"
+    },
+    "Line": {
+      "description": "A second line under a cell or a heading that a toggle may hide -- extra statistics under a\nlap's time, shown and hidden with it, as the generator's own HTML does.",
+      "properties": {
+        "strong": {
+          "default": false,
+          "title": "Strong",
+          "type": "boolean"
+        },
+        "text": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Text",
+          "type": "string"
+        },
+        "toggle": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Toggle"
+        }
+      },
+      "title": "Line",
       "type": "object"
     },
     "Row": {

@@ -751,3 +751,22 @@ def test_no_table_heading_is_left_without_text(page: Page, live_server, approved
         "ths => ths.filter(th => !th.textContent.trim() && !th.getAttribute('aria-label')).length"
     )
     assert empty == 0
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_toggle_shows_and_hides_the_statistics_under_a_lap_time(page: Page, live_server, approved_competition):
+    document = _raw(toggles=[{"id": "splits", "label": "Splits"}, {"id": "stats", "label": "Stats"}])
+    lap = next(c for c in document["sections"][0]["columns"] if c["id"] == "lap1")
+    lap["sub_label"] = [{"text": "(lap gap)", "toggle": "stats"}]
+    for row in document["sections"][0]["rows"]:
+        row["cells"]["lap1"] = {"text": row["cells"]["lap1"], "sub": [{"text": "0:00:00.0 (1)", "toggle": "stats"}]}
+    protocol = _protocol(approved_competition, parse(json.dumps(document).encode()))
+    _open(page, live_server, protocol, 1280)
+    stats = _cell(page, "Anna", "lap1").locator(".protocol-line")
+    heading = page.locator("thead .protocol-line")
+    expect(stats).to_be_visible()
+    expect(heading).to_be_visible()
+    page.get_by_role("button", name="Stats").click()
+    expect(stats).to_be_hidden()
+    expect(heading).to_be_hidden()
+    expect(_cell(page, "Anna", "lap1")).to_contain_text("0:25:01")

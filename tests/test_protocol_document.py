@@ -131,6 +131,19 @@ def test_unknown_fields_are_ignored_and_unknown_kinds_kept():
         (
             _raw(
                 sections=[
+                    {"columns": [{"id": "a"}], "rows": [{"cells": {"a": {"sub": [{"text": "x", "toggle": "s"}]}}}]}
+                ]
+            ),
+            "a line names toggle 's', which is not in the toggles list",
+        ),
+        (
+            _raw(sections=[{"columns": [{"id": "a", "sub_label": [{"text": "x", "toggle": "s"}]}], "rows": []}]),
+            "a line names toggle 's', which is not in the toggles list",
+        ),
+        (_raw(sections=[{"columns": [{"id": "a", "priority": 10}], "rows": []}]), "less than or equal to 9"),
+        (
+            _raw(
+                sections=[
                     {
                         "type": "group",
                         "sections": [{"type": "group", "sections": [{"type": "group", "sections": [{}]}]}],
@@ -564,3 +577,34 @@ def test_a_rows_search_text_is_folded_to_one_script():
     rows = view["sections"][0]["table"]["rows"]
     assert [r["search"] for r in rows] == ["chernykh denis", "chernykh denis"]
     assert json.loads(view["fold"])[chr(0x427)] == "ch"
+
+
+def test_a_toggle_hides_second_lines_under_a_cell_and_its_heading():
+    stats = {"text": "0:00:00.0 (1)", "toggle": "stats", "strong": True}
+    document = _document(
+        toggles=[{"id": "stats", "label": "Stats"}],
+        sections=[
+            {
+                "columns": [
+                    {"id": "name", "role": "name"},
+                    {
+                        "id": "lap",
+                        "label": "Lap 1",
+                        "priority": 5,
+                        "sub_label": ["(gap)", {"text": "(lap gap)", "toggle": "stats"}],
+                    },
+                ],
+                "rows": [{"cells": {"name": "Ann", "lap": {"text": "0:25:32.4", "sub": ["(0:25:32.4)", stats]}}}],
+            }
+        ],
+    )
+    table = rendering.build(document, [])["sections"][0]["table"]
+    assert table["columns"][1]["priority"] == 5
+    body = str(table["body"])
+    assert '<br><small class="protocol-cell-sub">(0:25:32.4)</small>' in body
+    assert (
+        '<span class="protocol-line" data-toggle-id="stats"><br><small class="protocol-cell-sub">'
+        "<strong>0:00:00.0 (1)</strong></small></span>"
+    ) in body
+    # Only the cell's own text is searched, never a time under it.
+    assert table["rows"][0]["search"] == "ann"

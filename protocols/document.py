@@ -41,7 +41,8 @@ MAX_CELLS = 100_000
 
 Text = Annotated[str, StringConstraints(max_length=MAX_TEXT)]
 Slug = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_-]{1,64}$")]
-Lines = Annotated[list[Text], Field(max_length=MAX_SUB_LINES)]
+#: Least important first: a column of priority 1 always shows, the highest number is left out first.
+MAX_PRIORITY = 9
 
 
 class DocumentError(ValueError):
@@ -61,6 +62,18 @@ class Item(_Lenient):
     value: Text | None = None
     text: Text | None = None
     html: Annotated[str, StringConstraints(max_length=MAX_HTML)] | None = None
+
+
+class Line(_Lenient):
+    """A second line under a cell or a heading that a toggle may hide -- extra statistics under a
+    lap's time, shown and hidden with it, as the generator's own HTML does."""
+
+    text: Text = ""
+    toggle: Slug | None = None
+    strong: bool = False
+
+
+Lines = Annotated[list[Text | Line], Field(max_length=MAX_SUB_LINES)]
 
 
 class CellObject(_Lenient):
@@ -86,7 +99,7 @@ class Column(_Lenient):
     sub_label: Lines = []
     group: Text | None = None
     role: Text | None = None
-    priority: Annotated[int, Field(ge=1, le=3)] | None = None
+    priority: Annotated[int, Field(ge=1, le=MAX_PRIORITY)] | None = None
     toggle: Slug | None = None
     align: Text | None = None
 
@@ -185,17 +198,30 @@ def _check_table(section: Section, groups: set[str], toggles: set[str], totals: 
     for column in section.columns:
         if column.toggle is not None and column.toggle not in toggles:
             raise ValueError(f"column {column.id!r} names toggle {column.toggle!r}, which is not in the toggles list")
-    known = set(ids)
+        _check_lines(column.sub_label, toggles)
+    _check_rows(section, set(ids), groups, toggles, totals)
+    totals["rows"] += len(section.rows)
+    totals["cells"] += len(section.rows) * len(section.columns)
+
+
+def _check_rows(section: Section, known: set[str], groups: set[str], toggles: set[str], totals: dict) -> None:
     for row in section.rows:
         stray = set(row.cells) - known
         if stray:
             raise ValueError(f"a row has cells for columns that do not exist: {sorted(stray)}")
+        for cell in row.cells.values():
+            if isinstance(cell, CellObject):
+                _check_lines(cell.sub, toggles)
         if row.group is not None and row.group not in groups:
             raise ValueError(f"row group {row.group!r} is not in the groups list")
         if row.note:
             totals["cells"] += 1
-    totals["rows"] += len(section.rows)
-    totals["cells"] += len(section.rows) * len(section.columns)
+
+
+def _check_lines(lines: list, toggles: set[str]) -> None:
+    for line in lines:
+        if isinstance(line, Line) and line.toggle is not None and line.toggle not in toggles:
+            raise ValueError(f"a line names toggle {line.toggle!r}, which is not in the toggles list")
 
 
 def _too_deep(sections: Any) -> bool:
