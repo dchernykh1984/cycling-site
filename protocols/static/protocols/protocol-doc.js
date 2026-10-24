@@ -105,35 +105,51 @@
     });
   }
 
-  // The short view, on any screen: while a table is wider than its box, the least important column
-  // still shown is left out -- the highest priority number, and of two alike the one further right
-  // -- until it fits. Priority 1 always stays. "All columns" shows every one, scrolling in the box.
+  // The short view, on any screen: while a table is wider than its box, the least important columns
+  // still shown are left out -- the highest priority number first, all its columns together -- until
+  // it fits. Priority 1 always stays. "All columns" shows every one, scrolling in the box.
   function fitColumns(table) {
     var wrap = table.closest(".protocol-table-wrap");
     if (state.full || !wrap || wrap.scrollWidth <= wrap.clientWidth + 1) return;
-    var order = Array.prototype.slice
-      .call(table.querySelectorAll("thead th[data-col]"))
-      .filter(function (th) {
-        return priorityOf(th) > 1 && shown(th) && !th.classList.contains("prio-forced");
-      })
+    // Columns of one priority are one set -- every lap, say -- left out whole or not at all, so
+    // the reader never sees laps 1 to 4 with 5 and 6 tucked away.
+    var sets = {};
+    Array.prototype.forEach.call(table.querySelectorAll("thead th[data-col]"), function (th) {
+      var priority = priorityOf(th);
+      if (priority > 1 && shown(th) && !th.classList.contains("prio-forced")) {
+        (sets[priority] = sets[priority] || []).push(th);
+      }
+    });
+    var order = Object.keys(sets)
+      .map(Number)
       .sort(function (a, b) {
-        return priorityOf(b) - priorityOf(a) || Number(b.dataset.col) - Number(a.dataset.col);
+        return b - a;
+      })
+      .map(function (priority) {
+        return sets[priority];
       });
     // The widths are measured once and summed, then checked against the real layout: laying a
-    // table of thousands of rows out again for every column would take seconds.
-    var widths = order.map(function (th) {
-      return th.offsetWidth;
+    // table of thousands of rows out again for every set would take seconds.
+    var widths = order.map(function (set) {
+      return set.reduce(function (sum, th) {
+        return sum + th.offsetWidth;
+      }, 0);
     });
     var overflow = wrap.scrollWidth - wrap.clientWidth;
+    var leaveOutSet = function (set) {
+      set.forEach(function (th) {
+        leaveOut(table, th);
+      });
+    };
     var i = 0;
     for (var freed = 0; i < order.length && freed < overflow; i += 1) {
-      leaveOut(table, order[i]);
+      leaveOutSet(order[i]);
       freed += widths[i];
     }
     // The row buttons that open what was left out take a column of their own.
     table.classList.add("has-hidden");
     for (; i < order.length && wrap.scrollWidth > wrap.clientWidth + 1; i += 1) {
-      leaveOut(table, order[i]);
+      leaveOutSet(order[i]);
     }
   }
 

@@ -65,8 +65,9 @@ table needs a change in the generator only; the site knows nothing of laps, atte
 1. **Given** any screen, phone or desktop, **Then** each table fits its box: while it is wider,
    the least important column still shown is left out -- the highest priority number (the
    document ranks columns 1 to 9; without a rank, place, number, name and result are 1 and the rest
-   2; a table with no 1 keeps its first three), and of two alike the one further right; priority 1
-   always stays. The page never scrolls sideways, and a button on each row (keyboard-reachable)
+   2; a table with no 1 keeps its first three). Columns of one priority are one set, left out
+   together or not at all -- every lap, never laps 1 to 4 without 5 and 6; priority 1 always
+   stays. The page never scrolls sideways, and a button on each row (keyboard-reachable)
    opens what was left out. "All columns" -- offered only while something is left out -- shows
    every column, scrolling inside the table, with the place, number and name columns kept in view
    -- where they stay
