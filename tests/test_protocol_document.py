@@ -384,3 +384,22 @@ def test_notes_are_drawn_as_their_own_row(client: Client, protocol):
     body = client.get(f"/ru/protocols/{protocol.pk}/").content.decode()
     assert 'class="protocol-row status-dsq"' in body
     assert '<tr class="protocol-note" data-for="row-1"><td colspan="2">cut<br>no chip</td></tr>' in body
+
+
+def test_a_number_too_long_to_read_is_a_refused_document_not_a_crash():
+    raw = b'{"schema": 1, "sections": [], "future": ' + b"1" * 5000 + b"}"
+    with pytest.raises(DocumentError, match="not UTF-8 JSON"):
+        parse(raw)
+
+
+def test_deeply_nested_json_in_an_unknown_field_is_ignored_not_a_crash():
+    stored = parse(b'{"schema": 1, "sections": [], "x": ' + b"[" * 100_000 + b"]" * 100_000 + b"}")
+    assert "x" not in stored
+
+
+def test_sections_nested_too_deep_for_the_validator_are_refused():
+    nested: dict = {"type": "group"}
+    for _ in range(2000):
+        nested = {"type": "group", "sections": [nested]}
+    with pytest.raises(DocumentError, match="nested deeper"):
+        parse(json.dumps({"schema": 1, "sections": [nested]}).encode())

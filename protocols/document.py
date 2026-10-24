@@ -198,17 +198,37 @@ def _check_table(section: Section, groups: set[str], toggles: set[str], totals: 
     totals["cells"] += len(section.rows) * len(section.columns)
 
 
+def _too_deep(sections: Any) -> bool:
+    """Whether sections nest deeper than allowed -- checked before the recursive models
+    see them, so a deep document is refused with a short reason, not a long trace."""
+    stack = [(sections, 1)]
+    while stack:
+        items, depth = stack.pop()
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if isinstance(item, dict) and item.get("sections"):
+                if depth >= MAX_DEPTH:
+                    return True
+                stack.append((item["sections"], depth + 1))
+    return False
+
+
 def parse(raw: bytes) -> dict:
     """The accepted document as it is stored, or DocumentError saying what is wrong with it."""
     try:
         data = json.loads(raw.decode("utf-8-sig"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (ValueError, RecursionError) as exc:
+        # ValueError covers bad UTF-8 and JSON and also numbers too long to convert;
+        # RecursionError, arrays nested deeper than Python follows.
         raise DocumentError(f"The document is not UTF-8 JSON: {exc}") from None
     if not isinstance(data, dict):
         raise DocumentError("The document must be a JSON object")
     version = data.get("schema")
     if version != SCHEMA_VERSION:
         raise DocumentError(f"Unsupported protocol document schema {version!r}; this site supports {SCHEMA_VERSION}")
+    if _too_deep(data.get("sections")):
+        raise DocumentError(f"Sections are nested deeper than {MAX_DEPTH}")
     try:
         document = Document.model_validate(data)
     except ValidationError as exc:
