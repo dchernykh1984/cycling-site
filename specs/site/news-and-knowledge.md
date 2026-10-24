@@ -56,6 +56,7 @@ member may submit a draft for review; members comment.
 
 ### Edge Cases
 
+- Articles are soft-deleted; a deleted comment is erased.
 - Bodies are sanitised on every save, inline images kept; an over-long body is a translated form
   error, not a server error.
 - Knowledge-article and Wagtail page slugs are ASCII even for a Cyrillic title; knowledge slugs are

@@ -6,12 +6,12 @@ Sync Impact Report
   issue #324); principles II and III no longer name it.
   1.2.0 -> 1.3.0: principle IV requires localized reader-facing data fields by default, with
   an explicit exception for documents that belong to one locale.
-  1.3.0 -> 1.4.0: principles added by the maintainer -- VII: what a participant or an organizer
-  does with data on the site is also available through the API (the gaps are listed per area in
-  specs/site/); VIII: one fact, one home.
+  1.3.0 -> 1.4.0: principles added by the maintainer -- VII: what a participant or an organizer does
+  with data on the site is also available through the API (the gaps are listed per area in
+  specs/site/); VIII: one fact, one home; IX: nothing is lost by accident.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
-  .agents/skills, which stay the detailed runtime guidance; VI-VIII set by the maintainer (no local
-  or sport-specific hardcoding; an API by default; one fact, one home).
+  .agents/skills, which stay the detailed runtime guidance; VI-IX set by the maintainer (no local or
+  sport-specific hardcoding; an API by default; one fact, one home; nothing is lost by accident).
 - Templates: plan-template.md's "Constitution Check" gate reads these principles; no template
   needed changes.
 -->
@@ -126,6 +126,22 @@ JavaScript.
   alongside; a merge that touches an approved event waits for the maintainer (principle II).
 - Where a copy cannot be avoided -- a cache, a column kept for speed -- one side is the source, the
   other is rebuilt from it, and the code says which.
+
+### IX. Nothing is lost by accident
+
+What people entered or uploaded survives every change to the site.
+
+- Events, articles, places and registration categories are soft-deleted: deleting one hides its
+  row rather than erasing it. What is erased outright -- a comment, a cancelled entry, a gallery
+  photo -- is erased by a rule its area's specification states.
+- A migration carries existing data across; one that rewrites many rows is tried first on a
+  production backup restored locally (see Constraints).
+- A new form of data keeps the old one working: localized fields keep the existing text
+  (principle IV); the structured protocol document arrived beside the HTML, and old HTML protocols
+  and generators that send only HTML still work (issue #310).
+- Old versions are dropped only by a written rule too: a protocol keeps its ten most recent.
+- A file is removed only after the database change that freed it is committed, so a failed write
+  never leaves a row pointing at a missing file.
 
 ## Constraints
 

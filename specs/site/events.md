@@ -103,6 +103,7 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 
 ### Edge Cases
 
+- An event is soft-deleted; a deleted comment is erased.
 - An event's time zone is worked out from its place on every use (`Competition.timezone`,
   `locations.models.timezone_of`): the venue's coordinates, else the nearest place above it that has
   them, else UTC. Nothing about it is stored, so moving an event moves its zone.
