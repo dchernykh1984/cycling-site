@@ -96,7 +96,7 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
   country, region, city, venue and links; it links the registration form on the site while it is
   open and not full, before any external registration link; a full or closed form is not linked.
 - **FR-CAL-005**: Feeds and subscriptions never carry hidden, unapproved or invite-only events.
-- **FR-CAL-006**: Calendar labels are translated in every language; Kazakh period labels put
+- **FR-CAL-006**: Calendar labels, including grid weekdays, come from the translated catalogues; Kazakh period labels put
   the year before the month or days. Shared period controls offer days, weekend, week, month and
   a year picker, step by the selected kind and return keyboard focus when a picker closes.
 - **FR-CAL-007**: Phone List rows show city and sport, and preserve the remaining FR-CAL-004

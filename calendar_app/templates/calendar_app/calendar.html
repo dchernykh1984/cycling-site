@@ -268,7 +268,10 @@ document.addEventListener('DOMContentLoaded', function () {
     initialDate: selectedFrom || undefined,
     locale: '{{ CURRENT_LANGUAGE }}',
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
-    views: { listRange: { type: 'list', visibleRange: function () { return listRange; } } },
+    views: {
+      dayGridMonth: {dayHeaderContent: function (arg) { return DATE_WORDS.weekday_short[(arg.date.getDay() + 6) % 7]; }},
+      listRange: { type: 'list', visibleRange: function () { return listRange; } },
+    },
     // FullCalendar's own bundle has no Kazakh at all, so the labels come from our catalogue like
     // every other word on the page.
     // The period lives in the row above (_period_nav.html).

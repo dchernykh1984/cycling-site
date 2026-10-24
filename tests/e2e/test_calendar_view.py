@@ -1,6 +1,10 @@
 """E2E tests for the competition calendar view (FullCalendar)."""
 
+import datetime
+
 import pytest
+from django.utils.formats import date_format
+from django.utils.translation import override as translation_override
 from playwright.sync_api import Page, expect
 
 
@@ -87,3 +91,16 @@ def test_month_arrows_retain_the_phone_layout(page: Page, live_server):
     expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
     page.locator('[data-period-step="1"]').click()
     expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("language", ["ru", "kk", "en"])
+def test_grid_weekdays_use_the_readers_catalogue(page: Page, live_server, language):
+    monday = datetime.date(2001, 1, 1)
+    with translation_override(language):
+        names = [date_format(monday + datetime.timedelta(days=n), "D") for n in range(7)]
+    if language == "en":
+        names = names[-1:] + names[:-1]
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{live_server.url}/{language}/calendar/")
+    expect(page.locator(".fc-col-header-cell")).to_have_text(names)

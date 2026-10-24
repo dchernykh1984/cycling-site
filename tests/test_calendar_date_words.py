@@ -11,6 +11,7 @@ class CalendarDateWordsTests(SimpleTestCase):
         words = calendar_date_words()
         self.assertEqual(len(words["months"]), 12)
         self.assertEqual(len(words["weekdays"]), 7)
+        self.assertEqual(len(words["weekday_short"]), 7)
 
     def test_the_week_starts_on_monday(self):
         with translation_override("en"):
@@ -33,6 +34,7 @@ class CalendarDateWordsTests(SimpleTestCase):
             english = calendar_date_words()
         self.assertNotEqual(words["months"], english["months"])
         self.assertNotEqual(words["weekdays"], english["weekdays"])
+        self.assertNotEqual(words["weekday_short"], english["weekday_short"])
 
     def test_inside_a_date_russian_and_kazakh_write_lower_case(self):
         for language in ("ru", "kk"):

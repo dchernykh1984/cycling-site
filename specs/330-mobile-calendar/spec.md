@@ -113,7 +113,7 @@ period picker with a keyboard.
 - **FR-007**: The initial plain list and map MUST use the remaining current month; a faceted list
   MUST retain the existing open future range, and supplied dates MUST win.
 - **FR-008**: Home areas and the empty-map fallback MUST come from named configuration values.
-- **FR-009**: All new words MUST be available in ru, kk and en; the Kazakh period MUST put years first.
+- **FR-009**: All new words and grid weekday headings MUST be available in ru, kk and en; the Kazakh period MUST put years first.
 - **FR-010**: Controls MUST remain named, keyboard reachable and usable at the tested widths and
   tap sizes in every skin; existing documented skin debt MUST NOT be expanded to hide new defects.
 - **FR-011**: Event visibility, registration rules, pagination and API v1 contracts MUST be preserved.
