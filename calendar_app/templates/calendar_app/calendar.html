@@ -191,9 +191,8 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('location-filter-ready', updateSwitcherLinks);
 
   // --- The period ---
-  // The row above the grid (_period_nav.html) asks for a period: a month is the month grid, on
-  // every screen; any other period is a list of exactly those days. The list of a month's days is
-  // the List tab's on a phone, so the calendar has no second "List" of its own.
+  // Phone visits begin with readable days; Month explicitly opens the grid. The chosen layout
+  // lasts for the visit and never changes merely because the viewport was resized.
   function dayAfter(isoDay) {
     var p = isoDay.split('-');
     var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]) + 1);
@@ -203,8 +202,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // dates: handing a range to changeView instead fetched the events of the range before it when
   // the view stayed a list -- the next year opened on last year's events, the year after on none.
   var initialKind = window.periodNav.kindOf(selectedFrom, selectedTo);
-  var initialList = selectedFrom && selectedTo && initialKind !== 'month';
-  var listRange = initialList ? {start: selectedFrom, end: dayAfter(selectedTo)} : null;
+  var savedLayout = stored('cal_layout');
+  var phoneList = savedLayout ? savedLayout === 'list' : window.matchMedia('(max-width: 991.98px)').matches;
+  var initialList = (selectedFrom && selectedTo && initialKind !== 'month') || (!selectedFrom && phoneList);
+  var initialRange = window.periodNav.rangeOf('month', new Date());
+  var listRange = initialList ? {start: selectedFrom || initialRange[0], end: dayAfter(selectedTo || initialRange[1])} : null;
   function showRange(from, to) {
     listRange = {start: from, end: dayAfter(to)};
     calendar.changeView('listRange', from);
@@ -292,6 +294,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(failureCallback);
     },
     datesSet: function (info) {
+      try { sessionStorage.setItem('cal_layout', info.view.type === 'dayGridMonth' ? 'grid' : 'list'); } catch (e) { /* storage blocked */ }
       var start = info.view.currentStart;
       var end = info.view.currentEnd;
       var from = isoDate(start);

@@ -12,13 +12,26 @@ def test_a_wide_screen_opens_on_the_month_grid(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_a_phone_opens_on_the_month_grid_too(page: Page, live_server):
-    """One calendar on every screen: the list of a month's days is the List tab's (issue #330), so
-    the calendar has no Grid/List switch of its own -- two "Lists" on one screen meant two things."""
+def test_a_phone_opens_on_days_and_month_opens_the_grid(page: Page, live_server):
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(f"{live_server.url}/ru/calendar/")
+    expect(page.locator(".fc-listRange-view")).to_be_visible()
+    page.locator('[data-period-kind="month"]').click()
     expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
-    expect(page.locator("[data-month-view]")).to_have_count(0)
+    page.goto(f"{live_server.url}/ru/calendar/")
+    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_resizing_retains_the_calendar_layout(page: Page, live_server):
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}/en/calendar/")
+    expect(page.locator(".fc-listRange-view")).to_be_visible()
+    page.set_viewport_size({"width": 1280, "height": 900})
+    expect(page.locator(".fc-listRange-view")).to_be_visible()
+    page.locator('[data-period-kind="month"]').click()
+    page.set_viewport_size({"width": 390, "height": 844})
+    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
 
 
 @pytest.mark.django_db(transaction=True)
