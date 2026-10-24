@@ -1,7 +1,7 @@
 # Site Specification: The photo gallery
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-22
+**Verified against**: `main` on 2026-10-24
 **Code**: `gallery/` (models, permissions, images, forms, views, templates, sitemap section in
 `cycling_site/sitemaps.py`), `gallery/events.py`, `gallery/translation.py`,
 `calendar_app/templates/calendar_app/detail.html` (the event's albums)
@@ -38,9 +38,12 @@ photos are kept exactly as they were taken, and only admins and the owner put th
 
 ### Story 2 -- A reader looks at the photos (P1)
 
-1. **Given** `/<lang>/gallery/`, **Then** it opens the newest album with the others as tabs; "All
-   albums" shows each album by its cover; a photo's page shows the original, steps through the album
-   with the arrow keys, and offers it to download as it was uploaded.
+1. **Given** `/<lang>/gallery/` -- what "Gallery" in the menu opens -- **Then** it shows every album
+   the reader may see by its cover, newest first (by the album's date); an album's page shows its
+   photos with the newest other albums as tabs and "View more" back to the gallery; a photo's page
+   shows the original, steps through the album with the arrow keys, and offers it to download as it
+   was uploaded. `/<lang>/gallery/albums/`, the list's former address, redirects permanently to
+   the gallery, keeping its page.
 2. **Given** an event with a public album, **Then** the event page lists it under "Photo albums".
 3. **Given** a link to an album pasted into a chat, **Then** the chat shows the album's cover.
 4. **Given** a linked public event, **Then** the album shows its localized name, start/end dates,
@@ -72,8 +75,7 @@ photos are kept exactly as they were taken, and only admins and the owner put th
   delete albums and photos.
 - **FR-GAL-002**: The original is stored and served unchanged; the thumbnail is the only derived file.
 - **FR-GAL-003**: Deleting a photo or an album deletes its files.
-- **FR-GAL-004**: Public albums are a sitemap section (`gallery`); the index and the list of albums
-  are in `sections`.
+- **FR-GAL-004**: Public albums are a sitemap section (`gallery`); the gallery index is in `sections`.
 - **FR-GAL-005**: Album titles and photo captions are localized fields, as required by constitution
   principle IV; introducing them preserves existing text.
 - **FR-GAL-006**: An album's optional event is selected with a keyboard-accessible searchable
