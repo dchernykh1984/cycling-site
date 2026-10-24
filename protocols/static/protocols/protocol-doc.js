@@ -9,6 +9,18 @@
   "use strict";
 
   var state = { search: "", group: "", toggles: {}, full: false };
+  // The letters the server folds to Latin (cycling_site/text_search.py), so a query in either
+  // script matches a name written in either: "Che" and its Cyrillic spelling find "Chernykh".
+  var foldTable = {};
+
+  function searchWords(text) {
+    var folded = "";
+    for (var i = 0; i < text.length; i += 1) {
+      var letter = text.charAt(i);
+      folded += Object.prototype.hasOwnProperty.call(foldTable, letter) ? foldTable[letter] : letter;
+    }
+    return folded.toLowerCase().match(/[a-z0-9]+/g) || [];
+  }
   var roots = [];
 
   function each(root, selector, fn) {
@@ -132,10 +144,13 @@
   }
 
   function filter(root) {
-    var query = state.search.trim().toLowerCase();
+    var words = searchWords(state.search);
     each(root, ".protocol-row", function (row) {
+      var text = row.dataset.search || "";
       var out =
-        (query && (row.dataset.search || "").indexOf(query) === -1) ||
+        words.some(function (word) {
+          return text.indexOf(word) === -1;
+        }) ||
         (state.group && row.dataset.groupId !== state.group);
       row.classList.toggle("is-filtered", !!out);
       // A row's note and open details follow it directly.
@@ -253,6 +268,11 @@
     if (groups.indexOf(state.group) === -1) state.group = "";
 
     each(root, ".protocol-search", function (input) {
+      try {
+        foldTable = JSON.parse(input.dataset.fold || "{}");
+      } catch (e) {
+        foldTable = {};
+      }
       input.value = state.search;
       input.addEventListener("input", function () {
         state.search = input.value;
