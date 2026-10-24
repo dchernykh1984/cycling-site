@@ -268,6 +268,9 @@ TIME_ZONE = "Asia/Almaty"
 # The skin (skins/<key>/) of a first visit and of a new member; also what a stored key falls back to
 # once its folder is gone.
 DEFAULT_SKIN = "orange"
+# A skin offered once to readers in any other skin (cycling_site/skins.py, _skin_offer.html); empty
+# for none. A new skin worth recommending is a new value here.
+SKIN_OFFER = DEFAULT_SKIN
 
 # The view the map opens on for a reader whose places all lie in one of these areas -- the places
 # in the location filter, which a member's saved preferences fill in on a fresh visit. A city and

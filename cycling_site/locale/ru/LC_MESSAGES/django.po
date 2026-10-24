@@ -3635,3 +3635,16 @@ msgstr "Стрелки: по годам"
 #: calendar_app/templates/calendar_app/_period_nav.html
 msgid "tap the month or year"
 msgstr "нажмите на месяц или год"
+
+#: cycling_site/templates/_skin_offer.html
+msgid "A new look for the site"
+msgstr "Новый вид сайта"
+
+#: cycling_site/templates/_skin_offer.html
+#, python-format
+msgid "Try the site's new look, \"%(name)s\"."
+msgstr "Попробуйте новое оформление сайта — «%(name)s»."
+
+#: cycling_site/templates/_skin_offer.html
+msgid "Switch to it"
+msgstr "Включить"

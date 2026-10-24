@@ -1,0 +1,9 @@
+{% load i18n %}
+{% comment %}A skin the site asks the reader to try, once (settings.SKIN_OFFER, cycling_site/skins.py): shown in any other skin until a page has been drawn in that one -- by this button or the skin menu -- and not again after.{% endcomment %}
+{% if skin_offer %}
+<div class="alert alert-info border shadow-sm py-2 d-flex flex-wrap align-items-center gap-2 skin-offer" id="skin-offer"
+     role="region" aria-label="{% trans 'A new look for the site' %}">
+    <span class="flex-grow-1">{% blocktrans with name=skin_offer.name %}Try the site's new look, "{{ name }}".{% endblocktrans %}</span>
+    <button type="button" class="btn btn-sm btn-primary" data-skin-key="{{ skin_offer.key }}" data-mode="{{ skin_offer.mode }}" data-reload="1">{% trans "Switch to it" %}</button>
+</div>
+{% endif %}

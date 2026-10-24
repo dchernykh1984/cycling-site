@@ -3633,3 +3633,16 @@ msgstr "Көрсеткілер: жыл бойынша"
 #: calendar_app/templates/calendar_app/_period_nav.html
 msgid "tap the month or year"
 msgstr "айды не жылды басыңыз"
+
+#: cycling_site/templates/_skin_offer.html
+msgid "A new look for the site"
+msgstr "Сайттың жаңа көрінісі"
+
+#: cycling_site/templates/_skin_offer.html
+#, python-format
+msgid "Try the site's new look, \"%(name)s\"."
+msgstr "Сайттың жаңа безендіруін көріңіз — «%(name)s»."
+
+#: cycling_site/templates/_skin_offer.html
+msgid "Switch to it"
+msgstr "Қосу"
