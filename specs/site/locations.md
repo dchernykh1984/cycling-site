@@ -71,6 +71,9 @@ places, and lets managers maintain the tree.
   and up) never approves geography on its own.
 - **FR-LOC-003**: Pending locations are visible only to their proposer and to admins.
 - **FR-LOC-004**: Deletion is soft; redirects after an action follow only a same-origin `next`.
+- **FR-LOC-005**: All embedded maps use the shared `_map_layers.html` component, which disables
+  Leaflet's flag-bearing attribution prefix. Map and satellite layers keep their provider credits
+  visible, including when the reader switches layers.
 
 ## Key Entities
 
