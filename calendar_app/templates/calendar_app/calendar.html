@@ -298,6 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     datesSet: function (info) {
       try { sessionStorage.setItem('cal_layout', info.view.type === 'dayGridMonth' ? 'grid' : 'list'); } catch (e) { /* storage blocked */ }
+      markTab(info.view.type === 'dayGridMonth');
       var start = info.view.currentStart;
       var end = info.view.currentEnd;
       var from = isoDate(start);
@@ -347,6 +348,27 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   calendar.render();
+
+  // The tabs name what is on screen: days as a list light up "List", the month grid "Calendar" --
+  // a phone opens this page on the list, and "Calendar" over a list told the reader otherwise.
+  // Here "Calendar" then turns the list into the grid instead of reloading the page onto the list.
+  function markTab(grid) {
+    [['view-link-calendar', grid], ['view-link-list', !grid]].forEach(function (pair) {
+      var link = document.getElementById(pair[0]);
+      if (!link) return;
+      link.classList.toggle('active', pair[1]);
+      if (pair[1]) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    });
+  }
+  var calendarTab = document.getElementById('view-link-calendar');
+  if (calendarTab) {
+    calendarTab.addEventListener('click', function (e) {
+      if (calendar.view.type === 'dayGridMonth') return;
+      e.preventDefault();
+      calendar.changeView('dayGridMonth', isoDate(calendar.view.currentStart));
+    });
+  }
   window.calendarFC = calendar;  // exposed for e2e/debugging, like the map's window.calendarMap
 
   // Called by the filter partials whenever any multi-select changes.

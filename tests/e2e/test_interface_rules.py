@@ -99,6 +99,9 @@ _LIGHT_OUTLINE_BUTTONS = (
         if other != tab
         for state in STATES
     }
+    # On a phone the calendar opens on its days as a list, so "List" is the selected tab there and
+    # "Calendar", unselected, is drawn as the same outline button.
+    | {f"light|contrast/light/phone/calendar/#view-link-calendar/{state}" for state in STATES}
     | {f"light|border/light/phone/{tab}/#filter-toggle" for tab in TABS}
     | {f"light|contrast/light/desktop/{tab}/[data-copied-label]/{state}" for tab in TABS for state in STATES}
     | {f"light|border/light/phone/{tab}/[data-copied-label]" for tab in TABS}
