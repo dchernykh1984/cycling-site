@@ -1,12 +1,10 @@
 """The gallery's public event choices and the facts shown alongside a linked album."""
 
-import re
-
-from anyascii import anyascii
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 
 from calendar_app.models import Competition
+from cycling_site.text_search import search_words
 from locations.models import Location, LocationProposal
 
 RESULT_LIMIT = 20
@@ -16,11 +14,6 @@ def public_events():
     return Competition.objects.filter(
         status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False, invite_only=False
     ).order_by("-date_start", "pk")
-
-
-def search_words(value):
-    """One script and case for matching, including a mixture of Cyrillic and Latin letters."""
-    return re.findall(r"[a-z0-9]+", anyascii(value).casefold())
 
 
 def matching_ids(query):
