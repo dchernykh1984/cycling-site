@@ -119,6 +119,8 @@ table needs a change in the generator only; the site knows nothing of laps, atte
 - **FR-PRO-010**: `protocols/<pk>/fragment/` returns the drawn document with the hash, live flag and
   form of the row it was drawn from (`X-Protocol-*`); a protocol without a document answers empty.
 - **FR-PRO-011**: A column with no heading and no value in any row is not drawn.
+- **FR-PRO-012**: A section with no rows -- a group nobody rode in -- is not drawn, nor a section
+  left with nothing in it.
 
 ## Key Entities
 

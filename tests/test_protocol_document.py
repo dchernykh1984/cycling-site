@@ -281,7 +281,12 @@ def test_nested_sections_pass_their_group_down():
 
 
 def test_a_table_without_priorities_keeps_its_first_columns_on_a_phone():
-    view = rendering.build(_document(sections=[{"columns": [{"id": f"c{i}"} for i in range(5)], "rows": []}]), [])
+    view = rendering.build(
+        _document(
+            sections=[{"columns": [{"id": f"c{i}", "label": f"C{i}"} for i in range(5)], "rows": [{"cells": {}}]}]
+        ),
+        [],
+    )
     priorities = [c["priority"] for c in view["sections"][0]["table"]["columns"]]
     assert priorities == [1, 1, 1, 2, 2]
 
@@ -290,7 +295,15 @@ def test_primary_roles_default_to_priority_one_and_others_to_two():
     view = rendering.build(_document(), [])
     assert [c["priority"] for c in view["sections"][0]["table"]["columns"]] == [1, 1, 1]
     view = rendering.build(
-        _document(sections=[{"columns": [{"id": "name", "role": "name"}, {"id": "team"}], "rows": []}]), []
+        _document(
+            sections=[
+                {
+                    "columns": [{"id": "name", "label": "N", "role": "name"}, {"id": "team", "label": "T"}],
+                    "rows": [{"cells": {}}],
+                }
+            ]
+        ),
+        [],
     )
     assert [c["priority"] for c in view["sections"][0]["table"]["columns"]] == [1, 2]
 
@@ -327,12 +340,12 @@ def test_header_groups_merge_neighbouring_columns():
             sections=[
                 {
                     "columns": [
-                        {"id": "p"},
-                        {"id": "l1", "group": "Lap 1"},
-                        {"id": "s1", "group": "Lap 1"},
-                        {"id": "r"},
+                        {"id": "p", "label": "P"},
+                        {"id": "l1", "label": "L", "group": "Lap 1"},
+                        {"id": "s1", "label": "S", "group": "Lap 1"},
+                        {"id": "r", "label": "R"},
                     ],
-                    "rows": [],
+                    "rows": [{"cells": {}}],
                 }
             ]
         ),
@@ -367,7 +380,7 @@ def test_unknown_section_kinds_are_drawn_by_their_shape():
                 {
                     "type": "bracket",
                     "title": "Final",
-                    "sections": [{"type": "heat", "columns": [{"id": "a"}], "rows": []}],
+                    "sections": [{"type": "heat", "columns": [{"id": "a"}], "rows": [{"cells": {}}]}],
                 }
             ]
         ),
@@ -495,12 +508,21 @@ def test_an_unknown_status_is_drawn_as_other():
 def test_the_fallback_columns_are_chosen_among_those_switched_on():
     one_switched_on = _document(
         toggles=[{"id": "t", "default": True}],
-        sections=[{"columns": [{"id": "result", "label": "Time", "toggle": "t"}], "rows": []}],
+        sections=[{"columns": [{"id": "result", "label": "Time", "toggle": "t"}], "rows": [{"cells": {}}]}],
     )
     assert rendering.build(one_switched_on, [])["sections"][0]["table"]["columns"][0]["priority"] == 1
     off_first = _document(
         toggles=[{"id": "t", "default": False}],
-        sections=[{"columns": [{"id": "a", "toggle": "t"}, {"id": "b"}, {"id": "c"}], "rows": []}],
+        sections=[
+            {
+                "columns": [
+                    {"id": "a", "label": "A", "toggle": "t"},
+                    {"id": "b", "label": "B"},
+                    {"id": "c", "label": "C"},
+                ],
+                "rows": [{"cells": {}}],
+            }
+        ],
     )
     priorities = [c["priority"] for c in rendering.build(off_first, [])["sections"][0]["table"]["columns"]]
     assert priorities == [2, 1, 1]
@@ -608,3 +630,18 @@ def test_a_toggle_hides_second_lines_under_a_cell_and_its_heading():
     ) in body
     # Only the cell's own text is searched, never a time under it.
     assert table["rows"][0]["search"] == "ann"
+
+
+def test_a_group_nobody_rode_in_is_left_out():
+    columns = [{"id": "name", "label": "Name", "role": "name"}]
+    view = rendering.build(
+        _document(
+            sections=[
+                {"title": "M30", "columns": columns, "rows": [{"cells": {"name": "Ann"}}]},
+                {"title": "M70+", "columns": columns, "rows": []},
+                {"type": "group", "title": "Stage 2", "sections": [{"title": "W", "columns": columns, "rows": []}]},
+            ]
+        ),
+        [],
+    )
+    assert [s["title"] for s in view["sections"]] == ["M30"]

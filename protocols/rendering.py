@@ -232,7 +232,10 @@ def _sections(
             "table": _table(raw, group, counter, off_toggles) if raw.get("columns") else None,
             "sections": _sections(raw.get("sections", []), group, anchor, counter, off_toggles),
         }
-        sections.append(section)
+        # A group nobody rode in -- a category with no entries -- is only a heading over an empty
+        # table: it is left out, and a section left with nothing in it goes too.
+        if (section["table"] and section["table"]["rows"]) or section["sections"]:
+            sections.append(section)
     return sections
 
 
