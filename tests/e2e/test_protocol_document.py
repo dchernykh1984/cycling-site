@@ -208,7 +208,7 @@ def test_group_filter_works_in_one_mixed_table_without_a_group_column(page: Page
 def test_full_table_shows_every_column_and_scrolls_inside_its_box(page: Page, live_server, approved_competition):
     protocol = _protocol(approved_competition)
     _open(page, live_server, protocol, 390)
-    mode = page.get_by_role("button", name=_tr("Full table"))
+    mode = page.get_by_role("button", name=_tr("All columns"))
     mode.click()
     expect(mode).to_have_attribute("aria-pressed", "true")
     for column in ("team", "year", "lap1", "lap1_s1"):
@@ -259,7 +259,7 @@ def test_group_headers_follow_the_columns_they_cover(page: Page, live_server, ap
     page.set_viewport_size({"width": 390, "height": 800})
     expect(group).to_be_hidden()  # no column of Lap 1 left on a phone
     check()
-    page.get_by_role("button", name=_tr("Full table")).click()
+    page.get_by_role("button", name=_tr("All columns")).click()
     expect(group).to_be_visible()
     check()
     splits.click()
@@ -273,7 +273,7 @@ def test_disqualification_reason_is_always_readable(page: Page, live_server, app
     protocol = _protocol(approved_competition)
     _open(page, live_server, protocol, width)
     if full:
-        page.get_by_role("button", name=_tr("Full table")).click()
+        page.get_by_role("button", name=_tr("All columns")).click()
     expect(page.locator(".protocol-note", has_text="Cut the course")).to_be_visible()
 
 
@@ -659,7 +659,7 @@ def test_times_stay_on_one_line(page: Page, live_server, approved_competition):
 def test_place_number_and_name_stay_in_view_while_a_wide_table_scrolls(page: Page, live_server, approved_competition):
     protocol = _protocol(approved_competition)
     _open(page, live_server, protocol, 390)
-    page.get_by_role("button", name=_tr("Full table")).click()
+    page.get_by_role("button", name=_tr("All columns")).click()
     wrap = page.locator(".protocol-table-wrap").first
     assert wrap.evaluate("el => el.scrollWidth > el.clientWidth")
     wrap.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
@@ -715,7 +715,7 @@ def test_place_and_name_stay_put_when_a_filter_is_pressed_on_a_scrolled_table(
 ):
     protocol = _protocol(approved_competition)
     _open(page, live_server, protocol, 390)
-    page.get_by_role("button", name=_tr("Full table")).click()
+    page.get_by_role("button", name=_tr("All columns")).click()
     wrap = page.locator(".protocol-table-wrap").first
     wrap.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
     before = _cell(page, "Anna", "name").bounding_box()
@@ -725,3 +725,17 @@ def test_place_and_name_stay_put_when_a_filter_is_pressed_on_a_scrolled_table(
         page.locator(f'.protocol-groups [data-group-id="{group}"]').click()
         after = _cell(page, "Anna", "name").bounding_box()
         assert after is not None and abs(after["x"] - before["x"]) <= 1, group
+
+
+@pytest.mark.django_db(transaction=True)
+def test_all_columns_is_offered_only_where_columns_are_left_out(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 1280)
+    mode = page.locator(".protocol-mode")
+    expect(mode).to_be_hidden()  # every column already shows
+    page.set_viewport_size({"width": 390, "height": 800})
+    expect(page.get_by_role("button", name=_tr("All columns"))).to_be_visible()
+    mode.click()
+    expect(mode).to_have_attribute("aria-pressed", "true")
+    page.set_viewport_size({"width": 1280, "height": 800})
+    expect(mode).to_be_hidden()

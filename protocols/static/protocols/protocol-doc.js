@@ -82,7 +82,24 @@
         button.hidden = !hidden;
       });
     });
+    each(root, ".protocol-mode", function (button) {
+      button.hidden = !priorityHides(root);
+    });
     stickColumns(root);
+  }
+
+  // The widths at which protocol.css leaves priority 3, then also priority 2, out of the short view.
+  var TABLET = window.matchMedia("(max-width: 1199.98px)");
+  var PHONE = window.matchMedia("(max-width: 767.98px)");
+
+  // Whether the short view leaves out a column at this width: only then is there anything for
+  // "All columns" to bring back, so on a wide screen the button does not show at all.
+  function priorityHides(root) {
+    var left = PHONE.matches ? ".prio-2, .prio-3" : TABLET.matches ? ".prio-3" : "";
+    if (!left) return false;
+    return Array.prototype.some.call(root.querySelectorAll(".protocol-table thead th[data-col]"), function (th) {
+      return th.matches(left) && !th.classList.contains("toggle-off") && !th.classList.contains("prio-forced");
+    });
   }
 
   // A table must never show no column at all: when priorities and switches leave none,
@@ -307,8 +324,7 @@
     }, 150);
   });
 
-  ["(max-width: 767.98px)", "(max-width: 1199.98px)"].forEach(function (query) {
-    var list = window.matchMedia(query);
+  [PHONE, TABLET].forEach(function (list) {
     var relayout = function () {
       roots.forEach(layout);
     };
