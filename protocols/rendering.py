@@ -196,7 +196,11 @@ def _own_images_only(html: str, sources: list[str]) -> str:
         src = str(img.get("src", ""))
         if src.startswith("data:"):
             continue
-        parts = urlsplit(src)
+        try:
+            parts = urlsplit(src)
+        except ValueError:  # an address no browser could load either
+            img.decompose()
+            continue
         if f"{parts.scheme}://{parts.netloc}" not in origins:
             img.decompose()
     return str(soup)
