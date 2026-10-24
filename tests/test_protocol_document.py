@@ -503,7 +503,11 @@ def test_a_column_with_no_heading_and_no_values_is_not_drawn():
                         {"id": "year", "label": ""},
                         {"id": "t", "label": "Time"},
                     ],
-                    "rows": [{"cells": {"name": "Ann", "t": "1:00"}}, {"cells": {"name": "Bob", "year": ""}}],
+                    "rows": [
+                        {"cells": {"name": "Ann", "t": "1:00"}},
+                        {"cells": {"name": "Bob", "year": ""}},
+                        {"cells": {"name": "Eve", "year": {"text": "", "sub": []}}},
+                    ],
                 }
             ]
         ),

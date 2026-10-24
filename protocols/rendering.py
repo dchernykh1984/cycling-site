@@ -115,7 +115,7 @@ def _has_content(column: dict, rows: list[dict]) -> bool:
     """A column with no heading and nothing in any row draws only an unnamed, empty band."""
     if column.get("label") or column.get("sub_label") or not rows:
         return True
-    return any(row.get("cells", {}).get(column["id"]) for row in rows)
+    return any(_cell_text(_cell(row.get("cells", {}).get(column["id"], ""))) for row in rows)
 
 
 def _table(raw: dict, inherited_group: str | None, counter: list[int], off_toggles: frozenset[str]) -> dict:
