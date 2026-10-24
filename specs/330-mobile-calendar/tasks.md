@@ -41,24 +41,24 @@ Independent test: phone row exposes city/sport, all remaining facts, Info and co
 
 Independent test: Kazakh range years first, settings override moves the empty map, picker focus returns.
 
-- [x] T013 [P] [US4] Fix and verify year order in calendar_app/views.py and tests/e2e/test_period_nav.py.
-- [x] T014 [P] [US4] Configure map fallback in cycling_site/settings/base.py and tests/test_map_home_area.py.
+- [x] T013 [US4] Fix and verify period year order and grid weekdays in calendar_app/views.py, calendar_app/templates/calendar_app/calendar.html and tests/e2e/test_period_nav.py.
+- [x] T014 [US4] Configure map fallback in cycling_site/settings/base.py and tests/test_map_home_area.py.
 - [x] T015 [US4] Fix focus return and verify tests/e2e/test_period_nav.py.
 - [x] T016 [US4] Fix wrapping/tap targets and verify tests/e2e/test_interface_rules.py and tests/e2e/test_filter_toggle.py.
 - [x] T017 [US4] Keep new template source ASCII in calendar_app/templates/calendar_app/.
 
 ## Phase 7: Cross-cutting completion
 
-- [ ] T018 Reconcile final behaviour and mirrored guidance in specs/site/calendar.md and .agents/skills/interface/SKILL.md.
-- [ ] T019 Complete review cycles 2 and 3 and Spec Kit analysis in specs/330-mobile-calendar/review.md.
-- [ ] T020 Run full unit/coverage and pre-commit checks described in specs/330-mobile-calendar/quickstart.md.
-- [ ] T021 Refresh synthetic before/after report under tmp/pr343-review/ and verify final-head CI.
+- [x] T018 Reconcile final behaviour and mirrored guidance in specs/site/calendar.md and .agents/skills/interface/SKILL.md.
+- [x] T019 Complete review cycles 2 and 3 and Spec Kit analysis in specs/330-mobile-calendar/review.md.
+- [x] T020 Run full unit/coverage and pre-commit checks described in specs/330-mobile-calendar/quickstart.md.
+- [x] T021 Refresh the synthetic before/after report under tmp/pr343-review/; document the final-head CI gate in specs/330-mobile-calendar/quickstart.md.
 
 ## Dependencies and parallel opportunities
 
 T001-T004 precede remediation. US1 and US2 share calendar.html and must be sequential; US3 is
 independent of them. T013 and T014 may be researched independently but both touch views.py, so
-commits remain separate. US4's focus and tap regressions already passed. Final analysis follows all
+implementation and commits remain sequential. US4's focus and tap regressions already passed. Final analysis follows all
 four stories; final CI follows the last source commit.
 
 ## Delivery strategy
