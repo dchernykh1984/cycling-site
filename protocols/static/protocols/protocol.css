@@ -123,6 +123,25 @@
   display: table-cell;
 }
 
+/* A phone shows the results first: the group chips and the switches each keep to one row
+ * that scrolls sideways, instead of filling the screen above the table. */
+@media (max-width: 767.98px) {
+  .protocol-groups,
+  .protocol-switches {
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    max-width: 100%;
+    scrollbar-width: thin;
+  }
+  .protocol-groups > .btn,
+  .protocol-switches > .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}
+
 @media (max-width: 1199.98px) {
   .protocol-js:not(.protocol-full) .protocol-table .prio-3 {
     display: none;
