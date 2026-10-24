@@ -142,6 +142,27 @@ document.addEventListener('DOMContentLoaded', function () {
     if (favEl && favEl.checked) params.set('favorite', '1');
   }
 
+  function stored(key) {
+    try { return sessionStorage.getItem(key); } catch (e) { return null; }
+  }
+  function validDay(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return null;
+    var parts = value.split('-').map(Number);
+    var day = new Date(parts[0], parts[1] - 1, parts[2]);
+    return isoDate(day) === value ? value : null;
+  }
+  // Resolve before render(): its first datesSet writes the displayed period back to storage.
+  var incoming = new URLSearchParams(window.location.search);
+  var explicitPeriod = incoming.has('date_from') || incoming.has('date_to') || incoming.get('period') === 'month';
+  var selectedFrom = validDay(explicitPeriod ? incoming.get('date_from') : stored('cal_date_from'));
+  var selectedTo = validDay(explicitPeriod ? incoming.get('date_to') : stored('cal_date_to'));
+  if (selectedTo && selectedFrom && selectedTo < selectedFrom) selectedTo = selectedFrom;
+  function appendPeriod(params) {
+    if (selectedFrom) params.set('date_from', selectedFrom);
+    if (selectedTo) params.set('date_to', selectedTo);
+    if (!selectedFrom) params.set('period', 'month');
+  }
+
   // The share button hands out this calendar as it is filtered now, dates included -- "the running
   // races in Almaty this year" is the point of sharing it. Not "only favourites": somebody else's
   // favourites mean nothing to whoever opens the link.
@@ -149,10 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var params = new URLSearchParams();
     appendFilterParams(params, 'discipline_category');
     params.delete('favorite');
-    var df = sessionStorage.getItem('cal_date_from');
-    var dt = sessionStorage.getItem('cal_date_to');
-    if (df) params.set('date_from', df);
-    if (dt) params.set('date_to', dt);
+    appendPeriod(params);
     var qs = params.toString();
     return window.location.origin + window.location.pathname + (qs ? '?' + qs : '');
   };
@@ -161,10 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function updateSwitcherLinks() {
     var params = new URLSearchParams();
     appendFilterParams(params, 'discipline_category');
-    var df = sessionStorage.getItem('cal_date_from');
-    var dt = sessionStorage.getItem('cal_date_to');
-    if (df) params.set('date_from', df);
-    if (dt) params.set('date_to', dt);
+    appendPeriod(params);
     var qs = params.toString();
     ['view-link-list', 'view-link-map'].forEach(function (id) {
       var a = document.getElementById(id);
@@ -187,7 +202,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // The days a listRange view shows. FullCalendar asks for them each time it works out the view's
   // dates: handing a range to changeView instead fetched the events of the range before it when
   // the view stayed a list -- the next year opened on last year's events, the year after on none.
-  var listRange = null;
+  var initialKind = window.periodNav.kindOf(selectedFrom, selectedTo);
+  var initialList = selectedFrom && selectedTo && initialKind !== 'month';
+  var listRange = initialList ? {start: selectedFrom, end: dayAfter(selectedTo)} : null;
   function showRange(from, to) {
     listRange = {start: from, end: dayAfter(to)};
     calendar.changeView('listRange', from);
@@ -201,6 +218,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // and written out it would pin today -- a link shared on the 20th still opening on the 20th days
   // later, as a range rather than the month.
   function storeDates(from, to) {
+    selectedFrom = from || null;
+    selectedTo = to || null;
     try {
       if (from) {
         sessionStorage.setItem('cal_date_from', from);
@@ -243,7 +262,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // --- FullCalendar ---
   var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-    initialView: 'dayGridMonth',
+    initialView: initialList ? 'listRange' : 'dayGridMonth',
+    initialDate: selectedFrom || undefined,
     locale: '{{ CURRENT_LANGUAGE }}',
     firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
     views: { listRange: { type: 'list', visibleRange: function () { return listRange; } } },
@@ -322,17 +342,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   calendar.render();
   window.calendarFC = calendar;  // exposed for e2e/debugging, like the map's window.calendarMap
-
-  // A link with dates -- from Share, or from the list and the map -- opens on that period.
-  (function () {
-    var p = new URLSearchParams(window.location.search);
-    var from = p.get('date_from');
-    var to = p.get('date_to');
-    if (!from) return;
-    var kind = window.periodNav.kindOf(from, to);
-    if (kind === 'month' || kind === 'open') calendar.changeView('dayGridMonth', from);
-    else showRange(from, to);
-  }());
 
   // Called by the filter partials whenever any multi-select changes.
   window.onCalendarFilterChange = function () {

@@ -335,3 +335,35 @@ def test_kazakh_period_places_each_year_before_its_days(page: Page, live_server,
         buttons = _label(page).locator("button")
         expect(buttons.nth(2)).to_have_attribute("data-period-pick", "year")
         expect(buttons.nth(2)).to_have_text("2027")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reopening_the_calendar_keeps_the_chosen_weekend(page: Page, live_server):
+    _calendar(page, live_server)
+    _kind(page, "weekend")
+    expect(_label(page)).to_have_text("24\u201325 October 2026")
+    page.goto(f"{live_server.url}/en/calendar/")
+    expect(_label(page)).to_have_text("24\u201325 October 2026")
+    expect(page.locator(".fc-listRange-view")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_explicit_links_win_over_the_session_period(page: Page, live_server):
+    _calendar(page, live_server)
+    _kind(page, "weekend")
+    page.goto(f"{live_server.url}/en/calendar/?period=month")
+    expect(_label(page)).to_have_text("October 2026")
+    assert "period=month" in page.evaluate("window.shareUrl()")
+    assert "date_from" not in page.evaluate("window.shareUrl()")
+    page.goto(f"{live_server.url}/en/calendar/?date_from=2027-03-01&date_to=2027-03-31")
+    expect(_label(page)).to_have_text("March 2027")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_calendar_period_changes_work_when_storage_is_blocked(page: Page, live_server):
+    page.add_init_script("Object.defineProperty(window, 'sessionStorage', {get() {throw new Error('blocked');}})")
+    _calendar(page, live_server)
+    _kind(page, "weekend")
+    expect(_label(page)).to_have_text("24\u201325 October 2026")
+    assert "date_from=2026-10-24" in page.evaluate("window.shareUrl()")
+    expect(page.locator("#view-link-list")).to_have_attribute("href", re.compile("date_from=2026-10-24"))
