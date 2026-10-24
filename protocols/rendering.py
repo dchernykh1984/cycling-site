@@ -8,6 +8,7 @@ phone shows, and how, is decided here and in protocol.css / protocol-doc.js.
 
 from __future__ import annotations
 
+import json
 import re
 from urllib.parse import urlsplit
 
@@ -17,6 +18,7 @@ from django.utils.safestring import SafeString, mark_safe
 from django.utils.translation import get_language, get_language_info, gettext
 
 from cycling_site.sanitize import sanitize_rich_html
+from cycling_site.text_search import fold_table, search_words
 
 #: Columns that stay on a phone even when the document gives them no priority.
 _PRIMARY_ROLES = frozenset({"place", "bib", "name", "result"})
@@ -131,7 +133,8 @@ def _table(raw: dict, inherited_group: str | None, counter: list[int], off_toggl
                 "group": raw_row.get("group") or inherited_group or "",
                 "status": _status_class(raw_row.get("status")),
                 "note": [line for line in (raw_row.get("note") or "").split("\n") if line],
-                "search": " ".join(_cell_text(cells[c["index"]]) for c in search_columns).lower(),
+                # Folded like the query (protocol-doc.js, with fold_table), so either script finds either.
+                "search": " ".join(search_words(" ".join(_cell_text(cells[c["index"]]) for c in search_columns))),
                 "who": " ".join(_cell_text(cells[c["index"]]) for c in columns if c["role"] in ("bib", "name")).strip(),
             }
         )
@@ -276,4 +279,5 @@ def build(document: dict, image_sources: list[str]) -> dict:
         "groups": document.get("groups", []),
         "toggles": document.get("toggles", []),
         "sections": _sections(document.get("sections", []), None, "sec", counter, off_toggles),
+        "fold": json.dumps(fold_table()),
     }

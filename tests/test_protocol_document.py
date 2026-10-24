@@ -511,3 +511,22 @@ def test_an_unlabelled_column_with_values_is_kept():
         _document(sections=[{"columns": [{"id": "a", "label": ""}], "rows": [{"cells": {"a": "x"}}]}]), []
     )
     assert [c["id"] for c in view["sections"][0]["table"]["columns"]] == ["a"]
+
+
+def test_a_rows_search_text_is_folded_to_one_script():
+    # Cyrillic "Chernykh" and a Latin name: both end up as lower-case Latin words.
+    cyrillic = "".join(map(chr, (0x427, 0x435, 0x440, 0x43D, 0x44B, 0x445)))
+    view = rendering.build(
+        _document(
+            sections=[
+                {
+                    "columns": [{"id": "name", "role": "name"}],
+                    "rows": [{"cells": {"name": f"{cyrillic} Denis"}}, {"cells": {"name": "Chernykh Denis"}}],
+                }
+            ]
+        ),
+        [],
+    )
+    rows = view["sections"][0]["table"]["rows"]
+    assert [r["search"] for r in rows] == ["chernykh denis", "chernykh denis"]
+    assert json.loads(view["fold"])[chr(0x427)] == "ch"

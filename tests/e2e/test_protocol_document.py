@@ -666,3 +666,25 @@ def test_place_number_and_name_stay_in_view_while_a_wide_table_scrolls(page: Pag
     result = _cell(page, "Anna", "result").bounding_box()
     name = _cell(page, "Anna", "name").bounding_box()
     assert result is not None and name is not None and result["x"] >= name["x"] + name["width"] - 1
+
+
+CHE = "".join(map(chr, (0x427, 0x435)))  # Cyrillic "Che"
+CHERNYKH = "".join(map(chr, (0x427, 0x435, 0x440, 0x43D, 0x44B, 0x445)))  # Cyrillic "Chernykh"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_search_finds_a_name_whichever_script_either_is_written_in(page: Page, live_server, approved_competition):
+    document = _raw()
+    rows = document["sections"][0]["rows"]
+    rows[0]["cells"]["name"] = "Denis Chernykh"
+    rows[1]["cells"]["name"] = f"{CHERNYKH} Pavel"
+    protocol = _protocol(approved_competition, parse(json.dumps(document).encode()))
+    _open(page, live_server, protocol, 1280)
+    search = page.get_by_role("searchbox")
+    search.fill(CHE)
+    expect(page.locator(".protocol-row:visible")).to_have_count(2)
+    search.fill("chern")
+    expect(page.locator(".protocol-row:visible")).to_have_count(2)
+    search.fill("denis CHE")
+    expect(page.locator(".protocol-row:visible")).to_have_count(1)
+    expect(page.locator(".protocol-row", has_text="Denis Chernykh")).to_be_visible()

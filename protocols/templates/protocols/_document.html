@@ -13,7 +13,7 @@
   {% endif %}
 
   <div class="protocol-panel mb-3" hidden lang="{{ page_language }}">
-    <input type="search" class="form-control form-control-sm protocol-search" placeholder="{% trans 'Search by name or number' %}" aria-label="{% trans 'Search by name or number' %}">
+    <input type="search" class="form-control form-control-sm protocol-search" data-fold="{{ doc.fold }}" placeholder="{% trans 'Search by name or number' %}" aria-label="{% trans 'Search by name or number' %}">
     {% if doc.groups %}
     <div class="protocol-groups" role="group" aria-label="{% trans 'Groups' %}">
       <button type="button" class="btn btn-sm btn-outline-secondary" data-group-id="" aria-pressed="true">{% trans "All" %}</button>
