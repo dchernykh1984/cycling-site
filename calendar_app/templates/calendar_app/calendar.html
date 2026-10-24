@@ -119,7 +119,7 @@
 document.addEventListener('DOMContentLoaded', function () {
   var eventsUrl = '{% url "calendar_events_api" %}';
 
-  // "3 октября, суббота" from Django's own month and weekday names (see calendar_date_words):
+  // "3 October, Saturday" from Django's own month and weekday names (see calendar_date_words):
   // FullCalendar would ask the browser, and browsers write Kazakh dates as "2026 M10 3 SAT".
   // Read from the period row's copy (_period_nav.html), the one the page carries.
   var DATE_WORDS = JSON.parse(document.getElementById('period-date-words').textContent);

@@ -3,8 +3,8 @@
 calendar, the list and the map (issue #330), so switching tabs moves nothing and keeps the period.
 
 Four kinds: today and tomorrow, the weekend, the week (Monday to Sunday) and the calendar month;
-a year is reached by tapping the year in the label. The label always says what is shown ("Октябрь
-2026", "24-25 октября 2026", "2026, весь год"), the arrows step by the kind on screen, and Today
+a year is reached by tapping the year in the label. The label always says what is shown ("October
+2026", "24-25 October 2026", "2026, whole year"), the arrows step by the kind on screen, and Today
 goes to the same kind around today. Tapping the month opens the twelve months with their own year
 arrows: paging the years there changes nothing until a month is picked, so a reader looking for
 next March does not drag the calendar through every month on the way. The current month starts
@@ -17,7 +17,7 @@ count from the site's own day (server_today), the day their defaults are counted
 from the browser's, as FullCalendar itself does.{% endcomment %}
 <style>
   /* Its own quiet look rather than the skin's small capitals: the row is read, not just pressed, and
-     a label in capitals spelt "ВЫХОДНЫЕ" wider than its button. As wide as a phone everywhere. The
+     a label in capitals spelt the weekend label wider than its button. As wide as a phone everywhere. The
      greys come from the skin's own Bootstrap variables, so a dark skin keeps the row readable. */
   /* A control's edge needs 3:1 against the page (WCAG 1.4.11); the skins' border colour is a hairline
      for cards and tables, 1.16:1 in light, so the row draws its frames in the secondary text colour. */
@@ -188,10 +188,10 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     var end = tap('year', String(to.getFullYear()));
     if (same(from, to)) return dayAndMonth(from) + ' ' + year;
     if (from.getFullYear() !== to.getFullYear()) {
-      return dayAndMonth(from) + ' ' + year + ' – ' + dayAndMonth(to) + ' ' + end;
+      return dayAndMonth(from) + ' ' + year + ' \u2013 ' + dayAndMonth(to) + ' ' + end;
     }
-    if (from.getMonth() === to.getMonth()) return from.getDate() + '–' + dayAndMonth(to) + ' ' + year;
-    return from.getDate() + ' ' + WORDS.months[from.getMonth()] + ' – ' + dayAndMonth(to) + ' ' + year;
+    if (from.getMonth() === to.getMonth()) return from.getDate() + '\u2013' + dayAndMonth(to) + ' ' + year;
+    return from.getDate() + ' ' + WORDS.months[from.getMonth()] + ' \u2013 ' + dayAndMonth(to) + ' ' + year;
   }
   function popup() {
     if (pop === 'month') {

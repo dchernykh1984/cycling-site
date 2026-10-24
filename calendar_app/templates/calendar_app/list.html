@@ -184,9 +184,9 @@ breakpoint where the filters fold away too.{% endcomment %}
     {% for row in day.rows %}
     <li>
       <div>
-        {% if row.comp.pk in favorited_ids %}<span class="text-warning" aria-hidden="true">★</span> {% endif %}
+        {% if row.comp.pk in favorited_ids %}<span class="text-warning" aria-hidden="true">&#9733;</span> {% endif %}
         <a href="{% url 'competition_detail' row.comp.pk %}">{{ row.comp.title }}</a>
-        {% if row.until %}<span class="calendar-day-until">– {{ row.until }}</span>{% endif %}
+        {% if row.until %}<span class="calendar-day-until">&ndash; {{ row.until }}</span>{% endif %}
         {% if is_manager and row.comp.is_hidden %}<span class="badge bg-warning text-dark ms-1">{% trans "Hidden" %}</span>{% endif %}
         {% if row.comp.invite_only %}<span class="badge bg-info text-dark ms-1">{% trans "By invitation" %}</span>{% endif %}
       </div>
