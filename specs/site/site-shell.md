@@ -87,7 +87,9 @@ legal pages and a link to report a bug.
 - **FR-SHL-003**: All rich text (site content, articles, descriptions) goes through one sanitiser:
   scripts and dangerous links dropped, links open in a new tab, a limited set of formatting, image
   size/float and text colour kept.
-- **FR-SHL-004**: The navbar stays on top with a solid background while scrolling.
+- **FR-SHL-004**: The navbar stays on top with a solid background while scrolling. Its open menu
+  wraps whole links and tool groups when needed instead of widening the page, in every locale
+  and skin (`tests/e2e/test_interface_rules.py::test_no_tab_scrolls_sideways`).
 - **FR-SHL-005**: Templates use no multi-line `{# #}` comments (they leak into pages).
 - **FR-SHL-006**: Reader-facing names, titles, captions and descriptions are localized data fields
   by default, edited per ru / kk / en in forms and administration. Existing text survives their
