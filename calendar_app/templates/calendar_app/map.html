@@ -65,6 +65,7 @@
 
 <div id="calendar-map"></div>
 {{ map_home_area|json_script:"map-home-area" }}
+{{ map_default_view|json_script:"map-default-view" }}
 {% endblock %}
 
 {% block extra_js %}
@@ -77,7 +78,8 @@ document.addEventListener('DOMContentLoaded', function () {
   var dtEl = document.getElementById('map-date-to');
   var favEl = document.getElementById('map-favorite-filter');
 
-  var DEFAULT_CENTER = [48.0, 68.0], DEFAULT_ZOOM = 5;  // Kazakhstan/Central Asia overview
+  var DEFAULT_VIEW = JSON.parse(document.getElementById('map-default-view').textContent);
+  var DEFAULT_CENTER = DEFAULT_VIEW.center, DEFAULT_ZOOM = DEFAULT_VIEW.zoom;
   // The reader's home area from settings.MAP_HOME_AREAS (see map_home_area), or null.
   var HOME_AREA = JSON.parse(document.getElementById('map-home-area').textContent);
   var map = L.map('calendar-map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);

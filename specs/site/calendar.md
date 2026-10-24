@@ -101,12 +101,18 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
   An event carries several event types and several disciplines; its directions are those of its
   disciplines, since every discipline belongs to one direction.
 
+## Configuration
+
+- `MAP_HOME_AREAS` maps named areas to south-west/north-east corners; a matching selection opens
+  that area, otherwise the map fits its event markers. The current `almaty` bounds are
+  `[43.05, 76.55]` to `[43.90, 77.45]`.
+- `MAP_DEFAULT_VIEW` sets the empty-map center and zoom; currently `[48.0, 68.0]`, zoom 5.
+  Changing these deployment choices needs configuration, not a template change.
+
 ## Local assumptions
 
 Where the code still assumes a place, a brand or a sport (constitution, principle VI):
 
-- The map opens over Central Asia (`DEFAULT_CENTER = [48.0, 68.0]`, zoom 5 in
-  `calendar_app/templates/calendar_app/map.html`) when there is nothing to fit to.
 - **Accepted** (maintainer, 2026-10-21: the brand in code does not matter). The iCalendar subscription names the brand and host in code (`calendar_app/feeds.py`:
   `Universal Bicycle Team`, `@universalbicycle.team`) rather than from the site's settings.
 

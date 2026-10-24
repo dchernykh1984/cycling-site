@@ -3,6 +3,7 @@ import json
 import uuid
 from calendar import monthrange
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
@@ -443,8 +444,6 @@ def map_home_area(location_ids) -> list | None:
     A place counts by its own point; one without coordinates says nothing. No place, a place outside
     every area, or places in two areas -- the map fits its events instead.
     """
-    from django.conf import settings
-
     from locations.models import Location
 
     points = [
@@ -731,6 +730,7 @@ class CalendarMapView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateVie
         context["disciplines_json"] = _disciplines_for_locale()
         context["only_favorite"] = _only_favorite_requested(self.request)
         context["map_home_area"] = map_home_area(_parse_int_ids(self.request.GET.getlist("location")))
+        context["map_default_view"] = settings.MAP_DEFAULT_VIEW
         return context
 
 

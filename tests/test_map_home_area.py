@@ -1,11 +1,27 @@
 """The map's home area: a region is a line in settings, not a value in the code (#330)."""
 
+import json
+import re
+
 from django.test import TestCase, override_settings
 
 from calendar_app.views import map_home_area
 from locations.models import add_location_child
 
 AREAS = {"almaty": ((43.05, 76.55), (43.90, 77.45)), "bishkek": ((42.70, 74.40), (43.00, 74.80))}
+
+
+class MapDefaultViewTests(TestCase):
+    @override_settings(MAP_DEFAULT_VIEW={"center": [0.0, 0.0], "zoom": 3})
+    def test_the_map_receives_its_configured_fallback(self):
+        response = self.client.get("/en/calendar/map/")
+        match = re.search(
+            r'<script id="map-default-view" type="application/json">(.*?)</script>',
+            response.content.decode(),
+            re.S,
+        )
+        assert match is not None
+        self.assertEqual(json.loads(match[1]), {"center": [0.0, 0.0], "zoom": 3})
 
 
 @override_settings(MAP_HOME_AREAS=AREAS)
