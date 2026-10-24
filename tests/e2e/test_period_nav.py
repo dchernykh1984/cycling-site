@@ -295,3 +295,19 @@ def test_a_tap_elsewhere_closes_the_picker(page: Page, live_server):
     expect(page.locator("#period-pop")).to_be_visible()
     page.locator("h1").click()
     expect(page.locator("#period-pop")).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("picker", ["month", "year"])
+@pytest.mark.parametrize("choose", [False, True], ids=["escape", "choose"])
+def test_closing_the_picker_returns_keyboard_focus(page: Page, live_server, picker, choose):
+    _calendar(page, live_server)
+    trigger = page.locator(f'#period-label [data-period-pick="{picker}"]')
+    trigger.click()
+    if choose:
+        option = '[data-pop-month="0"]' if picker == "month" else '[data-pop-pick-year="2026"]'
+        page.locator(option).click()
+    else:
+        page.keyboard.press("Escape")
+    expect(page.locator("#period-pop")).to_be_hidden()
+    expect(trigger).to_be_focused()
