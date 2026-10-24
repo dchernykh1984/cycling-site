@@ -32,7 +32,7 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 2. **Given** the list view, **Then** it shows upcoming events (not past ones) until the current month's end,
    a page at a time with numbered pages, a jump-to-page field, and filters kept across pages;
    with a location, direction, discipline or event type chosen, the whole season ahead is shown
-   instead; an explicit date range wins over both.
+   instead; an explicit date range or floating-month marker wins over both.
 3. **Given** the map view, **Then** events until the current month's end (or the chosen range) are pinned:
    each location with coordinates gets a marker listing its events with links; several events at
    one place share one marker.
