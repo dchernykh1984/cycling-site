@@ -127,8 +127,8 @@
   display: none;
 }
 
-/* Stand-ins for a table whose priorities and switches would leave nothing (protocol-doc.js);
- * one class more than the priority rules below, so they win. */
+/* Stand-ins for a table whose switches would leave nothing (protocol-doc.js); one class more than
+ * the rule for columns left out, so they win. */
 .protocol-js .protocol-table th.prio-forced:not(.toggle-off),
 .protocol-js .protocol-table td.prio-forced:not(.toggle-off) {
   display: table-cell;
@@ -173,13 +173,7 @@
   }
 }
 
-@media (max-width: 1199.98px) {
-  .protocol-js:not(.protocol-full) .protocol-table .prio-3 {
-    display: none;
-  }
-}
-@media (max-width: 767.98px) {
-  .protocol-js:not(.protocol-full) .protocol-table .prio-2 {
-    display: none;
-  }
+/* Columns the short view leaves out until the table fits its box (protocol-doc.js, fitColumns). */
+.protocol-js:not(.protocol-full) .protocol-table .prio-off {
+  display: none;
 }

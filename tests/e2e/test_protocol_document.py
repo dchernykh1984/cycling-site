@@ -137,8 +137,9 @@ def test_phone_shows_place_number_name_and_result_and_the_rest_on_request(
     _no_page_scroll(page)
     for column in ("place", "bib", "name", "result"):
         expect(_cell(page, "Anna", column)).to_be_visible()
-    for column in ("team", "year", "lap1"):
-        expect(_cell(page, "Anna", column)).to_be_hidden()
+    # What does not fit is left out, the least important first: the last split before anything.
+    expect(_cell(page, "Anna", "lap1_s2")).to_be_hidden()
+    assert page.locator(".protocol-table-wrap").first.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
 
     expand = page.locator(".protocol-row", has_text="Anna").locator(".protocol-row-expand")
     expect(expand).to_be_visible()
@@ -147,8 +148,7 @@ def test_phone_shows_place_number_name_and_result_and_the_rest_on_request(
     page.keyboard.press("Enter")
     expect(expand).to_have_attribute("aria-expanded", "true")
     details = page.locator(".protocol-details")
-    expect(details).to_contain_text("Team Anna")
-    expect(details).to_contain_text("0:25:01")
+    expect(details).to_contain_text("0:13:01")
     page.keyboard.press(" ")
     expect(details).to_have_count(0)
 
@@ -157,20 +157,20 @@ def test_phone_shows_place_number_name_and_result_and_the_rest_on_request(
 def test_table_without_priorities_or_roles_keeps_its_first_columns_on_a_phone(
     page: Page, live_server, approved_competition
 ):
-    columns = [{"id": f"c{i}", "label": f"C{i}"} for i in range(6)]
+    columns = [{"id": f"c{i}", "label": f"Column{i}"} for i in range(12)]
     document = _document(
         groups=[],
         toggles=[],
-        sections=[{"columns": columns, "rows": [{"cells": {f"c{i}": f"v{i}" for i in range(6)}}]}],
+        sections=[{"columns": columns, "rows": [{"cells": {f"c{i}": f"value{i}" for i in range(12)}}]}],
     )
     protocol = _protocol(approved_competition, document)
     _open(page, live_server, protocol, 320)
     row = page.locator(".protocol-row")
     for i in range(3):
         expect(row.locator(f'td[data-col="{i}"]')).to_be_visible()
-    expect(row.locator('td[data-col="3"]')).to_be_hidden()
+    expect(row.locator('td[data-col="11"]')).to_be_hidden()
     row.locator(".protocol-row-expand").click()
-    expect(page.locator(".protocol-details")).to_contain_text("v5")
+    expect(page.locator(".protocol-details")).to_contain_text("value11")
 
 
 @pytest.mark.django_db(transaction=True)
@@ -215,7 +215,7 @@ def test_full_table_shows_every_column_and_scrolls_inside_its_box(page: Page, li
         expect(_cell(page, "Anna", column)).to_be_visible()
     _no_page_scroll(page)
     mode.click()
-    expect(_cell(page, "Anna", "team")).to_be_hidden()
+    expect(_cell(page, "Anna", "lap1_s2")).to_be_hidden()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -491,7 +491,6 @@ def test_switching_off_the_only_main_column_brings_others_on_a_phone(page: Page,
     _open(page, live_server, protocol, 390)
     row = page.locator(".protocol-row")
     expect(row.locator('td[data-col="0"]')).to_be_visible()
-    expect(row.locator('td[data-col="1"]')).to_be_hidden()
     page.get_by_role("button", name="T", exact=True).click()
     expect(row.locator('td[data-col="0"]')).to_be_hidden()
     expect(row.locator('td[data-col="1"]')).to_be_visible()
@@ -770,3 +769,32 @@ def test_a_toggle_shows_and_hides_the_statistics_under_a_lap_time(page: Page, li
     expect(stats).to_be_hidden()
     expect(heading).to_be_hidden()
     expect(_cell(page, "Anna", "lap1")).to_contain_text("0:25:01")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_wide_table_fits_a_desktop_leaving_out_the_least_important_first(
+    page: Page, live_server, approved_competition
+):
+    names = ["place", "name", "extra", "year", "city", "team", "lap1", "lap2", "lap3", "bib", "start", "result"]
+    ranks = {"place": 1, "name": 1, "result": 1, "start": 2, "bib": 3, "lap1": 4, "lap2": 4, "lap3": 4}
+    ranks.update({"team": 5, "city": 6, "year": 7, "extra": 8})
+    columns = [{"id": n, "label": f"A long heading for {n}", "priority": ranks[n]} for n in names]
+    cells = {n: f"a fairly long value in {n}" for n in names}
+    document = _document(groups=[], toggles=[], sections=[{"columns": columns, "rows": [{"cells": cells}]}])
+    protocol = _protocol(approved_competition, document)
+    _open(page, live_server, protocol, 1280)
+    wrap = page.locator(".protocol-table-wrap").first
+    assert wrap.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
+    row = page.locator(".protocol-row")
+
+    def shown(name):
+        return row.locator(f'td[data-col="{names.index(name)}"]').is_visible()
+
+    assert not shown("extra")  # the least important goes first
+    for name in ("place", "name", "result", "start"):
+        assert shown(name), name
+    # Nothing more important is left out while something less important stays.
+    hidden = [n for n in names if not shown(n)]
+    kept = [n for n in names if n not in hidden]
+    assert min(ranks[n] for n in hidden) >= max(ranks[n] for n in kept)
+    expect(page.get_by_role("button", name=_tr("All columns"))).to_be_visible()

@@ -62,12 +62,14 @@ table needs a change in the generator only; the site knows nothing of laps, atte
 
 ### Story 3 -- Read a drawn protocol on a phone (P1)
 
-1. **Given** a phone, **Then** each table shows its main columns (place, number, name, result, or
-   the document's priority 1; a table with none keeps its first three), the page never scrolls
-   sideways, and a button on each row (keyboard-reachable) opens the columns that do not fit.
-   Tablets show priority 1-2, desktops everything; "All columns" -- offered only where the short
-   view leaves a column out -- shows every column, scrolling
-   inside the table, with the place, number and name columns kept in view -- where they stay
+1. **Given** any screen, phone or desktop, **Then** each table fits its box: while it is wider,
+   the least important column still shown is left out -- the highest priority number (the
+   document ranks columns 1 to 9; without a rank, place, number, name and result are 1 and the rest
+   2; a table with no 1 keeps its first three), and of two alike the one further right; priority 1
+   always stays. The page never scrolls sideways, and a button on each row (keyboard-reachable)
+   opens what was left out. "All columns" -- offered only while something is left out -- shows
+   every column, scrolling inside the table, with the place, number and name columns kept in view
+   -- where they stay
    however often a filter or a switch is pressed while the table is scrolled. Group chips and
    column switches keep to one scrolling row on a phone; times stay on one line.
 2. **Given** a reader, **Then** they search every field of a row -- name, number, team, city and
