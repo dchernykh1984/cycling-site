@@ -24,6 +24,9 @@ Run that from the production shell (see `production-access`) so the token never 
 - `POST /api/v1/knowledge/` -- one article per locale, each with its own slug and URL.
 - `PATCH /api/v1/knowledge/{id}` -- partial update; send only what changes.
 - `POST /api/v1/news/` and `/api/v1/competitions/` follow the same shape.
+- `/api/v1/gallery/` -- albums (`POST /albums/`, `PATCH`/`DELETE /albums/{id}`, titles per
+  locale, an empty title or date taken from the linked event), photos uploaded as multipart
+  `photos` to `POST /albums/{id}/photos/`, captions with `PATCH /photos/{id}`. Admins only.
 
 ## Who may edit an event through the API
 
