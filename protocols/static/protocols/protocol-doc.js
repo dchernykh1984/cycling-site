@@ -62,7 +62,9 @@
       });
       table.classList.toggle("has-hidden", hidden);
       var labelled = false;
-      each(table, ".protocol-group-row th[data-cols]", function (th) {
+      // Columns outside any group sit under an empty cell (a td: a heading with no text is one a
+      // screen reader announces as nothing).
+      each(table, ".protocol-group-row [data-cols]", function (th) {
         var span = th.dataset.cols.split(" ").filter(function (col) {
           return visible[col];
         }).length;
