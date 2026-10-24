@@ -23,6 +23,9 @@
     padding: .75rem; border: 1px solid var(--bs-border-color); border-top-width: 0;
   }
   .calendar-day-events li .btn { flex: none; }
+  .calendar-event-main { min-width: 0; overflow-wrap: anywhere; }
+  .calendar-event-facts summary { padding: .5rem 0; }
+  .calendar-event-facts dd { margin-bottom: .25rem; }
   .calendar-day-until { margin-left: .25rem; color: var(--bs-body-color); }
 </style>
 {% endblock %}
@@ -183,12 +186,30 @@ breakpoint where the filters fold away too.{% endcomment %}
   <ul class="list-unstyled calendar-day-events">
     {% for row in day.rows %}
     <li>
-      <div>
+      <div class="calendar-event-main">
         {% if row.comp.pk in favorited_ids %}<span class="text-warning" aria-hidden="true">&#9733;</span> {% endif %}
         <a href="{% url 'competition_detail' row.comp.pk %}">{{ row.comp.title }}</a>
         {% if row.until %}<span class="calendar-day-until">&ndash; {{ row.until }}</span>{% endif %}
         {% if is_manager and row.comp.is_hidden %}<span class="badge bg-warning text-dark ms-1">{% trans "Hidden" %}</span>{% endif %}
         {% if row.comp.invite_only %}<span class="badge bg-info text-dark ms-1">{% trans "By invitation" %}</span>{% endif %}
+        <div class="calendar-event-summary small text-body-secondary">
+          {{ row.comp.disciplines_label|default:row.comp.direction_label }}{% if row.comp.city_label %} &middot; {{ row.comp.city_label }}{% endif %}
+        </div>
+        <details class="calendar-event-facts small">
+          <summary>{% trans "Details" %}</summary>
+          <dl class="mb-1">
+            <dt>{% trans "Type" %}</dt><dd>{{ row.comp.event_type_label|default:"&mdash;" }}</dd>
+            <dt>{% trans "Directions" %}</dt><dd>{{ row.comp.direction_label|default:"&mdash;" }}</dd>
+            <dt>{% trans "Disciplines" %}</dt><dd>{{ row.comp.disciplines_label|default:"&mdash;" }}</dd>
+            <dt>{% trans "Country" %}</dt><dd>{{ row.comp.country_label|default:"&mdash;" }}</dd>
+            <dt>{% trans "Region" %}</dt><dd>{{ row.comp.region_label|default:"&mdash;" }}</dd>
+            <dt>{% trans "City" %}</dt><dd>{{ row.comp.city_label|default:"&mdash;" }}</dd>
+            <dt>{% trans "Location" %}</dt><dd>{{ row.comp.location_label|default:"&mdash;" }}</dd>
+          </dl>
+          {% if row.comp.url_announcement %}
+          <a href="{{ row.comp.url_announcement }}" target="_blank" rel="noopener">{% trans "Info" %}</a>
+          {% endif %}
+        </details>
       </div>
       {% comment %}Signing up from the list, as the table's links cell offers it: entries taken here
       win over an external link.{% endcomment %}

@@ -1,18 +1,20 @@
 """Lists of days (issue #330): the List tab on a phone, and a short period on the calendar.
 
 A phone reads the List tab by day -- the day, then the events that start on it -- where a wide
-screen keeps the table. The calendar itself is always the month grid; a period shorter than a month
-(a weekend, a week) is a list of exactly those days.
+screen keeps the table. The calendar initially lists days on a phone; Month opens its grid, and
+a short period (a weekend, a week) is a list of exactly those days.
 """
 
 import datetime
 
 import pytest
+from django.urls import reverse
 from django.utils.translation import override as translation_override
 from playwright.sync_api import Page, expect
 
-from calendar_app.models import Competition
+from calendar_app.models import Competition, EventType
 from calendar_app.views import calendar_date_words
+from locations.models import Location
 
 TODAY = datetime.date.today()
 
@@ -104,3 +106,32 @@ def test_the_end_day_holds_where_clocks_go_forward(browser, live_server, organiz
     expect(row).to_have_count(1)
     expect(row.locator(".fc-list-event-until")).to_have_text("\u2013 28 March")
     context.close()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_phone_rows_keep_their_sport_place_and_information(page: Page, live_server, three_day_race, road_discipline):
+    parent = None
+    for name in ("Demo country", "Demo region", "Demo city", "Demo venue"):
+        names = dict(name=name, name_ru=name, name_kk=name, name_en=name)
+        parent = parent.add_child(**names) if parent else Location.add_root(**names)
+    three_day_race.location = parent
+    three_day_race.url_announcement = "https://example.com/information"
+    three_day_race.url_registration = "https://example.com/register"
+    three_day_race.registration_enabled = True
+    three_day_race.save()
+    three_day_race.disciplines.add(road_discipline)
+    three_day_race.event_types.add(EventType.objects.create(name_en="Demo type", name_ru="Demo type"))
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}/en/calendar/list/")
+    row = page.locator(".calendar-day-events li", has_text="Three day race")
+    expect(row.locator(".calendar-event-summary")).to_contain_text("Demo city")
+    expect(row.locator(".calendar-event-summary")).to_contain_text("Road Race")
+    row.locator("summary").click()
+    for fact in ("Demo type", "Road Cycling", "Road Race", "Demo country", "Demo region", "Demo venue"):
+        expect(row.locator("details")).to_contain_text(fact)
+    expect(row.get_by_role("link", name="Info", exact=True)).to_have_attribute(
+        "href", "https://example.com/information"
+    )
+    with translation_override("en"):
+        register_url = reverse("registrations:register", args=[three_day_race.pk])
+    expect(row.get_by_role("link", name="Register", exact=True)).to_have_attribute("href", register_url)
