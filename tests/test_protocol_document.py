@@ -416,3 +416,27 @@ def test_a_picture_with_a_broken_address_is_dropped_and_the_protocol_still_opens
         body = response.content.decode()
         assert "Sponsor" in body
         assert "[broken" not in body
+
+
+def test_long_labels_and_roles_are_not_repeated_in_every_cell():
+    columns = [{"id": f"c{i}", "label": "L" * 2000, "role": "r" * 2000} for i in range(100)]
+    view = rendering.build(_document(sections=[{"columns": columns, "rows": [{"cells": {}}] * 100}]), [])
+    body = str(view["sections"][0]["table"]["body"])
+    assert "LLLL" not in body and "rrrr" not in body
+    assert len(body) / (100 * 100) < 80  # bytes of markup per cell, whatever the labels
+
+
+def test_an_unknown_status_is_drawn_as_other():
+    view = rendering.build(
+        _document(
+            sections=[
+                {
+                    "columns": [{"id": "a"}],
+                    "rows": [{"status": "x" * 2000, "cells": {}}, {"status": "DSQ", "cells": {}}],
+                }
+            ]
+        ),
+        [],
+    )
+    rows = view["sections"][0]["table"]["rows"]
+    assert [r["status"] for r in rows] == ["other", "dsq"]
