@@ -441,6 +441,8 @@ def test_secondary_text_stays_legible_in_every_skin(page: Page, live_server, app
         page.locator(".protocol-note td"),
         _cell(page, "Anna", "result").locator(".protocol-cell-sub"),
         page.locator("thead .protocol-cell-sub"),
+        page.locator(".protocol-footer .protocol-field"),
+        page.locator(".protocol-header .protocol-field"),
     ):
         assert legibility(locator) >= 4.5, (theme, locator)
 
@@ -798,3 +800,19 @@ def test_a_wide_table_fits_a_desktop_leaving_out_the_least_important_first(
     kept = [n for n in names if n not in hidden]
     assert min(ranks[n] for n in hidden) >= max(ranks[n] for n in kept)
     expect(page.get_by_role("button", name=_tr("All columns"))).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_people_who_ran_the_race_take_one_quiet_line(page: Page, live_server, approved_competition):
+    footer = [
+        {"type": "field", "key": "organizer", "label": "Director", "value": "R. Mamaev"},
+        {"type": "field", "key": "referee", "label": "Referee", "value": "D. Chernykh"},
+        {"type": "field", "key": "secretary", "label": "Timekeeper", "value": "E. Chernykh"},
+    ]
+    protocol = _protocol(approved_competition, _document(footer=footer))
+    _open(page, live_server, protocol, 1280)
+    tops = page.locator(".protocol-footer .protocol-field").evaluate_all(
+        "fields => fields.map(f => Math.round(f.getBoundingClientRect().top))"
+    )
+    assert len(set(tops)) == 1, tops
+    expect(page.locator(".protocol-header .protocol-field--weather")).to_be_visible()

@@ -121,6 +121,10 @@ table needs a change in the generator only; the site knows nothing of laps, atte
 - **FR-PRO-011**: A column with no heading and no value in any row is not drawn.
 - **FR-PRO-012**: A section with no rows -- a group nobody rode in -- is not drawn, nor a section
   left with nothing in it.
+- **FR-PRO-013**: The document's header -- the conditions of the race, the weather above all -- is
+  drawn in a box of its own above the tables; its footer -- the people who ran the race -- as one
+  line of smaller type under them, a block of the generator's own text keeping a line of its own.
+  Date, place, course and sponsors are the event page's, and the generators no longer send them.
 
 ## Key Entities
 
