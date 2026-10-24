@@ -6,3 +6,12 @@
 [data-bs-theme="light"] .navbar .nav-link.active {
     color: var(--bs-primary) !important;
 }
+
+/* A pressed chip of a drawn protocol -- a category, a switch, a set of columns -- filled like the
+   chosen tab and period. Lux draws an active outline button as plain text, so nothing showed
+   which chips were on. Only in this skin: a skin built on this mode draws its own. */
+:root[data-skin="light"] .protocol-panel .btn.active {
+    background-color: var(--bs-emphasis-color);
+    border-color: var(--bs-emphasis-color);
+    color: var(--bs-body-bg);
+}

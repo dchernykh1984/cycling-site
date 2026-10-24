@@ -218,3 +218,12 @@
 [data-bs-theme="dark"]:root .flatpickr-day.today { border-color: var(--skin-accent); }
 [data-bs-theme="dark"]:root .flatpickr-day.selected { background: var(--skin-accent); border-color: var(--skin-accent); color: var(--skin-on-accent); }
 [data-bs-theme="dark"]:root .flatpickr-day.flatpickr-disabled, [data-bs-theme="dark"]:root .flatpickr-day.prevMonthDay, [data-bs-theme="dark"]:root .flatpickr-day.nextMonthDay { color: var(--skin-faint); }
+
+/* A pressed chip of a drawn protocol -- a category, a switch, a set of columns -- filled like the
+   chosen tab and period. The outline buttons above are painted alike with !important, so nothing showed
+   which chips were on. Only in this skin: a skin built on this mode draws its own. */
+:root[data-skin="dark"] .protocol-panel .btn.active {
+    background-color: var(--bs-emphasis-color) !important;
+    border-color: var(--bs-emphasis-color) !important;
+    color: var(--bs-body-bg) !important;
+}
