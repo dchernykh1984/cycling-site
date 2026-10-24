@@ -47,13 +47,20 @@ def _css_word(value: str | None) -> str:
     return _CSS_WORD.sub("", (value or "").lower()) or "other"
 
 
+def _line(raw) -> dict:
+    """A second line, plain or one a toggle shows and hides (protocols.document.Line)."""
+    if isinstance(raw, dict):
+        return {"text": raw.get("text", ""), "toggle": raw.get("toggle") or "", "strong": bool(raw.get("strong"))}
+    return {"text": raw if isinstance(raw, str) else "", "toggle": "", "strong": False}
+
+
 def _cell(raw) -> dict:
     if isinstance(raw, str):
         return {"text": raw, "sub": [], "url": "", "strong": False}
     if isinstance(raw, dict):
         return {
             "text": raw.get("text", ""),
-            "sub": raw.get("sub", []),
+            "sub": [_line(line) for line in raw.get("sub", [])],
             "url": raw.get("url", ""),
             "strong": bool(raw.get("strong")),
         }
@@ -61,7 +68,7 @@ def _cell(raw) -> dict:
 
 
 def _cell_text(cell: dict) -> str:
-    return " ".join([cell["text"], *cell["sub"]]).strip()
+    return " ".join([cell["text"], *(line["text"] for line in cell["sub"])]).strip()
 
 
 def _columns(raw_columns: list[dict], off_toggles: frozenset[str] = frozenset()) -> list[dict]:
@@ -75,7 +82,7 @@ def _columns(raw_columns: list[dict], off_toggles: frozenset[str] = frozenset())
                 "index": index,
                 "id": raw["id"],
                 "label": raw.get("label", ""),
-                "sub_label": raw.get("sub_label", []),
+                "sub_label": [_line(line) for line in raw.get("sub_label", [])],
                 "group": raw.get("group"),
                 "role": role,
                 # Only the roles the site knows become a class: a cell carries it once per
@@ -168,7 +175,18 @@ def _cell_html(cell: dict) -> str:
         text = f"<strong>{text}</strong>"
     if cell["url"]:
         text = f'<a href="{escape(cell["url"])}" rel="nofollow noopener" target="_blank">{text}</a>'
-    return text + "".join(f'<br><small class="protocol-cell-sub">{escape(line)}</small>' for line in cell["sub"])
+    return text + "".join(_line_html(line) for line in cell["sub"])
+
+
+def _line_html(line: dict) -> str:
+    """A second line; one that belongs to a toggle is wrapped so the toggle hides it, break and all."""
+    text: str = escape(line["text"])
+    if line["strong"]:
+        text = f"<strong>{text}</strong>"
+    html = f'<br><small class="protocol-cell-sub">{text}</small>'
+    if line["toggle"]:
+        html = f'<span class="protocol-line" data-toggle-id="{escape(line["toggle"])}">{html}</span>'
+    return html
 
 
 def _body_html(columns: list[dict], rows: list[dict], width: int) -> SafeString:
