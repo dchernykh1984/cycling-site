@@ -618,3 +618,12 @@ def test_many_long_groups_keep_to_one_row_on_a_phone(page: Page, live_server, ap
     # The last chip is still reachable: it scrolls into view and filters.
     page.locator(f'.protocol-groups [data-group-id="{names[-1]}"]').click()
     expect(page.locator(".protocol-row:visible")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_group_headings_row_hides_when_none_of_its_groups_is_shown(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 390)
+    expect(page.locator(".protocol-group-row")).to_be_hidden()
+    page.set_viewport_size({"width": 1280, "height": 800})
+    expect(page.locator(".protocol-group-row")).to_be_visible()

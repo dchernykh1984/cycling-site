@@ -49,12 +49,18 @@
         else hidden = true;
       });
       table.classList.toggle("has-hidden", hidden);
+      var labelled = false;
       each(table, ".protocol-group-row th[data-cols]", function (th) {
         var span = th.dataset.cols.split(" ").filter(function (col) {
           return visible[col];
         }).length;
         th.hidden = span === 0;
         if (span) th.colSpan = span;
+        if (span && th.textContent.trim()) labelled = true;
+      });
+      // A row of group headings with nothing left to name is only an empty band.
+      each(table, ".protocol-group-row", function (row) {
+        row.hidden = !labelled;
       });
       var width = count + (hidden ? 1 : 0);
       each(table, ".protocol-note td", function (td) {
