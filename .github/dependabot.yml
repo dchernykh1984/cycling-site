@@ -10,6 +10,11 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    ignore:
+      # Wagtail 7.x requires draftjs_exporter<6.0; 6.0 and later come with Wagtail 8. Drop this
+      # once the site moves to Wagtail 8.
+      - dependency-name: "draftjs-exporter"
+        versions: [">=6.0"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
