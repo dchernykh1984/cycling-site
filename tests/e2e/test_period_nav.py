@@ -311,3 +311,27 @@ def test_closing_the_picker_returns_keyboard_focus(page: Page, live_server, pick
         page.keyboard.press("Escape")
     expect(page.locator("#period-pop")).to_be_hidden()
     expect(trigger).to_be_focused()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize(
+    "query,expected",
+    [
+        ("", "2026"),
+        ("?date_from=2026-10-25&date_to=2026-10-25", "2026"),
+        ("?date_from=2026-10-24&date_to=2026-10-25", "2026"),
+        ("?date_from=2026-10-31&date_to=2026-11-01", "2026"),
+        ("?date_from=2026-12-31&date_to=2027-01-01", "2026"),
+        ("?date_from=2026-10-21", "2026"),
+    ],
+)
+def test_kazakh_period_places_each_year_before_its_days(page: Page, live_server, query, expected):
+    page.clock.set_fixed_time(WEDNESDAY)
+    page.goto(f"{live_server.url}/kk/calendar/{query}")
+    expect(_label(page)).to_contain_text(expected)
+    # The year is the first picker in every label, including the open-ended range.
+    expect(_label(page).locator("button").first).to_have_attribute("data-period-pick", "year")
+    if "2027" in query:
+        buttons = _label(page).locator("button")
+        expect(buttons.nth(2)).to_have_attribute("data-period-pick", "year")
+        expect(buttons.nth(2)).to_have_text("2027")

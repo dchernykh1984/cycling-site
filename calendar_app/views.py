@@ -490,7 +490,7 @@ def calendar_date_words() -> dict:
     if not (get_language() or "").startswith("en"):
         months = [month.lower() for month in months]
         weekdays = [weekday.lower() for weekday in weekdays]
-    return {"months": months, "weekdays": weekdays}
+    return {"months": months, "weekdays": weekdays, "year_first": (get_language() or "").startswith("kk")}
 
 
 def day_groups(rows) -> list[dict]:

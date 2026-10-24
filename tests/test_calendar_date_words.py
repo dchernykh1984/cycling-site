@@ -46,3 +46,8 @@ class CalendarDateWordsTests(SimpleTestCase):
             words = calendar_date_words()
         self.assertEqual(words["months"][9], "October")
         self.assertEqual(words["weekdays"][1], "Tuesday")
+
+    def test_only_kazakh_places_the_year_first(self):
+        for language in ("ru", "kk", "en"):
+            with translation_override(language):
+                self.assertEqual(calendar_date_words()["year_first"], language == "kk")
