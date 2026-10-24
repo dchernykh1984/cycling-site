@@ -900,3 +900,22 @@ def test_a_set_turned_on_by_hand_stays_even_where_it_does_not_fit(page: Page, li
         expect(_cell(page, "Anna", column)).to_be_visible()
     _no_page_scroll(page)
     assert page.locator(".protocol-table-wrap").first.evaluate("el => el.scrollWidth > el.clientWidth")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_all_columns_brings_back_a_set_turned_off_while_every_column_shows(
+    page: Page, live_server, approved_competition
+):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 390)
+    mode = page.locator(".protocol-mode")
+    mode.click()
+    expect(mode).to_have_attribute("aria-pressed", "true")
+    _set_chip(page, "Team").click()
+    expect(_cell(page, "Anna", "team")).to_be_hidden()
+    mode.click()  # still "all": the set turned off comes back, nothing returns to fitting
+    expect(_cell(page, "Anna", "team")).to_be_visible()
+    expect(mode).to_have_attribute("aria-pressed", "true")
+    mode.click()  # now every column shows: back to what fits
+    expect(mode).to_have_attribute("aria-pressed", "false")
+    expect(_cell(page, "Anna", "lap1")).to_be_hidden()
