@@ -116,6 +116,13 @@
   display: none;
 }
 
+/* Stand-ins for a table whose priorities and switches would leave nothing (protocol-doc.js);
+ * one class more than the priority rules below, so they win. */
+.protocol-js .protocol-table th.prio-forced:not(.toggle-off),
+.protocol-js .protocol-table td.prio-forced:not(.toggle-off) {
+  display: table-cell;
+}
+
 @media (max-width: 1199.98px) {
   .protocol-js:not(.protocol-full) .protocol-table .prio-3 {
     display: none;

@@ -61,7 +61,7 @@ def _cell_text(cell: dict) -> str:
     return " ".join([cell["text"], *cell["sub"]]).strip()
 
 
-def _columns(raw_columns: list[dict]) -> list[dict]:
+def _columns(raw_columns: list[dict], off_toggles: frozenset[str] = frozenset()) -> list[dict]:
     columns = []
     for index, raw in enumerate(raw_columns):
         role = raw.get("role") or ""
@@ -84,8 +84,9 @@ def _columns(raw_columns: list[dict]) -> list[dict]:
             }
         )
     if columns and not any(c["priority"] == 1 for c in columns):
-        # A table must never be empty on a phone: its first columns stand in.
-        for column in [c for c in columns if not c["toggle"]][:_FALLBACK_PRIMARY]:
+        # A table must never be empty on a phone: its first columns shown at opening stand
+        # in. Which columns are on can change later -- protocol-doc.js keeps the same rule.
+        for column in [c for c in columns if c["toggle"] not in off_toggles][:_FALLBACK_PRIMARY]:
             column["priority"] = 1
     return columns
 
@@ -107,8 +108,8 @@ def _header_groups(columns: list[dict]) -> list[dict]:
     return runs
 
 
-def _table(raw: dict, inherited_group: str | None, counter: list[int]) -> dict:
-    columns = _columns(raw.get("columns", []))
+def _table(raw: dict, inherited_group: str | None, counter: list[int], off_toggles: frozenset[str]) -> dict:
+    columns = _columns(raw.get("columns", []), off_toggles)
     search_columns = [c for c in columns if c["role"] in _SEARCH_ROLES] or columns
     rows = []
     for raw_row in raw.get("rows", []):
@@ -189,7 +190,9 @@ def _body_html(columns: list[dict], rows: list[dict], width: int) -> SafeString:
     return mark_safe("".join(parts))  # noqa: S308 -- every value above went through escape()
 
 
-def _sections(raw_sections: list[dict], inherited_group: str | None, prefix: str, counter: list[int]) -> list:
+def _sections(
+    raw_sections: list[dict], inherited_group: str | None, prefix: str, counter: list[int], off_toggles: frozenset[str]
+) -> list:
     sections = []
     for number, raw in enumerate(raw_sections, start=1):
         anchor = f"{prefix}-{number}"
@@ -197,8 +200,8 @@ def _sections(raw_sections: list[dict], inherited_group: str | None, prefix: str
         section = {
             "anchor": anchor,
             "title": raw.get("title", ""),
-            "table": _table(raw, group, counter) if raw.get("columns") else None,
-            "sections": _sections(raw.get("sections", []), group, anchor, counter),
+            "table": _table(raw, group, counter, off_toggles) if raw.get("columns") else None,
+            "sections": _sections(raw.get("sections", []), group, anchor, counter, off_toggles),
         }
         sections.append(section)
     return sections
@@ -255,6 +258,7 @@ def _language_note(lang: str | None) -> str:
 def build(document: dict, image_sources: list[str]) -> dict:
     """Everything the protocol templates draw, from a stored document."""
     counter = [0]
+    off_toggles = frozenset(t["id"] for t in document.get("toggles", []) if not t.get("default", True))
     return {
         "title": document.get("title", ""),
         "lang": document.get("lang", ""),
@@ -263,5 +267,5 @@ def build(document: dict, image_sources: list[str]) -> dict:
         "footer": _items(document.get("footer", []), image_sources),
         "groups": document.get("groups", []),
         "toggles": document.get("toggles", []),
-        "sections": _sections(document.get("sections", []), None, "sec", counter),
+        "sections": _sections(document.get("sections", []), None, "sec", counter, off_toggles),
     }

@@ -38,6 +38,7 @@
   function layout(root) {
     closeDetails(root);
     each(root, ".protocol-table", function (table) {
+      keepSomethingVisible(table);
       var visible = {};
       var count = 0;
       var hidden = false;
@@ -63,6 +64,26 @@
         button.hidden = !hidden;
       });
     });
+  }
+
+  // A table must never show no column at all: when priorities and switches leave none,
+  // its first columns that are switched on stand in, as the server chose at opening.
+  function keepSomethingVisible(table) {
+    each(table, ".prio-forced", function (cell) {
+      cell.classList.remove("prio-forced");
+    });
+    var heads = Array.prototype.slice.call(table.querySelectorAll("thead th[data-col]"));
+    if (heads.some(shown)) return;
+    heads
+      .filter(function (th) {
+        return !th.classList.contains("toggle-off");
+      })
+      .slice(0, 3)
+      .forEach(function (th) {
+        each(table, '[data-col="' + th.dataset.col + '"]', function (cell) {
+          cell.classList.add("prio-forced");
+        });
+      });
   }
 
   function filter(root) {
