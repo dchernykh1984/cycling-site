@@ -552,3 +552,24 @@ def test_html_page_moves_to_data_only_published_between_the_hint_and_the_load(
     _republish(protocol, _document(), file_hash="h2", live=False)
     expect(page.locator(".protocol-row", has_text="Anna")).to_be_visible(timeout=10_000)
     expect(page.locator("iframe")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_stalled_fragment_does_not_stall_a_drawn_protocol(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 1280)
+    stalled: list = []
+
+    def first_one_hangs(route):
+        if not stalled:
+            stalled.append(route)
+        else:
+            route.continue_()
+
+    page.route(re.compile(r".*/protocols/\d+/fragment/"), first_one_hangs)
+    updated = _document()
+    updated["sections"][0]["rows"][0]["cells"]["name"] = "Anna After"
+    _republish(protocol, updated, file_hash="h2", live=False)
+    expect(page.locator(".protocol-row", has_text="Anna After")).to_be_visible(timeout=15_000)
+    expect(page.locator("#live-banner")).to_have_text(_tr("Final results"))
+    assert stalled

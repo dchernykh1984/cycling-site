@@ -107,8 +107,25 @@
 
   // The drawn document: the response carries the state of the row it was drawn from, and a body
   // only while the protocol still has a document -- an empty one with "html" means it no longer does.
+  // A request that never answers must not stall the loop: it is abandoned after the same
+  // time a frame gets to load, and the next round tries again.
+  function fetchInTime(url) {
+    var controller = window.AbortController ? new AbortController() : null;
+    var timer = controller ? setTimeout(function () { controller.abort(); }, loadTimeout) : null;
+    return fetch(url, { cache: "no-store", signal: controller ? controller.signal : undefined }).then(
+      function (r) {
+        clearTimeout(timer);
+        return r;
+      },
+      function (failure) {
+        clearTimeout(timer);
+        throw failure;
+      }
+    );
+  }
+
   function loadDocument() {
-    return fetch(data.fragmentUrl, { cache: "no-store" }).then(function (r) {
+    return fetchInTime(data.fragmentUrl).then(function (r) {
       var hash = r.headers.get("X-Protocol-Hash");
       var type = r.headers.get("Content-Type") || "";
       if (!r.ok || hash === null || type.indexOf("text/html") !== 0) throw new Error("status " + r.status);
@@ -169,7 +186,7 @@
     if (inFlight || stopped) return;
     inFlight = true;
     clearTimeout(timer);
-    fetch(data.pollUrl, { cache: "no-store" })
+    fetchInTime(data.pollUrl)
       .then(function (r) {
         if (!r.ok) throw new Error("status " + r.status);
         return r.json();
