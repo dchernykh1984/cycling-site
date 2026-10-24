@@ -6,9 +6,11 @@ Sync Impact Report
   issue #324); principles II and III no longer name it.
   1.2.0 -> 1.3.0: principle IV requires localized reader-facing data fields by default, with
   an explicit exception for documents that belong to one locale.
+  1.3.0 -> 1.4.0: principle VII added -- what a participant or an organizer does with data on the
+  site is also available through the API; the gaps are listed per area in specs/site/.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
   .agents/skills, which stay the detailed runtime guidance; VI set by the maintainer (no local or
-  sport-specific hardcoding).
+  sport-specific hardcoding); VII set by the maintainer (an API by default).
 - Templates: plan-template.md's "Constitution Check" gate reads these principles; no template
   needed changes.
 -->
@@ -90,6 +92,26 @@ place and sport:
   "Local assumptions", and a change touching that code removes the assumption rather than adding
   another -- unless the maintainer marked it **Accepted**.
 
+### VII. What a member does on the site, a program can do through the API
+
+What a participant or an organizer reads or changes on the site -- events, entries, results,
+comments, their own profile -- is also available through the API (`/api/v1/`), so the timing
+tools, the events agents and a member's own programs work with the same data a person does.
+
+- A feature that lets a participant or an organizer read or change data ships its API operations
+  in the same change, with their tests (principle III).
+- The API keeps the site's rules: who may see, create, change or delete something is decided the
+  same way on both, and what the site shows per language the API reads and writes per language
+  (principle IV).
+- Work only admins and owners do -- moderating geography and submissions, the gallery, the site's
+  own texts -- may have an API but need not.
+- A member action is left out of the API only for a reason, recorded in the area's specification:
+  signing up and signing in, for example, establish who an API caller is, so they come before the
+  API rather than through it.
+- Where a member action still has no API, the area's file in `specs/site/` lists it under "API
+  gaps". A change that reworks an action listed there closes its gap rather than leaving it open --
+  unless the maintainer marked it **Exception**.
+
 ## Constraints
 
 - Stack: Django 6 with Wagtail 7, PostgreSQL, Bootstrap 5.3 with the Bootswatch Lux theme,
@@ -118,4 +140,4 @@ bumps the version -- MAJOR for a principle removed or redefined, MINOR for one a
 expanded, PATCH for wording -- and updates the Last Amended date. Plans check themselves against
 it in their "Constitution Check".
 
-**Version**: 1.3.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-23
+**Version**: 1.4.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-24

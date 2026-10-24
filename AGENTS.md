@@ -16,6 +16,9 @@ universalbicycle.team.
 - **Localize reader-facing data fields by default.** Names, titles, captions and descriptions
   have ru / kk / en values. A document such as a knowledge article may instead belong to one
   locale and appear only in that locale's listings. IDs, dates, numbers and URLs are not translated.
+- **An API by default.** What a participant or an organizer reads or changes on the site is also
+  available through `/api/v1/`, with the site's permission rules; a new feature ships its API
+  operations and their tests. What is still missing is listed under "API gaps" in `specs/site/`.
 - **Approved events belong to the maintainer.** A cleanup that would change one -- its links, its
   location, its dates -- needs their explicit go-ahead first.
 - Commit messages are **one line**, no body, and never mention Codex or co-authorship.

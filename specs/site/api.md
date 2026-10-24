@@ -74,6 +74,9 @@ and protocols with the event's upload token. The API has no language prefix.
   [events](events.md)).
 - **FR-API-003**: Writes keep the same rules as the site: roles, moderation, sanitising, soft delete,
   audit (the audit log records the token's member).
+- **FR-API-004**: What a participant or an organizer reads or changes on the site is also available
+  here (constitution principle VII); each area's specification lists what is still missing under
+  "API gaps", and what is left out on purpose as an **Exception** with its reason.
 
 ## Key Entities
 
