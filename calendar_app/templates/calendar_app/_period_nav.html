@@ -29,13 +29,14 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     border: 1px solid var(--period-line); border-radius: .5rem; overflow: hidden;
   }
   /* Up to two lines (the interface skill): the button grows to hold them, the row shares the height, and
-     the words keep 8px from the frame at the sides and 4px above and below -- at 13px, the size at which
-     all four hold that at 360px in every language and skin. Under .period-nav, or
+     the words keep 8px from the frame at the sides and 4px above and below. Phone segments use 12px
+     so the wider orange font keeps that clearance on Linux too. Under .period-nav, or
      `.period-nav button { font: inherit }` wins and the kinds draw at 16px on a 24px line. */
   .period-nav .period-kind {
     min-height: 2.75rem; padding: .375rem .5rem; border: 0; background: transparent;
     font-size: .8125rem; line-height: 1.2;
   }
+  @media (max-width: 575.98px) { .period-nav .period-kind { font-size: .75rem; } }
   /* Under 360px the page only has to keep words inside their frames (the interface skill), and the
      orange skin's wider type spilled "Vykhodnye" over it by 2px at 320px. */
   @media (max-width: 359.98px) { .period-nav .period-kind { padding-left: .25rem; padding-right: .25rem; } }

@@ -103,10 +103,7 @@ _LIGHT_OUTLINE_BUTTONS = (
     | {f"light|contrast/light/desktop/{tab}/[data-copied-label]/{state}" for tab in TABS for state in STATES}
     | {f"light|border/light/phone/{tab}/[data-copied-label]" for tab in TABS}
 )
-# The orange skin's body font sets Weekend in Russian 2px wider on each side than its segment leaves
-# at 360px, as Linux draws it (CI); Windows draws it narrower and passes.
-_ORANGE_WEEKEND_RU = {f"orange|fits/phone/ru/{tab}/[data-period-kind=weekend]" for tab in TABS}
-KNOWN: set[str] = _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS | _ORANGE_WEEKEND_RU
+KNOWN: set[str] = _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS
 
 
 def _breaks(found):
