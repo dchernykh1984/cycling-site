@@ -482,3 +482,32 @@ def test_a_nul_character_in_a_stored_field_is_refused(fields):
 def test_a_nul_character_in_an_unknown_field_is_ignored_with_the_field():
     stored = parse(_raw(future="x\u0000y"))
     assert "future" not in stored
+
+
+def test_a_column_with_no_heading_and_no_values_is_not_drawn():
+    view = rendering.build(
+        _document(
+            sections=[
+                {
+                    "columns": [
+                        {"id": "name", "label": "Name"},
+                        {"id": "year", "label": ""},
+                        {"id": "t", "label": "Time"},
+                    ],
+                    "rows": [{"cells": {"name": "Ann", "t": "1:00"}}, {"cells": {"name": "Bob", "year": ""}}],
+                }
+            ]
+        ),
+        [],
+    )
+    table = view["sections"][0]["table"]
+    assert [c["id"] for c in table["columns"]] == ["name", "t"]
+    assert [c["index"] for c in table["columns"]] == [0, 1]
+    assert 'data-col="2"' not in str(table["body"])
+
+
+def test_an_unlabelled_column_with_values_is_kept():
+    view = rendering.build(
+        _document(sections=[{"columns": [{"id": "a", "label": ""}], "rows": [{"cells": {"a": "x"}}]}]), []
+    )
+    assert [c["id"] for c in view["sections"][0]["table"]["columns"]] == ["a"]
