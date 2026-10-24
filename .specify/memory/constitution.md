@@ -9,11 +9,13 @@ Sync Impact Report
   1.3.0 -> 1.4.0: principles added by the maintainer -- VII: what a participant or an organizer does
   with data on the site is also available through the API (the gaps are listed per area in
   specs/site/); VIII: one fact, one home; IX: nothing is lost by accident; X: every input is
-  checked, every member's data is private; XI: the API keeps its promises.
+  checked, every member's data is private; XI: the API keeps its promises; XII: usable by everyone,
+  on any screen.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
-  .agents/skills, which stay the detailed runtime guidance; VI-XI set by the maintainer (no local or
-  sport-specific hardcoding; an API by default; one fact, one home; nothing is lost by accident;
-  every input is checked, every member's data is private; the API keeps its promises).
+  .agents/skills, which stay the detailed runtime guidance; VI-XII set by the maintainer (no local
+  or sport-specific hardcoding; an API by default; one fact, one home; nothing is lost by accident;
+  every input is checked, every member's data is private; the API keeps its promises; usable by
+  everyone, on any screen).
 - Templates: plan-template.md's "Constitution Check" gate reads these principles; no template
   needed changes.
 -->
@@ -171,6 +173,19 @@ version was installed on it. So `/api/v1/` only grows.
   retires it.
 - An older client gets the answer it got before: finish-protocol generators that send only HTML
   keep publishing beside the ones that send the structured document (issue #310).
+
+### XII. Usable by everyone, on any screen
+
+Every page works on a phone as well as on a desktop, and with a keyboard or a screen reader as well
+as with a mouse.
+
+- Every control and every table header has an accessible name -- an icon button says what it does,
+  a column is never drawn with an empty heading.
+- Keyboard focus is visible, and everything a mouse can reach a keyboard can reach.
+- A page fits a phone's width without scrolling sideways; a wide table scrolls inside its own box.
+- The browser suite runs on phones as well as desktops (principle III), and its tests find controls
+  by their role and name where they can, as a screen reader does -- so a control without a name
+  fails its own test.
 
 ## Constraints
 
