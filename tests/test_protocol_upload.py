@@ -269,3 +269,34 @@ class UploadDocumentTest(_MediaMixin, TestCase):
             "file_hash"
         ]
         self.assertEqual(len({first, second, third}), 3)
+
+
+class UndecodableDocumentTest(_MediaMixin, TestCase):
+    """A number too long for Python to read is a refused document, never a 500."""
+
+    def setUp(self):
+        self._use_temp_media()
+        self.competition = Competition.objects.create(
+            title_ru="Race", date_start="2026-01-01", status=Competition.Status.APPROVED
+        )
+        raw = b'{"schema": 1, "sections": [], "future": ' + b"1" * 5000 + b"}"
+        self.document = lambda: SimpleUploadedFile("protocol.json", raw, content_type="application/json")
+
+    def _post(self, **files):
+        data = {"competition_token": str(self.competition.upload_token), "protocol_type": "group", **files}
+        with self.captureOnCommitCallbacks(execute=True):
+            return Client(raise_request_exception=False).post(URL, data)
+
+    def test_alone_it_is_a_400(self):
+        response = self._post(document=self.document())
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("not UTF-8 JSON", response.json()["detail"])
+
+    def test_with_html_the_html_is_published_and_the_reason_given(self):
+        response = self._post(document=self.document(), html_file=_html("kept"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("not UTF-8 JSON", response.json()["document_error"])
+        protocol = Protocol.objects.get()
+        self.assertIsNone(protocol.document)
+        with protocol.html_file.open("rb") as f:
+            self.assertIn(b"kept", f.read())
