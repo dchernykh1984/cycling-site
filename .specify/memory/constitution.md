@@ -155,8 +155,8 @@ where it arrives, and the site shows nothing about a person that they did not ch
 - Rich text is sanitised on save; every string and list is bounded, and an over-long value is an
   error naming the field and its limit, not a server error.
 - An uploaded HTML file is shown only in a sandboxed frame.
-- A member's e-mail is never shown to others, and signing up with a known address does not say
-  that an account exists.
+- A member's e-mail is never shown to other members, and signing up with a known address does not
+  say that an account exists.
 - Something a reader may not see answers as missing, never confirming that it exists: an event that
   is pending, hidden or invite-only and not theirs is a 404, and a wrong invitation key says nothing.
 - Tokens, keys and passwords live in settings and the environment, never in the repository.
