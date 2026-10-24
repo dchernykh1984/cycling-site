@@ -324,6 +324,7 @@ def test_live_registries_change_and_the_choice_follows_the_id(page: Page, live_s
         toggles=[{"id": "splits", "label": "Splits"}, {"id": "stats", "label": "Stats", "default": False}],
     )
     reordered["sections"][0]["columns"].append({"id": "rank", "label": "Rank", "toggle": "stats"})
+    reordered["sections"][0]["rows"].append(_row("3", "44", "Wanda", "W"))
     _republish(protocol, reordered, file_hash="h2")
     expect(page.locator('.protocol-groups [data-group-id="W"]')).to_be_visible(timeout=10_000)
     expect(page.locator('.protocol-groups [data-group-id="M30"]')).to_have_attribute("aria-pressed", "true")
@@ -339,8 +340,8 @@ def test_live_registries_change_and_the_choice_follows_the_id(page: Page, live_s
     for column in without["sections"][0]["columns"]:
         column.pop("toggle", None)
     _republish(protocol, parse(json.dumps(without).encode()), file_hash="h3")
-    expect(page.locator('.protocol-groups [data-group-id="M30"]')).to_have_count(0, timeout=10_000)
-    expect(page.locator('.protocol-groups [data-group-id=""]')).to_have_attribute("aria-pressed", "true")
+    # One category left: no filter to offer, and the choice of a vanished one no longer hides rows.
+    expect(page.locator(".protocol-groups")).to_have_count(0, timeout=10_000)
     expect(page.locator(".protocol-row:visible")).to_have_count(3)
     expect(page.get_by_role("button", name="Splits")).to_have_count(0)
 
@@ -605,8 +606,8 @@ def _height(locator) -> float:
 def test_many_long_groups_keep_to_one_row_on_a_phone(page: Page, live_server, approved_competition):
     names = [f"M{age}-{age + 9} - Men born {2004 - age}-{1995 - age}" for age in range(18, 90, 8)]
     document = _raw(groups=[{"id": n, "label": n} for n in names])
-    for row in document["sections"][0]["rows"]:
-        row["group"] = names[0]
+    for row, name in zip(document["sections"][0]["rows"], (names[0], names[1], names[-1]), strict=True):
+        row["group"] = name
     protocol = _protocol(approved_competition, parse(json.dumps(document).encode()))
     _open(page, live_server, protocol, 390)
     groups = page.locator(".protocol-groups")
@@ -617,7 +618,7 @@ def test_many_long_groups_keep_to_one_row_on_a_phone(page: Page, live_server, ap
     _no_page_scroll(page)
     # The last chip is still reachable: it scrolls into view and filters.
     page.locator(f'.protocol-groups [data-group-id="{names[-1]}"]').click()
-    expect(page.locator(".protocol-row:visible")).to_have_count(0)
+    expect(page.locator(".protocol-row:visible")).to_have_count(1)
 
 
 @pytest.mark.django_db(transaction=True)

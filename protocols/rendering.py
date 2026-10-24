@@ -266,18 +266,39 @@ def _language_note(lang: str | None) -> str:
         return lang
 
 
+def _row_groups(sections: list[dict]) -> set[str]:
+    found: set[str] = set()
+    for section in sections:
+        if section["table"]:
+            found.update(row["group"] for row in section["table"]["rows"])
+        found |= _row_groups(section["sections"])
+    return found
+
+
+def _filter_groups(groups: list[dict], sections: list[dict]) -> list[dict]:
+    """The groups worth a filter chip: those holding rows, and only when there are two to choose from.
+
+    A protocol of one category -- or a registry naming categories nobody rode in -- offers no choice,
+    and chips that change nothing only make the reader wonder what they are for.
+    """
+    present = _row_groups(sections)
+    held = [group for group in groups if group["id"] in present]
+    return held if len(held) > 1 else []
+
+
 def build(document: dict, image_sources: list[str]) -> dict:
     """Everything the protocol templates draw, from a stored document."""
     counter = [0]
     off_toggles = frozenset(t["id"] for t in document.get("toggles", []) if not t.get("default", True))
+    sections = _sections(document.get("sections", []), None, "sec", counter, off_toggles)
     return {
         "title": document.get("title", ""),
         "lang": document.get("lang", ""),
         "language_note": _language_note(document.get("lang")),
         "header": _items(document.get("header", []), image_sources),
         "footer": _items(document.get("footer", []), image_sources),
-        "groups": document.get("groups", []),
+        "groups": _filter_groups(document.get("groups", []), sections),
         "toggles": document.get("toggles", []),
-        "sections": _sections(document.get("sections", []), None, "sec", counter, off_toggles),
+        "sections": sections,
         "fold": json.dumps(fold_table()),
     }
