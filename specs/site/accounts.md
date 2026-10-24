@@ -131,6 +131,16 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   (Garmin Connect, Polar, Suunto and the like) have no place yet.
 - The sign-in providers (Google, GitHub, Strava) come from settings, which is as it should be.
 
+## API gaps
+
+- Editing the profile (names, gender, birth date, team, city, Strava link).
+- Asking for another role and writing to the owners.
+- **Exception**: signing up, signing in, confirming the address, connecting sign-in providers and
+  generating the API token. They establish who an API caller is, so they come before the API
+  rather than through it.
+- **Exception**: the skin, saved calendar filters and dismissed setup hints. They only change how
+  the site's own pages look and open, so a program has nothing to do with them.
+
 ## Open Questions
 
 - None known.

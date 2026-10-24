@@ -15,7 +15,8 @@ description: Spec-driven development in this repository (issue #337) - where the
   never branches in the code. Examples the maintainer gives (a sport, a city, a race) explain an idea;
   they are not values to copy into code.
 - `specs/site/<area>.md` -- the site as it works today, one file per area, each with the tests that
-  pin it and its "Local assumptions".
+  pin it, its "Local assumptions" and its "API gaps" (principle VII: what a participant or an
+  organizer does on the site is also available through the API).
 - `specs/<issue>-<short-name>/` -- one feature: `spec.md`, then `plan.md` (+ research, data model,
   contracts, quickstart), then `tasks.md`.
 - `.claude/skills/speckit-*`, `.agents/skills/speckit-*`, `.specify/` -- Spec Kit 1.2.2 itself.
@@ -45,5 +46,7 @@ A bug fix or a small change needs no folder of its own.
 Any change -- feature, fix, refactor -- that alters behaviour a `specs/site/` file describes updates
 that file in the same pull request: the scenario, the requirement, the tests line. A change that
 touches code listed under "Local assumptions" removes the assumption (moving the value into data or
-a setting) rather than adding another, and deletes the line. Write specs in English, ASCII, from the
+a setting) rather than adding another, and deletes the line. A change that adds a member action adds
+its API operations; one that reworks an action listed under "API gaps" closes the gap and deletes the
+line, unless it is marked **Exception**. Write specs in English, ASCII, from the
 code and tests -- never from memory -- and mark what is unknown `NEEDS CLARIFICATION`.

@@ -126,6 +126,11 @@ table needs a change in the generator only; the site knows nothing of laps, atte
   labels are the referee's, not translated (an exception to constitution principle IV, recorded
   here).
 
+## API gaps
+
+- Reading results: an event's protocols, a protocol's document or HTML and its update history are
+  served to browsers only; the API takes uploads.
+
 ## Open Questions
 
 - Protocol generation is still done by a separate desktop application; moving it onto the site is

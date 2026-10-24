@@ -95,6 +95,10 @@ photos are kept exactly as they were taken, and only admins and the owner put th
 
 - The gallery's texts call the photos "our races, rides and training camps": the site's own club.
 
+## API gaps
+
+- Reading albums and photos. Publishing them is admins' work, which principle VII leaves out.
+
 ## Open Questions
 
 - The production media disk is about 1 GB. Originals of a few to 25 MB each fill it after a hundred

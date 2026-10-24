@@ -110,6 +110,10 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 - **Accepted** (maintainer, 2026-10-21: the brand in code does not matter). The iCalendar subscription names the brand and host in code (`calendar_app/feeds.py`:
   `Universal Bicycle Team`, `@universalbicycle.team`) rather than from the site's settings.
 
+## API gaps
+
+- Favorites: starring an event and reading one's starred events.
+
 ## Open Questions
 
 - None known.
