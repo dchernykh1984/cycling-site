@@ -47,6 +47,16 @@ def test_map_page_renders_with_three_view_buttons(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_an_empty_map_uses_the_configured_fallback(page: Page, live_server, settings):
+    settings.MAP_DEFAULT_VIEW = {"center": [0.0, 0.0], "zoom": 3}
+    page.goto(f"{live_server.url}/en/calendar/map/")
+    page.wait_for_function("window.calendarMap && window.calendarMap.getZoom() === 3")
+    center = page.evaluate("() => window.calendarMap.getCenter()")
+    assert abs(center["lat"]) < 0.001
+    assert abs(center["lng"]) < 0.001
+
+
+@pytest.mark.django_db(transaction=True)
 def test_map_view_button_is_active_on_map_page(page: Page, live_server):
     page.goto(f"{live_server.url}/ru/calendar/map/")
     expect(page.locator("#view-link-map")).to_have_class(re.compile(r"active"))

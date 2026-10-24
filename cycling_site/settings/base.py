@@ -277,6 +277,8 @@ MAP_HOME_AREAS = {
     # Kaskelen to Issyk, Shymbulak to Konaev.
     "almaty": ((43.05, 76.55), (43.90, 77.45)),
 }
+# Used only when the map has neither a reader's home area nor matching markers to fit.
+MAP_DEFAULT_VIEW = {"center": [48.0, 68.0], "zoom": 5}
 
 USE_I18N = True
 
