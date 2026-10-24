@@ -702,3 +702,21 @@ def test_search_finds_a_team_or_a_city_but_not_digits_inside_times(page: Page, l
     expect(page.locator(".protocol-row:visible")).to_have_count(3)
     search.fill("25")  # only inside lap times ("0:25:01"): no rider
     expect(page.locator(".protocol-row:visible")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_place_and_name_stay_put_when_a_filter_is_pressed_on_a_scrolled_table(
+    page: Page, live_server, approved_competition
+):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 390)
+    page.get_by_role("button", name=_tr("Full table")).click()
+    wrap = page.locator(".protocol-table-wrap").first
+    wrap.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
+    before = _cell(page, "Anna", "name").bounding_box()
+    assert before is not None
+    # Each press lays the table out again; the columns kept in view must not drift with the scroll.
+    for group in ("M30", "", "M30", ""):
+        page.locator(f'.protocol-groups [data-group-id="{group}"]').click()
+        after = _cell(page, "Anna", "name").bounding_box()
+        assert after is not None and abs(after["x"] - before["x"]) <= 1, group
