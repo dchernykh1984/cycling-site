@@ -491,3 +491,24 @@ def test_switching_off_the_only_main_column_brings_others_on_a_phone(page: Page,
     expect(row.locator('td[data-col="0"]')).to_be_hidden()
     expect(row.locator('td[data-col="1"]')).to_be_visible()
     expect(row.locator('td[data-col="2"]')).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_link_to_the_original_follows_each_live_update(page: Page, live_server, approved_competition):
+    from django.core.files.base import ContentFile
+
+    protocol = _protocol(approved_competition)
+    protocol.html_file.save("p.html", ContentFile(b"<html><body>orig</body></html>"), save=True)
+    _open(page, live_server, protocol, 1280)
+    expect(page.locator("#protocol-original")).to_be_visible()
+
+    # Data only now: the original is gone, and so is its link.
+    protocol.html_file = ""
+    _republish(protocol, _document(), file_hash="h2", live=True)
+    expect(page.locator("#protocol-original")).to_have_count(0, timeout=10_000)
+
+    # Both again, and final: the link comes back with the final results.
+    protocol.html_file.save("p2.html", ContentFile(b"<html><body>orig 2</body></html>"), save=False)
+    _republish(protocol, _document(), file_hash="h3", live=False)
+    expect(page.locator("#live-banner")).to_have_text(_tr("Final results"), timeout=10_000)
+    expect(page.locator("#protocol-original")).to_have_attribute("href", f"/ru/protocols/{protocol.pk}/html/?v=h3")

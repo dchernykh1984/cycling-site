@@ -1,5 +1,9 @@
 {% load i18n %}{% get_current_language as page_language %}
 <div class="protocol-doc" id="protocol-doc"{% if doc.lang %} lang="{{ doc.lang }}"{% endif %}>
+  {% comment %}Inside the document, so a live update brings it, or takes it away, with the upload it belongs to.{% endcomment %}
+  {% if protocol.html_file %}
+  <p class="small mb-2" lang="{{ page_language }}"><a href="{% url 'protocol_html' protocol.pk %}?v={{ protocol.file_hash }}" target="_blank" rel="noopener" id="protocol-original">{% trans "Original protocol" %}</a></p>
+  {% endif %}
   {% if doc.language_note %}
   <p class="protocol-language small text-body-secondary mb-2" lang="{{ page_language }}">{% blocktrans with language=doc.language_note %}Protocol language: {{ language }}{% endblocktrans %}</p>
   {% endif %}
