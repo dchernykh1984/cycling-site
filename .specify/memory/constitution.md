@@ -8,10 +8,12 @@ Sync Impact Report
   an explicit exception for documents that belong to one locale.
   1.3.0 -> 1.4.0: principles added by the maintainer -- VII: what a participant or an organizer does
   with data on the site is also available through the API (the gaps are listed per area in
-  specs/site/); VIII: one fact, one home; IX: nothing is lost by accident.
+  specs/site/); VIII: one fact, one home; IX: nothing is lost by accident; X: every input is
+  checked, every member's data is private.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
-  .agents/skills, which stay the detailed runtime guidance; VI-IX set by the maintainer (no local or
-  sport-specific hardcoding; an API by default; one fact, one home; nothing is lost by accident).
+  .agents/skills, which stay the detailed runtime guidance; VI-X set by the maintainer (no local or
+  sport-specific hardcoding; an API by default; one fact, one home; nothing is lost by accident;
+  every input is checked, every member's data is private).
 - Templates: plan-template.md's "Constitution Check" gate reads these principles; no template
   needed changes.
 -->
@@ -142,6 +144,20 @@ What people entered or uploaded survives every change to the site.
 - Old versions are dropped only by a written rule too: a protocol keeps its ten most recent.
 - A file is removed only after the database change that freed it is committed, so a failed write
   never leaves a row pointing at a missing file.
+
+### X. Every input is checked, every member's data is private
+
+Whatever reaches the site -- from a browser, the API, an agent or an uploaded file -- is checked
+where it arrives, and the site shows nothing about a person that they did not choose to show.
+
+- Rich text is sanitised on save; every string and list is bounded, and an over-long value is an
+  error naming the field and its limit, not a server error.
+- An uploaded HTML file is shown only in a sandboxed frame.
+- A member's e-mail is never shown to others, and signing up with a known address does not say
+  that an account exists.
+- Something a reader may not see answers as missing, never confirming that it exists: an event that
+  is pending, hidden or invite-only and not theirs is a 404, and a wrong invitation key says nothing.
+- Tokens, keys and passwords live in settings and the environment, never in the repository.
 
 ## Constraints
 
