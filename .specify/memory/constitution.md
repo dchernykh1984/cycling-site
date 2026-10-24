@@ -13,7 +13,8 @@ Sync Impact Report
   on any screen.
   1.4.0 -> 1.5.0: the preamble states what the platform is for, who it serves and that organizing
   comes with a role the owners grant; principle VI widens from timed sports to any activity where
-  people move, with timing for lap and point-to-point courses.
+  people move, with timing for lap and point-to-point courses; Constraints say load is handled when
+  the site grows.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
   .agents/skills, which stay the detailed runtime guidance; VI-XII set by the maintainer (no local
   or sport-specific hardcoding; an API by default; one fact, one home; nothing is lost by accident;
@@ -212,6 +213,10 @@ as with a mouse.
   Python 3.13 (CI), dependencies locked with uv and exported to `requirements.txt`.
 - Hosting: Render, behind Cloudflare. A change touching many rows is tried first on a production
   backup restored into a local scratch database.
+- Scale: what the site can do is built for anyone, anywhere; how much it can carry is sized for its
+  audience today, not for millions of users or requests per second. Load is worked on when growth
+  calls for it. Until then no feature is shaped around a small or local audience (principle VI) --
+  the limit is capacity, never what the site lets people do.
 - The look of the site is split into skins (`skins/`): designers own their skins; a change to the
   site that breaks a skin does not merge until the skin is green again.
 
