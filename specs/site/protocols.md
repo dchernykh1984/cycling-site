@@ -72,7 +72,8 @@ table needs a change in the generator only; the site knows nothing of laps, atte
    every column, scrolling inside the table, with the place, number and name columns kept in view
    -- where they stay
    however often a filter or a switch is pressed while the table is scrolled. Group chips and
-   column switches keep to one scrolling row on a phone; times stay on one line.
+   column switches wrap onto as many rows as they need on a phone, never scrolling sideways;
+   times stay on one line.
 2. **Given** a reader, **Then** they search every field of a row -- name, number, team, city and
    the rest, not times or second lines -- in Latin or Cyrillic whichever the protocol uses (both
    are folded to one script, the rule the gallery's event picker uses), filter by the document's groups (in
