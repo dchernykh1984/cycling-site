@@ -2,10 +2,10 @@
 
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-24
-**Code**: `gallery/` (models, permissions, images, forms, views, templates, sitemap section in
-`cycling_site/sitemaps.py`), `gallery/events.py`, `gallery/translation.py`,
+**Code**: `gallery/` (models, permissions, images, forms, actions, views, templates, sitemap section in
+`cycling_site/sitemaps.py`), `gallery/events.py`, `gallery/translation.py`, `api/endpoints/gallery.py`,
 `calendar_app/templates/calendar_app/detail.html` (the event's albums)
-**Tests**: `tests/test_gallery.py`, `tests/test_gallery_localization.py`,
+**Tests**: `tests/test_gallery.py`, `tests/test_gallery_localization.py`, `tests/test_gallery_api.py`,
 `tests/e2e/test_gallery_upload.py`, `tests/e2e/test_gallery_event_picker.py`, `tests/e2e/test_navbar_fits.py`
 **Related**: [events](events.md), [site shell](site-shell.md), [search visibility](search-visibility.md);
 `gallery/README.md`; issue #349 (the wider gallery idea: bib numbers, external storage)
@@ -85,6 +85,10 @@ photos are kept exactly as they were taken, and only admins and the owner put th
   returned with a request to refine a broader query. The initial form does not load every event.
 - **FR-GAL-007**: The event selector and the album show the same localized event facts: name,
   dates, location, types, directions and disciplines; no description. An album may have no event.
+- **FR-GAL-008**: Everything above works through `/api/v1/gallery/` too (issue #365): reads with the
+  pages' visibility -- a hidden album only for admins, an event id only while the event is public --
+  and writes for admins and the owner only, through the same album form, upload limits and
+  `gallery/actions.py` the pages use (see [the API](api.md)).
 
 ## Key Entities
 
@@ -97,7 +101,7 @@ photos are kept exactly as they were taken, and only admins and the owner put th
 
 ## API gaps
 
-- Reading albums and photos. Publishing them is admins' work, which principle VII leaves out.
+- None: reading and changing the gallery both work through the API (FR-GAL-008).
 
 ## Open Questions
 

@@ -5,9 +5,10 @@
 **Code**: `api/` (`router.py`, `auth.py`, `schemas.py`), `api/endpoints/`; django-ninja, served at
 `/api/v1/`
 **Tests**: `api/tests.py`, `registrations/tests.py` (participants), `protocols/tests.py`,
-`tests/test_input_length_limits.py`, `tests/e2e/test_api_to_front.py`
+`tests/test_gallery_api.py`, `tests/test_input_length_limits.py`, `tests/e2e/test_api_to_front.py`
 **Related**: [events](events.md), [locations](locations.md), [news and knowledge](news-and-knowledge.md),
-[protocols](protocols.md), [registrations](registrations.md), [events agents](events-agents.md)
+[protocols](protocols.md), [registrations](registrations.md), [events agents](events-agents.md),
+[gallery](gallery.md)
 
 ## Overview
 
@@ -37,6 +38,9 @@ and protocols with the event's upload token. The API has no language prefix.
    base, members manage their own drafts and admins publish articles (a news item carries every
    language, a knowledge article its one).
 5. **Given** disciplines and event types, **Then** they can be listed with their names per language.
+6. **Given** the gallery, **Then** anybody reads the albums and photos they could see on the site,
+   and admins and the owner create, change and delete albums, upload photos and caption them, by the
+   pages' own rules ([gallery](gallery.md), issue #365).
 
 ### Story 2 -- The timing tools exchange race data (P1)
 
@@ -68,7 +72,7 @@ and protocols with the event's upload token. The API has no language prefix.
 
 - **FR-API-001**: Routers: `/competitions/`, `/news/`, `/knowledge/`, `/locations/`, `/disciplines/`,
   `/event-types/`, `/participants/`, `/protocols/`, `/start-list/`, `/group-times/`,
-  `/finish-times/`, `/remote-points/`, `/live-stats/`.
+  `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`.
 - **FR-API-002**: Personal tokens belong to participants and up (generated on the profile); the
   upload token belongs to an event and is managed by its managers and its author (see
   [events](events.md)).
