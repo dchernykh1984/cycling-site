@@ -112,3 +112,14 @@ class DevelopmentReloadTests(TestCase):
             with self.subTest(path=str(path)), mock.patch("django.template.autoreload.reset_loaders") as reset:
                 self.assertIsNone(skins.reset_on_skin_template(None, path))
                 reset.assert_not_called()
+
+
+def test_a_skin_s_own_base_keeps_the_site_s_lines_under_the_menu():
+    """A skin that replaces base.html still carries what the site says under the menu, or its readers
+    never see the moderation queue, a setup hint or the next skin on offer."""
+    from django.conf import settings
+
+    for base in sorted(settings.SKINS_DIR.glob("*/templates/base.html")):
+        text = base.read_text()
+        for part in ("_moderation_banner.html", "_setup_hint.html", "_skin_offer.html"):
+            assert part in text, f"{base.parent.parent.name}: base.html leaves out {part}"
