@@ -43,6 +43,10 @@ through its own "All" box, so the filter redraws the page exactly as a hand on t
   window.renderFilterChips = function () {
     var box = document.getElementById('filter-chips');
     if (!box) return;
+    // The chips are redrawn whenever a filter settles -- the location tree arrives after the page --
+    // so a chip that has focus is replaced under the reader's finger: the same chip, drawn again,
+    // takes the focus back, and if it is gone, the next chip or the Filters button does.
+    var focused = box.contains(document.activeElement) ? document.activeElement.getAttribute('aria-label') : null;
     box.innerHTML = '';
     var deepest = {};
     document.querySelectorAll('#filter-panel .dropdown > button[id*="-btn-"]').forEach(function (button) {
@@ -65,6 +69,13 @@ through its own "All" box, so the filter redraws the page exactly as a hand on t
         favourite.checked = false;
         favourite.dispatchEvent(new Event('change', {bubbles: true}));
       });
+    }
+    if (focused !== null) {
+      var same = Array.prototype.find.call(box.querySelectorAll('.filter-chip'), function (chip) {
+        return chip.getAttribute('aria-label') === focused;
+      });
+      var next = same || box.querySelector('.filter-chip') || document.getElementById('filter-toggle');
+      if (next) next.focus();
     }
   };
 
