@@ -117,6 +117,9 @@
       stickyStyle.id = "protocol-sticky";
       document.head.appendChild(stickyStyle);
     }
+    // Measured unstuck: a stuck cell's offsetLeft includes how far the table is scrolled, so
+    // measuring under the old rules would push the columns right by that much on every layout.
+    stickyStyle.textContent = "";
     var rules = [];
     each(root, ".protocol-section", function (section) {
       var wrap = section.querySelector(":scope > .protocol-table-wrap");

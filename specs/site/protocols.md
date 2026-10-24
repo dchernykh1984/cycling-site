@@ -66,7 +66,8 @@ table needs a change in the generator only; the site knows nothing of laps, atte
    the document's priority 1; a table with none keeps its first three), the page never scrolls
    sideways, and a button on each row (keyboard-reachable) opens the columns that do not fit.
    Tablets show priority 1-2, desktops everything; "Full table" shows every column, scrolling
-   inside the table, with the place, number and name columns kept in view. Group chips and
+   inside the table, with the place, number and name columns kept in view -- where they stay
+   however often a filter or a switch is pressed while the table is scrolled. Group chips and
    column switches keep to one scrolling row on a phone; times stay on one line.
 2. **Given** a reader, **Then** they search every field of a row -- name, number, team, city and
    the rest, not times or second lines -- in Latin or Cyrillic whichever the protocol uses (both
