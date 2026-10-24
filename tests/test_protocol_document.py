@@ -461,3 +461,24 @@ def test_the_fallback_columns_are_chosen_among_those_switched_on():
     )
     priorities = [c["priority"] for c in rendering.build(off_first, [])["sections"][0]["table"]["columns"]]
     assert priorities == [2, 1, 1]
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"title": "x\u0000y"},
+        {"header": [{"type": "field", "label": "Weather", "value": "+1\u00004"}]},
+        {"groups": [{"id": "M\u000030"}]},
+        {"sections": [{"columns": [{"id": "a", "label": "L\u0000"}], "rows": []}]},
+        {"sections": [{"columns": [{"id": "a"}], "rows": [{"cells": {"a": {"text": "1", "sub": ["\u0000"]}}}]}]},
+        {"sections": [{"columns": [{"id": "a"}], "rows": [{"note": "cut\u0000", "cells": {}}]}]},
+    ],
+)
+def test_a_nul_character_in_a_stored_field_is_refused(fields):
+    with pytest.raises(DocumentError, match="NUL character"):
+        parse(_raw(**fields))
+
+
+def test_a_nul_character_in_an_unknown_field_is_ignored_with_the_field():
+    stored = parse(_raw(future="x\u0000y"))
+    assert "future" not in stored

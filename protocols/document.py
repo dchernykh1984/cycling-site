@@ -214,6 +214,22 @@ def _too_deep(sections: Any) -> bool:
     return False
 
 
+def _has_nul(value: Any) -> bool:
+    """Whether a NUL character sits anywhere in the stored document, keys included."""
+    stack = [value]
+    while stack:
+        item = stack.pop()
+        if isinstance(item, str):
+            if "\x00" in item:
+                return True
+        elif isinstance(item, dict):
+            stack.extend(item.keys())
+            stack.extend(item.values())
+        elif isinstance(item, list):
+            stack.extend(item)
+    return False
+
+
 def parse(raw: bytes) -> dict:
     """The accepted document as it is stored, or DocumentError saying what is wrong with it."""
     try:
@@ -234,7 +250,12 @@ def parse(raw: bytes) -> dict:
     except ValidationError as exc:
         problems = "; ".join(f"{'.'.join(str(p) for p in error['loc'])}: {error['msg']}" for error in exc.errors()[:5])
         raise DocumentError(f"The document does not match schema {SCHEMA_VERSION}: {problems}") from None
-    return document.model_dump(mode="json", by_alias=True, exclude_none=True)
+    stored = document.model_dump(mode="json", by_alias=True, exclude_none=True)
+    if _has_nul(stored):
+        # PostgreSQL cannot keep U+0000 in JSON text: refuse it here, as a document
+        # error, rather than fail the whole upload when the row is written.
+        raise DocumentError("The document contains a NUL character (\\u0000), which cannot be stored")
+    return stored
 
 
 def json_schema() -> dict[str, Any]:
