@@ -283,6 +283,10 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   };
 
   var nav = document.getElementById('period-nav');
+  function focusLabel(what) {
+    var trigger = nav.querySelector('#period-label [data-period-pick="' + what + '"]');
+    if (trigger) trigger.focus();
+  }
   nav.addEventListener('click', function (e) {
     var b = e.target.closest('button');
     if (!b) return;
@@ -307,12 +311,19 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
       if (arrow) arrow.focus();
     } else if (b.dataset.popMonth) {
       go('month', new Date(popYear, Number(b.dataset.popMonth), 1));
+      focusLabel('month');
     } else if (b.dataset.popPickYear) {
       go('year', new Date(Number(b.dataset.popPickYear), 0, 1));
+      focusLabel('year');
     }
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && pop) { pop = null; render(); }
+    if (e.key === 'Escape' && pop) {
+      var what = pop;
+      pop = null;
+      render();
+      focusLabel(what);
+    }
   });
   // A tap anywhere else closes the picker: a phone has no Escape key. The path, not the target: the
   // button tapped inside the row is often redrawn, and gone from the page, by the time this runs.
