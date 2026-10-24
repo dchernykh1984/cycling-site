@@ -51,8 +51,8 @@ table needs a change in the generator only; the site knows nothing of laps, atte
    that report replaces the protocol on screen. A final upload ends the polling only once its own
    content is on screen; a final one shows the results without polling; the page lists the update
    history.
-3. **Given** a newer upload that fails to load (an error page, a broken connection, no report within
-   `PROTOCOL_LOAD_TIMEOUT_MS`), **Then** the results already on screen stay, the page says the
+3. **Given** a newer upload that fails to load (an error page, a broken connection, a request that
+   never answers, no report within `PROTOCOL_LOAD_TIMEOUT_MS`), **Then** the results already on screen stay, the page says the
    update failed, and the next round tries again -- final or not.
 4. **Given** a hidden browser tab, **Then** it does not poll; on return it checks at once, and never
    runs two checks at the same time.
@@ -66,7 +66,8 @@ table needs a change in the generator only; the site knows nothing of laps, atte
    the document's priority 1; a table with none keeps its first three), the page never scrolls
    sideways, and a button on each row (keyboard-reachable) opens the columns that do not fit.
    Tablets show priority 1-2, desktops everything; "Full table" shows every column, scrolling
-   inside the table.
+   inside the table, with the place, number and name columns kept in view. Group chips and
+   column switches keep to one scrolling row on a phone; times stay on one line.
 2. **Given** a reader, **Then** they search by name or number, filter by the document's groups (in
    every table, whatever its layout), and switch the document's toggled columns; notes such as the
    reasons for a DSQ are always visible under their row.
@@ -101,7 +102,8 @@ table needs a change in the generator only; the site knows nothing of laps, atte
 - **FR-PRO-007**: The document's schema is `protocols/document.py`, exported to
   `protocols/schema/protocol-document-v1.json` for the generators. Within a major version unknown
   fields are ignored, an unknown section type is drawn by its shape, an unknown role means none; an
-  id used twice, a cell or a reference to something undeclared, or a non-http(s) link is refused.
+  id used twice, a cell or a reference to something undeclared, a non-http(s) link, a NUL
+  character (PostgreSQL cannot keep it) or JSON that cannot be read is refused.
 - **FR-PRO-008**: A document may hold at most 100 000 table cells (rows x columns over every table,
   plus one per note), 200 columns and 5000 rows per table, 20 000 rows, 500 sections nested 3 deep.
 - **FR-PRO-009**: HTML lines of a document are sanitized and keep only pictures from this site or
