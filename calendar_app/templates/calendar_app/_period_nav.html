@@ -234,14 +234,14 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     box.innerHTML = pop ? popup() : '';
   }
 
-  function go(kind, day) {
+  function go(kind, day, showGrid) {
     var range = rangeOf(kind, day);
     picked = kind;
     try { sessionStorage.setItem(PICKED_KEY, kind); } catch (e) { /* storage blocked */ }
     state = {kind: kind, from: range[0], to: range[1]};
     pop = null;
     render();
-    if (window.onPeriodChange) window.onPeriodChange({kind: kind, from: iso(range[0]), to: iso(range[1])});
+    if (window.onPeriodChange) window.onPeriodChange({kind: kind, from: iso(range[0]), to: iso(range[1]), showGrid: Boolean(showGrid)});
   }
   function step(n) {
     var from = state.from;
@@ -294,7 +294,7 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   nav.addEventListener('click', function (e) {
     var b = e.target.closest('button');
     if (!b) return;
-    if (b.dataset.periodKind) go(b.dataset.periodKind, today());
+    if (b.dataset.periodKind) go(b.dataset.periodKind, today(), b.dataset.periodKind === 'month');
     else if (b.dataset.periodStep) step(Number(b.dataset.periodStep));
     else if (b.hasAttribute('data-period-today')) {
       go(['days', 'weekend', 'week', 'month'].indexOf(state.kind) >= 0 ? state.kind : 'month', today());
@@ -314,7 +314,7 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
       var arrow = nav.querySelector('#period-pop [data-pop-year="' + b.dataset.popYear + '"]');
       if (arrow) arrow.focus();
     } else if (b.dataset.popMonth) {
-      go('month', new Date(popYear, Number(b.dataset.popMonth), 1));
+      go('month', new Date(popYear, Number(b.dataset.popMonth), 1), true);
       focusLabel('month');
     } else if (b.dataset.popPickYear) {
       go('year', new Date(Number(b.dataset.popPickYear), 0, 1));

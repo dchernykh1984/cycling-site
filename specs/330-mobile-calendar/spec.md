@@ -25,7 +25,8 @@ A reader opens the calendar and reads event names without squeezing them into se
 1. **Given** a fresh visit below 992px, **When** the calendar opens, **Then** the current month's
    remaining days are listed; at 992px and above the month opens as a grid.
 2. **Given** the phone list, **When** Month is chosen, **Then** the month grid opens; a chosen
-   layout survives another visit in the same browser session and is not changed by resizing.
+   layout survives another visit in the same browser session and is not changed by resizing or
+   stepping to another month with the arrows.
 3. **Given** five events on one day in the grid, **Then** three show and +2 opens all five.
 4. **Given** a multi-day event in a calendar list, **Then** it appears once with its end day.
 
