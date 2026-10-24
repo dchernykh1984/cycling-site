@@ -3562,8 +3562,8 @@ msgid "All categories"
 msgstr "Барлық санаттар"
 
 #: protocols/templates/protocols/_document.html
-msgid "Full table"
-msgstr "Толық кесте"
+msgid "All columns"
+msgstr "Барлық бағандар"
 
 #: protocols/templates/protocols/_document.html
 msgid "Details"

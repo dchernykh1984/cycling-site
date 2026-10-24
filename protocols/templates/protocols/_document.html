@@ -23,7 +23,7 @@
     {% endif %}
     <div class="protocol-switches">
       {% for toggle in doc.toggles %}<button type="button" class="btn btn-sm btn-outline-secondary protocol-toggle" data-toggle-id="{{ toggle.id }}" data-default="{{ toggle.default|yesno:'true,false' }}" aria-pressed="{{ toggle.default|yesno:'true,false' }}" lang="{{ doc.lang|default:page_language }}">{{ toggle.label|default:toggle.id }}</button>{% endfor %}
-      <button type="button" class="btn btn-sm btn-outline-secondary protocol-mode" aria-pressed="false">{% trans "Full table" %}</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary protocol-mode" aria-pressed="false" hidden>{% trans "All columns" %}</button>
     </div>
   </div>
 
