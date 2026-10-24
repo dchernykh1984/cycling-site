@@ -19,7 +19,8 @@
   max-width: 24rem;
 }
 .protocol-groups,
-.protocol-switches {
+.protocol-switches,
+.protocol-columns {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
@@ -152,6 +153,7 @@
 }
 
 .protocol-js .protocol-table .toggle-off,
+.protocol-js .protocol-table .col-off,
 .protocol-row.is-filtered,
 .protocol-note.is-filtered,
 .protocol-details.is-filtered,
@@ -186,17 +188,19 @@
   }
 }
 
-/* On a phone the category chips and the switches wrap onto as many rows as they need: every
- * choice in sight, nothing scrolling sideways, and a label longer than the screen breaking
- * inside its own chip. */
+/* On a phone the category and column chips and the switches wrap onto as many rows as they
+ * need: every choice in sight, nothing scrolling sideways, and a label longer than the screen
+ * breaking inside its own chip. */
 @media (max-width: 767.98px) {
   .protocol-groups,
-  .protocol-switches {
+  .protocol-switches,
+  .protocol-columns {
     flex: 1 1 100%;
     min-width: 0;
   }
   .protocol-groups > .btn,
-  .protocol-switches > .btn {
+  .protocol-switches > .btn,
+  .protocol-columns > .btn {
     flex: 0 1 auto;
     max-width: 100%;
     white-space: normal;

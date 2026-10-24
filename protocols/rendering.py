@@ -30,6 +30,8 @@ _FALLBACK_PRIMARY = 3
 _ALIGNS = frozenset({"start", "center", "end"})
 _KNOWN_ROLES = frozenset({"place", "bib", "name", "result", "gap", "group", "team"})
 _CSS_WORD = re.compile(r"[^a-z0-9_-]")
+#: A heading that ends in its number ("Lap 6"): the sets of such columns are named by the range.
+_NUMBERED = re.compile(r"^(.*?)(\d+)$")
 
 
 _KNOWN_STATUSES = frozenset({"ok", "dnf", "dns", "dsq"})
@@ -98,7 +100,48 @@ def _columns(raw_columns: list[dict], off_toggles: frozenset[str] = frozenset())
         # in. Which columns are on can change later -- protocol-doc.js keeps the same rule.
         for column in [c for c in columns if c["toggle"] not in off_toggles][:_FALLBACK_PRIMARY]:
             column["priority"] = 1
+    for column in columns:
+        column["set_id"] = _set_id(column)
     return columns
+
+
+def _set_id(column: dict) -> str:
+    """The set a column is shown and left out with: its priority, or itself when that is 1.
+
+    Columns of one priority above 1 go together -- every lap, never laps 1 to 4 without 5 and 6
+    (protocol-doc.js); place, name and result, all priority 1, are each a set of their own.
+    """
+    if column["priority"] == 1:
+        return f"c-{column['id']}"
+    return f"p{column['priority']}"
+
+
+def _set_label(names: list[str]) -> str:
+    """One name for a set of columns, from their headings: "Lap 1" to "Lap 6" make "Lap 1-6"."""
+    names = list(dict.fromkeys(name for name in names if name))
+    if len(names) <= 1:
+        return names[0] if names else ""
+    parts = [match for match in map(_NUMBERED.match, names) if match]
+    if len(parts) == len(names) and len({part.group(1) for part in parts}) == 1:
+        return f"{parts[0].group(1)}{parts[0].group(2)}\u2013{parts[-1].group(2)}"
+    return ", ".join(names) if len(names) <= 3 else f"{names[0]} \u2026 {names[-1]}"
+
+
+def _column_sets(sections: list[dict]) -> list[dict]:
+    """A chip for every set of columns, in the order the columns first appear."""
+    names: dict[str, list[str]] = {}
+    ids: dict[str, str] = {}
+
+    def walk(items: list[dict]) -> None:
+        for section in items:
+            for column in section["table"]["columns"] if section["table"] else []:
+                # A lap's splits sit under the lap's heading: the heading names the set.
+                names.setdefault(column["set_id"], []).append(column["group"] or column["label"])
+                ids.setdefault(column["set_id"], column["id"])
+            walk(section["sections"])
+
+    walk(sections)
+    return [{"id": set_id, "label": _set_label(labels) or ids[set_id]} for set_id, labels in names.items()]
 
 
 def _header_groups(columns: list[dict]) -> list[dict]:
@@ -319,6 +362,7 @@ def build(document: dict, image_sources: list[str]) -> dict:
         "header": _items(document.get("header", []), image_sources),
         "footer": _items(document.get("footer", []), image_sources),
         "groups": _filter_groups(document.get("groups", []), sections),
+        "column_sets": _column_sets(sections),
         "toggles": document.get("toggles", []),
         "sections": sections,
         "fold": json.dumps(fold_table()),

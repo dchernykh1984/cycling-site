@@ -654,3 +654,27 @@ def test_a_cell_takes_ten_second_lines_and_no_more():
     assert parse(cell(10))
     with pytest.raises(DocumentError, match="at most 10"):
         parse(cell(11))
+
+
+def test_each_set_of_columns_gets_a_chip_named_from_its_headings():
+    assert rendering._set_label(["Lap 1", "Lap 2", "Lap 6"]) == "Lap 1\u20136"
+    assert rendering._set_label(["Bib", "Group"]) == "Bib, Group"
+    assert rendering._set_label(["Year"]) == "Year"
+    columns = [
+        {"id": "place", "label": "Place", "role": "place"},
+        {"id": "name", "label": "Name", "role": "name"},
+        {"id": "lap1", "label": "Lap 1", "group": "Lap 1", "priority": 5},
+        {"id": "lap1_s1", "label": "(1 split)", "group": "Lap 1", "priority": 5},
+        {"id": "lap2", "label": "Lap 2", "group": "Lap 2", "priority": 5},
+        {"id": "result", "label": "Time", "role": "result"},
+        {"id": "start", "label": "Start", "priority": 2},
+    ]
+    cells = {c["id"]: "x" for c in columns}
+    view = rendering.build(_document(sections=[{"columns": columns, "rows": [{"cells": cells}]}]), [])
+    assert [(s["id"], s["label"]) for s in view["column_sets"]] == [
+        ("c-place", "Place"),
+        ("c-name", "Name"),
+        ("p5", "Lap 1\u20132"),
+        ("c-result", "Time"),
+        ("p2", "Start"),
+    ]

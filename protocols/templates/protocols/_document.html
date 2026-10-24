@@ -21,8 +21,15 @@
       {% for group in doc.groups %}<button type="button" class="btn btn-sm btn-outline-secondary" data-group-id="{{ group.id }}" aria-pressed="false" lang="{{ doc.lang|default:page_language }}">{{ group.label|default:group.id }}</button>{% endfor %}
     </div>
     {% endif %}
+    {% if doc.toggles %}
     <div class="protocol-switches">
       {% for toggle in doc.toggles %}<button type="button" class="btn btn-sm btn-outline-secondary protocol-toggle" data-toggle-id="{{ toggle.id }}" data-default="{{ toggle.default|yesno:'true,false' }}" aria-pressed="{{ toggle.default|yesno:'true,false' }}" lang="{{ doc.lang|default:page_language }}">{{ toggle.label|default:toggle.id }}</button>{% endfor %}
+    </div>
+    {% endif %}
+    {% comment %}A chip for each set of columns -- name, number, all the laps, the result -- that shows it or leaves it out, whatever fits; "All columns" last brings every one back.{% endcomment %}
+    <div class="protocol-columns" role="group" aria-labelledby="protocol-columns-label">
+      <span class="protocol-columns-label small text-body-secondary align-self-center text-nowrap" id="protocol-columns-label">{% trans "Columns" %}:</span>
+      {% for set in doc.column_sets %}<button type="button" class="btn btn-sm btn-outline-secondary protocol-column-set" data-set="{{ set.id }}" aria-pressed="true" lang="{{ doc.lang|default:page_language }}">{{ set.label }}</button>{% endfor %}
       <button type="button" class="btn btn-sm btn-outline-secondary protocol-mode" aria-pressed="false" hidden>{% trans "All columns" %}</button>
     </div>
   </div>
