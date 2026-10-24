@@ -65,6 +65,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 
 ### Edge Cases
 
+- A cancelled or deleted entry is erased, not soft-deleted; its event's categories are
+  soft-deleted.
 - Registration is open only for an approved event with registration enabled, before its deadline
   (date and time at the event's place), or without a deadline until the end of the event's last day
   there, and below the overall and per-category limits; a full field still lets its riders edit
