@@ -20,7 +20,7 @@
               }
             ]
           },
-          "maxItems": 5,
+          "maxItems": 10,
           "title": "Sub",
           "type": "array"
         },
@@ -126,7 +126,7 @@
               }
             ]
           },
-          "maxItems": 5,
+          "maxItems": 10,
           "title": "Sub Label",
           "type": "array"
         },

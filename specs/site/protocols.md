@@ -113,7 +113,8 @@ table needs a change in the generator only; the site knows nothing of laps, atte
   id used twice, a cell or a reference to something undeclared, a non-http(s) link, a NUL
   character (PostgreSQL cannot keep it) or JSON that cannot be read is refused.
 - **FR-PRO-008**: A document may hold at most 100 000 table cells (rows x columns over every table,
-  plus one per note), 200 columns and 5000 rows per table, 20 000 rows, 500 sections nested 3 deep.
+  plus one per note), 200 columns and 5000 rows per table, 20 000 rows, 500 sections nested 3 deep,
+  and 10 second lines under a cell or a heading.
 - **FR-PRO-009**: HTML lines of a document are sanitized and keep only pictures from this site or
   inline (as FR-PRO-003); cell links are http(s), `nofollow noopener`.
 - **FR-PRO-010**: `protocols/<pk>/fragment/` returns the drawn document with the hash, live flag and

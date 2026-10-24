@@ -645,3 +645,12 @@ def test_a_group_nobody_rode_in_is_left_out():
         [],
     )
     assert [s["title"] for s in view["sections"]] == ["M30"]
+
+
+def test_a_cell_takes_ten_second_lines_and_no_more():
+    def cell(n):
+        return _raw(sections=[{"columns": [{"id": "a"}], "rows": [{"cells": {"a": {"sub": ["x"] * n}}}]}])
+
+    assert parse(cell(10))
+    with pytest.raises(DocumentError, match="at most 10"):
+        parse(cell(11))
