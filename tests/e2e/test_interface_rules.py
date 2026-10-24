@@ -78,11 +78,6 @@ _DESCRIBE = """
 # What broke a rule when the rule came in, by cause. Each entry names its skin, and the set only
 # shrinks: a fixed break is dropped here, a new one fails. The orange skin carries its own templates
 # and breaks none of these.
-# The menu unfolds at 992px (navbar-expand-lg) and does not fit until about 1150px: the page scrolls
-# sideways on a tablet on its side, in every language.
-_MENU_TOO_WIDE = {
-    f"{skin}|sideways/tablet-flat/{lang}/{tab}" for skin in ("light", "dark") for lang in LANGUAGES for tab in TABS
-}
 # The list's table is fixed at nine columns and lets words break anywhere: its headings and dates
 # split mid-word on a desktop and on a tablet on its side.
 _TABLE_BREAKS_WORDS = {
@@ -120,9 +115,7 @@ _ORANGE_ICONS_NARROW = {
 # The orange skin's body font sets Weekend in Russian 2px wider on each side than its segment leaves
 # at 360px, as Linux draws it (CI); Windows draws it narrower and passes.
 _ORANGE_WEEKEND_RU = {f"orange|fits/phone/ru/{tab}/[data-period-kind=weekend]" for tab in TABS}
-KNOWN: set[str] = (
-    _MENU_TOO_WIDE | _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS | _ORANGE_ICONS_NARROW | _ORANGE_WEEKEND_RU
-)
+KNOWN: set[str] = _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS | _ORANGE_ICONS_NARROW | _ORANGE_WEEKEND_RU
 
 
 def _breaks(found):

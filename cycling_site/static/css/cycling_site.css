@@ -13,6 +13,15 @@ body > main {
 }
 
 /* Navbar */
+#mainNav {
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+#mainNav > .navbar-nav {
+    flex-wrap: wrap;
+}
+
 .navbar-brand {
     letter-spacing: 0.04em;
     text-transform: none;
