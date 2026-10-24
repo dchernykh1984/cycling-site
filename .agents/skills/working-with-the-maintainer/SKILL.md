@@ -45,7 +45,7 @@ no co-authorship line.
 A feature with an issue of its own starts as a specification and a plan in `specs/<issue>-<name>/`
 that the maintainer reviews before code is written; every change keeps `specs/site/` true (the
 `specs` skill). Nothing local or sport-specific is written into the code: the site is meant for
-anyone, anywhere, in any timed sport.
+anyone, anywhere, in any activity where people move.
 
 ## Data work
 
