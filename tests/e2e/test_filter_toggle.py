@@ -55,3 +55,15 @@ def test_an_opened_panel_stays_open_after_the_list_reloads(page: Page, live_serv
     expect(page.locator("#filter-panel")).to_be_visible()
     page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race_event_type.pk}")
     expect(page.locator("#filter-panel")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_orange_filter_icon_answers_a_44px_wide_tap(page: Page, live_server, settings):
+    settings.DEFAULT_SKIN = "orange"
+    page.set_viewport_size(PHONE)
+    page.goto(f"{live_server.url}/ru/calendar/")
+    page.evaluate("() => document.fonts.ready")
+    box = page.locator("#filter-toggle").bounding_box()
+    assert box is not None
+    page.mouse.click(box["x"] + box["width"] / 2 - 21, box["y"] + box["height"] / 2)
+    expect(page.locator("#filter-panel")).to_be_visible()

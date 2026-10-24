@@ -103,19 +103,10 @@ _LIGHT_OUTLINE_BUTTONS = (
     | {f"light|contrast/light/desktop/{tab}/[data-copied-label]/{state}" for tab in TABS for state in STATES}
     | {f"light|border/light/phone/{tab}/[data-copied-label]" for tab in TABS}
 )
-# On a phone the icon buttons -- Filters, and Share -- take the tabs' height for their width, and the
-# invisible tap zone of _page_heading.html adds height only: in the orange skin the tabs are 36px tall,
-# so a tap reaches 36px across instead of 44. The zone wants a width of its own.
-_ORANGE_ICONS_NARROW = {
-    f"orange|tap/phone/{lang}/{tab}/{key}"
-    for lang in LANGUAGES
-    for tab in TABS
-    for key in ("#filter-toggle", "[data-copied-label]")
-}
 # The orange skin's body font sets Weekend in Russian 2px wider on each side than its segment leaves
 # at 360px, as Linux draws it (CI); Windows draws it narrower and passes.
 _ORANGE_WEEKEND_RU = {f"orange|fits/phone/ru/{tab}/[data-period-kind=weekend]" for tab in TABS}
-KNOWN: set[str] = _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS | _ORANGE_ICONS_NARROW | _ORANGE_WEEKEND_RU
+KNOWN: set[str] = _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS | _ORANGE_WEEKEND_RU
 
 
 def _breaks(found):

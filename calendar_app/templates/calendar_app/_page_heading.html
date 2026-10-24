@@ -8,11 +8,13 @@ text of the h1.{% endcomment %}
      whatever the heading's length ("Calendar", "Events", a city's list). */
   .calendar-heading { flex: 1 1 auto; min-width: 0; }
   .calendar-heading .share-btn { margin-left: auto; }
-  /* Every header button answers a tap across 44px (2.75rem), centred on it, whatever its drawn
-     height; the rows of buttons sit far enough apart that two zones never overlap. */
+  /* Every header button answers a tap across 44px (2.75rem) in each direction, centred on it,
+     whatever its drawn size; the rows sit far enough apart that two zones never overlap. */
   .calendar-header .btn { position: relative; }
+  /* Zero insets on wider buttons avoid WebKit rounding a centred 100% target past its frame. */
   .calendar-header .btn::after {
-    content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2.75rem; transform: translateY(-50%);
+    content: ""; position: absolute; top: 50%; height: 2.75rem; transform: translateY(-50%);
+    left: min(0px, calc((100% - 2.75rem) / 2)); right: min(0px, calc((100% - 2.75rem) / 2));
   }
   .calendar-header .calendar-controls { column-gap: .5rem; row-gap: .625rem; }
   /* On a phone the icon buttons -- Filters, and Share once its word is hidden -- are squares as tall
