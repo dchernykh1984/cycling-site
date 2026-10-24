@@ -70,6 +70,7 @@
         button.hidden = !hidden;
       });
     });
+    stickColumns(root);
   }
 
   // A table must never show no column at all: when priorities and switches leave none,
@@ -90,6 +91,44 @@
           cell.classList.add("prio-forced");
         });
       });
+  }
+
+  // When a table is wider than the screen, its leading place, number and name columns (and
+  // the row buttons) stay in view while the rest scrolls, so a time is never read without
+  // knowing whose it is. The offsets go into one style element, not onto every cell.
+  var stickyStyle = null;
+  var STICKY_ROLES = ["role-place", "role-bib", "role-name"];
+
+  function stickColumns(root) {
+    if (!stickyStyle) {
+      stickyStyle = document.createElement("style");
+      stickyStyle.id = "protocol-sticky";
+      document.head.appendChild(stickyStyle);
+    }
+    var rules = [];
+    each(root, ".protocol-section", function (section) {
+      var wrap = section.querySelector(":scope > .protocol-table-wrap");
+      if (!wrap || wrap.scrollWidth <= wrap.clientWidth + 1) return;
+      var scope = "#" + section.id + " > .protocol-table-wrap ";
+      var heads = wrap.querySelectorAll("thead tr:last-child th");
+      for (var i = 0; i < heads.length; i += 1) {
+        var th = heads[i];
+        if (!shown(th)) continue;
+        var target;
+        if (th.classList.contains("protocol-expand-col")) {
+          target = ".protocol-expand-col";
+        } else if (STICKY_ROLES.some(function (role) { return th.classList.contains(role); })) {
+          target = '[data-col="' + th.dataset.col + '"]';
+        } else {
+          break;
+        }
+        rules.push(
+          scope + "th" + target + "," + scope + "td" + target +
+            "{position:sticky;left:" + th.offsetLeft + "px;z-index:1;background-color:var(--bs-body-bg)}"
+        );
+      }
+    });
+    stickyStyle.textContent = rules.join("\n");
   }
 
   function filter(root) {
@@ -236,6 +275,14 @@
 
     apply(root);
   }
+
+  var resizeTimer = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      roots.forEach(stickColumns);
+    }, 150);
+  });
 
   ["(max-width: 767.98px)", "(max-width: 1199.98px)"].forEach(function (query) {
     var list = window.matchMedia(query);
