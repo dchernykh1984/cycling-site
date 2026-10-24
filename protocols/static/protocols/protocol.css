@@ -41,6 +41,17 @@
 .protocol-table th {
   font-weight: 700;
 }
+/* Times, gaps and places stay on one line; only names, teams and groups may wrap, and
+ * not into a sliver. */
+.protocol-table td {
+  white-space: nowrap;
+}
+.protocol-table td.role-name,
+.protocol-table td.role-team,
+.protocol-table td.role-group {
+  white-space: normal;
+  min-width: 7rem;
+}
 .protocol-table .align-start {
   text-align: start;
 }

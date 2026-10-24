@@ -639,3 +639,12 @@ def test_the_result_fits_a_phone_without_scrolling_the_table(page: Page, live_se
         assert box is not None and box["x"] + box["width"] <= width
     wrap = page.locator(".protocol-table-wrap").first
     assert wrap.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_times_stay_on_one_line(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 1280)
+    cell = _cell(page, "Anna", "lap1")
+    assert cell.evaluate("el => getComputedStyle(el).whiteSpace") == "nowrap"
+    assert _cell(page, "Anna", "name").evaluate("el => getComputedStyle(el).whiteSpace") == "normal"
