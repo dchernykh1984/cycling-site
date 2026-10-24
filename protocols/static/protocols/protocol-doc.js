@@ -50,7 +50,11 @@
   function layout(root) {
     closeDetails(root);
     each(root, ".protocol-table", function (table) {
+      each(table, ".prio-off", function (cell) {
+        cell.classList.remove("prio-off");
+      });
       keepSomethingVisible(table);
+      fitColumns(table);
       var visible = {};
       var count = 0;
       var hidden = false;
@@ -85,22 +89,60 @@
       });
     });
     each(root, ".protocol-mode", function (button) {
-      button.hidden = !priorityHides(root);
+      button.hidden = !somethingLeftOut(root);
     });
     stickColumns(root);
   }
 
-  // The widths at which protocol.css leaves priority 3, then also priority 2, out of the short view.
-  var TABLET = window.matchMedia("(max-width: 1199.98px)");
-  var PHONE = window.matchMedia("(max-width: 767.98px)");
+  function priorityOf(th) {
+    var match = /\bprio-(\d+)\b/.exec(th.className);
+    return match ? Number(match[1]) : 2;
+  }
 
-  // Whether the short view leaves out a column at this width: only then is there anything for
-  // "All columns" to bring back, so on a wide screen the button does not show at all.
-  function priorityHides(root) {
-    var left = PHONE.matches ? ".prio-2, .prio-3" : TABLET.matches ? ".prio-3" : "";
-    if (!left) return false;
-    return Array.prototype.some.call(root.querySelectorAll(".protocol-table thead th[data-col]"), function (th) {
-      return th.matches(left) && !th.classList.contains("toggle-off") && !th.classList.contains("prio-forced");
+  function leaveOut(table, th) {
+    each(table, '[data-col="' + th.dataset.col + '"]', function (cell) {
+      cell.classList.add("prio-off");
+    });
+  }
+
+  // The short view, on any screen: while a table is wider than its box, the least important column
+  // still shown is left out -- the highest priority number, and of two alike the one further right
+  // -- until it fits. Priority 1 always stays. "All columns" shows every one, scrolling in the box.
+  function fitColumns(table) {
+    var wrap = table.closest(".protocol-table-wrap");
+    if (state.full || !wrap || wrap.scrollWidth <= wrap.clientWidth + 1) return;
+    var order = Array.prototype.slice
+      .call(table.querySelectorAll("thead th[data-col]"))
+      .filter(function (th) {
+        return priorityOf(th) > 1 && shown(th) && !th.classList.contains("prio-forced");
+      })
+      .sort(function (a, b) {
+        return priorityOf(b) - priorityOf(a) || Number(b.dataset.col) - Number(a.dataset.col);
+      });
+    // The widths are measured once and summed, then checked against the real layout: laying a
+    // table of thousands of rows out again for every column would take seconds.
+    var widths = order.map(function (th) {
+      return th.offsetWidth;
+    });
+    var overflow = wrap.scrollWidth - wrap.clientWidth;
+    var i = 0;
+    for (var freed = 0; i < order.length && freed < overflow; i += 1) {
+      leaveOut(table, order[i]);
+      freed += widths[i];
+    }
+    // The row buttons that open what was left out take a column of their own.
+    table.classList.add("has-hidden");
+    for (; i < order.length && wrap.scrollWidth > wrap.clientWidth + 1; i += 1) {
+      leaveOut(table, order[i]);
+    }
+  }
+
+  // "All columns" is offered only while there is something to bring back: a column left out, or,
+  // with every column shown, a table wider than its box.
+  function somethingLeftOut(root) {
+    if (!state.full) return !!root.querySelector(".protocol-table .prio-off");
+    return Array.prototype.some.call(root.querySelectorAll(".protocol-table-wrap"), function (wrap) {
+      return wrap.scrollWidth > wrap.clientWidth + 1;
     });
   }
 
@@ -318,21 +360,24 @@
     apply(root);
   }
 
+  // Fitting depends on the width alone: a phone's address bar coming and going changes only the
+  // height, and laying out again then would also close the rows the reader opened.
   var resizeTimer = null;
+  var lastWidth = window.innerWidth;
   window.addEventListener("resize", function () {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function () {
-      roots.forEach(stickColumns);
+      if (window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+      roots.forEach(layout);
     }, 150);
   });
-
-  [PHONE, TABLET].forEach(function (list) {
-    var relayout = function () {
+  // A skin's font arrives after the first layout and sets the text wider or narrower.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () {
       roots.forEach(layout);
-    };
-    if (list.addEventListener) list.addEventListener("change", relayout);
-    else if (list.addListener) list.addListener(relayout);
-  });
+    });
+  }
 
   window.ProtocolDocument = { mount: mount };
   mount(document.getElementById("protocol-doc"));
