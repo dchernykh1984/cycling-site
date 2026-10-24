@@ -159,7 +159,8 @@ where it arrives, and the site shows nothing about a person that they did not ch
   say that an account exists.
 - Something a reader may not see answers as missing, never confirming that it exists: an event that
   is pending, hidden or invite-only and not theirs is a 404, and a wrong invitation key says nothing.
-- Tokens, keys and passwords live in settings and the environment, never in the repository.
+- Production tokens, keys and passwords live in the environment, never in the repository; the
+  development settings' throwaway key is not one of them.
 
 ### XI. The API keeps its promises
 
