@@ -38,11 +38,11 @@ It began as the calendar of a small cycling team in Almaty, Kazakhstan, and is m
 - a rider in New York can open the map, see what is on in Almaty today -- a ride of three people as
   much as a championship -- and find where to go and when, in their own time and the event's.
 
-The platform is open to everyone, after a check. Anyone may read; a confirmed member may propose an
-event, which waits for review; organizing -- registration on the site, events published without
-waiting -- comes with the organizer role, which the owners grant on request. The review and the role
-are deliberate: they keep the calendar free of spam and fake events, and are not a barrier to
-remove.
+The platform is open to everyone, after a check. Anyone may read what is public; a confirmed member
+may propose an event, which waits for review; organizing -- registration on the site, events
+published without waiting -- comes with the organizer role, which the owners grant on request. The
+review and the role are deliberate: they keep the calendar free of spam and fake events, and are not
+a barrier to remove.
 
 ## Core Principles
 
