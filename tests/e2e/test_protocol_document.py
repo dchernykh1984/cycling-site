@@ -627,3 +627,15 @@ def test_the_group_headings_row_hides_when_none_of_its_groups_is_shown(page: Pag
     expect(page.locator(".protocol-group-row")).to_be_hidden()
     page.set_viewport_size({"width": 1280, "height": 800})
     expect(page.locator(".protocol-group-row")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [320, 390])
+def test_the_result_fits_a_phone_without_scrolling_the_table(page: Page, live_server, approved_competition, width):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, width)
+    for name in ("Anna", "Boris"):
+        box = _cell(page, name, "result").bounding_box()
+        assert box is not None and box["x"] + box["width"] <= width
+    wrap = page.locator(".protocol-table-wrap").first
+    assert wrap.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
