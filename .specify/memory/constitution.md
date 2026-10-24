@@ -12,7 +12,8 @@ Sync Impact Report
   checked, every member's data is private; XI: the API keeps its promises; XII: usable by everyone,
   on any screen.
   1.4.0 -> 1.5.0: the preamble states what the platform is for, who it serves and that organizing
-  comes with a role the owners grant.
+  comes with a role the owners grant; principle VI widens from timed sports to any activity where
+  people move, with timing for lap and point-to-point courses.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
   .agents/skills, which stay the detailed runtime guidance; VI-XII set by the maintainer (no local
   or sport-specific hardcoding; an API by default; one fact, one home; nothing is lost by accident;
@@ -93,16 +94,18 @@ finding fixed in a commit of its own. Pull requests are merged by rebase so ever
 on a linear history. A change finishes every part it touches -- callers, tests, translations,
 setup hints, documentation, specifications -- and adds nothing nobody asked for.
 
-### VI. Built for anyone, anywhere, in any timed sport
+### VI. Built for anyone, anywhere, in any activity where people move
 
 The site starts as a small team's calendar in Almaty, Kazakhstan, but is built so that a person in
-any country, following any sport where time is kept -- on wheels, skis, skates or foot, on road,
-trail or water -- finds it just as natural to use. So the code assumes as little as it can about
-place and sport:
+any country, organizing or joining any activity where people move -- on wheels, skis, skates or
+foot, on road, trail, ice or water, timed or not -- finds it just as natural to use. Anything with a
+start can be an event: a race, a ride of three friends, a walk, an evening on skates, once its event
+type is in the calendar. Timing serves courses covered in laps and point-to-point courses from a
+start to a finish. So the code assumes as little as it can about place and activity:
 
 - Places, sports, disciplines, event types, time zones, map services and the like are data or
-  configuration, not branches in the code. A new country or sport should need a row or a setting,
-  not a release. (Languages are the exception the maintainer chose -- principle IV.)
+  configuration, not branches in the code. A new country, sport or activity should need a row or a
+  setting, not a release. (Languages are the exception the maintainer chose -- principle IV.)
 - Nothing local is written into the code as a default the rest of the world must live with -- not a
   city, a country, a currency, a time zone, a provider or a unit. Where a local choice is needed
   today, it sits in one named setting and the specification records it.
