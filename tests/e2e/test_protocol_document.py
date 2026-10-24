@@ -648,3 +648,21 @@ def test_times_stay_on_one_line(page: Page, live_server, approved_competition):
     cell = _cell(page, "Anna", "lap1")
     assert cell.evaluate("el => getComputedStyle(el).whiteSpace") == "nowrap"
     assert _cell(page, "Anna", "name").evaluate("el => getComputedStyle(el).whiteSpace") == "normal"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_place_number_and_name_stay_in_view_while_a_wide_table_scrolls(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 390)
+    page.get_by_role("button", name=_tr("Full table")).click()
+    wrap = page.locator(".protocol-table-wrap").first
+    assert wrap.evaluate("el => el.scrollWidth > el.clientWidth")
+    wrap.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
+    wrap_box = wrap.bounding_box()
+    assert wrap_box is not None
+    for column in ("place", "bib", "name"):
+        box = _cell(page, "Anna", column).bounding_box()
+        assert box is not None and box["x"] >= wrap_box["x"] - 1, column
+    result = _cell(page, "Anna", "result").bounding_box()
+    name = _cell(page, "Anna", "name").bounding_box()
+    assert result is not None and name is not None and result["x"] >= name["x"] + name["width"] - 1
