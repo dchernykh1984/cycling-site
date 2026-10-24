@@ -204,20 +204,24 @@ def test_frame_grows_to_the_whole_protocol(page: Page, live_server, approved_com
 @pytest.mark.django_db(transaction=True)
 def test_a_request_that_never_answers_does_not_stall_live_results(page: Page, live_server, approved_competition):
     protocol = _live_protocol(approved_competition)
-    frame = _open(page, live_server, protocol)
-    expect(frame.get_by_text("Version A")).to_be_visible()
-
     stalled: list[Route] = []
+    waiting = {"on": True}
 
-    def first_one_hangs(route: Route):
-        if not stalled:
+    def wait_for_release(route: Route):
+        if waiting["on"]:
             stalled.append(route)  # never answered
         else:
             route.continue_()
 
-    page.route(re.compile(r".*/api/protocols/\d+/last_updated/"), first_one_hangs)
-    page.wait_for_function("() => true")  # let the next round start
+    page.route(re.compile(r".*/api/protocols/\d+/last_updated/"), wait_for_release)
+    frame = _open(page, live_server, protocol)
+    expect(frame.get_by_text("Version A")).to_be_visible()
+    # Install the route before polling can start, and observe the timeout before publishing B.
+    # A request already in flight when routing was installed could otherwise return B and end
+    # live without exercising the stalled-request recovery at all.
+    expect(page.locator("#live-error")).to_be_visible(timeout=10_000)
+    assert stalled
     _publish(protocol, "Version B", is_live=False)
+    waiting["on"] = False
     expect(page.frame_locator("#protocol-frame").get_by_text("Version B")).to_be_visible(timeout=15_000)
     expect(page.locator("#live-banner")).to_have_text(_final_text())
-    assert stalled

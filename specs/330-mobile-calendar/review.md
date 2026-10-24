@@ -81,3 +81,18 @@ reported in the maintainer's external review report, not asserted in advance her
 
 All twelve constitution principles have a design check in plan.md. No production data was changed,
 no paid workflow was run and this PR must remain unmerged until the maintainer asks.
+
+## Post-review CI validation
+
+At head 89ff162, eleven checks succeeded and desktop WebKit exposed an inherited live-protocol
+test race. Its only poll had already started before routing was installed, returned the final
+version, and finished live without exercising a stalled request; the trace showed that response
+and the test's empty `stalled` list. The no-op `wait_for_function("() => true")` was not a wait.
+
+The test now installs interception before opening the page and keeps metadata requests unanswered
+until an actual timeout warning is observed. Only then does it publish the final version and let
+future requests through. Keeping the warning observable avoids a second race where a successful
+retry hides it before the assertion polls. All eight live-protocol cases passed on desktop WebKit
+and all eight on WebKit/iPhone. This is test synchronization only; production polling is unchanged.
+The full pipeline must be checked again at the new pushed head before the owner's requested admin
+rebase merge.
