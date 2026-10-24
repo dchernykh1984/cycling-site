@@ -300,3 +300,38 @@ class UndecodableDocumentTest(_MediaMixin, TestCase):
         self.assertIsNone(protocol.document)
         with protocol.html_file.open("rb") as f:
             self.assertIn(b"kept", f.read())
+
+
+class NulDocumentTest(_MediaMixin, TestCase):
+    """PostgreSQL cannot store U+0000 in JSON: such a document is refused, never a 500."""
+
+    def setUp(self):
+        self._use_temp_media()
+        self.competition = Competition.objects.create(
+            title_ru="Race", date_start="2026-01-01", status=Competition.Status.APPROVED
+        )
+
+    def _document(self):
+        raw = json.dumps({"schema": 1, "sections": [], "title": "x\u0000y"}).encode()
+        return SimpleUploadedFile("protocol.json", raw, content_type="application/json")
+
+    def _post(self, **files):
+        data = {"competition_token": str(self.competition.upload_token), "protocol_type": "group", **files}
+        with self.captureOnCommitCallbacks(execute=True):
+            return Client(raise_request_exception=False).post(URL, data)
+
+    def test_alone_it_is_a_400(self):
+        response = self._post(document=self._document())
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("NUL character", response.json()["detail"])
+        self.assertFalse(Protocol.objects.exists())
+
+    def test_with_html_the_new_html_is_published_and_the_reason_given(self):
+        self._post(html_file=_html("old"))
+        response = self._post(document=self._document(), html_file=_html("new"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("NUL character", response.json()["document_error"])
+        protocol = Protocol.objects.get()
+        self.assertIsNone(protocol.document)
+        with protocol.html_file.open("rb") as f:
+            self.assertIn(b"new", f.read())
