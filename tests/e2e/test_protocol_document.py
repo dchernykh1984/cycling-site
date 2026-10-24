@@ -196,7 +196,11 @@ def test_group_filter_works_in_one_mixed_table_without_a_group_column(page: Page
     expect(page.locator(".protocol-row:visible")).to_have_count(2)
     expect(page.locator(".protocol-row", has_text="Boris")).to_be_hidden()
     page.locator('.protocol-groups [data-group-id="M30"]').evaluate("b => b.blur()")
-    page.locator('.protocol-groups [data-group-id=""]').click()
+    # The chips say what they choose between: a visible "Category:" names them, and the first
+    # one says it brings back every category.
+    categories = page.get_by_role("group", name=_tr("Category"))
+    expect(categories).to_be_visible()
+    categories.get_by_role("button", name=_tr("All categories")).click()
     expect(page.locator(".protocol-row:visible")).to_have_count(3)
 
 

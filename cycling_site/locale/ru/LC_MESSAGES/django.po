@@ -2978,6 +2978,7 @@ msgstr "Найти похожую статью на вашем языке"
 #: knowledge/templates/knowledge/submit.html:33
 #: registrations/templates/registrations/register.html:157
 #: tests/test_profile_registration_actions.py:283
+#: protocols/templates/protocols/_document.html
 msgid "Category"
 msgstr "Категория"
 
@@ -3559,8 +3560,8 @@ msgid "Search by name or number"
 msgstr "Поиск по имени или номеру"
 
 #: protocols/templates/protocols/_document.html
-msgid "Groups"
-msgstr "Группы"
+msgid "All categories"
+msgstr "Все категории"
 
 #: protocols/templates/protocols/_document.html
 msgid "Full table"
