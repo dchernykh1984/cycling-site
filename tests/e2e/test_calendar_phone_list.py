@@ -139,3 +139,29 @@ def test_phone_rows_keep_their_sport_place_and_information(page: Page, live_serv
     with translation_override("en"):
         register_url = reverse("registrations:register", args=[three_day_race.pk])
     expect(row.get_by_role("link", name="Register", exact=True)).to_have_attribute("href", register_url)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_tabs_name_what_the_calendar_shows(page: Page, live_server):
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}/ru/calendar/")
+    calendar_tab = page.locator("#view-link-calendar")
+    list_tab = page.locator("#view-link-list")
+    # A phone opens on the days as a list: "List" is what is on screen, not "Calendar".
+    expect(page.locator(".fc-list")).to_be_visible()
+    expect(list_tab).to_have_attribute("aria-current", "page")
+    expect(calendar_tab).not_to_have_attribute("aria-current", "page")
+    # "Calendar" turns the list into the month grid, and lights up with it.
+    calendar_tab.click()
+    expect(page.locator(".fc-daygrid")).to_be_visible()
+    expect(calendar_tab).to_have_attribute("aria-current", "page")
+    expect(list_tab).not_to_have_attribute("aria-current", "page")
+    assert page.url.rstrip("/").endswith("/ru/calendar")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_wide_screen_opens_the_grid_under_calendar(page: Page, live_server):
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{live_server.url}/ru/calendar/")
+    expect(page.locator(".fc-daygrid")).to_be_visible()
+    expect(page.locator("#view-link-calendar")).to_have_attribute("aria-current", "page")
