@@ -24,6 +24,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
       - uses: pre-commit/action@v3.0.1
+      # The host installs from requirements.txt, CI from uv.lock: a file that drifted from the lock
+      # deploys versions nothing here tested, or ones that do not install at all -- Django 6.1 next to
+      # django-ninja 1.6, which needs Django below 6.1, broke the deploy that way. The uv-export hook
+      # rewrites and stages the file, which pre-commit does not count as a change, so look here.
+      - name: requirements.txt matches uv.lock
+        run: git diff --exit-code HEAD -- requirements.txt
 
   commitizen:
     if: github.ref != 'refs/heads/main'
