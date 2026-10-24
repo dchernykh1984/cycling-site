@@ -573,3 +573,23 @@ def test_a_stalled_fragment_does_not_stall_a_drawn_protocol(page: Page, live_ser
     expect(page.locator(".protocol-row", has_text="Anna After")).to_be_visible(timeout=15_000)
     expect(page.locator("#live-banner")).to_have_text(_tr("Final results"))
     assert stalled
+
+
+@pytest.mark.django_db(transaction=True)
+def test_html_page_loads_html_when_the_hinted_document_is_gone_again(page: Page, live_server, approved_competition):
+    from django.core.files.base import ContentFile
+
+    protocol = _html_page(page, live_server, approved_competition)
+    # The hint names a document, but by the time the page asks, the protocol is HTML again.
+    page.route(
+        re.compile(r".*/api/protocols/\d+/last_updated/"),
+        lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({"last_updated": "", "file_hash": "h-doc", "is_live": True, "shown": "document"}),
+        ),
+    )
+    protocol.html_file.save("p2.html", ContentFile(b"<html><body><p>Plain HTML B</p></body></html>"), save=False)
+    _republish(protocol, None, file_hash="h2", live=True)
+    expect(page.frame_locator("#protocol-frame").get_by_text("Plain HTML B")).to_be_visible(timeout=10_000)
+    expect(page.locator("#live-error")).to_be_hidden()

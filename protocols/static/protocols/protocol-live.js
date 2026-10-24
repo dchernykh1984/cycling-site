@@ -134,7 +134,8 @@
         isLive: r.headers.get("X-Protocol-Live") === "true",
         format: r.headers.get("X-Protocol-Shown"),
       };
-      if (meta.format !== pageFormat) return meta;
+      // Only a document has a body to draw; for HTML the headers are the whole answer.
+      if (meta.format !== "document") return meta;
       return r.text().then(function (html) {
         var holder = document.createElement("div");
         holder.innerHTML = html;
@@ -199,7 +200,11 @@
         // became data only between the hint and the load.
         var load =
           pageFormat === "document" || meta.shown === "document"
-            ? loadDocument()
+            ? loadDocument().then(function (state) {
+                // A framed page asked because the hint named a document, but the protocol
+                // is HTML again by now: load that HTML like any other new version.
+                return pageFormat === "html" && state.format === "html" ? loadHtml(state.hash) : state;
+              })
             : loadHtml(meta.file_hash).catch(function (failure) {
                 return loadDocument().then(function (state) {
                   if (state.format === pageFormat) throw failure;
