@@ -593,3 +593,28 @@ def test_html_page_loads_html_when_the_hinted_document_is_gone_again(page: Page,
     _republish(protocol, None, file_hash="h2", live=True)
     expect(page.frame_locator("#protocol-frame").get_by_text("Plain HTML B")).to_be_visible(timeout=10_000)
     expect(page.locator("#live-error")).to_be_hidden()
+
+
+def _height(locator) -> float:
+    box = locator.bounding_box()
+    assert box is not None
+    return box["height"]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_many_long_groups_keep_to_one_row_on_a_phone(page: Page, live_server, approved_competition):
+    names = [f"M{age}-{age + 9} - Men born {2004 - age}-{1995 - age}" for age in range(18, 90, 8)]
+    document = _raw(groups=[{"id": n, "label": n} for n in names])
+    for row in document["sections"][0]["rows"]:
+        row["group"] = names[0]
+    protocol = _protocol(approved_competition, parse(json.dumps(document).encode()))
+    _open(page, live_server, protocol, 390)
+    groups = page.locator(".protocol-groups")
+    assert _height(groups) < 60
+    assert groups.evaluate("el => el.scrollWidth > el.clientWidth")
+    switches = page.locator(".protocol-switches")
+    assert _height(switches) < 60
+    _no_page_scroll(page)
+    # The last chip is still reachable: it scrolls into view and filters.
+    page.locator(f'.protocol-groups [data-group-id="{names[-1]}"]').click()
+    expect(page.locator(".protocol-row:visible")).to_have_count(0)
