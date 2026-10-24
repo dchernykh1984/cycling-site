@@ -486,10 +486,16 @@ def calendar_date_words() -> dict:
     monday = datetime.date(2001, 1, 1)
     months = [date_format(datetime.date(2001, month, 1), "E") for month in range(1, 13)]
     weekdays = [date_format(monday + datetime.timedelta(days=day), "l") for day in range(7)]
+    weekday_short = [date_format(monday + datetime.timedelta(days=day), "D") for day in range(7)]
     if not (get_language() or "").startswith("en"):
         months = [month.lower() for month in months]
         weekdays = [weekday.lower() for weekday in weekdays]
-    return {"months": months, "weekdays": weekdays, "year_first": (get_language() or "").startswith("kk")}
+    return {
+        "months": months,
+        "weekdays": weekdays,
+        "weekday_short": weekday_short,
+        "year_first": (get_language() or "").startswith("kk"),
+    }
 
 
 def day_groups(rows) -> list[dict]:

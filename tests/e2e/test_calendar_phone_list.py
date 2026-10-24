@@ -83,6 +83,7 @@ def test_a_week_on_the_calendar_shows_a_multi_day_race_once(page: Page, live_ser
     rows = page.locator(".fc-list-event:visible", has_text="Three day race")
     expect(rows).to_have_count(1)
     expect(page.locator(".fc-list-day:visible")).to_have_count(1)
+    expect(page.locator(".fc-list-day:visible")).to_contain_text(_month_day(TODAY))
 
 
 @pytest.mark.django_db(transaction=True)
