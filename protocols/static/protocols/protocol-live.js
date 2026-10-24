@@ -176,7 +176,19 @@
       })
       .then(function (meta) {
         if (meta.file_hash === shown.hash && meta.is_live === shown.isLive && meta.shown === pageFormat) return;
-        var load = pageFormat === "document" ? loadDocument() : loadHtml(meta.file_hash);
+        // The fragment answers for either form (its headers carry the row's state), so it is
+        // asked whenever the page draws a document or the hint names one; a framed HTML page
+        // asks it too when the frame fails, in case the HTML is gone because the protocol
+        // became data only between the hint and the load.
+        var load =
+          pageFormat === "document" || meta.shown === "document"
+            ? loadDocument()
+            : loadHtml(meta.file_hash).catch(function (failure) {
+                return loadDocument().then(function (state) {
+                  if (state.format === pageFormat) throw failure;
+                  return state;
+                });
+              });
         return load.then(function (loaded) {
           if (loaded.format !== pageFormat) {
             // The protocol now takes another form: the server draws that page, not this one.
