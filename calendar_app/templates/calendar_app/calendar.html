@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var initialKind = window.periodNav.kindOf(selectedFrom, selectedTo);
   var savedLayout = stored('cal_layout');
   var phoneList = savedLayout ? savedLayout === 'list' : window.matchMedia('(max-width: 991.98px)').matches;
-  var initialList = (selectedFrom && selectedTo && initialKind !== 'month') || (!selectedFrom && phoneList);
+  var initialList = (selectedFrom && selectedTo && initialKind !== 'month') || (initialKind === 'month' && phoneList);
   var initialRange = window.periodNav.rangeOf('month', new Date());
   var listRange = initialList ? {start: selectedFrom || initialRange[0], end: dayAfter(selectedTo || initialRange[1])} : null;
   function showRange(from, to) {
@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.changeView('listRange', from);
   }
   window.onPeriodChange = function (period) {
-    if (period.kind === 'month') calendar.changeView('dayGridMonth', period.from);
+    if (period.kind === 'month' && (period.showGrid || calendar.view.type === 'dayGridMonth')) calendar.changeView('dayGridMonth', period.from);
     else showRange(period.from, period.to);
   };
   // The period on screen travels to Share and to the List and Map links, so the other tabs open

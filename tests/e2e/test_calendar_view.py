@@ -72,3 +72,18 @@ def test_switching_tabs_moves_none_of_the_controls(page: Page, live_server):
         boxes[path] = [page.locator(selector).bounding_box() for selector in controls]
     calendar, listing, mapping = boxes.values()
     assert calendar == listing == mapping, boxes
+
+
+@pytest.mark.django_db(transaction=True)
+def test_month_arrows_retain_the_phone_layout(page: Page, live_server):
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}/en/calendar/")
+    expect(page.locator(".fc-listRange-view")).to_be_visible()
+    page.locator('[data-period-step="1"]').click()
+    expect(page.locator(".fc-listRange-view")).to_be_visible()
+    page.goto(f"{live_server.url}/en/calendar/")
+    expect(page.locator(".fc-listRange-view")).to_be_visible()
+    page.locator('[data-period-kind="month"]').click()
+    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
+    page.locator('[data-period-step="1"]').click()
+    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
