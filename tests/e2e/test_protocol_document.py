@@ -958,3 +958,25 @@ def test_a_chip_changes_its_own_columns_and_no_other(page: Page, live_server, ap
         changed = {s for (s, a), (_, b) in zip(before, after, strict=True) if a != b}
         assert changed == {own}, (own, changed)
         expect(chip).to_have_attribute("aria-pressed", "true" if dict(after)[own] else "false")
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("theme", list(registry()))
+def test_a_pressed_chip_looks_pressed_in_every_skin(page: Page, live_server, approved_competition, theme):
+    protocol = _protocol(approved_competition)
+    host = live_server.url.split("//")[1].split(":")[0]
+    page.context.add_cookies([{"name": "skin", "value": theme, "domain": host, "path": "/"}])
+    _open(page, live_server, protocol, 1280)
+    page.locator('.protocol-column-set[data-set="c-bib"]').click()
+    page.evaluate("document.activeElement && document.activeElement.blur()")
+    page.mouse.move(1, 1)
+    page.wait_for_timeout(500)  # the buttons' colour transition
+
+    def look(selector):
+        return page.locator(selector).first.evaluate(
+            "e => [getComputedStyle(e).backgroundColor, getComputedStyle(e).color]"
+        )
+
+    pressed = look('.protocol-column-set[aria-pressed="true"]')
+    unpressed = look('.protocol-column-set[aria-pressed="false"]')
+    assert pressed != unpressed, (theme, pressed, unpressed)
