@@ -177,7 +177,7 @@ def test_table_without_priorities_or_roles_keeps_its_first_columns_on_a_phone(
 def test_search_by_name_and_number(page: Page, live_server, approved_competition):
     protocol = _protocol(approved_competition)
     _open(page, live_server, protocol)
-    search = page.get_by_role("searchbox", name=_tr("Search by name or number"))
+    search = page.get_by_role("searchbox", name=_tr("Search the protocol"))
     search.fill("bor")
     expect(page.locator(".protocol-row:visible")).to_have_count(1)
     expect(page.locator(".protocol-row", has_text="Boris")).to_be_visible()
@@ -688,3 +688,17 @@ def test_search_finds_a_name_whichever_script_either_is_written_in(page: Page, l
     search.fill("denis CHE")
     expect(page.locator(".protocol-row:visible")).to_have_count(1)
     expect(page.locator(".protocol-row", has_text="Denis Chernykh")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_search_finds_a_team_or_a_city_but_not_digits_inside_times(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 1280)
+    search = page.get_by_role("searchbox")
+    search.fill("team bor")
+    expect(page.locator(".protocol-row:visible")).to_have_count(1)
+    expect(page.locator(".protocol-row", has_text="Boris")).to_be_visible()
+    search.fill("1990")  # every rider's year of birth
+    expect(page.locator(".protocol-row:visible")).to_have_count(3)
+    search.fill("25")  # only inside lap times ("0:25:01"): no rider
+    expect(page.locator(".protocol-row:visible")).to_have_count(0)

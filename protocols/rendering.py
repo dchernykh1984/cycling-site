@@ -22,8 +22,9 @@ from cycling_site.text_search import fold_table, search_words
 
 #: Columns that stay on a phone even when the document gives them no priority.
 _PRIMARY_ROLES = frozenset({"place", "bib", "name", "result"})
-#: Columns the search looks in; with none of them in a table, it looks in every column.
-_SEARCH_ROLES = frozenset({"name", "bib"})
+#: A time, a gap or a pace ("1:23:45.6", "+0:12"): left out of the search, so a bib number finds
+#: its rider rather than everyone whose time contains those digits.
+_TIME = re.compile(r"^[+-]?\(?\d+(?::\d{1,2})+(?:[.,]\d+)?\)?$")
 #: How many leading columns stand in for priority 1 when a table has none.
 _FALLBACK_PRIMARY = 3
 _ALIGNS = frozenset({"start", "center", "end"})
@@ -120,7 +121,6 @@ def _has_content(column: dict, rows: list[dict]) -> bool:
 def _table(raw: dict, inherited_group: str | None, counter: list[int], off_toggles: frozenset[str]) -> dict:
     raw_rows = raw.get("rows", [])
     columns = _columns([c for c in raw.get("columns", []) if _has_content(c, raw_rows)], off_toggles)
-    search_columns = [c for c in columns if c["role"] in _SEARCH_ROLES] or columns
     rows = []
     for raw_row in raw.get("rows", []):
         counter[0] += 1
@@ -134,7 +134,7 @@ def _table(raw: dict, inherited_group: str | None, counter: list[int], off_toggl
                 "status": _status_class(raw_row.get("status")),
                 "note": [line for line in (raw_row.get("note") or "").split("\n") if line],
                 # Folded like the query (protocol-doc.js, with fold_table), so either script finds either.
-                "search": " ".join(search_words(" ".join(_cell_text(cells[c["index"]]) for c in search_columns))),
+                "search": " ".join(search_words(" ".join(c["text"] for c in cells if not _TIME.match(c["text"])))),
                 "who": " ".join(_cell_text(cells[c["index"]]) for c in columns if c["role"] in ("bib", "name")).strip(),
             }
         )
