@@ -980,3 +980,48 @@ def test_a_pressed_chip_looks_pressed_in_every_skin(page: Page, live_server, app
     pressed = look('.protocol-column-set[aria-pressed="true"]')
     unpressed = look('.protocol-column-set[aria-pressed="false"]')
     assert pressed != unpressed, (theme, pressed, unpressed)
+
+
+def _two_groups():
+    """Two categories in tables of their own, the second with far wider teams than the first."""
+    document = _raw()
+    first = document["sections"][0]
+    second = json.loads(json.dumps(first))
+    first["title"], first["group"] = "M30", "M30"
+    second["title"], second["group"] = "M40", "M40"
+    for row in first["rows"]:
+        row["group"] = "M30"
+    for row in second["rows"]:
+        row["group"] = "M40"
+        row["cells"]["team"] = "A team whose name runs on and on across the whole table"
+    document["sections"] = [first, second]
+    return parse(json.dumps(document).encode())
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [390, 1280])
+def test_switching_category_changes_neither_the_columns_nor_the_chips(
+    page: Page, live_server, approved_competition, width
+):
+    protocol = _protocol(approved_competition, _two_groups())
+    _open(page, live_server, protocol, width)
+
+    def picture():
+        chips = page.locator(".protocol-column-set").evaluate_all(
+            "els => els.map(e => [e.dataset.set, e.getAttribute('aria-pressed')])"
+        )
+        heads = page.locator(".protocol-table thead th[data-set]").evaluate_all(
+            "ths => ths.map(th => [th.dataset.set, getComputedStyle(th).display !== 'none'])"
+        )
+        return chips, heads
+
+    start = picture()
+    for group in ("M30", "M40", "", "M40", "M30", ""):
+        page.locator(f'.protocol-groups [data-group-id="{group}"]').click()
+        assert picture() == start, group
+    # The same sets show in both tables: one choice for the whole protocol.
+    shown = page.locator(".protocol-table").evaluate_all(
+        "ts => ts.map(t => Array.from(t.querySelectorAll('thead th[data-set]'))"
+        "  .filter(th => getComputedStyle(th).display !== 'none').map(th => th.dataset.set).join())"
+    )
+    assert len(set(shown)) == 1, shown

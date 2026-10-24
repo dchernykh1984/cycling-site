@@ -57,12 +57,12 @@
   // visible width. Called after anything that shows or hides columns.
   function layout(root) {
     closeDetails(root);
+    each(root, ".protocol-table .prio-off", function (cell) {
+      cell.classList.remove("prio-off");
+    });
+    each(root, ".protocol-table", keepSomethingVisible);
+    fitColumns(root);
     each(root, ".protocol-table", function (table) {
-      each(table, ".prio-off", function (cell) {
-        cell.classList.remove("prio-off");
-      });
-      keepSomethingVisible(table);
-      fitColumns(table);
       var visible = {};
       var count = 0;
       var hidden = false;
@@ -104,7 +104,7 @@
     each(root, ".protocol-column-set", function (button) {
       var on = Array.prototype.some.call(
         root.querySelectorAll('.protocol-table thead th[data-set="' + button.dataset.set + '"]'),
-        shown
+        shown,
       );
       press(button, on);
       if (on) pressed.push(button);
@@ -130,48 +130,98 @@
 
   // The short view, on any screen: while a table is wider than its box, the least important columns
   // still shown are left out -- the highest priority number first, all its columns together -- until
-  // it fits. Priority 1 always stays. "All columns" shows every one, scrolling in the box.
-  function fitColumns(table) {
-    var wrap = table.closest(".protocol-table-wrap");
-    if (state.full || !wrap || wrap.scrollWidth <= wrap.clientWidth + 1) return;
+  // every table fits. Priority 1 always stays. "All columns" shows every one, scrolling in the box.
+  //
+  // One choice for the whole protocol, not one per table: every table is measured, with every row,
+  // whatever the category chips or the search hide just now, and a set left out goes from them all.
+  // So switching category or typing a name never brings a column out or puts one away, and a chip
+  // reads the same whichever group is on screen. The hidden tables and rows are shown only for the
+  // measuring, within this one task: the browser never paints them.
+  function fitColumns(root) {
+    if (state.full) return;
+    var hidden = [];
+    each(root, ".protocol-section.is-empty", function (el) {
+      hidden.push([el, "is-empty"]);
+    });
+    each(root, ".protocol-row.is-filtered, .protocol-note.is-filtered", function (el) {
+      hidden.push([el, "is-filtered"]);
+    });
+    hidden.forEach(function (pair) {
+      pair[0].classList.remove(pair[1]);
+    });
+    try {
+      fitTables(root);
+    } finally {
+      hidden.forEach(function (pair) {
+        pair[0].classList.add(pair[1]);
+      });
+    }
+  }
+
+  function zeros(n) {
+    var list = [];
+    for (var i = 0; i < n; i += 1) list.push(0);
+    return list;
+  }
+
+  function fitTables(root) {
+    var tables = Array.prototype.slice.call(root.querySelectorAll(".protocol-table"));
+    var overflowOf = function (table) {
+      var wrap = table.closest(".protocol-table-wrap");
+      return wrap ? wrap.scrollWidth - wrap.clientWidth : 0;
+    };
+    var overflow = tables.map(overflowOf);
+    var anyOverflows = function () {
+      return tables.some(function (table) {
+        return overflowOf(table) > 1;
+      });
+    };
+    if (!anyOverflows()) return;
     // Columns of one set -- every lap, say -- are left out whole or not at all, so the reader
     // never sees laps 1 to 4 with 5 and 6 tucked away. A set the reader turned on stays.
     var sets = {};
-    Array.prototype.forEach.call(table.querySelectorAll("thead th[data-col]"), function (th) {
-      var free = !th.classList.contains("prio-forced") && !th.classList.contains("col-on");
-      if (priorityOf(th) > 1 && shown(th) && free) {
-        var key = th.dataset.set || "p" + priorityOf(th);
-        (sets[key] = sets[key] || []).push(th);
-      }
+    tables.forEach(function (table, t) {
+      each(table, "thead th[data-col]", function (th) {
+        var free = !th.classList.contains("prio-forced") && !th.classList.contains("col-on");
+        if (priorityOf(th) > 1 && shown(th) && free) {
+          var key = th.dataset.set || "p" + priorityOf(th);
+          if (!sets[key]) sets[key] = { priority: priorityOf(th), heads: [], widths: zeros(tables.length) };
+          sets[key].heads.push([table, th]);
+          sets[key].widths[t] += th.offsetWidth;
+        }
+      });
     });
     var order = Object.keys(sets)
       .map(function (key) {
         return sets[key];
       })
       .sort(function (a, b) {
-        return priorityOf(b[0]) - priorityOf(a[0]);
+        return b.priority - a.priority;
       });
-    // The widths are measured once and summed, then checked against the real layout: laying a
-    // table of thousands of rows out again for every set would take seconds.
-    var widths = order.map(function (set) {
-      return set.reduce(function (sum, th) {
-        return sum + th.offsetWidth;
-      }, 0);
-    });
-    var overflow = wrap.scrollWidth - wrap.clientWidth;
     var leaveOutSet = function (set) {
-      set.forEach(function (th) {
-        leaveOut(table, th);
+      set.heads.forEach(function (pair) {
+        leaveOut(pair[0], pair[1]);
       });
     };
+    // The widths are measured once and summed, then checked against the real layout: laying the
+    // tables of thousands of rows out again for every set would take seconds.
+    var freed = zeros(tables.length);
+    var short = function () {
+      for (var t = 0; t < tables.length; t += 1) {
+        if (overflow[t] > 1 && freed[t] < overflow[t]) return true;
+      }
+      return false;
+    };
     var i = 0;
-    for (var freed = 0; i < order.length && freed < overflow; i += 1) {
+    for (; i < order.length && short(); i += 1) {
       leaveOutSet(order[i]);
-      freed += widths[i];
+      for (var t = 0; t < tables.length; t += 1) freed[t] += order[i].widths[t];
     }
     // The row buttons that open what was left out take a column of their own.
-    table.classList.add("has-hidden");
-    for (; i < order.length && wrap.scrollWidth > wrap.clientWidth + 1; i += 1) {
+    tables.forEach(function (table) {
+      table.classList.add("has-hidden");
+    });
+    for (; i < order.length && anyOverflows(); i += 1) {
       leaveOutSet(order[i]);
     }
   }
@@ -233,14 +283,26 @@
         var target;
         if (th.classList.contains("protocol-expand-col")) {
           target = ".protocol-expand-col";
-        } else if (STICKY_ROLES.some(function (role) { return th.classList.contains(role); })) {
+        } else if (
+          STICKY_ROLES.some(function (role) {
+            return th.classList.contains(role);
+          })
+        ) {
           target = '[data-col="' + th.dataset.col + '"]';
         } else {
           break;
         }
         rules.push(
-          scope + "th" + target + "," + scope + "td" + target +
-            "{position:sticky;left:" + th.offsetLeft + "px;z-index:1;background-color:var(--bs-body-bg)}"
+          scope +
+            "th" +
+            target +
+            "," +
+            scope +
+            "td" +
+            target +
+            "{position:sticky;left:" +
+            th.offsetLeft +
+            "px;z-index:1;background-color:var(--bs-body-bg)}",
         );
       }
     });
@@ -263,7 +325,6 @@
       }
     });
     // Innermost sections first, so a section whose children all emptied out empties too.
-    var reappeared = false;
     var sections = Array.prototype.slice.call(root.querySelectorAll(".protocol-section")).reverse();
     sections.forEach(function (section) {
       var rows = section.querySelectorAll(".protocol-row");
@@ -271,10 +332,8 @@
       var any = Array.prototype.some.call(rows, function (row) {
         return !row.classList.contains("is-filtered");
       });
-      if (any && section.classList.contains("is-empty")) reappeared = true;
       section.classList.toggle("is-empty", !any);
     });
-    return reappeared;
   }
 
   function apply(root) {
@@ -392,9 +451,7 @@
       input.value = state.search;
       input.addEventListener("input", function () {
         state.search = input.value;
-        // A table the search had hidden when the columns were last fitted was never measured:
-        // fit it as it shows again, or it comes back at its full width.
-        if (filter(root)) layout(root);
+        filter(root);
       });
     });
     var sets = {};
