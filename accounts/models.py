@@ -71,6 +71,9 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     # Setup hints (issue #319) this member asked never to see again. A list of hint keys rather than a
     # flag, so turning one reminder off does not silence the next one.
     dismissed_hints = models.JSONField(default=list, blank=True)
+    # Skins this member has been drawn in since one was first offered (cycling_site/skins.py): a skin
+    # on offer is asked only of those who have not been in it.
+    tried_skins = models.JSONField(default=list, blank=True)
     # Timestamp of the last rate-limited outgoing mail action (confirmation email at
     # signup/resend and the contact-owners message). Shared cooldown across all of them.
     last_mail_action_at = models.DateTimeField(null=True, blank=True)
