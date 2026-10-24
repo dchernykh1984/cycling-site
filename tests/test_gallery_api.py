@@ -3,6 +3,7 @@
 import datetime
 import uuid
 from pathlib import Path
+from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -123,6 +124,22 @@ class GalleryWriteApiTests(ApiTestMixin, GalleryTestCase):
         self.album.refresh_from_db()
         self.assertFalse(self.album.is_hidden)
         self.assertTrue(Photo.objects.filter(pk=photo.pk).exists())
+
+    def test_a_missing_album_is_404_only_to_those_who_may_change_albums(self):
+        for method, body in (("patch", {"is_hidden": True}), ("delete", None)):
+            call = getattr(self, method)
+            args = ("/api/v1/gallery/albums/999999", body) if body else ("/api/v1/gallery/albums/999999",)
+            self.assertEqual(call(*args, user=self.participant).status_code, 403)
+            self.assertEqual(call(*args, user=self.admin).status_code, 404)
+
+    def test_changes_follow_the_pages_album_rule(self):
+        photo = self._photo(self.album)
+        with patch("api.endpoints.gallery.can_manage_album", return_value=False):
+            self.assertEqual(
+                self.patch(f"/api/v1/gallery/albums/{self.album.pk}", {"is_hidden": True}, user=self.admin).status_code,
+                403,
+            )
+            self.assertEqual(self.delete(f"/api/v1/gallery/photos/{photo.pk}", user=self.admin).status_code, 403)
 
     def test_an_admin_creates_an_album(self):
         response = self.post(

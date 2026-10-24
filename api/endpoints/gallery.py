@@ -27,7 +27,7 @@ from gallery import actions
 from gallery.events import public_events
 from gallery.forms import AlbumForm, PhotoUploadForm
 from gallery.models import Album, Photo
-from gallery.permissions import can_create_album, is_admin_plus
+from gallery.permissions import can_create_album, can_manage_album, is_admin_plus
 
 auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
@@ -180,17 +180,28 @@ def _require_editor(user) -> None:
         raise HttpError(403, "Admin role is required")
 
 
-def _album_or_404(album_id: int) -> Album:
+def _album_to_change(user, album_id: int) -> Album:
+    """The album, checked against the album rule the pages use (gallery.permissions.can_manage_album).
+
+    Somebody who may change no album is refused before the lookup, so a 404 never tells them which
+    albums -- hidden ones included -- exist.
+    """
+    _require_editor(user)
     album = Album.objects.filter(pk=album_id).first()
     if album is None:
         raise HttpError(404, "Not found")
+    if not can_manage_album(user, album):
+        raise HttpError(403, "Admin role is required")
     return album
 
 
-def _photo_or_404(photo_id: int) -> Photo:
+def _photo_to_change(user, photo_id: int) -> Photo:
+    _require_editor(user)
     photo = Photo.objects.select_related("album").filter(pk=photo_id).first()
     if photo is None:
         raise HttpError(404, "Not found")
+    if not can_manage_album(user, photo.album):
+        raise HttpError(403, "Admin role is required")
     return photo
 
 
@@ -230,8 +241,7 @@ def create_album(request, payload: AlbumIn):
 def update_album(request, album_id: int, payload: AlbumPatchIn):
     """Send only what changes. `title` replaces all three languages; `competition_id: null` unlinks the
     event; `cover_photo_id` picks one of the album's photos, `null` lets the first photo stand in."""
-    _require_editor(request.auth)
-    album = _album_or_404(album_id)
+    album = _album_to_change(request.auth, album_id)
     data = payload.dict(exclude_unset=True)
     # The stored translations as they are, not filled in from one another: an empty one stays empty.
     stored = {language: getattr(album, f"title_{language}") or "" for language in ("ru", "kk", "en")}
@@ -256,8 +266,7 @@ def update_album(request, album_id: int, payload: AlbumPatchIn):
 
 @router.delete("/albums/{album_id}", response={204: None}, auth=auth, summary="Delete an album and its photos (admin)")
 def delete_album(request, album_id: int):
-    _require_editor(request.auth)
-    actions.delete_album(_album_or_404(album_id))
+    actions.delete_album(_album_to_change(request.auth, album_id))
     return Status(204, None)
 
 
@@ -268,8 +277,7 @@ def upload_photos(request, album_id: int, photos: list[UploadedFile] = File(...)
     """Send the files as `photos` (multipart). The page's limits hold: the number of files, the size of
     each and of all together, and room left on the disk. A file that is not a picture is listed in
     `failed` and the rest are kept; when none could be kept the answer is 422."""
-    _require_editor(request.auth)
-    album = _album_or_404(album_id)
+    album = _album_to_change(request.auth, album_id)
     files: MultiValueDict = MultiValueDict()
     files.setlist("photos", list(photos))
     form = PhotoUploadForm({}, files)
@@ -283,8 +291,7 @@ def upload_photos(request, album_id: int, photos: list[UploadedFile] = File(...)
 
 @router.patch("/photos/{photo_id}", response=PhotoOut, auth=auth, summary="Change a photo's caption (admin)")
 def update_photo(request, photo_id: int, payload: PhotoPatchIn):
-    _require_editor(request.auth)
-    photo = _photo_or_404(photo_id)
+    photo = _photo_to_change(request.auth, photo_id)
     caption = payload.caption
     for language in ("ru", "kk", "en"):
         setattr(photo, f"caption_{language}", getattr(caption, language))
@@ -298,6 +305,5 @@ def update_photo(request, photo_id: int, payload: PhotoPatchIn):
 @router.delete("/photos/{photo_id}", response={204: None}, auth=auth, summary="Delete a photo (admin)")
 def delete_photo(request, photo_id: int):
     """The photo and its files go; an album that loses its cover shows its first photo instead."""
-    _require_editor(request.auth)
-    actions.delete_photo(_photo_or_404(photo_id))
+    actions.delete_photo(_photo_to_change(request.auth, photo_id))
     return Status(204, None)
