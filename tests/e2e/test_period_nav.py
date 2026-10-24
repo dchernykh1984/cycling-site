@@ -367,3 +367,21 @@ def test_calendar_period_changes_work_when_storage_is_blocked(page: Page, live_s
     expect(_label(page)).to_have_text("24\u201325 October 2026")
     assert "date_from=2026-10-24" in page.evaluate("window.shareUrl()")
     expect(page.locator("#view-link-list")).to_have_attribute("href", re.compile("date_from=2026-10-24"))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_filtered_month_keeps_its_period_on_the_list(page: Page, live_server, organizer, race_event_type):
+    today = timezone.localdate()
+    near = _race(organizer, "This month only", today)
+    later = _race(organizer, "Another month", _end_of_month(today) + datetime.timedelta(days=1))
+    near.event_types.add(race_event_type)
+    later.event_types.add(race_event_type)
+    _calendar(
+        page,
+        live_server,
+        clock=datetime.datetime.combine(today, datetime.time(12)),
+        query=f"?event_type={race_event_type.pk}",
+    )
+    page.locator("#view-link-list").click()
+    expect(page.get_by_role("link", name="This month only").first).to_be_visible()
+    expect(page.get_by_role("link", name="Another month")).to_have_count(0)

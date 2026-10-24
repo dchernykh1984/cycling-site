@@ -644,7 +644,7 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         # discipline is a page about that city -- and two rows of it is not a page about anything,
         # so the whole season ahead stands. An explicit date_to from the reader still wins over both.
         faceted = any(chosen.values())
-        date_to = None if faceted else end_of_month(today)
+        date_to = None if faceted and self.request.GET.get("period") != "month" else end_of_month(today)
 
         is_manager = _can_manage_any_competition(self.request.user)
         qs = (
