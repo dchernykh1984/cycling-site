@@ -3,8 +3,8 @@
 //
 // The reader's choices are kept by the document's own ids, not by position, so a live update that
 // adds, removes or reorders groups and toggles (protocol-live.js swaps the whole document in and
-// calls mount again) keeps what the reader chose: a group that disappeared falls back to "All", a
-// toggle that disappeared is forgotten, a new toggle starts in its default.
+// calls mount again) keeps what the reader chose: a group that disappeared falls back to "All
+// categories", a toggle that disappeared is forgotten, a new toggle starts in its default.
 (function () {
   "use strict";
 
