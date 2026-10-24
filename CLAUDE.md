@@ -1,9 +1,9 @@
 # cycling-site
 
-A calendar of endurance-sport events -- cycling, running, skiing, hiking -- across Kazakhstan,
-Kyrgyzstan, Russia and beyond, with a knowledge base, news, race registration, refereeing and live
-protocols. Django 6 + Wagtail, three locales (ru / kk / en), deployed on Render at
-universalbicycle.team.
+A platform that helps people organize sport and the activities around it wherever people move --
+cycling, running, skiing, hiking and more: announcing an event, registration, timing and live
+protocols, with a knowledge base and news. It began in Almaty and is meant for anyone, anywhere.
+Django 6 + Wagtail, three locales (ru / kk / en), deployed on Render at universalbicycle.team.
 
 ## Rules that are not negotiable
 

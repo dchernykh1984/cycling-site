@@ -11,6 +11,8 @@ Sync Impact Report
   specs/site/); VIII: one fact, one home; IX: nothing is lost by accident; X: every input is
   checked, every member's data is private; XI: the API keeps its promises; XII: usable by everyone,
   on any screen.
+  1.4.0 -> 1.5.0: the preamble states what the platform is for, who it serves and that organizing
+  comes with a role the owners grant.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
   .agents/skills, which stay the detailed runtime guidance; VI-XII set by the maintainer (no local
   or sport-specific hardcoding; an API by default; one fact, one home; nothing is lost by accident;
@@ -22,10 +24,23 @@ Sync Impact Report
 
 # cycling-site Constitution
 
-cycling-site is a calendar of timed-sport events -- races, rides, runs and their kin -- with a
-knowledge base, news, race registration, refereeing and live protocols, served at
-universalbicycle.team in Russian, Kazakh and English. It began with events in Kazakhstan,
-Kyrgyzstan and Russia; it is meant for everyone.
+cycling-site is a platform that helps people organize sport, and the activities around it, wherever
+people move -- a race, a ride, a run, a hike, a walk. It announces an event, takes its registrations,
+times it and publishes its results, with a knowledge base and news beside them. It is served at
+universalbicycle.team in Russian, Kazakh and English.
+
+It began as the calendar of a small cycling team in Almaty, Kazakhstan, and is meant for everyone:
+
+- an organizer in Germany or Vietnam can announce their event here, open registration for it and
+  time it;
+- a rider in New York can open the map, see what is on in Almaty today -- a ride of three people as
+  much as a championship -- and find where to go and when, in their own time and the event's.
+
+The platform is open to everyone, after a check. Anyone may read; a confirmed member may propose an
+event, which waits for review; organizing -- registration on the site, events published without
+waiting -- comes with the organizer role, which the owners grant on request. The review and the role
+are deliberate: they keep the calendar free of spam and fake events, and are not a barrier to
+remove.
 
 ## Core Principles
 
@@ -216,4 +231,4 @@ bumps the version -- MAJOR for a principle removed or redefined, MINOR for one a
 expanded, PATCH for wording -- and updates the Last Amended date. Plans check themselves against
 it in their "Constitution Check".
 
-**Version**: 1.4.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-24
+**Version**: 1.5.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-24
