@@ -37,7 +37,7 @@ class GalleryTranslationTests(TestCase):
                 page = self.client.get(f"/{language}/gallery/albums/{album.pk}/")
                 self.assertContains(page, title)
                 self.assertNotContains(page, 'id="gallery-linked-event"')
-                self.assertContains(self.client.get(f"/{language}/gallery/albums/"), title)
+                self.assertContains(self.client.get(f"/{language}/gallery/"), title)
                 self.assertContains(self.client.get(f"/{language}/gallery/"), title)
 
     def test_a_title_in_one_language_is_enough_and_falls_back_without_being_copied(self):

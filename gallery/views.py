@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import Count, Max
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
@@ -102,8 +103,21 @@ def _album_page(request, album):
 
 
 def gallery_index(request):
-    """The newest album, with the others as tabs: the page the navbar's "Gallery" opens."""
-    return _album_page(request, Album.objects.visible_to(request.user).first())
+    """Every album the reader may see, newest first, by its cover: the page "Gallery" opens."""
+    albums = Album.objects.visible_to(request.user).select_related("cover").annotate(photo_count=Count("photos"))
+    page = Paginator(albums, ALBUMS_PER_PAGE).get_page(request.GET.get("page"))
+    newest = albums.first()
+    return render(
+        request,
+        "gallery/albums.html",
+        {
+            "albums": page,
+            "can_create": can_create_album(request.user),
+            "meta_title": _("Gallery"),
+            "meta_description": _("Photos from our races, rides and training camps."),
+            **_share_image(request, newest.cover_photo if newest else None),
+        },
+    )
 
 
 def gallery_album(request, pk):
@@ -111,18 +125,9 @@ def gallery_album(request, pk):
 
 
 def gallery_albums(request):
-    albums = Album.objects.visible_to(request.user).select_related("cover").annotate(photo_count=Count("photos"))
-    page = Paginator(albums, ALBUMS_PER_PAGE).get_page(request.GET.get("page"))
-    return render(
-        request,
-        "gallery/albums.html",
-        {
-            "albums": page,
-            "can_create": can_create_album(request.user),
-            "meta_title": _("All albums"),
-            "meta_description": _("Photos from our races, rides and training camps."),
-        },
-    )
+    """The list's former address, kept for links already shared: the gallery itself is the list."""
+    query = request.GET.urlencode()
+    return redirect(reverse("gallery_index") + (f"?{query}" if query else ""), permanent=True)
 
 
 def photo_detail(request, pk):

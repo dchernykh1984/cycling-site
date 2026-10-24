@@ -306,22 +306,28 @@ class CoverTests(GalleryTestCase):
 
 
 class GalleryPageTests(GalleryTestCase):
-    def test_the_gallery_opens_the_newest_album(self):
+    def test_the_gallery_lists_every_album_newest_first(self):
         self._album("Old ride 2025", datetime.date(2025, 6, 1))
-        newest = self._album("Changan race 2026", datetime.date(2026, 9, 6))
-        self._photo(newest)
-        response = self.client.get(reverse("gallery_index"))
-        self.assertContains(response, "Changan race 2026")
-        with translation_override("ru"):
-            self.assertContains(response, gettext("Gallery %(year)s") % {"year": 2026})
-
-    def test_other_albums_are_tabs(self):
-        self._album("Gran Fondo 2026", datetime.date(2026, 5, 17))
         self._album("Changan race 2026", datetime.date(2026, 9, 6))
-        response = self.client.get(reverse("gallery_index"))
+        self._album("Gran Fondo 2026", datetime.date(2026, 5, 17))
+        html = self.client.get(reverse("gallery_index")).content.decode()
+        positions = [html.index(title) for title in ("Changan race 2026", "Gran Fondo 2026", "Old ride 2025")]
+        self.assertEqual(positions, sorted(positions))
+        self.assertNotIn('class="gallery-tab', html)  # a list of albums, not one album with tabs
+
+    def test_an_albums_page_has_the_newest_others_as_tabs_and_leads_back_to_the_gallery(self):
+        self._album("Gran Fondo 2026", datetime.date(2026, 5, 17))
+        album = self._album("Changan race 2026", datetime.date(2026, 9, 6))
+        response = self.client.get(album.get_absolute_url())
         self.assertContains(response, 'class="gallery-tab active"')
         self.assertContains(response, "Gran Fondo 2026")
-        self.assertContains(response, reverse("gallery_albums"))
+        self.assertContains(response, f'class="gallery-tab gallery-tab-more" href="{reverse("gallery_index")}"')
+
+    def test_the_lists_former_address_redirects_to_the_gallery_keeping_its_page(self):
+        response = self.client.get(reverse("gallery_albums") + "?page=2")
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response["Location"], reverse("gallery_index") + "?page=2")
+        self.assertRedirects(self.client.get(reverse("gallery_albums")), reverse("gallery_index"), 301)
 
     def test_an_empty_gallery_says_so(self):
         response = self.client.get(reverse("gallery_index"))
@@ -330,9 +336,10 @@ class GalleryPageTests(GalleryTestCase):
     def test_a_hidden_album_is_not_shown_to_readers(self):
         album = self._album("Draft 2026", is_hidden=True)
         self.assertEqual(self.client.get(album.get_absolute_url()).status_code, 404)
-        self.assertNotContains(self.client.get(reverse("gallery_albums")), "Draft 2026")
+        self.assertNotContains(self.client.get(reverse("gallery_index")), "Draft 2026")
         self.client.force_login(self.admin)
         self.assertEqual(self.client.get(album.get_absolute_url()).status_code, 200)
+        self.assertContains(self.client.get(reverse("gallery_index")), "Draft 2026")
 
     def test_a_hidden_album_offers_no_share_button(self):
         album = self._album(is_hidden=True)
@@ -353,7 +360,7 @@ class GalleryPageTests(GalleryTestCase):
         chosen = self._photo(album)
         album.cover = chosen
         album.save()
-        self.assertContains(self.client.get(reverse("gallery_albums")), chosen.thumbnail.url)
+        self.assertContains(self.client.get(reverse("gallery_index")), chosen.thumbnail.url)
 
     def test_deleting_an_album_removes_it_and_its_photos(self):
         album = self._album()
