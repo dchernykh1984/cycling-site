@@ -188,6 +188,20 @@ class GalleryWriteApiTests(ApiTestMixin, GalleryTestCase):
         self.album.refresh_from_db()
         self.assertIsNone(self.album.competition_id)
 
+    def test_an_album_kept_on_an_event_no_longer_public_is_refused_as_on_the_page(self):
+        event = Competition.objects.create(title_ru="Race", date_start="2026-09-06", status=Competition.Status.APPROVED)
+        self.album.competition = event
+        self.album.save()
+        event.is_hidden = True
+        event.save()
+        refused = self.patch(f"/api/v1/gallery/albums/{self.album.pk}", {"is_hidden": True}, user=self.admin)
+        self.assertEqual(refused.status_code, 422)
+        self.assertIn("competition_id", refused.json()["detail"])
+        unlinked = self.patch(
+            f"/api/v1/gallery/albums/{self.album.pk}", {"is_hidden": True, "competition_id": None}, user=self.admin
+        )
+        self.assertEqual(unlinked.status_code, 200)
+
     def test_the_cover_is_one_of_the_albums_own_photos(self):
         first, second = self._photo(self.album), self._photo(self.album)
         response = self.patch(f"/api/v1/gallery/albums/{self.album.pk}", {"cover_photo_id": second.pk}, user=self.admin)
