@@ -77,6 +77,9 @@ and protocols with the event's upload token. The API has no language prefix.
 - **FR-API-004**: What a participant or an organizer reads or changes on the site is also available
   here (constitution principle VII); each area's specification lists what is still missing under
   "API gaps", and what is left out on purpose as an **Exception** with its reason.
+- **FR-API-005**: `/api/v1/` only grows: endpoints and optional fields are added, never removed,
+  renamed or made required, and a value keeps its meaning; a breaking change is a new version
+  (constitution principle XI).
 
 ## Key Entities
 

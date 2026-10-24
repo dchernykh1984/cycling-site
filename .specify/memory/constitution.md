@@ -9,11 +9,11 @@ Sync Impact Report
   1.3.0 -> 1.4.0: principles added by the maintainer -- VII: what a participant or an organizer does
   with data on the site is also available through the API (the gaps are listed per area in
   specs/site/); VIII: one fact, one home; IX: nothing is lost by accident; X: every input is
-  checked, every member's data is private.
+  checked, every member's data is private; XI: the API keeps its promises.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
-  .agents/skills, which stay the detailed runtime guidance; VI-X set by the maintainer (no local or
+  .agents/skills, which stay the detailed runtime guidance; VI-XI set by the maintainer (no local or
   sport-specific hardcoding; an API by default; one fact, one home; nothing is lost by accident;
-  every input is checked, every member's data is private).
+  every input is checked, every member's data is private; the API keeps its promises).
 - Templates: plan-template.md's "Constitution Check" gate reads these principles; no template
   needed changes.
 -->
@@ -158,6 +158,19 @@ where it arrives, and the site shows nothing about a person that they did not ch
 - Something a reader may not see answers as missing, never confirming that it exists: an event that
   is pending, hidden or invite-only and not theirs is a 404, and a wrong invitation key says nothing.
 - Tokens, keys and passwords live in settings and the environment, never in the repository.
+
+### XI. The API keeps its promises
+
+Programs that talk to the site are not updated with it: a timing laptop at a race runs whatever
+version was installed on it. So `/api/v1/` only grows.
+
+- A change may add an endpoint or an optional field, and an answer may carry fields an older client
+  ignores.
+- Removing or renaming a field, making an optional one required or changing what a value means is a
+  breaking change. It goes to a new version (`/api/v2/`), and v1 keeps serving until the maintainer
+  retires it.
+- An older client gets the answer it got before: finish-protocol generators that send only HTML
+  keep publishing beside the ones that send the structured document (issue #310).
 
 ## Constraints
 
