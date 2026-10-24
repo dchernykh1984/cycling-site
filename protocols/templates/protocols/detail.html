@@ -58,6 +58,7 @@
     <div id="protocol-wrap" style="overflow-x: auto; width: 100%; position: relative;"
          data-poll-url="{% url 'protocol_last_updated' protocol.pk %}"
          data-html-url="{% url 'protocol_html' protocol.pk %}"
+         data-fragment-url="{% url 'protocol_fragment' protocol.pk %}"
          data-format="html"
          data-hash="{{ state.hash }}"
          data-live="{{ state.is_live|yesno:'true,false' }}"

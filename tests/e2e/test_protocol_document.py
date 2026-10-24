@@ -512,3 +512,43 @@ def test_the_link_to_the_original_follows_each_live_update(page: Page, live_serv
     _republish(protocol, _document(), file_hash="h3", live=False)
     expect(page.locator("#live-banner")).to_have_text(_tr("Final results"), timeout=10_000)
     expect(page.locator("#protocol-original")).to_have_attribute("href", f"/ru/protocols/{protocol.pk}/html/?v=h3")
+
+
+def _html_page(page: Page, live_server, competition):
+    from django.core.files.base import ContentFile
+
+    protocol = Protocol(competition=competition, protocol_type="absolute", is_live=True, file_hash="h1")
+    protocol.html_file.save("p.html", ContentFile(b"<html><body><p>Plain HTML A</p></body></html>"), save=True)
+    page.goto(f"{live_server.url}/ru/protocols/{protocol.pk}/")
+    expect(page.frame_locator("#protocol-frame").get_by_text("Plain HTML A")).to_be_visible()
+    return protocol
+
+
+@pytest.mark.django_db(transaction=True)
+def test_html_page_moves_to_a_data_only_protocol(page: Page, live_server, approved_competition):
+    protocol = _html_page(page, live_server, approved_competition)
+    protocol.html_file = ""
+    _republish(protocol, _document(), file_hash="h2", live=False)
+    expect(page.locator(".protocol-row", has_text="Anna")).to_be_visible(timeout=10_000)
+    expect(page.locator("iframe")).to_have_count(0)
+    expect(page.locator("#live-banner, .alert-success").first).to_have_text(_tr("Final results"))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_html_page_moves_to_data_only_published_between_the_hint_and_the_load(
+    page: Page, live_server, approved_competition
+):
+    protocol = _html_page(page, live_server, approved_competition)
+    # The hint still names a new HTML upload; by the time the frame asks, the HTML is gone.
+    page.route(
+        re.compile(r".*/api/protocols/\d+/last_updated/"),
+        lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({"last_updated": "", "file_hash": "h-html", "is_live": True, "shown": "html"}),
+        ),
+    )
+    protocol.html_file = ""
+    _republish(protocol, _document(), file_hash="h2", live=False)
+    expect(page.locator(".protocol-row", has_text="Anna")).to_be_visible(timeout=10_000)
+    expect(page.locator("iframe")).to_have_count(0)
