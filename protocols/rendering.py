@@ -25,7 +25,19 @@ _SEARCH_ROLES = frozenset({"name", "bib"})
 #: How many leading columns stand in for priority 1 when a table has none.
 _FALLBACK_PRIMARY = 3
 _ALIGNS = frozenset({"start", "center", "end"})
+_KNOWN_ROLES = frozenset({"place", "bib", "name", "result", "gap", "group", "team"})
 _CSS_WORD = re.compile(r"[^a-z0-9_-]")
+
+
+_KNOWN_STATUSES = frozenset({"ok", "dnf", "dns", "dsq"})
+
+
+def _status_class(status: str | None) -> str:
+    """A row's status as a class: a known one, or "other" -- never an arbitrary string."""
+    if not status:
+        return ""
+    word = _css_word(status)
+    return word if word in _KNOWN_STATUSES else "other"
 
 
 def _css_word(value: str | None) -> str:
@@ -63,7 +75,9 @@ def _columns(raw_columns: list[dict]) -> list[dict]:
                 "sub_label": raw.get("sub_label", []),
                 "group": raw.get("group"),
                 "role": role,
-                "role_class": _css_word(role) if role else "",
+                # Only the roles the site knows become a class: a cell carries it once per
+                # row, so an arbitrary role would be repeated through the whole table.
+                "role_class": role if role in _KNOWN_ROLES else "",
                 "priority": priority,
                 "toggle": raw.get("toggle") or "",
                 "align": align,
@@ -106,7 +120,7 @@ def _table(raw: dict, inherited_group: str | None, counter: list[int]) -> dict:
                 "number": counter[0],
                 "cells": list(zip(columns, cells, strict=True)),
                 "group": raw_row.get("group") or inherited_group or "",
-                "status": _css_word(raw_row.get("status")) if raw_row.get("status") else "",
+                "status": _status_class(raw_row.get("status")),
                 "note": [line for line in (raw_row.get("note") or "").split("\n") if line],
                 "search": " ".join(_cell_text(cells[c["index"]]) for c in search_columns).lower(),
                 "who": " ".join(_cell_text(cells[c["index"]]) for c in columns if c["role"] in ("bib", "name")).strip(),
@@ -128,7 +142,9 @@ def _column_attrs(column: dict) -> str:
         classes += f" role-{column['role_class']}"
     if column["align"]:
         classes += f" align-{column['align']}"
-    attrs = f' class="{classes}" data-col="{column["index"]}" data-label="{escape(column["label"])}"'
+    # The label is kept once, on the column's heading (protocol-doc.js reads it there):
+    # repeated in every cell, a long label would multiply the page by the row count.
+    attrs = f' class="{classes}" data-col="{column["index"]}"'
     if column["toggle"]:
         attrs += f' data-toggle-id="{escape(column["toggle"])}"'
     return attrs

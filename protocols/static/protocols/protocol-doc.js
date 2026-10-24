@@ -121,10 +121,14 @@
       return;
     }
     var list = document.createElement("dl");
+    var labels = {};
+    each(table, "thead th[data-col]", function (th) {
+      labels[th.dataset.col] = th.dataset.label || "";
+    });
     each(row, "td[data-col]", function (td) {
       if (shown(td) || !td.textContent.trim()) return;
       var dt = document.createElement("dt");
-      dt.textContent = td.dataset.label || "";
+      dt.textContent = labels[td.dataset.col] || "";
       var dd = document.createElement("dd");
       Array.prototype.forEach.call(td.childNodes, function (node) {
         dd.appendChild(node.cloneNode(true));
