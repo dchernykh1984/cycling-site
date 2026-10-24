@@ -199,3 +199,25 @@ def test_frame_grows_to_the_whole_protocol(page: Page, live_server, approved_com
         page.goto(f"{live_server.url}/ru/protocols/{protocol.pk}/")
         expect(page.frame_locator("#protocol-frame").get_by_text("Bottom line")).to_be_attached()
         page.wait_for_function("() => document.getElementById('protocol-frame').offsetHeight > 2500")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_request_that_never_answers_does_not_stall_live_results(page: Page, live_server, approved_competition):
+    protocol = _live_protocol(approved_competition)
+    frame = _open(page, live_server, protocol)
+    expect(frame.get_by_text("Version A")).to_be_visible()
+
+    stalled: list[Route] = []
+
+    def first_one_hangs(route: Route):
+        if not stalled:
+            stalled.append(route)  # never answered
+        else:
+            route.continue_()
+
+    page.route(re.compile(r".*/api/protocols/\d+/last_updated/"), first_one_hangs)
+    page.wait_for_function("() => true")  # let the next round start
+    _publish(protocol, "Version B", is_live=False)
+    expect(page.frame_locator("#protocol-frame").get_by_text("Version B")).to_be_visible(timeout=15_000)
+    expect(page.locator("#live-banner")).to_have_text(_final_text())
+    assert stalled
