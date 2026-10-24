@@ -398,8 +398,10 @@
     });
     each(root, ".protocol-mode", function (button) {
       button.addEventListener("click", function () {
-        // Every column back, the reader's own choices included; pressed again, the width decides.
-        state.full = !state.full;
+        // Every column back, a set the reader turned off included; pressed again with nothing
+        // left out, the width decides once more.
+        var allShown = state.full && !root.querySelector(".protocol-table .col-off");
+        state.full = !allShown;
         state.columns = {};
         apply(root);
       });
