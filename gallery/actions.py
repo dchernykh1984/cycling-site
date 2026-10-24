@@ -44,6 +44,16 @@ def keep_a_cover(album: Album) -> None:
             album.save(update_fields=["cover", "updated_at"])
 
 
+def delete_photo(photo: Photo) -> None:
+    """Remove a photo and its files; an album that loses its cover falls back to its first photo."""
+    album = photo.album
+    was_cover = album.cover_id == photo.pk
+    photo.delete()
+    if was_cover:
+        album.cover = None
+        keep_a_cover(album)
+
+
 def delete_album(album: Album) -> None:
     """Remove an album with every photo and file in it."""
     with transaction.atomic():
