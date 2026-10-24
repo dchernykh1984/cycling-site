@@ -109,6 +109,8 @@ One page for every device, no separate version for phones or tablets.
 
 10. **Three languages, the longest first.** Size a control for its longest label, usually Kazakh.
     - A group of buttons that belong together stays in one row on a phone and a desktop.
+      A list of choices that grows with the data -- the categories of a protocol -- is not such a
+      group: it wraps onto as many rows as it needs, never scrolling sideways.
     - Inside a button the words take at most two lines, spaced at least 1.2 apart, at least 8px
       from the frame at the sides and 4px above and below; the button grows to hold them, and the
       buttons of a row share a height.

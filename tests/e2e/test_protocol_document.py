@@ -608,21 +608,27 @@ def _height(locator) -> float:
 
 
 @pytest.mark.django_db(transaction=True)
-def test_many_long_groups_keep_to_one_row_on_a_phone(page: Page, live_server, approved_competition):
+@pytest.mark.parametrize("width", [320, 390])
+def test_many_long_groups_wrap_on_a_phone_without_scrolling_sideways(
+    page: Page, live_server, approved_competition, width
+):
     names = [f"M{age}-{age + 9} - Men born {2004 - age}-{1995 - age}" for age in range(18, 90, 8)]
-    document = _raw(groups=[{"id": n, "label": n} for n in names])
+    names.append("A category whose name is far longer than any phone screen is wide, " * 2)
+    document = _raw(
+        groups=[{"id": n[:100], "label": n} for n in names],
+        toggles=[{"id": "splits", "label": "Show or hide the additional statistics of every lap"}],
+    )
     for row, name in zip(document["sections"][0]["rows"], (names[0], names[1], names[-1]), strict=True):
-        row["group"] = name
+        row["group"] = name[:100]
     protocol = _protocol(approved_competition, parse(json.dumps(document).encode()))
-    _open(page, live_server, protocol, 390)
-    groups = page.locator(".protocol-groups")
-    assert _height(groups) < 60
-    assert groups.evaluate("el => el.scrollWidth > el.clientWidth")
-    switches = page.locator(".protocol-switches")
-    assert _height(switches) < 60
+    _open(page, live_server, protocol, width)
+    for row in (".protocol-groups", ".protocol-switches"):
+        assert page.locator(row).evaluate("el => el.scrollWidth <= el.clientWidth + 1"), row
+        rights = page.locator(f"{row} > *").evaluate_all("els => els.map(e => e.getBoundingClientRect().right)")
+        assert max(rights) <= width, (row, rights)
     _no_page_scroll(page)
-    # The last chip is still reachable: it scrolls into view and filters.
-    page.locator(f'.protocol-groups [data-group-id="{names[-1]}"]').click()
+    # Every chip is in sight and filters, the longest included.
+    page.locator(f'.protocol-groups [data-group-id="{names[-1][:100]}"]').click()
     expect(page.locator(".protocol-row:visible")).to_have_count(1)
 
 
