@@ -20,7 +20,7 @@ through its own "All" box, so the filter redraws the page exactly as a hand on t
     chip.appendChild(document.createTextNode(text + ' '));
     var cross = document.createElement('span');
     cross.setAttribute('aria-hidden', 'true');
-    cross.textContent = '×';
+    cross.textContent = '\u00d7';
     chip.appendChild(cross);
     chip.addEventListener('click', function () {
       lift();
@@ -61,7 +61,7 @@ through its own "All" box, so the filter redraws the page exactly as a hand on t
     var favourite = document.querySelector('#filter-panel input[type="checkbox"][id$="favorite-filter"]');
     if (favourite && favourite.checked) {
       var favouriteLabel = document.querySelector('label[for="' + favourite.id + '"]');
-      addChip(box, favouriteLabel ? favouriteLabel.textContent.trim() : '★', function () {
+      addChip(box, favouriteLabel ? favouriteLabel.textContent.trim() : '\u2605', function () {
         favourite.checked = false;
         favourite.dispatchEvent(new Event('change', {bubbles: true}));
       });
