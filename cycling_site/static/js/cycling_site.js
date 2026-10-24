@@ -28,7 +28,8 @@
     }
 
     document.addEventListener('click', function (event) {
-        var item = event.target.closest('.skin-select [data-skin-key]');
+        // The menu's items, and the button of a skin on offer (_skin_offer.html).
+        var item = event.target.closest('.skin-select [data-skin-key], .skin-offer [data-skin-key]');
         if (!item) return;
         var key = item.dataset.skinKey, mode = item.dataset.mode;
         var saved = saveSkin(key);

@@ -3,9 +3,11 @@
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21
 **Code**: `skins/`, `cycling_site/skins.py`, `cycling_site/templates/_skin_select.html`,
-`cycling_site/static/js/cycling_site.js`, `home/management/commands/startskin.py`,
+`cycling_site/static/js/cycling_site.js`, `cycling_site/templates/_skin_offer.html`,
+`home/management/commands/startskin.py`,
 `scripts/demo_seed.py`
 **Tests**: `tests/test_skins.py`, `tests/test_skin_choice.py`, `tests/test_skin_templates.py`,
+`tests/test_skin_offer.py`, `tests/e2e/test_skin_offer.py`,
 `tests/test_startskin.py`, `tests/e2e/test_theme_choice.py`, `test_skin_of_its_own.py`,
 `test_skin_contrast.py`, `test_contrast_helper.py`; CI `e2e-skin` jobs
 **Related**: [accounts](accounts.md), [site shell](site-shell.md); `skins/README.md` for designers and
@@ -34,6 +36,13 @@ behind the moon/sun button.
 5. **Given** a first visit, or a new member, **Then** the site opens in `DEFAULT_SKIN`: UBT Almaty
    (`orange`). Tests never rely on it -- each sets the skin it checks, the browser suite light
    unless `E2E_SKIN` names another; making the default follow the most used skin is issue #347.
+6. **Given** `SKIN_OFFER` names a skin (now `DEFAULT_SKIN`, UBT Almaty) and a reader is in another
+   one, **Then** a line under the menu asks them to try it, with a button that switches to it.
+   Once a page has been drawn in that skin -- by the button or the menu -- the line never shows to
+   them again, whatever skin they go back to: a member's profile keeps it with their dismissed
+   setup hints (`skin:<key>`), a guest's `skin_offer` cookie (set on pages only, never on the API
+   or files). A first visit opens in the skin on offer and is never asked. A new skin worth
+   recommending is a new `SKIN_OFFER`.
 
 ### Story 2 -- A designer adds a skin (P1)
 
@@ -67,6 +76,8 @@ behind the moon/sun button.
 - **FR-SKN-003**: Text in a designer's skin is at least 4.5:1 against what it is drawn on (3:1 for
   large text) at rest, under the pointer and in focus; light and dark keep their recorded shortfalls
   as floors.
+- **FR-SKN-004**: At most one skin is on offer at a time (`settings.SKIN_OFFER`; empty for none),
+  asked once of readers in any other skin until they have been in it.
 
 ## Key Entities
 

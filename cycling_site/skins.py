@@ -124,23 +124,71 @@ def chosen(request) -> Skin:
     return resolve(request.COOKIES.get(COOKIE))
 
 
+# A skin the site asks readers in any other skin to try, once (settings.SKIN_OFFER): until the page
+# has been drawn in it -- by the offer's button or the skin menu -- after which the reader may go back
+# to theirs and is not asked again. A member's "been there" is kept in the profile with the setup
+# hints they are done with, a guest's in a cookie. A new skin to recommend is a new SKIN_OFFER.
+OFFER_COOKIE = "skin_offer"
+
+
+def offer_marker(key: str) -> str:
+    return f"skin:{key}"
+
+
+def _offer_key() -> str:
+    key = getattr(settings, "SKIN_OFFER", "")
+    return key if key in registry() else ""
+
+
+def _has_tried(request, key: str) -> bool:
+    user = getattr(request, "user", None)
+    if user is not None and user.is_authenticated:
+        return offer_marker(key) in (user.dismissed_hints or [])
+    return request.COOKIES.get(OFFER_COOKIE) == key
+
+
+def offered(request) -> Skin | None:
+    """The skin to ask this reader to try, or None: nothing on offer, drawn in it now, or tried it."""
+    key = _offer_key()
+    if not key or chosen(request).key == key or _has_tried(request, key):
+        return None
+    return registry()[key]
+
+
+def _remember_offer(request, response, skin: Skin) -> None:
+    key = _offer_key()
+    if not key or skin.key != key or _has_tried(request, key):
+        return
+    user = getattr(request, "user", None)
+    if user is not None and user.is_authenticated:
+        user.dismissed_hints = [*(user.dismissed_hints or []), offer_marker(key)]
+        user.save(update_fields=["dismissed_hints"])
+    elif response.get("Content-Type", "").startswith("text/html"):
+        # Only on a page a person reads: a cookie on a picture, an API answer or the sitemap would
+        # keep Cloudflare from caching them, for robots and programs that never send it back.
+        response.set_cookie(OFFER_COOKIE, key, max_age=365 * 24 * 3600, samesite="Lax")
+
+
 # The skin of the request being answered, for the template loaders below; None outside a request
 # (e-mails, management commands), which then get the site's own templates.
 current_skin: ContextVar[str | None] = ContextVar("current_skin", default=None)
 
 
 class SkinMiddleware:
-    """Tell the template loaders which skin this request is drawn in."""
+    """Tell the template loaders which skin this request is drawn in, and note a skin on offer tried."""
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        token = current_skin.set(chosen(request).key)
+        skin = chosen(request)
+        token = current_skin.set(skin.key)
         try:
-            return self.get_response(request)
+            response = self.get_response(request)
         finally:
             current_skin.reset(token)
+        _remember_offer(request, response, skin)
+        return response
 
 
 class SkinLoader(FilesystemLoader):

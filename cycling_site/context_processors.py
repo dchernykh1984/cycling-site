@@ -113,6 +113,7 @@ def skins(request):
         "skins": list(skin_registry.registry().values()),
         "skin_stylesheets": skin_registry.stylesheets(skin),
         "skin_modes": {key: s.mode for key, s in skin_registry.registry().items()},
+        "skin_offer": skin_registry.offered(request),
     }
 
 

@@ -35,6 +35,11 @@ this file is what an agent needs on top of it.
   registry refuses the folder otherwise. `manage.py startskin <key> --mode light|dark` lays out a
   valid new skin.
 
+- To recommend a skin once to readers in any other one, set `SKIN_OFFER` in the settings to its
+  key (now `DEFAULT_SKIN`): a line under the menu offers it until a page has been drawn in it, then
+  never again for that reader (`skin:<key>` among a member's `dismissed_hints`, a guest's
+  `skin_offer` cookie). A new key starts a new offer for everyone not drawn in it yet.
+
 ## When a change to the site touches a skin
 
 A skin that copied a template does not get later changes to it. So when you change a template, a
