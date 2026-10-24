@@ -6,11 +6,12 @@ Sync Impact Report
   issue #324); principles II and III no longer name it.
   1.2.0 -> 1.3.0: principle IV requires localized reader-facing data fields by default, with
   an explicit exception for documents that belong to one locale.
-  1.3.0 -> 1.4.0: principle VII added -- what a participant or an organizer does with data on the
-  site is also available through the API; the gaps are listed per area in specs/site/.
+  1.3.0 -> 1.4.0: principles added by the maintainer -- VII: what a participant or an organizer
+  does with data on the site is also available through the API (the gaps are listed per area in
+  specs/site/); VIII: one fact, one home.
 - Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
-  .agents/skills, which stay the detailed runtime guidance; VI set by the maintainer (no local or
-  sport-specific hardcoding); VII set by the maintainer (an API by default).
+  .agents/skills, which stay the detailed runtime guidance; VI-VIII set by the maintainer (no local
+  or sport-specific hardcoding; an API by default; one fact, one home).
 - Templates: plan-template.md's "Constitution Check" gate reads these principles; no template
   needed changes.
 -->
@@ -111,6 +112,20 @@ tools, the events agents and a member's own programs work with the same data a p
 - Where a member action still has no API, the area's file in `specs/site/` lists it under "API
   gaps". A change that reworks an action listed there closes its gap rather than leaving it open --
   unless the maintainer marked it **Exception**.
+
+### VIII. One fact, one home
+
+A fact is stored in one place and everything else derives it from there: an event's time zone is
+worked out from its place on every use rather than saved beside it (issue #344). A rule is written
+once and shared -- the server hands the browser what it needs, as the protocol search receives the
+server's table for folding one script into another, rather than the rule being written again in
+JavaScript.
+
+- Before adding a model, a field, a setting or a helper, look for the one that already holds it.
+- A duplicate -- a second venue for the same place, a second copy of a list -- is merged, not kept
+  alongside; a merge that touches an approved event waits for the maintainer (principle II).
+- Where a copy cannot be avoided -- a cache, a column kept for speed -- one side is the source, the
+  other is rebuilt from it, and the code says which.
 
 ## Constraints
 
