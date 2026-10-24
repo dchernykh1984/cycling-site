@@ -739,3 +739,15 @@ def test_all_columns_is_offered_only_where_columns_are_left_out(page: Page, live
     expect(mode).to_have_attribute("aria-pressed", "true")
     page.set_viewport_size({"width": 1280, "height": 800})
     expect(mode).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_no_table_heading_is_left_without_text(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 1280)
+    expect(page.locator(".protocol-group-row")).to_be_visible()
+    # A screen reader announces an empty heading as nothing; cells under no group are plain cells.
+    empty = page.locator(".protocol-table thead th").evaluate_all(
+        "ths => ths.filter(th => !th.textContent.trim() && !th.getAttribute('aria-label')).length"
+    )
+    assert empty == 0
