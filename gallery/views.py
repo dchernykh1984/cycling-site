@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count, Max
+from django.db.models import Count
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -11,9 +11,10 @@ from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
+from gallery.actions import delete_album, keep_a_cover, save_uploads
 from gallery.events import RESULT_LIMIT, describe_events, matching_ids, public_events
 from gallery.forms import AlbumForm, PhotoUploadForm, max_batch_mb, max_file_mb, max_files
-from gallery.images import THUMB_SIDE, PhotoError, process
+from gallery.images import THUMB_SIDE
 from gallery.models import Album, Photo
 from gallery.permissions import can_create_album, can_manage_album
 
@@ -153,22 +154,10 @@ def photo_detail(request, pk):
 
 
 def _save_uploads(request, album, files) -> int:
-    saved, failed = 0, []
-    start = (album.photos.aggregate(top=Max("sort_order"))["top"] or 0) + 1
-    for offset, uploaded in enumerate(files):
-        try:
-            full, thumb, (width, height) = process(uploaded)
-        except PhotoError as error:
-            failed.append(f"{uploaded.name}: {error}")
-            continue
-        photo = Photo(album=album, sort_order=start + offset, uploaded_by=request.user, width=width, height=height)
-        photo.image.save(full.name or "photo.jpg", full, save=False)
-        photo.thumbnail.save(thumb.name or "photo.jpg", thumb, save=False)
-        photo.save()
-        saved += 1
+    saved, failed = save_uploads(album, files, request.user)
     if failed:
         messages.warning(request, _("Not uploaded: %(files)s") % {"files": "; ".join(failed)})
-    return saved
+    return len(saved)
 
 
 @login_required
@@ -182,10 +171,8 @@ def album_create(request):
             album = form.save(commit=False)
             album.created_by = request.user
             album.save()
-        saved = _save_uploads(request, album, upload.cleaned_data["photos"])
-        if saved:
-            album.cover = album.photos.first()
-            album.save(update_fields=["cover", "updated_at"])
+        _save_uploads(request, album, upload.cleaned_data["photos"])
+        keep_a_cover(album)
         messages.success(request, _("Album created. Choose its cover photo below."))
         return redirect("gallery_album_edit", pk=album.pk)
     return render(
@@ -252,12 +239,7 @@ def album_delete(request, pk):
     album = get_object_or_404(Album, pk=pk)
     if not can_manage_album(request.user, album):
         raise PermissionDenied
-    with transaction.atomic():
-        album.cover = None
-        album.save(update_fields=["cover"])
-        for photo in album.photos.all():
-            photo.delete()
-        album.delete()
+    delete_album(album)
     messages.success(request, _("Album deleted."))
     return redirect("gallery_index")
 
