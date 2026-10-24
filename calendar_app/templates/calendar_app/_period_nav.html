@@ -175,23 +175,26 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     return '<button type="button" class="period-tap" data-period-pick="' + what + '">' + text + '</button>';
   }
   function dayAndMonth(d) { return d.getDate() + ' ' + tap('month', WORDS.months[d.getMonth()]); }
+  function withYear(text, year) {
+    return WORDS.year_first ? year + ' ' + text : text + ' ' + year;
+  }
   function label() {
     var from = state.from;
     var to = state.to;
     var year = tap('year', String(from.getFullYear()));
     if (state.kind === 'month') {
       var name = MONTHS[from.getMonth()];
-      return tap('month', name.charAt(0).toUpperCase() + name.slice(1)) + ' ' + year;
+      return withYear(tap('month', name.charAt(0).toUpperCase() + name.slice(1)), year);
     }
     if (state.kind === 'year') return year + ', ' + WHOLE_YEAR;
-    if (state.kind === 'open') return FROM_DAY.replace('%s', dayAndMonth(from) + ' ' + year);
+    if (state.kind === 'open') return FROM_DAY.replace('%s', withYear(dayAndMonth(from), year));
     var end = tap('year', String(to.getFullYear()));
-    if (same(from, to)) return dayAndMonth(from) + ' ' + year;
+    if (same(from, to)) return withYear(dayAndMonth(from), year);
     if (from.getFullYear() !== to.getFullYear()) {
-      return dayAndMonth(from) + ' ' + year + ' \u2013 ' + dayAndMonth(to) + ' ' + end;
+      return withYear(dayAndMonth(from), year) + ' \u2013 ' + withYear(dayAndMonth(to), end);
     }
-    if (from.getMonth() === to.getMonth()) return from.getDate() + '\u2013' + dayAndMonth(to) + ' ' + year;
-    return from.getDate() + ' ' + WORDS.months[from.getMonth()] + ' \u2013 ' + dayAndMonth(to) + ' ' + year;
+    if (from.getMonth() === to.getMonth()) return withYear(from.getDate() + '\u2013' + dayAndMonth(to), year);
+    return withYear(from.getDate() + ' ' + WORDS.months[from.getMonth()] + ' \u2013 ' + dayAndMonth(to), year);
   }
   function popup() {
     if (pop === 'month') {
