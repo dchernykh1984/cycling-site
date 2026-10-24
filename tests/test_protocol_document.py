@@ -392,9 +392,16 @@ def test_a_number_too_long_to_read_is_a_refused_document_not_a_crash():
         parse(raw)
 
 
-def test_deeply_nested_json_in_an_unknown_field_is_ignored_not_a_crash():
-    stored = parse(b'{"schema": 1, "sections": [], "x": ' + b"[" * 100_000 + b"]" * 100_000 + b"}")
-    assert "x" not in stored
+def test_deeply_nested_json_is_ignored_or_refused_never_a_crash():
+    # How deep json can nest depends on the Python build: it is either read (and the
+    # unknown field dropped) or refused as a document -- never any other error.
+    raw = b'{"schema": 1, "sections": [], "x": ' + b"[" * 100_000 + b"]" * 100_000 + b"}"
+    try:
+        stored = parse(raw)
+    except DocumentError as exc:
+        assert "not UTF-8 JSON" in str(exc)
+    else:
+        assert "x" not in stored
 
 
 def test_sections_nested_too_deep_for_the_validator_are_refused():
