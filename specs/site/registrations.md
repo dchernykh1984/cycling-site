@@ -110,6 +110,14 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 - **Accepted** (maintainer, 2026-10-21: Strava is the sport's de facto standard; a general tracker connector may come later, not as a fix). The additional-info field knows one service by name: a Strava link (`AdditionalInfoMode.STRAVA`).
 - Payment is a yes/no flag; no currency or amount is modelled, so nothing local is assumed there.
 
+## API gaps
+
+- Entering a race, editing or cancelling one's own entry, and listing one's own entries.
+- Running the field: approving, rejecting, marking paid, deleting, adding and editing entries, and
+  exporting the list. `/participants/` serves the timing tools with the event's upload token, not a
+  manager with their own token.
+- Reading the public participant list.
+
 ## Open Questions
 
 - None known.

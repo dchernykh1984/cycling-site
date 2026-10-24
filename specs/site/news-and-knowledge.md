@@ -84,6 +84,11 @@ member may submit a draft for review; members comment.
 
 - None known.
 
+## API gaps
+
+- Submitting news for review (participants; knowledge drafts already have their API).
+- Commenting on news and knowledge articles.
+
 ## Open Questions
 
 - The legacy Wagtail `NewsPage` (with its own comments and an auto-approve setting) still exists

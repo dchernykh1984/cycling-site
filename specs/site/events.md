@@ -154,6 +154,18 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 - **Accepted** (maintainer, 2026-10-21: the brand in code does not matter). An event page's meta description ends with the brand written in code ("Details, start point and
   results on the Universal Bicycle Team calendar.", `calendar_app/models.py`).
 
+## API gaps
+
+- Approving and rejecting an event: organizers and up moderate on the site; the API only resubmits
+  a rejected one.
+- Registration on the site and invite-only events: enabling registration, its mode, options and
+  categories; making an event invite-only and issuing a new invitation link.
+- Materials (named links), uploaded documents (announcement, regulations, route, results) and the
+  link-preview image: the API takes the five links only.
+- The upload token: the API shows it to the event's author and admins, but cannot regenerate or
+  delete it.
+- Commenting on an event, reporting it as inaccurate, and accepting an invitation.
+
 ## Open Questions
 
 - None known.

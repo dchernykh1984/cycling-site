@@ -27,11 +27,13 @@ The project's principles -- the "constitution" every plan is checked against -- 
 Each file describes one area as it behaves now: who does what (user stories with acceptance
 scenarios), the functional requirements, the entities, the tests that pin it, the **local
 assumptions** the code still makes (a place, a brand or a sport written into code -- see principle
-VI), and open questions. They were written from the code and its tests; where something was not
-clear it says so rather than guessing.
+VI), the **API gaps** -- what a participant or an organizer does on the site that the API cannot
+do yet (principle VII) -- and open questions. They were written from the code and its tests; where
+something was not clear it says so rather than guessing.
 
 A local assumption marked **Accepted** is one the maintainer decided to keep; it is recorded so that
 nobody "fixes" it again, and stays until they decide otherwise.
+An API gap marked **Exception** is left out of the API on purpose, and says why.
 
 **Keep them true.** A change that alters an area's behaviour updates its file in the same pull
 request: the scenario, the requirement, the tests line, and -- when it removes a hardcoded place or
