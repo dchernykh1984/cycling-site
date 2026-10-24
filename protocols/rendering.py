@@ -108,8 +108,16 @@ def _header_groups(columns: list[dict]) -> list[dict]:
     return runs
 
 
+def _has_content(column: dict, rows: list[dict]) -> bool:
+    """A column with no heading and nothing in any row draws only an unnamed, empty band."""
+    if column.get("label") or column.get("sub_label") or not rows:
+        return True
+    return any(row.get("cells", {}).get(column["id"]) for row in rows)
+
+
 def _table(raw: dict, inherited_group: str | None, counter: list[int], off_toggles: frozenset[str]) -> dict:
-    columns = _columns(raw.get("columns", []), off_toggles)
+    raw_rows = raw.get("rows", [])
+    columns = _columns([c for c in raw.get("columns", []) if _has_content(c, raw_rows)], off_toggles)
     search_columns = [c for c in columns if c["role"] in _SEARCH_ROLES] or columns
     rows = []
     for raw_row in raw.get("rows", []):
