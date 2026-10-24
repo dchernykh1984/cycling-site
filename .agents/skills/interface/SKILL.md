@@ -255,3 +255,12 @@ pre-commit run no-hex-colours-in-templates --all-files
 The test sets its widths itself -- 360 and 1280px for every rule; 320, 768 and 1024px for what
 scrolls sideways, is cut off or breaks into letters -- and CI runs it in every browser job and, via
 the `e2e-skin` jobs, in every skin.
+
+
+## Calendar layout (issue #330)
+
+A fresh phone visit opens readable days; Month explicitly opens the grid. Keep the chosen layout
+for the browser session and do not switch it on resize. The List tab keeps full event facts in
+expandable row details, with city and sport visible beside the title. These are the reviewed choices
+in `specs/330-mobile-calendar/spec.md`; light/dark selection fills and frames were approved by the
+maintainer on 2026-10-24.

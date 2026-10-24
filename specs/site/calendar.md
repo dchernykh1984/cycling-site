@@ -1,7 +1,7 @@
 # Site Specification: Finding events (calendar, list, map, feeds)
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-21
+**Verified against**: PR #343 on 2026-10-24
 **Code**: `calendar_app/` (views, filters, feeds, `visibility.py`), `calendar_app/templates/calendar_app/`
 **Tests**: `calendar_app/tests.py` (calendar, list, map, events API, filters, favorites, default
 filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/test_feeds.py`,
@@ -10,7 +10,8 @@ filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/tes
 `tests/e2e/test_calendar_view.py`, `test_calendar_map.py`, `test_competition_list.py`,
 `test_discipline_filter.py`, `test_location_filter.py`, `test_date_filters.py`,
 `test_filter_url_length.py`, `test_view_switcher_location.py`, `test_favorite_events.py`,
-`test_save_filter_preferences.py`
+`test_save_filter_preferences.py`, `test_calendar_phone_list.py`, `test_period_nav.py`,
+`test_calendar_busy_day.py`, `test_filter_chips.py`, `test_filter_toggle.py`
 **Related**: [events](events.md), [locations](locations.md), [accounts](accounts.md) (saved
 preferences), [search visibility](search-visibility.md)
 
@@ -24,25 +25,29 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 
 ### Story 1 -- Browse what is coming (P1)
 
-1. **Given** a visitor opens the calendar, **Then** a month grid shows the published events; a
-   multi-day event appears on every day it runs; a "Today" button and a month and year picker move
-   the grid (the years reach from the oldest to the furthest visible event, at least this year).
-2. **Given** the list view, **Then** it shows upcoming events (not past ones) for the next 30 days,
+1. **Given** a fresh visitor opens the calendar, **Then** a phone lists the remaining days of the
+   month and a wide screen opens the month grid; Month explicitly opens the grid. A chosen layout
+   survives the visit without switching on resize. A multi-day event appears once in a list and
+   on every day in the grid; three events and +N keep a busy grid day compact.
+2. **Given** the list view, **Then** it shows upcoming events (not past ones) until the current month's end,
    a page at a time with numbered pages, a jump-to-page field, and filters kept across pages;
    with a location, direction, discipline or event type chosen, the whole season ahead is shown
    instead; an explicit date range wins over both.
-3. **Given** the map view, **Then** events of the next 30 days (or the chosen range) are pinned:
+3. **Given** the map view, **Then** events until the current month's end (or the chosen range) are pinned:
    each location with coordinates gets a marker listing its events with links; several events at
    one place share one marker.
 4. **Given** any of the three, **Then** a switcher moves between them keeping the filters; the map,
    which has no location filter of its own, carries the incoming location filter through its links,
-   and a chosen date range is remembered for the browser session.
+   and a chosen date range is remembered for the browser session. Explicit dates or a floating
+   current-month link win over saved dates; a bare calendar visit restores the session period.
 5. **Given** the grid page, **Then** it also links upcoming and running events in plain HTML so
    crawlers can follow them (finished events are not advertised as upcoming).
 
 ### Story 2 -- Filter (P1)
 
-1. **Given** the filters, **Then** a reader can choose several event types, directions and
+1. **Given** a phone, **Then** filters start folded behind a named icon showing their count;
+   active filters have removable chips and the panel retains its open state during the visit.
+   **Given** the filters, **Then** a reader can choose several event types, directions and
    disciplines on every view, and a signed-in member also "favorites only"; several countries / regions / cities / venues on
    the grid and the list; a date range on the list and the map. A level whose every option is ticked
    is sent as its parent, and ids travel comma-joined, so a wide selection stays a short address.
@@ -91,7 +96,13 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
   country, region, city, venue and links; it links the registration form on the site while it is
   open and not full, before any external registration link; a full or closed form is not linked.
 - **FR-CAL-005**: Feeds and subscriptions never carry hidden, unapproved or invite-only events.
-- **FR-CAL-006**: Calendar labels (Today, months) are translated in every language.
+- **FR-CAL-006**: Calendar labels are translated in every language; Kazakh period labels put
+  the year before the month or days. Shared period controls offer days, weekend, week, month and
+  a year picker, step by the selected kind and return keyboard focus when a picker closes.
+- **FR-CAL-007**: Phone List rows show city and sport, and preserve the remaining FR-CAL-004
+  facts and Info link in expandable row details. Desktop retains the table.
+- **FR-CAL-008**: The approved PR #343 styling uses filled active tabs and contrasting period
+  frames in light/dark (maintainer approval, 2026-10-24); all skins retain named 44px tap targets.
 
 ## Key Entities
 
@@ -103,11 +114,12 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 
 ## Configuration
 
-- `MAP_HOME_AREAS` maps named areas to south-west/north-east corners; a matching selection opens
-  that area, otherwise the map fits its event markers. The current `almaty` bounds are
-  `[43.05, 76.55]` to `[43.90, 77.45]`.
-- `MAP_DEFAULT_VIEW` sets the empty-map center and zoom; currently `[48.0, 68.0]`, zoom 5.
-  Changing these deployment choices needs configuration, not a template change.
+- `MAP_HOME_AREAS` maps named areas to their south-west and north-east corners. The deployment currently names
+  `almaty`, bounded by `[43.05, 76.55]` and `[43.90, 77.45]`. If every mapped selected place lies
+  in one area, the map opens on it; otherwise it fits matching event markers.
+- `MAP_DEFAULT_VIEW` sets the center and zoom when neither an area nor markers are available.
+  The deployment's current default is `[48.0, 68.0]`, zoom 5; changing it needs configuration,
+  not a template change.
 
 ## Local assumptions
 
