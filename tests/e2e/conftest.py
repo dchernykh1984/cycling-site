@@ -118,7 +118,11 @@ def switch_locale(page, locale):
     On mobile the navbar is collapsed; it is opened automatically before clicking.
     """
     open_navbar_if_collapsed(page)
-    page.locator(f"form:has(input[name='language'][value='{locale}']) button[type='submit']").first.click()
+    with page.expect_response(
+        lambda response: response.request.method == "POST" and response.url.endswith("/i18n/set_language/")
+    ):
+        page.locator(f"form:has(input[name='language'][value='{locale}']) button[type='submit']").first.click()
+    page.locator(f"html[lang='{locale}']").wait_for()
     page.wait_for_load_state("networkidle")
 
 

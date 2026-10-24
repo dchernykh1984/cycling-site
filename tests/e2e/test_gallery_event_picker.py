@@ -34,7 +34,10 @@ def _open(page, live_server, admin_user, path="/ru/gallery/albums/new/"):
 
 
 def _save(page):
-    page.locator('#album-form button[type="submit"]').click()
+    with page.expect_response(
+        lambda response: response.request.method == "POST" and "/gallery/albums/" in response.url
+    ):
+        page.locator('#album-form button[type="submit"]').click()
     page.wait_for_url("**/gallery/albums/*/edit/")
 
 
@@ -106,8 +109,7 @@ def test_removing_an_event_keeps_the_album_and_its_titles(page: Page, live_serve
     expect(page.locator("#gallery-selected-event")).to_contain_text("Gran Fondo")
     page.locator("#gallery-clear-event").click()
     expect(page.locator("#id_competition")).to_have_value("")
-    page.locator('#album-form button[type="submit"]').click()
-    page.wait_for_load_state()
+    _save(page)
     album.refresh_from_db()
     assert album.competition_id is None
     assert album.title == "My album"
