@@ -27,11 +27,11 @@ Photo albums at `/<lang>/gallery/`, linked from the navbar.
   image is reported and the rest of the batch is kept. An upload
   that would leave less than `GALLERY_DISK_RESERVE_MB` (200) free on the media disk -- shared with
   event posters, news pictures and protocols -- is refused.
-- **Pages**: `gallery_index` (newest album, others as tabs), `gallery_album`, `gallery_albums`
-  (all albums by cover), `gallery_photo` (one photo, arrow keys step through the album).
+- **Pages**: `gallery_index` (every album by its cover, newest first), `gallery_album` (one album,
+  the newest others as tabs), `gallery_photo` (one photo, arrow keys step through the album);
+  `gallery_albums` is the list's former address and redirects to the index.
 - **Event page**: `calendar_app/detail.html` lists the event's public albums.
-- **Search**: public albums are the `gallery` sitemap section; the index and the album list are in
-  `sections`.
+- **Search**: public albums are the `gallery` sitemap section; the index is in `sections`.
 
 Tests: `tests/test_gallery.py`, `tests/test_gallery_localization.py`,
 `tests/e2e/test_gallery_event_picker.py`. Specification: `specs/site/gallery.md`.
