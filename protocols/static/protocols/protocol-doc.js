@@ -24,6 +24,13 @@
   }
   var roots = [];
 
+  // A pressed chip says so to a screen reader (aria-pressed) and to the eye: "active" is the class
+  // Bootstrap and every skin draw a selected button with; the attribute alone draws nothing.
+  function press(button, on) {
+    button.setAttribute("aria-pressed", on ? "true" : "false");
+    button.classList.toggle("active", Boolean(on));
+  }
+
   function each(root, selector, fn) {
     Array.prototype.forEach.call(root.querySelectorAll(selector), fn);
   }
@@ -98,7 +105,7 @@
         root.querySelectorAll('.protocol-table thead th[data-set="' + button.dataset.set + '"]'),
         shown
       );
-      button.setAttribute("aria-pressed", on ? "true" : "false");
+      press(button, on);
     });
     stickColumns(root);
   }
@@ -270,10 +277,10 @@
       });
     });
     each(root, ".protocol-toggle", function (button) {
-      button.setAttribute("aria-pressed", state.toggles[button.dataset.toggleId] ? "true" : "false");
+      press(button, state.toggles[button.dataset.toggleId]);
     });
     each(root, ".protocol-groups [data-group-id]", function (button) {
-      button.setAttribute("aria-pressed", button.dataset.groupId === state.group ? "true" : "false");
+      press(button, button.dataset.groupId === state.group);
     });
     each(root, ".protocol-table", function (table) {
       each(table, "thead th[data-set]", function (th) {
@@ -286,7 +293,7 @@
     });
     root.classList.toggle("protocol-full", state.full);
     each(root, ".protocol-mode", function (button) {
-      button.setAttribute("aria-pressed", state.full ? "true" : "false");
+      press(button, state.full);
     });
     filter(root);
     layout(root);

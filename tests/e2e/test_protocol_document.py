@@ -919,3 +919,16 @@ def test_all_columns_brings_back_a_set_turned_off_while_every_column_shows(
     mode.click()  # now every column shows: back to what fits
     expect(mode).to_have_attribute("aria-pressed", "false")
     expect(_cell(page, "Anna", "lap1")).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_every_pressed_chip_is_drawn_pressed(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 390)
+    # "active" is what Bootstrap and the skins draw a selected button with; aria-pressed alone shows nothing.
+    states = page.locator(".protocol-panel button[aria-pressed]").evaluate_all(
+        "els => els.filter(e => !e.hidden)"
+        "  .map(e => [e.getAttribute('aria-pressed') === 'true', e.classList.contains('active')])"
+    )
+    assert states and all(pressed == active for pressed, active in states), states
+    assert any(pressed for pressed, _ in states) and not all(pressed for pressed, _ in states)
