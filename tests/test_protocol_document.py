@@ -233,6 +233,27 @@ def test_rows_carry_their_group_whatever_the_columns(client: Client, protocol):
     assert body.count('data-group-id="M40"') == 2
 
 
+def test_one_category_offers_no_filter(client: Client, protocol):
+    protocol.document = _document(
+        groups=[{"id": "M30", "label": "M30"}],
+        sections=[{"columns": [{"id": "name", "role": "name"}], "rows": [{"group": "M30", "cells": {"name": "Ann"}}]}],
+    )
+    protocol.save()
+    body = client.get(f"/ru/protocols/{protocol.pk}/").content.decode()
+    assert 'class="protocol-groups"' not in body
+    assert body.count('data-group-id="M30"') == 1  # the row keeps its group, no chip offers it
+
+
+def test_only_categories_with_riders_get_a_chip():
+    rows = [{"group": g, "cells": {"name": g}} for g in ("M30", "W")]
+    groups = [{"id": "M30"}, {"id": "M40"}, {"id": "W"}]
+    view = rendering.build(_document(groups=groups, sections=[{"columns": [{"id": "name"}], "rows": rows}]), [])
+    assert [g["id"] for g in view["groups"]] == ["M30", "W"]
+    only_one = [{"group": "M40", "cells": {"name": "x"}}]
+    view = rendering.build(_document(groups=groups, sections=[{"columns": [{"id": "name"}], "rows": only_one}]), [])
+    assert view["groups"] == []
+
+
 def test_nested_sections_pass_their_group_down():
     view = rendering.build(
         _document(
