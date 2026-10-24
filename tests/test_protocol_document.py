@@ -403,3 +403,16 @@ def test_sections_nested_too_deep_for_the_validator_are_refused():
         nested = {"type": "group", "sections": [nested]}
     with pytest.raises(DocumentError, match="nested deeper"):
         parse(json.dumps({"schema": 1, "sections": [nested]}).encode())
+
+
+def test_a_picture_with_a_broken_address_is_dropped_and_the_protocol_still_opens(client: Client, protocol):
+    protocol.document = _document(
+        header=[{"type": "html", "html": '<p>Sponsor</p><img src="https://[broken/foo.png">'}]
+    )
+    protocol.save()
+    for url in (f"/ru/protocols/{protocol.pk}/", f"/ru/protocols/{protocol.pk}/fragment/"):
+        response = client.get(url)
+        assert response.status_code == 200
+        body = response.content.decode()
+        assert "Sponsor" in body
+        assert "[broken" not in body
