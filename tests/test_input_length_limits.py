@@ -28,6 +28,7 @@ from django.test import SimpleTestCase
 from ninja import Schema
 
 from calendar_app.models import Competition, CompetitionComment, CompetitionMaterial
+from gallery.models import Album, Photo
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment
 from locations.models import Location
 from news.models import NewsArticle, NewsArticleComment
@@ -36,6 +37,7 @@ from registrations.models import CompetitionRegistration, RegistrationCategory, 
 FORM_MODULES = (
     "accounts.views",
     "calendar_app.forms",
+    "gallery.forms",
     "home.forms",
     "knowledge.forms",
     "locations.forms",
@@ -70,6 +72,8 @@ FORM_TARGETS = {
     "registrations.forms.EditRegistrationForm": (CompetitionRegistration, Team),
     "registrations.forms.RegistrationForm": (CompetitionRegistration, Team),
     "registrations.forms.RejectRegistrationForm": None,
+    "gallery.forms.AlbumForm": Album,
+    "gallery.forms.PhotoUploadForm": None,
 }
 
 # The same for request schemas -- the ones the routers actually accept a body into. A response
@@ -78,6 +82,9 @@ SCHEMA_TARGETS = {
     "api.endpoints.competitions.CompetitionIn": Competition,
     "api.endpoints.competitions.CompetitionPatchIn": Competition,
     "api.endpoints.content.DraftIn": DraftSubmission,
+    "api.endpoints.gallery.AlbumIn": Album,
+    "api.endpoints.gallery.AlbumPatchIn": Album,
+    "api.endpoints.gallery.PhotoPatchIn": Photo,
     "api.endpoints.content.DraftPatchIn": DraftSubmission,
     "api.endpoints.content.KnowledgeArticleIn": KnowledgeArticle,
     "api.endpoints.content.KnowledgeArticlePatchIn": KnowledgeArticle,
@@ -95,6 +102,8 @@ SCHEMA_TARGETS = {
 
 # A bounded column whose input is measured somewhere this test cannot see, with what does it.
 CHECKED_ELSEWHERE = {
+    ("api.endpoints.gallery.AlbumIn", "title"): "the page's AlbumForm (max_length 200), 422 naming title.<lang>",
+    ("api.endpoints.gallery.AlbumPatchIn", "title"): "the page's AlbumForm (max_length 200), 422 naming title.<lang>",
     ("api.endpoints.content.KnowledgeArticleIn", "title"): "_validate_knowledge_payload, localized 422",
     ("api.endpoints.content.KnowledgeArticleIn", "category"): "_validate_knowledge_payload, localized 422",
     ("api.endpoints.content.KnowledgeArticleIn", "locale"): "_validate_locale, against the choices",
