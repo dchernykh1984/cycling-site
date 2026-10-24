@@ -123,6 +123,26 @@
   display: table-cell;
 }
 
+/* On a phone the table is set tighter, so place, number, name and result fit the width:
+ * the skin's spacing and capitals stay everywhere else. */
+@media (max-width: 767.98px) {
+  .protocol-table {
+    font-size: 0.875rem;
+  }
+  .protocol-table th,
+  .protocol-table td {
+    padding: 0.3rem 0.25rem;
+  }
+  .protocol-table th {
+    font-size: 0.75rem;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+  .protocol-table td.role-name {
+    min-width: 0;
+  }
+}
+
 /* A phone shows the results first: the group chips and the switches each keep to one row
  * that scrolls sideways, instead of filling the screen above the table. */
 @media (max-width: 767.98px) {
