@@ -62,12 +62,14 @@ table needs a change in the generator only; the site knows nothing of laps, atte
 
 ### Story 3 -- Read a drawn protocol on a phone (P1)
 
-1. **Given** any screen, phone or desktop, **Then** each table fits its box: while it is wider,
+1. **Given** any screen, phone or desktop, **Then** every table fits its box: while one is wider,
    the least important column still shown is left out -- the highest priority number (the
    document ranks columns 1 to 9; without a rank, place, number, name and result are 1 and the rest
    2; a table with no 1 keeps its first three). Columns of one priority are one set, left out
    together or not at all -- every lap, never laps 1 to 4 without 5 and 6; priority 1 always
-   stays. The page never scrolls sideways, and a button on each row (keyboard-reachable)
+   stays. The choice is one for the whole protocol -- every table measured with every row, whatever
+   the category or the search hides -- so switching category or searching never changes the columns
+   or the chips. The page never scrolls sideways, and a button on each row (keyboard-reachable)
    opens what was left out. A row of chips, "Columns:", names each set in the order of the columns
    (a set of several is named from its headings, "Lap 1-6"): a chip is drawn pressed while its set
    shows, and a tap shows or leaves out that set and no other -- from the first tap every set keeps
