@@ -37,8 +37,8 @@ this file is what an agent needs on top of it.
 
 - To recommend a skin once to readers in any other one, set `SKIN_OFFER` in the settings to its
   key (now `DEFAULT_SKIN`): a line under the menu offers it until a page has been drawn in it, then
-  never again for that reader (`skin:<key>` among a member's `dismissed_hints`, a guest's
-  `skin_offer` cookie). A new key starts a new offer for everyone not drawn in it yet.
+  never again for that reader (a member's `tried_skins`, a guest's `skin_offer` cookie). A new
+  key starts a new offer for everyone not drawn in it yet.
 
 ## When a change to the site touches a skin
 

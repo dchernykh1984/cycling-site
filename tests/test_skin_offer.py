@@ -3,7 +3,7 @@
 from django.test import TestCase, override_settings
 
 from accounts.models import User
-from cycling_site.skins import OFFER_COOKIE, offer_marker
+from cycling_site.skins import OFFER_COOKIE
 
 OFFER = 'id="skin-offer"'
 
@@ -27,7 +27,8 @@ class SkinOfferTests(TestCase):
         user.save(update_fields=["theme"])
         self.assertNotContains(self._page(), OFFER)
         user.refresh_from_db()
-        self.assertIn(offer_marker("orange"), user.dismissed_hints)
+        self.assertEqual(user.tried_skins, ["orange"])
+        self.assertEqual(user.dismissed_hints, [])  # the setup hints' list stays theirs
         # Back in dark: tried once, never asked again.
         user.theme = "dark"
         user.save(update_fields=["theme"])
@@ -69,3 +70,9 @@ class SkinOfferTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotIn(OFFER_COOKIE, response.cookies)
         self.assertNotIn(OFFER_COOKIE, self.client.get("/robots.txt").cookies)
+
+    def test_a_form_post_or_a_json_call_writes_nothing(self):
+        user = self._member("orange")
+        self.client.post("/ru/accounts/theme/", data="{}", content_type="application/json")
+        user.refresh_from_db()
+        self.assertEqual(user.tried_skins, [])

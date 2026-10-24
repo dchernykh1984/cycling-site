@@ -39,9 +39,8 @@ behind the moon/sun button.
 6. **Given** `SKIN_OFFER` names a skin (now `DEFAULT_SKIN`, UBT Almaty) and a reader is in another
    one, **Then** a line under the menu asks them to try it, with a button that switches to it.
    Once a page has been drawn in that skin -- by the button or the menu -- the line never shows to
-   them again, whatever skin they go back to: a member's profile keeps it with their dismissed
-   setup hints (`skin:<key>`), a guest's `skin_offer` cookie (set on pages only, never on the API
-   or files). A first visit opens in the skin on offer and is never asked. A new skin worth
+   them again, whatever skin they go back to: a member's profile keeps it (`tried_skins`), a
+   guest's `skin_offer` cookie -- noted on a page read, never on the API, a file or a form post. A first visit opens in the skin on offer and is never asked. A new skin worth
    recommending is a new `SKIN_OFFER`.
 
 ### Story 2 -- A designer adds a skin (P1)

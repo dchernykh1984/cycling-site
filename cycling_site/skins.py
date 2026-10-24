@@ -124,15 +124,11 @@ def chosen(request) -> Skin:
     return resolve(request.COOKIES.get(COOKIE))
 
 
-# A skin the site asks readers in any other skin to try, once (settings.SKIN_OFFER): until the page
+# A skin the site asks readers in any other skin to try, once (settings.SKIN_OFFER): until a page
 # has been drawn in it -- by the offer's button or the skin menu -- after which the reader may go back
-# to theirs and is not asked again. A member's "been there" is kept in the profile with the setup
-# hints they are done with, a guest's in a cookie. A new skin to recommend is a new SKIN_OFFER.
+# to theirs and is not asked again. A member's "been there" is kept in the profile (tried_skins), a
+# guest's in a cookie. A new skin to recommend is a new SKIN_OFFER.
 OFFER_COOKIE = "skin_offer"
-
-
-def offer_marker(key: str) -> str:
-    return f"skin:{key}"
 
 
 def _offer_key() -> str:
@@ -143,7 +139,7 @@ def _offer_key() -> str:
 def _has_tried(request, key: str) -> bool:
     user = getattr(request, "user", None)
     if user is not None and user.is_authenticated:
-        return offer_marker(key) in (user.dismissed_hints or [])
+        return key in (user.tried_skins or [])
     return request.COOKIES.get(OFFER_COOKIE) == key
 
 
@@ -156,16 +152,17 @@ def offered(request) -> Skin | None:
 
 
 def _remember_offer(request, response, skin: Skin) -> None:
+    # Only a page a person reads: a cookie on a picture, an API answer or the sitemap would keep
+    # Cloudflare from caching them, and a write on every form post or JSON call would cost a query.
+    page = request.method == "GET" and response.get("Content-Type", "").startswith("text/html")
     key = _offer_key()
-    if not key or skin.key != key or _has_tried(request, key):
+    if not page or not key or skin.key != key or _has_tried(request, key):
         return
     user = getattr(request, "user", None)
     if user is not None and user.is_authenticated:
-        user.dismissed_hints = [*(user.dismissed_hints or []), offer_marker(key)]
-        user.save(update_fields=["dismissed_hints"])
-    elif response.get("Content-Type", "").startswith("text/html"):
-        # Only on a page a person reads: a cookie on a picture, an API answer or the sitemap would
-        # keep Cloudflare from caching them, for robots and programs that never send it back.
+        user.tried_skins = [*(user.tried_skins or []), key]
+        user.save(update_fields=["tried_skins"])
+    else:
         response.set_cookie(OFFER_COOKIE, key, max_age=365 * 24 * 3600, samesite="Lax")
 
 
