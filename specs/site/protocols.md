@@ -1,7 +1,7 @@
 # Site Specification: Results protocols
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-23
+**Verified against**: `main` on 2026-10-24
 **Code**: `protocols/` (models, views, `protocols/document.py`, `protocols/rendering.py`),
 `protocols/static/protocols/`, `protocols/schema/protocol-document-v1.json`, `api/endpoints/protocols.py`
 **Tests**: `protocols/tests.py`, `tests/test_protocol_images.py`, `tests/test_protocol_document.py`,
@@ -68,7 +68,9 @@ table needs a change in the generator only; the site knows nothing of laps, atte
    Tablets show priority 1-2, desktops everything; "Full table" shows every column, scrolling
    inside the table, with the place, number and name columns kept in view. Group chips and
    column switches keep to one scrolling row on a phone; times stay on one line.
-2. **Given** a reader, **Then** they search by name or number, filter by the document's groups (in
+2. **Given** a reader, **Then** they search every field of a row -- name, number, team, city and
+   the rest, not times or second lines -- in Latin or Cyrillic whichever the protocol uses (both
+   are folded to one script, the rule the gallery's event picker uses), filter by the document's groups (in
    every table, whatever its layout), and switch the document's toggled columns; notes such as the
    reasons for a DSQ are always visible under their row.
 3. **Given** a live drawn protocol, **Then** a newer upload swaps in its tables and keeps the reader's
@@ -110,6 +112,7 @@ table needs a change in the generator only; the site knows nothing of laps, atte
   inline (as FR-PRO-003); cell links are http(s), `nofollow noopener`.
 - **FR-PRO-010**: `protocols/<pk>/fragment/` returns the drawn document with the hash, live flag and
   form of the row it was drawn from (`X-Protocol-*`); a protocol without a document answers empty.
+- **FR-PRO-011**: A column with no heading and no value in any row is not drawn.
 
 ## Key Entities
 
