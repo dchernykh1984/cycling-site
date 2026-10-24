@@ -223,6 +223,7 @@
       }
     });
     // Innermost sections first, so a section whose children all emptied out empties too.
+    var reappeared = false;
     var sections = Array.prototype.slice.call(root.querySelectorAll(".protocol-section")).reverse();
     sections.forEach(function (section) {
       var rows = section.querySelectorAll(".protocol-row");
@@ -230,8 +231,10 @@
       var any = Array.prototype.some.call(rows, function (row) {
         return !row.classList.contains("is-filtered");
       });
+      if (any && section.classList.contains("is-empty")) reappeared = true;
       section.classList.toggle("is-empty", !any);
     });
+    return reappeared;
   }
 
   function apply(root) {
@@ -340,7 +343,9 @@
       input.value = state.search;
       input.addEventListener("input", function () {
         state.search = input.value;
-        filter(root);
+        // A table the search had hidden when the columns were last fitted was never measured:
+        // fit it as it shows again, or it comes back at its full width.
+        if (filter(root)) layout(root);
       });
     });
     each(root, ".protocol-mode", function (button) {

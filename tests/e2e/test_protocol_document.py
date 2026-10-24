@@ -816,3 +816,17 @@ def test_the_people_who_ran_the_race_take_one_quiet_line(page: Page, live_server
     )
     assert len(set(tops)) == 1, tops
     expect(page.locator(".protocol-header .protocol-field--weather")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_table_the_search_hid_is_fitted_when_it_shows_again(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 390)
+    search = page.get_by_role("searchbox")
+    search.fill("nobody")
+    expect(page.locator(".protocol-section")).to_be_hidden()
+    page.get_by_role("button", name="Splits").click()  # columns laid out again while it is hidden
+    search.fill("")
+    expect(page.locator(".protocol-section")).to_be_visible()
+    wrap = page.locator(".protocol-table-wrap").first
+    assert wrap.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
