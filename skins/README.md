@@ -74,12 +74,13 @@ takes a skin's colours. To restyle it further, target these classes from `skin.c
 | Class | What it is |
 | --- | --- |
 | `.protocol-doc` | the whole protocol |
-| `.protocol-header`, `.protocol-footer` | lines above and below the tables |
+| `.protocol-header`, `.protocol-footer` | the conditions above the tables (in a box), the officials below them (one line) |
 | `.protocol-field`, `.protocol-field--<key>` | one labelled line (`weather`, `referee`, ...) |
 | `.protocol-panel`, `.protocol-search`, `.protocol-groups`, `.protocol-groups-label`, `.protocol-toggle`, `.protocol-mode` | search, category chips and their "Category:" label, column switches, the all-columns button |
 | `.protocol-table`, `.protocol-group-row` | a table and its row of column groups |
 | `.protocol-row`, `.protocol-row.status-<s>` | a competitor's row; `<s>` is `dnf`, `dns`, `dsq`, ... |
 | `.protocol-cell-sub` | a cell's second lines (gap, laps) |
+| `.protocol-line` | a second line a switch shows and hides (a lap's statistics) |
 | `.protocol-note` | the always-visible note under a row (reasons for a DSQ) |
 | `.protocol-row-expand`, `.protocol-details` | the button and the row of columns that do not fit |
 
