@@ -856,3 +856,47 @@ def test_columns_of_one_priority_are_left_out_together(page: Page, live_server, 
     shown = [row.locator(f'td[data-col="{2 + i}"]').is_visible() for i in range(len(laps))]
     # Every lap or none: never laps 1 to 4 with 5 and up tucked away.
     assert len(set(shown)) == 1, shown
+
+
+def _set_chip(page: Page, label: str):
+    return page.get_by_role("group", name=_tr("Columns")).get_by_role("button", name=label, exact=True)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_chip_for_each_set_of_columns_with_all_columns_last(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 1280)
+    chips = page.get_by_role("group", name=_tr("Columns")).get_by_role("button")
+
+    def labels():  # the words, not as a skin draws them (some skins set buttons in capitals)
+        return chips.evaluate_all("els => els.filter(e => !e.hidden).map(e => e.textContent.trim())")
+
+    assert labels()[:3] == ["Place", "Bib", "Name"]
+    assert _tr("All columns") not in labels()  # nothing is left out on a wide screen
+    team = _set_chip(page, "Team")
+    expect(team).to_have_attribute("aria-pressed", "true")
+    team.click()
+    expect(team).to_have_attribute("aria-pressed", "false")
+    expect(_cell(page, "Anna", "team")).to_be_hidden()
+    # A set turned off is something to bring back: "All columns" now shows, last.
+    mode = page.locator(".protocol-mode")
+    expect(mode).to_be_visible()
+    assert labels()[-1] == _tr("All columns")
+    mode.click()
+    expect(_cell(page, "Anna", "team")).to_be_visible()
+    expect(team).to_have_attribute("aria-pressed", "true")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_set_turned_on_by_hand_stays_even_where_it_does_not_fit(page: Page, live_server, approved_competition):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, 390)
+    expect(_cell(page, "Anna", "lap1")).to_be_hidden()
+    laps = page.locator('.protocol-column-set[data-set="p3"]')
+    expect(laps).to_have_attribute("aria-pressed", "false")
+    laps.click()
+    expect(laps).to_have_attribute("aria-pressed", "true")
+    for column in ("lap1", "year", "place", "name", "result"):
+        expect(_cell(page, "Anna", column)).to_be_visible()
+    _no_page_scroll(page)
+    assert page.locator(".protocol-table-wrap").first.evaluate("el => el.scrollWidth > el.clientWidth")

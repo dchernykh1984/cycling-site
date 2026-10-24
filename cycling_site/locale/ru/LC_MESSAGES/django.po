@@ -3564,6 +3564,10 @@ msgid "All categories"
 msgstr "Все категории"
 
 #: protocols/templates/protocols/_document.html
+msgid "Columns"
+msgstr "Столбцы"
+
+#: protocols/templates/protocols/_document.html
 msgid "All columns"
 msgstr "Все столбцы"
 

@@ -8,7 +8,8 @@
 (function () {
   "use strict";
 
-  var state = { search: "", group: "", toggles: {}, full: false };
+  // columns: the sets of columns the reader turned on (true) or off (false) by hand.
+  var state = { search: "", group: "", toggles: {}, columns: {}, full: false };
   // The letters the server folds to Latin (cycling_site/text_search.py), so a query in either
   // script matches a name written in either: "Che" and its Cyrillic spelling find "Chernykh".
   var foldTable = {};
@@ -91,6 +92,14 @@
     each(root, ".protocol-mode", function (button) {
       button.hidden = !somethingLeftOut(root);
     });
+    // A set's chip is pressed while its columns show, whether the reader or the width decided.
+    each(root, ".protocol-column-set", function (button) {
+      var on = Array.prototype.some.call(
+        root.querySelectorAll('.protocol-table thead th[data-set="' + button.dataset.set + '"]'),
+        shown
+      );
+      button.setAttribute("aria-pressed", on ? "true" : "false");
+    });
     stickColumns(root);
   }
 
@@ -111,22 +120,22 @@
   function fitColumns(table) {
     var wrap = table.closest(".protocol-table-wrap");
     if (state.full || !wrap || wrap.scrollWidth <= wrap.clientWidth + 1) return;
-    // Columns of one priority are one set -- every lap, say -- left out whole or not at all, so
-    // the reader never sees laps 1 to 4 with 5 and 6 tucked away.
+    // Columns of one set -- every lap, say -- are left out whole or not at all, so the reader
+    // never sees laps 1 to 4 with 5 and 6 tucked away. A set the reader turned on stays.
     var sets = {};
     Array.prototype.forEach.call(table.querySelectorAll("thead th[data-col]"), function (th) {
-      var priority = priorityOf(th);
-      if (priority > 1 && shown(th) && !th.classList.contains("prio-forced")) {
-        (sets[priority] = sets[priority] || []).push(th);
+      var free = !th.classList.contains("prio-forced") && !th.classList.contains("col-on");
+      if (priorityOf(th) > 1 && shown(th) && free) {
+        var key = th.dataset.set || "p" + priorityOf(th);
+        (sets[key] = sets[key] || []).push(th);
       }
     });
     var order = Object.keys(sets)
-      .map(Number)
-      .sort(function (a, b) {
-        return b - a;
+      .map(function (key) {
+        return sets[key];
       })
-      .map(function (priority) {
-        return sets[priority];
+      .sort(function (a, b) {
+        return priorityOf(b[0]) - priorityOf(a[0]);
       });
     // The widths are measured once and summed, then checked against the real layout: laying a
     // table of thousands of rows out again for every set would take seconds.
@@ -156,6 +165,7 @@
   // "All columns" is offered only while there is something to bring back: a column left out, or,
   // with every column shown, a table wider than its box.
   function somethingLeftOut(root) {
+    if (root.querySelector(".protocol-table .col-off")) return true;
     if (!state.full) return !!root.querySelector(".protocol-table .prio-off");
     return Array.prototype.some.call(root.querySelectorAll(".protocol-table-wrap"), function (wrap) {
       return wrap.scrollWidth > wrap.clientWidth + 1;
@@ -265,6 +275,15 @@
     each(root, ".protocol-groups [data-group-id]", function (button) {
       button.setAttribute("aria-pressed", button.dataset.groupId === state.group ? "true" : "false");
     });
+    each(root, ".protocol-table", function (table) {
+      each(table, "thead th[data-set]", function (th) {
+        var choice = state.columns[th.dataset.set];
+        each(table, '[data-col="' + th.dataset.col + '"]', function (cell) {
+          cell.classList.toggle("col-off", choice === false);
+          cell.classList.toggle("col-on", choice === true);
+        });
+      });
+    });
     root.classList.toggle("protocol-full", state.full);
     each(root, ".protocol-mode", function (button) {
       button.setAttribute("aria-pressed", state.full ? "true" : "false");
@@ -364,9 +383,24 @@
         if (filter(root)) layout(root);
       });
     });
+    var sets = {};
+    each(root, ".protocol-column-set", function (button) {
+      sets[button.dataset.set] = true;
+      button.addEventListener("click", function () {
+        // What the reader turns on stays on even where it no longer fits, and what they turn
+        // off stays off, until "All columns".
+        state.columns[button.dataset.set] = button.getAttribute("aria-pressed") !== "true";
+        apply(root);
+      });
+    });
+    Object.keys(state.columns).forEach(function (id) {
+      if (!sets[id]) delete state.columns[id];
+    });
     each(root, ".protocol-mode", function (button) {
       button.addEventListener("click", function () {
+        // Every column back, the reader's own choices included; pressed again, the width decides.
         state.full = !state.full;
+        state.columns = {};
         apply(root);
       });
     });

@@ -68,7 +68,11 @@ table needs a change in the generator only; the site knows nothing of laps, atte
    2; a table with no 1 keeps its first three). Columns of one priority are one set, left out
    together or not at all -- every lap, never laps 1 to 4 without 5 and 6; priority 1 always
    stays. The page never scrolls sideways, and a button on each row (keyboard-reachable)
-   opens what was left out. "All columns" -- offered only while something is left out -- shows
+   opens what was left out. A row of chips, "Columns:", names each set in the order of the columns
+   (a set of several is named from its headings, "Lap 1-6"): a chip is pressed while its set shows,
+   and a tap shows or leaves out that set whatever the width -- a set turned on stays even where
+   it no longer fits, and the table then scrolls inside its box. "All columns", the last chip and
+   offered only while something is left out by the width or by hand, shows
    every column, scrolling inside the table, with the place, number and name columns kept in view
    -- where they stay
    however often a filter or a switch is pressed while the table is scrolled. Group chips and
