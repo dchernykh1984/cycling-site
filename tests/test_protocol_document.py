@@ -261,21 +261,30 @@ def test_primary_roles_default_to_priority_one_and_others_to_two():
     assert [c["priority"] for c in view["sections"][0]["table"]["columns"]] == [1, 2]
 
 
-def test_search_looks_in_names_and_numbers_only_when_there_are_such_columns():
-    view = rendering.build(_document(), [])
-    assert view["sections"][0]["table"]["rows"][1]["search"] == "bob"
+def test_search_looks_in_every_field_but_times_and_second_lines():
     view = rendering.build(
         _document(
             sections=[
                 {
-                    "columns": [{"id": "a"}, {"id": "b"}],
-                    "rows": [{"cells": {"a": "X", "b": {"text": "Y", "sub": ["Z"]}}}],
+                    "columns": [{"id": c} for c in ("bib", "name", "team", "city", "lap", "result")],
+                    "rows": [
+                        {
+                            "cells": {
+                                "bib": "23",
+                                "name": "Ann Lee",
+                                "team": "Team X",
+                                "city": "Almaty",
+                                "lap": "0:12:23.4",
+                                "result": {"text": "1:23:45", "sub": ["(+0:02.0)", "(2)"]},
+                            }
+                        }
+                    ],
                 }
             ]
         ),
         [],
     )
-    assert view["sections"][0]["table"]["rows"][0]["search"] == "x y z"
+    assert view["sections"][0]["table"]["rows"][0]["search"] == "23 ann lee team x almaty"
 
 
 def test_header_groups_merge_neighbouring_columns():

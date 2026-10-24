@@ -3571,3 +3571,7 @@ msgstr "Толығырақ"
 #: protocols/templates/protocols/_document.html
 msgid "Original protocol"
 msgstr "Бастапқы хаттама"
+
+#: protocols/templates/protocols/_document.html
+msgid "Search the protocol"
+msgstr "Хаттама бойынша іздеу"
