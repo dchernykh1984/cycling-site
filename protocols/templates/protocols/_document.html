@@ -15,8 +15,9 @@
   <div class="protocol-panel mb-3" hidden lang="{{ page_language }}">
     <input type="search" class="form-control form-control-sm protocol-search" data-fold="{{ doc.fold }}" placeholder="{% trans 'Search the protocol' %}" aria-label="{% trans 'Search the protocol' %}">
     {% if doc.groups %}
-    <div class="protocol-groups" role="group" aria-label="{% trans 'Groups' %}">
-      <button type="button" class="btn btn-sm btn-outline-secondary" data-group-id="" aria-pressed="true">{% trans "All" %}</button>
+    <div class="protocol-groups" role="group" aria-labelledby="protocol-groups-label">
+      <span class="protocol-groups-label small text-body-secondary align-self-center text-nowrap" id="protocol-groups-label">{% trans "Category" %}:</span>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-group-id="" aria-pressed="true">{% trans "All categories" %}</button>
       {% for group in doc.groups %}<button type="button" class="btn btn-sm btn-outline-secondary" data-group-id="{{ group.id }}" aria-pressed="false" lang="{{ doc.lang|default:page_language }}">{{ group.label|default:group.id }}</button>{% endfor %}
     </div>
     {% endif %}

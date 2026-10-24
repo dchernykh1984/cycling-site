@@ -76,7 +76,7 @@ takes a skin's colours. To restyle it further, target these classes from `skin.c
 | `.protocol-doc` | the whole protocol |
 | `.protocol-header`, `.protocol-footer` | lines above and below the tables |
 | `.protocol-field`, `.protocol-field--<key>` | one labelled line (`weather`, `referee`, ...) |
-| `.protocol-panel`, `.protocol-search`, `.protocol-groups`, `.protocol-toggle`, `.protocol-mode` | search, group chips, column switches, the full-table button |
+| `.protocol-panel`, `.protocol-search`, `.protocol-groups`, `.protocol-groups-label`, `.protocol-toggle`, `.protocol-mode` | search, category chips and their "Category:" label, column switches, the all-columns button |
 | `.protocol-table`, `.protocol-group-row` | a table and its row of column groups |
 | `.protocol-row`, `.protocol-row.status-<s>` | a competitor's row; `<s>` is `dnf`, `dns`, `dsq`, ... |
 | `.protocol-cell-sub` | a cell's second lines (gap, laps) |

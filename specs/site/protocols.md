@@ -74,9 +74,10 @@ table needs a change in the generator only; the site knows nothing of laps, atte
    are folded to one script, the rule the gallery's event picker uses), filter by the document's groups (in
    every table, whatever its layout), and switch the document's toggled columns; notes such as the
    reasons for a DSQ are always visible under their row. The group filter offers only groups that
-   hold rows, and appears only when there are at least two of them.
+   hold rows, and appears only when there are at least two of them; it is labelled "Category:" and
+   its first chip, "All categories", shows every row.
 3. **Given** a live drawn protocol, **Then** a newer upload swaps in its tables and keeps the reader's
-   search, group and switches by their ids; a group that disappeared falls back to "All".
+   search, group and switches by their ids; a group that disappeared falls back to "All categories".
 4. **Given** a protocol in another language than the page, **Then** the page says which.
 
 ### Edge Cases

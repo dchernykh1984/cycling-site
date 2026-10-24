@@ -2978,6 +2978,7 @@ msgstr "Өз тіліңізде ұқсас мақаланы іздеу"
 #: knowledge/templates/knowledge/submit.html:33
 #: registrations/templates/registrations/register.html:157
 #: tests/test_profile_registration_actions.py:283
+#: protocols/templates/protocols/_document.html
 msgid "Category"
 msgstr "Санат"
 
@@ -3557,8 +3558,8 @@ msgid "Search by name or number"
 msgstr "Аты немесе нөмірі бойынша іздеу"
 
 #: protocols/templates/protocols/_document.html
-msgid "Groups"
-msgstr "Топтар"
+msgid "All categories"
+msgstr "Барлық санаттар"
 
 #: protocols/templates/protocols/_document.html
 msgid "Full table"
