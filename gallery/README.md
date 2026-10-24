@@ -31,6 +31,10 @@ Photo albums at `/<lang>/gallery/`, linked from the navbar.
   the newest others as tabs), `gallery_photo` (one photo, arrow keys step through the album);
   `gallery_albums` is the list's former address and redirects to the index.
 - **Event page**: `calendar_app/detail.html` lists the event's public albums.
+- **API** (`api/endpoints/gallery.py`, `/api/v1/gallery/`): anybody reads the albums and photos
+  they could see on the pages; admins and the owner create, change and delete albums, upload photos
+  (multipart `photos`, the same limits) and caption them. Both doors share `AlbumForm`,
+  `PhotoUploadForm` and `gallery/actions.py`, so they cannot drift apart.
 - **Search**: public albums are the `gallery` sitemap section; the index is in `sections`.
 
 Tests: `tests/test_gallery.py`, `tests/test_gallery_localization.py`,
