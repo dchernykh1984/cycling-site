@@ -438,3 +438,56 @@ def test_secondary_text_stays_legible_in_every_skin(page: Page, live_server, app
         page.locator("thead .protocol-cell-sub"),
     ):
         assert legibility(locator) >= 4.5, (theme, locator)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_table_of_one_switched_column_shows_it_on_a_phone(page: Page, live_server, approved_competition):
+    document = parse(
+        json.dumps(
+            {
+                "schema": 1,
+                "toggles": [{"id": "t", "label": "T", "default": True}],
+                "sections": [
+                    {
+                        "columns": [{"id": "result", "label": "Time", "toggle": "t"}],
+                        "rows": [{"cells": {"result": "1:00"}}],
+                    }
+                ],
+            }
+        ).encode()
+    )
+    protocol = _protocol(approved_competition, document)
+    _open(page, live_server, protocol, 390)
+    expect(page.locator('.protocol-row td[data-col="0"]')).to_be_visible()
+    expect(page.locator(".protocol-row-expand")).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_switching_off_the_only_main_column_brings_others_on_a_phone(page: Page, live_server, approved_competition):
+    document = parse(
+        json.dumps(
+            {
+                "schema": 1,
+                "toggles": [{"id": "t", "label": "T", "default": True}],
+                "sections": [
+                    {
+                        "columns": [
+                            {"id": "result", "label": "Time", "role": "result", "toggle": "t"},
+                            {"id": "team", "label": "Team"},
+                            {"id": "city", "label": "City"},
+                        ],
+                        "rows": [{"cells": {"result": "1:00", "team": "Team A", "city": "Almaty"}}],
+                    }
+                ],
+            }
+        ).encode()
+    )
+    protocol = _protocol(approved_competition, document)
+    _open(page, live_server, protocol, 390)
+    row = page.locator(".protocol-row")
+    expect(row.locator('td[data-col="0"]')).to_be_visible()
+    expect(row.locator('td[data-col="1"]')).to_be_hidden()
+    page.get_by_role("button", name="T", exact=True).click()
+    expect(row.locator('td[data-col="0"]')).to_be_hidden()
+    expect(row.locator('td[data-col="1"]')).to_be_visible()
+    expect(row.locator('td[data-col="2"]')).to_be_visible()

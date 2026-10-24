@@ -440,3 +440,17 @@ def test_an_unknown_status_is_drawn_as_other():
     )
     rows = view["sections"][0]["table"]["rows"]
     assert [r["status"] for r in rows] == ["other", "dsq"]
+
+
+def test_the_fallback_columns_are_chosen_among_those_switched_on():
+    one_switched_on = _document(
+        toggles=[{"id": "t", "default": True}],
+        sections=[{"columns": [{"id": "result", "label": "Time", "toggle": "t"}], "rows": []}],
+    )
+    assert rendering.build(one_switched_on, [])["sections"][0]["table"]["columns"][0]["priority"] == 1
+    off_first = _document(
+        toggles=[{"id": "t", "default": False}],
+        sections=[{"columns": [{"id": "a", "toggle": "t"}, {"id": "b"}, {"id": "c"}], "rows": []}],
+    )
+    priorities = [c["priority"] for c in rendering.build(off_first, [])["sections"][0]["table"]["columns"]]
+    assert priorities == [2, 1, 1]
