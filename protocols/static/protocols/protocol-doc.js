@@ -100,12 +100,19 @@
       button.hidden = !somethingLeftOut(root);
     });
     // A set's chip is pressed while its columns show, whether the reader or the width decided.
+    var pressed = [];
     each(root, ".protocol-column-set", function (button) {
       var on = Array.prototype.some.call(
         root.querySelectorAll('.protocol-table thead th[data-set="' + button.dataset.set + '"]'),
         shown
       );
       press(button, on);
+      if (on) pressed.push(button);
+    });
+    // The last set shown cannot be turned off: an empty table would bring other columns back on
+    // its own, the very thing a chip must not do to columns not its own.
+    each(root, ".protocol-column-set", function (button) {
+      button.disabled = pressed.length === 1 && pressed[0] === button;
     });
     stickColumns(root);
   }
@@ -394,8 +401,15 @@
     each(root, ".protocol-column-set", function (button) {
       sets[button.dataset.set] = true;
       button.addEventListener("click", function () {
-        // What the reader turns on stays on even where it no longer fits, and what they turn
-        // off stays off, until "All columns".
+        // From the first tap the reader decides: every set keeps what it shows now, so a tap
+        // changes its own columns and no other -- left to the width, hiding the names brought the
+        // laps out, and turning the laps on put the numbers away. A table that no longer fits
+        // scrolls in its box; "All columns" shows every one, and pressed again, fits once more.
+        each(root, ".protocol-column-set", function (chip) {
+          if (!(chip.dataset.set in state.columns)) {
+            state.columns[chip.dataset.set] = chip.getAttribute("aria-pressed") === "true";
+          }
+        });
         state.columns[button.dataset.set] = button.getAttribute("aria-pressed") !== "true";
         apply(root);
       });

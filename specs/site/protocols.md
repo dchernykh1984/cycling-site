@@ -69,9 +69,10 @@ table needs a change in the generator only; the site knows nothing of laps, atte
    together or not at all -- every lap, never laps 1 to 4 without 5 and 6; priority 1 always
    stays. The page never scrolls sideways, and a button on each row (keyboard-reachable)
    opens what was left out. A row of chips, "Columns:", names each set in the order of the columns
-   (a set of several is named from its headings, "Lap 1-6"): a chip is pressed while its set shows,
-   and a tap shows or leaves out that set whatever the width -- a set turned on stays even where
-   it no longer fits, and the table then scrolls inside its box. "All columns", the last chip and
+   (a set of several is named from its headings, "Lap 1-6"): a chip is drawn pressed while its set
+   shows, and a tap shows or leaves out that set and no other -- from the first tap every set keeps
+   what it shows, the width no longer moves any, and a table that no longer fits scrolls inside its
+   box; the last set shown cannot be turned off. "All columns", the last chip and
    offered only while something is left out by the width or by hand, shows
    every column, scrolling inside the table, with the place, number and name columns kept in view
    -- where they stay

@@ -932,3 +932,29 @@ def test_every_pressed_chip_is_drawn_pressed(page: Page, live_server, approved_c
     )
     assert states and all(pressed == active for pressed, active in states), states
     assert any(pressed for pressed, _ in states) and not all(pressed for pressed, _ in states)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [390, 1280])
+def test_a_chip_changes_its_own_columns_and_no_other(page: Page, live_server, approved_competition, width):
+    protocol = _protocol(approved_competition)
+    _open(page, live_server, protocol, width)
+    heads = page.locator(".protocol-table").first.locator("thead th[data-set]")
+
+    def shown():
+        return heads.evaluate_all("ths => ths.map(th => [th.dataset.set, getComputedStyle(th).display !== 'none'])")
+
+    chips = page.locator(".protocol-column-set")
+    for i in range(chips.count()):
+        chip = chips.nth(i)
+        own = chip.get_attribute("data-set")
+        if chip.is_disabled():
+            # The one set left on stays on: the table is never emptied.
+            assert chips.evaluate_all("els => els.filter(e => e.ariaPressed === 'true').length") == 1
+            continue
+        before = shown()
+        chip.click()
+        after = shown()
+        changed = {s for (s, a), (_, b) in zip(before, after, strict=True) if a != b}
+        assert changed == {own}, (own, changed)
+        expect(chip).to_have_attribute("aria-pressed", "true" if dict(after)[own] else "false")
