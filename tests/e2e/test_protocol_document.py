@@ -830,3 +830,23 @@ def test_a_table_the_search_hid_is_fitted_when_it_shows_again(page: Page, live_s
     expect(page.locator(".protocol-section")).to_be_visible()
     wrap = page.locator(".protocol-table-wrap").first
     assert wrap.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [390, 1280])
+def test_columns_of_one_priority_are_left_out_together(page: Page, live_server, approved_competition, width):
+    laps = [f"lap{i}" for i in range(1, 9)]
+    columns = [
+        {"id": "place", "label": "Place", "role": "place"},
+        {"id": "name", "label": "Name", "role": "name"},
+        *({"id": lap, "label": f"Lap {lap[3:]} with a long heading", "priority": 5} for lap in laps),
+        {"id": "result", "label": "Result", "role": "result"},
+    ]
+    cells = {"place": "1", "name": "Anna", "result": "1:21:38.8", **{lap: "00:13:16.5" for lap in laps}}
+    document = _document(groups=[], toggles=[], sections=[{"columns": columns, "rows": [{"cells": cells}]}])
+    protocol = _protocol(approved_competition, document)
+    _open(page, live_server, protocol, width)
+    row = page.locator(".protocol-row")
+    shown = [row.locator(f'td[data-col="{2 + i}"]').is_visible() for i in range(len(laps))]
+    # Every lap or none: never laps 1 to 4 with 5 and up tucked away.
+    assert len(set(shown)) == 1, shown
