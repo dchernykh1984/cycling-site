@@ -5,8 +5,7 @@
 
 {% block content %}
 {% comment %}One album at a time: its year as the heading, the newest albums as tabs above the photos,
-"View more" for the rest. The navbar's "Gallery" opens the newest album; /gallery/albums/<pk>/ opens
-any other. Each card opens the photo's own page.{% endcomment %}
+"View more" back to the gallery, which lists every album. Each card opens the photo's own page.{% endcomment %}
 <section class="gallery-page">
   <header class="gallery-head">
     <div class="gallery-head-main">
@@ -33,7 +32,7 @@ any other. Each card opens the photo's own page.{% endcomment %}
     <a class="gallery-tab{% if album and tab.pk == album.pk %} active{% endif %}" href="{{ tab.get_absolute_url }}"
        {% if album and tab.pk == album.pk %}aria-current="page"{% endif %}>{{ tab.title }}{% if tab.is_hidden %} <span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>{% endif %}</a>
     {% endfor %}
-    <a class="gallery-tab gallery-tab-more" href="{% url 'gallery_albums' %}">{% trans "View more" %} {% include "gallery/_icons.html" with name="arrow" %}</a>
+    <a class="gallery-tab gallery-tab-more" href="{% url 'gallery_index' %}">{% trans "View more" %} {% include "gallery/_icons.html" with name="arrow" %}</a>
   </nav>
   {% endif %}
 

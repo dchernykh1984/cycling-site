@@ -8,10 +8,9 @@
   <header class="gallery-head">
     <div class="gallery-head-main">
       <p class="gallery-kicker">{% trans "our events & moments" %}</p>
-      <h1 class="gallery-title">{% trans "All albums" %}</h1>
+      <h1 class="gallery-title">{% trans "Gallery" %}</h1>
     </div>
     <div class="gallery-head-side">
-      <a href="{% url 'gallery_index' %}" class="btn btn-sm btn-outline-secondary">{% include "gallery/_icons.html" with name="back" %} {% trans "Gallery" %}</a>
       {% if can_create %}
       <a href="{% url 'gallery_album_create' %}" class="btn btn-sm btn-primary">{% include "gallery/_icons.html" with name="plus" %} {% trans "New album" %}</a>
       {% endif %}
