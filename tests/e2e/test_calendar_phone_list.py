@@ -127,7 +127,10 @@ def test_phone_rows_keep_their_sport_place_and_information(page: Page, live_serv
     row = page.locator(".calendar-day-events li", has_text="Three day race")
     expect(row.locator(".calendar-event-summary")).to_contain_text("Demo city")
     expect(row.locator(".calendar-event-summary")).to_contain_text("Road Race")
-    row.locator("summary").click()
+    # The disclosure answers a 44px tap, including near the bottom edge of that target.
+    summary = row.locator("summary").bounding_box()
+    assert summary is not None
+    page.mouse.click(summary["x"] + summary["width"] / 2, summary["y"] + summary["height"] / 2 + 21)
     for fact in ("Demo type", "Road Cycling", "Road Race", "Demo country", "Demo region", "Demo venue"):
         expect(row.locator("details")).to_contain_text(fact)
     expect(row.get_by_role("link", name="Info", exact=True)).to_have_attribute(
