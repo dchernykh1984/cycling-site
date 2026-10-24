@@ -101,6 +101,9 @@ photos are kept exactly as they were taken, and only admins and the owner put th
 
 ## Open Questions
 
+- A photo's files are deleted as its row is (`post_delete` in `gallery/signals.py`), before the
+  transaction commits; constitution principle IX asks for after the commit, so a failed delete
+  could leave a row without its files.
 - The production media disk is about 1 GB. Originals of a few to 25 MB each fill it after a hundred
   or so photos; a larger disk or external storage (issue #349) decides how far the gallery grows.
 - Originals keep their metadata, a phone photo's location included; whether to strip location
