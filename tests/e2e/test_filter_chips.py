@@ -69,3 +69,13 @@ def test_after_the_cross_the_keyboard_lands_on_the_filters_button(page: Page, li
     page.locator("#filter-chips .filter-chip").focus()
     page.keyboard.press("Enter")
     expect(page.locator("#filter-toggle")).to_be_focused()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_chip_keeps_the_focus_when_the_chips_are_drawn_again(page: Page, live_server, race_event_type):
+    page.set_viewport_size(PHONE)
+    page.goto(f"{live_server.url}/en/calendar/?event_type={race_event_type.pk}")
+    page.locator("#filter-chips .filter-chip").focus()
+    # A filter settling later -- the location tree arriving -- redraws every chip.
+    page.evaluate("window.renderFilterChips()")
+    expect(page.locator("#filter-chips .filter-chip")).to_be_focused()
