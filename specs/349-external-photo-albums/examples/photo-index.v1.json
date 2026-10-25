@@ -9,6 +9,7 @@
   },
   "bib_normalization": "trim-nfc-exact-v1",
   "processing": {
+    "inventory_complete": true,
     "complete": true,
     "total": 1,
     "processed": 1

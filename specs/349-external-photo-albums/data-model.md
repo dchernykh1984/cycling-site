@@ -39,6 +39,8 @@ semantics agree; do not change curated-gallery administration rights to enable e
   manifest entry and checksum; stale originals never silently replace a verified asset.
 - Provider revision tokens are opaque and scoped to that adapter. Manifest revisions order one
   album's publication; SHA-256 verifies bytes. None is a substitute for the others.
+- Inventory completeness is explicit and independent of per-photo progress; a stopped scan with
+  all discovered photos processed must not look like a complete album.
 - Processing states distinguish pending, processed and failed. An empty bib list after processing
   means no accepted bib was found, not proof that no rider is present.
 - Only accepted observations enter normal matches; uncertain candidates are a separate manager
