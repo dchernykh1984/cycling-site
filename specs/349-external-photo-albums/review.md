@@ -15,3 +15,12 @@ entries and documented separate confirmation elsewhere, including the regression
 
 **Result**: The design no longer treats this existing field as universal proof of athlete identity.
 No application change is included.
+
+## Cycle 2 - Cross-contract consistency
+
+**Accepted finding R2**: `processed == total` could make an interrupted initial scan look like a
+complete album, because the importer cannot see undiscovered files. Added machine-readable
+`inventory_complete`, required it for `complete`, updated the sample/model and acceptance runbook.
+A local diagnostic alone would not satisfy the transparent-setup principle.
+
+**Result**: Readers can distinguish a complete inventory from only the discovered subset.

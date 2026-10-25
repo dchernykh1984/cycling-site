@@ -33,7 +33,8 @@ Connect the existing event and album; request import through UI and the equivale
 Expected: stable photo IDs, retained original bytes, progress and accepted-bib matches. Interrupt
 and resume indexing/import; repeat a revision; submit an older/conflicting revision; disconnect
 storage during search. Metadata remains queryable from the last valid authorized published index;
-media availability is separately reported. Missing/photos pending are not reported as "no rider".
+media availability is separately reported. Stop source enumeration before it discovers every
+photo while processing all discovered ones: the UI must still say the inventory is incomplete. Missing/photos pending are not reported as "no rider".
 
 Run the same conformance fixture through Dropbox, Drive and HTTPS adapters. Include duplicate
 Drive path names, foreign-root references, revoked access, 429 and changed content. Prove no

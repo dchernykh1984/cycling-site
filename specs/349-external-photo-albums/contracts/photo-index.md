@@ -14,7 +14,7 @@ See [example](../examples/photo-index.v1.json); example digests are illustrative
 | `generated_at` | ISO 8601 UTC timestamp; informational, not used to order concurrent revisions |
 | `producer` | Tool name/version; optional OCR engine/model identifiers, no credentials |
 | `bib_normalization` | `trim-nfc-exact-v1`; shared with the site and timing binding contract |
-| `processing` | `complete` boolean, `total` and `processed` nonnegative counts |
+| `processing` | `inventory_complete` and `complete` booleans, `total`/`processed` nonnegative counts |
 | `photos` | Full current known inventory, including pending/failed entries |
 | `removed_photo_ids` | Explicit photo UUID tombstones; never inferred from a failed/partial scan |
 
@@ -52,11 +52,15 @@ bytes is a conflict. Older revisions are rejected. Concurrent producers must coo
 revision sequence or stop with a conflict, not invent timestamp ordering.
 
 `processed` equals the number of processed photo entries, `total` equals live inventory size,
-and `complete` requires every photo processed. Failed entries remain explicit and make the
-snapshot incomplete. An unreadable bib is not a processing failure if the photo was examined.
+and `complete` requires both `inventory_complete: true` and every live photo processed.
+`inventory_complete` becomes true only after a successful full source inventory; a truncated or
+interrupted scan keeps it false even if every discovered photo was processed. UI/API must expose
+this flag and describe `total` as discovered photos until enumeration finishes. Failed entries
+remain explicit and make processing incomplete. An unreadable bib is not a processing failure if the photo was examined.
 A successor includes every prior live photo or explicitly tombstones it; an accidental omission
 is rejected instead of implicitly deleting it. The first import may have an incomplete inventory,
-but must say so in producer diagnostics and may not claim complete.
+and must encode `inventory_complete: false`, not only print a local warning. A complete producer
+snapshot is not proof that OCR found every real bib; recognition quality is a separate measure.
 
 Validate schema, field bounds, UTF-8, PostgreSQL-safe strings (including rejection of NUL), unique
 IDs, safe paths and root membership before publication. Limit manifest bytes, photo count,
