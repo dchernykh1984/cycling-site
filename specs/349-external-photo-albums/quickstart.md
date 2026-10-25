@@ -65,6 +65,11 @@ previews and archive owner/access revocation. Remove a photo on the site, re-imp
 manifest still containing it and retry a prepared archive: the photo must remain unavailable until
 an explicit authorized restoration. Curated gallery permissions remain unchanged.
 
+Follow the [event/cabinet journeys](contracts/user-journeys.md): both personal entry points must
+reach the same results; several photographer albums form one personal event card with own-photo
+cover/count. Check normal external links, sign-in return, account switching and selection across
+pages before archive creation.
+
 Record pilot precision/recall, unreadable rate, CPU time, import memory, metadata query p95,
 external traffic, original integrity and download failures. Evaluate the 10,000-photo search fixture
 separately from actual pilot size. Bulk archives must stay within advertised byte/photo/TTL bounds.

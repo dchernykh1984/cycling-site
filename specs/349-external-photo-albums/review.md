@@ -39,3 +39,14 @@ coverage and an archive/resync acceptance scenario; originals remain external an
 **Result**: Three document review cycles completed, with R1-R4 addressed in separate commits.
 Document checks do not establish provider access, OCR accuracy or deployed feature readiness.
 Spec/plan still require maintainer review; no application code or production albums changed.
+
+## Follow-up scope - Event and cabinet journeys
+
+The maintainer requested explicit personal-photo versus all-album navigation after the initial
+three cycles. Added a dedicated journey contract and synchronized spec, plan, model, API and
+acceptance runbook. Reviewed the addition in three passes: existing gallery/event/profile seams;
+personal-versus-source grouping and guest/identity scope; pagination, account-switching and removal
+failure paths. Verified bulk selection is a new control, not existing gallery behaviour, and
+separated plain-link classification from successful index import. No unresolved findings remain
+in these document passes. These are proposed screens,
+not implemented UI or evidence of a working personal gallery.

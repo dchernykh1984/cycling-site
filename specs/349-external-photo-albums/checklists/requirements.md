@@ -7,6 +7,7 @@
 
 - [x] User stories describe value independently; historical Dropbox albums are the first pilot.
 - [x] Spec states WHAT/WHY; technical choices and transport details live in plan/contracts.
+- [x] Event/cabinet entry points, personal event cards and ordinary album links are distinct.
 - [x] Reader-facing help is part of acceptance, including supported services and local indexing.
 - [x] Existing and proposed behaviour are explicitly separated; originals and curated rights survive.
 

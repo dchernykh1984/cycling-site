@@ -36,7 +36,8 @@ indexes; find a bib across both albums with storage access disabled for metadata
    pages explain the missing association without requiring new registrations for an old race.
 5. **Given** an event with photo links in additional materials, **Then** indexed albums have a
    separate event-page section with indexing/search status; additional materials retain videos,
-   clips, documents and other links. A link is moved only after a working album is confirmed.
+   clips, documents and other links. Photo-link classification is explicit; indexed search is
+   advertised only after a working import, while plain external albums remain usable.
 
 ### User Story 2 - Understand and connect an album (Priority: P1)
 
@@ -76,6 +77,9 @@ editing, save/restart and upload; the athlete's gallery finds the assigned bib's
    labelled as the account holder's own photos.
 4. **Given** old start lists/results, **Then** a manager reviews suggested registration matches
    once and retains confirmed associations. Name equality alone never establishes identity.
+5. **Given** the event page and cabinet, **Then** the event's "Photos with me" opens one-start
+   thumbnails, while the cabinet action opens event cards like gallery albums. Opening a card
+   shows the same own-photo selection across source albums; ordinary album links are separate.
 
 ### User Story 4 - Download selected photos or all my photos (Priority: P2)
 
@@ -153,13 +157,19 @@ number matches and access rules survive a verified source move.
   or publishes a private file.
 
 - **FR-017**: Present indexed participant-photo albums in a separate event-page section. Keep
-  additional materials for videos, clips, documents and other resources. Existing photo links stay
-  usable until their indexed replacement is confirmed; moving one preserves its original source
-  and is an explicit manager action, not destructive rewriting of the event description.
+  additional materials for videos, clips, documents and other resources. Classifying a plain photo
+  link is an explicit manager action and keeps its source/fallback usable. Show it as indexed only
+  after a working import; never destructively rewrite the event description or other materials.
 
 - **FR-018**: Keep site publication/removal decisions independent of producer recognition data.
   Resync must not republish an album or photo hidden/removed on the site; restoration requires
   an explicit authorized action. Apply removal to search, media and pending/ready archives.
+
+- **FR-019**: On the event page distinguish "Photos with me" (personal matches at that event)
+  from "All photo albums" (all visible sources, with external/unindexed sources labelled). In the
+  cabinet, "Photos with me" opens personal event cards in the gallery album style; a card opens
+  that same event-scoped personal grid, retaining source-album grouping/filtering inside it.
+  Counts/covers are personal, pending states are visible and guest sign-in preserves destination.
 
 ### Key Entities
 
