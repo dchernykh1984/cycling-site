@@ -41,9 +41,10 @@ semantics agree; do not change curated-gallery administration rights to enable e
 - One account can be the athlete of several entries at one event (two distances, a race and a
   relay). Its personal results are the union, deduplicated by photo; nothing forces one entry
   per account per event.
-- A relay bib matches the team, not a member: each confirmed member sees the team's bib photos
-  labelled as team photos, because the bib does not say which member is in the frame. Only a
-  later face slice can narrow that (see the [recognition roadmap](contracts/recognition-roadmap.md)).
+- A relay bib (or a multi-stage line's set of stage bibs) matches the team, not a member: each
+  confirmed member sees the team's bib photos labelled as team photos, because the bib does not
+  say which member is in the frame. Only a later face slice can narrow that (see the
+  [recognition roadmap](contracts/recognition-roadmap.md)).
 - Entries an account filed for other people (a child, team-mates) form a separate submitter scope,
   "Photos of my entries". It is never presented as "Photos with me", needs the same confirmed bib
   and reveals nothing beyond event-level search for a number the submitter already knows.

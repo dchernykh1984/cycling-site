@@ -81,6 +81,9 @@ Derive assignments from the accepted snapshot of every device, under the existin
 - A token on a line with a bib in field 0 assigns that bib to that registration. An empty field 0
   and SPM's `NOT_PAID` marker assign nothing; letters and leading zeroes are ordinary bib text.
 - Several tokens on one line give every listed registration the same bib (a team).
+- A line whose stage field (index 4) is N > 1 owns bibs `number` .. `number + N - 1`, one per stage,
+  as FPG already reads it (`protocol_document.py`, `calculator.py`). All of them go to the line's
+  registrations as team bibs. Which member wore which stage bib is not inferred from name order.
 - The same registration with two bibs, or one bib on two lines with different tokens, is a conflict:
   personal matching for those entries is suspended and the manager sees both sources. No winner is
   guessed; the last upload does not silently win.
