@@ -180,8 +180,10 @@ then publish an index; completed originals stay unchanged and new matches appear
   the chronometers ignore it unchanged. Never repurpose comments, change fields 0-9 or interpret
   a bib as a person ID. Define outcomes for duplicate assignments, reassignment,
   lost references, stale devices and offline retries.
-- **FR-012**: Offer individual and bounded asynchronous bulk downloads with progress, expiry,
-  cancellation and unavailable-file reports. Recheck access when delivering files.
+- **FR-012**: A single photo is viewed and downloaded in the storage, opened from its thumbnail
+  (FR-003). Bounded asynchronous bulk downloads with progress, expiry, cancellation and
+  unavailable-file reports come after the first slice; every archive byte is site traffic.
+  Recheck access when delivering files.
 - **FR-013**: Apply event/album visibility and ownership to pages, search, previews, API and archives;
   non-visible resources answer 404. Keep credentials and private registration facts out of portable
   indexes. Explain that hiding a site page cannot make public provider links private.
