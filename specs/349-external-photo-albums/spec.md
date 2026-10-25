@@ -236,6 +236,12 @@ then publish an index; completed originals stay unchanged and new matches appear
 - **FR-025**: If the coach role of [#315](https://github.com/dchernykh1984/cycling-site/issues/315)
   is added, a coach sees the albums of all their trainees' registrations, and each trainee sees
   only their own. The coach-trainee link comes from that role, never from names or teams.
+- **FR-026**: Keep the site's imported copy of an album's index apart from participants'
+  decisions. Refresh the copy only when an organizer adds the album or presses "Refresh
+  participants' tagging". In a registration album show accepted matches and candidates
+  (recall first); let the participant mark each photo "this is me" (green check) or "not me" (red
+  cross). Decisions are per registration, survive every refresh and never change the album files.
+  Import validates the index's structure; its content is checked by these decisions.
 
 ### Retained later-stage scenarios and open decisions
 
