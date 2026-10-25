@@ -133,8 +133,10 @@ explicit. Normal external links remain distinguishable from indexed/searchable a
 
 ## Delivery slices for later task generation
 
-1. **Historical pilot**: read-only Dropbox connector, local index producer, visible setup help,
-   atomic import, event bib search and individual downloads. Several albums per event work here.
+1. **Historical pilot**: read-only Dropbox connector (the only adapter for now), local index
+   producer, visible setup help, atomic import, tiny site thumbnails, photos opened in Dropbox,
+   event bib search and registration albums with "this is me" / "not me". Several albums per
+   event work here; pilot event 719.
 2. **Historical identity backfill**: reviewed number-source import and confirmed account links;
    personalized event/cross-event queries use the same search index. No new race registrations.
 3. **Future race identity**: preserve references in StartProtocolMaker and derive assignments from
