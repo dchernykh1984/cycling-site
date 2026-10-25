@@ -87,3 +87,7 @@ or provider API credentials to a browser. Limits and expiry are visible before s
 The [upload contract](uploads.md) covers the second organizer input path. Its transfer/resume/job
 operations are required when the write-capable slice ships; a read-only connector is not a reason
 to remove the product requirement or to advertise an unavailable upload button.
+
+Future D1-D3 capabilities are listed as planned until they ship. Their query/enrollment/removal or
+producer job operations require the same UI/API permission parity and visible status/cost rules;
+the bib-only pilot does not expose inactive face controls or pretend server indexing is enabled.
