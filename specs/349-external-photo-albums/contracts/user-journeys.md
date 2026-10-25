@@ -11,7 +11,7 @@ must supply ru/kk/en copy and check the longest labels against the existing inte
 | Event: **All photo albums** | This event's album cards | Indexed albums, existing curated albums and ordinary external photo-album links, clearly distinguished |
 | Cabinet: **My race photos** | One card per registration I can see, newest event first | Registrations I filed, ones where I am the confirmed athlete, and (with #315) my trainees' |
 | A registration album card | The same registration grid reached from the event page | That registration's matches across photographers, with an optional source-album filter |
-| A photo card | Photo detail / viewer | Photo, event, photographer/source album, original download and back to the same filtered selection |
+| A photo thumbnail | The photo in Dropbox, in a new tab | Full-size view and download on the storage's page; the site tab keeps its filters, page and selection |
 
 The event's two actions are sibling navigation links with explicit scope, not two identical
 buttons opening different things. Keep the primary personal action and the secondary album action
@@ -25,7 +25,7 @@ flowchart TD
   Event --> Albums[All photo albums for this event]
   Profile[Cabinet: My race photos] --> Cards[One card per registration]
   Cards --> Mine
-  Mine --> Photo[Photo detail and downloads]
+  Mine --> Photo[Photo opened in Dropbox, new tab]
   Albums --> Indexed[Indexed album grid and bib search]
   Albums --> External[External album with clear source label]
 ```
