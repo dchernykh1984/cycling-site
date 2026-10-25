@@ -24,6 +24,10 @@ Use them as the reference, so nobody has to upload a selfie.
    unchanged originals. A relay member first picks which team cluster is them; no cluster is
    assigned to a member automatically.
 
+Helmets and sunglasses weaken face matching on cyclists. Inside one event a rider's kit and bike
+do not change, so the pilot also measures appearance cues beyond the face, under the same consent
+and privacy rules ([research section 7](../research.md)).
+
 Only event-scoped: a cluster built at one event is not used to search another event in this
 route. Cross-event reuse would need the saved-reference rules below.
 
