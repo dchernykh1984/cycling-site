@@ -54,8 +54,8 @@ another person must not receive their photos as its own, even when both registra
 `registered_by` point to that account. Record original source and reviewer.
 
 For a future race, import registrations into SPM, assign/edit bibs, assemble a team from two
-registrations, save a backup and restart. Upload the start list (variant A: tokens on the lines;
-variant B: bindings plus capability ACK). Verify own photos without another bib input. Test
+registrations, save a backup and restart. Upload the start list with the tokens on its lines.
+Verify own photos without another bib input. Test
 duplicate bibs across devices, one registration on two lines, a line edited in an older SPM that
 lost its token, withdrawal, foreign registration IDs, stale/offline retries and old-client uploads.
 Feed the same start protocol file to the current FPG and check the protocol is unchanged.

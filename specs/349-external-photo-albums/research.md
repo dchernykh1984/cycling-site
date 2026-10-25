@@ -58,9 +58,9 @@ than selecting an arbitrary file. Temporary URLs and tokens never enter the port
 ## 3. Return assigned bibs through the exchange that already exists
 
 **Decision (maintainer)**: StartProtocolMaker is the primary source of actually issued bibs.
-**Proposed transport**: Keep the registration ID on the start line itself, as an optional trailing
-field (variant A in the binding contract); structured bindings beside unchanged lines remain the
-alternative (variant B). Preserve existing registration IDs; no global person registry needed.
+**Decision (maintainer, 2026-10-25)**: Keep the registration ID on the start line itself, as an
+optional trailing field (variant A in the binding contract). Preserve existing registration IDs;
+no global person registry needed.
 
 **Verified path**:
 

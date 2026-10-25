@@ -57,7 +57,7 @@ Gates apply before research and again after design, against constitution 1.6.0.
 | III | Behaviour validation mapped in quickstart; implementation must ship tests and green CI | Pass for design |
 | IV, XII | Localized titles/help/API fields; mobile/keyboard setup and error checks | Pass |
 | VI | Registry and capabilities; providers confined to adapters | Pass |
-| VII, XI | API contract; optional trailing start-line field that existing readers ignore (A), or acknowledged structured fields (B) | Pass |
+| VII, XI | API contract; optional trailing start-line field that existing readers ignore | Pass |
 | VIII, IX | Manifest and SPM assignments are sources; DB is derived, atomic and recoverable | Pass |
 | X | Scoped roots, no tokens in indexes, visibility checks, bounded untrusted inputs | Pass |
 | XIII | Preserve registration IDs; reuse known event/profile/connection facts | Pass |
@@ -84,14 +84,14 @@ Existing seams to extend during implementation, not files created by this PR:
 - `gallery/`: shared search/import/asset actions; a `connectors/` module holds provider adapters.
 - `api/endpoints/gallery.py`: organizer and participant operations through shared actions.
 - `api/endpoints/start_list.py`, `protocols/models.py`: read registration tokens from uploaded lines
-  (variant A) or optional structured bindings (variant B) into issued-bib assignments.
+  into issued-bib assignments.
 - `registrations/`: issued-bib read model with registration/event provenance, not list-position bibs.
 - `tests/`, `tests/e2e/`: permissions, import, compatibility and visible setup contracts.
 
 Sibling repositories requiring later coordinated changes:
 `offline_referee/StartProtocolMakerPython` preserves registration references in its lines (its own
-spec covers this); `offline_referee/FinishProtocolGeneratorPython` already ignores a trailing field
-and may later forward it. The first photo release does not depend on new structured finish
+spec covers this); `offline_referee/FinishProtocolGeneratorPython` and the chronometer ignore the
+trailing field and need no change. The first photo release does not depend on new structured finish
 documents or chronometer records.
 
 **Structure Decision**: Reuse gallery domain/actions, but distinguish curated local albums from
