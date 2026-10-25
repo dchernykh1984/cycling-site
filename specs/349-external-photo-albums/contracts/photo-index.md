@@ -79,8 +79,16 @@ The site keeps two things apart (maintainer decision, 2026-10-25):
 
 - its imported copy of the album's index, replaced only when an organizer adds the album or presses
   "Refresh participants' tagging" -- never by background polling;
-- participants' decisions, per registration and photo: "this is me" (a green check) or "not me"
-  (a red cross). They are site data, never written into the album, and survive every refresh.
+- participants' decisions, per registration album and photo: "this is me" (a green check) tells
+  the site the registration's participant is on this photo; "not me" (a red cross) says the match
+  is an error. They are site data, never written into the album, and survive every refresh.
+
+Who decides: the registration's confirmed athlete, or their coach once the role of #315 exists;
+one decision per album, whoever made it. A check can later become a cross; a cross removes the
+photo from the album, so it cannot become a check afterwards -- only an undo right after the tap
+guards against a mis-tap. A decision applies wherever the site shows that registration's matches,
+including the event's search for its bib. Whether an account that filed a registration for
+someone else (a parent) may decide is an open maintainer question.
 
 That is also how a locally made index is validated. The site checks its structure on import --
 schema, sizes, paths inside the album -- because those protect the site. It does not trust its

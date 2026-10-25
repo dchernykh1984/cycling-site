@@ -15,7 +15,7 @@ semantics agree; do not change curated-gallery administration rights to enable e
 | HistoricalMatchBatch | Event, retained file digest, rows, suggested registration, decision/reviewer | Staging only until manager confirmation; names never act as stable keys |
 | ClassifiedPhotoLink | Existing material reference, manager classification, localized display override/fallback | Ordinary external source, no index required; URL stays on original material |
 | PublicationDecision | Album/photo visibility or removal, actor, reason, restoration history | Site-owned publication overlay; not a competing source for recognized bibs |
-| ParticipantPhotoDecision | Registration, `(album_uuid, photo_uuid)`, "this is me" / "not me", actor, time | Site-owned; set from the registration album; survives index refreshes; kept when a photo leaves the index and applied again if it returns |
+| ParticipantPhotoDecision | Registration, `(album_uuid, photo_uuid)`, "this is me" / "not me", actor (athlete or coach), time | Site-owned, one per album and photo; check -> cross allowed, cross is final (bar an immediate undo); survives index refreshes; kept when a photo leaves the index and applied again if it returns |
 | UploadJob / UploadItem | Event/root, owner, per-file digest/reference/session, transferred bytes and accepted state | Provider-backed resumable transfer; no duplicate durable original on site |
 | ImportJob / ArchiveJob | Owner, bounded inputs, cursor/progress, result/error/expiry | Durable execution state; no unbounded page-request processing |
 
@@ -110,7 +110,7 @@ a provider hostname. A classified plain link has no fabricated photo count or nu
 A registration album is a query projection, not another stored album: the registration's
 confirmed bib(s) joined to the event's visible accepted matches and candidates, then that
 registration's own decisions applied -- "this is me" marks a photo confirmed, "not me" hides it
-from that album only. Unchecked candidates stay visible and marked, because a missed photo is
+from that album and from the event's search for that registration's bib, not from anyone else's. Unchecked candidates stay visible and marked, because a missed photo is
 worse than a wrong suggestion (maintainer, 2026-10-25). Count distinct `(album_id, photo_id)` results and select covers
 only from that set; several source albums at the event stay one registration album, with a
 source filter. Registrations with pending number/index data keep an explicit state instead of
