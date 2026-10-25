@@ -138,10 +138,12 @@ then publish an index; completed originals stay unchanged and new matches appear
 
 - **FR-001**: Read external albums through a common connector interface, initially Dropbox and
   Google Drive. Other services, including Yandex Disk, need an adapter and shared conformance
-  checks. Unsupported adapters must not appear as working options.
+  checks. Unsupported adapters must not appear as working options. The site's own storage is
+  another adapter, so moving albums onto the site later swaps the connector, not the format.
 - **FR-002**: Accept a documented, versioned, storage-independent index beside the photos. Each
   photo has a stable identity, original/preview references and zero or more bib observations, with
-  explicit processing state and correction provenance. Originals are not rewritten.
+  explicit processing state and correction provenance. Originals are not rewritten. Previews are
+  part of the album, written by the producer; the site does not make thumbnails from originals.
 - **FR-003**: Import validated indexes into a durable site search index. Event, bib and personal
   metadata searches use it without contacting photo storage; retrieving media is separate.
 - **FR-004**: Publish revisions atomically, resume interrupted work and make repeat imports
@@ -149,6 +151,8 @@ then publish an index; completed originals stay unchanged and new matches appear
   and never silently removes photos missing from a partial run.
 - **FR-005**: Provide a documented local CPU indexing path producing the portable format, with
   resumable processing and review of uncertain bibs. Recognition runs outside page requests.
+  The same tool works without any OCR engine as a manual mode: a person types the bibs per photo
+  and the output is the same format with `method: manual`.
   Optional later server recognition produces the same format and is not a prerequisite.
 - **FR-006**: Beside the album input explain services, access, index versions/example and local
   preparation. Help and validation share capability/version definitions. Explain processing

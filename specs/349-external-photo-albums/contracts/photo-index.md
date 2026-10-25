@@ -28,6 +28,12 @@ connection supplies the event. No account IDs, names, birth dates, emails, secre
 may be absent while `processing_state` is pending/failed, but a searchable processed photo needs a
 preview. Previews are separate derivatives without unnecessary metadata; originals stay unchanged.
 
+Previews are a requirement on the album, not a site service: the producer writes them into the
+album beside the originals, and the site never downloads originals to make thumbnails. Import
+rejects a processed photo without a preview and names the entry. Maximum preview size (long side,
+bytes) belongs to the format version, is shown in the setup help and is checked on first fetch;
+the values are chosen from the pilot albums.
+
 `processing_state` is `pending`, `processed` or `failed`; `bibs` is an array, possibly empty.
 Each observation has `value`, `state` (`candidate`, `accepted`, `rejected`), `method` (`ocr` or
 `manual`), optional confidence in [0,1], an optional correction reference and an optional
