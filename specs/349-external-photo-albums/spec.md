@@ -6,7 +6,8 @@
 **Issue**: [#349](https://github.com/dchernykh1984/cycling-site/issues/349)
 **Input**: External storage, portable photo indexes, event and personal galleries.
 StartProtocolMaker is the primary source of issued bibs. Reuse known facts; explain preparation
-where it is required. Pilot on historical events 533 (Google Drive) and 719 (Dropbox), with room for a third event.
+where it is required. Pilot on historical events 533 (Google Drive) and 719 (Dropbox), with room
+for a third event.
 
 ## User Scenarios & Testing
 
@@ -33,7 +34,6 @@ indexes; find a bib across both albums with storage access disabled for metadata
    photographer's credit, source and download information.
 4. **Given** known historical bibs but no account association, **Then** bib search works; personal
    pages explain the missing association without requiring new registrations for an old race.
-
 5. **Given** an event with photo links in additional materials, **Then** indexed albums have a
    separate event-page section with indexing/search status; additional materials retain videos,
    clips, documents and other links. A link is moved only after a working album is confirmed.

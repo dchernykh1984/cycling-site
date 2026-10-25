@@ -24,3 +24,7 @@ complete album, because the importer cannot see undiscovered files. Added machin
 A local diagnostic alone would not satisfy the transparent-setup principle.
 
 **Result**: Readers can distinguish a complete inventory from only the discovered subset.
+
+**Accepted finding R3**: The scope paragraph put event 533 before enabling its Drive connector,
+while delivery slice 4 added that connector. Aligned the scope and acceptance order: Dropbox pilot
+719 first, Drive pilot 533 once the Drive slice exists. No mandatory album relocation was added.

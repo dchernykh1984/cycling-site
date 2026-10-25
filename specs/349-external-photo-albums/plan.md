@@ -43,8 +43,8 @@ original bytes, known form values and last good indexes. No recognition or archi
 page request. Start with a resumable management-command worker over DB jobs; use the deployment's
 scheduler for bounded batches, without introducing a queue service before it is needed.
 
-**Scale/Scope**: First pilot event 719 on Dropbox, then 533 on Drive; then enable the second
-adapter and authoritative bib round trip. No face recognition in this design.
+**Scale/Scope**: Pilot 719 first on Dropbox; pilot 533 when the Drive slice is enabled. Historical
+identity recovery and the future SPM round trip can progress independently. No face recognition.
 
 ## Constitution Check
 
@@ -137,8 +137,9 @@ candidate; server OCR and face search are separate later decisions.
 
 The maintainer selected events 533 (Drive) and 719 (Dropbox). Their existing album links are in
 additional materials; inspect and obtain authorized access during the later pilot, not this docs
-change. Retained start lists/results still need an inventory. Select a labelled sample before selecting OCR dependencies; compare CPU engines and
-record accuracy/time rather than assuming bib OCR is solved. Manager-reviewed annotations and
+change. Retained start lists/results still need an inventory. Select a labelled sample before
+choosing OCR dependencies; compare CPU engines and record accuracy/time rather than assuming
+bib OCR is solved. Manager-reviewed annotations and
 manually prepared indexes are valid reference fixtures for evaluating the importer.
 
 Google Drive needs a proven authorization route before its implementation slice: `drive.file` must
