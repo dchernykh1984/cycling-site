@@ -77,7 +77,10 @@ unchanged positional lines. Preserve existing registration IDs; no global person
   an unsupported identity field to a generated document alone will not preserve it on the site.
 
 **Rationale**: The fact can return at start registration, before any finish protocol exists. Names,
-list ordering and the person who entered a rider are not trustworthy identity keys.
+list ordering and the person who entered a rider are not trustworthy identity keys. In particular,
+`registrations/views.py` creates free-mode entries with both `user=user` and `registered_by=user`
+while accepting another athlete's entered identity. A non-null registration `user` is therefore not
+sufficient evidence for personal photo ownership outside self-only, non-relay registration.
 
 **Alternatives considered**: A separate assignment endpoint (possible, but adds a second snapshot
 transaction); scraping HTML results (no stable identity); a new positional/comment field (unsafe

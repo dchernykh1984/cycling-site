@@ -93,7 +93,8 @@ facts and conflicts to an authorized manager. Name/birth/category similarity sug
 but never commits identity automatically. One confirmation can apply an unambiguous reviewed batch;
 ambiguous or absent entries remain unresolved. Do not require old athletes to re-register.
 
-Only an existing athlete-owned registration or separately confirmed athlete link enables personal
-photos. Registered-by is insufficient; absent accounts and relay members remain event-level bib
+Only a self-only, non-relay athlete-owned registration or separately confirmed athlete link
+enables personal photos. In current free-mode registrations, neither `user` nor `registered_by`
+alone proves athlete ownership; absent accounts and relay members remain event-level bib
 search only. Keep history, reviewer and corrections. Historical proposals cannot replace a newer
 SPM-confirmed assignment without explicit manager resolution. Expose source/status in manager UI.
