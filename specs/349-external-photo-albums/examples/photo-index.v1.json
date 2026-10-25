@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "album_id": "c00f63ce-2872-4a27-9640-de9dcb16def5",
+  "revision": 1,
+  "generated_at": "2026-10-25T06:00:00Z",
+  "producer": {
+    "name": "example-local-indexer",
+    "version": "0.1.0"
+  },
+  "bib_normalization": "trim-nfc-exact-v1",
+  "processing": {
+    "complete": true,
+    "total": 1,
+    "processed": 1
+  },
+  "photos": [
+    {
+      "id": "2a318e91-ae62-4bba-9f7f-274dc90b69b4",
+      "original": {
+        "path": "originals/IMG_0001.jpg",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 2500000,
+        "media_type": "image/jpeg"
+      },
+      "preview": {
+        "path": "previews/IMG_0001.webp",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "bytes": 42000,
+        "media_type": "image/webp"
+      },
+      "processing_state": "processed",
+      "bibs": [
+        {
+          "value": "00120",
+          "state": "accepted",
+          "method": "manual"
+        }
+      ]
+    }
+  ],
+  "removed_photo_ids": []
+}
