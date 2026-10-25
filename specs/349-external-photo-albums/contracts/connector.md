@@ -21,6 +21,14 @@ The portable root is a logical folder. OAuth scope is a different control; descr
 real grant even when the site enforces a narrower root. Existing Drive folders may need a different
 route from `drive.file`; Dropbox App Folder does not cover arbitrary personal folders.
 
+## Site-hosted storage
+
+The site's own storage (its media disk, or an object store it controls) is one more adapter with
+the same operations, not a separate code path. Moving an album onto the site later means copying
+the folder and switching the album to that connection through a verified source move: photo IDs,
+relative paths, manual decisions and the event link stay as they are, and the index format does
+not change. The existing curated gallery keeps its current storage and is not migrated by this.
+
 ## Write-capable slice
 
 Adapter capabilities remain optional, but the product must support the site's upload workflow
