@@ -29,8 +29,10 @@ may be absent while `processing_state` is pending/failed, but a searchable proce
 preview. Previews are separate derivatives without unnecessary metadata; originals stay unchanged.
 
 Previews are a requirement on the album, not a site service: the producer writes them into the
-album beside the originals, and the site never downloads originals to make thumbnails. Import
-rejects a processed photo without a preview and names the entry. Maximum preview size (long side,
+album beside the originals, and the site never downloads originals to make thumbnails. The one
+exception is an adapter that can produce a thumbnail itself (Dropbox's `files/get_thumbnail_v2`);
+import rejects a processed photo that has neither, and names the entry. Whether album previews
+stay mandatory for Dropbox albums is an open maintainer question. Maximum preview size (long side,
 bytes) belongs to the format version, is shown in the setup help and is checked on first fetch;
 the values are chosen from the pilot albums.
 
