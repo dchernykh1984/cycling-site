@@ -53,10 +53,12 @@ leave equal-name/absent/relay rows unresolved and re-import idempotently. An acc
 another person must not receive their photos as its own, even when both registration `user` and
 `registered_by` point to that account. Record original source and reviewer.
 
-For a future race, import registrations into SPM, assign/edit bibs, save a backup and restart.
-Send legacy lines plus structured bindings; require capability advertisement and revision ACK.
-Verify own photos without another bib input. Test duplicate bibs across devices, corrections,
-withdrawal, foreign event IDs, stale/offline retries and old-client uploads without bindings.
+For a future race, import registrations into SPM, assign/edit bibs, assemble a team from two
+registrations, save a backup and restart. Upload the start list (variant A: tokens on the lines;
+variant B: bindings plus capability ACK). Verify own photos without another bib input. Test
+duplicate bibs across devices, one registration on two lines, a line edited in an older SPM that
+lost its token, withdrawal, foreign registration IDs, stale/offline retries and old-client uploads.
+Feed the same start protocol file to the current FPG and check the protocol is unchanged.
 
 Expected: no guessed identity, no silent overwrite, legacy exchange unchanged, explicit conflict
 or stale status and a safe resync path. The site can associate before a finish protocol exists.

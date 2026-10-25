@@ -1,89 +1,116 @@
-# Issued bib exchange v1 (proposed optional extension)
+# Issued bib exchange v1 (proposed)
 
 Existing `/api/v1/participants/` supplies each registration `id` and its `competition_id`.
-StartProtocolMaker must retain these references when importing and assigning bibs. Existing
-`/api/v1/start-list/` transport, authentication, legacy `items` and revision counter remain.
-This contract is a proposal: these binding fields are not implemented today.
+StartProtocolMaker (SPM) loses that `id` today: `participant_to_open_line()` builds
+`number#name#group#laps#stage#year#team#city#comment#time_shift#` without it. This contract keeps
+the reference with the line, so the issued bib and the entry it belongs to travel together
+through text files, backups, FTP and the existing `/api/v1/start-list/` upload.
 
-## Optional envelope addition
+**Decision pending (maintainer)**: variant A below is recommended; variant B is the alternative.
+Neither is implemented today.
 
-An upgraded POST may add `registration_bindings` beside existing fields:
+## Variant A (recommended): a trailing entry-reference field
 
-```json
-{
-  "schema_version": 1,
-  "site_origin": "https://example.org",
-  "competition_id": 42,
-  "entries": [
-    {
-      "entry_id": "c0ee56da-2a9e-4543-8ef1-21465819e214",
-      "registration_id": 1234,
-      "line_index": 0,
-      "bib": "120",
-      "state": "assigned"
-    }
-  ]
-}
+One optional field after the start delay, the eleventh field (index 10):
+
+```
+120#Ivanov Ivan#M40#3#1#1984#Team#Almaty##0 00:00:00.000#r1234#
+12#Petrov P<BR>Sidorov S#Relay#3#1#1980<BR>1985#Team#Almaty<BR>Almaty##0 00:00:00.000#r2051#
+15#Kim A / Lee B#Relay#3#1#1990 / 1992#Team#Almaty##0 00:00:00.000#r2101,r2117#
+7#Late Entrant#M40#3#1#1979###0 00:00:00.000##
 ```
 
-The example is the value of the new field, not a replacement POST body. The existing
-`competition_token`, `device_id`, `client_revision` and `items` stay required as before.
-The token authorizes the event; origin/event/registration references confer no permission.
+- **Grammar**: empty, or comma-separated tokens; v1 defines one token kind, `r` followed by the
+  site registration ID in decimal (`r1234`). No spaces, `#` or line breaks. A reader skips a token
+  kind it does not know, so a later kind can be added without breaking v1 readers.
+- **One registration, one token**. A relay registered on the site as one team entry is one token
+  (its members are strings in that registration). A team assembled in SPM from separate
+  registrations ("Add into team") carries one token per member, in member order.
+- **No token** means an entrant without a site entry (on-the-day, typed by hand, an old file).
+  Their bib stays searchable at event level; it is never bound by name.
+- **Scope**: a token means "registration N of the event whose token delivered this line". The site
+  checks every token against that event; a foreign, deleted or rejected registration is ignored with
+  a manager-visible warning. A token grants no permission.
 
-`entry_id` is a durable local entrant UUID; `registration_id` may be null for an on-the-day entrant
-not yet linked to a site registration. A name is not a substitute. Assigned entries reference a
-unique zero-based `line_index` whose legacy bib agrees with the structured bib. Withdrawn entries
-have `state: "withdrawn"`, null bib and null line index. Preserve their entry ID for audit.
+### Why a registration ID and not the account ID
 
-Use `trim-nfc-exact-v1` bib normalization from the photo-index contract. Validate bounded IDs,
-values, list size and total request bytes within the existing endpoint limits. Reject foreign
-events, missing/deleted registrations, duplicate assignments and inconsistent line references;
-none is a reason to bind by name. Relay entries bind the registered team, not inferred member accounts.
+The account ID was considered first. It answers the wrong question in these cases:
 
-## Snapshot and conflict semantics
+- One account files several entries for one race (`allow_multiple_registrations`, or a parent
+  entering a child and themselves). The account ID cannot say which bib belongs to which entry.
+- In free mode `user` and `registered_by` both name the submitter, not the athlete
+  (`registrations/views.py`), so the account ID would hand the athlete's photos to the submitter.
+- A relay line is several people; one account ID cannot describe it.
+- An on-the-day entrant has no account at all.
+- A line in a start protocol file is copied, uploaded by FTP and printed. An account ID there is a
+  site-wide identifier of a person; a registration ID only means something inside one event.
 
-- One full bindings snapshot belongs to the same per-device `client_revision` as its `items`.
-  Validate and store both atomically. Equality/idempotency compares both, not just legacy lines.
-- Older revisions receive 409; identical retries are no-ops; equal revisions with changed lines
-  or changed bindings receive 409. GET exposes current per-device revisions and structured data
-  only to the same event-token-authorized timing callers.
-- Enforce active bib/registration uniqueness across devices under an event-level lock. A valid
-  newer conflicting proposal receives 409 and a manager-visible dispute; it does not overwrite
-  the last accepted snapshot. Disputed personal associations are suspended pending resolution.
-  An invalid or stale request cannot by itself mark an accepted association disputed.
-- Reassignment/releasing a number is explicit. Manager resolution records competing sources and
-  changes affected device projections atomically or instructs the owning devices to resubmit.
-  Reconnecting a stale device cannot silently reclaim the number. History survives corrections.
-- Removing a prior entrant from an explicit full snapshot withdraws that device's assignment.
-  Cross-device transfer requires a reviewed/authorized transfer, not last-writer-wins ordering.
+Who the athlete of a registration is stays a site fact (see [data model](../data-model.md)),
+so it can be confirmed or corrected later without rewriting any start protocol.
 
-## Capability acknowledgement and older clients
+### Readers that already exist
 
-GET adds `start_list_capabilities.registration_bindings_versions: [1]` when supported. A POST that
-accepts bindings returns `registration_bindings_revision` equal to the accepted `client_revision`.
-New clients require both advertised support and acknowledgement; HTTP 200 from an older server
-that ignores unknown fields must not be reported as successful identity synchronization.
+Verified on 2026-10-25:
 
-Older clients may keep sending only `items`, and old consumers may ignore new GET fields. A newer
-legacy-only snapshot keeps start-list exchange functional, but marks that device's earlier binding
-projection stale. Preserve historical facts; do not silently keep using an unverified mapping for
-personal photos and do not treat field absence as a confirmed mass withdrawal. Return the stale
-state for the manager and request a capable-client resync. Replaying the exact older legacy-only
-revision remains an idempotent legacy retry.
+- FinishProtocolGeneratorPython reads fields by index (`get_field`, `StartProtocolElement.from_line`)
+  and has ignored anything past field 9 since its first Python release (`9aece9f`).
+- WindowsChronometerPython reads only field 0 of a start line.
+- The site stores uploaded start-list lines as opaque strings (`StartListUpload.items`) and returns
+  them unchanged to FPG; each line may be 2000 characters, far above a few tokens.
+- An older SPM Python keeps loaded lines verbatim and drops the field only when a line is rebuilt
+  from its form; the site handles that loss as described below.
 
-Do not append a positional field, replace comment contents or alter the meaning of existing
-`competitor_id` (currently the bib). New support lives in structured metadata. Mixed-version tests
-must prove the existing server/client responses retain their prior meaning.
+The C++ tools are unmaintained and out of scope (maintainer, 2026-10-25).
 
-## Desktop persistence and offline transfer
+### What SPM does
 
-The imported reference is part of the local entrant model, not recoverable from display name.
-Preserve it through Merge/Replace, bib edits, sorting, backups, saved projects, restart and resend.
-A local file export can include a versioned sidecar containing this same envelope plus its source
-revision and a digest of the associated legacy file; a mismatch is an explicit stale-sidecar error.
-FinishProtocolGenerator may consume/forward the metadata beside unchanged lines; it does not
-invent registration links from `competitor_id` or HTML cells. No new finish document is required
-for site photos once the start-list assignment has been acknowledged.
+- Import from the site writes `r<id>` into the open-list line.
+- Opening a line in the form keeps its tokens as form state; saving or editing the line writes them
+  back, including after a bib, name or group change. The form shows that the line is linked to a
+  site entry and offers an explicit unlink. A cleared form starts without tokens.
+- "Add into team" appends the added entrant's tokens to the team line.
+- Merge from site matches an existing line by token first, then by the current name/year key, so a
+  registration renamed on the site does not come back as a second line.
+- The same token on two protocol lines is reported like a duplicate bib.
+- Backups and the start protocol file hold the lines as they are; no second file is written.
+
+### What the site does with an upload
+
+Derive assignments from the accepted snapshot of every device, under the existing event lock:
+
+- A token on a line with a bib in field 0 assigns that bib to that registration. `NOT_PAID` and
+  other non-numeric markers do not assign a bib.
+- Several tokens on one line give every listed registration the same bib (a team).
+- The same registration with two bibs, or one bib on two lines with different tokens, is a conflict:
+  personal matching for those entries is suspended and the manager sees both sources. No winner is
+  guessed; the last upload does not silently win.
+- A bib bound in the previous snapshot that is still present but has lost its token (edited in an
+  older SPM) keeps its binding, marked for manager review. A bib that disappeared withdraws it.
+- History of assignments, corrections and their sources is kept.
+
+FPG may later carry the tokens into the protocol document as non-displayed row data, so results
+can be linked to accounts too. Photos do not need that: the start-list upload already says which
+bib went to which entry, before any finish protocol exists.
+
+## Variant B (alternative): structured bindings beside unchanged lines
+
+Leave every line as it is and add `registration_bindings` to the start-list POST: per entrant a
+durable local UUID, `registration_id`, `line_index`, `bib` and `state`, under the same
+`client_revision`. GET advertises `start_list_capabilities.registration_bindings_versions: [1]`;
+a client reports success only after the server acknowledges `registration_bindings_revision`.
+Offline files need a versioned sidecar with a digest of the text file it describes.
+
+Costs compared with A: a second representation of the same list to keep consistent, a sidecar that
+can be lost or go stale beside its text file, a capability handshake, and nothing for a race whose
+start list never reached the site. Its advantage, untouched line layout, matters less once the
+existing readers are known to ignore an extra trailing field.
+
+## Rules for either variant
+
+- Do not repurpose comments or change the meaning of fields 0-9; `competitor_id` stays the bib.
+- Use `trim-nfc-exact-v1` bib normalization from the photo-index contract.
+- Never bind by name. Name/birth-year similarity may only suggest a candidate to a manager.
+- Mixed-version tests prove that old SPM, FPG and site responses keep their meaning.
 
 ## Historical backfill
 
@@ -93,8 +120,7 @@ facts and conflicts to an authorized manager. Name/birth/category similarity sug
 but never commits identity automatically. One confirmation can apply an unambiguous reviewed batch;
 ambiguous or absent entries remain unresolved. Do not require old athletes to re-register.
 
-Only a self-only, non-relay athlete-owned registration or separately confirmed athlete link
-enables personal photos. In current free-mode registrations, neither `user` nor `registered_by`
-alone proves athlete ownership; absent accounts and relay members remain event-level bib
-search only. Keep history, reviewer and corrections. Historical proposals cannot replace a newer
-SPM-confirmed assignment without explicit manager resolution. Expose source/status in manager UI.
+Personal photos need a confirmed athlete of the registration (see [data model](../data-model.md));
+a registration ID alone says which entry got the bib, not who the athlete is. Keep history,
+reviewer and corrections. Historical proposals cannot replace a newer SPM-confirmed assignment
+without explicit manager resolution. Expose source/status in manager UI.
