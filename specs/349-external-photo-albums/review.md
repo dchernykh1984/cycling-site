@@ -83,3 +83,20 @@ not implemented features or a decision to require paid recognition.
 The [coverage matrix](requirements-coverage.md) records C01-C30, separates later-stage wishes from
 first-pilot requirements and keeps unresolved implementation choices visible. Documented coverage
 is not implementation proof; only specification artifacts changed in this audit.
+
+## Maintainer review of 2026-10-25 and cycle 4
+
+The maintainer's additions (C31-C37) changed the start-line binding to a recommended trailing field
+(variant A, with the structured envelope kept as variant B), added athlete ownership for several
+entries and relay slots, the bib-seeded face route, previews as an album requirement, site-hosted
+storage as an adapter and a manual indexing mode. A self-review of those changes found:
+
+**Accepted finding R8**: "Non-numeric markers assign no bib" contradicted the index rule that bibs
+keep letters and leading zeroes. Only an empty field 0 and SPM's `NOT_PAID` now assign nothing.
+
+**Accepted finding R9**: A line whose stage field is N > 1 owns N consecutive bibs, as FPG reads it.
+The binding contract treated a line as one bib. All stage bibs now go to the line's registrations
+as team bibs; the member of each stage is not inferred.
+
+**Accepted finding R10**: The plan's VII/XI gate still described only the acknowledged structured
+fields. It now states the compatibility evidence for both variants.
