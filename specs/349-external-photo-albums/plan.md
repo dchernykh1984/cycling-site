@@ -71,7 +71,8 @@ architecture gate is not evidence that the proposed feature already works or is 
 
 - `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`
 - `contracts/connector.md`, `contracts/photo-index.md`, `contracts/start-list-bindings.md`
-- `contracts/api-and-setup.md`, `examples/photo-index.v1.json`, `checklists/requirements.md`
+- `contracts/api-and-setup.md`, `contracts/user-journeys.md`, `examples/photo-index.v1.json`
+  and `checklists/requirements.md`
 - `review.md` records three document review cycles. `tasks.md` is deferred until maintainer review.
 
 ### Source Code (repository root)
@@ -115,8 +116,16 @@ The arrows for indexing and import are background work. Gallery metadata queries
 Media delivery can require provider I/O and has its own availability/error state.
 
 Event pages gain a separate indexed-photo-album section. Existing additional materials remain
-for video, clips, documents and unconverted links. A manager confirms each conversion after import,
-retaining the original link and publication history rather than rewriting approved event content.
+for video, clips, documents and unclassified links. A manager confirms each photo-link
+classification, retaining its source/history; searchable indexed status requires a working import.
+
+### User-facing views
+
+The [journey contract](contracts/user-journeys.md) defines two event actions (personal photos and
+all albums) and one cabinet entry point into personal event cards. These are projections over the
+same photo index, not stored duplicate albums. Personal grids and source-album grids share the
+existing gallery card/detail patterns while keeping their scopes, permissions and empty states
+explicit. Normal external links remain distinguishable from indexed/searchable albums.
 
 ## Delivery slices for later task generation
 

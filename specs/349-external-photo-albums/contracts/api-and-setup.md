@@ -9,10 +9,11 @@ All machine routes remain under `/api/v1/`, without a language prefix.
 | Operation | Caller and bounds |
 | --- | --- |
 | Read enabled connector/index capabilities and guide links | A person allowed to open setup; no credentials/account grants returned |
+| Classify/unclassify an existing material as a photo-album link | Authorized event manager/admin/owner; preserve source URL and other materials |
 | Connect, inspect, resync, disconnect an external album | Manager of that album's event, or admin/owner; validated root and access |
 | Hide/remove or explicitly restore an indexed album/photo | Event manager/admin/owner; persistent publication decision, never deletes provider original |
 | Read event albums, bib matches and paginated photos | Same event/album visibility as pages; 404 for non-visible resources |
-| Read my event/all-event matches | Authenticated athlete; confirmed registration associations, never caller-supplied account override |
+| Read my event cards, per-event matches and source-album facets | Authenticated athlete; confirmed registration associations, never caller-supplied account override |
 | Request individual download or archive; inspect/cancel own job | Recheck resource visibility and job ownership; bounded selection and bytes |
 | Stage/review/commit historical bib associations | Event manager/admin/owner; source preview, ambiguity and audit required |
 
@@ -24,6 +25,9 @@ not a blanket participant API credential.
 API results include source/recognition/identity status and structured actionable errors, supported
 versions, current limits and retry-after where relevant. Localized fields preserve ru/kk/en values;
 numeric IDs, dates, paths and bibs are not translated. Both pages and API call the same actions.
+
+The [user journey contract](user-journeys.md) fixes event/cabinet navigation, personal counts/covers,
+guest return and selection semantics. Its cards/facets/statuses need API parity too.
 
 ## Album-link input: information beside the field
 
@@ -61,8 +65,9 @@ reconnection only when a grant expires or is revoked.
 Named pilot events are 533 (Google Drive) and 719 (Dropbox); inspect their links later.
 Choose the existing event, attach its old albums, show publication and number-search progress.
 Show a separate indexed-photo-album section with these actions; keep additional materials for
-videos, clips, documents and unconverted links. A manager explicitly converts a link only after
-a working import; retain the source and do not rewrite or erase other event materials.
+videos, clips, documents and unclassified links. A manager explicitly classifies a photo link;
+it can remain an ordinary external album before indexing. Retain the source and do not rewrite
+or erase other materials; advertise number search only after a working import.
 Offer manager import of old start/results files with a preview of proposed associations. Reuse the
 existing event/registration facts; do not ask participants for names and bibs again to compensate
 for dropped references. State separately how many photos are indexed and how many registrations

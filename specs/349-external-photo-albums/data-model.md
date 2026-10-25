@@ -13,6 +13,7 @@ semantics agree; do not change curated-gallery administration rights to enable e
 | IssuedBibAssignment | Event, registration reference, bib, source/device/revision, state | SPM authoritative for new races; confirmed historical import for old races |
 | AthleteRegistrationLink | Existing registration and confirmed athlete account, provenance | Existing self-registration or reviewed association; registered-by is not athlete identity |
 | HistoricalMatchBatch | Event, retained file digest, rows, suggested registration, decision/reviewer | Staging only until manager confirmation; names never act as stable keys |
+| ClassifiedPhotoLink | Existing material reference, manager classification, localized display override/fallback | Ordinary external source, no index required; URL stays on original material |
 | PublicationDecision | Album/photo visibility or removal, actor, reason, restoration history | Site-owned publication overlay; not a competing source for recognized bibs |
 | ImportJob / ArchiveJob | Owner, bounded inputs, cursor/progress, result/error/expiry | Durable execution state; no unbounded page-request processing |
 
@@ -68,6 +69,21 @@ revisions and cannot overwrite a current authoritative SPM assignment silently.
 
 **Archive**: queued -> preparing -> ready / partial / failed / cancelled -> expired. Ready/partial
 results are owner-bound; access checks at execution and retrieval can remove newly hidden files.
+
+## Event album source projection
+
+The all-albums view unifies visible curated albums, indexed external albums and explicitly
+classified photo material links. Reference existing rows/URLs; do not create a second stored copy
+of a material URL. Classification is independent of indexing and never infers resource type from
+a provider hostname. A classified plain link has no fabricated photo count or number search.
+
+## Personal gallery projections
+
+A personal event album is a query projection, not another stored album: eligible athlete links
+join confirmed bibs to accepted observations within the same event and visible sources. Group
+by event; count distinct `(album_id, photo_id)` results and select covers only from that set.
+Multiple registrations/bibs/source albums do not create duplicate event cards. Owned registrations
+with pending number/index data retain an explicit state instead of disappearing from the overview.
 
 ## Access and retention
 

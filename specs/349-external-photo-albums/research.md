@@ -106,7 +106,8 @@ riders (duplicates facts); automatically equate names or registered-by with athl
 Actual album access and retained number files are still to be inventoried during the pilot. Their
 availability affects recovered personal links, not support for historical number search. Add a
 separate indexed-album section on event pages, retaining general additional materials and the
-original links until a manager confirms a working indexed replacement.
+original links and history. Manager-approved plain photo-link classification can precede indexing;
+only a working indexed import enables number search.
 Never claim every participant has a known issued bib: the current site computes provisional list
 numbers, and historical protocols may have gaps or changes.
 
@@ -130,3 +131,18 @@ Instructions beside the link cover prerequisites, tested tool download/version, 
 uncertainty review, publication, refresh and recovery. Do not advertise an unshipped indexer or an
 unapproved Drive scope as ready. Remaining tool/hosting choices are explicitly gated experiments
 for later implementation slices, not hidden requirements imposed on users.
+
+## 6. Existing gallery patterns and external links
+
+Verified `gallery/templates/gallery/albums.html` provides album cards and `gallery/gallery.html`
+provides the photo grid/pagination; `gallery/photo.html` provides detail, original download and
+previous/next navigation. There is no existing bulk-selection control to claim as reusable.
+`calendar_app/templates/calendar_app/detail.html` already separates gallery albums from materials;
+`accounts/templates/accounts/profile.html` has registration lists but no personal photo overview.
+The new journey contract proposes these additions without changing those templates now.
+
+`calendar_app.models.CompetitionMaterial` currently has title, URL and ordering, with an untranslated
+legacy caption and no resource-type field. Photo classification must be an explicit manager fact,
+not guessed from a Drive/Dropbox hostname (the same provider can host a video or document). Reuse
+the existing material reference/URL; preserve its original label as fallback. New photo-source
+display fields follow ru/kk/en rules without inventing translations or rewriting unrelated materials.
