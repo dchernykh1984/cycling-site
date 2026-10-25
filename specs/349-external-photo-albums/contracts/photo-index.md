@@ -66,8 +66,25 @@ Normalize bibs by trimming boundary whitespace and Unicode NFC only. Keep leadin
 letters and case. Values are 1..32 characters, without controls; no automatic `00120` -> `120`
 conversion or OCR `O` -> `0` conversion. Alias rules, if needed for real data, require explicit
 reviewed event configuration shared by indexing, timing and search, not separate heuristics.
-Only accepted observations enter ordinary search. Candidate counts and an uncertainty-review
-workflow remain visible to the manager. A photo can contain several accepted bibs.
+Only accepted observations enter ordinary event search. A registration album also shows that
+bib's candidates (uncertain OCR, `appearance`) for the participant to confirm or reject; candidate
+counts and the review workflow remain visible to the manager. A photo can contain several
+accepted bibs.
+
+## Participant decisions are not part of the index
+
+The site keeps two things apart (maintainer decision, 2026-10-25):
+
+- its imported copy of the album's index, replaced only when an organizer adds the album or presses
+  "Refresh participants' tagging" -- never by background polling;
+- participants' decisions, per registration and photo: "this is me" (a green check) or "not me"
+  (a red cross). They are site data, never written into the album, and survive every refresh.
+
+That is also how a locally made index is validated. The site checks its structure on import --
+schema, sizes, paths inside the album -- because those protect the site. It does not trust its
+content: a wrong bib shows up as a candidate that the participant rejects, and a rebuilt or broken
+index cannot erase what participants already decided. Producer-side corrections (manual precedence
+above) stay in the index; they are the organizer's tool, not the participant's.
 
 The same photo UUID cannot occur twice, be both live and removed, or point at two originals.
 Do not automatically merge distinct photographers' photographs by filename. A checked source move
