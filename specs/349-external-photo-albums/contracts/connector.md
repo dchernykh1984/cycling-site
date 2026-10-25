@@ -49,6 +49,12 @@ Native IDs and opaque revisions are private adapter details. Never cache tempora
 asset references. Use a provider-supported safe delivery mode or a bounded authenticated proxy;
 never assume a temporary API URL may be embedded in a browser.
 
+Delivery (see [research section 7](../research.md)): import copies every published preview into the
+site's media storage once, verified against its SHA-256, and the site serves previews itself;
+neither Dropbox nor Drive offers a supported way to embed a file from someone else's shared folder.
+An adapter declares how it hands out originals: a documented provider download URL, or a bounded
+proxy whose traffic counts against a configured monthly budget shown to the manager.
+
 The HTTPS adapter confines every path and redirect to configured public origins/root. Protect
 against SSRF including DNS resolution, redirects, private/reserved network addresses and oversized
 responses. A provider adapter accepts only its known URL shapes/API hosts, never arbitrary fetches

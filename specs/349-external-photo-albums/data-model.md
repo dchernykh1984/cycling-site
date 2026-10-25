@@ -8,7 +8,7 @@ semantics agree; do not change curated-gallery administration rights to enable e
 | StorageConnection | Owner, adapter key, secret reference, granted capabilities, health | Provider grant; never expose secrets in album/API responses |
 | ExternalAlbum | Site ID, portable album UUID, event, root, localized title/credit, visibility, connection | Manager-owned link; one event per album; many albums per event |
 | IndexRevision | Album, producer revision, manifest SHA-256, processing counts, import state | Immutable validated producer snapshot; one published pointer per album |
-| IndexedPhoto | Album UUID + photo UUID, original/preview refs and digests, processing state | Derived from published manifest; provider IDs are an internal root-checked cache |
+| IndexedPhoto | Album UUID + photo UUID, original/preview refs and digests, processing state, site copy of the preview | Derived from published manifest; provider IDs are an internal root-checked cache; the preview copy is replaced when its digest changes |
 | BibObservation | Photo, exact normalized bib, candidate/accepted/rejected, method/confidence | Manifest source; corrections published there, not independently edited in site DB |
 | IssuedBibAssignment | Event, registration reference, bib, source/device/revision, state | SPM authoritative for new races; confirmed historical import for old races |
 | AthleteRegistrationLink | Registration, optional member slot, confirmed athlete account, provenance | Self-only entry, "this is me" at submission, accepted claim or manager decision; registered-by is not athlete identity |
