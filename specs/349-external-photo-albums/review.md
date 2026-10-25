@@ -100,3 +100,21 @@ as team bibs; the member of each stage is not inferred.
 
 **Accepted finding R10**: The plan's VII/XI gate still described only the acknowledged structured
 fields. It now states the compatibility evidence for both variants.
+
+## Maintainer decisions of 2026-10-25 (second round) and cycle 5
+
+Decisions recorded: variant A adopted, with the reference as a visible form field kept on both
+lists; one album per registration (C33) and a coach's view once #315 exists (C40); appearance
+instead of faces (C26, C31); participant "this is me" / "not me" marks kept apart from the
+folder index, refreshed only on request (C41, C42); Dropbox alone first, tiny thumbnails on the
+site and the photo opened in Dropbox (C43). A self-review of those changes found:
+
+**Accepted finding R11**: The index contract still rejected any processed photo without an album
+preview, while the connector let Dropbox thumbnails stand in. Import now rejects a photo only when
+it has neither; whether album previews stay mandatory is an open question.
+
+**Accepted finding R12**: The journeys still sent a thumbnail click to a site photo page with an
+original download. A click now opens the photo in Dropbox in a new tab.
+
+**Accepted finding R13**: FR-012 still promised individual downloads from the site. A single photo
+is now viewed and downloaded in the storage; archives come after the first slice.
