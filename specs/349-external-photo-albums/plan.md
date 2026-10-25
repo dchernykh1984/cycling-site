@@ -44,7 +44,8 @@ page request. Start with a resumable management-command worker over DB jobs; use
 scheduler for bounded batches, without introducing a queue service before it is needed.
 
 **Scale/Scope**: Pilot 719 first on Dropbox; pilot 533 when the Drive slice is enabled. Historical
-identity recovery and the future SPM round trip can progress independently. No face recognition.
+identity recovery and the future SPM round trip can progress independently. Face search and
+server/cloud producers remain later reviewed slices, not part of the first number-only pilot.
 
 ## Constitution Check
 
@@ -71,9 +72,10 @@ architecture gate is not evidence that the proposed feature already works or is 
 
 - `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`
 - `contracts/connector.md`, `contracts/photo-index.md`, `contracts/start-list-bindings.md`
-- `contracts/api-and-setup.md`, `contracts/user-journeys.md`, `examples/photo-index.v1.json`
-  and `contracts/uploads.md`, plus `checklists/requirements.md`
-- `review.md` records three document review cycles. `tasks.md` is deferred until maintainer review.
+- `contracts/api-and-setup.md`, `contracts/user-journeys.md`, `contracts/uploads.md`,
+  `contracts/recognition-roadmap.md`
+- `examples/photo-index.v1.json`, `checklists/requirements.md`, `requirements-coverage.md`, `review.md`
+- `tasks.md` is deferred until maintainer review; the review log records the document review cycles.
 
 ### Source Code (repository root)
 
@@ -145,7 +147,13 @@ flag alone implements. Test/upload credentials and byte limits before advertisin
 
 These are reviewable slices, not permission to implement before spec/plan review. Every slice ships
 its applicable API, tests, translations and truthful setup help together. Yandex Disk is an extension
-candidate; server OCR and face search are separate later decisions.
+candidate. The [recognition roadmap](contracts/recognition-roadmap.md) retains face/selfie search,
+bounded site-side recognition and external/cloud producers with acceptance and open gates. Those
+are further slices; no choice or implementation is implied by documenting them.
+
+The [coverage matrix](requirements-coverage.md) maps the complete discussion to normative
+requirements, scenarios and retained later-stage decisions. It separates documented scope from
+implemented or validated capabilities.
 
 ## Pilot and implementation gates
 

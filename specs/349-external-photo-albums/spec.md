@@ -201,6 +201,32 @@ then publish an index; completed originals stay unchanged and new matches appear
   upgrades, reindex and storage moves. Only an explicit authorized edit resets them; changed
   original content requires review rather than silently carrying old decisions onto a new image.
 
+- **FR-022**: Reuse authorized confirmed bib lists as optional recognition hints where available;
+  never require retyping a known roster or treat it as complete. Preserve candidates for missing
+  historical/on-the-day entrants; provisional participant-list numbering is not issued-bib truth.
+- **FR-023**: Keep storage and producer choices independent. A compatible third-party index works
+  without repeated recognition. Local indexing must not require a new paid recognition service;
+  any paid producer is opt-in with visible budget/limits. Distinguish recognition, storage and
+  delivery/temporary-resource costs rather than promising unconditional zero cost.
+
+### Retained later-stage scenarios and open decisions
+
+These wishes remain part of the feature, while the first standalone pilot is number-based:
+
+- **D1 - Face/selfie search**: Find photos at an allowed event when a bib cannot be read, using a
+  separately enabled face capability. Reuse an explicitly saved authorized reference where chosen.
+  Model/private index compatibility, access, reference/template retention/deletion, uncertainty
+  and release timing need their own reviewed design; the public bib index contains no face vectors.
+- **D2 - Background site indexing**: Optionally process connected photos slowly within configured
+  background resource budgets, with pause/resume/checkpoints and progressively visible results.
+  This is another producer of the same portable format, not recognition during a page request.
+- **D3 - Other producers**: Accept photographer/third-party tools and optional Google/Amazon or
+  specialized recognition as producer alternatives; no paid vendor is mandated. Select additional
+  producers only after measurement and an explicit operating/cost decision.
+
+The [recognition roadmap](contracts/recognition-roadmap.md) gives each scenario's acceptance and
+open decisions. Deferral means outside the first pilot, not deleted from the requested feature.
+
 ### Key Entities
 
 - **Storage connection / external album**: provider access, bounded root, event, localized title
@@ -238,7 +264,14 @@ then publish an index; completed originals stay unchanged and new matches appear
   materials; inspecting them and historical number files is deferred to the pilot. Event 533 may
   be copied to Dropbox if the maintainer chooses, but relocation is not an architectural requirement.
   Personal matching is not a prerequisite for useful event-level results.
-- Face recognition/templates, a photo marketplace and mandatory cloud OCR are outside this first
-  design. Face search needs separate identity, consent and deletion requirements.
+- Face search and optional server/cloud producers are retained in D1-D3, outside the first
+  number-based pilot. Their detailed gates remain open. A photo marketplace and mandatory cloud
+  OCR are not requested scope.
 - This describes proposed behaviour. The maintainer reviews spec and plan before task generation
   and implementation. No application behaviour is changed by this document.
+
+## Coverage of the discussion
+
+The [requirements matrix](requirements-coverage.md) maps issue/conversation scenarios to this
+specification, contracts and explicitly retained later-stage wishes. It also lists genuinely open
+implementation choices. Coverage means documented, not already implemented or approved.

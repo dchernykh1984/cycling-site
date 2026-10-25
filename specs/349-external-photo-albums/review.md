@@ -64,3 +64,22 @@ job states and retry/indexing acceptance. A capability flag does not satisfy the
 from overwriting them on reindex. Added FR-021 and normative acceptance/rejection precedence,
 content-digest binding, optional reviewed-set locking (including no accepted bibs), sample fields
 and repeat/model-change/source-move acceptance scenarios. Changed-image review retains audit.
+
+## Completeness audit - Retained broader recognition scope
+
+**Accepted omission R7**: Face/selfie search and slow server recognition were named as deferred,
+but did not retain the user's scenarios and acceptance. Added D1-D3 with explicit model/private
+format/access/retention and resource/publication gates, independent third-party/cloud producers,
+optional issued-roster hints and cost boundaries (FR-022/023). These are later reviewed slices,
+not implemented features or a decision to require paid recognition.
+
+## Coverage verification passes
+
+1. Compare issue scenarios, comments and later maintainer decisions against spec stories/FRs.
+2. Check each added requirement reaches plan, applicable contracts and acceptance scenarios.
+3. Probe regression edges: read-only upload, uploaded-not-indexed status, rerun/manual rejection,
+   changed bytes, unknown-roster bibs and deferred capability labels versus actual first-pilot scope.
+
+The [coverage matrix](requirements-coverage.md) records C01-C30, separates later-stage wishes from
+first-pilot requirements and keeps unresolved implementation choices visible. Documented coverage
+is not implementation proof; only specification artifacts changed in this audit.

@@ -80,6 +80,11 @@ interrupt a writable batch, resume without duplicates, retry finalize, compare o
 then index and publish. Read-only/cross-manager destinations must reject writes, while completed
 uploads and known form values survive recoverable errors. Uploaded-only files remain pending.
 
+Confirm a compatible index created by an independent producer imports without another OCR pass.
+Use optional issued-bib hints with one deliberately absent on-the-day bib: it must remain
+reviewable, not be discarded by an assumed-complete roster. Future D1-D3 acceptance is in the
+[recognition roadmap](contracts/recognition-roadmap.md), not claimed as runnable in this pilot.
+
 Record pilot precision/recall, unreadable rate, CPU time, import memory, metadata query p95,
 external traffic, original integrity and download failures. Evaluate the 10,000-photo search fixture
 separately from actual pilot size. Bulk archives must stay within advertised byte/photo/TTL bounds.
