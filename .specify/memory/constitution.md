@@ -1,29 +1,3 @@
-<!--
-Sync Impact Report
-- Version: none -> 1.0.0 (first constitution, issue #337); 1.0.0 -> 1.1.0: principle IV makes the
-  three languages a deliberate choice; principle VI lets the maintainer accept a local assumption.
-  1.1.0 -> 1.2.0: the light/dark screenshot comparison is retired (it guarded the skins refactoring,
-  issue #324); principles II and III no longer name it.
-  1.2.0 -> 1.3.0: principle IV requires localized reader-facing data fields by default, with
-  an explicit exception for documents that belong to one locale.
-  1.3.0 -> 1.4.0: principles added by the maintainer -- VII: what a participant or an organizer does
-  with data on the site is also available through the API (the gaps are listed per area in
-  specs/site/); VIII: one fact, one home; IX: nothing is lost by accident; X: every input is
-  checked, every member's data is private; XI: the API keeps its promises; XII: usable by everyone,
-  on any screen.
-  1.4.0 -> 1.5.0: the preamble states what the platform is for, who it serves and that organizing
-  comes with a role the owners grant; principle VI widens from timed sports to any activity where
-  people move, with timing for lap and point-to-point courses; Constraints say load is handled when
-  the site grows.
-- Principles: I-V drawn from CLAUDE.md / AGENTS.md and the skills under .claude/skills and
-  .agents/skills, which stay the detailed runtime guidance; VI-XII set by the maintainer (no local
-  or sport-specific hardcoding; an API by default; one fact, one home; nothing is lost by accident;
-  every input is checked, every member's data is private; the API keeps its promises; usable by
-  everyone, on any screen).
-- Templates: plan-template.md's "Constitution Check" gate reads these principles; no template
-  needed changes.
--->
-
 # cycling-site Constitution
 
 cycling-site is a platform that helps people organize sport, and the activities around it, wherever
@@ -207,6 +181,35 @@ as with a mouse.
   by their role and name where they can, as a screen reader does -- so a control without a name
   fails its own test.
 
+### XIII. Ask for a fact once, reuse it with permission
+
+A participant, organizer, judge or any other person does not have to enter again a fact the
+platform already knows and may use for that person and purpose. Forms and connected tools reuse
+known values and offer editing, rather than asking people to bridge a gap between programs.
+
+- Before adding an input, check profiles, registrations, event data and connected tools for its
+  source. Carry stable references through imports and exports instead of asking for names or
+  numbers again after losing the reference.
+- Ask only for missing or changed facts. A recoverable error keeps the values already submitted;
+  a conflict shows the existing facts and asks for the decision, not the whole form again.
+- Reuse follows permissions and the person the fact concerns. Registering someone else does not
+  make their identity the registering account's identity. Authentication and purpose-specific
+  consent remain explicit; previous consent is not silently reused for a different purpose.
+
+### XIV. Explain a requirement where the person meets it
+
+A person can understand what a feature needs and what will happen before submitting data or
+starting an operation. Necessary instructions are part of the feature, not knowledge they must
+find in a ticket, source code or a conversation with the maintainer.
+
+- Beside an input that depends on a service, file format or preparation step, show supported
+  choices, accepted versions, an example and a reachable step-by-step guide. Distinguish what
+  works now from what is planned; state required access and any known material limits or costs.
+- Show progress, partial results and failures with their cause and the next available action.
+  Unknown, unprocessed and unavailable are explicit states, never an unexplained empty result.
+- Keep these explanations accessible on phones and by keyboard, in every site language. Generate
+  changing lists and format versions from the same definitions the operation validates.
+
 ## Constraints
 
 - Stack: Django 6 with Wagtail 7, PostgreSQL, Bootstrap 5.3 with the Bootswatch Lux theme,
@@ -239,4 +242,4 @@ bumps the version -- MAJOR for a principle removed or redefined, MINOR for one a
 expanded, PATCH for wording -- and updates the Last Amended date. Plans check themselves against
 it in their "Constitution Check".
 
-**Version**: 1.5.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-24
+**Version**: 1.6.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-25
