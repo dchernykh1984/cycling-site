@@ -80,6 +80,12 @@ editing, save/restart and upload; the athlete's gallery finds the assigned bib's
 5. **Given** the event page and cabinet, **Then** the event's "Photos with me" opens one-start
    thumbnails, while the cabinet action opens event cards like gallery albums. Opening a card
    shows the same own-photo selection across source albums; ordinary album links are separate.
+6. **Given** an athlete with two entries and two bibs at one event, **Then** one personal event
+   card holds both bibs' photos once each, with a filter by bib.
+7. **Given** a parent who entered a child, **Then** the child's photos appear under "Photos of my
+   entries", labelled with the child's entry, and never under the parent's "Photos with me".
+8. **Given** a relay team sharing one bib, **Then** each confirmed member sees the team's bib
+   photos labelled as team photos; an unclaimed member name gives nobody access.
 
 ### User Story 4 - Download selected photos or all my photos (Priority: P2)
 
@@ -212,6 +218,14 @@ then publish an index; completed originals stay unchanged and new matches appear
   without repeated recognition. Local indexing must not require a new paid recognition service;
   any paid producer is opt-in with visible budget/limits. Distinguish recognition, storage and
   delivery/temporary-resource costs rather than promising unconditional zero cost.
+- **FR-024**: Record who the athlete of an entry is separately from who submitted it: self-only
+  entries, an explicit "this is me" at submission, an accepted claim link or a manager decision.
+  Relay entries have member slots that are claimed the same way. One account may be the athlete of
+  several entries at one event; its personal results are their union, deduplicated by photo.
+- **FR-025**: Offer the submitter a separate "Photos of my entries" scope for entries filed for
+  other people, labelled per entry and never merged into "Photos with me". It uses the same
+  confirmed bibs and visibility rules. Whether it stays visible after the athlete claims the entry
+  for their own account is an open maintainer decision.
 
 ### Retained later-stage scenarios and open decisions
 
