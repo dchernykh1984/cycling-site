@@ -231,8 +231,10 @@ then publish an index; completed originals stay unchanged and new matches appear
 
 These wishes remain part of the feature, while the first standalone pilot is number-based:
 
-- **D1 - Face/selfie search**: Find photos at an allowed event when a bib cannot be read, using a
-  separately enabled face capability. Reuse an explicitly saved authorized reference where chosen.
+- **D1 - Face search**: Find photos at an allowed event when a bib cannot be read, using a
+  separately enabled face capability. Primary route: faces from the athlete's own numbered photos
+  at that event, so no selfie is needed; relay bibs give one cluster per member, never one person.
+  Alternative: an explicitly saved authorized reference photo.
   Model/private index compatibility, access, reference/template retention/deletion, uncertainty
   and release timing need their own reviewed design; the public bib index contains no face vectors.
 - **D2 - Background site indexing**: Optionally process connected photos slowly within configured
