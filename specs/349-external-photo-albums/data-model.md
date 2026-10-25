@@ -23,8 +23,11 @@ semantics agree; do not change curated-gallery administration rights to enable e
   an explicit replacement transaction retaining history, not a silent last-device-wins update.
 - Historical rows can remain unresolved without a site registration/account. Keep their source
   and bib for manager review; public photo search does not expose their private imported fields.
-- Self-only linked entries are evidence of athlete ownership. Free-mode registered-by and relay
-  membership strings are not. No automatic relay-member account linking in the pilot.
+- Self-only, non-relay entries linked to the account are evidence of athlete ownership. In the
+  current free-mode submission path, both `user` and `registered_by` can identify the submitter
+  rather than the named athlete (`registrations/views.py`). Neither field alone proves ownership
+  there. Require a separately confirmed athlete link; relay strings are not account links either.
+  No automatic relay-member account linking in the pilot.
 - A withdrawn/deleted registration invalidates automatic personal association. Retain only the
   minimum source/audit facts permitted by the existing deletion policy; no duplicated profile.
 

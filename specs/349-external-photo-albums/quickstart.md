@@ -43,7 +43,8 @@ provider call happens in metadata search, including personal galleries and pagin
 
 Import a retained number file; compare names only as suggestions. Confirm reviewed mappings,
 leave equal-name/absent/relay rows unresolved and re-import idempotently. An account that entered
-another person must not receive their photos as its own. Record original source and reviewer.
+another person must not receive their photos as its own, even when both registration `user` and
+`registered_by` point to that account. Record original source and reviewer.
 
 For a future race, import registrations into SPM, assign/edit bibs, save a backup and restart.
 Send legacy lines plus structured bindings; require capability advertisement and revision ACK.
