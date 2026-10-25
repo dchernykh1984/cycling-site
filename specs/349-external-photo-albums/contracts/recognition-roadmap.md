@@ -4,10 +4,33 @@ This contract preserves the broader discussion. The first independent pilot uses
 local CPU indexing. Deferred scenarios remain feature requirements for later reviewed slices;
 their presence here is not approval to implement every producer or process face data now.
 
-## D1 - Search by a face/selfie (later slice)
+## D1 - Find unnumbered photos by face (later slice)
+
+### Seeded by the athlete's own numbered photos (primary route)
+
+The maintainer's idea: the photos where a bib was read already show what that rider looks like.
+Use them as the reference, so nobody has to upload a selfie.
+
+1. Seeds: accepted bib observations whose `region` can be paired with exactly one face. A bib with
+   two candidate faces (riders side by side, a spectator behind) is not a seed for that photo.
+2. Per event and bib, cluster the seed faces. An individual entry expects one cluster; outlier
+   faces are dropped, not attached. A relay bib expects up to one cluster per team member, and
+   clusters are never merged into one person because they share a bib.
+3. Match faces on the event's photos with no accepted bib (or a different one) against those
+   clusters. A match is a `face` candidate, kept apart from bib matches; it never becomes an
+   accepted bib.
+4. The athlete sees face candidates as "probably you", with confirm/reject. Their answer is a
+   site-owned personal decision, like the publication overlay, and survives reindexing of
+   unchanged originals. A relay member first picks which team cluster is them; no cluster is
+   assigned to a member automatically.
+
+Only event-scoped: a cluster built at one event is not used to search another event in this
+route. Cross-event reuse would need the saved-reference rules below.
+
+### Seeded by a reference photo (alternative)
 
 A participant can search an allowed event using their own reference photo when the bib is not
-visible or was not recognized. Results are thumbnails with the same individual/selected/all
+visible or was not recognized, or when no numbered photo of them exists. Results are thumbnails with the same individual/selected/all
 allowed downloads. Event selection and album visibility still apply; do not implement a global
 search for arbitrary people across private events. Number search remains independently useful.
 
@@ -22,13 +45,20 @@ quality/uncertainty thresholds and any needed permission/consent workflow. Porta
 manifests never acquire face vectors or identity records. A versioned private face extension must
 not require redoing ordinary bib indexes or tie the gallery to a particular storage provider.
 
-Acceptance for that slice: a visible face with no readable bib can be found through the face
+Face boxes and templates are biometric data. They live in a private extension delivered to the
+site (or kept by the producer), never in the album folder next to the public manifest, and are
+deleted with the event's face data on request. Whether processing needs an athlete's opt-in, an
+event-level notice or both is a decision to take before this slice ships.
+
+Acceptance for that slice: a rider whose bib is readable on some photos is found on photos where
+it is not, without uploading a selfie; a relay bib yields separate clusters per member; a face
+paired ambiguously with a bib seeds nothing; a visible face with no readable bib can be found through the face
 capability; mismatched model/index versions are actionable errors; unsupported events do not ask
 for a selfie; reference reuse and removal have visible effects. API permissions equal the UI.
 False matches, processing times and face quality are measured on authorized pilot samples.
 
-**Open decision**: engine and private face contract, supported query authority, retention and
-release timing. Do not claim this is included in the number-only pilot or silently drop the wish.
+**Open decision**: engine and private face contract, consent model, supported query authority,
+retention and release timing. Do not claim this is included in the number-only pilot or silently drop the wish.
 
 ## D2 - Slow background indexing on site resources (optional producer)
 
