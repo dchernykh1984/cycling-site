@@ -70,6 +70,11 @@ reach the same results; several photographer albums form one personal event card
 cover/count. Check normal external links, sign-in return, account switching and selection across
 pages before archive creation.
 
+Exercise the [site upload path](contracts/uploads.md) independently of ready-album import:
+interrupt a writable batch, resume without duplicates, retry finalize, compare original bytes,
+then index and publish. Read-only/cross-manager destinations must reject writes, while completed
+uploads and known form values survive recoverable errors. Uploaded-only files remain pending.
+
 Record pilot precision/recall, unreadable rate, CPU time, import memory, metadata query p95,
 external traffic, original integrity and download failures. Evaluate the 10,000-photo search fixture
 separately from actual pilot size. Bulk archives must stay within advertised byte/photo/TTL bounds.

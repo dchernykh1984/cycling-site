@@ -72,7 +72,7 @@ architecture gate is not evidence that the proposed feature already works or is 
 - `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`
 - `contracts/connector.md`, `contracts/photo-index.md`, `contracts/start-list-bindings.md`
 - `contracts/api-and-setup.md`, `contracts/user-journeys.md`, `examples/photo-index.v1.json`
-  and `checklists/requirements.md`
+  and `contracts/uploads.md`, plus `checklists/requirements.md`
 - `review.md` records three document review cycles. `tasks.md` is deferred until maintainer review.
 
 ### Source Code (repository root)
@@ -137,6 +137,11 @@ explicit. Normal external links remain distinguishable from indexed/searchable a
    binding exchange; test backups/restart and mixed old/new clients before adoption.
 4. **Portability and downloads**: Google Drive reader, public HTTPS conformance adapter and bounded
    archive jobs. Enable each provider only after its access flow is proven on real test albums.
+
+The [site upload slice](contracts/uploads.md) follows the read-only pilot: organizer UI/API,
+writable-adapter transfer/resume, job progress and a truthful hand-off to local or enabled
+background indexing. It is a retained product requirement, not something an adapter capability
+flag alone implements. Test/upload credentials and byte limits before advertising it as ready.
 
 These are reviewable slices, not permission to implement before spec/plan review. Every slice ships
 its applicable API, tests, translations and truthful setup help together. Yandex Disk is an extension

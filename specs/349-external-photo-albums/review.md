@@ -50,3 +50,10 @@ failure paths. Verified bulk selection is a new control, not existing gallery be
 separated plain-link classification from successful index import. No unresolved findings remain
 in these document passes. These are proposed screens,
 not implemented UI or evidence of a working personal gallery.
+
+## Completeness audit - Organizer input paths
+
+**Accepted omission R5**: Conversation and issue scenario 4 require uploading through the site
+into selected external storage. Earlier contracts mentioned only an optional adapter upload
+capability, not a shippable user flow. Added story 6, FR-020, upload contract, UI/API operations,
+job states and retry/indexing acceptance. A capability flag does not satisfy the user scenario.
