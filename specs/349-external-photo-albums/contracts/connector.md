@@ -49,11 +49,20 @@ Native IDs and opaque revisions are private adapter details. Never cache tempora
 asset references. Use a provider-supported safe delivery mode or a bounded authenticated proxy;
 never assume a temporary API URL may be embedded in a browser.
 
-Delivery (see [research section 7](../research.md)): import copies every published preview into the
-site's media storage once, verified against its SHA-256, and the site serves previews itself;
-neither Dropbox nor Drive offers a supported way to embed a file from someone else's shared folder.
-An adapter declares how it hands out originals: a documented provider download URL, or a bounded
-proxy whose traffic counts against a configured monthly budget shown to the manager.
+Delivery (maintainer decision 2026-10-25; see [research section 7](../research.md)):
+
+- **Thumbnails** live on the site: tiny, about 10-20 KB each (a long side of about 320 px), made
+  once at import from the album's preview. When an album has no previews, the Dropbox adapter can
+  take them from `files/get_thumbnail_v2`, which works for a file inside a shared folder link with
+  app authentication. 2,000 photos are then roughly 20-40 MB of disk (estimate).
+- **A click opens the photo in Dropbox in a new tab**; viewing and downloading happen there, on
+  Dropbox's traffic, not the site's. For an album whose owner connected their Dropbox account,
+  the adapter creates (or reuses) a shared link for that file on the first click and caches it.
+  For an album known only by its folder link, the API cannot make a link to one file inside it;
+  the adapter opens the folder link with `preview=<file name>`, which is what Dropbox's own page
+  produces when a file is clicked but is not documented, so the pilot must confirm it and fall
+  back to the folder link.
+- No proxy of originals through the site in the first slice; archives come later.
 
 The HTTPS adapter confines every path and redirect to configured public origins/root. Protect
 against SSRF including DNS resolution, redirects, private/reserved network addresses and oversized

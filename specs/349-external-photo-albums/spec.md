@@ -135,20 +135,22 @@ then publish an index; completed originals stay unchanged and new matches appear
 
 ### Functional Requirements
 
-- **FR-001**: Read external albums through a common connector interface, initially Dropbox and
-  Google Drive. Google Photos is not a source: its API no longer reads shared albums. Other services, including Yandex Disk, need an adapter and shared conformance
-  checks. Unsupported adapters must not appear as working options. The site's own storage is
-  another adapter, so moving albums onto the site later swaps the connector, not the format.
+- **FR-001**: Read external albums through a common connector interface. The first and, for now,
+  only adapter is Dropbox, the maintainer's main storage (decision 2026-10-25); Google Drive comes
+  next. Google Photos is not a source: its API no longer reads shared albums. Other services,
+  including Yandex Disk, need an adapter and shared conformance checks. Unsupported adapters must
+  not appear as working options. The site's own storage is another adapter, so moving albums onto
+  the site later swaps the connector, not the format.
 - **FR-002**: Accept a documented, versioned, storage-independent index beside the photos. Each
   photo has a stable identity, original/preview references and zero or more bib observations, with
   explicit processing state and correction provenance. Originals are not rewritten. Previews are
   part of the album, written by the producer; the site does not make thumbnails from originals.
 - **FR-003**: Import validated indexes into a durable site search index. Event, bib and personal
   metadata searches use it without contacting photo storage; retrieving media is separate.
-  Import copies the album's previews to site storage (originals stay external), because the
-  providers offer no supported way to show a file of someone else's folder straight in a page.
-  Originals go out by a provider download URL where the adapter has one, otherwise through a
-  bounded proxy counted against a visible traffic budget.
+  The site stores only tiny thumbnails, about 10-20 KB each, made at import; clicking one opens
+  the photo in Dropbox in a new tab, so full-size views and downloads are served by the storage
+  (maintainer decision 2026-10-25). The providers offer no supported way to show a file of
+  someone else's folder straight inside a site page.
 - **FR-004**: Publish revisions atomically, resume interrupted work and make repeat imports
   idempotent. Failed replacements retain the last valid index. Progressive processing shows counts
   and never silently removes photos missing from a partial run.
@@ -276,8 +278,8 @@ open decisions. Deferral means outside the first pilot, not deleted from the req
 
 ### Measurable Outcomes
 
-- **SC-001**: Pilot historical events 533 (Drive) and 719 (Dropbox), with an optional third;
-  at least one event has multiple albums. Each shows
+- **SC-001**: Pilot historical event 719 (seven Dropbox albums) first; event 533 (Drive) waits
+  for the Drive adapter or a copy in Dropbox. At least one event has multiple albums. Each shows
   searchable previews and original downloads without moving originals. Record real counts,
   indexing time, storage traffic and failures.
 - **SC-002**: On a manager-reviewed pilot sample, report precision, recall and unreadable rate

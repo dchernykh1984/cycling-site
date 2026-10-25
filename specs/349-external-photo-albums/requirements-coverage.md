@@ -81,6 +81,7 @@ pilots, event/cabinet navigation and specification-only scope).
 | C40 | A coach (issue #315) sees all trainees' albums; a trainee only their own | FR-025, conditional on the role being added |
 | C41 | Participants mark photos "this is me" / "not me"; candidates shown recall-first | FR-026; [index contract](contracts/photo-index.md), registration grid in the [journeys](contracts/user-journeys.md) |
 | C42 | Validate a local index by keeping participant decisions apart; refresh on adding an album or on request | FR-026; ParticipantPhotoDecision in the [data model](data-model.md) |
+| C43 | Tiny thumbnails on the site, the photo opened in Dropbox on click; Dropbox-only connector first | FR-001/003; delivery in the [connector contract](contracts/connector.md); research section 7 |
 | C34 | Keep the bib-to-entry link through SPM without losing plain text files or existing readers | FR-009/011; [binding contract](contracts/start-list-bindings.md) variant A (trailing field) adopted by the maintainer, readers checked |
 | C35 | Thumbnails are a requirement on the album and live in it | FR-002; preview rules in the [index contract](contracts/photo-index.md) |
 | C36 | Moving storage onto the site later only swaps the connector | FR-001; site-hosted storage in the [connector contract](contracts/connector.md) |

@@ -195,14 +195,16 @@ What passing traffic through the site costs:
   Previews beside the site's pages are ordinary use; serving originals or archives through it is
   not something to rely on.
 
-**Decision (proposed)**:
+**Decision (maintainer, 2026-10-25)**:
 
-- Import copies each published preview to the site's media storage once, checked against its
-  SHA-256; the site serves previews itself. An album of 2,000 photos with 50 KB previews is about
-  100 MB of disk (estimate). Originals are not copied.
-- Originals go to the reader by the cheapest route the adapter supports: a provider download URL
-  where one is documented for that file, otherwise a bounded proxy whose traffic is counted
-  against a configured monthly budget and shown to the manager.
+- The site keeps tiny thumbnails, about 10-20 KB each, made at import; originals are not copied.
+- A click opens the photo in Dropbox in a new tab, so full-size viewing and downloading use
+  Dropbox's traffic. Per-file shared links need the owner's connected account; for a folder known
+  only by its link, Dropbox's own `preview=<file name>` parameter is undocumented
+  ([forum](https://dropboxforum.com/t5/Discuss-Dropbox-Developer-API/Embedder-folder-can-t-preview-file-required-dropbox-login-even/td-p/732087))
+  and has to be tried in the pilot.
+- Dropbox first and alone; Google Drive (where a file can be opened by its ID in Drive's viewer)
+  is the next adapter.
 - "Download all" archives come after the first pilot: every archive byte is site traffic.
 - The setup help says, beside the album link, that heavy downloads count against the owner's
   sharing limits and that Google Photos albums must be exported first.
