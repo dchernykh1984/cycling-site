@@ -10,6 +10,7 @@ All machine routes remain under `/api/v1/`, without a language prefix.
 | --- | --- |
 | Read enabled connector/index capabilities and guide links | A person allowed to open setup; no credentials/account grants returned |
 | Connect, inspect, resync, disconnect an external album | Manager of that album's event, or admin/owner; validated root and access |
+| Hide/remove or explicitly restore an indexed album/photo | Event manager/admin/owner; persistent publication decision, never deletes provider original |
 | Read event albums, bib matches and paginated photos | Same event/album visibility as pages; 404 for non-visible resources |
 | Read my event/all-event matches | Authenticated athlete; confirmed registration associations, never caller-supplied account override |
 | Request individual download or archive; inspect/cancel own job | Recheck resource visibility and job ownership; bounded selection and bytes |

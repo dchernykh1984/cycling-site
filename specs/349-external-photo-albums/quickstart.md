@@ -61,7 +61,9 @@ or stale status and a safe resync path. The site can associate before a finish p
 Exercise ru/kk/en, phone, keyboard and API permission parity. At the album field verify supported
 services, scope, format version, sample, tested tool guide and next-action errors. Test a first-time
 manager using only that help. Test hidden/invite-only events, cross-manager ownership, private
-previews and archive owner/access revocation. Curated gallery permissions remain unchanged.
+previews and archive owner/access revocation. Remove a photo on the site, re-import a newer
+manifest still containing it and retry a prepared archive: the photo must remain unavailable until
+an explicit authorized restoration. Curated gallery permissions remain unchanged.
 
 Record pilot precision/recall, unreadable rate, CPU time, import memory, metadata query p95,
 external traffic, original integrity and download failures. Evaluate the 10,000-photo search fixture
