@@ -21,6 +21,13 @@ The portable root is a logical folder. OAuth scope is a different control; descr
 real grant even when the site enforces a narrower root. Existing Drive folders may need a different
 route from `drive.file`; Dropbox App Folder does not cover arbitrary personal folders.
 
+## Write-capable slice
+
+Adapter capabilities remain optional, but the product must support the site's upload workflow
+through enabled writable adapters. Implement authorize/start, append/resume, finalize, inspect and
+cancel as needed for the provider's transfer protocol, following the [upload contract](uploads.md).
+Read-only adapters explicitly lack this capability and continue to support ready album imports.
+
 ## Path and asset rules
 
 Paths are UTF-8 NFC, relative to root, case-sensitive logical names. Reject absolute paths, URI

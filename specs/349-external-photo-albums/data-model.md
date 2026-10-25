@@ -15,6 +15,7 @@ semantics agree; do not change curated-gallery administration rights to enable e
 | HistoricalMatchBatch | Event, retained file digest, rows, suggested registration, decision/reviewer | Staging only until manager confirmation; names never act as stable keys |
 | ClassifiedPhotoLink | Existing material reference, manager classification, localized display override/fallback | Ordinary external source, no index required; URL stays on original material |
 | PublicationDecision | Album/photo visibility or removal, actor, reason, restoration history | Site-owned publication overlay; not a competing source for recognized bibs |
+| UploadJob / UploadItem | Event/root, owner, per-file digest/reference/session, transferred bytes and accepted state | Provider-backed resumable transfer; no duplicate durable original on site |
 | ImportJob / ArchiveJob | Owner, bounded inputs, cursor/progress, result/error/expiry | Durable execution state; no unbounded page-request processing |
 
 ## Identity invariants
@@ -66,6 +67,10 @@ resolved. Explicit manager resolution records the competing sources and chosen r
 **Historical import**: staged -> suggested -> reviewed -> committed; rejected/unresolved rows stay
 separate. Re-importing the same file and choices is idempotent. Corrections are new reviewed
 revisions and cannot overwrite a current authoritative SPM assignment silently.
+
+**Upload**: queued -> transferring -> uploaded / partial / failed / cancelled. Uploaded is not
+indexed; preserve per-file acceptance through retry. Staging/session cleanup cannot delete
+unrelated or previously published external files. Recognition/import track their own states.
 
 **Archive**: queued -> preparing -> ready / partial / failed / cancelled -> expired. Ready/partial
 results are owner-bound; access checks at execution and retrieval can remove newly hidden files.

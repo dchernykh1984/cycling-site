@@ -11,6 +11,7 @@ All machine routes remain under `/api/v1/`, without a language prefix.
 | Read enabled connector/index capabilities and guide links | A person allowed to open setup; no credentials/account grants returned |
 | Classify/unclassify an existing material as a photo-album link | Authorized event manager/admin/owner; preserve source URL and other materials |
 | Connect, inspect, resync, disconnect an external album | Manager of that album's event, or admin/owner; validated root and access |
+| Start/resume/finalize/cancel a photo upload and read its status | Event manager of the writable destination; capability/root checks, bounded job |
 | Hide/remove or explicitly restore an indexed album/photo | Event manager/admin/owner; persistent publication decision, never deletes provider original |
 | Read event albums, bib matches and paginated photos | Same event/album visibility as pages; 404 for non-visible resources |
 | Read my event cards, per-event matches and source-album facets | Authenticated athlete; confirmed registration associations, never caller-supplied account override |
@@ -82,3 +83,7 @@ uses the adapter's supported method and respects private access; cached assets c
 access revocation. Archive requests pin their selection to photo/content revisions, recheck access
 at execution and delivery, and report skipped/changed/unavailable files. They never expose tokens
 or provider API credentials to a browser. Limits and expiry are visible before starting a job.
+
+The [upload contract](uploads.md) covers the second organizer input path. Its transfer/resume/job
+operations are required when the write-capable slice ships; a read-only connector is not a reason
+to remove the product requirement or to advertise an unavailable upload button.

@@ -97,6 +97,26 @@ not service-specific rules in search or personal pages.
 **Independent Test**: Import one portable album through two adapters; stable photo identities,
 number matches and access rules survive a verified source move.
 
+### User Story 6 - Upload event photos through the site (Priority: P2)
+
+An organizer uploads their event photos into connected external storage through the site, instead
+of first constructing an album elsewhere. The ready-album import path remains available too.
+
+**Independent Test**: Upload a batch to the organizer's writable album, interrupt and resume it,
+then publish an index; completed originals stay unchanged and new matches appear progressively.
+
+**Acceptance Scenarios**:
+
+1. **Given** an event manager and writable connection, **Then** upload reuses the selected event
+   and stored access, reports per-file progress and stores originals in that external root.
+2. **Given** a partial failure or retry, **Then** accepted files remain accepted, unfinished files
+   can resume and no duplicate photo or silent overwrite is created.
+3. **Given** read-only access, **Then** the page explains why site upload is unavailable and keeps
+   the external preparation/import path usable.
+4. **Given** uploaded but not yet indexed photos, **Then** show awaiting-indexing status and the
+   local-indexer next step, or progress from an explicitly enabled background producer. Upload
+   success is not falsely reported as recognition success.
+
 ### Edge Cases
 
 - Several people/bibs in one photo; unreadable, uncertain or falsely recognized digits; leading zeroes.
@@ -170,6 +190,11 @@ number matches and access rules survive a verified source move.
   cabinet, "Photos with me" opens personal event cards in the gallery album style; a card opens
   that same event-scoped personal grid, retaining source-album grouping/filtering inside it.
   Counts/covers are personal, pending states are visible and guest sign-in preserves destination.
+
+- **FR-020**: Let each authorized organizer upload photos through the site into their event's
+  writable external album, as well as connect a ready album. Provide capability/limit discovery,
+  per-file progress, bounded transfer, resume/idempotency and cancellation through UI and API.
+  Keep reusable tokens private, originals unchanged and uploaded-versus-indexed status explicit.
 
 ### Key Entities
 
