@@ -71,6 +71,18 @@ pilots, event/cabinet navigation and specification-only scope).
 | C29 | Known issued bibs can aid recognition; unknown old/on-the-day entrants still work | FR-022; roadmap shared producer rules; reuse authorized hints, not a complete allowlist |
 | C30 | Reuse already-paid 2 TB storage; distinguish recognition from storage/serving costs | FR-006/023; research and roadmap separate local CPU, paid OCR, capacity, traffic and temporary resources; no unconditional free-service promise |
 
+## Additions from the maintainer's 2026-10-25 review
+
+| ID | Discussed requirement | Normative coverage / acceptance |
+| --- | --- | --- |
+| C31 | Faces on bib-matched photos find the same rider where the bib is hidden | D1 primary route in the [recognition roadmap](contracts/recognition-roadmap.md); optional bib `region` in the index; no selfie needed |
+| C32 | A relay shares one bib among several very different people | FR-024; relay member slots and team-photo label in the [data model](data-model.md); one face cluster per member in D1 |
+| C33 | One account may file several entries for one race | FR-024/025; union of own entries with a bib filter; entries filed for others under "Photos of my entries" |
+| C34 | Keep the bib-to-entry link through SPM without losing plain text files or existing readers | FR-009/011; [binding contract](contracts/start-list-bindings.md) variant A (trailing field), readers checked; variant B kept as the alternative |
+| C35 | Thumbnails are a requirement on the album and live in it | FR-002; preview rules in the [index contract](contracts/photo-index.md) |
+| C36 | Moving storage onto the site later only swaps the connector | FR-001; site-hosted storage in the [connector contract](contracts/connector.md) |
+| C37 | The uploader indexes, by OCR or by hand with our tool | FR-005 manual mode; same format, `method: manual` |
+
 ## Actual gaps versus unresolved choices
 
 The audit found and added the previously incomplete website-upload scenario (R5), manual-priority
@@ -81,6 +93,7 @@ requirements or to eliminate the following real choices.
 
 Still open: real pilot album/number-source inventory; measured OCR engine/runtime/OS support and
 accuracy; proven provider authorization and operational limits; any photographer delegation;
-D1 face model/private format/access/retention/release; D2 server capacity/publication; D3 whether a
-paid producer is needed. SPM authority is resolved, but its proposed identity round trip is not
+D1 face model/private format/consent/access/retention/release; D2 server capacity/publication; D3
+whether a paid producer is needed; variant A or B for the start-line references; whether "Photos of
+my entries" stays visible after the athlete claims the entry. SPM authority is resolved, but its proposed identity round trip is not
 implemented. The maintainer reviews these documents before tasks or application implementation.
