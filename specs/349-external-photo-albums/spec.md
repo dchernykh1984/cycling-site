@@ -137,7 +137,7 @@ then publish an index; completed originals stay unchanged and new matches appear
 ### Functional Requirements
 
 - **FR-001**: Read external albums through a common connector interface, initially Dropbox and
-  Google Drive. Other services, including Yandex Disk, need an adapter and shared conformance
+  Google Drive. Google Photos is not a source: its API no longer reads shared albums. Other services, including Yandex Disk, need an adapter and shared conformance
   checks. Unsupported adapters must not appear as working options. The site's own storage is
   another adapter, so moving albums onto the site later swaps the connector, not the format.
 - **FR-002**: Accept a documented, versioned, storage-independent index beside the photos. Each
@@ -146,6 +146,10 @@ then publish an index; completed originals stay unchanged and new matches appear
   part of the album, written by the producer; the site does not make thumbnails from originals.
 - **FR-003**: Import validated indexes into a durable site search index. Event, bib and personal
   metadata searches use it without contacting photo storage; retrieving media is separate.
+  Import copies the album's previews to site storage (originals stay external), because the
+  providers offer no supported way to show a file of someone else's folder straight in a page.
+  Originals go out by a provider download URL where the adapter has one, otherwise through a
+  bounded proxy counted against a visible traffic budget.
 - **FR-004**: Publish revisions atomically, resume interrupted work and make repeat imports
   idempotent. Failed replacements retain the last valid index. Progressive processing shows counts
   and never silently removes photos missing from a partial run.

@@ -154,3 +154,71 @@ legacy caption and no resource-type field. Photo classification must be an expli
 not guessed from a Drive/Dropbox hostname (the same provider can host a video or document). Reuse
 the existing material reference/URL; preserve its original label as fallback. New photo-source
 display fields follow ru/kk/en rules without inventing translations or rewriting unrelated materials.
+
+## 7. Feasibility: can the site show photos straight from the storage?
+
+Checked on 2026-10-25 against provider documentation and, where the documentation is silent,
+staff answers on the providers' own forums. Nothing here was tried against a real account.
+
+**Short answer**: reading the index and the files is possible on Dropbox and Google Drive. Showing
+the photos to readers straight from those services, with nothing copied to the site, is not
+reliably possible. Previews have to be copied to the site on import; originals can often be handed
+out by the provider.
+
+| Question | Dropbox | Google Drive |
+| --- | --- | --- |
+| List a shared folder and read the index without the owner's login | Yes: `files/list_folder` takes a `shared_link`; `sharing/get_shared_link_file` returns a file's bytes ([staff answer](https://www.dropboxforum.com/t5/Dropbox-API-Support-Feedback/How-to-read-a-shared-folder-link-in-v2/m-p/246662)) | Yes for link-shared files, with an API key; some links need a resource key in `X-Goog-Drive-Resource-Keys` ([resource keys](https://developers.google.com/drive/api/v3/resource-keys)) |
+| A direct URL for one photo inside someone else's shared folder | No: there is no way to get a link to a nested file ([staff answer](https://www.dropboxforum.com/discussions/101000014/get-all-files-in-shared-link-loder/187019/replies/246666)) | No supported one: `uc?export=view` embeds return 403 intermittently, and the format is undocumented ([report](https://wordpress.org/support/?p=17344623)); web hosting from Drive ended in 2016 ([announcement](https://workspaceupdates.googleblog.com/2015/08/deprecating-web-hosting-support-in.html)) |
+| With the owner's own login | `files/get_temporary_link` gives a 4-hour link that "should not be used to display content directly in the browser" ([docs](https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/get-temporary-link)); per-file shared links with `raw=1` render inline ([help](https://help.dropbox.com/files-folders/share/force-download)) | Same API; no browser-embeddable URL is documented |
+| Thumbnails made by the provider | `files/get_thumbnail_v2` works for a file in a shared folder link, with app authentication, and returns bytes, not a URL ([staff answer](https://www.dropboxforum.com/discussions/101000014/get-thumbnails-of-files-from-shared-folders/599907)) | `thumbnailLink` exists but is short-lived; not checked further |
+| Traffic limits | Shared links: 20 GB/day on Basic, 1 TB/day on Plus/Essentials/Business; on a first breach "sharing activity and link or file requests are paused for 24 hours" ([help](https://help.dropbox.com/share/banned-links)) -- for a personal account that also pauses the owner's own sharing | Per file: a popular file can be locked for 24 hours with `downloadQuotaExceeded`, threshold unpublished ([reports](https://forum.rclone.org/t/google-drive-quota-limits/24225)); per project: 1 TB/day egress before charges ([limits](https://developers.google.com/workspace/drive/api/guides/limits)) |
+| Terms | The Acceptable Use Policy forbids using Dropbox "as infrastructure for your own cloud services" and overloading ([policy](https://www.dropbox.com/acceptable_use)); serving an album's own previews to its readers is a judgement call, not an explicit permission | No explicit rule found; Google directs content serving for apps to Google Cloud |
+
+Other services:
+
+- **Google Photos** cannot be a source. Since 2025-03-31 the Library API reaches only media the
+  app itself created, and shared-album calls return 403 ([Google](https://developers.googleblog.com/en/google-photos-picker-api-launch-and-library-api-updates/)).
+  An album kept there has to be exported to Drive or Dropbox first.
+- **Yandex Disk** has a public-resources API. A heavily downloaded public file is restricted for
+  24 hours ([help](https://yandex.com/support/disk/share/sharing-to-me.html)), and the API then
+  answers 429 "Download limit exceeded" ([report](https://qna.habr.com/q/1223398)); the threshold
+  is not published.
+
+What passing traffic through the site costs:
+
+- Render bills outbound traffic beyond 5 GB/month (Hobby) or 25 GB/month (Pro) at $0.15/GB
+  ([docs](https://render.com/docs/outbound-bandwidth)). An estimate, not a measurement: one athlete
+  downloading 30 originals of about 8 MB is about 0.24 GB, so 200 such athletes are about 48 GB,
+  about $7 above the allowance. A grid of 50 previews of about 50 KB is about 2.5 MB per view.
+- Cloudflare's CDN may restrict a site that serves "a disproportionate share of pictures" without
+  its paid image products ([terms](https://www.cloudflare.com/service-specific-terms-application-services)).
+  Previews beside the site's pages are ordinary use; serving originals or archives through it is
+  not something to rely on.
+
+**Decision (proposed)**:
+
+- Import copies each published preview to the site's media storage once, checked against its
+  SHA-256; the site serves previews itself. An album of 2,000 photos with 50 KB previews is about
+  100 MB of disk (estimate). Originals are not copied.
+- Originals go to the reader by the cheapest route the adapter supports: a provider download URL
+  where one is documented for that file, otherwise a bounded proxy whose traffic is counted
+  against a configured monthly budget and shown to the manager.
+- "Download all" archives come after the first pilot: every archive byte is site traffic.
+- The setup help says, beside the album link, that heavy downloads count against the owner's
+  sharing limits and that Google Photos albums must be exported first.
+
+### The approach itself
+
+- **Bib search from an uploader's index** holds together: one small file per album, read once per
+  revision, and a site-side search index. Bib recognition still misreads digits and misses covered
+  bibs; vendors that claim 99% publish no test sets ([9Pic](https://docs.9pic.ai/pro-guide/facefind-bibtrack),
+  [Kamero](https://kamero.ai/post/the-speed-of-victory-solving-the-marathon-bib-gap-with-ai-recognition)),
+  so manual review stays part of the design and accuracy is measured on the pilot albums.
+- **Faces seeded from bib photos** match how race-photo services combine bibs and faces. For
+  cyclists, helmets and sunglasses are a known weak spot for face matching ([Kamero](https://kamero.ai/post/the-future-of-race-photo-sorting-hybrid-ai-for-faster-more-accurate-matching)).
+  Inside one event, clothing and bike stay the same, so appearance cues beyond the face may carry
+  more weight; that is a hypothesis for the pilot, not a finding.
+- **Consent for faces is a gate, not a detail.** Kazakhstan's law 94-V treats biometric data as
+  personal data that needs the subject's consent ([law](https://adilet.zan.kz/eng/docs/Z1300000094)).
+  Matching faces means processing the faces of everyone in the photos, including people who never
+  registered. Legal advice is needed before D1, for every country the site serves.
