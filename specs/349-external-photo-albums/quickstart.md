@@ -73,8 +73,8 @@ manifest still containing it and retry a prepared archive: the photo must remain
 an explicit authorized restoration. Curated gallery permissions remain unchanged.
 
 Follow the [event/cabinet journeys](contracts/user-journeys.md): both personal entry points must
-reach the same results; several photographer albums form one personal event card with own-photo
-cover/count. Check normal external links, sign-in return, account switching and selection across
+reach the same results; several photographer albums form one registration card with its own
+cover/count, and three registrations give three cards. Check normal external links, sign-in return, account switching and selection across
 pages before archive creation.
 
 Exercise the [site upload path](contracts/uploads.md) independently of ready-album import:

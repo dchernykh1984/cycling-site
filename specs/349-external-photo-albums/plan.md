@@ -126,7 +126,7 @@ classification, retaining its source/history; searchable indexed status requires
 ### User-facing views
 
 The [journey contract](contracts/user-journeys.md) defines two event actions (personal photos and
-all albums) and one cabinet entry point into personal event cards. These are projections over the
+all albums) and one cabinet entry point into registration album cards. These are projections over the
 same photo index, not stored duplicate albums. Personal grids and source-album grids share the
 existing gallery card/detail patterns while keeping their scopes, permissions and empty states
 explicit. Normal external links remain distinguishable from indexed/searchable albums.

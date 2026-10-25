@@ -77,7 +77,8 @@ pilots, event/cabinet navigation and specification-only scope).
 | --- | --- | --- |
 | C31 | Faces on bib-matched photos find the same rider where the bib is hidden | D1 primary route in the [recognition roadmap](contracts/recognition-roadmap.md); optional bib `region` in the index; no selfie needed |
 | C32 | A relay shares one bib among several very different people | FR-024; relay member slots and team-photo label in the [data model](data-model.md); one face cluster per member in D1 |
-| C33 | One account may file several entries for one race | FR-024/025; union of own entries with a bib filter; entries filed for others under "Photos of my entries" |
+| C33 | One account may file several entries for one race | FR-024: one album per registration, titled with the entrant's name and bib |
+| C40 | A coach (issue #315) sees all trainees' albums; a trainee only their own | FR-025, conditional on the role being added |
 | C34 | Keep the bib-to-entry link through SPM without losing plain text files or existing readers | FR-009/011; [binding contract](contracts/start-list-bindings.md) variant A (trailing field) adopted by the maintainer, readers checked |
 | C35 | Thumbnails are a requirement on the album and live in it | FR-002; preview rules in the [index contract](contracts/photo-index.md) |
 | C36 | Moving storage onto the site later only swaps the connector | FR-001; site-hosted storage in the [connector contract](contracts/connector.md) |
