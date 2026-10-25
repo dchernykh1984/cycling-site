@@ -118,3 +118,11 @@ original download. A click now opens the photo in Dropbox in a new tab.
 
 **Accepted finding R13**: FR-012 still promised individual downloads from the site. A single photo
 is now viewed and downloaded in the storage; archives come after the first slice.
+
+## Maintainer decisions of 2026-10-25 (third round)
+
+Recorded: who marks photos and how a cross is final (C44); reading with the site's own Dropbox app
+and per-file links from the indexer, thumbnails straight from Dropbox where the index allows (C45);
+event 533 set aside until re-uploaded to Dropbox; existing indexing tools surveyed (C46). The
+Dropbox authentication types were checked against the API reference, not tried; the concept check
+with a 58 KB test album is prepared for when the site's Dropbox app exists.

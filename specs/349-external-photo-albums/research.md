@@ -229,3 +229,29 @@ What passing traffic through the site costs:
   processed. The maintainer therefore chose overall appearance instead (D1): inside one event a
   rider's kit, bike, build and helmet stay the same, and few amateur riders share all of them.
   How well that works is measured on the pilot sample, not assumed.
+
+## 8. Existing tools that could produce the index
+
+Looked for on 2026-10-25, to decide what the maintainer's new indexer (`SportPhotoIndexer`) should
+build itself. None was tried.
+
+- **Immich** (self-hosted photo library): OCR text search since v2.2.0 (October 2025), CLIP
+  "smart search" and an API ([release](https://immich.app/blog/v2.2.0-release),
+  [search docs](https://docs.immich.app/features/searching)). It could act as the recognition engine,
+  with a small exporter writing `photo-index.v1.json` from its results. Costs: Docker, PostgreSQL
+  and a machine-learning container; its OCR officially targets English and CJK text, and how well
+  it reads bibs is unmeasured.
+- **gheinrich/bibnumber** ([GitHub](https://github.com/gheinrich/bibnumber)): bib reading with
+  stroke-width transform and Tesseract; C++, OpenCV 2.4, tuned for precision over recall, ignores
+  single-digit bibs. Useful as a reference, not as a dependency.
+- **Commercial services** -- WaldoPro (bibs for running, cycling and motocross,
+  [announcement](https://thedeadpixelssociety.com/waldopro-introduces-ai-bib-race-number-recognition-for-running-cycling-and-motocross-photography/)),
+  9Pic, Kamero, FotoOwl: they host and sell the photos themselves; no export into a portable index
+  was found, and they would replace rather than feed the site's albums.
+- **Building blocks** for a own indexer: PaddleOCR (Apache 2.0) or Tesseract for bibs; a person
+  re-identification model or CLIP-style embeddings for appearance (D1). Detector licences matter:
+  ultralytics YOLO is AGPL.
+
+**Proposed**: keep the index format as the contract and let `SportPhotoIndexer` start with the
+manual mode; compare an Immich-based exporter with a direct PaddleOCR pipeline on the pilot sample
+before choosing.
