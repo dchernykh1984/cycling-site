@@ -10,7 +10,8 @@ must supply ru/kk/en copy and check the longest labels against the existing inte
 | Event: **Photos with me** | Personal photo grid for this event | Only accepted matches for the signed-in athlete's confirmed issued bibs |
 | Event: **All photo albums** | This event's album cards | Indexed albums, existing curated albums and ordinary external photo-album links, clearly distinguished |
 | Cabinet: **Photos with me** | Personal overview, grouped by event | Event cards acting as virtual personal albums across confirmed registrations |
-| A personal event card | The same personal event grid reached from the event page | Own matches across photographers, with optional source-album filter |
+| Cabinet: **Photos of my entries** | Submitter overview, grouped by event and entry | Shown only to an account that filed entries for other people; each card names the entry it belongs to |
+| A personal event card | The same personal event grid reached from the event page | Own matches across photographers, with optional source-album and bib filters |
 | A photo card | Photo detail / viewer | Photo, event, photographer/source album, original download and back to the same filtered selection |
 
 The event's two actions are sibling navigation links with explicit scope, not two identical
@@ -64,6 +65,8 @@ An all-events bulk action spans my eligible photos; per-event actions stay insid
 Do not omit a known owned registration merely because indexing or bib assignment is pending.
 Show its explicit state with a neutral cover; distinguish it from events with confirmed matches.
 Free-mode submitter links and relay names alone do not justify a card claiming participation.
+Entries filed for other people appear under "Photos of my entries", one card per entry, named
+after the entry; they never add cards or counts to "Photos with me".
 Do not build or publish a browsable personal album for an arbitrary account ID.
 
 ## Personal event grid
@@ -71,7 +74,9 @@ Do not build or publish a browsable personal album for an arbitrary account ID.
 Reuse the gallery's thumbnail/detail and pagination patterns; add accessible selection controls
 for this feature (the current gallery does not have bulk selection). The heading
 names the event and personal scope; show found count and indexing completeness. Search may cover
-several confirmed bibs/registrations for the same athlete at this event, deduplicating by photo ID.
+several confirmed bibs/registrations for the same athlete at this event, deduplicating by photo ID;
+with more than one bib the grid offers a bib filter. Photos matched through a relay team's shared
+bib carry a "team photo" label, because the bib does not say which member is in the frame.
 Include photographer/source on each photo or its detail, and preserve credit in download results.
 
 Offer individual download, select/deselect visible photos, download selected and download all
@@ -91,6 +96,8 @@ personal response to another account; personal pages are excluded from public in
 | --- | --- |
 | Guest opens Photos with me | Explain sign-in, retain event destination; All photo albums remains available if public |
 | No confirmed athlete or bib association | Say why personal matching is unavailable; offer event albums / number search, do not require retyping a known bib |
+| Entry filed by someone else for me | Offer to accept the submitter's claim link; until then the entry is not "mine" |
+| Relay member slot not claimed | The team's photos stay with the submitter scope and event search; tell the member how to claim their slot |
 | No indexed album yet | Say photos are not indexed; show existing album links rather than an unexplained empty grid |
 | Inventory or recognition incomplete | Show discovered/processed counts and partial matches; never claim every photo was checked |
 | Fully processed, no accepted matches | Say no matches were found for the confirmed bibs, not that the person is absent from every photograph |
@@ -107,7 +114,8 @@ by "Photos with me": this phase matches issued numbers and explains that beside 
 
 Verify event and cabinet entry points converge on identical event results; three source albums
 produce one personal event card; counts/covers never include another athlete's unmatched photos.
-Check guest return after sign-in, multiple registrations/bibs without duplicate cards, ordinary
+Check guest return after sign-in, multiple registrations/bibs without duplicate cards, a parent's
+entry for a child kept out of "Photos with me", relay team photos labelled for every claimed member, ordinary
 external links without false search capability, back navigation, pagination/selection, provider
 outage, account switching and removal before archive delivery. Run UI and API cases with equivalent
 permissions in all three locales, on phones/desktop and every skin. These are future behaviour
