@@ -82,6 +82,8 @@ pilots, event/cabinet navigation and specification-only scope).
 | C35 | Thumbnails are a requirement on the album and live in it | FR-002; preview rules in the [index contract](contracts/photo-index.md) |
 | C36 | Moving storage onto the site later only swaps the connector | FR-001; site-hosted storage in the [connector contract](contracts/connector.md) |
 | C37 | The uploader indexes, by OCR or by hand with our tool | FR-005 manual mode; same format, `method: manual` |
+| C38 | Check that storage services allow reading albums and showing photos without copying them to the site | [Research section 7](research.md): reading works on Dropbox and Drive, direct display does not; FR-003 copies previews, originals by provider URL or budgeted proxy; Google Photos excluded (FR-001) |
+| C39 | Check that the proposed logic holds | Research section 7: bib index sound with manual review; faces weak under helmets and sunglasses, consent needed before D1 |
 
 ## Actual gaps versus unresolved choices
 
