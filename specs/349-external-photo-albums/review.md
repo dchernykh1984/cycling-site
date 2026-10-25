@@ -57,3 +57,10 @@ not implemented UI or evidence of a working personal gallery.
 into selected external storage. Earlier contracts mentioned only an optional adapter upload
 capability, not a shippable user flow. Added story 6, FR-020, upload contract, UI/API operations,
 job states and retry/indexing acceptance. A capability flag does not satisfy the user scenario.
+
+## Completeness audit - Reviewed recognition outcomes
+
+**Accepted omission R6**: The index could record corrections but did not explicitly prevent OCR
+from overwriting them on reindex. Added FR-021 and normative acceptance/rejection precedence,
+content-digest binding, optional reviewed-set locking (including no accepted bibs), sample fields
+and repeat/model-change/source-move acceptance scenarios. Changed-image review retains audit.

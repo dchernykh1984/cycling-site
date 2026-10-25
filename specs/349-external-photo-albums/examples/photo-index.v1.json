@@ -34,9 +34,15 @@
         {
           "value": "00120",
           "state": "accepted",
-          "method": "manual"
+          "method": "manual",
+          "content_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
         }
-      ]
+      ],
+      "manual_review": {
+        "original_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "lock_accepted_set": true,
+        "review_id": "example-review-001"
+      }
     }
   ],
   "removed_photo_ids": []

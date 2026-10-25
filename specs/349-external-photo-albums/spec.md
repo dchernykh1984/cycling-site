@@ -196,6 +196,11 @@ then publish an index; completed originals stay unchanged and new matches appear
   per-file progress, bounded transfer, resume/idempotency and cancellation through UI and API.
   Keep reusable tokens private, originals unchanged and uploaded-versus-indexed status explicit.
 
+- **FR-021**: Manual bib acceptance, correction and rejection take precedence over later
+  automated recognition of the same original bytes. Preserve decisions across resume, model
+  upgrades, reindex and storage moves. Only an explicit authorized edit resets them; changed
+  original content requires review rather than silently carrying old decisions onto a new image.
+
 ### Key Entities
 
 - **Storage connection / external album**: provider access, bounded root, event, localized title
