@@ -28,3 +28,14 @@ A local diagnostic alone would not satisfy the transparent-setup principle.
 **Accepted finding R3**: The scope paragraph put event 533 before enabling its Drive connector,
 while delivery slice 4 added that connector. Aligned the scope and acceptance order: Dropbox pilot
 719 first, Drive pilot 533 once the Drive slice exists. No mandatory album relocation was added.
+
+## Cycle 3 - Failure paths and readiness
+
+**Accepted finding R4**: A source-of-truth manifest plus repeated resync could resurrect a photo
+removed on the site. Separated site-owned publication decisions from producer-owned recognition
+facts, made suppression persistent across imports and required explicit restoration. Added API
+coverage and an archive/resync acceptance scenario; originals remain external and unchanged.
+
+**Result**: Three document review cycles completed, with R1-R4 addressed in separate commits.
+Document checks do not establish provider access, OCR accuracy or deployed feature readiness.
+Spec/plan still require maintainer review; no application code or production albums changed.

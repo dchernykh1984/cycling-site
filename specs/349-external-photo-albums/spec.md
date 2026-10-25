@@ -157,6 +157,10 @@ number matches and access rules survive a verified source move.
   usable until their indexed replacement is confirmed; moving one preserves its original source
   and is an explicit manager action, not destructive rewriting of the event description.
 
+- **FR-018**: Keep site publication/removal decisions independent of producer recognition data.
+  Resync must not republish an album or photo hidden/removed on the site; restoration requires
+  an explicit authorized action. Apply removal to search, media and pending/ready archives.
+
 ### Key Entities
 
 - **Storage connection / external album**: provider access, bounded root, event, localized title

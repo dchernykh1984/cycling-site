@@ -13,6 +13,7 @@ semantics agree; do not change curated-gallery administration rights to enable e
 | IssuedBibAssignment | Event, registration reference, bib, source/device/revision, state | SPM authoritative for new races; confirmed historical import for old races |
 | AthleteRegistrationLink | Existing registration and confirmed athlete account, provenance | Existing self-registration or reviewed association; registered-by is not athlete identity |
 | HistoricalMatchBatch | Event, retained file digest, rows, suggested registration, decision/reviewer | Staging only until manager confirmation; names never act as stable keys |
+| PublicationDecision | Album/photo visibility or removal, actor, reason, restoration history | Site-owned publication overlay; not a competing source for recognized bibs |
 | ImportJob / ArchiveJob | Owner, bounded inputs, cursor/progress, result/error/expiry | Durable execution state; no unbounded page-request processing |
 
 ## Identity invariants
@@ -82,5 +83,11 @@ metadata; originals remain unchanged and may retain camera/location metadata.
 
 Import limits, worker concurrency, archive byte/photo limits and TTL are named settings with
 visible values. Pilot defaults are selected from actual counts/hosting capacity before rollout.
+A site-owned publication overlay is applied after every import: hidden/removed albums and photos
+stay suppressed across newer producer revisions, source moves and retries. Only an explicit
+authorized restore changes it. Keep the minimal stable identity needed to enforce suppression;
+this is a visibility fact, not a second source of recognition observations. Recheck it for cached
+media and all archive states. A new producer index cannot undo a site removal.
+
 Disconnect never deletes provider originals. Site photo removal and job cleanup occur after the
 transaction commits; archived files are deleted on expiry, cancellation or access revocation.

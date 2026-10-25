@@ -74,3 +74,8 @@ Stage a new revision without changing the published pointer; commit projection a
 atomically. Known processed entries become searchable after a valid partial snapshot is published.
 An outage during import keeps the old published snapshot. Unpublish/removal invalidates personal
 results, cached delivery and queued archives, without deleting external files.
+
+Site publication decisions are an independent overlay: producer tombstones update inventory,
+while site hide/removal decisions still apply to every successor import. A newer manifest cannot
+restore a site-removed photo/album. Keep minimal suppression identifiers and require an authorized
+explicit restore; never infer restoration from the source file still being present.
