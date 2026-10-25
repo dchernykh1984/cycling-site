@@ -8,7 +8,8 @@ Use the contracts as acceptance inputs when generating implementation tasks afte
 
 Start with event 719 (Dropbox), then event 533 (Google Drive); an optional third event can follow.
 Inspect album links in additional materials during the pilot and obtain owner-approved read
-access. Include one event with several photographers' albums. Collect retained SPM/start/results files where available.
+access. Include one event with several photographers' albums. Collect retained SPM/start/results
+files where available.
 Select a manager-reviewed labelled sample including several people/bibs, leading zeroes, blur and
 unreadable numbers. Record real counts rather than assuming storage or CPU capacity.
 
