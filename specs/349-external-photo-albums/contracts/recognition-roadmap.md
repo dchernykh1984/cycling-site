@@ -4,65 +4,40 @@ This contract preserves the broader discussion. The first independent pilot uses
 local CPU indexing. Deferred scenarios remain feature requirements for later reviewed slices;
 their presence here is not approval to implement every producer or process face data now.
 
-## D1 - Find unnumbered photos by face (later slice)
+## D1 - Find unnumbered photos by overall appearance (later slice)
 
-### Seeded by the athlete's own numbered photos (primary route)
+**Decision (maintainer, 2026-10-25)**: no face recognition and no selfie search. Riders are
+matched by their overall look -- kit, bike, build, helmet -- because at amateur races few riders
+share all of those. Faces are not detected, compared or stored for this.
 
-The maintainer's idea: the photos where a bib was read already show what that rider looks like.
-Use them as the reference, so nobody has to upload a selfie.
+### How it works (a sketch for the experiment, not a chosen implementation)
 
-1. Seeds: accepted bib observations whose `region` can be paired with exactly one face. A bib with
-   two candidate faces (riders side by side, a spectator behind) is not a seed for that photo.
-2. Per event and bib, cluster the seed faces. An individual entry expects one cluster; outlier
-   faces are dropped, not attached. A relay bib expects up to one cluster per team member, and
-   clusters are never merged into one person because they share a bib.
-3. Match faces on the event's photos with no accepted bib (or a different one) against those
-   clusters. A match is a `face` candidate, kept apart from bib matches; it never becomes an
-   accepted bib.
-4. The athlete sees face candidates as "probably you", with confirm/reject. Their answer is a
-   site-owned personal decision, like the publication overlay, and survives reindexing of
-   unchanged originals. A relay member first picks which team cluster is them; no cluster is
-   assigned to a member automatically.
+1. Detect every rider on every photo of the event, as a crop of the person together with the bike.
+2. Seeds: a rider crop that contains an accepted bib's `region`. A bib region inside two crops
+   (riders overlapping) seeds nothing on that photo.
+3. Describe every crop with an appearance vector from a person re-identification model or a
+   general image-embedding model; which one is decided by the experiment.
+4. For each bib, look in the same event's albums for crops close to any of its seeds. Recall
+   comes first: the maintainer accepts that up to about half of the suggestions are wrong, while
+   a missed photo of the rider is the worse failure. The threshold is set from the pilot sample.
+5. A relay bib's seeds show several people. Group them into one cluster per member and search with
+   each; everything found goes to the team's registration album.
+6. A match is published as an observation with `method: appearance`, always `candidate`, with its
+   score and region. It never becomes an accepted bib by itself; the participant's "this is me" /
+   "not me" decides (see the [data model](../data-model.md)).
 
-Helmets and sunglasses weaken face matching on cyclists. Inside one event a rider's kit and bike
-do not change, so the pilot also measures appearance cues beyond the face, under the same consent
-and privacy rules ([research section 7](../research.md)).
+Within one event only: kit and bike change between events. Appearance vectors stay with the
+producer; the album index carries only the candidate bib, score and region, so nothing in the
+public folder describes a person beyond the photo itself.
 
-Only event-scoped: a cluster built at one event is not used to search another event in this
-route. Cross-event reuse would need the saved-reference rules below.
+Acceptance for that slice: on a labelled pilot sample, a rider whose bib is readable on some
+photos is suggested on photos of the same event where it is not; report the share of the rider's
+real photos found and the share of wrong suggestions; a relay bib yields one cluster per member;
+an overlapping seed is not used. Measure CPU time per photo.
 
-### Seeded by a reference photo (alternative)
-
-A participant can search an allowed event using their own reference photo when the bib is not
-visible or was not recognized, or when no numbered photo of them exists. Results are thumbnails with the same individual/selected/all
-allowed downloads. Event selection and album visibility still apply; do not implement a global
-search for arbitrary people across private events. Number search remains independently useful.
-
-An authorized reusable reference, if the participant chooses to save one, avoids asking for the
-same selfie at every event. Its purpose, reuse and removal are explicit; a profile avatar is not
-automatically a face-search authorization. "Photos with me" must explain whether it uses issued
-numbers or an explicitly enabled face capability, rather than silently changing its meaning.
-
-Before implementation, specify the matching engine/model version, compatible private index format,
-reference and template storage/retention/deletion, who can initiate a query, event eligibility,
-quality/uncertainty thresholds and any needed permission/consent workflow. Portable public bib
-manifests never acquire face vectors or identity records. A versioned private face extension must
-not require redoing ordinary bib indexes or tie the gallery to a particular storage provider.
-
-Face boxes and templates are biometric data. They live in a private extension delivered to the
-site (or kept by the producer), never in the album folder next to the public manifest, and are
-deleted with the event's face data on request. Whether processing needs an athlete's opt-in, an
-event-level notice or both is a decision to take before this slice ships.
-
-Acceptance for that slice: a rider whose bib is readable on some photos is found on photos where
-it is not, without uploading a selfie; a relay bib yields separate clusters per member; a face
-paired ambiguously with a bib seeds nothing; a visible face with no readable bib can be found through the face
-capability; mismatched model/index versions are actionable errors; unsupported events do not ask
-for a selfie; reference reuse and removal have visible effects. API permissions equal the UI.
-False matches, processing times and face quality are measured on authorized pilot samples.
-
-**Open decision**: engine and private face contract, consent model, supported query authority,
-retention and release timing. Do not claim this is included in the number-only pilot or silently drop the wish.
+**Open decision**: detector and appearance model (and their licences), threshold, CPU budget.
+The approach treats people's appearance as personal data; a legal check is still advisable, but
+it avoids biometric face processing altogether.
 
 ## D2 - Slow background indexing on site resources (optional producer)
 
