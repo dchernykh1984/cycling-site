@@ -243,8 +243,10 @@ then publish an index; completed originals stay unchanged and new matches appear
 - **FR-026**: Keep the site's imported copy of an album's index apart from participants'
   decisions. Refresh the copy only when an organizer adds the album or presses "Refresh
   participants' tagging". In a registration album show accepted matches and candidates
-  (recall first); let the participant mark each photo "this is me" (green check) or "not me" (red
-  cross). Decisions are per registration, survive every refresh and never change the album files.
+  (recall first); let the athlete or their coach mark each photo "this is me" (green check) or
+  "not me" (red cross). One decision per album and photo; a check may become a cross, a cross is
+  final apart from an immediate undo. Decisions survive every refresh, apply wherever that
+  registration's matches show (including event bib search) and never change the album files.
   Import validates the index's structure; its content is checked by these decisions.
 
 ### Retained later-stage scenarios and open decisions

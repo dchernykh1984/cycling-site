@@ -11,7 +11,7 @@ All machine routes remain under `/api/v1/`, without a language prefix.
 | Read enabled connector/index capabilities and guide links | A person allowed to open setup; no credentials/account grants returned |
 | Classify/unclassify an existing material as a photo-album link | Authorized event manager/admin/owner; preserve source URL and other materials |
 | Connect, inspect, refresh ("Refresh participants' tagging"), disconnect an external album | Manager of that album's event, or admin/owner; validated root and access |
-| Mark a photo "this is me" / "not me", or clear the mark, in a registration album | An account that sees that registration album; the decision belongs to that registration only |
+| Mark a photo "this is me" / "not me" in a registration album; undo a cross right after it | The registration's confirmed athlete, or their coach (#315); one decision per album and photo; a cross is final after the undo window |
 | Start/resume/finalize/cancel a photo upload and read its status | Event manager of the writable destination; capability/root checks, bounded job |
 | Hide/remove or explicitly restore an indexed album/photo | Event manager/admin/owner; persistent publication decision, never deletes provider original |
 | Read event albums, bib matches and paginated photos | Same event/album visibility as pages; 404 for non-visible resources |
