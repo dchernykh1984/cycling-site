@@ -57,7 +57,7 @@ Gates apply before research and again after design, against constitution 1.6.0.
 | III | Behaviour validation mapped in quickstart; implementation must ship tests and green CI | Pass for design |
 | IV, XII | Localized titles/help/API fields; mobile/keyboard setup and error checks | Pass |
 | VI | Registry and capabilities; providers confined to adapters | Pass |
-| VII, XI | API contract; optional timing fields and explicit feature acknowledgement | Pass |
+| VII, XI | API contract; optional trailing start-line field that existing readers ignore (A), or acknowledged structured fields (B) | Pass |
 | VIII, IX | Manifest and SPM assignments are sources; DB is derived, atomic and recoverable | Pass |
 | X | Scoped roots, no tokens in indexes, visibility checks, bounded untrusted inputs | Pass |
 | XIII | Preserve registration IDs; reuse known event/profile/connection facts | Pass |
