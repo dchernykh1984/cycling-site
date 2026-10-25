@@ -1,4 +1,4 @@
-# Issued bib exchange v1 (proposed)
+# Issued bib exchange v1
 
 Existing `/api/v1/participants/` supplies each registration `id` and its `competition_id`.
 StartProtocolMaker (SPM) loses that `id` today: `participant_to_open_line()` builds
@@ -6,10 +6,10 @@ StartProtocolMaker (SPM) loses that `id` today: `participant_to_open_line()` bui
 the reference with the line, so the issued bib and the entry it belongs to travel together
 through text files, backups, FTP and the existing `/api/v1/start-list/` upload.
 
-**Decision pending (maintainer)**: variant A below is recommended; variant B is the alternative.
-Neither is implemented today.
+**Decision (maintainer, 2026-10-25)**: variant A, a trailing field on the start line. Variant B is
+kept below only as the considered alternative. Not implemented yet.
 
-## Variant A (recommended): a trailing entry-reference field
+## Variant A (adopted): a trailing entry-reference field
 
 One optional field after the start delay, the eleventh field (index 10):
 
@@ -65,9 +65,9 @@ The C++ tools are unmaintained and out of scope (maintainer, 2026-10-25).
 ### What SPM does
 
 - Import from the site writes `r<id>` into the open-list line.
-- Opening a line in the form keeps its tokens as form state; saving or editing the line writes them
-  back, including after a bib, name or group change. The form shows that the line is linked to a
-  site entry and offers an explicit unlink. A cleared form starts without tokens.
+- The reference is an ordinary visible field of the form, like team or city, not hidden state. On-
+  the-spot registration -- open a pre-registration line, give it a bib, save it to the protocol
+  list -- carries the field over, so it is on both lists. Clearing the field unlinks the line.
 - "Add into team" appends the added entrant's tokens to the team line.
 - Merge from site matches an existing line by token first, then by the current name/year key, so a
   registration renamed on the site does not come back as a second line.
@@ -91,11 +91,11 @@ Derive assignments from the accepted snapshot of every device, under the existin
   older SPM) keeps its binding, marked for manager review. A bib that disappeared withdraws it.
 - History of assignments, corrections and their sources is kept.
 
-FPG may later carry the tokens into the protocol document as non-displayed row data, so results
-can be linked to accounts too. Photos do not need that: the start-list upload already says which
-bib went to which entry, before any finish protocol exists.
+FinishProtocolGenerator and the chronometers stay unchanged and ignore the field. The site learns
+which bib went to which registration from the start-list upload -- the same exchange that hands
+start lists from registration to protocol generation -- before any finish protocol exists.
 
-## Variant B (alternative): structured bindings beside unchanged lines
+## Variant B (considered, not adopted): structured bindings beside unchanged lines
 
 Leave every line as it is and add `registration_bindings` to the start-list POST: per entrant a
 durable local UUID, `registration_id`, `line_index`, `bib` and `state`, under the same
@@ -108,7 +108,7 @@ can be lost or go stale beside its text file, a capability handshake, and nothin
 start list never reached the site. Its advantage, untouched line layout, matters less once the
 existing readers are known to ignore an extra trailing field.
 
-## Rules for either variant
+## Rules
 
 - Do not repurpose comments or change the meaning of fields 0-9; `competitor_id` stays the bib.
 - Use `trim-nfc-exact-v1` bib normalization from the photo-index contract.

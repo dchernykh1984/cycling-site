@@ -174,10 +174,10 @@ then publish an index; completed originals stay unchanged and new matches appear
 - **FR-010**: Backfill historical numbers from retained start lists/results with a preview of
   candidate matches and manager confirmation. Retain source and reviewer. Missing identities stay
   unresolved; do not create accounts, registrations or personal links from name equality.
-- **FR-011**: Keep legacy timing exchange working. Carry the references either in an optional
-  trailing field of the start line (recommended, variant A) or in structured metadata beside
-  unchanged lines (variant B); the maintainer chooses. Never repurpose comments, change fields
-  0-9 or interpret a bib as a person ID. Define outcomes for duplicate assignments, reassignment,
+- **FR-011**: Keep legacy timing exchange working. Carry the references in an optional trailing
+  field of the start line (variant A, maintainer decision 2026-10-25); FinishProtocolGenerator and
+  the chronometers ignore it unchanged. Never repurpose comments, change fields 0-9 or interpret
+  a bib as a person ID. Define outcomes for duplicate assignments, reassignment,
   lost references, stale devices and offline retries.
 - **FR-012**: Offer individual and bounded asynchronous bulk downloads with progress, expiry,
   cancellation and unavailable-file reports. Recheck access when delivering files.
