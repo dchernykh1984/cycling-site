@@ -37,6 +37,11 @@ storage during search. Metadata remains queryable from the last valid authorized
 media availability is separately reported. Stop source enumeration before it discovers every
 photo while processing all discovered ones: the UI must still say the inventory is incomplete. Missing/photos pending are not reported as "no rider".
 
+Correct an OCR number, reject another and review one photo as having no accepted bibs. Re-run
+with another model and resume after interruption: accepted/rejected decisions and a locked empty
+set must survive unchanged original bytes. Change the original bytes and verify stale-review
+handling; move the same unchanged album to another adapter and verify decisions survive.
+
 Run the same conformance fixture through Dropbox, Drive and HTTPS adapters. Include duplicate
 Drive path names, foreign-root references, revoked access, 429 and changed content. Prove no
 provider call happens in metadata search, including personal galleries and pagination.

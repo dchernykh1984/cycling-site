@@ -46,6 +46,9 @@ semantics agree; do not change curated-gallery administration rights to enable e
   all discovered photos processed must not look like a complete album.
 - Processing states distinguish pending, processed and failed. An empty bib list after processing
   means no accepted bib was found, not proof that no rider is present.
+- Manual observations bind to the reviewed original digest and override automatic outcomes.
+  Reindexing preserves manual rejections as well as acceptances; an optional reviewed-set lock
+  can preserve an empty accepted set. Changed bytes invalidate application, not the audit trail.
 - Only accepted observations enter normal matches; uncertain candidates are a separate manager
   review surface. Exact normalization retains leading zeroes and never maps unrelated digit text.
 

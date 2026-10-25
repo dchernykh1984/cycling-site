@@ -32,7 +32,27 @@ preview. Previews are separate derivatives without unnecessary metadata; origina
 Each observation has `value`, `state` (`candidate`, `accepted`, `rejected`), `method` (`ocr` or
 `manual`), optional confidence in [0,1], and an optional correction reference. A manual change
 records a local non-personal correction ID and prior value/state; the producer retains its audit.
-OCR confidence is meaningful only for the named model, not comparable across different engines.
+Manual observations include `content_sha256`, binding the decision to the reviewed original's
+bytes. OCR confidence is meaningful only for the named model, not comparable across engines.
+
+### Manual precedence during reindexing
+
+For unchanged original bytes, the producer preserves manual observations and correction IDs when
+resuming, changing OCR models or rebuilding the index. An explicit manual rejection of a value
+cannot become accepted because OCR detects it again; a manual acceptance remains accepted.
+Correcting a wrong value records its rejection and the replacement acceptance atomically, so the
+wrong number does not return on the next pass. New automatic candidates may still be reviewed.
+
+An optional photo-level `manual_review` contains `original_sha256`, `lock_accepted_set` and a
+non-personal `review_id`. With `lock_accepted_set: true`, only the reviewed accepted set in `bibs`
+is searchable; OCR may suggest candidates but cannot add accepted values. An empty reviewed set
+is valid and survives reruns. Do not store a second accepted-number array in this object.
+
+Only an explicit reviewer change/unlock alters a manual decision. If original bytes change,
+retain the prior decision in audit, mark it stale for review and do not apply it to the new content
+or erase it under the guise of a model update. A site import rejects manual observations whose
+`content_sha256` or active review lock does not match that entry's original digest.
+
 
 Normalize bibs by trimming boundary whitespace and Unicode NFC only. Keep leading zeroes,
 letters and case. Values are 1..32 characters, without controls; no automatic `00120` -> `120`
