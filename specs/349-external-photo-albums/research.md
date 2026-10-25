@@ -214,11 +214,10 @@ What passing traffic through the site costs:
   bibs; vendors that claim 99% publish no test sets ([9Pic](https://docs.9pic.ai/pro-guide/facefind-bibtrack),
   [Kamero](https://kamero.ai/post/the-speed-of-victory-solving-the-marathon-bib-gap-with-ai-recognition)),
   so manual review stays part of the design and accuracy is measured on the pilot albums.
-- **Faces seeded from bib photos** match how race-photo services combine bibs and faces. For
-  cyclists, helmets and sunglasses are a known weak spot for face matching ([Kamero](https://kamero.ai/post/the-future-of-race-photo-sorting-hybrid-ai-for-faster-more-accurate-matching)).
-  Inside one event, clothing and bike stay the same, so appearance cues beyond the face may carry
-  more weight; that is a hypothesis for the pilot, not a finding.
-- **Consent for faces is a gate, not a detail.** Kazakhstan's law 94-V treats biometric data as
-  personal data that needs the subject's consent ([law](https://adilet.zan.kz/eng/docs/Z1300000094)).
-  Matching faces means processing the faces of everyone in the photos, including people who never
-  registered. Legal advice is needed before D1, for every country the site serves.
+- **Faces would be weak here.** Race-photo services combine bibs and faces, but helmets and
+  sunglasses are a known weak spot for face matching on cyclists ([Kamero](https://kamero.ai/post/the-future-of-race-photo-sorting-hybrid-ai-for-faster-more-accurate-matching)).
+  Faces are also biometric data: Kazakhstan's law 94-V requires the subject's consent
+  ([law](https://adilet.zan.kz/eng/docs/Z1300000094)), and every bystander in a frame would be
+  processed. The maintainer therefore chose overall appearance instead (D1): inside one event a
+  rider's kit, bike, build and helmet stay the same, and few amateur riders share all of them.
+  How well that works is measured on the pilot sample, not assumed.

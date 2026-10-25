@@ -65,7 +65,7 @@ pilots, event/cabinet navigation and specification-only scope).
 
 | ID | Discussed requirement | Coverage and deliberately open decisions |
 | --- | --- | --- |
-| C26 | Find photos by face/selfie, including when a bib cannot be read | D1, [recognition roadmap](contracts/recognition-roadmap.md): event-scoped reference search and downloads; private compatible model/index, reference reuse/removal and release timing remain for review |
+| C26 | Find photos when a bib cannot be read | D1 in the [recognition roadmap](contracts/recognition-roadmap.md): by overall appearance seeded from the rider's bib photos; face and selfie search dropped by the maintainer (2026-10-25) |
 | C27 | Site can slowly recognize photos using spare CPU instead of requiring local indexing | D2, same roadmap: scheduled resource budgets, checkpoints/pause/resume, partial results and required publication access; hosting/worker choice remains open |
 | C28 | Third-party, Google/Amazon or another paid recognizer can generate the same index | D3 and FR-023: optional producer choice independent of storage; opt-in budget, no mandatory paid service or unannounced processing bill |
 | C29 | Known issued bibs can aid recognition; unknown old/on-the-day entrants still work | FR-022; roadmap shared producer rules; reuse authorized hints, not a complete allowlist |
@@ -75,8 +75,8 @@ pilots, event/cabinet navigation and specification-only scope).
 
 | ID | Discussed requirement | Normative coverage / acceptance |
 | --- | --- | --- |
-| C31 | Faces on bib-matched photos find the same rider where the bib is hidden | D1 primary route in the [recognition roadmap](contracts/recognition-roadmap.md); optional bib `region` in the index; no selfie needed |
-| C32 | A relay shares one bib among several very different people | FR-024; relay member slots and team-photo label in the [data model](data-model.md); one face cluster per member in D1 |
+| C31 | Find the same rider where the bib is hidden, from their bib photos | D1 in the [recognition roadmap](contracts/recognition-roadmap.md): overall appearance, not faces (maintainer decision); optional bib `region`; `method: appearance` candidates |
+| C32 | A relay shares one bib among several very different people | FR-024; relay member slots and team-photo label in the [data model](data-model.md); one appearance cluster per member in D1 |
 | C33 | One account may file several entries for one race | FR-024: one album per registration, titled with the entrant's name and bib |
 | C40 | A coach (issue #315) sees all trainees' albums; a trainee only their own | FR-025, conditional on the role being added |
 | C34 | Keep the bib-to-entry link through SPM without losing plain text files or existing readers | FR-009/011; [binding contract](contracts/start-list-bindings.md) variant A (trailing field) adopted by the maintainer, readers checked |
@@ -84,7 +84,7 @@ pilots, event/cabinet navigation and specification-only scope).
 | C36 | Moving storage onto the site later only swaps the connector | FR-001; site-hosted storage in the [connector contract](contracts/connector.md) |
 | C37 | The uploader indexes, by OCR or by hand with our tool | FR-005 manual mode; same format, `method: manual` |
 | C38 | Check that storage services allow reading albums and showing photos without copying them to the site | [Research section 7](research.md): reading works on Dropbox and Drive, direct display does not; FR-003 copies previews, originals by provider URL or budgeted proxy; Google Photos excluded (FR-001) |
-| C39 | Check that the proposed logic holds | Research section 7: bib index sound with manual review; faces weak under helmets and sunglasses, consent needed before D1 |
+| C39 | Check that the proposed logic holds | Research section 7: bib index sound with manual review; faces weak under helmets and sunglasses, which is why D1 uses overall appearance |
 
 ## Actual gaps versus unresolved choices
 
