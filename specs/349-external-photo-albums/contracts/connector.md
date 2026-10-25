@@ -51,17 +51,25 @@ never assume a temporary API URL may be embedded in a browser.
 
 Delivery (maintainer decision 2026-10-25; see [research section 7](../research.md)):
 
-- **Thumbnails** live on the site: tiny, about 10-20 KB each (a long side of about 320 px), made
-  once at import from the album's preview. When an album has no previews, the Dropbox adapter can
-  take them from `files/get_thumbnail_v2`, which works for a file inside a shared folder link with
-  app authentication. 2,000 photos are then roughly 20-40 MB of disk (estimate).
-- **A click opens the photo in Dropbox in a new tab**; viewing and downloading happen there, on
-  Dropbox's traffic, not the site's. For an album whose owner connected their Dropbox account,
-  the adapter creates (or reuses) a shared link for that file on the first click and caches it.
-  For an album known only by its folder link, the API cannot make a link to one file inside it;
-  the adapter opens the folder link with `preview=<file name>`, which is what Dropbox's own page
-  produces when a file is clicked but is not documented, so the pilot must confirm it and fall
-  back to the folder link.
+- **Reading needs no token from the organizer.** The site uses its own Dropbox app ("app
+  authentication", App key and secret). Dropbox documents app authentication for
+  `files/list_folder` with a `shared_link` and for `sharing/get_shared_link_file`; for
+  `files/get_thumbnail_v2` with a link resource Dropbox staff confirm it. A folder shared "anyone
+  with the link" is all the site needs.
+- **Per-file links come from the indexer.** Dropbox's API cannot link to one file inside someone
+  else's shared folder, and its scopes limit kinds of operations, not folders: the narrowest grant
+  is an App-folder app that sees only `/Apps/<app name>`. So the site never asks organizers for a
+  token. The indexer, running on the organizer's computer under the organizer's own Dropbox
+  login, may create a shared link per file and write it into the index as `view_url`; that login
+  never leaves the computer.
+- **Thumbnails**: when the index gives a preview's `view_url`, the page shows it straight from
+  Dropbox (`raw=1`) and the site stores nothing (pending the embed check). Otherwise the site keeps
+  a tiny thumbnail, about 10-20 KB (a long side of about 320 px), made once at import with
+  `files/get_thumbnail_v2`; 2,000 photos are roughly 20-40 MB of disk (estimate).
+- **A click opens the photo in Dropbox in a new tab**, so viewing and downloading use Dropbox's
+  traffic: the original's `view_url` when the index has one, otherwise the folder link with
+  `preview=<file name>` (what Dropbox's own page produces when a file is clicked; undocumented,
+  so the pilot confirms it), otherwise the folder link itself.
 - No proxy of originals through the site in the first slice; archives come later.
 
 The HTTPS adapter confines every path and redirect to configured public origins/root. Protect

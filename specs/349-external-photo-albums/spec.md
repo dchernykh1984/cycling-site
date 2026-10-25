@@ -147,9 +147,10 @@ then publish an index; completed originals stay unchanged and new matches appear
   part of the album, written by the producer; the site does not make thumbnails from originals.
 - **FR-003**: Import validated indexes into a durable site search index. Event, bib and personal
   metadata searches use it without contacting photo storage; retrieving media is separate.
-  The site stores only tiny thumbnails, about 10-20 KB each, made at import; clicking one opens
-  the photo in Dropbox in a new tab, so full-size views and downloads are served by the storage
-  (maintainer decision 2026-10-25). The providers offer no supported way to show a file of
+  Thumbnails come straight from Dropbox when the index carries per-file links; otherwise the site
+  stores tiny ones, about 10-20 KB each, made at import. Clicking one opens the photo in Dropbox in
+  a new tab, so full-size views and downloads are served by the storage (maintainer decision
+  2026-10-25). Reading an album needs only the site's own Dropbox app, never an organizer's token. The providers offer no supported way to show a file of
   someone else's folder straight inside a site page.
 - **FR-004**: Publish revisions atomically, resume interrupted work and make repeat imports
   idempotent. Failed replacements retain the last valid index. Progressive processing shows counts
@@ -282,8 +283,8 @@ open decisions. Deferral means outside the first pilot, not deleted from the req
 
 ### Measurable Outcomes
 
-- **SC-001**: Pilot historical event 719 (seven Dropbox albums) first; event 533 (Drive) waits
-  for the Drive adapter or a copy in Dropbox. At least one event has multiple albums. Each shows
+- **SC-001**: Pilot historical event 719 (seven Dropbox albums, the maintainer's own) first;
+  event 533 is set aside until the maintainer re-uploads it to Dropbox. At least one event has multiple albums. Each shows
   searchable previews and original downloads without moving originals. Record real counts,
   indexing time, storage traffic and failures.
 - **SC-002**: On a manager-reviewed pilot sample, report precision, recall and unreadable rate

@@ -5,7 +5,7 @@ semantics agree; do not change curated-gallery administration rights to enable e
 
 | Entity | Key facts | Source and relationships |
 | --- | --- | --- |
-| StorageConnection | Owner, adapter key, secret reference, granted capabilities, health | Provider grant; never expose secrets in album/API responses |
+| StorageConnection | Owner, adapter key, secret reference, granted capabilities, health | Provider grant; never expose secrets in album/API responses. Reading a Dropbox shared link needs none: the site's own app credentials are a setting, not a connection |
 | ExternalAlbum | Site ID, portable album UUID, event, root, localized title/credit, visibility, connection | Manager-owned link; one event per album; many albums per event |
 | IndexRevision | Album, producer revision, manifest SHA-256, processing counts, import state | Immutable validated producer snapshot; one published pointer per album |
 | IndexedPhoto | Album UUID + photo UUID, original/preview refs and digests, processing state, site copy of the preview | Derived from published manifest; provider IDs are an internal root-checked cache; the preview copy is replaced when its digest changes |

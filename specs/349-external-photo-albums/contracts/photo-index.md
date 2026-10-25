@@ -27,6 +27,10 @@ connection supplies the event. No account IDs, names, birth dates, emails, secre
 `sha256` (64 lowercase hex), `bytes` (positive integer) and `media_type` (JPEG/PNG/WebP). `preview`
 may be absent while `processing_state` is pending/failed, but a searchable processed photo needs a
 preview. Previews are separate derivatives without unnecessary metadata; originals stay unchanged.
+Either may carry an optional `view_url`: a long-lived link of the storage's own sharing for that
+file (for Dropbox, a shared file link), made by the producer. It must be on the adapter's known
+hosts, is never a temporary link and is never required; a storage move produces a new index with
+new links.
 
 Previews are a requirement on the album, not a site service: the producer writes them into the
 album beside the originals, and the site never downloads originals to make thumbnails. The one

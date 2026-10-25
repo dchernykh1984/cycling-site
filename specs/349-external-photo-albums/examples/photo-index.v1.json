@@ -21,7 +21,8 @@
         "path": "originals/IMG_0001.jpg",
         "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
         "bytes": 2500000,
-        "media_type": "image/jpeg"
+        "media_type": "image/jpeg",
+        "view_url": "https://www.dropbox.com/scl/fi/example/IMG_0001.jpg?rlkey=example&dl=0"
       },
       "preview": {
         "path": "previews/IMG_0001.webp",
