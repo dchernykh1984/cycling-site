@@ -58,8 +58,9 @@ than selecting an arbitrary file. Temporary URLs and tokens never enter the port
 ## 3. Return assigned bibs through the exchange that already exists
 
 **Decision (maintainer)**: StartProtocolMaker is the primary source of actually issued bibs.
-**Proposed transport**: Optional structured bindings on the existing start-list exchange, beside
-unchanged positional lines. Preserve existing registration IDs; no global person registry needed.
+**Proposed transport**: Keep the registration ID on the start line itself, as an optional trailing
+field (variant A in the binding contract); structured bindings beside unchanged lines remain the
+alternative (variant B). Preserve existing registration IDs; no global person registry needed.
 
 **Verified path**:
 
@@ -82,10 +83,17 @@ list ordering and the person who entered a rider are not trustworthy identity ke
 while accepting another athlete's entered identity. A non-null registration `user` is therefore not
 sufficient evidence for personal photo ownership outside self-only, non-relay registration.
 
-**Alternatives considered**: A separate assignment endpoint (possible, but adds a second snapshot
-transaction); scraping HTML results (no stable identity); a new positional/comment field (unsafe
-for older readers); matching names automatically (ambiguous). Offline sidecar export uses the same
-binding format, not an independently maintained mapping. See the binding contract for compatibility.
+**Readers checked for a trailing field** (2026-10-25): FinishProtocolGeneratorPython reads fields by
+index and ignores those past field 9 since its first Python release; WindowsChronometerPython reads
+only field 0; the site keeps uploaded lines as opaque strings. The C++ tools are unmaintained and
+out of scope by maintainer decision. An older SPM keeps loaded lines but drops the field when it
+rebuilds a line from its form; the binding contract says how the site treats that loss.
+
+**Alternatives considered**: The account ID (wrong for several entries per account, free-mode
+submitters, relays and on-the-day entrants); the comment field (free text shown in protocols);
+a separate assignment endpoint or structured bindings with an offline sidecar (variant B: two
+representations of one list that can drift); scraping HTML results (no stable identity); matching
+names automatically (ambiguous). See the binding contract for compatibility.
 
 ## 4. Historical events are the first useful pilot
 

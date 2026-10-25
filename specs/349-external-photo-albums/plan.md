@@ -83,14 +83,16 @@ Existing seams to extend during implementation, not files created by this PR:
 
 - `gallery/`: shared search/import/asset actions; a `connectors/` module holds provider adapters.
 - `api/endpoints/gallery.py`: organizer and participant operations through shared actions.
-- `api/endpoints/start_list.py`, `protocols/models.py`: optional structured bib snapshot exchange.
+- `api/endpoints/start_list.py`, `protocols/models.py`: read registration tokens from uploaded lines
+  (variant A) or optional structured bindings (variant B) into issued-bib assignments.
 - `registrations/`: issued-bib read model with registration/event provenance, not list-position bibs.
 - `tests/`, `tests/e2e/`: permissions, import, compatibility and visible setup contracts.
 
 Sibling repositories requiring later coordinated changes:
-`offline_referee/StartProtocolMakerPython` preserves registration references in local records;
-`offline_referee/FinishProtocolGeneratorPython` may consume/forward the same metadata. The first
-photo release does not depend on new structured finish documents or chronometer records.
+`offline_referee/StartProtocolMakerPython` preserves registration references in its lines (its own
+spec covers this); `offline_referee/FinishProtocolGeneratorPython` already ignores a trailing field
+and may later forward it. The first photo release does not depend on new structured finish
+documents or chronometer records.
 
 **Structure Decision**: Reuse gallery domain/actions, but distinguish curated local albums from
 external event albums and their different edit rights. Read adapters never decide who owns an
@@ -135,8 +137,8 @@ explicit. Normal external links remain distinguishable from indexed/searchable a
    atomic import, event bib search and individual downloads. Several albums per event work here.
 2. **Historical identity backfill**: reviewed number-source import and confirmed account links;
    personalized event/cross-event queries use the same search index. No new race registrations.
-3. **Future race identity**: preserve references in StartProtocolMaker and add acknowledged optional
-   binding exchange; test backups/restart and mixed old/new clients before adoption.
+3. **Future race identity**: preserve references in StartProtocolMaker and derive assignments from
+   uploaded start lists; test backups/restart and mixed old/new clients before adoption.
 4. **Portability and downloads**: Google Drive reader, public HTTPS conformance adapter and bounded
    archive jobs. Enable each provider only after its access flow is proven on real test albums.
 

@@ -153,14 +153,18 @@ then publish an index; completed originals stay unchanged and new matches appear
   personal gallery. Personal association requires a confirmed athlete-registration-bib link;
   manual event-level bib search works without such a link.
 - **FR-009**: StartProtocolMaker authors issued bib assignments. Preserve registration references
-  through imports, edits, local persistence, restart and exchange; return them with actual bibs.
-  Do not ask the participant to supply the same fact again.
+  (not account IDs: one account may file several entries, and a relay is several people) through
+  imports, edits, team assembly, local persistence, restart and exchange; return them with actual
+  bibs. Plain text start protocols remain the offline format. Do not ask the participant to
+  supply the same fact again.
 - **FR-010**: Backfill historical numbers from retained start lists/results with a preview of
   candidate matches and manager confirmation. Retain source and reviewer. Missing identities stay
   unresolved; do not create accounts, registrations or personal links from name equality.
-- **FR-011**: Keep legacy timing exchange working. Add structured identity/bib metadata without
-  repurposing comments, changing positional records or interpreting a bib as a person ID. Define
-  outcomes for duplicate assignments, reassignment, stale devices and offline retries.
+- **FR-011**: Keep legacy timing exchange working. Carry the references either in an optional
+  trailing field of the start line (recommended, variant A) or in structured metadata beside
+  unchanged lines (variant B); the maintainer chooses. Never repurpose comments, change fields
+  0-9 or interpret a bib as a person ID. Define outcomes for duplicate assignments, reassignment,
+  lost references, stale devices and offline retries.
 - **FR-012**: Offer individual and bounded asynchronous bulk downloads with progress, expiry,
   cancellation and unavailable-file reports. Recheck access when delivering files.
 - **FR-013**: Apply event/album visibility and ownership to pages, search, previews, API and archives;
