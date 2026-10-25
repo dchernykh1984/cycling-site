@@ -45,6 +45,10 @@ A feature with its own GitHub issue gets a folder named after the issue -- for e
 `specs/337-spec-driven-development/`, the issue that introduced all this. The number is the issue's,
 so the spec, the branch (`337-spec-driven-development`) and the issue point at each other.
 
+Current design for external indexed photo albums: [issue #349](349-external-photo-albums/spec.md)
+and its [architecture plan](349-external-photo-albums/plan.md). This is proposed behaviour;
+`site/gallery.md` remains the description of the implemented gallery.
+
 ## The workflow
 
 With Claude Code type the commands below; with Codex ask it to use the skill of the same name
