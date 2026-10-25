@@ -14,7 +14,7 @@ All machine routes remain under `/api/v1/`, without a language prefix.
 | Start/resume/finalize/cancel a photo upload and read its status | Event manager of the writable destination; capability/root checks, bounded job |
 | Hide/remove or explicitly restore an indexed album/photo | Event manager/admin/owner; persistent publication decision, never deletes provider original |
 | Read event albums, bib matches and paginated photos | Same event/album visibility as pages; 404 for non-visible resources |
-| Read my event cards, per-event matches and source-album facets | Authenticated athlete; confirmed registration associations, never caller-supplied account override |
+| Read my registration albums, their matches and source-album facets | Authenticated account; registrations it filed, is the confirmed athlete of, or coaches (#315); never a caller-supplied account override |
 | Request individual download or archive; inspect/cancel own job | Recheck resource visibility and job ownership; bounded selection and bytes |
 | Stage/review/commit historical bib associations | Event manager/admin/owner; source preview, ambiguity and audit required |
 

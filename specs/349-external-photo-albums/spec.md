@@ -78,13 +78,12 @@ editing, save/restart and upload; the athlete's gallery finds the assigned bib's
 4. **Given** old start lists/results, **Then** a manager reviews suggested registration matches
    once and retains confirmed associations. Name equality alone never establishes identity.
 5. **Given** the event page and cabinet, **Then** the event's "Photos with me" opens one-start
-   thumbnails, while the cabinet action opens event cards like gallery albums. Opening a card
-   shows the same own-photo selection across source albums; ordinary album links are separate.
-6. **Given** an athlete with two entries and two bibs at one event, **Then** one personal event
-   card holds both bibs' photos once each, with a filter by bib.
-7. **Given** a parent who entered a child, **Then** the child's photos appear under "Photos of my
-   entries", labelled with the child's entry, and never under the parent's "Photos with me".
-8. **Given** a relay team sharing one bib, **Then** each confirmed member sees the team's bib
+   thumbnails, while the cabinet action opens registration cards like gallery albums. Opening a
+   card shows the same selection across source albums; ordinary album links are separate.
+6. **Given** an account that filed three registrations at one event (itself and two children),
+   **Then** it sees three albums, one per registration, each titled with that entrant's name and
+   bib; a child's album is never titled as the parent's own photos.
+7. **Given** a relay team sharing one bib, **Then** each confirmed member sees the team's bib
    photos labelled as team photos; an unclaimed member name gives nobody access.
 
 ### User Story 4 - Download selected photos or all my photos (Priority: P2)
@@ -203,10 +202,11 @@ then publish an index; completed originals stay unchanged and new matches appear
   Resync must not republish an album or photo hidden/removed on the site; restoration requires
   an explicit authorized action. Apply removal to search, media and pending/ready archives.
 
-- **FR-019**: On the event page distinguish "Photos with me" (personal matches at that event)
-  from "All photo albums" (all visible sources, with external/unindexed sources labelled). In the
-  cabinet, "Photos with me" opens personal event cards in the gallery album style; a card opens
-  that same event-scoped personal grid, retaining source-album grouping/filtering inside it.
+- **FR-019**: On the event page distinguish "Photos with me" (my registration album at that event,
+  or a choice of them) from "All photo albums" (all visible sources, with external/unindexed
+  sources labelled). In the cabinet, "My race photos" lists one card per registration in the
+  gallery album style; a card opens that same registration grid, retaining source-album
+  filtering inside it.
   Counts/covers are personal, pending states are visible and guest sign-in preserves destination.
 
 - **FR-020**: Let each authorized organizer upload photos through the site into their event's
@@ -226,14 +226,16 @@ then publish an index; completed originals stay unchanged and new matches appear
   without repeated recognition. Local indexing must not require a new paid recognition service;
   any paid producer is opt-in with visible budget/limits. Distinguish recognition, storage and
   delivery/temporary-resource costs rather than promising unconditional zero cost.
-- **FR-024**: Record who the athlete of an entry is separately from who submitted it: self-only
-  entries, an explicit "this is me" at submission, an accepted claim link or a manager decision.
-  Relay entries have member slots that are claimed the same way. One account may be the athlete of
-  several entries at one event; its personal results are their union, deduplicated by photo.
-- **FR-025**: Offer the submitter a separate "Photos of my entries" scope for entries filed for
-  other people, labelled per entry and never merged into "Photos with me". It uses the same
-  confirmed bibs and visibility rules. Whether it stays visible after the athlete claims the entry
-  for their own account is an open maintainer decision.
+- **FR-024**: Personal photo albums are per registration (maintainer decision 2026-10-25): one
+  album for each registration, holding that registration's bib(s) at its event. An account sees the
+  albums of the registrations it filed, so three registrations give three albums, each titled with
+  the entrant's name and bib. Who the athlete of a registration is stays a separate fact
+  (self-only entry, "this is me" at submission, accepted claim link, manager decision) that decides
+  whether the album is titled as the account's own; a confirmed athlete sees the album too. A relay
+  registration has one album; members who claimed their slot see it as well.
+- **FR-025**: If the coach role of [#315](https://github.com/dchernykh1984/cycling-site/issues/315)
+  is added, a coach sees the albums of all their trainees' registrations, and each trainee sees
+  only their own. The coach-trainee link comes from that role, never from names or teams.
 
 ### Retained later-stage scenarios and open decisions
 

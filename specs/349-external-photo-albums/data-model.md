@@ -38,16 +38,17 @@ semantics agree; do not change curated-gallery administration rights to enable e
   `participant_names`). Each slot can get its own confirmed athlete by the same claim route; a
   member name string never links an account by itself. A team that SPM assembles from separate
   registrations links each member through that member's own registration.
-- One account can be the athlete of several entries at one event (two distances, a race and a
-  relay). Its personal results are the union, deduplicated by photo; nothing forces one entry
-  per account per event.
+- Personal albums are per registration. An account that filed several registrations at one
+  event (two distances, itself and its children) has one album per registration, titled with the
+  entrant's name and bib; nothing forces one entry per account per event.
 - A relay bib (or a multi-stage line's set of stage bibs) matches the team, not a member: each
   confirmed member sees the team's bib photos labelled as team photos, because the bib does not
   say which member is in the frame. Only a later face slice can narrow that (see the
   [recognition roadmap](contracts/recognition-roadmap.md)).
-- Entries an account filed for other people (a child, team-mates) form a separate submitter scope,
-  "Photos of my entries". It is never presented as "Photos with me", needs the same confirmed bib
-  and reveals nothing beyond event-level search for a number the submitter already knows.
+- Who sees a registration album: the account that filed it, its confirmed athlete, members who
+  claimed a relay slot and, once the coach role of #315 exists, the athlete's coach. A trainee sees
+  only their own albums. A submitter's album for someone else reveals nothing beyond event-level
+  search for a number the submitter already knows.
 - A withdrawn/deleted registration invalidates automatic personal association. Retain only the
   minimum source/audit facts permitted by the existing deletion policy; no duplicated profile.
 
@@ -104,13 +105,12 @@ a provider hostname. A classified plain link has no fabricated photo count or nu
 
 ## Personal gallery projections
 
-A personal event album is a query projection, not another stored album: eligible athlete links
-join confirmed bibs to accepted observations within the same event and visible sources. Group
-by event; count distinct `(album_id, photo_id)` results and select covers only from that set.
-Multiple registrations/bibs/source albums do not create duplicate event cards; the event grid
-offers a per-bib filter when there are several. Owned registrations with pending number/index data
-retain an explicit state instead of disappearing from the overview. The submitter scope is a
-separate projection over entries the account filed for others, with the same rules.
+A registration album is a query projection, not another stored album: the registration's
+confirmed bib(s) joined to the event's visible photo matches, plus that registration's own
+"this is me" / "not me" decisions. Count distinct `(album_id, photo_id)` results and select covers
+only from that set; several source albums at the event stay one registration album, with a
+source filter. Registrations with pending number/index data keep an explicit state instead of
+disappearing from the overview.
 
 ## Access and retention
 
