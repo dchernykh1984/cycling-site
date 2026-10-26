@@ -62,7 +62,7 @@ class SectionPagesSitemap(Sitemap):
     x_default = True
 
     def items(self):
-        return ["calendar", "calendar_list", "calendar_map", "gallery_index"]
+        return ["calendar", "calendar_list", "calendar_map", "gallery_index", "virtual_ride"]
 
     def location(self, name):
         return reverse(name)
