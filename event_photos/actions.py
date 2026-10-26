@@ -215,6 +215,7 @@ def registration_summary(registration) -> dict:
     conflict = IssuedBib.objects.filter(registration=registration, state=IssuedBib.State.CONFLICT).exists()
     photos = registration_photos(registration)
     count = photos.count()
+    confirmed = photos.filter(confirmed=True).count() if count else 0
     albums = ExternalAlbum.objects.filter(competition_id=registration.competition_id, is_hidden=False)
     indexing = any(not a.inventory_complete or a.processed_count < a.photo_count for a in albums)
     if conflict and not bibs:
@@ -231,7 +232,8 @@ def registration_summary(registration) -> dict:
         "registration": registration,
         "bibs": bibs,
         "count": count,
-        "confirmed": photos.filter(confirmed=True).count() if count else 0,  # type: ignore[misc]  # annotated
+        "confirmed": confirmed,
+        "to_check": count - confirmed,
         "cover": photos.filter(confirmed=True)  # type: ignore[misc]  # annotated
         .filter(~Q(preview_path="") | Q(original_bytes__lte=THUMBNAIL_LIMIT_BYTES))
         .select_related("album")
