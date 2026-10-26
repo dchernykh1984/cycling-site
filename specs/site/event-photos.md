@@ -107,3 +107,8 @@ confirmations remain visible even without a current bib binding. Personal API ca
 confirmed count, state, participant/category and a token-protected thumbnail URL. Photo marks,
 undo and manager moderation keep the current gallery page. Start-list references work for past
 events too; dates do not invalidate registration IDs or historical bibs.
+
+## Open Questions
+
+Pilot precision/recall, CPU time and useful appearance thresholds still need measurements on real
+photos. Cross-album appearance matching and additional storage connectors remain future slices.
