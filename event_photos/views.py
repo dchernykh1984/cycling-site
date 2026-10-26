@@ -95,10 +95,7 @@ def album(request, pk, album_pk):
     competition = _event(request, pk)
     album_obj = get_object_or_404(visible_albums(request.user, competition), pk=album_pk)
     managing = can_manage_albums(request.user, competition)
-    if managing:  # the organizer also sees the photos they hid, to show them again
-        photos = album_obj.photos.filter(in_index=True).select_related("album")
-    else:
-        photos = actions.visible_photos(ExternalAlbum.objects.filter(pk=album_obj.pk)).select_related("album")
+    photos = actions.album_photos(album_obj, include_hidden=managing).select_related("album")
     page = Paginator(photos, PER_PAGE).get_page(request.GET.get("page"))
     _with_links(page, competition)
     return render(

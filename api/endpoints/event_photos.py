@@ -68,6 +68,7 @@ class PhotoOut(Schema):
     # Empty when no thumbnail can be made (an original over 20 MB without a preview).
     thumbnail_url: str
     open_url: str
+    is_hidden: bool
     confirmed: bool | None = None
     decision: str | None = None
 
@@ -135,6 +136,7 @@ def _photos(request, qs, competition, page_number, decisions=None) -> dict:
                 "id": photo.pk,
                 "album_id": photo.album_id,
                 "file_name": photo.file_name,
+                "is_hidden": photo.is_hidden,
                 # The API's own address, so the caller's token is what decides, as for the list.
                 "thumbnail_url": ""
                 if photo.needs_preview
@@ -174,7 +176,9 @@ def album_photos(request, album_id: int, page: int = 1):
     competition = _competition(request.auth, album.competition_id)
     if not visible_albums(request.auth, competition).filter(pk=album.pk).exists():
         raise HttpError(404, "Not found")
-    qs = actions.visible_photos(ExternalAlbum.objects.filter(pk=album.pk)).select_related("album")
+    qs = actions.album_photos(album, include_hidden=can_manage_albums(request.auth, competition)).select_related(
+        "album"
+    )
     return _photos(request, qs, competition, page)
 
 

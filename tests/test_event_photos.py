@@ -748,3 +748,19 @@ class PageAndApiTests(EventPhotosTestCase):
             line, warning = bindings.parse_line(f"{number}#A#G#1#{stage}#1990####0#r1#", max_stages=20)
             self.assertEqual(line.bibs, (number,))
             self.assertTrue(warning)
+
+    def test_managers_can_list_hidden_photos_through_the_api_to_show_them_again(self):
+        self.organizer.api_token = uuid.uuid4()
+        self.organizer.save(update_fields=["api_token"])
+        actions.set_photo_hidden(self.photo, True)
+        url = f"/api/v1/event-photos/albums/{self.album.pk}/photos"
+        result = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.organizer.api_token}").json()
+        self.assertEqual(result["count"], 2)
+        self.assertTrue(next(p for p in result["photos"] if p["id"] == self.photo.pk)["is_hidden"])
+        self.assertEqual(self.client.get(url).json()["count"], 1)
+        self.album.is_hidden = True
+        self.album.save(update_fields=["is_hidden"])
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(
+            self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.organizer.api_token}").json()["count"], 2
+        )
