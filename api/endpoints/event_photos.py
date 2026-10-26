@@ -84,6 +84,12 @@ class RegistrationAlbumOut(Schema):
     competition_id: int
     competition_title: str
     bibs: list[str]
+    count: int
+    confirmed: int
+    state: str
+    cover_thumbnail_url: str
+    participant: str
+    category: LocalizedStr | None
 
 
 class DecisionIn(Schema):
@@ -127,6 +133,30 @@ def _competition(user, pk) -> Competition:
     return competition
 
 
+def _thumbnail_url(request, photo) -> str:
+    if photo is None or photo.needs_preview:
+        return ""
+    return request.build_absolute_uri(f"/api/v1/event-photos/photos/{photo.pk}/thumbnail?v={photo.source_sha256[:16]}")
+
+
+def _registration_card(request, registration) -> dict:
+    summary = actions.registration_summary(registration)
+    return {
+        "registration_id": registration.pk,
+        "competition_id": registration.competition_id,
+        "competition_title": registration.competition.title,
+        "bibs": summary["bibs"],
+        "count": summary["count"],
+        "confirmed": summary["confirmed"],
+        "state": summary["state"],
+        "cover_thumbnail_url": _thumbnail_url(request, summary["cover"]),
+        "participant": str(registration)
+        if registration.participant_names
+        else f"{registration.last_name} {registration.first_name}".strip(),
+        "category": localize_field(registration.category, "name") if registration.category else None,
+    }
+
+
 def _photos(request, qs, competition, page_number, decisions=None) -> dict:
     page = Paginator(qs, PER_PAGE).get_page(page_number)
     out = []
@@ -138,11 +168,7 @@ def _photos(request, qs, competition, page_number, decisions=None) -> dict:
                 "file_name": photo.file_name,
                 "is_hidden": photo.is_hidden,
                 # The API's own address, so the caller's token is what decides, as for the list.
-                "thumbnail_url": ""
-                if photo.needs_preview
-                else request.build_absolute_uri(
-                    f"/api/v1/event-photos/photos/{photo.pk}/thumbnail?v={photo.source_sha256[:16]}"
-                ),
+                "thumbnail_url": _thumbnail_url(request, photo),
                 "open_url": photo.original_view_url or preview_url(photo.album.folder_url, photo.file_name),
                 "confirmed": getattr(photo, "confirmed", None),
                 "decision": decisions.get(photo.pk) if decisions is not None else None,
@@ -192,18 +218,9 @@ def my_albums(request):
             competition__external_albums__is_hidden=False,
         )
         .distinct()
-        .select_related("competition")
+        .select_related("competition", "category")
     )
-    return [
-        {
-            "registration_id": r.pk,
-            "competition_id": r.competition_id,
-            "competition_title": r.competition.title,
-            "bibs": actions.registration_bibs(r),
-        }
-        for r in regs
-        if can_see_event(request.auth, r.competition)
-    ]
+    return [_registration_card(request, r) for r in regs if can_see_event(request.auth, r.competition)]
 
 
 def _registration(user, registration_id) -> CompetitionRegistration:
