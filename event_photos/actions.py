@@ -158,6 +158,10 @@ def thumbnail_path(photo: IndexedPhoto) -> Path:
     return path
 
 
+def set_photo_hidden(photo: IndexedPhoto, hidden: bool) -> None:
+    IndexedPhoto.objects.filter(pk=photo.pk).update(is_hidden=hidden)
+
+
 # -- matches ---------------------------------------------------------------------------------------
 
 

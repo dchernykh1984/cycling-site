@@ -75,13 +75,23 @@ def event_photos(request, pk):
 def album(request, pk, album_pk):
     competition = _event(request, pk)
     album_obj = get_object_or_404(visible_albums(request.user, competition), pk=album_pk)
-    photos = actions.visible_photos(ExternalAlbum.objects.filter(pk=album_obj.pk)).select_related("album")
+    managing = can_manage_albums(request.user, competition)
+    if managing:  # the organizer also sees the photos they hid, to show them again
+        photos = album_obj.photos.filter(in_index=True).select_related("album")
+    else:
+        photos = actions.visible_photos(ExternalAlbum.objects.filter(pk=album_obj.pk)).select_related("album")
     page = Paginator(photos, PER_PAGE).get_page(request.GET.get("page"))
     _with_links(page, competition)
     return render(
         request,
         "event_photos/album.html",
-        {"competition": competition, "album": album_obj, "photos": page, "meta_title": album_obj.title},
+        {
+            "competition": competition,
+            "album": album_obj,
+            "photos": page,
+            "can_manage": managing,
+            "meta_title": album_obj.title,
+        },
     )
 
 
@@ -236,6 +246,19 @@ def _refresh(request, album_obj) -> None:
         messages.success(request, _("Participants' tagging is up to date."))
     else:
         messages.info(request, _("Nothing new in the index."))
+
+
+@login_required
+@require_POST
+def photo_action(request, pk, photo_pk):
+    """Hide or show one photo; the mark is the site's own and survives every import."""
+    competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+    if not can_manage_albums(request.user, competition):
+        raise Http404
+    photo = get_object_or_404(IndexedPhoto, pk=photo_pk, album__competition=competition)
+    if request.POST.get("action") in ("hide", "show"):
+        actions.set_photo_hidden(photo, request.POST["action"] == "hide")
+    return redirect(f"{reverse('event_photos:album', args=[competition.pk, photo.album_id])}#photo-{photo.pk}")
 
 
 @login_required

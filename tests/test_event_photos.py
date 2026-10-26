@@ -528,6 +528,28 @@ class PageAndApiTests(EventPhotosTestCase):
         bad = self.client.post(self._url("manage"), {"folder_url": "https://drive.google.com/x", "title_ru": "X"})
         self.assertContains(bad, "Dropbox")
 
+    def test_a_hidden_photo_leaves_search_albums_and_thumbnails_and_stays_hidden(self):
+        photo1 = IndexedPhoto.objects.get(photo_uuid=uuid.UUID(int=2))
+        self.client.force_login(self.organizer)
+        self.client.post(self._url("photo_action", photo1.pk), {"action": "hide"})
+        self.assertContains(self.client.get(self._url("album", self.album.pk)), 'value="show"')
+        self.client.force_login(self.athlete)
+        self.assertNotContains(self.client.get(self._url("event") + "?bib=12"), "IMG_0001.jpg")
+        self.assertNotIn(photo1, list(actions.registration_photos(self.reg)))
+        thumb = self._url("thumb", photo1.pk, photo1.source_sha256[:16])
+        self.assertEqual(self.client.get(thumb).status_code, 404)
+        self._publish(_index([_photo(1, [("12", "accepted", "ocr")]), _photo(2)], revision=2))
+        photo1.refresh_from_db()
+        self.assertTrue(photo1.is_hidden)
+        self.organizer.api_token = uuid.uuid4()
+        self.organizer.save(update_fields=["api_token"])
+        shown = self.client.post(
+            f"/api/v1/event-photos/photos/{photo1.pk}/show", HTTP_AUTHORIZATION=f"Bearer {self.organizer.api_token}"
+        )
+        self.assertEqual(shown.status_code, 204)
+        photo1.refresh_from_db()
+        self.assertFalse(photo1.is_hidden)
+
     def test_the_creator_manages_albums_whatever_their_role(self):
         self.race.submitted_by = self.athlete  # a participant who created the event
         self.race.save(update_fields=["submitted_by"])
