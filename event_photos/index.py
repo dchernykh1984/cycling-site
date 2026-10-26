@@ -1,0 +1,217 @@
+"""Checking a photo-index.v1.json before anything of it is stored (contracts/photo-index.md).
+
+Pure functions, no database: ``parse`` turns the bytes into an ``Index`` or raises ``IndexValidationError``
+naming the offending field; ``check_successor`` compares it with what the album already published.
+The site checks the index's structure because that protects the site; whether its bibs are right is
+for the participants' own marks to settle.
+"""
+
+import json
+import re
+import unicodedata
+import uuid
+from dataclasses import dataclass, field
+from typing import NoReturn
+
+from django.conf import settings
+
+SCHEMA_VERSION = 1
+_SHA = re.compile(r"^[0-9a-f]{64}\Z")
+_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp"}
+_PROCESSING = {"pending", "processed", "failed"}
+_STATES = {"candidate", "accepted", "rejected"}
+_METHODS = {"ocr", "appearance", "manual"}
+_VIEW_URL = re.compile(r"^https://(www\.dropbox\.com|dl\.dropboxusercontent\.com)/scl/fi/[^\s]+\Z")
+_MAX_PATH = 500
+
+
+class IndexValidationError(ValueError):
+    pass
+
+
+@dataclass(frozen=True)
+class Bib:
+    value: str
+    state: str
+    method: str
+    confidence: float | None
+
+
+@dataclass(frozen=True)
+class Photo:
+    uuid: uuid.UUID
+    original_path: str
+    original_sha256: str
+    original_bytes: int
+    original_view_url: str
+    preview_path: str
+    preview_sha256: str
+    processing_state: str
+    bibs: tuple[Bib, ...]
+
+
+@dataclass(frozen=True)
+class Index:
+    album_uuid: uuid.UUID
+    revision: int
+    sha256: str
+    inventory_complete: bool
+    photos: tuple[Photo, ...]
+    removed: frozenset[uuid.UUID] = field(default_factory=frozenset)
+
+
+def normalize_bib(value: str) -> str:
+    """``trim-nfc-exact-v1``: trim and NFC only; leading zeroes, letters and case are kept."""
+    return unicodedata.normalize("NFC", value.strip())
+
+
+def _fail(where: str, why: str) -> NoReturn:
+    raise IndexValidationError(f"{where}: {why}")
+
+
+def _uuid(value, where: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(str(value))
+    except (ValueError, TypeError):
+        _fail(where, "not a UUID")
+
+
+def _path(value, where: str) -> str:
+    if not isinstance(value, str) or not value or len(value) > _MAX_PATH:
+        _fail(where, "missing or too long")
+    if any(ord(c) < 32 or c in "\\\x7f" for c in value) or value.startswith("/") or "://" in value:
+        _fail(where, "not a safe relative path")
+    if any(part in ("", ".", "..") for part in value.split("/")):
+        _fail(where, "not a safe relative path")
+    return unicodedata.normalize("NFC", value)
+
+
+def _asset(value, where: str, *, view_url: bool) -> tuple[str, str, int, str]:
+    if not isinstance(value, dict):
+        _fail(where, "missing")
+    path = _path(value.get("path"), f"{where}.path")
+    sha = value.get("sha256")
+    if not isinstance(sha, str) or not _SHA.match(sha):
+        _fail(f"{where}.sha256", "must be the file's SHA-256, 64 lowercase hex digits")
+    size = value.get("bytes")
+    if not isinstance(size, int) or isinstance(size, bool) or size < 1:
+        _fail(f"{where}.bytes", "must be a positive integer")
+    if value.get("media_type") not in _MEDIA_TYPES:
+        _fail(f"{where}.media_type", "must be image/jpeg, image/png or image/webp")
+    url = value.get("view_url", "")
+    if url and not (view_url and isinstance(url, str) and _VIEW_URL.match(url)):
+        _fail(f"{where}.view_url", "must be a Dropbox shared file link")
+    return path, sha, size, url
+
+
+def _bib(value, where: str, original_sha: str) -> Bib:
+    if not isinstance(value, dict):
+        _fail(where, "not an object")
+    raw = value.get("value")
+    if not isinstance(raw, str):
+        _fail(f"{where}.value", "must be text")
+    bib = normalize_bib(raw)
+    if not 1 <= len(bib) <= 32 or any(unicodedata.category(c).startswith("C") for c in bib):
+        _fail(f"{where}.value", "must be 1 to 32 printable characters")
+    state, method = value.get("state"), value.get("method")
+    if state not in _STATES:
+        _fail(f"{where}.state", "must be candidate, accepted or rejected")
+    if method not in _METHODS:
+        _fail(f"{where}.method", "must be ocr, appearance or manual")
+    if method == "appearance" and state != "candidate":
+        _fail(f"{where}.state", "an appearance match is always a candidate")
+    if method == "manual" and value.get("content_sha256") != original_sha:
+        _fail(f"{where}.content_sha256", "a manual decision must name the original's SHA-256")
+    confidence = value.get("confidence")
+    if confidence is not None and not (isinstance(confidence, int | float) and 0 <= confidence <= 1):
+        _fail(f"{where}.confidence", "must be between 0 and 1")
+    return Bib(bib, state, method, None if confidence is None else float(confidence))
+
+
+def _load(raw: bytes) -> dict:
+    if len(raw) > settings.PHOTO_INDEX_MAX_BYTES:
+        _fail("index", f"larger than {settings.PHOTO_INDEX_MAX_BYTES} bytes")
+    try:
+        text = raw.decode("utf-8")
+        data = json.loads(text)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        _fail("index", f"not UTF-8 JSON ({exc})")
+    if "\x00" in text:
+        _fail("index", "contains a NUL character")
+    if not isinstance(data, dict):
+        _fail("index", "not a JSON object")
+    _header(data)
+    return data
+
+
+def _header(data: dict) -> None:
+    if data.get("schema_version") != SCHEMA_VERSION:
+        _fail("schema_version", f"only version {SCHEMA_VERSION} is supported")
+    revision = data.get("revision")
+    if not isinstance(revision, int) or isinstance(revision, bool) or not 1 <= revision < 2**63:
+        _fail("revision", "must be a positive integer")
+    if data.get("bib_normalization") != "trim-nfc-exact-v1":
+        _fail("bib_normalization", "must be trim-nfc-exact-v1")
+    processing = data.get("processing")
+    if not isinstance(processing, dict) or not isinstance(processing.get("inventory_complete"), bool):
+        _fail("processing.inventory_complete", "must be true or false")
+    photos = data.get("photos")
+    if not isinstance(photos, list):
+        _fail("photos", "must be a list")
+    if len(photos) > settings.PHOTO_INDEX_MAX_PHOTOS:
+        _fail("photos", f"more than {settings.PHOTO_INDEX_MAX_PHOTOS} photos")
+
+
+def _photo(p, where: str) -> Photo:
+    if not isinstance(p, dict):
+        _fail(where, "not an object")
+    pid = _uuid(p.get("id"), f"{where}.id")
+    o_path, o_sha, o_bytes, o_url = _asset(p.get("original"), f"{where}.original", view_url=True)
+    pv_path, pv_sha = "", ""
+    if p.get("preview") is not None:
+        pv_path, pv_sha, _, _ = _asset(p["preview"], f"{where}.preview", view_url=True)
+    state = p.get("processing_state")
+    if state not in _PROCESSING:
+        _fail(f"{where}.processing_state", "must be pending, processed or failed")
+    bibs_raw = p.get("bibs", [])
+    if not isinstance(bibs_raw, list) or len(bibs_raw) > settings.PHOTO_INDEX_MAX_BIBS_PER_PHOTO:
+        _fail(f"{where}.bibs", f"must be a list of at most {settings.PHOTO_INDEX_MAX_BIBS_PER_PHOTO}")
+    bibs = tuple(_bib(b, f"{where}.bibs[{j}]", o_sha) for j, b in enumerate(bibs_raw))
+    return Photo(pid, o_path, o_sha, o_bytes, o_url, pv_path, pv_sha, state, bibs)
+
+
+def parse(raw: bytes, sha256: str) -> Index:
+    data = _load(raw)
+    album_uuid = _uuid(data.get("album_id"), "album_id")
+    photos = [_photo(p, f"photos[{i}]") for i, p in enumerate(data["photos"])]
+    seen = [p.uuid for p in photos]
+    if len(set(seen)) != len(seen):
+        _fail("photos", "a photo id repeats")
+    originals = [p.original_path for p in photos]
+    if len(set(originals)) != len(originals):
+        _fail("photos", "two photos name the same original")
+    removed_raw = data.get("removed_photo_ids", [])
+    if not isinstance(removed_raw, list):
+        _fail("removed_photo_ids", "must be a list")
+    removed = frozenset(_uuid(r, "removed_photo_ids") for r in removed_raw)
+    if removed & set(seen):
+        _fail("removed_photo_ids", "a photo cannot be both live and removed")
+    return Index(album_uuid, data["revision"], sha256, data["processing"]["inventory_complete"], tuple(photos), removed)
+
+
+def check_successor(index: Index, *, revision: int, sha256: str, live: set[uuid.UUID]) -> bool:
+    """Whether ``index`` may replace the published one; False means "same snapshot, nothing to do".
+
+    Raises when it is older, a different snapshot at the same revision, or silently drops photos the
+    album already shows -- an incomplete scan must never look like a deletion.
+    """
+    if index.revision < revision:
+        _fail("revision", f"older than the published revision {revision}")
+    if index.revision == revision:
+        if index.sha256 == sha256:
+            return False
+        _fail("revision", f"a different index is already published at revision {revision}")
+    missing = live - {p.uuid for p in index.photos} - index.removed
+    if missing:
+        _fail("photos", f"{len(missing)} photo(s) missing without being listed in removed_photo_ids")
+    return True
