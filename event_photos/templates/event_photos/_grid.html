@@ -11,6 +11,14 @@ viewed full size and downloaded. With can_mark, each card carries the athlete's 
         {% if registration %}<span class="gallery-card-date">{% if photo.confirmed %}{% trans "Confirmed" %}{% else %}{% trans "Check: is this you?" %}{% endif %}</span>{% endif %}
       </span>
     </a>
+    {% if can_manage and not registration %}
+    <form method="post" action="{% url 'event_photos:photo_action' competition.pk photo.pk %}" class="mt-2 d-flex align-items-center gap-2">
+      {% csrf_token %}
+      {% if photo.is_hidden %}<span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>
+      <button name="action" value="show" class="btn btn-sm btn-outline-secondary">{% trans "Show" %}</button>
+      {% else %}<button name="action" value="hide" class="btn btn-sm btn-outline-secondary">{% trans "Hide" %}</button>{% endif %}
+    </form>
+    {% endif %}
     {% if can_mark %}
     <div class="event-photo-marks d-flex gap-2 mt-2">
       {% if photo.decision != "me" %}

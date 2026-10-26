@@ -289,6 +289,24 @@ def start_list_diagnostics(request, competition_id: int):
     return diagnostics.warnings if diagnostics else []
 
 
+@router.post("/photos/{photo_id}/hide", response={204: None}, auth=auth)
+def hide_photo(request, photo_id: int):
+    return _set_hidden(request, photo_id, True)
+
+
+@router.post("/photos/{photo_id}/show", response={204: None}, auth=auth)
+def show_photo(request, photo_id: int):
+    return _set_hidden(request, photo_id, False)
+
+
+def _set_hidden(request, photo_id: int, hidden: bool):
+    photo = get_object_or_404(IndexedPhoto.objects.select_related("album__competition"), pk=photo_id)
+    if not can_manage_albums(request.auth, photo.album.competition):
+        raise HttpError(404, "Not found")
+    actions.set_photo_hidden(photo, hidden)
+    return Status(204, None)
+
+
 @router.get("/albums/{album_id}/stats", response=StatsOut, auth=auth)
 def album_stats(request, album_id: int):
     stats = actions.mark_stats(_managed_album(request.auth, album_id))
