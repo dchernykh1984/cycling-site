@@ -16,6 +16,7 @@ from event_photos.dropbox import DropboxError, preview_url
 from event_photos.forms import ExternalAlbumForm
 from event_photos.models import ExternalAlbum, IndexedPhoto, IssuedBib, PhotoDecision, StartListDiagnostics
 from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration
+from gallery.models import Album as GalleryAlbum
 from registrations.models import CompetitionRegistration
 
 PER_PAGE = 50
@@ -70,6 +71,8 @@ def event_photos(request, pk):
             "registration_cards": [
                 actions.registration_summary(r) for r in my_registrations(request.user, competition)
             ],
+            # The club's curated albums of this event are photo sources too, with their own rights.
+            "gallery_albums": GalleryAlbum.objects.visible_to(request.user).filter(competition=competition),
             "meta_title": _("Photos: %(event)s") % {"event": competition.title},
         },
     )

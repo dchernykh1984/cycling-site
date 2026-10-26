@@ -14,8 +14,12 @@ def event_photo_section(context, competition):
     """What the event page offers about its external photo albums."""
     user = context["request"].user
     albums = visible_albums(user, competition)
+    from gallery.models import Album
+
+    curated = Album.objects.visible_to(user).filter(competition=competition).exists()
     return {
         "has_albums": albums.exists(),
+        "has_any_photos": albums.exists() or curated,
         "registrations": [registration_summary(r) for r in my_registrations(user, competition)]
         if albums.exists()
         else [],

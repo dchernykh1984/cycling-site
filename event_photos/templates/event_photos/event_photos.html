@@ -30,13 +30,20 @@
   {% endif %}
 
   <h2 class="h5 mt-4">{% trans "All photo albums" %}</h2>
+  {% if gallery_albums %}
+  <ul class="list-unstyled mb-2">
+    {% for album in gallery_albums %}
+    <li class="mb-1"><a href="{{ album.get_absolute_url }}">{{ album.title }}</a> &middot; <span class="text-muted">{% trans "Gallery" %}</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
   {% if albums %}
   <ul class="list-unstyled">
     {% for album in albums %}
     <li class="mb-1"><a href="{% url 'event_photos:album' competition.pk album.pk %}">{{ album.title }}</a>{% if album.credit %} &middot; {{ album.credit }}{% endif %} &middot; {% blocktrans with counter=album.photo_count %}Photos: {{ counter }}{% endblocktrans %}{% if album.is_hidden %} <span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>{% endif %}</li>
     {% endfor %}
   </ul>
-  {% else %}
+  {% elif not gallery_albums %}
   <p>{% trans "No photo albums yet." %}</p>
   {% endif %}
 </section>
