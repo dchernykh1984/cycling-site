@@ -22,6 +22,7 @@ the profile and the event page.{% endcomment %}
         {% elif card.state == "review" %}{% trans "Bib needs review" %}
         {% else %}{% blocktrans with counter=card.count %}Photos: {{ counter }}{% endblocktrans %}{% if card.state == "indexing" %} &middot; {% trans "indexing is not finished" %}{% endif %}{% endif %}
       </span>
+      <span class="gallery-card-date">{% blocktrans with confirmed=card.confirmed to_check=card.to_check %}Confirmed: {{ confirmed }}. To check: {{ to_check }}.{% endblocktrans %}</span>
     </span>
     <span class="gallery-card-arrow">{% include "gallery/_icons.html" with name="arrow-circle" %}</span>
   </a>

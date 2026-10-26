@@ -877,3 +877,13 @@ class PageAndApiTests(EventPhotosTestCase):
             photo["bibs"][0]["region"] = region
             with self.assertRaises(index_module.IndexValidationError):
                 index_module.parse(json.dumps(raw).encode(), "0" * 64)
+
+    def test_personal_cards_show_both_confirmed_and_to_check_counts(self):
+        from django.template.loader import render_to_string
+        from django.utils.translation import override
+
+        with override("en"):
+            html = render_to_string(
+                "event_photos/_registration_cards.html", {"cards": [actions.registration_summary(self.reg)]}
+            )
+        self.assertIn("Confirmed: 1. To check: 1.", html)
