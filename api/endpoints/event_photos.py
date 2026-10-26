@@ -34,6 +34,23 @@ class AlbumOut(Schema):
     inventory_complete: bool
     revision: int
     is_hidden: bool
+    # For the event's managers only (null for everybody else): how the last import went.
+    import_state: str | None = None
+    last_error: str | None = None
+
+    @staticmethod
+    def resolve_import_state(obj, context) -> str | None:
+        if not can_manage_albums(context["request"].auth, obj.competition):
+            return None
+        if obj.last_error:
+            return "failed"
+        return "imported" if obj.imported_at else "not-imported"
+
+    @staticmethod
+    def resolve_last_error(obj, context) -> str | None:
+        if not can_manage_albums(context["request"].auth, obj.competition):
+            return None
+        return obj.last_error
 
     @staticmethod
     def resolve_title(obj) -> LocalizedStr:
@@ -136,7 +153,7 @@ def photo_thumbnail(request, photo_id: int, v: str = ""):
 
 @router.get("/competitions/{competition_id}/albums", response=list[AlbumOut], auth=optional_auth)
 def list_albums(request, competition_id: int):
-    return list(visible_albums(request.auth, _competition(request.auth, competition_id)))
+    return list(visible_albums(request.auth, _competition(request.auth, competition_id)).select_related("competition"))
 
 
 @router.get("/competitions/{competition_id}/photos", response=PhotoPageOut, auth=optional_auth)

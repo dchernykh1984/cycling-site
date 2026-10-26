@@ -550,6 +550,21 @@ class PageAndApiTests(EventPhotosTestCase):
         photo1.refresh_from_db()
         self.assertFalse(photo1.is_hidden)
 
+    def test_a_failed_first_import_is_reported_to_the_manager_only(self):
+        self.organizer.api_token = uuid.uuid4()
+        self.organizer.save(update_fields=["api_token"])
+        FakeAdapter.files = {}
+        created = self.client.post(
+            f"/api/v1/event-photos/competitions/{self.race.pk}/albums",
+            {"folder_url": FOLDER + "2", "title_ru": "B"},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.organizer.api_token}",
+        )
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual((created.json()["import_state"], created.json()["last_error"]), ("failed", "not-found"))
+        public = self.client.get(f"/api/v1/event-photos/competitions/{self.race.pk}/albums").json()
+        self.assertEqual({a["last_error"] for a in public}, {None})
+
     def test_the_creator_manages_albums_whatever_their_role(self):
         self.race.submitted_by = self.athlete  # a participant who created the event
         self.race.save(update_fields=["submitted_by"])
