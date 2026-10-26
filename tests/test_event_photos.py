@@ -719,3 +719,26 @@ class PageAndApiTests(EventPhotosTestCase):
         )
         self.assertEqual(response.status_code, 422)
         self.assertIn("processing_state", response.json()["detail"])
+
+    def test_unsafe_json_is_rejected_without_a_server_error(self):
+        self.organizer.api_token = uuid.uuid4()
+        self.organizer.save(update_fields=["api_token"])
+        base = _index([_photo(1), _photo(2)], revision=2)
+        bad_photo = _photo(1)
+        bad_photo["original"]["path"] = "bad\ud800.jpg"
+        cases = [
+            _index([bad_photo, _photo(2)], revision=2),
+            base[:-1] + b',"extra":' + b"[" * 1500 + b"0" + b"]" * 1500 + b"}",
+            base[:-1] + b',"extra":' + b"9" * 5000 + b"}",
+        ]
+        for raw in cases:
+            with self.subTest(raw_bytes=len(raw)):
+                FakeAdapter.files[actions.INDEX_FILE] = raw
+                result = self.client.post(
+                    f"/api/v1/event-photos/albums/{self.album.pk}/refresh",
+                    HTTP_AUTHORIZATION=f"Bearer {self.organizer.api_token}",
+                )
+                self.assertEqual(result.status_code, 422)
+                self.album.refresh_from_db()
+                self.assertEqual(self.album.revision, 1)
+                self.assertTrue(self.album.last_error)
