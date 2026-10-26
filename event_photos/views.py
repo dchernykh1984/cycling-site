@@ -1,6 +1,7 @@
 """Event photos on the site: the event's albums and bib search, a registration's own album with its
 "this is me" / "not me" marks, the organizer's page, and the thumbnails the site keeps."""
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -27,7 +28,7 @@ from gallery.models import Album as GalleryAlbum
 from registrations.models import CompetitionRegistration
 
 PER_PAGE = 50
-INDEXING_GUIDE_URL = "https://github.com/dchernykh1984/SportPhotoIndexer#how-to-index-an-album"
+INDEXER_URL = "https://github.com/dchernykh1984/SportPhotoIndexer/releases/latest"
 
 
 def _event(request, pk) -> Competition:
@@ -251,7 +252,9 @@ def manage(request, pk):
             "competition": competition,
             "form": form,
             "albums": albums,
-            "guide_url": INDEXING_GUIDE_URL,
+            "guide_url": reverse("event_photos:guide"),
+            "max_photos": settings.PHOTO_INDEX_MAX_PHOTOS,
+            "max_mb": settings.PHOTO_INDEX_MAX_BYTES // 1_000_000,
             "start_list_warnings": diagnostics.warnings if diagnostics else [],
             "meta_title": _("Event photos"),
         },
@@ -299,3 +302,29 @@ def album_action(request, pk, album_pk):
     elif action == "delete":
         album_obj.delete()  # the files in Dropbox stay where they are
     return redirect("event_photos:manage", competition.pk)
+
+
+def guide(request):
+    """How to prepare an album: steps, and the limits the import really applies (same settings)."""
+    return render(
+        request,
+        "event_photos/guide.html",
+        {
+            "indexer_url": INDEXER_URL,
+            "max_photos": settings.PHOTO_INDEX_MAX_PHOTOS,
+            "max_bibs": settings.PHOTO_INDEX_MAX_BIBS_PER_PHOTO,
+            "max_mb": settings.PHOTO_INDEX_MAX_BYTES // 1_000_000,
+            "meta_title": _("How to prepare a photo album for the site"),
+        },
+    )
+
+
+def sample_index(request):
+    """A small example of photo-index.v1.json to download."""
+    from django.http import HttpResponse
+
+    from event_photos.index import SAMPLE
+
+    response = HttpResponse(SAMPLE, content_type="application/json")
+    response["Content-Disposition"] = 'attachment; filename="photo-index.v1.json"'
+    return response
