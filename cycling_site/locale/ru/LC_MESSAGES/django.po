@@ -3784,3 +3784,149 @@ msgstr "Разметка участников обновлена."
 
 msgid "Nothing new in the index."
 msgstr "В индексе ничего нового."
+
+msgid "Bib not received yet"
+msgstr "Номер ещё не получен"
+
+msgid "Bib in dispute"
+msgstr "Номер под вопросом"
+
+msgid "How to prepare a photo album for the site"
+msgstr "Как подготовить фотоальбом для сайта"
+
+msgid ""
+"The site shows photos from a Dropbox folder shared as 'Anyone with the link "
+"can view'. The photos lie at the top of the folder, next to a file photo-"
+"index.v1.json that says which bibs are on which photo."
+msgstr ""
+"Сайт показывает фото из папки Dropbox с доступом «Все, у кого есть ссылка, "
+"могут смотреть». Фото лежат в корне папки, рядом с файлом photo-"
+"index.v1.json, где записано, какие номера на каком фото."
+
+msgid "Steps"
+msgstr "Шаги"
+
+#, python-format
+msgid ""
+"Download <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo "
+"Indexer</a> for your computer and open the album folder in it."
+msgstr ""
+"Скачайте <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo "
+"Indexer</a> для своего компьютера и откройте в нём папку альбома."
+
+msgid ""
+"Type the bibs on each photo and press Enter: the index is saved after every "
+"photo, so you can stop and come back."
+msgstr ""
+"Наберите номера на каждом фото и нажмите Enter: индекс сохраняется после "
+"каждого фото, можно прерваться и продолжить позже."
+
+msgid ""
+"In Dropbox, share the folder: 'Anyone with the link can view', and copy the "
+"link."
+msgstr ""
+"В Dropbox откройте доступ к папке «Все, у кого есть ссылка, могут смотреть» "
+"и скопируйте ссылку."
+
+msgid ""
+"On the event page open 'Manage event photos', paste the link and press 'Add "
+"and import'."
+msgstr ""
+"На странице события откройте «Фото события: управление», вставьте ссылку и "
+"нажмите «Добавить и импортировать»."
+
+msgid ""
+"After indexing more photos, press 'Refresh participants' tagging' there."
+msgstr ""
+"Когда проиндексируете ещё фото, нажмите там «Обновить разметку участников»."
+
+msgid "Limits"
+msgstr "Ограничения"
+
+#, python-format
+msgid ""
+"One album: at most %(max_photos)s photos, %(max_bibs)s bibs on a photo, and "
+"an index file of at most %(max_mb)s MB."
+msgstr ""
+"Один альбом: не больше %(max_photos)s фото, %(max_bibs)s номеров на фото и "
+"файл индекса не больше %(max_mb)s МБ."
+
+msgid ""
+"Only the photos at the top of the folder are shown; subfolders are not read."
+msgstr "Показываются только фото в корне папки; вложенные папки не читаются."
+
+msgid ""
+"Dropbox cannot make a thumbnail of a photo over 20 MB; the indexer makes a "
+"small preview for such photos."
+msgstr ""
+"Dropbox не делает миниатюры фото больше 20 МБ; для таких фото индексатор "
+"создаёт небольшое превью."
+
+msgid ""
+"Dropbox limits the traffic of shared links (1 TB a day on paid plans, 20 GB "
+"on Basic). Over it, all the owner's shared links pause for a day."
+msgstr ""
+"Dropbox ограничивает трафик общих ссылок (1 ТБ в сутки на платных тарифах, "
+"20 ГБ на Basic). При превышении все общие ссылки владельца "
+"приостанавливаются на сутки."
+
+msgid "If something goes wrong"
+msgstr "Если что-то пошло не так"
+
+msgid ""
+"When an import fails, the event's photo page names the field of the index "
+"and what is wrong with it, and the last good version stays on the site. Fix "
+"it in the indexer and refresh."
+msgstr ""
+"Если импорт не удался, страница фото события называет поле индекса и что с "
+"ним не так, а на сайте остаётся последняя рабочая версия. Исправьте в "
+"индексаторе и обновите."
+
+msgid "Example index file"
+msgstr "Пример файла индекса"
+
+#, python-format
+msgid ""
+"Participants' marks: %(confirmed)s confirmed, %(rejected)s rejected, "
+"%(unchecked)s photos not checked yet."
+msgstr ""
+"Отметки участников: подтверждено %(confirmed)s, отклонено %(rejected)s, ещё "
+"не проверено фото: %(unchecked)s."
+
+#, python-format
+msgid ""
+"Photos over 20 MB without a preview, which Dropbox cannot make thumbnails "
+"of: %(counter)s."
+msgstr ""
+"Фото больше 20 МБ без превью, для которых Dropbox не делает миниатюры: "
+"%(counter)s."
+
+msgid ""
+"Run the indexer on the folder (it makes previews for such photos), then "
+"refresh."
+msgstr ""
+"Запустите индексатор на папке (он сделает превью для таких фото), затем "
+"обновите."
+
+msgid "Start list: what could not be matched"
+msgstr "Стартовый протокол: что не удалось сопоставить"
+
+msgid "Fix these in StartProtocolMaker and send the start list again."
+msgstr ""
+"Исправьте это в StartProtocolMaker и отправьте стартовый протокол заново."
+
+#, python-format
+msgid ""
+"One album: at most %(max_photos)s photos and an index file of at most "
+"%(max_mb)s MB; photos at the top of a Dropbox folder shared by link."
+msgstr ""
+"Один альбом: не больше %(max_photos)s фото и файл индекса не больше "
+"%(max_mb)s МБ; фото в корне папки Dropbox с доступом по ссылке."
+
+msgid ""
+"The start lists give this registration more than one bib, or give its bib to"
+" someone else. The organizer is sorting it out; meanwhile, search the "
+"event's photos by bib."
+msgstr ""
+"По стартовым протоколам у этой заявки больше одного номера, или её номер у "
+"кого-то ещё. Организатор разбирается; пока ищите фото события по номеру."
