@@ -14,7 +14,7 @@ from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.dropbox import preview_url
 from event_photos.forms import ExternalAlbumForm
-from event_photos.models import ExternalAlbum, PhotoDecision
+from event_photos.models import ExternalAlbum, PhotoDecision, StartListDiagnostics
 from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration
 from event_photos.views import visible_albums
 from registrations.models import CompetitionRegistration
@@ -271,6 +271,16 @@ def change_album(request, album_id: int, payload: AlbumPatchIn):
 def disconnect_album(request, album_id: int):
     _managed_album(request.auth, album_id).delete()  # the folder in Dropbox stays as it is
     return Status(204, None)
+
+
+@router.get("/competitions/{competition_id}/start-list-diagnostics", response=list[str], auth=auth)
+def start_list_diagnostics(request, competition_id: int):
+    """What the last start-list upload could not bind (foreign ids, conflicts, stage limits)."""
+    competition = get_object_or_404(Competition, pk=competition_id, is_deleted=False)
+    if not can_manage_albums(request.auth, competition):
+        raise HttpError(404, "Not found")
+    diagnostics = StartListDiagnostics.objects.filter(competition=competition).first()
+    return diagnostics.warnings if diagnostics else []
 
 
 @router.get("/albums/{album_id}/stats", response=StatsOut, auth=auth)
