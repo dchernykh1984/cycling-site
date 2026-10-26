@@ -126,3 +126,20 @@ and per-file links from the indexer, thumbnails straight from Dropbox where the 
 event 533 set aside until re-uploaded to Dropbox; existing indexing tools surveyed (C46). The
 Dropbox authentication types were checked against the API reference, not tried; the concept check
 with a 58 KB test album is prepared for when the site's Dropbox app exists.
+
+## External review of the implementation plan (2026-10-26)
+
+A second agent reviewed `tmp/plan.txt` (15 findings, all accepted). Those that change contracts
+are recorded here; the rest changed only the plan.
+
+- Start line: absent and empty field 10 are now distinct (11 separators mean the field is
+  present), so a referee's unlink is not mistaken for an older SPM's loss; stage expansion is
+  bounded before it runs.
+- Decisions: an undo reverts one recorded transition, only while it is the latest and in its
+  window; team-mates sharing a bib keep their own marks, and event search drops a photo only when
+  every holder of the bib said "not me". Bib assignments get their own append-only history, since
+  the generic audit log keeps only changed field names.
+- Thumbnails: stored outside `MEDIA_ROOT` (served unchecked by `serve_media`), served by a
+  permission-checked view with private caching, named by internal IDs plus source digest and
+  regenerated when it changes; originals over 20 MB without a preview are flagged to the organizer.
+- Portable album UUIDs are unique on the site; `sha256` is never a provider's own hash.
