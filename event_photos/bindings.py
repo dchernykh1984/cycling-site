@@ -56,6 +56,10 @@ def parse_line(line: str, *, max_stages: int) -> tuple[Line, str]:
     return Line(tuple(bibs), tuple(dict.fromkeys(refs)), refs_present), warning
 
 
+class AssignmentOverflowError(Exception):
+    pass
+
+
 @dataclass
 class Result:
     # (registration id, bib) -> (state, device_id, client_revision)
@@ -64,60 +68,75 @@ class Result:
 
 
 def _collect(uploads, valid_ids: set[int], warnings: list[str]):
-    """(registration, bib) -> (device, revision, line number), and the bibs of lines without the field."""
-    pairs: dict[tuple[int, str], tuple[str, int, int]] = {}
-    unreferenced: set[str] = set()
+    """(registration, bib) -> (device, revision, line number, restored).
+
+    A binding from before whose line now comes without the field (edited in an older
+    program) is restored here, ahead of the conflict check, so it can conflict like any
+    other; one for a registration that is no longer valid is not restored.
+    """
+    pairs: dict[tuple[int, str], tuple[str, int, int, bool]] = {}
+    unreferenced: dict[str, tuple[str, int, int]] = {}
     lines = ((device_id, revision, item) for device_id, revision, items in uploads for item in items)
     for line_no, (device_id, revision, item) in enumerate(lines):
         line, warning = parse_line(item, max_stages=settings.START_LIST_MAX_STAGES)
         if warning:
             warnings.append(warning)
         if not line.refs_present:
-            unreferenced.update(line.bibs)
+            for bib in line.bibs:
+                unreferenced.setdefault(bib, (device_id, revision, line_no))
             continue
         for reg in line.refs:
             if reg not in valid_ids:
                 warnings.append(f"r{reg}: not a registration of this event")
                 continue
             for bib in line.bibs:
-                if len(pairs) >= _MAX_ASSIGNMENTS:
-                    warnings.append("too many assignments; the rest are ignored")
-                    return pairs, unreferenced
-                pairs.setdefault((reg, bib), (device_id, revision, line_no))
+                pairs.setdefault((reg, bib), (device_id, revision, line_no, False))
+        if len(pairs) > _MAX_ASSIGNMENTS:
+            raise AssignmentOverflowError
     return pairs, unreferenced
 
 
-def compute(uploads, valid_ids: set[int], previous: dict[tuple[int, str], str]) -> Result:
+def _restore(pairs, unreferenced, previous, valid_ids: set[int]) -> None:
+    for reg, bib in previous:
+        if (reg, bib) not in pairs and bib in unreferenced and reg in valid_ids:
+            pairs[(reg, bib)] = (*unreferenced[bib], True)
+    if len(pairs) > _MAX_ASSIGNMENTS:
+        raise AssignmentOverflowError
+
+
+def compute(uploads, valid_ids: set[int], previous) -> Result:
     """Every assignment the uploaded lines make, worked out in memory before anything is written.
 
-    ``uploads``: (device_id, client_revision, items). ``previous``: the current (registration, bib)
-    -> state, used only to keep a binding whose line lost its field in an older program.
+    ``uploads``: (device_id, client_revision, items). ``previous``: the current
+    (registration, bib) pairs. Raises AssignmentOverflowError rather than return a prefix.
     """
     warnings: list[str] = []
-    pairs, unreferenced_bibs = _collect(uploads, valid_ids, warnings)
+    pairs, unreferenced = _collect(uploads, valid_ids, warnings)
+    _restore(pairs, unreferenced, previous, valid_ids)
     # Conflicts: one registration on two lines with different bibs, or one bib on two lines.
     lines_by_reg: dict[int, set[int]] = {}
     lines_by_bib: dict[str, set[int]] = {}
-    for (reg, bib), (_, _, ln) in pairs.items():
+    for (reg, bib), (_, _, ln, _) in pairs.items():
         lines_by_reg.setdefault(reg, set()).add(ln)
         lines_by_bib.setdefault(bib, set()).add(ln)
     assignments = {}
-    for (reg, bib), (device, revision, _) in pairs.items():
-        conflict = len(lines_by_reg[reg]) > 1 or len(lines_by_bib[bib]) > 1
-        assignments[(reg, bib)] = ("conflict" if conflict else "active", device, revision)
-    # A bib bound before whose line now comes without the field keeps its binding, for review.
-    for (reg, bib), _state in previous.items():
-        if (reg, bib) not in assignments and bib in unreferenced_bibs:
-            assignments[(reg, bib)] = ("review", "", 0)
+    for (reg, bib), (device, revision, _, restored) in pairs.items():
+        if len(lines_by_reg[reg]) > 1 or len(lines_by_bib[bib]) > 1:
+            state = "conflict"
+            warnings.append(f"bib {bib}: r{reg} is in conflict (device {device}, revision {revision})")
+        else:
+            state = "review" if restored else "active"
+        assignments[(reg, bib)] = (state, device, revision)
     return Result(assignments, warnings)
 
 
 def recompute(competition) -> list[str]:
     """Replace the competition's IssuedBib rows from its stored start lists; returns the warnings.
 
-    Call inside the start-list upload's transaction, under its competition lock.
+    Call inside the start-list upload's transaction, under its competition lock. On overflow the
+    current bindings stay as they are. The warnings are kept for the event's organizer.
     """
-    from event_photos.models import IssuedBib, IssuedBibEvent
+    from event_photos.models import IssuedBib, IssuedBibEvent, StartListDiagnostics
     from protocols.models import StartListUpload
     from registrations.models import CompetitionRegistration
 
@@ -128,15 +147,21 @@ def recompute(competition) -> list[str]:
         CompetitionRegistration.objects.filter(competition=competition, is_rejected=False).values_list("pk", flat=True)
     )
     current = {(b.registration_id, b.bib): b for b in IssuedBib.objects.filter(competition=competition)}
-    result = compute(uploads, valid, {k: v.state for k, v in current.items()})
-    events = []
     with transaction.atomic():
-        for key, row in current.items():
-            if key not in result.assignments:
-                events.append(
-                    IssuedBibEvent(competition=competition, registration_id=key[0], bib=key[1], change="withdrawn")
-                )
-                row.delete()
+        try:
+            result = compute(uploads, valid, set(current))
+        except AssignmentOverflowError:
+            warnings = [f"more than {_MAX_ASSIGNMENTS} bib assignments; the previous ones are kept"]
+            _keep_diagnostics(StartListDiagnostics, competition, warnings)
+            return warnings
+        events = [
+            IssuedBibEvent(competition=competition, registration_id=key[0], bib=key[1], change="withdrawn")
+            for key in current
+            if key not in result.assignments
+        ]
+        IssuedBib.objects.filter(
+            pk__in=[row.pk for key, row in current.items() if key not in result.assignments]
+        ).delete()
         for (reg, bib), (state, device, revision) in result.assignments.items():
             existing = current.get((reg, bib))
             if existing is None:
@@ -148,21 +173,28 @@ def recompute(competition) -> list[str]:
                     device_id=device,
                     client_revision=revision,
                 )
-            elif existing.state == state:
+            elif (existing.state, existing.device_id, existing.client_revision) == (state, device, revision):
                 continue
             else:
-                existing.state = state
-                existing.save(update_fields=["state", "updated_at"])
-            change = "assigned" if state == "active" else state
+                changed_state = existing.state != state
+                existing.state, existing.device_id, existing.client_revision = state, device, revision
+                existing.save(update_fields=["state", "device_id", "client_revision", "updated_at"])
+                if not changed_state:
+                    continue
             events.append(
                 IssuedBibEvent(
                     competition=competition,
                     registration_id=reg,
                     bib=bib,
-                    change=change,
+                    change="assigned" if state == "active" else state,
                     device_id=device,
                     client_revision=revision,
                 )
             )
         IssuedBibEvent.objects.bulk_create(events)
+        _keep_diagnostics(StartListDiagnostics, competition, result.warnings)
     return result.warnings
+
+
+def _keep_diagnostics(model, competition, warnings: list[str]) -> None:
+    model.objects.update_or_create(competition=competition, defaults={"warnings": warnings[:200]})
