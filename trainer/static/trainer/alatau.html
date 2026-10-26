@@ -83,6 +83,37 @@ button{cursor:pointer}
   .brand h1{font-size:28px}
 }
 
+/* ---------- страница 1: настройки ---------- */
+#menu{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:stretch;pointer-events:auto;background:var(--bg);color:var(--ink)}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel);border-bottom:1px solid var(--line);
+  padding:calc(env(safe-area-inset-top,0px) + 12px) max(18px,env(safe-area-inset-right,0px)) 12px max(18px,env(safe-area-inset-left,0px))}
+.topbar .brand{margin:0;align-items:center;gap:12px}
+.topbar .brand h1{font-size:26px}
+#btnRecords{margin:0}
+.setup{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px max(16px,env(safe-area-inset-right,0px)) 28px max(16px,env(safe-area-inset-left,0px))}
+.setup-in{max-width:1120px;margin:0 auto}
+.setup .lead{margin:0 0 16px;max-width:760px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;min-width:0}
+.box.wide{grid-column:1/-1}
+.box h2{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:17px}
+.num{width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--panel);display:inline-grid;place-items:center;font-size:13px;font-weight:700;flex:none}
+.box .routes{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-top:12px}
+.box #modeSeg{margin-bottom:6px}
+.box #charPrev{height:210px}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 32px}
+.cols > div{min-width:0}
+.startbar{display:flex;align-items:center;gap:16px;background:var(--panel);border-top:1px solid var(--line);
+  padding:12px max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(18px,env(safe-area-inset-left,0px))}
+.startbar .sum{flex:1;min-width:0;font-size:14px;color:var(--muted);line-height:1.4}
+.startbar .sum b{display:block;color:var(--ink);font-size:15px}
+.startbar .btn.primary{width:auto;min-width:220px;margin:0}
+@media (max-width:820px){
+  .grid,.cols{grid-template-columns:1fr}
+  .startbar .btn.primary{min-width:0;padding:14px 26px}
+  .topbar .brand h1{font-size:22px}
+}
+
 /* ---------- hud (always over 3D, theme-independent) ---------- */
 .hud{position:fixed;z-index:10;color:var(--hud-ink);font-family:var(--body);pointer-events:none}
 .panel{background:var(--hud);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:16px}
@@ -229,24 +260,27 @@ button{cursor:pointer}
 <canvas id="gl" aria-label="Трёхмерный вид маршрута"></canvas>
 <div id="loading">Строим Алматы…</div>
 
-<!-- ======== MENU ======== -->
-<div id="menu">
-  <div class="sheet" role="dialog" aria-label="Настройка заезда">
-    <div class="brand">
-      <svg width="54" height="34" viewBox="0 0 54 34" aria-hidden="true"><path d="M2 32 L16 10 L22 18 L30 4 L52 32 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M26 10 L30 4 L34 10 L31 9 L29 11 Z" fill="currentColor"/><circle cx="44" cy="9" r="4" fill="#C3323B"/></svg>
-      <h1>Алатау</h1>
-    </div>
-    <p class="lead">Виртуальные заезды по настоящим улицам. Подключите датчики, пульсометр или умный станок — и стартуйте.</p>
+<!-- ======== СТРАНИЦА 1: НАСТРОЙКИ ======== -->
+<div id="menu" class="page" role="main" aria-label="Настройка заезда">
+  <header class="topbar">
+    <div class="brand"><svg width="44" height="28" viewBox="0 0 54 34" aria-hidden="true"><path d="M2 32 L16 10 L22 18 L30 4 L52 32 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M26 10 L30 4 L34 10 L31 9 L29 11 Z" fill="currentColor"/><circle cx="44" cy="9" r="4" fill="#C3323B"/></svg><h1>Алатау</h1></div>
     <button class="btn" id="btnRecords" type="button">Мои рекорды</button>
-
-    <h2>Город</h2>
-    <div class="cities" id="cities"></div>
-
-    <h2>Маршрут</h2>
-    <div class="routes" id="routes"></div>
-
-    <h2>Режим</h2>
-    <div class="cities" id="modeSeg"><button class="city" type="button" data-mode="race">Гонка с соперниками</button><button class="city" type="button" data-mode="plan">План по каденсу</button></div>
+  </header>
+  <div class="setup"><div class="setup-in">
+    <p class="lead">Сначала настройте заезд, затем нажмите «Старт» — откроется страница заезда. Подключите датчики, пульсометр или умный станок, либо катайтесь в демо-режиме.</p>
+    <div class="grid">
+      <section class="box wide" aria-labelledby="hRoute">
+        <h2 id="hRoute"><span class="num">1</span>Маршрут</h2>
+        <div class="cities" id="cities"></div>
+        <div class="routes" id="routes"></div>
+      </section>
+      <section class="box" aria-labelledby="hMode">
+        <h2 id="hMode"><span class="num">2</span>Режим</h2>
+    <div class="cities" id="modeSeg"><button class="city" type="button" data-mode="race">Гонка с соперниками</button><button class="city" type="button" data-mode="plan">План по каденсу</button><button class="city" type="button" data-mode="free">Свободная езда</button></div>
+    <div id="raceOpts"><div class="field"><label for="bots">Соперники</label>
+      <select id="bots"><option value="0">Без соперников</option><option value="3">3 бота</option><option value="6" selected>6 ботов</option><option value="10">10 ботов</option></select></div>
+    <div class="field"><label for="level">Уровень соперников</label>
+      <select id="level"><option value="easy">Лёгкий, 1,8–2,4 Вт/кг</option><option value="mid" selected>Средний, 2,5–3,2 Вт/кг</option><option value="hard">Сильный, 3,3–4,2 Вт/кг</option></select></div></div>
     <div id="planEd" class="hidden">
       <p class="hint">Звёзды считаются как на велосипеде: спереди 1 — самая маленькая, сзади 1 — самая большая, то есть 1×1 — самая лёгкая передача. В скобках — число зубьев.</p>
       <div class="field"><label>Стартовая передача</label><span class="gearpick"><select id="plStartF" aria-label="Стартовая передняя звезда"></select><span>×</span><select id="plStartR" aria-label="Стартовая задняя звезда"></select></span></div>
@@ -255,21 +289,39 @@ button{cursor:pointer}
       <p class="hint" id="plTotal"></p>
     </div>
 
-    <h2>Гонщик</h2>
-    <canvas id="charPrev" aria-label="Выбранный гонщик"></canvas>
-    <p class="hint" id="charInfo"></p>
-    <div class="chars" id="chars"></div>
+      </section>
+      <section class="box" aria-labelledby="hRider">
+        <h2 id="hRider"><span class="num">3</span>Гонщик</h2>
+        <canvas id="charPrev" aria-label="Ваш гонщик в форме UBT"></canvas>
+    <div class="field"><label for="height">Ваш рост, см</label><input id="height" type="number" min="120" max="220" step="1" value="178" inputmode="numeric"></div>
+<div class="field"><label for="mass">Ваш вес, кг</label><input id="mass" type="number" min="35" max="160" step="1" value="75" inputmode="numeric"></div>
+<p class="hint" id="bodyHint"></p>
+    <div class="field"><label for="view">Вид в заезде</label>
+      <select id="view"><option value="chase" selected>От третьего лица</option><option value="fpv">От первого лица</option></select></div>
 
-    <h2>Устройства</h2>
+      </section>
+      <section class="box wide" aria-labelledby="hDev">
+        <h2 id="hDev"><span class="num">4</span>Устройства и велосипед</h2>
+        <div class="cols">
+          <div>
     <button class="btn" id="btnConnect" type="button">Подключить устройство</button>
     <ul class="devlist" id="devList"></ul>
     <p class="hint" id="btHint">Подходят датчики скорости и каденса, пульсометры, измерители мощности и умные станки с протоколом FTMS. Устройства подключаются по одному. Без них заезд пойдёт в демо-режиме.</p>
+    <div class="field"><label for="difficulty">Сложность умного станка</label>
+      <select id="difficulty"><option value="0">0%, без подъёмов</option><option value="25">25%</option><option value="50" selected>50%</option><option value="75">75%</option><option value="100">100%, как на дороге</option></select></div>
+    <div class="field"><label for="hrmax">Максимальный пульс</label><input id="hrmax" type="number" min="120" max="230" step="1" value="185" inputmode="numeric"></div>
+
+          </div>
+          <div>
+    <div class="field"><label for="bikeType">Тип велосипеда</label><select id="bikeType"></select></div>
+    <div class="field"><label for="bikeKg">Вес велосипеда, кг</label><input id="bikeKg" type="number" min="5" max="30" step="0.1" value="8.5" inputmode="decimal"></div>
     <div class="field"><label for="circ">Колесо</label>
       <select id="circ">
         <option value="2096">700×23C — 2096 мм</option>
         <option value="2105" selected>700×25C — 2105 мм</option>
         <option value="2136">700×28C — 2136 мм</option>
         <option value="2155">700×32C — 2155 мм</option>
+        <option value="2200">700×40C — 2200 мм</option>
         <option value="2288">29×2.1 — 2288 мм</option>
         <option value="2148">27.5×2.1 — 2148 мм</option>
         <option value="2068">26×2.1 — 2068 мм</option>
@@ -287,26 +339,21 @@ button{cursor:pointer}
     <p class="hint" id="plBikeInfo"></p>
     <div class="field"><label for="cadSpeed">Скорость при датчике каденса</label>
       <select id="cadSpeed"><option value="direct" selected>По передаче и каденсу</option><option value="physics">С учётом уклона маршрута</option></select></div>
-    <div class="field"><label for="difficulty">Сложность умного станка</label>
-      <select id="difficulty"><option value="0">0%, без подъёмов</option><option value="25">25%</option><option value="50" selected>50%</option><option value="75">75%</option><option value="100">100%, как на дороге</option></select></div>
-    <div class="field"><label for="hrmax">Максимальный пульс</label><input id="hrmax" type="number" min="120" max="230" step="1" value="185" inputmode="numeric"></div>
 
-    <h2>Заезд</h2>
-    <div class="field"><label for="mass">Ваш вес, кг</label><input id="mass" type="number" min="35" max="160" step="1" value="75" inputmode="numeric"></div>
-    <div id="raceOpts"><div class="field"><label for="bots">Соперники</label>
-      <select id="bots"><option value="0">Без соперников</option><option value="3">3 бота</option><option value="6" selected>6 ботов</option><option value="10">10 ботов</option></select></div>
-    <div class="field"><label for="level">Уровень соперников</label>
-      <select id="level"><option value="easy">Лёгкий, 1,8–2,4 Вт/кг</option><option value="mid" selected>Средний, 2,5–3,2 Вт/кг</option><option value="hard">Сильный, 3,3–4,2 Вт/кг</option></select></div></div>
-    <div class="field"><label for="look">Камера в заезде</label>
-      <select id="look"><option value="bodycam" selected>Бодикам</option><option value="clean">Чистая</option><option value="film">Плёнка</option></select></div>
-    <div class="field"><label for="view">Вид в заезде</label>
-      <select id="view"><option value="fpv" selected>От первого лица</option><option value="chase">От третьего лица</option></select></div>
-
-    <button class="btn primary" id="btnStart" type="button">Старт</button>
+          </div>
+        </div>
+      </section>
+    </div>
     <p class="attr">Маршруты нанесены по данным <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© участники OpenStreetMap</a> (ODbL), геометрия и высоты упрощены. Здания и деревья сгенерированы.</p>
-  </div>
+
+  </div></div>
+  <footer class="startbar">
+    <div class="sum" id="startSum"></div>
+    <button class="btn primary" id="btnStart" type="button">Старт</button>
+  </footer>
 </div>
 
+<!-- ======== СТРАНИЦА 2: ЗАЕЗД ======== -->
 <!-- ======== HUD ======== -->
 <div id="hud" class="hidden">
   <div id="tags" aria-hidden="true"></div>
@@ -360,8 +407,8 @@ button{cursor:pointer}
 <div class="modal hidden" id="pauseM">
   <div class="card">
     <h3>Пауза</h3>
-    <p class="hint">Таймер остановлен. Соперники тоже ждут.</p>
-    <div class="row2"><button class="btn" id="btnResume" type="button">Продолжить</button><button class="btn" id="btnQuit" type="button">Выйти в меню</button></div>
+    <p class="hint" id="pauseHint">Таймер остановлен. Соперники тоже ждут.</p>
+    <div class="row2"><button class="btn" id="btnResume" type="button">Продолжить</button><button class="btn hidden" id="btnFinish" type="button">Завершить заезд</button><button class="btn" id="btnQuit" type="button">Выйти в меню</button></div>
   </div>
 </div>
 
@@ -478,7 +525,8 @@ const ORIGIN = { lat: 43.238, lon: 76.945 };
 function proj(lat, lon) { const R = 6371000; return { x: (lon - ORIGIN.lon) * Math.PI / 180 * R * Math.cos(ORIGIN.lat * Math.PI / 180), z: -(lat - ORIGIN.lat) * Math.PI / 180 * R }; }
 
 function buildTrack(r) {
-  const v = r.pts.map(p => { const q = proj(p[0], p[1]); return new THREE.Vector3(q.x, p[2], q.z); });
+  const src = r.osm ? r.osm.path : r.pts; // если загружен файл OSM — точная ось настоящих улиц
+  const v = src.map(p => { const q = proj(p[0], p[1]); return new THREE.Vector3(q.x, p[2], q.z); });
   const curve = new THREE.CatmullRomCurve3(v, !!r.loop, 'centripetal', .5);
   const n = Math.max(80, Math.round(curve.getLength() / 4));
   const sp = curve.getSpacedPoints(n);
@@ -726,9 +774,9 @@ const TRAINERS = { // мощность по скорости колеса на �
 const COGS = [11, 12, 13, 14, 15, 17, 19, 21, 24, 28];
 const PHYS = { g: 9.81, rho: 1.08, CdA: .32, Crr: .005, bike: 8.5 };
 function stepRider(r, P, grade, dt) {
-  const m = r.mass + PHYS.bike, th = Math.atan(grade);
+  const m = r.mass + (r.bike || PHYS.bike), th = Math.atan(grade);
   const v = Math.max(r.v, .5);
-  const F = P / v - .5 * PHYS.rho * r.CdA * r.v * r.v - PHYS.Crr * m * PHYS.g * Math.cos(th) - m * PHYS.g * Math.sin(th);
+  const F = P / v - .5 * PHYS.rho * r.CdA * r.v * r.v - (r.Crr || PHYS.Crr) * m * PHYS.g * Math.cos(th) - m * PHYS.g * Math.sin(th);
   r.v = Math.max(0, r.v + F / (m * 1.04) * dt);
   if (r.v > 30) r.v = 30;
   return r.v * dt;
@@ -814,15 +862,17 @@ function roadTexture(lanes) {
     for (let k = 1; k < per; k++) { const x1 = w / 2 * k / per, x2 = w - x1; g.fillRect(x1 - 2, 0, 4, h * .4); g.fillRect(x2 - 2, 0, 4, h * .4); }
   });
 }
-let buildingMat, treeMat;
+let buildingMat, treeMat, osmMat;
 function makeMaterials() {
   buildingMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-  buildingMat.onBeforeCompile = sh => {
+  const winShader = sh => {
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n#ifdef USE_INSTANCING\n mat4 wm=modelMatrix*instanceMatrix;\n#else\n mat4 wm=modelMatrix;\n#endif\n vWP=(wm*vec4(transformed,1.0)).xyz; vWN=normalize(mat3(wm)*objectNormal);');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;')
       .replace('#include <color_fragment>', '#include <color_fragment>\n if(abs(vWN.y)<0.5){ vec2 t=normalize(vec2(-vWN.z,vWN.x)); float u=dot(vWP.xz,t); float fl=fract(vWP.y/3.0); float cl=fract(u/3.3); float win=step(.2,fl)*step(fl,.7)*step(.18,cl)*step(cl,.74); float lit=step(.86,fract(sin(dot(floor(vec2(u/3.3,vWP.y/3.0)),vec2(12.9898,78.233)))*43758.5453)); vec3 glass=mix(vec3(.15,.19,.24),vec3(.62,.66,.66),lit*.6); diffuseColor.rgb=mix(diffuseColor.rgb,glass,win*.88); } else { diffuseColor.rgb*=.7; }');
   };
+  buildingMat.onBeforeCompile = winShader;
+  osmMat = new THREE.MeshLambertMaterial({ vertexColors: true }); osmMat.onBeforeCompile = winShader;
   treeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
 }
 function makeBars() {
@@ -881,6 +931,22 @@ function jerseyTex(ch) {
         g.fillStyle = hexs(ch.leaf || 0x3f9a46); g.beginPath(); g.ellipse(cx + 18, ey - 26, 13, 6, -.5, 0, 7); g.fill();
         g.fillStyle = hexs(ch.b); g.fillRect(0, h - 14, w, 6); break;
       }
+      case 'ornament': { // оранжевая форма: полосы на груди, молния, флаг и горы на спине
+        g.fillStyle = '#3a3a3a'; g.fillRect(cx - 2, 0, 4, h);
+        g.fillStyle = hexs(ch.b);
+        for (let k = 0; k < 3; k++) { const y = h * .4 + k * 17;
+          g.beginPath(); g.moveTo(cx - 150, y + 4); g.lineTo(cx - 40, y); g.lineTo(cx - 40, y + 9); g.lineTo(cx - 150, y + 13); g.closePath(); g.fill();
+          g.beginPath(); g.moveTo(cx + 150, y + 4); g.lineTo(cx + 40, y); g.lineTo(cx + 40, y + 9); g.lineTo(cx + 150, y + 13); g.closePath(); g.fill(); }
+        for (const x0 of [0, w]) { // спина — края холста
+          g.fillStyle = '#00AFCA'; g.fillRect(x0 - 26, 34, 52, 32); g.fillStyle = '#FFD21F'; g.beginPath(); g.arc(x0, 50, 8, 0, 7); g.fill();
+          g.fillStyle = hexs(ch.b); g.beginPath(); g.moveTo(x0 - 90, h - 26); g.lineTo(x0 - 50, h - 70); g.lineTo(x0 - 30, h - 50); g.lineTo(x0, h - 92); g.lineTo(x0 + 34, h - 48); g.lineTo(x0 + 52, h - 64); g.lineTo(x0 + 90, h - 26); g.closePath(); g.fill();
+          g.fillStyle = hexs(ch.a); g.beginPath(); g.moveTo(x0 - 8, h - 80); g.lineTo(x0, h - 92); g.lineTo(x0 + 9, h - 79); g.lineTo(x0 + 2, h - 84); g.closePath(); g.fill();
+          if (ch.backText) { // надпись на спине (шов холста проходит по центру спины)
+            g.save(); g.translate(x0, h * .5); g.fillStyle = hexs(ch.b); g.font = '700 54px Unbounded, "Arial Black", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ch.backText, 0, 0); g.restore();
+          }
+        }
+        break;
+      }
       case 'stripes': for (let i = 0; i < 4; i++) g.fillRect(0, 32 + i * 56, w, 18); break;
       case 'hoops': g.fillRect(0, h * .4, w, h * .22); break;
       case 'split': g.fillRect(0, 0, w / 2, h); break;
@@ -899,12 +965,30 @@ function jerseyTex(ch) {
   t.wrapS = THREE.RepeatWrapping; t.offset.x = .5;
   return t;
 }
+// казахский орнамент «қошқар мүйіз» (бараньи рога) — традиционный мотив
+function ramHorn(g, x, y, s, col) {
+  g.save(); g.translate(x, y); g.scale(s, s); g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 7; g.lineCap = 'round';
+  for (const k of [-1, 1]) {
+    g.beginPath(); g.moveTo(0, 14); g.bezierCurveTo(k * 6, -4, k * 30, -6, k * 32, -24); g.bezierCurveTo(k * 34, -42, k * 15, -46, k * 12, -33); g.bezierCurveTo(k * 10, -25, k * 18, -21, k * 22, -28); g.stroke();
+    g.beginPath(); g.moveTo(0, 14); g.bezierCurveTo(k * 8, 26, k * 28, 28, k * 30, 44); g.bezierCurveTo(k * 31, 58, k * 17, 60, k * 15, 51); g.stroke();
+  }
+  g.beginPath(); g.moveTo(0, -46); g.lineTo(-8, -30); g.lineTo(0, -18); g.lineTo(8, -30); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(0, -18); g.lineTo(0, 58); g.stroke();
+  g.restore();
+}
+function sleeveTex(ch) {
+  return canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = hexs(ch.a); g.fillRect(0, 0, w, h);
+    g.fillStyle = hexs(ch.cuff); g.fillRect(0, 0, w, h * .26);
+    ramHorn(g, w * .25, h * .62, .55, hexs(ch.orn)); ramHorn(g, w * .75, h * .62, .55, hexs(ch.orn));
+  });
+}
 const UPV = new THREE.Vector3(0, 1, 0), _sv = new THREE.Vector3();
 function placeSeg(m, a, b) { _sv.subVectors(b, a); const L = _sv.length() || 1e-4; m.position.copy(a).addScaledVector(_sv, .5); m.quaternion.setFromUnitVectors(UPV, _sv.multiplyScalar(1 / L)); m.scale.y = L; }
 function makeRider(ch) {
   const g = new THREE.Group(); g.rotation.order = 'YXZ';
   const L = c => new THREE.MeshLambertMaterial({ color: c });
-  const mFrame = L(ch.bike), mDark = L(0x1c1f23), mTire = L(0x151618), mRim = L(ch.rim || 0xb9bec4), mSkin = L(ch.skin), mBib = L(ch.bib || 0x16191d), mHelm = L(ch.helmet), mShoe = L(ch.shoe), mSleeve = L(ch.sleeve || ch.a);
+  const mFrame = L(ch.bike), mDark = L(0x1c1f23), mTire = L(0x151618), mRim = L(ch.rim || 0xb9bec4), mSkin = L(ch.skin), mBib = L(ch.bib || 0x16191d), mHelm = L(ch.helmet), mShoe = L(ch.shoe), mSleeve = ch.sleeveTex ? new THREE.MeshLambertMaterial({ map: sleeveTex(ch) }) : L(ch.sleeve || ch.a), mSleeveBall = L(ch.sleeve || ch.a);
   const mGlass = new THREE.MeshStandardMaterial({ color: ch.glass || 0x0d0f12, metalness: ch.mirror ? .9 : .2, roughness: ch.mirror ? .15 : .4, emissive: ch.mirror ? ch.glass : 0, emissiveIntensity: ch.mirror ? .25 : 0 });
   const mJersey = new THREE.MeshLambertMaterial({ map: jerseyTex(ch) });
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -912,7 +996,7 @@ function makeRider(ch) {
   const ball = (p, r, m) => { const s = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), m); s.position.copy(p); g.add(s); return s; };
   // велосипед
   [.52, -.48].forEach(z => {
-    const tire = new THREE.Mesh(new THREE.TorusGeometry(.335, .021, 8, 30), mTire); tire.rotation.y = Math.PI / 2; tire.position.set(0, .34, z); g.add(tire);
+    const tire = new THREE.Mesh(new THREE.TorusGeometry(.335, ch.tire || .021, 8, 30), mTire); tire.rotation.y = Math.PI / 2; tire.position.set(0, .34, z); g.add(tire);
     const rim = new THREE.Mesh(new THREE.TorusGeometry(.305, ch.deep ? .03 : .014, 6, 30), mRim); rim.rotation.y = Math.PI / 2; rim.position.set(0, .34, z); g.add(rim);
     const hub = new THREE.Mesh(new THREE.CylinderGeometry(.025, .025, .11, 8), mDark); hub.rotation.z = Math.PI / 2; hub.position.set(0, .34, z); g.add(hub);
     for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; tube(V(0, .34, z), V(0, .34 + Math.sin(a) * .3, z + Math.cos(a) * .3), .004, mRim); }
@@ -928,7 +1012,7 @@ function makeRider(ch) {
   const bw = ch.build || 1, hip = V(0, 1.0, -.17), sh = V(0, 1.36, .23);
   ball(hip, .14, mBib).scale.set(1.15 * bw, .9, 1.1);
   const torso = tube(hip, sh, .155, mJersey, .135); torso.scale.x = 1.25 * bw; torso.scale.z = .85 * bw;
-  ball(sh, .135, mSleeve).scale.set(1.45 * bw, .8, .9);
+  ball(sh, .135, mSleeveBall).scale.set(1.45 * bw, .8, .9);
   tube(sh, V(0, 1.47, .34), .05, mSkin);
   const hc = V(0, 1.53, .39), hr = .128; ball(hc, hr, mSkin).scale.set(1, 1.04, 1);
   const helm = new THREE.Mesh(new THREE.SphereGeometry(hr * 1.2, 20, 12, 0, Math.PI * 2, 0, Math.PI * .56), mHelm); helm.position.set(0, 1.585, .37); helm.scale.set(1, .85, 1.2); helm.rotation.x = .12; g.add(helm);
@@ -978,9 +1062,10 @@ function poseRider(R, phase) {
 function disposeWorld() {
   if (!world) return;
   scene.remove(world.group);
-  world.group.traverse(o => { if (o.geometry) o.geometry.dispose(); [].concat(o.material || []).forEach(m => { if (m === buildingMat || m === treeMat) return; if (m.map) m.map.dispose(); m.dispose(); }); });
+  world.group.traverse(o => { if (o.geometry) o.geometry.dispose(); [].concat(o.material || []).forEach(m => { if (m === buildingMat || m === treeMat || m === osmMat) return; if (m.map) m.map.dispose(); m.dispose(); }); });
   world = null;
 }
+let world_osmKept = 0;
 function buildWorld(route) {
   disposeWorld();
   const T = buildTrack(route), grp = new THREE.Group(), r = rng(route.id.length * 977 + 13);
@@ -1030,10 +1115,12 @@ function buildWorld(route) {
   // --- здания ---
   const bl = [];
   const lms = nearLandmarks(T);
-  const tooClose = (x, z, rad) => nearest(T, x, z).d < rad || lms.some(l => Math.hypot(l.x - x, l.z - z) < l.r + rad * .5);
+  const osmB = route.osm ? prepOSM(route.osm.buildings) : null;
+  const tooClose = (x, z, rad) => nearest(T, x, z).d < rad || lms.some(l => Math.hypot(l.x - x, l.z - z) < l.r + rad * .5) || (osmB ? osmB.hit(x, z) : false);
   // «окна» в застройке, чтобы достопримечательности было видно с дороги
   const inView = (s, side) => lms.some(l => { if (l.dist > 700 || (l.side === 'справа' ? 1 : -1) !== side) return false; let d = Math.abs(s - l.s); if (T.loop) d = Math.min(d, T.L - d); return d < l.r + 60 + l.dist * .25; });
-  if (!gorge) {
+  if (osmB) { world_osmKept = addOSMBuildings(grp, T, W, lms, osmB); }
+  else if (!gorge) {
     for (const side of [-1, 1]) for (const row of [0, 1]) {
       let s = r() * 20;
       while (s < T.L) {
@@ -1113,6 +1200,101 @@ function addMountains(grp, T) {
   g.setAttribute('color', new THREE.BufferAttribute(cols, 3)); g.computeVertexNormals();
   grp.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true })));
 }
+/* ---------------- Настоящие здания и улицы из OpenStreetMap (файл alatau_osm.json) ---------------- */
+// Хранилище в браузере (IndexedDB): файл бывает в несколько мегабайт, localStorage столько не вмещает
+const IDB = {
+  db: null,
+  open() { return new Promise((res, rej) => { try { const r = indexedDB.open('alatau', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(this.db = r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }); },
+  async op(mode, fn) { const db = this.db || await this.open(); return new Promise((res, rej) => { const st = db.transaction('kv', mode).objectStore('kv'), rq = fn(st); rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error); }); },
+  get(k) { return this.op('readonly', s => s.get(k)); }, set(k, v) { return this.op('readwrite', s => s.put(v, k)); }, del(k) { return this.op('readwrite', s => s.delete(k)); }
+};
+let OSM = null;
+function validOSM(d) { return d && d.v === 1 && d.routes && typeof d.routes === 'object'; }
+function applyOSM(d) {
+  OSM = validOSM(d) ? d : null;
+  ROUTES.forEach(r => { const x = OSM && OSM.routes[r.id]; r.osm = x && Array.isArray(x.path) && x.path.length > 3 ? x : null; });
+  renderOSMStatus();
+}
+function osmCount() { return OSM ? Object.values(OSM.routes).reduce((a, r) => a + ((r.buildings && r.buildings.length) || 0), 0) : 0; }
+function renderOSMStatus() {
+  const el = $('#osmStatus'); if (!el) return;
+  if (OSM) {
+    const ids = ROUTES.filter(r => r.osm).map(r => r.name);
+    el.textContent = 'Загружено ' + osmCount().toLocaleString('ru-RU') + ' зданий из OpenStreetMap. Улицы выровнены на маршрутах: ' + ids.join(', ') + '.';
+    $('#osmClear').classList.remove('hidden');
+  } else {
+    el.textContent = 'Сейчас дома вдоль маршрутов сгенерированы. Загрузите файл alatau_osm.json из скрипта выгрузки, и появятся настоящие здания Алматы и точная геометрия улиц.';
+    $('#osmClear').classList.add('hidden');
+  }
+}
+async function loadOSM() {
+  try { const t = await Promise.race([IDB.get('osm'), new Promise(r => setTimeout(() => r(null), 2500))]); if (t) applyOSM(JSON.parse(t)); else renderOSMStatus(); }
+  catch (e) { renderOSMStatus(); }
+}
+async function importOSMFile(file) {
+  const el = $('#osmStatus');
+  try {
+    el.textContent = 'Читаю файл…'; const text = await file.text(); const d = JSON.parse(text);
+    if (!validOSM(d)) { el.textContent = 'Это не тот файл: нужен alatau_osm.json, который создаёт скрипт выгрузки.'; return; }
+    try { await IDB.set('osm', text); } catch (e) {}
+    applyOSM(d); rebuildMenuWorld();
+  } catch (e) { el.textContent = 'Не удалось прочитать файл: ' + e.message; }
+}
+function rebuildMenuWorld() { showLoading(true); setTimeout(() => { world = null; renderMenu(); startMenu(); cam.init = false; cam.cinit = false; showLoading(false); }, 30); }
+
+// Подготовка зданий: метры, центр, радиус и сетка для быстрых проверок
+function prepOSM(arr) {
+  const list = [], g = new Map(), cell = 40;
+  (arr || []).forEach(a => {
+    if (!Array.isArray(a) || a.length < 8) return;
+    const h = a[0] / 10, mh = a[1] / 10; if (mh > .5) return; // части зданий на высоте пропускаем
+    const ring = []; for (let i = 2; i + 1 < a.length; i += 2) ring.push([a[i] / 10, a[i + 1] / 10]);
+    if (ring.length < 3) return;
+    let cx = 0, cz = 0; ring.forEach(p => { cx += p[0]; cz += p[1]; }); cx /= ring.length; cz /= ring.length;
+    let r = 0; ring.forEach(p => { r = Math.max(r, Math.hypot(p[0] - cx, p[1] - cz)); });
+    const b = { ring, h: clamp(h, 3, 320), cx, cz, r }; list.push(b);
+    const k = Math.floor(cx / cell) + ',' + Math.floor(cz / cell); (g.get(k) || g.set(k, []).get(k)).push(b);
+  });
+  return {
+    list,
+    hit(x, z) { const ci = Math.floor(x / cell), cj = Math.floor(z / cell); for (let a = -2; a <= 2; a++) for (let d = -2; d <= 2; d++) { const L = g.get((ci + a) + ',' + (cj + d)); if (L) for (const b of L) if (Math.hypot(b.cx - x, b.cz - z) < b.r + 1.5) return true; } return false; }
+  };
+}
+// Все здания маршрута — одна геометрия: стены, крыша, цвет фасада в вершинах
+function addOSMBuildings(grp, T, W, lms, osmB) {
+  const cell = 30, rg = new Map();
+  for (let i = 0; i < T.N; i += 2) { const k = Math.floor(T.X[i] / cell) + ',' + Math.floor(T.Z[i] / cell); (rg.get(k) || rg.set(k, []).get(k)).push(i); }
+  const roadD = (x, z) => { let b = 1e9; const ci = Math.floor(x / cell), cj = Math.floor(z / cell); for (let a = -1; a <= 1; a++) for (let d = -1; d <= 1; d++) { const L = rg.get((ci + a) + ',' + (cj + d)); if (L) for (const i of L) { const v = Math.hypot(T.X[i] - x, T.Z[i] - z); if (v < b) b = v; } } return b; };
+  const pal = [0xd8cfbf, 0xc9c2b5, 0xe2dccd, 0xb9b5ad, 0xd6c4a8, 0xc7cdd1, 0xe8e3d8, 0xb7a993, 0xcfc1a9], glass = 0x7f97ab;
+  const P = [], N = [], C = [], c = new THREE.Color(); let kept = 0;
+  const push = (x, y, z, nx, ny, nz) => { P.push(x, y, z); N.push(nx, ny, nz); C.push(c.r, c.g, c.b); };
+  osmB.list.forEach((b, bi) => {
+    if (lms.some(l => Math.hypot(l.x - b.cx, l.z - b.cz) < l.r + b.r * .5)) return;   // на месте наших достопримечательностей
+    if (b.ring.some(p => roadD(p[0], p[1]) < W / 2 + 5.5)) return;                    // ничего на проезжей части и тротуаре
+    const base = terrainH(T, b.cx, b.cz) - 1.5, top = base + 1.5 + b.h;
+    let area = 0; const R0 = b.ring; for (let i = 0; i < R0.length; i++) { const p = R0[i], q = R0[(i + 1) % R0.length]; area += p[0] * q[1] - q[0] * p[1]; }
+    const R = area > 0 ? R0.slice().reverse() : R0; // обход, при котором нормали стен смотрят наружу
+    c.setHex(b.h > 45 ? glass : pal[(bi * 2654435761 >>> 0) % pal.length]);
+    for (let i = 0; i < R.length; i++) {
+      const p = R[i], q = R[(i + 1) % R.length], ex = q[0] - p[0], ez = q[1] - p[1], L = Math.hypot(ex, ez) || 1, nx = -ez / L, nz = ex / L;
+      push(p[0], base, p[1], nx, 0, nz); push(q[0], base, q[1], nx, 0, nz); push(q[0], top, q[1], nx, 0, nz);
+      push(p[0], base, p[1], nx, 0, nz); push(q[0], top, q[1], nx, 0, nz); push(p[0], top, p[1], nx, 0, nz);
+    }
+    let tris = []; try { tris = THREE.ShapeUtils.triangulateShape(R.map(p => new THREE.Vector2(p[0], p[1])), []); } catch (e) {}
+    tris.forEach(t => {
+      let [a, b2, d] = t; const A = R[a], B = R[b2], D = R[d];
+      if ((B[1] - A[1]) * (D[0] - A[0]) - (B[0] - A[0]) * (D[1] - A[1]) < 0) { const tmp = b2; b2 = d; d = tmp; }
+      [a, b2, d].forEach(k => push(R[k][0], top, R[k][1], 0, 1, 0));
+    });
+    kept++;
+  });
+  if (!P.length) return 0;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+  g.computeBoundingSphere(); grp.add(new THREE.Mesh(g, osmMat));
+  return kept;
+}
+
 function addLandmark(grp, lm, q, T) {
   const lam = c => new THREE.MeshLambertMaterial({ color: c });
   const G = new THREE.Group();
@@ -1237,10 +1419,6 @@ const STYLES = {
 };
 // a — основной цвет формы, b — узор, pat — тип узора. Никаких надписей и логотипов.
 const CHARS = [
-  // Герои из листа персонажей: Беркут, Ирбис, Алма
-  { id: 'berkut', hero: true, name: 'Беркут', style: 'sprinter', motif: 'беркут, золотой орёл Казахстана', a: 0x1d48b8, b: 0xe8b53a, trim: 0xe8b53a, pat: 'wing', bib: 0x15224a, helmet: 0xe8b53a, helmetType: 'aero', stripe: 0x1d48b8, glass: 0x101216, bike: 0x1d48b8, rim: 0xe8b53a, deep: true, skin: 0xf0c8a4, shoe: 0xf4f6f8, hair: 'none', mass: 79, size: 1.03, build: 1.12 },
-  { id: 'irbis', hero: true, name: 'Ирбис', style: 'climber', motif: 'ирбис, снежный барс Тянь-Шаня', a: 0xdfe3e7, b: 0x8a9096, pat: 'leopard', sleeve: 0xd3d8dd, bib: 0x2e3135, helmet: 0x8f969d, helmetType: 'cat', glass: 0x2fc7c0, mirror: true, bike: 0xe9ecef, rim: 0x2e3135, skin: 0xc08a5e, shoe: 0x8f969d, hair: 'none', mass: 59, size: .97, build: .9 },
-  { id: 'alma', hero: true, name: 'Алма', style: 'allround', motif: 'Алматы, город яблок', a: 0xc62f34, b: 0xf3e6c8, trim: 0x3f9a46, leaf: 0x3f9a46, pat: 'apple', bib: 0x2f7a3c, helmet: 0x3f9a46, glass: 0xf08a24, mirror: true, bike: 0xc62f34, skin: 0xeec3a0, shoe: 0xf4f6f8, hair: 'braids', hairC: 0x2a1a12, tie: 0xf3e6c8, mass: 61, size: .96, build: 1 },
   { id: 'aybar', name: 'Айбар', style: 'climber', a: 0x1f4e8c, b: 0xeef2f6, pat: 'peaks', helmet: 0xeef2f6, bike: 0x1f4e8c, skin: 0xc68e62, shoe: 0xeef2f6, hair: 'none', mass: 64, size: .97 },
   { id: 'dana', name: 'Дана', style: 'sprinter', a: 0xc3323b, b: 0xe8a33a, pat: 'split', helmet: 0x1d2024, bike: 0x26292e, skin: 0xd9a77f, shoe: 0x1d2024, hair: 'pony', hairC: 0x2a1b12, mass: 62, size: .95 },
   { id: 'erlan', name: 'Ерлан', style: 'rouleur', a: 0x33383f, b: 0xa8d03c, pat: 'sash', helmet: 0xa8d03c, bike: 0x33383f, skin: 0xb98159, shoe: 0x1d2024, hair: 'beard', hairC: 0x1f1610, mass: 80, size: 1.04, deep: true },
@@ -1254,7 +1432,32 @@ const CHARS = [
   { id: 'ilyas', name: 'Ильяс', style: 'climber', a: 0x2c7a4b, b: 0x101214, pat: 'dots', helmet: 0x101214, bike: 0x2c7a4b, skin: 0xc68e62, shoe: 0x101214, hair: 'none', mass: 63, size: .97 },
   { id: 'kamila', name: 'Камила', style: 'allround', a: 0x3d7bb6, b: 0xe9f1f8, pat: 'wave', helmet: 0xe9f1f8, bike: 0xe9f1f8, skin: 0xe2b48c, shoe: 0x3d7bb6, hair: 'pony', hairC: 0x1a120c, mass: 57, size: .94 }
 ];
-const charById = id => CHARS.find(c => c.id === id) || CHARS[0];
+// гонщик игрока: одна модель в форме UBT
+const PLAYER_CH = { id: 'me', name: 'Вы', style: 'allround', a: 0xEE6A1F, b: 0x17181a, pat: 'ornament', helmet: 0x17181a, stripe: 0xEE6A1F, glass: 0x101216, bike: 0x17181a, rim: 0xEE6A1F, deep: true, skin: 0xeec3a0, shoe: 0xf4f6f8, hair: 'none', mass: 75, size: 1, build: 1 };
+const charById = id => CHARS.find(c => c.id === id) || PLAYER_CH;
+// Формы, которые можно надеть на любого героя (без логотипов и надписей)
+const KITS = {
+  ubt: { name: 'UBT', over: { a: 0xEE6A1F, b: 0x17181a, trim: 0x17181a, pat: 'ornament', sleeve: 0xEE6A1F, sleeveTex: true, cuff: 0xFFD21F, orn: 0xFFD21F, bib: 0x17181a, backText: 'UBT' } }
+};
+// Популярные типы велосипедов: типичный вес, сопротивление качению (шины), посадка (аэродинамика), типичное колесо
+const BIKE_TYPES = {
+  road: { name: 'Шоссейный', kg: 8.5, crr: .0045, aero: 1.0, circ: 2105, tire: .021 },
+  aero: { name: 'Аэро-шоссейный', kg: 8.0, crr: .0042, aero: .94, circ: 2105, tire: .021 },
+  tt: { name: 'Разделочный (ТТ)', kg: 9.0, crr: .0042, aero: .8, circ: 2105, tire: .02 },
+  gravel: { name: 'Гравийный', kg: 9.8, crr: .0058, aero: 1.06, circ: 2200, tire: .03 },
+  hybrid: { name: 'Гибрид / городской', kg: 13, crr: .0065, aero: 1.22, circ: 2136, tire: .028 },
+  mtb: { name: 'Горный хардтейл', kg: 12.5, crr: .0085, aero: 1.18, circ: 2288, tire: .042 },
+  fs: { name: 'Горный двухподвес', kg: 14.5, crr: .009, aero: 1.2, circ: 2288, tire: .045 }
+};
+function bikeType() { return BIKE_TYPES[settings.bikeType] || BIKE_TYPES.road; }
+function kitted(ch) { return Object.assign({}, ch, KITS.ubt.over, { size: (settings.height || 178) / 178, tire: bikeType().tire }); } // размер модели — по росту
+// Аэродинамика по росту и весу: лобовая площадь гонщика с велосипедом (формула Бассетта и соавт., 1999)
+// A = 0,0293 · рост(м)^0,725 · вес(кг)^0,425 + 0,0604; CdA = 0,88 · A (посадка с руками на тормозных ручках)
+function riderAero(hcm, kg) { const A = 0.0293 * Math.pow((hcm || 178) / 100, .725) * Math.pow(kg || 75, .425) + .0604; return { A, CdA: A * .88 }; }
+function renderBodyHint() {
+  const el = $('#bodyHint'); if (!el) return; const h = settings.height || 178, m = settings.mass || 75, a = riderAero(h, m), bt = bikeType(), bk = settings.bikeKg || bt.kg, cda = a.CdA * bt.aero, bmi = m / Math.pow(h / 100, 2);
+  el.textContent = 'По росту и весу: лобовая площадь ≈ ' + a.A.toFixed(2).replace('.', ',') + ' м², аэродинамическое сопротивление CdA ≈ ' + cda.toFixed(3).replace('.', ',') + ' м², вес с велосипедом ' + fmt1(m + bk) + ' кг (' + bt.name.toLowerCase() + ' ' + fmt1(bk) + ' кг). Это влияет на скорость на равнине и на подъёмах.' + (bmi < 15 || bmi > 45 ? ' Проверьте, что рост и вес введены верно.' : '');
+} // игрок всегда в форме UBT
 function styleMult(b, grade) {
   switch (b.ch.style) {
     case 'climber': return grade > .03 ? 1.13 : .96;
@@ -1267,7 +1470,9 @@ function styleMult(b, grade) {
 const LEVELS = { easy: [1.8, 2.4], mid: [2.5, 3.2], hard: [3.3, 4.2] };
 let phase = 'loading', bots = [], me = null, raceT = 0, cdT = 0, paused = false, photo = false, demoP = 150, cogIdx = 5;
 let routeSel = store.get('route', 'center');
-const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'fpv', char: 'berkut' }, store.get('settings', {}));
+const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'chase', char: 'me' }, store.get('settings', {}));
+if (!settings.viewDefault3) { settings.view = 'chase'; settings.viewDefault3 = true; } // стандартный вид — от третьего лица
+settings.char = 'me'; // выбор героев убран: игрок всегда в форме UBT
 
 function newRider(name, color, mass, s, lane) { return { name, color, mass, v: 0, s, lane, CdA: PHYS.CdA, phase: Math.random() * 6, finishT: null, P: 0 }; }
 function spawnBots(n, levelKey, s0) {
@@ -1283,8 +1488,8 @@ function spawnBots(n, levelKey, s0) {
 function setPlayerChar(id) {
   settings.char = charById(id).id;
   if (playerAvatar) scene.remove(playerAvatar.g);
-  playerAvatar = makeRider(charById(settings.char)); playerAvatar.g.visible = false; scene.add(playerAvatar.g);
-  if (me) me.color = charById(settings.char).a;
+  playerAvatar = makeRider(kitted(charById(settings.char))); playerAvatar.g.visible = false; scene.add(playerAvatar.g);
+  if (me) me.color = kitted(charById(settings.char)).a;
 }
 /* превью персонажа в меню */
 let prev = null;
@@ -1294,66 +1499,68 @@ function initPreview() {
     const r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xe6efff, 0x6a5e4c, .85)); const dl = new THREE.DirectionalLight(0xfff2dc, .9); dl.position.set(-2, 3, 2); sc.add(dl);
     const disc = new THREE.Mesh(new THREE.CircleGeometry(1.1, 40), new THREE.MeshLambertMaterial({ color: 0x9aa3ab })); disc.rotation.x = -Math.PI / 2; sc.add(disc);
-    const c = new THREE.PerspectiveCamera(30, 1, .1, 50); c.position.set(2.6, 1.45, 2.9); c.lookAt(0, .78, 0);
+    const c = new THREE.PerspectiveCamera(30, 1, .1, 50); c.position.set(3.1, 1.65, 3.45); c.lookAt(0, .88, 0);
     prev = { r, sc, c, model: null, rot: -.6, ph: 0 };
   } catch (e) { cv.classList.add('hidden'); }
 }
 function setPreview(id) {
   if (!prev) return; if (prev.model) prev.sc.remove(prev.model.g);
-  prev.model = makeRider(charById(id)); prev.sc.add(prev.model.g);
+  prev.model = makeRider(kitted(charById(id))); prev.sc.add(prev.model.g);
 }
 function renderPreview(dt) {
   if (!prev || !prev.model) return; const cv = prev.r.domElement, w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
   if (cv.width !== Math.round(w * prev.r.getPixelRatio())) { prev.r.setSize(w, h, false); prev.c.aspect = w / h; prev.c.updateProjectionMatrix(); }
   prev.rot += dt * .45; prev.ph += dt * 8; prev.model.g.rotation.y = prev.rot; poseRider(prev.model, prev.ph); prev.r.render(prev.sc, prev.c);
 }
-function renderChars() {
-  const box = $('#chars'); box.innerHTML = '';
-  CHARS.filter(c => c.hero).forEach(ch => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'char'; b.setAttribute('aria-pressed', ch.id === settings.char ? 'true' : 'false');
-    b.innerHTML = '<span class="sw" style="background:linear-gradient(90deg,' + hexs(ch.a) + ' 0 62%,' + hexs(ch.b) + ' 62% 100%)"></span><span><b></b><small></small></span>';
-    b.querySelector('b').textContent = ch.name; b.querySelector('small').textContent = STYLES[ch.style].name;
-    b.onclick = () => { setPlayerChar(ch.id); store.set('settings', settings); renderChars(); setPreview(ch.id); };
-    box.appendChild(b);
-  });
-  const ch = charById(settings.char), st = STYLES[ch.style];
-  $('#charInfo').textContent = ch.name + ' (' + ch.motif + '). ' + st.name + ': ' + st.hint + '. Двое других героев выйдут на старт соперниками.';
-}
-function startMenu() {
+function renderChars() {} // выбор героев убран
+function startMenu() { // страница 1: настройки (3D-сцена скрыта и не рисуется)
   phase = 'menu'; paused = false; photo = false;
-  $('#menu').classList.remove('hidden'); $('#hud').classList.add('hidden'); $('#resM').classList.add('hidden'); $('#pauseM').classList.add('hidden'); $('#photoUI').classList.add('hidden'); $('#stamp').classList.add('hidden');
-  const route = ROUTES.find(r => r.id === routeSel) || ROUTES[0];
-  if (!world || world.route.id !== route.id) buildWorld(route);
-  me = newRider('Вы', charById(settings.char).a, settings.mass, world.S0 + 30, 2.6); me.v = 7.5;
-  spawnBots(3, 'mid', world.S0 + 60); bots.forEach((b, i) => { b.s += 10 + i * 9; b.v = 7; b.wkg = 2.2; });
-  applyLook(settings.look === 'clean' ? 'clean' : 'bodycam'); setView(settings.view, true);
+  $('#menu').classList.remove('hidden'); $('#gl').classList.add('hidden'); $('#hud').classList.add('hidden'); $('#count').classList.add('hidden');
+  $('#resM').classList.add('hidden'); $('#pauseM').classList.add('hidden'); $('#photoUI').classList.add('hidden'); $('#stamp').classList.add('hidden');
+  bots.forEach(b => scene.remove(b.mesh.g)); bots = [];
+  me = newRider('Вы', kitted(charById(settings.char)).a, settings.mass, 0, 2.6);
+  applyLook('clean'); setView(settings.view, true); renderStartSum();
 }
+function renderStartSum() {
+  const el = $('#startSum'); if (!el) return;
+  const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
+  const mode = settings.mode === 'plan' ? 'план по каденсу на ' + fmtTime(planTotalMin() * 60) : settings.mode === 'free' ? 'свободная езда' : 'гонка, ' + (+settings.bots ? 'соперников: ' + settings.bots : 'без соперников');
+  const sm = Sensors.mode(), dev = sm === 'demo' ? 'демо-режим без датчиков' : sm === 'power' ? 'мощность со станка или измерителя' : sm === 'speed' ? 'по датчику скорости' : 'по датчику каденса';
+  el.innerHTML = '<b></b><span></span>'; el.querySelector('b').textContent = r.name;
+  el.querySelector('span').textContent = mode[0].toUpperCase() + mode.slice(1) + ', ' + dev + (Sensors.live('hr').length ? ', пульсометр' : '') + ', ' + bikeType().name.toLowerCase() + ' ' + fmt1(settings.bikeKg || bikeType().kg) + ' кг.';
+}
+// страница 2: заезд
 function startRace() {
   readSettings();
   const route = ROUTES.find(r => r.id === routeSel);
   showLoading(true);
   setTimeout(() => {
+    $('#gl').classList.remove('hidden'); onResize();
     if (!world || world.route.id !== route.id) buildWorld(route);
     world.lms.forEach(l => { l.done = false; });
-    me = newRider('Вы', charById(settings.char).a, settings.mass, world.S0, Math.min(3.2, route.width / 2 - 1.5));
+    me = newRider('Вы', kitted(charById(settings.char)).a, settings.mass, world.S0, Math.min(3.2, route.width / 2 - 1.5));
+    const bt = bikeType(); me.CdA = riderAero(settings.height, settings.mass).CdA * bt.aero; me.bike = settings.bikeKg || bt.kg; me.Crr = bt.crr;
     me.stats = { dist: 0, gain: 0, sumP: 0, sumCad: 0, nCad: 0, maxV: 0, t: 0, sumHR: 0, nHR: 0, maxHR: 0, real: false, demoT: 0 };
     me.powerLog = []; me.pAcc = 0; me.pT = 0;
-    const planMode = settings.mode === 'plan';
-    spawnBots(planMode ? 0 : +settings.bots, settings.level, world.S0);
+    const planMode = settings.mode === 'plan', freeMode = settings.mode === 'free';
+    spawnBots(planMode || freeMode ? 0 : +settings.bots, settings.level, world.S0);
     me.lap = 0; Work.active = false;
     if (planMode) { Work.start(settings.plan.steps); gearF = settings.plan.steps[0].f; gearR = settings.plan.steps[0].r; }
     else { gearF = bikeF().length; gearR = Math.ceil(bikeR().length / 2); }
-    $('#planBox').classList.toggle('hidden', !planMode); $('#board').classList.toggle('hidden', planMode);
+    $('#planBox').classList.toggle('hidden', !planMode); $('#board').classList.toggle('hidden', planMode || freeMode);
+    $('#btnFinish').classList.toggle('hidden', !(planMode || freeMode));
+    $('#pauseHint').textContent = freeMode ? 'Таймер остановлен. «Завершить заезд» сохранит его в истории.' : planMode ? 'Таймер и план остановлены. Можно завершить тренировку досрочно.' : 'Таймер остановлен. Соперники тоже ждут.';
+    if (freeMode) setTimeout(() => toast('Свободная езда: завершить можно через паузу', 5), 4500);
     raceT = 0; cdT = 3.999; phase = 'countdown'; paused = false;
     $('#menu').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#count').classList.remove('hidden');
-    applyLook(settings.look); setView(settings.view, true); Trainer.sent = null; drawProfileBase(); updateModeUI(); showLoading(false);
+    applyLook('clean'); setView(settings.view, true); Trainer.sent = null; drawProfileBase(); updateModeUI(); showLoading(false);
     try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {}); } catch (e) {}
   }, 30);
 }
 function finishRace() {
   phase = 'done';
   const t = me.finishT, st = me.stats, distKm = (world.FIN - world.S0) / 1000;
-  const list = [{ name: 'Вы', t, me: true, color: hexs(charById(settings.char).a) }].concat(bots.map(b => ({ name: b.name, t: b.finishT != null ? b.finishT : raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: '#' + b.color.toString(16).padStart(6, '0'), est: b.finishT == null })));
+  const list = [{ name: 'Вы', t, me: true, color: hexs(kitted(charById(settings.char)).a) }].concat(bots.map(b => ({ name: b.name, t: b.finishT != null ? b.finishT : raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: '#' + b.color.toString(16).padStart(6, '0'), est: b.finishT == null })));
   list.sort((a, b) => a.t - b.t);
   const place = list.findIndex(x => x.me) + 1;
   const avgP = Math.round(st.sumP / Math.max(1, st.t));
@@ -1390,6 +1597,7 @@ function updateModeUI() {
   $('#gear').classList.toggle('hidden', !(inRace && mode === 'cadence'));
   $('#uPower').textContent = mode === 'demo' ? 'Вт, демо' : mode === 'power' ? 'Вт' : 'Вт, оценка';
   const gt = gearTeeth(gearF, gearR); $('#gearV').textContent = gearLabel(gearF, gearR) + ' · ' + gt[0] + '×' + gt[1];
+  if (phase === 'menu') renderStartSum();
 }
 const ZONE_BG = ['', 'rgba(110,125,140,.82)', 'rgba(61,123,182,.85)', 'rgba(76,124,85,.86)', 'rgba(214,140,40,.9)', 'rgba(195,50,59,.92)'];
 function hrZone(hr) { const p = hr / settings.hrmax; return p < .6 ? 1 : p < .7 ? 2 : p < .8 ? 3 : p < .9 ? 4 : 5; }
@@ -1473,7 +1681,7 @@ function drawProfile() {
   const cv = $('#profile'); if (!profBase) return; const g = cv.getContext('2d'), dpr = cv.width / (cv.clientWidth || 1);
   g.clearRect(0, 0, cv.width, cv.height); g.drawImage(profBase, 0, 0);
   const span = world.FIN - world.S0, pr = world.prof, o = {};
-  const mark = (R, c, r) => { const rel = R.s - world.S0, f = settings.mode === 'plan' && world.T.loop ? (((rel % span) + span) % span) / span : clamp(rel / span, 0, 1), y = sampleAt(world.T, R.s, o).y; const X = f * cv.width, Y = cv.height - 6 * dpr - (y - pr.mn) / pr.rng * (cv.height - 14 * dpr); g.fillStyle = c; g.beginPath(); g.arc(X, Y, r * dpr, 0, 7); g.fill(); };
+  const mark = (R, c, r) => { const rel = R.s - world.S0, f = settings.mode !== 'race' && world.T.loop ? (((rel % span) + span) % span) / span : clamp(rel / span, 0, 1), y = sampleAt(world.T, R.s, o).y; const X = f * cv.width, Y = cv.height - 6 * dpr - (y - pr.mn) / pr.rng * (cv.height - 14 * dpr); g.fillStyle = c; g.beginPath(); g.arc(X, Y, r * dpr, 0, 7); g.fill(); };
   bots.forEach(b => mark(b, '#' + b.color.toString(16).padStart(6, '0'), 3));
   mark(me, '#ffffff', 6); mark(me, '#C3323B', 4);
 }
@@ -1504,7 +1712,7 @@ function updateHUD(inp, grade) {
   $('#grade').style.background = gradeColor(grade);
   $('#vTime').textContent = fmtTime(raceT);
   const done = clamp(me.s - world.S0, 0, world.FIN - world.S0);
-  $('#vDist').textContent = settings.mode === 'plan' ? fmt1(me.stats.dist / 1000) + ' км, круг ' + (me.lap + 1) : fmt1(done / 1000) + ' из ' + fmt1((world.FIN - world.S0) / 1000) + ' км';
+  $('#vDist').textContent = settings.mode !== 'race' ? fmt1(me.stats.dist / 1000) + ' км, круг ' + (me.lap + 1) : fmt1(done / 1000) + ' из ' + fmt1((world.FIN - world.S0) / 1000) + ' км';
   if (settings.mode === 'plan') updatePlanHUD(inp.cad);
   $('#vEle').textContent = Math.round(sampleAt(T, me.s, {}).y) + ' м над морем';
   const all = [me].concat(bots).slice().sort((a, b) => (b.finishT != null ? 1e9 - b.finishT : b.s) - (a.finishT != null ? 1e9 - a.finishT : a.s));
@@ -1579,6 +1787,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.1, (now - last) / 1000); last = now; clockT += dt;
   Sensors.tick(now);
+  if (phase === 'menu') { renderPreview(dt); return; } // на странице настроек 3D-сцену не рисуем
   if (!world) return;
   const T = world.T;
   let inp = { P: 0, cad: 0, mode: 'demo' }, grade = gradeAt(T, me.s);
@@ -1599,12 +1808,12 @@ function frame(now) {
         raceT += dt; const ds = inp.direct ? directStep(me, inp.wheelKmh, dt) : stepRider(me, inp.P, grade, dt); me.s += ds; me.stats.dist += ds;
         const st = me.stats, y1 = sampleAt(T, me.s, _p1).y; if (y1 > y0) st.gain += y1 - y0;
         st.t += dt; st.sumP += inp.P * dt; if (inp.cad > 0) { st.sumCad += inp.cad; st.nCad++; } st.maxV = Math.max(st.maxV, me.v); if (inp.mode === 'demo') st.demoT += dt; me.pAcc += inp.P * dt; me.pT += dt; if (me.pT >= 1) { me.powerLog.push(me.pAcc / me.pT); me.pAcc = 0; me.pT = 0; } if (inp.mode === 'power') st.real = true; const hrNow = Sensors.hr(); if (hrNow) { st.sumHR += hrNow; st.nHR++; st.maxHR = Math.max(st.maxHR, hrNow); }
-        if (settings.mode === 'plan') {
+        if (settings.mode === 'plan' || settings.mode === 'free') {
           // тренировка по плану: маршрут крутится кругами, финиш — когда закончится последний шаг
           if (!T.loop && me.s >= T.L - 15) { me.s = world.S0; cam.cinit = false; cam.init = false; }
           const lap = Math.floor(me.stats.dist / (world.FIN - world.S0));
           if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); toast('Круг ' + (lap + 1), 2.5); }
-          if (Work.update(dt, inp.cad, inp.mode)) finishWorkout();
+          if (settings.mode === 'plan' && Work.update(dt, inp.cad, inp.mode)) finishWorkout();
         } else if (me.s >= world.FIN) { me.finishT = raceT; finishRace(); }
         world.lms.forEach(l => { if (l.done || l.dist > 700) return; let ahead = l.s - me.s; if (T.loop) ahead = ((ahead % T.L) + T.L) % T.L; if (ahead < 220 && ahead > -40) { l.done = true; toast((l.side === 'справа' ? 'Справа' : 'Слева') + ': ' + l.name, 4.5); } });
       } else { me.s += stepRider(me, 60, grade, dt); }
@@ -1722,9 +1931,9 @@ function renderRecords() {
   $('#recPeaks').innerHTML = PEAKS.map(([k, , label]) => { const p = D.peaks[k]; return tile(p ? p.w + ' Вт' : '—', label + (p && p.est ? ', оценка' : '')); }).join('') + tile(D.maxSpeed ? fmt1(D.maxSpeed.v) + ' км/ч' : '—', 'макс. скорость');
   $('#recRoutes').innerHTML = ROUTES.map(r => {
     const x = D.routes[r.id];
-    return '<div class="rrow"><div><b>' + r.name + '</b><small>' + (x && x.time ? fmtDate(x.date) + (x.char ? ', ' + charById(x.char).name : '') + (x.demo ? ', демо' : '') + ', попыток: ' + x.attempts : 'ещё не проезжали') + '</small></div><div class="rv">' + (x && x.time ? fmtTime(x.time) : '—') + (x && x.avgPower ? '<small>' + x.avgPower + ' Вт ср.</small>' : '') + '</div></div>';
+    return '<div class="rrow"><div><b>' + r.name + '</b><small>' + (x && x.time ? fmtDate(x.date) +  + (x.demo ? ', демо' : '') + ', попыток: ' + x.attempts : 'ещё не проезжали') + '</small></div><div class="rv">' + (x && x.time ? fmtTime(x.time) : '—') + (x && x.avgPower ? '<small>' + x.avgPower + ' Вт ср.</small>' : '') + '</div></div>';
   }).join('');
-  $('#recHist').innerHTML = D.history.length ? D.history.slice(0, 12).map(h => '<li><span>' + fmtDate(h.date) + '</span><span>' + (h.kind === 'plan' ? 'План по каденсу: ' : '') + routeName(h.route) + (h.of > 1 ? ', ' + h.place + '-е из ' + h.of : '') + (h.demo ? ', демо' : '') + '</span><span>' + fmtTime(h.time) + '<small>' + fmt1(h.avgSpeed) + ' км/ч, ' + h.avgPower + ' Вт</small></span></li>').join('') : '<li class="empty">Здесь появятся ваши заезды после первого финиша.</li>';
+  $('#recHist').innerHTML = D.history.length ? D.history.slice(0, 12).map(h => '<li><span>' + fmtDate(h.date) + '</span><span>' + (h.kind === 'plan' ? 'План по каденсу: ' : h.kind === 'free' ? 'Свободная езда: ' : '') + routeName(h.route) + (h.of > 1 ? ', ' + h.place + '-е из ' + h.of : '') + (h.demo ? ', демо' : '') + '</span><span>' + fmtTime(h.time) + '<small>' + fmt1(h.avgSpeed) + ' км/ч, ' + h.avgPower + ' Вт</small></span></li>').join('') : '<li class="empty">Здесь появятся ваши заезды после первого финиша.</li>';
   const rb = $('#btnRecReset'); rb.textContent = 'Сбросить рекорды'; rb.dataset.armed = '';
 }
 
@@ -1776,7 +1985,7 @@ function renderPlanEditor() {
   const P = settings.plan, F = bikeF(), R = bikeR();
   document.querySelectorAll('#modeSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === settings.mode ? 'true' : 'false'));
   $('#planEd').classList.toggle('hidden', settings.mode !== 'plan');
-  $('#raceOpts').classList.toggle('hidden', settings.mode === 'plan');
+  $('#raceOpts').classList.toggle('hidden', settings.mode !== 'race');
   $('#plFront').innerHTML = Object.keys(FRONTS).concat('custom').map(k => '<option value="' + k + '"' + (k === P.front ? ' selected' : '') + '>' + FRONT_LABEL[k] + '</option>').join('');
   $('#plCass').innerHTML = CASS_GROUPS.map(g => '<optgroup label="' + g[0] + '">' + g[1].map(k => '<option value="' + k + '"' + (k === P.cass ? ' selected' : '') + '>' + cassName(k) + '</option>').join('') + '</optgroup>').join('') + '<option value="custom"' + (P.cass === 'custom' ? ' selected' : '') + '>Свои зубья…</option>';
   $('#plFrontCustomF').classList.toggle('hidden', P.front !== 'custom'); $('#plCassCustomF').classList.toggle('hidden', P.cass !== 'custom');
@@ -1801,7 +2010,7 @@ function renderPlanEditor() {
     li.querySelector('.x').onclick = () => { if (P.steps.length > 1) { P.steps.splice(i, 1); savePlan(); renderPlanEditor(); } };
     ol.appendChild(li);
   });
-  renderPlanTotal();
+  renderPlanTotal(); if (phase === 'menu') renderStartSum();
 }
 // смена стартовой передачи сдвигает весь план на ту же разницу
 function shiftPlan(df, dr) {
@@ -1863,6 +2072,25 @@ Records.addWorkout = function (ride, powerLog) {
   this.save();
   return { news };
 };
+// Свободная езда: без финиша и соперников, завершается вручную
+function finishFree() {
+  if (phase !== 'race') return;
+  const st = me.stats, t = raceT, km = st.dist / 1000;
+  if (t < 60) { phase = 'done'; startMenu(); return; } // заезды короче минуты не сохраняем
+  phase = 'done';
+  const avgP = Math.round(st.sumP / Math.max(1, st.t));
+  const ride = { id: Date.now().toString(36), date: Date.now(), kind: 'free', route: world.route.id, time: Math.round(t * 10) / 10, dist: Math.round(km * 100) / 100, avgSpeed: Math.round(km / Math.max(t / 3600, 1e-6) * 10) / 10, avgPower: avgP, real: st.real, demo: st.demoT > st.t * .5, maxSpeed: Math.round(st.maxV * 36) / 10, gain: Math.round(st.gain), avgCad: st.nCad ? Math.round(st.sumCad / st.nCad) : null, avgHR: st.nHR ? Math.round(st.sumHR / st.nHR) : null, place: 1, of: 1, char: settings.char };
+  const rec = Records.addWorkout(ride, me.powerLog || []);
+  $('#resTitle').textContent = 'Свободная езда';
+  $('#resSub').textContent = world.route.name + ', кругов: ' + (me.lap + 1) + '. Заезд сохранён в истории.';
+  $('#resRec').innerHTML = rec.news.length ? '<b>Новые рекорды</b><ul>' + rec.news.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '';
+  $('#resRec').classList.toggle('hidden', !rec.news.length);
+  const sx = [[fmtTime(t), 'время'], [fmt1(km) + ' км', 'дистанция'], [fmt1(ride.avgSpeed), 'средняя, км/ч'], [avgP + ' Вт', st.real ? 'средняя мощность' : 'средняя мощность (оценка)'], [ride.avgCad || '—', 'средний каденс'], [ride.gain + ' м', 'набор высоты']];
+  if (st.nHR) sx.push([Math.round(st.sumHR / st.nHR) + ' / ' + st.maxHR, 'пульс: средний / макс.']);
+  $('#resStats').innerHTML = sx.map(s => '<div class="stat"><div class="v">' + s[0] + '</div><div class="u">' + s[1] + '</div></div>').join('');
+  $('#resList').innerHTML = '';
+  $('#resM').classList.remove('hidden');
+}
 function finishWorkout() {
   phase = 'done';
   const st = me.stats, t = raceT, km = st.dist / 1000;
@@ -1936,28 +2164,33 @@ function renderMenu() {
     const pb = Records.best(r.id);
     b.innerHTML = '<b></b><span class="meta"></span><span class="desc"></span>';
     b.querySelector('b').textContent = r.name;
-    b.querySelector('.meta').textContent = fmt1(T.L / 1000) + ' км, набор ' + Math.round(T.gain) + ' м' + (r.loop ? ', круг' : '') + (pb ? ', рекорд ' + fmtTime(pb) : '');
+    b.querySelector('.meta').textContent = fmt1(T.L / 1000) + ' км, набор ' + Math.round(T.gain) + ' м' + (r.loop ? ', круг' : '') + (r.osm ? ', дома из OSM' : '') + (pb ? ', рекорд ' + fmtTime(pb) : '');
     const sights = nearLandmarks(T).filter(l => l.dist <= 700).map(l => l.name); b.querySelector('.desc').textContent = r.desc + (sights.length ? ' По пути: ' + sights.join(', ') + '.' : ''); b.appendChild(cv);
-    b.onclick = () => { routeSel = r.id; store.set('route', r.id); renderMenu(); showLoading(true); setTimeout(() => { startMenu(); cam.init = false; showLoading(false); }, 30); };
+    b.onclick = () => { routeSel = r.id; store.set('route', r.id); renderMenu(); };
     box.appendChild(b);
   });
+  renderStartSum();
 }
 function readSettings() {
   settings.circ = +$('#circ').value; settings.trainer = $('#trainer').value;
-  settings.mass = clamp(+$('#mass').value || 75, 35, 160); settings.bots = +$('#bots').value; settings.level = $('#level').value; settings.look = $('#look').value; settings.difficulty = +$('#difficulty').value; settings.hrmax = clamp(+$('#hrmax').value || 185, 120, 230); settings.view = $('#view').value; settings.cadSpeed = $('#cadSpeed').value;
+  settings.mass = clamp(+$('#mass').value || 75, 35, 160); settings.height = clamp(Math.round(+$('#height').value || 178), 120, 220); settings.bikeType = BIKE_TYPES[$('#bikeType').value] ? $('#bikeType').value : 'road'; settings.bikeKg = Math.round(clamp(+$('#bikeKg').value || bikeType().kg, 5, 30) * 10) / 10; settings.bots = +$('#bots').value; settings.level = $('#level').value; settings.difficulty = +$('#difficulty').value; settings.hrmax = clamp(+$('#hrmax').value || 185, 120, 230); settings.view = $('#view').value; settings.cadSpeed = $('#cadSpeed').value;
   store.set('settings', settings);
 }
-function fillSettings() { $('#circ').value = settings.circ; $('#trainer').value = settings.trainer; $('#mass').value = settings.mass; $('#bots').value = settings.bots; $('#level').value = settings.level; $('#look').value = settings.look; $('#difficulty').value = settings.difficulty; $('#hrmax').value = settings.hrmax; $('#view').value = settings.view; $('#cadSpeed').value = settings.cadSpeed || 'direct'; }
+function fillSettings() { $('#circ').value = settings.circ; $('#trainer').value = settings.trainer; $('#mass').value = settings.mass; $('#height').value = settings.height || 178; $('#bikeType').innerHTML = Object.keys(BIKE_TYPES).map(k => '<option value="' + k + '">' + BIKE_TYPES[k].name + ', ≈' + fmt1(BIKE_TYPES[k].kg) + ' кг</option>').join(''); $('#bikeType').value = BIKE_TYPES[settings.bikeType] ? settings.bikeType : 'road'; $('#bikeKg').value = settings.bikeKg || bikeType().kg; renderBodyHint(); $('#bots').value = settings.bots; $('#level').value = settings.level; $('#difficulty').value = settings.difficulty; $('#hrmax').value = settings.hrmax; $('#view').value = settings.view; $('#cadSpeed').value = settings.cadSpeed || 'direct'; }
 function directStep(r, kmh, dt) { const t = (kmh || 0) / 3.6; r.v += (t - r.v) * (1 - Math.exp(-dt * 3)); if (t === 0 && r.v < .05) r.v = 0; return r.v * dt; }
 function showLoading(on) { $('#loading').classList.toggle('hidden', !on); }
 
 /* ---------------- События ---------------- */
 $('#btnConnect').onclick = () => Sensors.add();
 $('#btnStart').onclick = startRace;
+// когда шрифт загрузится, перерисовываем форму, чтобы надпись была нужным шрифтом
+try { document.fonts && document.fonts.ready.then(() => { setPlayerChar(settings.char); setPreview(settings.char); }); } catch (e) {}
 $('#btnRecords').onclick = () => { renderRecords(); $('#recM').classList.remove('hidden'); };
 $('#btnRecClose').onclick = () => $('#recM').classList.add('hidden');
 $('#btnRecReset').onclick = e => { const b = e.currentTarget; if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Точно сбросить? Нажмите ещё раз'; return; } Records.reset(); renderRecords(); renderMenu(); };
-['#circ', '#trainer', '#cadSpeed', '#mass', '#bots', '#level', '#look', '#difficulty', '#hrmax', '#view'].forEach(id => $(id).addEventListener('change', () => { readSettings(); if (id === '#view' && phase === 'menu') setView(settings.view, true); if (id === '#look' && phase === 'menu') applyLook(settings.look === 'clean' ? 'clean' : settings.look); updateModeUI(); }));
+['#circ', '#trainer', '#cadSpeed', '#bikeType', '#bikeKg', '#height', '#mass', '#bots', '#level', '#difficulty', '#hrmax', '#view'].forEach(id => $(id).addEventListener('change', () => { readSettings(); renderStartSum(); if (id === '#bikeType') { const bt = bikeType(); settings.bikeKg = bt.kg; settings.circ = bt.circ; $('#bikeKg').value = bt.kg; $('#circ').value = bt.circ; store.set('settings', settings); }
+    if (id === '#bikeKg') $('#bikeKg').value = settings.bikeKg;
+    if (id === '#height' || id === '#mass' || id === '#bikeType' || id === '#bikeKg') { if (id === '#height' || id === '#mass') $(id).value = id === '#height' ? settings.height : settings.mass; renderBodyHint(); setPlayerChar(settings.char); setPreview(settings.char); renderStartSum(); } if (id === '#view' && phase === 'menu') setView(settings.view, true); updateModeUI(); }));
 $('#demoP').addEventListener('input', e => { demoP = +e.target.value; $('#demoV').textContent = demoP + ' Вт'; });
 $('#gUp').onclick = () => { gearR = Math.min(bikeR().length, gearR + 1); updateModeUI(); };
 $('#gDown').onclick = () => { gearR = Math.max(1, gearR - 1); updateModeUI(); };
@@ -1974,6 +2207,7 @@ $('#plAdd').onclick = () => { const st = settings.plan.steps, l = st[st.length -
 $('#plTpl').onclick = () => { const d = defaultPlan(); settings.plan.steps = d.steps; savePlan(); renderPlanEditor(); };
 $('#btnPause').onclick = () => { if (phase === 'race' || phase === 'countdown') { paused = true; $('#pauseM').classList.remove('hidden'); } };
 $('#btnResume').onclick = () => { paused = false; $('#pauseM').classList.add('hidden'); };
+$('#btnFinish').onclick = () => { $('#pauseM').classList.add('hidden'); paused = false; if (settings.mode === 'free') finishFree(); else if (settings.mode === 'plan' && phase === 'race') finishWorkout(); };
 $('#btnQuit').onclick = () => { $('#pauseM').classList.add('hidden'); $('#count').classList.add('hidden'); startMenu(); };
 $('#btnAgain').onclick = () => { $('#resM').classList.add('hidden'); startRace(); };
 $('#btnMenu').onclick = () => { startMenu(); renderMenu(); };
@@ -2012,6 +2246,7 @@ document.addEventListener('visibilitychange', () => {
   try {
     Records.load(); initGL(); makeMaterials(); fillSettings(); renderMenu(); initPreview(); renderChars(); setPreview(settings.char); renderPlanEditor();
     if (!Sensors.supported()) btHint(isIOS() ? 'На iPhone и iPad Safari не поддерживает Bluetooth для сайтов: для датчиков откройте страницу в браузере Bluefy. Демо-режим работает и так.' : 'Этот браузер не поддерживает Web Bluetooth. Для датчиков используйте Chrome или Edge. Демо-режим работает и так.', true);
+    applyOSM(null); try { IDB.del('osm').catch(() => {}); } catch (e) {} // загрузка карты города отключена
     startMenu(); showLoading(false); Records.connect(); requestAnimationFrame(t => { last = t; frame(t); });
   } catch (e) { console.error(e); $('#loading').textContent = 'Не удалось запустить 3D: ' + e.message; }
 })();
