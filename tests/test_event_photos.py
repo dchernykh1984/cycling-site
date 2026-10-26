@@ -126,6 +126,12 @@ class IndexCheckTests(TestCase):
         tombstoned = self._parse(_index([_photo(n) for n in range(50)], revision=2, removed=range(50, 100)))
         self.assertTrue(index_module.check_successor(tombstoned, revision=1, sha256="x", live=live))
 
+    def test_an_incomplete_scan_cannot_remove_a_published_photo(self):
+        live = {uuid.UUID(int=n + 1) for n in range(2)}
+        partial = self._parse(_index([_photo(0)], revision=2, removed=[1], complete=False))
+        with self.assertRaisesRegex(index_module.IndexValidationError, "incomplete scan"):
+            index_module.check_successor(partial, revision=1, sha256="x", live=live)
+
     def test_revisions_only_move_forward(self):
         parsed = self._parse(_index([_photo(1)], revision=3))
         with self.assertRaisesRegex(index_module.IndexValidationError, "older"):

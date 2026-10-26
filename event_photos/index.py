@@ -211,6 +211,8 @@ def check_successor(index: Index, *, revision: int, sha256: str, live: set[uuid.
         if index.sha256 == sha256:
             return False
         _fail("revision", f"a different index is already published at revision {revision}")
+    if not index.inventory_complete and index.removed & live:
+        _fail("removed_photo_ids", "an incomplete scan cannot remove published photos")
     missing = live - {p.uuid for p in index.photos} - index.removed
     if missing:
         _fail("photos", f"{len(missing)} photo(s) missing without being listed in removed_photo_ids")
