@@ -161,10 +161,12 @@ then publish an index; completed originals stay unchanged and new matches appear
   and the output is the same format with `method: manual`.
   Optional later server recognition produces the same format and is not a prerequisite.
 - **FR-006**: Beside the album input explain services, access, index versions/example and local
-  preparation. Help and validation share capability/version definitions. Explain processing
+  preparation, with a link to the instruction on indexing a folder right next to the form. Help and validation share capability/version definitions. Explain processing
   location, external visibility, material costs/limits, failures and the next action.
-- **FR-007**: Allow event managers to connect/manage their event's external albums. Retain existing
-  curated albums, originals and their current administration rights.
+- **FR-007**: The event's creator or an admin connects and manages its external albums
+  (maintainer decision 2026-10-26). If a storage operation ever needs a provider token, it is the
+  token of whoever added the album. Retain existing curated albums, originals and their current
+  administration rights.
 - **FR-008**: Offer event-level bib search across albums, personal event photos and a cross-event
   personal gallery. Personal association requires a confirmed athlete-registration-bib link;
   manual event-level bib search works without such a link.
@@ -252,6 +254,10 @@ then publish an index; completed originals stay unchanged and new matches appear
   every refresh and never change the album files; a shared team bib's photo leaves the event search
   only when every registration holding it said "not me".
   Import validates the index's structure; its content is checked by these decisions.
+- **FR-027**: Show the organizer the participants' marks per album: photos confirmed, rejected
+  and still unchecked, and per observation method (OCR, appearance, manual) how many of the decided
+  suggestions were confirmed or rejected, so the index's quality can be judged and improved. Counts
+  only; no names of who marked what.
 
 ### Retained later-stage scenarios and open decisions
 
