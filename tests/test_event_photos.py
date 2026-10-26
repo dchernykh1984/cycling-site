@@ -819,20 +819,21 @@ class PageAndApiTests(EventPhotosTestCase):
 
     @mock.patch("event_photos.views.PER_PAGE", 1)
     def test_marks_undo_and_moderation_return_to_the_current_gallery_page(self):
+        last_photo = IndexedPhoto.objects.get(photo_uuid=uuid.UUID(int=3))
         self.client.force_login(self.athlete)
         page_url = self._url("registration", self.reg.pk)
         page = self.client.get(page_url + "?page=2")
         self.assertContains(page, 'name="page" value="2"')
-        marked = self.client.post(self._url("decide", self.reg.pk, self.photo.pk), {"state": "not_me", "page": "2"})
+        marked = self.client.post(self._url("decide", self.reg.pk, last_photo.pk), {"state": "not_me", "page": "2"})
         self.assertIn("page=2", marked["Location"])
         event = PhotoDecisionEvent.objects.latest("pk")
         undone = self.client.post(self._url("undo", self.reg.pk), {"event": str(event.pk), "page": "2"})
         self.assertEqual(undone["Location"], page_url + "?page=2")
         self.client.force_login(self.organizer)
-        hidden = self.client.post(self._url("photo_action", self.photo.pk), {"action": "hide", "page": "2"})
+        hidden = self.client.post(self._url("photo_action", last_photo.pk), {"action": "hide", "page": "2"})
         self.assertIn("?page=2#", hidden["Location"])
         invalid = self.client.post(
-            self._url("photo_action", self.photo.pk), {"action": "show", "page": "https://outside.test"}
+            self._url("photo_action", last_photo.pk), {"action": "show", "page": "https://outside.test"}
         )
         self.assertNotIn("outside", invalid["Location"])
 
@@ -887,3 +888,19 @@ class PageAndApiTests(EventPhotosTestCase):
                 "event_photos/_registration_cards.html", {"cards": [actions.registration_summary(self.reg)]}
             )
         self.assertIn("Confirmed: 1. To check: 1.", html)
+
+    @mock.patch("event_photos.views.PER_PAGE", 1)
+    def test_undo_returns_to_the_original_page_after_its_last_photo_is_removed(self):
+        last_photo = IndexedPhoto.objects.get(photo_uuid=uuid.UUID(int=3))
+        self.client.force_login(self.athlete)
+        response = self.client.post(
+            self._url("decide", self.reg.pk, last_photo.pk), {"state": "not_me", "page": "2"}, follow=True
+        )
+        self.assertEqual(response.context["photos"].number, 1)
+        self.assertContains(response, 'name="page" value="2"')
+        event = PhotoDecisionEvent.objects.latest("pk")
+        undone = self.client.post(
+            self._url("undo", self.reg.pk), {"event": str(event.pk), "page": response.context["undo_page"]}, follow=True
+        )
+        self.assertEqual(undone.context["photos"].number, 2)
+        self.assertContains(undone, last_photo.file_name)

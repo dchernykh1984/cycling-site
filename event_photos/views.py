@@ -163,6 +163,7 @@ def registration_album(request, pk, reg_pk):
             "to_check_count": page.paginator.count - confirmed,
             "can_mark": can_mark(request.user, registration),
             "undo_event": undo_event if undo_event.isdigit() else "",
+            "undo_page": request.GET.get("page", page.number),
             "meta_title": _("Photos: %(event)s") % {"event": competition.title},
         },
     )
