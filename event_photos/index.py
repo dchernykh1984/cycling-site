@@ -99,7 +99,7 @@ def _asset(value, where: str, *, view_url: bool) -> tuple[str, str, int, str]:
     if not isinstance(value.get("media_type"), str) or value["media_type"] not in _MEDIA_TYPES:
         _fail(f"{where}.media_type", "must be image/jpeg, image/png or image/webp")
     url = value.get("view_url", "")
-    if url and not (view_url and isinstance(url, str) and len(url) <= _MAX_PATH and _VIEW_URL.match(url)):
+    if not isinstance(url, str) or (url and not (view_url and len(url) <= _MAX_PATH and _VIEW_URL.match(url))):
         _fail(f"{where}.view_url", "must be a Dropbox shared file link")
     return path, sha, size, url
 
@@ -132,8 +132,11 @@ def _no_nul(value, where: str) -> None:
     """PostgreSQL text cannot hold NUL, and JSON can smuggle one in as an escape."""
     if isinstance(value, str) and "\x00" in value:
         _fail(where, "contains a NUL character")
+    if isinstance(value, str) and any(0xD800 <= ord(c) <= 0xDFFF for c in value):
+        _fail(where, "contains an unpaired Unicode surrogate")
     if isinstance(value, dict):
         for key, item in value.items():
+            _no_nul(key, f"{where} key")
             _no_nul(item, f"{where}.{key}")
     elif isinstance(value, list):
         for i, item in enumerate(value):
@@ -146,17 +149,20 @@ def _load(raw: bytes) -> dict:
     try:
         text = raw.decode("utf-8")
         data = json.loads(text)
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, ValueError, RecursionError) as exc:
         _fail("index", f"not UTF-8 JSON ({exc})")
     if not isinstance(data, dict):
         _fail("index", "not a JSON object")
-    _no_nul(data, "index")
+    try:
+        _no_nul(data, "index")
+    except RecursionError:
+        _fail("index", "nested too deeply")
     _header(data)
     return data
 
 
 def _header(data: dict) -> None:
-    if data.get("schema_version") != SCHEMA_VERSION:
+    if type(data.get("schema_version")) is not int or data["schema_version"] != SCHEMA_VERSION:
         _fail("schema_version", f"only version {SCHEMA_VERSION} is supported")
     revision = data.get("revision")
     if not isinstance(revision, int) or isinstance(revision, bool) or not 1 <= revision < 2**63:
