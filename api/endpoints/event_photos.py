@@ -3,7 +3,6 @@ and the same actions. Anything the caller may not see answers 404."""
 
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
 from ninja import Router, Schema, Status
 from ninja.errors import HttpError
 from pydantic import Field
@@ -14,9 +13,9 @@ from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.dropbox import preview_url
 from event_photos.forms import ExternalAlbumForm
-from event_photos.models import ExternalAlbum, PhotoDecision, StartListDiagnostics
+from event_photos.models import ExternalAlbum, IndexedPhoto, PhotoDecision, StartListDiagnostics
 from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration
-from event_photos.views import visible_albums
+from event_photos.views import thumbnail_response, visible_albums
 from registrations.models import CompetitionRegistration
 
 auth = ApiTokenAuth()
@@ -117,8 +116,9 @@ def _photos(request, qs, competition, page_number, decisions=None) -> dict:
                 "id": photo.pk,
                 "album_id": photo.album_id,
                 "file_name": photo.file_name,
+                # The API's own address, so the caller's token is what decides, as for the list.
                 "thumbnail_url": request.build_absolute_uri(
-                    reverse("event_photos:thumb", args=[competition.pk, photo.pk, photo.source_sha256[:16]])
+                    f"/api/v1/event-photos/photos/{photo.pk}/thumbnail?v={photo.source_sha256[:16]}"
                 ),
                 "open_url": photo.original_view_url or preview_url(photo.album.folder_url, photo.file_name),
                 "confirmed": getattr(photo, "confirmed", None),
@@ -126,6 +126,12 @@ def _photos(request, qs, competition, page_number, decisions=None) -> dict:
             }
         )
     return {"count": page.paginator.count, "page": page.number, "photos": out}
+
+
+@router.get("/photos/{photo_id}/thumbnail", auth=optional_auth, summary="A photo's thumbnail (JPEG)")
+def photo_thumbnail(request, photo_id: int, v: str = ""):
+    photo = get_object_or_404(IndexedPhoto.objects.select_related("album"), pk=photo_id)
+    return thumbnail_response(request.auth, _competition(request.auth, photo.album.competition_id), photo.pk)
 
 
 @router.get("/competitions/{competition_id}/albums", response=list[AlbumOut], auth=optional_auth)
