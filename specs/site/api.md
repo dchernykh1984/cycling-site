@@ -72,7 +72,9 @@ and protocols with the event's upload token. The API has no language prefix.
 
 - **FR-API-001**: Routers: `/competitions/`, `/news/`, `/knowledge/`, `/locations/`, `/disciplines/`,
   `/event-types/`, `/participants/`, `/protocols/`, `/start-list/`, `/group-times/`,
-  `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`.
+  `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`, `/event-photos/`
+  ([event photos](event-photos.md)). A start-list upload also records which registration got which
+  bib, from the lines' trailing `r<id>` field; its response is unchanged.
 - **FR-API-002**: Personal tokens belong to participants and up (generated on the profile); the
   upload token belongs to an event and is managed by its managers and its author (see
   [events](events.md)).
