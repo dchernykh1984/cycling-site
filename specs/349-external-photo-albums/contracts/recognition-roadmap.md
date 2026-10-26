@@ -14,18 +14,20 @@ share all of those. Faces are not detected, compared or stored for this.
 
 One `Recognize automatically` button runs sequential phases. A dropdown offers `Bib numbers only`
 and `Bib numbers, then rider appearance`, with the second selected by default. The desktop app
-uses pinned PP-OCRv3/CRNN text models, NanoDet person detection and Youtu whole-body ReID
+uses pinned PP-OCRv3 text detection and PP-OCRv5 English reading, NanoDet person detection
+and Youtu whole-body ReID
 through ONNX Runtime on CPU. No face detector, face embedding or selfie is used. The person crop
 contains kit, helmet and build, and bike pixels falling within that crop. A bike detector or a
 cyclist-specific model can be evaluated later; it is not a claim of this implementation.
 
-First use downloads about 68 MB for OCR or 178 MB for both phases, with visible progress and
+First use downloads up to 11 MB for OCR or 121 MB for both phases, with visible progress and
 verified hashes; subsequent runs work offline. Photos never go to a recognition service. The
 initial implementation searches one album of one event at a time. Cross-album appearance search
 is not yet implemented: no implicit association across arbitrary open folders or events.
 
 OCR confidence >= 0.95 is accepted, >= 0.60 is a candidate; values retain case and leading zeroes.
-The current reader supports digits and Latin bibs; other scripts remain available through manual
+Large photos are read as overlapping 768-pixel tiles; rider detection preserves image aspect
+with padding and maps boxes back to the oriented original. The current reader supports digits and Latin bibs; other scripts remain available through manual
 entry/CSV. ReID cosine similarity >= 0.80 suggests a candidate. These are provisional model
 thresholds, not measured race accuracy. Appearance never becomes accepted automatically.
 
@@ -59,8 +61,9 @@ real photos found and the share of wrong suggestions; a relay bib yields one clu
 an overlapping seed is not used. Measure CPU time per photo.
 
 **Pilot acceptance still open**: measure precision, recall and CPU time on events 533/719; compare
-models and tune thresholds from labelled photos. Synthetic OCR and mocked pipeline tests do not
-prove race-photo accuracy. Source models/licenses/hashes are recorded in SportPhotoIndexer
+models and tune thresholds from labelled photos. An actual 158-photo race album was exercised locally; without a complete manually labelled
+reference, result counts do not prove precision or recall. Synthetic and mocked regressions
+cover the scale and geometry failures found by that pilot. Source models/licenses/hashes are recorded in SportPhotoIndexer
 `MODEL_NOTICES.md` and `app/model_catalog.json`.
 
 ## D2 - Slow background indexing on site resources (optional producer)
