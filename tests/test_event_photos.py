@@ -25,6 +25,7 @@ from event_photos.models import (
     IssuedBib,
     IssuedBibEvent,
     PhotoDecision,
+    PhotoDecisionEvent,
 )
 from registrations.models import CompetitionRegistration
 
@@ -815,3 +816,22 @@ class PageAndApiTests(EventPhotosTestCase):
         self.assertEqual(
             (card["count"], card["confirmed"], card["state"], card["cover_thumbnail_url"]), (0, 0, "no-bib", "")
         )
+
+    @mock.patch("event_photos.views.PER_PAGE", 1)
+    def test_marks_undo_and_moderation_return_to_the_current_gallery_page(self):
+        self.client.force_login(self.athlete)
+        page_url = self._url("registration", self.reg.pk)
+        page = self.client.get(page_url + "?page=2")
+        self.assertContains(page, 'name="page" value="2"')
+        marked = self.client.post(self._url("decide", self.reg.pk, self.photo.pk), {"state": "not_me", "page": "2"})
+        self.assertIn("page=2", marked["Location"])
+        event = PhotoDecisionEvent.objects.latest("pk")
+        undone = self.client.post(self._url("undo", self.reg.pk), {"event": str(event.pk), "page": "2"})
+        self.assertEqual(undone["Location"], page_url + "?page=2")
+        self.client.force_login(self.organizer)
+        hidden = self.client.post(self._url("photo_action", self.photo.pk), {"action": "hide", "page": "2"})
+        self.assertIn("?page=2#", hidden["Location"])
+        invalid = self.client.post(
+            self._url("photo_action", self.photo.pk), {"action": "show", "page": "https://outside.test"}
+        )
+        self.assertNotIn("outside", invalid["Location"])
