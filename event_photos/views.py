@@ -19,7 +19,7 @@ from event_photos.permissions import can_manage_albums, can_mark, can_see_event,
 from registrations.models import CompetitionRegistration
 
 PER_PAGE = 50
-INDEXING_GUIDE_URL = "https://github.com/dchernykh1984/SportPhotoIndexer#readme"
+INDEXING_GUIDE_URL = "https://github.com/dchernykh1984/SportPhotoIndexer#how-to-index-an-album"
 
 
 def _event(request, pk) -> Competition:
