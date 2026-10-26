@@ -28,6 +28,10 @@ One optional field after the start delay, the eleventh field (index 10):
   registrations ("Add into team") carries one token per member, in member order.
 - **No token** means an entrant without a site entry (on-the-day, typed by hand, an old file).
   Their bib stays searchable at event level; it is never bound by name.
+- **Absent and empty are different.** An SPM that knows the field always writes it, even empty,
+  so its lines have at least 11 `#` separators: `...#0 00:00:00.000##` is a line the referee
+  explicitly unlinked. A line with the legacy 10 separators (`...#0 00:00:00.000#`) comes from a
+  writer that does not know the field; for it the field is absent, not empty.
 - **Scope**: a token means "registration N of the event whose token delivered this line". The site
   checks every token against that event; a foreign, deleted or rejected registration is ignored with
   a manager-visible warning. A token grants no permission.
@@ -84,11 +88,18 @@ Derive assignments from the accepted snapshot of every device, under the existin
 - A line whose stage field (index 4) is N > 1 owns bibs `number` .. `number + N - 1`, one per stage,
   as FPG already reads it (`protocol_document.py`, `calculator.py`). All of them go to the line's
   registrations as team bibs. Which member wore which stage bib is not inferred from name order.
+  Bounds are checked arithmetically before anything is expanded: `number` must be an integer, N
+  at most `START_LIST_MAX_STAGES` (a setting), every resulting bib at most 32 characters, and the
+  competition's total assignments at most the start list's own item limit. A line over a bound gets
+  only its field-0 bib and a warning for the manager; overlapping stage ranges are ordinary
+  conflicts. The whole result is computed in memory first, so a rejected input never half-replaces
+  the accepted snapshot.
 - The same registration with two bibs, or one bib on two lines with different tokens, is a conflict:
   personal matching for those entries is suspended and the manager sees both sources. No winner is
   guessed; the last upload does not silently win.
-- A bib bound in the previous snapshot that is still present but has lost its token (edited in an
-  older SPM) keeps its binding, marked for manager review. A bib that disappeared withdraws it.
+- A bib bound in the previous snapshot whose line now has the field **absent** (edited in an older
+  SPM) keeps its binding, marked for manager review. A line with the field present but **empty**
+  withdraws the binding: the referee unlinked it. A bib that disappeared withdraws it too.
 - History of assignments, corrections and their sources is kept.
 
 FinishProtocolGenerator and the chronometers stay unchanged and ignore the field. The site learns
