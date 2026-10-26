@@ -171,6 +171,13 @@ def visible_photos(album_qs) -> QuerySet:
     return IndexedPhoto.objects.filter(album__in=album_qs, in_index=True, is_hidden=False, album__is_hidden=False)
 
 
+def album_photos(album, *, include_hidden: bool = False) -> QuerySet:
+    """An album's inventory, including hidden photos only for its managers."""
+    if include_hidden:
+        return album.photos.filter(in_index=True)
+    return visible_photos(ExternalAlbum.objects.filter(pk=album.pk))
+
+
 def registration_bibs(registration) -> list[str]:
     """The bibs a registration holds; none while they are in conflict."""
     return list(
