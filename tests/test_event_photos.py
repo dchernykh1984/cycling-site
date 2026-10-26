@@ -78,6 +78,29 @@ def _index(photos, *, revision=1, album=ALBUM, removed=(), complete=True) -> byt
     ).encode()
 
 
+class AdapterTests(TestCase):
+    @override_settings(DROPBOX_APP_KEY="k", DROPBOX_APP_SECRET="s", PHOTO_INDEX_MAX_BYTES=5_000_000)
+    def test_an_oversized_index_is_abandoned_without_reading_the_rest(self):
+        from event_photos.dropbox import DropboxAdapter, DropboxError
+
+        served = []
+
+        def chunks(size):
+            for _ in range(200):  # 200 x 64 KB = 13 MB on offer, no Content-Length
+                served.append(size)
+                yield b"x" * size
+
+        response = mock.MagicMock(status_code=200, headers={})
+        response.iter_content.side_effect = chunks
+        response.__enter__.return_value = response
+        with mock.patch("event_photos.dropbox.requests.post", return_value=response) as post:
+            with self.assertRaisesRegex(DropboxError, "too-large"):
+                DropboxAdapter().read_file(FOLDER, "photo-index.v1.json")
+        self.assertTrue(post.call_args.kwargs["stream"])
+        self.assertLess(sum(served), 5_200_000)
+        response.__exit__.assert_called_once()
+
+
 class IndexCheckTests(TestCase):
     def _parse(self, raw):
         return index_module.parse(raw, hashlib.sha256(raw).hexdigest())
