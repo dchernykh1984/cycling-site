@@ -374,3 +374,100 @@ class DecisionTests(EventPhotosTestCase):
         actions.decide(self.reg, self.photo, "not_me", None)
         with self.assertRaisesRegex(actions.DecisionRefusedError, "newer"):
             actions.undo(self.reg, first.pk, None)
+
+
+class PageAndApiTests(EventPhotosTestCase):
+    def setUp(self):
+        super().setUp()
+        from accounts.models import User
+
+        self.athlete = User.objects.create_user(username="a@x.kz", email="a@x.kz", password="pw", role="participant")
+        self.stranger = User.objects.create_user(username="s@x.kz", email="s@x.kz", password="pw", role="participant")
+        self.organizer = User.objects.create_user(username="o@x.kz", email="o@x.kz", password="pw", role="organizer")
+        self.race.submitted_by = self.organizer
+        self.race.save(update_fields=["submitted_by"])
+        self.reg = self._registration()
+        self.reg.user = self.athlete
+        self.reg.save(update_fields=["user"])
+        self._bib(self.reg, "12")
+        self._publish(_index([_photo(1, [("12", "accepted", "ocr")]), _photo(2, [("12", "candidate", "ocr")])]))
+        self.photo = IndexedPhoto.objects.get(photo_uuid=uuid.UUID(int=2))
+
+    def _url(self, name, *args):
+        from django.urls import reverse
+
+        return reverse(f"event_photos:{name}", args=[self.race.pk, *args])
+
+    def test_the_athlete_sees_and_marks_their_album_and_others_do_not(self):
+        self.client.force_login(self.athlete)
+        page = self.client.get(self._url("registration", self.reg.pk))
+        self.assertContains(page, "&#10003;")
+        self.assertContains(page, "preview=IMG_0001.jpg")
+        response = self.client.post(self._url("decide", self.reg.pk, self.photo.pk), {"state": "not_me"})
+        self.assertIn("?undo=", response["Location"])
+        self.assertEqual(PhotoDecision.objects.get().state, "not_me")
+        self.client.force_login(self.stranger)
+        self.assertEqual(self.client.get(self._url("registration", self.reg.pk)).status_code, 404)
+        self.assertEqual(
+            self.client.post(self._url("decide", self.reg.pk, self.photo.pk), {"state": "me"}).status_code, 404
+        )
+
+    def test_the_organizer_sees_the_album_but_does_not_mark_it(self):
+        self.client.force_login(self.organizer)
+        page = self.client.get(self._url("registration", self.reg.pk))
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, "&#10007;")
+
+    def test_a_thumbnail_follows_the_albums_visibility_and_is_not_cached_publicly(self):
+        url = self._url("thumb", self.photo.pk, self.photo.source_sha256[:16])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Cache-Control"], "private, max-age=3600")
+        self.album.is_hidden = True
+        self.album.save(update_fields=["is_hidden"])
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.race.is_hidden = True
+        self.race.save(update_fields=["is_hidden"])
+        self.assertEqual(self.client.get(self._url("event")).status_code, 404)
+
+    def test_event_search_finds_the_bib_and_the_event_page_links_my_photos(self):
+        self.assertContains(self.client.get(self._url("event") + "?bib=12"), "IMG_0001.jpg")
+        self.client.force_login(self.athlete)
+        self.assertContains(self.client.get(self.race.get_absolute_url()), self._url("registration", self.reg.pk))
+
+    def test_only_the_creator_or_an_admin_manages_albums(self):
+        self.client.force_login(self.stranger)
+        self.assertEqual(self.client.get(self._url("manage")).status_code, 404)
+        self.client.force_login(self.organizer)
+        page = self.client.get(self._url("manage"))
+        self.assertContains(page, "Folder A")
+        self.assertContains(page, "SportPhotoIndexer")
+        bad = self.client.post(self._url("manage"), {"folder_url": "https://drive.google.com/x", "title_ru": "X"})
+        self.assertContains(bad, "Dropbox")
+
+    def test_the_api_follows_the_same_rules(self):
+        self.athlete.api_token = uuid.uuid4()
+        self.athlete.save(update_fields=["api_token"])
+        self.stranger.api_token = uuid.uuid4()
+        self.stranger.save(update_fields=["api_token"])
+        mine = {"HTTP_AUTHORIZATION": f"Bearer {self.athlete.api_token}"}
+        theirs = {"HTTP_AUTHORIZATION": f"Bearer {self.stranger.api_token}"}
+        base = "/api/v1/event-photos"
+        photos = self.client.get(f"{base}/registrations/{self.reg.pk}/photos", **mine).json()
+        self.assertEqual(photos["count"], 2)
+        self.assertEqual(self.client.get(f"{base}/registrations/{self.reg.pk}/photos", **theirs).status_code, 404)
+        decided = self.client.post(
+            f"{base}/registrations/{self.reg.pk}/photos/{self.photo.pk}/decision",
+            {"state": "not_me"},
+            content_type="application/json",
+            **mine,
+        ).json()
+        undone = self.client.post(
+            f"{base}/registrations/{self.reg.pk}/undo",
+            {"event_id": decided["event_id"]},
+            content_type="application/json",
+            **mine,
+        )
+        self.assertEqual(undone.status_code, 204)
+        self.assertEqual(self.client.get(f"{base}/competitions/{self.race.pk}/photos?bib=12").json()["count"], 1)
+        self.assertEqual(self.client.get(f"{base}/albums/{self.album.pk}/stats", **mine).status_code, 404)

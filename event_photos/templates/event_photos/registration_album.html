@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block content %}
+<section class="event-photos">
+  <p class="mb-1"><a href="{% url 'event_photos:event' competition.pk %}">{{ competition.title }}</a></p>
+  <h1 class="h3">{% if registration.participant_names %}{{ registration }}{% else %}{{ registration.last_name }} {{ registration.first_name }}{% endif %}{% if bibs %} &middot; {% trans "bib" %} {{ bibs|join:", " }}{% endif %}</h1>
+
+  {% if undo_event %}
+  <form method="post" action="{% url 'event_photos:undo' competition.pk registration.pk %}" class="alert alert-secondary d-flex flex-wrap align-items-center gap-2" role="status">
+    {% csrf_token %}<input type="hidden" name="event" value="{{ undo_event }}">
+    <span>{% trans "The photo was removed from your album." %}</span>
+    <button type="submit" class="btn btn-sm btn-outline-secondary">{% trans "Undo" %}</button>
+  </form>
+  {% endif %}
+
+  {% if not bibs %}
+    <p>{% trans "Your bib for this event is not known yet: it comes from the start list the referees send. Meanwhile, search the event's photos by bib." %}
+       <a href="{% url 'event_photos:event' competition.pk %}">{% trans "Event photos" %}</a></p>
+  {% elif photos %}
+    <p class="text-muted">{% blocktrans with confirmed=confirmed_count to_check=to_check_count %}Confirmed: {{ confirmed }}. To check: {{ to_check }}.{% endblocktrans %}</p>
+    {% include "event_photos/_grid.html" %}
+  {% else %}
+    <p>{% trans "No photos with your bib yet." %}</p>
+  {% endif %}
+</section>
+{% endblock %}

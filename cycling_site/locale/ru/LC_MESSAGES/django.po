@@ -3657,3 +3657,130 @@ msgstr "Открыть на весь экран"
 
 msgid "Ride Almaty's routes on an indoor trainer."
 msgstr "Маршруты Алматы на велотренажёре."
+
+msgid "My race photos"
+msgstr "Мои фото со стартов"
+
+msgid "Photos from the race"
+msgstr "Фото со старта"
+
+msgid "Photos with me"
+msgstr "Фото со мной"
+
+msgid "All photo albums"
+msgstr "Все фотоальбомы"
+
+msgid "Manage event photos"
+msgstr "Фото события: управление"
+
+msgid ""
+"A Dropbox folder shared as \"Anyone with the link can view\", with photo-"
+"index.v1.json in it."
+msgstr ""
+"Папка Dropbox с доступом «Все, у кого есть ссылка, могут смотреть» и файлом "
+"photo-index.v1.json внутри."
+
+msgid ""
+"Paste a Dropbox shared folder link (https://www.dropbox.com/scl/fo/...). "
+"Other services are not supported yet."
+msgstr ""
+"Вставьте ссылку на общую папку Dropbox (https://www.dropbox.com/scl/fo/...)."
+" Другие сервисы пока не поддерживаются."
+
+msgid "Folder link"
+msgstr "Ссылка на папку"
+
+msgid "Photographer"
+msgstr "Фотограф"
+
+msgid "Confirmed"
+msgstr "Подтверждено"
+
+msgid "Check: is this you?"
+msgstr "Проверьте: это вы?"
+
+msgid "This is me"
+msgstr "Это я"
+
+msgid "Not me"
+msgstr "Не я"
+
+msgid "indexing is not finished"
+msgstr "индексация не завершена"
+
+msgid "Event photos"
+msgstr "Фото события"
+
+msgid "Find photos by bib"
+msgstr "Найти фото по номеру"
+
+#, python-format
+msgid "No photos with bib %(bib)s yet."
+msgstr "Фото с номером %(bib)s пока нет."
+
+msgid "No photo albums yet."
+msgstr "Фотоальбомов пока нет."
+
+#, python-format
+msgid "Revision %(revision)s: %(photos)s photos, %(processed)s processed."
+msgstr "Ревизия %(revision)s: фото %(photos)s, обработано %(processed)s."
+
+msgid "The folder has not been fully indexed yet."
+msgstr "Папка проиндексирована не полностью."
+
+#, python-format
+msgid "Participants' marks: %(confirmed)s confirmed, %(rejected)s rejected."
+msgstr ""
+"Отметки участников: подтверждено %(confirmed)s, отклонено %(rejected)s."
+
+msgid "Refresh participants' tagging"
+msgstr "Обновить разметку участников"
+
+msgid "Show"
+msgstr "Показать"
+
+msgid "Add an album"
+msgstr "Добавить альбом"
+
+msgid "How to index a folder for the site"
+msgstr "Как проиндексировать папку для сайта"
+
+msgid "Add and import"
+msgstr "Добавить и импортировать"
+
+msgid "bib"
+msgstr "номер"
+
+msgid "The photo was removed from your album."
+msgstr "Фото убрано из вашего альбома."
+
+msgid "Undo"
+msgstr "Отменить"
+
+msgid ""
+"Your bib for this event is not known yet: it comes from the start list the "
+"referees send. Meanwhile, search the event's photos by bib."
+msgstr ""
+"Ваш номер на этом старте пока неизвестен: он приходит из стартового "
+"протокола от судей. Пока можно искать фото события по номеру."
+
+#, python-format
+msgid "Confirmed: %(confirmed)s. To check: %(to_check)s."
+msgstr "Подтверждено: %(confirmed)s. Проверить: %(to_check)s."
+
+msgid "No photos with your bib yet."
+msgstr "Фото с вашим номером пока нет."
+
+#, python-format
+msgid "Photos: %(event)s"
+msgstr "Фото: %(event)s"
+
+#, python-format
+msgid "The index was not imported: %(error)s"
+msgstr "Индекс не импортирован: %(error)s"
+
+msgid "Participants' tagging is up to date."
+msgstr "Разметка участников обновлена."
+
+msgid "Nothing new in the index."
+msgstr "В индексе ничего нового."

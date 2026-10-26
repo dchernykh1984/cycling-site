@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n event_photos_tags %}
 
 {% block title %}{% trans "Profile" %}{% endblock %}
 
@@ -243,6 +243,17 @@
                 {% include "_skin_select.html" with with_name=True %}
             </div>
         </div>
+
+        {% my_race_photos as race_photos %}
+        {% if race_photos %}
+        <h2 class="h5 mb-2">{% trans "My race photos" %}</h2>
+        <ul class="list-unstyled mb-4">
+            {% for reg in race_photos %}
+            <li class="mb-1"><a href="{% url 'event_photos:registration' reg.competition_id reg.pk %}">{{ reg.competition.title }}</a>
+                <span class="text-muted">&middot; {{ reg.competition.date_start|date:"d.m.Y" }} &middot; {% if reg.participant_names %}{{ reg }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %}</span></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
 
         {% if active_registrations %}
         <h2 class="h5 mb-1">{% trans "Active registrations" %}</h2>

@@ -3655,3 +3655,131 @@ msgstr "Толық экранда ашу"
 
 msgid "Ride Almaty's routes on an indoor trainer."
 msgstr "Алматы маршруттары велотренажерде."
+
+msgid "My race photos"
+msgstr "Жарыстардағы фотоларым"
+
+msgid "Photos from the race"
+msgstr "Жарыстан фотолар"
+
+msgid "Photos with me"
+msgstr "Мен бар фотолар"
+
+msgid "All photo albums"
+msgstr "Барлық фотоальбомдар"
+
+msgid "Manage event photos"
+msgstr "Іс-шара фотоларын басқару"
+
+msgid ""
+"A Dropbox folder shared as \"Anyone with the link can view\", with photo-"
+"index.v1.json in it."
+msgstr ""
+"«Сілтемесі бар кез келген адам көре алады» рұқсаты бар және ішінде photo-"
+"index.v1.json файлы бар Dropbox қалтасы."
+
+msgid ""
+"Paste a Dropbox shared folder link (https://www.dropbox.com/scl/fo/...). "
+"Other services are not supported yet."
+msgstr ""
+"Dropbox ортақ қалтасының сілтемесін қойыңыз "
+"(https://www.dropbox.com/scl/fo/...). Басқа сервистер әзірге қолдау "
+"көрсетілмейді."
+
+msgid "Folder link"
+msgstr "Қалта сілтемесі"
+
+msgid "Photographer"
+msgstr "Фотограф"
+
+msgid "Confirmed"
+msgstr "Расталды"
+
+msgid "Check: is this you?"
+msgstr "Тексеріңіз: бұл сізсіз бе?"
+
+msgid "This is me"
+msgstr "Бұл мен"
+
+msgid "Not me"
+msgstr "Мен емес"
+
+msgid "indexing is not finished"
+msgstr "индекстеу аяқталмаған"
+
+msgid "Event photos"
+msgstr "Іс-шара фотолары"
+
+msgid "Find photos by bib"
+msgstr "Нөмір бойынша фото табу"
+
+#, python-format
+msgid "No photos with bib %(bib)s yet."
+msgstr "%(bib)s нөмірі бар фото әзірге жоқ."
+
+msgid "No photo albums yet."
+msgstr "Фотоальбомдар әзірге жоқ."
+
+#, python-format
+msgid "Revision %(revision)s: %(photos)s photos, %(processed)s processed."
+msgstr "%(revision)s нұсқа: %(photos)s фото, %(processed)s өңделді."
+
+msgid "The folder has not been fully indexed yet."
+msgstr "Қалта әлі толық индекстелмеген."
+
+#, python-format
+msgid "Participants' marks: %(confirmed)s confirmed, %(rejected)s rejected."
+msgstr ""
+"Қатысушылардың белгілері: %(confirmed)s расталды, %(rejected)s қабылданбады."
+
+msgid "Refresh participants' tagging"
+msgstr "Қатысушылар белгілеуін жаңарту"
+
+msgid "Show"
+msgstr "Көрсету"
+
+msgid "Add an album"
+msgstr "Альбом қосу"
+
+msgid "How to index a folder for the site"
+msgstr "Қалтаны сайт үшін қалай индекстеу керек"
+
+msgid "Add and import"
+msgstr "Қосу және импорттау"
+
+msgid "bib"
+msgstr "нөмір"
+
+msgid "The photo was removed from your album."
+msgstr "Фото сіздің альбомыңыздан алынды."
+
+msgid "Undo"
+msgstr "Болдырмау"
+
+msgid ""
+"Your bib for this event is not known yet: it comes from the start list the "
+"referees send. Meanwhile, search the event's photos by bib."
+msgstr ""
+"Бұл жарыстағы нөміріңіз әзірге белгісіз: ол төрешілер жіберетін старт "
+"хаттамасынан келеді. Әзірше іс-шара фотоларын нөмір бойынша іздеуге болады."
+
+#, python-format
+msgid "Confirmed: %(confirmed)s. To check: %(to_check)s."
+msgstr "Расталды: %(confirmed)s. Тексеру керек: %(to_check)s."
+
+msgid "No photos with your bib yet."
+msgstr "Сіздің нөміріңіз бар фото әзірге жоқ."
+
+#, python-format
+msgid "Photos: %(event)s"
+msgstr "Фото: %(event)s"
+
+#, python-format
+msgid "The index was not imported: %(error)s"
+msgstr "Индекс импортталмады: %(error)s"
+
+msgid "Participants' tagging is up to date."
+msgstr "Қатысушылар белгілеуі жаңартылды."
+
+msgid "Nothing new in the index."
+msgstr "Индексте жаңа ештеңе жоқ."

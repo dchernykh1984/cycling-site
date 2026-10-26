@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block content %}
+<section class="event-photos">
+  <p class="mb-1"><a href="{{ competition.get_absolute_url }}">{{ competition.title }}</a></p>
+  <h1 class="h3 mb-3">{% trans "Event photos" %}</h1>
+
+  {% if registrations %}
+  <h2 class="h5">{% trans "Photos with me" %}</h2>
+  <ul class="list-unstyled mb-4">
+    {% for reg in registrations %}
+    <li><a href="{% url 'event_photos:registration' competition.pk reg.pk %}">{% if reg.participant_names %}{{ reg }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-4" role="search">
+    <div>
+      <label for="bib" class="form-label mb-1">{% trans "Find photos by bib" %}</label>
+      <input type="text" id="bib" name="bib" value="{{ bib }}" maxlength="32" class="form-control" inputmode="text" autocomplete="off">
+    </div>
+    <button type="submit" class="btn btn-primary">{% trans "Search" %}</button>
+  </form>
+
+  {% if bib %}
+    {% if photos %}
+      {% include "event_photos/_grid.html" %}
+    {% else %}
+      <p>{% blocktrans %}No photos with bib {{ bib }} yet.{% endblocktrans %}</p>
+    {% endif %}
+  {% endif %}
+
+  <h2 class="h5 mt-4">{% trans "All photo albums" %}</h2>
+  {% if albums %}
+  <ul class="list-unstyled">
+    {% for album in albums %}
+    <li class="mb-1"><a href="{% url 'event_photos:album' competition.pk album.pk %}">{{ album.title }}</a>{% if album.credit %} &middot; {{ album.credit }}{% endif %} &middot; {% blocktrans with counter=album.photo_count %}Photos: {{ counter }}{% endblocktrans %}{% if album.is_hidden %} <span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>{% trans "No photo albums yet." %}</p>
+  {% endif %}
+</section>
+{% endblock %}
