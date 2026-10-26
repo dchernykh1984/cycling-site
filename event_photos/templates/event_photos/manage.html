@@ -17,6 +17,13 @@
         {% if not album.inventory_complete %}{% trans "The folder has not been fully indexed yet." %}{% endif %}</p>
       <p class="mb-1">{% blocktrans with confirmed=album.stats.totals.confirmed rejected=album.stats.totals.rejected unchecked=album.stats.totals.unchecked %}Participants' marks: {{ confirmed }} confirmed, {{ rejected }} rejected, {{ unchecked }} photos not checked yet.{% endblocktrans %}
         {% for row in album.stats.by_method %}<span class="text-muted">{{ row.method }}: {{ row.confirmed }} / {{ row.rejected }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+      {% if album.needs_preview %}
+      <div class="alert alert-warning py-2 mb-2 small">
+        {% blocktrans with counter=album.needs_preview|length %}Photos over 20 MB without a preview, which Dropbox cannot make thumbnails of: {{ counter }}.{% endblocktrans %}
+        {% trans "Run the indexer on the folder (it makes previews for such photos), then refresh." %}
+        <div class="text-break">{{ album.needs_preview|slice:":20"|join:", " }}{% if album.needs_preview|length > 20 %} &hellip;{% endif %}</div>
+      </div>
+      {% endif %}
       {% if album.last_error %}<div class="alert alert-danger py-2 mb-2">{{ album.last_error }}</div>{% endif %}
       <form method="post" action="{% url 'event_photos:album_action' competition.pk album.pk %}" class="d-flex flex-wrap gap-2">
         {% csrf_token %}

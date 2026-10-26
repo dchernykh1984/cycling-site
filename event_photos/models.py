@@ -13,6 +13,8 @@ from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+THUMBNAIL_LIMIT_BYTES = 20 * 1024 * 1024
+
 
 class ExternalAlbum(models.Model):
     competition = models.ForeignKey(
@@ -71,6 +73,11 @@ class IndexedPhoto(models.Model):
 
     def __str__(self) -> str:
         return self.original_path
+
+    @property
+    def needs_preview(self) -> bool:
+        """Dropbox makes no thumbnail of a file over 20 MB: such a photo needs a preview in the album."""
+        return not self.preview_path and self.original_bytes > THUMBNAIL_LIMIT_BYTES
 
     @property
     def source_sha256(self) -> str:

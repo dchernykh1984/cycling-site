@@ -608,6 +608,22 @@ class PageAndApiTests(EventPhotosTestCase):
         self.assertContains(self.client.get(self.race.get_absolute_url()), self._url("event"))
         self.assertContains(self.client.get(self._url("event")), "Best shots")
 
+    def test_a_big_original_without_preview_gets_a_placeholder_and_a_note_for_the_organizer(self):
+        big = _photo(3, [("12", "accepted", "ocr")])
+        big["original"]["bytes"] = 25 * 1024 * 1024
+        self._publish(
+            _index([_photo(1, [("12", "accepted", "ocr")]), _photo(2, [("12", "candidate", "ocr")]), big], revision=2)
+        )
+        photo = IndexedPhoto.objects.get(photo_uuid=uuid.UUID(int=4))
+        page = self.client.get(self._url("event") + "?bib=12")
+        self.assertNotContains(page, self._url("thumb", photo.pk, photo.source_sha256[:16]))
+        self.assertContains(page, "preview=IMG_0003.jpg")  # still opens in Dropbox
+        self.client.force_login(self.organizer)
+        self.assertContains(self.client.get(self._url("manage")), "IMG_0003.jpg")
+        served = FakeAdapter.thumbnails_served
+        self.assertEqual(self.client.get(self._url("thumb", photo.pk, "x")).status_code, 404)
+        self.assertEqual(FakeAdapter.thumbnails_served, served)  # Dropbox is not even asked
+
     def test_the_creator_manages_albums_whatever_their_role(self):
         self.race.submitted_by = self.athlete  # a participant who created the event
         self.race.save(update_fields=["submitted_by"])

@@ -14,7 +14,14 @@ from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.dropbox import DropboxError, preview_url
 from event_photos.forms import ExternalAlbumForm
-from event_photos.models import ExternalAlbum, IndexedPhoto, IssuedBib, PhotoDecision, StartListDiagnostics
+from event_photos.models import (
+    THUMBNAIL_LIMIT_BYTES,
+    ExternalAlbum,
+    IndexedPhoto,
+    IssuedBib,
+    PhotoDecision,
+    StartListDiagnostics,
+)
 from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration
 from gallery.models import Album as GalleryAlbum
 from registrations.models import CompetitionRegistration
@@ -45,7 +52,12 @@ def my_registrations(user, competition):
 def _with_links(photos, competition):
     for photo in photos:
         photo.open_url = photo.original_view_url or preview_url(photo.album.folder_url, photo.file_name)
-        photo.thumb_url = reverse("event_photos:thumb", args=[competition.pk, photo.pk, photo.source_sha256[:16]])
+        # No thumbnail can be made for a big original without a preview: the card shows a placeholder.
+        photo.thumb_url = (
+            ""
+            if photo.needs_preview
+            else reverse("event_photos:thumb", args=[competition.pk, photo.pk, photo.source_sha256[:16]])
+        )
     return photos
 
 
@@ -227,6 +239,10 @@ def manage(request, pk):
     albums = list(ExternalAlbum.objects.filter(competition=competition))
     for album_obj in albums:
         album_obj.stats = actions.mark_stats(album_obj)
+        album_obj.needs_preview = [
+            p.original_path
+            for p in album_obj.photos.filter(in_index=True, preview_path="", original_bytes__gt=THUMBNAIL_LIMIT_BYTES)
+        ]
     diagnostics = StartListDiagnostics.objects.filter(competition=competition).first()
     return render(
         request,
