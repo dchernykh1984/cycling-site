@@ -33,7 +33,10 @@ semantics agree; do not change curated-gallery administration rights to enable e
   current free-mode submission path, both `user` and `registered_by` can identify the submitter
   rather than the named athlete (`registrations/views.py`). Neither field alone proves ownership
   there. Require a separately confirmed athlete link; relay strings are not account links either.
-- Ways to confirm the athlete of a free-mode entry: an explicit "this is me" choice at submission
+- Maintainer decision (2026-10-26): people entered on the spot without a site account are left out
+  of personal photos; they use event bib search. For a registration made on the site, its account
+  (`user`) is treated as the athlete; registering other people is the representative role of #315.
+- Ways to confirm the athlete of a free-mode entry (later, if ever needed): an explicit "this is me" choice at submission
   (prefilled, never assumed, when the entered name and birth date equal the account's profile);
   a claim link the submitter passes to the athlete, accepted by the athlete signed in to their own
   account; or a manager decision. A claim changes who the athlete is, not who may edit the entry.

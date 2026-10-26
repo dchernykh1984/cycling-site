@@ -255,3 +255,19 @@ build itself. None was tried.
 **Proposed**: keep the index format as the contract and let `SportPhotoIndexer` start with the
 manual mode; compare an Immich-based exporter with a direct PaddleOCR pipeline on the pilot sample
 before choosing.
+
+## 9. Concept check on a real album (2026-10-26)
+
+Run against one of the maintainer's event-719 folders (158 JPEGs, 2.8-9.7 MB each, no subfolders),
+with only the site's own Dropbox app key and secret -- no owner token:
+
+- `files/list_folder` with the shared link: 158 entries in about 2 s.
+- `sharing/get_shared_link_file`: a 2.8 MB file read in full.
+- `files/get_thumbnail_v2` with a link resource, `w256h256` JPEG: about 10 KB each, about 1.4 s per
+  call; eight in parallel took 3.4 s for sixteen. The site keeps these as they come (no re-encoding)
+  and fetches them on first view, in parallel from the browser, then serves its copy.
+- The folder link plus `&preview=<file name>` opened that photo for a signed-out visitor, with
+  download, by redirecting to a per-file address. So clicking a thumbnail needs no per-file links
+  from the indexer for files at the album's root; files in subfolders were not tried, so the index
+  should keep originals at the root (as photographers' folders already are).
+- Not tried: `raw=1` embedding, which needs per-file links an owner creates. Not needed now.
