@@ -1931,7 +1931,7 @@ function renderRecords() {
   $('#recPeaks').innerHTML = PEAKS.map(([k, , label]) => { const p = D.peaks[k]; return tile(p ? p.w + ' Вт' : '—', label + (p && p.est ? ', оценка' : '')); }).join('') + tile(D.maxSpeed ? fmt1(D.maxSpeed.v) + ' км/ч' : '—', 'макс. скорость');
   $('#recRoutes').innerHTML = ROUTES.map(r => {
     const x = D.routes[r.id];
-    return '<div class="rrow"><div><b>' + r.name + '</b><small>' + (x && x.time ? fmtDate(x.date) +  + (x.demo ? ', демо' : '') + ', попыток: ' + x.attempts : 'ещё не проезжали') + '</small></div><div class="rv">' + (x && x.time ? fmtTime(x.time) : '—') + (x && x.avgPower ? '<small>' + x.avgPower + ' Вт ср.</small>' : '') + '</div></div>';
+    return '<div class="rrow"><div><b>' + r.name + '</b><small>' + (x && x.time ? fmtDate(x.date) + (x.demo ? ', демо' : '') + ', попыток: ' + x.attempts : 'ещё не проезжали') + '</small></div><div class="rv">' + (x && x.time ? fmtTime(x.time) : '—') + (x && x.avgPower ? '<small>' + x.avgPower + ' Вт ср.</small>' : '') + '</div></div>';
   }).join('');
   $('#recHist').innerHTML = D.history.length ? D.history.slice(0, 12).map(h => '<li><span>' + fmtDate(h.date) + '</span><span>' + (h.kind === 'plan' ? 'План по каденсу: ' : h.kind === 'free' ? 'Свободная езда: ' : '') + routeName(h.route) + (h.of > 1 ? ', ' + h.place + '-е из ' + h.of : '') + (h.demo ? ', демо' : '') + '</span><span>' + fmtTime(h.time) + '<small>' + fmt1(h.avgSpeed) + ' км/ч, ' + h.avgPower + ' Вт</small></span></li>').join('') : '<li class="empty">Здесь появятся ваши заезды после первого финиша.</li>';
   const rb = $('#btnRecReset'); rb.textContent = 'Сбросить рекорды'; rb.dataset.armed = '';
