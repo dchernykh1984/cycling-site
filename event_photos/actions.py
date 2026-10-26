@@ -14,6 +14,7 @@ from django.utils import timezone
 from event_photos import index as index_module
 from event_photos.dropbox import DropboxError, get_adapter
 from event_photos.models import (
+    THUMBNAIL_LIMIT_BYTES,
     BibObservation,
     ExternalAlbum,
     IndexedPhoto,
@@ -229,7 +230,12 @@ def registration_summary(registration) -> dict:
         "bibs": bibs,
         "count": count,
         "confirmed": photos.filter(confirmed=True).count() if count else 0,  # type: ignore[misc]  # annotated
-        "cover": photos.select_related("album").first() if count else None,
+        "cover": photos.filter(confirmed=True)  # type: ignore[misc]  # annotated
+        .filter(~Q(preview_path="") | Q(original_bytes__lte=THUMBNAIL_LIMIT_BYTES))
+        .select_related("album")
+        .first()
+        if count
+        else None,
         "state": state,
     }
 
