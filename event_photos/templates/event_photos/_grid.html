@@ -5,7 +5,11 @@ viewed full size and downloaded. With can_mark, each card carries the athlete's 
   {% for photo in photos %}
   <div class="event-photo" id="photo-{{ photo.pk }}">
     <a class="gallery-card" href="{{ photo.open_url }}" target="_blank" rel="noopener">
+      {% if photo.thumb_url %}
       <img src="{{ photo.thumb_url }}" alt="{{ photo.file_name }}" width="256" height="171" loading="lazy" decoding="async">
+      {% else %}
+      <span class="gallery-card-blank">{% include "gallery/_icons.html" with name="image" %}</span>
+      {% endif %}
       <span class="gallery-card-caption">
         <span class="gallery-card-title">{{ photo.file_name }}</span>
         {% if registration %}<span class="gallery-card-date">{% if photo.confirmed %}{% trans "Confirmed" %}{% else %}{% trans "Check: is this you?" %}{% endif %}</span>{% endif %}

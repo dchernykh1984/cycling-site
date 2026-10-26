@@ -145,6 +145,8 @@ def thumbnail_path(photo: IndexedPhoto) -> Path:
         path = _thumb_root() / photo.thumb_file
         if path.exists():
             return path
+    if photo.needs_preview:
+        raise DropboxError("unsupported", "the original is too big for a Dropbox thumbnail and has no preview")
     data = get_adapter().thumbnail(photo.album.folder_url, photo.preview_path or photo.original_path)
     name = f"{photo.album_id}/{photo.pk}-{source[:16]}.jpg"
     path = _thumb_root() / name

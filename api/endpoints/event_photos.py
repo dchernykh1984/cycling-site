@@ -65,6 +65,7 @@ class PhotoOut(Schema):
     id: int
     album_id: int
     file_name: str
+    # Empty when no thumbnail can be made (an original over 20 MB without a preview).
     thumbnail_url: str
     open_url: str
     confirmed: bool | None = None
@@ -135,7 +136,9 @@ def _photos(request, qs, competition, page_number, decisions=None) -> dict:
                 "album_id": photo.album_id,
                 "file_name": photo.file_name,
                 # The API's own address, so the caller's token is what decides, as for the list.
-                "thumbnail_url": request.build_absolute_uri(
+                "thumbnail_url": ""
+                if photo.needs_preview
+                else request.build_absolute_uri(
                     f"/api/v1/event-photos/photos/{photo.pk}/thumbnail?v={photo.source_sha256[:16]}"
                 ),
                 "open_url": photo.original_view_url or preview_url(photo.album.folder_url, photo.file_name),
