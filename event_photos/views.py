@@ -1,6 +1,8 @@
 """Event photos on the site: the event's albums and bib search, a registration's own album with its
 "this is me" / "not me" marks, the organizer's page, and the thumbnails the site keeps."""
 
+from urllib.parse import urlencode
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -119,6 +121,17 @@ def _registration(request, pk, reg_pk):
     return competition, registration
 
 
+def _return_url(url, page, **query):
+    """Keep a gallery's page after a POST; accept only a page number, never a destination."""
+    try:
+        number = int(page)
+    except (ValueError, TypeError):
+        number = 1
+    if 1 < number < 2**31:
+        query["page"] = number
+    return url + ("?" + urlencode(query) if query else "")
+
+
 @login_required
 def registration_album(request, pk, reg_pk):
     competition, registration = _registration(request, pk, reg_pk)
@@ -170,10 +183,10 @@ def decide(request, pk, reg_pk, photo_pk):
         event = actions.decide(registration, photo, state, request.user)
     except actions.DecisionRefusedError as exc:
         messages.error(request, str(exc))
-        return redirect(url)
+        return redirect(_return_url(url, request.POST.get("page")))
     if event is not None and state == PhotoDecision.State.NOT_ME:
-        return redirect(f"{url}?undo={event.pk}")
-    return redirect(f"{url}#photo-{photo.pk}")
+        return redirect(_return_url(url, request.POST.get("page"), undo=event.pk))
+    return redirect(f"{_return_url(url, request.POST.get('page'))}#photo-{photo.pk}")
 
 
 @login_required
@@ -186,7 +199,11 @@ def undo(request, pk, reg_pk):
         actions.undo(registration, int(request.POST.get("event", "0") or 0), request.user)
     except (actions.DecisionRefusedError, ValueError) as exc:
         messages.error(request, str(exc))
-    return redirect("event_photos:registration", competition.pk, registration.pk)
+    return redirect(
+        _return_url(
+            reverse("event_photos:registration", args=[competition.pk, registration.pk]), request.POST.get("page")
+        )
+    )
 
 
 def thumb(request, pk, photo_pk, digest):
@@ -283,7 +300,8 @@ def photo_action(request, pk, photo_pk):
     photo = get_object_or_404(IndexedPhoto, pk=photo_pk, album__competition=competition)
     if request.POST.get("action") in ("hide", "show"):
         actions.set_photo_hidden(photo, request.POST["action"] == "hide")
-    return redirect(f"{reverse('event_photos:album', args=[competition.pk, photo.album_id])}#photo-{photo.pk}")
+    url = _return_url(reverse("event_photos:album", args=[competition.pk, photo.album_id]), request.POST.get("page"))
+    return redirect(f"{url}#photo-{photo.pk}")
 
 
 @login_required

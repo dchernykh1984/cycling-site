@@ -18,6 +18,7 @@ viewed full size and downloaded. With can_mark, each card carries the athlete's 
     {% if can_manage and not registration %}
     <form method="post" action="{% url 'event_photos:photo_action' competition.pk photo.pk %}" class="mt-2 d-flex align-items-center gap-2">
       {% csrf_token %}
+      <input type="hidden" name="page" value="{{ photos.number }}">
       {% if photo.is_hidden %}<span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>
       <button name="action" value="show" class="btn btn-sm btn-outline-secondary">{% trans "Show" %}</button>
       {% else %}<button name="action" value="hide" class="btn btn-sm btn-outline-secondary">{% trans "Hide" %}</button>{% endif %}
@@ -27,11 +28,13 @@ viewed full size and downloaded. With can_mark, each card carries the athlete's 
     <div class="event-photo-marks d-flex gap-2 mt-2">
       {% if photo.decision != "me" %}
       <form method="post" action="{% url 'event_photos:decide' competition.pk registration.pk photo.pk %}">{% csrf_token %}
+        <input type="hidden" name="page" value="{{ photos.number }}">
         <input type="hidden" name="state" value="me">
         <button type="submit" class="btn btn-sm btn-success">&#10003; {% trans "This is me" %}</button>
       </form>
       {% endif %}
       <form method="post" action="{% url 'event_photos:decide' competition.pk registration.pk photo.pk %}">{% csrf_token %}
+        <input type="hidden" name="page" value="{{ photos.number }}">
         <input type="hidden" name="state" value="not_me">
         <button type="submit" class="btn btn-sm btn-outline-danger">&#10007; {% trans "Not me" %}</button>
       </form>
