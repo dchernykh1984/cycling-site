@@ -704,7 +704,8 @@ class PageAndApiTests(EventPhotosTestCase):
         )
         self.assertEqual(api.json(), ["bib 12: r9 is in conflict"])
         self.client.force_login(self.athlete)
-        self.assertContains(self.client.get(self._url("registration", self.reg.pk)), "organizer is sorting it out")
+        page = self.client.get(self._url("registration", self.reg.pk).replace("/ru/", "/en/", 1))
+        self.assertContains(page, "organizer is sorting it out")
 
     def test_a_bad_index_on_refresh_is_a_422_with_the_field_named(self):
         self.organizer.api_token = uuid.uuid4()
