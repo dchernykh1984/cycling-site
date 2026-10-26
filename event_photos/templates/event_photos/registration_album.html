@@ -23,6 +23,7 @@
     <p>{% trans "Your bib for this event is not known yet: it comes from the start list the referees send. Meanwhile, search the event's photos by bib." %}
        <a href="{% url 'event_photos:event' competition.pk %}">{% trans "Event photos" %}</a></p>
   {% endif %}
+  {% if bib_needs_review %}<p role="status">{% trans "Bib needs review" %}: {% trans "The bib link was restored from an older start list. The organizer needs to check it." %}</p>{% endif %}
   {% if photos %}
     <p class="text-muted">{% blocktrans with confirmed=confirmed_count to_check=to_check_count %}Confirmed: {{ confirmed }}. To check: {{ to_check }}.{% endblocktrans %}</p>
     {% include "event_photos/_grid.html" %}

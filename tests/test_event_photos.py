@@ -789,3 +789,14 @@ class PageAndApiTests(EventPhotosTestCase):
         page = self.client.get(self._url("registration", self.reg.pk))
         self.assertContains(page, self.photo.file_name)
         self.assertEqual(page.context["bibs"], [])
+
+    def test_a_restored_bib_is_reported_for_review_in_the_card_and_page(self):
+        IssuedBib.objects.filter(registration=self.reg).update(state=IssuedBib.State.REVIEW)
+        self.assertEqual(actions.registration_summary(self.reg)["state"], "review")
+        self.client.force_login(self.athlete)
+        from tests.language_urls import in_language
+
+        page = self.client.get(in_language(self._url("registration", self.reg.pk), "en"))
+        self.assertContains(page, "Bib needs review")
+        result = bindings.compute([("old-device", 3, ["12#A#G#1#1#1#T#C##0#"])], {self.reg.pk}, {(self.reg.pk, "12")})
+        self.assertTrue(any("review" in w and "old-device" in w and "3" in w for w in result.warnings))

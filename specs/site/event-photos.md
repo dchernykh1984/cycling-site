@@ -86,7 +86,8 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 
 None: the pages' operations are all in `/api/v1/event-photos/`.
 
-## Open Questions
+## Binding review
 
-- Warnings from start-list bindings (a foreign registration id, too many stages) are logged, not yet
-  shown to the organizer.
+Restored bindings remain usable but carry a visible `review` state in personal cards and galleries.
+The organizer sees the registration, bib, source device and revision that need checking in the
+start-list diagnostics, including foreign registration IDs and stage limits.

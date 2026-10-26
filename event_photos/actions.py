@@ -221,6 +221,8 @@ def registration_summary(registration) -> dict:
         state = "conflict"
     elif not bibs:
         state = "no-bib"
+    elif IssuedBib.objects.filter(registration=registration, state=IssuedBib.State.REVIEW).exists():
+        state = "review"
     elif indexing:
         state = "indexing"
     else:
