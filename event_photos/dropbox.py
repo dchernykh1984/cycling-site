@@ -7,6 +7,7 @@ Tests replace the module-level ``adapter`` (see ``get_adapter``) and never reach
 import base64
 import json
 import re
+from typing import NoReturn
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 
 import requests
@@ -15,6 +16,10 @@ from django.utils.module_loading import import_string
 
 _FOLDER_LINK = re.compile(r"^https://www\.dropbox\.com/scl/fo/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+\?")
 _TIMEOUT = 20
+# A w256h256 JPEG is about 10 KB; anything far bigger is not a thumbnail.
+_MAX_THUMBNAIL_BYTES = 2_000_000
+_CHUNK = 64 * 1024
+_MAX_ERROR_BYTES = 64 * 1024
 
 
 class DropboxError(Exception):
@@ -40,8 +45,18 @@ def preview_url(folder_url: str, file_name: str) -> str:
     return f"{folder_url}&dl=0&preview={quote(file_name)}"
 
 
+def _read_capped(response, limit: int) -> bytes:
+    """The body, read in chunks and abandoned as soon as it passes ``limit`` bytes."""
+    data = bytearray()
+    for chunk in response.iter_content(_CHUNK):
+        data += chunk
+        if len(data) > limit:
+            raise DropboxError("too-large", f"the file is larger than {limit} bytes")
+    return bytes(data)
+
+
 class DropboxAdapter:
-    def _call(self, url: str, *, body: dict | None = None, arg: dict | None = None) -> bytes:
+    def _call(self, url: str, *, body: dict | None = None, arg: dict | None = None, limit: int) -> bytes:
         if not (settings.DROPBOX_APP_KEY and settings.DROPBOX_APP_SECRET):
             raise DropboxError("unavailable", "the site has no Dropbox app configured")
         token = base64.b64encode(f"{settings.DROPBOX_APP_KEY}:{settings.DROPBOX_APP_SECRET}".encode()).decode()
@@ -49,15 +64,23 @@ class DropboxAdapter:
         if arg is not None:
             headers["Dropbox-API-Arg"] = json.dumps(arg)  # ensure_ascii keeps the header ASCII
         try:
-            response = requests.post(url, json=body, headers=headers, timeout=_TIMEOUT)
+            response = requests.post(url, json=body, headers=headers, timeout=_TIMEOUT, stream=True)
         except requests.RequestException as exc:
             raise DropboxError("unavailable", type(exc).__name__) from None
-        if response.status_code == 200:
-            return response.content
+        with response:
+            try:
+                if response.status_code == 200:
+                    return _read_capped(response, limit)
+                self._refuse(response)
+            except requests.RequestException as exc:
+                raise DropboxError("unavailable", type(exc).__name__) from None
+
+    @staticmethod
+    def _refuse(response) -> NoReturn:
         if response.status_code == 429:
             retry = response.headers.get("Retry-After")
             raise DropboxError("throttled", retry_after=int(retry) if retry and retry.isdigit() else None)
-        text = response.text[:200]
+        text = _read_capped(response, _MAX_ERROR_BYTES).decode("utf-8", "replace")[:200]
         if response.status_code == 409 and "not_found" in text:
             raise DropboxError("not-found")
         if response.status_code in (401, 403) or "shared_link_access_denied" in text:
@@ -68,7 +91,9 @@ class DropboxAdapter:
 
     def read_file(self, folder_url: str, path: str) -> bytes:
         return self._call(
-            "https://content.dropboxapi.com/2/sharing/get_shared_link_file", arg={"url": folder_url, "path": "/" + path}
+            "https://content.dropboxapi.com/2/sharing/get_shared_link_file",
+            arg={"url": folder_url, "path": "/" + path},
+            limit=settings.PHOTO_INDEX_MAX_BYTES,
         )
 
     def thumbnail(self, folder_url: str, path: str) -> bytes:
@@ -80,6 +105,7 @@ class DropboxAdapter:
                 "size": "w256h256",
                 "mode": "bestfit",
             },
+            limit=_MAX_THUMBNAIL_BYTES,
         )
 
 
