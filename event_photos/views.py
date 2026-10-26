@@ -161,14 +161,18 @@ def undo(request, pk, reg_pk):
 
 
 def thumb(request, pk, photo_pk, digest):
-    competition = _event(request, pk)
+    return thumbnail_response(request.user, _event(request, pk), photo_pk)
+
+
+def thumbnail_response(user, competition, photo_pk) -> FileResponse:
+    """A photo's thumbnail for ``user``, by the album's visibility; the page and the API share it."""
     photo = get_object_or_404(
         IndexedPhoto.objects.select_related("album"),
         pk=photo_pk,
-        album__in=visible_albums(request.user, competition),
+        album__in=visible_albums(user, competition),
         in_index=True,
     )
-    if photo.is_hidden and not can_manage_albums(request.user, competition):
+    if photo.is_hidden and not can_manage_albums(user, competition):
         raise Http404
     try:
         path = actions.thumbnail_path(photo)

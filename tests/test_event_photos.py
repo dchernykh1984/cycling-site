@@ -563,6 +563,17 @@ class PageAndApiTests(EventPhotosTestCase):
         self.assertEqual(self.client.get(f"{base}/competitions/{self.race.pk}/photos?bib=12").json()["count"], 1)
         self.assertEqual(self.client.get(f"{base}/albums/{self.album.pk}/stats", **mine).status_code, 404)
 
+    def test_an_api_client_gets_thumbnails_of_an_invite_only_event_with_its_token(self):
+        self.race.invite_only = True
+        self.race.save(update_fields=["invite_only"])
+        self.athlete.api_token = uuid.uuid4()
+        self.athlete.save(update_fields=["api_token"])
+        mine = {"HTTP_AUTHORIZATION": f"Bearer {self.athlete.api_token}"}
+        photos = self.client.get(f"/api/v1/event-photos/registrations/{self.reg.pk}/photos", **mine).json()
+        thumb = photos["photos"][0]["thumbnail_url"]
+        self.assertEqual(self.client.get(thumb, **mine).status_code, 200)
+        self.assertEqual(self.client.get(thumb).status_code, 404)  # no token, not invited
+
     def test_start_list_problems_reach_the_organizer_and_explain_a_conflict(self):
         from event_photos.models import StartListDiagnostics
 
