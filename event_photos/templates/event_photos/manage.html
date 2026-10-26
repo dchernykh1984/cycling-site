@@ -29,6 +29,14 @@
   </div>
   {% endfor %}
 
+  {% if start_list_warnings %}
+  <div class="alert alert-warning">
+    <h2 class="h6">{% trans "Start list: what could not be matched" %}</h2>
+    <p class="small mb-1">{% trans "Fix these in StartProtocolMaker and send the start list again." %}</p>
+    <ul class="small mb-0">{% for warning in start_list_warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
   <h2 class="h5 mt-4">{% trans "Add an album" %}</h2>
   <p><a href="{{ guide_url }}" target="_blank" rel="noopener">{% trans "How to index a folder for the site" %}</a></p>
   <form method="post" class="mb-4">

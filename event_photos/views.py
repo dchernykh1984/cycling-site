@@ -14,7 +14,7 @@ from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.dropbox import DropboxError, preview_url
 from event_photos.forms import ExternalAlbumForm
-from event_photos.models import ExternalAlbum, IndexedPhoto, PhotoDecision
+from event_photos.models import ExternalAlbum, IndexedPhoto, IssuedBib, PhotoDecision, StartListDiagnostics
 from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration
 from registrations.models import CompetitionRegistration
 
@@ -113,6 +113,9 @@ def registration_album(request, pk, reg_pk):
             "competition": competition,
             "registration": registration,
             "bibs": actions.registration_bibs(registration),
+            "bib_in_conflict": IssuedBib.objects.filter(
+                registration=registration, state=IssuedBib.State.CONFLICT
+            ).exists(),
             "photos": page,
             "confirmed_count": confirmed,
             "to_check_count": page.paginator.count - confirmed,
@@ -204,6 +207,7 @@ def manage(request, pk):
     albums = list(ExternalAlbum.objects.filter(competition=competition))
     for album_obj in albums:
         album_obj.stats = actions.mark_stats(album_obj)
+    diagnostics = StartListDiagnostics.objects.filter(competition=competition).first()
     return render(
         request,
         "event_photos/manage.html",
@@ -212,6 +216,7 @@ def manage(request, pk):
             "form": form,
             "albums": albums,
             "guide_url": INDEXING_GUIDE_URL,
+            "start_list_warnings": diagnostics.warnings if diagnostics else [],
             "meta_title": _("Event photos"),
         },
     )

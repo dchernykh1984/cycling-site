@@ -314,6 +314,16 @@ class StartLineTests(TestCase):
         self.assertEqual(result.assignments[(5, "5")][0], "review")  # an old program dropped the field
         self.assertNotIn((6, "6"), result.assignments)  # the referee unlinked it
 
+    def test_a_restored_binding_still_conflicts_with_a_new_line(self):
+        uploads = [("a", 2, ["12#Old#G#1#1#1#T#C##0#", "12#New#G#1#1#1#T#C##0#r2#"])]
+        result = bindings.compute(uploads, {1, 2}, {(1, "12")})
+        self.assertEqual(result.assignments[(1, "12")][0], "conflict")
+        self.assertEqual(result.assignments[(2, "12")][0], "conflict")
+
+    def test_a_rejected_registration_is_not_restored(self):
+        uploads = [("a", 2, ["12#Old#G#1#1#1#T#C##0#"])]
+        self.assertEqual(bindings.compute(uploads, set(), {(1, "12")}).assignments, {})
+
 
 class StartListUploadTests(EventPhotosTestCase):
     def test_an_upload_assigns_bibs_and_keeps_their_history(self):
@@ -335,6 +345,33 @@ class StartListUploadTests(EventPhotosTestCase):
         self.assertEqual(
             list(IssuedBibEvent.objects.order_by("pk").values_list("change", flat=True)), ["assigned", "withdrawn"]
         )
+
+    def _upload(self, items, revision, device="dev"):
+        body = {
+            "competition_token": str(self.race.upload_token),
+            "device_id": device,
+            "items": items,
+            "client_revision": revision,
+        }
+        return self.client.post("/api/v1/start-list/", body, content_type="application/json")
+
+    def test_too_many_assignments_keep_the_previous_ones(self):
+        reg = self._registration()
+        self._upload([f"120#A#G#1#1#1#T#C##0#r{reg.pk}#"], 1)
+        with mock.patch.object(bindings, "_MAX_ASSIGNMENTS", 2):
+            self._upload([f"120#A#G#1#3#1#T#C##0#r{reg.pk}#"], 2)
+        self.assertEqual(list(IssuedBib.objects.values_list("bib", flat=True)), ["120"])
+        warnings = self.race.start_list_diagnostics.warnings
+        self.assertIn("previous ones are kept", warnings[0])
+
+    def test_a_resend_updates_the_source_and_conflicts_are_explained(self):
+        reg = self._registration()
+        self._upload([f"120#A#G#1#1#1#T#C##0#r{reg.pk}#"], 1)
+        self._upload([f"120#A#G#1#1#1#T#C##0#r{reg.pk}#"], 2)
+        self.assertEqual(IssuedBib.objects.get().client_revision, 2)
+        self._upload([f"121#A#G#1#1#1#T#C##0#r{reg.pk}#"], 1, device="other")
+        self.assertEqual(set(IssuedBib.objects.values_list("state", flat=True)), {"conflict"})
+        self.assertTrue(any("conflict" in w for w in self.race.start_list_diagnostics.warnings))
 
 
 class MatchTests(EventPhotosTestCase):
@@ -517,6 +554,23 @@ class PageAndApiTests(EventPhotosTestCase):
         self.assertEqual(undone.status_code, 204)
         self.assertEqual(self.client.get(f"{base}/competitions/{self.race.pk}/photos?bib=12").json()["count"], 1)
         self.assertEqual(self.client.get(f"{base}/albums/{self.album.pk}/stats", **mine).status_code, 404)
+
+    def test_start_list_problems_reach_the_organizer_and_explain_a_conflict(self):
+        from event_photos.models import StartListDiagnostics
+
+        StartListDiagnostics.objects.create(competition=self.race, warnings=["bib 12: r9 is in conflict"])
+        IssuedBib.objects.filter(registration=self.reg).update(state=IssuedBib.State.CONFLICT)
+        self.client.force_login(self.organizer)
+        self.assertContains(self.client.get(self._url("manage")), "bib 12: r9 is in conflict")
+        self.organizer.api_token = uuid.uuid4()
+        self.organizer.save(update_fields=["api_token"])
+        api = self.client.get(
+            f"/api/v1/event-photos/competitions/{self.race.pk}/start-list-diagnostics",
+            HTTP_AUTHORIZATION=f"Bearer {self.organizer.api_token}",
+        )
+        self.assertEqual(api.json(), ["bib 12: r9 is in conflict"])
+        self.client.force_login(self.athlete)
+        self.assertContains(self.client.get(self._url("registration", self.reg.pk)), "organizer is sorting it out")
 
     def test_a_bad_index_on_refresh_is_a_422_with_the_field_named(self):
         self.organizer.api_token = uuid.uuid4()

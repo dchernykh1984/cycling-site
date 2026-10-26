@@ -16,7 +16,10 @@
   </form>
   {% endif %}
 
-  {% if not bibs %}
+  {% if bib_in_conflict and not bibs %}
+    <p>{% trans "The start lists give this registration more than one bib, or give its bib to someone else. The organizer is sorting it out; meanwhile, search the event's photos by bib." %}
+       <a href="{% url 'event_photos:event' competition.pk %}">{% trans "Event photos" %}</a></p>
+  {% elif not bibs %}
     <p>{% trans "Your bib for this event is not known yet: it comes from the start list the referees send. Meanwhile, search the event's photos by bib." %}
        <a href="{% url 'event_photos:event' competition.pk %}">{% trans "Event photos" %}</a></p>
   {% elif photos %}
