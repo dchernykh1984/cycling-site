@@ -125,7 +125,41 @@ def _bib(value, where: str, original_sha: str) -> Bib:
     confidence = value.get("confidence")
     if confidence is not None and not (isinstance(confidence, int | float) and 0 <= confidence <= 1):
         _fail(f"{where}.confidence", "must be between 0 and 1")
+    if "region" in value:
+        _region(value["region"], f"{where}.region")
     return Bib(bib, state, method, None if confidence is None else float(confidence))
+
+
+def _region(region, where):
+    if not isinstance(region, dict):
+        _fail(where, "must be an x, y, w, h object")
+    values = [region.get(key) for key in ("x", "y", "w", "h")]
+    if any(type(v) not in (int, float) or not 0 <= v <= 1 for v in values):
+        _fail(where, "coordinates must be fractions between 0 and 1")
+    x, y, w, h = values
+    if not w or not h or x + w > 1.000001 or y + h > 1.000001:
+        _fail(where, "box must fit inside the image")
+
+
+def _manual_review(photo, where, sha):
+    review = photo.get("manual_review")
+    if review is None:
+        return
+    if not isinstance(review, dict) or review.get("original_sha256") != sha:
+        _fail(f"{where}.manual_review", "must name the reviewed original's SHA-256")
+    if not isinstance(review.get("lock_accepted_set"), bool):
+        _fail(f"{where}.manual_review.lock_accepted_set", "must be true or false")
+    review_id = review.get("review_id")
+    if not isinstance(review_id, str) or not 1 <= len(review_id) <= 100:
+        _fail(f"{where}.manual_review.review_id", "must be a nonempty correction ID")
+    if review["lock_accepted_set"]:
+        accepted = {
+            normalize_bib(b["value"])
+            for b in photo.get("bibs", [])
+            if b["method"] == "manual" and b["state"] == "accepted"
+        }
+        if any(b["state"] == "accepted" and normalize_bib(b["value"]) not in accepted for b in photo.get("bibs", [])):
+            _fail(f"{where}.bibs", "automatic matches cannot extend the manually accepted set")
 
 
 def _no_nul(value, where: str) -> None:
@@ -194,6 +228,7 @@ def _photo(p, where: str) -> Photo:
     if not isinstance(bibs_raw, list) or len(bibs_raw) > settings.PHOTO_INDEX_MAX_BIBS_PER_PHOTO:
         _fail(f"{where}.bibs", f"must be a list of at most {settings.PHOTO_INDEX_MAX_BIBS_PER_PHOTO}")
     bibs = tuple(_bib(b, f"{where}.bibs[{j}]", o_sha) for j, b in enumerate(bibs_raw))
+    _manual_review(p, where, o_sha)
     return Photo(pid, o_path, o_sha, o_bytes, o_url, pv_path, pv_sha, state, bibs)
 
 

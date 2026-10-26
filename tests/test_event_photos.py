@@ -856,3 +856,24 @@ class PageAndApiTests(EventPhotosTestCase):
         response = self.client.post("/api/v1/start-list/", body, content_type="application/json")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(list(IssuedBib.objects.filter(registration=self.reg).values_list("bib", flat=True)), ["012"])
+
+    def test_manual_review_locks_and_regions_are_checked_before_import(self):
+        raw = json.loads(_index([_photo(1, [("12", "accepted", "ocr")])]))
+        photo = raw["photos"][0]
+        photo["manual_review"] = {
+            "original_sha256": photo["original"]["sha256"],
+            "lock_accepted_set": True,
+            "review_id": "review-1",
+        }
+        with self.assertRaises(index_module.IndexValidationError):
+            index_module.parse(json.dumps(raw).encode(), "0" * 64)
+        photo["bibs"][0]["state"] = "candidate"
+        index_module.parse(json.dumps(raw).encode(), "0" * 64)
+        photo["manual_review"]["original_sha256"] = "f" * 64
+        with self.assertRaises(index_module.IndexValidationError):
+            index_module.parse(json.dumps(raw).encode(), "0" * 64)
+        photo.pop("manual_review")
+        for region in ([], {"x": 0, "y": 0, "w": 1.5, "h": 0.2}, {"x": 0.9, "y": 0, "w": 0.2, "h": 0.2}):
+            photo["bibs"][0]["region"] = region
+            with self.assertRaises(index_module.IndexValidationError):
+                index_module.parse(json.dumps(raw).encode(), "0" * 64)
