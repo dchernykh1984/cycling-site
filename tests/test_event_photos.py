@@ -137,6 +137,11 @@ class IndexCheckTests(TestCase):
             with self.subTest(bad), self.assertRaisesRegex(index_module.IndexValidationError, "original.path"):
                 self._parse(_index([photo]))
 
+    def test_the_downloadable_example_passes_the_check(self):
+        from event_photos.index import SAMPLE
+
+        self.assertEqual(len(self._parse(SAMPLE.encode()).photos), 1)
+
     def test_a_provider_hash_is_not_a_sha256(self):
         photo = _photo(1)
         photo["original"]["sha256"] = "ABC"
@@ -542,7 +547,7 @@ class PageAndApiTests(EventPhotosTestCase):
         self.client.force_login(self.organizer)
         page = self.client.get(self._url("manage"))
         self.assertContains(page, "Folder A")
-        self.assertContains(page, "SportPhotoIndexer")
+        self.assertContains(page, "photos-guide/")
         bad = self.client.post(self._url("manage"), {"folder_url": "https://drive.google.com/x", "title_ru": "X"})
         self.assertContains(bad, "Dropbox")
 
@@ -623,6 +628,20 @@ class PageAndApiTests(EventPhotosTestCase):
         served = FakeAdapter.thumbnails_served
         self.assertEqual(self.client.get(self._url("thumb", photo.pk, "x")).status_code, 404)
         self.assertEqual(FakeAdapter.thumbnails_served, served)  # Dropbox is not even asked
+
+    @override_settings(PHOTO_INDEX_MAX_PHOTOS=1234)
+    def test_the_guide_states_the_real_limits_in_every_language(self):
+        from django.urls import reverse
+        from django.utils.translation import override as translation_override
+
+        for lang in ("ru", "kk", "en"):
+            with translation_override(lang):
+                url = reverse("event_photos:guide")
+            self.assertContains(self.client.get(url), "1234")
+        self.client.force_login(self.organizer)
+        manage = self.client.get(self._url("manage"))
+        self.assertContains(manage, "1234")
+        self.assertContains(manage, "photo-index.v1.json")
 
     def test_the_creator_manages_albums_whatever_their_role(self):
         self.race.submitted_by = self.athlete  # a participant who created the event

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block content %}
+<article class="event-photos-guide" style="max-width: 46rem">
+  <h1 class="h3 mb-3">{% trans "How to prepare a photo album for the site" %}</h1>
+  <p>{% trans "The site shows photos from a Dropbox folder shared as 'Anyone with the link can view'. The photos lie at the top of the folder, next to a file photo-index.v1.json that says which bibs are on which photo." %}</p>
+
+  <h2 class="h5">{% trans "Steps" %}</h2>
+  <ol>
+    <li>{% blocktrans with url=indexer_url %}Download <a href="{{ url }}" target="_blank" rel="noopener">Sport Photo Indexer</a> for your computer and open the album folder in it.{% endblocktrans %}</li>
+    <li>{% trans "Type the bibs on each photo and press Enter: the index is saved after every photo, so you can stop and come back." %}</li>
+    <li>{% trans "In Dropbox, share the folder: 'Anyone with the link can view', and copy the link." %}</li>
+    <li>{% trans "On the event page open 'Manage event photos', paste the link and press 'Add and import'." %}</li>
+    <li>{% trans "After indexing more photos, press 'Refresh participants' tagging' there." %}</li>
+  </ol>
+
+  <h2 class="h5">{% trans "Limits" %}</h2>
+  <ul>
+    <li>{% blocktrans %}One album: at most {{ max_photos }} photos, {{ max_bibs }} bibs on a photo, and an index file of at most {{ max_mb }} MB.{% endblocktrans %}</li>
+    <li>{% trans "Only the photos at the top of the folder are shown; subfolders are not read." %}</li>
+    <li>{% trans "Dropbox cannot make a thumbnail of a photo over 20 MB; the indexer makes a small preview for such photos." %}</li>
+    <li>{% trans "Dropbox limits the traffic of shared links (1 TB a day on paid plans, 20 GB on Basic). Over it, all the owner's shared links pause for a day." %}</li>
+  </ul>
+
+  <h2 class="h5">{% trans "If something goes wrong" %}</h2>
+  <p>{% trans "When an import fails, the event's photo page names the field of the index and what is wrong with it, and the last good version stays on the site. Fix it in the indexer and refresh." %}</p>
+  <p><a href="{% url 'event_photos:sample_index' %}">{% trans "Example index file" %}</a></p>
+</article>
+{% endblock %}

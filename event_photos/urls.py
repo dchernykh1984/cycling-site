@@ -5,6 +5,8 @@ from event_photos import views
 app_name = "event_photos"
 
 urlpatterns = [
+    path("photos-guide/", views.guide, name="guide"),
+    path("photos-guide/photo-index.v1.json", views.sample_index, name="sample_index"),
     path("<int:pk>/photos/", views.event_photos, name="event"),
     path("<int:pk>/photos/manage/", views.manage, name="manage"),
     path("<int:pk>/photos/manage/<int:album_pk>/", views.album_action, name="album_action"),

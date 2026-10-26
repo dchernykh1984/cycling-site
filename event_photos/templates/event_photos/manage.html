@@ -45,7 +45,9 @@
   {% endif %}
 
   <h2 class="h5 mt-4">{% trans "Add an album" %}</h2>
-  <p><a href="{{ guide_url }}" target="_blank" rel="noopener">{% trans "How to index a folder for the site" %}</a></p>
+  <p><a href="{{ guide_url }}" target="_blank" rel="noopener">{% trans "How to index a folder for the site" %}</a>
+     &middot; <a href="{% url 'event_photos:sample_index' %}">{% trans "Example index file" %}</a></p>
+  <p class="small text-muted">{% blocktrans with max_photos=max_photos max_mb=max_mb %}One album: at most {{ max_photos }} photos and an index file of at most {{ max_mb }} MB; photos at the top of a Dropbox folder shared by link.{% endblocktrans %}</p>
   <form method="post" class="mb-4">
     {% csrf_token %}
     {{ form.non_field_errors }}

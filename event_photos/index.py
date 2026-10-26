@@ -228,3 +228,32 @@ def check_successor(index: Index, *, revision: int, sha256: str, live: set[uuid.
     if missing:
         _fail("photos", f"{len(missing)} photo(s) missing without being listed in removed_photo_ids")
     return True
+
+
+# The example offered next to the album form; a test checks that it passes ``parse``.
+SAMPLE = json.dumps(
+    {
+        "schema_version": SCHEMA_VERSION,
+        "album_id": "c00f63ce-2872-4a27-9640-de9dcb16def5",
+        "revision": 1,
+        "generated_at": "2026-10-26T06:00:00Z",
+        "producer": {"name": "SportPhotoIndexer", "version": "0.1.0"},
+        "bib_normalization": "trim-nfc-exact-v1",
+        "processing": {"inventory_complete": True, "complete": True, "total": 1, "processed": 1},
+        "photos": [
+            {
+                "id": "2a318e91-ae62-4bba-9f7f-274dc90b69b4",
+                "original": {
+                    "path": "IMG_0001.jpg",
+                    "sha256": "0" * 64,
+                    "bytes": 2500000,
+                    "media_type": "image/jpeg",
+                },
+                "processing_state": "processed",
+                "bibs": [{"value": "120", "state": "accepted", "method": "manual", "content_sha256": "0" * 64}],
+            }
+        ],
+        "removed_photo_ids": [],
+    },
+    indent=2,
+)
