@@ -779,3 +779,13 @@ class PageAndApiTests(EventPhotosTestCase):
         self.assertEqual(
             self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.organizer.api_token}").json()["count"], 2
         )
+
+    def test_confirmed_photos_stay_visible_when_the_bib_binding_disappears(self):
+        actions.decide(self.reg, self.photo, "me", self.athlete)
+        IssuedBib.objects.filter(registration=self.reg).delete()
+        summary = actions.registration_summary(self.reg)
+        self.assertEqual((summary["count"], summary["confirmed"], summary["state"]), (1, 1, "no-bib"))
+        self.client.force_login(self.athlete)
+        page = self.client.get(self._url("registration", self.reg.pk))
+        self.assertContains(page, self.photo.file_name)
+        self.assertEqual(page.context["bibs"], [])
