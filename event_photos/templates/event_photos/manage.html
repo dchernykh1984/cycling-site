@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block content %}
+<section class="event-photos-manage">
+  <p class="mb-1"><a href="{{ competition.get_absolute_url }}">{{ competition.title }}</a></p>
+  <h1 class="h3 mb-3">{% trans "Event photos" %}</h1>
+
+  {% for album in albums %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h2 class="h5"><a href="{% url 'event_photos:album' competition.pk album.pk %}">{{ album.title }}</a>{% if album.is_hidden %} <span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>{% endif %}</h2>
+      <p class="mb-1 text-break small"><a href="{{ album.folder_url }}" target="_blank" rel="noopener">{{ album.folder_url }}</a></p>
+      <p class="mb-1">{% blocktrans with revision=album.revision photos=album.photo_count processed=album.processed_count %}Revision {{ revision }}: {{ photos }} photos, {{ processed }} processed.{% endblocktrans %}
+        {% if not album.inventory_complete %}{% trans "The folder has not been fully indexed yet." %}{% endif %}</p>
+      <p class="mb-1">{% blocktrans with confirmed=album.stats.totals.confirmed rejected=album.stats.totals.rejected %}Participants' marks: {{ confirmed }} confirmed, {{ rejected }} rejected.{% endblocktrans %}
+        {% for row in album.stats.by_method %}<span class="text-muted">{{ row.method }}: {{ row.confirmed }} / {{ row.rejected }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+      {% if album.last_error %}<div class="alert alert-danger py-2 mb-2">{{ album.last_error }}</div>{% endif %}
+      <form method="post" action="{% url 'event_photos:album_action' competition.pk album.pk %}" class="d-flex flex-wrap gap-2">
+        {% csrf_token %}
+        <button name="action" value="refresh" class="btn btn-sm btn-primary">{% trans "Refresh participants' tagging" %}</button>
+        {% if album.is_hidden %}<button name="action" value="show" class="btn btn-sm btn-outline-secondary">{% trans "Show" %}</button>
+        {% else %}<button name="action" value="hide" class="btn btn-sm btn-outline-secondary">{% trans "Hide" %}</button>{% endif %}
+        <button name="action" value="delete" class="btn btn-sm btn-outline-danger">{% trans "Disconnect" %}</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+
+  <h2 class="h5 mt-4">{% trans "Add an album" %}</h2>
+  <p><a href="{{ guide_url }}" target="_blank" rel="noopener">{% trans "How to index a folder for the site" %}</a></p>
+  <form method="post" class="mb-4">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+    <div class="mb-2">
+      <label for="{{ field.id_for_label }}" class="form-label mb-1">{{ field.label }}</label>
+      <input type="{% if field.name == 'folder_url' %}url{% else %}text{% endif %}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" value="{{ field.value|default_if_none:'' }}" class="form-control{% if field.errors %} is-invalid{% endif %}"{% if field.field.required %} required{% endif %}>
+      {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      {% for error in field.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">{% trans "Add and import" %}</button>
+  </form>
+</section>
+{% endblock %}

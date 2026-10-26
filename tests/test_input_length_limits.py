@@ -28,6 +28,7 @@ from django.test import SimpleTestCase
 from ninja import Schema
 
 from calendar_app.models import Competition, CompetitionComment, CompetitionMaterial
+from event_photos.models import ExternalAlbum
 from gallery.models import Album, Photo
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment
 from locations.models import Location
@@ -37,6 +38,7 @@ from registrations.models import CompetitionRegistration, RegistrationCategory, 
 FORM_MODULES = (
     "accounts.views",
     "calendar_app.forms",
+    "event_photos.forms",
     "gallery.forms",
     "home.forms",
     "knowledge.forms",
@@ -74,6 +76,7 @@ FORM_TARGETS = {
     "registrations.forms.RejectRegistrationForm": None,
     "gallery.forms.AlbumForm": Album,
     "gallery.forms.PhotoUploadForm": None,
+    "event_photos.forms.ExternalAlbumForm": ExternalAlbum,
 }
 
 # The same for request schemas -- the ones the routers actually accept a body into. A response
@@ -85,6 +88,11 @@ SCHEMA_TARGETS = {
     "api.endpoints.gallery.AlbumIn": Album,
     "api.endpoints.gallery.AlbumPatchIn": Album,
     "api.endpoints.gallery.PhotoPatchIn": Photo,
+    "api.endpoints.event_photos.AlbumIn": ExternalAlbum,
+    "api.endpoints.event_photos.AlbumPatchIn": ExternalAlbum,
+    # A mark and an undo name a state (a fixed pattern) and an id; nothing lands in a text column.
+    "api.endpoints.event_photos.DecisionIn": None,
+    "api.endpoints.event_photos.UndoIn": None,
     "api.endpoints.content.DraftPatchIn": DraftSubmission,
     "api.endpoints.content.KnowledgeArticleIn": KnowledgeArticle,
     "api.endpoints.content.KnowledgeArticlePatchIn": KnowledgeArticle,
@@ -120,6 +128,13 @@ CHECKED_ELSEWHERE = {
     ("api.endpoints.content.NewsArticleIn", "intro"): "_validate_localized_length, localized 422",
     ("api.endpoints.content.NewsArticlePatchIn", "title"): "_validate_news_title, localized 422",
     ("api.endpoints.content.NewsArticlePatchIn", "intro"): "_validate_localized_length, localized 422",
+    ("api.endpoints.event_photos.AlbumIn", "folder_url"): "the page's ExternalAlbumForm, 422 naming the field",
+    ("api.endpoints.event_photos.AlbumIn", "title_ru"): "the page's ExternalAlbumForm, 422 naming the field",
+    ("api.endpoints.event_photos.AlbumIn", "title_kk"): "the page's ExternalAlbumForm, 422 naming the field",
+    ("api.endpoints.event_photos.AlbumIn", "title_en"): "the page's ExternalAlbumForm, 422 naming the field",
+    ("api.endpoints.event_photos.AlbumIn", "credit_ru"): "the page's ExternalAlbumForm, 422 naming the field",
+    ("api.endpoints.event_photos.AlbumIn", "credit_kk"): "the page's ExternalAlbumForm, 422 naming the field",
+    ("api.endpoints.event_photos.AlbumIn", "credit_en"): "the page's ExternalAlbumForm, 422 naming the field",
     ("calendar_app.forms.RegistrationSettingsForm", "categories_json"): "clean_categories_json, per category name",
 }
 

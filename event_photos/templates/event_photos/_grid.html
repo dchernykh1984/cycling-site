@@ -1,0 +1,31 @@
+{% load i18n %}
+{% comment %}Thumbnails of event photos; each opens the photo in Dropbox in a new tab, where it can be
+viewed full size and downloaded. With can_mark, each card carries the athlete's two marks.{% endcomment %}
+<div class="gallery-grid event-photos-grid">
+  {% for photo in photos %}
+  <div class="event-photo" id="photo-{{ photo.pk }}">
+    <a class="gallery-card" href="{{ photo.open_url }}" target="_blank" rel="noopener">
+      <img src="{{ photo.thumb_url }}" alt="{{ photo.file_name }}" width="256" height="171" loading="lazy" decoding="async">
+      <span class="gallery-card-caption">
+        <span class="gallery-card-title">{{ photo.file_name }}</span>
+        {% if registration %}<span class="gallery-card-date">{% if photo.confirmed %}{% trans "Confirmed" %}{% else %}{% trans "Check: is this you?" %}{% endif %}</span>{% endif %}
+      </span>
+    </a>
+    {% if can_mark %}
+    <div class="event-photo-marks d-flex gap-2 mt-2">
+      {% if photo.decision != "me" %}
+      <form method="post" action="{% url 'event_photos:decide' competition.pk registration.pk photo.pk %}">{% csrf_token %}
+        <input type="hidden" name="state" value="me">
+        <button type="submit" class="btn btn-sm btn-success">&#10003; {% trans "This is me" %}</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'event_photos:decide' competition.pk registration.pk photo.pk %}">{% csrf_token %}
+        <input type="hidden" name="state" value="not_me">
+        <button type="submit" class="btn btn-sm btn-outline-danger">&#10007; {% trans "Not me" %}</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% include "_pagination.html" with page_obj=photos %}

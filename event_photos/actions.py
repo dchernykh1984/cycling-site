@@ -270,3 +270,19 @@ def undo(registration, event_id: int, actor) -> None:
         decision.state = event.from_state
         decision.version += 1
         decision.save(update_fields=["state", "version"])
+
+
+# -- organizer statistics --------------------------------------------------------------------------
+
+
+def mark_stats(album_obj) -> dict:
+    """Participants' marks on an album, in numbers only: totals, and per method of the matched bib."""
+    decided = BibObservation.objects.filter(photo__album=album_obj, photo__decisions__state__in=["me", "not_me"])
+    by_method = decided.values("method").annotate(
+        confirmed=Count("pk", filter=Q(photo__decisions__state="me")),
+        rejected=Count("pk", filter=Q(photo__decisions__state="not_me")),
+    )
+    totals = PhotoDecision.objects.filter(photo__album=album_obj).aggregate(
+        confirmed=Count("pk", filter=Q(state="me")), rejected=Count("pk", filter=Q(state="not_me"))
+    )
+    return {"totals": totals, "by_method": list(by_method)}

@@ -149,6 +149,7 @@ urlpatterns += i18n_patterns(
     path("knowledge/", include("knowledge.urls")),
     path("locations/", include("locations.urls")),
     path("news/", include("news.urls")),
+    path("calendar/", include("event_photos.urls")),
     path("calendar/", include("calendar_app.urls")),
     path("gallery/", include("gallery.urls")),
     path("virtual-ride/", include("trainer.urls")),
