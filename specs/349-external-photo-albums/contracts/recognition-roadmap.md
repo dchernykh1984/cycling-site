@@ -4,24 +4,47 @@ This contract preserves the broader discussion. The first independent pilot uses
 local CPU indexing. Deferred scenarios remain feature requirements for later reviewed slices;
 their presence here is not approval to implement every producer or process face data now.
 
-## D1 - Find unnumbered photos by overall appearance (later slice)
+## D1 - Local automatic bib and appearance recognition (approved slice)
 
 **Decision (maintainer, 2026-10-25)**: no face recognition and no selfie search. Riders are
 matched by their overall look -- kit, bike, build, helmet -- because at amateur races few riders
 share all of those. Faces are not detected, compared or stored for this.
 
-### How it works (a sketch for the experiment, not a chosen implementation)
+### Automatic indexing (maintainer, 2026-10-26)
 
-1. Detect every rider on every photo of the event, as a crop of the person together with the bike.
+One `Recognize automatically` button runs sequential phases. A dropdown offers `Bib numbers only`
+and `Bib numbers, then rider appearance`, with the second selected by default. The desktop app
+uses pinned PP-OCRv3/CRNN text models, NanoDet person detection and Youtu whole-body ReID
+through ONNX Runtime on CPU. No face detector, face embedding or selfie is used. The person crop
+contains kit, helmet and build, and bike pixels falling within that crop. A bike detector or a
+cyclist-specific model can be evaluated later; it is not a claim of this implementation.
+
+First use downloads about 68 MB for OCR or 178 MB for both phases, with visible progress and
+verified hashes; subsequent runs work offline. Photos never go to a recognition service. The
+initial implementation searches one album of one event at a time. Cross-album appearance search
+is not yet implemented: no implicit association across arbitrary open folders or events.
+
+OCR confidence >= 0.95 is accepted, >= 0.60 is a candidate; values retain case and leading zeroes.
+The current reader supports digits and Latin bibs; other scripts remain available through manual
+entry/CSV. ReID cosine similarity >= 0.80 suggests a candidate. These are provisional model
+thresholds, not measured race accuracy. Appearance never becomes accepted automatically.
+
+Every photo is saved as an atomic revision. Stop keeps OCR checkpoints; resuming skips unchanged
+OCR for the same model version and recomputes appearance. Vectors live only in a private temporary
+database outside the album and are deleted on exit. Concurrent index edits stop the worker.
+Manual acceptance, rejection and an empty accepted-set lock survive automatic runs; changed
+original bytes archive the old manual review and invalidate all old automatic observations.
+
+### Matching rules
+
+1. Detect person crops in every photo of the open album; do not mix events.
 2. Seeds: a rider crop that contains an accepted bib's `region`. A bib region inside two crops
    (riders overlapping) seeds nothing on that photo.
-3. Describe every crop with an appearance vector from a person re-identification model or a
-   general image-embedding model; which one is decided by the experiment.
-4. For each bib, look in the same event's albums for crops close to any of its seeds. Recall
+3. Describe every crop with the pinned Youtu whole-body appearance model.
+4. For each bib, look in the open album for crops close to any of its seeds. Recall
    comes first: the maintainer accepts that up to about half of the suggestions are wrong, while
    a missed photo of the rider is the worse failure. The threshold is set from the pilot sample.
-5. A relay bib's seeds show several people. Group them into one cluster per member and search with
-   each; everything found goes to the team's registration album.
+5. A relay bib's seeds can show several people. Retain every seed appearance and search their union; everything found goes to the team's registration album.
 6. A match is published as an observation with `method: appearance`, always `candidate`, with its
    score and region. It never becomes an accepted bib by itself; the participant's "this is me" /
    "not me" decides (see the [data model](../data-model.md)).
@@ -35,9 +58,10 @@ photos is suggested on photos of the same event where it is not; report the shar
 real photos found and the share of wrong suggestions; a relay bib yields one cluster per member;
 an overlapping seed is not used. Measure CPU time per photo.
 
-**Open decision**: detector and appearance model (and their licences), threshold, CPU budget.
-The approach treats people's appearance as personal data; a legal check is still advisable, but
-it avoids biometric face processing altogether.
+**Pilot acceptance still open**: measure precision, recall and CPU time on events 533/719; compare
+models and tune thresholds from labelled photos. Synthetic OCR and mocked pipeline tests do not
+prove race-photo accuracy. Source models/licenses/hashes are recorded in SportPhotoIndexer
+`MODEL_NOTICES.md` and `app/model_catalog.json`.
 
 ## D2 - Slow background indexing on site resources (optional producer)
 

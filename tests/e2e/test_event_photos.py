@@ -12,7 +12,7 @@ from playwright.sync_api import Page, expect
 from accounts.models import User
 from calendar_app.models import Competition
 from event_photos import actions
-from event_photos.models import ExternalAlbum, IssuedBib
+from event_photos.models import ExternalAlbum, IssuedBib, PhotoDecision
 from registrations.models import CompetitionRegistration
 from tests.e2e.conftest import inject_session
 from tests.test_event_photos import FOLDER, FakeAdapter, _index, _photo
@@ -67,3 +67,11 @@ def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, set
     page.locator(".event-photo").filter(has_text="IMG_0002.jpg").get_by_role("button", name=no).click()
     expect(page.locator(".event-photo")).to_have_count(1)
     expect(page.locator(".event-photo a").first).to_have_attribute("target", "_blank")
+
+    # Own confirmations survive a later removal of the start-list bib.
+    accepted = album.photos.get(original_path="IMG_0001.jpg")
+    actions.decide(reg, accepted, PhotoDecision.State.ME, athlete)
+    IssuedBib.objects.filter(registration=reg).delete()
+    page.reload()
+    expect(page.locator(".event-photo")).to_have_count(1)
+    expect(page.locator(".event-photo")).to_contain_text("IMG_0001.jpg")
