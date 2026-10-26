@@ -114,6 +114,7 @@ class AlbumPatchIn(Schema):
 class StatsOut(Schema):
     confirmed: int
     rejected: int
+    unchecked: int
     by_method: list[dict]
 
 

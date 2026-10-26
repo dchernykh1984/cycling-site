@@ -18,7 +18,14 @@ from django.utils import timezone
 from calendar_app.models import Competition
 from event_photos import actions, bindings
 from event_photos import index as index_module
-from event_photos.models import ExternalAlbum, IndexedPhoto, IssuedBib, IssuedBibEvent, PhotoDecision
+from event_photos.models import (
+    BibObservation,
+    ExternalAlbum,
+    IndexedPhoto,
+    IssuedBib,
+    IssuedBibEvent,
+    PhotoDecision,
+)
 from registrations.models import CompetitionRegistration
 
 EXAMPLE = Path(settings.BASE_DIR) / "specs" / "349-external-photo-albums" / "examples" / "photo-index.v1.json"
@@ -406,6 +413,17 @@ class MatchTests(EventPhotosTestCase):
         self.assertEqual([p.photo_uuid.int - 1 for p in actions.registration_photos(second)], [1, 2])
         actions.decide(second, self.photos[1], PhotoDecision.State.NOT_ME, None)
         self.assertEqual(list(actions.bib_photos(self.race, "12")), [])
+
+    def test_a_mark_counts_only_for_the_markers_own_bib(self):
+        reg = self._registration()
+        self._bib(reg, "12")
+        photo = IndexedPhoto.objects.get(photo_uuid=uuid.UUID(int=2))
+        BibObservation.objects.create(photo=photo, value="7", state="accepted", method="manual")
+        actions.decide(reg, photo, PhotoDecision.State.ME, None)
+        stats = actions.mark_stats(self.album)
+        self.assertEqual(stats["totals"]["confirmed"], 1)
+        self.assertEqual(stats["by_method"], [{"method": "ocr", "confirmed": 1, "rejected": 0}])
+        self.assertEqual(stats["totals"]["unchecked"], 2)  # photos 2 and 3 carry bibs nobody marked
 
     def test_a_bib_in_conflict_gives_nobody_photos(self):
         reg = self._registration()
