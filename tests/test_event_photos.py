@@ -435,6 +435,21 @@ class MatchTests(EventPhotosTestCase):
         IssuedBib.objects.create(competition=self.race, registration=reg, bib="12", state=IssuedBib.State.CONFLICT)
         self.assertEqual(list(actions.registration_photos(reg)), [])
 
+    def test_a_personal_cover_is_confirmed_and_can_be_thumbnailed(self):
+        reg = self._registration()
+        self._bib(reg, "12")
+        self.photos[1].is_hidden = True
+        self.photos[1].save(update_fields=["is_hidden"])
+        self.assertEqual(actions.registration_summary(reg)["count"], 1)
+        self.assertIsNone(actions.registration_summary(reg)["cover"])
+        self.photos[1].is_hidden = False
+        self.photos[1].original_bytes = 21 * 1024 * 1024
+        self.photos[1].save(update_fields=["is_hidden", "original_bytes"])
+        self.assertIsNone(actions.registration_summary(reg)["cover"])
+        self.photos[1].preview_path = "_previews/a.jpg"
+        self.photos[1].save(update_fields=["preview_path"])
+        self.assertEqual(actions.registration_summary(reg)["cover"], self.photos[1])
+
 
 class DecisionTests(EventPhotosTestCase):
     def setUp(self):
