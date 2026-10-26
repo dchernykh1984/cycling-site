@@ -582,6 +582,14 @@ class PageAndApiTests(EventPhotosTestCase):
         self.race.save(update_fields=["is_hidden"])
         self.assertNotContains(self.client.get(reverse("account_profile")), self._url("registration", self.reg.pk))
 
+    def test_curated_gallery_albums_count_as_the_events_photos(self):
+        from gallery.models import Album
+
+        Album.objects.create(title="Best shots", date=self.race.date_start, competition=self.race)
+        self.album.delete()
+        self.assertContains(self.client.get(self.race.get_absolute_url()), self._url("event"))
+        self.assertContains(self.client.get(self._url("event")), "Best shots")
+
     def test_the_creator_manages_albums_whatever_their_role(self):
         self.race.submitted_by = self.athlete  # a participant who created the event
         self.race.save(update_fields=["submitted_by"])

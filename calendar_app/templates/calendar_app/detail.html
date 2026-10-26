@@ -223,7 +223,7 @@
     {% endif %}
 
     {% event_photo_section competition as photo_section %}
-    {% if photo_section.has_albums or photo_section.can_manage %}
+    {% if photo_section.has_any_photos or photo_section.can_manage %}
     <div class="mt-4 pt-3 mb-4 border-top event-photo-links">
       <h2 class="mb-3 h5">{% trans "Photos from the race" %}</h2>
       <div class="d-flex flex-wrap gap-2">
@@ -231,6 +231,8 @@
         {% for card in photo_section.registrations %}{% with reg=card.registration %}
         <a href="{% url 'event_photos:registration' competition.pk reg.pk %}" class="btn btn-primary btn-sm">{% trans "Photos with me" %}{% if photo_section.registrations|length > 1 %}: {{ reg.last_name }} {{ reg.first_name }}{% if card.bibs %} &middot; {{ card.bibs|join:", " }}{% endif %}{% if reg.category %} &middot; {{ reg.category.name }}{% endif %}{% endif %}</a>
         {% endwith %}{% endfor %}
+        {% endif %}
+        {% if photo_section.has_any_photos %}
         <a href="{% url 'event_photos:event' competition.pk %}" class="btn btn-outline-primary btn-sm">{% trans "All photo albums" %}</a>
         {% endif %}
         {% if photo_section.can_manage %}
