@@ -211,6 +211,23 @@ class ImportTests(EventPhotosTestCase):
         with self.assertRaisesRegex(actions.ImportFailedError, "already connected"):
             self._publish(_index([_photo(1)]), album=copy)
 
+    def test_malformed_fields_are_refused_by_name_not_with_a_server_error(self):
+        self._publish(_index([_photo(1)]))
+        cases = {
+            "media_type": lambda p: p["original"].__setitem__("media_type", []),
+            "processing_state": lambda p: p.__setitem__("processing_state", []),
+            "bytes": lambda p: p["original"].__setitem__("bytes", 2**100),
+            "NUL": lambda p: p["original"].__setitem__("view_url", "https://www.dropbox.com/scl/fi/a\x00b/x.jpg"),
+        }
+        for where, spoil in cases.items():
+            photo = _photo(1)
+            spoil(photo)
+            with self.subTest(where), self.assertRaisesRegex(actions.ImportFailedError, where):
+                self._publish(_index([photo], revision=2))
+            self.album.refresh_from_db()
+            self.assertIn(where, self.album.last_error)
+            self.assertEqual(self.album.revision, 1)
+
     def test_a_missing_index_is_reported_and_keeps_the_last_publication(self):
         self._publish(_index([_photo(1)]))
         FakeAdapter.files = {}
@@ -477,3 +494,16 @@ class PageAndApiTests(EventPhotosTestCase):
         self.assertEqual(undone.status_code, 204)
         self.assertEqual(self.client.get(f"{base}/competitions/{self.race.pk}/photos?bib=12").json()["count"], 1)
         self.assertEqual(self.client.get(f"{base}/albums/{self.album.pk}/stats", **mine).status_code, 404)
+
+    def test_a_bad_index_on_refresh_is_a_422_with_the_field_named(self):
+        self.organizer.api_token = uuid.uuid4()
+        self.organizer.save(update_fields=["api_token"])
+        photo = _photo(1)
+        photo["processing_state"] = []
+        FakeAdapter.files[actions.INDEX_FILE] = _index([photo], revision=2)
+        response = self.client.post(
+            f"/api/v1/event-photos/albums/{self.album.pk}/refresh",
+            HTTP_AUTHORIZATION=f"Bearer {self.organizer.api_token}",
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("processing_state", response.json()["detail"])
