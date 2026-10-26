@@ -62,8 +62,9 @@ def _in_state(page: Page, element, state):
         element.hover()
     elif state == "focus":
         element.focus()
-    # Buttons fade between states; a colour read mid-fade is neither state's.
-    element.evaluate("el => Promise.all(el.getAnimations().map(a => a.finished))")
+    # Buttons fade between states; a colour read mid-fade is neither state's. A fade cut short by the
+    # next state rejects its promise with AbortError, which only means it is over.
+    element.evaluate("el => Promise.all(el.getAnimations().map(a => a.finished.catch(() => {})))")
 
 
 @pytest.mark.django_db(transaction=True)

@@ -17,7 +17,7 @@ from tests.language_urls import in_language
 
 def _appearance(link):
     return link.evaluate(
-        "async el => { await Promise.all(el.getAnimations().map(a => a.finished));"
+        "async el => { await Promise.all(el.getAnimations().map(a => a.finished.catch(() => {})));"
         " const s = getComputedStyle(el); return {fill: s.backgroundColor, weight: parseInt(s.fontWeight)}; }"
     )
 
