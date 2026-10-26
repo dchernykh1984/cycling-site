@@ -15,9 +15,15 @@ content, legal pages), `search/`
 ## Overview
 
 Every page shares one frame: a sticky navbar (site title, News, Calendar, Map and About when their
-pages exist, Knowledge Base, Gallery ([gallery](gallery.md)), Search, the skin chooser, the three language buttons, sign-in or the member's
+pages exist, Knowledge Base, Gallery ([gallery](gallery.md)), Virtual ride, Search, the skin chooser, the three language buttons, sign-in or the member's
 menu), a banner of moderation tasks for moderators, one setup hint, the page, and a footer with the
 legal pages and a link to report a bug.
+
+**Virtual ride** (`trainer/`, `/<lang>/virtual-ride/`) frames a self-contained indoor-trainer page,
+`trainer/static/trainer/alatau.html`, in an iframe that may use Web Bluetooth, the screen wake
+lock and full screen; a link opens the same file on its own. The file is kept as delivered and is
+not localized (Russian only); its progress stays in the reader's browser. Tests:
+`tests/test_virtual_ride.py`.
 
 ## User Scenarios
 

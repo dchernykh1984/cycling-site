@@ -3646,3 +3646,12 @@ msgstr "Сайттың жаңа безендіруін көріңіз — «%(na
 #: cycling_site/templates/_skin_offer.html
 msgid "Switch to it"
 msgstr "Қосу"
+
+msgid "Virtual ride"
+msgstr "Виртуалды заезд"
+
+msgid "Open full screen"
+msgstr "Толық экранда ашу"
+
+msgid "Ride Almaty's routes on an indoor trainer."
+msgstr "Алматы маршруттары велотренажерде."

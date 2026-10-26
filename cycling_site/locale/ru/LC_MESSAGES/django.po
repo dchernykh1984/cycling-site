@@ -3648,3 +3648,12 @@ msgstr "Попробуйте новое оформление сайта — «%(
 #: cycling_site/templates/_skin_offer.html
 msgid "Switch to it"
 msgstr "Включить"
+
+msgid "Virtual ride"
+msgstr "Виртуальный заезд"
+
+msgid "Open full screen"
+msgstr "Открыть на весь экран"
+
+msgid "Ride Almaty's routes on an indoor trainer."
+msgstr "Маршруты Алматы на велотренажёре."
