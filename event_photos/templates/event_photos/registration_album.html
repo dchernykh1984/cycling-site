@@ -22,10 +22,11 @@
   {% elif not bibs %}
     <p>{% trans "Your bib for this event is not known yet: it comes from the start list the referees send. Meanwhile, search the event's photos by bib." %}
        <a href="{% url 'event_photos:event' competition.pk %}">{% trans "Event photos" %}</a></p>
-  {% elif photos %}
+  {% endif %}
+  {% if photos %}
     <p class="text-muted">{% blocktrans with confirmed=confirmed_count to_check=to_check_count %}Confirmed: {{ confirmed }}. To check: {{ to_check }}.{% endblocktrans %}</p>
     {% include "event_photos/_grid.html" %}
-  {% else %}
+  {% elif bibs %}
     <p>{% trans "No photos with your bib yet." %}</p>
   {% endif %}
 </section>

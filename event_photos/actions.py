@@ -213,7 +213,7 @@ def registration_summary(registration) -> dict:
     and a state while there is nothing to show yet. Database only -- no call to Dropbox."""
     bibs = registration_bibs(registration)
     conflict = IssuedBib.objects.filter(registration=registration, state=IssuedBib.State.CONFLICT).exists()
-    photos = registration_photos(registration) if bibs else IndexedPhoto.objects.none()
+    photos = registration_photos(registration)
     count = photos.count()
     albums = ExternalAlbum.objects.filter(competition_id=registration.competition_id, is_hidden=False)
     indexing = any(not a.inventory_complete or a.processed_count < a.photo_count for a in albums)
