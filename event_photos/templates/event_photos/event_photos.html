@@ -10,11 +10,7 @@
 
   {% if registrations %}
   <h2 class="h5">{% trans "Photos with me" %}</h2>
-  <ul class="list-unstyled mb-4">
-    {% for reg in registrations %}
-    <li><a href="{% url 'event_photos:registration' competition.pk reg.pk %}">{% if reg.participant_names %}{{ reg }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %}</a></li>
-    {% endfor %}
-  </ul>
+  <div class="mb-4">{% include "event_photos/_registration_cards.html" with cards=registration_cards %}</div>
   {% endif %}
 
   <form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-4" role="search">

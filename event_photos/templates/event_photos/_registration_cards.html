@@ -1,0 +1,29 @@
+{% load i18n event_photos_tags %}
+{% comment %}One card per registration: my own cover and counts, never the photographer's. Shared by
+the profile and the event page.{% endcomment %}
+<div class="gallery-grid event-photo-cards">
+  {% for card in cards %}
+  {% with reg=card.registration %}
+  <a class="gallery-card gallery-album-card" href="{% url 'event_photos:registration' reg.competition_id reg.pk %}">
+    {% if card.cover %}
+    <img src="{% photo_thumb_url card.cover %}" alt="{{ reg.competition.title }}" width="256" height="171" loading="lazy" decoding="async">
+    {% else %}
+    <span class="gallery-card-blank">{% include "gallery/_icons.html" with name="image" %}</span>
+    {% endif %}
+    <span class="gallery-card-caption">
+      <span class="gallery-card-title">{% if with_event %}{{ reg.competition.title }}{% else %}{% if reg.participant_names %}{{ reg }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %}{% endif %}</span>
+      <span class="gallery-card-date">
+        {% if with_event %}{{ reg.competition.date_start|date:"d.m.Y" }} &middot; {% if reg.participant_names %}{{ reg }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %} &middot; {% endif %}
+        {% if card.bibs %}{% trans "bib" %} {{ card.bibs|join:", " }}{% endif %}{% if reg.category %} &middot; {{ reg.category.name }}{% endif %}
+      </span>
+      <span class="gallery-card-date">
+        {% if card.state == "no-bib" %}{% trans "Bib not received yet" %}
+        {% elif card.state == "conflict" %}{% trans "Bib in dispute" %}
+        {% else %}{% blocktrans with counter=card.count %}Photos: {{ counter }}{% endblocktrans %}{% if card.state == "indexing" %} &middot; {% trans "indexing is not finished" %}{% endif %}{% endif %}
+      </span>
+    </span>
+    <span class="gallery-card-arrow">{% include "gallery/_icons.html" with name="arrow-circle" %}</span>
+  </a>
+  {% endwith %}
+  {% endfor %}
+</div>

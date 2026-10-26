@@ -67,6 +67,9 @@ def event_photos(request, pk):
             "bib": bib,
             "photos": page,
             "registrations": my_registrations(request.user, competition),
+            "registration_cards": [
+                actions.registration_summary(r) for r in my_registrations(request.user, competition)
+            ],
             "meta_title": _("Photos: %(event)s") % {"event": competition.title},
         },
     )

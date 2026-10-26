@@ -198,6 +198,33 @@ def registration_photos(registration) -> QuerySet:
     )
 
 
+def registration_summary(registration) -> dict:
+    """What a registration's photo card shows: its bibs, my counts, a cover from my own photos,
+    and a state while there is nothing to show yet. Database only -- no call to Dropbox."""
+    bibs = registration_bibs(registration)
+    conflict = IssuedBib.objects.filter(registration=registration, state=IssuedBib.State.CONFLICT).exists()
+    photos = registration_photos(registration) if bibs else IndexedPhoto.objects.none()
+    count = photos.count()
+    albums = ExternalAlbum.objects.filter(competition_id=registration.competition_id, is_hidden=False)
+    indexing = any(not a.inventory_complete or a.processed_count < a.photo_count for a in albums)
+    if conflict and not bibs:
+        state = "conflict"
+    elif not bibs:
+        state = "no-bib"
+    elif indexing:
+        state = "indexing"
+    else:
+        state = "ready"
+    return {
+        "registration": registration,
+        "bibs": bibs,
+        "count": count,
+        "confirmed": photos.filter(confirmed=True).count() if count else 0,  # type: ignore[misc]  # annotated
+        "cover": photos.select_related("album").first() if count else None,
+        "state": state,
+    }
+
+
 def bib_photos(competition, bib: str) -> QuerySet:
     """Event search by bib: accepted matches and "this is me" of a registration holding the bib, less
     the photos every registration holding it marked "not me" (a team-mate's mark never hides it)."""
