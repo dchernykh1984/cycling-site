@@ -238,16 +238,19 @@ then publish an index; completed originals stay unchanged and new matches appear
   (self-only entry, "this is me" at submission, accepted claim link, manager decision) that decides
   whether the album is titled as the account's own; a confirmed athlete sees the album too. A relay
   registration has one album; members who claimed their slot see it as well.
-- **FR-025**: If the coach role of [#315](https://github.com/dchernykh1984/cycling-site/issues/315)
-  is added, a coach sees the albums of all their trainees' registrations, and each trainee sees
-  only their own. The coach-trainee link comes from that role, never from names or teams.
+- **FR-025**: When the coach or athlete-representative role of
+  [#315](https://github.com/dchernykh1984/cycling-site/issues/315) is added (it registers trainees
+  in batches), the representative sees the albums of all their trainees' registrations and may mark
+  photos in them; each trainee sees and marks only their own. The link comes from that role, never
+  from names or teams. Until then only the athlete marks.
 - **FR-026**: Keep the site's imported copy of an album's index apart from participants'
   decisions. Refresh the copy only when an organizer adds the album or presses "Refresh
   participants' tagging". In a registration album show accepted matches and candidates
-  (recall first); let the athlete or their coach mark each photo "this is me" (green check) or
-  "not me" (red cross). One decision per album and photo; a check may become a cross, a cross is
-  final apart from an immediate undo. Decisions survive every refresh, apply wherever that
-  registration's matches show (including event bib search) and never change the album files.
+  (recall first); let the athlete or their representative mark each photo "this is me" (green
+  check) or "not me" (red cross). One decision per registration and photo; a check may become a
+  cross, a cross is final apart from an immediate undo of that exact change. Decisions survive
+  every refresh and never change the album files; a shared team bib's photo leaves the event search
+  only when every registration holding it said "not me".
   Import validates the index's structure; its content is checked by these decisions.
 
 ### Retained later-stage scenarios and open decisions

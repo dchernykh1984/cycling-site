@@ -15,7 +15,9 @@ semantics agree; do not change curated-gallery administration rights to enable e
 | HistoricalMatchBatch | Event, retained file digest, rows, suggested registration, decision/reviewer | Staging only until manager confirmation; names never act as stable keys |
 | ClassifiedPhotoLink | Existing material reference, manager classification, localized display override/fallback | Ordinary external source, no index required; URL stays on original material |
 | PublicationDecision | Album/photo visibility or removal, actor, reason, restoration history | Site-owned publication overlay; not a competing source for recognized bibs |
-| ParticipantPhotoDecision | Registration, `(album_uuid, photo_uuid)`, "this is me" / "not me", actor (athlete or coach), time | Site-owned, one per album and photo; check -> cross allowed, cross is final (bar an immediate undo); survives index refreshes; kept when a photo leaves the index and applied again if it returns |
+| ParticipantPhotoDecision | Registration, `(album_uuid, photo_uuid)`, current state "this is me" / "not me", version | Site-owned, one per registration and photo; check -> cross allowed, cross is final (bar an immediate undo); survives index refreshes; kept when a photo leaves the index and applied again if it returns |
+| PhotoDecisionEvent | Decision, from state, to state, actor (athlete or representative), time | Append-only; an undo names one event and is refused unless it is the latest and inside the undo window |
+| IssuedBibEvent | Competition, registration, bib, change (assigned, conflict, review, withdrawn, resolved), device ID, client revision, actor, time | Append-only history written in the same transaction as the recalculation; survives deletion of the assignment. The generic audit log records only changed field names, so it cannot replace this |
 | UploadJob / UploadItem | Event/root, owner, per-file digest/reference/session, transferred bytes and accepted state | Provider-backed resumable transfer; no duplicate durable original on site |
 | ImportJob / ArchiveJob | Owner, bounded inputs, cursor/progress, result/error/expiry | Durable execution state; no unbounded page-request processing |
 
@@ -47,9 +49,10 @@ semantics agree; do not change curated-gallery administration rights to enable e
   say which member is in the frame. Only a later face slice can narrow that (see the
   [recognition roadmap](contracts/recognition-roadmap.md)).
 - Who sees a registration album: the account that filed it, its confirmed athlete, members who
-  claimed a relay slot and, once the coach role of #315 exists, the athlete's coach. A trainee sees
-  only their own albums. A submitter's album for someone else reveals nothing beyond event-level
-  search for a number the submitter already knows.
+  claimed a relay slot and, once the coach / representative role of #315 exists, the athlete's
+  representative. A trainee sees only their own albums. Only the athlete or the representative
+  marks photos. A submitter's album for someone else reveals nothing beyond event-level search for
+  a number the submitter already knows.
 - A withdrawn/deleted registration invalidates automatic personal association. Retain only the
   minimum source/audit facts permitted by the existing deletion policy; no duplicated profile.
 
@@ -110,7 +113,8 @@ a provider hostname. A classified plain link has no fabricated photo count or nu
 A registration album is a query projection, not another stored album: the registration's
 confirmed bib(s) joined to the event's visible accepted matches and candidates, then that
 registration's own decisions applied -- "this is me" marks a photo confirmed, "not me" hides it
-from that album and from the event's search for that registration's bib, not from anyone else's. Unchecked candidates stay visible and marked, because a missed photo is
+from that album. The event's search for a bib hides a photo only when every registration holding
+that bib marked it "not me"; a team-mate's own album is never affected. Unchecked candidates stay visible and marked, because a missed photo is
 worse than a wrong suggestion (maintainer, 2026-10-25). Count distinct `(album_id, photo_id)` results and select covers
 only from that set; several source albums at the event stay one registration album, with a
 source filter. Registrations with pending number/index data keep an explicit state instead of
