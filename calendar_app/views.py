@@ -891,7 +891,6 @@ class CompetitionDetailView(View):
             already_registered = CompetitionRegistration.objects.filter(
                 competition=competition, user=request.user
             ).exists()
-        from django.conf import settings
 
         comments = competition.comments.select_related("author")
         can_comment = request.user.is_authenticated and (
@@ -931,7 +930,7 @@ class CompetitionDetailView(View):
             # the upload token stay manager-only via is_manager.
             "can_edit": is_manager or is_author,
             "already_registered": already_registered,
-            "site_base_url": getattr(settings, "SITE_BASE_URL", ""),
+            "site_base_url": request.build_absolute_uri("/").rstrip("/"),
             "comments": comments,
             "can_comment": can_comment,
             "comment_form": AddCompetitionCommentForm() if can_comment else None,

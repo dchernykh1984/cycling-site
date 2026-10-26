@@ -835,3 +835,24 @@ class PageAndApiTests(EventPhotosTestCase):
             self._url("photo_action", self.photo.pk), {"action": "show", "page": "https://outside.test"}
         )
         self.assertNotIn("outside", invalid["Location"])
+
+    @override_settings(SITE_BASE_URL="http://localhost:8000")
+    def test_the_referee_url_hint_uses_the_host_and_port_serving_the_event(self):
+        self.client.force_login(self.organizer)
+        response = self.client.get(self.race.get_absolute_url(), HTTP_HOST="127.0.0.1:8349")
+        self.assertContains(response, "HttpSiteUrl:")
+        self.assertEqual(response.context["site_base_url"], "http://127.0.0.1:8349")
+
+    def test_a_past_race_can_receive_registration_ids_and_historical_bibs(self):
+        self.race.date_start = datetime.date(2020, 1, 1)
+        self.race.save(update_fields=["date_start"])
+        IssuedBib.objects.filter(registration=self.reg).delete()
+        body = {
+            "competition_token": str(self.race.upload_token),
+            "device_id": "historical",
+            "client_revision": 1,
+            "items": [f"012#Rider#G#1#1#1990#T#C##0#r{self.reg.pk}#"],
+        }
+        response = self.client.post("/api/v1/start-list/", body, content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(IssuedBib.objects.filter(registration=self.reg).values_list("bib", flat=True)), ["012"])
