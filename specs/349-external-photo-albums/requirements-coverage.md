@@ -85,6 +85,9 @@ pilots, event/cabinet navigation and specification-only scope).
 | C44 | Only the athlete or their coach marks; a check can become a cross, a cross is final | FR-026; decisions in the [index contract](contracts/photo-index.md) and [journeys](contracts/user-journeys.md) |
 | C45 | No broad token from organizers; ideally no thumbnails stored on the site | FR-003; [connector](contracts/connector.md): app authentication for reading, per-file `view_url` made by the indexer, site thumbnails only as fallback |
 | C46 | Are there existing projects that index automatically? | [Research section 8](research.md): Immich, bibnumber, commercial services; none produces the index as is |
+| C47 | A coach or athlete representative (#315) registers trainees in batches and manages their photos | FR-025; who marks in the [index contract](contracts/photo-index.md) |
+| C48 | External albums are added by the event's creator or an admin, with their token if one is ever needed; indexing instruction beside the form | FR-006/007; [data model](data-model.md) |
+| C49 | Organizer statistics of confirmations and rejections | FR-027; [API matrix](contracts/api-and-setup.md) |
 | C34 | Keep the bib-to-entry link through SPM without losing plain text files or existing readers | FR-009/011; [binding contract](contracts/start-list-bindings.md) variant A (trailing field) adopted by the maintainer, readers checked |
 | C35 | Thumbnails are a requirement on the album and live in it | FR-002; preview rules in the [index contract](contracts/photo-index.md) |
 | C36 | Moving storage onto the site later only swaps the connector | FR-001; site-hosted storage in the [connector contract](contracts/connector.md) |

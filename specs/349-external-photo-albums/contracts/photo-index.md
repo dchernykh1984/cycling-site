@@ -24,7 +24,9 @@ connection supplies the event. No account IDs, names, birth dates, emails, secre
 ## Photo
 
 `id` is a stable UUID within the album. `original` and `preview` each contain a safe relative `path`,
-`sha256` (64 lowercase hex), `bytes` (positive integer) and `media_type` (JPEG/PNG/WebP). `preview`
+`sha256` (64 lowercase hex: plain SHA-256 of the file's bytes, computed by the producer from the
+file itself; a provider's own hash, such as Dropbox's `content_hash`, is a different algorithm and
+never goes here), `bytes` (positive integer) and `media_type` (JPEG/PNG/WebP). `preview`
 may be absent while `processing_state` is pending/failed, but a searchable processed photo needs a
 preview. Previews are separate derivatives without unnecessary metadata; originals stay unchanged.
 Either may carry an optional `view_url`: a long-lived link of the storage's own sharing for that
