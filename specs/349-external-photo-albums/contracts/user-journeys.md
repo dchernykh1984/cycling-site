@@ -77,12 +77,13 @@ several bibs; results deduplicate by photo ID. Photos matched through a relay te
 carry a "team photo" label, because the bib does not say which member is in the frame. Include
 photographer/source on each photo or its detail, and preserve credit in download results.
 
-For the registration's athlete (and their coach, with #315) every photo in the grid carries two
+For the registration's athlete (and their representative, with #315) every photo in the grid carries two
 controls with visible text: a green check "This is me" and a red cross "Not me". Unchecked
 suggestions are marked as such; the heading counts confirmed photos and photos still to check. A
-check can be turned into a cross. "Not me" removes the photo from this registration's album and
-from the event's search for its bib, with an undo offered right after the tap; after that it is
-final. It never affects another registration's album. Other viewers of the album see the marks,
+check can be turned into a cross. "Not me" removes the photo from this registration's album, with
+an undo offered right after the tap; after that it is final. It never affects another
+registration's album, even a team-mate's with the same bib; the event's search for the bib drops
+the photo only when every registration holding that bib said "not me". Other viewers of the album see the marks,
 not the controls.
 
 Offer individual download, select/deselect visible photos, download selected and download all

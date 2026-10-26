@@ -87,12 +87,21 @@ The site keeps two things apart (maintainer decision, 2026-10-25):
   the site the registration's participant is on this photo; "not me" (a red cross) says the match
   is an error. They are site data, never written into the album, and survive every refresh.
 
-Who decides: the registration's confirmed athlete, or their coach once the role of #315 exists;
-one decision per album, whoever made it. A check can later become a cross; a cross removes the
-photo from the album, so it cannot become a check afterwards -- only an undo right after the tap
-guards against a mis-tap. A decision applies wherever the site shows that registration's matches,
-including the event's search for its bib. Whether an account that filed a registration for
-someone else (a parent) may decide is an open maintainer question.
+Who decides: the registration's athlete, or their representative -- the coach or representative
+role of #315, which also registers trainees in batches. One decision per album and photo, whoever
+made it. A check can later become a cross; a cross removes the photo from the album, so it cannot
+become a check afterwards -- only an undo right after the tap guards against a mis-tap.
+
+Every change is a recorded transition (from, to, actor, time). An undo names the transition it
+reverts and succeeds only while that transition is still the latest for the album and photo and
+younger than `PHOTO_DECISION_UNDO_SECONDS`; it restores the previous state (a check, or nothing).
+Repeating "not me" is a no-op and does not restart the undo window. Writes and undos lock the
+decision row, so two tabs or two authorized accounts cannot undo each other's newer change.
+
+Decisions belong to one registration. Two registrations sharing a team bib keep their own: one's
+"not me" never hides the photo from the other's album. The event's search for a bib leaves a
+photo out only when every registration holding that bib has marked it "not me"; one shared
+function answers albums, search and counts alike.
 
 That is also how a locally made index is validated. The site checks its structure on import --
 schema, sizes, paths inside the album -- because those protect the site. It does not trust its
