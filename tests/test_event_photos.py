@@ -742,3 +742,9 @@ class PageAndApiTests(EventPhotosTestCase):
                 self.album.refresh_from_db()
                 self.assertEqual(self.album.revision, 1)
                 self.assertTrue(self.album.last_error)
+
+    def test_unicode_digit_lookalikes_do_not_crash_stage_parsing(self):
+        for number, stage in [("12", "\u00b2"), ("\u00b2", "2")]:
+            line, warning = bindings.parse_line(f"{number}#A#G#1#{stage}#1990####0#r1#", max_stages=20)
+            self.assertEqual(line.bibs, (number,))
+            self.assertTrue(warning)

@@ -43,9 +43,11 @@ def parse_line(line: str, *, max_stages: int) -> tuple[Line, str]:
     bibs = [number]
     warning = ""
     stage = fields[4].strip() if len(fields) > 4 else ""
-    if stage.isdigit() and int(stage) > 1:
+    if stage and not stage.isdecimal():
+        warning = f"bib {number}: invalid stage count; only the first bib is kept"
+    elif stage.isdecimal() and int(stage) > 1:
         n = int(stage)
-        if not number.isdigit():
+        if not number.isdecimal():
             warning = f"bib {number}: stages need a numeric bib"
         elif n > max_stages:
             warning = f"bib {number}: {n} stages is over the limit of {max_stages}"
