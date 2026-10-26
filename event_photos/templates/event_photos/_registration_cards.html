@@ -19,6 +19,7 @@ the profile and the event page.{% endcomment %}
       <span class="gallery-card-date">
         {% if card.state == "no-bib" %}{% trans "Bib not received yet" %}
         {% elif card.state == "conflict" %}{% trans "Bib in dispute" %}
+        {% elif card.state == "review" %}{% trans "Bib needs review" %}
         {% else %}{% blocktrans with counter=card.count %}Photos: {{ counter }}{% endblocktrans %}{% if card.state == "indexing" %} &middot; {% trans "indexing is not finished" %}{% endif %}{% endif %}
       </span>
     </span>

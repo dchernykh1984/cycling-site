@@ -128,6 +128,8 @@ def compute(uploads, valid_ids: set[int], previous) -> Result:
             warnings.append(f"bib {bib}: r{reg} is in conflict (device {device}, revision {revision})")
         else:
             state = "review" if restored else "active"
+            if restored:
+                warnings.append(f"bib {bib}: r{reg} needs review after restore (device {device}, revision {revision})")
         assignments[(reg, bib)] = (state, device, revision)
     return Result(assignments, warnings)
 

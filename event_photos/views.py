@@ -142,6 +142,9 @@ def registration_album(request, pk, reg_pk):
             "bib_in_conflict": IssuedBib.objects.filter(
                 registration=registration, state=IssuedBib.State.CONFLICT
             ).exists(),
+            "bib_needs_review": IssuedBib.objects.filter(
+                registration=registration, state=IssuedBib.State.REVIEW
+            ).exists(),
             "photos": page,
             "confirmed_count": confirmed,
             "to_check_count": page.paginator.count - confirmed,
