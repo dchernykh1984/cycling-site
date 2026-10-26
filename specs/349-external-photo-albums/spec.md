@@ -259,9 +259,9 @@ then publish an index; completed originals stay unchanged and new matches appear
   suggestions were confirmed or rejected, so the index's quality can be judged and improved. Counts
   only; no names of who marked what.
 
-### Retained later-stage scenarios and open decisions
+### Additional scenarios and open decisions
 
-These wishes remain part of the feature, while the first standalone pilot is number-based:
+D1 local recognition was approved on 2026-10-26; D2-D3 remain deferred.
 
 - **D1 - Appearance matching**: Find a rider's photos where the bib is not readable by their
   overall look (kit, bike, build, helmet), seeded from their own bib photos at the same event.
@@ -315,14 +315,29 @@ open decisions. Deferral means outside the first pilot, not deleted from the req
   materials; inspecting them and historical number files is deferred to the pilot. Event 533 may
   be copied to Dropbox if the maintainer chooses, but relocation is not an architectural requirement.
   Personal matching is not a prerequisite for useful event-level results.
-- Face search and optional server/cloud producers are retained in D1-D3, outside the first
-  number-based pilot. Their detailed gates remain open. A photo marketplace and mandatory cloud
+- Face recognition and selfie search are excluded. Optional server/cloud producers remain
+  deferred in D2-D3. A photo marketplace and mandatory cloud
   OCR are not requested scope.
-- This describes proposed behaviour. The maintainer reviews spec and plan before task generation
-  and implementation. No application behaviour is changed by this document.
+- This specification retains the full requested behaviour. The current implemented subset and
+  validation evidence are distinguished in the plan and `specs/site/event-photos.md`.
 
 ## Coverage of the discussion
 
 The [requirements matrix](requirements-coverage.md) maps issue/conversation scenarios to this
 specification, contracts and explicitly retained later-stage wishes. It also lists genuinely open
 implementation choices. Coverage means documented, not already implemented or approved.
+
+
+## Approved implementation addition (2026-10-26)
+
+The maintainer requested one local automatic action with two sequential phases: bib OCR followed
+by appearance matching seeded by accepted bibs. The dropdown defaults to both phases and also
+allows OCR only. See [the recognition contract](contracts/recognition-roadmap.md) for the selected
+CPU model interfaces, provisional thresholds, manual precedence, progress/cancel/resume and the
+current one-album search boundary. The site imports accepted OCR and appearance candidates through
+the same manifest. Recognition does not add a cloud bill or require re-entering participant data.
+
+Past events use the same registration references: load their existing registrations into the new
+StartProtocolMaker, retain or enter the historical bibs, then send the start list. Manual-only SPM
+rows have no site registration ID; equal names are not proof of identity. Do not create duplicate
+site registrations solely to attach photos. A past event's date does not block this upload.

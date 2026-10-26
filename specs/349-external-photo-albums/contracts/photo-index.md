@@ -45,8 +45,8 @@ the values are chosen from the pilot albums.
 `processing_state` is `pending`, `processed` or `failed`; `bibs` is an array, possibly empty.
 Each observation has `value`, `state` (`candidate`, `accepted`, `rejected`), `method` (`ocr`,
 `appearance` or `manual`; an `appearance` observation is always a `candidate`), optional confidence in [0,1], an optional correction reference and an optional
-`region`: the bib's box as `x`, `y`, `w`, `h` fractions of the preview in [0,1]. A region is not
-personal data; it lets a later face slice pair a face with the bib and lets the viewer highlight it. A manual change
+`region`: the bib's box as `x`, `y`, `w`, `h` fractions of the preview in [0,1]. Coordinates refer to the EXIF-oriented image (and identically oriented preview).
+They pair a bib with a whole-person crop and can support highlighting; no face matching is used. A manual change
 records a local non-personal correction ID and prior value/state; the producer retains its audit.
 Manual observations include `content_sha256`, binding the decision to the reviewed original's
 bytes. OCR confidence is meaningful only for the named model, not comparable across engines.

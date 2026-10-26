@@ -91,3 +91,19 @@ None: the pages' operations are all in `/api/v1/event-photos/`.
 Restored bindings remain usable but carry a visible `review` state in personal cards and galleries.
 The organizer sees the registration, bib, source device and revision that need checking in the
 start-list diagnostics, including foreign registration IDs and stage limits.
+
+
+## Automatic producer and review corrections
+
+SportPhotoIndexer offers one local automatic button: bib OCR first, then whole-person appearance
+matching, selected by default; OCR only is also available. The one-album boundary, model downloads,
+provisional thresholds and unmeasured pilot accuracy are documented in the feature recognition
+contract. Appearance observations are always candidates. The site validates normalized regions
+and active manual-review locks before publication; vectors never enter its database or the index.
+
+Manager album listings include hidden photos and their flag through the API, just as on the page.
+Personal covers use confirmed photos with usable thumbnails; candidates use a placeholder. Own
+confirmations remain visible even without a current bib binding. Personal API cards include counts,
+confirmed count, state, participant/category and a token-protected thumbnail URL. Photo marks,
+undo and manager moderation keep the current gallery page. Start-list references work for past
+events too; dates do not invalidate registration IDs or historical bibs.

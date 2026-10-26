@@ -2,7 +2,7 @@
 
 **Branch**: `349-external-photo-albums` | **Date**: 2026-10-25 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification in `specs/349-external-photo-albums/spec.md`
-**Status**: Proposed architecture for maintainer review; no implementation or tasks generated.
+**Status**: Architecture and retained scenarios, with the implemented pilot boundary below.
 
 ## Summary
 
@@ -18,7 +18,9 @@ Local producer has a separate runtime so an OCR dependency cannot force a site d
 
 **Primary Dependencies**: Existing Django ORM, Django Ninja API, existing gallery actions/permissions.
 Use provider HTTP APIs behind adapters; add no dependency merely to render a third-party album.
-Select the local OCR engine only after the pilot comparison described in [research](research.md).
+The maintainer approved the local automatic slice on 2026-10-26. The pinned CPU model
+interfaces and provisional thresholds are specified in [recognition-roadmap](contracts/recognition-roadmap.md);
+real-race quality and CPU measurements remain acceptance work for the pilot.
 
 **Storage**: External originals and generated previews; PostgreSQL for derived published metadata,
 assignments and job state. Bound temporary archive storage; credentials in server secret storage.
@@ -44,8 +46,8 @@ page request. Start with a resumable management-command worker over DB jobs; use
 scheduler for bounded batches, without introducing a queue service before it is needed.
 
 **Scale/Scope**: Pilot 719 first on Dropbox; pilot 533 when the Drive slice is enabled. Historical
-identity recovery and the future SPM round trip can progress independently. Face search and
-server/cloud producers remain later reviewed slices, not part of the first number-only pilot.
+identity recovery and the future SPM round trip can progress independently. Face recognition is excluded. Server/cloud producers remain deferred; local bib OCR and
+appearance matching are approved for the desktop producer.
 
 ## Constitution Check
 
@@ -75,7 +77,8 @@ architecture gate is not evidence that the proposed feature already works or is 
 - `contracts/api-and-setup.md`, `contracts/user-journeys.md`, `contracts/uploads.md`,
   `contracts/recognition-roadmap.md`
 - `examples/photo-index.v1.json`, `checklists/requirements.md`, `requirements-coverage.md`, `review.md`
-- `tasks.md` is deferred until maintainer review; the review log records the document review cycles.
+- The initial implementation was driven by `tmp/plan.txt`; it did not generate `tasks.md`.
+  The current implementation boundary is recorded in `specs/site/event-photos.md`.
 
 ### Source Code (repository root)
 
@@ -180,3 +183,15 @@ available. The schema and instructions can be reviewed now; this PR does not pre
 No constitutional violations. Durable jobs, a derived search index and adapter boundaries address
 explicit requirements; do not introduce a generic storage platform, person registry or task queue
 service for this pilot.
+
+
+## Current pilot implementation boundary (2026-10-26)
+
+The site uses `event_photos/` and `/api/v1/event-photos/`: a Dropbox adapter, validated manifest
+imports, database-backed bib/registration queries, private thumbnail caching, personal marks,
+manager moderation and diagnostics. The independent SportPhotoIndexer produces the manifest;
+StartProtocolMaker preserves and returns `r<registration-id>` references. The implementation does
+not yet provide Drive/Yandex connectors, direct uploads or ZIP downloads. Those remain retained
+scenarios, not capabilities claimed by the current help page. The local automatic producer now
+uses the one-button two-phase flow described in the recognition contract; real-race accuracy is
+still a pilot measurement, not a completed acceptance result.
