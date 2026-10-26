@@ -66,8 +66,9 @@ Delivery (maintainer decision 2026-10-25; see [research section 7](../research.m
   Dropbox (`raw=1`) and the site stores nothing (pending the embed check). Otherwise the site keeps
   a tiny thumbnail, about 10-20 KB (a long side of about 320 px), made with
   `files/get_thumbnail_v2`; 2,000 photos are roughly 20-40 MB of disk (estimate). Rules for those:
-  - stored outside `MEDIA_ROOT`, because `serve_media` hands out any file under it without a
-    permission check; served only by a view that applies the album's visibility, with
+  - stored where `serve_media` cannot hand them out (it serves any file under `MEDIA_ROOT`
+    without a permission check): a separate root, or a subfolder it refuses; served only by a
+    view that applies the album's visibility, with
     `Cache-Control: private` and a short lifetime, so no shared cache keeps a thumbnail of an album
     that has since been hidden;
   - named by the site's internal album and photo IDs plus the source digest, never by UUIDs taken
