@@ -11,8 +11,10 @@ def can_see_event(user, competition: Competition) -> bool:
 
 
 def can_manage_albums(user, competition: Competition) -> bool:
-    """The event's creator or an admin adds and refreshes its external albums."""
-    return manages(user, competition)
+    """The event's creator, whatever their role, or an admin adds and refreshes its albums."""
+    if manages(user, competition):
+        return True
+    return bool(user.is_authenticated and user.pk == competition.submitted_by_id)
 
 
 def can_represent(user, registration) -> bool:
