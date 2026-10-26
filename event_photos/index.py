@@ -94,12 +94,12 @@ def _asset(value, where: str, *, view_url: bool) -> tuple[str, str, int, str]:
     if not isinstance(sha, str) or not _SHA.match(sha):
         _fail(f"{where}.sha256", "must be the file's SHA-256, 64 lowercase hex digits")
     size = value.get("bytes")
-    if not isinstance(size, int) or isinstance(size, bool) or size < 1:
+    if not isinstance(size, int) or isinstance(size, bool) or not 1 <= size < 2**63:
         _fail(f"{where}.bytes", "must be a positive integer")
-    if value.get("media_type") not in _MEDIA_TYPES:
+    if not isinstance(value.get("media_type"), str) or value["media_type"] not in _MEDIA_TYPES:
         _fail(f"{where}.media_type", "must be image/jpeg, image/png or image/webp")
     url = value.get("view_url", "")
-    if url and not (view_url and isinstance(url, str) and _VIEW_URL.match(url)):
+    if url and not (view_url and isinstance(url, str) and len(url) <= _MAX_PATH and _VIEW_URL.match(url)):
         _fail(f"{where}.view_url", "must be a Dropbox shared file link")
     return path, sha, size, url
 
@@ -114,9 +114,9 @@ def _bib(value, where: str, original_sha: str) -> Bib:
     if not 1 <= len(bib) <= 32 or any(unicodedata.category(c).startswith("C") for c in bib):
         _fail(f"{where}.value", "must be 1 to 32 printable characters")
     state, method = value.get("state"), value.get("method")
-    if state not in _STATES:
+    if not isinstance(state, str) or state not in _STATES:
         _fail(f"{where}.state", "must be candidate, accepted or rejected")
-    if method not in _METHODS:
+    if not isinstance(method, str) or method not in _METHODS:
         _fail(f"{where}.method", "must be ocr, appearance or manual")
     if method == "appearance" and state != "candidate":
         _fail(f"{where}.state", "an appearance match is always a candidate")
@@ -128,6 +128,18 @@ def _bib(value, where: str, original_sha: str) -> Bib:
     return Bib(bib, state, method, None if confidence is None else float(confidence))
 
 
+def _no_nul(value, where: str) -> None:
+    """PostgreSQL text cannot hold NUL, and JSON can smuggle one in as an escape."""
+    if isinstance(value, str) and "\x00" in value:
+        _fail(where, "contains a NUL character")
+    if isinstance(value, dict):
+        for key, item in value.items():
+            _no_nul(item, f"{where}.{key}")
+    elif isinstance(value, list):
+        for i, item in enumerate(value):
+            _no_nul(item, f"{where}[{i}]")
+
+
 def _load(raw: bytes) -> dict:
     if len(raw) > settings.PHOTO_INDEX_MAX_BYTES:
         _fail("index", f"larger than {settings.PHOTO_INDEX_MAX_BYTES} bytes")
@@ -136,10 +148,9 @@ def _load(raw: bytes) -> dict:
         data = json.loads(text)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         _fail("index", f"not UTF-8 JSON ({exc})")
-    if "\x00" in text:
-        _fail("index", "contains a NUL character")
     if not isinstance(data, dict):
         _fail("index", "not a JSON object")
+    _no_nul(data, "index")
     _header(data)
     return data
 
@@ -171,7 +182,7 @@ def _photo(p, where: str) -> Photo:
     if p.get("preview") is not None:
         pv_path, pv_sha, _, _ = _asset(p["preview"], f"{where}.preview", view_url=True)
     state = p.get("processing_state")
-    if state not in _PROCESSING:
+    if not isinstance(state, str) or state not in _PROCESSING:
         _fail(f"{where}.processing_state", "must be pending, processed or failed")
     bibs_raw = p.get("bibs", [])
     if not isinstance(bibs_raw, list) or len(bibs_raw) > settings.PHOTO_INDEX_MAX_BIBS_PER_PHOTO:
