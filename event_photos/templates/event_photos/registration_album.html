@@ -11,7 +11,7 @@
   {% if undo_event %}
   <form method="post" action="{% url 'event_photos:undo' competition.pk registration.pk %}" class="alert alert-secondary d-flex flex-wrap align-items-center gap-2" role="status">
     {% csrf_token %}<input type="hidden" name="event" value="{{ undo_event }}">
-    <input type="hidden" name="page" value="{{ photos.number }}">
+    <input type="hidden" name="page" value="{{ undo_page }}">
     <span>{% trans "The photo was removed from your album." %}</span>
     <button type="submit" class="btn btn-sm btn-outline-secondary">{% trans "Undo" %}</button>
   </form>

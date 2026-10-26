@@ -2,6 +2,7 @@
 undoes the cross, and crosses it out for good. The folder is a fake; nothing reaches Dropbox."""
 
 import datetime
+import re
 import tempfile
 
 import pytest
@@ -18,8 +19,8 @@ from tests.e2e.conftest import inject_session
 from tests.test_event_photos import FOLDER, FakeAdapter, _index, _photo
 
 
-@pytest.mark.django_db(transaction=True)
-def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, settings):
+@pytest.fixture
+def indexed_event(settings):
     settings.EVENT_PHOTOS_ADAPTER = "tests.test_event_photos.FakeAdapter"
     settings.MEDIA_ROOT = tempfile.mkdtemp()
     athlete = User.objects.create_user(username="rider", email="rider@example.com", role=User.Role.PARTICIPANT)
@@ -41,6 +42,12 @@ def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, set
     }
     actions.import_album(album, None)
 
+    return athlete, race, reg, album
+
+
+@pytest.mark.django_db(transaction=True)
+def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, indexed_event):
+    athlete, race, reg, album = indexed_event
     with translation_override("ru"):
         mine, yes, no, undo = (gettext(s) for s in ("Photos with me", "This is me", "Not me", "Undo"))
     inject_session(page, live_server, athlete)
@@ -79,3 +86,27 @@ def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, set
     page.reload()
     expect(page.locator(".event-photo")).to_have_count(1)
     expect(page.locator(".event-photo")).to_contain_text("IMG_0001.jpg")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_undo_restores_the_last_photo_to_its_original_gallery_page(page: Page, live_server, indexed_event, monkeypatch):
+    from django.urls import reverse
+
+    from event_photos import views
+
+    athlete, race, reg, _ = indexed_event
+    monkeypatch.setattr(views, "PER_PAGE", 1)
+    with translation_override("ru"):
+        no, undo = gettext("Not me"), gettext("Undo")
+        path = reverse("event_photos:registration", args=[race.pk, reg.pk])
+    inject_session(page, live_server, athlete)
+    page.goto(f"{live_server.url}{path}?page=2")
+    expect(page.locator(".event-photo")).to_have_count(1)
+    expect(page.locator(".event-photo")).to_contain_text("IMG_0002.jpg")
+    page.get_by_role("button", name=no).click()
+    undo_button = page.get_by_role("button", name=undo)
+    form = page.locator("form").filter(has=undo_button)
+    expect(form.locator('input[name="page"]')).to_have_value("2")
+    undo_button.click()
+    expect(page).to_have_url(re.compile(r"[?]page=2$"))
+    expect(page.locator(".event-photo")).to_contain_text("IMG_0002.jpg")
