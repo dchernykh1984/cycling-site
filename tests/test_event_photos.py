@@ -800,3 +800,18 @@ class PageAndApiTests(EventPhotosTestCase):
         self.assertContains(page, "Bib needs review")
         result = bindings.compute([("old-device", 3, ["12#A#G#1#1#1#T#C##0#"])], {self.reg.pk}, {(self.reg.pk, "12")})
         self.assertTrue(any("review" in w and "old-device" in w and "3" in w for w in result.warnings))
+
+    def test_personal_api_cards_include_the_same_counts_cover_and_state_as_the_site(self):
+        self.athlete.api_token = uuid.uuid4()
+        self.athlete.save(update_fields=["api_token"])
+        auth = {"HTTP_AUTHORIZATION": f"Bearer {self.athlete.api_token}"}
+        url = "/api/v1/event-photos/me/registrations"
+        card = self.client.get(url, **auth).json()[0]
+        self.assertEqual((card["count"], card["confirmed"], card["state"]), (2, 1, "ready"))
+        self.assertIn("/api/v1/event-photos/photos/", card["cover_thumbnail_url"])
+        self.assertEqual(card["registration_id"], self.reg.pk)
+        IssuedBib.objects.filter(registration=self.reg).delete()
+        card = self.client.get(url, **auth).json()[0]
+        self.assertEqual(
+            (card["count"], card["confirmed"], card["state"], card["cover_thumbnail_url"]), (0, 0, "no-bib", "")
+        )
