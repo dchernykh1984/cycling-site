@@ -25,7 +25,7 @@ verified hashes; subsequent runs work offline. Photos never go to a recognition 
 initial implementation searches one album of one event at a time. Cross-album appearance search
 is not yet implemented: no implicit association across arbitrary open folders or events.
 
-OCR confidence >= 0.95 is accepted, >= 0.60 is a candidate; values retain case and leading zeroes.
+OCR confidence >= 0.98 is accepted, >= 0.60 is a candidate; values retain case and leading zeroes.
 Large photos are read as overlapping 768-pixel tiles; rider detection preserves image aspect
 with padding and maps boxes back to the oriented original. The current reader supports digits and Latin bibs; other scripts remain available through manual
 entry/CSV. ReID cosine similarity >= 0.80 suggests a candidate. These are provisional model
@@ -119,3 +119,19 @@ incomplete and on-the-day entrants may be absent. A detected number outside the 
 remains reviewable/searchable under the same acceptance policy, not silently discarded.
 All producers preserve the [manual precedence rules](photo-index.md), stable IDs, unchanged
 originals, resumable checkpoints and atomic publication. Engine changes cannot erase reviewed data.
+
+
+### Real-photo pilot and calibration (2026-10-26)
+
+The maintainer supplied 158 actual race photos. Testing used a separate local copy and did not
+publish images or change the source album. Full CPU inference took about five minutes on the
+pilot computer. The mobile PP-OCRv5 reader produced more usable reads than the initial CRNN
+reader while requiring fewer downloaded bytes. Manual checking exposed a partial digit read and
+a digit on clothing; the accepted-read threshold was raised to 0.98. Cached confidence is
+reclassified without repeating OCR when calibration changes. This is a pilot setting, not a
+claim of calibrated accuracy on other events.
+
+An appearance suggestion must respect a bib already known for that same unambiguous crop;
+another rider on the same frame remains independently searchable. Temporarily missing photos
+restore their manual decisions when the exact same bytes return. The pilot has not completely
+labelled every rider in all photos, so result counts are not an estimate of overall recall.
