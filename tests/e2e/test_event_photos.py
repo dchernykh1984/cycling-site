@@ -49,6 +49,10 @@ def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, set
     cards = page.locator(".event-photo")
     expect(cards).to_have_count(2)
 
+    for button in page.locator(".event-photo-marks .btn").all():
+        box = button.bounding_box()
+        assert box is not None and box["height"] >= 44 and box["width"] >= 44, box
+
     candidate = cards.filter(has_text="IMG_0002.jpg")
     candidate.get_by_role("button", name=yes).click()
     expect(page.locator(".event-photo").filter(has_text="IMG_0002.jpg").get_by_role("button", name=yes)).to_have_count(
