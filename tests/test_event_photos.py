@@ -565,6 +565,23 @@ class PageAndApiTests(EventPhotosTestCase):
         public = self.client.get(f"/api/v1/event-photos/competitions/{self.race.pk}/albums").json()
         self.assertEqual({a["last_error"] for a in public}, {None})
 
+    def test_profile_cards_follow_event_visibility_and_tell_registrations_apart(self):
+        from django.urls import reverse
+
+        second = self._registration()  # the same person entered for another distance
+        second.user = self.athlete
+        second.save(update_fields=["user"])
+        self.client.force_login(self.athlete)
+        profile = self.client.get(reverse("account_profile"))
+        self.assertContains(profile, self._url("registration", self.reg.pk))
+        self.assertContains(profile, self._url("registration", second.pk))
+        self.assertContains(profile, "12")  # the first card names its bib
+        self.assertEqual(actions.registration_summary(second)["state"], "no-bib")
+        self.assertEqual(actions.registration_summary(self.reg)["count"], 2)
+        self.race.is_hidden = True
+        self.race.save(update_fields=["is_hidden"])
+        self.assertNotContains(self.client.get(reverse("account_profile")), self._url("registration", self.reg.pk))
+
     def test_the_creator_manages_albums_whatever_their_role(self):
         self.race.submitted_by = self.athlete  # a participant who created the event
         self.race.save(update_fields=["submitted_by"])
