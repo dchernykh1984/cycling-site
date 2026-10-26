@@ -15,7 +15,7 @@
       <p class="mb-1 text-break small"><a href="{{ album.folder_url }}" target="_blank" rel="noopener">{{ album.folder_url }}</a></p>
       <p class="mb-1">{% blocktrans with revision=album.revision photos=album.photo_count processed=album.processed_count %}Revision {{ revision }}: {{ photos }} photos, {{ processed }} processed.{% endblocktrans %}
         {% if not album.inventory_complete %}{% trans "The folder has not been fully indexed yet." %}{% endif %}</p>
-      <p class="mb-1">{% blocktrans with confirmed=album.stats.totals.confirmed rejected=album.stats.totals.rejected %}Participants' marks: {{ confirmed }} confirmed, {{ rejected }} rejected.{% endblocktrans %}
+      <p class="mb-1">{% blocktrans with confirmed=album.stats.totals.confirmed rejected=album.stats.totals.rejected unchecked=album.stats.totals.unchecked %}Participants' marks: {{ confirmed }} confirmed, {{ rejected }} rejected, {{ unchecked }} photos not checked yet.{% endblocktrans %}
         {% for row in album.stats.by_method %}<span class="text-muted">{{ row.method }}: {{ row.confirmed }} / {{ row.rejected }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
       {% if album.last_error %}<div class="alert alert-danger py-2 mb-2">{{ album.last_error }}</div>{% endif %}
       <form method="post" action="{% url 'event_photos:album_action' competition.pk album.pk %}" class="d-flex flex-wrap gap-2">

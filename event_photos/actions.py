@@ -307,13 +307,45 @@ def undo(registration, event_id: int, actor) -> None:
 
 
 def mark_stats(album_obj) -> dict:
-    """Participants' marks on an album, in numbers only: totals, and per method of the matched bib."""
-    decided = BibObservation.objects.filter(photo__album=album_obj, photo__decisions__state__in=["me", "not_me"])
-    by_method = decided.values("method").annotate(
-        confirmed=Count("pk", filter=Q(photo__decisions__state="me")),
-        rejected=Count("pk", filter=Q(photo__decisions__state="not_me")),
+    """Participants' marks on an album, in numbers only.
+
+    A mark counts for a method only through the observation of the marking registration's own
+    bib on that photo -- another bib on the same frame was not checked by this mark. ``unchecked``
+    is the photos with a bib on them that nobody has marked yet.
+    """
+    decisions = list(
+        PhotoDecision.objects.filter(photo__album=album_obj, state__in=["me", "not_me"]).values_list(
+            "registration_id", "photo_id", "state"
+        )
     )
-    totals = PhotoDecision.objects.filter(photo__album=album_obj).aggregate(
-        confirmed=Count("pk", filter=Q(state="me")), rejected=Count("pk", filter=Q(state="not_me"))
+    bibs_of: dict[int, set[str]] = {}
+    for reg, bib in IssuedBib.objects.filter(registration_id__in={d[0] for d in decisions}).values_list(
+        "registration_id", "bib"
+    ):
+        bibs_of.setdefault(reg, set()).add(bib)
+    observations: dict[int, list[tuple[str, str]]] = {}
+    for photo, value, method in BibObservation.objects.filter(photo_id__in={d[1] for d in decisions}).values_list(
+        "photo_id", "value", "method"
+    ):
+        observations.setdefault(photo, []).append((value, method))
+    by_method: dict[str, dict[str, int | str]] = {}
+    for reg, photo, state in decisions:
+        for value, method in observations.get(photo, []):
+            if value in bibs_of.get(reg, set()):
+                row = by_method.setdefault(method, {"method": method, "confirmed": 0, "rejected": 0})
+                key = "confirmed" if state == "me" else "rejected"
+                row[key] = int(row[key]) + 1
+    unchecked = (
+        IndexedPhoto.objects.filter(album=album_obj, in_index=True, bibs__state__in=["accepted", "candidate"])
+        .exclude(decisions__state__in=["me", "not_me"])
+        .distinct()
+        .count()
     )
-    return {"totals": totals, "by_method": list(by_method)}
+    return {
+        "totals": {
+            "confirmed": sum(d[2] == "me" for d in decisions),
+            "rejected": sum(d[2] == "not_me" for d in decisions),
+            "unchecked": unchecked,
+        },
+        "by_method": sorted(by_method.values(), key=lambda row: row["method"]),
+    }
