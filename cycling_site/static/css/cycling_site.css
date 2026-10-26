@@ -575,3 +575,12 @@ main .gallery-pick-photo img { width: 100%; height: 100%; max-width: none; objec
     .gallery-head-side { align-items: flex-start; }
     .gallery-tab-more { margin-left: 0; }
 }
+
+/* Event photo marks: "This is me" / "Not me" are tapped on phones, so each is at least 44 px and
+   the pair is one height, whichever of them is shown. */
+.event-photo-marks .btn {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+}
