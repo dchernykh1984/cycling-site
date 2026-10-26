@@ -22,8 +22,10 @@ legal pages and a link to report a bug.
 **Virtual ride** (`trainer/`, `/<lang>/virtual-ride/`) frames a self-contained indoor-trainer page,
 `trainer/static/trainer/alatau.html`, in an iframe that may use Web Bluetooth, the screen wake
 lock and full screen; a link opens the same file on its own. The file is kept as delivered and is
-not localized (Russian only); its progress stays in the reader's browser. Tests:
-`tests/test_virtual_ride.py`.
+not localized (Russian only); its progress stays in the reader's browser. The settings page
+is separate from the ride and offers racing, a cadence plan and free riding. It includes rider
+height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
+default. Free rides can be finished from the pause menu. Tests: `tests/test_virtual_ride.py`.
 
 ## User Scenarios
 
