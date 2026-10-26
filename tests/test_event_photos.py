@@ -528,6 +528,14 @@ class PageAndApiTests(EventPhotosTestCase):
         bad = self.client.post(self._url("manage"), {"folder_url": "https://drive.google.com/x", "title_ru": "X"})
         self.assertContains(bad, "Dropbox")
 
+    def test_the_creator_manages_albums_whatever_their_role(self):
+        self.race.submitted_by = self.athlete  # a participant who created the event
+        self.race.save(update_fields=["submitted_by"])
+        self.client.force_login(self.athlete)
+        self.assertEqual(self.client.get(self._url("manage")).status_code, 200)
+        self.client.force_login(self.stranger)
+        self.assertEqual(self.client.get(self._url("manage")).status_code, 404)
+
     def test_the_api_follows_the_same_rules(self):
         self.athlete.api_token = uuid.uuid4()
         self.athlete.save(update_fields=["api_token"])
