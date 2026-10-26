@@ -64,8 +64,20 @@ Delivery (maintainer decision 2026-10-25; see [research section 7](../research.m
   never leaves the computer.
 - **Thumbnails**: when the index gives a preview's `view_url`, the page shows it straight from
   Dropbox (`raw=1`) and the site stores nothing (pending the embed check). Otherwise the site keeps
-  a tiny thumbnail, about 10-20 KB (a long side of about 320 px), made once at import with
-  `files/get_thumbnail_v2`; 2,000 photos are roughly 20-40 MB of disk (estimate).
+  a tiny thumbnail, about 10-20 KB (a long side of about 320 px), made with
+  `files/get_thumbnail_v2`; 2,000 photos are roughly 20-40 MB of disk (estimate). Rules for those:
+  - stored outside `MEDIA_ROOT`, because `serve_media` hands out any file under it without a
+    permission check; served only by a view that applies the album's visibility, with
+    `Cache-Control: private` and a short lifetime, so no shared cache keeps a thumbnail of an album
+    that has since been hidden;
+  - named by the site's internal album and photo IDs plus the source digest, never by UUIDs taken
+    from an index; the URL carries the digest, so a changed preview or original gets a new
+    thumbnail, the old file is deleted after the import commits, and a thumbnail made from an old
+    digest is never attached to the new one;
+  - Dropbox does not make thumbnails of files over 20 MB: a processed photo with no preview and an
+    original over that size is listed to the organizer as "needs a preview" with its path and the
+    fix (run the indexer with previews); readers see a neutral placeholder and can still open the
+    photo in Dropbox.
 - **A click opens the photo in Dropbox in a new tab**, so viewing and downloading use Dropbox's
   traffic: the original's `view_url` when the index has one, otherwise the folder link with
   `preview=<file name>` (what Dropbox's own page produces when a file is clicked; undocumented,

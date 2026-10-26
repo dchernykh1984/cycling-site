@@ -10,7 +10,8 @@ All machine routes remain under `/api/v1/`, without a language prefix.
 | --- | --- |
 | Read enabled connector/index capabilities and guide links | A person allowed to open setup; no credentials/account grants returned |
 | Classify/unclassify an existing material as a photo-album link | Authorized event manager/admin/owner; preserve source URL and other materials |
-| Connect, inspect, refresh ("Refresh participants' tagging"), disconnect an external album | Manager of that album's event, or admin/owner; validated root and access |
+| Connect, inspect, refresh ("Refresh participants' tagging"), disconnect an external album | The event's creator, or admin/owner; validated root and access; unique portable album UUID |
+| Read an album's mark statistics (confirmed, rejected, unchecked; per method) | The event's creator or an admin; counts only |
 | Mark a photo "this is me" / "not me" in a registration album; undo one named transition | The registration's athlete, or their representative (#315); idempotent writes; an undo names its transition and is refused once it is no longer the latest or the window has passed |
 | Start/resume/finalize/cancel a photo upload and read its status | Event manager of the writable destination; capability/root checks, bounded job |
 | Hide/remove or explicitly restore an indexed album/photo | Event manager/admin/owner; persistent publication decision, never deletes provider original |
