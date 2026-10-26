@@ -139,7 +139,7 @@ are recorded here; the rest changed only the plan.
   window; team-mates sharing a bib keep their own marks, and event search drops a photo only when
   every holder of the bib said "not me". Bib assignments get their own append-only history, since
   the generic audit log keeps only changed field names.
-- Thumbnails: stored outside `MEDIA_ROOT` (served unchecked by `serve_media`), served by a
+- Thumbnails: stored where `serve_media` (which serves `MEDIA_ROOT` unchecked) cannot reach them, served by a
   permission-checked view with private caching, named by internal IDs plus source digest and
   regenerated when it changes; originals over 20 MB without a preview are flagged to the organizer.
 - Portable album UUIDs are unique on the site; `sha256` is never a provider's own hash.
