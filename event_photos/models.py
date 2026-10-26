@@ -172,3 +172,16 @@ class PhotoDecisionEvent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.from_state or '-'} -> {self.to_state}"
+
+
+class StartListDiagnostics(models.Model):
+    """What the last start-list upload could not bind, for the event's organizer."""
+
+    competition = models.OneToOneField(
+        "calendar_app.Competition", on_delete=models.CASCADE, related_name="start_list_diagnostics"
+    )
+    warnings = models.JSONField(default=list)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{len(self.warnings)} warning(s)"
