@@ -1,0 +1,376 @@
+"""Event photos from an indexed Dropbox folder (issue #349): the index check, the import, the bibs a
+start list assigns, and the participants' own marks. No test reaches Dropbox: FakeAdapter stands in."""
+
+import datetime
+import hashlib
+import json
+import tempfile
+import uuid
+from datetime import timedelta
+from pathlib import Path
+from typing import ClassVar
+from unittest import mock
+
+from django.conf import settings
+from django.test import TestCase, override_settings
+from django.utils import timezone
+
+from calendar_app.models import Competition
+from event_photos import actions, bindings
+from event_photos import index as index_module
+from event_photos.models import ExternalAlbum, IndexedPhoto, IssuedBib, IssuedBibEvent, PhotoDecision
+from registrations.models import CompetitionRegistration
+
+EXAMPLE = Path(settings.BASE_DIR) / "specs" / "349-external-photo-albums" / "examples" / "photo-index.v1.json"
+FOLDER = "https://www.dropbox.com/scl/fo/abc123/DEF456?rlkey=k&st=s"
+MEDIA = tempfile.mkdtemp()
+
+
+class FakeAdapter:
+    files: ClassVar[dict[str, bytes]] = {}
+    thumbnails_served = 0
+
+    def read_file(self, folder_url, path):
+        from event_photos.dropbox import DropboxError
+
+        if path not in self.files:
+            raise DropboxError("not-found")
+        return self.files[path]
+
+    def thumbnail(self, folder_url, path):
+        FakeAdapter.thumbnails_served += 1
+        return b"jpeg:" + path.encode()
+
+
+def _sha(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def _photo(n: int, bibs=(), *, content="v1", state="processed"):
+    original = _sha(f"photo-{n}-{content}")
+    return {
+        "id": str(uuid.UUID(int=n + 1)),
+        "original": {"path": f"IMG_{n:04d}.jpg", "sha256": original, "bytes": 1000 + n, "media_type": "image/jpeg"},
+        "processing_state": state,
+        "bibs": [
+            {"value": b, "state": s, "method": m, **({"content_sha256": original} if m == "manual" else {})}
+            for b, s, m in bibs
+        ],
+    }
+
+
+ALBUM = uuid.UUID(int=999)
+
+
+def _index(photos, *, revision=1, album=ALBUM, removed=(), complete=True) -> bytes:
+    return json.dumps(
+        {
+            "schema_version": 1,
+            "album_id": str(album),
+            "revision": revision,
+            "generated_at": "2026-10-26T00:00:00Z",
+            "producer": {"name": "test", "version": "0"},
+            "bib_normalization": "trim-nfc-exact-v1",
+            "processing": {"inventory_complete": complete, "complete": complete, "total": len(photos), "processed": 0},
+            "photos": photos,
+            "removed_photo_ids": [str(uuid.UUID(int=n + 1)) for n in removed],
+        }
+    ).encode()
+
+
+class IndexCheckTests(TestCase):
+    def _parse(self, raw):
+        return index_module.parse(raw, hashlib.sha256(raw).hexdigest())
+
+    def test_the_specification_example_passes(self):
+        parsed = self._parse(EXAMPLE.read_bytes())
+        self.assertEqual(parsed.photos[0].bibs[0].value, "00120")  # leading zeroes kept
+
+    def test_a_bib_is_trimmed_but_otherwise_kept_as_written(self):
+        parsed = self._parse(_index([_photo(1, [(" 07A ", "accepted", "ocr")])]))
+        self.assertEqual(parsed.photos[0].bibs[0].value, "07A")
+
+    def test_a_manual_mark_must_name_the_bytes_it_was_made_on(self):
+        photo = _photo(1, [("12", "accepted", "manual")])
+        photo["bibs"][0]["content_sha256"] = "0" * 64
+        with self.assertRaisesRegex(index_module.IndexValidationError, "content_sha256"):
+            self._parse(_index([photo]))
+
+    def test_an_appearance_match_cannot_be_accepted_by_the_producer(self):
+        with self.assertRaisesRegex(index_module.IndexValidationError, "always a candidate"):
+            self._parse(_index([_photo(1, [("12", "accepted", "appearance")])]))
+
+    def test_paths_that_leave_the_folder_are_refused(self):
+        for bad in ("../x.jpg", "/abs.jpg", "a//b.jpg", "https://evil/x.jpg", "a\\b.jpg"):
+            photo = _photo(1)
+            photo["original"]["path"] = bad
+            with self.subTest(bad), self.assertRaisesRegex(index_module.IndexValidationError, "original.path"):
+                self._parse(_index([photo]))
+
+    def test_a_provider_hash_is_not_a_sha256(self):
+        photo = _photo(1)
+        photo["original"]["sha256"] = "ABC"
+        with self.assertRaisesRegex(index_module.IndexValidationError, "SHA-256"):
+            self._parse(_index([photo]))
+
+    @override_settings(PHOTO_INDEX_MAX_PHOTOS=2)
+    def test_too_many_photos_names_the_limit(self):
+        with self.assertRaisesRegex(index_module.IndexValidationError, "more than 2 photos"):
+            self._parse(_index([_photo(n) for n in range(3)]))
+
+    def test_a_successor_must_keep_or_tombstone_every_live_photo(self):
+        live = {uuid.UUID(int=n + 1) for n in range(100)}
+        partial = self._parse(_index([_photo(n) for n in range(50)], revision=2, complete=False))
+        with self.assertRaisesRegex(index_module.IndexValidationError, "50 photo"):
+            index_module.check_successor(partial, revision=1, sha256="x", live=live)
+        tombstoned = self._parse(_index([_photo(n) for n in range(50)], revision=2, removed=range(50, 100)))
+        self.assertTrue(index_module.check_successor(tombstoned, revision=1, sha256="x", live=live))
+
+    def test_revisions_only_move_forward(self):
+        parsed = self._parse(_index([_photo(1)], revision=3))
+        with self.assertRaisesRegex(index_module.IndexValidationError, "older"):
+            index_module.check_successor(parsed, revision=4, sha256="x", live=set())
+        self.assertFalse(index_module.check_successor(parsed, revision=3, sha256=parsed.sha256, live=set()))
+        with self.assertRaisesRegex(index_module.IndexValidationError, "different index"):
+            index_module.check_successor(parsed, revision=3, sha256="other", live=set())
+
+
+@override_settings(EVENT_PHOTOS_ADAPTER="tests.test_event_photos.FakeAdapter", MEDIA_ROOT=MEDIA)
+class EventPhotosTestCase(TestCase):
+    def setUp(self):
+        FakeAdapter.files = {}
+        FakeAdapter.thumbnails_served = 0
+        self.race = Competition.objects.create(
+            title_ru="Alatau XCO", date_start=datetime.date(2026, 10, 11), status=Competition.Status.APPROVED
+        )
+        self.album = ExternalAlbum.objects.create(competition=self.race, folder_url=FOLDER, title="Folder A")
+
+    def _publish(self, raw, album=None):
+        FakeAdapter.files[actions.INDEX_FILE] = raw
+        return actions.import_album(album or self.album, None)
+
+    def _registration(self, last="Ivanov"):
+        return CompetitionRegistration.objects.create(
+            competition=self.race, first_name="Ivan", last_name=last, birth_date=datetime.date(1990, 1, 1), gender="M"
+        )
+
+    def _bib(self, registration, bib):
+        return IssuedBib.objects.create(competition=self.race, registration=registration, bib=bib)
+
+
+class ImportTests(EventPhotosTestCase):
+    def test_an_import_publishes_the_photos_and_their_bibs(self):
+        self.assertTrue(self._publish(_index([_photo(1, [("12", "accepted", "ocr")]), _photo(2)])))
+        self.album.refresh_from_db()
+        self.assertEqual((self.album.photo_count, self.album.revision, self.album.last_error), (2, 1, ""))
+        self.assertEqual(IndexedPhoto.objects.get(photo_uuid=uuid.UUID(int=2)).bibs.get().value, "12")
+
+    def test_the_same_snapshot_twice_changes_nothing(self):
+        raw = _index([_photo(1)])
+        self._publish(raw)
+        self.assertFalse(self._publish(raw))
+
+    def test_an_incomplete_index_never_takes_photos_away(self):
+        self._publish(_index([_photo(n) for n in range(100)]))
+        with self.assertRaises(actions.ImportFailedError):
+            self._publish(_index([_photo(n) for n in range(50)], revision=2, complete=False))
+        self.album.refresh_from_db()
+        self.assertEqual(IndexedPhoto.objects.filter(album=self.album, in_index=True).count(), 100)
+        self.assertIn("missing without being listed", self.album.last_error)
+
+    def test_a_removed_photo_keeps_its_marks_and_comes_back_with_them(self):
+        reg = self._registration()
+        self._publish(_index([_photo(1), _photo(2)]))
+        photo = IndexedPhoto.objects.get(photo_uuid=uuid.UUID(int=3))  # _photo(2)
+        actions.decide(reg, photo, PhotoDecision.State.ME, None)
+        self._publish(_index([_photo(1)], revision=2, removed=[2]))
+        photo.refresh_from_db()
+        self.assertFalse(photo.in_index)
+        self._publish(_index([_photo(1), _photo(2)], revision=3))
+        photo.refresh_from_db()
+        self.assertTrue(photo.in_index)
+        self.assertEqual(PhotoDecision.objects.get(photo=photo).state, PhotoDecision.State.ME)
+
+    def test_an_older_index_arriving_late_does_not_roll_the_album_back(self):
+        newer, older = _index([_photo(1), _photo(2)], revision=3), _index([_photo(1)], revision=2)
+        self._publish(newer)
+        with self.assertRaises(actions.ImportFailedError):
+            self._publish(older)
+        self.album.refresh_from_db()
+        self.assertEqual((self.album.revision, self.album.photo_count), (3, 2))
+
+    def test_another_folder_cannot_take_over_a_connected_album(self):
+        self._publish(_index([_photo(1)]))
+        copy = ExternalAlbum.objects.create(competition=self.race, folder_url=FOLDER + "x", title="Copy")
+        with self.assertRaisesRegex(actions.ImportFailedError, "already connected"):
+            self._publish(_index([_photo(1)]), album=copy)
+
+    def test_a_missing_index_is_reported_and_keeps_the_last_publication(self):
+        self._publish(_index([_photo(1)]))
+        FakeAdapter.files = {}
+        with self.assertRaises(actions.ImportFailedError):
+            actions.import_album(self.album, None)
+        self.assertEqual(IndexedPhoto.objects.filter(album=self.album).count(), 1)
+
+
+class ThumbnailTests(EventPhotosTestCase):
+    def test_a_thumbnail_is_fetched_once_and_kept_where_media_does_not_serve_it(self):
+        self._publish(_index([_photo(1)]))
+        photo = IndexedPhoto.objects.get()
+        path = actions.thumbnail_path(photo)
+        photo.refresh_from_db()
+        actions.thumbnail_path(photo)
+        self.assertEqual(FakeAdapter.thumbnails_served, 1)
+        self.assertIn("/private/", str(path))
+        relative = path.relative_to(MEDIA)
+        self.assertEqual(self.client.get(f"/media/{relative}").status_code, 404)
+        self.assertEqual(self.client.get(f"/media/x/../{relative}").status_code, 404)
+
+    def test_new_bytes_make_a_new_thumbnail(self):
+        self._publish(_index([_photo(1)]))
+        old = actions.thumbnail_path(IndexedPhoto.objects.get())
+        with self.captureOnCommitCallbacks(execute=True):
+            self._publish(_index([_photo(1, content="v2")], revision=2))
+        photo = IndexedPhoto.objects.get()
+        self.assertEqual(photo.thumb_file, "")
+        self.assertFalse(old.exists())
+        self.assertNotEqual(actions.thumbnail_path(photo), old)
+
+
+class StartLineTests(TestCase):
+    def test_lines_are_read_as_the_contract_says(self):
+        cases = {
+            "120#Ivanov#M40#3#1#1984#T#C##0 00:00:00.000#": ((("120",), (), False)),
+            "120#Ivanov#M40#3#1#1984#T#C##0 00:00:00.000#r1234#": ((("120",), (1234,), True)),
+            "120#Ivanov#M40#3#1#1984#T#C##0 00:00:00.000##": ((("120",), (), True)),
+            "15#Kim / Lee#Relay#3#1#1990#T#C##0 00:00:00.000#r21,r17,x9,r21#": ((("15",), (21, 17), True)),
+            "12#Team#Relay#3#3#1990#T#C##0 00:00:00.000#r5#": ((("12", "13", "14"), (5,), True)),
+            "NOT_PAID#Ivanov#M40#3#1#1984#T#C##0 00:00:00.000#r9#": (((), (9,), True)),
+        }
+        for line, (bibs, refs, present) in cases.items():
+            parsed, _ = bindings.parse_line(line, max_stages=20)
+            self.assertEqual((parsed.bibs, parsed.refs, parsed.refs_present), (bibs, refs, present), line)
+
+    def test_a_huge_stage_count_is_not_expanded(self):
+        parsed, warning = bindings.parse_line("120#X#G#1#1000000000#1#T#C##0#r1#", max_stages=20)
+        self.assertEqual(parsed.bibs, ("120",))
+        self.assertIn("over the limit", warning)
+
+    def test_conflicts_review_and_unlinking(self):
+        uploads = [
+            ("a", 1, ["1#A#G#1#1#1#T#C##0#r1#", "2#B#G#1#1#1#T#C##0#r2#", "3#C#G#1#1#1#T#C##0#r3#"]),
+            ("b", 1, ["4#A#G#1#1#1#T#C##0#r1#", "5#D#G#1#1#1#T#C##0#", "6#E#G#1#1#1#T#C##0##"]),
+        ]
+        previous = {(5, "5"): "active", (6, "6"): "active"}
+        result = bindings.compute(uploads, {1, 2, 3, 5, 6}, previous)
+        self.assertEqual(result.assignments[(1, "1")][0], "conflict")  # one registration, two bibs
+        self.assertEqual(result.assignments[(2, "2")][0], "active")
+        self.assertEqual(result.assignments[(5, "5")][0], "review")  # an old program dropped the field
+        self.assertNotIn((6, "6"), result.assignments)  # the referee unlinked it
+
+
+class StartListUploadTests(EventPhotosTestCase):
+    def test_an_upload_assigns_bibs_and_keeps_their_history(self):
+        reg = self._registration()
+        body = {
+            "competition_token": str(self.race.upload_token),
+            "device_id": "dev",
+            "items": [f"120#Ivanov#M40#3#1#1990#T#C##0 00:00:00.000#r{reg.pk}#", "121#Hand#M40#3#1#1990#T#C##0#"],
+            "client_revision": 1,
+        }
+        response = self.client.post("/api/v1/start-list/", body, content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            list(IssuedBib.objects.values_list("registration_id", "bib", "state")), [(reg.pk, "120", "active")]
+        )
+        body.update(items=["120#Ivanov#M40#3#1#1990#T#C##0 00:00:00.000##"], client_revision=2)
+        self.client.post("/api/v1/start-list/", body, content_type="application/json")
+        self.assertFalse(IssuedBib.objects.exists())
+        self.assertEqual(
+            list(IssuedBibEvent.objects.order_by("pk").values_list("change", flat=True)), ["assigned", "withdrawn"]
+        )
+
+
+class MatchTests(EventPhotosTestCase):
+    def setUp(self):
+        super().setUp()
+        self._publish(
+            _index(
+                [
+                    _photo(1, [("12", "accepted", "ocr")]),
+                    _photo(2, [("12", "candidate", "appearance")]),
+                    _photo(3, [("99", "accepted", "ocr")]),
+                    _photo(4),
+                ]
+            )
+        )
+        self.photos = {p.photo_uuid.int - 1: p for p in IndexedPhoto.objects.all()}
+
+    def test_a_registration_album_holds_its_matches_and_its_own_marks(self):
+        reg = self._registration()
+        self._bib(reg, "12")
+        actions.decide(reg, self.photos[4], PhotoDecision.State.ME, None)
+        actions.decide(reg, self.photos[2], PhotoDecision.State.NOT_ME, None)
+        shown = {p.photo_uuid.int - 1: p.confirmed for p in actions.registration_photos(reg)}
+        self.assertEqual(shown, {1: True, 4: True})
+
+    def test_a_team_mates_not_me_does_not_hide_the_photo_from_the_bib_search(self):
+        first, second = self._registration("A"), self._registration("B")
+        self._bib(first, "12")
+        self._bib(second, "12")
+        actions.decide(first, self.photos[1], PhotoDecision.State.NOT_ME, None)
+        self.assertEqual([p.photo_uuid.int - 1 for p in actions.bib_photos(self.race, "12")], [1])
+        self.assertEqual([p.photo_uuid.int - 1 for p in actions.registration_photos(second)], [1, 2])
+        actions.decide(second, self.photos[1], PhotoDecision.State.NOT_ME, None)
+        self.assertEqual(list(actions.bib_photos(self.race, "12")), [])
+
+    def test_a_bib_in_conflict_gives_nobody_photos(self):
+        reg = self._registration()
+        IssuedBib.objects.create(competition=self.race, registration=reg, bib="12", state=IssuedBib.State.CONFLICT)
+        self.assertEqual(list(actions.registration_photos(reg)), [])
+
+
+class DecisionTests(EventPhotosTestCase):
+    def setUp(self):
+        super().setUp()
+        self._publish(_index([_photo(1)]))
+        self.photo = IndexedPhoto.objects.get()
+        self.reg = self._registration()
+
+    def _state(self):
+        return PhotoDecision.objects.get(registration=self.reg, photo=self.photo).state
+
+    def test_me_then_not_me_then_undo_brings_the_check_back(self):
+        actions.decide(self.reg, self.photo, "me", None)
+        event = actions.decide(self.reg, self.photo, "not_me", None)
+        actions.undo(self.reg, event.pk, None)
+        self.assertEqual(self._state(), "me")
+
+    def test_undo_of_a_first_cross_leaves_no_mark(self):
+        event = actions.decide(self.reg, self.photo, "not_me", None)
+        actions.undo(self.reg, event.pk, None)
+        self.assertEqual(self._state(), "")
+
+    def test_a_cross_is_final_and_repeating_it_changes_nothing(self):
+        actions.decide(self.reg, self.photo, "not_me", None)
+        self.assertIsNone(actions.decide(self.reg, self.photo, "not_me", None))
+        with self.assertRaises(actions.DecisionRefusedError):
+            actions.decide(self.reg, self.photo, "me", None)
+
+    def test_a_late_or_repeated_undo_is_refused(self):
+        event = actions.decide(self.reg, self.photo, "not_me", None)
+        later = timezone.now() + timedelta(seconds=settings.PHOTO_DECISION_UNDO_SECONDS + 1)
+        with (
+            mock.patch("django.utils.timezone.now", return_value=later),
+            self.assertRaises(actions.DecisionRefusedError),
+        ):
+            actions.undo(self.reg, event.pk, None)
+        actions.undo(self.reg, event.pk, None)
+        with self.assertRaises(actions.DecisionRefusedError):
+            actions.undo(self.reg, event.pk, None)
+
+    def test_an_undo_cannot_revert_an_older_change(self):
+        first = actions.decide(self.reg, self.photo, "me", None)
+        actions.decide(self.reg, self.photo, "not_me", None)
+        with self.assertRaisesRegex(actions.DecisionRefusedError, "newer"):
+            actions.undo(self.reg, first.pk, None)

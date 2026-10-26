@@ -75,8 +75,16 @@ def serve_media(request, path):
     per request so tests can override it. This routes every media hit through a worker --
     acceptable for this low-traffic site; a web server/CDN would be preferable at scale.
     """
+    import posixpath
+
+    from django.http import Http404
     from django.views.static import serve as django_serve
 
+    # Files whose visibility depends on who asks (event photo thumbnails) live under this prefix and
+    # are served by their own views; a direct /media/ address must not bypass those checks. The path
+    # is normalized first, so `a/../private/x` cannot slip past.
+    if (posixpath.normpath(path).lstrip("/") + "/").startswith(settings.PRIVATE_MEDIA_PREFIX):
+        raise Http404
     return django_serve(request, path, document_root=settings.MEDIA_ROOT)
 
 

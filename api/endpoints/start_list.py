@@ -6,6 +6,7 @@ Both authenticate with the competition's `upload_token` (the same token the prot
 endpoint uses), so the endpoints are unauthenticated otherwise.
 """
 
+import logging
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
@@ -15,9 +16,11 @@ from ninja.errors import HttpError
 from pydantic import Field
 
 from calendar_app.models import Competition
+from event_photos.bindings import recompute as recompute_bindings
 from protocols.models import StartListUpload
 
 router = Router(tags=["start-list"])
+logger = logging.getLogger(__name__)
 
 _MAX_ITEMS = 20000
 _MAX_ITEM_LEN = 2000
@@ -74,6 +77,11 @@ def _competition_by_token(token: str) -> Competition:
         )
     except (Competition.DoesNotExist, ValidationError):
         raise HttpError(401, "Invalid competition_token") from None
+
+
+def _record_bindings(competition) -> None:
+    for warning in recompute_bindings(competition):
+        logger.info("start list %s: %s", competition.pk, warning)
 
 
 @router.post("/", response=StartListUploadOut, auth=None, summary="Upload a device's start list")
@@ -141,6 +149,9 @@ def upload_start_list(request, payload: StartListIn):
             StartListUpload.objects.create(
                 competition=competition, device_id=device_id, items=items, client_revision=revision
             )
+        # Which registration got which bib (the lines' trailing r<id> field), for event photos.
+        # Same transaction and lock, so the bindings never disagree with the stored lists.
+        _record_bindings(competition)
     return {"device_id": device_id, "count": len(items), "client_revision": revision}
 
 

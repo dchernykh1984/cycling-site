@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "protocols",
     "registrations",
     "gallery",
+    "event_photos",
     "trainer",
     "modeltranslation",  # before apps it will translate and before django.contrib.admin
     "wagtail_localize",  # before wagtail.admin
@@ -374,6 +375,24 @@ GALLERY_MAX_BATCH_MB = env.int("GALLERY_MAX_BATCH_MB", default=90)
 # Free space the gallery always leaves on the media disk, which posters, news pictures and protocols
 # share with it: an upload that would cut into it is refused.
 GALLERY_DISK_RESERVE_MB = env.int("GALLERY_DISK_RESERVE_MB", default=200)
+
+# Event photos in external folders (issue #349). The site reads a Dropbox folder shared "anyone with
+# the link" with its own app's key and secret -- never an organizer's token.
+DROPBOX_APP_KEY = env("DROPBOX_APP_KEY", default="")
+DROPBOX_APP_SECRET = env("DROPBOX_APP_SECRET", default="")
+# What reads the folders; tests swap in a fake so they never reach Dropbox.
+EVENT_PHOTOS_ADAPTER = "event_photos.dropbox.DropboxAdapter"
+# Bounds on an imported photo-index.v1.json; an import over them is refused with the limit named.
+PHOTO_INDEX_MAX_BYTES = env.int("PHOTO_INDEX_MAX_BYTES", default=5_000_000)
+PHOTO_INDEX_MAX_PHOTOS = env.int("PHOTO_INDEX_MAX_PHOTOS", default=5000)
+PHOTO_INDEX_MAX_BIBS_PER_PHOTO = env.int("PHOTO_INDEX_MAX_BIBS_PER_PHOTO", default=20)
+# Thumbnails the site keeps live under MEDIA_ROOT/private/ (on the persistent disk), which serve_media
+# refuses: only event_photos' own view, which checks the album's rights, hands them out.
+PRIVATE_MEDIA_PREFIX = "private/"
+# How long a "not me" may still be undone.
+PHOTO_DECISION_UNDO_SECONDS = env.int("PHOTO_DECISION_UNDO_SECONDS", default=10)
+# A start-list line with this many stages or more is not expanded into stage bibs.
+START_LIST_MAX_STAGES = env.int("START_LIST_MAX_STAGES", default=20)
 
 # Search Console and Yandex Webmaster prove that whoever adds the site controls it. Their "HTML tag"
 # method reads a meta tag from the home page; the value is the content attribute each console shows.
