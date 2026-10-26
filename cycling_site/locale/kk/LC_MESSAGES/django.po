@@ -3783,3 +3783,150 @@ msgstr "Қатысушылар белгілеуі жаңартылды."
 
 msgid "Nothing new in the index."
 msgstr "Индексте жаңа ештеңе жоқ."
+
+msgid "Bib not received yet"
+msgstr "Нөмір әлі алынбаған"
+
+msgid "Bib in dispute"
+msgstr "Нөмір даулы"
+
+msgid "How to prepare a photo album for the site"
+msgstr "Сайтқа фотоальбомды қалай дайындау керек"
+
+msgid ""
+"The site shows photos from a Dropbox folder shared as 'Anyone with the link "
+"can view'. The photos lie at the top of the folder, next to a file photo-"
+"index.v1.json that says which bibs are on which photo."
+msgstr ""
+"Сайт «Сілтемесі бар кез келген адам көре алады» рұқсаты бар Dropbox "
+"қалтасындағы фотоларды көрсетеді. Фотолар қалтаның түбірінде, қай фотода қай"
+" нөмір бар екенін жазатын photo-index.v1.json файлының жанында жатады."
+
+msgid "Steps"
+msgstr "Қадамдар"
+
+#, python-format
+msgid ""
+"Download <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo "
+"Indexer</a> for your computer and open the album folder in it."
+msgstr ""
+"Компьютеріңізге <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport"
+" Photo Indexer</a> бағдарламасын жүктеп алып, онда альбом қалтасын ашыңыз."
+
+msgid ""
+"Type the bibs on each photo and press Enter: the index is saved after every "
+"photo, so you can stop and come back."
+msgstr ""
+"Әр фотодағы нөмірлерді теріп, Enter басыңыз: индекс әр фотодан кейін "
+"сақталады, тоқтап, кейін жалғастыруға болады."
+
+msgid ""
+"In Dropbox, share the folder: 'Anyone with the link can view', and copy the "
+"link."
+msgstr ""
+"Dropbox-та қалтаға «Сілтемесі бар кез келген адам көре алады» рұқсатын "
+"беріп, сілтемені көшіріңіз."
+
+msgid ""
+"On the event page open 'Manage event photos', paste the link and press 'Add "
+"and import'."
+msgstr ""
+"Іс-шара бетінде «Іс-шара фотоларын басқару» бөлімін ашып, сілтемені қойып, "
+"«Қосу және импорттау» батырмасын басыңыз."
+
+msgid ""
+"After indexing more photos, press 'Refresh participants' tagging' there."
+msgstr ""
+"Тағы фото индекстегеннен кейін сол жерде «Қатысушылар белгілеуін жаңарту» "
+"батырмасын басыңыз."
+
+msgid "Limits"
+msgstr "Шектеулер"
+
+#, python-format
+msgid ""
+"One album: at most %(max_photos)s photos, %(max_bibs)s bibs on a photo, and "
+"an index file of at most %(max_mb)s MB."
+msgstr ""
+"Бір альбом: ең көбі %(max_photos)s фото, бір фотода %(max_bibs)s нөмір және "
+"индекс файлы ең көбі %(max_mb)s МБ."
+
+msgid ""
+"Only the photos at the top of the folder are shown; subfolders are not read."
+msgstr "Тек қалта түбіріндегі фотолар көрсетіледі; ішкі қалталар оқылмайды."
+
+msgid ""
+"Dropbox cannot make a thumbnail of a photo over 20 MB; the indexer makes a "
+"small preview for such photos."
+msgstr ""
+"Dropbox 20 МБ-тан үлкен фотоның шағын нұсқасын жасамайды; индекстеуші мұндай"
+" фотоларға шағын превью жасайды."
+
+msgid ""
+"Dropbox limits the traffic of shared links (1 TB a day on paid plans, 20 GB "
+"on Basic). Over it, all the owner's shared links pause for a day."
+msgstr ""
+"Dropbox ортақ сілтемелер трафигін шектейді (ақылы тарифтерде тәулігіне 1 ТБ,"
+" Basic-те 20 ГБ). Асып кетсе, иесінің барлық ортақ сілтемелері бір тәулікке "
+"тоқтатылады."
+
+msgid "If something goes wrong"
+msgstr "Бірдеңе дұрыс болмаса"
+
+msgid ""
+"When an import fails, the event's photo page names the field of the index "
+"and what is wrong with it, and the last good version stays on the site. Fix "
+"it in the indexer and refresh."
+msgstr ""
+"Импорт сәтсіз болса, іс-шара фотолары беті индекстің қай өрісі және оның не "
+"қатесі бар екенін атайды, ал сайтта соңғы дұрыс нұсқа қалады. Индекстеушіде "
+"түзетіп, жаңартыңыз."
+
+msgid "Example index file"
+msgstr "Индекс файлының үлгісі"
+
+#, python-format
+msgid ""
+"Participants' marks: %(confirmed)s confirmed, %(rejected)s rejected, "
+"%(unchecked)s photos not checked yet."
+msgstr ""
+"Қатысушылардың белгілері: %(confirmed)s расталды, %(rejected)s қабылданбады,"
+" әлі тексерілмеген фото: %(unchecked)s."
+
+#, python-format
+msgid ""
+"Photos over 20 MB without a preview, which Dropbox cannot make thumbnails "
+"of: %(counter)s."
+msgstr ""
+"Dropbox шағын нұсқасын жасай алмайтын, превьюсыз 20 МБ-тан үлкен фото: "
+"%(counter)s."
+
+msgid ""
+"Run the indexer on the folder (it makes previews for such photos), then "
+"refresh."
+msgstr ""
+"Қалтада индекстеушіні іске қосыңыз (ол мұндай фотоларға превью жасайды), "
+"содан кейін жаңартыңыз."
+
+msgid "Start list: what could not be matched"
+msgstr "Старт хаттамасы: нені сәйкестендіру мүмкін болмады"
+
+msgid "Fix these in StartProtocolMaker and send the start list again."
+msgstr "Мұны StartProtocolMaker-де түзетіп, старт хаттамасын қайта жіберіңіз."
+
+#, python-format
+msgid ""
+"One album: at most %(max_photos)s photos and an index file of at most "
+"%(max_mb)s MB; photos at the top of a Dropbox folder shared by link."
+msgstr ""
+"Бір альбом: ең көбі %(max_photos)s фото және индекс файлы ең көбі %(max_mb)s"
+" МБ; фотолар сілтеме арқылы ашылған Dropbox қалтасының түбірінде."
+
+msgid ""
+"The start lists give this registration more than one bib, or give its bib to"
+" someone else. The organizer is sorting it out; meanwhile, search the "
+"event's photos by bib."
+msgstr ""
+"Старт хаттамалары бойынша бұл өтінімде бірнеше нөмір бар немесе оның нөмірі "
+"басқа біреуде. Ұйымдастырушы анықтап жатыр; әзірше іс-шара фотоларын нөмір "
+"бойынша іздеңіз."
