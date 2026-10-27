@@ -135,66 +135,88 @@
 
 (function () {
     // Two downloads at a time, only near the viewport. Leave web threads free for people's marks.
-    var queue = [], active = 0;
+    // A 503 means the server is busy with other people's previews: wait longer each time, with a
+    // random spread so waiting pages do not come back together, and keep the card's place.
+    var MAX_RETRIES = 12;
+    var queue = [], active = 0, observer = null;
     function pump() {
         while (active < 2 && queue.length) {
             load(queue.shift());
         }
     }
+    function frameOf(image) {
+        return image.closest('[data-photo-preview]');
+    }
+    function unavailable(image) {
+        var frame = frameOf(image);
+        frame.querySelector('[data-photo-placeholder]').hidden = true;
+        frame.querySelector('[data-photo-unavailable]').hidden = false;
+    }
+    function enqueue(image) {
+        if (observer) {
+            observer.observe(frameOf(image));  // queued again when it is, or comes back, into view
+        } else {
+            queue.push(image);
+            pump();
+        }
+    }
+    function retry(image, seconds) {
+        image.retries = (image.retries || 0) + 1;
+        if (image.retries > MAX_RETRIES) {
+            unavailable(image);
+            return;
+        }
+        var delay = Math.min(seconds * Math.pow(2, image.retries - 1), 30) * (0.5 + Math.random());
+        setTimeout(function () { enqueue(image); }, delay * 1000);
+    }
     function load(image) {
         active += 1;
-        var frame = image.closest('[data-photo-preview]');
         var controller = new AbortController();
         var timer = setTimeout(function () { controller.abort(); }, 10000);
         fetch(image.dataset.photoSrc, {signal: controller.signal}).then(function (response) {
+            if (response.status === 503) {
+                retry(image, Math.min(Number(response.headers.get('Retry-After')) || 2, 60));
+                return null;
+            }
             if (!response.ok) {
-                if (response.status === 503 && (image.retries || 0) < 2) {
-                    image.retries = (image.retries || 0) + 1;
-                    var delay = Math.min(Number(response.headers.get('Retry-After')) || 2, 60);
-                    setTimeout(function () { queue.push(image); pump(); }, delay * 1000);
-                    return null;
-                }
                 throw new Error('preview unavailable');
             }
             return response.blob();
+        }, function () {
+            // Timed out or the connection dropped: the server may still finish and keep the preview.
+            retry(image, 2);
+            return null;
         }).then(function (blob) {
             if (!blob) return;
             var url = URL.createObjectURL(blob);
             image.onload = function () {
                 URL.revokeObjectURL(url);
                 image.hidden = false;
-                frame.querySelector('[data-photo-placeholder]').hidden = true;
+                frameOf(image).querySelector('[data-photo-placeholder]').hidden = true;
             };
-            image.onerror = function () { URL.revokeObjectURL(url); unavailable(); };
+            image.onerror = function () { URL.revokeObjectURL(url); unavailable(image); };
             image.src = url;
-        }).catch(unavailable).finally(function () {
+        }).catch(function () { unavailable(image); }).finally(function () {
             clearTimeout(timer);
             active -= 1;
             pump();
         });
-        function unavailable() {
-            frame.querySelector('[data-photo-placeholder]').hidden = true;
-            frame.querySelector('[data-photo-unavailable]').hidden = false;
-        }
     }
     var images = document.querySelectorAll('img[data-photo-src]');
     if (!images.length) return;
     images.forEach(function (image) {
-        var placeholder = image.closest('[data-photo-preview]').querySelector('[data-photo-placeholder]');
+        var placeholder = frameOf(image).querySelector('[data-photo-placeholder]');
         placeholder.textContent = placeholder.dataset.loadingLabel;
     });
-    if (!('IntersectionObserver' in window)) {
-        images.forEach(function (image) { queue.push(image); });
-        pump();
-        return;
+    if ('IntersectionObserver' in window) {
+        observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                observer.unobserve(entry.target);
+                queue.push(entry.target.querySelector('img[data-photo-src]'));
+            });
+            pump();
+        }, {rootMargin: '200px'});
     }
-    var observer = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-            if (!entry.isIntersecting) return;
-            observer.unobserve(entry.target);
-            queue.push(entry.target.querySelector('img[data-photo-src]'));
-        });
-        pump();
-    }, {rootMargin: '200px'});
-    images.forEach(function (image) { observer.observe(image.closest('[data-photo-preview]')); });
+    images.forEach(enqueue);
 }());
