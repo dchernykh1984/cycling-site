@@ -3940,3 +3940,12 @@ msgid ""
 msgstr ""
 "Привязка номера восстановлена из старого стартового списка. Организатору "
 "нужно её проверить."
+
+msgid "Loading preview..."
+msgstr "Загрузка превью…"
+
+msgid "Open the original photo"
+msgstr "Открыть исходное фото"
+
+msgid "Preview unavailable. Open the original photo."
+msgstr "Превью недоступно. Откройте исходное фото."

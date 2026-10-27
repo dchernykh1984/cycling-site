@@ -1,0 +1,6 @@
+{% load i18n %}
+<span class="event-photo-preview" data-photo-preview>
+  <span class="event-photo-placeholder" data-photo-placeholder data-loading-label="{% trans 'Loading preview...' %}">{% trans "Open the original photo" %}</span>
+  <img data-photo-src="{{ thumbnail_url }}" alt="" width="256" height="171" hidden decoding="async">
+  <span data-photo-unavailable hidden>{% trans "Preview unavailable. Open the original photo." %}</span>
+</span>

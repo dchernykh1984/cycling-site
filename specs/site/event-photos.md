@@ -73,6 +73,9 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 - **FR-EVP-007**: The organizer page shows participants' marks per album and per bib method.
 - **FR-EVP-008**: Every page operation has an `/api/v1/event-photos/` counterpart with the same rules.
 
+- **FR-EVP-010**: Thumbnails preserve the entire frame, including portraits and on hover. Their
+  captions sit below the image. Image alternatives do not duplicate adjacent link captions;
+  unavailable previews show a translated fallback while the original link remains usable.
 - **FR-EVP-011**: The browser requests at most two nearby previews concurrently, with at most two
   retries for a temporary 503. Each web process allows at most two concurrent storage thumbnail
   downloads and uses four Gunicorn threads so marks need not wait for them. Cached thumbnails

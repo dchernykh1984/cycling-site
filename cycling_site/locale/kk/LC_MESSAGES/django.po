@@ -3940,3 +3940,12 @@ msgid ""
 msgstr ""
 "Нөмір байланысы ескі старттық тізімнен қалпына келтірілді. Ұйымдастырушы оны"
 " тексеруі керек."
+
+msgid "Loading preview..."
+msgstr "Алдын ала көрініс жүктелуде…"
+
+msgid "Open the original photo"
+msgstr "Түпнұсқа фотосуретті ашу"
+
+msgid "Preview unavailable. Open the original photo."
+msgstr "Алдын ала көрініс қолжетімсіз. Түпнұсқа фотосуретті ашыңыз."
