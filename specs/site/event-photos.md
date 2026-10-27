@@ -6,12 +6,12 @@ uses that preview for thumbnails and keeps the original storage link for downloa
 it never decodes camera formats or rewrites originals.
 
 **Status**: Baseline -- describes the first slice of issue #349 as built
-**Verified against**: branch `349-external-photo-albums` on 2026-10-26
+**Verified against**: branch `fix/event-photo-gallery` on 2026-10-27
 **Code**: `event_photos/` (models, index, dropbox, bindings, actions, permissions, forms, views,
 templates, template tags), `api/endpoints/event_photos.py`, `api/endpoints/start_list.py` (bindings on
 upload), `cycling_site/urls.py` (`serve_media` refuses the private prefix),
 `calendar_app/templates/calendar_app/detail.html`, `accounts/templates/accounts/profile.html`
-**Tests**: `tests/test_event_photos.py`, `tests/test_input_length_limits.py`
+**Tests**: `tests/test_event_photos.py`, `tests/e2e/test_event_photos.py`, `tests/test_input_length_limits.py`
 **Related**: [gallery](gallery.md), [registrations](registrations.md), [protocols](protocols.md), [api](api.md);
 feature design in `specs/349-external-photo-albums/`
 
@@ -39,7 +39,8 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 
 ### Story 2 -- A reader finds photos by bib (P1)
 
-1. **Given** an event with albums, **Then** "All photo albums" lists them and a bib search shows the
+1. **Given** an event with albums, **Then** its single "Photos from the event" link opens an overview
+   with personal registration cards, photo sources and bib search. The search shows the
    photos with that accepted bib (or confirmed by a registration holding it), unless every
    registration holding the bib marked the photo "not me".
 2. Each thumbnail opens the photo in Dropbox in a new tab (Dropbox's `preview=` address, or the
@@ -48,7 +49,7 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 ### Story 3 -- A participant checks their album (P1)
 
 1. **Given** a member registered on the site whose start line carried their registration id, **Then**
-   the event page and the profile ("My race photos") link one album per registration.
+   the event photo overview and the profile ("My race photos") link one album per registration.
 2. The album shows confirmed photos first, then candidates marked "Check: is this you?".
 3. The athlete marks "This is me" or "Not me"; "Not me" removes the photo with a short undo; after
    that the cross is final. A check can become a cross.
@@ -72,7 +73,9 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
   is the latest and within `PHOTO_DECISION_UNDO_SECONDS`.
 - **FR-EVP-007**: The organizer page shows participants' marks per album and per bib method.
 - **FR-EVP-008**: Every page operation has an `/api/v1/event-photos/` counterpart with the same rules.
-
+- **FR-EVP-009**: Photo pages have a breadcrumb from Events to the actual event, its photo
+  overview, then the current source album, participant name or searched bib. The event title
+  always opens the event, never a different photo level.
 - **FR-EVP-010**: Thumbnails preserve the entire frame, including portraits and on hover. Their
   captions sit below the image. Image alternatives do not duplicate adjacent link captions;
   unavailable previews show a translated fallback while the original link remains usable.

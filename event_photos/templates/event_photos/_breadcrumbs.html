@@ -1,0 +1,13 @@
+{% load i18n %}
+<nav aria-label="{% trans 'Breadcrumb' %}" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'calendar_list' %}">{% trans "Events" %}</a></li>
+    <li class="breadcrumb-item"><a href="{{ competition.get_absolute_url }}">{{ competition.title }}</a></li>
+    {% if photo_page_title %}
+    <li class="breadcrumb-item"><a href="{% url 'event_photos:event' competition.pk %}">{% trans "Photos from the event" %}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ photo_page_title }}</li>
+    {% else %}
+    <li class="breadcrumb-item active" aria-current="page">{% trans "Photos from the event" %}</li>
+    {% endif %}
+  </ol>
+</nav>

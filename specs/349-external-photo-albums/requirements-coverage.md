@@ -55,7 +55,7 @@ pilots, event/cabinet navigation and specification-only scope).
 
 | ID | Discussed requirement | Normative coverage / acceptance |
 | --- | --- | --- |
-| C21 | Distinguish Photos with me from ordinary album links on the event page | FR-017/019; two explicit event actions, labelled indexed/external sources in journey contract |
+| C21 | Distinguish Photos with me from ordinary album links | FR-017/019; one event photo entry, personal cards and labelled sources within its overview (2026-10-27 revision) |
 | C22 | Cabinet uses gallery-style albums and the same per-event personal thumbnail view | FR-019; one virtual card per event, own-photo covers/counts, source album/photographer filter inside |
 | C23 | Keep additional materials for video/clips/documents; move photo sources without data loss | FR-017/018; explicit classification, existing URL reference, no double rendering or silent deletion |
 | C24 | Ask known facts only once; explain support, format and preparation beside the link | Constitution XIII/XIV; FR-006/015; supported services/versions/sample, tested local-tool guide, access/costs and actionable retained-value errors |

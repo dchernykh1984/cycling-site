@@ -54,14 +54,17 @@ def indexed_event(settings, monkeypatch):
 def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, indexed_event):
     athlete, race, reg, album = indexed_event
     with translation_override("ru"):
-        mine, yes, no, undo = (gettext(s) for s in ("Photos with me", "This is me", "Not me", "Undo"))
+        yes, no, undo, overview = (gettext(s) for s in ("This is me", "Not me", "Undo", "Photos from the event"))
     inject_session(page, live_server, athlete)
     with translation_override("ru"):
         counters = gettext("Confirmed: %(confirmed)s. To check: %(to_check)s.") % {"confirmed": 1, "to_check": 1}
     page.goto(f"{live_server.url}/ru/calendar/{race.pk}/photos/")
     expect(page.locator(".event-photo-cards")).to_contain_text(counters)
     page.goto(f"{live_server.url}/ru{race.get_absolute_url()[3:]}")
-    page.get_by_role("link", name=mine).click()
+    page.get_by_role("link", name=overview, exact=True).click()
+    page.locator(".event-photo-cards a").click()
+    crumbs = page.get_by_role("navigation", name=gettext("Breadcrumb"))
+    expect(crumbs.locator('[aria-current="page"]')).to_contain_text("Rider Ivan")
     cards = page.locator(".event-photo")
     expect(cards).to_have_count(2)
 

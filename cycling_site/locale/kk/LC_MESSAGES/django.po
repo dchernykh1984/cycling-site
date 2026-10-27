@@ -3949,3 +3949,21 @@ msgstr "Түпнұсқа фотосуретті ашу"
 
 msgid "Preview unavailable. Open the original photo."
 msgstr "Алдын ала көрініс қолжетімсіз. Түпнұсқа фотосуретті ашыңыз."
+
+msgid "Photos from the event"
+msgstr "Іс-шара фотосуреттері"
+
+msgid "Breadcrumb"
+msgstr "Навигация тізбегі"
+
+#, python-format
+msgid "Photos with bib %(bib)s"
+msgstr "%(bib)s нөмірі бар фотосуреттер"
+
+#, python-format
+msgid "Photos with me: %(participant)s"
+msgstr "Мен бар фотосуреттер: %(participant)s"
+
+#, python-format
+msgid "Photos of %(participant)s"
+msgstr "Қатысушының фотосуреттері: %(participant)s"
