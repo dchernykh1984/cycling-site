@@ -373,13 +373,18 @@ class GalleryPageTests(GalleryTestCase):
 
 
 class EventLinkTests(GalleryTestCase):
-    def test_the_event_page_links_its_public_albums(self):
+    def test_curated_albums_share_the_event_photo_entry_and_keep_their_visibility(self):
         race = Competition.objects.create(
             title_ru="Gran Fondo", date_start=datetime.date(2026, 5, 17), status=Competition.Status.APPROVED
         )
         public = self._album("Gran Fondo 2026", competition=race)
         hidden = self._album("Gran Fondo draft", competition=race, is_hidden=True)
         html = self.client.get(race.get_absolute_url()).content.decode()
+        self.assertNotIn(public.get_absolute_url(), html)
+        self.assertNotIn(hidden.get_absolute_url(), html)
+        overview = reverse("event_photos:event", args=[race.pk])
+        self.assertIn(overview, html)
+        html = self.client.get(overview).content.decode()
         self.assertIn(public.get_absolute_url(), html)
         self.assertNotIn(hidden.get_absolute_url(), html)
 

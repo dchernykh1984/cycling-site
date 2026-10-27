@@ -117,6 +117,18 @@ def test_portraits_are_complete_and_captions_never_cover_them(page: Page, live_s
 
 
 @pytest.mark.django_db(transaction=True)
+def test_curated_albums_use_the_same_photo_entry(page: Page, live_server, indexed_event):
+    from gallery.models import Album
+
+    _, race, _, _ = indexed_event
+    album = Album.objects.create(title_ru="Curated photos", date=race.date_start, competition=race)
+    page.goto(f"{live_server.url}/en/calendar/{race.pk}/")
+    expect(page.locator(".competition-albums")).to_have_count(0)
+    page.get_by_role("link", name="Photos from the event", exact=True).click()
+    expect(page.get_by_role("link", name=album.title)).to_have_attribute("href", album.get_absolute_url())
+
+
+@pytest.mark.django_db(transaction=True)
 def test_missing_preview_reserves_the_same_frame_as_a_loaded_photo(page: Page, live_server, indexed_event):
     athlete, race, reg, album = indexed_event
     photo = album.photos.get(original_path="IMG_0001.jpg")
