@@ -616,13 +616,17 @@ class PageAndApiTests(EventPhotosTestCase):
         self.athlete.save(update_fields=["api_token"])
         headers = {"HTTP_AUTHORIZATION": f"Bearer {self.athlete.api_token}"}
         url = f"/api/v1/event-photos/registrations/{self.reg.pk}/photos/{self.photo.pk}/decision"
-        self.assertEqual(
-            self.client.post(url, {"state": "not_me"}, content_type="application/json", **headers).status_code, 200
-        )
+        first = self.client.post(url, {"state": "not_me"}, content_type="application/json", **headers)
+        self.assertEqual(first.status_code, 200)
         response = self.client.post(url, {"state": "not_me"}, content_type="application/json", **headers)
         self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.json()["event_id"])
+        # A client whose first answer was lost can still undo, inside the original window only.
+        self.assertEqual(response.json()["event_id"], first.json()["event_id"])
         self.assertEqual(PhotoDecisionEvent.objects.count(), 1)
+        later = PhotoDecisionEvent.objects.get().at + timedelta(seconds=settings.PHOTO_DECISION_UNDO_SECONDS + 1)
+        with mock.patch("django.utils.timezone.now", return_value=later):
+            expired = self.client.post(url, {"state": "not_me"}, content_type="application/json", **headers)
+        self.assertIsNone(expired.json()["event_id"])
         self.photo.is_hidden = True
         self.photo.save(update_fields=["is_hidden"])
         self.assertEqual(
