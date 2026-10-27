@@ -4,6 +4,7 @@ import hashlib
 import shutil
 from datetime import timedelta
 from pathlib import Path
+from threading import BoundedSemaphore
 
 from django.conf import settings
 from django.db import transaction
@@ -24,6 +25,7 @@ from event_photos.models import (
 )
 
 INDEX_FILE = "photo-index.v1.json"
+_THUMBNAIL_SLOTS = BoundedSemaphore(2)
 
 
 class ImportFailedError(Exception):
@@ -148,7 +150,13 @@ def thumbnail_path(photo: IndexedPhoto) -> Path:
             return path
     if photo.needs_preview:
         raise DropboxError("unsupported", "the original is too big for a Dropbox thumbnail and has no preview")
-    data = get_adapter().thumbnail(photo.album.folder_url, photo.preview_path or photo.original_path)
+    # Never let external storage occupy all four web threads, including for API callers.
+    if not _THUMBNAIL_SLOTS.acquire(blocking=False):
+        raise DropboxError("busy", retry_after=1)
+    try:
+        data = get_adapter().thumbnail(photo.album.folder_url, photo.preview_path or photo.original_path)
+    finally:
+        _THUMBNAIL_SLOTS.release()
     name = f"{photo.album_id}/{photo.pk}-{source[:16]}.jpg"
     path = _thumb_root() / name
     path.parent.mkdir(parents=True, exist_ok=True)

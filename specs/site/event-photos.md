@@ -73,6 +73,12 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 - **FR-EVP-007**: The organizer page shows participants' marks per album and per bib method.
 - **FR-EVP-008**: Every page operation has an `/api/v1/event-photos/` counterpart with the same rules.
 
+- **FR-EVP-011**: The browser requests at most two nearby previews concurrently, with at most two
+  retries for a temporary 503. Each web process allows at most two concurrent storage thumbnail
+  downloads and uses four Gunicorn threads so marks need not wait for them. Cached thumbnails
+  bypass this limit. Busy or temporarily unavailable thumbnails return private, non-cacheable
+  503 with Retry-After on both site and API. Index imports retain their own timeout.
+
 ## Key Entities
 
 - **ExternalAlbum**: event, folder link, localized title and photographer, album id from the index,

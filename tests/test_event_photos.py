@@ -87,6 +87,19 @@ def _index(photos, *, revision=1, album=ALBUM, removed=(), complete=True) -> byt
 
 
 class AdapterTests(TestCase):
+    @override_settings(DROPBOX_APP_KEY="k", DROPBOX_APP_SECRET="s")
+    def test_thumbnail_requests_have_a_shorter_timeout_than_index_imports(self):
+        from event_photos.dropbox import DropboxAdapter
+
+        response = mock.MagicMock(status_code=200)
+        response.iter_content.return_value = [b"jpeg"]
+        response.__enter__.return_value = response
+        with mock.patch("event_photos.dropbox.requests.post", return_value=response) as post:
+            DropboxAdapter().thumbnail(FOLDER, "a.jpg")
+            self.assertEqual(post.call_args.kwargs["timeout"], (3.05, 5))
+            DropboxAdapter().read_file(FOLDER, "photo-index.v1.json")
+            self.assertEqual(post.call_args.kwargs["timeout"], 20)
+
     @override_settings(DROPBOX_APP_KEY="k", DROPBOX_APP_SECRET="s", PHOTO_INDEX_MAX_BYTES=5_000_000)
     def test_an_oversized_index_is_abandoned_without_reading_the_rest(self):
         from event_photos.dropbox import DropboxAdapter, DropboxError
@@ -578,6 +591,38 @@ class PageAndApiTests(EventPhotosTestCase):
         self.race.is_hidden = True
         self.race.save(update_fields=["is_hidden"])
         self.assertEqual(self.client.get(self._url("event")).status_code, 404)
+
+    def test_busy_thumbnails_leave_capacity_for_marks_and_can_be_retried(self):
+        from threading import BoundedSemaphore
+
+        slots = BoundedSemaphore(2)
+        slots.acquire()
+        slots.acquire()
+        url = self._url("thumb", self.photo.pk, self.photo.source_sha256[:16])
+        with mock.patch.object(actions, "_THUMBNAIL_SLOTS", slots):
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 503)
+            self.assertEqual(response["Retry-After"], "1")
+            self.assertEqual(response["Cache-Control"], "private, no-store")
+            self.assertEqual(FakeAdapter.thumbnails_served, 0)
+            self.client.force_login(self.athlete)
+            marked = self.client.post(self._url("decide", self.reg.pk, self.photo.pk), {"state": "me"})
+            self.assertEqual(marked.status_code, 302)
+            self.assertEqual(PhotoDecision.objects.get(photo=self.photo).state, "me")
+            slots.release()
+            slots.release()
+            self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_storage_failure_releases_thumbnail_capacity(self):
+        from event_photos.dropbox import DropboxError
+
+        url = self._url("thumb", self.photo.pk, self.photo.source_sha256[:16])
+        with mock.patch.object(FakeAdapter, "thumbnail", side_effect=DropboxError("throttled", retry_after=4)):
+            for _ in range(3):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 503)
+                self.assertEqual(response["Retry-After"], "4")
+        self.assertEqual(self.client.get(url).status_code, 200)
 
     def test_event_search_finds_the_bib_and_the_event_page_links_my_photos(self):
         self.assertContains(self.client.get(self._url("event") + "?bib=12"), "IMG_0001.jpg")
