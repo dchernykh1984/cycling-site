@@ -227,12 +227,16 @@ def test_slow_previews_do_not_block_marks_or_start_a_request_storm(page: Page, l
         [_photo(n, [("12", "candidate", "ocr")]) for n in range(1, 21)], revision=2
     )
     actions.import_album(race.external_albums.get(), None)
-    pending = []
-    page.route("**/photos/thumb/**", lambda route: pending.append(route))
-    # A preview gives up after 10 s and frees its place for the next one; a slow runner would cross
-    # that before the click, so the page's clock stands still and the count is what it asks at once.
-    page.clock.install(time=datetime.datetime(2026, 1, 1))
-    page.clock.pause_at(datetime.datetime(2026, 1, 1, 0, 0, 1))
+    # Downloads are never answered. One the page gives up on -- after 10 s, or on leaving for the
+    # redirected page -- frees its place for the next, so what is counted is how many are open at once.
+    open_now, at_once = set(), []
+
+    def hold(route):
+        open_now.add(route.request)
+        at_once.append(len(open_now))
+
+    page.route("**/photos/thumb/**", hold)
+    page.on("requestfailed", lambda request: open_now.discard(request))
     inject_session(page, live_server, athlete)
     page.goto(f"{live_server.url}/en/calendar/{race.pk}/photos/registration/{reg.pk}/")
     expect(page.locator(".event-photo")).to_have_count(20)
@@ -240,7 +244,7 @@ def test_slow_previews_do_not_block_marks_or_start_a_request_storm(page: Page, l
     # Two downloads stay blocked; marking still completes instead of waiting for those downloads.
     page.locator(".event-photo").first.get_by_role("button", name="This is me").click()
     expect(page.locator(".event-photo").first.get_by_role("button", name="This is me")).to_have_count(0)
-    assert len(pending) <= 4  # two on each of the initial and redirected pages
+    assert at_once and max(at_once) <= 2, at_once
 
 
 @pytest.mark.django_db(transaction=True)
