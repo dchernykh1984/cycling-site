@@ -13,16 +13,26 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
-from ninja.security import django_auth
+from ninja.security import SessionAuth
 
+from accounts.access import needs_email_confirmation
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from trainer import live, records
 from trainer.models import GroupRide, GroupRideMember, LiveRider, VirtualRide
 
 router = Router(tags=["virtual-ride"])
 
-# A member signed in on the site (the trainer page) or holding a personal API token.
-member_auth = [ApiTokenAuth(), django_auth]
+
+class ConfirmedSessionAuth(SessionAuth):
+    """The site's session, for a member who confirmed their address: an unconfirmed one may not use the API."""
+
+    def authenticate(self, request, key):
+        user = super().authenticate(request, key)
+        return None if user is None or needs_email_confirmation(user) else user
+
+
+# A confirmed member signed in on the site (the trainer page) or holding a personal API token.
+member_auth = [ApiTokenAuth(), ConfirmedSessionAuth()]
 
 _ROUTE = r"^[a-z0-9][a-z0-9_-]{0,39}$"
 _MAX_HISTORY = 100
@@ -229,7 +239,7 @@ def _online_out(row: LiveRider) -> dict:
 @router.get("/me", response=MeOut, auth=OptionalApiTokenAuth(), summary="Who the trainer page is riding for")
 def me(request):
     user = request.auth if getattr(request.auth, "is_authenticated", False) else request.user
-    if not getattr(user, "is_authenticated", False):
+    if not getattr(user, "is_authenticated", False) or needs_email_confirmation(user):
         return MeOut(authenticated=False, login_url=reverse("account_login"))
     return MeOut(
         authenticated=True,

@@ -22,6 +22,7 @@ API = "/api/v1/virtual-ride"
 
 
 def _user(username, **kwargs):
+    kwargs.setdefault("role", User.Role.PARTICIPANT)
     user = User.objects.create_user(
         username=username, email=f"{username}@example.com", password="Pass1234!", first_name=username.title(), **kwargs
     )
@@ -88,6 +89,15 @@ class SavedRidesTests(MemberClientMixin, TestCase):
     def test_saving_needs_a_member(self):
         response = self.client.post(f"{API}/rides", data=json.dumps(_ride()), content_type="application/json")
         self.assertEqual(response.status_code, 401)
+
+    def test_an_unconfirmed_account_rides_as_a_guest(self):
+        # Until the address is confirmed the site's rule holds: no API, no name in the lobby.
+        client = self.member(_user("nina", role=User.Role.GUEST))
+        self.assertFalse(client.get(f"{API}/me").json()["authenticated"])
+        self.assertEqual(self.post(client, "/rides", _ride()).status_code, 401)
+        self.assertEqual(self.post(client, "/groups", {"route": "center"}).status_code, 401)
+        self.assertEqual(self.post(client, "/presence").status_code, 401)
+        self.assertNotContains(client.get(reverse("account_profile")), 'id="virtual-rides"')
 
     def test_the_first_race_on_a_route_is_its_first_result_and_only_a_faster_one_beats_it(self):
         first = self.post(self.client_a, "/rides", _ride())

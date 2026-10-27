@@ -234,8 +234,8 @@
         {% endif %}
 
         {% comment %}Virtual ride (trainer/): the member's records, derived from the rides the trainer page
-        saved through /api/v1/virtual-ride/rides. Every signed-in member can ride, so it sits above the
-        role-gated part of the cabinet.{% endcomment %}
+        saved through /api/v1/virtual-ride/rides. Any confirmed member can ride, whatever their role, so it
+        sits above the role-gated part of the cabinet; an unconfirmed account rides as a guest.{% endcomment %}
         {% if virtual_ride %}
         <div class="card mb-4" id="virtual-rides">
             <div class="card-header d-flex justify-content-between align-items-center gap-2">
