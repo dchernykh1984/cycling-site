@@ -6,6 +6,7 @@ import uuid
 import zipfile
 from threading import BoundedSemaphore
 from unittest import mock
+from urllib.parse import quote
 
 from django.test import override_settings
 from django.urls import reverse
@@ -84,6 +85,13 @@ class ArchiveTests(EventPhotosTestCase):
         self.assertContains(search, self._bib_url())
         nothing = self.client.get(f"{self._url('event')}?bib=99")
         self.assertNotContains(nothing, self._url("bib_archive"))
+
+    def test_a_guest_searching_is_offered_sign_in_and_brought_back_to_the_search(self):
+        search = self.client.get(f"{self._url('event')}?bib=12")
+        self.assertNotContains(search, self._url("bib_archive"))
+        self.assertContains(
+            search, f"{reverse('account_login')}?next={quote(self._url('event') + '?bib=12', safe='/')}"
+        )
 
     def test_a_photo_the_storage_cannot_give_is_listed_with_its_link(self):
         del FakeAdapter.files["IMG_0002.jpg"]

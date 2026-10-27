@@ -3991,3 +3991,6 @@ msgstr "Этих фото нет в архиве, откройте их по с�
 
 msgid "missing-photos.txt"
 msgstr "недостающие-фото.txt"
+
+msgid "Sign in to download all photos"
+msgstr "Войдите, чтобы скачать все фото"

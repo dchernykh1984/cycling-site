@@ -46,7 +46,7 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 2. Each thumbnail opens the photo in Dropbox in a new tab (Dropbox's `preview=` address, or the
    index's own file link).
 3. **Given** a signed-in reader and a search with results, **Then** "Download all (ZIP, size)" gives
-   the found photos' originals as one archive.
+   the found photos' originals as one archive; a guest is offered sign-in that returns to the search.
 
 ### Story 3 -- A participant checks their album (P1)
 
