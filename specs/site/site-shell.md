@@ -81,8 +81,12 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
   zone, the site's `TIME_ZONE` setting is used (issue #344).
 - A missing page answers 404 with the site's template in every language, offering a link home that
   names a language; an address without a language is sent to one first.
-- Server errors are mailed to the admins when not in debug; media is served in production and a
-  missing file is a 404.
+- Django request errors and Gunicorn errors (including worker timeouts after application
+  initialization, with `--preload` on the host) are mailed to the admins when not in debug.
+  Warnings are logged without email. SMTP operations have a five-second timeout by default
+  (`EMAIL_TIMEOUT`), so reporting an error cannot wait indefinitely. An unavailable server or
+  a proxy-generated 502 without an application/server log still needs external monitoring.
+  Media is served in production and a missing file is a 404.
 - Every page declares a canonical address, a title without stray whitespace, a translated fallback
   description and a social image with its size; an event page's title and description name the
   event, its date and place.
