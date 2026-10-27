@@ -1,13 +1,13 @@
 {% load i18n %}{% comment %}"Download all": a ZIP of the originals on screen, or why there is none.{% endcomment %}
 {% if archive %}
 <p class="event-photos-download d-flex flex-wrap align-items-center gap-2">
-  {% if not user.is_authenticated %}
+  {% if not archive.fits %}
+  <span class="text-muted">{% blocktrans with size=archive.size|filesizeformat %}Too many photos for one archive ({{ size }}): open them one by one.{% endblocktrans %}</span>
+  {% elif not user.is_authenticated %}
   {# Signed in first, back on this page: the archive itself would leave them on the sign-in form. #}
   <a class="btn btn-outline-primary" href="{% url 'account_login' %}?next={{ request.get_full_path|urlencode }}">{% trans "Sign in to download all photos" %}</a>
-  {% elif archive.fits %}
-  <a class="btn btn-outline-primary" href="{{ archive.url }}" rel="nofollow">{% blocktrans with size=archive.size|filesizeformat %}Download all (ZIP, {{ size }}){% endblocktrans %}</a>
   {% else %}
-  <span class="text-muted">{% blocktrans with size=archive.size|filesizeformat %}Too many photos for one archive ({{ size }}): open them one by one.{% endblocktrans %}</span>
+  <a class="btn btn-outline-primary" href="{{ archive.url }}" rel="nofollow">{% blocktrans with size=archive.size|filesizeformat %}Download all (ZIP, {{ size }}){% endblocktrans %}</a>
   {% endif %}
 </p>
 {% endif %}
