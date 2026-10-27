@@ -4,6 +4,7 @@ undoes the cross, and crosses it out for good. The folder is a fake; nothing rea
 import datetime
 import re
 import tempfile
+import time
 from io import BytesIO
 
 import pytest
@@ -194,6 +195,28 @@ def test_a_busy_server_delays_previews_without_losing_them(page: Page, live_serv
     page.goto(f"{live_server.url}/en/calendar/{race.pk}/photos/registration/{reg.pk}/")
     expect(page.locator(".event-photo img").first).to_be_visible(timeout=20000)
     expect(page.locator("[data-photo-unavailable]").first).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_preview_is_not_asked_again_before_the_server_allows(page: Page, live_server, indexed_event):
+    athlete, race, reg, _ = indexed_event
+    asked: dict[str, list[float]] = {}
+
+    def answer(route):
+        times = asked.setdefault(route.request.url, [])
+        times.append(time.monotonic())
+        if len(times) == 1:
+            route.fulfill(status=503, headers={"Retry-After": "3"})
+        else:
+            route.continue_()
+
+    page.route("**/photos/thumb/**", answer)
+    page.add_init_script("Math.random = function () { return 0; };")  # the shortest spread the page can pick
+    inject_session(page, live_server, athlete)
+    page.goto(f"{live_server.url}/en/calendar/{race.pk}/photos/registration/{reg.pk}/")
+    expect(page.locator(".event-photo img").first).to_be_visible(timeout=20000)
+    for first, second in (times[:2] for times in asked.values() if len(times) > 1):
+        assert second - first >= 2.9
 
 
 @pytest.mark.django_db(transaction=True)
