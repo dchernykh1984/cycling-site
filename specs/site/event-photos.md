@@ -1,5 +1,10 @@
 # Site Specification: Event photos by bib
 
+Originals may be JPEG, PNG, WebP, HEIC/HEIF, TIFF, BMP, GIF or AVIF. Formats outside
+JPEG/PNG/WebP must include a separate web-compatible preview in the index. The site
+uses that preview for thumbnails and keeps the original storage link for downloads;
+it never decodes camera formats or rewrites originals.
+
 **Status**: Baseline -- describes the first slice of issue #349 as built
 **Verified against**: branch `349-external-photo-albums` on 2026-10-26
 **Code**: `event_photos/` (models, index, dropbox, bindings, actions, permissions, forms, views,

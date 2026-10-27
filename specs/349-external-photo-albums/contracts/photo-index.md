@@ -26,7 +26,12 @@ connection supplies the event. No account IDs, names, birth dates, emails, secre
 `id` is a stable UUID within the album. `original` and `preview` each contain a safe relative `path`,
 `sha256` (64 lowercase hex: plain SHA-256 of the file's bytes, computed by the producer from the
 file itself; a provider's own hash, such as Dropbox's `content_hash`, is a different algorithm and
-never goes here), `bytes` (positive integer) and `media_type` (JPEG/PNG/WebP). `preview`
+never goes here), `bytes` (positive integer) and `media_type`. Originals support
+JPEG, PNG, WebP, HEIC/HEIF, TIFF, BMP, GIF and AVIF (`image/jpeg`, `image/png`, `image/webp`,
+`image/heic`, `image/heif`, `image/tiff`, `image/bmp`, `image/gif`, `image/avif`).
+A preview must be JPEG/PNG/WebP. Every original outside JPEG/PNG/WebP requires a
+separate preview even below 20 MB; the site never decodes HEIC or other camera formats.
+The original path, format and SHA-256 remain unchanged. `preview`
 may be absent while `processing_state` is pending/failed, but a searchable processed photo needs a
 preview. Previews are separate derivatives without unnecessary metadata; originals stay unchanged.
 Either may carry an optional `view_url`: a long-lived link of the storage's own sharing for that
