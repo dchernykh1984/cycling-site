@@ -18,7 +18,7 @@ from django.views.decorators.http import require_POST
 from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.archive import Archive, ArchiveBusyError, ArchiveTooBigError
-from event_photos.dropbox import DropboxError, preview_url
+from event_photos.dropbox import DropboxError, open_url
 from event_photos.forms import ExternalAlbumForm
 from event_photos.models import (
     THUMBNAIL_LIMIT_BYTES,
@@ -58,7 +58,7 @@ def my_registrations(user, competition):
 
 def _with_links(photos, competition):
     for photo in photos:
-        photo.open_url = photo.original_view_url or preview_url(photo.album.folder_url, photo.file_name)
+        photo.open_url = open_url(photo)
         # No thumbnail can be made for a big original without a preview: the card shows a placeholder.
         photo.thumb_url = (
             ""

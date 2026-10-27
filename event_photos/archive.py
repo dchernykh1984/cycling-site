@@ -13,7 +13,7 @@ from django.conf import settings
 from django.utils import translation
 from django.utils.translation import gettext as _
 
-from event_photos.dropbox import DropboxError, get_adapter, preview_url
+from event_photos.dropbox import DropboxError, get_adapter, open_url
 
 _SLOTS = BoundedSemaphore(1)
 # A storage hiccup is waited out once, briefly: the reader is watching the download.
@@ -45,10 +45,6 @@ class _Sink:
     def drain(self):
         chunks, self._chunks = self._chunks, []
         yield from chunks
-
-
-def open_url(photo) -> str:
-    return photo.original_view_url or preview_url(photo.album.folder_url, photo.file_name)
 
 
 def total_bytes(photos) -> int:
