@@ -5,7 +5,8 @@
 **Code**: `api/` (`router.py`, `auth.py`, `schemas.py`), `api/endpoints/`; django-ninja, served at
 `/api/v1/`
 **Tests**: `api/tests.py`, `registrations/tests.py` (participants), `protocols/tests.py`,
-`tests/test_gallery_api.py`, `tests/test_input_length_limits.py`, `tests/e2e/test_api_to_front.py`
+`tests/test_gallery_api.py`, `tests/test_input_length_limits.py`, `tests/test_virtual_ride_api.py`,
+`tests/e2e/test_api_to_front.py`
 **Related**: [events](events.md), [locations](locations.md), [news and knowledge](news-and-knowledge.md),
 [protocols](protocols.md), [registrations](registrations.md), [events agents](events-agents.md),
 [gallery](gallery.md)
@@ -41,6 +42,10 @@ and protocols with the event's upload token. The API has no language prefix.
 6. **Given** the gallery, **Then** anybody reads the albums and photos they could see on the site,
    and admins and the owner create, change and delete albums, upload photos and caption them, by the
    pages' own rules ([gallery](gallery.md), issue #365).
+7. **Given** the virtual ride, **Then** a member (session or token) saves finished rides, lists and
+   deletes their own, reads their records, gathers, joins, leaves and cancels group races, reads a
+   race's results, and reports their live position to get the riders beside them
+   ([site shell](site-shell.md)).
 
 ### Story 2 -- The timing tools exchange race data (P1)
 
@@ -73,8 +78,8 @@ and protocols with the event's upload token. The API has no language prefix.
 - **FR-API-001**: Routers: `/competitions/`, `/news/`, `/knowledge/`, `/locations/`, `/disciplines/`,
   `/event-types/`, `/participants/`, `/protocols/`, `/start-list/`, `/group-times/`,
   `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`, `/event-photos/`
-  ([event photos](event-photos.md)). A start-list upload also records which registration got which
-  bib, from the lines' trailing `r<id>` field; its response is unchanged.
+  ([event photos](event-photos.md)), `/virtual-ride/`. A start-list upload also records which
+  registration got which bib, from the lines' trailing `r<id>` field; its response is unchanged.
 - **FR-API-002**: Personal tokens belong to participants and up (generated on the profile); the
   upload token belongs to an event and is managed by its managers and its author (see
   [events](events.md)).

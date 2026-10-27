@@ -29,6 +29,7 @@ def _register_routers() -> None:
         group_times_router,
         remote_points_router,
     )
+    from api.endpoints.virtual_ride import router as virtual_ride_router
 
     api.add_router("/competitions/", competitions_router)
     api.add_router("/news/", news_router)
@@ -45,6 +46,7 @@ def _register_routers() -> None:
     api.add_router("/live-stats/", live_stats_router)
     api.add_router("/gallery/", gallery_router)
     api.add_router("/event-photos/", event_photos_router)
+    api.add_router("/virtual-ride/", virtual_ride_router)
 
 
 _register_routers()
