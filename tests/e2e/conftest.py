@@ -3,6 +3,7 @@ import os
 import threading
 
 import pytest
+from django.core.signals import request_finished, request_started
 from django.test import Client
 
 from accounts.models import User
@@ -37,6 +38,27 @@ AROUND_UPCOMING = f"date_from={UPCOMING - _FORTNIGHT:%Y-%m-%d}&date_to={UPCOMING
 # pick freely.
 E2E_SKIN = os.environ.get("E2E_SKIN", "light")
 
+# The live server's threads in the middle of a request, from Django's start and end signals.
+_live_requests: set[threading.Thread] = set()
+_live_requests_changed = threading.Condition()
+
+
+def _live_request_started(**kwargs):
+    thread = threading.current_thread()
+    if "process_request_thread" in thread.name:
+        with _live_requests_changed:
+            _live_requests.add(thread)
+
+
+def _live_request_finished(**kwargs):
+    with _live_requests_changed:
+        _live_requests.discard(threading.current_thread())
+        _live_requests_changed.notify_all()
+
+
+request_started.connect(_live_request_started)
+request_finished.connect(_live_request_finished)
+
 
 @pytest.fixture(autouse=True)
 def _finish_live_requests():
@@ -47,11 +69,13 @@ def _finish_live_requests():
     fixtures in name order, so this name sorts before ``_generous_ci_timeouts``, the first to open
     ``page``: set up before the page, it is torn down after the page has closed and before the
     database fixture, which pytest-django sets up first and tears down last.
+
+    It waits for the requests in progress, not for the server's threads: a thread lives as long as the
+    browser keeps its connection open, and Firefox keeps an idle one open well past the test.
     """
     yield
-    for thread in threading.enumerate():
-        if "process_request_thread" in thread.name:
-            thread.join(timeout=10)
+    with _live_requests_changed:
+        _live_requests_changed.wait_for(lambda: not any(t.is_alive() for t in _live_requests), timeout=10)
 
 
 @pytest.fixture(autouse=True)
