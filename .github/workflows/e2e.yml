@@ -58,7 +58,14 @@ jobs:
         run: uv sync --locked
 
       - name: Install Playwright browser
-        run: uv run playwright install --with-deps ${{ matrix.browser }}
+        # A download sometimes stalls until the job is cancelled (26 minutes once, against the usual
+        # half minute; a slow one has taken 9 and finished): give each attempt 10 minutes, then retry.
+        run: |
+          for attempt in 1 2 3; do
+            timeout 600 uv run playwright install --with-deps ${{ matrix.browser }} && exit 0
+            echo "Attempt $attempt failed or stalled, retrying..."
+          done
+          exit 1
 
       - name: Run E2E tests (desktop)
         if: matrix.device == ''
@@ -137,7 +144,14 @@ jobs:
         run: uv sync --locked
 
       - name: Install Playwright browser
-        run: uv run playwright install --with-deps chromium
+        # A download sometimes stalls until the job is cancelled (26 minutes once, against the usual
+        # half minute; a slow one has taken 9 and finished): give each attempt 10 minutes, then retry.
+        run: |
+          for attempt in 1 2 3; do
+            timeout 600 uv run playwright install --with-deps chromium && exit 0
+            echo "Attempt $attempt failed or stalled, retrying..."
+          done
+          exit 1
 
       - name: Run E2E tests in the ${{ matrix.skin }} skin
         run: >
