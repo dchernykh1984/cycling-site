@@ -13,7 +13,7 @@ from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.archive import ArchiveBusyError, ArchiveTooBigError
-from event_photos.dropbox import preview_url
+from event_photos.dropbox import open_url
 from event_photos.forms import ExternalAlbumForm
 from event_photos.models import ExternalAlbum, IndexedPhoto, PhotoDecision, StartListDiagnostics
 from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration
@@ -177,7 +177,7 @@ def _photos(request, qs, competition, page_number, decisions=None) -> dict:
                 "is_hidden": photo.is_hidden,
                 # The API's own address, so the caller's token is what decides, as for the list.
                 "thumbnail_url": _thumbnail_url(request, photo),
-                "open_url": photo.original_view_url or preview_url(photo.album.folder_url, photo.file_name),
+                "open_url": open_url(photo),
                 "confirmed": getattr(photo, "confirmed", None),
                 "decision": decisions.get(photo.pk) if decisions is not None else None,
             }

@@ -45,6 +45,11 @@ def preview_url(folder_url: str, file_name: str) -> str:
     return f"{folder_url}&dl=0&preview={quote(file_name)}"
 
 
+def open_url(photo) -> str:
+    """Where a photo opens: the index's own link for it, or Dropbox's address in the shared folder."""
+    return photo.original_view_url or preview_url(photo.album.folder_url, photo.file_name)
+
+
 def _read_capped(response, limit: int) -> bytes:
     """The body, read in chunks and abandoned as soon as it passes ``limit`` bytes."""
     data = bytearray()
