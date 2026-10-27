@@ -61,5 +61,12 @@ def build_logging_config(log_dir: Path) -> dict:
                 "level": "WARNING",
                 "propagate": False,
             },
+            # A killed or timed-out worker never reaches Django's request error handler.
+            # With --preload this configuration also reaches Gunicorn's master process.
+            "gunicorn.error": {
+                "handlers": ["console", "file", "mail_admins"],
+                "level": "WARNING",
+                "propagate": False,
+            },
         },
     }

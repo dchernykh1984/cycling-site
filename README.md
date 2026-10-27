@@ -87,12 +87,21 @@ dashboard:
   `django.contrib.sites` Site to it on every deploy
 - `MEDIA_ROOT` - path to the mounted persistent disk that stores uploaded media
 - `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` - SMTP (Gmail)
+- `ADMINS` - comma-separated error email recipients (defaults to `DEFAULT_FROM_EMAIL`);
+  `SERVER_EMAIL` - error sender (defaults to `DEFAULT_FROM_EMAIL`);
+  `EMAIL_TIMEOUT` - SMTP operation timeout in seconds (default 5)
 - `GOOGLE_`/`GITHUB_`/`STRAVA_` `CLIENT_ID` and `CLIENT_SECRET` - social login
 
 The team domain (`universalbicycle.team` and `www.universalbicycle.team`) is always
 in `ALLOWED_HOSTS`; set `VIRTUAL_HOST` to add more hosts. Static files are served by
 WhiteNoise. DNS is managed by Cloudflare, with the apex `universalbicycle.team` as
 the canonical host and `www` redirecting to it.
+
+`gunicorn.conf.py` provides four threads per worker; the thumbnail service uses at most two for
+storage downloads, leaving capacity for form submissions. On the small Render instance keep
+`WEB_CONCURRENCY=1`. With Render's `--preload`, Gunicorn worker errors use the same admin email
+handler as Django 500s. Proxy errors without a running application require external monitoring.
+
 
 Live site: <https://universalbicycle.team>.
 

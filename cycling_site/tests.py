@@ -1,5 +1,7 @@
 import logging
 import shutil
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -77,6 +79,58 @@ class Custom404IntegrationTests(TestCase):
 
 
 class LoggingConfigTests(SimpleTestCase):
+    def test_production_smtp_has_a_finite_overridable_timeout(self):
+        script = """
+import importlib
+import os
+import sys
+os.environ.update(SECRET_KEY='test', DATABASE_URL='postgres://localhost/test', LOG_DIR=sys.argv[1])
+os.environ.pop('EMAIL_TIMEOUT', None)
+from cycling_site.settings import prod
+assert prod.EMAIL_TIMEOUT == 5
+os.environ['EMAIL_TIMEOUT'] = '2.5'
+assert importlib.reload(prod).EMAIL_TIMEOUT == 2.5
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(  # noqa: S603 -- fixed script and current interpreter
+                [sys.executable, "-c", script, directory], capture_output=True, text=True, timeout=15
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_worker_timeouts_email_admins_without_an_http_request(self):
+        # Configure logging in a child so the test cannot replace pytest's own handlers.
+        script = """
+import logging
+from pathlib import Path
+import sys
+from django.conf import settings
+from cycling_site.logconfig import build_logging_config
+settings.configure(
+    DEBUG=False, SECRET_KEY='test', ADMINS=['ops@example.com'],
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    LOGGING=build_logging_config(Path(sys.argv[1])),
+)
+import django
+django.setup()
+from django.core import mail
+mail.get_connection()
+logger = logging.getLogger('gunicorn.error')
+logger.error('WORKER TIMEOUT (pid:123)')
+assert len(mail.outbox) == 1
+assert 'WORKER TIMEOUT' in mail.outbox[0].subject
+assert mail.outbox[0].to == ['ops@example.com']
+logger.warning('Worker is restarting')
+assert len(mail.outbox) == 1
+settings.DEBUG = True
+logger.error('WORKER TIMEOUT (pid:456)')
+assert len(mail.outbox) == 1
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(  # noqa: S603 -- fixed script and current interpreter
+                [sys.executable, "-c", script, directory], capture_output=True, text=True, timeout=15
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_file_handler_writes_under_given_log_dir(self):
         # Logs must live under BASE_DIR (=/www in prod) so they are reachable via `cr download`.
         cfg = build_logging_config(Path("/www/logs"))
