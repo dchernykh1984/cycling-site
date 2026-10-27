@@ -7,14 +7,17 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import FileResponse, Http404, HttpResponse
+from django.db.models import Count, Sum
+from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import content_disposition_header
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from calendar_app.models import Competition
 from event_photos import actions
+from event_photos.archive import Archive, ArchiveBusyError, ArchiveTooBigError
 from event_photos.dropbox import DropboxError, preview_url
 from event_photos.forms import ExternalAlbumForm
 from event_photos.models import (
@@ -64,16 +67,64 @@ def _with_links(photos, competition):
     return photos
 
 
+def archive_summary(photos, url: str) -> dict | None:
+    """What the "Download all" button says: the archive's size, and whether it is under the limit."""
+    totals = IndexedPhoto.objects.filter(pk__in=photos.order_by().values("pk")).aggregate(
+        count=Count("pk"), size=Sum("original_bytes")
+    )
+    if not totals["count"]:
+        return None
+    return {"url": url, "size": totals["size"], "fits": totals["size"] <= settings.PHOTO_ARCHIVE_MAX_BYTES}
+
+
+def archive_response(photos, name: str) -> StreamingHttpResponse:
+    """The photos' originals as one ZIP, streamed; refused (ArchiveTooBigError, ArchiveBusyError)
+    before anything is sent. The page and the API share it."""
+    body = Archive(photos.select_related("album"))
+    response = StreamingHttpResponse(body, content_type="application/zip")
+    response["Content-Disposition"] = content_disposition_header(True, f"{name}.zip")
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+def _archive_or_back(request, photos, name: str, back: str):
+    try:
+        return archive_response(photos, name)
+    except ArchiveTooBigError:
+        messages.error(request, _("Too many photos for one archive: open them one by one."))
+    except ArchiveBusyError:
+        messages.error(request, _("Another archive is being made right now. Try again in a minute."))
+    return redirect(back)
+
+
+def participant_name(registration) -> str:
+    if registration.participant_names:
+        return str(registration)
+    return f"{registration.last_name} {registration.first_name}"
+
+
+def bib_archive_name(competition, bib: str) -> str:
+    return _("%(event)s - bib %(bib)s") % {"event": competition.title, "bib": bib}
+
+
+def _bib_query(request) -> str:
+    return request.GET.get("bib", "").strip()[:32]
+
+
 def event_photos(request, pk):
     """All the event's albums, and its photos found by a bib."""
     competition = _event(request, pk)
     albums = visible_albums(request.user, competition)
-    bib = request.GET.get("bib", "").strip()[:32]
+    bib = _bib_query(request)
     page = None
+    archive = None
     if bib:
         found = actions.bib_photos(competition, bib).filter(album__in=albums).select_related("album")
         page = Paginator(found, PER_PAGE).get_page(request.GET.get("page"))
         _with_links(page, competition)
+        archive = archive_summary(
+            found, reverse("event_photos:bib_archive", args=[competition.pk]) + "?" + urlencode({"bib": bib})
+        )
     return render(
         request,
         "event_photos/event_photos.html",
@@ -81,6 +132,7 @@ def event_photos(request, pk):
             "competition": competition,
             "albums": albums,
             "bib": bib,
+            "archive": archive,
             "photo_page_title": (_("Photos with bib %(bib)s") % {"bib": bib}) if bib else "",
             "photos": page,
             "registrations": my_registrations(request.user, competition),
@@ -146,9 +198,7 @@ def registration_album(request, pk, reg_pk):
         photo.decision = decisions.get(photo.pk, "")
     confirmed = photos.filter(confirmed=True).count()
     undo_event = request.GET.get("undo", "")
-    participant = (
-        str(registration) if registration.participant_names else f"{registration.last_name} {registration.first_name}"
-    )
+    participant = participant_name(registration)
     title = (
         _("Photos with me: %(participant)s")
         if registration.user_id == request.user.pk
@@ -169,6 +219,9 @@ def registration_album(request, pk, reg_pk):
                 registration=registration, state=IssuedBib.State.REVIEW
             ).exists(),
             "photos": page,
+            "archive": archive_summary(
+                photos, reverse("event_photos:registration_archive", args=[competition.pk, registration.pk])
+            ),
             "confirmed_count": confirmed,
             "to_check_count": page.paginator.count - confirmed,
             "can_mark": can_mark(request.user, registration),
@@ -177,6 +230,31 @@ def registration_album(request, pk, reg_pk):
             "meta_title": f"{title} - {competition.title}",
         },
     )
+
+
+@login_required
+def registration_archive(request, pk, reg_pk):
+    """A registration's album as one ZIP of originals."""
+    competition, registration = _registration(request, pk, reg_pk)
+    return _archive_or_back(
+        request,
+        actions.registration_photos(registration),
+        f"{competition.title} - {participant_name(registration)}",
+        reverse("event_photos:registration", args=[competition.pk, registration.pk]),
+    )
+
+
+@login_required
+def bib_archive(request, pk):
+    """The photos found by a bib as one ZIP of originals; signed-in readers only, since every byte
+    passes through the site."""
+    competition = _event(request, pk)
+    bib = _bib_query(request)
+    if not bib:
+        raise Http404
+    photos = actions.bib_photos(competition, bib).filter(album__in=visible_albums(request.user, competition))
+    back = reverse("event_photos:event", args=[competition.pk]) + "?" + urlencode({"bib": bib})
+    return _archive_or_back(request, photos, bib_archive_name(competition, bib), back)
 
 
 @login_required

@@ -3967,3 +3967,27 @@ msgstr "Мен бар фотосуреттер: %(participant)s"
 #, python-format
 msgid "Photos of %(participant)s"
 msgstr "Қатысушының фотосуреттері: %(participant)s"
+
+#, python-format
+msgid "Download all (ZIP, %(size)s)"
+msgstr "Барлығын жүктеп алу (ZIP, %(size)s)"
+
+#, python-format
+msgid "Too many photos for one archive (%(size)s): open them one by one."
+msgstr "Бір мұрағат үшін фотосуреттер тым көп (%(size)s): оларды бір-бірлеп ашыңыз."
+
+msgid "Too many photos for one archive: open them one by one."
+msgstr "Бір мұрағат үшін фотосуреттер тым көп: оларды бір-бірлеп ашыңыз."
+
+msgid "Another archive is being made right now. Try again in a minute."
+msgstr "Қазір басқа мұрағат жиналып жатыр. Бір минуттан кейін қайталап көріңіз."
+
+#, python-format
+msgid "%(event)s - bib %(bib)s"
+msgstr "%(event)s - нөмір %(bib)s"
+
+msgid "These photos are not in the archive; open them by their links:"
+msgstr "Бұл фотосуреттер мұрағатта жоқ, оларды сілтемелер арқылы ашыңыз:"
+
+msgid "missing-photos.txt"
+msgstr "жетіспейтін-фотосуреттер.txt"

@@ -3967,3 +3967,27 @@ msgstr "Фото со мной: %(participant)s"
 #, python-format
 msgid "Photos of %(participant)s"
 msgstr "Фото участника: %(participant)s"
+
+#, python-format
+msgid "Download all (ZIP, %(size)s)"
+msgstr "Скачать все (ZIP, %(size)s)"
+
+#, python-format
+msgid "Too many photos for one archive (%(size)s): open them one by one."
+msgstr "Слишком много фото для одного архива (%(size)s): откройте их по одному."
+
+msgid "Too many photos for one archive: open them one by one."
+msgstr "Слишком много фото для одного архива: откройте их по одному."
+
+msgid "Another archive is being made right now. Try again in a minute."
+msgstr "Сейчас собирается другой архив. Попробуйте через минуту."
+
+#, python-format
+msgid "%(event)s - bib %(bib)s"
+msgstr "%(event)s - номер %(bib)s"
+
+msgid "These photos are not in the archive; open them by their links:"
+msgstr "Этих фото нет в архиве, откройте их по ссылкам:"
+
+msgid "missing-photos.txt"
+msgstr "недостающие-фото.txt"

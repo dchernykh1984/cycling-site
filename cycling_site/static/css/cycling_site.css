@@ -610,3 +610,9 @@ main .event-photo-preview img { object-fit: contain; }
     display: inline-flex;
     align-items: center;
 }
+/* "Download all" is tapped on phones too: 44 px whatever height the skin gives a button. */
+.event-photos-download .btn {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+}

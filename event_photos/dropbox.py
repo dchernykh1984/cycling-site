@@ -91,11 +91,12 @@ class DropboxAdapter:
             raise DropboxError("invalid-link", text)
         raise DropboxError("unavailable", f"HTTP {response.status_code}")
 
-    def read_file(self, folder_url: str, path: str) -> bytes:
+    def read_file(self, folder_url: str, path: str, limit: int | None = None) -> bytes:
+        """A file of the folder; the index by default, or an original up to ``limit`` bytes."""
         return self._call(
             "https://content.dropboxapi.com/2/sharing/get_shared_link_file",
             arg={"url": folder_url, "path": "/" + path},
-            limit=settings.PHOTO_INDEX_MAX_BYTES,
+            limit=limit or settings.PHOTO_INDEX_MAX_BYTES,
         )
 
     def thumbnail(self, folder_url: str, path: str) -> bytes:

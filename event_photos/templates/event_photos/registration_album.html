@@ -27,6 +27,7 @@
   {% if bib_needs_review %}<p role="status">{% trans "Bib needs review" %}: {% trans "The bib link was restored from an older start list. The organizer needs to check it." %}</p>{% endif %}
   {% if photos %}
     <p class="text-muted">{% blocktrans with confirmed=confirmed_count to_check=to_check_count %}Confirmed: {{ confirmed }}. To check: {{ to_check }}.{% endblocktrans %}</p>
+    {% include "event_photos/_download_all.html" %}
     {% include "event_photos/_grid.html" %}
   {% elif bibs %}
     <p>{% trans "No photos with your bib yet." %}</p>

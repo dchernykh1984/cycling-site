@@ -393,6 +393,11 @@ PRIVATE_MEDIA_PREFIX = "private/"
 PHOTO_DECISION_UNDO_SECONDS = env.int("PHOTO_DECISION_UNDO_SECONDS", default=10)
 # A start-list line with this many stages or more is not expanded into stage bibs.
 START_LIST_MAX_STAGES = env.int("START_LIST_MAX_STAGES", default=20)
+# "Download all": the site streams a ZIP of originals as it reads them from storage, one archive at a
+# time, each original held in memory once. Bigger archives are refused; bigger originals are listed
+# in the archive with their links instead.
+PHOTO_ARCHIVE_MAX_BYTES = env.int("PHOTO_ARCHIVE_MAX_BYTES", default=1_000_000_000)
+PHOTO_ARCHIVE_MAX_FILE_BYTES = env.int("PHOTO_ARCHIVE_MAX_FILE_BYTES", default=50_000_000)
 
 # Search Console and Yandex Webmaster prove that whoever adds the site controls it. Their "HTML tag"
 # method reads a meta tag from the home page; the value is the content attribute each console shows.
