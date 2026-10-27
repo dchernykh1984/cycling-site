@@ -82,7 +82,8 @@ def archive_response(photos, name: str) -> StreamingHttpResponse:
     before anything is sent. The page and the API share it."""
     body = Archive(photos.select_related("album"))
     response = StreamingHttpResponse(body, content_type="application/zip")
-    response["Content-Disposition"] = content_disposition_header(True, f"{name}.zip")
+    # A title typed with a line break would carry it into the saved file's name.
+    response["Content-Disposition"] = content_disposition_header(True, f"{' '.join(name.split())}.zip")
     response["Cache-Control"] = "private, no-store"
     return response
 
