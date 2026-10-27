@@ -271,6 +271,13 @@ class RidingTogetherTests(MemberClientMixin, TestCase):
         self.assertEqual(len(body["groups"]), 1)
         self.assertEqual(body["riders"], [])
 
+    def test_the_lobby_lists_the_others_in_a_steady_order(self):
+        client_c = self.member(carl := _user("carl"))
+        for client in (self.client_a, client_c, self.client_a):  # anna's row is rewritten last
+            self.post(client, "/presence")
+        online = self.post(self.client_b, "/presence").json()["online"]
+        self.assertEqual([p["user_id"] for p in online], [self.anna.pk, carl.pk])
+
     def test_free_riders_on_the_same_route_see_each_other(self):
         self.ride(self.client_b, distance_m=250, cadence_rpm=90, power_w=210)
         riders = self.ride(self.client_a)["riders"]
