@@ -185,9 +185,11 @@ def decide(request, pk, reg_pk, photo_pk):
     competition, registration = _registration(request, pk, reg_pk)
     if not can_mark(request.user, registration):
         raise Http404
-    photo = get_object_or_404(actions.registration_photos(registration), pk=photo_pk)
     state = request.POST.get("state")
     if state not in (PhotoDecision.State.ME, PhotoDecision.State.NOT_ME):
+        raise Http404
+    photo = actions.decision_photo(registration, photo_pk, state)
+    if photo is None:
         raise Http404
     url = reverse("event_photos:registration", args=[competition.pk, registration.pk])
     try:
@@ -195,8 +197,10 @@ def decide(request, pk, reg_pk, photo_pk):
     except actions.DecisionRefusedError as exc:
         messages.error(request, str(exc))
         return redirect(_return_url(url, request.POST.get("page")))
-    if event is not None and state == PhotoDecision.State.NOT_ME:
-        return redirect(_return_url(url, request.POST.get("page"), undo=event.pk))
+    if state == PhotoDecision.State.NOT_ME:
+        event = event or actions.recent_rejection(registration, photo)
+        query = {"undo": event.pk} if event else {}
+        return redirect(_return_url(url, request.POST.get("page"), **query))
     return redirect(f"{_return_url(url, request.POST.get('page'))}#photo-{photo.pk}")
 
 

@@ -70,7 +70,9 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
   (`event_photos/bindings.py`): absent versus empty field, stage bibs within `START_LIST_MAX_STAGES`,
   conflicts suspend the bib, history in `IssuedBibEvent`. The upload's response is unchanged.
 - **FR-EVP-006**: Decisions are per registration and photo; undo reverts one recorded change while it
-  is the latest and within `PHOTO_DECISION_UNDO_SECONDS`.
+  is the latest and within `PHOTO_DECISION_UNDO_SECONDS`. Repeating "Not me" is idempotent on the
+  page and API, even after the photo leaves the personal grid; it preserves the original undo
+  window and never exposes hidden photos.
 - **FR-EVP-007**: The organizer page shows participants' marks per album and per bib method.
 - **FR-EVP-008**: Every page operation has an `/api/v1/event-photos/` counterpart with the same rules.
 - **FR-EVP-009**: Photo pages have a breadcrumb from Events to the actual event, its photo
