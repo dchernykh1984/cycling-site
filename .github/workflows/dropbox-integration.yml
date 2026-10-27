@@ -1,0 +1,36 @@
+name: Dropbox Integration
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dropbox-integration:
+    # Fork code must never receive storage credentials. No pull_request_target.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: "3.13"
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Read index and decode one Dropbox thumbnail
+        env:
+          RUN_DROPBOX_INTEGRATION: "1"
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DROPBOX_TEST_FOLDER_URL: ${{ secrets.DROPBOX_TEST_FOLDER_URL }}
+        run: uv run pytest tests/integration/test_dropbox_photos.py -n 0 --no-cov -q --tb=short

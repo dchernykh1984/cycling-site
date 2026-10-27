@@ -102,6 +102,12 @@ storage downloads, leaving capacity for form submissions. On the small Render in
 `WEB_CONCURRENCY=1`. With Render's `--preload`, Gunicorn worker errors use the same admin email
 handler as Django 500s. Proxy errors without a running application require external monitoring.
 
+The read-only `Dropbox Integration` workflow checks a real index and decodes one thumbnail on
+trusted pull requests, pushes to main, or manual dispatch. Set repository secrets
+`DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET` and `DROPBOX_TEST_FOLDER_URL` (a shared folder containing
+`photo-index.v1.json` and at least one usable photo/preview). Keep that fixture available; a
+dedicated small album is preferable. Fork pull requests never receive these secrets. Normal
+unit tests skip this network check; no race photos or shared links are committed as fixtures.
 
 Live site: <https://universalbicycle.team>.
 
