@@ -8,7 +8,7 @@ from playwright.sync_api import Page, expect
 
 from accounts.models import User
 from cycling_site.skins import registry
-from tests.e2e.conftest import inject_session, open_navbar_if_collapsed
+from tests.e2e.conftest import close_navbar_if_open, inject_session, open_navbar_if_collapsed
 
 # The icon shows the mode the page is in: a sun in light, a moon in dark.
 ICON = {"light": "\u2600", "dark": "\u263e"}
@@ -115,6 +115,7 @@ def test_the_list_opens_from_the_old_switch_and_agrees_with_the_profile(page: Pa
     navbar.locator("> button").click()
 
     other = registry()[_other()]
+    close_navbar_if_open(page)
     pick(page, "main", other.key)
     expect(page.locator("html")).to_have_attribute("data-bs-theme", other.mode)
     expect(page.locator("main .skin-select .skin-name")).to_have_text(other.names["ru"])
@@ -130,7 +131,9 @@ def test_the_open_list_stays_on_the_screen(page: Page, live_server, where):
     )
     inject_session(page, live_server, member)
     page.goto(f"{live_server.url}/ru/accounts/profile/")
-    open_navbar_if_collapsed(page)
+    if where == "nav":
+        # Only the navbar's own chooser needs the menu: open, it covers the one on the page.
+        open_navbar_if_collapsed(page)
     chooser = page.locator(f"{where} .skin-select")
     chooser.locator("> button").click()
     menu = chooser.locator(".dropdown-menu")

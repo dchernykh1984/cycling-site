@@ -109,6 +109,13 @@ def open_navbar_if_collapsed(page) -> None:
         page.locator(".navbar-collapse.show").wait_for(state="visible")
 
 
+def close_navbar_if_open(page) -> None:
+    """Close the hamburger menu a phone test opened: open, the sticky navbar covers the page below it."""
+    if page.locator(".navbar-toggler").is_visible() and page.locator(".navbar-collapse.show").count():
+        page.locator(".navbar-toggler").click()
+        page.locator("#mainNav").wait_for(state="hidden")
+
+
 def switch_locale(page, locale):
     """Switch locale by clicking the language-switcher form button in the navbar.
 
