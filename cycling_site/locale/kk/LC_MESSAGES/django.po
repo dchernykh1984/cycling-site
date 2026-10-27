@@ -3994,3 +3994,7 @@ msgstr "жетіспейтін-фотосуреттер.txt"
 
 msgid "Sign in to download all photos"
 msgstr "Барлық фотосуреттерді жүктеп алу үшін кіріңіз"
+
+#, python-format
+msgid "Instead of steps 1 and 2, the folder can be indexed with the skill in the <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer project</a>."
+msgstr "1 және 2-қадамдардың орнына папканы <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer жобасындағы</a> скилл арқылы индекстеуге болады."

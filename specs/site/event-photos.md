@@ -30,7 +30,8 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 
 1. **Given** the event's creator or an admin, **Then** "Manage event photos" on the event page opens a
    form: folder link, title (prefilled from the event) and photographer in three languages, with a
-   link to the indexing instructions. Only Dropbox shared folder links are accepted.
+   link to the indexing instructions (the Sport Photo Indexer program, or the skill in the Sport Photo
+   Indexer project). Only Dropbox shared folder links are accepted.
 2. **When** they add it or press "Refresh participants' tagging", **Then** the index is read and
    checked; on success the photo counts and revision show, otherwise the reason is shown and the last
    published state stays.

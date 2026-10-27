@@ -839,7 +839,10 @@ class PageAndApiTests(EventPhotosTestCase):
         for lang in ("ru", "kk", "en"):
             with translation_override(lang):
                 url = reverse("event_photos:guide")
-            self.assertContains(self.client.get(url), "1234")
+            guide = self.client.get(url)
+            self.assertContains(guide, "1234")
+            # The other way to index: the skill in the indexer's project.
+            self.assertContains(guide, 'href="https://github.com/dchernykh1984/SportPhotoIndexer"')
         self.client.force_login(self.organizer)
         manage = self.client.get(self._url("manage"))
         self.assertContains(manage, "1234")
