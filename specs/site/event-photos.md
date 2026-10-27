@@ -81,14 +81,18 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 - **FR-EVP-010**: Thumbnails preserve the entire frame, including portraits and on hover. Their
   captions sit below the image. Image alternatives do not duplicate adjacent link captions;
   unavailable previews show a translated fallback while the original link remains usable.
-- **FR-EVP-011**: The browser requests at most two nearby previews concurrently, with at most two
-  retries for a temporary 503. Each web process allows at most two concurrent storage thumbnail
-  downloads and uses four Gunicorn threads so marks need not wait for them. Cached thumbnails
-  bypass this limit. Busy or temporarily unavailable thumbnails return private, non-cacheable
-  503 with Retry-After on both site and API. Index imports retain their own timeout.
+- **FR-EVP-011**: The browser requests at most two nearby previews concurrently. A temporary 503
+  or a dropped request is retried with a growing, randomly spread delay (never sooner than
+  Retry-After, at most 30 s apart, 12 times) once the card is in view again, so a busy server
+  delays a preview instead of losing it. Each web process allows at most two concurrent storage
+  thumbnail downloads and uses four Gunicorn threads so marks need not wait for them. Cached
+  thumbnails bypass this limit, and a disk below its reserve refuses before downloading. Busy or
+  temporarily unavailable thumbnails return private, non-cacheable 503 with Retry-After on both
+  site and API. Index imports retain their own timeout.
 - **FR-EVP-012**: A separate opt-in integration check uses real Dropbox app authentication to read
   a secret-configured fixture index and decode one thumbnail, without writing storage or the
-  site's database. CI runs it on trusted pull requests and main; fork code receives no credentials.
+  site's database. CI runs it on trusted pull requests and main; fork code receives no credentials,
+  and Dependabot's pull requests, which get no Actions secrets, skip it.
 
 ## Key Entities
 
