@@ -25,7 +25,8 @@ def _user(name, role):
 def _event(title, **kwargs):
     defaults = {
         "title_ru": title,
-        "date_start": timezone.localdate() + datetime.timedelta(days=5),
+        # Visibility tests must stay inside the default list's current-month window.
+        "date_start": timezone.localdate(),
         "status": Competition.Status.APPROVED,
         "approved_at": timezone.now(),
     }
