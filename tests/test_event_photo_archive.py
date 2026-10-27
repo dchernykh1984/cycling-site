@@ -95,6 +95,15 @@ class ArchiveTests(EventPhotosTestCase):
             search, f"{reverse('account_login')}?next={quote(self._url('event') + '?bib=12', safe='/')}"
         )
 
+    @override_settings(PHOTO_ARCHIVE_MAX_BYTES=1000)  # the one photo found is 1001 bytes
+    def test_a_guest_is_not_sent_to_sign_in_for_an_archive_too_big_to_give(self):
+        search = self.client.get(f"{self._url('event')}?bib=12")
+        with translation_override("ru"):
+            self.assertNotContains(search, gettext("Sign in to download all photos"))
+            self.assertContains(
+                search, gettext("Too many photos for one archive (%(size)s): open them one by one.")[:20]
+            )
+
     def test_a_photo_the_storage_cannot_give_is_listed_with_its_link(self):
         del FakeAdapter.files["IMG_0002.jpg"]
         self.client.force_login(self.athlete)
