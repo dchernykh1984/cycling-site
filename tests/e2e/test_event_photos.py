@@ -125,7 +125,9 @@ def test_curated_albums_use_the_same_photo_entry(page: Page, live_server, indexe
     page.goto(f"{live_server.url}/en/calendar/{race.pk}/")
     expect(page.locator(".competition-albums")).to_have_count(0)
     page.get_by_role("link", name="Photos from the event", exact=True).click()
-    expect(page.get_by_role("link", name=album.title)).to_have_attribute("href", album.get_absolute_url())
+    with translation_override("en"):
+        expected_url = album.get_absolute_url()
+    expect(page.get_by_role("link", name=album.title)).to_have_attribute("href", expected_url)
 
 
 @pytest.mark.django_db(transaction=True)
