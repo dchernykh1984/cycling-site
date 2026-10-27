@@ -313,6 +313,21 @@ class ImportTests(EventPhotosTestCase):
 
 
 class ThumbnailTests(EventPhotosTestCase):
+    def test_a_failed_thumbnail_publish_keeps_the_complete_previous_file(self):
+        self._publish(_index([_photo(1)]))
+        photo = IndexedPhoto.objects.get()
+        directory = actions._thumb_root() / str(self.album.pk)
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / f"{photo.pk}-{photo.source_sha256[:16]}.jpg"
+        path.write_bytes(b"previous complete image")
+        with mock.patch.object(Path, "replace", side_effect=OSError("disk failure")):
+            with self.assertRaises(OSError):
+                actions.thumbnail_path(photo)
+        self.assertEqual(path.read_bytes(), b"previous complete image")
+        self.assertEqual(list(directory.iterdir()), [path])
+        photo.refresh_from_db()
+        self.assertEqual(photo.thumb_file, "")
+
     def test_a_thumbnail_is_fetched_once_and_kept_where_media_does_not_serve_it(self):
         self._publish(_index([_photo(1)]))
         photo = IndexedPhoto.objects.get()
