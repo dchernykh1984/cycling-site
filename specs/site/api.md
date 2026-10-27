@@ -42,9 +42,9 @@ and protocols with the event's upload token. The API has no language prefix.
 6. **Given** the gallery, **Then** anybody reads the albums and photos they could see on the site,
    and admins and the owner create, change and delete albums, upload photos and caption them, by the
    pages' own rules ([gallery](gallery.md), issue #365).
-7. **Given** the virtual ride, **Then** a member (session or token) saves finished rides, lists and
-   deletes their own, reads their records, gathers, joins, leaves and cancels group races, reads a
-   race's results, and reports their live position to get the riders beside them
+7. **Given** the virtual ride, **Then** a confirmed member (session or token) saves finished rides,
+   lists and deletes their own, reads their records, gathers, joins, leaves and cancels group races,
+   reads a race's results, and reports their live position to get the riders beside them
    ([site shell](site-shell.md)).
 
 ### Story 2 -- The timing tools exchange race data (P1)

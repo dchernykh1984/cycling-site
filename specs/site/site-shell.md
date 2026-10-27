@@ -23,7 +23,7 @@ legal pages and a link to report a bug.
 `trainer/static/trainer/alatau.html`, in an iframe that may use Web Bluetooth, the screen wake
 lock and full screen; a link opens the same file on its own. The self-contained page is updated
 from delivered revisions and is not localized (Russian only). A guest's progress stays in their
-browser; for a signed-in member the page saves every finished ride through `/api/v1/virtual-ride/`
+browser, as does an unconfirmed account's; for a confirmed member the page saves every finished ride through `/api/v1/virtual-ride/`
 (see [the API](api.md)), and their records -- best time per route, peak power, top speed, totals --
 are derived from those rides and shown on the profile ([accounts](accounts.md)); rides in demo mode
 are kept but never count. Members ride together: the settings page lists who else is on it and the

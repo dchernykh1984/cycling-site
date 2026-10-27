@@ -147,7 +147,7 @@ class ProfileView(TemplateView):
         # The contact-owners button shares the same timestamp/cooldown (issue #122).
         context["contact_cooldown_seconds"] = cooldown_remaining
         context["roles"] = role_ladder(user)
-        if user.is_authenticated:
+        if user.is_authenticated and not needs_email_confirmation(user):
             from trainer.records import profile_context
 
             context["virtual_ride"] = profile_context(user)
