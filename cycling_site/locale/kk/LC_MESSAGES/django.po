@@ -3991,3 +3991,6 @@ msgstr "Бұл фотосуреттер мұрағатта жоқ, оларды 
 
 msgid "missing-photos.txt"
 msgstr "жетіспейтін-фотосуреттер.txt"
+
+msgid "Sign in to download all photos"
+msgstr "Барлық фотосуреттерді жүктеп алу үшін кіріңіз"
