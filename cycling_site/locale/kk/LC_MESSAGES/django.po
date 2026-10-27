@@ -3998,6 +3998,7 @@ msgstr "Барлық фотосуреттерді жүктеп алу үшін �
 #, python-format
 msgid "Instead of steps 1 and 2, the folder can be indexed with the skill in the <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer project</a>."
 msgstr "1 және 2-қадамдардың орнына папканы <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer жобасындағы</a> скилл арқылы индекстеуге болады."
+
 #: accounts/templates/accounts/profile.html:246
 #: tests/test_virtual_ride_api.py:141
 msgid "Virtual rides"
