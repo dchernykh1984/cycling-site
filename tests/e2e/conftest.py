@@ -1,5 +1,6 @@
 import datetime
 import os
+import threading
 
 import pytest
 from django.test import Client
@@ -35,6 +36,22 @@ AROUND_UPCOMING = f"date_from={UPCOMING - _FORTNIGHT:%Y-%m-%d}&date_to={UPCOMING
 # starting point: new members and first-time guests get it, and the tests that pick a skin still
 # pick freely.
 E2E_SKIN = os.environ.get("E2E_SKIN", "light")
+
+
+@pytest.fixture(autouse=True)
+def _finish_live_requests():
+    """Let the live server finish what a closed page left running before the tables are flushed.
+
+    A request still inside a transaction while the flush truncates its tables deadlocks the flush, and
+    the next tests then fail on rows the flush left behind. pytest sets up a conftest's autouse
+    fixtures in name order, so this name sorts before ``_generous_ci_timeouts``, the first to open
+    ``page``: set up before the page, it is torn down after the page has closed and before the
+    database fixture, which pytest-django sets up first and tears down last.
+    """
+    yield
+    for thread in threading.enumerate():
+        if "process_request_thread" in thread.name:
+            thread.join(timeout=10)
 
 
 @pytest.fixture(autouse=True)
