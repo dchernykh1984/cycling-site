@@ -6,7 +6,8 @@ the profile and the event page.{% endcomment %}
   {% with reg=card.registration %}
   <a class="gallery-card gallery-album-card" href="{% url 'event_photos:registration' reg.competition_id reg.pk %}">
     {% if card.cover %}
-    <img src="{% photo_thumb_url card.cover %}" alt="{{ reg.competition.title }}" width="256" height="171" loading="lazy" decoding="async">
+    {% photo_thumb_url card.cover as thumbnail_url %}
+    {% include "event_photos/_thumbnail.html" %}
     {% else %}
     <span class="gallery-card-blank">{% include "gallery/_icons.html" with name="image" %}</span>
     {% endif %}

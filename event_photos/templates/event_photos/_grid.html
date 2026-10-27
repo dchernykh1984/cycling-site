@@ -6,7 +6,7 @@ viewed full size and downloaded. With can_mark, each card carries the athlete's 
   <div class="event-photo" id="photo-{{ photo.pk }}">
     <a class="gallery-card" href="{{ photo.open_url }}" target="_blank" rel="noopener">
       {% if photo.thumb_url %}
-      <img src="{{ photo.thumb_url }}" alt="{{ photo.file_name }}" width="256" height="171" loading="lazy" decoding="async">
+      {% include "event_photos/_thumbnail.html" with thumbnail_url=photo.thumb_url %}
       {% else %}
       <span class="gallery-card-blank">{% include "gallery/_icons.html" with name="image" %}</span>
       {% endif %}

@@ -132,3 +132,69 @@
         });
     });
 }());
+
+(function () {
+    // Two downloads at a time, only near the viewport. Leave web threads free for people's marks.
+    var queue = [], active = 0;
+    function pump() {
+        while (active < 2 && queue.length) {
+            load(queue.shift());
+        }
+    }
+    function load(image) {
+        active += 1;
+        var frame = image.closest('[data-photo-preview]');
+        var controller = new AbortController();
+        var timer = setTimeout(function () { controller.abort(); }, 10000);
+        fetch(image.dataset.photoSrc, {signal: controller.signal}).then(function (response) {
+            if (!response.ok) {
+                if (response.status === 503 && (image.retries || 0) < 2) {
+                    image.retries = (image.retries || 0) + 1;
+                    var delay = Math.min(Number(response.headers.get('Retry-After')) || 2, 60);
+                    setTimeout(function () { queue.push(image); pump(); }, delay * 1000);
+                    return null;
+                }
+                throw new Error('preview unavailable');
+            }
+            return response.blob();
+        }).then(function (blob) {
+            if (!blob) return;
+            var url = URL.createObjectURL(blob);
+            image.onload = function () {
+                URL.revokeObjectURL(url);
+                image.hidden = false;
+                frame.querySelector('[data-photo-placeholder]').hidden = true;
+            };
+            image.onerror = function () { URL.revokeObjectURL(url); unavailable(); };
+            image.src = url;
+        }).catch(unavailable).finally(function () {
+            clearTimeout(timer);
+            active -= 1;
+            pump();
+        });
+        function unavailable() {
+            frame.querySelector('[data-photo-placeholder]').hidden = true;
+            frame.querySelector('[data-photo-unavailable]').hidden = false;
+        }
+    }
+    var images = document.querySelectorAll('img[data-photo-src]');
+    if (!images.length) return;
+    images.forEach(function (image) {
+        var placeholder = image.closest('[data-photo-preview]').querySelector('[data-photo-placeholder]');
+        placeholder.textContent = placeholder.dataset.loadingLabel;
+    });
+    if (!('IntersectionObserver' in window)) {
+        images.forEach(function (image) { queue.push(image); });
+        pump();
+        return;
+    }
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            observer.unobserve(entry.target);
+            queue.push(entry.target.querySelector('img[data-photo-src]'));
+        });
+        pump();
+    }, {rootMargin: '200px'});
+    images.forEach(function (image) { observer.observe(image.closest('[data-photo-preview]')); });
+}());
