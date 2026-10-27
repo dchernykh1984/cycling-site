@@ -255,7 +255,8 @@ class CompetitionListViewTests(TestCase):
         self.comp = _make_competition(
             "Upcoming Race",
             status=Competition.Status.APPROVED,
-            date_start=today + datetime.timedelta(days=5),
+            # The default list ends this month; +5 days crosses it every month-end.
+            date_start=today,
         )
         self.old = _make_competition(
             "Past Race",
