@@ -20,8 +20,10 @@ MAX_START_DELAY_S = 3600
 
 
 def online(now=None):
+    """Who is on the page, in a steady order: each poll rewrites a row, and an unordered list reshuffles."""
     now = now or timezone.now()
-    return LiveRider.objects.filter(updated_at__gte=now - timedelta(seconds=ONLINE_SECONDS)).select_related("user")
+    recent = LiveRider.objects.filter(updated_at__gte=now - timedelta(seconds=ONLINE_SECONDS))
+    return recent.select_related("user").order_by("user_id")
 
 
 def open_groups(now=None):
