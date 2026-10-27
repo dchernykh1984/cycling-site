@@ -620,6 +620,9 @@ class PageAndApiTests(EventPhotosTestCase):
             self.assertEqual(response["Retry-After"], "1")
             self.assertEqual(response["Cache-Control"], "private, no-store")
             self.assertEqual(FakeAdapter.thumbnails_served, 0)
+            api_response = self.client.get(f"/api/v1/event-photos/photos/{self.photo.pk}/thumbnail")
+            self.assertEqual(api_response.status_code, 503)
+            self.assertEqual(api_response["Retry-After"], "1")
             self.client.force_login(self.athlete)
             marked = self.client.post(self._url("decide", self.reg.pk, self.photo.pk), {"state": "me"})
             self.assertEqual(marked.status_code, 302)
@@ -637,6 +640,17 @@ class PageAndApiTests(EventPhotosTestCase):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, 503)
                 self.assertEqual(response["Retry-After"], "4")
+        self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_a_thumbnail_evicted_while_responding_can_be_retried(self):
+        url = self._url("thumb", self.photo.pk, self.photo.source_sha256[:16])
+        path = actions.thumbnail_path(self.photo)
+        path.unlink()  # a concurrent index refresh invalidated the cache after its lookup
+        with mock.patch.object(actions, "thumbnail_path", return_value=path):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response["Retry-After"], "1")
+        self.assertEqual(response["Cache-Control"], "private, no-store")
         self.assertEqual(self.client.get(url).status_code, 200)
 
     def test_event_search_finds_the_bib_and_the_event_page_links_my_photos(self):

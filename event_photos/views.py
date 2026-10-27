@@ -233,14 +233,14 @@ def thumbnail_response(user, competition, photo_pk) -> FileResponse | HttpRespon
         raise Http404
     try:
         path = actions.thumbnail_path(photo)
-    except DropboxError as exc:
-        if exc.kind not in ("busy", "throttled", "unavailable"):
+        response = FileResponse(path.open("rb"), content_type="image/jpeg")
+    except (DropboxError, FileNotFoundError) as exc:
+        if isinstance(exc, DropboxError) and exc.kind not in ("busy", "throttled", "unavailable"):
             raise Http404 from None
         unavailable = HttpResponse(status=503)
-        unavailable["Retry-After"] = str(min(exc.retry_after or 2, 60))
+        unavailable["Retry-After"] = str(min(exc.retry_after or 2, 60) if isinstance(exc, DropboxError) else 1)
         unavailable["Cache-Control"] = "private, no-store"
         return unavailable
-    response = FileResponse(path.open("rb"), content_type="image/jpeg")
     # Private: no shared cache may keep a thumbnail of an album that is hidden later.
     response["Cache-Control"] = "private, max-age=3600"
     return response
