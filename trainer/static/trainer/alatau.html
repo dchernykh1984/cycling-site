@@ -2424,7 +2424,7 @@ $('#btnPause').onclick = () => { if (phase === 'race' || phase === 'countdown') 
 $('#btnResume').onclick = () => { paused = false; $('#pauseM').classList.add('hidden'); };
 $('#btnFinish').onclick = () => { $('#pauseM').classList.add('hidden'); paused = false; if (rideMode === 'free') finishFree(); else if (rideMode === 'plan' && phase === 'race') finishWorkout(); };
 $('#btnQuit').onclick = () => { $('#pauseM').classList.add('hidden'); $('#count').classList.add('hidden'); startMenu(); };
-$('#btnAgain').onclick = () => { $('#resM').classList.add('hidden'); startRace(); };
+$('#btnAgain').onclick = () => { $('#resM').classList.add('hidden'); groupRide = null; startRace(); }; // a group race is ridden once: again is alone
 $('#btnMenu').onclick = () => { startMenu(); renderMenu(); };
 $('#btnPhoto').onclick = enterPhoto;
 $('#btnPhotoExit').onclick = exitPhoto;
