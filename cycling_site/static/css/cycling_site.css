@@ -616,3 +616,13 @@ main .event-photo-preview img { object-fit: contain; }
     display: inline-flex;
     align-items: center;
 }
+/* The profile's link to the virtual ride is tapped on phones: 44 px, reaching into the header's
+   padding so the header keeps the height of the others. */
+#virtual-rides .card-header a {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    margin: calc(-1 * var(--bs-card-cap-padding-y)) 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}

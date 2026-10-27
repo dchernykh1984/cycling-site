@@ -7,6 +7,10 @@ import pytest
 from django.conf import settings
 from playwright.sync_api import Page, expect
 
+from accounts.models import User
+from tests.e2e.conftest import inject_session
+from tests.e2e.test_interface_rules import _REACH
+
 
 @pytest.mark.parametrize("demo", [False, True])
 def test_a_route_record_keeps_its_date_and_demo_label(page: Page, demo: bool):
@@ -87,3 +91,17 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
     assert page.evaluate("window.asked") == "/groups/7/join"
     page.evaluate("MP.groups = []; renderMP()")
     expect(page.locator("#mpGroups > *")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_profile_link_to_the_ride_is_big_enough_to_tap(page: Page, live_server):
+    member = User.objects.create_user(
+        username="e2e_vr", email="e2e_vr@test.local", password="testpass123!", role=User.Role.PARTICIPANT
+    )
+    inject_session(page, live_server, member)
+    page.set_viewport_size({"width": 360, "height": 740})
+    page.goto(f"{live_server.url}/kk/accounts/profile/")
+    link = page.locator("#virtual-rides .card-header a")
+    link.scroll_into_view_if_needed()  # a tap is measured where it can land: on screen
+    wide, high = link.evaluate(_REACH)
+    assert wide >= 44 and high >= 44, (wide, high)
