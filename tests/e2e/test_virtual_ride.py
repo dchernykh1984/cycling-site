@@ -55,3 +55,35 @@ def test_riding_again_after_a_group_race_rides_alone(page: Page):
     page.click("#btnAgain")
     # The race is over: riding again must not report a second finish into it.
     assert page.evaluate("window.rodeIn") is None
+
+
+def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
+    function = re.search(r"^function renderMP\(\) \{.*?^\}", _trainer_source(), re.DOTALL | re.MULTILINE)
+    assert function is not None
+    page.set_content(
+        '<p id="mpStatus"></p><div id="mpOnline"></div><div id="mpGroups"></div><button id="mpCreate"></button>'
+    )
+    page.evaluate(
+        """render => {
+            const $ = s => document.querySelector(s);
+            const host = {user_id: 1, name: 'Anna'};
+            window.MP = {status: 'on', online: [], groups: [
+                {id: 7, route: 'center', route_name: 'Center', host, members: [host], is_host: false, is_member: false}
+            ]};
+            const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000;
+            const fmtTime = String, routeName = String, hexs = String, mpColor = String;
+            const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = path => { window.asked = path; };
+            eval(render);
+            window.renderMP = renderMP;
+            renderMP();
+        }""",
+        function.group(),
+    )
+    button = page.locator("#mpGroups button").element_handle()
+    page.evaluate("renderMP()")  # the lobby's countdown redraws every second
+    # A tap that lands between two redraws reaches the same button.
+    assert button.evaluate("b => b.isConnected")
+    button.click()
+    assert page.evaluate("window.asked") == "/groups/7/join"
+    page.evaluate("MP.groups = []; renderMP()")
+    expect(page.locator("#mpGroups > *")).to_have_count(0)
