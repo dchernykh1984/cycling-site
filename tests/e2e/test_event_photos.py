@@ -117,6 +117,18 @@ def test_portraits_are_complete_and_captions_never_cover_them(page: Page, live_s
 
 
 @pytest.mark.django_db(transaction=True)
+def test_missing_preview_reserves_the_same_frame_as_a_loaded_photo(page: Page, live_server, indexed_event):
+    athlete, race, reg, album = indexed_event
+    photo = album.photos.get(original_path="IMG_0001.jpg")
+    photo.original_bytes = 21 * 1024 * 1024
+    photo.save(update_fields=["original_bytes"])
+    inject_session(page, live_server, athlete)
+    page.goto(f"{live_server.url}/en/calendar/{race.pk}/photos/registration/{reg.pk}/")
+    blank = page.locator(".event-photo .gallery-card-blank").bounding_box()
+    assert blank and abs(blank["width"] / blank["height"] - 1.5) < 0.01
+
+
+@pytest.mark.django_db(transaction=True)
 def test_unavailable_previews_keep_the_original_link_and_have_no_broken_image(page: Page, live_server, indexed_event):
     athlete, race, reg, _ = indexed_event
     inject_session(page, live_server, athlete)

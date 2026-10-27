@@ -584,6 +584,10 @@ main .gallery-pick-photo img { width: 100%; height: 100%; max-width: none; objec
     aspect-ratio: 3 / 2;
 }
 main .event-photo-preview img { object-fit: contain; }
+.event-photos-grid .gallery-card-blank, .event-photo-cards .gallery-card-blank {
+    height: auto;
+    aspect-ratio: 3 / 2;
+}
 .event-photos-grid .gallery-card, .event-photo-cards .gallery-card { aspect-ratio: auto; }
 .event-photos-grid .gallery-card-caption, .event-photo-cards .gallery-card-caption {
     position: relative;
