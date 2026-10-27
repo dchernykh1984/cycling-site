@@ -179,3 +179,22 @@ def test_two_photographers_files_of_one_name_both_fit():
     taken: set[str] = set()
     names = [archive._unique(name, taken) for name in ("IMG_0001.jpg", "img_0001.JPG", "IMG_0001.jpg", "README")]
     assert names == ["IMG_0001.jpg", "img_0001-2.JPG", "IMG_0001-3.jpg", "README"]
+
+
+@override_settings(EVENT_PHOTOS_ADAPTER="tests.test_event_photos.FakeAdapter", MEDIA_ROOT=MEDIA)
+class ArchiveNameTests(EventPhotosTestCase):
+    def test_a_title_with_a_line_break_gives_a_one_line_file_name(self):
+        athlete = User.objects.create_user(username="a@x.kz", email="a@x.kz", password="pw", role="participant")
+        self.race.title_ru = "Alatau\r\nXCO"
+        self.race.save(update_fields=["title_ru"])
+        reg = self._registration()
+        reg.user = athlete
+        reg.save(update_fields=["user"])
+        self._bib(reg, "12")
+        self._publish(_index([_photo(1, [("12", "accepted", "ocr")])]))
+        FakeAdapter.files["IMG_0001.jpg"] = b"first original"
+        self.client.force_login(athlete)
+        url = reverse("event_photos:registration_archive", args=[self.race.pk, reg.pk])
+        response = self.client.get(url)
+        self.assertIn("Alatau XCO - Ivanov Ivan.zip", response["Content-Disposition"])
+        self.assertEqual(_zip(response).namelist(), ["IMG_0001.jpg"])
