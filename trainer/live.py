@@ -15,8 +15,6 @@ from .models import GroupRide, LiveRider, VirtualRide
 ONLINE_SECONDS = 15
 # A group race stays listed this long after its start, so late polls still find it.
 GROUP_LISTED_AFTER_START = timedelta(minutes=5)
-# How long a group race can run before it is considered over (for results and joining).
-GROUP_MAX_DURATION = timedelta(hours=4)
 MIN_START_DELAY_S = 20
 MAX_START_DELAY_S = 3600
 
