@@ -229,6 +229,10 @@ def test_slow_previews_do_not_block_marks_or_start_a_request_storm(page: Page, l
     actions.import_album(race.external_albums.get(), None)
     pending = []
     page.route("**/photos/thumb/**", lambda route: pending.append(route))
+    # A preview gives up after 10 s and frees its place for the next one; a slow runner would cross
+    # that before the click, so the page's clock stands still and the count is what it asks at once.
+    page.clock.install(time=datetime.datetime(2026, 1, 1))
+    page.clock.pause_at(datetime.datetime(2026, 1, 1, 0, 0, 1))
     inject_session(page, live_server, athlete)
     page.goto(f"{live_server.url}/en/calendar/{race.pk}/photos/registration/{reg.pk}/")
     expect(page.locator(".event-photo")).to_have_count(20)
