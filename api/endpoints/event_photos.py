@@ -250,6 +250,8 @@ def decide(request, registration_id: int, photo_id: int, payload: DecisionIn):
         event = actions.decide(registration, photo, payload.state, request.auth)
     except actions.DecisionRefusedError as exc:
         raise HttpError(409, str(exc)) from None
+    if event is None and payload.state == PhotoDecision.State.NOT_ME:
+        event = actions.recent_rejection(registration, photo)  # a retry keeps the original undo
     return {"state": payload.state, "event_id": event.pk if event else None}
 
 
