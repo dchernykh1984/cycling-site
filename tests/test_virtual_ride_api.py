@@ -1,16 +1,20 @@
 """Virtual ride on the site: saved rides and records in the profile, group races, riding together."""
 
 import json
+import threading
 import uuid
 from datetime import timedelta
+from unittest import mock
 
-from django.test import Client, TestCase
+from django.db import connections
+from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext
 from django.utils.translation import override as translation_override
 
 from accounts.models import User
+from trainer import records
 from trainer.live import ONLINE_SECONDS
 from trainer.models import GroupRide, GroupRideMember, LiveRider, VirtualRide
 
@@ -202,6 +206,42 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         self.post(self.client_g, "/rides", _ride(group_id=group_id, duration_s=1490, place=1, field_size=1))
         places = dict(VirtualRide.objects.filter(group_id=group_id).values_list("user_id", "place"))
         self.assertEqual(places, {self.guest.pk: 1, self.host.pk: 2})
+
+
+class FinishingTogetherTests(MemberClientMixin, TransactionTestCase):
+    def test_two_members_finishing_at_once_get_different_places(self):
+        host, guest = _user("anna"), _user("boris")
+        group = GroupRide.objects.create(route="center", host=host, start_at=timezone.now())
+        for user in (host, guest):
+            GroupRideMember.objects.create(group=group, user=user)
+        clients = {host.pk: self.member(host), guest.pk: self.member(guest)}
+        ranked, go = threading.Event(), threading.Event()
+        rank = records.rank_group
+
+        def rank_then_hold(group):
+            rank(group)
+            if not ranked.is_set():
+                ranked.set()
+                go.wait(timeout=10)  # the first finisher's save is still open
+
+        def save(user, seconds):
+            try:
+                self.post(clients[user.pk], "/rides", _ride(group_id=group.pk, duration_s=seconds))
+            finally:
+                connections.close_all()
+
+        with mock.patch.object(records, "rank_group", side_effect=rank_then_hold):
+            first = threading.Thread(target=save, args=(host, 1520))
+            first.start()
+            self.assertTrue(ranked.wait(timeout=10))
+            second = threading.Thread(target=save, args=(guest, 1490))
+            second.start()
+            second.join(timeout=1)
+            go.set()
+            first.join(timeout=10)
+            second.join(timeout=10)
+        places = dict(VirtualRide.objects.values_list("user_id", "place"))
+        self.assertEqual(places, {guest.pk: 1, host.pk: 2})
 
 
 class RidingTogetherTests(MemberClientMixin, TestCase):

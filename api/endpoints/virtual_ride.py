@@ -252,6 +252,9 @@ def save_ride(request, payload: RideIn):
         if not group.memberships.filter(user=request.auth).exists():
             raise HttpError(403, "You did not ride in this group race")
     with transaction.atomic():
+        if group is not None:
+            # Members finishing together take turns, so each ranking sees the rides saved before it.
+            group = GroupRide.objects.select_for_update().get(pk=group.pk)
         ride = VirtualRide.objects.create(user=request.auth, group=group, **data)
         found = records.new_records(request.auth, ride)
         if group is not None:
