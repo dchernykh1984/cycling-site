@@ -2283,9 +2283,9 @@ async function mpPollResults(gid, until) {
 function renderMP() {
   const st = $('#mpStatus'); if (!st) return;
   const create = $('#mpCreate'), online = $('#mpOnline'), box = $('#mpGroups');
-  online.innerHTML = ''; box.innerHTML = '';
+  online.innerHTML = '';
   if (MP.status !== 'on') {
-    create.disabled = true;
+    create.disabled = true; box.innerHTML = '';
     if (MP.status === 'guest') { st.innerHTML = 'Совместная езда и групповые гонки доступны участникам сайта. <a href="' + escapeHTML(Site.loginHref()) + '" target="_top">Войти</a>'; }
     else st.textContent = MP.status === 'connecting' ? 'Подключаемся…' : 'Совместная езда работает, когда страница открыта на сайте.';
     renderStartSum(); return;
@@ -2299,17 +2299,20 @@ function renderMP() {
     online.appendChild(el);
   });
   const mine = mpMyGroup();
+  // cards are updated in place: rebuilt every second, they would swallow a tap landing mid-rebuild
+  const ids = MP.groups.map(g => String(g.id));
+  [...box.children].forEach(c => { if (!ids.includes(c.dataset.gid)) c.remove(); });
   MP.groups.forEach(g => {
     const left = Math.max(0, Math.ceil((mpStartLocal(g) - Date.now()) / 1000));
-    const card = document.createElement('div'); card.className = 'mp-group' + (g.is_member ? ' on' : '');
-    card.innerHTML = '<div><b></b><small></small></div><button class="btn" type="button"></button>';
+    let card = box.querySelector('[data-gid="' + g.id + '"]');
+    if (!card) { card = document.createElement('div'); card.dataset.gid = g.id; card.innerHTML = '<div><b></b><small></small></div><button class="btn" type="button"></button>'; box.appendChild(card); }
+    card.className = 'mp-group' + (g.is_member ? ' on' : '');
     card.querySelector('b').textContent = (g.is_host ? 'Ваша групповая гонка' : g.host.name + ' собирает гонку') + ': ' + (g.route_name || routeName(g.route));
     card.querySelector('small').textContent = (left ? 'Старт через ' + fmtTime(left) : 'Старт') + '. Участники: ' + g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? 'вы' : m.name).join(', ') + '.';
-    const btn = card.querySelector('button');
+    const btn = card.querySelector('button'); btn.disabled = false;
     if (g.is_host) { btn.textContent = 'Отменить'; btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }
     else if (g.is_member) { btn.textContent = 'Не участвовать'; btn.onclick = () => mpAction('/groups/' + g.id + '/leave'); }
     else { btn.textContent = 'Участвовать'; btn.disabled = !!mine || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }
-    box.appendChild(card);
   });
   create.disabled = !!mine;
   renderStartSum();
