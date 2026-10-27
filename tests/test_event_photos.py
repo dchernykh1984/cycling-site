@@ -38,11 +38,13 @@ class FakeAdapter:
     files: ClassVar[dict[str, bytes]] = {}
     thumbnails_served = 0
 
-    def read_file(self, folder_url, path):
+    def read_file(self, folder_url, path, limit=None):
         from event_photos.dropbox import DropboxError
 
         if path not in self.files:
             raise DropboxError("not-found")
+        if limit is not None and len(self.files[path]) > limit:
+            raise DropboxError("too-large")
         return self.files[path]
 
     def thumbnail(self, folder_url, path):

@@ -2,6 +2,7 @@
 and the same actions. Anything the caller may not see answers 404."""
 
 from django.core.paginator import Paginator
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from ninja import Router, Schema, Status
 from ninja.errors import HttpError
@@ -11,11 +12,18 @@ from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
 from event_photos import actions
+from event_photos.archive import ArchiveBusyError, ArchiveTooBigError
 from event_photos.dropbox import preview_url
 from event_photos.forms import ExternalAlbumForm
 from event_photos.models import ExternalAlbum, IndexedPhoto, PhotoDecision, StartListDiagnostics
 from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration
-from event_photos.views import thumbnail_response, visible_albums
+from event_photos.views import (
+    archive_response,
+    bib_archive_name,
+    participant_name,
+    thumbnail_response,
+    visible_albums,
+)
 from registrations.models import CompetitionRegistration
 
 auth = ApiTokenAuth()
@@ -236,6 +244,36 @@ def registration_photos(request, registration_id: int, page: int = 1):
     qs = actions.registration_photos(registration).select_related("album")
     decisions = dict(PhotoDecision.objects.filter(registration=registration).values_list("photo_id", "state"))
     return _photos(request, qs, registration.competition, page, decisions)
+
+
+def _archive(photos, name: str):
+    try:
+        return archive_response(photos, name)
+    except ArchiveTooBigError:
+        raise HttpError(413, "Too many photos for one archive") from None
+    except ArchiveBusyError:
+        busy = HttpResponse(status=503)
+        busy["Retry-After"] = "60"
+        return busy
+
+
+@router.get("/registrations/{registration_id}/photos/archive", auth=auth, summary="A registration's photos as one ZIP")
+def registration_archive(request, registration_id: int):
+    registration = _registration(request.auth, registration_id)
+    return _archive(
+        actions.registration_photos(registration),
+        f"{registration.competition.title} - {participant_name(registration)}",
+    )
+
+
+@router.get("/competitions/{competition_id}/photos/archive", auth=auth, summary="A bib's photos as one ZIP")
+def bib_archive(request, competition_id: int, bib: str):
+    competition = _competition(request.auth, competition_id)
+    bib = bib.strip()[:32]
+    if not bib:
+        raise HttpError(404, "Not found")
+    photos = actions.bib_photos(competition, bib).filter(album__in=visible_albums(request.auth, competition))
+    return _archive(photos, bib_archive_name(competition, bib))
 
 
 @router.post("/registrations/{registration_id}/photos/{photo_id}/decision", response=DecisionOut, auth=auth)

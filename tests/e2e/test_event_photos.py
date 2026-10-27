@@ -5,6 +5,7 @@ import datetime
 import re
 import tempfile
 import time
+import zipfile
 from io import BytesIO
 
 import pytest
@@ -260,3 +261,24 @@ def test_undo_restores_the_last_photo_to_its_original_gallery_page(page: Page, l
     undo_button.click()
     expect(page).to_have_url(re.compile(r"[?]page=2$"))
     expect(page.locator(".event-photo")).to_contain_text("IMG_0002.jpg")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_download_all_gives_the_album_as_one_zip_from_a_phone_sized_button(page: Page, live_server, indexed_event):
+    athlete, race, reg, _ = indexed_event
+    FakeAdapter.files.update({"IMG_0001.jpg": b"first original", "IMG_0002.jpg": b"second original"})
+    with translation_override("ru"):
+        label = gettext("Download all (ZIP, %(size)s)").split(" (")[0]
+    inject_session(page, live_server, athlete)
+    page.set_viewport_size({"width": 360, "height": 800})
+    page.goto(f"{live_server.url}/ru/calendar/{race.pk}/photos/registration/{reg.pk}/")
+    button = page.get_by_role("link", name=re.compile(re.escape(label)))
+    box = button.bounding_box()
+    assert box is not None and box["height"] >= 44, box
+    with page.expect_download() as caught:
+        button.click()
+    download = caught.value
+    assert download.suggested_filename.endswith(".zip"), download.suggested_filename
+    with zipfile.ZipFile(download.path()) as archive:
+        assert sorted(archive.namelist()) == ["IMG_0001.jpg", "IMG_0002.jpg"]
+        assert archive.read("IMG_0001.jpg") == b"first original"

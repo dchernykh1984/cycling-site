@@ -23,6 +23,7 @@
 
   {% if bib %}
     {% if photos %}
+      {% include "event_photos/_download_all.html" %}
       {% include "event_photos/_grid.html" %}
     {% else %}
       <p>{% blocktrans %}No photos with bib {{ bib }} yet.{% endblocktrans %}</p>

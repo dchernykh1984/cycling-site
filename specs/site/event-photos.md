@@ -45,6 +45,8 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
    registration holding the bib marked the photo "not me".
 2. Each thumbnail opens the photo in Dropbox in a new tab (Dropbox's `preview=` address, or the
    index's own file link).
+3. **Given** a signed-in reader and a search with results, **Then** "Download all (ZIP, size)" gives
+   the found photos' originals as one archive.
 
 ### Story 3 -- A participant checks their album (P1)
 
@@ -54,6 +56,8 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 3. The athlete marks "This is me" or "Not me"; "Not me" removes the photo with a short undo; after
    that the cross is final. A check can become a cross.
 4. Without a known bib the album says so and points to the bib search.
+5. "Download all (ZIP, size)" gives the album's originals as one archive; a photo marked "not me" is
+   not in it.
 
 ## Functional Requirements
 
@@ -93,6 +97,14 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
   a secret-configured fixture index and decode one thumbnail, without writing storage or the
   site's database. CI runs it on trusted pull requests and main; fork code receives no credentials,
   and Dependabot's pull requests, which get no Actions secrets, skip it.
+- **FR-EVP-013**: "Download all" streams a ZIP of the originals as they are read from storage, writing
+  nothing to disk: a registration's album (its owner and the event's managers) or a bib's search
+  results (signed-in readers only, since every byte passes through the site; the link is `nofollow`).
+  One archive at a time per web process; another answers "try again in a minute" on the page and
+  503 with Retry-After over the API. An archive over `PHOTO_ARCHIVE_MAX_BYTES` (by the index's
+  sizes) is not offered and answers 413 over the API. An original over
+  `PHOTO_ARCHIVE_MAX_FILE_BYTES`, or one storage cannot give after one short retry, is left out and
+  listed with its link in a text file inside the archive. Equal file names get a number.
 
 ## Key Entities
 
