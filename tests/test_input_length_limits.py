@@ -34,6 +34,7 @@ from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticle
 from locations.models import Location
 from news.models import NewsArticle, NewsArticleComment
 from registrations.models import CompetitionRegistration, RegistrationCategory, Team
+from trainer.models import GroupRide, LiveRider, VirtualRide
 
 FORM_MODULES = (
     "accounts.views",
@@ -99,6 +100,9 @@ SCHEMA_TARGETS = {
     "api.endpoints.content.NewsArticleIn": NewsArticle,
     "api.endpoints.content.NewsArticlePatchIn": NewsArticle,
     "api.endpoints.locations.LocationIn": Location,
+    "api.endpoints.virtual_ride.GroupIn": GroupRide,
+    "api.endpoints.virtual_ride.PresenceIn": LiveRider,
+    "api.endpoints.virtual_ride.RideIn": VirtualRide,
     "api.endpoints.locations.LocationPatchIn": Location,
     # Timing and start-list payloads are device streams, not rows of these models: they carry a
     # competition token and a list of lines, parsed and validated by their own endpoints.

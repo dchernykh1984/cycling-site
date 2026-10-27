@@ -3998,3 +3998,151 @@ msgstr "Барлық фотосуреттерді жүктеп алу үшін �
 #, python-format
 msgid "Instead of steps 1 and 2, the folder can be indexed with the skill in the <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer project</a>."
 msgstr "1 және 2-қадамдардың орнына папканы <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer жобасындағы</a> скилл арқылы индекстеуге болады."
+#: accounts/templates/accounts/profile.html:246
+#: tests/test_virtual_ride_api.py:141
+msgid "Virtual rides"
+msgstr "Виртуалды заездтер"
+
+#: accounts/templates/accounts/profile.html:247
+msgid "Ride"
+msgstr "Жолға шығу"
+
+#: accounts/templates/accounts/profile.html:252
+msgid "rides"
+msgstr "заезд"
+
+#: accounts/templates/accounts/profile.html:253
+#: accounts/templates/accounts/profile.html:287
+msgid "km"
+msgstr "км"
+
+#: accounts/templates/accounts/profile.html:253
+msgid "ridden"
+msgstr "жүрілді"
+
+#: accounts/templates/accounts/profile.html:254
+msgid "m"
+msgstr "м"
+
+#: accounts/templates/accounts/profile.html:254
+msgid "climbed"
+msgstr "биіктік жинау"
+
+#: accounts/templates/accounts/profile.html:255
+msgid "in the saddle"
+msgstr "ер-тоқымда"
+
+#: accounts/templates/accounts/profile.html:258
+msgid "Best times"
+msgstr "Үздік уақыт"
+
+#: accounts/templates/accounts/profile.html:261
+msgid "Time"
+msgstr "Уақыт"
+
+#: accounts/templates/accounts/profile.html:261
+msgid "Attempts"
+msgstr "Әрекет"
+
+#: accounts/templates/accounts/profile.html:274
+msgid "Peak power and top speed"
+msgstr "Ең жоғары қуат пен жылдамдық"
+
+#: accounts/templates/accounts/profile.html:276
+msgid "5 s"
+msgstr "5 с"
+
+#: accounts/templates/accounts/profile.html:277
+msgid "1 min"
+msgstr "1 мин"
+
+#: accounts/templates/accounts/profile.html:278
+msgid "5 min"
+msgstr "5 мин"
+
+#: accounts/templates/accounts/profile.html:279
+msgid "20 min"
+msgstr "20 мин"
+
+#: accounts/templates/accounts/profile.html:280
+msgid "Top speed"
+msgstr "Ең жоғары жылдамдық"
+
+#: accounts/templates/accounts/profile.html:280
+msgid "km/h"
+msgstr "км/сағ"
+
+#: accounts/templates/accounts/profile.html:282
+msgid "Recent rides"
+msgstr "Соңғы заездтер"
+
+#: accounts/templates/accounts/profile.html:286
+msgid "demo"
+msgstr "демо"
+
+#: accounts/templates/accounts/profile.html:292
+msgid ""
+"Rides you finish on the virtual ride page are saved here, with your best "
+"times and peak power. Rides in demo mode are kept but never count as "
+"records."
+msgstr ""
+"Виртуалды жүріс бетінде аяқталған заездтер осында үздік уақыт пен ең жоғары "
+"қуатпен бірге сақталады. Демо режимдегі заездтер тарихта сақталады, бірақ "
+"рекорд болып саналмайды."
+
+#: api/endpoints/virtual_ride.py:288
+msgid "You already have a group race waiting to start"
+msgstr "Сізде басталуын күтіп тұрған топтық жарыс бар"
+
+#: api/endpoints/virtual_ride.py:304
+msgid "This group race has already started"
+msgstr "Бұл топтық жарыс басталып кетті"
+
+#: api/endpoints/virtual_ride.py:313
+msgid "The host cancels the race instead of leaving it"
+msgstr "Ұйымдастырушы жарыстан шықпайды, оны тоқтатады"
+
+#: api/endpoints/virtual_ride.py:322
+msgid "Only the host can cancel this group race"
+msgstr "Топтық жарысты тек ұйымдастырушы тоқтата алады"
+
+#: trainer/models.py:17
+msgid "Race"
+msgstr "Жарыс"
+
+#: trainer/models.py:18
+msgid "Cadence plan"
+msgstr "Каденс жоспары"
+
+#: trainer/models.py:19
+msgid "Free ride"
+msgstr "Еркін жүріс"
+
+#: trainer/models.py:23
+msgid "Measured power"
+msgstr "Өлшенген қуат"
+
+#: trainer/models.py:24
+msgid "Estimated power"
+msgstr "Бағаланған қуат"
+
+#: trainer/models.py:25
+msgid "Demo mode"
+msgstr "Демо режим"
+
+#: trainer/models.py:96
+msgid "Setting up a ride"
+msgstr "Заездті баптап жатыр"
+
+#: trainer/models.py:97
+msgid "Riding"
+msgstr "Жолда"
+
+#: accounts/templates/accounts/profile.html:266
+#: accounts/templates/accounts/profile.html:276
+#: accounts/templates/accounts/profile.html:277
+#: accounts/templates/accounts/profile.html:278
+#: accounts/templates/accounts/profile.html:279
+msgctxt "watts"
+msgid "W"
+msgstr "Вт"

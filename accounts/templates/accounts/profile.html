@@ -233,6 +233,64 @@
         </script>
         {% endif %}
 
+        {% comment %}Virtual ride (trainer/): the member's records, derived from the rides the trainer page
+        saved through /api/v1/virtual-ride/rides. Every signed-in member can ride, so it sits above the
+        role-gated part of the cabinet.{% endcomment %}
+        {% if virtual_ride %}
+        <div class="card mb-4" id="virtual-rides">
+            <div class="card-header d-flex justify-content-between align-items-center gap-2">
+                <span>{% trans "Virtual rides" %}</span>
+                <a href="{% url 'virtual_ride' %}" class="small">{% trans "Ride" %}</a>
+            </div>
+            <div class="card-body">
+                {% if virtual_ride.rides %}
+                <div class="row g-2 mb-3 text-center small">
+                    <div class="col-6 col-sm-3"><div class="fw-semibold fs-6">{{ virtual_ride.rides }}</div><div class="text-muted">{% trans "rides" %}</div></div>
+                    <div class="col-6 col-sm-3"><div class="fw-semibold fs-6">{{ virtual_ride.distance_km }} {% trans "km" %}</div><div class="text-muted">{% trans "ridden" %}</div></div>
+                    <div class="col-6 col-sm-3"><div class="fw-semibold fs-6">{{ virtual_ride.elevation_m }} {% trans "m" %}</div><div class="text-muted">{% trans "climbed" %}</div></div>
+                    <div class="col-6 col-sm-3"><div class="fw-semibold fs-6">{{ virtual_ride.time_label }}</div><div class="text-muted">{% trans "in the saddle" %}</div></div>
+                </div>
+                {% if virtual_ride.routes %}
+                <h3 class="h6">{% trans "Best times" %}</h3>
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm small mb-0">
+                        <thead><tr><th>{% trans "Route" %}</th><th class="text-end">{% trans "Time" %}</th><th class="text-end">{% trans "Attempts" %}</th></tr></thead>
+                        <tbody>
+                            {% for best in virtual_ride.routes %}
+                            <tr>
+                                <td>{{ best.route_name }}<div class="text-muted">{{ best.finished_at|date:"SHORT_DATE_FORMAT" }}</div></td>
+                                <td class="text-end">{{ best.time_label }}{% if best.best_avg_power_w %}<div class="text-muted">{{ best.best_avg_power_w }} {% trans "W" context "watts" %}</div>{% endif %}</td>
+                                <td class="text-end">{{ best.attempts }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+                <h3 class="h6">{% trans "Peak power and top speed" %}</h3>
+                <ul class="list-inline small mb-3">
+                    <li class="list-inline-item">{% trans "5 s" %}: <b>{% if virtual_ride.peaks.peak_5s_w %}{{ virtual_ride.peaks.peak_5s_w }} {% trans "W" context "watts" %}{% else %}&mdash;{% endif %}</b></li>
+                    <li class="list-inline-item">{% trans "1 min" %}: <b>{% if virtual_ride.peaks.peak_1m_w %}{{ virtual_ride.peaks.peak_1m_w }} {% trans "W" context "watts" %}{% else %}&mdash;{% endif %}</b></li>
+                    <li class="list-inline-item">{% trans "5 min" %}: <b>{% if virtual_ride.peaks.peak_5m_w %}{{ virtual_ride.peaks.peak_5m_w }} {% trans "W" context "watts" %}{% else %}&mdash;{% endif %}</b></li>
+                    <li class="list-inline-item">{% trans "20 min" %}: <b>{% if virtual_ride.peaks.peak_20m_w %}{{ virtual_ride.peaks.peak_20m_w }} {% trans "W" context "watts" %}{% else %}&mdash;{% endif %}</b></li>
+                    <li class="list-inline-item">{% trans "Top speed" %}: <b>{% if virtual_ride.max_speed_kmh %}{{ virtual_ride.max_speed_kmh|floatformat:1 }} {% trans "km/h" %}{% else %}&mdash;{% endif %}</b></li>
+                </ul>
+                <h3 class="h6">{% trans "Recent rides" %}</h3>
+                <ul class="list-unstyled small mb-0">
+                    {% for ride in virtual_ride.recent %}
+                    <li class="d-flex justify-content-between gap-2 py-1 border-bottom">
+                        <span><span class="text-muted">{{ ride.finished_at|date:"SHORT_DATE_FORMAT" }}</span> {{ ride.route_name|default:ride.route }}, {{ ride.get_kind_display|lower }}{% if ride.place and ride.field_size and ride.field_size > 1 %}, {{ ride.place }}/{{ ride.field_size }}{% endif %}{% if ride.power_source == "demo" %}, {% trans "demo" %}{% endif %}</span>
+                        <span class="text-nowrap">{{ ride.time_label }}, {{ ride.distance_km }} {% trans "km" %}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted small mb-0">{% trans "Rides you finish on the virtual ride page are saved here, with your best times and peak power. Rides in demo mode are kept but never count as records." %}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         {# Unverified users (GUEST) get a minimal cabinet: profile data + the resend block #}
         {# above. Everything below requires a confirmed account (participant+). #}
         {% if user.get_role_rank >= 1 %}

@@ -22,11 +22,19 @@ legal pages and a link to report a bug.
 **Virtual ride** (`trainer/`, `/<lang>/virtual-ride/`) frames a self-contained indoor-trainer page,
 `trainer/static/trainer/alatau.html`, in an iframe that may use Web Bluetooth, the screen wake
 lock and full screen; a link opens the same file on its own. The self-contained page is updated
-from delivered revisions and is not localized (Russian only); its progress stays in the reader's
-browser. The settings page is separate from the ride and offers racing, a cadence plan and free riding. It includes rider
+from delivered revisions and is not localized (Russian only). A guest's progress stays in their
+browser; for a signed-in member the page saves every finished ride through `/api/v1/virtual-ride/`
+(see [the API](api.md)), and their records -- best time per route, peak power, top speed, totals --
+are derived from those rides and shown on the profile ([accounts](accounts.md)); rides in demo mode
+are kept but never count. Members ride together: the settings page lists who else is on it and the
+open group races; a member gathers a race on the chosen route with a start 20 s to 1 h away, others
+join, and every member's page starts it at the same server time. During a group race, or a free ride
+on the same route, each page reports its position about once a second and draws the others
+(`trainer/live.py`; rows older than 15 s count as gone). Group results are the members' saved rides,
+fastest first. The settings page is separate from the ride and offers racing, a cadence plan and free riding. It includes rider
 height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
 default. Free rides can be finished from the pause menu. Record labels keep the date and demo marker distinct. Tests:
-`tests/test_virtual_ride.py`, `tests/e2e/test_virtual_ride.py`.
+`tests/test_virtual_ride.py`, `tests/test_virtual_ride_api.py`, `tests/e2e/test_virtual_ride.py`.
 
 ## User Scenarios
 

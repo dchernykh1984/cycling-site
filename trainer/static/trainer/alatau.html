@@ -103,6 +103,19 @@ button{cursor:pointer}
 .box #charPrev{height:210px}
 .cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 32px}
 .cols > div{min-width:0}
+.mp-online{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.mp-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:6px 12px 6px 8px;font-size:13px}
+.mp-chip i{width:10px;height:10px;border-radius:50%;flex:none}
+.mp-chip small{color:var(--muted)}
+.mp-groups{display:grid;gap:8px;margin:10px 0}
+.mp-group{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);background:var(--soft);border-radius:14px;padding:12px 14px}
+.mp-group.on{border-color:var(--apple);box-shadow:inset 0 0 0 1px var(--apple)}
+.mp-group b{display:block;font-size:14.5px}
+.mp-group small{color:var(--muted);font-size:13px}
+.mp-group .btn{flex:none}
+.mp-create{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.mp-create select{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 .startbar{display:flex;align-items:center;gap:16px;background:var(--panel);border-top:1px solid var(--line);
   padding:12px max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(18px,env(safe-area-inset-left,0px))}
 .startbar .sum{flex:1;min-width:0;font-size:14px;color:var(--muted);line-height:1.4}
@@ -300,8 +313,16 @@ button{cursor:pointer}
       <select id="view"><option value="chase" selected>От третьего лица</option><option value="fpv">От первого лица</option></select></div>
 
       </section>
+      <section class="box wide" aria-labelledby="hMp">
+        <h2 id="hMp"><span class="num">4</span>Вместе с друзьями</h2>
+        <p class="hint" id="mpStatus">Подключаемся…</p>
+        <div class="mp-online" id="mpOnline"></div>
+        <div class="mp-groups" id="mpGroups"></div>
+        <div class="mp-create"><select id="mpDelay" aria-label="Через сколько старт"><option value="30">Старт через 30 с</option><option value="60" selected>Старт через 1 мин</option><option value="120">Старт через 2 мин</option><option value="300">Старт через 5 мин</option></select><button class="btn" id="mpCreate" type="button" disabled>Собрать групповую гонку</button></div>
+        <p class="hint">Для участников сайта. Групповая гонка идёт по маршруту, выбранному в блоке 1, без ботов: все участники стартуют одновременно, когда закончится отсчёт, а результаты сохраняются в личном кабинете. В свободной езде вы видите всех, кто сейчас катается по тому же маршруту.</p>
+      </section>
       <section class="box wide" aria-labelledby="hDev">
-        <h2 id="hDev"><span class="num">4</span>Устройства и велосипед</h2>
+        <h2 id="hDev"><span class="num">5</span>Устройства и велосипед</h2>
         <div class="cols">
           <div>
     <button class="btn" id="btnConnect" type="button">Подключить устройство</button>
@@ -1520,11 +1541,12 @@ function startMenu() { // страница 1: настройки (3D-сцена 
   bots.forEach(b => scene.remove(b.mesh.g)); bots = [];
   me = newRider('Вы', kitted(charById(settings.char)).a, settings.mass, 0, 2.6);
   applyLook('clean'); setView(settings.view, true); renderStartSum();
+  groupRide = null; rideMode = settings.mode; MP.resultsFor = null; $('#btnPhoto').classList.remove('hidden'); if (MP.status === 'on') mpSchedule(300); renderMP();
 }
 function renderStartSum() {
   const el = $('#startSum'); if (!el) return;
   const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
-  const mode = settings.mode === 'plan' ? 'план по каденсу на ' + fmtTime(planTotalMin() * 60) : settings.mode === 'free' ? 'свободная езда' : 'гонка, ' + (+settings.bots ? 'соперников: ' + settings.bots : 'без соперников');
+  const mode = (typeof MP !== 'undefined' && mpMyGroup()) ? 'вы записаны в групповую гонку, она начнётся сама (кнопка «Старт» — выйти из неё и поехать одному)' : settings.mode === 'plan' ? 'план по каденсу на ' + fmtTime(planTotalMin() * 60) : settings.mode === 'free' ? 'свободная езда' : 'гонка, ' + (+settings.bots ? 'соперников: ' + settings.bots : 'без соперников');
   const sm = Sensors.mode(), dev = sm === 'demo' ? 'демо-режим без датчиков' : sm === 'power' ? 'мощность со станка или измерителя' : sm === 'speed' ? 'по датчику скорости' : 'по датчику каденса';
   el.innerHTML = '<b></b><span></span>'; el.querySelector('b').textContent = r.name;
   el.querySelector('span').textContent = mode[0].toUpperCase() + mode.slice(1) + ', ' + dev + (Sensors.live('hr').length ? ', пульсометр' : '') + ', ' + bikeType().name.toLowerCase() + ' ' + fmt1(settings.bikeKg || bikeType().kg) + ' кг.';
@@ -1532,6 +1554,7 @@ function renderStartSum() {
 // страница 2: заезд
 function startRace() {
   readSettings();
+  rideMode = groupRide ? 'race' : settings.mode;
   const route = ROUTES.find(r => r.id === routeSel);
   showLoading(true);
   setTimeout(() => {
@@ -1542,8 +1565,8 @@ function startRace() {
     const bt = bikeType(); me.CdA = riderAero(settings.height, settings.mass).CdA * bt.aero; me.bike = settings.bikeKg || bt.kg; me.Crr = bt.crr;
     me.stats = { dist: 0, gain: 0, sumP: 0, sumCad: 0, nCad: 0, maxV: 0, t: 0, sumHR: 0, nHR: 0, maxHR: 0, real: false, demoT: 0 };
     me.powerLog = []; me.pAcc = 0; me.pT = 0;
-    const planMode = settings.mode === 'plan', freeMode = settings.mode === 'free';
-    spawnBots(planMode || freeMode ? 0 : +settings.bots, settings.level, world.S0);
+    const planMode = rideMode === 'plan', freeMode = rideMode === 'free';
+    spawnBots(planMode || freeMode || groupRide ? 0 : +settings.bots, settings.level, world.S0);
     me.lap = 0; Work.active = false;
     if (planMode) { Work.start(settings.plan.steps); gearF = settings.plan.steps[0].f; gearR = settings.plan.steps[0].r; }
     else { gearF = bikeF().length; gearR = Math.ceil(bikeR().length / 2); }
@@ -1551,7 +1574,9 @@ function startRace() {
     $('#btnFinish').classList.toggle('hidden', !(planMode || freeMode));
     $('#pauseHint').textContent = freeMode ? 'Таймер остановлен. «Завершить заезд» сохранит его в истории.' : planMode ? 'Таймер и план остановлены. Можно завершить тренировку досрочно.' : 'Таймер остановлен. Соперники тоже ждут.';
     if (freeMode) setTimeout(() => toast('Свободная езда: завершить можно через паузу', 5), 4500);
-    raceT = 0; cdT = 3.999; phase = 'countdown'; paused = false;
+    if (groupRide) { $('#pauseHint').textContent = 'Групповая гонка не останавливается: время идёт, соперники едут дальше.'; setTimeout(() => toast('Групповая гонка: все стартуют одновременно', 4), 300); }
+    $('#btnPhoto').classList.toggle('hidden', !!groupRide);
+    raceT = 0; cdT = groupRide ? Math.max(.5, (groupRide.startAt - Date.now()) / 1000) : 3.999; phase = 'countdown'; paused = false;
     $('#menu').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#count').classList.remove('hidden');
     applyLook('clean'); setView(settings.view, true); Trainer.sent = null; drawProfileBase(); updateModeUI(); showLoading(false);
     try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {}); } catch (e) {}
@@ -1560,20 +1585,19 @@ function startRace() {
 function finishRace() {
   phase = 'done';
   const t = me.finishT, st = me.stats, distKm = (world.FIN - world.S0) / 1000;
-  const list = [{ name: 'Вы', t, me: true, color: hexs(kitted(charById(settings.char)).a) }].concat(bots.map(b => ({ name: b.name, t: b.finishT != null ? b.finishT : raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: '#' + b.color.toString(16).padStart(6, '0'), est: b.finishT == null })));
-  list.sort((a, b) => a.t - b.t);
-  const place = list.findIndex(x => x.me) + 1;
+  const list = raceList(), place = list.findIndex(x => x.me) + 1, humans = list.filter(x => x.human).length;
   const avgP = Math.round(st.sumP / Math.max(1, st.t));
-  const ride = { id: Date.now().toString(36), date: Date.now(), route: world.route.id, time: Math.round(t * 10) / 10, dist: Math.round(distKm * 100) / 100, avgSpeed: Math.round(distKm / (t / 3600) * 10) / 10, avgPower: avgP, real: st.real, demo: st.demoT > st.t * .5, maxSpeed: Math.round(st.maxV * 36) / 10, gain: Math.round(st.gain), avgCad: st.nCad ? Math.round(st.sumCad / st.nCad) : null, avgHR: st.nHR ? Math.round(st.sumHR / st.nHR) : null, place, of: list.length, char: settings.char };
+  const ride = { id: Date.now().toString(36), date: Date.now(), route: world.route.id, time: Math.round(t * 10) / 10, dist: Math.round(distKm * 100) / 100, avgSpeed: Math.round(distKm / (t / 3600) * 10) / 10, avgPower: avgP, real: st.real, demo: st.demoT > st.t * .5, maxSpeed: Math.round(st.maxV * 36) / 10, gain: Math.round(st.gain), avgCad: st.nCad ? Math.round(st.sumCad / st.nCad) : null, avgHR: st.nHR ? Math.round(st.sumHR / st.nHR) : null, place, of: list.length, char: settings.char, group: !!groupRide };
   const rec = Records.add(ride, me.powerLog || []), pb = rec.prev && rec.prev.time;
-  $('#resTitle').textContent = place === 1 && bots.length ? 'Победа на маршруте' : 'Финиш';
-  $('#resSub').textContent = world.route.name + (bots.length ? ', место ' + place + ' из ' + list.length : '') + (pb && t >= pb ? '. Лучший результат: ' + fmtTime(pb) + '.' : '.');
+  $('#resTitle').textContent = place === 1 && bots.length ? (groupRide ? 'Победа в групповой гонке' : 'Победа на маршруте') : 'Финиш';
+  $('#resSub').textContent = world.route.name + (bots.length ? ', место ' + place + ' из ' + list.length : '') + (pb && t >= pb ? '. Лучший результат: ' + fmtTime(pb) + '.' : '.') + (humans && list.some(x => x.human && x.est) ? ' Места тех, кто ещё едет, уточнятся, когда они финишируют.' : '');
   $('#resRec').innerHTML = rec.news.length ? '<b>Новые рекорды</b><ul>' + rec.news.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '';
   $('#resRec').classList.toggle('hidden', !rec.news.length);
-  const sx = [[fmtTime(t), 'время'], [fmt1(distKm / (t / 3600)), 'средняя, км/ч'], [Math.round(st.sumP / Math.max(1, st.t)) + ' Вт', st.real ? 'средняя мощность' : 'средняя мощность (оценка)'], [st.nCad ? Math.round(st.sumCad / st.nCad) : '—', 'средний каденс'], [fmt1(st.maxV * 3.6), 'максимум, км/ч'], [Math.round(st.gain) + ' м', 'набор высоты']];
+  const sx = [[fmtTime(t), 'время'], [fmt1(distKm / (t / 3600)), 'средняя, км/ч'], [avgP + ' Вт', st.real ? 'средняя мощность' : 'средняя мощность (оценка)'], [st.nCad ? Math.round(st.sumCad / st.nCad) : '—', 'средний каденс'], [fmt1(st.maxV * 3.6), 'максимум, км/ч'], [Math.round(st.gain) + ' м', 'набор высоты']];
   if (st.nHR) sx.push([Math.round(st.sumHR / st.nHR) + ' / ' + st.maxHR, 'пульс: средний / макс.']);
   $('#resStats').innerHTML = sx.map(s => '<div class="stat"><div class="v">' + s[0] + '</div><div class="u">' + s[1] + '</div></div>').join('');
-  $('#resList').innerHTML = list.map((x, i) => '<li class="' + (x.me ? 'me' : '') + '"><span>' + (i + 1) + '</span><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + x.color + ';margin-right:8px"></span>' + x.name + '</span><span>' + (x.est ? '≈ ' : '') + fmtTime(x.t) + '</span></li>').join('');
+  renderRaceList(list);
+  if (groupRide) { const gid = groupRide.gid; setTimeout(() => mpPollResults(gid, Date.now() + 10 * 60000), 2500); }
   setTimeout(() => $('#resM').classList.remove('hidden'), 1500);
 }
 
@@ -1681,7 +1705,7 @@ function drawProfile() {
   const cv = $('#profile'); if (!profBase) return; const g = cv.getContext('2d'), dpr = cv.width / (cv.clientWidth || 1);
   g.clearRect(0, 0, cv.width, cv.height); g.drawImage(profBase, 0, 0);
   const span = world.FIN - world.S0, pr = world.prof, o = {};
-  const mark = (R, c, r) => { const rel = R.s - world.S0, f = settings.mode !== 'race' && world.T.loop ? (((rel % span) + span) % span) / span : clamp(rel / span, 0, 1), y = sampleAt(world.T, R.s, o).y; const X = f * cv.width, Y = cv.height - 6 * dpr - (y - pr.mn) / pr.rng * (cv.height - 14 * dpr); g.fillStyle = c; g.beginPath(); g.arc(X, Y, r * dpr, 0, 7); g.fill(); };
+  const mark = (R, c, r) => { const rel = R.s - world.S0, f = rideMode !== 'race' && world.T.loop ? (((rel % span) + span) % span) / span : clamp(rel / span, 0, 1), y = sampleAt(world.T, R.s, o).y; const X = f * cv.width, Y = cv.height - 6 * dpr - (y - pr.mn) / pr.rng * (cv.height - 14 * dpr); g.fillStyle = c; g.beginPath(); g.arc(X, Y, r * dpr, 0, 7); g.fill(); };
   bots.forEach(b => mark(b, '#' + b.color.toString(16).padStart(6, '0'), 3));
   mark(me, '#ffffff', 6); mark(me, '#C3323B', 4);
 }
@@ -1712,12 +1736,12 @@ function updateHUD(inp, grade) {
   $('#grade').style.background = gradeColor(grade);
   $('#vTime').textContent = fmtTime(raceT);
   const done = clamp(me.s - world.S0, 0, world.FIN - world.S0);
-  $('#vDist').textContent = settings.mode !== 'race' ? fmt1(me.stats.dist / 1000) + ' км, круг ' + (me.lap + 1) : fmt1(done / 1000) + ' из ' + fmt1((world.FIN - world.S0) / 1000) + ' км';
-  if (settings.mode === 'plan') updatePlanHUD(inp.cad);
+  $('#vDist').textContent = rideMode !== 'race' ? fmt1(me.stats.dist / 1000) + ' км, круг ' + (me.lap + 1) : fmt1(done / 1000) + ' из ' + fmt1((world.FIN - world.S0) / 1000) + ' км';
+  if (rideMode === 'plan') updatePlanHUD(inp.cad);
   $('#vEle').textContent = Math.round(sampleAt(T, me.s, {}).y) + ' м над морем';
   const all = [me].concat(bots).slice().sort((a, b) => (b.finishT != null ? 1e9 - b.finishT : b.s) - (a.finishT != null ? 1e9 - a.finishT : a.s));
   const lead = all[0];
-  $('#boardList').innerHTML = all.slice(0, 8).map((r, i) => { const gap = r === lead ? '' : '+' + Math.max(0, Math.round((lead.s - r.s) / Math.max(r.v, 3))) + ' с'; const col = r === me ? '#fff' : '#' + r.color.toString(16).padStart(6, '0'); return '<li class="' + (r === me ? 'me' : '') + '"><span class="dot" style="background:' + col + '"></span><span>' + r.name + '</span><span class="gap">' + gap + '</span></li>'; }).join('');
+  $('#boardList').innerHTML = all.slice(0, 8).map((r, i) => { const gap = r === lead ? '' : '+' + Math.max(0, Math.round((lead.s - r.s) / Math.max(r.v, 3))) + ' с'; const col = r === me ? '#fff' : '#' + r.color.toString(16).padStart(6, '0'); return '<li class="' + (r === me ? 'me' : '') + '"><span class="dot" style="background:' + col + '"></span><span>' + escapeHTML(r.name) + '</span><span class="gap">' + gap + '</span></li>'; }).join('');
   drawMini(); drawProfile();
   updateTagText();
 }
@@ -1732,7 +1756,7 @@ function ensureTags() {
     const el = document.createElement('div'); el.className = 'tag3d'; el.style.borderLeftColor = hexs(b.color);
     el.innerHTML = '<div class="nm"></div><div class="r"><b class="g">0</b><span>с</span></div><div class="r"><b class="c">0</b><span>об/мин</span></div><div class="r"><b class="p">0</b><span>Вт</span></div>';
     el.querySelector('.nm').textContent = b.name; box.appendChild(el);
-    return { b, el, g: el.querySelector('.g'), c: el.querySelector('.c'), p: el.querySelector('.p') };
+    return { b, el, nm: el.querySelector('.nm'), g: el.querySelector('.g'), c: el.querySelector('.c'), p: el.querySelector('.p') };
   });
 }
 function updateTagText() {
@@ -1741,6 +1765,7 @@ function updateTagText() {
     const b = t.b, dist = b.s - me.s, sec = Math.round(Math.abs(dist) / Math.max((me.v + b.v) / 2, 3));
     t.g.textContent = sec === 0 ? '0' : (dist > 0 ? '+' : '−') + sec;
     t.g.className = 'g ' + (sec === 0 ? '' : dist > 0 ? 'ahead' : 'behind');
+    if (t.nm.textContent !== b.name) t.nm.textContent = b.name;
     t.c.textContent = Math.round(b.cad || 0); t.p.textContent = Math.round(b.P || 0);
   });
 }
@@ -1808,17 +1833,18 @@ function frame(now) {
         raceT += dt; const ds = inp.direct ? directStep(me, inp.wheelKmh, dt) : stepRider(me, inp.P, grade, dt); me.s += ds; me.stats.dist += ds;
         const st = me.stats, y1 = sampleAt(T, me.s, _p1).y; if (y1 > y0) st.gain += y1 - y0;
         st.t += dt; st.sumP += inp.P * dt; if (inp.cad > 0) { st.sumCad += inp.cad; st.nCad++; } st.maxV = Math.max(st.maxV, me.v); if (inp.mode === 'demo') st.demoT += dt; me.pAcc += inp.P * dt; me.pT += dt; if (me.pT >= 1) { me.powerLog.push(me.pAcc / me.pT); me.pAcc = 0; me.pT = 0; } if (inp.mode === 'power') st.real = true; const hrNow = Sensors.hr(); if (hrNow) { st.sumHR += hrNow; st.nHR++; st.maxHR = Math.max(st.maxHR, hrNow); }
-        if (settings.mode === 'plan' || settings.mode === 'free') {
+        if (rideMode === 'plan' || rideMode === 'free') {
           // тренировка по плану: маршрут крутится кругами, финиш — когда закончится последний шаг
           if (!T.loop && me.s >= T.L - 15) { me.s = world.S0; cam.cinit = false; cam.init = false; }
           const lap = Math.floor(me.stats.dist / (world.FIN - world.S0));
           if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); toast('Круг ' + (lap + 1), 2.5); }
-          if (settings.mode === 'plan' && Work.update(dt, inp.cad, inp.mode)) finishWorkout();
+          if (rideMode === 'plan' && Work.update(dt, inp.cad, inp.mode)) finishWorkout();
         } else if (me.s >= world.FIN) { me.finishT = raceT; finishRace(); }
         world.lms.forEach(l => { if (l.done || l.dist > 700) return; let ahead = l.s - me.s; if (T.loop) ahead = ((ahead % T.L) + T.L) % T.L; if (ahead < 220 && ahead > -40) { l.done = true; toast((l.side === 'справа' ? 'Справа' : 'Слева') + ': ' + l.name, 4.5); } });
       } else { me.s += stepRider(me, 60, grade, dt); }
     }
     bots.forEach(b => {
+      if (b.remote) { mpStepRemote(b, dt); return; }
       if (phase === 'countdown') return;
       const gb = gradeAt(T, b.s), surge = 1 + .08 * Math.sin(clockT * .21 + b.seed) + .05 * Math.sin(clockT * .9 + b.seed * 2) + (gb > .03 ? .08 : 0);
       const P = b.finishT != null ? 70 : b.wkg * b.mass * surge * styleMult(b, gb);
@@ -1834,6 +1860,7 @@ function frame(now) {
   bots.forEach(b => { const o = riderPos(b, _p0); b.mesh.g.position.set(o.px, o.y, o.pz); b.mesh.g.rotation.y = Math.atan2(o.tx, o.tz); b.mesh.g.rotation.x = -Math.atan(gradeAt(T, b.s)); poseRider(b.mesh, b.phase); });
   updateCamera(frozen ? 0 : dt, frozen ? 0 : inp.cad || 0, me.v);
   Trainer.update(clockT, phase === 'race' && !frozen ? grade * 100 : 0);
+  MP.lastInp = inp;
   // пост-обработка
   const u = postMat.uniforms;
   u.uTime.value = clockT; u.uDist.value = look.dist; u.uCA.value = look.ca; u.uGrain.value = look.grain; u.uVig.value = look.vig; u.uExp.value = look.exp; u.uSat.value = look.sat; u.uCon.value = look.con; u.uMono.value = look.mono; u.uTint.value.set(look.tint[0], look.tint[1], look.tint[2]);
@@ -1848,11 +1875,11 @@ function frame(now) {
   if (photo && $('#pStamp').checked) updateStamp();
 }
 
-/* ---------------- Рекорды пользователя: аккаунт Claude (db) + запасная копия в браузере ---------------- */
+/* ---------------- Рекорды: личный кабинет на сайте (для вошедших) или этот браузер ---------------- */
 const PEAKS = [['p5', 5, '5 с'], ['p60', 60, '1 мин'], ['p300', 300, '5 мин'], ['p1200', 1200, '20 мин']];
 const fmtDate = d => d ? new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 const Records = {
-  data: null, db: null, uid: null, synced: false, q: Promise.resolve(),
+  data: null, synced: false, me: null, loginUrl: '', accountUrl: '',
   empty() { return { v: 1, routes: {}, peaks: {}, maxSpeed: null, totals: { rides: 0, dist: 0, gain: 0, time: 0 }, history: [] }; },
   load() {
     const d = store.get('records', null); this.data = d ? Object.assign(this.empty(), d) : this.empty();
@@ -1860,39 +1887,36 @@ const Records = {
   },
   async connect() {
     try {
-      if (!window.claude || !window.claude.use) return;
-      const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
-      if (!db || !user) return;
-      const id = await user.id(); if (!id) return;
-      this.db = db; this.uid = id;
-      const snap = await this.ref().get();
-      if (snap.exists) this.data = this.merge(this.data, snap.data());
-      this.synced = true; syncPlanFromRecords(); await this.save(); renderMenu(); if (!$('#recM').classList.contains('hidden')) renderRecords();
-    } catch (e) { this.db = null; this.synced = false; }
+      const me = await Site.get('/me'); this.me = me; this.loginUrl = me.login_url || '';
+      if (!me.authenticated) return;
+      this.synced = true; this.accountUrl = me.profile_url || '';
+      await this.pull(); renderMenu();
+      if (!$('#recM').classList.contains('hidden')) renderRecords();
+    } catch (e) { this.me = null; }
   },
-  ref() { return this.db.collection('data/users/' + this.uid).doc('alatau-records'); },
-  merge(a, b) {
-    const m = this.empty(); b = Object.assign(this.empty(), b || {});
-    for (const id of new Set([...Object.keys(a.routes), ...Object.keys(b.routes)])) {
-      const x = a.routes[id], y = b.routes[id];
-      if (!x || !y) { m.routes[id] = Object.assign({}, x || y); continue; }
-      const best = (x.time || 1e9) <= (y.time || 1e9) ? x : y;
-      m.routes[id] = Object.assign({}, best, { attempts: Math.max(x.attempts || 0, y.attempts || 0), avgPower: Math.max(x.avgPower || 0, y.avgPower || 0) || null, avgSpeed: Math.max(x.avgSpeed || 0, y.avgSpeed || 0) || null });
-    }
-    PEAKS.forEach(([k]) => { const x = a.peaks[k], y = b.peaks[k]; m.peaks[k] = !x ? y : !y ? x : (x.w >= y.w ? x : y); if (!m.peaks[k]) delete m.peaks[k]; });
-    m.maxSpeed = !a.maxSpeed ? b.maxSpeed : !b.maxSpeed ? a.maxSpeed : (a.maxSpeed.v >= b.maxSpeed.v ? a.maxSpeed : b.maxSpeed);
-    ['rides', 'dist', 'gain', 'time'].forEach(k => { m.totals[k] = Math.max(a.totals[k] || 0, b.totals[k] || 0); });
-    const seen = new Set(); m.history = [...a.history, ...b.history].filter(h => !seen.has(h.id) && seen.add(h.id)).sort((p, q) => q.date - p.date).slice(0, 30);
-    const pa = a.plan, pb2 = b.plan; if (pa || pb2) m.plan = ((pa && pa.updated) || 0) >= ((pb2 && pb2.updated) || 0) ? pa : pb2;
-    return m;
+  // сводка и история из личного кабинета; план тренировки остаётся свой
+  async pull() {
+    const [sum, rides] = await Promise.all([Site.get('/records'), Site.get('/rides?limit=30')]);
+    this.data = recordsFromServer(sum, rides, this.data && this.data.plan); store.set('records', this.data);
   },
-  save() {
-    store.set('records', this.data);
-    if (!this.db) return Promise.resolve();
-    const body = JSON.parse(JSON.stringify(this.data));
-    this.q = this.q.then(() => this.ref().set(body)).catch(e => { if (e && e.code === 'invalid_argument') { this.db = null; this.synced = false; } });
-    return this.q;
+  // завершённый заезд уходит в личный кабинет; рекорды считает сервер по всем заездам участника
+  push(ride, powerLog) {
+    if (!this.synced) return;
+    const peaks = bestPeaks(powerLog || []), num = (v, lo, hi) => (v == null || isNaN(v)) ? null : Math.round(clamp(v, lo, hi));
+    const body = {
+      route: ride.route, route_name: routeName(ride.route), kind: ride.kind || 'race', group_id: ride.group && groupRide ? groupRide.gid : null,
+      duration_s: Math.max(1, ride.time), distance_m: Math.round(clamp(ride.dist * 1000, 0, 1e6)), elevation_gain_m: clamp(ride.gain || 0, 0, 20000),
+      avg_speed_kmh: clamp(ride.avgSpeed || 0, 0, 120), max_speed_kmh: clamp(ride.maxSpeed || 0, 0, 150), avg_power_w: num(ride.avgPower, 0, 3000),
+      avg_cadence_rpm: num(ride.avgCad, 0, 250), avg_hr_bpm: num(ride.avgHR, 0, 260), max_hr_bpm: me && me.stats && me.stats.maxHR ? num(me.stats.maxHR, 0, 260) : null,
+      power_source: ride.demo ? 'demo' : ride.real ? 'measured' : 'estimated', place: ride.of > 1 ? ride.place : null, field_size: ride.of > 1 ? ride.of : null,
+      peak_5s_w: num(peaks.p5, 0, 3000), peak_1m_w: num(peaks.p60, 0, 3000), peak_5m_w: num(peaks.p300, 0, 3000), peak_20m_w: num(peaks.p1200, 0, 3000)
+    };
+    Site.post('/rides', body)
+      .then(res => { if (phase === 'done') showServerRecords(res.records, ride, peaks); return this.pull(); })
+      .then(() => { if (phase === 'menu') renderMenu(); })
+      .catch(e => { const box = $('#resRec'); box.innerHTML = '<b>Заезд не сохранился в личном кабинете</b><ul><li>' + escapeHTML(e.message) + '</li></ul>'; box.classList.remove('hidden'); });
   },
+  save() { store.set('records', this.data); return Promise.resolve(); },
   best(routeId) { const r = this.data && this.data.routes[routeId]; return r && r.time ? r.time : null; },
   add(ride, powerLog) {
     const D = this.data, news = [], now = ride.date;
@@ -1917,7 +1941,7 @@ const Records = {
     if (!ride.demo && (!D.maxSpeed || ride.maxSpeed > D.maxSpeed.v)) { D.maxSpeed = { v: ride.maxSpeed, date: now, route: ride.route }; if (D.totals.rides) news.push('максимальная скорость: ' + fmt1(ride.maxSpeed) + ' км/ч'); }
     D.totals.rides++; D.totals.dist += ride.dist; D.totals.gain += ride.gain; D.totals.time += ride.time;
     D.history.unshift(ride); D.history = D.history.slice(0, 30);
-    this.save();
+    this.save(); this.push(ride, powerLog);
     return { news, prev };
   },
   reset() { this.data = this.empty(); ROUTES.forEach(r => store.set('pb:' + r.id, null)); return this.save(); }
@@ -1925,7 +1949,9 @@ const Records = {
 const routeName = id => (ROUTES.find(r => r.id === id) || { name: id }).name;
 function renderRecords() {
   const D = Records.data, T = D.totals;
-  $('#recSync').textContent = Records.synced ? 'Рекорды хранятся в вашем аккаунте Claude и доступны на любом устройстве, где вы откроете эту страницу.' : 'Рекорды сохраняются в этом браузере. Если открыть страницу, войдя в аккаунт Claude, они будут синхронизироваться между устройствами.';
+  $('#recSync').textContent = Records.synced ? 'Рекорды хранятся в вашем личном кабинете на сайте и доступны на любом устройстве.' : 'Рекорды сохраняются только в этом браузере. Войдите на сайт, чтобы они сохранялись в личном кабинете.';
+  if (!Records.synced && Records.loginUrl) { const a = document.createElement('a'); a.href = Site.loginHref(); a.target = '_top'; a.textContent = ' Войти'; $('#recSync').appendChild(a); }
+  if (Records.synced && Records.accountUrl) { const a = document.createElement('a'); a.href = Records.accountUrl + '#virtual-rides'; a.target = '_top'; a.textContent = ' Открыть личный кабинет'; $('#recSync').appendChild(a); }
   const tile = (v, u) => '<div class="stat"><div class="v">' + v + '</div><div class="u">' + u + '</div></div>';
   $('#recTotals').innerHTML = tile(T.rides, 'заездов') + tile(fmt1(T.dist) + ' км', 'всего проехано') + tile(Math.round(T.gain) + ' м', 'набор высоты') + tile(fmtTime(T.time), 'время в седле');
   $('#recPeaks').innerHTML = PEAKS.map(([k, , label]) => { const p = D.peaks[k]; return tile(p ? p.w + ' Вт' : '—', label + (p && p.est ? ', оценка' : '')); }).join('') + tile(D.maxSpeed ? fmt1(D.maxSpeed.v) + ' км/ч' : '—', 'макс. скорость');
@@ -1934,7 +1960,7 @@ function renderRecords() {
     return '<div class="rrow"><div><b>' + r.name + '</b><small>' + (x && x.time ? fmtDate(x.date) + (x.demo ? ', демо' : '') + ', попыток: ' + x.attempts : 'ещё не проезжали') + '</small></div><div class="rv">' + (x && x.time ? fmtTime(x.time) : '—') + (x && x.avgPower ? '<small>' + x.avgPower + ' Вт ср.</small>' : '') + '</div></div>';
   }).join('');
   $('#recHist').innerHTML = D.history.length ? D.history.slice(0, 12).map(h => '<li><span>' + fmtDate(h.date) + '</span><span>' + (h.kind === 'plan' ? 'План по каденсу: ' : h.kind === 'free' ? 'Свободная езда: ' : '') + routeName(h.route) + (h.of > 1 ? ', ' + h.place + '-е из ' + h.of : '') + (h.demo ? ', демо' : '') + '</span><span>' + fmtTime(h.time) + '<small>' + fmt1(h.avgSpeed) + ' км/ч, ' + h.avgPower + ' Вт</small></span></li>').join('') : '<li class="empty">Здесь появятся ваши заезды после первого финиша.</li>';
-  const rb = $('#btnRecReset'); rb.textContent = 'Сбросить рекорды'; rb.dataset.armed = '';
+  const rb = $('#btnRecReset'); rb.textContent = 'Сбросить рекорды'; rb.dataset.armed = ''; rb.classList.toggle('hidden', !!Records.synced);
 }
 
 /* ---------------- Велосипед, передачи и план по каденсу ---------------- */
@@ -2069,7 +2095,7 @@ Records.addWorkout = function (ride, powerLog) {
   }
   D.totals.rides++; D.totals.dist += ride.dist; D.totals.gain += ride.gain; D.totals.time += ride.time;
   D.history.unshift(ride); D.history = D.history.slice(0, 30);
-  this.save();
+  this.save(); this.push(ride, powerLog);
   return { news };
 };
 // Свободная езда: без финиша и соперников, завершается вручную
@@ -2110,6 +2136,194 @@ function finishWorkout() {
   setTimeout(() => $('#resM').classList.remove('hidden'), 1200);
 }
 
+/* ---------------- Сайт: личный кабинет и совместная езда через /api/v1/virtual-ride/ ---------------- */
+// Страница открыта во фрейме сайта и говорит с его API от имени вошедшего участника (сессия + CSRF).
+const API_BASE = '/api/v1/virtual-ride';
+const Site = {
+  csrf() { const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; },
+  async req(method, path, body) {
+    const headers = { 'Accept': 'application/json' };
+    if (body) headers['Content-Type'] = 'application/json';
+    if (method !== 'GET') headers['X-CSRFToken'] = this.csrf();
+    const r = await fetch(API_BASE + path, { method, credentials: 'same-origin', headers, body: body ? JSON.stringify(body) : undefined });
+    if (r.status === 204) return null;
+    const data = await r.json().catch(() => null);
+    if (!r.ok) { const e = new Error((data && (data.detail || data.message)) || ('HTTP ' + r.status)); e.status = r.status; throw e; }
+    return data;
+  },
+  get(p) { return this.req('GET', p); },
+  post(p, b) { return this.req('POST', p, b || {}); },
+  loginHref() {
+    let next = location.pathname;
+    try { next = window.top.location.pathname; } catch (e) {}
+    return (Records.loginUrl || '/accounts/login/') + '?next=' + encodeURIComponent(next);
+  }
+};
+const RECORD_LABELS = { route_first: 'первый результат на маршруте', route_best: 'лучшее время на маршруте', peak_5s_w: 'пиковая мощность 5 с', peak_1m_w: 'пиковая мощность 1 мин', peak_5m_w: 'пиковая мощность 5 мин', peak_20m_w: 'пиковая мощность 20 мин', max_speed_kmh: 'максимальная скорость' };
+function bestPeaks(powerLog) {
+  const out = {};
+  PEAKS.forEach(([k, sec]) => {
+    if (powerLog.length < sec) return;
+    let sum = 0, best = 0; for (let i = 0; i < powerLog.length; i++) { sum += powerLog[i]; if (i >= sec) sum -= powerLog[i - sec]; if (i >= sec - 1) best = Math.max(best, sum / sec); }
+    out[k] = Math.round(best);
+  });
+  return out;
+}
+// Ответ сервера о рекордах заменяет местный: он сравнивает со всеми заездами в личном кабинете
+function showServerRecords(keys, ride, peaks) {
+  const val = { route_first: fmtTime(ride.time), route_best: fmtTime(ride.time), peak_5s_w: peaks.p5 + ' Вт', peak_1m_w: peaks.p60 + ' Вт', peak_5m_w: peaks.p300 + ' Вт', peak_20m_w: peaks.p1200 + ' Вт', max_speed_kmh: fmt1(ride.maxSpeed) + ' км/ч' };
+  const items = (keys || []).filter(k => RECORD_LABELS[k]).map(k => RECORD_LABELS[k] + ': ' + val[k]);
+  const box = $('#resRec');
+  box.innerHTML = items.length ? '<b>Новые рекорды в личном кабинете</b><ul>' + items.map(t => '<li>' + t + '</li>').join('') + '</ul>' : '';
+  box.classList.toggle('hidden', !items.length);
+}
+// Сводка с сервера в том же виде, в каком «Мои рекорды» хранят её в браузере
+function recordsFromServer(sum, rides, plan) {
+  const routes = {};
+  (sum.routes || []).forEach(r => { routes[r.route] = { time: r.duration_s, date: Date.parse(r.finished_at), attempts: r.attempts, avgPower: r.best_avg_power_w }; });
+  const keyOf = { peak_5s_w: 'p5', peak_1m_w: 'p60', peak_5m_w: 'p300', peak_20m_w: 'p1200' }, peaks = {};
+  Object.keys(keyOf).forEach(k => { if (sum.peaks && sum.peaks[k]) peaks[keyOf[k]] = { w: sum.peaks[k] }; });
+  return {
+    v: 1, routes, peaks, plan,
+    maxSpeed: sum.max_speed_kmh ? { v: sum.max_speed_kmh } : null,
+    totals: { rides: sum.rides, dist: sum.distance_km, gain: sum.elevation_m, time: sum.time_s },
+    history: (rides || []).map(h => ({ id: 's' + h.id, date: Date.parse(h.finished_at), kind: h.kind === 'race' ? undefined : h.kind, route: h.route, time: h.duration_s, avgSpeed: h.avg_speed_kmh, avgPower: h.avg_power_w || 0, place: h.place || 1, of: h.field_size || 1, demo: h.power_source === 'demo' }))
+  };
+}
+
+const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), lastInp: null, resultsFor: null };
+let groupRide = null;   // { gid, startAt } во время групповой гонки
+let rideMode = 'race';  // режим текущего заезда: race | plan | free
+const MP_COLORS = [0x2f6db5, 0x3f8f5a, 0x7a4fb0, 0x1f9aa3, 0xb53f7a, 0xe5a23a, 0x5a6470, 0xd36b2c, 0x2c3e8f, 0x8fa33a];
+const mpColor = id => MP_COLORS[Math.abs(+id || 0) % MP_COLORS.length];
+const mpStartLocal = g => Date.parse(g.start_at) - MP.offset;   // время старта по своим часам
+function mpInit() {
+  if (!Records.synced) { MP.status = Records.me ? 'guest' : 'off'; renderMP(); return; }
+  MP.status = 'on'; mpPoll();
+}
+function mpSchedule(ms) { clearTimeout(MP.timer); MP.timer = setTimeout(mpPoll, ms); }
+async function mpPoll() {
+  if (MP.status !== 'on') return;
+  if (MP.busy) { mpSchedule(300); return; }
+  MP.busy = true;
+  const riding = phase !== 'menu' && world && me, inp = MP.lastInp || {};
+  const body = riding
+    ? { status: 'ride', route: world.route.id, mode: rideMode, group_id: groupRide ? groupRide.gid : null, distance_m: Math.round(me.s * 10) / 10, speed_ms: Math.round(me.v * 100) / 100, cadence_rpm: Math.round(clamp(inp.cad || 0, 0, 250)), power_w: Math.round(clamp(inp.P || 0, 0, 3000)), lane_m: Math.round(me.lane * 10) / 10, finished_s: me.finishT != null ? Math.round(me.finishT * 10) / 10 : null }
+    : { status: 'lobby', route: routeSel };
+  const t0 = Date.now();
+  try {
+    const res = await Site.post('/presence', body), t1 = Date.now();
+    MP.offset = Date.parse(res.server_now) - (t0 + t1) / 2;
+    MP.online = res.online || []; MP.riders = res.riders || []; MP.recv = t1;
+    if (!riding) MP.groups = res.groups || [];
+    if (phase === 'menu') { mpMaybeStart(); renderMP(); } else mpSyncRemotes();
+  } catch (e) {
+    if (e.status === 401 || e.status === 403) { MP.status = 'guest'; renderMP(); MP.busy = false; return; }
+  }
+  MP.busy = false;
+  mpSchedule(phase === 'menu' ? 3000 : 1000);
+}
+function mpMyGroup() { return MP.groups.find(g => g.is_member); }
+function mpMaybeStart() {
+  const g = mpMyGroup(); if (!g || MP.started.has(g.id)) return;
+  const at = mpStartLocal(g), now = Date.now();
+  if (now >= at - 7000 && now < at + 30000) { MP.started.add(g.id); groupRide = { gid: g.id, startAt: at }; routeSel = g.route; renderMenu(); startRace(); }
+}
+async function mpAction(path, body) {
+  try { await Site.post(path, body); } catch (e) { $('#mpStatus').textContent = 'Не получилось: ' + e.message; }
+  mpSchedule(50);
+}
+function mpCreateGroup() {
+  if (MP.status !== 'on' || mpMyGroup()) return;
+  const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
+  mpAction('/groups', { route: r.id, route_name: r.name, start_in_s: +$('#mpDelay').value || 60 });
+}
+async function mpLeaveMyGroup() { const g = mpMyGroup(); if (g) await mpAction('/groups/' + g.id + (g.is_host ? '/cancel' : '/leave')); }
+// живые соперники: те же записи, что у ботов, но без своей физики
+function mpSyncRemotes() {
+  if (!world || phase === 'menu') return;
+  const want = new Map(MP.riders.filter(r => r.route === world.route.id).map(r => [r.user_id, r]));
+  // кто пропал из ответа, остаётся на трассе ещё 20 с: связь у соседа могла просто запнуться
+  const nowMs = performance.now();
+  for (let i = bots.length - 1; i >= 0; i--) { const b = bots[i]; if (b.remote && !want.has(b.uid) && nowMs - (b.seenAt || 0) > 20000) { scene.remove(b.mesh.g); bots.splice(i, 1); } }
+  let changedFinish = false;
+  want.forEach((r, uid) => {
+    let b = bots.find(x => x.remote && x.uid === uid);
+    if (!b) {
+      const col = mpColor(uid), ch = Object.assign({}, kitted(PLAYER_CH), { helmet: col, stripe: col });
+      b = newRider(r.name || 'Гонщик', col, 75, r.distance_m, clamp(r.lane_m || 2, .5, world.route.width / 2 - .8));
+      Object.assign(b, { remote: true, uid, ch, mesh: makeRider(ch), seed: 0, wkg: 0 });
+      scene.add(b.mesh.g); bots.push(b);
+    }
+    b.seenAt = nowMs; b.sampleS = r.distance_m; b.sampleT = performance.now() - (r.age_s || 0) * 1000; b.v = r.speed_ms || 0; b.cad = r.cadence_rpm || 0; b.P = r.power_w || 0;
+    b.lane = clamp(r.lane_m || b.lane, .5, world.route.width / 2 - .8); b.name = r.name || 'Гонщик';
+    const f = typeof r.finished_s === 'number' ? r.finished_s : null; if (f !== b.finishT) { b.finishT = f; changedFinish = true; }
+  });
+  if (changedFinish && phase === 'done' && rideMode === 'race' && me.finishT != null && !MP.resultsFor) renderRaceList(raceList());
+}
+function mpStepRemote(b, dt) {
+  const pred = b.sampleS + b.v * Math.min(2.5, (performance.now() - b.sampleT) / 1000);
+  if (Math.abs(pred - b.s) > 60) b.s = pred; else b.s += (pred - b.s) * (1 - Math.exp(-dt * 4));
+  b.phase += (b.cad || 0) / 60 * Math.PI * 2 * dt;
+}
+// итоги групповой гонки с сервера: время тех, кто финишировал, и тех, кто ещё едет
+async function mpPollResults(gid, until) {
+  if (phase !== 'done' || !groupRide || groupRide.gid !== gid || Date.now() > until) { MP.resultsFor = null; return; }
+  MP.resultsFor = gid;
+  try {
+    const res = await Site.get('/groups/' + gid + '/results'), myId = Records.me && Records.me.user_id;
+    const done = new Set(res.finished.map(f => f.user_id));
+    const list = res.finished.map(f => ({ name: f.user_id === myId ? 'Вы' : f.name, t: f.duration_s, me: f.user_id === myId, color: f.user_id === myId ? hexs(kitted(charById(settings.char)).a) : hexs(mpColor(f.user_id)), human: f.user_id !== myId }));
+    if (!done.has(myId) && me.finishT != null) list.push({ name: 'Вы', t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) });
+    bots.filter(b => b.remote && !done.has(b.uid)).forEach(b => list.push({ name: b.name, t: raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: true, human: true }));
+    list.sort((a, b) => a.t - b.t); renderRaceList(list);
+    if (bots.some(b => b.remote && !done.has(b.uid))) setTimeout(() => mpPollResults(gid, until), 2000); else MP.resultsFor = null;
+  } catch (e) { setTimeout(() => mpPollResults(gid, until), 5000); }
+}
+function renderMP() {
+  const st = $('#mpStatus'); if (!st) return;
+  const create = $('#mpCreate'), online = $('#mpOnline'), box = $('#mpGroups');
+  online.innerHTML = ''; box.innerHTML = '';
+  if (MP.status !== 'on') {
+    create.disabled = true;
+    if (MP.status === 'guest') { st.innerHTML = 'Совместная езда и групповые гонки доступны участникам сайта. <a href="' + escapeHTML(Site.loginHref()) + '" target="_top">Войти</a>'; }
+    else st.textContent = MP.status === 'connecting' ? 'Подключаемся…' : 'Совместная езда работает, когда страница открыта на сайте.';
+    renderStartSum(); return;
+  }
+  st.textContent = MP.online.length ? 'Сейчас на странице, кроме вас: ' + MP.online.length + '.' : 'Пока на странице только вы. Позовите друзей с аккаунтами на сайте, и они появятся здесь.';
+  MP.online.forEach(p => {
+    const el = document.createElement('span'); el.className = 'mp-chip';
+    const where = p.status === 'ride' ? (p.group_id ? 'в групповой гонке' : p.mode === 'free' ? 'свободная езда' : p.mode === 'plan' ? 'план по каденсу' : 'гонка') + ': ' + routeName(p.route) : 'в настройках';
+    el.innerHTML = '<i></i><b></b><small></small>'; el.querySelector('i').style.background = hexs(mpColor(p.user_id));
+    el.querySelector('b').textContent = p.name; el.querySelector('small').textContent = where;
+    online.appendChild(el);
+  });
+  const mine = mpMyGroup();
+  MP.groups.forEach(g => {
+    const left = Math.max(0, Math.ceil((mpStartLocal(g) - Date.now()) / 1000));
+    const card = document.createElement('div'); card.className = 'mp-group' + (g.is_member ? ' on' : '');
+    card.innerHTML = '<div><b></b><small></small></div><button class="btn" type="button"></button>';
+    card.querySelector('b').textContent = (g.is_host ? 'Ваша групповая гонка' : g.host.name + ' собирает гонку') + ': ' + (g.route_name || routeName(g.route));
+    card.querySelector('small').textContent = (left ? 'Старт через ' + fmtTime(left) : 'Старт') + '. Участники: ' + g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? 'вы' : m.name).join(', ') + '.';
+    const btn = card.querySelector('button');
+    if (g.is_host) { btn.textContent = 'Отменить'; btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }
+    else if (g.is_member) { btn.textContent = 'Не участвовать'; btn.onclick = () => mpAction('/groups/' + g.id + '/leave'); }
+    else { btn.textContent = 'Участвовать'; btn.disabled = !!mine || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }
+    box.appendChild(card);
+  });
+  create.disabled = !!mine;
+  renderStartSum();
+}
+function raceList() {
+  const list = [{ name: 'Вы', t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) }].concat(bots.map(b => ({ name: b.name, t: b.finishT != null ? b.finishT : raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: b.finishT == null, human: !!b.remote })));
+  list.sort((a, b) => a.t - b.t); return list;
+}
+function renderRaceList(list) {
+  $('#resList').innerHTML = list.map((x, i) => '<li class="' + (x.me ? 'me' : '') + '"><span>' + (i + 1) + '</span><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + x.color + ';margin-right:8px"></span>' + escapeHTML(x.name) + (x.human ? ' <small style="color:var(--muted)">гонщик</small>' : '') + '</span><span>' + (x.est ? (x.human ? 'в пути, ≈ ' : '≈ ') : '') + fmtTime(x.t) + '</span></li>').join('');
+}
+function escapeHTML(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+setInterval(() => { if (phase === 'menu' && MP.status === 'on') { mpMaybeStart(); renderMP(); } }, 1000);
+
 /* ---------------- Фоторежим ---------------- */
 function stampText() { const d = new Date(), p = n => String(n).padStart(2, '0'); return { a: d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()), b: 'ALATAU CAM ' + (world ? world.route.name.toUpperCase() : '') }; }
 function updateStamp() { const s = stampText(); $('#stamp').innerHTML = '<span class="rec">● REC</span> ' + s.a + '<br>' + s.b; }
@@ -2120,7 +2334,7 @@ function syncPhotoUI() {
   document.querySelectorAll('#lookSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.look === look.name ? 'true' : 'false'));
 }
 function enterPhoto() {
-  if (phase === 'menu' || phase === 'countdown') return; photo = true; cam.yaw = 0; cam.pitch = 0; lookBeforePhoto = look.name; setPhotoCam(viewMode === 'chase' ? 'orbit' : 'fpv');
+  if (phase === 'menu' || phase === 'countdown' || groupRide) return; photo = true; cam.yaw = 0; cam.pitch = 0; lookBeforePhoto = look.name; setPhotoCam(viewMode === 'chase' ? 'orbit' : 'fpv');
   $('#photoUI').classList.remove('hidden'); $('#hud').classList.toggle('hidden', !$('#pHud').checked); $('#stamp').classList.toggle('hidden', !$('#pStamp').checked); syncPhotoUI();
 }
 let lookBeforePhoto = 'bodycam';
@@ -2166,7 +2380,7 @@ function renderMenu() {
     b.querySelector('b').textContent = r.name;
     b.querySelector('.meta').textContent = fmt1(T.L / 1000) + ' км, набор ' + Math.round(T.gain) + ' м' + (r.loop ? ', круг' : '') + (r.osm ? ', дома из OSM' : '') + (pb ? ', рекорд ' + fmtTime(pb) : '');
     const sights = nearLandmarks(T).filter(l => l.dist <= 700).map(l => l.name); b.querySelector('.desc').textContent = r.desc + (sights.length ? ' По пути: ' + sights.join(', ') + '.' : ''); b.appendChild(cv);
-    b.onclick = () => { routeSel = r.id; store.set('route', r.id); renderMenu(); };
+    b.onclick = () => { routeSel = r.id; store.set('route', r.id); renderMenu(); if (MP.status === 'on') mpSchedule(200); };
     box.appendChild(b);
   });
   renderStartSum();
@@ -2182,7 +2396,8 @@ function showLoading(on) { $('#loading').classList.toggle('hidden', !on); }
 
 /* ---------------- События ---------------- */
 $('#btnConnect').onclick = () => Sensors.add();
-$('#btnStart').onclick = startRace;
+$('#btnStart').onclick = async () => { groupRide = null; if (mpMyGroup()) await mpLeaveMyGroup(); startRace(); };
+$('#mpCreate').onclick = mpCreateGroup;
 // когда шрифт загрузится, перерисовываем форму, чтобы надпись была нужным шрифтом
 try { document.fonts && document.fonts.ready.then(() => { setPlayerChar(settings.char); setPreview(settings.char); }); } catch (e) {}
 $('#btnRecords').onclick = () => { renderRecords(); $('#recM').classList.remove('hidden'); };
@@ -2205,9 +2420,9 @@ $('#plStartF').onchange = e => shiftPlan(+e.target.value - settings.plan.steps[0
 $('#plStartR').onchange = e => shiftPlan(0, +e.target.value - settings.plan.steps[0].r);
 $('#plAdd').onclick = () => { const st = settings.plan.steps, l = st[st.length - 1]; st.push({ f: l.f, r: Math.min(bikeR().length, l.r + 1), cad: l.cad, min: l.min }); savePlan(); renderPlanEditor(); };
 $('#plTpl').onclick = () => { const d = defaultPlan(); settings.plan.steps = d.steps; savePlan(); renderPlanEditor(); };
-$('#btnPause').onclick = () => { if (phase === 'race' || phase === 'countdown') { paused = true; $('#pauseM').classList.remove('hidden'); } };
+$('#btnPause').onclick = () => { if (phase === 'race' || phase === 'countdown') { paused = !groupRide; $('#pauseM').classList.remove('hidden'); } };
 $('#btnResume').onclick = () => { paused = false; $('#pauseM').classList.add('hidden'); };
-$('#btnFinish').onclick = () => { $('#pauseM').classList.add('hidden'); paused = false; if (settings.mode === 'free') finishFree(); else if (settings.mode === 'plan' && phase === 'race') finishWorkout(); };
+$('#btnFinish').onclick = () => { $('#pauseM').classList.add('hidden'); paused = false; if (rideMode === 'free') finishFree(); else if (rideMode === 'plan' && phase === 'race') finishWorkout(); };
 $('#btnQuit').onclick = () => { $('#pauseM').classList.add('hidden'); $('#count').classList.add('hidden'); startMenu(); };
 $('#btnAgain').onclick = () => { $('#resM').classList.add('hidden'); startRace(); };
 $('#btnMenu').onclick = () => { startMenu(); renderMenu(); };
@@ -2232,7 +2447,7 @@ window.addEventListener('keydown', e => {
   if (e.key === ' ' && (phase === 'race' || phase === 'countdown')) { e.preventDefault(); paused ? $('#btnResume').click() : $('#btnPause').click(); }
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && phase === 'race') { paused = true; $('#pauseM').classList.remove('hidden'); }
+  if (document.hidden && phase === 'race' && !groupRide) { paused = true; $('#pauseM').classList.remove('hidden'); }
   if (!document.hidden) {
     // после возврата на страницу проверяем связь: браузер мог тихо разорвать её, пока экран был выключен
     Sensors.devs.forEach(d => { if (!d.manual && !d.reconnecting && !(d.dev.gatt && d.dev.gatt.connected)) d.onDisc(); });
@@ -2247,7 +2462,7 @@ document.addEventListener('visibilitychange', () => {
     Records.load(); initGL(); makeMaterials(); fillSettings(); renderMenu(); initPreview(); renderChars(); setPreview(settings.char); renderPlanEditor();
     if (!Sensors.supported()) btHint(isIOS() ? 'На iPhone и iPad Safari не поддерживает Bluetooth для сайтов: для датчиков откройте страницу в браузере Bluefy. Демо-режим работает и так.' : 'Этот браузер не поддерживает Web Bluetooth. Для датчиков используйте Chrome или Edge. Демо-режим работает и так.', true);
     applyOSM(null); try { IDB.del('osm').catch(() => {}); } catch (e) {} // загрузка карты города отключена
-    startMenu(); showLoading(false); Records.connect(); requestAnimationFrame(t => { last = t; frame(t); });
+    startMenu(); showLoading(false); Records.connect().then(mpInit); requestAnimationFrame(t => { last = t; frame(t); });
   } catch (e) { console.error(e); $('#loading').textContent = 'Не удалось запустить 3D: ' + e.message; }
 })();
 </script>

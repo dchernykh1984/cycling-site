@@ -6,7 +6,7 @@
 **Tests**: `accounts/tests.py`, `tests/test_role_request.py`, `tests/test_user_display.py`,
 `tests/test_oauth_callback.py`, `tests/test_save_filter_preferences.py`, `tests/test_skin_choice.py`,
 `tests/e2e/test_api_token_profile.py`, `tests/e2e/test_profile_preferences.py`,
-`tests/e2e/test_theme_choice.py`
+`tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md)
 
 ## Overview
@@ -78,6 +78,9 @@ once; confirming the address unlocks everything that writes.
 3. **Given** a participant or higher, **Then** the profile shows an API section where a token can
    be generated; regenerating invalidates the old one; guests get no API section.
 4. **Given** a member picks a skin, **Then** it is kept in their profile (see [skins](skins.md)).
+5. **Given** a member has finished rides on the virtual ride page, **Then** the profile shows their
+   totals, best time per route with attempts, peak power over 5 s, 1, 5 and 20 min, top speed and the
+   latest rides; demo rides are listed but never count ([site shell](site-shell.md)).
 
 ### Edge Cases
 
@@ -121,6 +124,9 @@ once; confirming the address unlocks everything that writes.
   locations / directions / disciplines / event types, autosave flag, skin (`theme`), preferred
   language, API token, dismissed setup hints, time of the last mail sent on their behalf.
 - **E-mail address / social account** (allauth): the ways a member signs in.
+- **Virtual ride** (`trainer.VirtualRide`): one finished ride with its route key and name, kind
+  (race, cadence plan, free ride), times, distance, power and its source, place, peak powers; the
+  records are computed from these, never stored.
 
 ## Local assumptions
 

@@ -3998,3 +3998,151 @@ msgstr "Войдите, чтобы скачать все фото"
 #, python-format
 msgid "Instead of steps 1 and 2, the folder can be indexed with the skill in the <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer project</a>."
 msgstr "Вместо шагов 1 и 2 папку можно проиндексировать скиллом из <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">проекта Sport Photo Indexer</a>."
+#: accounts/templates/accounts/profile.html:246
+#: tests/test_virtual_ride_api.py:141
+msgid "Virtual rides"
+msgstr "Виртуальные заезды"
+
+#: accounts/templates/accounts/profile.html:247
+msgid "Ride"
+msgstr "Поехать"
+
+#: accounts/templates/accounts/profile.html:252
+msgid "rides"
+msgstr "заездов"
+
+#: accounts/templates/accounts/profile.html:253
+#: accounts/templates/accounts/profile.html:287
+msgid "km"
+msgstr "км"
+
+#: accounts/templates/accounts/profile.html:253
+msgid "ridden"
+msgstr "проехано"
+
+#: accounts/templates/accounts/profile.html:254
+msgid "m"
+msgstr "м"
+
+#: accounts/templates/accounts/profile.html:254
+msgid "climbed"
+msgstr "набор высоты"
+
+#: accounts/templates/accounts/profile.html:255
+msgid "in the saddle"
+msgstr "в седле"
+
+#: accounts/templates/accounts/profile.html:258
+msgid "Best times"
+msgstr "Лучшее время"
+
+#: accounts/templates/accounts/profile.html:261
+msgid "Time"
+msgstr "Время"
+
+#: accounts/templates/accounts/profile.html:261
+msgid "Attempts"
+msgstr "Попыток"
+
+#: accounts/templates/accounts/profile.html:274
+msgid "Peak power and top speed"
+msgstr "Пиковая мощность и скорость"
+
+#: accounts/templates/accounts/profile.html:276
+msgid "5 s"
+msgstr "5 с"
+
+#: accounts/templates/accounts/profile.html:277
+msgid "1 min"
+msgstr "1 мин"
+
+#: accounts/templates/accounts/profile.html:278
+msgid "5 min"
+msgstr "5 мин"
+
+#: accounts/templates/accounts/profile.html:279
+msgid "20 min"
+msgstr "20 мин"
+
+#: accounts/templates/accounts/profile.html:280
+msgid "Top speed"
+msgstr "Максимальная скорость"
+
+#: accounts/templates/accounts/profile.html:280
+msgid "km/h"
+msgstr "км/ч"
+
+#: accounts/templates/accounts/profile.html:282
+msgid "Recent rides"
+msgstr "Последние заезды"
+
+#: accounts/templates/accounts/profile.html:286
+msgid "demo"
+msgstr "демо"
+
+#: accounts/templates/accounts/profile.html:292
+msgid ""
+"Rides you finish on the virtual ride page are saved here, with your best "
+"times and peak power. Rides in demo mode are kept but never count as "
+"records."
+msgstr ""
+"Заезды, которые вы завершили на странице виртуальной езды, сохраняются здесь"
+" вместе с лучшим временем и пиковой мощностью. Заезды в демо-режиме хранятся"
+" в истории, но рекордами не считаются."
+
+#: api/endpoints/virtual_ride.py:288
+msgid "You already have a group race waiting to start"
+msgstr "У вас уже есть групповая гонка, которая ждёт старта"
+
+#: api/endpoints/virtual_ride.py:304
+msgid "This group race has already started"
+msgstr "Эта групповая гонка уже началась"
+
+#: api/endpoints/virtual_ride.py:313
+msgid "The host cancels the race instead of leaving it"
+msgstr "Организатор не выходит из гонки, а отменяет её"
+
+#: api/endpoints/virtual_ride.py:322
+msgid "Only the host can cancel this group race"
+msgstr "Отменить групповую гонку может только организатор"
+
+#: trainer/models.py:17
+msgid "Race"
+msgstr "Гонка"
+
+#: trainer/models.py:18
+msgid "Cadence plan"
+msgstr "План по каденсу"
+
+#: trainer/models.py:19
+msgid "Free ride"
+msgstr "Свободная езда"
+
+#: trainer/models.py:23
+msgid "Measured power"
+msgstr "Измеренная мощность"
+
+#: trainer/models.py:24
+msgid "Estimated power"
+msgstr "Оценка мощности"
+
+#: trainer/models.py:25
+msgid "Demo mode"
+msgstr "Демо-режим"
+
+#: trainer/models.py:96
+msgid "Setting up a ride"
+msgstr "Настраивает заезд"
+
+#: trainer/models.py:97
+msgid "Riding"
+msgstr "Едет"
+
+#: accounts/templates/accounts/profile.html:266
+#: accounts/templates/accounts/profile.html:276
+#: accounts/templates/accounts/profile.html:277
+#: accounts/templates/accounts/profile.html:278
+#: accounts/templates/accounts/profile.html:279
+msgctxt "watts"
+msgid "W"
+msgstr "Вт"
