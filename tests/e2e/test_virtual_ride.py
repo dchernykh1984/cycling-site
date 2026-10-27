@@ -33,3 +33,25 @@ def test_a_route_record_keeps_its_date_and_demo_label(page: Page, demo: bool):
     )
     label = "DATE" + (", \u0434\u0435\u043c\u043e" if demo else "") + ", \u043f\u043e\u043f\u044b\u0442\u043e\u043a: 2"
     expect(page.locator("#recRoutes small")).to_have_text(label)
+
+
+def _trainer_source() -> str:
+    return (Path(settings.BASE_DIR) / "trainer/static/trainer/alatau.html").read_text(encoding="utf-8")
+
+
+def test_riding_again_after_a_group_race_rides_alone(page: Page):
+    handler = re.search(r"^\$\('#btnAgain'\)\.onclick = .*$", _trainer_source(), re.MULTILINE)
+    assert handler is not None
+    page.set_content('<div id="resM"></div><button id="btnAgain"></button>')
+    page.evaluate(
+        """handler => {
+            const $ = s => document.querySelector(s);
+            let groupRide = {gid: 7, startAt: 0};
+            const startRace = () => { window.rodeIn = groupRide; };
+            eval(handler);
+        }""",
+        handler.group(),
+    )
+    page.click("#btnAgain")
+    # The race is over: riding again must not report a second finish into it.
+    assert page.evaluate("window.rodeIn") is None
