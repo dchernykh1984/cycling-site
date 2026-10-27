@@ -16,7 +16,10 @@ concurrency:
 jobs:
   dropbox-integration:
     # Fork code must never receive storage credentials. No pull_request_target.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Dependabot's runs get no Actions secrets, so the check could only fail there.
+    if: >-
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
