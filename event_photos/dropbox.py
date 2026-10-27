@@ -56,7 +56,9 @@ def _read_capped(response, limit: int) -> bytes:
 
 
 class DropboxAdapter:
-    def _call(self, url: str, *, body: dict | None = None, arg: dict | None = None, limit: int) -> bytes:
+    def _call(
+        self, url: str, *, body: dict | None = None, arg: dict | None = None, limit: int, timeout=_TIMEOUT
+    ) -> bytes:
         if not (settings.DROPBOX_APP_KEY and settings.DROPBOX_APP_SECRET):
             raise DropboxError("unavailable", "the site has no Dropbox app configured")
         token = base64.b64encode(f"{settings.DROPBOX_APP_KEY}:{settings.DROPBOX_APP_SECRET}".encode()).decode()
@@ -64,7 +66,7 @@ class DropboxAdapter:
         if arg is not None:
             headers["Dropbox-API-Arg"] = json.dumps(arg)  # ensure_ascii keeps the header ASCII
         try:
-            response = requests.post(url, json=body, headers=headers, timeout=_TIMEOUT, stream=True)
+            response = requests.post(url, json=body, headers=headers, timeout=timeout, stream=True)
         except requests.RequestException as exc:
             raise DropboxError("unavailable", type(exc).__name__) from None
         with response:
@@ -106,6 +108,7 @@ class DropboxAdapter:
                 "mode": "bestfit",
             },
             limit=_MAX_THUMBNAIL_BYTES,
+            timeout=(3.05, 5),
         )
 
 

@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
@@ -211,7 +211,7 @@ def thumb(request, pk, photo_pk, digest):
     return thumbnail_response(request.user, _event(request, pk), photo_pk)
 
 
-def thumbnail_response(user, competition, photo_pk) -> FileResponse:
+def thumbnail_response(user, competition, photo_pk) -> FileResponse | HttpResponse:
     """A photo's thumbnail for ``user``, by the album's visibility; the page and the API share it."""
     photo = get_object_or_404(
         IndexedPhoto.objects.select_related("album"),
@@ -223,8 +223,13 @@ def thumbnail_response(user, competition, photo_pk) -> FileResponse:
         raise Http404
     try:
         path = actions.thumbnail_path(photo)
-    except DropboxError:
-        raise Http404 from None
+    except DropboxError as exc:
+        if exc.kind not in ("busy", "throttled", "unavailable"):
+            raise Http404 from None
+        unavailable = HttpResponse(status=503)
+        unavailable["Retry-After"] = str(min(exc.retry_after or 2, 60))
+        unavailable["Cache-Control"] = "private, no-store"
+        return unavailable
     response = FileResponse(path.open("rb"), content_type="image/jpeg")
     # Private: no shared cache may keep a thumbnail of an album that is hidden later.
     response["Cache-Control"] = "private, max-age=3600"
