@@ -6,7 +6,7 @@ uses that preview for thumbnails and keeps the original storage link for downloa
 it never decodes camera formats or rewrites originals.
 
 **Status**: Baseline -- describes the first slice of issue #349 as built
-**Verified against**: branch `fix/event-photo-gallery` on 2026-10-27
+**Verified against**: branch fix/event-photo-gallery on 2026-10-27
 **Code**: `event_photos/` (models, index, dropbox, bindings, actions, permissions, forms, views,
 templates, template tags), `api/endpoints/event_photos.py`, `api/endpoints/start_list.py` (bindings on
 upload), `cycling_site/urls.py` (`serve_media` refuses the private prefix),
