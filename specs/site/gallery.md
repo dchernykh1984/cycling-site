@@ -44,7 +44,9 @@ photos are kept exactly as they were taken, and only admins and the owner put th
    shows the original, steps through the album with the arrow keys, and offers it to download as it
    was uploaded. `/<lang>/gallery/albums/`, the list's former address, redirects permanently to
    the gallery, keeping its page.
-2. **Given** an event with a public album, **Then** the event page lists it under "Photo albums".
+2. **Given** an event with a public album, **Then** the event's "Photos from the event" entry opens
+   its photo overview, which links the curated album alongside indexed photo sources. The album
+   keeps its existing page and visibility rules.
 3. **Given** a link to an album pasted into a chat, **Then** the chat shows the album's cover.
 4. **Given** a linked public event, **Then** the album shows its localized name, start/end dates,
    full visible location, event types, directions and disciplines, omitting missing facts and

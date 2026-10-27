@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n calendar_tags seo_tags gallery_tags event_photos_tags %}
+{% load i18n calendar_tags seo_tags event_photos_tags %}
 
 {% block extra_css %}
 {% if location_lat %}
@@ -205,18 +205,6 @@
           {% if protocol.stage_label %}&mdash; {{ protocol.stage_label }}{% endif %}
           {% if protocol.is_live %}<span class="badge bg-danger ms-1">{% trans "Live" %}</span>{% endif %}
         </a>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    {% competition_albums competition as albums %}
-    {% if albums %}
-    <div class="mt-4 pt-3 mb-4 border-top competition-albums">
-      <h2 class="mb-3 h5">{% trans "Photo albums" %}</h2>
-      <div class="d-flex flex-wrap gap-2">
-        {% for album in albums %}
-        <a href="{{ album.get_absolute_url }}" class="btn btn-outline-primary btn-sm">{{ album.title }}</a>
         {% endfor %}
       </div>
     </div>
