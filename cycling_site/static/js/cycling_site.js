@@ -166,7 +166,8 @@
             unavailable(image);
             return;
         }
-        var delay = Math.min(seconds * Math.pow(2, image.retries - 1), 30) * (0.5 + Math.random());
+        // Never sooner than the server asked: a throttled storage counts every early call.
+        var delay = Math.max(seconds, Math.min(seconds * Math.pow(2, image.retries - 1), 30) * (0.5 + Math.random()));
         setTimeout(function () { enqueue(image); }, delay * 1000);
     }
     function load(image) {
