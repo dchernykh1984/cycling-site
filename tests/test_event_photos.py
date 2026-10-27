@@ -595,6 +595,40 @@ class PageAndApiTests(EventPhotosTestCase):
         self.assertEqual(page.status_code, 200)
         self.assertNotContains(page, "&#10007;")
 
+    def test_retrying_not_me_keeps_one_mark_and_the_original_undo_window(self):
+        self.client.force_login(self.athlete)
+        url = self._url("decide", self.reg.pk, self.photo.pk)
+        first = self.client.post(url, {"state": "not_me"})
+        repeated = self.client.post(url, {"state": "not_me"})
+        self.assertEqual(repeated.status_code, 302)
+        self.assertEqual(repeated["Location"], first["Location"])
+        self.assertEqual(PhotoDecisionEvent.objects.count(), 1)
+        event = PhotoDecisionEvent.objects.get()
+        later = event.at + timedelta(seconds=settings.PHOTO_DECISION_UNDO_SECONDS + 1)
+        with mock.patch("django.utils.timezone.now", return_value=later):
+            expired = self.client.post(url, {"state": "not_me"})
+        self.assertEqual(expired.status_code, 302)
+        self.assertNotIn("undo=", expired["Location"])
+        self.assertEqual(PhotoDecisionEvent.objects.count(), 1)
+
+    def test_api_retries_of_not_me_are_idempotent_but_never_expose_a_hidden_photo(self):
+        self.athlete.api_token = uuid.uuid4()
+        self.athlete.save(update_fields=["api_token"])
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {self.athlete.api_token}"}
+        url = f"/api/v1/event-photos/registrations/{self.reg.pk}/photos/{self.photo.pk}/decision"
+        self.assertEqual(
+            self.client.post(url, {"state": "not_me"}, content_type="application/json", **headers).status_code, 200
+        )
+        response = self.client.post(url, {"state": "not_me"}, content_type="application/json", **headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["event_id"])
+        self.assertEqual(PhotoDecisionEvent.objects.count(), 1)
+        self.photo.is_hidden = True
+        self.photo.save(update_fields=["is_hidden"])
+        self.assertEqual(
+            self.client.post(url, {"state": "not_me"}, content_type="application/json", **headers).status_code, 404
+        )
+
     def test_a_thumbnail_follows_the_albums_visibility_and_is_not_cached_publicly(self):
         url = self._url("thumb", self.photo.pk, self.photo.source_sha256[:16])
         response = self.client.get(url)

@@ -243,7 +243,7 @@ def decide(request, registration_id: int, photo_id: int, payload: DecisionIn):
     registration = _registration(request.auth, registration_id)
     if not can_mark(request.auth, registration):
         raise HttpError(403, "Only the athlete or their representative marks photos")
-    photo = actions.registration_photos(registration).filter(pk=photo_id).first()
+    photo = actions.decision_photo(registration, photo_id, payload.state)
     if photo is None:
         raise HttpError(404, "Not found")
     try:

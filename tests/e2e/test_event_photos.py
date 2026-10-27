@@ -97,6 +97,28 @@ def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, ind
 
 
 @pytest.mark.django_db(transaction=True)
+def test_retrying_a_rejection_keeps_the_original_undo(page: Page, live_server, indexed_event):
+    athlete, race, reg, _ = indexed_event
+    inject_session(page, live_server, athlete)
+    page.goto(f"{live_server.url}/ru/calendar/{race.pk}/photos/registration/{reg.pk}/")
+    form = page.locator(".event-photo").filter(has_text="IMG_0002.jpg").locator('form:has(input[value="not_me"])')
+    data: dict[str, str | float | bool] = {
+        "state": "not_me",
+        "csrfmiddlewaretoken": form.locator('input[name="csrfmiddlewaretoken"]').input_value(),
+    }
+    url = live_server.url + form.get_attribute("action")
+    first = page.request.post(url, form=data, max_redirects=0)
+    repeated = page.request.post(url, form=data, max_redirects=0)
+    assert first.status == repeated.status == 302
+    assert first.headers["location"] == repeated.headers["location"]
+    page.goto(live_server.url + repeated.headers["location"])
+    with translation_override("ru"):
+        undo = gettext("Undo")
+    page.get_by_role("button", name=undo).click()
+    expect(page.locator(".event-photo")).to_have_count(2)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_portraits_are_complete_and_captions_never_cover_them(page: Page, live_server, indexed_event):
     athlete, race, reg, _ = indexed_event
     inject_session(page, live_server, athlete)

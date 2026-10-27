@@ -297,6 +297,36 @@ class DecisionRefusedError(Exception):
     pass
 
 
+def decision_photo(registration, photo_pk: int, state: str) -> IndexedPhoto | None:
+    """A mark's visible target, including an already rejected photo for an idempotent retry."""
+    if (
+        state == PhotoDecision.State.NOT_ME
+        and PhotoDecision.objects.filter(registration=registration, photo_id=photo_pk, state=state).exists()
+    ):
+        return (
+            visible_photos(ExternalAlbum.objects.filter(competition_id=registration.competition_id))
+            .filter(pk=photo_pk)
+            .first()
+        )
+    return registration_photos(registration).filter(pk=photo_pk).first()
+
+
+def recent_rejection(registration, photo) -> PhotoDecisionEvent | None:
+    """Keep the original undo link on a retry, without creating a new event or restarting its clock."""
+    return (
+        PhotoDecisionEvent.objects.filter(
+            decision__registration=registration,
+            decision__photo=photo,
+            decision__state=PhotoDecision.State.NOT_ME,
+            to_state=PhotoDecision.State.NOT_ME,
+            undone_at=None,
+            at__gte=timezone.now() - timedelta(seconds=settings.PHOTO_DECISION_UNDO_SECONDS),
+        )
+        .order_by("-pk")
+        .first()
+    )
+
+
 def decide(registration, photo: IndexedPhoto, state: str, actor) -> PhotoDecisionEvent | None:
     """Set "this is me" / "not me"; a cross is final, and repeating the same mark changes nothing."""
     with transaction.atomic():
