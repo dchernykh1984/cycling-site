@@ -83,7 +83,9 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
   names a language; an address without a language is sent to one first.
 - Django request errors and Gunicorn errors (including worker timeouts after application
   initialization, with `--preload` on the host) are mailed to the admins when not in debug.
-  Warnings are logged without email. SMTP operations have a five-second timeout by default
+  Warnings and expected HTTP 503 availability responses are logged without email; an actual
+  exception attached to a 503 still notifies admins. This keeps storage retries from flooding
+  the mailbox or occupying the web threads with SMTP. SMTP operations have a five-second timeout by default
   (`EMAIL_TIMEOUT`), so reporting an error cannot wait indefinitely. An unavailable server or
   a proxy-generated 502 without an application/server log still needs external monitoring.
   Media is served in production and a missing file is a 404.

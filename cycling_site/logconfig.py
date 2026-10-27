@@ -4,7 +4,15 @@ Kept as a plain function returning a ``dictConfig`` dict so it can be imported a
 asserted in tests without importing a settings module (which needs prod env vars).
 """
 
+import logging
 from pathlib import Path
+
+
+class SkipUnavailableResponses(logging.Filter):
+    """Log expected service unavailability without sending an email for every retry."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return getattr(record, "status_code", None) != 503 or bool(record.exc_info)
 
 
 def build_logging_config(log_dir: Path) -> dict:
@@ -21,6 +29,7 @@ def build_logging_config(log_dir: Path) -> dict:
             "require_debug_false": {
                 "()": "django.utils.log.RequireDebugFalse",
             },
+            "skip_unavailable_responses": {"()": "cycling_site.logconfig.SkipUnavailableResponses"},
         },
         "formatters": {
             "verbose": {
@@ -44,7 +53,7 @@ def build_logging_config(log_dir: Path) -> dict:
             "mail_admins": {
                 "class": "django.utils.log.AdminEmailHandler",
                 "level": "ERROR",
-                "filters": ["require_debug_false"],
+                "filters": ["require_debug_false", "skip_unavailable_responses"],
                 "include_html": True,
             },
         },
