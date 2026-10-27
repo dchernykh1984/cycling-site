@@ -4,6 +4,7 @@ import hashlib
 import shutil
 from datetime import timedelta
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from threading import BoundedSemaphore
 
 from django.conf import settings
@@ -162,7 +163,15 @@ def thumbnail_path(photo: IndexedPhoto) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     if shutil.disk_usage(path.parent).free < settings.GALLERY_DISK_RESERVE_MB * 1024 * 1024:
         raise DropboxError("unavailable", "no disk space left for thumbnails")
-    path.write_bytes(data)
+    # Other web threads may already be reading this name: publish only a complete image.
+    with NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
+        temporary_path = Path(temporary.name)
+        try:
+            temporary.write(data)
+            temporary.close()
+            temporary_path.replace(path)
+        finally:
+            temporary_path.unlink(missing_ok=True)
     IndexedPhoto.objects.filter(
         pk=photo.pk, preview_sha256=photo.preview_sha256, original_sha256=photo.original_sha256
     ).update(thumb_file=name, thumb_source_sha256=source)
