@@ -247,6 +247,8 @@ def registration_photos(request, registration_id: int, page: int = 1):
 
 
 def _archive(photos, name: str):
+    if not photos.exists():
+        raise HttpError(404, "Not found")
     try:
         return archive_response(photos, name)
     except ArchiveTooBigError:
