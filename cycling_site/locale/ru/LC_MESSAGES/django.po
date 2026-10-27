@@ -3994,3 +3994,7 @@ msgstr "недостающие-фото.txt"
 
 msgid "Sign in to download all photos"
 msgstr "Войдите, чтобы скачать все фото"
+
+#, python-format
+msgid "Instead of steps 1 and 2, the folder can be indexed with the skill in the <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer project</a>."
+msgstr "Вместо шагов 1 и 2 папку можно проиндексировать скиллом из <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">проекта Sport Photo Indexer</a>."

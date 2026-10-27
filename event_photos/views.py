@@ -34,6 +34,7 @@ from registrations.models import CompetitionRegistration
 
 PER_PAGE = 50
 INDEXER_URL = "https://github.com/dchernykh1984/SportPhotoIndexer/releases/latest"
+INDEXER_PROJECT_URL = "https://github.com/dchernykh1984/SportPhotoIndexer"
 
 
 def _event(request, pk) -> Competition:
@@ -430,6 +431,7 @@ def guide(request):
         "event_photos/guide.html",
         {
             "indexer_url": INDEXER_URL,
+            "indexer_project_url": INDEXER_PROJECT_URL,
             "max_photos": settings.PHOTO_INDEX_MAX_PHOTOS,
             "max_bibs": settings.PHOTO_INDEX_MAX_BIBS_PER_PHOTO,
             "max_mb": settings.PHOTO_INDEX_MAX_BYTES // 1_000_000,

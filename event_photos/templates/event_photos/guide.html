@@ -16,6 +16,7 @@
     <li>{% trans "On the event page open 'Manage event photos', paste the link and press 'Add and import'." %}</li>
     <li>{% trans "After indexing more photos, press 'Refresh participants' tagging' there." %}</li>
   </ol>
+  <p>{% blocktrans with url=indexer_project_url %}Instead of steps 1 and 2, the folder can be indexed with the skill in the <a href="{{ url }}" target="_blank" rel="noopener">Sport Photo Indexer project</a>.{% endblocktrans %}</p>
 
   <h2 class="h5">{% trans "Limits" %}</h2>
   <ul>
