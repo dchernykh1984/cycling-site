@@ -114,6 +114,18 @@ import django
 django.setup()
 from django.core import mail
 mail.get_connection()
+http = logging.getLogger('django.request')
+http.error('Preview temporarily unavailable', extra={'status_code': 503})
+assert len(mail.outbox) == 0
+http.error('Internal Server Error', extra={'status_code': 500})
+assert len(mail.outbox) == 1
+mail.outbox.clear()
+try:
+    raise ValueError('Unexpected storage failure')
+except ValueError:
+    http.exception('Unexpected service error', extra={'status_code': 503})
+assert len(mail.outbox) == 1
+mail.outbox.clear()
 logger = logging.getLogger('gunicorn.error')
 logger.error('WORKER TIMEOUT (pid:123)')
 assert len(mail.outbox) == 1
