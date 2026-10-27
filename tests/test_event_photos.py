@@ -110,6 +110,33 @@ class AdapterTests(TestCase):
 
 
 class IndexCheckTests(TestCase):
+    def test_camera_originals_need_a_web_preview_and_keep_their_original_path(self):
+        for mime, suffix in (
+            ("image/heic", "heic"),
+            ("image/heif", "heif"),
+            ("image/tiff", "tiff"),
+            ("image/bmp", "bmp"),
+            ("image/gif", "gif"),
+            ("image/avif", "avif"),
+        ):
+            with self.subTest(mime=mime):
+                photo = _photo(1, [("12", "accepted", "ocr")])
+                photo["original"].update(path=f"phone.{suffix}", media_type=mime)
+                with self.assertRaises(index_module.IndexValidationError):
+                    index_module.parse(_index([photo]), "0" * 64)
+                photo["preview"] = {
+                    "path": "_previews/phone.jpg",
+                    "sha256": "a" * 64,
+                    "bytes": 200,
+                    "media_type": "image/jpeg",
+                }
+                parsed = index_module.parse(_index([photo]), "0" * 64)
+                self.assertEqual(parsed.photos[0].original_path, f"phone.{suffix}")
+                self.assertEqual(parsed.photos[0].preview_path, "_previews/phone.jpg")
+                photo["preview"]["media_type"] = mime
+                with self.assertRaises(index_module.IndexValidationError):
+                    index_module.parse(_index([photo]), "0" * 64)
+
     def _parse(self, raw):
         return index_module.parse(raw, hashlib.sha256(raw).hexdigest())
 

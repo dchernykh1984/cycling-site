@@ -17,7 +17,15 @@ from django.conf import settings
 
 SCHEMA_VERSION = 1
 _SHA = re.compile(r"^[0-9a-f]{64}\Z")
-_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp"}
+_PREVIEW_TYPES = {"image/jpeg", "image/png", "image/webp"}
+_MEDIA_TYPES = _PREVIEW_TYPES | {
+    "image/heic",
+    "image/heif",
+    "image/tiff",
+    "image/bmp",
+    "image/gif",
+    "image/avif",
+}
 _PROCESSING = {"pending", "processed", "failed"}
 _STATES = {"candidate", "accepted", "rejected"}
 _METHODS = {"ocr", "appearance", "manual"}
@@ -97,7 +105,7 @@ def _asset(value, where: str, *, view_url: bool) -> tuple[str, str, int, str]:
     if not isinstance(size, int) or isinstance(size, bool) or not 1 <= size < 2**63:
         _fail(f"{where}.bytes", "must be a positive integer")
     if not isinstance(value.get("media_type"), str) or value["media_type"] not in _MEDIA_TYPES:
-        _fail(f"{where}.media_type", "must be image/jpeg, image/png or image/webp")
+        _fail(f"{where}.media_type", "must be a supported photo format")
     url = value.get("view_url", "")
     if not isinstance(url, str) or (url and not (view_url and len(url) <= _MAX_PATH and _VIEW_URL.match(url))):
         _fail(f"{where}.view_url", "must be a Dropbox shared file link")
@@ -221,6 +229,10 @@ def _photo(p, where: str) -> Photo:
     pv_path, pv_sha = "", ""
     if p.get("preview") is not None:
         pv_path, pv_sha, _, _ = _asset(p["preview"], f"{where}.preview", view_url=True)
+        if p["preview"]["media_type"] not in _PREVIEW_TYPES:
+            _fail(f"{where}.preview.media_type", "must be image/jpeg, image/png or image/webp")
+    if p["original"]["media_type"] not in _PREVIEW_TYPES and not pv_path:
+        _fail(f"{where}.preview", "required for this original format")
     state = p.get("processing_state")
     if not isinstance(state, str) or state not in _PROCESSING:
         _fail(f"{where}.processing_state", "must be pending, processed or failed")
