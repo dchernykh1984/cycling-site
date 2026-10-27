@@ -151,6 +151,12 @@ def thumbnail_path(photo: IndexedPhoto) -> Path:
             return path
     if photo.needs_preview:
         raise DropboxError("unsupported", "the original is too big for a Dropbox thumbnail and has no preview")
+    name = f"{photo.album_id}/{photo.pk}-{source[:16]}.jpg"
+    path = _thumb_root() / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Before the download: browsers retry a refusal, and each retry would fetch the thumbnail again.
+    if shutil.disk_usage(path.parent).free < settings.GALLERY_DISK_RESERVE_MB * 1024 * 1024:
+        raise DropboxError("unavailable", "no disk space left for thumbnails")
     # Never let external storage occupy all four web threads, including for API callers.
     if not _THUMBNAIL_SLOTS.acquire(blocking=False):
         raise DropboxError("busy", retry_after=1)
@@ -158,11 +164,6 @@ def thumbnail_path(photo: IndexedPhoto) -> Path:
         data = get_adapter().thumbnail(photo.album.folder_url, photo.preview_path or photo.original_path)
     finally:
         _THUMBNAIL_SLOTS.release()
-    name = f"{photo.album_id}/{photo.pk}-{source[:16]}.jpg"
-    path = _thumb_root() / name
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if shutil.disk_usage(path.parent).free < settings.GALLERY_DISK_RESERVE_MB * 1024 * 1024:
-        raise DropboxError("unavailable", "no disk space left for thumbnails")
     # Other web threads may already be reading this name: publish only a complete image.
     with NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
         temporary_path = Path(temporary.name)

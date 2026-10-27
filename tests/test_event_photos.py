@@ -340,6 +340,16 @@ class ThumbnailTests(EventPhotosTestCase):
         self.assertEqual(self.client.get(f"/media/{relative}").status_code, 404)
         self.assertEqual(self.client.get(f"/media/x/../{relative}").status_code, 404)
 
+    def test_a_full_disk_refuses_a_thumbnail_before_asking_storage_for_it(self):
+        from event_photos.dropbox import DropboxError
+
+        self._publish(_index([_photo(1)]))
+        served = FakeAdapter.thumbnails_served
+        with override_settings(GALLERY_DISK_RESERVE_MB=10**12), self.assertRaises(DropboxError) as refused:
+            actions.thumbnail_path(IndexedPhoto.objects.get())
+        self.assertEqual(refused.exception.kind, "unavailable")
+        self.assertEqual(FakeAdapter.thumbnails_served, served)
+
     def test_new_bytes_make_a_new_thumbnail(self):
         self._publish(_index([_photo(1)]))
         old = actions.thumbnail_path(IndexedPhoto.objects.get())
