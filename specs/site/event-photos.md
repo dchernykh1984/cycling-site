@@ -84,6 +84,9 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
   downloads and uses four Gunicorn threads so marks need not wait for them. Cached thumbnails
   bypass this limit. Busy or temporarily unavailable thumbnails return private, non-cacheable
   503 with Retry-After on both site and API. Index imports retain their own timeout.
+- **FR-EVP-012**: A separate opt-in integration check uses real Dropbox app authentication to read
+  a secret-configured fixture index and decode one thumbnail, without writing storage or the
+  site's database. CI runs it on trusted pull requests and main; fork code receives no credentials.
 
 ## Key Entities
 
