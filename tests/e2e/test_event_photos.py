@@ -176,6 +176,27 @@ def test_unavailable_previews_keep_the_original_link_and_have_no_broken_image(pa
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_busy_server_delays_previews_without_losing_them(page: Page, live_server, indexed_event):
+    athlete, race, reg, _ = indexed_event
+    busy: dict[str, int] = {}
+
+    def answer(route):
+        # Three busy replies per preview: more than the old two retries allowed.
+        url = route.request.url
+        busy[url] = busy.get(url, 0) + 1
+        if busy[url] <= 3:
+            route.fulfill(status=503, headers={"Retry-After": "1"})
+        else:
+            route.continue_()
+
+    page.route("**/photos/thumb/**", answer)
+    inject_session(page, live_server, athlete)
+    page.goto(f"{live_server.url}/en/calendar/{race.pk}/photos/registration/{reg.pk}/")
+    expect(page.locator(".event-photo img").first).to_be_visible(timeout=20000)
+    expect(page.locator("[data-photo-unavailable]").first).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_slow_previews_do_not_block_marks_or_start_a_request_storm(page: Page, live_server, indexed_event):
     athlete, race, reg, _ = indexed_event
     FakeAdapter.files[actions.INDEX_FILE] = _index(
