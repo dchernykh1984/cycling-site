@@ -22,7 +22,8 @@ LIST_URL = reverse("calendar_list")
 def _event(title, **kwargs):
     defaults = {
         "title_ru": title,
-        "date_start": timezone.localdate() + datetime.timedelta(days=5),
+        # Exercise registration links inside the list's current-month window.
+        "date_start": timezone.localdate(),
         "status": Competition.Status.APPROVED,
     }
     defaults.update(kwargs)
