@@ -34,4 +34,4 @@ def test_a_shared_album_supplies_a_valid_index_and_a_real_thumbnail(settings):
     with Image.open(BytesIO(data)) as image:
         assert image.format == "JPEG"
         assert 0 < image.width <= 256 and 0 < image.height <= 256
-        image.verify()
+        image.load()
