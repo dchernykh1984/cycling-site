@@ -58,12 +58,19 @@ jobs:
         run: uv sync --locked
 
       - name: Install Playwright browser
-        # A download sometimes stalls until the job is cancelled (26 minutes once, against the usual
-        # half minute; a slow one has taken 9 and finished): give each attempt 10 minutes, then retry.
+        # What stalls is apt-get fetching the browser's system libraries from the Ubuntu mirror (26
+        # minutes once, against the usual half minute). apt itself gives up on a silent mirror and
+        # retries; an attempt still gets 10 minutes. timeout cannot stop apt-get, which runs as root
+        # under sudo and would keep the dpkg lock from the next attempt, so it is stopped by hand.
         run: |
+          printf 'Acquire::Retries "3";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' \
+            | sudo tee /etc/apt/apt.conf.d/80-ci-timeouts > /dev/null
           for attempt in 1 2 3; do
             timeout 600 uv run playwright install --with-deps ${{ matrix.browser }} && exit 0
             echo "Attempt $attempt failed or stalled, retrying..."
+            sudo pkill -x apt-get || true
+            sleep 2
+            sudo dpkg --configure -a || true
           done
           exit 1
 
@@ -144,12 +151,19 @@ jobs:
         run: uv sync --locked
 
       - name: Install Playwright browser
-        # A download sometimes stalls until the job is cancelled (26 minutes once, against the usual
-        # half minute; a slow one has taken 9 and finished): give each attempt 10 minutes, then retry.
+        # What stalls is apt-get fetching the browser's system libraries from the Ubuntu mirror (26
+        # minutes once, against the usual half minute). apt itself gives up on a silent mirror and
+        # retries; an attempt still gets 10 minutes. timeout cannot stop apt-get, which runs as root
+        # under sudo and would keep the dpkg lock from the next attempt, so it is stopped by hand.
         run: |
+          printf 'Acquire::Retries "3";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' \
+            | sudo tee /etc/apt/apt.conf.d/80-ci-timeouts > /dev/null
           for attempt in 1 2 3; do
             timeout 600 uv run playwright install --with-deps chromium && exit 0
             echo "Attempt $attempt failed or stalled, retrying..."
+            sudo pkill -x apt-get || true
+            sleep 2
+            sudo dpkg --configure -a || true
           done
           exit 1
 
