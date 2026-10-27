@@ -89,6 +89,8 @@ def archive_response(photos, name: str) -> StreamingHttpResponse:
 
 
 def _archive_or_back(request, photos, name: str, back: str):
+    if not photos.exists():
+        raise Http404
     try:
         return archive_response(photos, name)
     except ArchiveTooBigError:

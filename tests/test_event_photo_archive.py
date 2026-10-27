@@ -75,6 +75,8 @@ class ArchiveTests(EventPhotosTestCase):
         # The search shows accepted matches only; the archive holds exactly what it shows.
         self.assertEqual(_zip(self.client.get(self._bib_url())).namelist(), ["IMG_0001.jpg"])
         self.assertEqual(self.client.get(self._url("bib_archive")).status_code, 404)
+        # Nothing found: no empty archive.
+        self.assertEqual(self.client.get(self._bib_url("99")).status_code, 404)
 
     def test_both_pages_offer_the_archive_with_its_size(self):
         self.client.force_login(self.athlete)
@@ -175,6 +177,7 @@ class ArchiveTests(EventPhotosTestCase):
         self.assertEqual(self.client.get(bib_url).status_code, 401)
         headers = {"HTTP_AUTHORIZATION": f"Bearer {self.stranger.api_token}"}
         self.assertEqual(_zip(self.client.get(bib_url, **headers)).namelist(), ["IMG_0001.jpg"])
+        self.assertEqual(self.client.get(bib_url.replace("bib=12", "bib=99"), **headers).status_code, 404)
         mine = f"/api/v1/event-photos/registrations/{self.reg.pk}/photos/archive"
         self.assertEqual(self.client.get(mine, **headers).status_code, 404)
         self.athlete.api_token = uuid.uuid4()
