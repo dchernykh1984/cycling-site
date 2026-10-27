@@ -5,8 +5,8 @@
 
 {% block content %}
 <section class="event-photos">
-  <p class="mb-1"><a href="{{ competition.get_absolute_url }}">{{ competition.title }}</a></p>
-  <h1 class="h3 mb-3">{% trans "Event photos" %}</h1>
+  {% include "event_photos/_breadcrumbs.html" %}
+  <h1 class="h3 mb-3">{% trans "Photos from the event" %}</h1>
 
   {% if registrations %}
   <h2 class="h5">{% trans "Photos with me" %}</h2>
@@ -29,7 +29,7 @@
     {% endif %}
   {% endif %}
 
-  <h2 class="h5 mt-4">{% trans "All photo albums" %}</h2>
+  <h2 class="h5 mt-4">{% trans "Photo albums" %}</h2>
   {% if gallery_albums %}
   <ul class="list-unstyled mb-2">
     {% for album in gallery_albums %}

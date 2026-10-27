@@ -3949,3 +3949,21 @@ msgstr "Открыть исходное фото"
 
 msgid "Preview unavailable. Open the original photo."
 msgstr "Превью недоступно. Откройте исходное фото."
+
+msgid "Photos from the event"
+msgstr "Фото с мероприятия"
+
+msgid "Breadcrumb"
+msgstr "Навигационная цепочка"
+
+#, python-format
+msgid "Photos with bib %(bib)s"
+msgstr "Фото с номером %(bib)s"
+
+#, python-format
+msgid "Photos with me: %(participant)s"
+msgstr "Фото со мной: %(participant)s"
+
+#, python-format
+msgid "Photos of %(participant)s"
+msgstr "Фото участника: %(participant)s"

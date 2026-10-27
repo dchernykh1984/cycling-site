@@ -81,6 +81,7 @@ def event_photos(request, pk):
             "competition": competition,
             "albums": albums,
             "bib": bib,
+            "photo_page_title": (_("Photos with bib %(bib)s") % {"bib": bib}) if bib else "",
             "photos": page,
             "registrations": my_registrations(request.user, competition),
             "registration_cards": [
@@ -145,12 +146,21 @@ def registration_album(request, pk, reg_pk):
         photo.decision = decisions.get(photo.pk, "")
     confirmed = photos.filter(confirmed=True).count()
     undo_event = request.GET.get("undo", "")
+    participant = (
+        str(registration) if registration.participant_names else f"{registration.last_name} {registration.first_name}"
+    )
+    title = (
+        _("Photos with me: %(participant)s")
+        if registration.user_id == request.user.pk
+        else _("Photos of %(participant)s")
+    ) % {"participant": participant}
     return render(
         request,
         "event_photos/registration_album.html",
         {
             "competition": competition,
             "registration": registration,
+            "photo_page_title": title,
             "bibs": actions.registration_bibs(registration),
             "bib_in_conflict": IssuedBib.objects.filter(
                 registration=registration, state=IssuedBib.State.CONFLICT
@@ -164,7 +174,7 @@ def registration_album(request, pk, reg_pk):
             "can_mark": can_mark(request.user, registration),
             "undo_event": undo_event if undo_event.isdigit() else "",
             "undo_page": request.GET.get("page", page.number),
-            "meta_title": _("Photos: %(event)s") % {"event": competition.title},
+            "meta_title": f"{title} - {competition.title}",
         },
     )
 

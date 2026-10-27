@@ -7,22 +7,22 @@ must supply ru/kk/en copy and check the longest labels against the existing inte
 
 | Surface / action | Destination | What it contains |
 | --- | --- | --- |
-| Event: **Photos with me** | My registration album for this event; a choice when I have several | Matches and candidates for that registration's confirmed bib(s) |
-| Event: **All photo albums** | This event's album cards | Indexed albums, existing curated albums and ordinary external photo-album links, clearly distinguished |
+| Event: **Photos from the event** | This event's photo overview | My registration cards, bib search and all visible photo sources |
+| Photo overview: **Photos with me** | My registration album for this event; a choice when I have several | Matches and candidates for that registration's confirmed bib(s) |
 | Cabinet: **My race photos** | One card per registration I can see, newest event first | Registrations I filed, ones where I am the confirmed athlete, and (with #315) my trainees' |
 | A registration album card | The same registration grid reached from the event page | That registration's matches across photographers, with an optional source-album filter |
 | A photo thumbnail | The photo in Dropbox, in a new tab | Full-size view and download on the storage's page; the site tab keeps its filters, page and selection |
 
-The event's two actions are sibling navigation links with explicit scope, not two identical
-buttons opening different things. Keep the primary personal action and the secondary album action
-beside the event's photo section; do not duplicate them in unrelated page controls. The cabinet
+The event has one photo entry (maintainer revision, 2026-10-27). Personal photos and source albums
+are choices inside that overview. Breadcrumbs go through Events, the actual event page, the photo
+overview and the current participant, source album or bib search. The cabinet
 needs one cross-event personal entry point, rather than an extra copy of all public galleries.
 A registration card may link directly to that event's personal grid using the same action.
 
 ```mermaid
 flowchart TD
-  Event[Event photo section] --> Mine[Photos with me: my registration album]
-  Event --> Albums[All photo albums for this event]
+  Event[Event page] --> Albums[Photos from the event]
+  Albums --> Mine[Photos with me: my registration album]
   Profile[Cabinet: My race photos] --> Cards[One card per registration]
   Cards --> Mine
   Mine --> Photo[Photo opened in Dropbox, new tab]
@@ -32,8 +32,8 @@ flowchart TD
 
 ## Event page and all-album destination
 
-Show a separate photo section and label its two destinations clearly. "All photo albums" means
-all visible photo sources linked to this event, not all gallery albums on the site. Existing
+Show a single "Photos from the event" entry. Its overview contains all visible photo sources linked
+to this event, not all gallery albums on the site, alongside personal cards and bib search. Existing
 curated photo albums keep their permissions and public pages.
 
 Indexed album cards show cover, localized name, photographer/credit, indexed/processed counts and
@@ -101,7 +101,7 @@ personal response to another account; personal pages are excluded from public in
 
 | Situation | Visible result / next action |
 | --- | --- |
-| Guest opens Photos with me | Explain sign-in, retain event destination; All photo albums remains available if public |
+| Guest opens Photos with me | Explain sign-in, retain event destination; the event photo overview remains available if public |
 | No confirmed athlete or bib association | Say why personal matching is unavailable; offer event albums / number search, do not require retyping a known bib |
 | Entry filed by someone else for me | Offer to accept the submitter's claim link; until then the entry is not "mine" |
 | Relay member slot not claimed | The team's album stays with the account that filed it and event search; tell the member how to claim their slot |

@@ -5,8 +5,8 @@
 
 {% block content %}
 <section class="event-photos">
-  <p class="mb-1"><a href="{% url 'event_photos:event' competition.pk %}">{{ competition.title }}</a></p>
-  <h1 class="h3">{% if registration.participant_names %}{{ registration }}{% else %}{{ registration.last_name }} {{ registration.first_name }}{% endif %}{% if bibs %} &middot; {% trans "bib" %} {{ bibs|join:", " }}{% endif %}</h1>
+  {% include "event_photos/_breadcrumbs.html" %}
+  <h1 class="h3">{{ photo_page_title }}{% if bibs %} &middot; {% trans "bib" %} {{ bibs|join:", " }}{% endif %}</h1>
 
   {% if undo_event %}
   <form method="post" action="{% url 'event_photos:undo' competition.pk registration.pk %}" class="alert alert-secondary d-flex flex-wrap align-items-center gap-2" role="status">

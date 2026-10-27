@@ -5,7 +5,8 @@
 
 {% block content %}
 <section class="event-photos-manage">
-  <p class="mb-1"><a href="{{ competition.get_absolute_url }}">{{ competition.title }}</a></p>
+  {% trans "Manage event photos" as photo_page_title %}
+  {% include "event_photos/_breadcrumbs.html" %}
   <h1 class="h3 mb-3">{% trans "Event photos" %}</h1>
 
   {% for album in albums %}

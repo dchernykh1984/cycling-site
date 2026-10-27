@@ -5,7 +5,7 @@
 
 {% block content %}
 <section class="event-photos">
-  <p class="mb-1"><a href="{% url 'event_photos:event' competition.pk %}">{{ competition.title }}</a></p>
+  {% include "event_photos/_breadcrumbs.html" with photo_page_title=album.title %}
   <h1 class="h3">{{ album.title }}</h1>
   <p class="text-muted">{% if album.credit %}{{ album.credit }} &middot; {% endif %}{% blocktrans with counter=photos.paginator.count %}Photos: {{ counter }}{% endblocktrans %}{% if not album.inventory_complete %} &middot; {% trans "indexing is not finished" %}{% endif %}</p>
   {% if photos %}

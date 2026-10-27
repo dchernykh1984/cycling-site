@@ -627,7 +627,42 @@ class PageAndApiTests(EventPhotosTestCase):
     def test_event_search_finds_the_bib_and_the_event_page_links_my_photos(self):
         self.assertContains(self.client.get(self._url("event") + "?bib=12"), "IMG_0001.jpg")
         self.client.force_login(self.athlete)
-        self.assertContains(self.client.get(self.race.get_absolute_url()), self._url("registration", self.reg.pk))
+        event = self.client.get(self.race.get_absolute_url())
+        self.assertContains(event, self._url("event"))
+        self.assertNotContains(event, self._url("registration", self.reg.pk))
+        overview = self.client.get(self._url("event"))
+        self.assertContains(overview, self._url("registration", self.reg.pk))
+
+    def test_photo_breadcrumbs_name_each_level_and_the_current_person_in_every_locale(self):
+        from bs4 import BeautifulSoup
+        from django.utils.translation import gettext, override
+
+        self.client.force_login(self.athlete)
+        for locale in ("ru", "kk", "en"):
+            with self.subTest(locale=locale), override(locale):
+                # _url uses the active language, just as the links on these pages do.
+                event_url = self._url("event")
+                personal = self.client.get(self._url("registration", self.reg.pk))
+                crumbs = BeautifulSoup(personal.content, "html.parser").select_one(".breadcrumb")
+                self.assertEqual(
+                    [a["href"] for a in crumbs.select("a")][-2:], [self.race.get_absolute_url(), event_url]
+                )
+                title = gettext("Photos with me: %(participant)s") % {"participant": "Ivanov Ivan"}
+                self.assertEqual(crumbs.select_one('[aria-current="page"]').get_text(), title)
+                album = self.client.get(self._url("album", self.album.pk))
+                crumbs = BeautifulSoup(album.content, "html.parser").select_one(".breadcrumb")
+                self.assertEqual(crumbs.select_one('[aria-current="page"]').get_text(), self.album.title)
+                search = self.client.get(event_url + "?bib=12")
+                crumbs = BeautifulSoup(search.content, "html.parser").select_one(".breadcrumb")
+                self.assertEqual(
+                    crumbs.select_one('[aria-current="page"]').get_text(),
+                    gettext("Photos with bib %(bib)s") % {"bib": "12"},
+                )
+
+        self.client.force_login(self.organizer)
+        with override("en"):
+            page = self.client.get(self._url("registration", self.reg.pk))
+            self.assertEqual(page.context["photo_page_title"], "Photos of Ivanov Ivan")
 
     def test_only_the_creator_or_an_admin_manages_albums(self):
         self.client.force_login(self.stranger)

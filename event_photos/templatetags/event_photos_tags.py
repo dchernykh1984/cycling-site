@@ -4,7 +4,7 @@ from django.urls import reverse
 from event_photos.actions import registration_summary
 from event_photos.models import ExternalAlbum
 from event_photos.permissions import can_manage_albums, can_see_event
-from event_photos.views import my_registrations, visible_albums
+from event_photos.views import visible_albums
 
 register = template.Library()
 
@@ -18,11 +18,7 @@ def event_photo_section(context, competition):
 
     curated = Album.objects.visible_to(user).filter(competition=competition).exists()
     return {
-        "has_albums": albums.exists(),
         "has_any_photos": albums.exists() or curated,
-        "registrations": [registration_summary(r) for r in my_registrations(user, competition)]
-        if albums.exists()
-        else [],
         "can_manage": can_manage_albums(user, competition),
     }
 

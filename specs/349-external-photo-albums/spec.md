@@ -77,7 +77,7 @@ editing, save/restart and upload; the athlete's gallery finds the assigned bib's
    labelled as the account holder's own photos.
 4. **Given** old start lists/results, **Then** a manager reviews suggested registration matches
    once and retains confirmed associations. Name equality alone never establishes identity.
-5. **Given** the event page and cabinet, **Then** the event's "Photos with me" opens one-start
+5. **Given** the event photo overview and cabinet, **Then** "Photos with me" opens one-start
    thumbnails, while the cabinet action opens registration cards like gallery albums. Opening a
    card shows the same selection across source albums; ordinary album links are separate.
 6. **Given** an account that filed three registrations at one event (itself and two children),
@@ -209,9 +209,11 @@ then publish an index; completed originals stay unchanged and new matches appear
   Resync must not republish an album or photo hidden/removed on the site; restoration requires
   an explicit authorized action. Apply removal to search, media and pending/ready archives.
 
-- **FR-019**: On the event page distinguish "Photos with me" (my registration album at that event,
-  or a choice of them) from "All photo albums" (all visible sources, with external/unindexed
-  sources labelled). In the cabinet, "My race photos" lists one card per registration in the
+- **FR-019**: The event page has one "Photos from the event" entry. Its overview distinguishes
+  "Photos with me" (my registration album at that event, or a choice of them) from all visible
+  photo sources, with external/unindexed sources labelled. Breadcrumbs identify the event,
+  photo overview and current participant, source album or searched bib. In the cabinet,
+  "My race photos" lists one card per registration in the
   gallery album style; a card opens that same registration grid, retaining source-album
   filtering inside it.
   Counts/covers are personal, pending states are visible and guest sign-in preserves destination.
