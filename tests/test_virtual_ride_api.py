@@ -10,7 +10,7 @@ from django.db import connections
 from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext
+from django.utils.translation import gettext, ngettext
 from django.utils.translation import override as translation_override
 
 from accounts.models import User
@@ -158,6 +158,18 @@ class SavedRidesTests(MemberClientMixin, TestCase):
         self.assertIn(heading, html)
         self.assertIn("Center loop", html)
         self.assertIn("24:59", html)
+
+    def test_the_profile_counts_rides_in_the_reader_s_grammar(self):
+        with translation_override("ru"):
+            url = reverse("account_profile")
+            one, few, many = (ngettext("ride", "rides", n) for n in (1, 3, 5))
+            self.assertEqual(ngettext("ride", "rides", 21), one)  # Russian: twenty-one rides like one
+        self.assertEqual(len({one, few, many}), 3)
+        self.post(self.client_a, "/rides", _ride())
+        self.assertInHTML(f'<div class="text-muted">{one}</div>', self.client_a.get(url).content.decode())
+        for _more in range(2):
+            self.post(self.client_a, "/rides", _ride())
+        self.assertInHTML(f'<div class="text-muted">{few}</div>', self.client_a.get(url).content.decode())
 
 
 class GroupRaceTests(MemberClientMixin, TestCase):

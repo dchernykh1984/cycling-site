@@ -245,7 +245,7 @@
             <div class="card-body">
                 {% if virtual_ride.rides %}
                 <div class="row g-2 mb-3 text-center small">
-                    <div class="col-6 col-sm-3"><div class="fw-semibold fs-6">{{ virtual_ride.rides }}</div><div class="text-muted">{% trans "rides" %}</div></div>
+                    <div class="col-6 col-sm-3"><div class="fw-semibold fs-6">{{ virtual_ride.rides }}</div><div class="text-muted">{% blocktrans count counter=virtual_ride.rides %}ride{% plural %}rides{% endblocktrans %}</div></div>
                     <div class="col-6 col-sm-3"><div class="fw-semibold fs-6">{{ virtual_ride.distance_km }} {% trans "km" %}</div><div class="text-muted">{% trans "ridden" %}</div></div>
                     <div class="col-6 col-sm-3"><div class="fw-semibold fs-6">{{ virtual_ride.elevation_m }} {% trans "m" %}</div><div class="text-muted">{% trans "climbed" %}</div></div>
                     <div class="col-6 col-sm-3"><div class="fw-semibold fs-6">{{ virtual_ride.time_label }}</div><div class="text-muted">{% trans "in the saddle" %}</div></div>
