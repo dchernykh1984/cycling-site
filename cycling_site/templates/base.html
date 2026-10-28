@@ -32,7 +32,9 @@
     {% endfor %}
     <meta property="og:type" content="{% firstof og_type 'website' %}" />
     <meta property="og:site_name" content="{% if current_site and current_site.site_name %}{{ current_site.site_name }}{% endif %}" />
-    <meta property="og:title" content="{% firstof meta_title page.seo_title page.title %}" />
+    {# What a view or an editor named the page for sharing, else what its tab shows (issue #334). #}
+    {% firstof meta_title page.seo_title as og_title %}
+    <meta property="og:title" content="{% if og_title %}{{ og_title }}{% else %}{% rendered_title %}{% endif %}" />
     {# og_description is the line a page wants a chat to show; search engines keep reading the description above. #}
     <meta property="og:description" content="{% if og_description %}{{ og_description }}{% elif description %}{{ description }}{% else %}{% trans 'Calendar of endurance sport events -- cycling, running, cross-country skiing -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base.' %}{% endif %}" />
     <meta property="og:url" content="{% firstof canonical_url request.build_absolute_uri %}" />
