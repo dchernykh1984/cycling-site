@@ -114,10 +114,14 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
     with transaction.atomic():
         competition = Competition.objects.select_for_update().get(pk=competition.pk)
         if not relay_enabled and check_duplicate(competition, person, first_name, last_name, birth_date):
-            if person == registered_by:
-                form.add_error(None, gettext("You are already registered for this competition."))
+            # Where anyone may be entered a duplicate is a name and a birth year, whoever typed them
+            if is_free(competition):
+                said = gettext("A participant with this name and birth year is already registered.")
+            elif person == registered_by:
+                said = gettext("You are already registered for this competition.")
             else:
-                form.add_error(None, gettext("Already registered for this competition."))
+                said = gettext("Already registered for this competition.")
+            form.add_error(None, said)
             return None
 
         team_name = cleaned.get("team_name", "").strip()
