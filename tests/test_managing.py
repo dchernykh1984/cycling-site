@@ -359,6 +359,13 @@ class ProfileSectionTests(TestCase):
         self.assertIn("/accounts/login/", response["Location"])
         self.assertIsNone(managing.invite_of(self.coach))
 
+    def test_a_members_gender_is_said_in_the_pages_language(self):
+        managing.ask(self.anna, managing.issue_invite(self.coach).key)
+        managing.accept(self.coach, self.anna.pk)
+        with translation.override("ru"):
+            self.assertContains(self.client.get("/ru/accounts/profile/"), gettext("Female"))
+            self.assertNotEqual(gettext("Female"), "Female")
+
     def test_the_sections_speak_each_language(self):
         managing.ask(self.coach, managing.issue_invite(self.anna).key)
         managing.accept(self.anna, self.coach.pk)
