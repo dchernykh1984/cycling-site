@@ -6,9 +6,9 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
 ``person`` is whose profile fills them in, and only the reader is told what their own profile lacks.{% endcomment %}
 {% if not relay_enabled %}
 <div class="mb-3">
-  <label class="form-label">{% trans "Last name" %} *</label>
+  <label class="form-label" for="{{ p }}last_name">{% trans "Last name" %} *</label>
   {% if "last_name" in form.fields %}
-    <input type="text" name="{{ form.last_name.html_name }}" value="{{ form.last_name.value|default:'' }}"
+    <input type="text" name="{{ form.last_name.html_name }}" id="{{ p }}last_name" value="{{ form.last_name.value|default:'' }}"
            class="form-control{% if form.last_name.errors %} is-invalid{% endif %}"
            {% if "last_name" in form.fields and form.fields.last_name.widget.attrs.readonly %}readonly{% endif %}{% if required %} required{% endif %}>
     {% for e in form.last_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
@@ -16,9 +16,9 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
 </div>
 
 <div class="mb-3">
-  <label class="form-label">{% trans "First name" %} *</label>
+  <label class="form-label" for="{{ p }}first_name">{% trans "First name" %} *</label>
   {% if "first_name" in form.fields %}
-    <input type="text" name="{{ form.first_name.html_name }}" value="{{ form.first_name.value|default:'' }}"
+    <input type="text" name="{{ form.first_name.html_name }}" id="{{ p }}first_name" value="{{ form.first_name.value|default:'' }}"
            class="form-control{% if form.first_name.errors %} is-invalid{% endif %}"
            {% if form.fields.first_name.widget.attrs.readonly %}readonly{% endif %}{% if required %} required{% endif %}>
     {% for e in form.first_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
@@ -27,8 +27,8 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
 {% endif %}
 
 <div class="mb-3">
-  <label class="form-label">{% trans "Gender" %} *</label>
-  <div id="{{ p }}gender-field">
+  <label class="form-label" id="{{ p }}gender-label">{% trans "Gender" %} *</label>
+  <div id="{{ p }}gender-field" role="radiogroup" aria-labelledby="{{ p }}gender-label">
     <div class="form-check form-check-inline">
       <input class="form-check-input js-gender" type="radio" name="{{ form.gender.html_name }}" id="{{ p }}gender_m" value="M"
              {% if form.gender.value == "M" %}checked{% endif %}
@@ -50,8 +50,8 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
 
 {% if "birth_year" in form.fields and not relay_enabled %}
 <div class="mb-3">
-  <label class="form-label">{% trans "Year of birth" %} *</label>
-  <input type="number" name="{{ form.birth_year.html_name }}" value="{{ form.birth_year.value|default:'' }}"
+  <label class="form-label" for="{{ p }}birth_year">{% trans "Year of birth" %} *</label>
+  <input type="number" name="{{ form.birth_year.html_name }}" id="{{ p }}birth_year" value="{{ form.birth_year.value|default:'' }}"
          class="form-control js-birth-year{% if form.birth_year.errors %} is-invalid{% endif %}"
          {% if form.fields.birth_year.widget.attrs.readonly %}readonly{% endif %}
          min="1900" max="{% now "Y" %}"{% if required %} required{% endif %}>
@@ -61,8 +61,8 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
 
 {% if "birth_date" in form.fields %}
 <div class="mb-3">
-  <label class="form-label">{% trans "Date of birth" %} *</label>
-  <input type="date" name="{{ form.birth_date.html_name }}" value="{{ form.birth_date.value|date:'Y-m-d'|default:form.birth_date.value|default:'' }}"
+  <label class="form-label" for="{{ p }}birth_date">{% trans "Date of birth" %} *</label>
+  <input type="date" name="{{ form.birth_date.html_name }}" id="{{ p }}birth_date" value="{{ form.birth_date.value|date:'Y-m-d'|default:form.birth_date.value|default:'' }}"
          class="form-control js-birth-date{% if form.birth_date.errors %} is-invalid{% endif %}"
          {% if form.fields.birth_date.widget.attrs.readonly %}readonly{% endif %}{% if required %} required{% endif %}>
   {% for e in form.birth_date.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
@@ -70,7 +70,7 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
 {% endif %}
 
 <div class="mb-3">
-  <label class="form-label">{% trans "Category" %} *</label>
+  <label class="form-label" for="{{ p }}category-select">{% trans "Category" %} *</label>
   <select name="{{ form.category.html_name }}" id="{{ p }}category-select"
           class="form-select js-category{% if form.category.errors %} is-invalid{% endif %}"{% if required %} required{% endif %}>
     <option value="">— {% trans "select" %} —</option>
@@ -85,14 +85,14 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
 
 {% if not relay_enabled %}
 <div class="mb-3">
-  <label class="form-label">{% trans "City" %}</label>
+  <label class="form-label" for="{{ p }}city-input">{% trans "City" %}</label>
   <input type="text" name="{{ form.city.html_name }}" value="{{ form.city.value|default:'' }}"
          class="form-control js-city" id="{{ p }}city-input" autocomplete="off">
 </div>
 {% endif %}
 
 <div class="mb-3">
-  <label class="form-label">{% trans "Team" %}</label>
+  <label class="form-label" for="{{ p }}team-input">{% trans "Team" %}</label>
   <input type="text" name="{{ form.team_name.html_name }}" value="{{ form.team_name.value|default:'' }}"
          class="form-control js-team" id="{{ p }}team-input" autocomplete="off">
 </div>
@@ -105,8 +105,8 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
 </div>
 {% endif %}
 <div class="mb-3">
-  <label class="form-label">{{ form.additional_info.label }}{% if form.additional_info.field.required %} *{% endif %}</label>
-  <input type="{% if competition.additional_info_is_strava %}url{% else %}text{% endif %}" name="{{ form.additional_info.html_name }}"
+  <label class="form-label" for="{{ p }}additional_info">{{ form.additional_info.label }}{% if form.additional_info.field.required %} *{% endif %}</label>
+  <input type="{% if competition.additional_info_is_strava %}url{% else %}text{% endif %}" name="{{ form.additional_info.html_name }}" id="{{ p }}additional_info"
          value="{{ form.additional_info.value|default:'' }}" class="form-control" maxlength="100"
          {% if required and form.additional_info.field.required %}required{% endif %}
          {% if competition.additional_info_is_strava %}placeholder="https://www.strava.com/athletes/..."{% endif %}>
