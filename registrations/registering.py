@@ -32,6 +32,14 @@ def profile_incomplete(person) -> bool:
     return not person.gender or not person.birth_date
 
 
+def cannot_fill(competition, person) -> bool:
+    """Whether ``person``'s profile cannot fill an event that takes only one's own data: the form
+    takes the names, the gender and the birth date from it, and nobody else may type them."""
+    return not is_free(competition) and (
+        profile_incomplete(person) or not (person.first_name.strip() and person.last_name.strip())
+    )
+
+
 def available_categories(competition, gender, birth_date) -> list[RegistrationCategory]:
     """The open categories a person of this gender and birth date may enter; none without both."""
     if not (gender and birth_date):
@@ -222,11 +230,11 @@ def rows_for(competition, user) -> list[Row] | None:
             else f"{person.last_name} {person.first_name}".strip() or person.public_display_name,
             profile=person,
         )
-        if not is_free(competition) and profile_incomplete(person):
+        if cannot_fill(competition, person):
             row.blocked = (
-                gettext("Complete your profile to register: it has no gender or date of birth.")
+                gettext("Complete your profile to register: it lacks your name, gender or date of birth.")
                 if is_reader
-                else gettext("Their profile has no gender or date of birth: ask them to complete it.")
+                else gettext("Their profile lacks a name, gender or date of birth: ask them to complete it.")
             )
         else:
             row.form = blank_form(competition, person, prefix=row.prefix)

@@ -107,9 +107,18 @@ class RegisterManyTests(TestCase):
         self.boris.birth_date = None
         self.boris.save()
         response = self.client.get(self._url())
-        self.assertContains(response, "Their profile has no gender or date of birth: ask them to complete it.")
+        self.assertContains(response, "Their profile lacks a name, gender or date of birth: ask them to complete it.")
         self.assertNotContains(response, f'name="person" value="{self.boris.pk}"')
         self.assertContains(response, f'name="person" value="{self.anna.pk}"')
+
+    def test_a_profile_without_a_name_cannot_fill_a_self_only_form_either(self):
+        """The form takes the names from the profile and nobody may type them: ticked, it could only fail."""
+        self.boris.last_name = ""
+        self.boris.save()
+        response = self.client.get(self._url())
+        self.assertNotContains(response, f'name="person" value="{self.boris.pk}"')
+        free = make_open_competition(submitted_by=self.organizer)
+        self.assertContains(self.client.get(self._url(free)), f'name="person" value="{self.boris.pk}"')
 
     def test_an_event_that_lets_anyone_be_registered_offers_another_person_too(self):
         free = make_open_competition(submitted_by=self.organizer)
