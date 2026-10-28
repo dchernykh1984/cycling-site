@@ -37,7 +37,12 @@ and an IndexNow notice whenever something is published.
 5. **Given** an event page, **Then** `og:description` -- the line a chat shows under a pasted
    link -- is the event's preview text in the page's language, else the sentence about the event
    (date and place) in that language; `meta description`, which search engines read, stays that
-   sentence whatever the preview text says (issue #318).
+   sentence whatever the preview text says (issue #318). The sentence names the event's type
+   unless it is the first in the types' order (the usual kind), and a direction's catch-all
+   discipline as the direction -- "Road Cycling", not "Other (Road Cycling)" (issue #334).
+6. **Given** any page, **Then** `og:title` is the name a view or an editor gave the page for
+   sharing, else the name its tab shows -- "Calendar", the home page's own title -- in every skin
+   (issue #334).
 
 ### Story 2 -- An engine finds the content (P1)
 
