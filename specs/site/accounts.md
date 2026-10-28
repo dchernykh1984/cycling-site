@@ -124,7 +124,8 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
   confirmation block, the sign-in methods and the role ladder (without the request button); the
   contact, appearance, registrations, submitted events, submissions, managing and API sections are
   hidden.
-- On a phone the managing sections' tables become cards, as the participant list's do.
+- The managing sections show each member and each request as a card, every column named beside its
+  value, at every width: the profile's column is too narrow for their columns even on a desktop.
 - Anything that writes -- submitting, registering, commenting, contacting the owners, the API --
   sends a guest to their profile with a message asking to confirm the address.
 - A member's public name never exposes their e-mail; where a name is shown to them (the sign-in
