@@ -1810,6 +1810,13 @@ msgstr "Таңдаулыларда"
 msgid "Hidden"
 msgstr "Жасырылған"
 
+#: calendar_app/templates/calendar_app/invite_preview.html:13
+msgid ""
+"This event is open by invitation. Sign in to accept the invitation and open "
+"it."
+msgstr ""
+"Бұл іс-шара шақыру бойынша. Шақыруды қабылдап, оны ашу үшін кіріңіз."
+
 #: calendar_app/templates/calendar_app/list.html:186
 msgid "By invitation"
 msgstr "Шақыру бойынша"

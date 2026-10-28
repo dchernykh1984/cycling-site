@@ -6,6 +6,7 @@ from calendar import monthrange
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
@@ -846,6 +847,26 @@ def _preview_image_tags(request, competition) -> dict:
     }
 
 
+def _link_preview_tags(request, competition) -> dict:
+    """What a search engine and a chat read in the head of a page about this event."""
+    return {
+        # What a search engine reads: the event's own name and a sentence about it, instead of
+        # the one site-wide line every page used to carry. A chat reads og_description below.
+        "meta_title": competition.title,
+        "meta_description": competition.search_summary(),
+        # What a chat shows under the title: the organizer's own line in the page's language
+        # when they wrote one (the meeting time and place, which the summary cannot know), else
+        # the summary above, in that same language. The language's own column, not the
+        # translated field: its fallback put a Russian line into a Kazakh chat, where the form
+        # promises the date and the place.
+        "og_description": getattr(competition, build_localized_fieldname("preview_text", get_language()), ""),
+        "og_type": "article",
+        # The picture a chat shows for this event. Absolute, because the messenger fetching it
+        # has nothing to resolve a relative path against.
+        **_preview_image_tags(request, competition),
+    }
+
+
 def _share_url(request, competition, *, is_public: bool, invite_url: str | None) -> str | None:
     """What an event page's share button hands out (issue #327), or None for no button.
 
@@ -943,20 +964,7 @@ class CompetitionDetailView(View):
             "report_form": ReportCompetitionForm() if can_report else None,
             "open_reports": open_reports,
             "can_dismiss_reports": bool(open_reports),
-            # What a search engine reads: the event's own name and a sentence about it, instead of
-            # the one site-wide line every page used to carry. A chat reads og_description below.
-            "meta_title": competition.title,
-            "meta_description": competition.search_summary(),
-            # What a chat shows under the title: the organizer's own line in the page's language
-            # when they wrote one (the meeting time and place, which the summary cannot know), else
-            # the summary above, in that same language. The language's own column, not the
-            # translated field: its fallback put a Russian line into a Kazakh chat, where the form
-            # promises the date and the place.
-            "og_description": getattr(competition, build_localized_fieldname("preview_text", get_language()), ""),
-            "og_type": "article",
-            # The picture a chat shows for this event. Absolute, because the messenger fetching it
-            # has nothing to resolve a relative path against.
-            **_preview_image_tags(request, competition),
+            **_link_preview_tags(request, competition),
             "structured_data": sports_event(competition, f"{request.scheme}://{request.get_host()}"),
         }
         # Resolve the map pin: a venue with its own coordinates, else the nearest visible ancestor
@@ -1811,21 +1819,39 @@ class CompetitionHideView(LoginRequiredMixin, View):
         return redirect("competition_detail", pk=pk)
 
 
-class AcceptInviteView(LoginRequiredMixin, View):
+class AcceptInviteView(View):
     """The invitation link of an invite-only event (issue #313).
 
-    Signing in is required -- an anonymous visitor is sent to the login page and brought back here --
-    because the invitation is kept against the account, which is what makes the event show up for
-    that person everywhere afterwards. The link then sends them on to the event's own address, so the
-    key does not linger in the address bar to be copied, shown or forwarded.
+    Accepting it takes signing in, because the invitation is kept against the account, which is what
+    makes the event show up for that person everywhere afterwards. The link then sends them on to the
+    event's own address, so the key does not linger in the address bar to be copied, shown or
+    forwarded.
+
+    Before that, a visitor who is not signed in -- a person, or a messenger fetching a preview of the
+    pasted link -- is shown the event's name, line and picture and asked to sign in, so a chat shows
+    the event rather than the login form (issue #351). Only for an event its invitees can open, the
+    one "Share" hands this link out for: anyone holding the key sees it once signed in anyway.
     """
 
     def get(self, request, pk, key):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+        if competition.invite_only and competition.invite_key != key:
+            # A stale or mistyped link says nothing about whether the event exists.
+            raise Http404
+        if not request.user.is_authenticated:
+            if not competition.invite_only:
+                return redirect("competition_detail", pk=pk)
+            if competition.status != Competition.Status.APPROVED or competition.is_hidden:
+                return redirect_to_login(request.get_full_path())
+            context = {
+                "competition": competition,
+                "login_url": f"{reverse('account_login')}?{urlencode({'next': request.get_full_path()})}",
+                **_link_preview_tags(request, competition),
+            }
+            response = render(request, "calendar_app/invite_preview.html", context)
+            response["X-Robots-Tag"] = "noindex"
+            return response
         if competition.invite_only:
-            if competition.invite_key != key:
-                # A stale or mistyped link says nothing about whether the event exists.
-                raise Http404
             CompetitionInvite.objects.get_or_create(competition=competition, user=request.user)
         return redirect("competition_detail", pk=pk)
 
