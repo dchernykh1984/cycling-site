@@ -15,6 +15,8 @@ from xml.etree import ElementTree as ET
 
 import requests
 from django.conf import settings
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.html import strip_tags
 
@@ -116,12 +118,23 @@ def _access_token(connection: StravaConnection) -> str:
 
 
 def disconnect(connection: StravaConnection) -> None:
-    """Revoke the grant at Strava when it still answers, and forget the tokens either way."""
+    """Forget the member's grant; ``revoke_at_strava`` takes it back at Strava on the way out."""
+    connection.delete()
+
+
+@receiver(pre_delete, sender=StravaConnection)
+def revoke_at_strava(sender, instance: StravaConnection, **kwargs) -> None:
+    """Whatever removes a grant -- the member turning it off, their account deleted -- revokes it at Strava too.
+
+    Best effort: Strava may not answer, and the tokens go either way. A grant Strava already refused
+    (``revoked``) is not asked about again.
+    """
+    if instance.revoked:
+        return
     try:
-        requests.post(DEAUTHORIZE_URL, data={"access_token": _access_token(connection)}, timeout=_TIMEOUT)
+        requests.post(DEAUTHORIZE_URL, data={"access_token": _access_token(instance)}, timeout=_TIMEOUT)
     except (StravaError, requests.RequestException):
         pass
-    connection.delete()
 
 
 def tcx(ride: VirtualRide, points: list) -> bytes:
@@ -227,6 +240,7 @@ def upload(ride: VirtualRide) -> StravaUpload:
         response = _call(connection, "POST", UPLOADS_URL, data=data, files=files)
     except StravaError as exc:
         if exc.revoked:
+            connection.revoked = True
             connection.delete()
         return _fail(record, str(exc))
     if response.status_code != 201:
@@ -243,6 +257,7 @@ def refresh(record: StravaUpload) -> StravaUpload:
         response = _call(connection, "GET", f"{UPLOADS_URL}/{record.upload_id}")
     except StravaError as exc:
         if exc.revoked:
+            connection.revoked = True
             connection.delete()
             return _fail(record, str(exc))
         return record  # Strava unreachable for now: ask again later

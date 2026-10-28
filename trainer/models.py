@@ -144,6 +144,8 @@ class StravaConnection(models.Model):
     refresh_token = models.CharField(max_length=255)
     expires_at = models.DateTimeField()
     connected_at = models.DateTimeField(auto_now_add=True)
+    # not stored: set before deleting a grant Strava itself refused, which leaves nothing to revoke there
+    revoked = False
 
     def __str__(self) -> str:
         return f"{self.user_id} -> strava {self.athlete_id}"

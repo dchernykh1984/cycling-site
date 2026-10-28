@@ -175,6 +175,21 @@ class StravaUploadTests(MemberClientMixin, TestCase):
         self.assertEqual(call.call_count, 1)  # nothing sent twice
 
     @mock.patch("trainer.strava.requests.post")
+    def test_deleting_an_account_revokes_its_strava_grant_too(self, post):
+        _connect(self.user)
+        self.user.delete()
+        self.assertEqual(post.call_args.args, (strava.DEAUTHORIZE_URL,))
+        self.assertEqual(post.call_args.kwargs["data"], {"access_token": "access"})
+
+    @mock.patch("trainer.strava.requests.post")
+    @mock.patch("trainer.strava.requests.request")
+    def test_a_grant_strava_refused_is_not_revoked_again(self, call, post):
+        _connect(self.user)
+        call.return_value = _answer(401)
+        self.save()
+        post.assert_not_called()
+
+    @mock.patch("trainer.strava.requests.post")
     def test_turning_it_off_revokes_the_grant_and_forgets_the_tokens(self, post):
         _connect(self.user)
         self.assertEqual(self.client_m.delete(f"{API}/strava").status_code, 204)
