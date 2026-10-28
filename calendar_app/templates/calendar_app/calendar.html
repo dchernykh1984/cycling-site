@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // FullCalendar would ask the browser, and browsers write Kazakh dates as "2026 M10 3 SAT".
   // Read from the period row's copy (_period_nav.html), the one the page carries.
   var DATE_WORDS = JSON.parse(document.getElementById('period-date-words').textContent);
+  var WEEK = JSON.parse(document.getElementById('period-week').textContent);
   function dayLabel(year, month, day) {
     var weekday = (new Date(year, month, day).getDay() + 6) % 7;
     return day + ' ' + DATE_WORDS.months[month] + ', ' + DATE_WORDS.weekdays[weekday];
@@ -267,7 +268,8 @@ document.addEventListener('DOMContentLoaded', function () {
     initialView: initialList ? 'listRange' : 'dayGridMonth',
     initialDate: selectedFrom || undefined,
     locale: '{{ CURRENT_LANGUAGE }}',
-    firstDay: {% if CURRENT_LANGUAGE == 'en' %}0{% else %}1{% endif %},
+    // The site's week in every language: the English grid no longer starts a week the period calls the last
+    firstDay: WEEK.first_day,
     views: {
       dayGridMonth: {dayHeaderContent: function (arg) { return DATE_WORDS.weekday_short[(arg.date.getDay() + 6) % 7]; }},
       listRange: { type: 'list', visibleRange: function () { return listRange; } },

@@ -274,6 +274,12 @@ DEFAULT_SKIN = "orange"
 # for none. A new skin worth recommending is a new value here.
 SKIN_OFFER = DEFAULT_SKIN
 
+# The calendar's week (issue #383): the day a week starts on and the days of the weekend, in order,
+# numbered as JavaScript numbers them, 0 for Sunday. The defaults are the week where the site began:
+# Monday to Sunday, with Saturday and Sunday the weekend -- for the grid, the periods and their arrows.
+CALENDAR_FIRST_WEEKDAY = env.int("CALENDAR_FIRST_WEEKDAY", default=1)
+CALENDAR_WEEKEND = env.list("CALENDAR_WEEKEND", cast=int, default=[6, 0])
+
 # The view the map opens on for a reader whose places all lie in one of these areas -- the places
 # in the location filter, which a member's saved preferences fill in on a fresh visit. A city and
 # the places its riders go out to, as (south, west) and (north, east) corners. Anyone else gets

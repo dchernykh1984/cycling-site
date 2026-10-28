@@ -3,6 +3,7 @@
 import datetime
 
 import pytest
+from django.conf import settings
 from django.utils.formats import date_format
 from django.utils.translation import override as translation_override
 from playwright.sync_api import Page, expect
@@ -99,8 +100,9 @@ def test_grid_weekdays_use_the_readers_catalogue(page: Page, live_server, langua
     monday = datetime.date(2001, 1, 1)
     with translation_override(language):
         names = [date_format(monday + datetime.timedelta(days=n), "D") for n in range(7)]
-    if language == "en":
-        names = names[-1:] + names[:-1]
+    # The site's week in every language (settings.CALENDAR_FIRST_WEEKDAY, 0 for Sunday)
+    shift = (settings.CALENDAR_FIRST_WEEKDAY - 1) % 7
+    names = names[shift:] + names[:shift]
     page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{live_server.url}/{language}/calendar/")
     expect(page.locator(".fc-col-header-cell")).to_have_text(names)

@@ -481,6 +481,7 @@ def month_picker_choices() -> dict:
         "calendar_months": list(enumerate((_(name) for name in MONTH_NAMES), start=1)),
         "calendar_years": calendar_year_choices(),
         "calendar_date_words": calendar_date_words(),
+        "calendar_week": {"first_day": settings.CALENDAR_FIRST_WEEKDAY, "weekend": list(settings.CALENDAR_WEEKEND)},
     }
 
 

@@ -90,6 +90,8 @@ dashboard:
 - `ADMINS` - comma-separated error email recipients (defaults to `DEFAULT_FROM_EMAIL`);
   `SERVER_EMAIL` - error sender (defaults to `DEFAULT_FROM_EMAIL`);
   `EMAIL_TIMEOUT` - SMTP operation timeout in seconds (default 5)
+- `CALENDAR_FIRST_WEEKDAY`, `CALENDAR_WEEKEND` - the calendar's week: the day it starts on and the
+  weekend's days, 0 for Sunday (defaults `1` and `6,0`: Monday, and Saturday with Sunday)
 - `GOOGLE_`/`GITHUB_`/`STRAVA_` `CLIENT_ID` and `CLIENT_SECRET` - social login; the Strava pair also
   sends members' virtual rides to Strava once they connect it on their profile
 
