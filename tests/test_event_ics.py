@@ -83,6 +83,9 @@ class EventFileTests(TestCase):
     def test_search_engines_are_told_to_keep_to_the_page(self):
         self.assertEqual(self._file(self.race)["X-Robots-Tag"], "noindex")
 
+    def test_no_shared_cache_keeps_a_copy_for_others(self):
+        self.assertIn("private", self._file(self.race)["Cache-Control"])
+
 
 class WhoGetsTheFileTests(TestCase):
     """The page's own rule: whoever may open the page gets its file, everybody else a 404."""
@@ -173,6 +176,7 @@ class ApiFileTests(TestCase):
         response = self._get(race, lang="kk")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "text/calendar; charset=utf-8")
+        self.assertIn("private", response["Cache-Control"])
         [lines] = _events(response.content.decode())
         self.assertEqual(_field(lines, "SUMMARY"), "Zharys")
         self.assertTrue(_field(lines, "URL").endswith(f"/kk/calendar/{race.pk}/"), _field(lines, "URL"))

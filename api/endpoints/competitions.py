@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.utils import translation
+from django.utils.cache import patch_cache_control
 from ninja import Query, Router, Schema, Status
 from ninja.errors import HttpError
 
@@ -417,7 +418,10 @@ def competition_ics(
     _require_visible_or_404(request.auth, competition)
     with translation.override(lang):
         body = build_calendar([competition], site_base_url(request))
-    return calendar_response(body, f"event-{competition.pk}.ics")
+    response = calendar_response(body, f"event-{competition.pk}.ics")
+    # An owner's hidden or pending event is theirs alone: no shared cache keeps a copy.
+    patch_cache_control(response, private=True)
+    return response
 
 
 @router.post("/", response={201: CompetitionDetailOut}, auth=auth, summary="Create competition")
