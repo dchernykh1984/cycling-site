@@ -51,9 +51,10 @@ normally is.
 
 ### User Story 5 - Rides go to Strava as virtual rides (Priority: P2)
 
-1. **Given** a member and a site with a Strava application, **Then** the setup page offers "Connect
-   with Strava" and the profile card carries the same button; connecting asks Strava for
-   `read,activity:write` in a round trip separate from signing in.
+1. **Given** a member who has not connected Strava and a site with a Strava application, **Then** the
+   setup page offers "Connect with Strava" and the profile card carries the same button; connecting
+   asks Strava for `read,activity:write` in a round trip separate from signing in. A connected
+   member's setup page says nothing of it; the profile card is where to turn it off.
 2. **Given** a connected member, **When** a ride that is not in demo mode is saved with its track,
    **Then** it is uploaded as a TCX file with `sport_type=VirtualRide`, the results say when it is on
    Strava ("View on Strava") or why not, and "Send again" retries it; a ride Strava already has is
