@@ -197,6 +197,11 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         self.assertEqual(self.post(self.client_h, f"/groups/{group_id}/cancel").status_code, 200)
         self.assertEqual(self.client_g.get(f"{API}/groups").json(), [])
 
+    def test_a_shared_link_leads_to_the_site_s_page_which_hands_out_the_cookie_to_join(self):
+        # the trainer file opened on its own has no CSRF cookie, and a newcomer could not join from it
+        for client in (self.client, self.client_g):
+            self.assertEqual(client.get(f"{API}/me").json()["page_url"], reverse("virtual_ride"))
+
     def test_a_shared_link_opens_the_race_and_says_when_it_was_cancelled(self):
         group_id = self.create().json()["id"]
         opened = self.client_g.get(f"{API}/groups/{group_id}").json()

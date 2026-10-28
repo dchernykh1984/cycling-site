@@ -3166,10 +3166,12 @@ function recordsFromServer(sum, rides, plan) {
 const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), lastInp: null, resultsFor: null, linkShown: false, linkChecked: false };
 // a group race named by the link the page was opened with (?group=)
 const LINKED = (g => /^[0-9]{1,12}$/.test(g || '') ? +g : null)(new URLSearchParams(location.search).get('group'));
-// the address of a group race: the site's page when it frames the trainer, else this file
+// the address of a group race: the site's page that frames the trainer, which also hands a newcomer
+// the cookie the page needs to join -- never this file on its own
 function groupLink(id) {
-  let base = location.origin + location.pathname + '?lang=' + LANG + '&';
-  try { if (window.top !== window) base = window.top.location.origin + window.top.location.pathname + '?'; } catch (e) {}
+  const page = Records.me && Records.me.page_url;
+  let base = page ? location.origin + langPath(page) + '?' : location.origin + location.pathname + '?lang=' + LANG + '&';
+  try { if (!page && window.top !== window) base = window.top.location.origin + window.top.location.pathname + '?'; } catch (e) {}
   return base + 'group=' + id;
 }
 function mpNote(text) { const el = $('#mpNote'); el.textContent = text; el.classList.toggle('hidden', !text); }
