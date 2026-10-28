@@ -1,10 +1,12 @@
 import datetime
 import os
+import re
 import threading
 
 import pytest
 from django.core.signals import request_finished, request_started
 from django.test import Client
+from playwright.sync_api import Error as PlaywrightError
 
 from accounts.models import User
 from calendar_app.models import Competition, Discipline, DisciplineCategory
@@ -92,6 +94,40 @@ def default_language_cookie(page, live_server):
     """
     host = live_server.url.split("//")[1].split(":")[0]
     page.context.add_cookies([{"name": "django_language", "value": "ru", "domain": host, "path": "/"}])
+
+
+# Files the pages load from CDNs (Bootstrap, FullCalendar, Leaflet, fonts), kept for the whole worker.
+# Fetched afresh for every test they are thousands of requests a job, and one slow answer -- 45 s once,
+# for FullCalendar's bundle -- stalls a page's load past its timeout. Google Fonts' CSS is left alone:
+# it differs by browser.
+_CDN = re.compile(r"^https://(cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com|unpkg\.com|fonts\.gstatic\.com)/")
+_CDN_FILES: dict[str, tuple[int, dict[str, str], bytes]] = {}
+# The bytes are kept decoded, so the headers that describe the encoded transfer are not passed on.
+_TRANSFER_HEADERS = {"content-encoding", "content-length", "transfer-encoding"}
+
+
+@pytest.fixture(autouse=True)
+def _cdn_files_from_memory(page):
+    def serve(route):
+        url = route.request.url
+        if url not in _CDN_FILES:
+            for attempt in (1, 2):
+                try:
+                    response = route.fetch(timeout=20_000)
+                    break
+                except PlaywrightError:
+                    if attempt == 2:
+                        route.abort()
+                        return
+            if response.status != 200:
+                route.fulfill(response=response)  # a missing file stays missing, for the page to show
+                return
+            headers = {k: v for k, v in response.headers.items() if k.lower() not in _TRANSFER_HEADERS}
+            _CDN_FILES[url] = (response.status, headers, response.body())
+        status, headers, body = _CDN_FILES[url]
+        route.fulfill(status=status, headers=headers, body=body)
+
+    page.route(_CDN, serve)
 
 
 @pytest.fixture(autouse=True)
