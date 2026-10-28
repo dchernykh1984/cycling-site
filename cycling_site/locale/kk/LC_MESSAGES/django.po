@@ -4449,3 +4449,6 @@ msgstr "Басқаларды тіркеу"
 #, python-format
 msgid "%(name)s asks to manage your registrations and photos. To answer, confirm your e-mail address first -- open the link in the mail we sent you -- and then open this link again."
 msgstr "%(name)s сіздің тіркелулеріңіз бен фотоларыңызды басқаруға рұқсат сұрайды. Жауап беру үшін алдымен поштаңызды растаңыз — біз жіберген хаттағы сілтемені ашыңыз, — содан кейін осы сілтемені қайта ашыңыз."
+
+msgid "Add your first and last name to your profile first: whoever opens your link must see who asks."
+msgstr "Алдымен профиліңізге атыңыз бен тегіңізді жазыңыз: сілтемеңізді ашқан адам кім сұрап тұрғанын көруі керек."

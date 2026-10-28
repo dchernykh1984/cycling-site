@@ -222,6 +222,8 @@ class ProfileSectionTests(TestCase):
 
     def setUp(self):
         self.coach = _user("coach")
+        self.coach.first_name, self.coach.last_name = "Ivan", "Petrov"
+        self.coach.save()
         self.anna = User.objects.create_user(
             username="anna",
             email="anna@example.com",
@@ -261,6 +263,19 @@ class ProfileSectionTests(TestCase):
         self._post("account_managing_delete")
         self.assertIsNone(managing.invite_of(self.coach))
         self.assertContains(self.client.get(self.profile), "Create link")
+
+    def test_a_member_without_a_name_is_asked_for_one_before_a_link(self):
+        """Whoever opens the link must see who asks: a nameless member would be shown as anybody."""
+        nameless = _user("nameless")
+        self.client.force_login(nameless)
+        refusal = "Add your first and last name to your profile first: whoever opens your link must see who asks."
+        page = self.client.get(self.profile)
+        self.assertContains(page, refusal)
+        self.assertNotContains(page, "Create link")
+        response = self._post("account_managing_issue")
+        self.assertRedirects(response, f"{self.profile}#managed-members", fetch_redirect_response=False)
+        self.assertIsNone(managing.invite_of(nameless))
+        self.assertContains(self.client.get(self.profile), refusal)
 
     def test_a_link_run_out_says_when_and_offers_a_new_one(self):
         managing.issue_invite(self.coach)

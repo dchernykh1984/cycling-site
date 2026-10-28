@@ -139,9 +139,13 @@ them. Named by what they do, with no word for a role.{% endcomment %}
     {% if managing.invite %}
     <p class="text-muted small mb-2">{% blocktrans with date=managing.invite.expires_at|date:"SHORT_DATE_FORMAT" %}Your link expired on {{ date }}.{% endblocktrans %}</p>
     {% endif %}
+    {% if managing.no_link %}
+    <p class="small mb-0">{{ managing.no_link }} <a href="{% url 'account_profile_edit' %}">{% trans "Edit profile" %}</a></p>
+    {% else %}
     <form method="post" action="{% url 'account_managing_issue' %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-sm btn-outline-primary">{% trans "Create link" %}</button>
     </form>
+    {% endif %}
     {% endif %}
 </section>

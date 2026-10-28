@@ -131,6 +131,7 @@ def _managing_context(request, user):
     live = invite is not None and invite.is_valid()
     return {
         "invite": invite,
+        "no_link": managing.why_no_link(user),
         "invite_url": request.build_absolute_uri(reverse("account_managing_join", kwargs={"key": invite.key}))
         if live
         else "",
@@ -632,6 +633,10 @@ class ManagingActionView(ParticipantRequiredMixin, View):
 
     def post(self, request, person_id=None):
         user = request.user
+        section = "my-managers" if self.action == "leave" else "managed-members"
+        if self.action == "issue" and managing.why_no_link(user):
+            messages.error(request, managing.why_no_link(user))
+            return redirect(f"{reverse('account_profile')}#{section}")
         {
             "issue": lambda: managing.issue_invite(user),
             "delete": lambda: managing.delete_invite(user),
@@ -642,5 +647,4 @@ class ManagingActionView(ParticipantRequiredMixin, View):
             "drop": lambda: managing.drop(user, person_id),
             "leave": lambda: managing.leave(user, person_id),
         }[self.action]()
-        section = "my-managers" if self.action == "leave" else "managed-members"
         return redirect(f"{reverse('account_profile')}#{section}")

@@ -96,6 +96,8 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
 2. **Given** "Create link", **Then** the member (the manager) gets a link with a key, valid for 30
    days, with the site's share button; "New link" makes the old one stop working and "Delete link"
    removes it; neither, nor its running out, rejects a request waiting. A link run out says when.
+   A member with no first and last name in the profile is asked for them first: whoever opens the
+   link has to see who asks.
 3. **Given** someone opens the link, **Then** a visitor signs in first and comes back, and an
    unconfirmed account is told, on the page, to confirm the address and open the link again (sent
    away to the profile, it would lose the link); the page names the manager, what they may do (register
