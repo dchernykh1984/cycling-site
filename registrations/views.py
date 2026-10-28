@@ -318,10 +318,6 @@ class ParticipantListView(TemplateView):
             registrations, section_categories, counts=lambda reg: counts_for_bib(reg, competition)
         )
         context["is_manager"] = is_manager
-        # Who submitted an entry, for the organizers, once anyone submitted one for someone else.
-        context["show_registered_by"] = is_manager and any(
-            reg.registered_by_id is not None and reg.registered_by_id != reg.user_id for reg in registrations
-        )
         # A signed-in participant (not a manager) gets Edit/Cancel controls on their own rows and on
         # those of the members they manage while registration is open. Compute once so the template
         # can add an actions column.

@@ -66,8 +66,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 2. **Given** the participant list, **Then** riders are grouped by category, each group numbered from
    its category's bib range (from 1 by default); uncategorised riders come last; the total and the
    limit stand by the title; a manager gets approve/reject and paid columns only when the event
-   requires approval or payment, and a "Submitted by" column once any entry was submitted by someone
-   other than its participant (a member's manager, or an organizer adding an entry by hand).
+   requires approval or payment; an entry submitted by someone other than its participant (a
+   member's manager, or an organizer adding it by hand) says who under its registration date.
 
 ### Story 4 -- Read the field (P2)
 
