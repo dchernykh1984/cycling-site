@@ -18,6 +18,7 @@ INVALID = "invalid"  # no such link, or one that ran out: the page says the same
 OWN = "own"
 MANAGED = "managed"
 WAITING = "waiting"
+UNCONFIRMED = "unconfirmed"  # the member's own address is not confirmed yet: they may only look
 
 
 def acts_for(manager, member_id) -> bool:
@@ -83,6 +84,14 @@ def refusal(outcome: str, invite: ManagerInvite | None) -> str:
         return gettext("%(name)s already manages your registrations and photos.") % name
     if outcome == WAITING:
         return gettext("Your request to %(name)s is already waiting to be accepted.") % name
+    if outcome == UNCONFIRMED:
+        return (
+            gettext(
+                "%(name)s asks to manage your registrations and photos. To answer, confirm your e-mail address"
+                " first -- open the link in the mail we sent you -- and then open this link again."
+            )
+            % name
+        )
     return ""
 
 

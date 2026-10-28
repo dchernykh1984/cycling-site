@@ -583,12 +583,14 @@ class SaveFilterPreferencesView(LoginRequiredMixin, View):
         return JsonResponse({"saved": True})
 
 
-class JoinManagerView(ParticipantRequiredMixin, View):
+class JoinManagerView(LoginRequiredMixin, View):
     """A member's link for the people they will manage (issue #315): consent by a button, never by opening.
 
     The page names who asks, what they may do and see, and asks; or says plainly why it cannot --
     a link that is not valid or ran out, one's own, someone who already manages you or whom you
-    already asked. A visitor is sent to sign in first and brought back by the mixin.
+    already asked. A visitor is sent to sign in first and brought back by the mixin. One who has just
+    signed up by e-mail stays on the page, told to confirm the address and open the link again: sent
+    to the profile, they would lose the link.
     """
 
     template_name = "accounts/managing_join.html"
@@ -602,9 +604,14 @@ class JoinManagerView(ParticipantRequiredMixin, View):
 
     def get(self, request, key):
         invite = managing.find_invite(key)
-        return self._page(request, invite, managing.outcome_for(request.user, invite))
+        outcome = managing.outcome_for(request.user, invite)
+        if outcome == managing.ASKED and needs_email_confirmation(request.user):
+            outcome = managing.UNCONFIRMED
+        return self._page(request, invite, outcome)
 
     def post(self, request, key):
+        if needs_email_confirmation(request.user):
+            return redirect_to_profile_for_email_confirmation(request)
         invite = managing.find_invite(key)
         outcome = managing.ask(request.user, key)
         if outcome != managing.ASKED or invite is None:

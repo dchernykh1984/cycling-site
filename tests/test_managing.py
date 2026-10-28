@@ -149,10 +149,13 @@ class JoinPageTests(TestCase):
         self.assertIn("/accounts/login/", response["Location"])
         self.assertIn(f"next=/en/accounts/managing/join/{self.key}/", response["Location"])
 
-    def test_an_account_not_confirmed_is_sent_to_confirm_it(self):
+    def test_an_account_not_confirmed_keeps_the_page_and_is_told_to_confirm_first(self):
         self.client.force_login(_user_with_role("guest", User.Role.GUEST))
         response = self.client.get(self.url)
-        self.assertRedirects(response, "/en/accounts/profile/", fetch_redirect_response=False)
+        self.assertContains(response, "Ivan Petrov asks to manage your registrations and photos.")
+        self.assertContains(response, "then open this link again")
+        self.assertNotContains(response, 'class="btn btn-primary"')
+        self.assertRedirects(self.client.post(self.url), "/en/accounts/profile/", fetch_redirect_response=False)
         self.assertFalse(ManagedMember.objects.exists())
 
     def test_opening_names_who_asks_and_grants_nothing(self):
