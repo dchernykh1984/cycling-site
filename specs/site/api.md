@@ -46,6 +46,10 @@ and protocols with the event's upload token. The API has no language prefix.
    lists and deletes their own, reads their records, gathers, joins, leaves and cancels group races,
    opens one group race by its id as a shared link names it (cancelled ones say so), reads a race's
    results, and reports their live position to get the riders beside them ([site shell](site-shell.md)).
+   A saved ride may carry its track; with Strava connected, a ride that is not in demo mode goes to
+   Strava as a Virtual Ride when it is saved, and the member can send one again, read how its upload
+   went (`/rides/{id}/strava`) and turn Strava off (`DELETE /strava`); `/me` says whether Strava is
+   available and connected and where to connect it ([accounts](accounts.md), FR-ACC-007).
 
 ### Story 2 -- The timing tools exchange race data (P1)
 

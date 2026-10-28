@@ -8,7 +8,8 @@ from dataclasses import dataclass
 
 from django.db.models import Count, Max, Min, Sum
 
-from .models import VirtualRide
+from . import strava
+from .models import StravaConnection, VirtualRide
 
 PEAK_FIELDS = ("peak_5s_w", "peak_1m_w", "peak_5m_w", "peak_20m_w")
 
@@ -133,8 +134,11 @@ def profile_context(user, recent: int = 5) -> dict:
     for best in data["routes"]:
         best.time_label = duration_label(best.duration_s)  # type: ignore[attr-defined]
     data["time_label"] = duration_label(data["time_s"])
-    data["recent"] = list(VirtualRide.objects.filter(user=user)[:recent])
+    data["recent"] = list(VirtualRide.objects.filter(user=user).select_related("strava")[:recent])
     for ride in data["recent"]:
         ride.time_label = duration_label(ride.duration_s)  # type: ignore[attr-defined]
         ride.distance_km = round(ride.distance_m / 1000, 1)  # type: ignore[attr-defined]
+    # Sending rides to Strava: offered when the site has a Strava application, on once the member allows it
+    data["strava_available"] = strava.available()
+    data["strava"] = StravaConnection.objects.filter(user=user).first()
     return data

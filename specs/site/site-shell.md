@@ -28,7 +28,12 @@ and the names of its routes, landmarks and riders come from a ru / kk / en dicti
 rather than from the translation catalogues -- an exception to FR-SHL-006 that keeps the page one
 self-contained file. A route name the page sends with a saved ride or a group race is in the
 language the page spoke then; the page itself shows the routes it knows in its current language,
-the profile shows the stored name. A guest's progress stays in their
+the profile shows the stored name. A member's page records the ride's track, a point a second: where
+the rider is on the route's map (the route's own OpenStreetMap coordinates, simplified, so a turn may
+cut a corner), height, distance, speed, power, cadence and pulse. The setup page offers a member to
+connect Strava with Strava's button, or says rides go there and links to the profile to turn it off;
+the results say when the ride is on Strava ("View on Strava") or why not, with "Send again". A
+guest's progress stays in their
 browser, as does an unconfirmed account's; for a confirmed member the page saves every finished ride through `/api/v1/virtual-ride/`
 (see [the API](api.md)), and their records -- best time per route, peak power, top speed, totals --
 are derived from those rides and shown on the profile ([accounts](accounts.md)); rides in demo mode

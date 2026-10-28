@@ -618,6 +618,9 @@ main .event-photo-preview img { object-fit: contain; }
 }
 /* The profile's link to the virtual ride is tapped on phones: 44 px, reaching into the header's
    padding so the header keeps the height of the others. */
+#virtual-rides-strava .btn {
+    min-height: 2.75rem;
+}
 #virtual-rides .card-header a {
     min-height: 2.75rem;
     min-width: 2.75rem;

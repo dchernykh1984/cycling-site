@@ -3974,13 +3974,15 @@ msgstr "Барлығын жүктеп алу (ZIP, %(size)s)"
 
 #, python-format
 msgid "Too many photos for one archive (%(size)s): open them one by one."
-msgstr "Бір мұрағат үшін фотосуреттер тым көп (%(size)s): оларды бір-бірлеп ашыңыз."
+msgstr ""
+"Бір мұрағат үшін фотосуреттер тым көп (%(size)s): оларды бір-бірлеп ашыңыз."
 
 msgid "Too many photos for one archive: open them one by one."
 msgstr "Бір мұрағат үшін фотосуреттер тым көп: оларды бір-бірлеп ашыңыз."
 
 msgid "Another archive is being made right now. Try again in a minute."
-msgstr "Қазір басқа мұрағат жиналып жатыр. Бір минуттан кейін қайталап көріңіз."
+msgstr ""
+"Қазір басқа мұрағат жиналып жатыр. Бір минуттан кейін қайталап көріңіз."
 
 #, python-format
 msgid "%(event)s - bib %(bib)s"
@@ -3996,8 +3998,14 @@ msgid "Sign in to download all photos"
 msgstr "Барлық фотосуреттерді жүктеп алу үшін кіріңіз"
 
 #, python-format
-msgid "Instead of steps 1 and 2, the folder can be indexed with the skill in the <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer project</a>."
-msgstr "1 және 2-қадамдардың орнына папканы <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer жобасындағы</a> скилл арқылы индекстеуге болады."
+msgid ""
+"Instead of steps 1 and 2, the folder can be indexed with the skill in the <a"
+" href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer "
+"project</a>."
+msgstr ""
+"1 және 2-қадамдардың орнына папканы <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noopener\">Sport Photo Indexer жобасындағы</a> скилл арқылы "
+"индекстеуге болады."
 
 #: accounts/templates/accounts/profile.html:246
 #: tests/test_virtual_ride_api.py:141
@@ -4147,3 +4155,103 @@ msgstr "Жолда"
 msgctxt "watts"
 msgid "W"
 msgstr "Вт"
+
+#: accounts/templates/accounts/profile.html:301
+msgid ""
+"Strava is connected: every ride you finish on the virtual ride page goes "
+"there as a virtual ride, along the streets of its route."
+msgstr ""
+"Strava қосылған: виртуалды заезд бетінде аяқтаған әр заездіңіз сонда маршрут"
+" көшелері бойымен виртуалды заезд ретінде жіберіледі."
+
+#: accounts/templates/accounts/profile.html:304
+msgid "Disconnect Strava"
+msgstr "Strava-ны ажырату"
+
+#: accounts/templates/accounts/profile.html:307
+msgid ""
+"Connect Strava, and every ride you finish on the virtual ride page goes "
+"there as a virtual ride, along the streets of its route. Rides in demo mode "
+"stay here."
+msgstr ""
+"Strava-ны қосыңыз — виртуалды заезд бетінде аяқтаған әр заездіңіз сонда "
+"маршрут көшелері бойымен виртуалды заезд ретінде жіберіледі. Демо режимдегі "
+"заездтер осында қалады."
+
+#: api/endpoints/virtual_ride.py:332
+msgid "Connect Strava in your profile first"
+msgstr "Алдымен жеке кабинетте Strava-ны қосыңыз"
+
+#: api/endpoints/virtual_ride.py:334
+msgid ""
+"This ride has no track to send: rides in demo mode and rides saved without "
+"one stay here"
+msgstr ""
+"Бұл заездте жіберетін трек жоқ: демо режимдегі және трексіз сақталған "
+"заездтер осында қалады"
+
+#: home/templates/home/privacy_page.html:20
+msgid ""
+"<strong>Virtual rides.</strong> When you are signed in, the rides you finish"
+" on the virtual ride page are saved to your profile: the route, time, "
+"distance, speed, power, cadence and heart rate, and the track of your "
+"position along the route. While you are on that page, other signed-in "
+"members see your name, what you are riding and where you are on the route. "
+"If you connect Strava for your rides, we keep the access Strava gives us for"
+" this and use it only to upload each ride you finish as a virtual ride; we "
+"still do not read your Strava activities. You can disconnect Strava in your "
+"profile at any time, and we then revoke that access."
+msgstr ""
+"<strong>Виртуалды заездтер.</strong> Сайтқа кірген болсаңыз, виртуалды заезд"
+" бетінде аяқтаған заездтеріңіз жеке кабинетіңізде сақталады: маршрут, уақыт,"
+" қашықтық, жылдамдық, қуат, каденс және пульс, сондай-ақ маршруттағы "
+"орныңыздың трегі. Сіз осы бетте болғанда, сайтқа кірген басқа қатысушылар "
+"атыңызды, қай маршрутпен жүріп жатқаныңызды және оның қай жерінде екеніңізді"
+" көреді. Заездтер үшін Strava-ны қоссаңыз, Strava осы мақсатқа беретін "
+"рұқсатты сақтаймыз және оны тек әр аяқталған заездті виртуалды заезд ретінде"
+" жүктеу үшін пайдаланамыз; Strava-дағы жаттығуларыңызды бұрынғыдай "
+"оқымаймыз. Strava-ны жеке кабинетте кез келген уақытта ажыратуға болады — "
+"сонда біз бұл рұқсатты кері қайтарып аламыз."
+
+#: trainer/models.py:156
+msgid "Processing at Strava"
+msgstr "Strava-да өңделуде"
+
+#: trainer/models.py:157
+msgid "On Strava"
+msgstr "Strava-да"
+
+#: trainer/models.py:158
+msgid "Not uploaded"
+msgstr "Жүктелмеді"
+
+#: trainer/views.py:73
+msgid ""
+"The answer from Strava did not match the request. Try connecting again."
+msgstr "Strava жауабы сұрауға сәйкес келмеді. Қайта қосып көріңіз."
+
+#: trainer/views.py:76
+msgid "Strava was not connected: your rides stay on this site."
+msgstr "Strava қосылмады: заездтеріңіз осы сайтта қалады."
+
+#: trainer/views.py:81
+msgid ""
+"Strava did not allow uploading activities, so rides are not sent there. "
+"Connect again and keep that permission on."
+msgstr ""
+"Strava жаттығуларды жүктеуге рұқсат бермеді, сондықтан заездтер онда "
+"жіберілмейді. Қайта қосып, бұл рұқсатты қосулы қалдырыңыз."
+
+#: trainer/views.py:87
+msgid "Strava could not be reached. Try connecting again later."
+msgstr "Strava-мен байланысу мүмкін болмады. Кейінірек қайта қосып көріңіз."
+
+#: trainer/views.py:89
+msgid ""
+"Strava is connected: every ride you finish goes there as a virtual ride."
+msgstr ""
+"Strava қосылды: аяқталған әр заезд сонда виртуалды заезд ретінде жіберіледі."
+
+#: trainer/views.py:99
+msgid "Strava is disconnected: rides are no longer sent there."
+msgstr "Strava ажыратылды: заездтер енді онда жіберілмейді."

@@ -14,11 +14,12 @@ from django.utils.translation import gettext as _
 from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 from ninja.security import SessionAuth
+from pydantic import field_validator
 
 from accounts.access import needs_email_confirmation
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
-from trainer import live, records
-from trainer.models import GroupRide, GroupRideMember, LiveRider, VirtualRide
+from trainer import live, records, strava
+from trainer.models import GroupRide, GroupRideMember, LiveRider, RideTrack, StravaConnection, StravaUpload, VirtualRide
 
 router = Router(tags=["virtual-ride"])
 
@@ -36,6 +37,20 @@ member_auth = [ApiTokenAuth(), ConfirmedSessionAuth()]
 
 _ROUTE = r"^[a-z0-9][a-z0-9_-]{0,39}$"
 _MAX_HISTORY = 100
+# One point a second for six hours; each point is
+# [t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm] within these bounds.
+_MAX_TRACK = 6 * 3600
+_TRACK_BOUNDS = (
+    (0, 24 * 3600),
+    (-90, 90),
+    (-180, 180),
+    (-500, 9000),
+    (0, 1_000_000),
+    (0, 40),
+    (0, 3000),
+    (0, 250),
+    (0, 260),
+)
 
 
 # -- Schemas ---------------------------------------------------------------
@@ -47,6 +62,11 @@ class MeOut(Schema):
     name: str = ""
     profile_url: str = ""
     login_url: str = ""
+    # Sending rides to Strava: whether the site can, whether this member turned it on, where to turn it on
+    strava_available: bool = False
+    strava_connected: bool = False
+    strava_athlete: str = ""
+    strava_connect_url: str = ""
 
 
 class RideIn(Schema):
@@ -70,6 +90,20 @@ class RideIn(Schema):
     peak_1m_w: int | None = Field(None, ge=0, le=3000)
     peak_5m_w: int | None = Field(None, ge=0, le=3000)
     peak_20m_w: int | None = Field(None, ge=0, le=3000)
+    track: list[list[float]] | None = Field(None, max_length=_MAX_TRACK)
+
+    @field_validator("track")
+    @classmethod
+    def _track_points(cls, track):
+        for point in track or []:
+            if len(point) != len(_TRACK_BOUNDS) or not all(
+                lo <= v <= hi for v, (lo, hi) in zip(point, _TRACK_BOUNDS, strict=True)
+            ):
+                raise ValueError(
+                    "each track point is [t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm]"
+                    " within their bounds"
+                )
+        return track
 
 
 class RideOut(Schema):
@@ -97,9 +131,16 @@ class RideOut(Schema):
     peak_20m_w: int | None
 
 
+class StravaOut(Schema):
+    status: str
+    activity_url: str = ""
+    error: str = ""
+
+
 class SavedRideOut(Schema):
     ride: RideOut
     records: list[str]
+    strava: StravaOut | None = None
 
 
 class RouteBestOut(Schema):
@@ -243,11 +284,16 @@ def me(request):
     user = request.auth if getattr(request.auth, "is_authenticated", False) else request.user
     if not getattr(user, "is_authenticated", False) or needs_email_confirmation(user):
         return MeOut(authenticated=False, login_url=reverse("account_login"))
+    connection = StravaConnection.objects.filter(user=user).first()
     return MeOut(
         authenticated=True,
         user_id=user.pk,
         name=user.public_display_name,
         profile_url=reverse("account_profile"),
+        strava_available=strava.available(),
+        strava_connected=connection is not None,
+        strava_athlete=connection.athlete_name if connection else "",
+        strava_connect_url=reverse("virtual_ride_strava_connect") if strava.available() else "",
     )
 
 
@@ -258,6 +304,7 @@ def me(request):
 def save_ride(request, payload: RideIn):
     data = payload.dict()
     group_id = data.pop("group_id")
+    track = data.pop("track")
     group = None
     if group_id is not None:
         group = get_object_or_404(GroupRide, pk=group_id)
@@ -268,11 +315,52 @@ def save_ride(request, payload: RideIn):
             # Members finishing together take turns, so each ranking sees the rides saved before it.
             group = GroupRide.objects.select_for_update().get(pk=group.pk)
         ride = VirtualRide.objects.create(user=request.auth, group=group, **data)
+        if track:
+            RideTrack.objects.create(ride=ride, points=track)
         found = records.new_records(request.auth, ride)
         if group is not None:
             records.rank_group(group)
             ride.refresh_from_db(fields=["place", "field_size"])
-    return Status(201, SavedRideOut(ride=RideOut.from_orm(ride), records=found))
+    sent = None
+    # a member who connected Strava gets every real ride there; demo power is not a ride to show anyone
+    if track and ride.power_source != VirtualRide.PowerSource.DEMO and _strava_on(request.auth):
+        sent = _strava_out(strava.upload(ride))
+    return Status(201, SavedRideOut(ride=RideOut.from_orm(ride), records=found, strava=sent))
+
+
+def _strava_on(user) -> bool:
+    return strava.available() and StravaConnection.objects.filter(user=user).exists()
+
+
+def _strava_out(upload: StravaUpload) -> StravaOut:
+    return StravaOut(status=upload.status, activity_url=upload.activity_url, error=upload.error)
+
+
+@router.post("/rides/{ride_id}/strava", response=StravaOut, auth=member_auth, summary="Send one of my rides to Strava")
+def send_to_strava(request, ride_id: int):
+    """Again after a failure, or a ride saved before Strava was connected: it goes as a Virtual Ride."""
+    ride = get_object_or_404(VirtualRide, pk=ride_id, user=request.auth)
+    if not _strava_on(request.auth):
+        raise HttpError(409, _("Connect Strava in your profile first"))
+    if ride.power_source == VirtualRide.PowerSource.DEMO or not RideTrack.objects.filter(ride=ride).exists():
+        raise HttpError(
+            409, _("This ride has no track to send: rides in demo mode and rides saved without one stay here")
+        )
+    return _strava_out(strava.upload(ride))
+
+
+@router.get("/rides/{ride_id}/strava", response=StravaOut, auth=member_auth, summary="How my ride's Strava upload went")
+def strava_status(request, ride_id: int):
+    upload = get_object_or_404(StravaUpload.objects.select_related("ride"), ride_id=ride_id, ride__user=request.auth)
+    return _strava_out(strava.refresh(upload))
+
+
+@router.delete("/strava", response={204: None}, auth=member_auth, summary="Stop sending my rides to Strava")
+def disconnect_strava(request):
+    connection = StravaConnection.objects.filter(user=request.auth).first()
+    if connection is not None:
+        strava.disconnect(connection)
+    return Status(204, None)
 
 
 @router.get("/rides", response=list[RideOut], auth=member_auth, summary="My rides, newest first")
