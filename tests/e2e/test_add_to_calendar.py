@@ -11,7 +11,6 @@ from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
 from tests.e2e.conftest import UPCOMING
-from tests.e2e.contrast import legibility
 from tests.e2e.test_interface_rules import _REACH
 from tests.e2e.test_skin_contrast import _in_state
 
@@ -62,11 +61,16 @@ def test_on_a_phone_it_is_an_icon_the_size_of_share_that_a_tap_reaches_across_44
     assert share_wide >= sb["width"] - 1, (share_wide, sb)
 
 
+# What a reader sees of a button: its words' colour, its fill, its frame and its corners.
+_LOOK = "el => { const s = getComputedStyle(el); return [s.color, s.backgroundColor, s.borderColor, s.borderRadius]; }"
+
+
 @pytest.mark.django_db(transaction=True)
-def test_it_reads_as_the_share_button_beside_it(page: Page, live_server, race):
+def test_it_looks_like_the_share_button_beside_it(page: Page, live_server, race):
+    """In whatever skin the suite runs in, at rest, under the pointer and in focus."""
     button, share = _open(page, live_server, race)
     for state in ("rest", "hover", "focus"):
         _in_state(page, share, state)
-        expected = legibility(share)
+        expected = share.evaluate(_LOOK)
         _in_state(page, button, state)
-        assert legibility(button) == pytest.approx(expected, abs=0.05), state
+        assert button.evaluate(_LOOK) == expected, state
