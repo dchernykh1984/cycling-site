@@ -150,7 +150,8 @@ def test_on_a_phone_every_button_takes_a_tap_and_nothing_scrolls_sideways(
         assert page.evaluate("document.scrollingElement.scrollWidth <= document.scrollingElement.clientWidth")
         for control in page.locator(controls).all():
             box = control.bounding_box()
-            if box and box["height"] < 44:
+            # to a tenth of a pixel: Firefox lays a 44 px line out as 43.99997
+            if box and round(box["height"], 1) < 44:
                 small.append((path, control.inner_text(), box["height"]))
     assert not small, small
 
