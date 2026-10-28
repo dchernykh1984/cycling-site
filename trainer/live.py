@@ -68,7 +68,10 @@ def voice_room(user, me_row: LiveRider, now=None):
     """
     now = now or timezone.now()
     mine = VoiceSession.objects.filter(user=user).select_related("group").first()
-    group = mine.group if mine else me_row.group or open_groups(now).filter(memberships__user=user).first()
+    waiting = GroupRide.objects.filter(
+        cancelled=False, start_at__gte=now - GROUP_LISTED_AFTER_START, memberships__user=user
+    ).order_by("start_at")
+    group = mine.group if mine else me_row.group or waiting.first()
     if group is None:
         return None, VoiceSession.objects.none()
     return group, in_voice(group, now).exclude(user=user)
