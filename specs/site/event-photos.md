@@ -106,7 +106,8 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
   site's database. CI runs it on trusted pull requests and main; fork code receives no credentials,
   and Dependabot's pull requests, which get no Actions secrets, skip it.
 - **FR-EVP-013**: "Download all" streams a ZIP of the originals as they are read from storage, writing
-  nothing to disk: a registration's album (its owner and the event's managers) or a bib's search
+  nothing to disk: a registration's album (its owner, whoever manages the owner's photos, and the
+  event's managers) or a bib's search
   results (signed-in readers only, since every byte passes through the site; the link is `nofollow`).
   One archive at a time per web process; another answers "try again in a minute" on the page and
   503 with Retry-After over the API. An archive over `PHOTO_ARCHIVE_MAX_BYTES` (by the index's

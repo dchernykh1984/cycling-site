@@ -1023,6 +1023,8 @@ class PageAndApiTests(EventPhotosTestCase):
         self.assertEqual([card["registration_id"] for card in cards], [self.reg.pk])
         url = f"/api/v1/event-photos/registrations/{self.reg.pk}/photos"
         self.assertEqual(self.client.get(url, **auth).status_code, 200)
+        archive = self.client.get(self._url("registration_archive", self.reg.pk))
+        self.assertEqual(archive["Content-Type"], "application/zip")
 
     def test_once_the_link_ends_the_former_manager_sees_nothing_of_the_members_photos(self):
         from accounts import managing
