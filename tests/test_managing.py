@@ -163,6 +163,8 @@ class JoinPageTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Ivan Petrov")
+        # What the manager will see, the Strava link a form may take among it, and never the e-mail
+        self.assertContains(response, "city, team and Strava link, but not your email")
         self.assertContains(response, '<button type="submit" class="btn btn-primary">')
         self.assertEqual(response["X-Robots-Tag"], "noindex")
         self.assertFalse(ManagedMember.objects.exists())

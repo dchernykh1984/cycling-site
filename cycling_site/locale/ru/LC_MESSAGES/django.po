@@ -4285,8 +4285,8 @@ msgstr "%(name)s просит разрешения управлять вашим
 msgid "%(name)s will be able to register you for events, change and cancel your registrations, and see your race photos and mark them \"This is me\" or \"Not me\"."
 msgstr "%(name)s сможет регистрировать вас на мероприятия, менять и отменять ваши заявки, видеть ваши фото со стартов и отмечать на них «Это я» или «Не я»."
 
-msgid "They will see your last name, first name, date of birth, gender, city and team, but not your email, and they will not be able to change your profile."
-msgstr "Будут видны ваши фамилия, имя, дата рождения, пол, город и команда, но не почта. Изменить ваш профиль будет нельзя."
+msgid "They will see your last name, first name, date of birth, gender, city, team and Strava link, but not your email, and they will not be able to change your profile."
+msgstr "Будут видны ваши фамилия, имя, дата рождения, пол, город, команда и ссылка на Strava, но не почта. Изменить ваш профиль будет нельзя."
 
 #, python-format
 msgid "Your request waits until %(name)s accepts it. You can take it back in your profile at any time."

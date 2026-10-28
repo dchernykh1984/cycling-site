@@ -4283,8 +4283,8 @@ msgstr "%(name)s сіздің тіркелулеріңіз бен фотолар
 msgid "%(name)s will be able to register you for events, change and cancel your registrations, and see your race photos and mark them \"This is me\" or \"Not me\"."
 msgstr "%(name)s сізді іс-шараларға тіркей алады, тіркелулеріңізді өзгертіп, болдырмай алады, жарыстардағы фотоларыңызды көріп, оларға «Бұл мен» немесе «Мен емес» деп белгі қоя алады."
 
-msgid "They will see your last name, first name, date of birth, gender, city and team, but not your email, and they will not be able to change your profile."
-msgstr "Сіздің тегіңіз, атыңыз, туған күніңіз, жынысыңыз, қалаңыз және командаңыз көрінеді, ал поштаңыз көрінбейді. Профиліңізді өзгерту мүмкін болмайды."
+msgid "They will see your last name, first name, date of birth, gender, city, team and Strava link, but not your email, and they will not be able to change your profile."
+msgstr "Сіздің тегіңіз, атыңыз, туған күніңіз, жынысыңыз, қалаңыз, командаңыз және Strava сілтемеңіз көрінеді, ал поштаңыз көрінбейді. Профиліңізді өзгерту мүмкін болмайды."
 
 #, python-format
 msgid "Your request waits until %(name)s accepts it. You can take it back in your profile at any time."
