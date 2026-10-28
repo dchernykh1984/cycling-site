@@ -147,26 +147,20 @@ html {
 @media (max-width: 767.98px) {
     .participant-list-table,
     .participant-list-table tbody,
-    .participant-list-table tr,
-    .managing-table,
-    .managing-table tbody,
-    .managing-table tr {
+    .participant-list-table tr {
         display: block;
         width: 100%;
     }
-    .participant-list-table thead,
-    .managing-table thead {
+    .participant-list-table thead {
         display: none;
     }
-    .participant-list-table tr,
-    .managing-table tr {
+    .participant-list-table tr {
         margin-bottom: 1rem;
         padding: 0.5rem 0.75rem;
         border: 1px solid var(--bs-border-color);
         border-radius: 0.375rem;
     }
-    .participant-list-table td,
-    .managing-table td {
+    .participant-list-table td {
         display: flex;
         gap: 0.75rem;
         justify-content: space-between;
@@ -175,23 +169,20 @@ html {
         padding: 0.2rem 0;
         text-align: right;
     }
-    .participant-list-table td::before,
-    .managing-table td::before {
+    .participant-list-table td::before {
         content: attr(data-label);
         flex: 0 0 7rem;
         font-weight: 600;
         text-align: left;
         color: var(--bs-secondary-color);
     }
-    .participant-list-table td.reg-actions,
-    .managing-table td.reg-actions {
+    .participant-list-table td.reg-actions {
         display: block;
         width: auto;
         text-align: left;
         margin-top: 0.25rem;
     }
-    .participant-list-table td.reg-actions::before,
-    .managing-table td.reg-actions::before {
+    .participant-list-table td.reg-actions::before {
         content: none;
     }
     /* The category heading used to be the only element here without a border, so in a column of
@@ -661,9 +652,48 @@ main .event-photo-preview img { object-fit: contain; }
     display: inline-flex;
     align-items: center;
 }
-/* A table wider than the profile scrolls inside its frame; the frame holds the hidden column names
-   too, which would otherwise widen the page. On a phone each row is a card, as in the participant list. */
-.managing .table-responsive { position: relative; }
+/* The tables of members and requests read as cards at every width, each column named beside its
+   value, as the participant list does on a phone: the profile's column is too narrow for their
+   columns even on a desktop, where the buttons at the end of a row would scroll out of sight. */
+.managing-table,
+.managing-table tbody,
+.managing-table tr {
+    display: block;
+    width: 100%;
+}
+.managing-table thead {
+    display: none;
+}
+.managing-table tr {
+    margin-bottom: 1rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+}
+.managing-table td {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    align-items: baseline;
+    border: 0;
+    padding: 0.2rem 0;
+    text-align: right;
+}
+.managing-table td::before {
+    content: attr(data-label);
+    flex: 0 0 7rem;
+    font-weight: 600;
+    text-align: left;
+    color: var(--bs-secondary-color);
+}
+.managing-table td.reg-actions {
+    display: block;
+    text-align: left;
+    margin-top: 0.25rem;
+}
+.managing-table td.reg-actions::before {
+    content: none;
+}
 /* Registering several people at once (issue #315): a person's form shows once they are ticked. The
    box and the name are one label, in line, taking a tap across 44 px; the box is drawn with the skin's
    secondary colour, since an empty one is all that tells the reader there is something to tick. The
