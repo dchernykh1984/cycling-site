@@ -4390,3 +4390,10 @@ msgstr "Срок вашей ссылки истёк %(date)s."
 
 msgid "Create link"
 msgstr "Создать ссылку"
+
+msgctxt "registration"
+msgid "Submitted by"
+msgstr "Кто подал"
+
+msgid "Cancel this registration?"
+msgstr "Отменить эту заявку?"

@@ -16,6 +16,7 @@
   {% if is_manager %}
   <td data-label="{% trans 'Rejected' %}">{% if reg.is_rejected %}<span class="badge bg-danger">{% trans "Yes" %}</span>{% if reg.rejection_note %}<div class="small text-muted">{{ reg.rejection_note }}</div>{% endif %}{% endif %}</td>
   <td class="small text-muted" data-label="{% trans 'Registered' %}">{{ reg.registered_at|date:"d.m.Y" }}</td>
+  {% if show_registered_by %}<td class="small" data-label="{% trans 'Submitted by' context "registration" %}">{% if reg.registered_by_id and reg.registered_by_id != reg.user_id %}{{ reg.registered_by.public_display_name }}{% endif %}</td>{% endif %}
   <td class="reg-actions">
     <div class="d-flex gap-1 flex-wrap">
       {% if competition.require_approval %}
@@ -54,11 +55,11 @@
   </td>
   {% elif show_owner_actions %}
   <td class="reg-actions">
-    {% if reg.user_id == request.user.id %}
+    {% if reg.user_id in owned_ids %}
     <div class="d-flex gap-1 flex-wrap">
       <a href="{% url 'registrations:edit_registration' competition.pk reg.pk %}" class="btn btn-xs btn-outline-secondary btn-sm py-0">{% trans "Edit" %}</a>
       <form method="post" action="{% url 'registrations:delete_registration' competition.pk reg.pk %}"
-            onsubmit="return confirm('{% trans "Cancel your registration?" %}')">
+            onsubmit="return confirm('{% if reg.user_id == request.user.id %}{% trans "Cancel your registration?" %}{% else %}{% trans "Cancel this registration?" %}{% endif %}')">
         {% csrf_token %}
         <button type="submit" class="btn btn-xs btn-outline-danger btn-sm py-0">{% trans "Cancel registration" %}</button>
       </form>
