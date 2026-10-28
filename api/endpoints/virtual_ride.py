@@ -62,6 +62,8 @@ class MeOut(Schema):
     name: str = ""
     profile_url: str = ""
     login_url: str = ""
+    # the site's page that frames the trainer: where a shared link to a group race should lead
+    page_url: str = ""
     # Sending rides to Strava: whether the site can, whether this member turned it on, where to turn it on
     strava_available: bool = False
     strava_connected: bool = False
@@ -283,13 +285,14 @@ def _online_out(row: LiveRider) -> dict:
 def me(request):
     user = request.auth if getattr(request.auth, "is_authenticated", False) else request.user
     if not getattr(user, "is_authenticated", False) or needs_email_confirmation(user):
-        return MeOut(authenticated=False, login_url=reverse("account_login"))
+        return MeOut(authenticated=False, login_url=reverse("account_login"), page_url=reverse("virtual_ride"))
     connection = StravaConnection.objects.filter(user=user).first()
     return MeOut(
         authenticated=True,
         user_id=user.pk,
         name=user.public_display_name,
         profile_url=reverse("account_profile"),
+        page_url=reverse("virtual_ride"),
         strava_available=strava.available(),
         strava_connected=connection is not None,
         strava_athlete=connection.athlete_name if connection else "",
