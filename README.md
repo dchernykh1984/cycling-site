@@ -92,9 +92,6 @@ dashboard:
   `EMAIL_TIMEOUT` - SMTP operation timeout in seconds (default 5)
 - `GOOGLE_`/`GITHUB_`/`STRAVA_` `CLIENT_ID` and `CLIENT_SECRET` - social login; the Strava pair also
   sends members' virtual rides to Strava once they connect it on their profile
-- `CLOUDFLARE_REALTIME_APP_ID`, `CLOUDFLARE_REALTIME_APP_SECRET` - voice chat in group races on the
-  virtual ride page (a Cloudflare Realtime SFU app; unset means no voice chat); `VOICE_MAX_RIDERS`
-  caps one race's chat (default 20)
 
 The team domain (`universalbicycle.team` and `www.universalbicycle.team`) is always
 in `ALLOWED_HOSTS`; set `VIRTUAL_HOST` to add more hosts. Static files are served by

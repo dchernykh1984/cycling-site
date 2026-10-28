@@ -7,8 +7,7 @@
 5. [x] Rides to Strava as virtual rides: the grant, the track, the upload, the profile, the privacy
    policy.
 6. [x] Voice chat in a group race through Cloudflare Realtime, with a browser test of the page's side
-   of the negotiation.
+   of the negotiation; taken out again on 2026-10-28 (the spec's User Story 6).
 7. [x] Update `specs/site/` (site shell, API, accounts).
-8. [ ] The maintainer: create a Cloudflare Realtime app and set `CLOUDFLARE_REALTIME_APP_ID` and
-   `_SECRET` on Render; mention uploads in the Strava application's description.
-9. [ ] Try a group race with voice on two real devices against the live site.
+8. [ ] The maintainer: mention uploads in the Strava application's description.
+9. [ ] Try a group race on two real devices against the live site.

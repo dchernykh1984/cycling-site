@@ -6,8 +6,7 @@
 {% block content %}
 {% comment %}The trainer is a standalone page with its own styles and scripts, so it runs in an iframe rather
 than inside the site's markup. It talks to a smart trainer over Web Bluetooth and keeps the screen on,
-which an iframe may do only when allowed to, copies or shares a link to a group race, and hears the
-microphone in a race's voice chat. It speaks the
+which an iframe may do only when allowed to, and copies or shares a link to a group race. It speaks the
 language named in its address.{% endcomment %}
 <section class="virtual-ride">
   <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2 mb-2">
@@ -15,7 +14,7 @@ language named in its address.{% endcomment %}
     <a href="{% static 'trainer/alatau.html' %}?{{ trainer_query }}" target="_blank" rel="noopener">{% trans "Open full screen" %}</a>
   </div>
   <iframe class="virtual-ride-frame" src="{% static 'trainer/alatau.html' %}?{{ trainer_query }}" title="{% trans 'Virtual ride' %}"
-          allow="bluetooth; screen-wake-lock; fullscreen; clipboard-write; web-share; microphone" allowfullscreen></iframe>
+          allow="bluetooth; screen-wake-lock; fullscreen; clipboard-write; web-share" allowfullscreen></iframe>
 </section>
 {% endblock %}
 

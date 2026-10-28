@@ -2,7 +2,7 @@
 
 **Feature Branch**: `392-virtual-ride-multiplayer`
 **Created**: 2026-10-28
-**Status**: Implemented (pull request #397 for issue #392)
+**Status**: Implemented (pull request #397 for issue #392); the voice chat taken out on 2026-10-28
 **Input**: Issue #392 -- the virtual ride page saves every finished ride of a member to their account,
 shows their records on the profile, and lets members ride together (group races, shared free rides);
 guests keep their progress in the browser. The issue's author delivered the implementation as a
@@ -63,12 +63,12 @@ normally is.
 4. **When** the member disconnects Strava, or their account is deleted, **Then** the grant is revoked
    at Strava and its tokens deleted; nothing ever reads the member's Strava activities.
 
-### User Story 6 - Talking during a group ride (Priority: P3)
+### User Story 6 - Talking during a group ride (Removed)
 
-1. **Given** a rider of a group race and a site with a media server configured, **Then** they may
-   join the race's voice chat in the lobby or during the ride; their microphone starts muted.
-2. **Given** a chat, **Then** each rider hears the others of that race only, up to twenty, through
-   Cloudflare Realtime's media server; leaving the race leaves its chat.
+Built in pull request #397 on Cloudflare Realtime's media server and taken out on 2026-10-28, before
+it was ever switched on: Cloudflare puts no hard limit on what its traffic costs, so a leaked key or a
+hijacked account could run up a bill that the site's owner would owe. Nothing of it is left on the site;
+riders talk over Discord meanwhile (the maintainer, 2026-10-28).
 
 ### Edge Cases
 
@@ -76,9 +76,7 @@ normally is.
 - A host who leaves a waiting group race ("Start" alone) hands it to the rider who joined next; alone
   in it, they cancel it. Deleting a ride of a group race moves the others up.
 - A grant revoked at Strava fails the next upload with its reason and forgets the tokens.
-- A rider whose page stops polling drops out of the online list after 15 s, and out of the voice chat
-  with it.
-- A network that blocks WebRTC's UDP cannot join the voice chat (no TURN relay).
+- A rider whose page stops polling drops out of the online list after 15 s.
 
 ## Requirements
 
@@ -87,16 +85,15 @@ normally is.
   signing in.
 - **FR-002**: Records are derived from saved rides, never stored; group places are ranked on the
   server, one saving member at a time.
-- **FR-003**: Inputs are bounded: ride fields, track points and their count, session descriptions,
-  key lists.
-- **FR-004**: The media server's session ids and the Strava tokens never reach a page.
-- **FR-005**: The privacy policy says what the virtual ride keeps, what other riders see, what goes
-  to Strava and how the voice chat travels.
+- **FR-003**: Inputs are bounded: ride fields, track points and their count.
+- **FR-004**: The Strava tokens never reach a page.
+- **FR-005**: The privacy policy says what the virtual ride keeps, what other riders see and what
+  goes to Strava.
 
 ## Key Entities
 
 `VirtualRide`, `GroupRide`, `GroupRideMember`, `LiveRider`, `RideTrack`, `StravaConnection`,
-`StravaUpload`, `VoiceSession` (`trainer/models.py`).
+`StravaUpload` (`trainer/models.py`).
 
 ## Open Questions
 

@@ -34,14 +34,7 @@ cut a corner), height, distance, speed, power, cadence and pulse. The setup page
 has not connected Strava to connect it with Strava's button, and says nothing of it to one who has;
 the results say when the ride is on Strava ("View on Strava") or why not, with "Send again"; a ride
 Strava already has is linked to that activity, never sent twice, and after half a minute of
-processing the page says to look in Strava later. The
-riders of a group race may talk while they wait and while they ride: a voice chat of up to
-`VOICE_MAX_RIDERS` (20) per race, offered when the site has a media server configured. Each page keeps
-one WebRTC connection to Cloudflare Realtime's media server, publishing its microphone (muted until
-the rider unmutes, in the lobby or with the microphone button of the ride) and receiving the others;
-the site introduces them through the presence it already polls (who is in the chat, by a key that
-changes on every joining) and holds the media server's secret, so a rider hears only their race and
-no sound passes through the site. Leaving the race leaves its chat. A
+processing the page says to look in Strava later. A
 guest's progress stays in their
 browser, as does an unconfirmed account's; for a confirmed member the page saves every finished ride through `/api/v1/virtual-ride/`
 (see [the API](api.md)), and their records -- best time per route, peak power, top speed, totals --
@@ -164,10 +157,6 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 - The virtual ride page (`trainer/static/trainer/alatau.html`) carries its own catalogue: the
   routes, cities and landmarks of Almaty and the UBT kit its rider wears. A route elsewhere comes with
   a new revision of the page; the site stores only the route key and name the page sends.
-- Voice chat goes through one media service, Cloudflare Realtime (`trainer/voice.py`, settings
-  `CLOUDFLARE_REALTIME_APP_ID` / `_SECRET`, and Cloudflare's STUN server in the trainer page). Another
-  service would need its own adapter. There is no TURN relay: a network that blocks WebRTC's UDP
-  cannot join the chat.
 - The fallback page description names countries and sports ("cycling, running, cross-country skiing
   -- in Kazakhstan, Kyrgyzstan, Russia and beyond", `base.html`), and the navbar falls back to
   "Cycling" and the footer to "Cycling events" when the site content has no title.
