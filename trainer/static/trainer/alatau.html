@@ -3287,7 +3287,8 @@ function mpCreateGroup() {
   const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
   mpAction('/groups', { route: r.id, route_name: r.name, start_in_s: +$('#mpDelay').value || 60 });
 }
-async function mpLeaveMyGroup() { const g = mpMyGroup(); if (g) { if (Voice.gid === g.id) voiceLeave(); await mpAction('/groups/' + g.id + (g.is_host ? '/cancel' : '/leave')); } }
+// "Start" while waiting: the rider rides alone and the race goes on without them (a host hands it on)
+async function mpLeaveMyGroup() { const g = mpMyGroup(); if (g) { if (Voice.gid === g.id) voiceLeave(); await mpAction('/groups/' + g.id + '/leave'); } }
 
 /* ---------------- Voice chat in a group race ---------------- */
 // One connection to Cloudflare's media server: the microphone goes up as one track, the other riders'

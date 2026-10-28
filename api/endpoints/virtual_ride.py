@@ -450,11 +450,19 @@ def join_group(request, group_id: int):
 
 @router.post("/groups/{group_id}/leave", response=GroupOut, auth=member_auth, summary="Leave a group race")
 def leave_group(request, group_id: int):
-    group = _open_group(group_id)
-    if group.host_id == request.auth.pk:
-        raise HttpError(409, _("The host cancels the race instead of leaving it"))
-    GroupRideMember.objects.filter(group=group, user=request.auth).delete()
-    return _group_out(group, request.auth)
+    """A host who leaves hands the race to the rider who joined next; alone in it, they cancel it."""
+    _open_group(group_id)
+    with transaction.atomic():
+        group = GroupRide.objects.select_for_update().get(pk=group_id)
+        GroupRideMember.objects.filter(group=group, user=request.auth).delete()
+        if group.host_id == request.auth.pk:
+            heir = group.memberships.order_by("joined_at", "pk").first()
+            if heir is None:
+                group.cancelled = True
+            else:
+                group.host_id = heir.user_id
+            group.save(update_fields=["cancelled", "host"])
+    return _group_out(GroupRide.objects.select_related("host").get(pk=group_id), request.auth)
 
 
 @router.post("/groups/{group_id}/cancel", response=GroupOut, auth=member_auth, summary="Cancel a group race")

@@ -190,6 +190,16 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         group = GroupRide.objects.create(route="center", host=self.host, start_at=timezone.now() - timedelta(seconds=5))
         self.assertEqual(self.post(self.client_g, f"/groups/{group.pk}/join").status_code, 409)
 
+    def test_a_host_who_leaves_hands_the_race_on_and_alone_cancels_it(self):
+        group_id = self.create().json()["id"]
+        self.post(self.client_g, f"/groups/{group_id}/join")
+        left = self.post(self.client_h, f"/groups/{group_id}/leave").json()
+        # the guest still rides it, now as its host; the old host is out
+        self.assertEqual((left["cancelled"], left["host"]["user_id"]), (False, self.guest.pk))
+        self.assertEqual([m["user_id"] for m in left["members"]], [self.guest.pk])
+        alone = self.post(self.client_g, f"/groups/{group_id}/leave").json()
+        self.assertTrue(alone["cancelled"])
+
     def test_only_the_host_cancels_and_a_cancelled_race_disappears(self):
         group_id = self.create().json()["id"]
         self.post(self.client_g, f"/groups/{group_id}/join")
