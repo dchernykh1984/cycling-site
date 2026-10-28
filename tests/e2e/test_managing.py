@@ -83,7 +83,7 @@ def test_the_link_goes_from_one_profile_to_the_other(page: Page, live_server, co
     waiting = page.locator("#managed-members table").first
     expect(waiting).to_contain_text("Ivanova")
     expect(waiting).to_contain_text("2010")
-    page.get_by_role("button", name="Accept", exact=True).click()
+    page.get_by_role("button", name="Accept: Ivanova Anna").click()
     expect(page.locator("#managed-members table").first).to_contain_text("Taraz")
     assert managing.acts_for(coach, anna.pk)
 
