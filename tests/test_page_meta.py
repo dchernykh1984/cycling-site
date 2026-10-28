@@ -74,7 +74,7 @@ class SharedTitleTests(TestCase):
         from home.models import SiteContent
 
         SiteContent.objects.update_or_create(pk=1, defaults={"page_title_ru": "UBT"})
-        for skin in ("light",):
+        for skin in ("light", "orange"):
             with override_settings(DEFAULT_SKIN=skin):
                 for url in ("/ru/", reverse("calendar"), reverse("calendar_list"), reverse("calendar_map")):
                     title, shared = self._titles(url)
