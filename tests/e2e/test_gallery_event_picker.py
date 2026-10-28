@@ -161,8 +161,11 @@ def test_enter_in_an_empty_search_does_not_submit_the_album(page: Page, live_ser
     query.fill("No such event")
     message = page.locator("#gallery-event-picker").get_attribute("data-empty")
     expect(page.locator("#gallery-event-status")).to_have_text(message or "")
+    # A form submitted by Enter fires its submit event while the key is handled: watching for that
+    # event says so at once, where waiting for the network to fall quiet could wait on a slow CDN.
+    query.evaluate("el => el.form.addEventListener('submit', () => { window.albumSubmitted = true; })")
     query.press("Enter")
-    page.wait_for_load_state("networkidle")
+    assert not page.evaluate("window.albumSubmitted === true")
     expect(page).to_have_url(live_server.url + "/ru/gallery/albums/new/")
     assert not Album.objects.exists()
 
