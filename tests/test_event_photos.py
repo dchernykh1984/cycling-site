@@ -991,6 +991,73 @@ class PageAndApiTests(EventPhotosTestCase):
         result = bindings.compute([("old-device", 3, ["12#A#G#1#1#1#T#C##0#"])], {self.reg.pk}, {(self.reg.pk, "12")})
         self.assertTrue(any("review" in w and "old-device" in w and "3" in w for w in result.warnings))
 
+    def _managed_by_a_coach(self):
+        """A coach who manages the athlete's registrations and photos (issue #315), with a token."""
+        from accounts import managing
+        from accounts.models import User
+
+        coach = User.objects.create_user(
+            username="c@x.kz", email="c@x.kz", password="pw", role="participant", api_token=uuid.uuid4()
+        )
+        managing.ask(self.athlete, managing.issue_invite(coach).key)
+        managing.accept(coach, self.athlete.pk)
+        return coach
+
+    def test_a_manager_sees_and_marks_a_members_album_on_the_site_and_through_the_api(self):
+        coach = self._managed_by_a_coach()
+        auth = {"HTTP_AUTHORIZATION": f"Bearer {coach.api_token}"}
+        self.client.force_login(coach)
+        page = self.client.get(self._url("registration", self.reg.pk))
+        self.assertContains(page, "&#10007;")
+        self.assertContains(page, "Ivanov Ivan")
+        self.assertEqual(
+            self.client.post(self._url("decide", self.reg.pk, self.photo.pk), {"state": "me"}).status_code, 302
+        )
+        self.assertEqual(PhotoDecision.objects.get().state, "me")
+        self.assertEqual(
+            [card["registration"].pk for card in self.client.get(self._url("event")).context["registration_cards"]],
+            [self.reg.pk],
+        )
+        self.assertContains(self.client.get("/en/accounts/profile/"), self._url("registration", self.reg.pk))
+        cards = self.client.get("/api/v1/event-photos/me/registrations", **auth).json()
+        self.assertEqual([card["registration_id"] for card in cards], [self.reg.pk])
+        url = f"/api/v1/event-photos/registrations/{self.reg.pk}/photos"
+        self.assertEqual(self.client.get(url, **auth).status_code, 200)
+
+    def test_once_the_link_ends_the_former_manager_sees_nothing_of_the_members_photos(self):
+        from accounts import managing
+
+        coach = self._managed_by_a_coach()
+        managing.leave(self.athlete, coach.pk)
+        auth = {"HTTP_AUTHORIZATION": f"Bearer {coach.api_token}"}
+        self.client.force_login(coach)
+        self.assertEqual(self.client.get(self._url("registration", self.reg.pk)).status_code, 404)
+        self.assertEqual(
+            self.client.post(self._url("decide", self.reg.pk, self.photo.pk), {"state": "me"}).status_code, 404
+        )
+        self.assertEqual(self.client.get("/api/v1/event-photos/me/registrations", **auth).json(), [])
+        url = f"/api/v1/event-photos/registrations/{self.reg.pk}/photos"
+        self.assertEqual(self.client.get(url, **auth).status_code, 404)
+
+    def test_a_member_sees_nothing_of_their_managers_or_another_members_albums(self):
+        from accounts import managing
+        from accounts.models import User
+
+        coach = self._managed_by_a_coach()
+        teammate = User.objects.create_user(username="t@x.kz", email="t@x.kz", password="pw", role="participant")
+        managing.ask(teammate, managing.invite_of(coach).key)
+        managing.accept(coach, teammate.pk)
+        theirs = self._registration(last="Petrov")
+        theirs.user = teammate
+        theirs.save(update_fields=["user"])
+        coachs = self._registration(last="Coach")
+        coachs.user = coach
+        coachs.save(update_fields=["user"])
+        self.client.force_login(self.athlete)
+        for registration in (theirs, coachs):
+            with self.subTest(registration.last_name):
+                self.assertEqual(self.client.get(self._url("registration", registration.pk)).status_code, 404)
+
     def test_personal_api_cards_include_the_same_counts_cover_and_state_as_the_site(self):
         self.athlete.api_token = uuid.uuid4()
         self.athlete.save(update_fields=["api_token"])

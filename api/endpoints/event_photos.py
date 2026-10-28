@@ -16,7 +16,7 @@ from event_photos.archive import ArchiveBusyError, ArchiveTooBigError
 from event_photos.dropbox import open_url
 from event_photos.forms import ExternalAlbumForm
 from event_photos.models import ExternalAlbum, IndexedPhoto, PhotoDecision, StartListDiagnostics
-from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration
+from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration, looked_after
 from event_photos.views import (
     archive_response,
     bib_archive_name,
@@ -220,7 +220,7 @@ def album_photos(request, album_id: int, page: int = 1):
 def my_albums(request):
     regs = (
         CompetitionRegistration.objects.filter(
-            user=request.auth,
+            looked_after(request.auth),
             is_rejected=False,
             competition__is_deleted=False,
             competition__external_albums__is_hidden=False,

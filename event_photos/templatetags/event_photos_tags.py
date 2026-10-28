@@ -3,8 +3,9 @@ from django.urls import reverse
 
 from event_photos.actions import registration_summary
 from event_photos.models import ExternalAlbum
-from event_photos.permissions import can_manage_albums, can_see_event
+from event_photos.permissions import can_manage_albums, can_see_event, looked_after
 from event_photos.views import visible_albums
+from registrations.models import CompetitionRegistration
 
 register = template.Library()
 
@@ -25,13 +26,14 @@ def event_photo_section(context, competition):
 
 @register.simple_tag(takes_context=True)
 def my_race_photos(context):
-    """Cards of the member's own registrations at events with albums they may see, newest first."""
+    """Cards of the registrations the member looks after -- their own and their members' -- at
+    events with albums they may see, newest first."""
     user = context["request"].user
     if not user.is_authenticated:
         return []
     events = ExternalAlbum.objects.filter(is_hidden=False).values("competition_id")
     registrations = (
-        user.competition_registrations.filter(competition_id__in=events, is_rejected=False)
+        CompetitionRegistration.objects.filter(looked_after(user), competition_id__in=events, is_rejected=False)
         .select_related("competition", "category")
         .order_by("-competition__date_start", "-pk")
     )

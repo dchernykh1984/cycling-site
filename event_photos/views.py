@@ -28,7 +28,7 @@ from event_photos.models import (
     PhotoDecision,
     StartListDiagnostics,
 )
-from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration
+from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration, looked_after
 from gallery.models import Album as GalleryAlbum
 from registrations.models import CompetitionRegistration
 
@@ -50,10 +50,10 @@ def visible_albums(user, competition):
 
 
 def my_registrations(user, competition):
-    """The registrations of this event whose albums ``user`` may open (their own, for now)."""
+    """The registrations of this event whose albums ``user`` looks after: their own and their members'."""
     if not user.is_authenticated:
         return CompetitionRegistration.objects.none()
-    return CompetitionRegistration.objects.filter(competition=competition, user=user, is_rejected=False)
+    return CompetitionRegistration.objects.filter(looked_after(user), competition=competition, is_rejected=False)
 
 
 def _with_links(photos, competition):
