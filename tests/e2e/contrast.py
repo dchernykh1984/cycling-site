@@ -110,8 +110,15 @@ def ratio(first, second) -> float:
 
 
 def legibility(locator: Locator) -> float:
-    """Contrast of a locator's text against the colour right under it."""
-    return ratio(drawn(locator, "text"), drawn(locator, "fill"))
+    """Contrast of a locator's text against the colour right under it.
+
+    Both are read in one go: a state can end between two reads -- WebKit on a touch device drops a
+    hover on its own -- and one state's text against another's fill measures neither.
+    """
+    text, fill = locator.evaluate(
+        f"(el) => {{ const paint = {_PAINT}; return [paint(el, 'text'), paint(el, 'fill')]; }}"
+    )
+    return ratio(text, fill)
 
 
 def is_large(locator: Locator) -> bool:
