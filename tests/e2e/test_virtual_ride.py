@@ -339,3 +339,20 @@ def test_a_voice_chat_that_fails_to_connect_leaves_no_rider_behind_on_the_server
     # the server may already have published the microphone: the page takes it back
     assert page.evaluate("[Voice.on, window.left]") == [False, "DELETE /groups/7/voice"]
     expect(page.locator("#voiceWho")).to_contain_text(page.evaluate("TEXT[LANG]['voice.failed'].split('{')[0]"))
+
+
+def test_a_ride_strava_keeps_processing_is_said_to_be_there_later(page: Page):
+    source = _trainer_source()
+    show = _cut(source, r"^let stravaFor = null;.*?^function stravaShow\(rideId, s, tries = 0\) \{.*?^\}")
+    page.set_content('<p id="resStrava" class="hidden"></p>')
+    page.evaluate(
+        """({words, show}) => {
+            const $ = s => document.querySelector(s);
+            const Site = {get: async () => ({status: 'processing'})};
+            const setTimeout = later => Promise.resolve().then(later); // half a minute of asking, at once
+            eval(words + show + '; window.stravaShow = stravaShow; window.t = t;');
+            stravaShow(5, {status: 'processing'});
+        }""",
+        {"words": _language_block(source), "show": show},
+    )
+    expect(page.locator("#resStrava")).to_have_text(page.evaluate("t('strava.later')"))

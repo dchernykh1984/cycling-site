@@ -830,7 +830,8 @@ const TEXT = {
     "voice.failed": "Голос не подключился: {msg}",
     "voice.noMic": "Нет доступа к микрофону: разрешите его браузеру и попробуйте ещё раз.",
     "voice.unsupported": "Этот браузер не поддерживает голосовую связь.",
-    "voice.title": "Голосовая связь"
+    "voice.title": "Голосовая связь",
+    "strava.later": "Strava ещё обрабатывает заезд — загляните в Strava чуть позже."
   },
   kk: {
     "title": "Алатау — Алматы бойынша виртуалды заездтер",
@@ -1140,7 +1141,8 @@ const TEXT = {
     "voice.failed": "Дауыс қосылмады: {msg}",
     "voice.noMic": "Микрофонға рұқсат жоқ: браузерге рұқсат беріп, қайталап көріңіз.",
     "voice.unsupported": "Бұл браузер дауыстық байланысты қолдамайды.",
-    "voice.title": "Дауыстық байланыс"
+    "voice.title": "Дауыстық байланыс",
+    "strava.later": "Strava заездті әлі өңдеп жатыр — Strava-ны сәл кейінірек қараңыз."
   },
   en: {
     "title": "Alatau — virtual rides around Almaty",
@@ -1450,7 +1452,8 @@ const TEXT = {
     "voice.failed": "Voice did not connect: {msg}",
     "voice.noMic": "No access to the microphone: allow it in the browser and try again.",
     "voice.unsupported": "This browser does not support voice chat.",
-    "voice.title": "Voice chat"
+    "voice.title": "Voice chat",
+    "strava.later": "Strava is still processing the ride — look in Strava a little later."
   }
 };
 // t(key, { name }) fills {name}; a key missing in a language falls back to Russian, then to the key
@@ -3180,8 +3183,10 @@ function stravaShow(rideId, s, tries = 0) {
     b.onclick = () => Site.post('/rides/' + rideId + '/strava').then(r => stravaShow(rideId, r)).catch(e => stravaShow(rideId, { status: 'failed', error: e.message }));
     el.append(t('strava.failed', { msg: s.error }) + ' ', b); return;
   }
+  // half a minute of asking is enough: past it the page says so instead of seeming to wait for ever
+  if (tries >= 15) { el.textContent = t('strava.later'); return; }
   el.textContent = t('strava.processing');
-  if (tries < 15) setTimeout(() => Site.get('/rides/' + rideId + '/strava').then(r => stravaShow(rideId, r, tries + 1)).catch(() => {}), 2000);
+  setTimeout(() => Site.get('/rides/' + rideId + '/strava').then(r => stravaShow(rideId, r, tries + 1)).catch(() => {}), 2000);
 }
 const RECORD_LABELS = { route_first: t('rec.firstLabel'), route_best: t('rec.bestLabel'), peak_5s_w: t('rec.peakLabel', { d: durLabel(5) }), peak_1m_w: t('rec.peakLabel', { d: durLabel(60) }), peak_5m_w: t('rec.peakLabel', { d: durLabel(300) }), peak_20m_w: t('rec.peakLabel', { d: durLabel(1200) }), max_speed_kmh: t('rec.maxSpeedLabel') };
 function bestPeaks(powerLog) {
