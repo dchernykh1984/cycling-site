@@ -3,7 +3,7 @@
 **Feature Branch**: `315-managing-registrations`
 **Created**: 2026-10-28
 **Status**: Draft under discussion with the maintainer -- no implementation until the open questions
-below are settled (the maintainer, 2026-10-28); the hand-over and the registration page were agreed the same day (decisions 14-19)
+below are settled (the maintainer, 2026-10-28); the hand-over and the registration page were agreed the same day (decisions 14-25)
 **Issue**: [#315](https://github.com/dchernykh1984/cycling-site/issues/315) ("coach role"), with the
 photo requirements [#349](https://github.com/dchernykh1984/cycling-site/issues/349) FR-024 and FR-025
 **Input**: A coach, a parent or a team captain registers the people they look after for a start in
@@ -88,20 +88,28 @@ Taken in conversation with the maintainer on 2026-10-28, in the order they came.
     manages you, or of someone your request to is still waiting -- each says so in a plain message
     and asks nothing.
 
+20. **A self-only event takes a manager's registration of a member.** "Self only" means the person's
+    data come from their own profile and cannot be replaced with someone else's (the form makes name,
+    birth date and gender read-only and refuses a profile without gender or birth date,
+    `registrations/views.py`); a member's registration filed by their manager keeps to that, with the
+    member's profile.
+21. **A waiting request, seen by the member,** shows the manager as waiting for confirmation, with a
+    way to withdraw it. No email is sent to anyone anywhere in this feature.
+22. **An event taking several registrations from one person** offers everyone in the list, those
+    already registered too (decision 16's leaving-out does not apply there).
+23. **An event that lets anyone be registered** keeps its way of typing a person's data, next to the
+    checkboxes.
+24. **Relay events** are left as they are: the checkboxes are for one-person registrations only.
+25. **An invite-only event:** a manager who was let in may register a member there, and the member
+    is then let in as though they had opened the invitation link themselves.
+
 ## Open questions
 
-1. **A self-only event** (a registration tied to the participant's account): may a manager register
-   a member there? Proposed: yes -- the registration still belongs to the member's account.
-2. **What the member sees of their request:** proposed -- their section shows it as waiting for the
-   manager, with a way to withdraw it; no email (decision 12 extends to this).
-3. **An event that takes several registrations from one person:** are people already registered
-   still offered in the list there? Proposed: yes, since they may register again.
-4. **An event that lets anyone be registered** ("free" registration, by typing the person's data):
-   does the page keep that way of adding a person next to the checkboxes? Proposed: yes, as today.
-5. **A relay event:** proposed -- the checkboxes are for one-person registrations only; a relay team
-   is registered with its own form, as today.
-6. **An invite-only event:** may a manager who was let in register a member there, which lets the
-   member see the event (a registration counts as being let in, #313)? Proposed: yes.
+1. **A self-only event and a member whose profile lacks gender or birth date.** Decision 10 has the
+   manager complete what is missing, while decision 20 keeps a self-only registration's identity to
+   the member's own profile, which only its owner changes (decision 8). Proposed: the manager
+   cannot register such a member there, and the form says which fields the member should fill in
+   their profile.
 
 ## Requirements already fixed elsewhere
 
