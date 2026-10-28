@@ -132,12 +132,18 @@ class StravaUploadTests(MemberClientMixin, TestCase):
     @mock.patch("trainer.strava.requests.request")
     def test_strava_s_error_is_kept_without_its_markup(self, call):
         _connect(self.user)
-        call.return_value = _answer(
-            201, {"id_str": "3", "error": "<a href='/activities/1'>duplicate</a> of activity 1"}
-        )
+        call.return_value = _answer(201, {"id_str": "3", "error": "<b>Improperly formatted</b> data"})
         self.assertEqual(
-            self.save().json()["strava"], {"status": "failed", "activity_url": "", "error": "duplicate of activity 1"}
+            self.save().json()["strava"], {"status": "failed", "activity_url": "", "error": "Improperly formatted data"}
         )
+
+    @mock.patch("trainer.strava.requests.request")
+    def test_a_ride_strava_already_has_is_linked_to_its_activity_not_failed(self, call):
+        _connect(self.user)
+        duplicate = "virtual-ride-1.tcx.gz duplicate of <a href='/activities/4242'>Central loop</a>"
+        call.return_value = _answer(201, {"id_str": "3", "error": duplicate})
+        sent = self.save().json()["strava"]
+        self.assertEqual((sent["status"], sent["activity_url"]), ("done", "https://www.strava.com/activities/4242"))
 
     @mock.patch("trainer.strava.requests.request")
     def test_a_ride_is_sent_again_on_request_but_only_with_a_track_and_a_grant(self, call):
