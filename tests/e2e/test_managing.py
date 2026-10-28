@@ -11,7 +11,8 @@ from accounts import managing
 from accounts.models import User
 from calendar_app.models import Competition
 from registrations.models import CompetitionRegistration, RegistrationCategory
-from tests.e2e.conftest import UPCOMING, inject_session
+from tests.e2e.conftest import E2E_SKIN, UPCOMING, inject_session
+from tests.e2e.contrast import drawn, ratio
 
 
 def _member(username, first_name, last_name, gender, born):
@@ -143,7 +144,7 @@ def test_on_a_phone_every_button_takes_a_tap_and_nothing_scrolls_sideways(
     small = []
     for path, controls in (
         ("/accounts/profile/", ".managing .btn"),
-        (f"/competitions/{comp.pk}/register/", ".register-many > .btn, .register-many .form-check-label"),
+        (f"/competitions/{comp.pk}/register/", ".register-many > .btn, .register-many .register-person-pick"),
     ):
         page.goto(f"{live_server.url}/{lang}{path}")
         assert page.evaluate("document.scrollingElement.scrollWidth <= document.scrollingElement.clientWidth")
@@ -175,3 +176,24 @@ def test_after_someone_is_registered_the_others_forms_still_follow_their_gender(
     hers.locator(f"#p{anna.pk}-gender_m").check()
     expect(hers.locator("select option", has_text="Boys")).to_have_count(1)
     expect(hers.locator("select option", has_text="Girls")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_box_stands_level_with_the_name_and_can_be_seen(page: Page, live_server, organizer, coach, anna):
+    """An empty box is all that says there is someone to tick: it sits by the name and has a frame."""
+    _manage(coach, anna)
+    comp = _event(organizer, registration_mode=Competition.RegistrationMode.FREE)
+    page.set_viewport_size({"width": 360, "height": 800})
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/ru/competitions/{comp.pk}/register/")
+    box = page.locator(f"#person-{anna.pk} .register-person-check")
+    name = page.locator(f"#person-{anna.pk} .register-person-pick span")
+    box_at, name_at = box.bounding_box(), name.bounding_box()
+    assert box_at and name_at
+    box_mid, name_mid = box_at["y"] + box_at["height"] / 2, name_at["y"] + name_at["height"] / 2
+    assert abs(box_mid - name_mid) <= 2, (box_mid, name_mid)
+    frame = drawn(box, "colour:" + box.evaluate("el => getComputedStyle(el).borderTopColor"))
+    # The dark skin draws every box of the site in its own field colours (skins/dark/skin.css, 2.1:1
+    # here): that skin is the maintainer's to change.
+    if E2E_SKIN != "dark":
+        assert ratio(frame, drawn(box, "fill-beneath")) >= 3

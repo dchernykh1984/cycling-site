@@ -664,10 +664,24 @@ main .event-photo-preview img { object-fit: contain; }
 /* A table wider than the profile scrolls inside its frame; the frame holds the hidden column names
    too, which would otherwise widen the page. On a phone each row is a card, as in the participant list. */
 .managing .table-responsive { position: relative; }
-/* Registering several people at once (issue #315): a person's form shows once they are ticked; the
-   name beside the box takes a tap across 44 px, and so do the page's buttons. */
+/* Registering several people at once (issue #315): a person's form shows once they are ticked. The
+   box and the name are one label, in line, taking a tap across 44 px; the box is drawn with the skin's
+   secondary colour, since an empty one is all that tells the reader there is something to tick. The
+   page's buttons take 44 px too. */
 .register-many .register-person:has(.register-person-check:not(:checked)) .register-person-form { display: none; }
-.register-many .register-person .form-check-label { display: block; padding: 0.625rem 0; }
+.register-many .register-person-pick {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    margin: 0;
+    cursor: pointer;
+}
+.register-many .register-person-pick .form-check-input {
+    flex: none;
+    margin: 0;
+    border-color: var(--bs-secondary-color);
+}
 .register-many > .btn {
     min-height: 2.75rem;
     display: inline-flex;
