@@ -3318,10 +3318,9 @@ async function voiceJoin(gid) {
       await pc.setRemoteDescription({ type: 'answer', sdp: res.answer });
     });
     Object.assign(Voice, { on: true, joining: false, gid }); voiceNote(''); mpSchedule(50);
-  } catch (e) { voiceLeave(); voiceNote(t('voice.failed', { msg: e.message })); }
+  } catch (e) { voiceLeave(gid); voiceNote(t('voice.failed', { msg: e.message })); } // the server may have published already
 }
-function voiceLeave() {
-  const gid = Voice.on ? Voice.gid : null;
+function voiceLeave(gid = Voice.on ? Voice.gid : null) {
   Voice.peers.forEach(p => { if (p.audio) { p.audio.srcObject = null; p.audio.remove(); } });
   Voice.peers.clear();
   if (Voice.mic) Voice.mic.getTracks().forEach(tr => tr.stop());

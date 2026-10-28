@@ -261,8 +261,8 @@ def test_the_profile_s_strava_controls_are_big_enough_to_tap(page: Page, live_se
     assert wide >= 44 and high >= 44, (wide, high)
 
 
-@pytest.mark.only_browser("chromium")
-def test_a_rider_joins_the_voice_chat_hears_another_and_mutes(page: Page):
+def _join_voice(page: Page, *, answer_breaks: bool = False) -> None:
+    """The page's voice code against a media server played by a second connection in the same page."""
     source = _trainer_source()
     block = _cut(source, r"^const Voice = \{.*?^function renderVoice\(\) \{.*?^\}")
     page.set_content(
@@ -270,7 +270,7 @@ def test_a_rider_joins_the_voice_chat_hears_another_and_mutes(page: Page):
         '<p id="voiceWho"></p></div><button id="btnMic" class="hidden"></button>'
     )
     page.evaluate(
-        """async ({words, block}) => {
+        """async ({words, block, answerBreaks}) => {
             // the media server is played by a second connection in the page: it answers, then offers a rider
             const sfu = new RTCPeerConnection();
             const gathered = pc => new Promise(done => pc.iceGatheringState === 'complete' ? done()
@@ -285,7 +285,7 @@ def test_a_rider_joins_the_voice_chat_hears_another_and_mutes(page: Page):
                     if (path.endsWith('/voice')) {
                         await sfu.setRemoteDescription({type: 'offer', sdp: body.offer});
                         await sfu.setLocalDescription(await sfu.createAnswer()); await gathered(sfu);
-                        return {answer: sfu.localDescription.sdp};
+                        return {answer: answerBreaks ? 'not a session description' : sfu.localDescription.sdp};
                     }
                     if (path.endsWith('/voice/pull')) {
                         const sender = sfu.addTransceiver(tone().getAudioTracks()[0], {direction: 'sendonly'});
@@ -307,8 +307,13 @@ def test_a_rider_joins_the_voice_chat_hears_another_and_mutes(page: Page):
             eval(words + block + share);
             await window.voiceJoin(7);
         }""",
-        {"words": _language_block(source), "block": block},
+        {"words": _language_block(source), "block": block, "answerBreaks": answer_breaks},
     )
+
+
+@pytest.mark.only_browser("chromium")
+def test_a_rider_joins_the_voice_chat_hears_another_and_mutes(page: Page):
+    _join_voice(page)
     assert page.evaluate("Voice.on")
     # the microphone starts muted, and the rider is told so in words
     expect(page.locator("#btnMic")).to_have_attribute("aria-pressed", "false")
@@ -326,3 +331,11 @@ def test_a_rider_joins_the_voice_chat_hears_another_and_mutes(page: Page):
     expect(page.locator("audio")).to_have_count(0)
     page.click("#voiceJoin")  # now "Leave voice chat"
     assert page.evaluate("[Voice.on, window.left]") == [False, "DELETE /groups/7/voice"]
+
+
+@pytest.mark.only_browser("chromium")
+def test_a_voice_chat_that_fails_to_connect_leaves_no_rider_behind_on_the_server(page: Page):
+    _join_voice(page, answer_breaks=True)
+    # the server may already have published the microphone: the page takes it back
+    assert page.evaluate("[Voice.on, window.left]") == [False, "DELETE /groups/7/voice"]
+    expect(page.locator("#voiceWho")).to_contain_text(page.evaluate("TEXT[LANG]['voice.failed'].split('{')[0]"))
