@@ -7,6 +7,7 @@ tokens live in ``StravaConnection`` and are refreshed here when they expire. Eve
 """
 
 import gzip
+import re
 from datetime import UTC, datetime, timedelta
 from typing import cast
 from urllib.parse import urlencode
@@ -30,6 +31,8 @@ SCOPE = "read,activity:write"
 _TIMEOUT = 10
 _TCX = "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
 _TPX = "http://www.garmin.com/xmlschemas/ActivityExtension/v2"
+# Strava names the activity a duplicate upload matches; that activity is this ride, sent before
+_DUPLICATE_OF = re.compile(r"duplicate of.*?activit(?:y|ies)\D{0,3}(\d+)", re.IGNORECASE | re.DOTALL)
 ET.register_namespace("", _TCX)
 ET.register_namespace("tpx", _TPX)
 
@@ -173,8 +176,15 @@ def _fail(record: StravaUpload, message: str) -> StravaUpload:
 def _apply(record: StravaUpload, body: dict) -> StravaUpload:
     """Strava's answer about an upload: still processing, an activity, or why there is none."""
     record.upload_id = str(body.get("id_str") or body.get("id") or record.upload_id)
-    if body.get("error"):
-        return _fail(record, str(body["error"]))
+    error = str(body.get("error") or "")
+    earlier = _DUPLICATE_OF.search(error)
+    if earlier:
+        # an earlier try reached Strava though its answer did not reach us: the ride is there
+        record.status, record.activity_id, record.error = StravaUpload.Status.DONE, earlier.group(1), ""
+        record.save()
+        return record
+    if error:
+        return _fail(record, error)
     if body.get("activity_id"):
         record.status, record.activity_id, record.error = StravaUpload.Status.DONE, str(body["activity_id"]), ""
     else:
