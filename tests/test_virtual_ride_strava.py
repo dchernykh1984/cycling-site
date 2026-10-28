@@ -150,6 +150,15 @@ class StravaUploadTests(MemberClientMixin, TestCase):
         other = self.member(_user("boris"))
         self.assertEqual(self.post(other, f"/rides/{ride_id}/strava").status_code, 404)
 
+    @mock.patch("trainer.strava.requests.request")
+    def test_a_ride_already_on_strava_keeps_its_activity_when_sent_again(self, call):
+        _connect(self.user)
+        call.return_value = _answer(201, {"id_str": "8", "activity_id": 77})
+        ride_id = self.save().json()["ride"]["id"]
+        again = self.post(self.client_m, f"/rides/{ride_id}/strava").json()
+        self.assertEqual(again["activity_url"], "https://www.strava.com/activities/77")
+        self.assertEqual(call.call_count, 1)  # nothing sent twice
+
     @mock.patch("trainer.strava.requests.post")
     def test_turning_it_off_revokes_the_grant_and_forgets_the_tokens(self, post):
         _connect(self.user)

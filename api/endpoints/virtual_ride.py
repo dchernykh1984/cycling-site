@@ -365,6 +365,10 @@ def _strava_out(upload: StravaUpload) -> StravaOut:
 def send_to_strava(request, ride_id: int):
     """Again after a failure, or a ride saved before Strava was connected: it goes as a Virtual Ride."""
     ride = get_object_or_404(VirtualRide, pk=ride_id, user=request.auth)
+    sent = StravaUpload.objects.filter(ride=ride).first()
+    if sent is not None and sent.status != StravaUpload.Status.FAILED:
+        # on Strava already, or on its way: sending it again would only come back a duplicate
+        return _strava_out(strava.refresh(sent))
     if not _strava_on(request.auth):
         raise HttpError(409, _("Connect Strava in your profile first"))
     if ride.power_source == VirtualRide.PowerSource.DEMO or not RideTrack.objects.filter(ride=ride).exists():
