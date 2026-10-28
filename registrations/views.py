@@ -19,6 +19,7 @@ from accounts.access import ParticipantRequiredMixin
 from calendar_app.models import Competition
 from calendar_app.visibility import can_see, manages
 
+from . import registering
 from .forms import EditRegistrationForm, RegistrationForm
 from .models import CompetitionRegistration, RegistrationCategory, Team, check_duplicate
 
@@ -63,14 +64,6 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
 
     def _get_competition(self, pk):
         return get_object_or_404(Competition, pk=pk, is_deleted=False)
-
-    def _available_categories(self, competition, gender, birth_date):
-        qs = RegistrationCategory.objects.filter(competition=competition, is_deleted=False)
-        if gender and birth_date:
-            qs = [c for c in qs if c.matches(gender, birth_date) and c.is_open()]
-        else:
-            qs = []
-        return qs
 
     def _page(self, request, competition, form, relay_members_post=()):
         """The page as first shown and as shown again after a refusal: one context for both, so a
@@ -121,45 +114,9 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 },
             )
 
-        user = request.user
-        is_free = competition.registration_mode == "free"
-        readonly_fields = [] if is_free else ["first_name", "last_name", "birth_date", "birth_year", "gender"]
+        return self._page(request, competition, registering.blank_form(competition, request.user))
 
-        if is_free:
-            gender = user.gender or ""
-            birth_date = user.birth_date
-        else:
-            gender = user.gender
-            birth_date = user.birth_date
-
-        available_categories = (
-            self._available_categories(competition, gender, birth_date) if (gender and birth_date) else []
-        )
-
-        initial = {
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "gender": gender,
-            "city": user.city,
-            "team_name": user.team,
-        }
-        if competition.birth_date_mode == "year":
-            initial["birth_year"] = birth_date.year if birth_date else None
-        else:
-            initial["birth_date"] = birth_date
-        if available_categories:
-            initial["category"] = available_categories[0].pk
-        if competition.show_additional_info_field and competition.additional_info_is_strava:
-            initial["additional_info"] = user.strava_link
-
-        form = RegistrationForm(initial=initial, competition=competition, user=user, readonly_fields=readonly_fields)
-        form.fields["category"].queryset = RegistrationCategory.objects.filter(
-            pk__in=[c.pk for c in available_categories]
-        )
-
-        return self._page(request, competition, form)
-
-    def post(self, request, pk):  # noqa: C901
+    def post(self, request, pk):
         competition = self._get_competition(pk)
         if not can_see(request.user, competition):
             raise Http404
@@ -169,17 +126,10 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
             raise PermissionDenied
 
         user = request.user
-        is_free = competition.registration_mode == "free"
-        readonly_fields = [] if is_free else ["first_name", "last_name", "birth_date", "birth_year", "gender"]
+        if not registering.is_free(competition) and registering.profile_incomplete(user):
+            raise PermissionDenied
 
-        if not is_free:
-            if not user.gender or not user.birth_date:
-                raise PermissionDenied
-
-        form = RegistrationForm(request.POST, competition=competition, user=user, readonly_fields=readonly_fields)
-        form.fields["category"].queryset = RegistrationCategory.objects.filter(
-            competition=competition, is_deleted=False
-        )
+        form = registering.bound_form(competition, user, request.POST)
 
         relay_enabled = competition.relay_enabled
         relay_names_raw: list[str] = []
@@ -210,80 +160,13 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
             {"name": n, "birth_year": y, "city": c}
             for n, y, c in zip(relay_names_raw, relay_birth_years_raw, relay_cities_raw, strict=False)
         ]
-        if form.is_valid() and not form.errors:
-            cleaned = form.cleaned_data
-
-            if not is_free:
-                first_name = user.first_name
-                last_name = user.last_name
-                gender = user.gender
-                birth_date = user.birth_date
-            else:
-                first_name = "" if relay_enabled else cleaned["first_name"]
-                last_name = "" if relay_enabled else cleaned["last_name"]
-                gender = cleaned["gender"]
-                if relay_enabled and relay_birth_years:
-                    try:
-                        birth_date = datetime.date(int(relay_birth_years[0]), 1, 1)
-                    except (ValueError, TypeError):
-                        birth_date = datetime.date(1900, 1, 1)
-                else:
-                    birth_date = cleaned.get("birth_date") or (
-                        datetime.date(cleaned["birth_year"], 1, 1)
-                        if cleaned.get("birth_year")
-                        else datetime.date(1900, 1, 1)
-                    )
-
-            with transaction.atomic():
-                competition = Competition.objects.select_for_update().get(pk=competition.pk)
-                if not relay_enabled and check_duplicate(competition, user, first_name, last_name, birth_date):
-                    form.add_error(None, gettext("You are already registered for this competition."))
-                    return self._page(request, competition, form, relay_members_post)
-
-                team = None
-                team_name = cleaned.get("team_name", "").strip()
-                if team_name:
-                    team = Team.get_or_restore(team_name)
-
-                category = cleaned.get("category")
-                # For relay only check gender; birth years span multiple age groups
-                cat_ok = not category or (
-                    category.is_open()
-                    and (category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date))
-                )
-                if not cat_ok:
-                    form.add_error("category", gettext("This category is not available."))
-                    return self._page(request, competition, form, relay_members_post)
-
-                if not competition.is_registration_open():
-                    form.add_error(None, gettext("Registration is no longer available."))
-                    return self._page(request, competition, form, relay_members_post)
-
-                CompetitionRegistration.objects.create(
-                    competition=competition,
-                    user=user,
-                    registered_by=user,
-                    first_name=first_name,
-                    last_name=last_name,
-                    participant_names="<BR>".join(relay_names) if relay_enabled else "",
-                    participant_birth_years="<BR>".join(relay_birth_years) if relay_enabled else "",
-                    participant_cities="<BR>".join(relay_cities) if relay_enabled else "",
-                    birth_date=birth_date,
-                    gender=gender,
-                    category=category,
-                    city="" if relay_enabled else cleaned.get("city", ""),
-                    team=team,
-                    additional_info=cleaned.get("additional_info", ""),
-                    is_approved=not competition.require_approval,
-                    is_paid=not competition.require_payment,
-                )
-
-                Competition.objects.filter(pk=competition.pk, registration_mode_locked=False).update(
-                    registration_mode_locked=True
-                )
-
+        relay = (relay_names, relay_birth_years, relay_cities) if relay_enabled else None
+        if (
+            form.is_valid()
+            and not form.errors
+            and registering.register_one(competition, form, user, registered_by=user, relay=relay)
+        ):
             return redirect("registrations:participant_list", pk=competition.pk)
-
         return self._page(request, competition, form, relay_members_post)
 
 
