@@ -267,7 +267,9 @@ breakpoint where the filters fold away too.{% endcomment %}
         <td data-label="{% trans 'Type' %}">{{ comp.event_type_label|default:"—" }}</td>
         <td data-label="{% trans 'Directions' %}">{{ comp.direction_label|default:"—" }}</td>
         <td data-label="{% trans 'Disciplines' %}">{{ comp.disciplines_label|default:"—" }}</td>
-        <td data-label="{% trans 'Location' %}">{{ comp.place_label|default:"—" }}</td>
+        {% comment %}The start point apart from the rest, in a line of text, so a skin may set them on two
+        lines (the orange skin's cards do).{% endcomment %}
+        <td data-label="{% trans 'Location' %}">{% with parts=comp.place_parts %}{% if parts %}<span class="place-venue">{{ parts.0 }}</span>{% if parts|length > 1 %}<span class="place-sep">, </span><span class="place-area">{{ parts|slice:"1:"|join:", " }}</span>{% endif %}{% else %}—{% endif %}{% endwith %}</td>
         <td data-label="{% trans 'Links' %}">
           <div class="d-flex flex-column gap-1">
             {% if comp.url_announcement %}

@@ -5,6 +5,7 @@ in the middle of a word.
 """
 
 import datetime
+import re
 
 from django.test import TestCase
 from django.urls import reverse
@@ -14,6 +15,12 @@ from calendar_app.models import Competition
 from locations.models import Location, add_location_child
 
 DAY = timezone.localdate() + datetime.timedelta(days=3)
+
+
+def _places(html):
+    """Each row's place as the reader reads it, and the venue the cell sets apart for a skin."""
+    cells = re.findall(r'<td data-label="[^"]*">(<span class="place-venue">.*?)</td>', html)
+    return [(re.sub(r"<[^>]+>", "", cell), re.search(r'place-venue">([^<]*)<', cell).group(1)) for cell in cells]
 
 
 class PlaceColumnTests(TestCase):
@@ -29,11 +36,10 @@ class PlaceColumnTests(TestCase):
 
     def test_the_place_reads_from_the_start_point_out(self):
         Competition.objects.create(title_ru="At Medeu", date_start=DAY, status="approved", location=self.venue)
-        self.assertContains(self._list(), "Medeu, Almaty, Almaty region, Kazakhstan")
+        places = _places(self._list().content.decode())
+        self.assertEqual(places, [("Medeu, Almaty, Almaty region, Kazakhstan", "Medeu")])
 
     def test_a_start_point_not_yet_known_names_its_city_once(self):
         catch_all = Location.get_or_create_other_location(self.city)
         Competition.objects.create(title_ru="Somewhere", date_start=DAY, status="approved", location=catch_all)
-        html = self._list().content.decode()
-        self.assertIn("Almaty, Almaty region, Kazakhstan", html)
-        self.assertNotIn("Almaty, Almaty,", html)
+        self.assertEqual(_places(self._list().content.decode()), [("Almaty, Almaty region, Kazakhstan", "Almaty")])
