@@ -185,6 +185,18 @@ class DescriptionKindTests(TestCase):
         ics = self.client.get(in_language(reverse("competition_ics", args=[outing.pk]), "en")).content.decode()
         self.assertIn(f"Type: {other.name_en}.", ics.replace("\r\n ", ""))
 
+    def test_a_feed_looks_the_usual_type_up_once_whatever_its_length(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        for title in ("One", "Two", "Three"):
+            _competition(title, approved_at=datetime.datetime(2026, 10, 1, tzinfo=datetime.UTC))
+        for feed in ("calendar_rss", "calendar_ics"):
+            with CaptureQueriesContext(connection) as queries:
+                self.assertEqual(self.client.get(reverse(feed)).status_code, 200)
+            lookups = [q["sql"] for q in queries if 'FROM "calendar_app_eventtype" ORDER BY' in q["sql"]]
+            self.assertEqual(len(lookups), 1, feed)
+
     def test_a_catch_all_discipline_reads_as_its_direction(self):
         catch_all = Discipline.objects.get(name_en="Other (Road Cycling)")
         comp = _competition("Coffee and climbs")
