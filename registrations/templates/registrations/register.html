@@ -288,7 +288,10 @@ function updateCategories() {
 
   const select = document.getElementById('category-select');
   const current = select.value;
-  select.innerHTML = '<option value="">— выбрать —</option>';
+  // the page's own "select" line, in the page's language, heads the list again
+  const placeholder = select.options[0].cloneNode(true);
+  select.innerHTML = '';
+  select.appendChild(placeholder);
 
   allCategories.forEach(c => {
     if (!c.is_open) return;

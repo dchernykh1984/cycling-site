@@ -4397,3 +4397,22 @@ msgstr "Кто подал"
 
 msgid "Cancel this registration?"
 msgstr "Отменить эту заявку?"
+
+msgid "At least one participant name is required."
+msgstr "Нужно указать хотя бы одного участника."
+
+#, python-format
+msgid "Maximum %(count)s members allowed."
+msgstr "Участников не больше: %(count)s."
+
+msgid "You are already registered for this competition."
+msgstr "Вы уже зарегистрированы на это мероприятие."
+
+msgid "This category is not available."
+msgstr "Эта категория недоступна."
+
+msgid "Registration is no longer available."
+msgstr "Регистрация уже недоступна."
+
+msgid "A participant with this name and birth year is already registered."
+msgstr "Участник с такими именем и годом рождения уже зарегистрирован."

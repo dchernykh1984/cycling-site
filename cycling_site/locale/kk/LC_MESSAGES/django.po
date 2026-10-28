@@ -4395,3 +4395,22 @@ msgstr "Тіркеген"
 
 msgid "Cancel this registration?"
 msgstr "Бұл тіркелуден бас тартасыз ба?"
+
+msgid "At least one participant name is required."
+msgstr "Кемінде бір қатысушыны көрсету керек."
+
+#, python-format
+msgid "Maximum %(count)s members allowed."
+msgstr "Қатысушылар саны көп дегенде: %(count)s."
+
+msgid "You are already registered for this competition."
+msgstr "Сіз бұл іс-шараға тіркеліп қойғансыз."
+
+msgid "This category is not available."
+msgstr "Бұл санат қолжетімсіз."
+
+msgid "Registration is no longer available."
+msgstr "Тіркелу енді қолжетімсіз."
+
+msgid "A participant with this name and birth year is already registered."
+msgstr "Осындай аты мен туған жылы бар қатысушы тіркелген."

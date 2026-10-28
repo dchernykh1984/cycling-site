@@ -521,6 +521,21 @@ class RefusedEntryPageTests(TestCase):
         self.assertContains(response, 'value="Petrov Vasya"')
 
 
+class RefusalLanguageTests(TestCase):
+    def test_a_refusal_is_said_in_the_pages_language(self):
+        user = make_user("lang_refused", gender="M", birth_date=datetime.date(1990, 1, 1))
+        comp = make_open_competition()
+        cat = make_category(comp)
+        make_registration(comp, first_name="Denis", last_name="Test", birth_date=datetime.date(1990, 1, 1))
+        self.client.force_login(user)
+        data = {"first_name": "Denis", "last_name": "Test", "gender": "M", "birth_year": 1990, "category": cat.pk}
+        for lang in ("ru", "kk", "en"):
+            with self.subTest(lang), translation.override(lang):
+                response = self.client.post(in_language(reverse("registrations:register", args=[comp.pk]), lang), data)
+                said = translation.gettext("You are already registered for this competition.")
+                self.assertIn(said, response.context["form"].non_field_errors())
+
+
 class RegistrationStravaFieldTests(TestCase):
     def setUp(self):
         self.user = make_user("stravauser", gender="M", birth_date=datetime.date(1990, 1, 1))
