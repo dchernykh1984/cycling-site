@@ -7,6 +7,7 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from tests.test_virtual_ride_api import API, MemberClientMixin, _user
+from trainer import live
 from trainer.live import ONLINE_SECONDS
 from trainer.models import GroupRide, GroupRideMember, LiveRider, VoiceSession
 
@@ -85,6 +86,14 @@ class VoiceChatTests(MemberClientMixin, TestCase):
             body["voice"], [{"user_id": self.host.pk, "name": self.host.public_display_name, "key": "k-host"}]
         )
         self.assertNotIn("S-k-host", str(body))
+
+    def test_finding_the_chat_costs_each_poll_three_queries(self):
+        # every rider's page asks this once a second: the race they wait for, not the lists of its riders
+        self.in_voice(self.host, "k-host")
+        row = LiveRider.objects.get(user=self.guest)
+        with self.assertNumQueries(3):
+            _group, others = live.voice_room(self.guest, row)
+            self.assertEqual([v.track_name for v in others], ["k-host"])
 
     @mock.patch("trainer.voice.requests.request")
     def test_hearing_the_others_maps_their_sound_to_them_and_stays_in_the_race(self, call):
