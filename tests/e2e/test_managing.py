@@ -152,3 +152,26 @@ def test_on_a_phone_every_button_takes_a_tap_and_nothing_scrolls_sideways(
             if box and box["height"] < 44:
                 small.append((path, control.inner_text(), box["height"]))
     assert not small, small
+
+
+@pytest.mark.django_db(transaction=True)
+def test_after_someone_is_registered_the_others_forms_still_follow_their_gender(
+    page: Page, live_server, organizer, coach, anna
+):
+    """The page comes back with a card that has no fields left: the script carries on past it."""
+    _manage(coach, anna)
+    comp = _event(organizer, registration_mode=Competition.RegistrationMode.FREE)
+    RegistrationCategory.objects.create(competition=comp, name="Boys", male=True, female=False)
+    RegistrationCategory.objects.create(competition=comp, name="Girls", male=False, female=True)
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/competitions/{comp.pk}/register/")
+    for person in (coach, anna):
+        page.locator(f"#person-{person.pk} .register-person-check").check()
+    page.locator(f"#person-{coach.pk} select").select_option(label="Boys")
+    page.locator(f'input[name="p{anna.pk}-last_name"]').fill("")
+    page.locator("#registration-form > button[type='submit']").click()
+    expect(page.locator(f"#person-{coach.pk}")).to_contain_text("Registration submitted")
+    hers = page.locator(f"#person-{anna.pk}")
+    hers.locator(f"#p{anna.pk}-gender_m").check()
+    expect(hers.locator("select option", has_text="Boys")).to_have_count(1)
+    expect(hers.locator("select option", has_text="Girls")).to_have_count(0)
