@@ -153,6 +153,11 @@
         </a>
         {% else %}
         <span class="badge bg-success">{% trans "You are registered" %}</span>
+        {% if registers_others %}
+        <a href="{% url 'registrations:register' competition.pk %}" class="btn btn-success btn-sm ms-2">
+          {% trans "Register others" %}
+        </a>
+        {% endif %}
         {% endif %}
       {% else %}
       <span class="badge bg-secondary">{% trans "Registration closed" %}</span>

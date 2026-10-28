@@ -4442,3 +4442,6 @@ msgstr "Мұнда тіркей алатын адамдарыңыздың бәр
 
 msgid "Already registered for this competition."
 msgstr "Бұл іс-шараға өтінім бұрыннан бар."
+
+msgid "Register others"
+msgstr "Басқаларды тіркеу"
