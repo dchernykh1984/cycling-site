@@ -3,7 +3,7 @@
 **Feature Branch**: `315-managing-registrations`
 **Created**: 2026-10-28
 **Status**: Draft under discussion with the maintainer -- no implementation until the open questions
-below are settled (the maintainer, 2026-10-28); the hand-over was agreed the same day (decisions 14-15)
+below are settled (the maintainer, 2026-10-28); the hand-over and the registration page were agreed the same day (decisions 14-19)
 **Issue**: [#315](https://github.com/dchernykh1984/cycling-site/issues/315) ("coach role"), with the
 photo requirements [#349](https://github.com/dchernykh1984/cycling-site/issues/349) FR-024 and FR-025
 **Input**: A coach, a parent or a team captain registers the people they look after for a start in
@@ -72,21 +72,36 @@ Taken in conversation with the maintainer on 2026-10-28, in the order they came.
     - Opening a link that no longer works says so plainly: the link is not valid or has
       probably expired, and the person who sent it can make a new one.
 
+16. **Registering several people** (refines decision 10):
+    - The list of checkboxes shows the manager themselves -- not obvious, and needed -- and each
+      managed member, leaving out whoever is already registered for the event.
+    - With no managed members there is no list: the page is as it always was.
+    - On submit, people are registered one by one from the top of the list, as many as can be;
+      those registered lose their checkbox, and each person who could not be registered gets their
+      error shown.
+17. **A rejected request just disappears.** The member may ask again through the same link; a
+    manager pestered by repeated requests makes a new link.
+18. **An ended link leaves nothing behind.** Whichever side ends it, the former manager sees and may
+    do nothing of the member's, as though the right had never been given. The registrations they
+    submitted stay the member's.
+19. **Plain errors on the link's page:** opening one's own link, the link of someone who already
+    manages you, or of someone your request to is still waiting -- each says so in a plain message
+    and asks nothing.
+
 ## Open questions
 
-1. **Several people at once, one fails** (a category that does not fit, the places run out): are
-   the others registered and the failures shown, or nobody?
-2. **A self-only event** (a registration tied to the participant's account): may a manager register
+1. **A self-only event** (a registration tied to the participant's account): may a manager register
    a member there? Proposed: yes -- the registration still belongs to the member's account.
-3. **What the member sees of their request:** proposed -- their section shows it as waiting for the
+2. **What the member sees of their request:** proposed -- their section shows it as waiting for the
    manager, with a way to withdraw it; no email (decision 12 extends to this).
-4. **A rejected request:** does the member see it was rejected, or does it just disappear? May they
-   ask again through the same link (a stranger with a leaked link could keep asking until the
-   manager deletes it)?
-5. **When the link between two members ends:** proposed -- registrations the manager submitted stay
-   the member's, untouched; the former manager loses every right over them and the member's photos.
-6. **Opening one's own link, or the link of someone who already manages you:** proposed -- the page
-   says so and asks nothing.
+3. **An event that takes several registrations from one person:** are people already registered
+   still offered in the list there? Proposed: yes, since they may register again.
+4. **An event that lets anyone be registered** ("free" registration, by typing the person's data):
+   does the page keep that way of adding a person next to the checkboxes? Proposed: yes, as today.
+5. **A relay event:** proposed -- the checkboxes are for one-person registrations only; a relay team
+   is registered with its own form, as today.
+6. **An invite-only event:** may a manager who was let in register a member there, which lets the
+   member see the event (a registration counts as being let in, #313)? Proposed: yes.
 
 ## Requirements already fixed elsewhere
 
