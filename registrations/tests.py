@@ -521,6 +521,16 @@ class RefusedEntryPageTests(TestCase):
         self.assertContains(response, 'value="Petrov Vasya"')
 
 
+class BirthYearBoundTests(TestCase):
+    def test_the_birth_year_goes_up_to_this_year(self):
+        """Written as a fixed year, the bound would refuse in the browser everyone born after it."""
+        user = make_user("bound", gender="M", birth_date=datetime.date(1990, 1, 1))
+        self.client.force_login(user)
+        comp = make_open_competition()
+        html = self.client.get(reverse("registrations:register", args=[comp.pk])).content.decode()
+        self.assertIn(f'min="1900" max="{datetime.date.today().year}"', html)
+
+
 class RefusalLanguageTests(TestCase):
     def test_a_refusal_is_said_in_the_pages_language(self):
         user = make_user("lang_refused", gender="M", birth_date=datetime.date(1990, 1, 1))

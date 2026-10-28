@@ -54,7 +54,7 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
   <input type="number" name="{{ form.birth_year.html_name }}" value="{{ form.birth_year.value|default:'' }}"
          class="form-control js-birth-year{% if form.birth_year.errors %} is-invalid{% endif %}"
          {% if form.fields.birth_year.widget.attrs.readonly %}readonly{% endif %}
-         min="1900" max="2025"{% if required %} required{% endif %}>
+         min="1900" max="{% now "Y" %}"{% if required %} required{% endif %}>
   {% for e in form.birth_year.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
 </div>
 {% endif %}
