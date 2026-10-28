@@ -113,3 +113,60 @@ class LiveRider(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_id} {self.status} {self.route}"
+
+
+class RideTrack(models.Model):
+    """Where a ride went and how, one sample a second: what its Strava activity is built from.
+
+    Each point is ``[t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm]``. The
+    position is the trainer page's route at the rider's distance -- a place on the map, not a GPS fix.
+    """
+
+    ride = models.OneToOneField(VirtualRide, on_delete=models.CASCADE, primary_key=True, related_name="track")
+    points = models.JSONField()
+
+    def __str__(self) -> str:
+        return f"track of {self.ride_id}"
+
+
+class StravaConnection(models.Model):
+    """A member's permission for the site to upload their virtual rides to Strava (``activity:write``).
+
+    Signing in with Strava asks for ``read`` only and keeps no token; this is a separate grant the
+    member gives on the profile, kept only while they want their rides sent. Turning it off revokes it
+    at Strava and deletes the row (``trainer.strava``).
+    """
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="strava_connection")
+    athlete_id = models.BigIntegerField()
+    athlete_name = models.CharField(max_length=120, blank=True, default="")
+    access_token = models.CharField(max_length=255)
+    refresh_token = models.CharField(max_length=255)
+    expires_at = models.DateTimeField()
+    connected_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.user_id} -> strava {self.athlete_id}"
+
+
+class StravaUpload(models.Model):
+    """One ride sent to Strava: the upload Strava is processing, then the activity it became."""
+
+    class Status(models.TextChoices):
+        PROCESSING = "processing", _("Processing at Strava")
+        DONE = "done", _("On Strava")
+        FAILED = "failed", _("Not uploaded")
+
+    ride = models.OneToOneField(VirtualRide, on_delete=models.CASCADE, primary_key=True, related_name="strava")
+    status = models.CharField(max_length=12, choices=Status.choices)
+    upload_id = models.CharField(max_length=30, blank=True, default="")
+    activity_id = models.CharField(max_length=30, blank=True, default="")
+    error = models.CharField(max_length=300, blank=True, default="")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{self.ride_id} {self.status}"
+
+    @property
+    def activity_url(self) -> str:
+        return f"https://www.strava.com/activities/{self.activity_id}" if self.activity_id else ""

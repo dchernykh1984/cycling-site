@@ -3974,7 +3974,8 @@ msgstr "Скачать все (ZIP, %(size)s)"
 
 #, python-format
 msgid "Too many photos for one archive (%(size)s): open them one by one."
-msgstr "Слишком много фото для одного архива (%(size)s): откройте их по одному."
+msgstr ""
+"Слишком много фото для одного архива (%(size)s): откройте их по одному."
 
 msgid "Too many photos for one archive: open them one by one."
 msgstr "Слишком много фото для одного архива: откройте их по одному."
@@ -3996,8 +3997,14 @@ msgid "Sign in to download all photos"
 msgstr "Войдите, чтобы скачать все фото"
 
 #, python-format
-msgid "Instead of steps 1 and 2, the folder can be indexed with the skill in the <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer project</a>."
-msgstr "Вместо шагов 1 и 2 папку можно проиндексировать скиллом из <a href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">проекта Sport Photo Indexer</a>."
+msgid ""
+"Instead of steps 1 and 2, the folder can be indexed with the skill in the <a"
+" href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer "
+"project</a>."
+msgstr ""
+"Вместо шагов 1 и 2 папку можно проиндексировать скиллом из <a "
+"href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">проекта Sport Photo "
+"Indexer</a>."
 
 #: accounts/templates/accounts/profile.html:246
 #: tests/test_virtual_ride_api.py:141
@@ -4147,3 +4154,105 @@ msgstr "Едет"
 msgctxt "watts"
 msgid "W"
 msgstr "Вт"
+
+#: accounts/templates/accounts/profile.html:301
+msgid ""
+"Strava is connected: every ride you finish on the virtual ride page goes "
+"there as a virtual ride, along the streets of its route."
+msgstr ""
+"Strava подключена: каждый заезд, который вы заканчиваете на странице "
+"виртуального заезда, уходит туда как виртуальный заезд по улицам его "
+"маршрута."
+
+#: accounts/templates/accounts/profile.html:304
+msgid "Disconnect Strava"
+msgstr "Отключить Strava"
+
+#: accounts/templates/accounts/profile.html:307
+msgid ""
+"Connect Strava, and every ride you finish on the virtual ride page goes "
+"there as a virtual ride, along the streets of its route. Rides in demo mode "
+"stay here."
+msgstr ""
+"Подключите Strava — и каждый заезд, который вы закончите на странице "
+"виртуального заезда, будет уходить туда как виртуальный заезд по улицам его "
+"маршрута. Заезды в демо-режиме остаются здесь."
+
+#: api/endpoints/virtual_ride.py:332
+msgid "Connect Strava in your profile first"
+msgstr "Сначала подключите Strava в личном кабинете"
+
+#: api/endpoints/virtual_ride.py:334
+msgid ""
+"This ride has no track to send: rides in demo mode and rides saved without "
+"one stay here"
+msgstr ""
+"У этого заезда нет трека для отправки: заезды в демо-режиме и сохранённые "
+"без трека остаются здесь"
+
+#: home/templates/home/privacy_page.html:20
+msgid ""
+"<strong>Virtual rides.</strong> When you are signed in, the rides you finish"
+" on the virtual ride page are saved to your profile: the route, time, "
+"distance, speed, power, cadence and heart rate, and the track of your "
+"position along the route. While you are on that page, other signed-in "
+"members see your name, what you are riding and where you are on the route. "
+"If you connect Strava for your rides, we keep the access Strava gives us for"
+" this and use it only to upload each ride you finish as a virtual ride; we "
+"still do not read your Strava activities. You can disconnect Strava in your "
+"profile at any time, and we then revoke that access."
+msgstr ""
+"<strong>Виртуальные заезды.</strong> Если вы вошли на сайт, заезды, которые "
+"вы заканчиваете на странице виртуального заезда, сохраняются в вашем личном "
+"кабинете: маршрут, время, дистанция, скорость, мощность, каденс и пульс, а "
+"также трек вашего положения на маршруте. Пока вы на этой странице, другие "
+"вошедшие участники видят ваше имя, по какому маршруту вы едете и где вы на "
+"нём. Если вы подключите Strava для заездов, мы храним доступ, который Strava"
+" выдаёт для этого, и используем его только чтобы загрузить каждый "
+"законченный заезд как виртуальный заезд; ваши тренировки в Strava мы по-"
+"прежнему не читаем. Отключить Strava можно в личном кабинете в любой момент "
+"— тогда мы отзываем этот доступ."
+
+#: trainer/models.py:156
+msgid "Processing at Strava"
+msgstr "Обрабатывается в Strava"
+
+#: trainer/models.py:157
+msgid "On Strava"
+msgstr "В Strava"
+
+#: trainer/models.py:158
+msgid "Not uploaded"
+msgstr "Не загружен"
+
+#: trainer/views.py:73
+msgid ""
+"The answer from Strava did not match the request. Try connecting again."
+msgstr "Ответ Strava не совпал с запросом. Попробуйте подключить ещё раз."
+
+#: trainer/views.py:76
+msgid "Strava was not connected: your rides stay on this site."
+msgstr "Strava не подключена: ваши заезды остаются на этом сайте."
+
+#: trainer/views.py:81
+msgid ""
+"Strava did not allow uploading activities, so rides are not sent there. "
+"Connect again and keep that permission on."
+msgstr ""
+"Strava не разрешила загружать тренировки, поэтому заезды туда не "
+"отправляются. Подключите ещё раз и оставьте это разрешение включённым."
+
+#: trainer/views.py:87
+msgid "Strava could not be reached. Try connecting again later."
+msgstr "Не удалось связаться со Strava. Попробуйте подключить позже."
+
+#: trainer/views.py:89
+msgid ""
+"Strava is connected: every ride you finish goes there as a virtual ride."
+msgstr ""
+"Strava подключена: каждый законченный заезд уходит туда как виртуальный "
+"заезд."
+
+#: trainer/views.py:99
+msgid "Strava is disconnected: rides are no longer sent there."
+msgstr "Strava отключена: заезды туда больше не отправляются."

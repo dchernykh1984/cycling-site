@@ -280,12 +280,34 @@
                     {% for ride in virtual_ride.recent %}
                     <li class="d-flex justify-content-between gap-2 py-1 border-bottom">
                         <span><span class="text-muted">{{ ride.finished_at|date:"SHORT_DATE_FORMAT" }}</span> {{ ride.route_name|default:ride.route }}, {{ ride.get_kind_display|lower }}{% if ride.place and ride.field_size and ride.field_size > 1 %}, {{ ride.place }}/{{ ride.field_size }}{% endif %}{% if ride.power_source == "demo" %}, {% trans "demo" %}{% endif %}</span>
-                        <span class="text-nowrap">{{ ride.time_label }}, {{ ride.distance_km }} {% trans "km" %}</span>
+                        <span class="text-nowrap">{{ ride.time_label }}, {{ ride.distance_km }} {% trans "km" %}{% if ride.strava.activity_url %}, <a href="{{ ride.strava.activity_url }}" class="fw-semibold" target="_blank" rel="noopener">View on Strava</a>{% endif %}</span>
                     </li>
                     {% endfor %}
                 </ul>
                 {% else %}
                 <p class="text-muted small mb-0">{% trans "Rides you finish on the virtual ride page are saved here, with your best times and peak power. Rides in demo mode are kept but never count as records." %}</p>
+                {% endif %}
+                {% comment %}Sending rides to Strava is a grant of its own (activity:write): signing in with Strava asks
+                for read only. The button keeps Strava's brand wording, as on the sign-in page, and "View on
+                Strava" is the wording its guidelines require for a link to an activity.{% endcomment %}
+                {% if virtual_ride.strava_available %}
+                <div class="border-top pt-3 mt-3" id="virtual-rides-strava">
+                    {% if virtual_ride.strava %}
+                    <p class="small mb-2">{% trans "Strava is connected: every ride you finish on the virtual ride page goes there as a virtual ride, along the streets of its route." %}</p>
+                    <form method="post" action="{% url 'virtual_ride_strava_disconnect' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-secondary">{% trans "Disconnect Strava" %}</button>
+                    </form>
+                    {% else %}
+                    <p class="small mb-2">{% trans "Connect Strava, and every ride you finish on the virtual ride page goes there as a virtual ride, along the streets of its route. Rides in demo mode stay here." %}</p>
+                    <a href="{% url 'virtual_ride_strava_connect' %}" class="social-btn social-btn--strava">
+                        <svg class="social-btn__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                        </svg>
+                        <span>Connect with Strava</span>
+                    </a>
+                    {% endif %}
+                </div>
                 {% endif %}
             </div>
         </div>

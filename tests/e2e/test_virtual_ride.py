@@ -185,3 +185,75 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
     linked.get_by_role("button", name=page.evaluate("t('mp.share')")).click()
     expect(page.locator("#mpNote")).to_have_text(page.evaluate("t('mp.copied', {url: 'LINK-7'})"))
     assert page.evaluate("window.copied") == "LINK-7"
+
+
+@pytest.mark.parametrize("connected", [False, True])
+def test_the_setup_page_offers_strava_or_says_where_to_turn_it_off(page: Page, connected: bool):
+    source = _trainer_source()
+    note = _cut(source, r"^function renderStravaNote\(\) \{.*?^\}")
+    page.set_content('<p id="stravaNote" class="hidden"></p>')
+    page.evaluate(
+        """({words, note, connected}) => {
+            const $ = s => document.querySelector(s);
+            const STRAVA_LOGO = '', topPath = () => '/ru/virtual-ride/?group=5';
+            const Records = {accountUrl: '/kk/accounts/profile/', me: {authenticated: true, strava_available: true,
+                strava_connected: connected, strava_connect_url: '/en/virtual-ride/strava/connect/'}};
+            eval(words + note);
+            window.t = t;
+            renderStravaNote();
+        }""",
+        {"words": _language_block(source), "note": note, "connected": connected},
+    )
+    link = page.locator("#stravaNote a")
+    if connected:
+        expect(page.locator("#stravaNote")).to_contain_text(page.evaluate("t('strava.on')"))
+        expect(link).to_have_attribute("href", "/kk/accounts/profile/#virtual-rides-strava")
+    else:
+        expect(page.locator("#stravaNote")).to_contain_text(page.evaluate("t('strava.offer')"))
+        # Strava's own button, in the page's language, and back to the very page the member came from
+        expect(link).to_have_text("Connect with Strava")
+        expect(link).to_have_attribute(
+            "href", "/ru/virtual-ride/strava/connect/?next=%2Fru%2Fvirtual-ride%2F%3Fgroup%3D5"
+        )
+
+
+def test_the_track_puts_the_rider_back_on_the_map_where_the_route_is(page: Page):
+    source = _trainer_source()
+    code = "\n".join(
+        _cut(source, pattern)
+        for pattern in (
+            r"^const ORIGIN = .*?;$",
+            r"^function unproj\(x, z\) \{.*?\}$",
+            r"^function proj\(lat, lon\) \{.*?\}$",
+        )
+    )
+    back = page.evaluate(
+        "code => { eval(code); const q = proj(43.2402, 76.929); const p = unproj(q.x, q.z); return [p.lat, p.lon]; }",
+        code,
+    )
+    assert back == pytest.approx([43.2402, 76.929], abs=1e-9)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("connected", [False, True])
+def test_the_profile_s_strava_controls_are_big_enough_to_tap(page: Page, live_server, settings, connected: bool):
+    from trainer.models import StravaConnection
+
+    settings.SOCIALACCOUNT_PROVIDERS = {
+        **settings.SOCIALACCOUNT_PROVIDERS,
+        "strava": {**settings.SOCIALACCOUNT_PROVIDERS["strava"], "APP": {"client_id": "1", "secret": "s"}},
+    }
+    member = User.objects.create_user(
+        username="e2e_strava", email="e2e_strava@test.local", password="testpass123!", role=User.Role.PARTICIPANT
+    )
+    if connected:
+        StravaConnection.objects.create(
+            user=member, athlete_id=1, access_token="a", refresh_token="r", expires_at="2099-01-01T00:00:00Z"
+        )
+    inject_session(page, live_server, member)
+    page.set_viewport_size({"width": 360, "height": 740})
+    page.goto(f"{live_server.url}/kk/accounts/profile/")
+    control = page.locator("#virtual-rides-strava button" if connected else "#virtual-rides-strava a")
+    control.scroll_into_view_if_needed()
+    wide, high = control.evaluate(_REACH)
+    assert wide >= 44 and high >= 44, (wide, high)

@@ -108,7 +108,12 @@ once; confirming the address unlocks everything that writes.
   redirected to the profile with the confirmation message.
 - **FR-ACC-006**: One mail per member per minute across the confirmation resend, the contact form
   and the role request; the slot is reserved before sending and released on failure.
-- **FR-ACC-007**: Strava sign-in requests read-only scope only.
+- **FR-ACC-007**: Strava sign-in requests read-only scope only and keeps no token. Sending virtual
+  rides to Strava is a separate grant (`read,activity:write`) the member gives from the profile's
+  "Virtual rides" card with Strava's own "Connect with Strava" button; its tokens live in
+  `trainer.StravaConnection`, are refreshed when they expire, and are revoked at Strava and deleted
+  when the member disconnects it there or through the API. Nothing reads the member's Strava
+  activities.
 - **FR-ACC-008**: The profile lists the member's own submitted events (those needing attention
   first) and their registrations: open entries as cards with approval and payment badges as their
   event requires, and every entry in a table below that marks only the rejected, waiting and unpaid
@@ -126,7 +131,10 @@ once; confirming the address unlocks everything that writes.
 - **E-mail address / social account** (allauth): the ways a member signs in.
 - **Virtual ride** (`trainer.VirtualRide`): one finished ride with its route key and name, kind
   (race, cadence plan, free ride), times, distance, power and its source, place, peak powers; the
-  records are computed from these, never stored.
+  records are computed from these, never stored. Its track (`trainer.RideTrack`, a point a second:
+  time, the route's place on the map, height, distance, speed, power, cadence, pulse) and what
+  became of it at Strava (`trainer.StravaUpload`: processing, the activity, or the reason).
+- **Strava connection** (`trainer.StravaConnection`): the member's upload grant, one per member.
 
 ## Local assumptions
 
@@ -141,8 +149,8 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 
 - Editing the profile (names, gender, birth date, team, city, Strava link).
 - Asking for another role and writing to the owners.
-- **Exception**: signing up, signing in, confirming the address, connecting sign-in providers and
-  generating the API token. They establish who an API caller is, so they come before the API
+- **Exception**: signing up, signing in, confirming the address, connecting sign-in providers,
+  connecting Strava for uploads (a browser round trip through Strava) and generating the API token. They establish who an API caller is, so they come before the API
   rather than through it.
 - **Exception**: the skin, saved calendar filters and dismissed setup hints. They only change how
   the site's own pages look and open, so a program has nothing to do with them.

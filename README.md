@@ -90,7 +90,8 @@ dashboard:
 - `ADMINS` - comma-separated error email recipients (defaults to `DEFAULT_FROM_EMAIL`);
   `SERVER_EMAIL` - error sender (defaults to `DEFAULT_FROM_EMAIL`);
   `EMAIL_TIMEOUT` - SMTP operation timeout in seconds (default 5)
-- `GOOGLE_`/`GITHUB_`/`STRAVA_` `CLIENT_ID` and `CLIENT_SECRET` - social login
+- `GOOGLE_`/`GITHUB_`/`STRAVA_` `CLIENT_ID` and `CLIENT_SECRET` - social login; the Strava pair also
+  sends members' virtual rides to Strava once they connect it on their profile
 
 The team domain (`universalbicycle.team` and `www.universalbicycle.team`) is always
 in `ALLOWED_HOSTS`; set `VIRTUAL_HOST` to add more hosts. Static files are served by

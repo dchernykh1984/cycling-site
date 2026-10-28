@@ -235,6 +235,11 @@ button{cursor:pointer}
 .res li.me{background:color-mix(in srgb,var(--apple) 18%,transparent)}
 .row2{display:flex;gap:8px;margin-top:16px}
 .row2 .btn{flex:1}
+.strava-note{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:10px 14px;margin:0 0 16px;max-width:760px}
+/* Strava's brand: the "Connect with Strava" button and the orange "View on Strava" link */
+.strava-btn{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 16px;border-radius:6px;background:#FC4C02;color:#fff;font-weight:600;text-decoration:none;white-space:nowrap}
+.strava-btn svg{width:20px;height:20px}
+.strava-link{color:#FC5200;font-weight:600}
 
 /* photo mode */
 #photoUI{position:fixed;z-index:25;right:calc(env(safe-area-inset-right,0px) + 12px);top:calc(env(safe-area-inset-top,0px) + 12px);
@@ -284,6 +289,7 @@ button{cursor:pointer}
   </header>
   <div class="setup"><div class="setup-in">
     <p class="lead" data-t="lead"></p>
+    <p class="strava-note hidden" id="stravaNote"></p>
     <div class="grid">
       <section class="box wide" aria-labelledby="hRoute">
         <h2 id="hRoute"><span class="num">1</span><span data-t="sec.route"></span></h2>
@@ -459,6 +465,7 @@ button{cursor:pointer}
     <h3 id="resTitle"></h3>
     <p class="hint" id="resSub"></p>
     <div class="newrec hidden" id="resRec"></div>
+    <p class="hint hidden" id="resStrava" role="status"></p>
     <div class="stats" id="resStats"></div>
     <ol class="res" id="resList"></ol>
     <div class="row2"><button class="btn" id="btnAgain" type="button" data-t="res.again"></button><button class="btn" id="btnMenu" type="button" data-t="res.menu"></button></div>
@@ -792,7 +799,14 @@ const TEXT = {
     "mp.guestLinked": "Вас позвали в групповую гонку. Войдите на сайт, чтобы участвовать.",
     "mp.linkCancelled": "Групповую гонку из ссылки отменили.",
     "mp.linkStarted": "Групповая гонка из ссылки уже стартовала.",
-    "mp.linkMissing": "Групповой гонки по этой ссылке нет."
+    "mp.linkMissing": "Групповой гонки по этой ссылке нет.",
+    "strava.offer": "Подключите Strava — и каждый заезд, который вы закончите здесь, будет уходить туда как виртуальный заезд по улицам маршрута.",
+    "strava.on": "Заезды уходят в Strava как виртуальные заезды.",
+    "strava.manage": "Настроить в личном кабинете",
+    "strava.processing": "Отправляем заезд в Strava…",
+    "strava.done": "Заезд в Strava как виртуальный заезд.",
+    "strava.failed": "Заезд не ушёл в Strava: {msg}",
+    "strava.retry": "Отправить ещё раз"
   },
   kk: {
     "title": "Алатау — Алматы бойынша виртуалды заездтер",
@@ -1081,7 +1095,14 @@ const TEXT = {
     "mp.guestLinked": "Сізді топтық жарысқа шақырды. Қатысу үшін сайтқа кіріңіз.",
     "mp.linkCancelled": "Сілтемедегі топтық жарыс болдырылмады.",
     "mp.linkStarted": "Сілтемедегі топтық жарыс басталып кетті.",
-    "mp.linkMissing": "Бұл сілтеме бойынша топтық жарыс жоқ."
+    "mp.linkMissing": "Бұл сілтеме бойынша топтық жарыс жоқ.",
+    "strava.offer": "Strava-ны қосыңыз — мұнда аяқтаған әр заезд маршрут көшелері бойымен виртуалды заезд ретінде сонда жіберіледі.",
+    "strava.on": "Заездтер Strava-ға виртуалды заезд ретінде жіберіледі.",
+    "strava.manage": "Жеке кабинетте баптау",
+    "strava.processing": "Заездті Strava-ға жіберіп жатырмыз…",
+    "strava.done": "Заезд Strava-да виртуалды заезд ретінде.",
+    "strava.failed": "Заезд Strava-ға жіберілмеді: {msg}",
+    "strava.retry": "Қайта жіберу"
   },
   en: {
     "title": "Alatau — virtual rides around Almaty",
@@ -1370,7 +1391,14 @@ const TEXT = {
     "mp.guestLinked": "You were invited to a group race. Sign in to the site to join it.",
     "mp.linkCancelled": "The group race in your link was cancelled.",
     "mp.linkStarted": "The group race in your link has already started.",
-    "mp.linkMissing": "There is no group race at this link."
+    "mp.linkMissing": "There is no group race at this link.",
+    "strava.offer": "Connect Strava, and every ride you finish here goes there as a virtual ride along the streets of its route.",
+    "strava.on": "Your rides go to Strava as virtual rides.",
+    "strava.manage": "Manage in your profile",
+    "strava.processing": "Sending the ride to Strava…",
+    "strava.done": "The ride is on Strava as a virtual ride.",
+    "strava.failed": "The ride did not reach Strava: {msg}",
+    "strava.retry": "Send again"
   }
 };
 // t(key, { name }) fills {name}; a key missing in a language falls back to Russian, then to the key
@@ -1440,6 +1468,8 @@ const LANDMARKS = [
   { type: 'dam', name: L({ ru: "плотина Медеу", kk: "Медеу бөгені", en: "Medeu dam" }), lat: 43.1512, lon: 77.0585, r: 220, far: true }
 ];
 const ORIGIN = { lat: 43.238, lon: 76.945 };
+// back from metres on the scene to the map: where the rider is, for the track a Strava upload carries
+function unproj(x, z) { const R = 6371000; return { lat: ORIGIN.lat - z / R * 180 / Math.PI, lon: ORIGIN.lon + x / (R * Math.cos(ORIGIN.lat * Math.PI / 180)) * 180 / Math.PI }; }
 function proj(lat, lon) { const R = 6371000; return { x: (lon - ORIGIN.lon) * Math.PI / 180 * R * Math.cos(ORIGIN.lat * Math.PI / 180), z: -(lat - ORIGIN.lat) * Math.PI / 180 * R }; }
 
 function buildTrack(r) {
@@ -2461,7 +2491,7 @@ function startRace() {
     me = newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, world.S0, Math.min(3.2, route.width / 2 - 1.5));
     const bt = bikeType(); me.CdA = riderAero(settings.height, settings.mass).CdA * bt.aero; me.bike = settings.bikeKg || bt.kg; me.Crr = bt.crr;
     me.stats = { dist: 0, gain: 0, sumP: 0, sumCad: 0, nCad: 0, maxV: 0, t: 0, sumHR: 0, nHR: 0, maxHR: 0, real: false, demoT: 0 };
-    me.powerLog = []; me.pAcc = 0; me.pT = 0;
+    me.powerLog = []; me.pAcc = 0; me.pT = 0; me.track = []; stravaShow(null, null);
     const planMode = rideMode === 'plan', freeMode = rideMode === 'free';
     spawnBots(planMode || freeMode || groupRide ? 0 : +settings.bots, settings.level, world.S0);
     me.lap = 0; Work.active = false;
@@ -2729,7 +2759,7 @@ function frame(now) {
       if (phase === 'race') {
         raceT += dt; const ds = inp.direct ? directStep(me, inp.wheelKmh, dt) : stepRider(me, inp.P, grade, dt); me.s += ds; me.stats.dist += ds;
         const st = me.stats, y1 = sampleAt(T, me.s, _p1).y; if (y1 > y0) st.gain += y1 - y0;
-        st.t += dt; st.sumP += inp.P * dt; if (inp.cad > 0) { st.sumCad += inp.cad; st.nCad++; } st.maxV = Math.max(st.maxV, me.v); if (inp.mode === 'demo') st.demoT += dt; me.pAcc += inp.P * dt; me.pT += dt; if (me.pT >= 1) { me.powerLog.push(me.pAcc / me.pT); me.pAcc = 0; me.pT = 0; } if (inp.mode === 'power') st.real = true; const hrNow = Sensors.hr(); if (hrNow) { st.sumHR += hrNow; st.nHR++; st.maxHR = Math.max(st.maxHR, hrNow); }
+        st.t += dt; st.sumP += inp.P * dt; if (inp.cad > 0) { st.sumCad += inp.cad; st.nCad++; } st.maxV = Math.max(st.maxV, me.v); if (inp.mode === 'demo') st.demoT += dt; me.pAcc += inp.P * dt; me.pT += dt; if (me.pT >= 1) { me.powerLog.push(me.pAcc / me.pT); me.pAcc = 0; me.pT = 0; if (me.track.length < MAX_TRACK) me.track.push(trackPoint(inp)); } if (inp.mode === 'power') st.real = true; const hrNow = Sensors.hr(); if (hrNow) { st.sumHR += hrNow; st.nHR++; st.maxHR = Math.max(st.maxHR, hrNow); }
         if (rideMode === 'plan' || rideMode === 'free') {
           // тренировка по плану: маршрут крутится кругами, финиш — когда закончится последний шаг
           if (!T.loop && me.s >= T.L - 15) { me.s = world.S0; cam.cinit = false; cam.init = false; }
@@ -2786,7 +2816,7 @@ const Records = {
     try {
       const me = await Site.get('/me'); this.me = me; this.loginUrl = langPath(me.login_url || '');
       if (!me.authenticated) return;
-      this.synced = true; this.accountUrl = langPath(me.profile_url || '');
+      this.synced = true; this.accountUrl = langPath(me.profile_url || ''); renderStravaNote();
       await this.pull(); renderMenu();
       if (!$('#recM').classList.contains('hidden')) renderRecords();
     } catch (e) { this.me = null; }
@@ -2806,10 +2836,11 @@ const Records = {
       avg_speed_kmh: clamp(ride.avgSpeed || 0, 0, 120), max_speed_kmh: clamp(ride.maxSpeed || 0, 0, 150), avg_power_w: num(ride.avgPower, 0, 3000),
       avg_cadence_rpm: num(ride.avgCad, 0, 250), avg_hr_bpm: num(ride.avgHR, 0, 260), max_hr_bpm: me && me.stats && me.stats.maxHR ? num(me.stats.maxHR, 0, 260) : null,
       power_source: ride.demo ? 'demo' : ride.real ? 'measured' : 'estimated', place: ride.of > 1 ? ride.place : null, field_size: ride.of > 1 ? ride.of : null,
-      peak_5s_w: num(peaks.p5, 0, 3000), peak_1m_w: num(peaks.p60, 0, 3000), peak_5m_w: num(peaks.p300, 0, 3000), peak_20m_w: num(peaks.p1200, 0, 3000)
+      peak_5s_w: num(peaks.p5, 0, 3000), peak_1m_w: num(peaks.p60, 0, 3000), peak_5m_w: num(peaks.p300, 0, 3000), peak_20m_w: num(peaks.p1200, 0, 3000),
+      track: !ride.demo && me && me.track && me.track.length > 1 ? me.track : null
     };
     Site.post('/rides', body)
-      .then(res => { if (phase === 'done') showServerRecords(res.records, ride, peaks); return this.pull(); })
+      .then(res => { if (phase === 'done') { showServerRecords(res.records, ride, peaks); stravaShow(res.ride.id, res.strava); } return this.pull(); })
       .then(() => { if (phase === 'menu') renderMenu(); })
       .catch(e => { const box = $('#resRec'); box.innerHTML = '<b>' + t('rec.notSaved') + '</b><ul><li>' + escapeHTML(e.message) + '</li></ul>'; box.classList.remove('hidden'); });
   },
@@ -3052,12 +3083,54 @@ const Site = {
   },
   get(p) { return this.req('GET', p); },
   post(p, b) { return this.req('POST', p, b || {}); },
-  loginHref() {
-    let next = location.pathname + location.search;
-    try { next = window.top.location.pathname + window.top.location.search; } catch (e) {}
-    return (Records.loginUrl || '/accounts/login/') + '?next=' + encodeURIComponent(next);
-  }
+  loginHref() { return (Records.loginUrl || '/accounts/login/') + '?next=' + encodeURIComponent(topPath()); }
 };
+// the address the reader sees: the site's page that frames the trainer, or the trainer itself
+function topPath() { try { return window.top.location.pathname + window.top.location.search; } catch (e) { return location.pathname + location.search; } }
+
+/* ---------------- Strava: every finished ride goes there as a virtual ride, once the member allows it ---------------- */
+const MAX_TRACK = 6 * 3600; // the site keeps six hours of a ride's track, a point a second
+const STRAVA_LOGO = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>';
+// [t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm]: the route's place on the map, not a GPS fix
+function trackPoint(inp) {
+  const o = riderPos(me, {}), ll = unproj(o.px, o.pz);
+  return [Math.round(raceT * 10) / 10, +ll.lat.toFixed(6), +ll.lon.toFixed(6), Math.round(o.y * 10) / 10, Math.round(me.stats.dist * 10) / 10,
+    Math.round(clamp(me.v, 0, 40) * 100) / 100, Math.round(clamp(inp.P || 0, 0, 3000)), Math.round(clamp(inp.cad || 0, 0, 250)), Math.round(clamp(Sensors.hr() || 0, 0, 260))];
+}
+// on the setup page: an offer to connect Strava, or where to turn it off
+function renderStravaNote() {
+  const el = $('#stravaNote'), who = Records.me, on = !!(who && who.authenticated && who.strava_available);
+  el.classList.toggle('hidden', !on); if (!on) return;
+  el.textContent = '';
+  const text = document.createElement('span'), a = document.createElement('a');
+  a.target = '_top';
+  if (who.strava_connected) {
+    text.textContent = t('strava.on'); a.href = Records.accountUrl + '#virtual-rides-strava'; a.textContent = t('strava.manage');
+  } else {
+    text.textContent = t('strava.offer'); a.href = langPath(who.strava_connect_url) + '?next=' + encodeURIComponent(topPath());
+    a.className = 'strava-btn'; a.innerHTML = STRAVA_LOGO + '<span>Connect with Strava</span>';
+  }
+  el.append(text, a);
+}
+// what happened to a saved ride at Strava: processing, an activity to open, or why not and another try
+let stravaFor = null; // the ride the results show: a late answer about an earlier one is dropped
+function stravaShow(rideId, s, tries = 0) {
+  if (tries === 0) stravaFor = rideId; else if (stravaFor !== rideId) return;
+  const el = $('#resStrava');
+  el.classList.toggle('hidden', !s); if (!s) return;
+  el.textContent = '';
+  if (s.status === 'done') {
+    const a = document.createElement('a'); a.href = s.activity_url; a.target = '_blank'; a.rel = 'noopener'; a.className = 'strava-link'; a.textContent = 'View on Strava';
+    el.append(t('strava.done') + ' ', a); return;
+  }
+  if (s.status === 'failed') {
+    const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = t('strava.retry');
+    b.onclick = () => Site.post('/rides/' + rideId + '/strava').then(r => stravaShow(rideId, r)).catch(e => stravaShow(rideId, { status: 'failed', error: e.message }));
+    el.append(t('strava.failed', { msg: s.error }) + ' ', b); return;
+  }
+  el.textContent = t('strava.processing');
+  if (tries < 15) setTimeout(() => Site.get('/rides/' + rideId + '/strava').then(r => stravaShow(rideId, r, tries + 1)).catch(() => {}), 2000);
+}
 const RECORD_LABELS = { route_first: t('rec.firstLabel'), route_best: t('rec.bestLabel'), peak_5s_w: t('rec.peakLabel', { d: durLabel(5) }), peak_1m_w: t('rec.peakLabel', { d: durLabel(60) }), peak_5m_w: t('rec.peakLabel', { d: durLabel(300) }), peak_20m_w: t('rec.peakLabel', { d: durLabel(1200) }), max_speed_kmh: t('rec.maxSpeedLabel') };
 function bestPeaks(powerLog) {
   const out = {};
