@@ -15,3 +15,19 @@
     border-color: var(--bs-emphasis-color);
     color: var(--bs-body-bg);
 }
+
+/* The quiet outline buttons -- the unselected calendar tabs, "Share", "Filters" and "Add to calendar".
+   Lux draws them grey on white (2.86:1) and white on light grey under the pointer, in focus and when
+   pressed (1.49:1), short of the 4.5:1 words need; darkened to one grey for the words, the frame and
+   that fill (issue #383, the maintainer's choice of 2026-10-28). Lux sets the colours themselves, not
+   Bootstrap's variables, so these do too. The chosen tab keeps its own fill. Only in this skin: a skin
+   built on the light mode draws its own. */
+:root[data-skin="light"] :is(.view-switcher .btn-outline-secondary, .share-btn, #filter-toggle, .calendar-btn) {
+    color: #5c636a;
+    border-color: #5c636a;
+}
+:root[data-skin="light"] :is(.view-switcher .btn-outline-secondary, .share-btn, #filter-toggle, .calendar-btn):not([disabled]):not(.disabled):is(:hover, :focus, :active) {
+    color: #fff;
+    background-color: #5c636a;
+    border-color: #5c636a;
+}

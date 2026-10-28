@@ -13,7 +13,7 @@ file. The API serves the same file.
 - **II (the maintainer's decisions)**: light and dark draw the button as they draw "Share"
   (`btn-outline-secondary`). In light that carries the share button's known contrast shortfall
   (2.8:1 at rest, `tests/e2e/test_skin_contrast.py`); changing it changes light, which is the
-  maintainer's. The orange skin already draws the two alike; a browser test compares their colours
+  maintainer's; they had both darkened to 4.5:1 in issue #383. The orange skin already draws the two alike; a browser test compares their colours
   in whichever skin the suite runs in.
 - **IV (language)**: the button and the file speak the page's language; the API takes
   `lang` from the site's languages.

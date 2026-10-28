@@ -34,9 +34,6 @@ CHECKS = [
 # to change, but never allowed to get worse. A designer's skin clears every check in full.
 KNOWN_SHORTFALLS = {
     ("light", "muted text", "rest"): 3.8,
-    ("light", "share button", "rest"): 2.8,
-    ("light", "share button", "hover"): 1.4,
-    ("light", "share button", "focus"): 1.4,
     ("dark", "footer link", "rest"): 3.8,
 }
 
