@@ -24,7 +24,7 @@
       </ol>
     </nav>
 
-    <div class="d-flex align-items-start gap-2 mb-2">
+    <div class="event-heading d-flex align-items-start gap-2 mb-2">
       <h1 class="mb-0">{{ competition.title }}</h1>
       {% if share_url %}{% include "_share_button.html" with share_url=share_url %}{% endif %}
       {% if competition.status == 'approved' %}{% include "_calendar_button.html" %}{% endif %}

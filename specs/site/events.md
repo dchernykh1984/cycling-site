@@ -124,6 +124,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
   uploaded documents follow the same order and a URL takes precedence over a file.
 - Map links on the event page (2GIS, Yandex, Google, Apple, OpenStreetMap) appear only for a venue
   with its own point; they open in a new tab.
+- On a phone an event's title shares its row with the page's buttons (share, add to calendar,
+  favourite); a word too long for the room they leave breaks, rather than pushing the page sideways.
 
 ## Functional Requirements
 
