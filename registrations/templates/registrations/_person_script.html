@@ -3,7 +3,8 @@ fields (``.register-person``) on its own: the category list follows the gender a
 an event that lets anyone be registered, and the city and the team are suggested as they are typed.{% endcomment %}
 <script>
 (function () {
-  const cards = document.querySelectorAll('.register-person');
+  // the people with fields: one already registered on the page for several has none left
+  const cards = [...document.querySelectorAll('.register-person')].filter(card => card.querySelector('.js-category'));
 {% if is_free %}
   const allCategories = {{ all_categories_json|safe }};
   const relayEnabled = {{ relay_enabled|yesno:"true,false" }};
