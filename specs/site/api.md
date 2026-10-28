@@ -49,7 +49,10 @@ and protocols with the event's upload token. The API has no language prefix.
    A saved ride may carry its track; with Strava connected, a ride that is not in demo mode goes to
    Strava as a Virtual Ride when it is saved, and the member can send one again, read how its upload
    went (`/rides/{id}/strava`) and turn Strava off (`DELETE /strava`); `/me` says whether Strava is
-   available and connected and where to connect it ([accounts](accounts.md), FR-ACC-007).
+   available and connected and where to connect it ([accounts](accounts.md), FR-ACC-007). A rider of
+   a group race joins its voice chat with their page's session description (`POST /groups/{id}/voice`),
+   asks to hear the others by the keys presence lists (`.../voice/pull`, then `.../voice/answer`) and
+   leaves it (`DELETE .../voice`); the media server's session ids never reach the page.
 
 ### Story 2 -- The timing tools exchange race data (P1)
 

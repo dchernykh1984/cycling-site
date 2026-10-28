@@ -4256,3 +4256,27 @@ msgstr ""
 #: trainer/views.py:99
 msgid "Strava is disconnected: rides are no longer sent there."
 msgstr "Strava отключена: заезды туда больше не отправляются."
+
+#: api/endpoints/virtual_ride.py:568
+msgid "Only the riders of this group race talk in its voice chat"
+msgstr "В голосовой связи групповой гонки говорят только её участники"
+
+#: api/endpoints/virtual_ride.py:575
+msgid "Join the voice chat first"
+msgstr "Сначала включите голосовую связь"
+
+#: api/endpoints/virtual_ride.py:585
+msgid "This voice chat is full"
+msgstr "В этой голосовой связи уже нет мест"
+
+#: home/templates/home/privacy_page.html:21
+msgid ""
+"<strong>Voice chat.</strong> If you join the voice chat of a group race on "
+"the virtual ride page, the other riders of that race hear your microphone. "
+"The sound goes through Cloudflare's media servers, encrypted on the way; the"
+" site itself never receives or records it."
+msgstr ""
+"<strong>Голосовая связь.</strong> Если вы включите голосовую связь групповой"
+" гонки на странице виртуального заезда, ваш микрофон слышат другие участники"
+" этой гонки. Звук идёт через медиасерверы Cloudflare и шифруется в пути; сам"
+" сайт его не получает и не записывает."

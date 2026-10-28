@@ -376,6 +376,13 @@ GALLERY_MAX_BATCH_MB = env.int("GALLERY_MAX_BATCH_MB", default=90)
 # share with it: an upload that would cut into it is refused.
 GALLERY_DISK_RESERVE_MB = env.int("GALLERY_DISK_RESERVE_MB", default=200)
 
+# Voice chat in group races on the virtual ride page (issue #392). Cloudflare Realtime's media server
+# carries the sound between the riders' browsers; the site only introduces them, with this app's id
+# and secret. Empty means no voice chat. VOICE_MAX_RIDERS caps one race's chat.
+CLOUDFLARE_REALTIME_APP_ID = env("CLOUDFLARE_REALTIME_APP_ID", default="")
+CLOUDFLARE_REALTIME_APP_SECRET = env("CLOUDFLARE_REALTIME_APP_SECRET", default="")
+VOICE_MAX_RIDERS = env.int("VOICE_MAX_RIDERS", default=20)
+
 # Event photos in external folders (issue #349). The site reads a Dropbox folder shared "anyone with
 # the link" with its own app's key and secret -- never an organizer's token.
 DROPBOX_APP_KEY = env("DROPBOX_APP_KEY", default="")

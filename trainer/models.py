@@ -170,3 +170,21 @@ class StravaUpload(models.Model):
     @property
     def activity_url(self) -> str:
         return f"https://www.strava.com/activities/{self.activity_id}" if self.activity_id else ""
+
+
+class VoiceSession(models.Model):
+    """A rider in the voice chat of a group race: their Cloudflare session and the microphone it publishes.
+
+    One per member: joining another race's voice chat replaces it. ``track_name`` is random per joining,
+    so the riders' pages tell a rider who came back from the one they heard before.
+    """
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="voice_session")
+    group = models.ForeignKey(GroupRide, on_delete=models.CASCADE, related_name="voice_sessions")
+    session_id = models.CharField(max_length=64)
+    track_name = models.CharField(max_length=64)
+    mid = models.CharField(max_length=16)
+    joined_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{self.user_id} in voice of {self.group_id}"

@@ -34,7 +34,7 @@ from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticle
 from locations.models import Location
 from news.models import NewsArticle, NewsArticleComment
 from registrations.models import CompetitionRegistration, RegistrationCategory, Team
-from trainer.models import GroupRide, LiveRider, VirtualRide
+from trainer.models import GroupRide, LiveRider, VirtualRide, VoiceSession
 
 FORM_MODULES = (
     "accounts.views",
@@ -103,6 +103,10 @@ SCHEMA_TARGETS = {
     "api.endpoints.virtual_ride.GroupIn": GroupRide,
     "api.endpoints.virtual_ride.PresenceIn": LiveRider,
     "api.endpoints.virtual_ride.RideIn": VirtualRide,
+    "api.endpoints.virtual_ride.VoiceJoinIn": VoiceSession,
+    # Session descriptions and track keys pass through to the media server; no column keeps them.
+    "api.endpoints.virtual_ride.VoiceAnswerIn": None,
+    "api.endpoints.virtual_ride.VoicePullIn": None,
     "api.endpoints.locations.LocationPatchIn": Location,
     # Timing and start-list payloads are device streams, not rows of these models: they carry a
     # competition token and a list of lines, parsed and validated by their own endpoints.
