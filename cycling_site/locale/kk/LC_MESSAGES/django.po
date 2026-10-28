@@ -4316,3 +4316,75 @@ msgstr "Профильге"
 #, python-format
 msgid "Your request is waiting for %(name)s to accept it."
 msgstr "Сұрау жіберілді: енді оны %(name)s қабылдауы керек."
+
+msgid "Who may manage my registrations and photos"
+msgstr "Менің тіркелулерім мен фотоларымды кім басқара алады"
+
+msgid "Waiting for confirmation"
+msgstr "Растауды күтуде"
+
+msgid "Take back this person's right to manage your registrations and photos?"
+msgstr "Бұл адамнан тіркелулеріңіз бен фотоларыңызды басқару құқығын қайтарып аласыз ба?"
+
+msgctxt "a person from a list"
+msgid "Remove"
+msgstr "Алып тастау"
+
+msgid "Withdraw"
+msgstr "Қайтарып алу"
+
+msgid "Nobody yet. When you open someone's link and allow it, they are listed here."
+msgstr "Әзірге ешкім жоқ. Біреудің сілтемесін ашып, рұқсат берсеңіз, ол осында шығады."
+
+msgid "Whose registrations and photos I manage"
+msgstr "Кімнің тіркелулері мен фотоларын басқарамын"
+
+msgid "Stop managing this person's registrations and photos?"
+msgstr "Бұл адамның тіркелулері мен фотоларын басқаруды тоқтатасыз ба?"
+
+msgid "Nobody yet."
+msgstr "Әзірге ешкім жоқ."
+
+msgid "Waiting for your answer"
+msgstr "Жауабыңызды күтуде"
+
+msgid "Accept"
+msgstr "Қабылдау"
+
+msgid "Accept all"
+msgstr "Барлығын қабылдау"
+
+msgid "Reject all the requests waiting?"
+msgstr "Күтіп тұрған барлық сұрауларды қабылдамайсыз ба?"
+
+msgid "Reject all"
+msgstr "Барлығын қабылдамау"
+
+msgid "Your link"
+msgstr "Сіздің сілтемеңіз"
+
+msgid "Send it to the people whose registrations and photos you will manage: they open it signed in and allow it, and then you accept them here."
+msgstr "Оны тіркелулері мен фотоларын басқаратын адамдарға жіберіңіз: олар сайтқа кіріп, оны ашып, рұқсат береді, ал сіз оларды осында қабылдайсыз."
+
+#, python-format
+msgid "Valid until %(date)s."
+msgstr "%(date)s дейін жарамды."
+
+msgid "Make a new link? This one will stop working; the requests already waiting stay."
+msgstr "Жаңа сілтеме жасайсыз ба? Бұл сілтеме жұмыс істемей қалады; күтіп тұрған сұраулар сақталады."
+
+msgid "New link"
+msgstr "Жаңа сілтеме"
+
+msgid "Delete the link? Nobody will be able to use it; the requests already waiting stay."
+msgstr "Сілтемені жоясыз ба? Оны енді ешкім пайдалана алмайды; күтіп тұрған сұраулар сақталады."
+
+msgid "Delete link"
+msgstr "Сілтемені жою"
+
+#, python-format
+msgid "Your link expired on %(date)s."
+msgstr "Сілтемеңіздің мерзімі %(date)s өтті."
+
+msgid "Create link"
+msgstr "Сілтеме жасау"

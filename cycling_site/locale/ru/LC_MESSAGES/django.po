@@ -4318,3 +4318,75 @@ msgstr "В профиль"
 #, python-format
 msgid "Your request is waiting for %(name)s to accept it."
 msgstr "Запрос отправлен и ждёт, пока его примет %(name)s."
+
+msgid "Who may manage my registrations and photos"
+msgstr "Кто может управлять моими заявками и фото"
+
+msgid "Waiting for confirmation"
+msgstr "Ждёт подтверждения"
+
+msgid "Take back this person's right to manage your registrations and photos?"
+msgstr "Забрать у этого человека право управлять вашими заявками и фото?"
+
+msgctxt "a person from a list"
+msgid "Remove"
+msgstr "Убрать"
+
+msgid "Withdraw"
+msgstr "Отозвать"
+
+msgid "Nobody yet. When you open someone's link and allow it, they are listed here."
+msgstr "Пока никого. Когда вы откроете чью-то ссылку и разрешите, этот человек появится здесь."
+
+msgid "Whose registrations and photos I manage"
+msgstr "Чьими заявками и фото я управляю"
+
+msgid "Stop managing this person's registrations and photos?"
+msgstr "Перестать управлять заявками и фото этого человека?"
+
+msgid "Nobody yet."
+msgstr "Пока никого."
+
+msgid "Waiting for your answer"
+msgstr "Ждут вашего ответа"
+
+msgid "Accept"
+msgstr "Принять"
+
+msgid "Accept all"
+msgstr "Принять всех"
+
+msgid "Reject all the requests waiting?"
+msgstr "Отклонить все ждущие запросы?"
+
+msgid "Reject all"
+msgstr "Отклонить все"
+
+msgid "Your link"
+msgstr "Ваша ссылка"
+
+msgid "Send it to the people whose registrations and photos you will manage: they open it signed in and allow it, and then you accept them here."
+msgstr "Отправьте её тем, чьими заявками и фото будете управлять: они откроют её, войдя на сайт, и разрешат, а вы примете их здесь."
+
+#, python-format
+msgid "Valid until %(date)s."
+msgstr "Действует до %(date)s."
+
+msgid "Make a new link? This one will stop working; the requests already waiting stay."
+msgstr "Сделать новую ссылку? Эта перестанет работать; уже ждущие запросы останутся."
+
+msgid "New link"
+msgstr "Новая ссылка"
+
+msgid "Delete the link? Nobody will be able to use it; the requests already waiting stay."
+msgstr "Удалить ссылку? По ней больше никто не сможет попроситься; уже ждущие запросы останутся."
+
+msgid "Delete link"
+msgstr "Удалить ссылку"
+
+#, python-format
+msgid "Your link expired on %(date)s."
+msgstr "Срок вашей ссылки истёк %(date)s."
+
+msgid "Create link"
+msgstr "Создать ссылку"
