@@ -13,7 +13,8 @@ file. The API serves the same file.
 - **II (the maintainer's decisions)**: light and dark draw the button as they draw "Share"
   (`btn-outline-secondary`). In light that carries the share button's known contrast shortfall
   (2.8:1 at rest, `tests/e2e/test_skin_contrast.py`); changing it changes light, which is the
-  maintainer's. The orange skin dresses the button as its share button, in a commit of its own.
+  maintainer's. The orange skin already draws the two alike; a browser test compares their colours
+  in whichever skin the suite runs in.
 - **IV (language)**: the button and the file speak the page's language; the API takes
   `lang` from the site's languages.
 - **VI (anywhere)**: the file is the iCalendar standard, no provider is named. Nothing is added to
