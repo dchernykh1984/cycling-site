@@ -2,7 +2,7 @@
 
 **Feature Branch**: `315-managing-registrations`
 **Created**: 2026-10-28
-**Status**: Agreed with the maintainer on 2026-10-28 (decisions 1-26); being implemented
+**Status**: Agreed with the maintainer on 2026-10-28 (decisions 1-26); built in pull request #402 ([plan](plan.md), [tasks](tasks.md))
 **Issue**: [#315](https://github.com/dchernykh1984/cycling-site/issues/315) ("coach role"), with the
 photo requirements [#349](https://github.com/dchernykh1984/cycling-site/issues/349) FR-024 and FR-025
 **Input**: A coach, a parent or a team captain registers the people they look after for a start in
@@ -120,4 +120,4 @@ None left (2026-10-28): the maintainer asked for the plan and the implementation
 - **Constitution VII**: every operation above -- the hand-over, the two lists, removing either way,
   registering a member, the photos -- is also an API operation under `/api/v1/` with the same rules,
   with tests that a member sees nothing of another member's albums and a stranger gets a 404.
-- Update `specs/site/` (accounts, registrations, event photos) when the feature is built.
+- `specs/site/` (accounts, registrations, event photos, API) describes the feature as built.

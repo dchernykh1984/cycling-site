@@ -6,7 +6,8 @@ uses that preview for thumbnails and keeps the original storage link for downloa
 it never decodes camera formats or rewrites originals.
 
 **Status**: Baseline -- describes the first slice of issue #349 as built
-**Verified against**: branch fix/event-photo-gallery on 2026-10-27
+**Verified against**: branch fix/event-photo-gallery on 2026-10-27; a member's manager (issue #315) against
+branch `315-managing-registrations` on 2026-10-28
 **Code**: `event_photos/` (models, index, dropbox, bindings, actions, permissions, forms, views,
 templates, template tags), `api/endpoints/event_photos.py`, `api/endpoints/start_list.py` (bindings on
 upload), `cycling_site/urls.py` (`serve_media` refuses the private prefix),
@@ -59,6 +60,12 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 4. Without a known bib the album says so and points to the bib search.
 5. "Download all (ZIP, size)" gives the album's originals as one archive; a photo marked "not me" is
    not in it.
+6. **Given** a member who manages another member's registrations and photos ([accounts](accounts.md),
+   issue #315), **Then** the member's registrations appear among theirs in "My race photos", on the
+   event's overview and in `GET /event-photos/me/registrations`, each card titled with the member's
+   name and bib; they open the member's albums ("Photos of ...") and mark the photos as the member
+   would (`can_represent`). The member sees and marks only their own; once the link ends, the former
+   manager gets a 404, as any stranger does.
 
 ## Functional Requirements
 
@@ -119,7 +126,7 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 
 - Dropbox is the only storage adapter so far (maintainer decision); Google Drive is next.
 - The registration's own account counts as the athlete; people entered on the spot without an
-  account use bib search only. The representative role of #315 is a stub (`can_represent`).
+  account use bib search only.
 
 ## API gaps
 
