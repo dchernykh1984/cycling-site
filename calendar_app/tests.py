@@ -1814,7 +1814,11 @@ class CompetitionListColumnsViewTests(TestCase):
         for header in ("Discipline", "Country", "Region", "City"):
             self.assertNotContains(response, f"<th>{header}</th>")
         self.assertContains(response, "Road")
-        self.assertContains(response, "Almaty, Almaty Region, Kazakhstan")
+        self.assertContains(
+            response,
+            '<span class="place-venue">Almaty</span><span class="place-sep">, </span>'
+            '<span class="place-area">Almaty Region, Kazakhstan</span>',
+        )
 
 
 class MultiLocationFilterTests(TestCase):
