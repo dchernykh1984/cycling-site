@@ -25,7 +25,9 @@ DEAUTHORIZE_URL = "https://www.strava.com/oauth/deauthorize"
 UPLOADS_URL = "https://www.strava.com/api/v3/uploads"
 # "read" keeps the athlete's name in the token answer; "activity:write" is what uploading needs
 SCOPE = "read,activity:write"
-_TIMEOUT = 20
+# Saving a ride waits for Strava (a token refresh, then the upload) on one of the site's four request
+# threads: a slow Strava fails the upload, which can be sent again, rather than hold the thread
+_TIMEOUT = 10
 _TCX = "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
 _TPX = "http://www.garmin.com/xmlschemas/ActivityExtension/v2"
 ET.register_namespace("", _TCX)

@@ -6,6 +6,7 @@ from unittest import mock
 from urllib.parse import parse_qs, urlsplit
 from xml.etree import ElementTree as ET
 
+import requests
 from django.conf import settings
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -149,6 +150,14 @@ class StravaUploadTests(MemberClientMixin, TestCase):
         self.assertEqual(self.post(self.client_m, f"/rides/{bare}/strava").status_code, 409)  # no track
         other = self.member(_user("boris"))
         self.assertEqual(self.post(other, f"/rides/{ride_id}/strava").status_code, 404)
+
+    @mock.patch("trainer.strava.requests.request")
+    def test_a_slow_strava_fails_the_upload_and_keeps_the_ride(self, call):
+        _connect(self.user)
+        call.side_effect = requests.Timeout()
+        saved = self.save()
+        self.assertEqual((saved.status_code, saved.json()["strava"]["status"]), (201, "failed"))
+        self.assertLessEqual(call.call_args.kwargs["timeout"], 10)  # a request thread is never held long
 
     @mock.patch("trainer.strava.requests.request")
     def test_a_ride_already_on_strava_keeps_its_activity_when_sent_again(self, call):
