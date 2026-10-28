@@ -12,7 +12,8 @@ them. Named by what they do, with no word for a role.{% endcomment %}
             <form method="post" action="{% url 'account_managing_leave' row.manager_id %}"
                   {% if row.accepted_at %}onsubmit="return confirm('{% filter escapejs %}{% trans "Take back this person's right to manage your registrations and photos?" %}{% endfilter %}')"{% endif %}>
                 {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-outline-danger">{% if row.accepted_at %}{% trans "Remove" context "a person from a list" %}{% else %}{% trans "Withdraw" %}{% endif %}</button>
+                {% if row.accepted_at %}{% trans "Remove" context "a person from a list" as act %}{% else %}{% trans "Withdraw" as act %}{% endif %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{{ act }}: {{ row.manager.public_display_name }}">{{ act }}</button>
             </form>
         </li>
         {% endfor %}
@@ -51,7 +52,8 @@ them. Named by what they do, with no word for a role.{% endcomment %}
                         <form method="post" action="{% url 'account_managing_drop' person.pk %}"
                               onsubmit="return confirm('{% filter escapejs %}{% trans "Stop managing this person's registrations and photos?" %}{% endfilter %}')">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Remove" context "a person from a list" %}</button>
+                            {% trans "Remove" context "a person from a list" as act %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{{ act }}: {{ person.last_name }} {{ person.first_name }}">{{ act }}</button>
                         </form>
                     </td>
                 </tr>
@@ -87,11 +89,13 @@ them. Named by what they do, with no word for a role.{% endcomment %}
                         <div class="d-flex justify-content-end gap-2">
                             <form method="post" action="{% url 'account_managing_accept' person.pk %}">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-success">{% trans "Accept" %}</button>
+                                {% trans "Accept" as act %}
+                                <button type="submit" class="btn btn-sm btn-outline-success" aria-label="{{ act }}: {{ person.last_name }} {{ person.first_name }}">{{ act }}</button>
                             </form>
                             <form method="post" action="{% url 'account_managing_reject' person.pk %}">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Reject" %}</button>
+                                {% trans "Reject" as act %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{{ act }}: {{ person.last_name }} {{ person.first_name }}">{{ act }}</button>
                             </form>
                         </div>
                     </td>

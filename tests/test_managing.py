@@ -303,6 +303,15 @@ class ProfileSectionTests(TestCase):
             self.assertContains(page, text)
         self.assertNotContains(page, "anna@example.com")
 
+    def test_each_persons_buttons_name_the_person_for_a_screen_reader(self):
+        """Several "Remove" buttons in a row: each says whom, beginning with the word on screen."""
+        managing.ask(self.anna, managing.issue_invite(self.coach).key)
+        self.assertContains(self.client.get(self.profile), 'aria-label="Accept: Ivanova Anna"')
+        managing.accept(self.coach, self.anna.pk)
+        self.assertContains(self.client.get(self.profile), 'aria-label="Remove: Ivanova Anna"')
+        self.client.force_login(self.anna)
+        self.assertContains(self.client.get(self.profile), 'aria-label="Remove: Ivan Petrov"')
+
     def test_requests_are_rejected_one_by_one_or_answered_all_at_once(self):
         key = managing.issue_invite(self.coach).key
         boris, carl, dana = _user("boris"), _user("carl"), _user("dana")
