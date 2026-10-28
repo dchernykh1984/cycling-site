@@ -4,7 +4,8 @@
 **Verified against**: PR #343 on 2026-10-24
 **Code**: `calendar_app/` (views, filters, feeds, `visibility.py`), `calendar_app/templates/calendar_app/`
 **Tests**: `calendar_app/tests.py` (calendar, list, map, events API, filters, favorites, default
-filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/test_feeds.py`,
+filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/test_event_ics.py`,
+`tests/test_feeds.py`,
 `tests/test_calendar_crawlable.py`, `tests/test_list_site_registration.py`,
 `tests/test_pagination_links.py`, `tests/test_locations_payload.py`, `tests/test_location.py`,
 `tests/e2e/test_calendar_view.py`, `test_calendar_map.py`, `test_competition_list.py`,
@@ -65,8 +66,12 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 
 1. **Given** the iCalendar subscription, **Then** it is a calendar clients accept, carries the same
    filters as the list, links every event back to its page, ends a multi-day event the day after
-   its last day, and leaves out hidden and long-finished events.
-2. **Given** the "new events" RSS/Atom feed, **Then** the newest approved addition comes first and
+   its last day, gives a venue's own point (never its city's), and leaves out hidden and
+   long-finished events.
+2. **Given** one event's file, `/<lang>/calendar/<id>/event.ics` (issue #398), **Then** it is that
+   event's entry from the same builder, in the address's language, for whoever may open the
+   event's page and a 404 for everyone else; search engines are told not to index it.
+3. **Given** the "new events" RSS/Atom feed, **Then** the newest approved addition comes first and
    unapproved events never appear; every page declares the news feeds and the calendar declares
    its own.
 
@@ -97,7 +102,8 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 - **FR-CAL-004**: The list shows each event's title, dates, types, directions, disciplines,
   country, region, city, venue and links; it links the registration form on the site while it is
   open and not full, before any external registration link; a full or closed form is not linked.
-- **FR-CAL-005**: Feeds and subscriptions never carry hidden, unapproved or invite-only events.
+- **FR-CAL-005**: Feeds and subscriptions never carry hidden, unapproved or invite-only events. An
+  event's own file is not a feed: it answers the people its page answers (`visibility.can_open`).
 - **FR-CAL-006**: Calendar labels, including grid weekdays, come from the translated catalogues; Kazakh period labels put
   the year before the month or days. Shared period controls offer days, weekend, week, month and
   a year picker, step by the selected kind and return keyboard focus when a picker closes.

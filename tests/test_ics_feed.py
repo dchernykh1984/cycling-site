@@ -6,12 +6,13 @@ event whose DTEND is the day after the last one.
 """
 
 import datetime
+from decimal import Decimal
 
 from django.test import TestCase
 from django.urls import reverse
 
 from calendar_app.models import Competition, Discipline, DisciplineCategory
-from locations.models import add_location_child
+from locations.models import Location, add_location_child
 
 TODAY = datetime.date.today()
 
@@ -112,6 +113,15 @@ class ICSFeedTests(TestCase):
         filtered = self._body(location=self.city.pk)
         self.assertIn("Tour of Almaty", filtered)
         self.assertNotIn("Bishkek criterium", filtered)
+
+    def test_a_venue_s_own_point_goes_with_its_events(self):
+        Location.objects.filter(pk=self.venue.pk).update(lat=Decimal("43.238"), lng=Decimal("76.945"))
+        events = _events(self._body())
+        tour = next(e for e in events if "Tour of Almaty" in _field(e, "SUMMARY"))
+        self.assertEqual(_field(tour, "GEO"), "43.238000;76.945000")
+        # A venue with no point of its own sends none, rather than its city's
+        bishkek = next(e for e in events if "Bishkek" in _field(e, "SUMMARY"))
+        self.assertIsNone(_field(bishkek, "GEO"))
 
     def test_nothing_hidden_or_long_finished_is_published(self):
         body = self._body()

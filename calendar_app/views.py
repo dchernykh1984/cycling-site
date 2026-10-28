@@ -55,7 +55,7 @@ from .models import (
     EventType,
 )
 from .seo import sports_event
-from .visibility import can_review, can_see, is_admin_plus, listed_for, manages
+from .visibility import can_open, can_review, can_see, is_admin_plus, listed_for, manages
 
 _ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 _ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
@@ -861,23 +861,13 @@ class CompetitionDetailView(View):
             Competition.objects.select_related("submitted_by").prefetch_related("disciplines__category"),
             pk=pk,
         )
-        from django.http import Http404
-
-        if competition.is_deleted:
+        if not can_open(request.user, competition):
             raise Http404
         is_manager = can_manage(request.user, competition)
         is_author = request.user.is_authenticated and request.user == competition.submitted_by
         # Any organizer moderates -- except an invite-only event, which is for the people who may
         # edit it, so only admins and up review it (see visibility.can_review).
         can_moderate = _is_organizer_plus(request.user) and (not competition.invite_only or is_admin_plus(request.user))
-        if competition.status != Competition.Status.APPROVED:
-            # A not-yet-approved competition is visible to its moderators and to its author (so
-            # they can track their submission and read a rejection reason); everyone else gets a
-            # 404. Approve/reject buttons stay moderator-only (see can_moderate below).
-            if not can_review(request.user, competition):
-                raise Http404
-        elif not can_see(request.user, competition):
-            raise Http404
         protocols = competition.protocols.all()
         # upload_token is a secret credential: only show it to the submitter or to users
         # who can manage this specific competition (superuser, admin+, or the organizer
