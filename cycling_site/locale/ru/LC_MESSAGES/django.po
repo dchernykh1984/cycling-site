@@ -852,6 +852,11 @@ msgid ""
 "Dates, start points and results on the Universal Bicycle Team calendar."
 msgstr "Даты, точки старта и результаты в календаре Universal Bicycle Team."
 
+#: calendar_app/models.py:313
+#, python-format
+msgid "Type: %(types)s."
+msgstr "Тип: %(types)s."
+
 #: calendar_app/models.py:286
 #, python-format
 msgid "Disciplines: %(kinds)s."

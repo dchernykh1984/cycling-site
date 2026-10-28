@@ -20,7 +20,7 @@ from django.utils.translation import gettext
 from django.utils.translation import override as translation_override
 from PIL import Image
 
-from calendar_app.models import Competition
+from calendar_app.models import Competition, Discipline, EventType
 from cycling_site import skins
 from tests.language_urls import in_language
 
@@ -165,6 +165,33 @@ class CompetitionMetaTests(TestCase):
         self.comp.save()
         self.assertIn("Almaty", _meta(self._html(), "description"))
         self.assertIsInstance(venue, Location)
+
+
+class DescriptionKindTests(TestCase):
+    """What kind of event its description names (issue #334): its type unless it is the usual one, and
+    a direction's catch-all discipline as the direction, not "Other (Road Cycling)"."""
+
+    def _description(self, comp):
+        return _meta(self.client.get(in_language(comp.get_absolute_url(), "en")).content.decode(), "description")
+
+    def test_an_unusual_type_is_named_and_the_usual_one_is_not(self):
+        usual, other = EventType.objects.order_by("order", "pk")[:2]
+        outing, race = _competition("Outing"), _competition("Usual race")
+        outing.event_types.set([other])
+        race.event_types.set([usual])
+        self.assertIn(f"Type: {other.name_en}.", self._description(outing))
+        self.assertNotIn("Type:", self._description(race))
+        # The calendar file says the same, its usual type looked up once for every event
+        ics = self.client.get(in_language(reverse("competition_ics", args=[outing.pk]), "en")).content.decode()
+        self.assertIn(f"Type: {other.name_en}.", ics.replace("\r\n ", ""))
+
+    def test_a_catch_all_discipline_reads_as_its_direction(self):
+        catch_all = Discipline.objects.get(name_en="Other (Road Cycling)")
+        comp = _competition("Coffee and climbs")
+        comp.disciplines.set([catch_all])
+        description = self._description(comp)
+        self.assertIn(f"Disciplines: {catch_all.category.name_en}.", description)
+        self.assertNotIn("Other (", description)
 
 
 class CompetitionPreviewTextTests(TestCase):
