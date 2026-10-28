@@ -8,8 +8,10 @@ channels read by machines (sitemap, feeds, search engines, the API) never carry 
 
 import datetime
 import json
+import uuid
+from urllib.parse import quote
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -213,11 +215,51 @@ class InvitationLinkTests(_Cast):
     def _link(self, key=None):
         return reverse("competition_invite", args=[self.private.pk, key or self.private.invite_key])
 
-    def test_signing_in_comes_first(self):
-        response = self.client.get(self._link())
-        self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse("account_login"), response["Location"])
-        self.assertIn("next=", response["Location"])
+    def test_a_visitor_not_signed_in_is_shown_the_event_and_asked_to_sign_in(self):
+        """What a chat's preview of the pasted link shows (issue #351): the event, not the login form."""
+        Competition.objects.filter(pk=self.private.pk).update(preview_text_ru="Meet at 6:15 by the bike shop")
+        for skin in ("light", "orange"):
+            with self.subTest(skin=skin), override_settings(DEFAULT_SKIN=skin):
+                response = self.client.get(self._link())
+                self.assertEqual(response.status_code, 200)
+                html = response.content.decode()
+                self.assertIn('<meta property="og:title" content="Private ride"', html)
+                self.assertIn('<meta property="og:description" content="Meet at 6:15 by the bike shop"', html)
+                self.assertEqual(response["X-Robots-Tag"], "noindex")
+                # Signing in comes back to the link, which then lets the reader in
+                self.assertIn(f"{reverse('account_login')}?next={quote(self._link(), safe='')}", html)
+        self.assertFalse(CompetitionInvite.objects.filter(competition=self.private).exclude(user=self.invitee).exists())
+
+    def test_a_wrong_key_says_nothing_to_a_visitor_either(self):
+        Competition.objects.filter(pk=self.private.pk).update(preview_text_ru="Meet at 6:15 by the bike shop")
+        response = self.client.get(self._link(uuid.uuid4()))
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn("Private ride", response.content.decode())
+        self.assertNotIn("Meet at 6:15", response.content.decode())
+
+    def test_an_event_its_invitees_cannot_open_yet_is_not_shown(self):
+        """Awaiting review or taken down, it would stay closed to them after signing in too."""
+        for case, change in (
+            ("awaiting review", {"status": Competition.Status.PENDING_APPROVAL}),
+            ("taken down", {"is_hidden": True}),
+        ):
+            with self.subTest(case=case):
+                Competition.objects.filter(pk=self.private.pk).update(
+                    **{"status": Competition.Status.APPROVED, "is_hidden": False, **change}
+                )
+                response = self.client.get(self._link())
+                self.assertEqual(response.status_code, 302)
+                self.assertIn(reverse("account_login"), response["Location"])
+
+    def test_its_page_says_nothing_to_someone_without_an_invitation(self):
+        Competition.objects.filter(pk=self.private.pk).update(preview_text_ru="Meet at 6:15 by the bike shop")
+        response = self.client.get(reverse("competition_detail", args=[self.private.pk]))
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn("Meet at 6:15", response.content.decode())
+
+    def test_the_link_of_an_ordinary_event_opens_it_for_a_visitor_too(self):
+        response = self.client.get(reverse("competition_invite", args=[self.public.pk, uuid.uuid4()]))
+        self.assertRedirects(response, reverse("competition_detail", args=[self.public.pk]))
 
     def test_opening_it_lets_the_reader_in_and_drops_the_key_from_the_address(self):
         self.as_(self.stranger)

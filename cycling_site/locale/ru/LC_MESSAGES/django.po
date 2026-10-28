@@ -1812,6 +1812,13 @@ msgstr "В избранном"
 msgid "Hidden"
 msgstr "Скрыто"
 
+#: calendar_app/templates/calendar_app/invite_preview.html:13
+msgid ""
+"This event is open by invitation. Sign in to accept the invitation and open "
+"it."
+msgstr ""
+"Это мероприятие по приглашению. Войдите, чтобы принять приглашение и открыть его."
+
 #: calendar_app/templates/calendar_app/list.html:186
 msgid "By invitation"
 msgstr "По приглашениям"
