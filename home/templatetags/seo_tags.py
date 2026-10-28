@@ -4,7 +4,8 @@ import re
 from urllib.parse import urlsplit
 
 from django.conf import settings
-from django.template import Library
+from django.template import Library, NodeList
+from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockNode
 from django.urls import Resolver404, resolve, translate_url
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language
@@ -32,6 +33,21 @@ def language_alternates(context):
             return []
         alternates.append((code, request.build_absolute_uri(translated)))
     return alternates
+
+
+@register.simple_tag(takes_context=True)
+def rendered_title(context):
+    """What the page's title block shows in its tab, for a chat's preview to show too (issue #334).
+
+    Most templates name their page in that block -- "Calendar", the home page's own title -- and the
+    preview's og:title, which read only what a view passed, showed nothing there, or "Home". The block is
+    rendered again the way Django renders it, the most derived one with block.super in reach.
+    """
+    blocks = context.render_context.get(BLOCK_CONTEXT_KEY)
+    if blocks is None or blocks.get_block("title") is None:
+        return ""
+    # Rendered output is escaped already; the strip only drops the whitespace around it
+    return mark_safe(BlockNode("title", NodeList()).render(context).strip())  # noqa: S308
 
 
 # An href that is a path on this site: starts with one slash (two would be another host).

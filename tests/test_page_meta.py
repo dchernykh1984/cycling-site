@@ -59,6 +59,34 @@ class TitleShapeTests(TestCase):
         self.assertNotIn("\n", title)
 
 
+class SharedTitleTests(TestCase):
+    """The title a chat shows for a link (issue #334): the page's own name, the one its tab shows.
+
+    The calendar's tabs and the home page name themselves in their templates' title block; og:title
+    read only what a view passed, so a chat showed nothing for the calendar and "Home" for the site.
+    """
+
+    def _titles(self, url):
+        html = self.client.get(url).content.decode()
+        return re.search(r"<title>(.*?)</title>", html, re.S).group(1), _prop(html, "og:title")
+
+    def test_the_home_page_and_the_calendar_s_tabs_are_shared_under_their_own_names(self):
+        from home.models import SiteContent
+
+        SiteContent.objects.update_or_create(pk=1, defaults={"page_title_ru": "UBT"})
+        for skin in ("light",):
+            with override_settings(DEFAULT_SKIN=skin):
+                for url in ("/ru/", reverse("calendar"), reverse("calendar_list"), reverse("calendar_map")):
+                    title, shared = self._titles(url)
+                    self.assertTrue(shared, (skin, url))
+                    self.assertTrue(title.startswith(shared), (skin, url, title, shared))
+                self.assertEqual(self._titles("/ru/")[1], "UBT", skin)
+
+    def test_a_name_the_view_gives_still_wins(self):
+        comp = _competition("Named race")
+        self.assertEqual(_prop(self.client.get(comp.get_absolute_url()).content.decode(), "og:title"), "Named race")
+
+
 class CanonicalTests(TestCase):
     def test_every_page_declares_a_canonical_address(self):
         comp = _competition("Canonical race")
