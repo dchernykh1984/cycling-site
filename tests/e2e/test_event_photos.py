@@ -228,15 +228,27 @@ def test_slow_previews_do_not_block_marks_or_start_a_request_storm(page: Page, l
     )
     actions.import_album(race.external_albums.get(), None)
     # Downloads are never answered. One the page gives up on -- after 10 s, or on leaving for the
-    # redirected page -- frees its place for the next, so what is counted is how many are open at once.
-    open_now, at_once = set(), []
-
-    def hold(route):
-        open_now.add(route.request)
-        at_once.append(len(open_now))
-
-    page.route("**/photos/thumb/**", hold)
-    page.on("requestfailed", lambda request: open_now.discard(request))
+    # redirected page -- frees its place for the next, so what is counted is how many each page has
+    # open at once. Each page counts its own, from inside: the browser's events about the requests of
+    # a page being left can come after the next page's, or not at all, and would mix the two pages.
+    at_once = []
+    page.route("**/photos/thumb/**", lambda route: None)
+    page.expose_function("previewsOpen", lambda count: at_once.append(count))
+    page.add_init_script(
+        """(() => {
+            const fetch0 = window.fetch;
+            let open = 0;
+            window.fetch = function (input, init) {
+                const answer = fetch0.apply(this, arguments);
+                if (String(input).includes('/photos/thumb/')) {
+                    open += 1; window.previewsOpen(open);
+                    const done = () => { open -= 1; }; // runs before the page's own handlers
+                    answer.then(done, done);
+                }
+                return answer;
+            };
+        })()"""
+    )
     inject_session(page, live_server, athlete)
     page.goto(f"{live_server.url}/en/calendar/{race.pk}/photos/registration/{reg.pk}/")
     expect(page.locator(".event-photo")).to_have_count(20)
