@@ -14,6 +14,7 @@ from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.cache import patch_cache_control
 from django.utils.feedgenerator import Atom1Feed
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
@@ -169,6 +170,8 @@ class CompetitionEventICSView(View):
         response = calendar_response(build_calendar([competition], site_base_url(request)), f"event-{pk}.ics")
         # The page is what a search engine should find, not a copy of it in another format.
         response["X-Robots-Tag"] = "noindex"
+        # Who gets it depends on who asks (a hidden or invite-only event): no shared cache keeps a copy.
+        patch_cache_control(response, private=True)
         return response
 
 
