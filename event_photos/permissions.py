@@ -1,5 +1,8 @@
 """Who sees and does what with event photos; the pages and the API both ask here."""
 
+from django.db.models import Q
+
+from accounts import managing
 from calendar_app.models import Competition
 from calendar_app.visibility import can_see, manages
 
@@ -18,8 +21,15 @@ def can_manage_albums(user, competition: Competition) -> bool:
 
 
 def can_represent(user, registration) -> bool:
-    """The coach / athlete-representative role of issue #315; False until that role exists."""
-    return False
+    """Whether ``user`` manages the registrations and photos of the account the registration is
+    (issue #315): a consent the member gave and the manager accepted, never a name or a team."""
+    return bool(registration.user_id) and managing.acts_for(user, registration.user_id)
+
+
+def looked_after(user) -> Q:
+    """The registrations whose albums are the member's to look after: their own and those of the
+    members whose registrations and photos they manage."""
+    return Q(user=user) | Q(user_id__in=managing.member_ids(user))
 
 
 def can_see_registration(user, registration) -> bool:
