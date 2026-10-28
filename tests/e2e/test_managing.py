@@ -197,3 +197,19 @@ def test_the_box_stands_level_with_the_name_and_can_be_seen(page: Page, live_ser
     # here): that skin is the maintainer's to change.
     if E2E_SKIN != "dark":
         assert ratio(frame, drawn(box, "fill-beneath")) >= 3
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [360, 1280])
+def test_the_buttons_of_a_member_and_a_request_stay_in_sight(page: Page, live_server, coach, anna, width):
+    """The profile's column is narrow even on a desktop: no row may push its buttons out of it."""
+    _manage(coach, anna)
+    managing.ask(_member("boris", "Boris", "Sokolov", "M", datetime.date(2011, 1, 2)), managing.issue_invite(coach).key)
+    page.set_viewport_size({"width": width, "height": 900})
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/kk/accounts/profile/")
+    section = page.locator("#managed-members").bounding_box()
+    assert section
+    for button in page.locator("#managed-members .managing-table .btn").all():
+        box = button.bounding_box()
+        assert box and box["x"] + box["width"] <= section["x"] + section["width"] + 1, (button.inner_text(), box)
