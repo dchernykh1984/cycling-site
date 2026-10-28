@@ -40,11 +40,11 @@ Those registered by a send lose the checkbox; those who could not be keep it, wi
     <div class="fw-semibold">{{ row.label }}</div>
     <p class="small text-muted mb-0">{{ row.blocked }}{% if row.profile == request.user %} <a href="{% url 'account_profile_edit' %}">{% trans "Edit profile" %}</a>{% endif %}</p>
     {% else %}
-    <div class="form-check">
+    <label class="register-person-pick fw-semibold" for="{{ row.ids }}check">
       <input class="form-check-input register-person-check" type="checkbox" name="person" value="{{ row.key }}"
              id="{{ row.ids }}check"{% if row.checked %} checked{% endif %}>
-      <label class="form-check-label fw-semibold" for="{{ row.ids }}check">{{ row.label }}</label>
-    </div>
+      <span>{{ row.label }}</span>
+    </label>
     <div class="register-person-form mt-3">
       {% include "registrations/_person_fields.html" with form=row.form p=row.ids required=False person=row.profile %}
       {% if row.form.non_field_errors %}
