@@ -94,7 +94,8 @@ and protocols with the event's upload token. The API has no language prefix.
   "API gaps", and what is left out on purpose as an **Exception** with its reason.
 - **FR-API-005**: `/api/v1/` only grows: endpoints and optional fields are added, never removed,
   renamed or made required, and a value keeps its meaning; a breaking change is a new version
-  (constitution principle XI).
+  (constitution principle XI). **Exception** (maintainer, 2026-10-28): the voice chat of group races
+  left v1 with its four endpoints and three fields; the live site had never switched it on.
 
 ## Key Entities
 
