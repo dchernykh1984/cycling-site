@@ -10,7 +10,7 @@ from django.utils import translation
 from accounts import managing
 from accounts.models import User
 from registrations.models import CompetitionRegistration
-from registrations.tests import make_open_competition, make_registration, make_user
+from registrations.tests import make_open_competition, make_registration, make_relay_competition, make_user
 
 
 def _en(name, *args):
@@ -98,6 +98,12 @@ class MembersRegistrationsTests(TestCase):
         self.assertEqual(response.context["registrations"], [])
         self.assertContains(response, "Ivanova Anna")
         self.assertContains(response, self.edit)
+
+    def test_a_members_relay_entry_is_named_by_its_team_in_the_profile(self):
+        relay = make_relay_competition(submitted_by=self.organizer)
+        make_registration(relay, user=self.anna, first_name="", last_name="", participant_names="Anna I.<BR>Dana B.")
+        self.client.force_login(self.coach)
+        self.assertContains(self.client.get("/en/accounts/profile/"), "Anna I.<BR>Dana B.")
 
     def test_organizers_see_who_submitted_once_someone_submitted_for_another(self):
         self.client.force_login(self.organizer)
