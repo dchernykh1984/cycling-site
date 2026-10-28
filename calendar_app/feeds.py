@@ -193,7 +193,7 @@ class NewCompetitionsFeed(Feed):
         return reverse("calendar_list")
 
     def items(self):
-        return (
+        items = list(
             Competition.objects.filter(
                 status=Competition.Status.APPROVED,
                 is_deleted=False,
@@ -207,12 +207,17 @@ class NewCompetitionsFeed(Feed):
             .prefetch_related("event_types", "disciplines__category")
             .order_by("-approved_at", "-pk")[: self.item_count]
         )
+        # Each description leaves the usual type unsaid: looked up once for the feed, not once an item
+        usual = usual_event_type_id()
+        for item in items:
+            item.usual_type_id = usual
+        return items
 
     def item_title(self, item):
         return item.title
 
     def item_description(self, item):
-        return item.search_summary()
+        return item.search_summary(item.usual_type_id)
 
     def item_link(self, item):
         return item.get_absolute_url()
