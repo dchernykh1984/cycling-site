@@ -12,7 +12,7 @@ from playwright.sync_api import Page, expect
 from calendar_app.models import Competition
 from tests.e2e.conftest import UPCOMING, inject_session
 from tests.e2e.test_interface_rules import _REACH
-from tests.e2e.test_skin_contrast import _in_state
+from tests.e2e.test_skin_contrast import NO_FADES, _in_state
 
 
 @pytest.fixture
@@ -69,6 +69,7 @@ _LOOK = "el => { const s = getComputedStyle(el); return [s.color, s.backgroundCo
 def test_it_looks_like_the_share_button_beside_it(page: Page, live_server, race):
     """In whatever skin the suite runs in, at rest, under the pointer and in focus."""
     button, share = _open(page, live_server, race)
+    page.add_style_tag(content=NO_FADES)
     for state in ("rest", "hover", "focus"):
         _in_state(page, share, state)
         expected = share.evaluate(_LOOK)

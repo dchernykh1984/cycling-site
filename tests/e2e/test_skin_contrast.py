@@ -53,6 +53,11 @@ def pages_with_content(db, organizer, race_event_type):
     race.event_types.add(race_event_type)
 
 
+# The colours a state ends on, without the fade into it: WebKit may begin a button's fade only after
+# the wait for its end below has looked, and a colour read mid-fade is neither state's.
+NO_FADES = "*, *::before, *::after { transition: none !important; }"
+
+
 def _in_state(page: Page, element, state):
     page.mouse.move(0, 0)
     if state == "hover":
@@ -69,6 +74,7 @@ def _in_state(page: Page, element, state):
 def test_text_is_readable_in_this_skin(page: Page, live_server, pages_with_content, path):
     skin = settings.DEFAULT_SKIN
     page.goto(f"{live_server.url}{path}")
+    page.add_style_tag(content=NO_FADES)
     # On a phone the menu and the filters fold away; open them to see what they look like.
     open_navbar_if_collapsed(page)
     open_filter_panel(page)
