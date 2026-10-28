@@ -161,6 +161,9 @@ button{cursor:pointer}
 .ctrls{display:flex;gap:8px;pointer-events:auto}
 .ib{width:48px;height:48px;border-radius:14px;border:0;background:var(--hud);color:var(--hud-ink);display:grid;place-items:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .ib svg{width:22px;height:22px}
+.ib[aria-pressed="true"]{background:var(--apple)}
+.voice{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+.voice-title{font-family:var(--display);font-weight:500;font-size:15px;margin:0 0 4px}
 #demo{right:calc(env(safe-area-inset-right,0px) + 12px);bottom:calc(env(safe-area-inset-bottom,0px) + 88px);padding:10px 12px;pointer-events:auto;width:220px;font-size:13px}
 #demo input{width:100%;accent-color:var(--apple)}
 #demo .row{display:flex;justify-content:space-between;align-items:baseline}
@@ -330,6 +333,12 @@ button{cursor:pointer}
         <p class="hint hidden" id="mpNote" role="status"></p>
         <div class="mp-create"><select id="mpDelay" data-t-label="mp.delay"><option value="30"></option><option value="60" selected></option><option value="120"></option><option value="300"></option><option value="900"></option><option value="1800"></option><option value="3600"></option></select><button class="btn" id="mpCreate" type="button" disabled data-t="mp.create"></button></div>
         <p class="hint" data-t="mp.hint"></p>
+        <div class="voice hidden" id="voiceBox">
+          <h3 class="voice-title" data-t="voice.title"></h3>
+          <p class="hint" data-t="voice.hint"></p>
+          <div class="mp-create"><button class="btn" id="voiceJoin" type="button"></button><button class="btn hidden" id="voiceMute" type="button" aria-pressed="false"></button></div>
+          <p class="hint" id="voiceWho" role="status"></p>
+        </div>
       </section>
       <section class="box wide" aria-labelledby="hDev">
         <h2 id="hDev"><span class="num">5</span><span data-t="sec.devices"></span></h2>
@@ -417,6 +426,7 @@ button{cursor:pointer}
     <div class="ctrls">
       <button class="ib" id="btnView" type="button" data-t-label="view.toThird"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6.5" r="2.6"/><path d="M6 20c.6-4.2 2.8-7 6-7s5.4 2.8 6 7"/><path d="M3 12l2.5-2.5M21 12l-2.5-2.5"/></svg></button>
       <button class="ib" id="btnPhoto" type="button" data-t-label="photo.title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      <button class="ib hidden" id="btnMic" type="button" data-t-label="voice.mic" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
       <button class="ib" id="btnPause" type="button" data-t-label="pause.title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
     </div>
   </div>
@@ -806,7 +816,21 @@ const TEXT = {
     "strava.processing": "Отправляем заезд в Strava…",
     "strava.done": "Заезд в Strava как виртуальный заезд.",
     "strava.failed": "Заезд не ушёл в Strava: {msg}",
-    "strava.retry": "Отправить ещё раз"
+    "strava.retry": "Отправить ещё раз",
+    "voice.hint": "Голосовая связь для участников групповой гонки, до 20 человек: включите её до старта или во время гонки. Микрофон сначала выключен; наденьте наушники, чтобы не было эха.",
+    "voice.join": "Включить голосовую связь",
+    "voice.leave": "Выйти из голосовой связи",
+    "voice.mute": "Выключить микрофон",
+    "voice.unmute": "Включить микрофон",
+    "voice.mic": "Микрофон",
+    "voice.in": "На связи: {list}.",
+    "voice.alone": "На связи пока только вы.",
+    "voice.nobody": "Голосом пока никто не говорит.",
+    "voice.connecting": "Подключаем голос…",
+    "voice.failed": "Голос не подключился: {msg}",
+    "voice.noMic": "Нет доступа к микрофону: разрешите его браузеру и попробуйте ещё раз.",
+    "voice.unsupported": "Этот браузер не поддерживает голосовую связь.",
+    "voice.title": "Голосовая связь"
   },
   kk: {
     "title": "Алатау — Алматы бойынша виртуалды заездтер",
@@ -1102,7 +1126,21 @@ const TEXT = {
     "strava.processing": "Заездті Strava-ға жіберіп жатырмыз…",
     "strava.done": "Заезд Strava-да виртуалды заезд ретінде.",
     "strava.failed": "Заезд Strava-ға жіберілмеді: {msg}",
-    "strava.retry": "Қайта жіберу"
+    "strava.retry": "Қайта жіберу",
+    "voice.hint": "Топтық жарыс қатысушыларына арналған дауыстық байланыс, 20 адамға дейін: оны стартқа дейін не жарыс кезінде қосыңыз. Микрофон алдымен өшірулі; жаңғырық болмауы үшін құлаққап киіңіз.",
+    "voice.join": "Дауыстық байланысты қосу",
+    "voice.leave": "Дауыстық байланыстан шығу",
+    "voice.mute": "Микрофонды өшіру",
+    "voice.unmute": "Микрофонды қосу",
+    "voice.mic": "Микрофон",
+    "voice.in": "Байланыста: {list}.",
+    "voice.alone": "Байланыста әзірге тек сізсіз.",
+    "voice.nobody": "Әзірге ешкім дауыспен сөйлеспейді.",
+    "voice.connecting": "Дауыс қосылуда…",
+    "voice.failed": "Дауыс қосылмады: {msg}",
+    "voice.noMic": "Микрофонға рұқсат жоқ: браузерге рұқсат беріп, қайталап көріңіз.",
+    "voice.unsupported": "Бұл браузер дауыстық байланысты қолдамайды.",
+    "voice.title": "Дауыстық байланыс"
   },
   en: {
     "title": "Alatau — virtual rides around Almaty",
@@ -1398,7 +1436,21 @@ const TEXT = {
     "strava.processing": "Sending the ride to Strava…",
     "strava.done": "The ride is on Strava as a virtual ride.",
     "strava.failed": "The ride did not reach Strava: {msg}",
-    "strava.retry": "Send again"
+    "strava.retry": "Send again",
+    "voice.hint": "Voice chat for the riders of a group race, up to 20 people: join it before the start or during the race. Your microphone starts muted; wear headphones to avoid echo.",
+    "voice.join": "Join voice chat",
+    "voice.leave": "Leave voice chat",
+    "voice.mute": "Mute microphone",
+    "voice.unmute": "Unmute microphone",
+    "voice.mic": "Microphone",
+    "voice.in": "In voice chat: {list}.",
+    "voice.alone": "Only you are in voice chat so far.",
+    "voice.nobody": "Nobody is in voice chat yet.",
+    "voice.connecting": "Connecting voice…",
+    "voice.failed": "Voice did not connect: {msg}",
+    "voice.noMic": "No access to the microphone: allow it in the browser and try again.",
+    "voice.unsupported": "This browser does not support voice chat.",
+    "voice.title": "Voice chat"
   }
 };
 // t(key, { name }) fills {name}; a key missing in a language falls back to Russian, then to the key
@@ -3211,7 +3263,7 @@ async function mpPoll() {
   try {
     const res = await Site.post('/presence', body), t1 = Date.now();
     MP.offset = Date.parse(res.server_now) - (t0 + t1) / 2;
-    MP.online = res.online || []; MP.riders = res.riders || []; MP.recv = t1;
+    MP.online = res.online || []; MP.riders = res.riders || []; MP.recv = t1; voiceSync(res.voice || []);
     if (!riding) MP.groups = res.groups || [];
     if (phase === 'menu') { mpMaybeStart(); renderMP(); mpCheckLink(); } else mpSyncRemotes();
   } catch (e) {
@@ -3235,7 +3287,99 @@ function mpCreateGroup() {
   const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
   mpAction('/groups', { route: r.id, route_name: r.name, start_in_s: +$('#mpDelay').value || 60 });
 }
-async function mpLeaveMyGroup() { const g = mpMyGroup(); if (g) await mpAction('/groups/' + g.id + (g.is_host ? '/cancel' : '/leave')); }
+async function mpLeaveMyGroup() { const g = mpMyGroup(); if (g) { if (Voice.gid === g.id) voiceLeave(); await mpAction('/groups/' + g.id + (g.is_host ? '/cancel' : '/leave')); } }
+
+/* ---------------- Voice chat in a group race ---------------- */
+// One connection to Cloudflare's media server: the microphone goes up as one track, the other riders'
+// come down the same connection. The site introduces the riders (presence lists who is in the chat)
+// and holds the media server's key; the sound itself never passes through the site.
+const Voice = { on: false, joining: false, gid: null, pc: null, mic: null, peers: new Map(), chain: Promise.resolve(), list: [], note: '' };
+const voiceSupported = () => !!(window.RTCPeerConnection && navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+const voiceMicOn = () => !!(Voice.mic && Voice.mic.getAudioTracks()[0] && Voice.mic.getAudioTracks()[0].enabled);
+// a connection takes one change of its session description at a time
+function voiceRun(job) { const run = Voice.chain.then(job); Voice.chain = run.catch(() => {}); return run; }
+function voiceNote(text) { Voice.note = text; renderVoice(); }
+async function voiceJoin(gid) {
+  if (Voice.on || Voice.joining) return;
+  if (!voiceSupported()) { voiceNote(t('voice.unsupported')); return; }
+  Voice.joining = true; voiceNote(t('voice.connecting'));
+  try {
+    Voice.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+  } catch (e) { Voice.joining = false; voiceNote(t('voice.noMic')); return; }
+  // muted until the rider unmutes: a muted track still sends silence, which keeps it alive at the server
+  Voice.mic.getAudioTracks()[0].enabled = false;
+  const pc = Voice.pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }], bundlePolicy: 'max-bundle' });
+  pc.ontrack = e => voiceHear(e.transceiver.mid, e.track);
+  const sender = pc.addTransceiver(Voice.mic.getAudioTracks()[0], { direction: 'sendonly' });
+  try {
+    await voiceRun(async () => {
+      await pc.setLocalDescription(await pc.createOffer());
+      const res = await Site.post('/groups/' + gid + '/voice', { offer: pc.localDescription.sdp, mid: sender.mid });
+      await pc.setRemoteDescription({ type: 'answer', sdp: res.answer });
+    });
+    Object.assign(Voice, { on: true, joining: false, gid }); voiceNote(''); mpSchedule(50);
+  } catch (e) { voiceLeave(); voiceNote(t('voice.failed', { msg: e.message })); }
+}
+function voiceLeave() {
+  const gid = Voice.on ? Voice.gid : null;
+  Voice.peers.forEach(p => { if (p.audio) { p.audio.srcObject = null; p.audio.remove(); } });
+  Voice.peers.clear();
+  if (Voice.mic) Voice.mic.getTracks().forEach(tr => tr.stop());
+  if (Voice.pc) Voice.pc.close();
+  Object.assign(Voice, { on: false, joining: false, gid: null, pc: null, mic: null, chain: Promise.resolve() });
+  if (gid) Site.req('DELETE', '/groups/' + gid + '/voice').catch(() => {});
+  renderVoice();
+}
+function voiceMute(muted) { const tr = Voice.mic && Voice.mic.getAudioTracks()[0]; if (tr) tr.enabled = !muted; renderVoice(); }
+// presence says who is in the chat: hear the newcomers, stop playing those who left
+function voiceSync(list) {
+  Voice.list = list;
+  if (Voice.on) {
+    const keys = new Set(list.map(v => v.key));
+    Voice.peers.forEach((p, key) => { if (!keys.has(key)) { if (p.audio) { p.audio.srcObject = null; p.audio.remove(); } Voice.peers.delete(key); } });
+    const missing = list.filter(v => !Voice.peers.has(v.key)).map(v => v.key);
+    if (missing.length) {
+      missing.forEach(key => Voice.peers.set(key, { mid: null, audio: null })); // asked for: not asked again every poll
+      voiceRun(() => voicePull(missing)).catch(e => {
+        voiceNote(t('voice.failed', { msg: e.message }));
+        // the site or the media server stumbled: ask for these riders again a little later
+        setTimeout(() => missing.forEach(key => { const p = Voice.peers.get(key); if (p && !p.mid) Voice.peers.delete(key); }), 10000);
+      });
+    }
+  }
+  renderVoice();
+}
+async function voicePull(keys) {
+  const res = await Site.post('/groups/' + Voice.gid + '/voice/pull', { keys });
+  res.tracks.forEach(x => { const p = Voice.peers.get(x.key); if (p) p.mid = x.mid; });
+  if (!res.offer) return;
+  await Voice.pc.setRemoteDescription({ type: 'offer', sdp: res.offer });
+  await Voice.pc.setLocalDescription(await Voice.pc.createAnswer());
+  await Site.post('/groups/' + Voice.gid + '/voice/answer', { answer: Voice.pc.localDescription.sdp });
+}
+// a rider's sound arrives by the slot the media server gave it; play it from the rider that slot belongs to
+function voiceHear(mid, track) {
+  for (const p of Voice.peers.values()) {
+    if (p.mid !== mid) continue;
+    if (!p.audio) { p.audio = document.createElement('audio'); p.audio.autoplay = true; document.body.appendChild(p.audio); }
+    p.audio.srcObject = new MediaStream([track]); p.audio.play().catch(() => {});
+    return;
+  }
+}
+function renderVoice() {
+  const box = $('#voiceBox'), mic = $('#btnMic');
+  const g = MP.status === 'on' ? mpMyGroup() : null, offered = !!(Records.me && Records.me.voice_available) && (Voice.on || !!g);
+  box.classList.toggle('hidden', !offered);
+  mic.classList.toggle('hidden', !Voice.on); mic.setAttribute('aria-pressed', voiceMicOn() ? 'true' : 'false');
+  if (!offered) return;
+  const join = $('#voiceJoin'), mute = $('#voiceMute');
+  join.textContent = Voice.on ? t('voice.leave') : t('voice.join'); join.disabled = Voice.joining;
+  join.onclick = () => Voice.on ? voiceLeave() : voiceJoin(g.id);
+  mute.classList.toggle('hidden', !Voice.on); mute.setAttribute('aria-pressed', voiceMicOn() ? 'true' : 'false');
+  mute.textContent = voiceMicOn() ? t('voice.mute') : t('voice.unmute'); mute.onclick = () => voiceMute(voiceMicOn());
+  const names = Voice.list.map(v => v.name).join(', ');
+  $('#voiceWho').textContent = Voice.note || (names ? t('voice.in', { list: Voice.on ? t('youLower') + ', ' + names : names }) : Voice.on ? t('voice.alone') : t('voice.nobody'));
+}
 // живые соперники: те же записи, что у ботов, но без своей физики
 function mpSyncRemotes() {
   if (!world || phase === 'menu') return;
@@ -3313,11 +3457,13 @@ function renderMP() {
     card.querySelector('small').textContent = (g.id === LINKED ? t('mp.byLink') : '') + (left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name).join(', ') });
     const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
     const btn = card.querySelector('.act'); btn.disabled = false;
-    if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }
-    else if (g.is_member) { btn.textContent = t('mp.leave'); btn.onclick = () => mpAction('/groups/' + g.id + '/leave'); }
+    const quit = path => { if (Voice.gid === g.id) voiceLeave(); mpAction(path); }; // leaving the race leaves its voice chat
+    if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => quit('/groups/' + g.id + '/cancel'); }
+    else if (g.is_member) { btn.textContent = t('mp.leave'); btn.onclick = () => quit('/groups/' + g.id + '/leave'); }
     else { btn.textContent = t('mp.join'); btn.disabled = !!mine || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }
   });
   create.disabled = !!mine;
+  renderVoice();
   renderStartSum();
 }
 function raceList() {
@@ -3433,6 +3579,7 @@ $('#btnQuit').onclick = () => { $('#pauseM').classList.add('hidden'); $('#count'
 $('#btnAgain').onclick = () => { $('#resM').classList.add('hidden'); groupRide = null; startRace(); }; // a group race is ridden once: again is alone
 $('#btnMenu').onclick = () => { startMenu(); renderMenu(); };
 $('#btnPhoto').onclick = enterPhoto;
+$('#btnMic').onclick = () => voiceMute(voiceMicOn());
 $('#btnPhotoExit').onclick = exitPhoto;
 $('#btnSnap').onclick = snap;
 $('#btnShotClose').onclick = () => $('#shot').classList.add('hidden');
@@ -3450,6 +3597,7 @@ window.addEventListener('keydown', e => {
   if (e.key === ']') $('#gUp').click(); if (e.key === '[') $('#gDown').click();
   if ((e.key === 'v' || e.key === 'м') && !photo) $('#btnView').click();
   if (e.key === 'p' || e.key === 'з') photo ? exitPhoto() : enterPhoto();
+  if ((e.key === 'm' || e.key === 'ь') && Voice.on) voiceMute(voiceMicOn());
   if (e.key === ' ' && (phase === 'race' || phase === 'countdown')) { e.preventDefault(); paused ? $('#btnResume').click() : $('#btnPause').click(); }
 });
 document.addEventListener('visibilitychange', () => {

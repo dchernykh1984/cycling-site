@@ -9,7 +9,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-from .models import GroupRide, LiveRider, VirtualRide
+from .models import GroupRide, LiveRider, VirtualRide, VoiceSession
 
 # A row not refreshed for this long belongs to someone who closed the page.
 ONLINE_SECONDS = 15
@@ -47,3 +47,28 @@ def riders_beside(me: LiveRider, now=None):
     if me.mode == VirtualRide.Kind.FREE:
         return others.filter(group__isnull=True, mode=VirtualRide.Kind.FREE)
     return LiveRider.objects.none()
+
+
+def in_voice(group: GroupRide, now=None):
+    """Who is in a race's voice chat now: someone whose page stopped polling is not."""
+    now = now or timezone.now()
+    since = now - timedelta(seconds=ONLINE_SECONDS)
+    return (
+        VoiceSession.objects.filter(group=group, user__live_ride__updated_at__gte=since)
+        .select_related("user")
+        .order_by("user_id")
+    )
+
+
+def voice_room(user, me_row: LiveRider, now=None):
+    """The voice chat a rider belongs to and who else is in it.
+
+    Their own chat once they joined one; before that the race they ride or wait for, so the page can say
+    who is talking there.
+    """
+    now = now or timezone.now()
+    mine = VoiceSession.objects.filter(user=user).select_related("group").first()
+    group = mine.group if mine else me_row.group or open_groups(now).filter(memberships__user=user).first()
+    if group is None:
+        return None, VoiceSession.objects.none()
+    return group, in_voice(group, now).exclude(user=user)
