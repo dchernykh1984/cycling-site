@@ -68,8 +68,9 @@ registering several people, and the sizes on a phone.
   gets the event's invitation.
 - Members' entries: `can_self_edit` lets the manager edit and cancel them on the owner's terms; the
   participant list offers the buttons on them and shows them to the manager even when hidden until
-  approved; the profile's "Active registrations" lists them under the member's name; organizers get a
-  "Submitted by" column once any entry was submitted by someone other than its participant.
+  approved; the profile's "Active registrations" lists them under the member's name; organizers read
+  "Submitted by" under the registration date of an entry submitted by someone other than its
+  participant (a line in a cell: the organizer's table has no room for another column).
 - Photos: `can_represent` is `acts_for`; "My race photos", the event's registration cards and
   `GET /event-photos/me/registrations` list the members' registrations too.
 

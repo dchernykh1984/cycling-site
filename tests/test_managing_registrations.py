@@ -105,16 +105,16 @@ class MembersRegistrationsTests(TestCase):
         self.client.force_login(self.coach)
         self.assertContains(self.client.get("/en/accounts/profile/"), "Anna I.<BR>Dana B.")
 
-    def test_organizers_see_who_submitted_once_someone_submitted_for_another(self):
+    def test_organizers_see_who_submitted_an_entry_for_someone_else(self):
         self.client.force_login(self.organizer)
         with translation.override("en"):
-            heading = translation.pgettext("registration", "Submitted by")
-        self.assertNotContains(self.client.get(self.participants), heading)
+            said = translation.pgettext("registration", "Submitted by") + ": Ivan Petrov"
+        self.assertNotContains(self.client.get(self.participants), said)
         boris = make_user("boris", first_name="Boris", last_name="Sokolov")
         _manage(self.coach, boris)
         make_registration(self.comp, user=boris, registered_by=self.coach, first_name="Boris", last_name="Sokolov")
         page = self.client.get(self.participants)
-        self.assertContains(page, heading)
-        self.assertContains(page, "Ivan Petrov")
+        self.assertContains(page, said, count=1)
+        self.assertNotContains(page, "<th>Submitted by")
         self.client.force_login(self.coach)
-        self.assertNotContains(self.client.get(self.participants), heading)
+        self.assertNotContains(self.client.get(self.participants), said)

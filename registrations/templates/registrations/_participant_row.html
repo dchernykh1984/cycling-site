@@ -15,8 +15,9 @@
   {% endif %}
   {% if is_manager %}
   <td data-label="{% trans 'Rejected' %}">{% if reg.is_rejected %}<span class="badge bg-danger">{% trans "Yes" %}</span>{% if reg.rejection_note %}<div class="small text-muted">{{ reg.rejection_note }}</div>{% endif %}{% endif %}</td>
-  <td class="small text-muted" data-label="{% trans 'Registered' %}">{{ reg.registered_at|date:"d.m.Y" }}</td>
-  {% if show_registered_by %}<td class="small" data-label="{% trans 'Submitted by' context "registration" %}">{% if reg.registered_by_id and reg.registered_by_id != reg.user_id %}{{ reg.registered_by.public_display_name }}{% endif %}</td>{% endif %}
+  <td class="small text-muted" data-label="{% trans 'Registered' %}">{{ reg.registered_at|date:"d.m.Y" }}{% if reg.registered_by_id and reg.registered_by_id != reg.user_id %}
+    {% comment %}Submitted by someone other than its participant (issue #315): said under the date, so the organizer's table grows no column{% endcomment %}
+    <div>{% trans "Submitted by" context "registration" %}: {{ reg.registered_by.public_display_name }}</div>{% endif %}</td>
   <td class="reg-actions">
     <div class="d-flex gap-1 flex-wrap">
       {% if competition.require_approval %}
