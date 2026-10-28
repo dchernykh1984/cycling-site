@@ -11,6 +11,8 @@ from decimal import Decimal
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext
+from django.utils.translation import override as translation_override
 
 from accounts.models import User
 from calendar_app.models import Competition, CompetitionInvite
@@ -124,3 +126,27 @@ class WhoGetsTheFileTests(TestCase):
     def test_a_deleted_event_is_nobody_s(self):
         gone = _event(is_deleted=True, submitted_by=self.author)
         self.assertEqual(self._status(gone, self.admin), 404)
+
+
+class ButtonTests(TestCase):
+    """ "Add to calendar" beside "Share" on a published event's page, leading to its file."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.author = _user("author", User.Role.ORGANIZER)
+
+    def test_a_published_event_offers_its_file_in_the_page_s_language(self):
+        race = _event(submitted_by=self.author)
+        page = reverse("competition_detail", args=[race.pk])
+        for language in ("ru", "kk", "en"):
+            html = self.client.get(in_language(page, language)).content.decode()
+            with translation_override(language):
+                self.assertIn(f'aria-label="{gettext("Add to calendar")}"', html, language)
+            self.assertIn(f'href="/{language}/calendar/{race.pk}/event.ics"', html, language)
+
+    def test_an_event_awaiting_review_offers_none_even_to_its_author(self):
+        pending = _event(status=Competition.Status.PENDING_APPROVAL, approved_at=None, submitted_by=self.author)
+        self.client.force_login(self.author)
+        response = self.client.get(reverse("competition_detail", args=[pending.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "calendar-btn")

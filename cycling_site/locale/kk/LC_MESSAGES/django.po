@@ -2158,6 +2158,11 @@ msgstr "Сілтеме көшірілді"
 msgid "Share"
 msgstr "Бөлісу"
 
+#: cycling_site/templates/_calendar_button.html:7
+#: cycling_site/templates/_calendar_button.html:12
+msgid "Add to calendar"
+msgstr "Күнтізбеге қосу"
+
 #: cycling_site/templates/_skin_select.html:11
 msgid "Switch theme"
 msgstr "Такырыпты ауыстыру"
