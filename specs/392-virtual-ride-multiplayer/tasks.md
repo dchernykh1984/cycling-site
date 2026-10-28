@@ -1,7 +1,7 @@
 # Tasks: Virtual ride together, saved to the profile
 
 1. [x] Merge the author's patch (rides, records, group races, presence, profile card) onto `main`.
-2. [x] Three review cycles over it, each finding a commit with its test.
+2. [x] Review cycles over it and over the additions below, each finding a commit with its test.
 3. [x] The page in ru / kk / en, with the dictionary checked complete by a unit test.
 4. [x] A link to a group race: the endpoint, the site's page passing it on, sharing and marking it.
 5. [x] Rides to Strava as virtual rides: the grant, the track, the upload, the profile, the privacy

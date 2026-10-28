@@ -56,11 +56,12 @@ normally is.
    `read,activity:write` in a round trip separate from signing in.
 2. **Given** a connected member, **When** a ride that is not in demo mode is saved with its track,
    **Then** it is uploaded as a TCX file with `sport_type=VirtualRide`, the results say when it is on
-   Strava ("View on Strava") or why not, and "Send again" retries it.
+   Strava ("View on Strava") or why not, and "Send again" retries it; a ride Strava already has is
+   linked to that activity and never sent twice.
 3. **Given** the track, **Then** its positions are the route's own coordinates at the rider's
    distance, a point a second, with height, speed, power, cadence and pulse.
-4. **When** the member disconnects Strava, **Then** the grant is revoked at Strava and its tokens
-   deleted; nothing ever reads the member's Strava activities.
+4. **When** the member disconnects Strava, or their account is deleted, **Then** the grant is revoked
+   at Strava and its tokens deleted; nothing ever reads the member's Strava activities.
 
 ### User Story 6 - Talking during a group ride (Priority: P3)
 
@@ -72,6 +73,8 @@ normally is.
 ### Edge Cases
 
 - A ride longer than six hours keeps the first six hours of its track.
+- A host who leaves a waiting group race ("Start" alone) hands it to the rider who joined next; alone
+  in it, they cancel it. Deleting a ride of a group race moves the others up.
 - A grant revoked at Strava fails the next upload with its reason and forgets the tokens.
 - A rider whose page stops polling drops out of the online list after 15 s, and out of the voice chat
   with it.

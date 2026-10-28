@@ -32,7 +32,9 @@ the profile shows the stored name. A member's page records the ride's track, a p
 the rider is on the route's map (the route's own OpenStreetMap coordinates, simplified, so a turn may
 cut a corner), height, distance, speed, power, cadence and pulse. The setup page offers a member to
 connect Strava with Strava's button, or says rides go there and links to the profile to turn it off;
-the results say when the ride is on Strava ("View on Strava") or why not, with "Send again". The
+the results say when the ride is on Strava ("View on Strava") or why not, with "Send again"; a ride
+Strava already has is linked to that activity, never sent twice, and after half a minute of
+processing the page says to look in Strava later. The
 riders of a group race may talk while they wait and while they ride: a voice chat of up to
 `VOICE_MAX_RIDERS` (20) per race, offered when the site has a media server configured. Each page keeps
 one WebRTC connection to Cloudflare Realtime's media server, publishing its microphone (muted until
@@ -55,7 +57,7 @@ into view, tells a guest to sign in and brings them back to it, and says when th
 has started or does not exist. During a group race, or a free ride
 on the same route, each page reports its position about once a second and draws the others
 (`trainer/live.py`; rows older than 15 s count as gone). Group results are the members' saved rides,
-fastest first. The settings page is separate from the ride and offers racing, a cadence plan and free riding. It includes rider
+fastest first; deleting one moves the others up. The settings page is separate from the ride and offers racing, a cadence plan and free riding. It includes rider
 height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
 default. Free rides can be finished from the pause menu. Record labels keep the date and demo marker distinct. Tests:
 `tests/test_virtual_ride.py`, `tests/test_virtual_ride_api.py`, `tests/e2e/test_virtual_ride.py`.

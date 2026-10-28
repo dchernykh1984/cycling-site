@@ -26,15 +26,15 @@ together is polling (`trainer/live.py`, no socket server), Strava and the voice 
 - **X (checked, private)**: bounded inputs; tokens and media session ids stay on the server; the
   privacy policy says what is kept, shown and sent.
 - **XI (API promises)**: new endpoints and optional fields only.
-- **XII (any screen)**: controls named in every language; the profile's Strava controls and link
-  measured at 44 px on a phone.
+- **XII (any screen)**: controls named in every language; the page's buttons and the profile's
+  Strava controls and link measured at 44 px on a phone.
 - **XIV (explain where met)**: the setup page says what connecting Strava does; the voice block says
   who it is for, its limit of twenty and to wear headphones.
 
 ## Design
 
-1. Rides, records, group races and presence: the author's patch, merged onto `main` and fixed in three
-   review cycles.
+1. Rides, records, group races and presence: the author's patch, merged onto `main` and fixed in the
+   review cycles the pull request lists.
 2. Language: `?lang=` from the site's page; `t()` over the dictionary; data names `L({ru, kk, en})`.
 3. Group link: `GET /groups/{id}`; `?group=` passed through the site's page; links lead to the site's
    page (`/me.page_url`), which hands out the CSRF cookie.

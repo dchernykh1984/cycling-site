@@ -112,8 +112,8 @@ once; confirming the address unlocks everything that writes.
   rides to Strava is a separate grant (`read,activity:write`) the member gives from the profile's
   "Virtual rides" card with Strava's own "Connect with Strava" button; its tokens live in
   `trainer.StravaConnection`, are refreshed when they expire, and are revoked at Strava and deleted
-  when the member disconnects it there or through the API. Nothing reads the member's Strava
-  activities.
+  when the member disconnects it there or through the API, or their account is deleted. Nothing
+  reads the member's Strava activities.
 - **FR-ACC-008**: The profile lists the member's own submitted events (those needing attention
   first) and their registrations: open entries as cards with approval and payment badges as their
   event requires, and every entry in a table below that marks only the rejected, waiting and unpaid
