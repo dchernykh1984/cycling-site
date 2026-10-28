@@ -344,7 +344,7 @@
                             <a href="{% url 'competition_detail' reg.competition.pk %}" class="fw-semibold">{{ reg.competition.title }}</a>
                             <span class="text-nowrap text-muted small">{{ reg.competition.date_start|date:"d.m.Y" }}</span>
                         </div>
-                        {% if reg.user_id != user.pk %}<div class="small">{{ reg.last_name }} {{ reg.first_name }}</div>{% endif %}
+                        {% if reg.user_id != user.pk %}<div class="small">{% if reg.is_relay %}{{ reg.participant_names|safe }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %}</div>{% endif %}
                         {% if reg.category %}<div class="text-muted small">{{ reg.category.name }}</div>{% endif %}
                         <div class="mt-2">
                             {% if reg.is_approved %}
