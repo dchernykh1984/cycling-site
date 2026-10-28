@@ -45,6 +45,8 @@ published; if that is not possible, skip it rather than guessing.
   show up: the gathering time and the start time, the meeting place, the route, the pace, whether
   anyone may join, the fee, and how to register when the post says. Keep the club's own concrete
   wording; do not invent details the post does not state.
+- **Type and discipline**: a coffee ride goes to the road discipline "Кофе-райд" with the
+  "Тренировка / Прогулка" type.
 - **No links and no platform.** Do not write a link anywhere, and never name the site or app the
   posts come from. The event is credited to the account by name alone, and that line is added for
   you -- do not write it yourself.

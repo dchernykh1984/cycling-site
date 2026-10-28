@@ -57,7 +57,9 @@ the day the message was published; if that is not possible, skip it rather than 
   Keep the community's own concrete wording; do not invent details the message does not state.
 - **Type and discipline**: the lists cover more than cycling -- running, ski racing and hiking
   included. A hike or a walk goes to the hiking disciplines with the "Тренировка / Прогулка"
-  type; a race goes to its discipline with the race type.
+  type; a race goes to its discipline with the race type. A coffee ride (кофе-райд: a social
+  road ride with a stop at a cafe) goes to the road discipline "Кофе-райд" with the
+  "Тренировка / Прогулка" type.
 - **Say which message announced it.** Every message is introduced by `--- message <number>,
   published <date>`; put that number in `source_message_id`. The site builds the link to that post
   from it -- give the number, never an address of your own.
