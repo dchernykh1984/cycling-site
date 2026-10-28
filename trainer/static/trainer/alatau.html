@@ -3346,6 +3346,7 @@ function voiceSync(list) {
     if (missing.length) {
       missing.forEach(key => Voice.peers.set(key, { mid: null, audio: null })); // asked for: not asked again every poll
       voiceRun(() => voicePull(missing)).catch(e => {
+        if (!Voice.on) return;
         voiceNote(t('voice.failed', { msg: e.message }));
         // the site or the media server stumbled: ask for these riders again a little later
         setTimeout(() => missing.forEach(key => { const p = Voice.peers.get(key); if (p && !p.mid) Voice.peers.delete(key); }), 10000);
@@ -3355,7 +3356,9 @@ function voiceSync(list) {
   renderVoice();
 }
 async function voicePull(keys) {
+  if (!Voice.on) return; // left while this waited its turn
   const res = await Site.post('/groups/' + Voice.gid + '/voice/pull', { keys });
+  if (!Voice.on) return;
   res.tracks.forEach(x => { const p = Voice.peers.get(x.key); if (p) p.mid = x.mid; });
   if (!res.offer) return;
   await Voice.pc.setRemoteDescription({ type: 'offer', sdp: res.offer });

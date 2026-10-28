@@ -282,6 +282,7 @@ def _join_voice(page: Page, *, answer_breaks: bool = False) -> None:
                 {value: {getUserMedia: async () => tone()}, configurable: true});
             const Site = {
                 async post(path, body) {
+                    (window.posts = window.posts || []).push(path);
                     if (path.endsWith('/voice')) {
                         await sfu.setRemoteDescription({type: 'offer', sdp: body.offer});
                         await sfu.setLocalDescription(await sfu.createAnswer()); await gathered(sfu);
@@ -367,3 +368,14 @@ def test_every_button_of_the_setup_page_is_big_enough_to_tap_on_a_phone(page: Pa
             .map(b => [b.id || b.textContent.trim(), b.getBoundingClientRect().height]).filter(([, h]) => h < 44)"""
     )
     assert small == [], small
+
+
+@pytest.mark.only_browser("chromium")
+def test_leaving_the_voice_chat_drops_what_was_still_waiting_to_be_asked(page: Page):
+    _join_voice(page)
+    # a newcomer is asked for, and the rider leaves before the media server is asked
+    page.evaluate("voiceSync([{user_id: 2, name: 'Anna', key: 'k2'}]); voiceLeave();")
+    page.wait_for_timeout(500)
+    assert page.evaluate("window.posts.filter(p => p.endsWith('/voice/pull'))") == []
+    # no failure to report: the line says who is still talking, without the rider who left
+    expect(page.locator("#voiceWho")).to_have_text(page.evaluate("TEXT[LANG]['voice.in'].replace('{list}', 'Anna')"))
