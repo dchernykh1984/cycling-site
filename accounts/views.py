@@ -175,7 +175,7 @@ class ProfileView(TemplateView):
         if self.request.user.is_authenticated:
             # Hide registrations whose competition was soft-deleted (issue #161).
             rows = self._registrations_with_actions(self.request.user)
-            context["registrations"] = rows
+            context["registrations"] = [reg for reg in rows if reg.user_id == user.pk]
             # The entries still worth acting on, nearest race first: everything else is history
             # and belongs in the table below, where it is read rather than edited.
             context["active_registrations"] = sorted(
@@ -203,16 +203,20 @@ class ProfileView(TemplateView):
 
     @staticmethod
     def _registrations_with_actions(user):
-        """The reader's own entries, each carrying whether they may still edit or cancel it.
+        """The reader's own entries and their members' (issue #315), each carrying whether the reader
+        may still edit or cancel it.
 
         The profile offers the same two buttons as the participant list, so it asks the same two
         questions the edit and delete views ask before they act -- rather than a second rule that
         can drift away from them and offer a button the server then refuses.
         """
+        from registrations.models import CompetitionRegistration
         from registrations.views import can_manage, can_self_edit
 
+        member_ids = managing.member_ids(user)
         rows = list(
-            user.competition_registrations.filter(competition__is_deleted=False)
+            CompetitionRegistration.objects.filter(Q(user=user) | Q(user_id__in=member_ids))
+            .filter(competition__is_deleted=False)
             # An organizer's rights are decided by the event's submitter, so that row travels with
             # the event -- otherwise the permission check fetches it once per registration.
             .select_related("competition", "competition__submitted_by", "competition__location", "category")
@@ -221,7 +225,7 @@ class ProfileView(TemplateView):
             .order_by("-competition__date_start", "-registered_at")
         )
         for reg in rows:
-            reg.can_edit = can_manage(user, reg.competition) or can_self_edit(user, reg.competition, reg)
+            reg.can_edit = can_manage(user, reg.competition) or can_self_edit(user, reg.competition, reg, member_ids)
         return rows
 
 

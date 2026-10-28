@@ -4388,3 +4388,10 @@ msgstr "Сілтемеңіздің мерзімі %(date)s өтті."
 
 msgid "Create link"
 msgstr "Сілтеме жасау"
+
+msgctxt "registration"
+msgid "Submitted by"
+msgstr "Тіркеген"
+
+msgid "Cancel this registration?"
+msgstr "Бұл тіркелуден бас тартасыз ба?"

@@ -13,6 +13,7 @@ from django.utils.html import escape
 from django.views import View
 from django.views.generic import TemplateView
 
+from accounts import managing
 from accounts.access import ParticipantRequiredMixin
 from calendar_app.models import Competition
 from calendar_app.visibility import can_see, manages
@@ -34,21 +35,26 @@ def can_manage_or_own(user, competition) -> bool:
     return can_manage(user, competition) or (user.is_authenticated and user == competition.submitted_by)
 
 
-def can_self_edit(user, competition, reg) -> bool:
-    """Whether ``user`` may edit/cancel ``reg`` as its owner (not as a manager).
+def can_self_edit(user, competition, reg, member_ids=None) -> bool:
+    """Whether ``user`` may edit/cancel ``reg`` as its owner, or for its owner (not as a manager).
 
     Managers are handled separately and take precedence; this covers a plain participant
     acting on their own entry while registration is open (by deadline -- the participant limit
-    is ignored since they already hold a slot) and the entry is not rejected. Authorization is
-    keyed on the stored ``reg.user`` only, never on request data.
+    is ignored since they already hold a slot) and the entry is not rejected -- and, on the same
+    terms, whoever manages the participant's registrations (issue #315). Authorization is keyed on
+    the stored ``reg.user`` only, never on request data. ``member_ids``, when given, are the members
+    ``user`` manages, asked once for a page of many rows.
     """
-    return bool(
+    if not (
         user.is_authenticated
         and reg.user_id is not None
-        and reg.user_id == user.id
         and not reg.is_rejected
         and competition.is_registration_open(ignore_limit=True)
-    )
+    ):
+        return False
+    if reg.user_id == user.id:
+        return True
+    return reg.user_id in member_ids if member_ids is not None else managing.acts_for(user, reg.user_id)
 
 
 class RegisterForCompetitionView(ParticipantRequiredMixin, View):
@@ -404,10 +410,12 @@ class ParticipantListView(TemplateView):
         if competition.status != Competition.Status.APPROVED and not is_manager:
             raise Http404
 
+        # The reader's own entries and those of the members they manage (issue #315)
+        owned = {user.id} | managing.member_ids(user) if user.is_authenticated else set()
         if is_manager:
-            registrations = list(competition.registrations.select_related("category", "team", "user"))
+            registrations = list(competition.registrations.select_related("category", "team", "user", "registered_by"))
         else:
-            registrations = list(self._public_registrations(competition, user))
+            registrations = list(self._public_registrations(competition, owned))
 
         cats = list(competition.registration_categories.filter(is_deleted=False))
         # Sections cover active categories plus any (soft-deleted) category a shown
@@ -424,13 +432,19 @@ class ParticipantListView(TemplateView):
             registrations, section_categories, counts=lambda reg: counts_for_bib(reg, competition)
         )
         context["is_manager"] = is_manager
-        # A signed-in participant (not a manager) gets Edit/Cancel controls on their own rows
-        # while registration is open. Compute once so the template can add an actions column.
+        # Who submitted an entry, for the organizers, once anyone submitted one for someone else.
+        context["show_registered_by"] = is_manager and any(
+            reg.registered_by_id is not None and reg.registered_by_id != reg.user_id for reg in registrations
+        )
+        # A signed-in participant (not a manager) gets Edit/Cancel controls on their own rows and on
+        # those of the members they manage while registration is open. Compute once so the template
+        # can add an actions column.
+        context["owned_ids"] = owned
         context["show_owner_actions"] = (
             not is_manager
             and user.is_authenticated
             and competition.is_registration_open(ignore_limit=True)
-            and any(reg.user_id == user.id for reg in registrations)
+            and any(reg.user_id in owned for reg in registrations)
         )
         context["categories"] = cats
         context["category_stats"] = [
@@ -445,7 +459,7 @@ class ParticipantListView(TemplateView):
         context["max_participants"] = competition.max_participants
         return context
 
-    def _public_registrations(self, competition, user):
+    def _public_registrations(self, competition, owned):
         qs = competition.registrations.filter(is_rejected=False)
         visibility = Q()
         if competition.require_approval and not competition.show_unapproved_in_list:
@@ -454,8 +468,9 @@ class ParticipantListView(TemplateView):
             visibility &= Q(is_paid=True)
         if visibility:
             # Hidden-until-qualified rules apply, but a signed-in owner must still see (and be
-            # able to edit) their own not-yet-qualified entry, so always include their own rows.
-            qs = qs.filter(visibility | Q(user=user)) if user.is_authenticated else qs.filter(visibility)
+            # able to edit) their own not-yet-qualified entry -- and their members' -- so always
+            # include those rows.
+            qs = qs.filter(visibility | Q(user_id__in=owned)) if owned else qs.filter(visibility)
         return qs.select_related("category", "team")
 
 

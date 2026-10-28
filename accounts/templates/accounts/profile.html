@@ -344,6 +344,7 @@
                             <a href="{% url 'competition_detail' reg.competition.pk %}" class="fw-semibold">{{ reg.competition.title }}</a>
                             <span class="text-nowrap text-muted small">{{ reg.competition.date_start|date:"d.m.Y" }}</span>
                         </div>
+                        {% if reg.user_id != user.pk %}<div class="small">{{ reg.last_name }} {{ reg.first_name }}</div>{% endif %}
                         {% if reg.category %}<div class="text-muted small">{{ reg.category.name }}</div>{% endif %}
                         <div class="mt-2">
                             {% if reg.is_approved %}
@@ -363,7 +364,7 @@
                             <a href="{% url 'registrations:edit_registration' reg.competition.pk reg.pk %}"
                                class="btn btn-outline-secondary btn-sm">{% trans "Edit" %}</a>
                             <form method="post" action="{% url 'registrations:delete_registration' reg.competition.pk reg.pk %}"
-                                  onsubmit="return confirm('{% trans "Cancel your registration?" %}')">
+                                  onsubmit="return confirm('{% if reg.user_id == user.pk %}{% trans "Cancel your registration?" %}{% else %}{% trans "Cancel this registration?" %}{% endif %}')">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-danger btn-sm">{% trans "Cancel registration" %}</button>
                             </form>
