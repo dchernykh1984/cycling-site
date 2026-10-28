@@ -811,8 +811,6 @@ const TEXT = {
     "mp.linkStarted": "Групповая гонка из ссылки уже стартовала.",
     "mp.linkMissing": "Групповой гонки по этой ссылке нет.",
     "strava.offer": "Подключите Strava — и каждый заезд, который вы закончите здесь, будет уходить туда как виртуальный заезд по улицам маршрута.",
-    "strava.on": "Заезды уходят в Strava как виртуальные заезды.",
-    "strava.manage": "Настроить в личном кабинете",
     "strava.processing": "Отправляем заезд в Strava…",
     "strava.done": "Заезд в Strava как виртуальный заезд.",
     "strava.failed": "Заезд не ушёл в Strava: {msg}",
@@ -1122,8 +1120,6 @@ const TEXT = {
     "mp.linkStarted": "Сілтемедегі топтық жарыс басталып кетті.",
     "mp.linkMissing": "Бұл сілтеме бойынша топтық жарыс жоқ.",
     "strava.offer": "Strava-ны қосыңыз — мұнда аяқтаған әр заезд маршрут көшелері бойымен виртуалды заезд ретінде сонда жіберіледі.",
-    "strava.on": "Заездтер Strava-ға виртуалды заезд ретінде жіберіледі.",
-    "strava.manage": "Жеке кабинетте баптау",
     "strava.processing": "Заездті Strava-ға жіберіп жатырмыз…",
     "strava.done": "Заезд Strava-ға виртуалды заезд ретінде жүктелді.",
     "strava.failed": "Заезд Strava-ға жіберілмеді: {msg}",
@@ -1433,8 +1429,6 @@ const TEXT = {
     "mp.linkStarted": "The group race in your link has already started.",
     "mp.linkMissing": "There is no group race at this link.",
     "strava.offer": "Connect Strava, and every ride you finish here goes there as a virtual ride along the streets of its route.",
-    "strava.on": "Your rides go to Strava as virtual rides.",
-    "strava.manage": "Manage in your profile",
     "strava.processing": "Sending the ride to Strava…",
     "strava.done": "The ride is on Strava as a virtual ride.",
     "strava.failed": "The ride did not reach Strava: {msg}",
@@ -3152,19 +3146,15 @@ function trackPoint(inp) {
   return [Math.round(raceT * 10) / 10, +ll.lat.toFixed(6), +ll.lon.toFixed(6), Math.round(o.y * 10) / 10, Math.round(me.stats.dist * 10) / 10,
     Math.round(clamp(me.v, 0, 40) * 100) / 100, Math.round(clamp(inp.P || 0, 0, 3000)), Math.round(clamp(inp.cad || 0, 0, 250)), Math.round(clamp(Sensors.hr() || 0, 0, 260))];
 }
-// on the setup page: an offer to connect Strava, or where to turn it off
+// on the setup page: an offer to connect Strava, to a member who has not; turning it off is the profile's
 function renderStravaNote() {
-  const el = $('#stravaNote'), who = Records.me, on = !!(who && who.authenticated && who.strava_available);
+  const el = $('#stravaNote'), who = Records.me, on = !!(who && who.authenticated && who.strava_available && !who.strava_connected);
   el.classList.toggle('hidden', !on); if (!on) return;
   el.textContent = '';
   const text = document.createElement('span'), a = document.createElement('a');
-  a.target = '_top';
-  if (who.strava_connected) {
-    text.textContent = t('strava.on'); a.href = Records.accountUrl + '#virtual-rides-strava'; a.textContent = t('strava.manage');
-  } else {
-    text.textContent = t('strava.offer'); a.href = langPath(who.strava_connect_url) + '?next=' + encodeURIComponent(topPath());
-    a.className = 'strava-btn'; a.innerHTML = STRAVA_LOGO + '<span>Connect with Strava</span>';
-  }
+  a.target = '_top'; a.className = 'strava-btn'; a.innerHTML = STRAVA_LOGO + '<span>Connect with Strava</span>';
+  a.href = langPath(who.strava_connect_url) + '?next=' + encodeURIComponent(topPath());
+  text.textContent = t('strava.offer');
   el.append(text, a);
 }
 // what happened to a saved ride at Strava: processing, an activity to open, or why not and another try

@@ -30,8 +30,8 @@ self-contained file. A route name the page sends with a saved ride or a group ra
 language the page spoke then; the page itself shows the routes it knows in its current language,
 the profile shows the stored name. A member's page records the ride's track, a point a second: where
 the rider is on the route's map (the route's own OpenStreetMap coordinates, simplified, so a turn may
-cut a corner), height, distance, speed, power, cadence and pulse. The setup page offers a member to
-connect Strava with Strava's button, or says rides go there and links to the profile to turn it off;
+cut a corner), height, distance, speed, power, cadence and pulse. The setup page offers a member who
+has not connected Strava to connect it with Strava's button, and says nothing of it to one who has;
 the results say when the ride is on Strava ("View on Strava") or why not, with "Send again"; a ride
 Strava already has is linked to that activity, never sent twice, and after half a minute of
 processing the page says to look in Strava later. The
