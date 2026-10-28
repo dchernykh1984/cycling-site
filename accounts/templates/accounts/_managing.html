@@ -26,7 +26,7 @@ them. Named by what they do, with no word for a role.{% endcomment %}
     <h2 class="h5 mb-2">{% trans "Whose registrations and photos I manage" %}</h2>
     {% if managing.members %}
     <div class="table-responsive mb-3">
-        <table class="table table-sm align-middle mb-0">
+        <table class="table table-sm align-middle mb-0 managing-table">
             <thead>
                 <tr>
                     <th>{% trans "Last name" %}</th>
@@ -41,13 +41,13 @@ them. Named by what they do, with no word for a role.{% endcomment %}
             <tbody>
                 {% for row in managing.members %}{% with person=row.member %}
                 <tr>
-                    <td>{{ person.last_name }}</td>
-                    <td>{{ person.first_name }}</td>
-                    <td class="text-nowrap">{{ person.birth_date|date:"SHORT_DATE_FORMAT" }}</td>
-                    <td>{{ person.get_gender_display }}</td>
-                    <td>{{ person.city }}</td>
-                    <td>{{ person.team }}</td>
-                    <td class="text-end">
+                    <td data-label="{% trans 'Last name' %}">{{ person.last_name }}</td>
+                    <td data-label="{% trans 'First name' %}">{{ person.first_name }}</td>
+                    <td class="text-nowrap" data-label="{% trans 'Date of birth' %}">{{ person.birth_date|date:"SHORT_DATE_FORMAT" }}</td>
+                    <td data-label="{% trans 'Gender' %}">{{ person.get_gender_display }}</td>
+                    <td data-label="{% trans 'City' %}">{{ person.city }}</td>
+                    <td data-label="{% trans 'Team' %}">{{ person.team }}</td>
+                    <td class="text-end reg-actions">
                         <form method="post" action="{% url 'account_managing_drop' person.pk %}"
                               onsubmit="return confirm('{% filter escapejs %}{% trans "Stop managing this person's registrations and photos?" %}{% endfilter %}')">
                             {% csrf_token %}
@@ -66,7 +66,7 @@ them. Named by what they do, with no word for a role.{% endcomment %}
     {% if managing.waiting %}
     <h3 class="h6">{% trans "Waiting for your answer" %}</h3>
     <div class="table-responsive mb-2">
-        <table class="table table-sm align-middle mb-0">
+        <table class="table table-sm align-middle mb-0 managing-table">
             <thead>
                 <tr>
                     <th>{% trans "Last name" %}</th>
@@ -79,11 +79,11 @@ them. Named by what they do, with no word for a role.{% endcomment %}
             <tbody>
                 {% for row in managing.waiting %}{% with person=row.member %}
                 <tr>
-                    <td>{{ person.last_name }}</td>
-                    <td>{{ person.first_name }}</td>
-                    <td>{{ person.team }}</td>
-                    <td>{{ person.birth_date|date:"Y" }}</td>
-                    <td>
+                    <td data-label="{% trans 'Last name' %}">{{ person.last_name }}</td>
+                    <td data-label="{% trans 'First name' %}">{{ person.first_name }}</td>
+                    <td data-label="{% trans 'Team' %}">{{ person.team }}</td>
+                    <td data-label="{% trans 'Year of birth' %}">{{ person.birth_date|date:"Y" }}</td>
+                    <td class="reg-actions">
                         <div class="d-flex justify-content-end gap-2">
                             <form method="post" action="{% url 'account_managing_accept' person.pk %}">
                                 {% csrf_token %}
