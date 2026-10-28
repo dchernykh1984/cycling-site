@@ -78,27 +78,7 @@ _DESCRIBE = """
 # What broke a rule when the rule came in, by cause. Each entry names its skin, and the set only
 # shrinks: a fixed break is dropped here, a new one fails. The orange skin carries its own templates
 # and breaks none of these.
-# Lux's btn-outline-secondary in the light skin: grey on white at rest (2.86), white on grey under
-# the pointer (1.49). The unselected tabs and the share button; on a phone the filter button and
-# the share button are icons alone, known by their outline (3:1).
-# test_skin_contrast.py's KNOWN_SHORTFALLS keep the same debt; the dark skin passes.
-_LIGHT_OUTLINE_BUTTONS = (
-    {
-        f"light|contrast/light/{viewport}/{tab}/#view-link-{other}/{state}"
-        for viewport in VIEWPORTS
-        for tab in TABS
-        for other in TABS
-        if other != tab
-        for state in STATES
-    }
-    # On a phone the calendar opens on its days as a list, so "List" is the selected tab there and
-    # "Calendar", unselected, is drawn as the same outline button.
-    | {f"light|contrast/light/phone/calendar/#view-link-calendar/{state}" for state in STATES}
-    | {f"light|border/light/phone/{tab}/#filter-toggle" for tab in TABS}
-    | {f"light|contrast/light/desktop/{tab}/[data-copied-label]/{state}" for tab in TABS for state in STATES}
-    | {f"light|border/light/phone/{tab}/[data-copied-label]" for tab in TABS}
-)
-KNOWN: set[str] = _LIGHT_OUTLINE_BUTTONS
+KNOWN: set[str] = set()
 
 
 def _breaks(found):
