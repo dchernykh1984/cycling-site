@@ -4414,3 +4414,31 @@ msgstr "Тіркелу енді қолжетімсіз."
 
 msgid "A participant with this name and birth year is already registered."
 msgstr "Осындай аты мен туған жылы бар қатысушы тіркелген."
+
+#, python-format
+msgid "%(name)s (you)"
+msgstr "%(name)s (сіз)"
+
+msgid "Another person"
+msgstr "Басқа адам"
+
+msgid "Tick whom to register. Each person gets the event's form, filled in from their profile; what you add goes into the registration only."
+msgstr "Кімді тіркеу керегін белгілеңіз. Әркімге профилінен толтырылған іс-шара формасы беріледі; сіз қосқан мәлімет тек өтінімге түседі."
+
+msgid "Tick at least one person."
+msgstr "Кемінде бір адамды белгілеңіз."
+
+msgid "Registration submitted"
+msgstr "Өтінім берілді"
+
+msgid "Complete your profile to register: it has no gender or date of birth."
+msgstr "Тіркелу үшін профильді толтырыңыз: онда жынысы немесе туған күні жоқ."
+
+msgid "Their profile has no gender or date of birth: ask them to complete it."
+msgstr "Бұл адамның профилінде жынысы немесе туған күні жоқ: профилін толтыруын сұраңыз."
+
+msgid "Everyone you could register here is registered already."
+msgstr "Мұнда тіркей алатын адамдарыңыздың бәрі тіркелген."
+
+msgid "Already registered for this competition."
+msgstr "Бұл іс-шараға өтінім бұрыннан бар."

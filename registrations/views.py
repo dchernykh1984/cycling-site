@@ -65,11 +65,54 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
     def _get_competition(self, pk):
         return get_object_or_404(Competition, pk=pk, is_deleted=False)
 
+    def _many(self, request, competition, rows, nobody=False):
+        """The page for several (issue #315): the reader and the members they manage, ticked."""
+        return render(
+            request,
+            "registrations/register_many.html",
+            {
+                "competition": competition,
+                "rows": rows,
+                "nobody": nobody,
+                "is_free": registering.is_free(competition),
+                "relay_enabled": False,
+                "all_categories_json": self._categories_json(competition),
+            },
+        )
+
+    def _post_many(self, request, competition, rows):
+        """Enter whoever was ticked on the page for several, from the top; the page again if anyone
+        could not be."""
+        if not registering.ticks_allowed(competition, request.user, request.POST):
+            raise PermissionDenied
+        if not request.POST.getlist("person"):
+            return self._many(request, competition, rows, nobody=True)
+        if registering.enter_rows(competition, rows, request.user, request.POST):
+            return redirect("registrations:participant_list", pk=competition.pk)
+        return self._many(request, competition, rows)
+
+    @staticmethod
+    def _categories_json(competition):
+        categories = RegistrationCategory.objects.filter(competition=competition, is_deleted=False)
+        return json.dumps(
+            [
+                {
+                    "id": c.pk,
+                    "name": c.name,
+                    "male": c.male,
+                    "female": c.female,
+                    "birth_from": c.birth_from.isoformat() if c.birth_from else None,
+                    "birth_to": c.birth_to.isoformat() if c.birth_to else None,
+                    "is_open": c.is_open(),
+                }
+                for c in categories
+            ]
+        )
+
     def _page(self, request, competition, form, relay_members_post=()):
         """The page as first shown and as shown again after a refusal: one context for both, so a
         refused entry keeps the category filter working and the relay team as it was typed."""
         user = request.user
-        categories = RegistrationCategory.objects.filter(competition=competition, is_deleted=False)
         return render(
             request,
             self.template_name,
@@ -81,20 +124,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 "relay_enabled": competition.relay_enabled,
                 "relay_max_members": competition.relay_max_members,
                 "relay_members_post": relay_members_post,
-                "all_categories_json": json.dumps(
-                    [
-                        {
-                            "id": c.pk,
-                            "name": c.name,
-                            "male": c.male,
-                            "female": c.female,
-                            "birth_from": c.birth_from.isoformat() if c.birth_from else None,
-                            "birth_to": c.birth_to.isoformat() if c.birth_to else None,
-                            "is_open": c.is_open(),
-                        }
-                        for c in categories
-                    ]
-                ),
+                "all_categories_json": self._categories_json(competition),
             },
         )
 
@@ -114,6 +144,9 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 },
             )
 
+        rows = registering.rows_for(competition, request.user)
+        if rows is not None:
+            return self._many(request, competition, rows)
         return self._page(request, competition, registering.blank_form(competition, request.user))
 
     def post(self, request, pk):
@@ -126,6 +159,9 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
             raise PermissionDenied
 
         user = request.user
+        rows = registering.rows_for(competition, user)
+        if rows is not None:
+            return self._post_many(request, competition, rows)
         if not registering.is_free(competition) and registering.profile_incomplete(user):
             raise PermissionDenied
 

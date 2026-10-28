@@ -5,12 +5,14 @@ entry goes through ``register_one``, so one rule decides with what data a person
 """
 
 import datetime
+from dataclasses import dataclass
 from typing import cast
 
 from django import forms
 from django.db import transaction
 from django.utils.translation import gettext
 
+from accounts import managing
 from calendar_app.models import Competition
 
 from .forms import RegistrationForm
@@ -48,7 +50,12 @@ def _offer(form, categories) -> None:
 
 
 def blank_form(competition, person, prefix=None) -> RegistrationForm:
-    """The form as the page first shows it for ``person``: filled in from their profile."""
+    """The form as the page first shows it for ``person``: filled in from their profile; empty for
+    nobody's, as for another person typed in where anyone may be entered."""
+    if person is None:
+        form = _form(competition, None, prefix=prefix)
+        _offer(form, RegistrationCategory.objects.none())
+        return form
     categories = available_categories(competition, person.gender, person.birth_date)
     initial = {
         "first_name": person.first_name,
@@ -107,7 +114,10 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
     with transaction.atomic():
         competition = Competition.objects.select_for_update().get(pk=competition.pk)
         if not relay_enabled and check_duplicate(competition, person, first_name, last_name, birth_date):
-            form.add_error(None, gettext("You are already registered for this competition."))
+            if person == registered_by:
+                form.add_error(None, gettext("You are already registered for this competition."))
+            else:
+                form.add_error(None, gettext("Already registered for this competition."))
             return None
 
         team_name = cleaned.get("team_name", "").strip()
@@ -150,3 +160,111 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
             registration_mode_locked=True
         )
     return registration
+
+
+def already_entered(competition, person) -> bool:
+    """Whether ``person`` holds an entry the event would refuse them a second of."""
+    if not is_free(competition):
+        return CompetitionRegistration.objects.filter(competition=competition, user=person).exists()
+    if competition.allow_multiple_registrations or not person.birth_date:
+        return False
+    return check_duplicate(competition, person, person.first_name, person.last_name, person.birth_date)
+
+
+@dataclass
+class Row:
+    """One person on the page for several (issue #315), and how entering them went."""
+
+    key: str  # what the person's checkbox sends: their account's id, or "other"
+    label: str
+    form: RegistrationForm | None = None
+    profile: object = None  # whose profile fills the form in: none for another person typed in
+    blocked: str = ""  # why the person has no checkbox
+    checked: bool = False
+    entered: bool = False
+
+    @property
+    def prefix(self) -> str:
+        return f"p{self.key}"
+
+    @property
+    def ids(self) -> str:
+        """What starts the ids of the row's fields, so that two rows never share one."""
+        return f"{self.prefix}-"
+
+
+def rows_for(competition, user) -> list[Row] | None:
+    """The people the page for several offers, top to bottom; None when it is the page for one.
+
+    The reader first, then the members they manage by name, leaving out whoever is entered already
+    unless the event takes several entries from one person; where anyone may be entered, one more
+    for another person typed in. A person whose profile cannot fill an event that takes only one's
+    own data is listed without a checkbox, with the reason.
+    """
+    if competition.relay_enabled:
+        return None
+    members = [row.member for row in managing.members(user)]
+    if not members:
+        return None
+    rows = []
+    for person in [user, *members]:
+        if already_entered(competition, person):
+            continue
+        is_reader = person == user
+        row = Row(
+            key=str(person.pk),
+            label=gettext("%(name)s (you)") % {"name": person.public_display_name}
+            if is_reader
+            else f"{person.last_name} {person.first_name}".strip() or person.public_display_name,
+            profile=person,
+        )
+        if not is_free(competition) and profile_incomplete(person):
+            row.blocked = (
+                gettext("Complete your profile to register: it has no gender or date of birth.")
+                if is_reader
+                else gettext("Their profile has no gender or date of birth: ask them to complete it.")
+            )
+        else:
+            row.form = blank_form(competition, person, prefix=row.prefix)
+        rows.append(row)
+    if is_free(competition):
+        rows.append(
+            Row(key="other", label=gettext("Another person"), form=blank_form(competition, None, prefix="pother"))
+        )
+    return rows
+
+
+def enter_rows(competition, rows, user, data) -> bool:
+    """Enter the people ticked in ``data``, one by one from the top: as many as can be.
+
+    Each row ticked gets its form as sent; a row entered is marked so, one refused keeps the reason
+    in its form. A member's entry is theirs, submitted by ``user``; in an invite-only event the
+    member is then let in as though they had opened its link. Returns whether everyone ticked was
+    entered.
+    """
+    from calendar_app.models import CompetitionInvite
+
+    chosen = set(data.getlist("person"))
+    everyone = True
+    for row in rows:
+        if row.key not in chosen or row.blocked:
+            continue
+        row.checked = True
+        account = row.profile or user
+        row.form = bound_form(competition, account, data, prefix=row.prefix)
+        if row.form.is_valid() and register_one(competition, row.form, account, registered_by=user):
+            row.entered = True
+            if competition.invite_only and account != user:
+                CompetitionInvite.objects.get_or_create(competition=competition, user=account)
+        else:
+            everyone = False
+    return everyone
+
+
+def ticks_allowed(competition, user, data) -> bool:
+    """Whether every box ticked in ``data`` is one the page may offer ``user``: themselves, a member
+    they manage, or another person where anyone may be entered. Anything else is a forged request."""
+    allowed = {str(user.pk), *(str(pk) for pk in managing.member_ids(user))}
+    if is_free(competition):
+        allowed.add("other")
+    return set(data.getlist("person")) <= allowed

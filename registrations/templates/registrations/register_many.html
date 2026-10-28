@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% comment %}Registering several people at once (issue #315): the reader and the members whose registrations
+they manage, each with a checkbox and, once ticked, the event's form filled in from their profile.
+Those registered by a send lose the checkbox; those who could not be keep it, with the reason.{% endcomment %}
+
+{% block title %}{% trans "Register" %} — {{ competition.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-md-9 col-lg-7">
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'competition_detail' competition.pk %}">{{ competition.title }}</a></li>
+    <li class="breadcrumb-item active">{% trans "Register" %}</li>
+  </ol>
+</nav>
+
+<h1 class="mb-2">{% trans "Registration" %}: {{ competition.title }}</h1>
+
+{% if rows %}
+<p class="text-muted mb-4">{% trans "Tick whom to register. Each person gets the event's form, filled in from their profile; what you add goes into the registration only." %}</p>
+
+{% if nobody %}
+<div class="alert alert-danger" role="alert">{% trans "Tick at least one person." %}</div>
+{% endif %}
+
+<form method="post" id="registration-form" class="register-many">
+{% csrf_token %}
+{% for row in rows %}
+<section class="register-person card mb-3" id="person-{{ row.key }}">
+  <div class="card-body">
+    {% if row.entered %}
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="fw-semibold">{{ row.label }}</span>
+      <span class="badge bg-success">{% trans "Registration submitted" %}</span>
+    </div>
+    {% elif row.blocked %}
+    <div class="fw-semibold">{{ row.label }}</div>
+    <p class="small text-muted mb-0">{{ row.blocked }}{% if row.profile == request.user %} <a href="{% url 'account_profile_edit' %}">{% trans "Edit profile" %}</a>{% endif %}</p>
+    {% else %}
+    <div class="form-check">
+      <input class="form-check-input register-person-check" type="checkbox" name="person" value="{{ row.key }}"
+             id="{{ row.ids }}check"{% if row.checked %} checked{% endif %}>
+      <label class="form-check-label fw-semibold" for="{{ row.ids }}check">{{ row.label }}</label>
+    </div>
+    <div class="register-person-form mt-3">
+      {% include "registrations/_person_fields.html" with form=row.form p=row.ids required=False person=row.profile %}
+      {% if row.form.non_field_errors %}
+      <div class="alert alert-danger mb-0">{{ row.form.non_field_errors }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endfor %}
+
+<button type="submit" class="btn btn-success">{% trans "Register" %}</button>
+<a href="{% url 'competition_detail' competition.pk %}" class="btn btn-outline-secondary ms-2">{% trans "Cancel" %}</a>
+</form>
+
+{% include "registrations/_person_script.html" %}
+{% else %}
+<div class="alert alert-info">{% trans "Everyone you could register here is registered already." %}</div>
+<a href="{% url 'registrations:participant_list' competition.pk %}" class="btn btn-outline-secondary">{% trans "Participant list" %}</a>
+{% endif %}
+
+</div>
+</div>
+{% endblock %}

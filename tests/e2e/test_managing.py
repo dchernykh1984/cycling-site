@@ -1,0 +1,154 @@
+"""E2E for managing another member's registrations and photos (issue #315): the link's way from one
+profile to the other, registering several people at once, and the size of what is tapped on a phone."""
+
+import datetime
+import re
+
+import pytest
+from playwright.sync_api import Page, expect
+
+from accounts import managing
+from accounts.models import User
+from calendar_app.models import Competition
+from registrations.models import CompetitionRegistration, RegistrationCategory
+from tests.e2e.conftest import UPCOMING, inject_session
+
+
+def _member(username, first_name, last_name, gender, born):
+    return User.objects.create_user(
+        username=username,
+        email=f"{username}@test.local",
+        password="testpass123!",
+        role=User.Role.PARTICIPANT,
+        first_name=first_name,
+        last_name=last_name,
+        gender=gender,
+        birth_date=born,
+        team="Snow Leopards",
+        city="Taraz",
+    )
+
+
+@pytest.fixture
+def coach(db):
+    return _member("coach", "Ivan", "Petrov", "M", datetime.date(1985, 5, 5))
+
+
+@pytest.fixture
+def anna(db):
+    return _member("anna", "Anna", "Ivanova", "F", datetime.date(2010, 4, 17))
+
+
+def _manage(manager, member):
+    managing.ask(member, managing.issue_invite(manager).key)
+    managing.accept(manager, member.pk)
+
+
+def _event(organizer, **kwargs):
+    return Competition.objects.create(
+        title_ru="Managing Race",
+        date_start=UPCOMING,
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        registration_enabled=True,
+        birth_date_mode=Competition.BirthDateMode.YEAR,
+        **kwargs,
+    )
+
+
+def _sign_in(page, live_server, user):
+    page.context.clear_cookies()
+    inject_session(page, live_server, user)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_link_goes_from_one_profile_to_the_other(page: Page, live_server, coach, anna):
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/accounts/profile/")
+    page.get_by_role("button", name="Create link").click()
+    link = page.locator("#managed-members code").inner_text()
+    assert re.search(r"/en/accounts/managing/join/[0-9a-f-]{36}/$", link), link
+    expect(page.locator("#managed-members .share-btn")).to_have_attribute("data-share-url", link)
+
+    _sign_in(page, live_server, anna)
+    page.goto(link)
+    expect(page.get_by_role("heading", level=1)).to_have_text("Let Ivan Petrov manage your registrations and photos?")
+    page.get_by_role("button", name="Allow").click()
+    expect(page).to_have_url(re.compile(r"/en/accounts/profile/#my-managers$"))
+    expect(page.locator("#my-managers")).to_contain_text("Waiting for confirmation")
+
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/accounts/profile/")
+    waiting = page.locator("#managed-members table").first
+    expect(waiting).to_contain_text("Ivanova")
+    expect(waiting).to_contain_text("2010")
+    page.get_by_role("button", name="Accept", exact=True).click()
+    expect(page.locator("#managed-members table").first).to_contain_text("Taraz")
+    assert managing.acts_for(coach, anna.pk)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ticking_a_person_shows_their_form_and_registers_them(page: Page, live_server, organizer, coach, anna):
+    _manage(coach, anna)
+    comp = _event(organizer, registration_mode=Competition.RegistrationMode.SELF_ONLY)
+    RegistrationCategory.objects.create(competition=comp, name="Open", male=True, female=True)
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/competitions/{comp.pk}/register/")
+    hers = page.locator(f"#person-{anna.pk}")
+    expect(hers.locator(".register-person-form")).to_be_hidden()
+    hers.get_by_text("Ivanova Anna").click()
+    expect(hers.locator(".register-person-form")).to_be_visible()
+    expect(hers.locator(f'input[name="p{anna.pk}-last_name"]')).to_have_value("Ivanova")
+    page.locator("#registration-form > button[type='submit']").click()
+    expect(page).to_have_url(re.compile(rf"/competitions/{comp.pk}/participants/"))
+    registration = CompetitionRegistration.objects.get(competition=comp)
+    assert (registration.user, registration.registered_by) == (anna, coach)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_each_persons_categories_follow_their_own_gender_and_year(page: Page, live_server, organizer, coach, anna):
+    _manage(coach, anna)
+    comp = _event(organizer, registration_mode=Competition.RegistrationMode.FREE)
+    RegistrationCategory.objects.create(competition=comp, name="Men", male=True, female=False)
+    RegistrationCategory.objects.create(
+        competition=comp,
+        name="Girls",
+        male=False,
+        female=True,
+        birth_from=datetime.date(2008, 1, 1),
+        birth_to=datetime.date(2012, 12, 31),
+    )
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/competitions/{comp.pk}/register/")
+    for person in (coach, anna):
+        page.locator(f"#person-{person.pk} .register-person-check").check()
+    expect(page.locator(f"#person-{coach.pk} select option", has_text="Men")).to_have_count(1)
+    expect(page.locator(f"#person-{coach.pk} select option", has_text="Girls")).to_have_count(0)
+    expect(page.locator(f"#person-{anna.pk} select option", has_text="Girls")).to_have_count(1)
+    expect(page.locator(f"#person-{anna.pk} select option", has_text="Men")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("lang", ["ru", "kk", "en"])
+def test_on_a_phone_every_button_takes_a_tap_and_nothing_scrolls_sideways(
+    page: Page, live_server, organizer, coach, anna, lang
+):
+    _manage(coach, anna)
+    key = managing.issue_invite(coach).key
+    managing.ask(_member("boris", "Boris", "Sokolov", "M", datetime.date(2011, 1, 2)), key)
+    managing.ask(_member("dana", "Dana", "Bekova", "F", datetime.date(2012, 3, 4)), key)
+    comp = _event(organizer, registration_mode=Competition.RegistrationMode.FREE)
+    page.set_viewport_size({"width": 360, "height": 800})
+    _sign_in(page, live_server, coach)
+    small = []
+    for path, controls in (
+        ("/accounts/profile/", ".managing .btn"),
+        (f"/competitions/{comp.pk}/register/", ".register-many > .btn, .register-many .form-check-label"),
+    ):
+        page.goto(f"{live_server.url}/{lang}{path}")
+        assert page.evaluate("document.scrollingElement.scrollWidth <= document.scrollingElement.clientWidth")
+        for control in page.locator(controls).all():
+            box = control.bounding_box()
+            if box and box["height"] < 44:
+                small.append((path, control.inner_text(), box["height"]))
+    assert not small, small
