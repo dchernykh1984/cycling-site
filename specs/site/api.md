@@ -30,7 +30,9 @@ and protocols with the event's upload token. The API has no language prefix.
    descriptions are sanitised and size-limited. An event's link preview text is read and written
    per language like its title (up to 200 characters each; a PATCH carrying one language clears
    the others). Reads preserve empty languages, so writing a response back keeps the chat's
-   date-and-place fallback in those languages (issue #318).
+   date-and-place fallback in those languages (issue #318). `GET /competitions/{id}/ics` reads the
+   event's calendar file, the one its page offers, in the language asked for (`lang`, the site's
+   default otherwise; another answers 422), to whoever may read the event (issue #398).
 3. **Given** locations, **Then** the tree can be read; an organizer may get or create a city's
    catch-all venue; a venue is created approved by an organizer and proposed by a participant;
    regions and cities are always proposed (organizer and up), countries created by admins only;
