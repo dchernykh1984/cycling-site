@@ -336,7 +336,7 @@ button{cursor:pointer}
         <div class="voice hidden" id="voiceBox">
           <h3 class="voice-title" data-t="voice.title"></h3>
           <p class="hint" data-t="voice.hint"></p>
-          <div class="mp-create"><button class="btn" id="voiceJoin" type="button"></button><button class="btn hidden" id="voiceMute" type="button" aria-pressed="false"></button></div>
+          <div class="mp-create"><button class="btn" id="voiceJoin" type="button"></button><button class="btn hidden" id="voiceMute" type="button"></button></div>
           <p class="hint" id="voiceWho" role="status"></p>
         </div>
       </section>
@@ -3375,7 +3375,8 @@ function renderVoice() {
   const join = $('#voiceJoin'), mute = $('#voiceMute');
   join.textContent = Voice.on ? t('voice.leave') : t('voice.join'); join.disabled = Voice.joining;
   join.onclick = () => Voice.on ? voiceLeave() : voiceJoin(g.id);
-  mute.classList.toggle('hidden', !Voice.on); mute.setAttribute('aria-pressed', voiceMicOn() ? 'true' : 'false');
+  // its words say what a tap does, so it carries no pressed state that would contradict them
+  mute.classList.toggle('hidden', !Voice.on);
   mute.textContent = voiceMicOn() ? t('voice.mute') : t('voice.unmute'); mute.onclick = () => voiceMute(voiceMicOn());
   const names = Voice.list.map(v => v.name).join(', ');
   $('#voiceWho').textContent = Voice.note || (names ? t('voice.in', { list: Voice.on ? t('youLower') + ', ' + names : names }) : Voice.on ? t('voice.alone') : t('voice.nobody'));

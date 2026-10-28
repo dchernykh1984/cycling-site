@@ -302,7 +302,8 @@ def test_a_rider_joins_the_voice_chat_hears_another_and_mutes(page: Page):
             const $ = s => document.querySelector(s);
             const MP = {status: 'on'}, Records = {me: {voice_available: true}};
             const mpMyGroup = () => ({id: 7}), mpSchedule = () => {};
-            const share = '; Object.assign(window, {Voice, voiceJoin, voiceSync, voiceMute, voiceLeave, voiceMicOn});';
+            const share = '; Object.assign(window, '
+                + '{Voice, voiceJoin, voiceSync, voiceMute, voiceLeave, voiceMicOn, TEXT, LANG});';
             eval(words + block + share);
             await window.voiceJoin(7);
         }""",
@@ -314,7 +315,11 @@ def test_a_rider_joins_the_voice_chat_hears_another_and_mutes(page: Page):
     page.evaluate("voiceSync([{user_id: 2, name: 'Anna', key: 'k2'}])")
     page.wait_for_function("document.querySelectorAll('audio').length === 1")
     assert page.evaluate("document.querySelector('audio').srcObject.getAudioTracks().length") == 1
+    # the lobby's button says what a tap does; the ride's microphone button says whether it is on
+    expect(page.locator("#voiceMute")).to_have_text(page.evaluate("TEXT[LANG]['voice.unmute']"))
+    assert page.locator("#voiceMute").get_attribute("aria-pressed") is None
     page.click("#voiceMute")
+    expect(page.locator("#voiceMute")).to_have_text(page.evaluate("TEXT[LANG]['voice.mute']"))
     expect(page.locator("#btnMic")).to_have_attribute("aria-pressed", "true")
     assert page.evaluate("voiceMicOn()")
     page.evaluate("voiceSync([])")  # Anna left: her sound stops
