@@ -19,9 +19,9 @@ Taken in conversation with the maintainer on 2026-10-28, in the order they came.
 2. **The words.** The profile shows two sections named by what they do, with no "coach", "trainer"
    or "mentor" in them: the people who may manage my registrations and photos, and the people whose
    registrations and photos I manage. (Wording in three languages: to be written with the spec.)
-3. **Consent by a button.** Agreeing to be managed takes a page that names who asks and what they
-   will be able to do, and a button; opening a link alone never grants anything (a browser may
-   prefetch a link, a page may embed it).
+3. **Consent by a button.** Agreeing to be managed takes a page that names who asks, what they
+   will be able to do and what of the member's they will see (decision 9), and a button; opening a
+   link alone never grants anything (a browser may prefetch a link, a page may embed it).
 4. **Either side ends it.** The managed member removes a manager in their profile, and the manager
    removes a managed member in theirs. Agreeing to someone by mistake is undone that way.
 5. **Self and chains.** Managing oneself is refused. Two members may manage each other. Rights do
