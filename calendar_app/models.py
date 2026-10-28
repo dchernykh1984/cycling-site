@@ -464,6 +464,18 @@ class Competition(index.Indexed, models.Model):
         return loc.name
 
     @property
+    def place_label(self) -> str:
+        """Where it is, from the start point out -- venue, city, region, country -- each named once.
+
+        One column of the list instead of four, so the table's words fit a desktop (issue #383).
+        """
+        parts: list[str] = []
+        for part in (self.location_label, self.city_label, self.region_label, self.country_label):
+            if part and part not in parts:
+                parts.append(part)
+        return ", ".join(parts)
+
+    @property
     def location_full_label(self) -> str:
         """Returns full country-region-city-venue path, comma-separated."""
         loc = self.location

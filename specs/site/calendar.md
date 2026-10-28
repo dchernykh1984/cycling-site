@@ -102,8 +102,9 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
   holds every event that runs on any of its days -- in the grid, the list and the map alike -- so a
   race from Friday to Sunday is a weekend race and one that began earlier stays while it is on
   (issue #352).
-- **FR-CAL-004**: The list shows each event's title, dates, types, directions, disciplines,
-  country, region, city, venue and links; it links the registration form on the site while it is
+- **FR-CAL-004**: The list shows each event's title, dates, types, directions, disciplines, its
+  place -- venue, city, region and country in one column, so that on a desktop no heading or date
+  breaks mid-word (issue #383) -- and links; it links the registration form on the site while it is
   open and not full, before any external registration link; a full or closed form is not linked.
 - **FR-CAL-005**: Feeds and subscriptions never carry hidden, unapproved or invite-only events. An
   event's own file is not a feed: it answers the people its page answers (`visibility.can_open`).
