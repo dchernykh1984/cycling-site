@@ -79,6 +79,16 @@ class ManagingApiTests(ApiTestMixin, TestCase):
         self.assertEqual(self.delete(f"{API}/invite", user=self.coach).status_code, 204)
         self.assertIsNone(self.get(f"{API}/", user=self.coach).json()["invite"])
 
+    def test_a_member_without_a_name_gets_no_link(self):
+        nameless = _user("nameless")
+        response = self.post(f"{API}/invite", {}, user=nameless)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(
+            response.json()["detail"],
+            _said("Add your first and last name to your profile first: whoever opens your link must see who asks."),
+        )
+        self.assertIsNone(managing.invite_of(nameless))
+
     def test_a_link_run_out_is_not_listed_and_lets_nobody_in(self):
         key = managing.issue_invite(self.coach).key
         ManagerInvite.objects.update(created_at=timezone.now() - ManagerInvite.LIFETIME)

@@ -118,6 +118,9 @@ def overview(request):
 
 @router.post("/invite", response={201: InviteOut}, auth=member_auth, summary="Make my link, or a new one")
 def issue_invite(request):
+    refusal = managing.why_no_link(request.auth)
+    if refusal:
+        raise HttpError(409, refusal)
     return Status(201, _invite_out(request, managing.issue_invite(request.auth)))
 
 

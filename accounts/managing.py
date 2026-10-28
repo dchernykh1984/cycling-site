@@ -42,6 +42,14 @@ def invite_of(user) -> ManagerInvite | None:
     return ManagerInvite.objects.filter(manager=user).first()
 
 
+def why_no_link(user) -> str:
+    """Why ``user`` may not hand out a link, in the reader's language; empty when they may. Whoever
+    opens it has to see who asks, so a member without a name in their profile is asked for one."""
+    if user.get_full_name():
+        return ""
+    return gettext("Add your first and last name to your profile first: whoever opens your link must see who asks.")
+
+
 def issue_invite(user) -> ManagerInvite:
     """A new link: the old key stops working at once, and requests already waiting stay."""
     invite, _created = ManagerInvite.objects.update_or_create(

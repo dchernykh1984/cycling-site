@@ -55,8 +55,8 @@ and protocols with the event's upload token. The API has no language prefix.
    available and connected and where to connect it ([accounts](accounts.md), FR-ACC-007).
 8. **Given** managing another member's registrations and photos ([accounts](accounts.md), issue
    #315), **Then** a confirmed member (session or token) reads their link, managers, requests
-   waiting and members (`GET /managing/`), makes a link or a new one and deletes it
-   (`/managing/invite`), asks through a link (`POST /managing/join`: 404 for a key not valid or run
+   waiting and members (`GET /managing/`), makes a link or a new one -- 409 while their profile has
+   no name -- and deletes it (`/managing/invite`), asks through a link (`POST /managing/join`: 404 for a key not valid or run
    out, 409 for one's own, a manager already or a request already waiting, with the page's words),
    accepts or rejects requests one by one or all at once (`/managing/waiting/...`), and ends a link
    from either side (`DELETE /managing/members/{user_id}`, `DELETE /managing/managers/{user_id}`).
