@@ -1,8 +1,11 @@
+import datetime
+import uuid
 from typing import ClassVar
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
@@ -148,3 +151,50 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         if editor_rank <= self.ROLE_HIERARCHY.index(self.Role.PARTICIPANT):
             return False
         return editor_rank >= target_user.get_role_rank()
+
+
+class ManagerInvite(models.Model):
+    """A member's link for the people whose registrations and photos they will manage (issue #315).
+
+    One per member: a new link replaces the key, so a leaked one stops working, and a link lasts
+    a month, so a forgotten one stops letting people ask. Whoever opens it is asked, never added:
+    their consent makes a waiting request the member then accepts or rejects.
+    """
+
+    LIFETIME = datetime.timedelta(days=30)
+
+    manager = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="manager_invite")
+    key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self) -> str:
+        return f"invite of {self.manager_id}"
+
+    @property
+    def expires_at(self) -> datetime.datetime:
+        return self.created_at + self.LIFETIME
+
+    def is_valid(self, now: datetime.datetime | None = None) -> bool:
+        return (now or timezone.now()) < self.expires_at
+
+
+class ManagedMember(models.Model):
+    """One member's consent to another managing their registrations and event photos (issue #315).
+
+    ``accepted_at`` is empty while the request waits for the manager. Rejecting or ending it, from
+    either side, deletes the row: nothing of the right is left behind.
+    """
+
+    manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="managed_members")
+    member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="managers")
+    created_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(fields=["manager", "member"], name="managed_member_once"),
+            models.CheckConstraint(condition=~models.Q(manager=models.F("member")), name="managed_member_not_self"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.manager_id} manages {self.member_id}" + ("" if self.accepted_at else " (waiting)")
