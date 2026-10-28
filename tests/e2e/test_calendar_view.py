@@ -104,3 +104,22 @@ def test_grid_weekdays_use_the_readers_catalogue(page: Page, live_server, langua
     page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{live_server.url}/{language}/calendar/")
     expect(page.locator(".fc-col-header-cell")).to_have_text(names)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_calendar_asks_for_no_missing_file_and_has_its_reader_s_language(page: Page, live_server):
+    missing: list[str] = []
+
+    def answered(response):
+        if response.status >= 400:
+            missing.append(response.url)
+
+    page.on("response", answered)
+    # a browser that blocks a foreign script's error page (Chromium's ORB) reports a failed request instead
+    page.on("requestfailed", lambda request: missing.append(request.url))
+    page.goto(f"{live_server.url}/kk/calendar/")
+    expect(page.locator("#period-nav")).to_be_visible()
+    page.wait_for_load_state("load")
+    assert missing == [], missing
+    # FullCalendar's own words (popover and link hints for a screen reader) come from its locales
+    assert page.evaluate("FullCalendar.globalLocales.some(locale => locale.code === 'kk')")
