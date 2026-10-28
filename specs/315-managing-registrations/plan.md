@@ -54,7 +54,8 @@ registering several people, and the sizes on a phone.
   (`#my-managers`: each manager, "waiting for confirmation" and "Withdraw", or "Remove") and "Whose
   registrations and photos I manage" (`#managed-members`: the members' table, the requests waiting
   with one-by-one and all-at-once answers, the link with the site's share button, its date, "New
-  link" and "Delete link"). Tables become cards on a phone. Buttons are POSTs to
+  link" and "Delete link"). The tables read as cards at every width (the profile's column is
+  narrow even on a desktop). Buttons are POSTs to
   `accounts/managing/...` (`ManagingActionView`), each reaching only the reader's own rows.
 - Registering (`registrations/registering.py`): entering one person is one function,
   `register_one`, called by the page for one and the page for several. The page for several
