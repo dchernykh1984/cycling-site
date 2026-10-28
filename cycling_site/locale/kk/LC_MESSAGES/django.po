@@ -6,6 +6,7 @@ msgstr ""
 "Language: kk\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: accounts/access.py:9
 msgid ""
@@ -4016,10 +4017,6 @@ msgstr "Виртуалды заездтер"
 msgid "Ride"
 msgstr "Жолға шығу"
 
-#: accounts/templates/accounts/profile.html:252
-msgid "rides"
-msgstr "заезд"
-
 #: accounts/templates/accounts/profile.html:253
 #: accounts/templates/accounts/profile.html:287
 msgid "km"
@@ -4275,3 +4272,9 @@ msgstr ""
 "дауыстық байланысын қоссаңыз, микрофоныңызды сол жарыстың басқа қатысушылары"
 " естиді. Дыбыс Cloudflare медиасерверлері арқылы өтеді және жолда "
 "шифрланады; сайттың өзі оны алмайды және жазбайды."
+
+#: accounts/templates/accounts/profile.html:252
+msgid "ride"
+msgid_plural "rides"
+msgstr[0] "заезд"
+msgstr[1] "заезд"

@@ -6,6 +6,7 @@ msgstr ""
 "Language: ru\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: accounts/access.py:9
 msgid ""
@@ -4015,10 +4016,6 @@ msgstr "Виртуальные заезды"
 msgid "Ride"
 msgstr "Поехать"
 
-#: accounts/templates/accounts/profile.html:252
-msgid "rides"
-msgstr "заездов"
-
 #: accounts/templates/accounts/profile.html:253
 #: accounts/templates/accounts/profile.html:287
 msgid "km"
@@ -4276,3 +4273,10 @@ msgstr ""
 " гонки на странице виртуального заезда, ваш микрофон слышат другие участники"
 " этой гонки. Звук идёт через медиасерверы Cloudflare и шифруется в пути; сам"
 " сайт его не получает и не записывает."
+
+#: accounts/templates/accounts/profile.html:252
+msgid "ride"
+msgid_plural "rides"
+msgstr[0] "заезд"
+msgstr[1] "заезда"
+msgstr[2] "заездов"
