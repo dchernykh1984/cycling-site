@@ -542,7 +542,7 @@ class RefusalLanguageTests(TestCase):
         for lang in ("ru", "kk", "en"):
             with self.subTest(lang), translation.override(lang):
                 response = self.client.post(in_language(reverse("registrations:register", args=[comp.pk]), lang), data)
-                said = translation.gettext("You are already registered for this competition.")
+                said = translation.gettext("A participant with this name and birth year is already registered.")
                 self.assertIn(said, response.context["form"].non_field_errors())
 
 

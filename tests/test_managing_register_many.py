@@ -178,6 +178,24 @@ class RegisterManyTests(TestCase):
         reg = CompetitionRegistration.objects.get(competition=free)
         self.assertEqual((reg.first_name, reg.user, reg.registered_by), ("Kid", self.coach, self.coach))
 
+    def test_another_person_already_entered_is_told_apart_from_oneself(self):
+        free = make_open_competition(submitted_by=self.organizer)
+        free_cat = make_category(free)
+        make_registration(free, first_name="Kid", last_name="Petrov", birth_date=datetime.date(2016, 3, 3))
+        data = {
+            "person": ["other"],
+            "pother-first_name": "Kid",
+            "pother-last_name": "Petrov",
+            "pother-gender": "M",
+            "pother-birth_year": 2016,
+            "pother-category": free_cat.pk,
+        }
+        response = self.client.post(self._url(free), data)
+        other = response.context["rows"][-1]
+        self.assertEqual(
+            other.form.non_field_errors(), ["A participant with this name and birth year is already registered."]
+        )
+
     def test_a_forged_tick_is_refused_whole(self):
         stranger = make_user("stranger", gender="F", birth_date=datetime.date(2000, 1, 1))
         data = {"person": [str(self.anna.pk), str(stranger.pk)], **_fields(self.anna), **_fields(stranger)}
