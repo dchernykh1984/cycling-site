@@ -10,7 +10,8 @@ materials, upload token, rich description, several event types), `calendar_app/t
 `tests/test_invite_only_events.py`,
 `tests/test_clone_competition.py`, `tests/test_preview_image.py`, `tests/test_preview_text_form.py`,
 `tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
-`tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/e2e/test_competition_form.py`,
+`tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/test_event_ics.py`,
+`tests/e2e/test_competition_form.py`, `test_add_to_calendar.py`,
 `test_competition_materials.py`, `test_description_editor.py`, `test_resubmit.py`,
 `test_pending_moderation.py`, `test_invite_only_events.py`, `test_competition_link_order.py`
 **Related**: [calendar](calendar.md), [registrations](registrations.md), [protocols](protocols.md),
@@ -100,6 +101,14 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 3. **Given** an invite-only event, **Then** the sitemap, feeds, iCalendar, public API and landing
    pages never carry it, and its page asks not to be indexed; while it waits for review only
    admins review it.
+
+### Story 6 -- Put an event into one's own calendar (P3, issue #398)
+
+1. **Given** a published event's page, **Then** "Add to calendar" beside "Share", drawn like it
+   (the icon alone on a phone, a tap reaching 44px), leads to the event's own calendar file
+   (`/<lang>/calendar/<id>/event.ics`, see [calendar](calendar.md)): one whole-day entry in the
+   page's language that the reader's calendar offers to add once. An event awaiting review or
+   rejected has no button.
 
 ### Edge Cases
 

@@ -1,0 +1,13 @@
+{% load i18n %}
+{% comment %}"Add to calendar" beside an event's heading (issue #398): a link to the event's own calendar
+file, which the reader's calendar -- Apple's, Outlook, a calendar app on Android -- offers to add once.
+Drawn as the share button beside it, so on a narrow screen only the icon shows; its 44px tap zone is in
+cycling_site.css.{% endcomment %}
+<a href="{% url 'competition_ics' competition.pk %}" class="btn btn-sm btn-outline-secondary calendar-btn d-inline-flex align-items-center gap-1 flex-shrink-0"
+   aria-label="{% trans 'Add to calendar' %}" title="{% trans 'Add to calendar' %}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7"/>
+        <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+    </svg>
+    <span class="d-none d-sm-inline">{% trans "Add to calendar" %}</span>
+</a>
