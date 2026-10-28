@@ -721,32 +721,21 @@ main form .helptext { display: inline-block; margin-top: 0.35rem; font-size: 0.8
     .calendar-list-table td:nth-child(3) { grid-column: 2; background: var(--ubt-orange-50); color: var(--ubt-orange-ink); }
     .calendar-list-table td:nth-child(4) { grid-column: 3; }
     .calendar-list-table td:nth-child(5) { grid-column: 4; font-weight: 500; }
-    /* place: venue on top, city / region / country under it */
-    .calendar-list-table td:nth-child(9) {
+    /* place: venue on top, city / region / country under it -- one cell of the site's list since
+       #383, its start point and the rest marked apart */
+    .calendar-list-table td:nth-child(6) {
         grid-column: 5 / 8;
-        grid-row: 1;
-        font-weight: 600;
+        grid-row: 1 / 3;
+        align-self: center;
         padding-left: 1rem;
         border-left: 1px solid var(--ubt-line);
-        align-self: end;
     }
-    .calendar-list-table td:nth-child(8),
-    .calendar-list-table td:nth-child(7),
-    .calendar-list-table td:nth-child(6) {
-        grid-row: 2;
-        color: var(--ubt-muted);
-        font-size: 0.82rem;
-        white-space: nowrap;
-        align-self: start;
-    }
-    .calendar-list-table td:nth-child(8) { grid-column: 5; padding-left: 1rem; border-left: 1px solid var(--ubt-line); }
-    .calendar-list-table td:nth-child(7) { grid-column: 6; }
-    .calendar-list-table td:nth-child(6) { grid-column: 7; }
-    .calendar-list-table td:nth-child(8)::after,
-    .calendar-list-table td:nth-child(7)::after { content: ","; }
+    .calendar-list-table .place-venue { display: block; font-weight: 600; }
+    .calendar-list-table .place-sep { display: none; }
+    .calendar-list-table .place-area { display: block; color: var(--ubt-muted); font-size: 0.82rem; }
     /* buttons */
-    .calendar-list-table td:nth-child(10) { grid-column: 8; grid-row: 1 / 3; align-self: center; padding-left: 0.75rem; }
-    .calendar-list-table td:nth-child(10) .btn { width: 100%; }
+    .calendar-list-table td:nth-child(7) { grid-column: 8; grid-row: 1 / 3; align-self: center; padding-left: 0.75rem; }
+    .calendar-list-table td:nth-child(7) .btn { width: 100%; }
 }
 /* Phones: the site already stacks each row into a labelled card (cycling_site.css); round it, put
    the title and the date first, and keep the buttons full width at the bottom. */
@@ -780,9 +769,9 @@ main form .helptext { display: inline-block; margin-top: 0.35rem; font-size: 0.8
         font-weight: 800;
     }
     .calendar-list-table td:nth-child(2)::before { content: none !important; }
-    .calendar-list-table td:nth-child(10) { display: block !important; margin-top: 0.5rem; }
-    .calendar-list-table td:nth-child(10)::before { content: none !important; }
-    .calendar-list-table td:nth-child(10) .btn { width: 100%; }
+    .calendar-list-table td:nth-child(7) { display: block !important; margin-top: 0.5rem; }
+    .calendar-list-table td:nth-child(7)::before { content: none !important; }
+    .calendar-list-table td:nth-child(7) .btn { width: 100%; }
 }
 
 /* Participant list and other data tables: a panel. */
