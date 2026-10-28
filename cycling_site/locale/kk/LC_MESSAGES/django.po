@@ -4431,11 +4431,11 @@ msgstr "Кемінде бір адамды белгілеңіз."
 msgid "Registration submitted"
 msgstr "Өтінім берілді"
 
-msgid "Complete your profile to register: it has no gender or date of birth."
-msgstr "Тіркелу үшін профильді толтырыңыз: онда жынысы немесе туған күні жоқ."
+msgid "Complete your profile to register: it lacks your name, gender or date of birth."
+msgstr "Тіркелу үшін профильді толтырыңыз: онда атыңыз, жынысыңыз немесе туған күніңіз жоқ."
 
-msgid "Their profile has no gender or date of birth: ask them to complete it."
-msgstr "Бұл адамның профилінде жынысы немесе туған күні жоқ: профилін толтыруын сұраңыз."
+msgid "Their profile lacks a name, gender or date of birth: ask them to complete it."
+msgstr "Бұл адамның профилінде аты, жынысы немесе туған күні жоқ: профилін толтыруын сұраңыз."
 
 msgid "Everyone you could register here is registered already."
 msgstr "Мұнда тіркей алатын адамдарыңыздың бәрі тіркелген."

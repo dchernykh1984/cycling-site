@@ -4433,11 +4433,11 @@ msgstr "Отметьте хотя бы одного человека."
 msgid "Registration submitted"
 msgstr "Заявка подана"
 
-msgid "Complete your profile to register: it has no gender or date of birth."
-msgstr "Чтобы зарегистрироваться, заполните профиль: в нём нет пола или даты рождения."
+msgid "Complete your profile to register: it lacks your name, gender or date of birth."
+msgstr "Чтобы зарегистрироваться, заполните профиль: в нём нет имени, пола или даты рождения."
 
-msgid "Their profile has no gender or date of birth: ask them to complete it."
-msgstr "В профиле этого человека нет пола или даты рождения: попросите его заполнить профиль."
+msgid "Their profile lacks a name, gender or date of birth: ask them to complete it."
+msgstr "В профиле этого человека нет имени, пола или даты рождения: попросите его заполнить профиль."
 
 msgid "Everyone you could register here is registered already."
 msgstr "Все, кого вы можете здесь зарегистрировать, уже зарегистрированы."

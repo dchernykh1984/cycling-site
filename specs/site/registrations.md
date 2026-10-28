@@ -41,8 +41,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
    last name, each with a checkbox; ticked, a person gets the event's form filled in from their own
    profile, and what the manager adds goes into the registration only. Whoever is entered already is
    left out, unless the event takes several entries from one person; in a self-only event a person
-   without a gender or a birth date has no checkbox and a note to complete the profile (to ask the
-   member to); in free mode "Another person" can be typed in as before. People are entered from the
+   whose profile lacks a name, a gender or a birth date has no checkbox and a note to complete the
+   profile (to ask the member to); in free mode "Another person" can be typed in as before. People are entered from the
    top, as many as can be: those entered lose their checkbox, the others keep it with the reason. A
    member's entry is theirs (`user`), submitted by the manager (`registered_by`), with the member's
    own profile data in a self-only event. In an invite-only event a manager who was let in may enter
