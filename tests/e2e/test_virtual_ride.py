@@ -190,15 +190,15 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
 
 
 @pytest.mark.parametrize("connected", [False, True])
-def test_the_setup_page_offers_strava_or_says_where_to_turn_it_off(page: Page, connected: bool):
+def test_the_setup_page_offers_strava_only_to_a_member_who_has_not_connected_it(page: Page, connected: bool):
     source = _trainer_source()
     note = _cut(source, r"^function renderStravaNote\(\) \{.*?^\}")
-    page.set_content('<p id="stravaNote" class="hidden"></p>')
+    page.set_content('<style>.hidden{display:none}</style><p id="stravaNote" class="hidden"></p>')
     page.evaluate(
         """({words, note, connected}) => {
             const $ = s => document.querySelector(s);
             const STRAVA_LOGO = '', topPath = () => '/ru/virtual-ride/?group=5';
-            const Records = {accountUrl: '/kk/accounts/profile/', me: {authenticated: true, strava_available: true,
+            const Records = {me: {authenticated: true, strava_available: true,
                 strava_connected: connected, strava_connect_url: '/en/virtual-ride/strava/connect/'}};
             eval(words + note);
             window.t = t;
@@ -206,17 +206,15 @@ def test_the_setup_page_offers_strava_or_says_where_to_turn_it_off(page: Page, c
         }""",
         {"words": _language_block(source), "note": note, "connected": connected},
     )
-    link = page.locator("#stravaNote a")
     if connected:
-        expect(page.locator("#stravaNote")).to_contain_text(page.evaluate("t('strava.on')"))
-        expect(link).to_have_attribute("href", "/kk/accounts/profile/#virtual-rides-strava")
-    else:
-        expect(page.locator("#stravaNote")).to_contain_text(page.evaluate("t('strava.offer')"))
-        # Strava's own button, in the page's language, and back to the very page the member came from
-        expect(link).to_have_text("Connect with Strava")
-        expect(link).to_have_attribute(
-            "href", "/ru/virtual-ride/strava/connect/?next=%2Fru%2Fvirtual-ride%2F%3Fgroup%3D5"
-        )
+        # its rides already go there, and the profile is where to turn it off
+        expect(page.locator("#stravaNote")).to_be_hidden()
+        return
+    expect(page.locator("#stravaNote")).to_contain_text(page.evaluate("t('strava.offer')"))
+    # Strava's own button, in the page's language, and back to the very page the member came from
+    link = page.locator("#stravaNote a")
+    expect(link).to_have_text("Connect with Strava")
+    expect(link).to_have_attribute("href", "/ru/virtual-ride/strava/connect/?next=%2Fru%2Fvirtual-ride%2F%3Fgroup%3D5")
 
 
 def test_the_track_puts_the_rider_back_on_the_map_where_the_route_is(page: Page):
