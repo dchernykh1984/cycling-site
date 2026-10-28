@@ -71,6 +71,39 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
             qs = []
         return qs
 
+    def _page(self, request, competition, form, relay_members_post=()):
+        """The page as first shown and as shown again after a refusal: one context for both, so a
+        refused entry keeps the category filter working and the relay team as it was typed."""
+        user = request.user
+        categories = RegistrationCategory.objects.filter(competition=competition, is_deleted=False)
+        return render(
+            request,
+            self.template_name,
+            {
+                "competition": competition,
+                "form": form,
+                "profile_incomplete": not user.gender or not user.birth_date,
+                "is_free": competition.registration_mode == "free",
+                "relay_enabled": competition.relay_enabled,
+                "relay_max_members": competition.relay_max_members,
+                "relay_members_post": relay_members_post,
+                "all_categories_json": json.dumps(
+                    [
+                        {
+                            "id": c.pk,
+                            "name": c.name,
+                            "male": c.male,
+                            "female": c.female,
+                            "birth_from": c.birth_from.isoformat() if c.birth_from else None,
+                            "birth_to": c.birth_to.isoformat() if c.birth_to else None,
+                            "is_open": c.is_open(),
+                        }
+                        for c in categories
+                    ]
+                ),
+            },
+        )
+
     def get(self, request, pk):
         competition = self._get_competition(pk)
         if not can_see(request.user, competition):
@@ -90,8 +123,6 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
         user = request.user
         is_free = competition.registration_mode == "free"
         readonly_fields = [] if is_free else ["first_name", "last_name", "birth_date", "birth_year", "gender"]
-
-        profile_incomplete = not user.gender or not user.birth_date
 
         if is_free:
             gender = user.gender or ""
@@ -125,33 +156,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
             pk__in=[c.pk for c in available_categories]
         )
 
-        return render(
-            request,
-            self.template_name,
-            {
-                "competition": competition,
-                "form": form,
-                "profile_incomplete": profile_incomplete,
-                "is_free": is_free,
-                "relay_enabled": competition.relay_enabled,
-                "relay_max_members": competition.relay_max_members,
-                "available_categories_json": json.dumps([{"id": c.pk, "name": c.name} for c in available_categories]),
-                "all_categories_json": json.dumps(
-                    [
-                        {
-                            "id": c.pk,
-                            "name": c.name,
-                            "male": c.male,
-                            "female": c.female,
-                            "birth_from": c.birth_from.isoformat() if c.birth_from else None,
-                            "birth_to": c.birth_to.isoformat() if c.birth_to else None,
-                            "is_open": c.is_open(),
-                        }
-                        for c in RegistrationCategory.objects.filter(competition=competition, is_deleted=False)
-                    ]
-                ),
-            },
-        )
+        return self._page(request, competition, form)
 
     def post(self, request, pk):  # noqa: C901
         competition = self._get_competition(pk)
@@ -198,6 +203,10 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
             elif len(relay_names) > competition.relay_max_members:
                 form.add_error(None, f"Maximum {competition.relay_max_members} members allowed.")
 
+        relay_members_post = [
+            {"name": n, "birth_year": y, "city": c}
+            for n, y, c in zip(relay_names_raw, relay_birth_years_raw, relay_cities_raw, strict=False)
+        ]
         if form.is_valid() and not form.errors:
             cleaned = form.cleaned_data
 
@@ -226,17 +235,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 competition = Competition.objects.select_for_update().get(pk=competition.pk)
                 if not relay_enabled and check_duplicate(competition, user, first_name, last_name, birth_date):
                     form.add_error(None, "You are already registered for this competition.")
-                    return render(
-                        request,
-                        self.template_name,
-                        {
-                            "competition": competition,
-                            "form": form,
-                            "is_free": is_free,
-                            "relay_enabled": relay_enabled,
-                            "relay_max_members": competition.relay_max_members,
-                        },
-                    )
+                    return self._page(request, competition, form, relay_members_post)
 
                 team = None
                 team_name = cleaned.get("team_name", "").strip()
@@ -251,31 +250,11 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 )
                 if not cat_ok:
                     form.add_error("category", "This category is not available.")
-                    return render(
-                        request,
-                        self.template_name,
-                        {
-                            "competition": competition,
-                            "form": form,
-                            "is_free": is_free,
-                            "relay_enabled": relay_enabled,
-                            "relay_max_members": competition.relay_max_members,
-                        },
-                    )
+                    return self._page(request, competition, form, relay_members_post)
 
                 if not competition.is_registration_open():
                     form.add_error(None, "Registration is no longer available.")
-                    return render(
-                        request,
-                        self.template_name,
-                        {
-                            "competition": competition,
-                            "form": form,
-                            "is_free": is_free,
-                            "relay_enabled": relay_enabled,
-                            "relay_max_members": competition.relay_max_members,
-                        },
-                    )
+                    return self._page(request, competition, form, relay_members_post)
 
                 CompetitionRegistration.objects.create(
                     competition=competition,
@@ -302,22 +281,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
 
             return redirect("registrations:participant_list", pk=competition.pk)
 
-        relay_members_post = [
-            {"name": n, "birth_year": y, "city": c}
-            for n, y, c in zip(relay_names_raw, relay_birth_years_raw, relay_cities_raw, strict=False)
-        ]
-        return render(
-            request,
-            self.template_name,
-            {
-                "competition": competition,
-                "form": form,
-                "is_free": is_free,
-                "relay_enabled": relay_enabled,
-                "relay_max_members": competition.relay_max_members,
-                "relay_members_post": relay_members_post,
-            },
-        )
+        return self._page(request, competition, form, relay_members_post)
 
 
 def counts_for_bib(reg, competition) -> bool:

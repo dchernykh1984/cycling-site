@@ -483,6 +483,44 @@ class RegisterForCompetitionViewTests(TestCase):
         self.assertEqual(CompetitionRegistration.objects.filter(competition=comp).count(), 1)
 
 
+class RefusedEntryPageTests(TestCase):
+    """An entry refused after the form was filled in shows the page again whole: the category filter
+    still has the event's categories, and a relay team keeps the members typed in."""
+
+    def setUp(self):
+        self.user = make_user("refused", gender="M", birth_date=datetime.date(1990, 1, 1))
+        self.client.force_login(self.user)
+
+    def test_a_refused_entry_keeps_the_category_filter(self):
+        comp = make_open_competition()
+        cat = make_category(comp, name="Masters")
+        url = reverse("registrations:register", args=[comp.pk])
+        data = {"first_name": "Denis", "last_name": "Test", "gender": "M", "birth_year": 1990, "category": cat.pk}
+        self.client.post(url, data)
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([c["name"] for c in json.loads(response.context["all_categories_json"])], ["Masters"])
+        self.assertContains(response, f'const allCategories = [{{"id": {cat.pk}')
+
+    def test_a_refused_relay_entry_keeps_the_team_typed_in(self):
+        comp = make_relay_competition()
+        women_only = make_category(comp, male=False)
+        url = reverse("registrations:register", args=[comp.pk])
+        response = self.client.post(
+            url,
+            {
+                "participant_name": ["Ivanov Ivan", "Petrov Vasya"],
+                "gender": "M",
+                "birth_year": 1990,
+                "category": women_only.pk,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(CompetitionRegistration.objects.exists())
+        self.assertContains(response, 'value="Ivanov Ivan"')
+        self.assertContains(response, 'value="Petrov Vasya"')
+
+
 class RegistrationStravaFieldTests(TestCase):
     def setUp(self):
         self.user = make_user("stravauser", gender="M", birth_date=datetime.date(1990, 1, 1))
