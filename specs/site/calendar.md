@@ -4,7 +4,7 @@
 **Verified against**: PR #343 on 2026-10-24
 **Code**: `calendar_app/` (views, filters, feeds, `visibility.py`), `calendar_app/templates/calendar_app/`
 **Tests**: `calendar_app/tests.py` (calendar, list, map, events API, filters, favorites, default
-filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/test_event_ics.py`,
+filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/test_event_ics.py`, `tests/test_period_overlap.py`,
 `tests/test_feeds.py`,
 `tests/test_calendar_crawlable.py`, `tests/test_list_site_registration.py`,
 `tests/test_pagination_links.py`, `tests/test_locations_payload.py`, `tests/test_location.py`,
@@ -98,7 +98,10 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 - **FR-CAL-002**: The events API behind the grid returns approved events overlapping the requested
   range, including multi-day events that started before it, each with its page address.
 - **FR-CAL-003**: Filters: location (multi, includes descendants), event type (multi), direction
-  (multi), discipline (multi), date from/to, favorites; comma-joined values are accepted.
+  (multi), discipline (multi), date from/to, favorites; comma-joined values are accepted. A period
+  holds every event that runs on any of its days -- in the grid, the list and the map alike -- so a
+  race from Friday to Sunday is a weekend race and one that began earlier stays while it is on
+  (issue #352).
 - **FR-CAL-004**: The list shows each event's title, dates, types, directions, disciplines,
   country, region, city, venue and links; it links the registration form on the site while it is
   open and not full, before any external registration link; a full or closed form is not linked.
