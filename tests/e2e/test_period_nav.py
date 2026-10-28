@@ -103,6 +103,27 @@ def test_the_week_runs_monday_to_sunday(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_week_and_the_weekend_follow_the_site_s_settings(page: Page, live_server, settings):
+    """A week from Sunday and a weekend of Friday and Saturday, where the site is used that way (#383)."""
+    settings.CALENDAR_FIRST_WEEKDAY = 0
+    settings.CALENDAR_WEEKEND = [5, 6]
+    _calendar(page, live_server)
+    expect(page.locator(".fc-col-header-cell").first).to_have_text("Sun")
+    _kind(page, "week")
+    expect(_label(page)).to_have_text("18\u201324 October 2026")
+    _kind(page, "weekend")
+    expect(_label(page)).to_have_text("23\u201324 October 2026")
+    _step(page, 1)
+    expect(_label(page)).to_have_text("30\u201331 October 2026")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_english_grid_starts_its_week_on_the_day_the_period_does(page: Page, live_server):
+    _calendar(page, live_server)
+    expect(page.locator(".fc-col-header-cell").first).to_have_text("Mon")
+
+
+@pytest.mark.django_db(transaction=True)
 def test_today_keeps_the_kind_and_comes_back(page: Page, live_server):
     _calendar(page, live_server)
     _kind(page, "week")

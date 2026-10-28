@@ -2,7 +2,8 @@
 {% comment %}The period on screen, said in words, and the way about it -- one row, the same above the
 calendar, the list and the map (issue #330), so switching tabs moves nothing and keeps the period.
 
-Four kinds: today and tomorrow, the weekend, the week (Monday to Sunday) and the calendar month;
+Four kinds: today and tomorrow, the weekend, the week (from the day settings.CALENDAR_FIRST_WEEKDAY
+names, the weekend's days from CALENDAR_WEEKEND) and the calendar month;
 a year is reached by tapping the year in the label. The label always says what is shown ("October
 2026", "24-25 October 2026", "2026, whole year"), the arrows step by the kind on screen, and Today
 goes to the same kind around today. Tapping the month opens the twelve months with their own year
@@ -91,11 +92,14 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
 {{ calendar_date_words|json_script:"period-date-words" }}
 {{ calendar_months|json_script:"period-months" }}
 {{ calendar_years|json_script:"period-years" }}
+{{ calendar_week|json_script:"period-week" }}
 <script>
 (function () {
   var WORDS = JSON.parse(document.getElementById('period-date-words').textContent);
   var MONTHS = JSON.parse(document.getElementById('period-months').textContent).map(function (m) { return m[1]; });
   var YEARS = JSON.parse(document.getElementById('period-years').textContent);
+  // The day a week starts on and the weekend's days in order, 0 for Sunday (settings.CALENDAR_*)
+  var WEEK = JSON.parse(document.getElementById('period-week').textContent);
   var WHOLE_YEAR = '{% filter escapejs %}{% trans "whole year" %}{% endfilter %}';
   var FROM_DAY = '{% filter escapejs %}{% trans "from %s" %}{% endfilter %}';
   var PREVIOUS = '{% filter escapejs %}{% trans "Previous" %}{% endfilter %}';
@@ -132,14 +136,14 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   function rangeOf(kind, day) {
     if (kind === 'days') return [day, add(day, 1)];
     if (kind === 'weekend') {
-      // This weekend while it lasts: on a Sunday that is the Sunday alone.
-      if (day.getDay() === 0) return [day, day];
-      var saturday = add(day, 6 - day.getDay());
-      return [saturday, add(saturday, 1)];
+      // This weekend while it lasts -- on its last day that day alone -- else the next one whole.
+      var at = WEEK.weekend.indexOf(day.getDay());
+      var start = at === -1 ? add(day, (WEEK.weekend[0] - day.getDay() + 7) % 7) : day;
+      return [start, add(start, WEEK.weekend.length - 1 - Math.max(at, 0))];
     }
     if (kind === 'week') {
-      var monday = add(day, -((day.getDay() + 6) % 7));
-      return [monday, add(monday, 6)];
+      var first = add(day, -((day.getDay() - WEEK.first_day + 7) % 7));
+      return [first, add(first, 6)];
     }
     if (kind === 'year') return [new Date(day.getFullYear(), 0, 1), new Date(day.getFullYear(), 11, 31)];
     var first = new Date(day.getFullYear(), day.getMonth(), 1);
@@ -156,8 +160,8 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     if (same(to, lastOfMonth(from)) && (from.getDate() === 1 || same(from, now))) return 'month';
     if (from.getMonth() === 0 && from.getDate() === 1 && to.getMonth() === 11 && to.getDate() === 31
         && from.getFullYear() === to.getFullYear()) return 'year';
-    if (from.getDay() === 1 && same(to, add(from, 6))) return 'week';
-    if ((from.getDay() === 6 && same(to, add(from, 1))) || (from.getDay() === 0 && same(to, from))) return 'weekend';
+    if (from.getDay() === WEEK.first_day && same(to, add(from, 6))) return 'week';
+    if (WEEK.weekend.indexOf(from.getDay()) !== -1 && same(to, rangeOf('weekend', from)[1])) return 'weekend';
     if (same(to, add(from, 1))) return 'days';
     return 'custom';
   }
@@ -246,8 +250,8 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   function step(n) {
     var from = state.from;
     if (state.kind === 'days') go('days', add(from, n));
-    // From that week's Saturday: a Sunday alone is "this weekend", and a week on is still Sat-Sun.
-    else if (state.kind === 'weekend') go('weekend', add(from, -((from.getDay() + 1) % 7) + 7 * n));
+    // From that weekend's first day: its last day alone is "this weekend", and a week on is a whole one.
+    else if (state.kind === 'weekend') go('weekend', add(from, -Math.max(0, WEEK.weekend.indexOf(from.getDay())) + 7 * n));
     else if (state.kind === 'week') go('week', add(from, 7 * n));
     else if (state.kind === 'year') go('year', new Date(from.getFullYear() + n, 0, 1));
     else go('month', new Date(from.getFullYear(), from.getMonth() + n, 1));

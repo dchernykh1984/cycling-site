@@ -126,6 +126,10 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 
 ## Configuration
 
+- `CALENDAR_FIRST_WEEKDAY` (default 1, Monday) and `CALENDAR_WEEKEND` (default `[6, 0]`, Saturday
+  and Sunday), numbered as JavaScript numbers days, 0 for Sunday: the day the grid, the "Week"
+  period and the date picker start a week on, in every language, and the days the "Weekend" period
+  covers, in order (issue #383). Both read the environment.
 - `MAP_HOME_AREAS` maps named areas to their south-west and north-east corners. The deployment currently names
   `almaty`, bounded by `[43.05, 76.55]` and `[43.90, 77.45]`. If every mapped selected place lies
   in one area, the map opens on it; otherwise it fits matching event markers.

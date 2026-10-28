@@ -1,6 +1,7 @@
 """E2E tests for the filter date pickers (flatpickr) on the list/map views.
 
-The popup must start the week on the same day as the main calendar: Monday for ru/kk, Sunday for en.
+The popup must start the week on the same day as the main calendar, in every language: the day
+settings.CALENDAR_FIRST_WEEKDAY names, Monday unless set otherwise (issue #383).
 On mobile the native date picker is kept by design, so the test skips there.
 """
 
@@ -28,7 +29,11 @@ def test_filter_datepicker_starts_on_monday_for_ru(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_filter_datepicker_starts_on_sunday_for_en(page: Page, live_server):
-    host = live_server.url.split("//")[1].split(":")[0]
-    page.context.add_cookies([{"name": "django_language", "value": "en", "domain": host, "path": "/"}])
-    assert _first_day_of_week_or_skip(page, f"{live_server.url}/en/calendar/list/") == 0  # Sunday
+def test_filter_datepicker_starts_on_monday_for_en_too(page: Page, live_server):
+    assert _first_day_of_week_or_skip(page, f"{live_server.url}/en/calendar/list/") == 1  # Monday
+
+
+@pytest.mark.django_db(transaction=True)
+def test_filter_datepicker_follows_the_site_s_first_day(page: Page, live_server, settings):
+    settings.CALENDAR_FIRST_WEEKDAY = 0
+    assert _first_day_of_week_or_skip(page, f"{live_server.url}/ru/calendar/map/") == 0  # Sunday
