@@ -67,9 +67,19 @@ cut off with the page.{% endcomment %}
   {% if request.user.autosave_filters %}
   // Reset is a link, not a filter change, so it never reaches the handler above. Clearing the
   // filter is still a state of the search, and with "always save" on it is saved like any other.
-  // Delegated: this script can run before the link is parsed.
+  // The page waits for the save before it leaves: a browser may drop a request still in flight as
+  // the page goes, even with keepalive, and the old filter would stay saved. A slow server holds
+  // the reader three seconds at most. Delegated: this script can run before the link is parsed.
   document.addEventListener('click', function (e) {
-    if (e.target.closest && e.target.closest('a[href*="reset=1"]')) window.saveFilterToPreferences(true);
+    var link = e.target.closest && e.target.closest('a[href*="reset=1"]');
+    if (!link) return;
+    var save = window.saveFilterToPreferences(true);
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // a new tab: this page stays
+    e.preventDefault();
+    var gone = false;
+    var go = function () { if (!gone) { gone = true; window.location.href = link.href; } };
+    save.then(go, go);
+    setTimeout(go, 3000);
   });
   {% endif %}
 }());
