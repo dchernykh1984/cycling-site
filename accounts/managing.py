@@ -8,6 +8,7 @@ Rights never pass along a chain: whom B manages is nothing to A, however A and B
 import uuid
 
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from .models import ManagedMember, ManagerInvite
 
@@ -69,6 +70,20 @@ def outcome_for(member, invite: ManagerInvite | None) -> str:
     if row is not None:
         return MANAGED if row.accepted_at else WAITING
     return ASKED
+
+
+def refusal(outcome: str, invite: ManagerInvite | None) -> str:
+    """Why asking through the link cannot be done, in the reader's language; empty when it can."""
+    name = {"name": invite.manager.public_display_name} if invite is not None else {}
+    if outcome == INVALID:
+        return gettext("This link is not valid or has probably expired. Ask whoever sent it for a new one.")
+    if outcome == OWN:
+        return gettext("This is your own link: send it to the people whose registrations and photos you will manage.")
+    if outcome == MANAGED:
+        return gettext("%(name)s already manages your registrations and photos.") % name
+    if outcome == WAITING:
+        return gettext("Your request to %(name)s is already waiting to be accepted.") % name
+    return ""
 
 
 def ask(member, key) -> str:

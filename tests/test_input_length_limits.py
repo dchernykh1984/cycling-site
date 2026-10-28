@@ -100,6 +100,8 @@ SCHEMA_TARGETS = {
     "api.endpoints.content.NewsArticleIn": NewsArticle,
     "api.endpoints.content.NewsArticlePatchIn": NewsArticle,
     "api.endpoints.locations.LocationIn": Location,
+    # Asking through a manager's link names its key, a UUID; nothing lands in a text column.
+    "api.endpoints.managing.JoinIn": None,
     "api.endpoints.virtual_ride.GroupIn": GroupRide,
     "api.endpoints.virtual_ride.PresenceIn": LiveRider,
     "api.endpoints.virtual_ride.RideIn": VirtualRide,

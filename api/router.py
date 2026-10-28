@@ -21,6 +21,7 @@ def _register_routers() -> None:
     from api.endpoints.gallery import router as gallery_router
     from api.endpoints.live_stats import router as live_stats_router
     from api.endpoints.locations import router as locations_router
+    from api.endpoints.managing import router as managing_router
     from api.endpoints.participants import router as participants_router
     from api.endpoints.protocols import router as protocols_router
     from api.endpoints.start_list import router as start_list_router
@@ -47,6 +48,7 @@ def _register_routers() -> None:
     api.add_router("/gallery/", gallery_router)
     api.add_router("/event-photos/", event_photos_router)
     api.add_router("/virtual-ride/", virtual_ride_router)
+    api.add_router("/managing/", managing_router)
 
 
 _register_routers()
