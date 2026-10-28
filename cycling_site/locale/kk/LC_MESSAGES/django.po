@@ -4107,10 +4107,6 @@ msgstr "Сізде басталуын күтіп тұрған топтық жа�
 msgid "This group race has already started"
 msgstr "Бұл топтық жарыс басталып кетті"
 
-#: api/endpoints/virtual_ride.py:313
-msgid "The host cancels the race instead of leaving it"
-msgstr "Ұйымдастырушы жарыстан шықпайды, оны тоқтатады"
-
 #: api/endpoints/virtual_ride.py:322
 msgid "Only the host can cancel this group race"
 msgstr "Топтық жарысты тек ұйымдастырушы тоқтата алады"

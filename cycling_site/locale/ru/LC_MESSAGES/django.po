@@ -4106,10 +4106,6 @@ msgstr "У вас уже есть групповая гонка, которая 
 msgid "This group race has already started"
 msgstr "Эта групповая гонка уже началась"
 
-#: api/endpoints/virtual_ride.py:313
-msgid "The host cancels the race instead of leaving it"
-msgstr "Организатор не выходит из гонки, а отменяет её"
-
 #: api/endpoints/virtual_ride.py:322
 msgid "Only the host can cancel this group race"
 msgstr "Отменить групповую гонку может только организатор"

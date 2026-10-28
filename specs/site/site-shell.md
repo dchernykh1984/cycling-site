@@ -46,7 +46,9 @@ browser, as does an unconfirmed account's; for a confirmed member the page saves
 are derived from those rides and shown on the profile ([accounts](accounts.md)); rides in demo mode
 are kept but never count. Members ride together: the settings page lists who else is on it and the
 open group races; a member gathers a race on the chosen route with a start 20 s to 1 h away (the
-page offers 30 s to 1 h), others join, and every member's page starts it at the same server time. Each
+page offers 30 s to 1 h), others join, and every member's page starts it at the same server time.
+"Start" while waiting rides alone and leaves the race to the others: a host who leaves hands it to the
+rider who joined next, and only a host alone in it cancels it that way ("Cancel" cancels it for all). Each
 race card has "Share": the phone's share sheet, or the link copied, to `/<lang>/virtual-ride/?group=<id>`;
 that address opens the trainer with the race marked on its card in words and colour and scrolled
 into view, tells a guest to sign in and brings them back to it, and says when the race was cancelled,
