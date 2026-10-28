@@ -40,6 +40,17 @@ For a new field a person fills in, also ask who reads it before readers do (a mo
 sees it cannot reject it), and what each locale shows when only one was filled; then check that
 the form's hint text says what the tests pin.
 
+After a set of cycles, report them as a table, to the maintainer and in the pull request's body:
+one row per cycle with how many findings it fixed, how many of each severity and the most notable
+one, and a last row that adds them up. A cycle that found nothing is a row of zeros, not a missing
+row -- it shows the review running dry. High: data lost or exposed, a page or the pipeline broken.
+Medium: wrong behaviour a person meets. Low: rough edges, wording, speed.
+
+| Cycle | Findings | High | Medium | Low | Most notable |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 3 | 0 | 1 | 2 | two members finishing together could both be first |
+| **All** | 3 | 0 | 1 | 2 | |
+
 ## The pipeline
 
 `ci.yml` runs pre-commit (ruff, mypy, ASCII check, requirements export), commitizen, the unit tests
