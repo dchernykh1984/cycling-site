@@ -74,7 +74,8 @@ once; confirming the address unlocks everything that writes.
 1. **Given** a member saves preferred locations, directions/disciplines and event types, **Then**
    the calendar, list and map open with them; clearing a picker clears that preference.
 2. **Given** "always save the filter" is on, **Then** a filter changed on a calendar page is saved
-   as the preference straight away instead of offering a save button.
+   as the preference straight away instead of offering a save button, and "Reset" saves the cleared
+   filter before the page leaves (three seconds at most), so the old one cannot stay behind.
 3. **Given** a participant or higher, **Then** the profile shows an API section where a token can
    be generated; regenerating invalidates the old one; guests get no API section.
 4. **Given** a member picks a skin, **Then** it is kept in their profile (see [skins](skins.md)).

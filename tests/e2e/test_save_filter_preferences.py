@@ -1,9 +1,11 @@
 """Saving the calendar filter into preferences (issue #322), as a member uses it."""
 
+import contextlib
 import re
 import time
 
 import pytest
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, expect
 
 from accounts.models import User
@@ -69,6 +71,31 @@ def test_with_always_save_reset_clears_the_saved_filter(page: Page, live_server,
     open_filter_panel(page)
     page.wait_for_load_state("load")
     page.locator("a[href*='reset=1']").click()
+    page.wait_for_url(re.compile(r"reset=1"))
+    deadline = time.monotonic() + 10
+    while member.preferred_event_types.exists() and time.monotonic() < deadline:
+        time.sleep(0.2)
+    assert not member.preferred_event_types.exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_with_always_save_reset_clears_the_filter_even_when_the_save_is_slow(page: Page, live_server, race_event_type):
+    """A browser may drop a request still in flight as the page goes: reset waits for its save."""
+    race = race_event_type
+    member = _member(autosave_filters=True)
+    member.preferred_event_types.add(race)
+    held = []
+    page.route("**/accounts/preferences/filters/", lambda route: held.append(route))
+    inject_session(page, live_server, member)
+    page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race.pk}")
+    open_filter_panel(page)
+    page.wait_for_load_state("load")
+    page.locator("a[href*='reset=1']").click()
+    page.wait_for_timeout(500)  # the server is slow to answer the save
+    for route in held:
+        # the page left without it, if it did not wait: then the save never reaches the server
+        with contextlib.suppress(PlaywrightError):
+            route.continue_()
     page.wait_for_url(re.compile(r"reset=1"))
     deadline = time.monotonic() + 10
     while member.preferred_event_types.exists() and time.monotonic() < deadline:
