@@ -22,7 +22,13 @@ legal pages and a link to report a bug.
 **Virtual ride** (`trainer/`, `/<lang>/virtual-ride/`) frames a self-contained indoor-trainer page,
 `trainer/static/trainer/alatau.html`, in an iframe that may use Web Bluetooth, the screen wake
 lock and full screen; a link opens the same file on its own. The self-contained page is updated
-from delivered revisions and is not localized (Russian only). A guest's progress stays in their
+from delivered revisions. It speaks the language its address names (`?lang=ru|kk|en`, which the
+site's page passes from its own; Russian without one): its texts, units, number and date formats
+and the names of its routes, landmarks and riders come from a ru / kk / en dictionary inside the page
+rather than from the translation catalogues -- an exception to FR-SHL-006 that keeps the page one
+self-contained file. A route name the page sends with a saved ride or a group race is in the
+language the page spoke then; the page itself shows the routes it knows in its current language,
+the profile shows the stored name. A guest's progress stays in their
 browser, as does an unconfirmed account's; for a confirmed member the page saves every finished ride through `/api/v1/virtual-ride/`
 (see [the API](api.md)), and their records -- best time per route, peak power, top speed, totals --
 are derived from those rides and shown on the profile ([accounts](accounts.md)); rides in demo mode
@@ -135,6 +141,9 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   `home/forms.py`, `locations/forms.py`, `api/schemas.py` and their templates), and helpers loop over
   a literal `("ru", "kk", "en")` (`api/endpoints/content.py`, `locations/models.py`,
   `cycling_site/skins.py`). A fourth language would need changes in each.
+- The virtual ride page (`trainer/static/trainer/alatau.html`) carries its own catalogue: the
+  routes, cities and landmarks of Almaty and the UBT kit its rider wears. A route elsewhere comes with
+  a new revision of the page; the site stores only the route key and name the page sends.
 - The fallback page description names countries and sports ("cycling, running, cross-country skiing
   -- in Kazakhstan, Kyrgyzstan, Russia and beyond", `base.html`), and the navbar falls back to
   "Cycling" and the footer to "Cycling events" when the site content has no title.

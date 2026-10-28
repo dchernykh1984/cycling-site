@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Алатау — виртуальные заезды по Алматы</title>
+<title>Alatau</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
@@ -270,107 +270,107 @@ button{cursor:pointer}
 </style>
 </head>
 <body>
-<canvas id="gl" aria-label="Трёхмерный вид маршрута"></canvas>
-<div id="loading">Строим Алматы…</div>
+<canvas id="gl" data-t-label="a11y.view3d"></canvas>
+<div id="loading" data-t="loading">…</div>
 
 <!-- ======== СТРАНИЦА 1: НАСТРОЙКИ ======== -->
-<div id="menu" class="page" role="main" aria-label="Настройка заезда">
+<div id="menu" class="page" role="main" data-t-label="a11y.setup">
   <header class="topbar">
-    <div class="brand"><svg width="44" height="28" viewBox="0 0 54 34" aria-hidden="true"><path d="M2 32 L16 10 L22 18 L30 4 L52 32 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M26 10 L30 4 L34 10 L31 9 L29 11 Z" fill="currentColor"/><circle cx="44" cy="9" r="4" fill="#C3323B"/></svg><h1>Алатау</h1></div>
-    <button class="btn" id="btnRecords" type="button">Мои рекорды</button>
+    <div class="brand"><svg width="44" height="28" viewBox="0 0 54 34" aria-hidden="true"><path d="M2 32 L16 10 L22 18 L30 4 L52 32 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M26 10 L30 4 L34 10 L31 9 L29 11 Z" fill="currentColor"/><circle cx="44" cy="9" r="4" fill="#C3323B"/></svg><h1 data-t="brand"></h1></div>
+    <button class="btn" id="btnRecords" type="button" data-t="records.title"></button>
   </header>
   <div class="setup"><div class="setup-in">
-    <p class="lead">Сначала настройте заезд, затем нажмите «Старт» — откроется страница заезда. Подключите датчики, пульсометр или умный станок, либо катайтесь в демо-режиме.</p>
+    <p class="lead" data-t="lead"></p>
     <div class="grid">
       <section class="box wide" aria-labelledby="hRoute">
-        <h2 id="hRoute"><span class="num">1</span>Маршрут</h2>
+        <h2 id="hRoute"><span class="num">1</span><span data-t="sec.route"></span></h2>
         <div class="cities" id="cities"></div>
         <div class="routes" id="routes"></div>
       </section>
       <section class="box" aria-labelledby="hMode">
-        <h2 id="hMode"><span class="num">2</span>Режим</h2>
-    <div class="cities" id="modeSeg"><button class="city" type="button" data-mode="race">Гонка с соперниками</button><button class="city" type="button" data-mode="plan">План по каденсу</button><button class="city" type="button" data-mode="free">Свободная езда</button></div>
-    <div id="raceOpts"><div class="field"><label for="bots">Соперники</label>
-      <select id="bots"><option value="0">Без соперников</option><option value="3">3 бота</option><option value="6" selected>6 ботов</option><option value="10">10 ботов</option></select></div>
-    <div class="field"><label for="level">Уровень соперников</label>
-      <select id="level"><option value="easy">Лёгкий, 1,8–2,4 Вт/кг</option><option value="mid" selected>Средний, 2,5–3,2 Вт/кг</option><option value="hard">Сильный, 3,3–4,2 Вт/кг</option></select></div></div>
+        <h2 id="hMode"><span class="num">2</span><span data-t="sec.mode"></span></h2>
+    <div class="cities" id="modeSeg"><button class="city" type="button" data-mode="race" data-t="mode.raceBots"></button><button class="city" type="button" data-mode="plan" data-t="mode.plan"></button><button class="city" type="button" data-mode="free" data-t="mode.free"></button></div>
+    <div id="raceOpts"><div class="field"><label for="bots" data-t="race.bots"></label>
+      <select id="bots"><option value="0" data-t="bots.none"></option><option value="3" data-t="bots.3"></option><option value="6" selected data-t="bots.6"></option><option value="10" data-t="bots.10"></option></select></div>
+    <div class="field"><label for="level" data-t="race.level"></label>
+      <select id="level"><option value="easy" data-t="level.easy"></option><option value="mid" selected data-t="level.mid"></option><option value="hard" data-t="level.hard"></option></select></div></div>
     <div id="planEd" class="hidden">
-      <p class="hint">Звёзды считаются как на велосипеде: спереди 1 — самая маленькая, сзади 1 — самая большая, то есть 1×1 — самая лёгкая передача. В скобках — число зубьев.</p>
-      <div class="field"><label>Стартовая передача</label><span class="gearpick"><select id="plStartF" aria-label="Стартовая передняя звезда"></select><span>×</span><select id="plStartR" aria-label="Стартовая задняя звезда"></select></span></div>
+      <p class="hint" data-t="plan.hint"></p>
+      <div class="field"><label data-t="plan.startGear"></label><span class="gearpick"><select id="plStartF" data-t-label="plan.startFront"></select><span>×</span><select id="plStartR" data-t-label="plan.startRear"></select></span></div>
       <ol class="steps" id="plSteps"></ol>
-      <div class="row2"><button class="btn" id="plAdd" type="button">Добавить шаг</button><button class="btn" id="plTpl" type="button">Вернуть пример</button></div>
+      <div class="row2"><button class="btn" id="plAdd" type="button" data-t="plan.add"></button><button class="btn" id="plTpl" type="button" data-t="plan.example"></button></div>
       <p class="hint" id="plTotal"></p>
     </div>
 
       </section>
       <section class="box" aria-labelledby="hRider">
-        <h2 id="hRider"><span class="num">3</span>Гонщик</h2>
-        <canvas id="charPrev" aria-label="Ваш гонщик в форме UBT"></canvas>
-    <div class="field"><label for="height">Ваш рост, см</label><input id="height" type="number" min="120" max="220" step="1" value="178" inputmode="numeric"></div>
-<div class="field"><label for="mass">Ваш вес, кг</label><input id="mass" type="number" min="35" max="160" step="1" value="75" inputmode="numeric"></div>
+        <h2 id="hRider"><span class="num">3</span><span data-t="sec.rider"></span></h2>
+        <canvas id="charPrev" data-t-label="a11y.riderPreview"></canvas>
+    <div class="field"><label for="height" data-t="body.height"></label><input id="height" type="number" min="120" max="220" step="1" value="178" inputmode="numeric"></div>
+<div class="field"><label for="mass" data-t="body.mass"></label><input id="mass" type="number" min="35" max="160" step="1" value="75" inputmode="numeric"></div>
 <p class="hint" id="bodyHint"></p>
-    <div class="field"><label for="view">Вид в заезде</label>
-      <select id="view"><option value="chase" selected>От третьего лица</option><option value="fpv">От первого лица</option></select></div>
+    <div class="field"><label for="view" data-t="view.label"></label>
+      <select id="view"><option value="chase" selected data-t="view.third"></option><option value="fpv" data-t="view.first"></option></select></div>
 
       </section>
       <section class="box wide" aria-labelledby="hMp">
-        <h2 id="hMp"><span class="num">4</span>Вместе с друзьями</h2>
-        <p class="hint" id="mpStatus">Подключаемся…</p>
+        <h2 id="hMp"><span class="num">4</span><span data-t="sec.friends"></span></h2>
+        <p class="hint" id="mpStatus" data-t="mp.connecting"></p>
         <div class="mp-online" id="mpOnline"></div>
         <div class="mp-groups" id="mpGroups"></div>
-        <div class="mp-create"><select id="mpDelay" aria-label="Через сколько старт"><option value="30">Старт через 30 с</option><option value="60" selected>Старт через 1 мин</option><option value="120">Старт через 2 мин</option><option value="300">Старт через 5 мин</option></select><button class="btn" id="mpCreate" type="button" disabled>Собрать групповую гонку</button></div>
-        <p class="hint">Для участников сайта. Групповая гонка идёт по маршруту, выбранному в блоке 1, без ботов: все участники стартуют одновременно, когда закончится отсчёт, а результаты сохраняются в личном кабинете. В свободной езде вы видите всех, кто сейчас катается по тому же маршруту.</p>
+        <div class="mp-create"><select id="mpDelay" data-t-label="mp.delay"><option value="30"></option><option value="60" selected></option><option value="120"></option><option value="300"></option></select><button class="btn" id="mpCreate" type="button" disabled data-t="mp.create"></button></div>
+        <p class="hint" data-t="mp.hint"></p>
       </section>
       <section class="box wide" aria-labelledby="hDev">
-        <h2 id="hDev"><span class="num">5</span>Устройства и велосипед</h2>
+        <h2 id="hDev"><span class="num">5</span><span data-t="sec.devices"></span></h2>
         <div class="cols">
           <div>
-    <button class="btn" id="btnConnect" type="button">Подключить устройство</button>
+    <button class="btn" id="btnConnect" type="button" data-t="dev.connect"></button>
     <ul class="devlist" id="devList"></ul>
-    <p class="hint" id="btHint">Подходят датчики скорости и каденса, пульсометры, измерители мощности и умные станки с протоколом FTMS. Устройства подключаются по одному. Без них заезд пойдёт в демо-режиме.</p>
-    <div class="field"><label for="difficulty">Сложность умного станка</label>
-      <select id="difficulty"><option value="0">0%, без подъёмов</option><option value="25">25%</option><option value="50" selected>50%</option><option value="75">75%</option><option value="100">100%, как на дороге</option></select></div>
-    <div class="field"><label for="hrmax">Максимальный пульс</label><input id="hrmax" type="number" min="120" max="230" step="1" value="185" inputmode="numeric"></div>
+    <p class="hint" id="btHint" data-t="bt.default"></p>
+    <div class="field"><label for="difficulty" data-t="trainer.difficulty"></label>
+      <select id="difficulty"><option value="0" data-t="diff.0"></option><option value="25">25%</option><option value="50" selected>50%</option><option value="75">75%</option><option value="100" data-t="diff.100"></option></select></div>
+    <div class="field"><label for="hrmax" data-t="body.hrmax"></label><input id="hrmax" type="number" min="120" max="230" step="1" value="185" inputmode="numeric"></div>
 
           </div>
           <div>
-    <div class="field"><label for="bikeType">Тип велосипеда</label><select id="bikeType"></select></div>
-    <div class="field"><label for="bikeKg">Вес велосипеда, кг</label><input id="bikeKg" type="number" min="5" max="30" step="0.1" value="8.5" inputmode="decimal"></div>
-    <div class="field"><label for="circ">Колесо</label>
+    <div class="field"><label for="bikeType" data-t="bike.type"></label><select id="bikeType"></select></div>
+    <div class="field"><label for="bikeKg" data-t="bike.kg"></label><input id="bikeKg" type="number" min="5" max="30" step="0.1" value="8.5" inputmode="decimal"></div>
+    <div class="field"><label for="circ" data-t="bike.wheel"></label>
       <select id="circ">
-        <option value="2096">700×23C — 2096 мм</option>
-        <option value="2105" selected>700×25C — 2105 мм</option>
-        <option value="2136">700×28C — 2136 мм</option>
-        <option value="2155">700×32C — 2155 мм</option>
-        <option value="2200">700×40C — 2200 мм</option>
-        <option value="2288">29×2.1 — 2288 мм</option>
-        <option value="2148">27.5×2.1 — 2148 мм</option>
-        <option value="2068">26×2.1 — 2068 мм</option>
+        <option value="2096" data-tyre="700×23C"></option>
+        <option value="2105" selected data-tyre="700×25C"></option>
+        <option value="2136" data-tyre="700×28C"></option>
+        <option value="2155" data-tyre="700×32C"></option>
+        <option value="2200" data-tyre="700×40C"></option>
+        <option value="2288" data-tyre="29×2.1"></option>
+        <option value="2148" data-tyre="27.5×2.1"></option>
+        <option value="2068" data-tyre="26×2.1"></option>
       </select></div>
-    <div class="field"><label for="trainer">Станок</label>
+    <div class="field"><label for="trainer" data-t="trainer.label"></label>
       <select id="trainer">
-        <option value="fluid" selected>Жидкостный</option>
-        <option value="mag">Магнитный</option>
-        <option value="rollers">Роллеры</option>
+        <option value="fluid" selected data-t="trainer.fluid"></option>
+        <option value="mag" data-t="trainer.mag"></option>
+        <option value="rollers" data-t="trainer.rollers"></option>
       </select></div>
-    <div class="field"><label for="plFront">Передние звёзды</label><select id="plFront"></select></div>
-    <div class="field hidden" id="plFrontCustomF"><label for="plFrontCustom">Передние зубья через дефис</label><input id="plFrontCustom" placeholder="50-34" inputmode="numeric"></div>
-    <div class="field"><label for="plCass">Кассета</label><select id="plCass"></select></div>
-    <div class="field hidden" id="plCassCustomF"><label for="plCassCustom">Задние зубья через дефис</label><input id="plCassCustom" placeholder="11-12-13-14-15-17-19-21-24-28" inputmode="numeric"></div>
+    <div class="field"><label for="plFront" data-t="bike.front"></label><select id="plFront"></select></div>
+    <div class="field hidden" id="plFrontCustomF"><label for="plFrontCustom" data-t="bike.frontCustom"></label><input id="plFrontCustom" placeholder="50-34" inputmode="numeric"></div>
+    <div class="field"><label for="plCass" data-t="bike.cass"></label><select id="plCass"></select></div>
+    <div class="field hidden" id="plCassCustomF"><label for="plCassCustom" data-t="bike.cassCustom"></label><input id="plCassCustom" placeholder="11-12-13-14-15-17-19-21-24-28" inputmode="numeric"></div>
     <p class="hint" id="plBikeInfo"></p>
-    <div class="field"><label for="cadSpeed">Скорость при датчике каденса</label>
-      <select id="cadSpeed"><option value="direct" selected>По передаче и каденсу</option><option value="physics">С учётом уклона маршрута</option></select></div>
+    <div class="field"><label for="cadSpeed" data-t="cad.label"></label>
+      <select id="cadSpeed"><option value="direct" selected data-t="cad.direct"></option><option value="physics" data-t="cad.physics"></option></select></div>
 
           </div>
         </div>
       </section>
     </div>
-    <p class="attr">Маршруты нанесены по данным <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© участники OpenStreetMap</a> (ODbL), геометрия и высоты упрощены. Здания и деревья сгенерированы.</p>
+    <p class="attr"><span data-t="attr.before"></span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" data-t="attr.osm"></a><span data-t="attr.after"></span></p>
 
   </div></div>
   <footer class="startbar">
     <div class="sum" id="startSum"></div>
-    <button class="btn primary" id="btnStart" type="button">Старт</button>
+    <button class="btn primary" id="btnStart" type="button" data-t="start"></button>
   </footer>
 </div>
 
@@ -379,45 +379,45 @@ button{cursor:pointer}
 <div id="hud" class="hidden">
   <div id="tags" aria-hidden="true"></div>
   <div class="hud" id="hudTL">
-    <div class="panel big"><div class="v" id="vSpeed">0</div><div class="u" id="uSpeed">км/ч</div></div>
+    <div class="panel big"><div class="v" id="vSpeed">0</div><div class="u" id="uSpeed" data-t="u.kmh"></div></div>
     <div class="stack">
-      <div class="panel mini"><div class="v" id="vPower">0</div><div class="u" id="uPower">Вт</div></div>
-      <div class="panel mini"><div class="v" id="vCad">—</div><div class="u">об/мин</div></div>
+      <div class="panel mini"><div class="v" id="vPower">0</div><div class="u" id="uPower" data-t="u.w"></div></div>
+      <div class="panel mini"><div class="v" id="vCad">—</div><div class="u" data-t="u.rpm"></div></div>
     </div>
-    <div class="panel mini hidden" id="hrBox"><div class="v" id="vHR">—</div><div class="u" id="uHR">уд/мин</div></div>
-    <div id="grade"><div class="v" id="vGrade">0%</div><div class="u" id="uGrade">уклон</div></div>
+    <div class="panel mini hidden" id="hrBox"><div class="v" id="vHR">—</div><div class="u" id="uHR" data-t="u.bpm"></div></div>
+    <div id="grade"><div class="v" id="vGrade">0%</div><div class="u" id="uGrade" data-t="hud.grade"></div></div>
   </div>
   <div class="hud" id="hudTR">
-    <canvas id="mini" class="panel" width="300" height="300" aria-label="Мини-карта"></canvas>
-    <div class="panel" id="raceInfo"><div class="v" id="vTime">0:00</div><div id="vDist">0,0 из 0,0 км</div><div id="vEle">0 м</div></div>
+    <canvas id="mini" class="panel" width="300" height="300" data-t-label="a11y.minimap"></canvas>
+    <div class="panel" id="raceInfo"><div class="v" id="vTime">0:00</div><div id="vDist"></div><div id="vEle"></div></div>
   </div>
   <div class="hud panel hidden" id="planBox">
-    <div class="ph"><span id="wStep">Шаг 1</span><span id="wLeft"></span></div>
+    <div class="ph"><span id="wStep"></span><span id="wLeft"></span></div>
     <div class="pm">
-      <div><div class="v" id="wGear">1×1</div><div class="u" id="wTeeth">передача</div></div>
-      <div><div class="v" id="wCad">80</div><div class="u">цель, об/мин</div></div>
-      <div><div class="v" id="wAct">0</div><div class="u">ваш, об/мин</div></div>
+      <div><div class="v" id="wGear">1×1</div><div class="u" id="wTeeth" data-t="plan.gear"></div></div>
+      <div><div class="v" id="wCad">80</div><div class="u" data-t="plan.target"></div></div>
+      <div><div class="v" id="wAct">0</div><div class="u" data-t="plan.yours"></div></div>
     </div>
     <div class="pbar"><i id="wProg"></i></div>
     <div class="pn" id="wNext"></div>
   </div>
   <div class="hud panel" id="board"><ol id="boardList"></ol></div>
   <div class="hud" id="hudB">
-    <canvas id="profile" class="panel" aria-label="Профиль высот"></canvas>
+    <canvas id="profile" class="panel" data-t-label="a11y.profile"></canvas>
     <div class="ctrls">
-      <button class="ib" id="btnView" type="button" aria-label="Вид от третьего лица"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6.5" r="2.6"/><path d="M6 20c.6-4.2 2.8-7 6-7s5.4 2.8 6 7"/><path d="M3 12l2.5-2.5M21 12l-2.5-2.5"/></svg></button>
-      <button class="ib" id="btnPhoto" type="button" aria-label="Фоторежим"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
-      <button class="ib" id="btnPause" type="button" aria-label="Пауза"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
+      <button class="ib" id="btnView" type="button" data-t-label="view.toThird"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6.5" r="2.6"/><path d="M6 20c.6-4.2 2.8-7 6-7s5.4 2.8 6 7"/><path d="M3 12l2.5-2.5M21 12l-2.5-2.5"/></svg></button>
+      <button class="ib" id="btnPhoto" type="button" data-t-label="photo.title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      <button class="ib" id="btnPause" type="button" data-t-label="pause.title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
     </div>
   </div>
   <div class="hud panel hidden" id="demo">
-    <div class="row"><span>Демо-мощность</span><b id="demoV">150 Вт</b></div>
-    <input id="demoP" type="range" min="0" max="450" step="5" value="150" aria-label="Демо-мощность">
+    <div class="row"><span data-t="demo.power"></span><b id="demoV"></b></div>
+    <input id="demoP" type="range" min="0" max="450" step="5" value="150" data-t-label="demo.power">
   </div>
   <div class="hud panel hidden" id="gear">
-    <button id="gDown" type="button" aria-label="Передача легче">−</button>
+    <button id="gDown" type="button" data-t-label="gear.down">−</button>
     <div><div class="v" id="gearV">50×17</div></div>
-    <button id="gUp" type="button" aria-label="Передача тяжелее">+</button>
+    <button id="gUp" type="button" data-t-label="gear.up">+</button>
   </div>
   <div class="hud panel" id="toast"></div>
 </div>
@@ -427,62 +427,62 @@ button{cursor:pointer}
 <!-- ======== PAUSE ======== -->
 <div class="modal hidden" id="pauseM">
   <div class="card">
-    <h3>Пауза</h3>
-    <p class="hint" id="pauseHint">Таймер остановлен. Соперники тоже ждут.</p>
-    <div class="row2"><button class="btn" id="btnResume" type="button">Продолжить</button><button class="btn hidden" id="btnFinish" type="button">Завершить заезд</button><button class="btn" id="btnQuit" type="button">Выйти в меню</button></div>
+    <h3 data-t="pause.title"></h3>
+    <p class="hint" id="pauseHint" data-t="pause.race"></p>
+    <div class="row2"><button class="btn" id="btnResume" type="button" data-t="pause.resume"></button><button class="btn hidden" id="btnFinish" type="button" data-t="pause.finish"></button><button class="btn" id="btnQuit" type="button" data-t="pause.quit"></button></div>
   </div>
 </div>
 
 <!-- ======== RECORDS ======== -->
 <div class="modal hidden" id="recM">
-  <div class="card wide" role="dialog" aria-label="Мои рекорды">
-    <h3>Мои рекорды</h3>
+  <div class="card wide" role="dialog" data-t-label="records.title">
+    <h3 data-t="records.title"></h3>
     <p class="hint" id="recSync"></p>
     <div class="stats four" id="recTotals"></div>
-    <h4>Пиковая мощность и скорость</h4>
+    <h4 data-t="records.peaks"></h4>
     <div class="stats five" id="recPeaks"></div>
-    <h4>Лучшее время по маршрутам</h4>
+    <h4 data-t="records.routes"></h4>
     <div id="recRoutes"></div>
-    <h4>Последние заезды</h4>
+    <h4 data-t="records.recent"></h4>
     <ol class="hist" id="recHist"></ol>
-    <div class="row2"><button class="btn" id="btnRecReset" type="button">Сбросить рекорды</button><button class="btn" id="btnRecClose" type="button">Закрыть</button></div>
+    <div class="row2"><button class="btn" id="btnRecReset" type="button" data-t="records.reset"></button><button class="btn" id="btnRecClose" type="button" data-t="close"></button></div>
   </div>
 </div>
 
 <!-- ======== RESULTS ======== -->
 <div class="modal hidden" id="resM">
   <div class="card">
-    <h3 id="resTitle">Финиш</h3>
+    <h3 id="resTitle"></h3>
     <p class="hint" id="resSub"></p>
     <div class="newrec hidden" id="resRec"></div>
     <div class="stats" id="resStats"></div>
     <ol class="res" id="resList"></ol>
-    <div class="row2"><button class="btn" id="btnAgain" type="button">Ещё раз</button><button class="btn" id="btnMenu" type="button">В меню</button></div>
+    <div class="row2"><button class="btn" id="btnAgain" type="button" data-t="res.again"></button><button class="btn" id="btnMenu" type="button" data-t="res.menu"></button></div>
   </div>
 </div>
 
 <!-- ======== PHOTO MODE ======== -->
 <div id="photoUI" class="hidden">
-  <h3>Фоторежим</h3>
-  <p>Заезд на паузе. Перетаскивайте по экрану, чтобы повернуть камеру, колесо мыши или щипок меняют дистанцию.</p>
-  <div class="seg" id="camSeg"><button type="button" data-cam="fpv" aria-pressed="true">От первого лица</button><button type="button" data-cam="orbit" aria-pressed="false">Со стороны</button></div>
-  <div class="seg" id="lookSeg"><button type="button" data-look="bodycam">Бодикам</button><button type="button" data-look="clean">Чистая</button><button type="button" data-look="film">Плёнка</button><button type="button" data-look="noir">Нуар</button></div>
-  <div class="sl"><span>Угол обзора</span><b id="oFov"></b><input type="range" id="pFov" min="40" max="120" step="1"></div>
-  <div class="sl"><span>Искажение линзы</span><b id="oDist"></b><input type="range" id="pDist" min="0" max="1.2" step="0.05"></div>
-  <div class="sl"><span>Хроматизм</span><b id="oCA"></b><input type="range" id="pCA" min="0" max="0.03" step="0.001"></div>
-  <div class="sl"><span>Зерно</span><b id="oGrain"></b><input type="range" id="pGrain" min="0" max="0.25" step="0.01"></div>
-  <div class="sl"><span>Виньетка</span><b id="oVig"></b><input type="range" id="pVig" min="0" max="1" step="0.05"></div>
-  <div class="sl"><span>Экспозиция</span><b id="oExp"></b><input type="range" id="pExp" min="0.5" max="1.6" step="0.02"></div>
-  <label class="chk"><input type="checkbox" id="pStamp" checked> Отметка времени, как на бодикамере</label>
-  <label class="chk"><input type="checkbox" id="pHud"> Показывать интерфейс</label>
-  <button class="btn primary" id="btnSnap" type="button">Сделать снимок</button>
-  <button class="btn" id="btnPhotoExit" type="button">Вернуться в заезд</button>
+  <h3 data-t="photo.title"></h3>
+  <p data-t="photo.hint"></p>
+  <div class="seg" id="camSeg"><button type="button" data-cam="fpv" aria-pressed="true" data-t="view.first"></button><button type="button" data-cam="orbit" aria-pressed="false" data-t="photo.side"></button></div>
+  <div class="seg" id="lookSeg"><button type="button" data-look="bodycam" data-t="look.bodycam"></button><button type="button" data-look="clean" data-t="look.clean"></button><button type="button" data-look="film" data-t="look.film"></button><button type="button" data-look="noir" data-t="look.noir"></button></div>
+  <div class="sl"><span data-t="photo.fov"></span><b id="oFov"></b><input type="range" id="pFov" min="40" max="120" step="1"></div>
+  <div class="sl"><span data-t="photo.dist"></span><b id="oDist"></b><input type="range" id="pDist" min="0" max="1.2" step="0.05"></div>
+  <div class="sl"><span data-t="photo.ca"></span><b id="oCA"></b><input type="range" id="pCA" min="0" max="0.03" step="0.001"></div>
+  <div class="sl"><span data-t="photo.grain"></span><b id="oGrain"></b><input type="range" id="pGrain" min="0" max="0.25" step="0.01"></div>
+  <div class="sl"><span data-t="photo.vig"></span><b id="oVig"></b><input type="range" id="pVig" min="0" max="1" step="0.05"></div>
+  <div class="sl"><span data-t="photo.exp"></span><b id="oExp"></b><input type="range" id="pExp" min="0.5" max="1.6" step="0.02"></div>
+  <label class="chk"><input type="checkbox" id="pStamp" checked> <span data-t="photo.stamp"></span></label>
+  <label class="chk"><input type="checkbox" id="pHud"> <span data-t="photo.hud"></span></label>
+  <button class="btn primary" id="btnSnap" type="button" data-t="photo.snap"></button>
+  <button class="btn" id="btnPhotoExit" type="button" data-t="photo.exit"></button>
 </div>
 <div id="shot" class="hidden">
   <div>
-    <img id="shotImg" alt="Снимок из фоторежима">
-    <p>Чтобы сохранить, нажмите и удерживайте снимок (на компьютере — правый клик и «Сохранить изображение»).</p>
-    <div class="row2"><button class="btn" id="btnShotClose" type="button">Закрыть</button></div>
+    <img id="shotImg" alt="" data-t-alt="photo.shotAlt">
+    <p data-t="photo.save"></p>
+    <div class="row2"><button class="btn" id="btnShotClose" type="button" data-t="close"></button></div>
   </div>
 </div>
 
@@ -495,7 +495,873 @@ button{cursor:pointer}
 const $ = s => document.querySelector(s);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
-const fmt1 = v => v.toFixed(1).replace('.', ',');
+/* ---------------- Language of the page: ru, kk, en ---------------- */
+// The site's page passes its language in the address (?lang=); without it the page speaks Russian,
+// the site's default. All three languages live here, so the page stays one self-contained file.
+const LANG = (q => ['ru', 'kk', 'en'].includes(q) ? q : 'ru')(new URLSearchParams(location.search).get('lang'));
+const LOCALE = { ru: 'ru-RU', kk: 'kk-KZ', en: 'en-GB' }[LANG];
+const TEXT = {
+  ru: {
+    "title": "Алатау — виртуальные заезды по Алматы",
+    "brand": "Алатау",
+    "loading": "Строим Алматы…",
+    "a11y.view3d": "Трёхмерный вид маршрута",
+    "a11y.setup": "Настройка заезда",
+    "a11y.riderPreview": "Ваш гонщик в форме UBT",
+    "a11y.minimap": "Мини-карта",
+    "a11y.profile": "Профиль высот",
+    "records.title": "Мои рекорды",
+    "lead": "Сначала настройте заезд, затем нажмите «Старт» — откроется страница заезда. Подключите датчики, пульсометр или умный станок, либо катайтесь в демо-режиме.",
+    "sec.route": "Маршрут",
+    "sec.mode": "Режим",
+    "sec.rider": "Гонщик",
+    "sec.friends": "Вместе с друзьями",
+    "sec.devices": "Устройства и велосипед",
+    "mode.raceBots": "Гонка с соперниками",
+    "mode.plan": "План по каденсу",
+    "mode.free": "Свободная езда",
+    "race.bots": "Соперники",
+    "bots.none": "Без соперников",
+    "bots.3": "3 бота",
+    "bots.6": "6 ботов",
+    "bots.10": "10 ботов",
+    "race.level": "Уровень соперников",
+    "level.easy": "Лёгкий, 1,8–2,4 Вт/кг",
+    "level.mid": "Средний, 2,5–3,2 Вт/кг",
+    "level.hard": "Сильный, 3,3–4,2 Вт/кг",
+    "plan.hint": "Звёзды считаются как на велосипеде: спереди 1 — самая маленькая, сзади 1 — самая большая, то есть 1×1 — самая лёгкая передача. В скобках — число зубьев.",
+    "plan.startGear": "Стартовая передача",
+    "plan.startFront": "Стартовая передняя звезда",
+    "plan.startRear": "Стартовая задняя звезда",
+    "plan.add": "Добавить шаг",
+    "plan.example": "Вернуть пример",
+    "body.height": "Ваш рост, см",
+    "body.mass": "Ваш вес, кг",
+    "body.hrmax": "Максимальный пульс",
+    "body.hint": "По росту и весу: лобовая площадь ≈ {a} м², аэродинамическое сопротивление CdA ≈ {cda} м², вес с велосипедом {total} кг ({bike} {kg} кг). Это влияет на скорость на равнине и на подъёмах.",
+    "body.check": " Проверьте, что рост и вес введены верно.",
+    "view.label": "Вид в заезде",
+    "view.third": "От третьего лица",
+    "view.first": "От первого лица",
+    "view.toThird": "Вид от третьего лица",
+    "view.toFirst": "Вид от первого лица",
+    "mp.connecting": "Подключаемся…",
+    "mp.delay": "Через сколько старт",
+    "mp.startIn": "Старт через {t}",
+    "mp.create": "Собрать групповую гонку",
+    "mp.hint": "Для участников сайта. Групповая гонка идёт по маршруту, выбранному в блоке 1, без ботов: все участники стартуют одновременно, когда закончится отсчёт, а результаты сохраняются в личном кабинете. В свободной езде вы видите всех, кто сейчас катается по тому же маршруту.",
+    "mp.guest": "Совместная езда и групповые гонки доступны участникам сайта.",
+    "mp.offSite": "Совместная езда работает, когда страница открыта на сайте.",
+    "mp.others": "Сейчас на странице, кроме вас: {n}.",
+    "mp.alone": "Пока на странице только вы. Позовите друзей с аккаунтами на сайте, и они появятся здесь.",
+    "where.group": "в групповой гонке",
+    "where.free": "свободная езда",
+    "where.plan": "план по каденсу",
+    "where.race": "гонка",
+    "where.lobby": "в настройках",
+    "mp.yours": "Ваша групповая гонка",
+    "mp.hostGathers": "{name} собирает гонку",
+    "mp.startsIn": "Старт через {t}",
+    "mp.starting": "Старт",
+    "mp.members": ". Участники: {list}.",
+    "mp.cancel": "Отменить",
+    "mp.leave": "Не участвовать",
+    "mp.join": "Участвовать",
+    "mp.failed": "Не получилось: {msg}",
+    "mp.rider": "Гонщик",
+    "you": "Вы",
+    "youLower": "вы",
+    "signIn": "Войти",
+    "openProfile": "Открыть личный кабинет",
+    "close": "Закрыть",
+    "start": "Старт",
+    "dev.connect": "Подключить устройство",
+    "dev.unnamed": "Устройство",
+    "dev.connecting": "подключение",
+    "dev.online": "на связи",
+    "dev.reconnecting": "переподключение",
+    "dev.noCtrlTag": "без управления",
+    "dev.detecting": "тип определяется",
+    "dev.disconnect": "Отключить",
+    "dev.noControl": "Станок не дал управление. Закройте другие приложения, подключённые к нему.",
+    "dev.lost": "Связь с «{name}» пропала, переподключаемся",
+    "dev.back": "Снова на связи: {name}",
+    "role.speed": "скорость",
+    "role.cadence": "каденс",
+    "role.power": "мощность",
+    "role.hr": "пульс",
+    "role.trainer": "станок",
+    "bt.default": "Подходят датчики скорости и каденса, пульсометры, измерители мощности и умные станки с протоколом FTMS. Устройства подключаются по одному. Без них заезд пойдёт в демо-режиме.",
+    "bt.iosAdd": "Safari на iPhone и iPad не поддерживает Bluetooth для сайтов. Откройте страницу в браузере Bluefy или используйте Chrome на Android или компьютере.",
+    "bt.noneAdd": "Этот браузер не поддерживает Web Bluetooth. Откройте страницу в Chrome или Edge на компьютере или Android.",
+    "bt.iosBoot": "На iPhone и iPad Safari не поддерживает Bluetooth для сайтов: для датчиков откройте страницу в браузере Bluefy. Демо-режим работает и так.",
+    "bt.noneBoot": "Этот браузер не поддерживает Web Bluetooth. Для датчиков используйте Chrome или Edge. Демо-режим работает и так.",
+    "bt.blocked": "Браузер заблокировал Bluetooth в этом окне. Откройте страницу в отдельной вкладке браузера или запустите файл со своего сайта по https.",
+    "bt.pickFailed": "Не удалось открыть выбор устройства: {msg}",
+    "bt.already": "Это устройство уже подключено.",
+    "bt.trainerCtrl": "Станок подключён и будет менять сопротивление по уклону маршрута.",
+    "bt.trainerNoCtrl": "Станок передаёт мощность, но не дал управление сопротивлением. Закройте Zwift и другие приложения и подключите заново.",
+    "bt.hrOk": "Пульсометр подключён.",
+    "bt.connected": "Подключено: {name}. Покрутите педали или колесо, чтобы датчик определил свой тип.",
+    "bt.failed": "Устройство найдено, но подключиться не удалось. Разбудите его (покрутите педали, наденьте пульсометр) и попробуйте ещё раз.",
+    "bt.twoSprockets": "Укажите хотя бы две задние звезды, например 11-12-13-14-15-17-19-21-24-28.",
+    "trainer.difficulty": "Сложность умного станка",
+    "diff.0": "0%, без подъёмов",
+    "diff.100": "100%, как на дороге",
+    "trainer.label": "Станок",
+    "trainer.fluid": "Жидкостный",
+    "trainer.mag": "Магнитный",
+    "trainer.rollers": "Роллеры",
+    "bike.type": "Тип велосипеда",
+    "bike.kg": "Вес велосипеда, кг",
+    "bike.wheel": "Колесо",
+    "bike.front": "Передние звёзды",
+    "bike.frontCustom": "Передние зубья через дефис",
+    "bike.cass": "Кассета",
+    "bike.cassCustom": "Задние зубья через дефис",
+    "bike.info": "Спереди {f} ({fl}), сзади {r} ({rl}).",
+    "bike.custom": "Свои зубья…",
+    "front.compact": "компакт",
+    "front.gravel": "гравел",
+    "front.triple": "тройник",
+    "cass.n": "{n} звёзд",
+    "cad.label": "Скорость при датчике каденса",
+    "cad.direct": "По передаче и каденсу",
+    "cad.physics": "С учётом уклона маршрута",
+    "attr.before": "Маршруты нанесены по данным ",
+    "attr.osm": "© участники OpenStreetMap",
+    "attr.after": " (ODbL), геометрия и высоты упрощены. Здания и деревья сгенерированы.",
+    "city.soon": "скоро",
+    "u.kmh": "км/ч",
+    "u.w": "Вт",
+    "u.wDemo": "Вт, демо",
+    "u.wEst": "Вт, оценка",
+    "u.rpm": "об/мин",
+    "u.bpm": "уд/мин",
+    "u.km": "км",
+    "u.m": "м",
+    "u.mm": "мм",
+    "u.kg": "кг",
+    "u.s": "с",
+    "u.min": "мин",
+    "u.h": "ч",
+    "hud.grade": "уклон",
+    "hud.onTrainer": "на станке {p}",
+    "hud.hrZone": "уд/мин, зона {z}",
+    "hud.lap": "{d} км, круг {lap}",
+    "hud.of": "{d} из {total} км",
+    "hud.ele": "{m} м над морем",
+    "hud.lapToast": "Круг {n}",
+    "map.north": "С",
+    "sight.right": "Справа: {name}",
+    "sight.left": "Слева: {name}",
+    "arch.both": "СТАРТ / ФИНИШ",
+    "arch.start": "СТАРТ",
+    "arch.finish": "ФИНИШ",
+    "count.go": "Старт!",
+    "plan.gear": "передача",
+    "plan.target": "цель, об/мин",
+    "plan.yours": "ваш, об/мин",
+    "plan.total": "Шагов: {n}, общее время {t}. Тренировка закончится, когда пройдёт последний шаг; короткий маршрут будет повторяться кругами.",
+    "plan.stepFront": "Передняя звезда, шаг {n}",
+    "plan.stepRear": "Задняя звезда, шаг {n}",
+    "plan.stepCad": "Каденс, шаг {n}",
+    "plan.stepMin": "Минуты, шаг {n}",
+    "plan.stepDel": "Удалить шаг {n}",
+    "plan.stepToast": "Шаг {n}: передача {g}, каденс {c} об/мин",
+    "plan.soon": "Через 10 с: {g}, {c} об/мин",
+    "plan.stepOf": "Шаг {i} из {n}",
+    "plan.left": "осталось {t}",
+    "plan.teeth": "{g} зуб.",
+    "plan.next": "Далее: {g}, {c} об/мин, {t}",
+    "plan.last": "Последний шаг",
+    "plan.chainringTitle": "Нажмите, чтобы сменить переднюю звезду",
+    "demo.power": "Демо-мощность",
+    "gear.down": "Передача легче",
+    "gear.up": "Передача тяжелее",
+    "pause.title": "Пауза",
+    "pause.race": "Таймер остановлен. Соперники тоже ждут.",
+    "pause.free": "Таймер остановлен. «Завершить заезд» сохранит его в истории.",
+    "pause.plan": "Таймер и план остановлены. Можно завершить тренировку досрочно.",
+    "pause.group": "Групповая гонка не останавливается: время идёт, соперники едут дальше.",
+    "pause.resume": "Продолжить",
+    "pause.finish": "Завершить заезд",
+    "pause.quit": "Выйти в меню",
+    "toast.free": "Свободная езда: завершить можно через паузу",
+    "toast.group": "Групповая гонка: все стартуют одновременно",
+    "records.peaks": "Пиковая мощность и скорость",
+    "records.routes": "Лучшее время по маршрутам",
+    "records.recent": "Последние заезды",
+    "records.reset": "Сбросить рекорды",
+    "records.resetSure": "Точно сбросить? Нажмите ещё раз",
+    "records.synced": "Рекорды хранятся в вашем личном кабинете на сайте и доступны на любом устройстве.",
+    "records.local": "Рекорды сохраняются только в этом браузере. Войдите на сайт, чтобы они сохранялись в личном кабинете.",
+    "rides": {"one": "заезд", "few": "заезда", "many": "заездов", "other": "заезда"},
+    "rec.totalDist": "всего проехано",
+    "rec.gain": "набор высоты",
+    "rec.saddle": "время в седле",
+    "rec.estShort": ", оценка",
+    "rec.topSpeed": "макс. скорость",
+    "rec.demo": ", демо",
+    "rec.attempts": ", попыток: {n}",
+    "rec.notYet": "ещё не проезжали",
+    "rec.avgW": "{w} Вт ср.",
+    "rec.bestFaster": "лучшее время на маршруте: {t} (быстрее на {d})",
+    "rec.first": "первый результат на маршруте: {t}",
+    "rec.firstLabel": "первый результат на маршруте",
+    "rec.bestLabel": "лучшее время на маршруте",
+    "rec.avgPower": "средняя мощность на маршруте: {w} Вт",
+    "rec.peak": "пиковая мощность {d}: {w} Вт",
+    "rec.peakLabel": "пиковая мощность {d}",
+    "rec.est": " (оценка)",
+    "rec.maxSpeed": "максимальная скорость: {v} км/ч",
+    "rec.maxSpeedLabel": "максимальная скорость",
+    "rec.notSaved": "Заезд не сохранился в личном кабинете",
+    "rec.newInProfile": "Новые рекорды в личном кабинете",
+    "hist.plan": "План по каденсу: ",
+    "hist.free": "Свободная езда: ",
+    "hist.place": ", {p}-е из {n}",
+    "hist.empty": "Здесь появятся ваши заезды после первого финиша.",
+    "sum.group": "вы записаны в групповую гонку, она начнётся сама (кнопка «Старт» — выйти из неё и поехать одному)",
+    "sum.plan": "план по каденсу на {t}",
+    "sum.raceBots": "гонка, соперников: {n}",
+    "sum.raceAlone": "гонка, без соперников",
+    "sum.demo": "демо-режим без датчиков",
+    "sum.power": "мощность со станка или измерителя",
+    "sum.speed": "по датчику скорости",
+    "sum.cadence": "по датчику каденса",
+    "sum.hr": "пульсометр",
+    "res.finish": "Финиш",
+    "res.winGroup": "Победа в групповой гонке",
+    "res.win": "Победа на маршруте",
+    "res.place": ", место {p} из {n}",
+    "res.best": ". Лучший результат: {t}.",
+    "res.pending": " Места тех, кто ещё едет, уточнятся, когда они финишируют.",
+    "res.newRecords": "Новые рекорды",
+    "res.time": "время",
+    "res.avgKmh": "средняя, км/ч",
+    "res.avgPower": "средняя мощность",
+    "res.avgPowerEst": "средняя мощность (оценка)",
+    "res.avgCad": "средний каденс",
+    "res.maxKmh": "максимум, км/ч",
+    "res.hr": "пульс: средний / макс.",
+    "res.dist": "дистанция",
+    "res.freeSub": "{route}, кругов: {n}. Заезд сохранён в истории.",
+    "res.workoutDone": "Тренировка выполнена",
+    "res.planSub": "План по каденсу, шагов: {n}, {t} на маршруте «{route}». В зоне каденса (±5 об/мин) {z}% времени.",
+    "res.stepRow": "{g}, цель {c} об/мин, {t}",
+    "res.human": "гонщик",
+    "res.onTheWay": "в пути, ≈ ",
+    "res.again": "Ещё раз",
+    "res.menu": "В меню",
+    "route.meta": "{d} км, набор {g} м",
+    "route.loop": "круг",
+    "route.osm": "дома из OSM",
+    "route.record": "рекорд {t}",
+    "route.sights": " По пути: {list}.",
+    "photo.title": "Фоторежим",
+    "photo.hint": "Заезд на паузе. Перетаскивайте по экрану, чтобы повернуть камеру, колесо мыши или щипок меняют дистанцию.",
+    "photo.side": "Со стороны",
+    "look.bodycam": "Бодикам",
+    "look.clean": "Чистая",
+    "look.film": "Плёнка",
+    "look.noir": "Нуар",
+    "photo.fov": "Угол обзора",
+    "photo.dist": "Искажение линзы",
+    "photo.ca": "Хроматизм",
+    "photo.grain": "Зерно",
+    "photo.vig": "Виньетка",
+    "photo.exp": "Экспозиция",
+    "photo.stamp": "Отметка времени, как на бодикамере",
+    "photo.hud": "Показывать интерфейс",
+    "photo.snap": "Сделать снимок",
+    "photo.exit": "Вернуться в заезд",
+    "photo.shotAlt": "Снимок из фоторежима",
+    "photo.save": "Чтобы сохранить, нажмите и удерживайте снимок (на компьютере — правый клик и «Сохранить изображение»).",
+    "boot.noThree": "Не удалось загрузить 3D-движок. Проверьте подключение к интернету и обновите страницу.",
+    "boot.failed": "Не удалось запустить 3D: {msg}"
+  },
+  kk: {
+    "title": "Алатау — Алматы бойынша виртуалды заездтер",
+    "brand": "Алатау",
+    "loading": "Алматыны салып жатырмыз…",
+    "a11y.view3d": "Маршруттың үш өлшемді көрінісі",
+    "a11y.setup": "Заездті баптау",
+    "a11y.riderPreview": "UBT формасындағы шабандозыңыз",
+    "a11y.minimap": "Шағын карта",
+    "a11y.profile": "Биіктік профилі",
+    "records.title": "Менің рекордтарым",
+    "lead": "Алдымен заездті баптаңыз, содан кейін «Бастау» түймесін басыңыз — заезд беті ашылады. Датчиктерді, пульсометрді немесе ақылды велотренажерді қосыңыз, не демо режимде жүріңіз.",
+    "sec.route": "Маршрут",
+    "sec.mode": "Режим",
+    "sec.rider": "Шабандоз",
+    "sec.friends": "Достармен бірге",
+    "sec.devices": "Құрылғылар және велосипед",
+    "mode.raceBots": "Қарсыластармен жарыс",
+    "mode.plan": "Каденс жоспары",
+    "mode.free": "Еркін жүріс",
+    "race.bots": "Қарсыластар",
+    "bots.none": "Қарсыластарсыз",
+    "bots.3": "3 бот",
+    "bots.6": "6 бот",
+    "bots.10": "10 бот",
+    "race.level": "Қарсыластар деңгейі",
+    "level.easy": "Жеңіл, 1,8–2,4 Вт/кг",
+    "level.mid": "Орташа, 2,5–3,2 Вт/кг",
+    "level.hard": "Күшті, 3,3–4,2 Вт/кг",
+    "plan.hint": "Жұлдызшалар велосипедтегідей саналады: алдыңғы 1 — ең кішісі, артқы 1 — ең үлкені, яғни 1×1 — ең жеңіл беріліс. Жақшада — тістер саны.",
+    "plan.startGear": "Бастапқы беріліс",
+    "plan.startFront": "Бастапқы алдыңғы жұлдызша",
+    "plan.startRear": "Бастапқы артқы жұлдызша",
+    "plan.add": "Қадам қосу",
+    "plan.example": "Үлгіні қайтару",
+    "body.height": "Бойыңыз, см",
+    "body.mass": "Салмағыңыз, кг",
+    "body.hrmax": "Ең жоғары пульс",
+    "body.hint": "Бой мен салмақ бойынша: маңдай ауданы ≈ {a} м², аэродинамикалық кедергі CdA ≈ {cda} м², велосипедпен бірге салмақ {total} кг ({bike} {kg} кг). Бұл жазық жердегі және өрлеудегі жылдамдыққа әсер етеді.",
+    "body.check": " Бой мен салмақтың дұрыс енгізілгенін тексеріңіз.",
+    "view.label": "Заездегі көрініс",
+    "view.third": "Үшінші жақтан",
+    "view.first": "Бірінші жақтан",
+    "view.toThird": "Үшінші жақтан көрініс",
+    "view.toFirst": "Бірінші жақтан көрініс",
+    "mp.connecting": "Қосылып жатырмыз…",
+    "mp.delay": "Старт қашан",
+    "mp.startIn": "Старт {t} кейін",
+    "mp.create": "Топтық жарыс жинау",
+    "mp.hint": "Сайт қатысушыларына арналған. Топтық жарыс 1-блокта таңдалған маршрут бойынша, боттарсыз өтеді: кері санақ біткенде барлық қатысушылар бір мезетте стартқа шығады, ал нәтижелер жеке кабинетте сақталады. Еркін жүрісте сол маршрутта қазір жүріп жүрген барлығын көресіз.",
+    "mp.guest": "Бірге жүру және топтық жарыстар сайт қатысушыларына қолжетімді.",
+    "mp.offSite": "Бірге жүру бет сайтта ашық болғанда жұмыс істейді.",
+    "mp.others": "Қазір бетте сізден басқа: {n}.",
+    "mp.alone": "Әзірге бетте тек сізсіз. Сайтта аккаунты бар достарыңызды шақырыңыз, олар осында пайда болады.",
+    "where.group": "топтық жарыста",
+    "where.free": "еркін жүріс",
+    "where.plan": "каденс жоспары",
+    "where.race": "жарыс",
+    "where.lobby": "баптауда",
+    "mp.yours": "Сіздің топтық жарысыңыз",
+    "mp.hostGathers": "{name} жарыс жинап жатыр",
+    "mp.startsIn": "Старт {t} кейін",
+    "mp.starting": "Старт",
+    "mp.members": ". Қатысушылар: {list}.",
+    "mp.cancel": "Болдырмау",
+    "mp.leave": "Қатыспау",
+    "mp.join": "Қатысу",
+    "mp.failed": "Болмады: {msg}",
+    "mp.rider": "Шабандоз",
+    "you": "Сіз",
+    "youLower": "сіз",
+    "signIn": "Кіру",
+    "openProfile": "Жеке кабинетті ашу",
+    "close": "Жабу",
+    "start": "Бастау",
+    "dev.connect": "Құрылғыны қосу",
+    "dev.unnamed": "Құрылғы",
+    "dev.connecting": "қосылуда",
+    "dev.online": "байланыста",
+    "dev.reconnecting": "қайта қосылуда",
+    "dev.noCtrlTag": "басқарусыз",
+    "dev.detecting": "түрі анықталуда",
+    "dev.disconnect": "Ажырату",
+    "dev.noControl": "Велотренажер басқаруды бермеді. Оған қосылған басқа қолданбаларды жабыңыз.",
+    "dev.lost": "«{name}» байланысы үзілді, қайта қосылып жатырмыз",
+    "dev.back": "Қайта байланыста: {name}",
+    "role.speed": "жылдамдық",
+    "role.cadence": "каденс",
+    "role.power": "қуат",
+    "role.hr": "пульс",
+    "role.trainer": "велотренажер",
+    "bt.default": "Жылдамдық пен каденс датчиктері, пульсометрлер, қуат өлшегіштер және FTMS хаттамасы бар ақылды велотренажерлер жарайды. Құрылғылар бір-бірден қосылады. Оларсыз заезд демо режимде өтеді.",
+    "bt.iosAdd": "iPhone мен iPad-тағы Safari сайттар үшін Bluetooth-ты қолдамайды. Бетті Bluefy браузерінде ашыңыз немесе Android не компьютердегі Chrome-ды пайдаланыңыз.",
+    "bt.noneAdd": "Бұл браузер Web Bluetooth-ты қолдамайды. Бетті компьютерде не Android-та Chrome немесе Edge арқылы ашыңыз.",
+    "bt.iosBoot": "iPhone мен iPad-та Safari сайттар үшін Bluetooth-ты қолдамайды: датчиктер үшін бетті Bluefy браузерінде ашыңыз. Демо режим онсыз да жұмыс істейді.",
+    "bt.noneBoot": "Бұл браузер Web Bluetooth-ты қолдамайды. Датчиктер үшін Chrome немесе Edge пайдаланыңыз. Демо режим онсыз да жұмыс істейді.",
+    "bt.blocked": "Браузер бұл терезеде Bluetooth-ты бұғаттады. Бетті браузердің бөлек қойындысында ашыңыз немесе файлды өз сайтыңыздан https арқылы іске қосыңыз.",
+    "bt.pickFailed": "Құрылғы таңдауын ашу мүмкін болмады: {msg}",
+    "bt.already": "Бұл құрылғы қосылып тұр.",
+    "bt.trainerCtrl": "Велотренажер қосылды және маршрут еңісіне қарай кедергіні өзгертеді.",
+    "bt.trainerNoCtrl": "Велотренажер қуатты жібереді, бірақ кедергіні басқаруды бермеді. Zwift пен басқа қолданбаларды жауып, қайта қосыңыз.",
+    "bt.hrOk": "Пульсометр қосылды.",
+    "bt.connected": "Қосылды: {name}. Датчик өз түрін анықтауы үшін педальды не дөңгелекті айналдырыңыз.",
+    "bt.failed": "Құрылғы табылды, бірақ қосылу мүмкін болмады. Оны оятыңыз (педальды айналдырыңыз, пульсометрді киіңіз) және қайталап көріңіз.",
+    "bt.twoSprockets": "Кемінде екі артқы жұлдызшаны көрсетіңіз, мысалы 11-12-13-14-15-17-19-21-24-28.",
+    "trainer.difficulty": "Ақылды велотренажердің күрделілігі",
+    "diff.0": "0%, өрлеусіз",
+    "diff.100": "100%, жолдағыдай",
+    "trainer.label": "Велотренажер",
+    "trainer.fluid": "Сұйықтықты",
+    "trainer.mag": "Магнитті",
+    "trainer.rollers": "Роллерлер",
+    "bike.type": "Велосипед түрі",
+    "bike.kg": "Велосипед салмағы, кг",
+    "bike.wheel": "Дөңгелек",
+    "bike.front": "Алдыңғы жұлдызшалар",
+    "bike.frontCustom": "Алдыңғы тістер, сызықша арқылы",
+    "bike.cass": "Кассета",
+    "bike.cassCustom": "Артқы тістер, сызықша арқылы",
+    "bike.info": "Алдыңғы {f} ({fl}), артқы {r} ({rl}).",
+    "bike.custom": "Өз тістеріңіз…",
+    "front.compact": "компакт",
+    "front.gravel": "гравел",
+    "front.triple": "үштік",
+    "cass.n": "{n} жұлдызша",
+    "cad.label": "Каденс датчигімен жылдамдық",
+    "cad.direct": "Беріліс пен каденс бойынша",
+    "cad.physics": "Маршрут еңісін ескеріп",
+    "attr.before": "Маршруттар ",
+    "attr.osm": "© OpenStreetMap қатысушылары",
+    "attr.after": " (ODbL) деректері бойынша салынған, геометрия мен биіктіктер жеңілдетілген. Ғимараттар мен ағаштар генерацияланған.",
+    "city.soon": "жақында",
+    "u.kmh": "км/сағ",
+    "u.w": "Вт",
+    "u.wDemo": "Вт, демо",
+    "u.wEst": "Вт, бағалау",
+    "u.rpm": "айн/мин",
+    "u.bpm": "соқ/мин",
+    "u.km": "км",
+    "u.m": "м",
+    "u.mm": "мм",
+    "u.kg": "кг",
+    "u.s": "с",
+    "u.min": "мин",
+    "u.h": "сағ",
+    "hud.grade": "еңіс",
+    "hud.onTrainer": "велотренажерде {p}",
+    "hud.hrZone": "соқ/мин, {z}-аймақ",
+    "hud.lap": "{d} км, {lap}-шеңбер",
+    "hud.of": "{d} / {total} км",
+    "hud.ele": "теңізден {m} м",
+    "hud.lapToast": "{n}-шеңбер",
+    "map.north": "С",
+    "sight.right": "Оң жақта: {name}",
+    "sight.left": "Сол жақта: {name}",
+    "arch.both": "СТАРТ / МӘРЕ",
+    "arch.start": "СТАРТ",
+    "arch.finish": "МӘРЕ",
+    "count.go": "Старт!",
+    "plan.gear": "беріліс",
+    "plan.target": "мақсат, айн/мин",
+    "plan.yours": "сіздікі, айн/мин",
+    "plan.total": "Қадамдар: {n}, жалпы уақыт {t}. Жаттығу соңғы қадам біткенде аяқталады; қысқа маршрут шеңбер бойынша қайталанады.",
+    "plan.stepFront": "Алдыңғы жұлдызша, {n}-қадам",
+    "plan.stepRear": "Артқы жұлдызша, {n}-қадам",
+    "plan.stepCad": "Каденс, {n}-қадам",
+    "plan.stepMin": "Минуттар, {n}-қадам",
+    "plan.stepDel": "{n}-қадамды жою",
+    "plan.stepToast": "{n}-қадам: беріліс {g}, каденс {c} айн/мин",
+    "plan.soon": "10 с кейін: {g}, {c} айн/мин",
+    "plan.stepOf": "{n} ішінен {i}-қадам",
+    "plan.left": "қалды {t}",
+    "plan.teeth": "{g} тіс",
+    "plan.next": "Келесі: {g}, {c} айн/мин, {t}",
+    "plan.last": "Соңғы қадам",
+    "plan.chainringTitle": "Алдыңғы жұлдызшаны ауыстыру үшін басыңыз",
+    "demo.power": "Демо қуат",
+    "gear.down": "Жеңілірек беріліс",
+    "gear.up": "Ауыррақ беріліс",
+    "pause.title": "Үзіліс",
+    "pause.race": "Таймер тоқтатылды. Қарсыластар да күтіп тұр.",
+    "pause.free": "Таймер тоқтатылды. «Заездті аяқтау» оны тарихта сақтайды.",
+    "pause.plan": "Таймер мен жоспар тоқтатылды. Жаттығуды мерзімінен бұрын аяқтауға болады.",
+    "pause.group": "Топтық жарыс тоқтамайды: уақыт жүріп жатыр, қарсыластар әрі қарай жүреді.",
+    "pause.resume": "Жалғастыру",
+    "pause.finish": "Заездті аяқтау",
+    "pause.quit": "Мәзірге шығу",
+    "toast.free": "Еркін жүріс: үзіліс арқылы аяқтауға болады",
+    "toast.group": "Топтық жарыс: бәрі бір мезетте стартқа шығады",
+    "records.peaks": "Шыңдық қуат және жылдамдық",
+    "records.routes": "Маршруттар бойынша үздік уақыт",
+    "records.recent": "Соңғы заездтер",
+    "records.reset": "Рекордтарды тазалау",
+    "records.resetSure": "Шынымен тазалау керек пе? Тағы бір рет басыңыз",
+    "records.synced": "Рекордтар сайттағы жеке кабинетіңізде сақталады және кез келген құрылғыда қолжетімді.",
+    "records.local": "Рекордтар тек осы браузерде сақталады. Олар жеке кабинетте сақталуы үшін сайтқа кіріңіз.",
+    "rides": "заезд",
+    "rec.totalDist": "барлығы жүрілді",
+    "rec.gain": "биіктік жинау",
+    "rec.saddle": "ершіктегі уақыт",
+    "rec.estShort": ", бағалау",
+    "rec.topSpeed": "ең жоғ. жылдамдық",
+    "rec.demo": ", демо",
+    "rec.attempts": ", талпыныс: {n}",
+    "rec.notYet": "әлі жүрілмеген",
+    "rec.avgW": "орт. {w} Вт",
+    "rec.bestFaster": "маршруттағы үздік уақыт: {t} ({d} жылдамырақ)",
+    "rec.first": "маршруттағы алғашқы нәтиже: {t}",
+    "rec.firstLabel": "маршруттағы алғашқы нәтиже",
+    "rec.bestLabel": "маршруттағы үздік уақыт",
+    "rec.avgPower": "маршруттағы орташа қуат: {w} Вт",
+    "rec.peak": "{d} шыңдық қуат: {w} Вт",
+    "rec.peakLabel": "{d} шыңдық қуат",
+    "rec.est": " (бағалау)",
+    "rec.maxSpeed": "ең жоғары жылдамдық: {v} км/сағ",
+    "rec.maxSpeedLabel": "ең жоғары жылдамдық",
+    "rec.notSaved": "Заезд жеке кабинетте сақталмады",
+    "rec.newInProfile": "Жеке кабинеттегі жаңа рекордтар",
+    "hist.plan": "Каденс жоспары: ",
+    "hist.free": "Еркін жүріс: ",
+    "hist.place": ", {n} ішінен {p}-орын",
+    "hist.empty": "Алғашқы мәреден кейін мұнда заездтеріңіз пайда болады.",
+    "sum.group": "сіз топтық жарысқа жазылдыңыз, ол өзі басталады («Бастау» түймесі — одан шығып, жалғыз жүру)",
+    "sum.plan": "{t} каденс жоспары",
+    "sum.raceBots": "жарыс, қарсыластар: {n}",
+    "sum.raceAlone": "жарыс, қарсыластарсыз",
+    "sum.demo": "датчиктерсіз демо режим",
+    "sum.power": "велотренажерден не өлшегіштен қуат",
+    "sum.speed": "жылдамдық датчигі бойынша",
+    "sum.cadence": "каденс датчигі бойынша",
+    "sum.hr": "пульсометр",
+    "res.finish": "Мәре",
+    "res.winGroup": "Топтық жарыстағы жеңіс",
+    "res.win": "Маршруттағы жеңіс",
+    "res.place": ", {n} ішінен {p}-орын",
+    "res.best": ". Үздік нәтиже: {t}.",
+    "res.pending": " Әлі жүріп келе жатқандардың орындары олар мәреге жеткенде нақтыланады.",
+    "res.newRecords": "Жаңа рекордтар",
+    "res.time": "уақыт",
+    "res.avgKmh": "орташа, км/сағ",
+    "res.avgPower": "орташа қуат",
+    "res.avgPowerEst": "орташа қуат (бағалау)",
+    "res.avgCad": "орташа каденс",
+    "res.maxKmh": "ең жоғары, км/сағ",
+    "res.hr": "пульс: орташа / ең жоғары",
+    "res.dist": "қашықтық",
+    "res.freeSub": "{route}, шеңбер: {n}. Заезд тарихта сақталды.",
+    "res.workoutDone": "Жаттығу орындалды",
+    "res.planSub": "Каденс жоспары, қадамдар: {n}, «{route}» маршрутында {t}. Каденс аймағында (±5 айн/мин) уақыттың {z}%.",
+    "res.stepRow": "{g}, мақсат {c} айн/мин, {t}",
+    "res.human": "шабандоз",
+    "res.onTheWay": "жолда, ≈ ",
+    "res.again": "Тағы бір рет",
+    "res.menu": "Мәзірге",
+    "route.meta": "{d} км, биіктік {g} м",
+    "route.loop": "шеңбер",
+    "route.osm": "OSM үйлері",
+    "route.record": "рекорд {t}",
+    "route.sights": " Жолда: {list}.",
+    "photo.title": "Фоторежим",
+    "photo.hint": "Заезд кідіртілді. Камераны бұру үшін экранды сүйреңіз, тінтуір дөңгелегі немесе екі саусақ қашықтықты өзгертеді.",
+    "photo.side": "Сырттан",
+    "look.bodycam": "Бодикам",
+    "look.clean": "Таза",
+    "look.film": "Пленка",
+    "look.noir": "Нуар",
+    "photo.fov": "Көру бұрышы",
+    "photo.dist": "Линза бұрмалануы",
+    "photo.ca": "Хроматизм",
+    "photo.grain": "Түйіршік",
+    "photo.vig": "Виньетка",
+    "photo.exp": "Экспозиция",
+    "photo.stamp": "Бодикамерадағыдай уақыт белгісі",
+    "photo.hud": "Интерфейсті көрсету",
+    "photo.snap": "Сурет түсіру",
+    "photo.exit": "Заездке оралу",
+    "photo.shotAlt": "Фоторежимнен түсірілген сурет",
+    "photo.save": "Сақтау үшін суретті басып ұстап тұрыңыз (компьютерде — оң жақ батырма және «Суретті сақтау»).",
+    "boot.noThree": "3D қозғалтқышын жүктеу мүмкін болмады. Интернет байланысын тексеріп, бетті жаңартыңыз.",
+    "boot.failed": "3D іске қосылмады: {msg}"
+  },
+  en: {
+    "title": "Alatau — virtual rides around Almaty",
+    "brand": "Alatau",
+    "loading": "Building Almaty…",
+    "a11y.view3d": "3D view of the route",
+    "a11y.setup": "Ride setup",
+    "a11y.riderPreview": "Your rider in the UBT kit",
+    "a11y.minimap": "Mini map",
+    "a11y.profile": "Elevation profile",
+    "records.title": "My records",
+    "lead": "Set up the ride first, then press “Start” to open the ride. Connect sensors, a heart rate monitor or a smart trainer, or ride in demo mode.",
+    "sec.route": "Route",
+    "sec.mode": "Mode",
+    "sec.rider": "Rider",
+    "sec.friends": "With friends",
+    "sec.devices": "Devices and bike",
+    "mode.raceBots": "Race against rivals",
+    "mode.plan": "Cadence plan",
+    "mode.free": "Free ride",
+    "race.bots": "Rivals",
+    "bots.none": "No rivals",
+    "bots.3": "3 bots",
+    "bots.6": "6 bots",
+    "bots.10": "10 bots",
+    "race.level": "Rival level",
+    "level.easy": "Easy, 1.8–2.4 W/kg",
+    "level.mid": "Medium, 2.5–3.2 W/kg",
+    "level.hard": "Strong, 3.3–4.2 W/kg",
+    "plan.hint": "Chainrings and sprockets are numbered as on a bike: front 1 is the smallest, rear 1 the largest, so 1×1 is the easiest gear. The number of teeth is in brackets.",
+    "plan.startGear": "Starting gear",
+    "plan.startFront": "Starting chainring",
+    "plan.startRear": "Starting sprocket",
+    "plan.add": "Add a step",
+    "plan.example": "Restore the example",
+    "body.height": "Your height, cm",
+    "body.mass": "Your weight, kg",
+    "body.hrmax": "Maximum heart rate",
+    "body.hint": "From your height and weight: frontal area ≈ {a} m², drag area CdA ≈ {cda} m², weight with the bike {total} kg ({bike} {kg} kg). This affects your speed on the flat and on climbs.",
+    "body.check": " Check that your height and weight are entered correctly.",
+    "view.label": "View while riding",
+    "view.third": "Third person",
+    "view.first": "First person",
+    "view.toThird": "Third-person view",
+    "view.toFirst": "First-person view",
+    "mp.connecting": "Connecting…",
+    "mp.delay": "When to start",
+    "mp.startIn": "Start in {t}",
+    "mp.create": "Gather a group race",
+    "mp.hint": "For members of the site. A group race follows the route chosen in block 1, without bots: everyone starts together when the countdown ends, and the results are saved in each member's profile. In a free ride you see everyone riding the same route right now.",
+    "mp.guest": "Riding together and group races are for members of the site.",
+    "mp.offSite": "Riding together works when the page is open on the site.",
+    "mp.others": "On the page besides you: {n}.",
+    "mp.alone": "Only you are on the page so far. Invite friends with accounts on the site and they will appear here.",
+    "where.group": "in a group race",
+    "where.free": "free ride",
+    "where.plan": "cadence plan",
+    "where.race": "race",
+    "where.lobby": "setting up",
+    "mp.yours": "Your group race",
+    "mp.hostGathers": "{name} is gathering a race",
+    "mp.startsIn": "Starts in {t}",
+    "mp.starting": "Starting",
+    "mp.members": ". Riders: {list}.",
+    "mp.cancel": "Cancel",
+    "mp.leave": "Leave",
+    "mp.join": "Join",
+    "mp.failed": "That did not work: {msg}",
+    "mp.rider": "Rider",
+    "you": "You",
+    "youLower": "you",
+    "signIn": "Sign in",
+    "openProfile": "Open your profile",
+    "close": "Close",
+    "start": "Start",
+    "dev.connect": "Connect a device",
+    "dev.unnamed": "Device",
+    "dev.connecting": "connecting",
+    "dev.online": "connected",
+    "dev.reconnecting": "reconnecting",
+    "dev.noCtrlTag": "no control",
+    "dev.detecting": "detecting type",
+    "dev.disconnect": "Disconnect",
+    "dev.noControl": "The trainer did not hand over control. Close other apps connected to it.",
+    "dev.lost": "Lost the connection to “{name}”, reconnecting",
+    "dev.back": "Connected again: {name}",
+    "role.speed": "speed",
+    "role.cadence": "cadence",
+    "role.power": "power",
+    "role.hr": "heart rate",
+    "role.trainer": "trainer",
+    "bt.default": "Speed and cadence sensors, heart rate monitors, power meters and smart trainers with the FTMS protocol work. Devices connect one at a time. Without them the ride runs in demo mode.",
+    "bt.iosAdd": "Safari on iPhone and iPad does not support Bluetooth for websites. Open the page in the Bluefy browser, or use Chrome on Android or a computer.",
+    "bt.noneAdd": "This browser does not support Web Bluetooth. Open the page in Chrome or Edge on a computer or Android.",
+    "bt.iosBoot": "On iPhone and iPad, Safari does not support Bluetooth for websites: for sensors, open the page in the Bluefy browser. Demo mode works anyway.",
+    "bt.noneBoot": "This browser does not support Web Bluetooth. Use Chrome or Edge for sensors. Demo mode works anyway.",
+    "bt.blocked": "The browser blocked Bluetooth in this window. Open the page in a separate browser tab, or serve the file from your own site over https.",
+    "bt.pickFailed": "Could not open the device picker: {msg}",
+    "bt.already": "This device is already connected.",
+    "bt.trainerCtrl": "The trainer is connected and will set the resistance from the gradient of the route.",
+    "bt.trainerNoCtrl": "The trainer sends power but did not hand over resistance control. Close Zwift and other apps and connect again.",
+    "bt.hrOk": "Heart rate monitor connected.",
+    "bt.connected": "Connected: {name}. Turn the pedals or the wheel so the sensor can tell what it is.",
+    "bt.failed": "The device was found but would not connect. Wake it up (turn the pedals, put on the heart rate monitor) and try again.",
+    "bt.twoSprockets": "Enter at least two sprockets, for example 11-12-13-14-15-17-19-21-24-28.",
+    "trainer.difficulty": "Smart trainer difficulty",
+    "diff.0": "0%, no climbs",
+    "diff.100": "100%, as on the road",
+    "trainer.label": "Trainer",
+    "trainer.fluid": "Fluid",
+    "trainer.mag": "Magnetic",
+    "trainer.rollers": "Rollers",
+    "bike.type": "Bike type",
+    "bike.kg": "Bike weight, kg",
+    "bike.wheel": "Wheel",
+    "bike.front": "Chainrings",
+    "bike.frontCustom": "Chainring teeth, separated by hyphens",
+    "bike.cass": "Cassette",
+    "bike.cassCustom": "Sprocket teeth, separated by hyphens",
+    "bike.info": "Front {f} ({fl}), rear {r} ({rl}).",
+    "bike.custom": "Custom teeth…",
+    "front.compact": "compact",
+    "front.gravel": "gravel",
+    "front.triple": "triple",
+    "cass.n": "{n} sprockets",
+    "cad.label": "Speed with a cadence sensor",
+    "cad.direct": "From gear and cadence",
+    "cad.physics": "Taking the gradient into account",
+    "attr.before": "Routes are drawn from data by ",
+    "attr.osm": "© OpenStreetMap contributors",
+    "attr.after": " (ODbL); geometry and heights are simplified. Buildings and trees are generated.",
+    "city.soon": "coming soon",
+    "u.kmh": "km/h",
+    "u.w": "W",
+    "u.wDemo": "W, demo",
+    "u.wEst": "W, estimate",
+    "u.rpm": "rpm",
+    "u.bpm": "bpm",
+    "u.km": "km",
+    "u.m": "m",
+    "u.mm": "mm",
+    "u.kg": "kg",
+    "u.s": "s",
+    "u.min": "min",
+    "u.h": "h",
+    "hud.grade": "gradient",
+    "hud.onTrainer": "trainer {p}",
+    "hud.hrZone": "bpm, zone {z}",
+    "hud.lap": "{d} km, lap {lap}",
+    "hud.of": "{d} of {total} km",
+    "hud.ele": "{m} m above sea level",
+    "hud.lapToast": "Lap {n}",
+    "map.north": "N",
+    "sight.right": "On the right: {name}",
+    "sight.left": "On the left: {name}",
+    "arch.both": "START / FINISH",
+    "arch.start": "START",
+    "arch.finish": "FINISH",
+    "count.go": "Go!",
+    "plan.gear": "gear",
+    "plan.target": "target, rpm",
+    "plan.yours": "yours, rpm",
+    "plan.total": "Steps: {n}, total time {t}. The workout ends when the last step does; a short route repeats in laps.",
+    "plan.stepFront": "Chainring, step {n}",
+    "plan.stepRear": "Sprocket, step {n}",
+    "plan.stepCad": "Cadence, step {n}",
+    "plan.stepMin": "Minutes, step {n}",
+    "plan.stepDel": "Delete step {n}",
+    "plan.stepToast": "Step {n}: gear {g}, cadence {c} rpm",
+    "plan.soon": "In 10 s: {g}, {c} rpm",
+    "plan.stepOf": "Step {i} of {n}",
+    "plan.left": "{t} left",
+    "plan.teeth": "{g} teeth",
+    "plan.next": "Next: {g}, {c} rpm, {t}",
+    "plan.last": "Last step",
+    "plan.chainringTitle": "Tap to change the chainring",
+    "demo.power": "Demo power",
+    "gear.down": "Easier gear",
+    "gear.up": "Harder gear",
+    "pause.title": "Pause",
+    "pause.race": "The timer is stopped. Your rivals wait too.",
+    "pause.free": "The timer is stopped. “End the ride” saves it to your history.",
+    "pause.plan": "The timer and the plan are stopped. You can end the workout early.",
+    "pause.group": "A group race does not stop: the clock runs and the others ride on.",
+    "pause.resume": "Resume",
+    "pause.finish": "End the ride",
+    "pause.quit": "Back to the menu",
+    "toast.free": "Free ride: end it from the pause menu",
+    "toast.group": "Group race: everyone starts together",
+    "records.peaks": "Peak power and speed",
+    "records.routes": "Best time per route",
+    "records.recent": "Recent rides",
+    "records.reset": "Reset records",
+    "records.resetSure": "Really reset? Press again",
+    "records.synced": "Your records are kept in your profile on the site and available on any device.",
+    "records.local": "Your records are kept in this browser only. Sign in to the site to keep them in your profile.",
+    "rides": {"one": "ride", "other": "rides"},
+    "rec.totalDist": "ridden in total",
+    "rec.gain": "elevation gain",
+    "rec.saddle": "time in the saddle",
+    "rec.estShort": ", estimate",
+    "rec.topSpeed": "top speed",
+    "rec.demo": ", demo",
+    "rec.attempts": ", attempts: {n}",
+    "rec.notYet": "not ridden yet",
+    "rec.avgW": "{w} W avg",
+    "rec.bestFaster": "best time on the route: {t} ({d} faster)",
+    "rec.first": "first result on the route: {t}",
+    "rec.firstLabel": "first result on the route",
+    "rec.bestLabel": "best time on the route",
+    "rec.avgPower": "average power on the route: {w} W",
+    "rec.peak": "peak power {d}: {w} W",
+    "rec.peakLabel": "peak power {d}",
+    "rec.est": " (estimate)",
+    "rec.maxSpeed": "top speed: {v} km/h",
+    "rec.maxSpeedLabel": "top speed",
+    "rec.notSaved": "The ride was not saved to your profile",
+    "rec.newInProfile": "New records in your profile",
+    "hist.plan": "Cadence plan: ",
+    "hist.free": "Free ride: ",
+    "hist.place": ", {p} of {n}",
+    "hist.empty": "Your rides appear here after your first finish.",
+    "sum.group": "you are in a group race, it starts by itself (“Start” leaves it and rides alone)",
+    "sum.plan": "cadence plan, {t}",
+    "sum.raceBots": "race, rivals: {n}",
+    "sum.raceAlone": "race, no rivals",
+    "sum.demo": "demo mode without sensors",
+    "sum.power": "power from a trainer or power meter",
+    "sum.speed": "from a speed sensor",
+    "sum.cadence": "from a cadence sensor",
+    "sum.hr": "heart rate monitor",
+    "res.finish": "Finish",
+    "res.winGroup": "You won the group race",
+    "res.win": "You won",
+    "res.place": ", place {p} of {n}",
+    "res.best": ". Your best: {t}.",
+    "res.pending": " Places of those still riding are settled when they finish.",
+    "res.newRecords": "New records",
+    "res.time": "time",
+    "res.avgKmh": "average, km/h",
+    "res.avgPower": "average power",
+    "res.avgPowerEst": "average power (estimate)",
+    "res.avgCad": "average cadence",
+    "res.maxKmh": "top, km/h",
+    "res.hr": "heart rate: average / max",
+    "res.dist": "distance",
+    "res.freeSub": "{route}, laps: {n}. The ride is saved to your history.",
+    "res.workoutDone": "Workout done",
+    "res.planSub": "Cadence plan, steps: {n}, {t} on “{route}”. In the cadence zone (±5 rpm) {z}% of the time.",
+    "res.stepRow": "{g}, target {c} rpm, {t}",
+    "res.human": "rider",
+    "res.onTheWay": "riding, ≈ ",
+    "res.again": "Again",
+    "res.menu": "To the menu",
+    "route.meta": "{d} km, {g} m of climbing",
+    "route.loop": "loop",
+    "route.osm": "buildings from OSM",
+    "route.record": "record {t}",
+    "route.sights": " On the way: {list}.",
+    "photo.title": "Photo mode",
+    "photo.hint": "The ride is paused. Drag on the screen to turn the camera; the mouse wheel or a pinch changes the distance.",
+    "photo.side": "From the side",
+    "look.bodycam": "Bodycam",
+    "look.clean": "Clean",
+    "look.film": "Film",
+    "look.noir": "Noir",
+    "photo.fov": "Field of view",
+    "photo.dist": "Lens distortion",
+    "photo.ca": "Chromatic aberration",
+    "photo.grain": "Grain",
+    "photo.vig": "Vignette",
+    "photo.exp": "Exposure",
+    "photo.stamp": "Timestamp, as on a bodycam",
+    "photo.hud": "Show the interface",
+    "photo.snap": "Take a picture",
+    "photo.exit": "Back to the ride",
+    "photo.shotAlt": "Picture from photo mode",
+    "photo.save": "To save it, press and hold the picture (on a computer, right-click and choose “Save image”).",
+    "boot.noThree": "Could not load the 3D engine. Check your internet connection and reload the page.",
+    "boot.failed": "Could not start 3D: {msg}"
+  }
+};
+// t(key, { name }) fills {name}; a key missing in a language falls back to Russian, then to the key
+function t(key, vars) {
+  const s = (TEXT[LANG][key] != null ? TEXT[LANG] : TEXT.ru)[key] ?? key;
+  return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m)) : s;
+}
+const tr = t; // the same, for the functions that keep the ride time in a local `t`
+const langPath = p => p.replace(/^\/(ru|kk|en)\//, '/' + LANG + '/'); // a site address in the language of the page
+const PLURAL = new Intl.PluralRules(LOCALE);
+function tn(key, n) { const f = t(key); return typeof f === 'string' ? f : (f[PLURAL.select(n)] || f.other); }
+const L = o => o[LANG] || o.ru; // a name in the route catalogue: { ru, kk, en }
+const lc = s => LANG === 'en' ? s : s.toLowerCase(); // a type name inside a sentence
+const numF = (v, d) => v.toFixed(d).replace('.', LANG === 'en' ? '.' : ',');
+const durLabel = sec => sec < 60 ? sec + ' ' + t('u.s') : sec < 3600 ? sec / 60 + ' ' + t('u.min') : sec / 3600 + ' ' + t('u.h');
+document.documentElement.lang = LANG; document.title = t('title');
+document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.dataset.t); });
+document.querySelectorAll('[data-t-label]').forEach(el => el.setAttribute('aria-label', t(el.dataset.tLabel)));
+document.querySelectorAll('[data-t-alt]').forEach(el => el.setAttribute('alt', t(el.dataset.tAlt)));
+document.querySelectorAll('[data-tyre]').forEach(o => { o.textContent = o.dataset.tyre + ' — ' + o.value + ' ' + t('u.mm'); });
+document.querySelectorAll('#mpDelay option').forEach(o => { o.textContent = t('mp.startIn', { t: durLabel(+o.value) }); });
+const fmt1 = v => numF(v, 1);
 const store = {
   get(k, d) { try { const v = localStorage.getItem('alatau:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('alatau:' + k, JSON.stringify(v)); } catch (e) {} }
@@ -508,39 +1374,39 @@ function fmtTime(sec) { sec = Math.max(0, Math.floor(sec)); const h = Math.floor
 
 /* ---------------- Города и маршруты ---------------- */
 const CITIES = [
-  { id: 'almaty', name: 'Алматы', ready: true },
-  { id: 'astana', name: 'Астана, скоро', ready: false },
-  { id: 'shymkent', name: 'Шымкент, скоро', ready: false }
+  { id: 'almaty', name: L({ ru: "Алматы", kk: "Алматы", en: "Almaty" }), ready: true },
+  { id: 'astana', name: L({ ru: "Астана", kk: "Астана", en: "Astana" }) + ', ' + t('city.soon'), ready: false },
+  { id: 'shymkent', name: L({ ru: "Шымкент", kk: "Шымкент", en: "Shymkent" }) + ', ' + t('city.soon'), ready: false }
 ];
 // [широта, долгота, высота м]
 const ROUTES = [
-  { id: 'center', city: 'almaty', name: 'Центральное кольцо', loop: true, width: 16, lanes: 4, scenery: 'city',
-    desc: 'Абая, Достык, Аль-Фараби, Байтурсынова. Тополя, панельки и горы на горизонте.',
+  { id: 'center', city: 'almaty', name: L({ ru: "Центральное кольцо", kk: "Орталық шеңбер", en: "Central loop" }), loop: true, width: 16, lanes: 4, scenery: 'city',
+    desc: L({ ru: "Абая, Достык, Аль-Фараби, Байтурсынова. Тополя, панельки и горы на горизонте.", kk: "Абай, Достық, Әл-Фараби, Байтұрсынұлы. Терек ағаштары, панельді үйлер және көкжиектегі таулар.", en: "Abay, Dostyk, Al-Farabi, Baitursynov. Poplars, panel blocks and mountains on the horizon." }),
     pts: [[43.2402,76.9290,832],[43.2404,76.9380,836],[43.2405,76.9480,840],[43.2405,76.9573,846],[43.2370,76.9582,860],[43.2330,76.9590,874],[43.2285,76.9600,890],[43.2245,76.9610,906],[43.2190,76.9622,928],[43.2140,76.9630,948],[43.2114,76.9606,955],[43.2130,76.9530,952],[43.2152,76.9440,946],[43.2172,76.9360,938],[43.2188,76.9298,930],[43.2240,76.9291,908],[43.2290,76.9290,886],[43.2345,76.9290,860]] },
-  { id: 'medeu', city: 'almaty', name: 'Подъём на Медеу', loop: false, width: 9, lanes: 2, scenery: 'gorge',
-    desc: 'От Аль-Фараби по Медеускому тракту вдоль Малой Алматинки до катка. Главный подъём города.',
+  { id: 'medeu', city: 'almaty', name: L({ ru: "Подъём на Медеу", kk: "Медеуге өрлеу", en: "Climb to Medeu" }), loop: false, width: 9, lanes: 2, scenery: 'gorge',
+    desc: L({ ru: "От Аль-Фараби по Медеускому тракту вдоль Малой Алматинки до катка. Главный подъём города.", kk: "Әл-Фарабиден Медеу жолымен Кіші Алматы өзенінің бойымен мұз айдынына дейін. Қаланың басты өрлеуі.", en: "From Al-Farabi up the Medeu road along the Malaya Almatinka river to the skating rink. The main climb of the city." }),
     extend: [[43.1550,77.0600,1715],[43.1525,77.0590,1740],[43.1490,77.0582,1770],[43.1450,77.0578,1800]],
     pts: [[43.2120,76.9636,958],[43.2085,76.9665,975],[43.2050,76.9705,1000],[43.2015,76.9745,1028],[43.1985,76.9790,1055],[43.1955,76.9835,1085],[43.1928,76.9885,1115],[43.1900,76.9940,1150],[43.1872,76.9995,1190],[43.1845,77.0050,1232],[43.1812,77.0100,1275],[43.1775,77.0145,1320],[43.1742,77.0195,1368],[43.1712,77.0250,1418],[43.1690,77.0310,1465],[43.1668,77.0365,1510],[43.1650,77.0420,1552],[43.1622,77.0460,1600],[43.1605,77.0515,1640],[43.1590,77.0560,1668],[43.1578,77.0592,1690]] },
-  { id: 'oldtown', city: 'almaty', name: 'Старый центр', loop: true, width: 12, lanes: 4, scenery: 'city',
-    desc: 'Назарбаева, Гоголя, Достык, Абая. Самые известные здания города на одном круге.',
+  { id: 'oldtown', city: 'almaty', name: L({ ru: "Старый центр", kk: "Ескі орталық", en: "Old centre" }), loop: true, width: 12, lanes: 4, scenery: 'city',
+    desc: L({ ru: "Назарбаева, Гоголя, Достык, Абая. Самые известные здания города на одном круге.", kk: "Назарбаев, Гоголь, Достық, Абай. Қаланың ең танымал ғимараттары бір шеңберде.", en: "Nazarbayev, Gogol, Dostyk, Abay. The best-known buildings of the city on one loop." }),
     pts: [[43.2404,76.9455,840],[43.2445,76.9458,825],[43.2482,76.9460,812],[43.2525,76.9462,800],[43.2568,76.9465,788],[43.2570,76.9510,790],[43.2572,76.9555,793],[43.2574,76.9590,796],[43.2530,76.9585,808],[43.2485,76.9580,822],[43.2445,76.9576,835],[43.2406,76.9573,846],[43.2405,76.9520,843]] },
-  { id: 'farabi', city: 'almaty', name: 'Аль-Фараби, спринт', loop: false, width: 18, lanes: 6, scenery: 'city',
-    desc: 'От Есентая к Розыбакиева. Широкий проспект с лёгким уклоном для коротких гонок.',
+  { id: 'farabi', city: 'almaty', name: L({ ru: "Аль-Фараби, спринт", kk: "Әл-Фараби, спринт", en: "Al-Farabi sprint" }), loop: false, width: 18, lanes: 6, scenery: 'city',
+    desc: L({ ru: "От Есентая к Розыбакиева. Широкий проспект с лёгким уклоном для коротких гонок.", kk: "Есентайдан Розыбакиевке дейін. Қысқа жарыстарға арналған, сәл еңісті кең даңғыл.", en: "From Esentai to Rozybakiev. A wide avenue with a gentle slope for short races." }),
     pts: [[43.2188,76.9298,930],[43.2196,76.9220,933],[43.2194,76.9150,934],[43.2185,76.9075,932],[43.2172,76.9000,929],[43.2150,76.8940,924],[43.2125,76.8880,920],[43.2100,76.8815,917],[43.2080,76.8750,914]] }
 ];
 const LANDMARKS = [
-  { type: 'tvtower', name: 'телебашня Кок-Тобе', lat: 43.2330, lon: 76.9760, ele: 1070, far: true, r: 60 },
-  { type: 'monument', name: 'Монумент Независимости', lat: 43.2385, lon: 76.9452, r: 45 },
-  { type: 'palace', name: 'Дворец Республики', lat: 43.2392, lon: 76.9546, r: 60 },
-  { type: 'hotel', name: 'гостиница «Казахстан»', lat: 43.2440, lon: 76.9592, h: 102, r: 35 },
-  { type: 'opera', name: 'Театр оперы и балета имени Абая', lat: 43.2484, lon: 76.9482, r: 50 },
-  { type: 'cathedral', name: 'Вознесенский собор в Парке 28 панфиловцев', lat: 43.2590, lon: 76.9530, r: 45 },
-  { type: 'bazaar', name: 'Зелёный базар', lat: 43.2628, lon: 76.9502, r: 70 },
-  { type: 'arena', name: 'Дворец спорта имени Балуана Шолака', lat: 43.2418, lon: 76.9312, r: 45 },
-  { type: 'glass', name: 'башня Есентай', lat: 43.2178, lon: 76.9262, h: 160, r: 30 },
-  { type: 'towers', name: 'бизнес-центр «Нурлы Тау»', lat: 43.2192, lon: 76.8985, r: 55 },
-  { type: 'rink', name: 'высокогорный каток Медеу', lat: 43.1556, lon: 77.0601, r: 120 },
-  { type: 'dam', name: 'плотина Медеу', lat: 43.1512, lon: 77.0585, r: 220, far: true }
+  { type: 'tvtower', name: L({ ru: "телебашня Кок-Тобе", kk: "Көктөбе телемұнарасы", en: "Kok-Tobe TV tower" }), lat: 43.2330, lon: 76.9760, ele: 1070, far: true, r: 60 },
+  { type: 'monument', name: L({ ru: "Монумент Независимости", kk: "Тәуелсіздік монументі", en: "Independence Monument" }), lat: 43.2385, lon: 76.9452, r: 45 },
+  { type: 'palace', name: L({ ru: "Дворец Республики", kk: "Республика сарайы", en: "Palace of the Republic" }), lat: 43.2392, lon: 76.9546, r: 60 },
+  { type: 'hotel', name: L({ ru: "гостиница «Казахстан»", kk: "«Қазақстан» қонақүйі", en: "Hotel Kazakhstan" }), lat: 43.2440, lon: 76.9592, h: 102, r: 35 },
+  { type: 'opera', name: L({ ru: "Театр оперы и балета имени Абая", kk: "Абай атындағы опера және балет театры", en: "Abay Opera and Ballet Theatre" }), lat: 43.2484, lon: 76.9482, r: 50 },
+  { type: 'cathedral', name: L({ ru: "Вознесенский собор в Парке 28 панфиловцев", kk: "28 панфиловшылар саябағындағы Вознесенский соборы", en: "Ascension Cathedral in the Park of 28 Panfilov Guardsmen" }), lat: 43.2590, lon: 76.9530, r: 45 },
+  { type: 'bazaar', name: L({ ru: "Зелёный базар", kk: "Көк базар", en: "Green Bazaar" }), lat: 43.2628, lon: 76.9502, r: 70 },
+  { type: 'arena', name: L({ ru: "Дворец спорта имени Балуана Шолака", kk: "Балуан Шолақ атындағы спорт сарайы", en: "Baluan Sholak Sports Palace" }), lat: 43.2418, lon: 76.9312, r: 45 },
+  { type: 'glass', name: L({ ru: "башня Есентай", kk: "Есентай мұнарасы", en: "Esentai Tower" }), lat: 43.2178, lon: 76.9262, h: 160, r: 30 },
+  { type: 'towers', name: L({ ru: "бизнес-центр «Нурлы Тау»", kk: "«Нұрлы Тау» бизнес орталығы", en: "Nurly Tau business centre" }), lat: 43.2192, lon: 76.8985, r: 55 },
+  { type: 'rink', name: L({ ru: "высокогорный каток Медеу", kk: "«Медеу» биік таулы мұз айдыны", en: "Medeu high-mountain skating rink" }), lat: 43.1556, lon: 77.0601, r: 120 },
+  { type: 'dam', name: L({ ru: "плотина Медеу", kk: "Медеу бөгені", en: "Medeu dam" }), lat: 43.1512, lon: 77.0585, r: 220, far: true }
 ];
 const ORIGIN = { lat: 43.238, lon: 76.945 };
 function proj(lat, lon) { const R = 6371000; return { x: (lon - ORIGIN.lon) * Math.PI / 180 * R * Math.cos(ORIGIN.lat * Math.PI / 180), z: -(lat - ORIGIN.lat) * Math.PI / 180 * R }; }
@@ -633,10 +1499,10 @@ function parseCP(dv) {
   if ((f & 32) && fits(dv, o, 4)) { r.cr = dv.getUint16(o, true); r.ct = dv.getUint16(o + 2, true); }
   return r;
 }
-const ROLE_NAMES = [['speed', 'скорость'], ['cadence', 'каденс'], ['power', 'мощность'], ['hr', 'пульс'], ['trainer', 'станок']];
+const ROLE_NAMES = [['speed', t('role.speed')], ['cadence', t('role.cadence')], ['power', t('role.power')], ['hr', t('role.hr')], ['trainer', t('role.trainer')]];
 class BLEDev {
   constructor(dev) {
-    this.dev = dev; this.name = dev.name || 'Устройство'; this.roles = new Set(); this.status = 'подключение'; this.retries = 0; this.ls = new WeakSet();
+    this.dev = dev; this.name = dev.name || t('dev.unnamed'); this.roles = new Set(); this.status = 'connecting'; this.retries = 0; this.ls = new WeakSet();
     this.wheelRpm = 0; this.crankRpm = 0; this.hrV = 0; this.powerV = 0; this.at = { w: 0, c: 0, h: 0, p: 0 };
     this.pw = null; this.pc = null; this.ctrl = false; this.busy = false; this.hasFtms = false;
   }
@@ -668,12 +1534,12 @@ class BLEDev {
       try { await this.sub(csc, UUID.cscMeas, dv => this.onCSC(dv)); } catch (e) {}
     }
     if (hr) { try { await this.sub(hr, UUID.hrMeas, dv => { this.hrV = parseHR(dv); this.at.h = performance.now(); }); this.roles.add('hr'); } catch (e) {} }
-    if (!ftms && !cp && !csc && !hr) throw new Error('нет поддерживаемых сервисов');
+    if (!ftms && !cp && !csc && !hr) throw new Error('no supported services');
     if (!this._d) { this._d = () => this.onDisc(); this.dev.addEventListener('gattserverdisconnected', this._d); }
-    this.status = 'на связи'; this.retries = 0; Sensors.changed();
+    this.status = 'online'; this.retries = 0; Sensors.changed();
   }
   async write(bytes) { const data = new Uint8Array(bytes); if (this.cpt.writeValueWithResponse) await this.cpt.writeValueWithResponse(data); else await this.cpt.writeValue(data); }
-  onCtrl(dv) { if (dv.getUint8(0) === 0x80 && dv.byteLength >= 3 && dv.getUint8(1) === 0x00 && dv.getUint8(2) !== 1) { this.ctrl = false; Sensors.changed(); toast('Станок не дал управление. Закройте другие приложения, подключённые к нему.'); } }
+  onCtrl(dv) { if (dv.getUint8(0) === 0x80 && dv.byteLength >= 3 && dv.getUint8(1) === 0x00 && dv.getUint8(2) !== 1) { this.ctrl = false; Sensors.changed(); toast(t('dev.noControl')); } }
   async setGrade(g) {
     if (!this.ctrl || this.busy) return false; this.busy = true;
     try { const v = Math.round(clamp(g, -10, 20) * 100); await this.write([0x11, 0, 0, v & 255, (v >> 8) & 255, 40, 51]); return true; } // ветер 0, уклон 0,01 %, Crr 0,004, CdA·ρ/2 ≈ 0,51
@@ -714,13 +1580,13 @@ class BLEDev {
   async onDisc() {
     this.ctrl = false; this.wheelRpm = this.crankRpm = this.hrV = this.powerV = 0; this.pw = this.pc = null;
     if (this.manual || this.reconnecting) return;
-    this.reconnecting = true; this.status = 'переподключение'; Sensors.changed();
-    if (phase === 'race') toast('Связь с «' + this.name + '» пропала, переподключаемся', 3.5);
+    this.reconnecting = true; this.status = 'reconnecting'; Sensors.changed();
+    if (phase === 'race') toast(t('dev.lost', { name: this.name }), 3.5);
     while (!this.manual) {
       await new Promise(r => setTimeout(r, Math.min(1000 + this.retries * 1000, 5000)));
       if (this.manual) break;
       this.retries++;
-      try { await this.connect(); this.pw = this.pc = null; Trainer.sent = null; toast('Снова на связи: ' + this.name); break; } catch (e) {}
+      try { await this.connect(); this.pw = this.pc = null; Trainer.sent = null; toast(t('dev.back', { name: this.name })); break; } catch (e) {}
     }
     this.reconnecting = false;
   }
@@ -730,7 +1596,7 @@ const Sensors = {
   devs: [],
   supported() { return !!(navigator.bluetooth && navigator.bluetooth.requestDevice); },
   async add() {
-    if (!this.supported()) { btHint(isIOS() ? 'Safari на iPhone и iPad не поддерживает Bluetooth для сайтов. Откройте страницу в браузере Bluefy или используйте Chrome на Android или компьютере.' : 'Этот браузер не поддерживает Web Bluetooth. Откройте страницу в Chrome или Edge на компьютере или Android.', true); return; }
+    if (!this.supported()) { btHint(isIOS() ? t('bt.iosAdd') : t('bt.noneAdd'), true); return; }
     let dev;
     try {
       dev = await navigator.bluetooth.requestDevice({
@@ -739,14 +1605,14 @@ const Sensors = {
       });
     } catch (e) {
       if (e.name === 'NotFoundError') return; // окно выбора закрыто
-      btHint(e.name === 'SecurityError' ? 'Браузер заблокировал Bluetooth в этом окне. Откройте страницу в отдельной вкладке браузера или запустите файл со своего сайта по https.' : 'Не удалось открыть выбор устройства: ' + e.message, true); return;
+      btHint(e.name === 'SecurityError' ? t('bt.blocked') : t('bt.pickFailed', { msg: e.message }), true); return;
     }
-    if (this.devs.some(d => d.dev.id === dev.id)) { btHint('Это устройство уже подключено.'); return; }
+    if (this.devs.some(d => d.dev.id === dev.id)) { btHint(t('bt.already')); return; }
     const d = new BLEDev(dev); this.devs.push(d); this.changed();
     try {
       await d.connect();
-      btHint(d.roles.has('trainer') ? (d.ctrl ? 'Станок подключён и будет менять сопротивление по уклону маршрута.' : 'Станок передаёт мощность, но не дал управление сопротивлением. Закройте Zwift и другие приложения и подключите заново.') : d.roles.has('hr') && d.roles.size === 1 ? 'Пульсометр подключён.' : 'Подключено: ' + d.name + '. Покрутите педали или колесо, чтобы датчик определил свой тип.');
-    } catch (e) { this.devs = this.devs.filter(x => x !== d); this.changed(); btHint('Устройство найдено, но подключиться не удалось. Разбудите его (покрутите педали, наденьте пульсометр) и попробуйте ещё раз.', true); }
+      btHint(d.roles.has('trainer') ? (d.ctrl ? t('bt.trainerCtrl') : t('bt.trainerNoCtrl')) : d.roles.has('hr') && d.roles.size === 1 ? t('bt.hrOk') : t('bt.connected', { name: d.name }));
+    } catch (e) { this.devs = this.devs.filter(x => x !== d); this.changed(); btHint(t('bt.failed'), true); }
   },
   remove(d) { d.disconnect(); this.devs = this.devs.filter(x => x !== d); this.changed(); },
   tick(now) { this.devs.forEach(d => d.tick(now)); },
@@ -778,10 +1644,10 @@ function renderDevs() {
   const ul = $('#devList'); ul.innerHTML = '';
   Sensors.devs.forEach(d => {
     const li = document.createElement('li'); li.className = 'dev';
-    const tags = ROLE_NAMES.filter(r => d.roles.has(r[0])).map(r => '<span class="tag on">' + r[1] + '</span>').join('') + (d.roles.has('trainer') && !d.ctrl && d.status === 'на связи' ? '<span class="tag">без управления</span>' : '') || '<span class="tag">тип определяется</span>';
+    const tags = ROLE_NAMES.filter(r => d.roles.has(r[0])).map(r => '<span class="tag on">' + r[1] + '</span>').join('') + (d.roles.has('trainer') && !d.ctrl && d.status === 'online' ? '<span class="tag">' + t('dev.noCtrlTag') + '</span>' : '') || '<span class="tag">' + t('dev.detecting') + '</span>';
     li.innerHTML = '<div><b></b><br><small></small><div class="tags">' + tags + '</div></div>';
-    li.querySelector('b').textContent = d.name; li.querySelector('small').textContent = d.status;
-    const btn = document.createElement('button'); btn.className = 'btn'; btn.type = 'button'; btn.textContent = 'Отключить'; btn.onclick = () => Sensors.remove(d);
+    li.querySelector('b').textContent = d.name; li.querySelector('small').textContent = d.status === 'online' ? t('dev.online') : d.status === 'reconnecting' ? t('dev.reconnecting') : t('dev.connecting');
+    const btn = document.createElement('button'); btn.className = 'btn'; btn.type = 'button'; btn.textContent = t('dev.disconnect'); btn.onclick = () => Sensors.remove(d);
     li.appendChild(btn); ul.appendChild(li);
   });
 }
@@ -1139,7 +2005,7 @@ function buildWorld(route) {
   const osmB = route.osm ? prepOSM(route.osm.buildings) : null;
   const tooClose = (x, z, rad) => nearest(T, x, z).d < rad || lms.some(l => Math.hypot(l.x - x, l.z - z) < l.r + rad * .5) || (osmB ? osmB.hit(x, z) : false);
   // «окна» в застройке, чтобы достопримечательности было видно с дороги
-  const inView = (s, side) => lms.some(l => { if (l.dist > 700 || (l.side === 'справа' ? 1 : -1) !== side) return false; let d = Math.abs(s - l.s); if (T.loop) d = Math.min(d, T.L - d); return d < l.r + 60 + l.dist * .25; });
+  const inView = (s, side) => lms.some(l => { if (l.dist > 700 || (l.side === 'right' ? 1 : -1) !== side) return false; let d = Math.abs(s - l.s); if (T.loop) d = Math.min(d, T.L - d); return d < l.r + 60 + l.dist * .25; });
   if (osmB) { world_osmKept = addOSMBuildings(grp, T, W, lms, osmB); }
   else if (!gorge) {
     for (const side of [-1, 1]) for (const row of [0, 1]) {
@@ -1184,7 +2050,7 @@ function buildWorld(route) {
   lms.forEach(lm => addLandmark(grp, lm, lm, T));
   // --- старт и финиш ---
   const S0 = 20, FIN = T.loop ? S0 + T.L : T.L - 8;
-  if (T.loop) addArch(grp, T, S0 + 8, 'СТАРТ / ФИНИШ', W); else { addArch(grp, T, S0 + 8, 'СТАРТ', W); addArch(grp, T, FIN, 'ФИНИШ', W); }
+  if (T.loop) addArch(grp, T, S0 + 8, t('arch.both'), W); else { addArch(grp, T, S0 + 8, t('arch.start'), W); addArch(grp, T, FIN, t('arch.finish'), W); }
 
   scene.add(grp);
   world = { T, group: grp, S0, FIN, route, lms };
@@ -1416,7 +2282,7 @@ function nearLandmarks(T) {
     const q = proj(lm.lat, lm.lon); let best = 1e18, bi = 0;
     for (let i = 0; i < T.N; i += 2) { const dx = T.X[i] - q.x, dz = T.Z[i] - q.z, d = dx * dx + dz * dz; if (d < best) { best = d; bi = i; } }
     const dist = Math.sqrt(best); if (dist > (lm.far ? 14000 : 1300)) return;
-    const o = sampleAt(T, T.D[bi], {}), side = ((q.x - o.x) * o.rx + (q.z - o.z) * o.rz) > 0 ? 'справа' : 'слева';
+    const o = sampleAt(T, T.D[bi], {}), side = ((q.x - o.x) * o.rx + (q.z - o.z) * o.rz) > 0 ? 'right' : 'left';
     out.push(Object.assign({}, lm, { x: q.x, z: q.z, s: T.D[bi], side, dist }));
   });
   return out;
@@ -1440,21 +2306,21 @@ const STYLES = {
 };
 // a — основной цвет формы, b — узор, pat — тип узора. Никаких надписей и логотипов.
 const CHARS = [
-  { id: 'aybar', name: 'Айбар', style: 'climber', a: 0x1f4e8c, b: 0xeef2f6, pat: 'peaks', helmet: 0xeef2f6, bike: 0x1f4e8c, skin: 0xc68e62, shoe: 0xeef2f6, hair: 'none', mass: 64, size: .97 },
-  { id: 'dana', name: 'Дана', style: 'sprinter', a: 0xc3323b, b: 0xe8a33a, pat: 'split', helmet: 0x1d2024, bike: 0x26292e, skin: 0xd9a77f, shoe: 0x1d2024, hair: 'pony', hairC: 0x2a1b12, mass: 62, size: .95 },
-  { id: 'erlan', name: 'Ерлан', style: 'rouleur', a: 0x33383f, b: 0xa8d03c, pat: 'sash', helmet: 0xa8d03c, bike: 0x33383f, skin: 0xb98159, shoe: 0x1d2024, hair: 'beard', hairC: 0x1f1610, mass: 80, size: 1.04, deep: true },
-  { id: 'madina', name: 'Мадина', style: 'attacker', a: 0x1f9aa3, b: 0xf07b5a, pat: 'hoops', helmet: 0xf07b5a, bike: 0xf4f6f8, skin: 0xe2b48c, shoe: 0xf4f6f8, hair: 'pony', hairC: 0x120c08, mass: 58, size: .94 },
-  { id: 'timur', name: 'Тимур', style: 'allround', a: 0xc28a2e, b: 0x2f4a33, pat: 'stripes', helmet: 0x2f4a33, bike: 0x2f4a33, skin: 0xa8734c, shoe: 0x1d2024, hair: 'none', mass: 72, size: 1 },
-  { id: 'aliya', name: 'Алия', style: 'climber', a: 0x6d4fb0, b: 0xf4f6f8, pat: 'chevron', helmet: 0xf4f6f8, bike: 0x6d4fb0, skin: 0xd9a77f, shoe: 0x6d4fb0, hair: 'pony', hairC: 0x5a3a22, mass: 54, size: .93 },
-  { id: 'nurzhan', name: 'Нуржан', style: 'sprinter', a: 0xe0702c, b: 0x1c2f5a, pat: 'bands', helmet: 0x1c2f5a, bike: 0xe0702c, skin: 0xc0875a, shoe: 0xf4f6f8, hair: 'none', mass: 78, size: 1.03, deep: true },
-  { id: 'saule', name: 'Сауле', style: 'allround', a: 0xf0c430, b: 0x2b2e33, pat: 'sun', helmet: 0x2b2e33, bike: 0x2b2e33, skin: 0xe8c09a, shoe: 0x2b2e33, hair: 'pony', hairC: 0x8a5a2b, mass: 60, size: .96 },
-  { id: 'arman', name: 'Арман', style: 'rouleur', a: 0x17191c, b: 0xaab2bb, pat: 'pin', helmet: 0xaab2bb, bike: 0x17191c, skin: 0xb07a50, shoe: 0x17191c, hair: 'beard', hairC: 0x15100c, mass: 77, size: 1.02, deep: true },
-  { id: 'zhanna', name: 'Жанна', style: 'attacker', a: 0xb53f7a, b: 0x2aa39a, pat: 'diag', helmet: 0x2aa39a, bike: 0xb53f7a, skin: 0xd6a27a, shoe: 0xf4f6f8, hair: 'pony', hairC: 0x2a1b12, mass: 59, size: .95 },
-  { id: 'ilyas', name: 'Ильяс', style: 'climber', a: 0x2c7a4b, b: 0x101214, pat: 'dots', helmet: 0x101214, bike: 0x2c7a4b, skin: 0xc68e62, shoe: 0x101214, hair: 'none', mass: 63, size: .97 },
-  { id: 'kamila', name: 'Камила', style: 'allround', a: 0x3d7bb6, b: 0xe9f1f8, pat: 'wave', helmet: 0xe9f1f8, bike: 0xe9f1f8, skin: 0xe2b48c, shoe: 0x3d7bb6, hair: 'pony', hairC: 0x1a120c, mass: 57, size: .94 }
+  { id: 'aybar', name: L({ ru: "Айбар", kk: "Айбар", en: "Aibar" }), style: 'climber', a: 0x1f4e8c, b: 0xeef2f6, pat: 'peaks', helmet: 0xeef2f6, bike: 0x1f4e8c, skin: 0xc68e62, shoe: 0xeef2f6, hair: 'none', mass: 64, size: .97 },
+  { id: 'dana', name: L({ ru: "Дана", kk: "Дана", en: "Dana" }), style: 'sprinter', a: 0xc3323b, b: 0xe8a33a, pat: 'split', helmet: 0x1d2024, bike: 0x26292e, skin: 0xd9a77f, shoe: 0x1d2024, hair: 'pony', hairC: 0x2a1b12, mass: 62, size: .95 },
+  { id: 'erlan', name: L({ ru: "Ерлан", kk: "Ерлан", en: "Erlan" }), style: 'rouleur', a: 0x33383f, b: 0xa8d03c, pat: 'sash', helmet: 0xa8d03c, bike: 0x33383f, skin: 0xb98159, shoe: 0x1d2024, hair: 'beard', hairC: 0x1f1610, mass: 80, size: 1.04, deep: true },
+  { id: 'madina', name: L({ ru: "Мадина", kk: "Мадина", en: "Madina" }), style: 'attacker', a: 0x1f9aa3, b: 0xf07b5a, pat: 'hoops', helmet: 0xf07b5a, bike: 0xf4f6f8, skin: 0xe2b48c, shoe: 0xf4f6f8, hair: 'pony', hairC: 0x120c08, mass: 58, size: .94 },
+  { id: 'timur', name: L({ ru: "Тимур", kk: "Тимур", en: "Timur" }), style: 'allround', a: 0xc28a2e, b: 0x2f4a33, pat: 'stripes', helmet: 0x2f4a33, bike: 0x2f4a33, skin: 0xa8734c, shoe: 0x1d2024, hair: 'none', mass: 72, size: 1 },
+  { id: 'aliya', name: L({ ru: "Алия", kk: "Әлия", en: "Aliya" }), style: 'climber', a: 0x6d4fb0, b: 0xf4f6f8, pat: 'chevron', helmet: 0xf4f6f8, bike: 0x6d4fb0, skin: 0xd9a77f, shoe: 0x6d4fb0, hair: 'pony', hairC: 0x5a3a22, mass: 54, size: .93 },
+  { id: 'nurzhan', name: L({ ru: "Нуржан", kk: "Нұржан", en: "Nurzhan" }), style: 'sprinter', a: 0xe0702c, b: 0x1c2f5a, pat: 'bands', helmet: 0x1c2f5a, bike: 0xe0702c, skin: 0xc0875a, shoe: 0xf4f6f8, hair: 'none', mass: 78, size: 1.03, deep: true },
+  { id: 'saule', name: L({ ru: "Сауле", kk: "Сәуле", en: "Saule" }), style: 'allround', a: 0xf0c430, b: 0x2b2e33, pat: 'sun', helmet: 0x2b2e33, bike: 0x2b2e33, skin: 0xe8c09a, shoe: 0x2b2e33, hair: 'pony', hairC: 0x8a5a2b, mass: 60, size: .96 },
+  { id: 'arman', name: L({ ru: "Арман", kk: "Арман", en: "Arman" }), style: 'rouleur', a: 0x17191c, b: 0xaab2bb, pat: 'pin', helmet: 0xaab2bb, bike: 0x17191c, skin: 0xb07a50, shoe: 0x17191c, hair: 'beard', hairC: 0x15100c, mass: 77, size: 1.02, deep: true },
+  { id: 'zhanna', name: L({ ru: "Жанна", kk: "Жанна", en: "Zhanna" }), style: 'attacker', a: 0xb53f7a, b: 0x2aa39a, pat: 'diag', helmet: 0x2aa39a, bike: 0xb53f7a, skin: 0xd6a27a, shoe: 0xf4f6f8, hair: 'pony', hairC: 0x2a1b12, mass: 59, size: .95 },
+  { id: 'ilyas', name: L({ ru: "Ильяс", kk: "Ілияс", en: "Ilyas" }), style: 'climber', a: 0x2c7a4b, b: 0x101214, pat: 'dots', helmet: 0x101214, bike: 0x2c7a4b, skin: 0xc68e62, shoe: 0x101214, hair: 'none', mass: 63, size: .97 },
+  { id: 'kamila', name: L({ ru: "Камила", kk: "Камила", en: "Kamila" }), style: 'allround', a: 0x3d7bb6, b: 0xe9f1f8, pat: 'wave', helmet: 0xe9f1f8, bike: 0xe9f1f8, skin: 0xe2b48c, shoe: 0x3d7bb6, hair: 'pony', hairC: 0x1a120c, mass: 57, size: .94 }
 ];
 // гонщик игрока: одна модель в форме UBT
-const PLAYER_CH = { id: 'me', name: 'Вы', style: 'allround', a: 0xEE6A1F, b: 0x17181a, pat: 'ornament', helmet: 0x17181a, stripe: 0xEE6A1F, glass: 0x101216, bike: 0x17181a, rim: 0xEE6A1F, deep: true, skin: 0xeec3a0, shoe: 0xf4f6f8, hair: 'none', mass: 75, size: 1, build: 1 };
+const PLAYER_CH = { id: 'me', name: t('you'), style: 'allround', a: 0xEE6A1F, b: 0x17181a, pat: 'ornament', helmet: 0x17181a, stripe: 0xEE6A1F, glass: 0x101216, bike: 0x17181a, rim: 0xEE6A1F, deep: true, skin: 0xeec3a0, shoe: 0xf4f6f8, hair: 'none', mass: 75, size: 1, build: 1 };
 const charById = id => CHARS.find(c => c.id === id) || PLAYER_CH;
 // Формы, которые можно надеть на любого героя (без логотипов и надписей)
 const KITS = {
@@ -1462,13 +2328,13 @@ const KITS = {
 };
 // Популярные типы велосипедов: типичный вес, сопротивление качению (шины), посадка (аэродинамика), типичное колесо
 const BIKE_TYPES = {
-  road: { name: 'Шоссейный', kg: 8.5, crr: .0045, aero: 1.0, circ: 2105, tire: .021 },
-  aero: { name: 'Аэро-шоссейный', kg: 8.0, crr: .0042, aero: .94, circ: 2105, tire: .021 },
-  tt: { name: 'Разделочный (ТТ)', kg: 9.0, crr: .0042, aero: .8, circ: 2105, tire: .02 },
-  gravel: { name: 'Гравийный', kg: 9.8, crr: .0058, aero: 1.06, circ: 2200, tire: .03 },
-  hybrid: { name: 'Гибрид / городской', kg: 13, crr: .0065, aero: 1.22, circ: 2136, tire: .028 },
-  mtb: { name: 'Горный хардтейл', kg: 12.5, crr: .0085, aero: 1.18, circ: 2288, tire: .042 },
-  fs: { name: 'Горный двухподвес', kg: 14.5, crr: .009, aero: 1.2, circ: 2288, tire: .045 }
+  road: { name: L({ ru: "Шоссейный", kk: "Шоссейлік", en: "Road" }), kg: 8.5, crr: .0045, aero: 1.0, circ: 2105, tire: .021 },
+  aero: { name: L({ ru: "Аэро-шоссейный", kk: "Аэро шоссейлік", en: "Aero road" }), kg: 8.0, crr: .0042, aero: .94, circ: 2105, tire: .021 },
+  tt: { name: L({ ru: "Разделочный (ТТ)", kk: "TT (жеке старт)", en: "Time trial (TT)" }), kg: 9.0, crr: .0042, aero: .8, circ: 2105, tire: .02 },
+  gravel: { name: L({ ru: "Гравийный", kk: "Гравел", en: "Gravel" }), kg: 9.8, crr: .0058, aero: 1.06, circ: 2200, tire: .03 },
+  hybrid: { name: L({ ru: "Гибрид / городской", kk: "Гибрид / қалалық", en: "Hybrid / city" }), kg: 13, crr: .0065, aero: 1.22, circ: 2136, tire: .028 },
+  mtb: { name: L({ ru: "Горный хардтейл", kk: "Тау хардтейлі", en: "Mountain hardtail" }), kg: 12.5, crr: .0085, aero: 1.18, circ: 2288, tire: .042 },
+  fs: { name: L({ ru: "Горный двухподвес", kk: "Екі амортизаторлы тау велосипеді", en: "Full-suspension mountain" }), kg: 14.5, crr: .009, aero: 1.2, circ: 2288, tire: .045 }
 };
 function bikeType() { return BIKE_TYPES[settings.bikeType] || BIKE_TYPES.road; }
 function kitted(ch) { return Object.assign({}, ch, KITS.ubt.over, { size: (settings.height || 178) / 178, tire: bikeType().tire }); } // размер модели — по росту
@@ -1477,7 +2343,7 @@ function kitted(ch) { return Object.assign({}, ch, KITS.ubt.over, { size: (setti
 function riderAero(hcm, kg) { const A = 0.0293 * Math.pow((hcm || 178) / 100, .725) * Math.pow(kg || 75, .425) + .0604; return { A, CdA: A * .88 }; }
 function renderBodyHint() {
   const el = $('#bodyHint'); if (!el) return; const h = settings.height || 178, m = settings.mass || 75, a = riderAero(h, m), bt = bikeType(), bk = settings.bikeKg || bt.kg, cda = a.CdA * bt.aero, bmi = m / Math.pow(h / 100, 2);
-  el.textContent = 'По росту и весу: лобовая площадь ≈ ' + a.A.toFixed(2).replace('.', ',') + ' м², аэродинамическое сопротивление CdA ≈ ' + cda.toFixed(3).replace('.', ',') + ' м², вес с велосипедом ' + fmt1(m + bk) + ' кг (' + bt.name.toLowerCase() + ' ' + fmt1(bk) + ' кг). Это влияет на скорость на равнине и на подъёмах.' + (bmi < 15 || bmi > 45 ? ' Проверьте, что рост и вес введены верно.' : '');
+  el.textContent = t('body.hint', { a: numF(a.A, 2), cda: numF(cda, 3), total: fmt1(m + bk), bike: lc(bt.name), kg: fmt1(bk) }) + (bmi < 15 || bmi > 45 ? t('body.check') : '');
 } // игрок всегда в форме UBT
 function styleMult(b, grade) {
   switch (b.ch.style) {
@@ -1539,17 +2405,17 @@ function startMenu() { // страница 1: настройки (3D-сцена 
   $('#menu').classList.remove('hidden'); $('#gl').classList.add('hidden'); $('#hud').classList.add('hidden'); $('#count').classList.add('hidden');
   $('#resM').classList.add('hidden'); $('#pauseM').classList.add('hidden'); $('#photoUI').classList.add('hidden'); $('#stamp').classList.add('hidden');
   bots.forEach(b => scene.remove(b.mesh.g)); bots = [];
-  me = newRider('Вы', kitted(charById(settings.char)).a, settings.mass, 0, 2.6);
+  me = newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, 0, 2.6);
   applyLook('clean'); setView(settings.view, true); renderStartSum();
   groupRide = null; rideMode = settings.mode; MP.resultsFor = null; $('#btnPhoto').classList.remove('hidden'); if (MP.status === 'on') mpSchedule(300); renderMP();
 }
 function renderStartSum() {
   const el = $('#startSum'); if (!el) return;
   const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
-  const mode = (typeof MP !== 'undefined' && mpMyGroup()) ? 'вы записаны в групповую гонку, она начнётся сама (кнопка «Старт» — выйти из неё и поехать одному)' : settings.mode === 'plan' ? 'план по каденсу на ' + fmtTime(planTotalMin() * 60) : settings.mode === 'free' ? 'свободная езда' : 'гонка, ' + (+settings.bots ? 'соперников: ' + settings.bots : 'без соперников');
-  const sm = Sensors.mode(), dev = sm === 'demo' ? 'демо-режим без датчиков' : sm === 'power' ? 'мощность со станка или измерителя' : sm === 'speed' ? 'по датчику скорости' : 'по датчику каденса';
+  const mode = (typeof MP !== 'undefined' && mpMyGroup()) ? t('sum.group') : settings.mode === 'plan' ? t('sum.plan', { t: fmtTime(planTotalMin() * 60) }) : settings.mode === 'free' ? t('where.free') : +settings.bots ? t('sum.raceBots', { n: settings.bots }) : t('sum.raceAlone');
+  const sm = Sensors.mode(), dev = sm === 'demo' ? t('sum.demo') : sm === 'power' ? t('sum.power') : sm === 'speed' ? t('sum.speed') : t('sum.cadence');
   el.innerHTML = '<b></b><span></span>'; el.querySelector('b').textContent = r.name;
-  el.querySelector('span').textContent = mode[0].toUpperCase() + mode.slice(1) + ', ' + dev + (Sensors.live('hr').length ? ', пульсометр' : '') + ', ' + bikeType().name.toLowerCase() + ' ' + fmt1(settings.bikeKg || bikeType().kg) + ' кг.';
+  el.querySelector('span').textContent = mode[0].toUpperCase() + mode.slice(1) + ', ' + dev + (Sensors.live('hr').length ? ', ' + t('sum.hr') : '') + ', ' + lc(bikeType().name) + ' ' + fmt1(settings.bikeKg || bikeType().kg) + ' ' + t('u.kg') + '.';
 }
 // страница 2: заезд
 function startRace() {
@@ -1561,7 +2427,7 @@ function startRace() {
     $('#gl').classList.remove('hidden'); onResize();
     if (!world || world.route.id !== route.id) buildWorld(route);
     world.lms.forEach(l => { l.done = false; });
-    me = newRider('Вы', kitted(charById(settings.char)).a, settings.mass, world.S0, Math.min(3.2, route.width / 2 - 1.5));
+    me = newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, world.S0, Math.min(3.2, route.width / 2 - 1.5));
     const bt = bikeType(); me.CdA = riderAero(settings.height, settings.mass).CdA * bt.aero; me.bike = settings.bikeKg || bt.kg; me.Crr = bt.crr;
     me.stats = { dist: 0, gain: 0, sumP: 0, sumCad: 0, nCad: 0, maxV: 0, t: 0, sumHR: 0, nHR: 0, maxHR: 0, real: false, demoT: 0 };
     me.powerLog = []; me.pAcc = 0; me.pT = 0;
@@ -1572,9 +2438,9 @@ function startRace() {
     else { gearF = bikeF().length; gearR = Math.ceil(bikeR().length / 2); }
     $('#planBox').classList.toggle('hidden', !planMode); $('#board').classList.toggle('hidden', planMode || freeMode);
     $('#btnFinish').classList.toggle('hidden', !(planMode || freeMode));
-    $('#pauseHint').textContent = freeMode ? 'Таймер остановлен. «Завершить заезд» сохранит его в истории.' : planMode ? 'Таймер и план остановлены. Можно завершить тренировку досрочно.' : 'Таймер остановлен. Соперники тоже ждут.';
-    if (freeMode) setTimeout(() => toast('Свободная езда: завершить можно через паузу', 5), 4500);
-    if (groupRide) { $('#pauseHint').textContent = 'Групповая гонка не останавливается: время идёт, соперники едут дальше.'; setTimeout(() => toast('Групповая гонка: все стартуют одновременно', 4), 300); }
+    $('#pauseHint').textContent = freeMode ? t('pause.free') : planMode ? t('pause.plan') : t('pause.race');
+    if (freeMode) setTimeout(() => toast(t('toast.free'), 5), 4500);
+    if (groupRide) { $('#pauseHint').textContent = t('pause.group'); setTimeout(() => toast(t('toast.group'), 4), 300); }
     $('#btnPhoto').classList.toggle('hidden', !!groupRide);
     raceT = 0; cdT = groupRide ? Math.max(.5, (groupRide.startAt - Date.now()) / 1000) : 3.999; phase = 'countdown'; paused = false;
     $('#menu').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#count').classList.remove('hidden');
@@ -1589,12 +2455,12 @@ function finishRace() {
   const avgP = Math.round(st.sumP / Math.max(1, st.t));
   const ride = { id: Date.now().toString(36), date: Date.now(), route: world.route.id, time: Math.round(t * 10) / 10, dist: Math.round(distKm * 100) / 100, avgSpeed: Math.round(distKm / (t / 3600) * 10) / 10, avgPower: avgP, real: st.real, demo: st.demoT > st.t * .5, maxSpeed: Math.round(st.maxV * 36) / 10, gain: Math.round(st.gain), avgCad: st.nCad ? Math.round(st.sumCad / st.nCad) : null, avgHR: st.nHR ? Math.round(st.sumHR / st.nHR) : null, place, of: list.length, char: settings.char, group: !!groupRide };
   const rec = Records.add(ride, me.powerLog || []), pb = rec.prev && rec.prev.time;
-  $('#resTitle').textContent = place === 1 && bots.length ? (groupRide ? 'Победа в групповой гонке' : 'Победа на маршруте') : 'Финиш';
-  $('#resSub').textContent = world.route.name + (bots.length ? ', место ' + place + ' из ' + list.length : '') + (pb && t >= pb ? '. Лучший результат: ' + fmtTime(pb) + '.' : '.') + (humans && list.some(x => x.human && x.est) ? ' Места тех, кто ещё едет, уточнятся, когда они финишируют.' : '');
-  $('#resRec').innerHTML = rec.news.length ? '<b>Новые рекорды</b><ul>' + rec.news.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '';
+  $('#resTitle').textContent = place === 1 && bots.length ? (groupRide ? tr('res.winGroup') : tr('res.win')) : tr('res.finish');
+  $('#resSub').textContent = world.route.name + (bots.length ? tr('res.place', { p: place, n: list.length }) : '') + (pb && t >= pb ? tr('res.best', { t: fmtTime(pb) }) : '.') + (humans && list.some(x => x.human && x.est) ? tr('res.pending') : '');
+  $('#resRec').innerHTML = rec.news.length ? '<b>' + tr('res.newRecords') + '</b><ul>' + rec.news.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '';
   $('#resRec').classList.toggle('hidden', !rec.news.length);
-  const sx = [[fmtTime(t), 'время'], [fmt1(distKm / (t / 3600)), 'средняя, км/ч'], [avgP + ' Вт', st.real ? 'средняя мощность' : 'средняя мощность (оценка)'], [st.nCad ? Math.round(st.sumCad / st.nCad) : '—', 'средний каденс'], [fmt1(st.maxV * 3.6), 'максимум, км/ч'], [Math.round(st.gain) + ' м', 'набор высоты']];
-  if (st.nHR) sx.push([Math.round(st.sumHR / st.nHR) + ' / ' + st.maxHR, 'пульс: средний / макс.']);
+  const sx = [[fmtTime(t), tr('res.time')], [fmt1(distKm / (t / 3600)), tr('res.avgKmh')], [avgP + ' ' + tr('u.w'), st.real ? tr('res.avgPower') : tr('res.avgPowerEst')], [st.nCad ? Math.round(st.sumCad / st.nCad) : '—', tr('res.avgCad')], [fmt1(st.maxV * 3.6), tr('res.maxKmh')], [Math.round(st.gain) + ' ' + tr('u.m'), tr('rec.gain')]];
+  if (st.nHR) sx.push([Math.round(st.sumHR / st.nHR) + ' / ' + st.maxHR, tr('res.hr')]);
   $('#resStats').innerHTML = sx.map(s => '<div class="stat"><div class="v">' + s[0] + '</div><div class="u">' + s[1] + '</div></div>').join('');
   renderRaceList(list);
   if (groupRide) { const gid = groupRide.gid; setTimeout(() => mpPollResults(gid, Date.now() + 10 * 60000), 2500); }
@@ -1619,13 +2485,13 @@ function updateModeUI() {
   const mode = Sensors.mode(), inRace = phase === 'race' || phase === 'countdown';
   $('#demo').classList.toggle('hidden', !(inRace && mode === 'demo'));
   $('#gear').classList.toggle('hidden', !(inRace && mode === 'cadence'));
-  $('#uPower').textContent = mode === 'demo' ? 'Вт, демо' : mode === 'power' ? 'Вт' : 'Вт, оценка';
+  $('#uPower').textContent = mode === 'demo' ? t('u.wDemo') : mode === 'power' ? t('u.w') : t('u.wEst');
   const gt = gearTeeth(gearF, gearR); $('#gearV').textContent = gearLabel(gearF, gearR) + ' · ' + gt[0] + '×' + gt[1];
   if (phase === 'menu') renderStartSum();
 }
 const ZONE_BG = ['', 'rgba(110,125,140,.82)', 'rgba(61,123,182,.85)', 'rgba(76,124,85,.86)', 'rgba(214,140,40,.9)', 'rgba(195,50,59,.92)'];
 function hrZone(hr) { const p = hr / settings.hrmax; return p < .6 ? 1 : p < .7 ? 2 : p < .8 ? 3 : p < .9 ? 4 : 5; }
-function fmtPct(p) { return (Math.round(p * 10) / 10).toFixed(1).replace('.', ',').replace(/,0$/, '') + '%'; }
+function fmtPct(p) { return numF(Math.round(p * 10) / 10, 1).replace(/[.,]0$/, '') + '%'; }
 
 /* ---------------- Камера ---------------- */
 const cam = { q: new THREE.Quaternion(), init: false, yaw: 0, pitch: 0, dist: 7, oyaw: .6, opitch: .25 };
@@ -1669,8 +2535,8 @@ function updateCamera(dt, cad, speed) {
 }
 function setView(v, quiet) {
   viewMode = v; cam.cinit = false; cam.init = false;
-  $('#btnView').setAttribute('aria-label', v === 'chase' ? 'Вид от первого лица' : 'Вид от третьего лица');
-  if (!quiet) toast(v === 'chase' ? 'Вид от третьего лица' : 'Вид от первого лица');
+  $('#btnView').setAttribute('aria-label', v === 'chase' ? t('view.toFirst') : t('view.toThird'));
+  if (!quiet) toast(v === 'chase' ? t('view.toThird') : t('view.toFirst'));
 }
 function setPhotoCam(mode) {
   cam.mode = mode;
@@ -1699,7 +2565,7 @@ function drawProfileBase() {
   ys.forEach((y, i) => g.lineTo(i / 200 * cv.width, cv.height - 6 * dpr - (y - mn) / rng2 * (cv.height - 14 * dpr)));
   g.lineTo(cv.width, cv.height); g.closePath(); g.fillStyle = 'rgba(243,246,249,.22)'; g.fill();
   g.lineWidth = 1.5 * dpr; g.strokeStyle = 'rgba(243,246,249,.85)'; g.beginPath(); ys.forEach((y, i) => { const X = i / 200 * cv.width, Y = cv.height - 6 * dpr - (y - mn) / rng2 * (cv.height - 14 * dpr); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }); g.stroke();
-  g.fillStyle = 'rgba(243,246,249,.7)'; g.font = (11 * dpr) + 'px Golos Text, sans-serif'; g.fillText(Math.round(mx) + ' м', 6 * dpr, 13 * dpr); g.fillText(Math.round(mn) + ' м', 6 * dpr, cv.height - 4 * dpr);
+  g.fillStyle = 'rgba(243,246,249,.7)'; g.font = (11 * dpr) + 'px Golos Text, sans-serif'; g.fillText(Math.round(mx) + ' ' + t('u.m'), 6 * dpr, 13 * dpr); g.fillText(Math.round(mn) + ' ' + t('u.m'), 6 * dpr, cv.height - 4 * dpr);
 }
 function drawProfile() {
   const cv = $('#profile'); if (!profBase) return; const g = cv.getContext('2d'), dpr = cv.width / (cv.clientWidth || 1);
@@ -1721,27 +2587,27 @@ function drawMini() {
   sampleAt(T, me.s, o); const p = P(o.x, o.z);
   g.fillStyle = '#fff'; g.beginPath(); g.arc(p[0], p[1], 11, 0, 7); g.fill(); g.fillStyle = '#C3323B'; g.beginPath(); g.arc(p[0], p[1], 8, 0, 7); g.fill();
   world.lms.forEach(l => { if (l.dist > 700) return; const q = P(l.x, l.z); if (q[0] < 0 || q[1] < 0 || q[0] > W || q[1] > H) return; g.save(); g.translate(q[0], q[1]); g.rotate(Math.PI / 4); g.fillStyle = '#E5A23A'; g.fillRect(-6, -6, 12, 12); g.restore(); });
-  g.fillStyle = 'rgba(243,246,249,.6)'; g.font = '600 18px Golos Text, sans-serif'; g.fillText('С', W - 26, 24);
+  g.fillStyle = 'rgba(243,246,249,.6)'; g.font = '600 18px Golos Text, sans-serif'; g.fillText(t('map.north'), W - 26, 24);
 }
 function updateHUD(inp, grade) {
   const T = world.T, spd = me.v * 3.6;
   $('#vSpeed').textContent = Math.round(spd);
-  $('#uSpeed').textContent = inp.direct ? 'км/ч, ' + gearLabel(gearF, gearR) : 'км/ч';
+  $('#uSpeed').textContent = inp.direct ? t('u.kmh') + ', ' + gearLabel(gearF, gearR) : t('u.kmh');
   $('#vPower').textContent = Math.round(inp.P);
   $('#vCad').textContent = inp.cad != null && inp.cad > 0 ? Math.round(inp.cad) : (inp.mode === 'speed' ? '—' : '0');
   $('#vGrade').textContent = fmtPct(grade * 100);
-  const tg = Trainer.info(); $('#uGrade').textContent = tg != null ? 'на станке ' + fmtPct(tg) : 'уклон';
+  const tg = Trainer.info(); $('#uGrade').textContent = tg != null ? t('hud.onTrainer', { p: fmtPct(tg) }) : t('hud.grade');
   const hr = Sensors.hr(), hb = $('#hrBox'); hb.classList.toggle('hidden', hr == null);
-  if (hr != null) { const z = hrZone(hr); $('#vHR').textContent = hr; $('#uHR').textContent = 'уд/мин, зона ' + z; hb.style.background = ZONE_BG[z]; }
+  if (hr != null) { const z = hrZone(hr); $('#vHR').textContent = hr; $('#uHR').textContent = t('hud.hrZone', { z }); hb.style.background = ZONE_BG[z]; }
   $('#grade').style.background = gradeColor(grade);
   $('#vTime').textContent = fmtTime(raceT);
   const done = clamp(me.s - world.S0, 0, world.FIN - world.S0);
-  $('#vDist').textContent = rideMode !== 'race' ? fmt1(me.stats.dist / 1000) + ' км, круг ' + (me.lap + 1) : fmt1(done / 1000) + ' из ' + fmt1((world.FIN - world.S0) / 1000) + ' км';
+  $('#vDist').textContent = rideMode !== 'race' ? t('hud.lap', { d: fmt1(me.stats.dist / 1000), lap: me.lap + 1 }) : t('hud.of', { d: fmt1(done / 1000), total: fmt1((world.FIN - world.S0) / 1000) });
   if (rideMode === 'plan') updatePlanHUD(inp.cad);
-  $('#vEle').textContent = Math.round(sampleAt(T, me.s, {}).y) + ' м над морем';
+  $('#vEle').textContent = t('hud.ele', { m: Math.round(sampleAt(T, me.s, {}).y) });
   const all = [me].concat(bots).slice().sort((a, b) => (b.finishT != null ? 1e9 - b.finishT : b.s) - (a.finishT != null ? 1e9 - a.finishT : a.s));
   const lead = all[0];
-  $('#boardList').innerHTML = all.slice(0, 8).map((r, i) => { const gap = r === lead ? '' : '+' + Math.max(0, Math.round((lead.s - r.s) / Math.max(r.v, 3))) + ' с'; const col = r === me ? '#fff' : '#' + r.color.toString(16).padStart(6, '0'); return '<li class="' + (r === me ? 'me' : '') + '"><span class="dot" style="background:' + col + '"></span><span>' + escapeHTML(r.name) + '</span><span class="gap">' + gap + '</span></li>'; }).join('');
+  $('#boardList').innerHTML = all.slice(0, 8).map((r, i) => { const gap = r === lead ? '' : '+' + Math.max(0, Math.round((lead.s - r.s) / Math.max(r.v, 3))) + ' ' + t('u.s'); const col = r === me ? '#fff' : '#' + r.color.toString(16).padStart(6, '0'); return '<li class="' + (r === me ? 'me' : '') + '"><span class="dot" style="background:' + col + '"></span><span>' + escapeHTML(r.name) + '</span><span class="gap">' + gap + '</span></li>'; }).join('');
   drawMini(); drawProfile();
   updateTagText();
 }
@@ -1754,7 +2620,7 @@ function ensureTags() {
   const box = $('#tags'); box.innerHTML = '';
   tagEls = bots.map(b => {
     const el = document.createElement('div'); el.className = 'tag3d'; el.style.borderLeftColor = hexs(b.color);
-    el.innerHTML = '<div class="nm"></div><div class="r"><b class="g">0</b><span>с</span></div><div class="r"><b class="c">0</b><span>об/мин</span></div><div class="r"><b class="p">0</b><span>Вт</span></div>';
+    el.innerHTML = '<div class="nm"></div><div class="r"><b class="g">0</b><span>' + t('u.s') + '</span></div><div class="r"><b class="c">0</b><span>' + t('u.rpm') + '</span></div><div class="r"><b class="p">0</b><span>' + t('u.w') + '</span></div>';
     el.querySelector('.nm').textContent = b.name; box.appendChild(el);
     return { b, el, nm: el.querySelector('.nm'), g: el.querySelector('.g'), c: el.querySelector('.c'), p: el.querySelector('.p') };
   });
@@ -1823,7 +2689,7 @@ function frame(now) {
   } else if (!frozen) {
     inp = readInput();
     if (phase === 'countdown') {
-      cdT -= dt; const n = Math.ceil(cdT); $('#count').textContent = n > 0 ? n : 'Старт!';
+      cdT -= dt; const n = Math.ceil(cdT); $('#count').textContent = n > 0 ? n : t('count.go');
       if (cdT <= 0) { phase = 'race'; updateModeUI(); }
       if (cdT < -0.8) $('#count').classList.add('hidden');
     } else if (phase === 'race' || phase === 'done') {
@@ -1837,10 +2703,10 @@ function frame(now) {
           // тренировка по плану: маршрут крутится кругами, финиш — когда закончится последний шаг
           if (!T.loop && me.s >= T.L - 15) { me.s = world.S0; cam.cinit = false; cam.init = false; }
           const lap = Math.floor(me.stats.dist / (world.FIN - world.S0));
-          if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); toast('Круг ' + (lap + 1), 2.5); }
+          if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); toast(t('hud.lapToast', { n: lap + 1 }), 2.5); }
           if (rideMode === 'plan' && Work.update(dt, inp.cad, inp.mode)) finishWorkout();
         } else if (me.s >= world.FIN) { me.finishT = raceT; finishRace(); }
-        world.lms.forEach(l => { if (l.done || l.dist > 700) return; let ahead = l.s - me.s; if (T.loop) ahead = ((ahead % T.L) + T.L) % T.L; if (ahead < 220 && ahead > -40) { l.done = true; toast((l.side === 'справа' ? 'Справа' : 'Слева') + ': ' + l.name, 4.5); } });
+        world.lms.forEach(l => { if (l.done || l.dist > 700) return; let ahead = l.s - me.s; if (T.loop) ahead = ((ahead % T.L) + T.L) % T.L; if (ahead < 220 && ahead > -40) { l.done = true; toast(l.side === 'right' ? t('sight.right', { name: l.name }) : t('sight.left', { name: l.name }), 4.5); } });
       } else { me.s += stepRider(me, 60, grade, dt); }
     }
     bots.forEach(b => {
@@ -1876,8 +2742,8 @@ function frame(now) {
 }
 
 /* ---------------- Рекорды: личный кабинет на сайте (для вошедших) или этот браузер ---------------- */
-const PEAKS = [['p5', 5, '5 с'], ['p60', 60, '1 мин'], ['p300', 300, '5 мин'], ['p1200', 1200, '20 мин']];
-const fmtDate = d => d ? new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const PEAKS = [5, 60, 300, 1200].map(sec => ['p' + sec, sec, durLabel(sec)]);
+const fmtDate = d => d ? new Date(d).toLocaleDateString(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 const Records = {
   data: null, synced: false, me: null, loginUrl: '', accountUrl: '',
   empty() { return { v: 1, routes: {}, peaks: {}, maxSpeed: null, totals: { rides: 0, dist: 0, gain: 0, time: 0 }, history: [] }; },
@@ -1887,9 +2753,9 @@ const Records = {
   },
   async connect() {
     try {
-      const me = await Site.get('/me'); this.me = me; this.loginUrl = me.login_url || '';
+      const me = await Site.get('/me'); this.me = me; this.loginUrl = langPath(me.login_url || '');
       if (!me.authenticated) return;
-      this.synced = true; this.accountUrl = me.profile_url || '';
+      this.synced = true; this.accountUrl = langPath(me.profile_url || '');
       await this.pull(); renderMenu();
       if (!$('#recM').classList.contains('hidden')) renderRecords();
     } catch (e) { this.me = null; }
@@ -1914,7 +2780,7 @@ const Records = {
     Site.post('/rides', body)
       .then(res => { if (phase === 'done') showServerRecords(res.records, ride, peaks); return this.pull(); })
       .then(() => { if (phase === 'menu') renderMenu(); })
-      .catch(e => { const box = $('#resRec'); box.innerHTML = '<b>Заезд не сохранился в личном кабинете</b><ul><li>' + escapeHTML(e.message) + '</li></ul>'; box.classList.remove('hidden'); });
+      .catch(e => { const box = $('#resRec'); box.innerHTML = '<b>' + t('rec.notSaved') + '</b><ul><li>' + escapeHTML(e.message) + '</li></ul>'; box.classList.remove('hidden'); });
   },
   save() { store.set('records', this.data); return Promise.resolve(); },
   best(routeId) { const r = this.data && this.data.routes[routeId]; return r && r.time ? r.time : null; },
@@ -1924,21 +2790,21 @@ const Records = {
     const rr = prev ? Object.assign({}, prev) : { attempts: 0 };
     rr.attempts = (rr.attempts || 0) + 1;
     if (!prev || !prev.time || ride.time < prev.time) {
-      news.push(prev && prev.time ? 'лучшее время на маршруте: ' + fmtTime(ride.time) + ' (быстрее на ' + fmtTime(prev.time - ride.time) + ')' : 'первый результат на маршруте: ' + fmtTime(ride.time));
+      news.push(prev && prev.time ? t('rec.bestFaster', { t: fmtTime(ride.time), d: fmtTime(prev.time - ride.time) }) : t('rec.first', { t: fmtTime(ride.time) }));
       Object.assign(rr, { time: ride.time, date: now, char: ride.char, demo: ride.demo, place: ride.place, of: ride.of });
     }
     if (!ride.demo) {
-      if (ride.avgPower > (rr.avgPower || 0)) { if (prev && prev.avgPower) news.push('средняя мощность на маршруте: ' + ride.avgPower + ' Вт'); rr.avgPower = ride.avgPower; }
+      if (ride.avgPower > (rr.avgPower || 0)) { if (prev && prev.avgPower) news.push(t('rec.avgPower', { w: ride.avgPower })); rr.avgPower = ride.avgPower; }
       PEAKS.forEach(([k, sec, label]) => {
         if (powerLog.length < sec) return;
         let sum = 0, best = 0; for (let i = 0; i < powerLog.length; i++) { sum += powerLog[i]; if (i >= sec) sum -= powerLog[i - sec]; if (i >= sec - 1) best = Math.max(best, sum / sec); }
         best = Math.round(best); const old = D.peaks[k];
-        if (best > 0 && (!old || best > old.w)) { D.peaks[k] = { w: best, date: now, route: ride.route, est: !ride.real }; news.push('пиковая мощность ' + label + ': ' + best + ' Вт' + (ride.real ? '' : ' (оценка)')); }
+        if (best > 0 && (!old || best > old.w)) { D.peaks[k] = { w: best, date: now, route: ride.route, est: !ride.real }; news.push(t('rec.peak', { d: label, w: best }) + (ride.real ? '' : t('rec.est'))); }
       });
     }
     if (ride.avgSpeed > (rr.avgSpeed || 0)) rr.avgSpeed = ride.avgSpeed;
     D.routes[ride.route] = rr;
-    if (!ride.demo && (!D.maxSpeed || ride.maxSpeed > D.maxSpeed.v)) { D.maxSpeed = { v: ride.maxSpeed, date: now, route: ride.route }; if (D.totals.rides) news.push('максимальная скорость: ' + fmt1(ride.maxSpeed) + ' км/ч'); }
+    if (!ride.demo && (!D.maxSpeed || ride.maxSpeed > D.maxSpeed.v)) { D.maxSpeed = { v: ride.maxSpeed, date: now, route: ride.route }; if (D.totals.rides) news.push(t('rec.maxSpeed', { v: fmt1(ride.maxSpeed) })); }
     D.totals.rides++; D.totals.dist += ride.dist; D.totals.gain += ride.gain; D.totals.time += ride.time;
     D.history.unshift(ride); D.history = D.history.slice(0, 30);
     this.save(); this.push(ride, powerLog);
@@ -1947,20 +2813,22 @@ const Records = {
   reset() { this.data = this.empty(); ROUTES.forEach(r => store.set('pb:' + r.id, null)); return this.save(); }
 };
 const routeName = id => (ROUTES.find(r => r.id === id) || { name: id }).name;
+// a group race in the language of the page when the page knows its route, else as its host named it
+const routeTitle = g => ROUTES.some(r => r.id === g.route) ? routeName(g.route) : (g.route_name || g.route);
 function renderRecords() {
   const D = Records.data, T = D.totals;
-  $('#recSync').textContent = Records.synced ? 'Рекорды хранятся в вашем личном кабинете на сайте и доступны на любом устройстве.' : 'Рекорды сохраняются только в этом браузере. Войдите на сайт, чтобы они сохранялись в личном кабинете.';
-  if (!Records.synced && Records.loginUrl) { const a = document.createElement('a'); a.href = Site.loginHref(); a.target = '_top'; a.textContent = ' Войти'; $('#recSync').appendChild(a); }
-  if (Records.synced && Records.accountUrl) { const a = document.createElement('a'); a.href = Records.accountUrl + '#virtual-rides'; a.target = '_top'; a.textContent = ' Открыть личный кабинет'; $('#recSync').appendChild(a); }
+  $('#recSync').textContent = Records.synced ? t('records.synced') : t('records.local');
+  if (!Records.synced && Records.loginUrl) { const a = document.createElement('a'); a.href = Site.loginHref(); a.target = '_top'; a.textContent = ' ' + t('signIn'); $('#recSync').appendChild(a); }
+  if (Records.synced && Records.accountUrl) { const a = document.createElement('a'); a.href = Records.accountUrl + '#virtual-rides'; a.target = '_top'; a.textContent = ' ' + t('openProfile'); $('#recSync').appendChild(a); }
   const tile = (v, u) => '<div class="stat"><div class="v">' + v + '</div><div class="u">' + u + '</div></div>';
-  $('#recTotals').innerHTML = tile(T.rides, 'заездов') + tile(fmt1(T.dist) + ' км', 'всего проехано') + tile(Math.round(T.gain) + ' м', 'набор высоты') + tile(fmtTime(T.time), 'время в седле');
-  $('#recPeaks').innerHTML = PEAKS.map(([k, , label]) => { const p = D.peaks[k]; return tile(p ? p.w + ' Вт' : '—', label + (p && p.est ? ', оценка' : '')); }).join('') + tile(D.maxSpeed ? fmt1(D.maxSpeed.v) + ' км/ч' : '—', 'макс. скорость');
+  $('#recTotals').innerHTML = tile(T.rides, tn('rides', T.rides)) + tile(fmt1(T.dist) + ' ' + t('u.km'), t('rec.totalDist')) + tile(Math.round(T.gain) + ' ' + t('u.m'), t('rec.gain')) + tile(fmtTime(T.time), t('rec.saddle'));
+  $('#recPeaks').innerHTML = PEAKS.map(([k, , label]) => { const p = D.peaks[k]; return tile(p ? p.w + ' ' + t('u.w') : '—', label + (p && p.est ? t('rec.estShort') : '')); }).join('') + tile(D.maxSpeed ? fmt1(D.maxSpeed.v) + ' ' + t('u.kmh') : '—', t('rec.topSpeed'));
   $('#recRoutes').innerHTML = ROUTES.map(r => {
     const x = D.routes[r.id];
-    return '<div class="rrow"><div><b>' + r.name + '</b><small>' + (x && x.time ? fmtDate(x.date) + (x.demo ? ', демо' : '') + ', попыток: ' + x.attempts : 'ещё не проезжали') + '</small></div><div class="rv">' + (x && x.time ? fmtTime(x.time) : '—') + (x && x.avgPower ? '<small>' + x.avgPower + ' Вт ср.</small>' : '') + '</div></div>';
+    return '<div class="rrow"><div><b>' + r.name + '</b><small>' + (x && x.time ? fmtDate(x.date) + (x.demo ? t('rec.demo') : '') + t('rec.attempts', { n: x.attempts }) : t('rec.notYet')) + '</small></div><div class="rv">' + (x && x.time ? fmtTime(x.time) : '—') + (x && x.avgPower ? '<small>' + t('rec.avgW', { w: x.avgPower }) + '</small>' : '') + '</div></div>';
   }).join('');
-  $('#recHist').innerHTML = D.history.length ? D.history.slice(0, 12).map(h => '<li><span>' + fmtDate(h.date) + '</span><span>' + (h.kind === 'plan' ? 'План по каденсу: ' : h.kind === 'free' ? 'Свободная езда: ' : '') + routeName(h.route) + (h.of > 1 ? ', ' + h.place + '-е из ' + h.of : '') + (h.demo ? ', демо' : '') + '</span><span>' + fmtTime(h.time) + '<small>' + fmt1(h.avgSpeed) + ' км/ч, ' + h.avgPower + ' Вт</small></span></li>').join('') : '<li class="empty">Здесь появятся ваши заезды после первого финиша.</li>';
-  const rb = $('#btnRecReset'); rb.textContent = 'Сбросить рекорды'; rb.dataset.armed = ''; rb.classList.toggle('hidden', !!Records.synced);
+  $('#recHist').innerHTML = D.history.length ? D.history.slice(0, 12).map(h => '<li><span>' + fmtDate(h.date) + '</span><span>' + (h.kind === 'plan' ? t('hist.plan') : h.kind === 'free' ? t('hist.free') : '') + routeName(h.route) + (h.of > 1 ? t('hist.place', { p: h.place, n: h.of }) : '') + (h.demo ? t('rec.demo') : '') + '</span><span>' + fmtTime(h.time) + '<small>' + fmt1(h.avgSpeed) + ' ' + t('u.kmh') + ', ' + h.avgPower + ' ' + t('u.w') + '</small></span></li>').join('') : '<li class="empty">' + t('hist.empty') + '</li>';
+  const rb = $('#btnRecReset'); rb.textContent = t('records.reset'); rb.dataset.armed = ''; rb.classList.toggle('hidden', !!Records.synced);
 }
 
 /* ---------------- Велосипед, передачи и план по каденсу ---------------- */
@@ -1974,9 +2842,9 @@ const CASSETTES = {
   '11-28': [28, 25, 23, 21, 19, 17, 15, 14, 13, 12, 11], '11-32': [32, 28, 25, 22, 20, 18, 16, 14, 13, 12, 11], '11-42': [42, 37, 32, 28, 24, 21, 19, 17, 15, 13, 11],
   '11-34': [34, 30, 27, 24, 21, 19, 17, 15, 14, 13, 12, 11]
 };
-const CASS_GROUPS = [['10 звёзд', ['10:11-25', '10:11-28', '10:12-25', '10:12-28', '10:11-32', '10:11-34', '10:11-36']], ['11 звёзд', ['11-28', '11-32', '11-42']], ['12 звёзд', ['11-34']]];
+const CASS_GROUPS = [[t('cass.n', { n: 10 }), ['10:11-25', '10:11-28', '10:12-25', '10:12-28', '10:11-32', '10:11-34', '10:11-36']], [t('cass.n', { n: 11 }), ['11-28', '11-32', '11-42']], [t('cass.n', { n: 12 }), ['11-34']]];
 const cassName = k => k.replace('10:', '').replace('-', '–');
-const FRONT_LABEL = { '50-34': '50/34 (компакт)', '52-36': '52/36', '53-39': '53/39', '46-30': '46/30 (гравел)', '48-35-26': '48/35/26 (тройник)', '1x40': '1× 40', '1x44': '1× 44', custom: 'Свои зубья…' };
+const FRONT_LABEL = { '50-34': '50/34 (' + t('front.compact') + ')', '52-36': '52/36', '53-39': '53/39', '46-30': '46/30 (' + t('front.gravel') + ')', '48-35-26': '48/35/26 (' + t('front.triple') + ')', '1x40': '1× 40', '1x44': '1× 44', custom: t('bike.custom') };
 function parseTeeth(str, min, max) { const a = String(str || '').split(/[^0-9]+/).map(Number).filter(n => n >= min && n <= max); return a; }
 const bikeF = () => settings.plan.front === 'custom' && (settings.plan.frontCustom || []).length ? settings.plan.frontCustom : (FRONTS[settings.plan.front] || FRONTS['50-34']);
 const bikeR = () => settings.plan.cass === 'custom' && (settings.plan.cassCustom || []).length ? settings.plan.cassCustom : (CASSETTES[settings.plan.cass] || CASSETTES['10:11-28']);
@@ -2004,7 +2872,7 @@ function syncPlanFromRecords() {
 }
 const planTotalMin = () => settings.plan.steps.reduce((a, s) => a + (+s.min || 0), 0);
 function renderPlanTotal() {
-  const m = planTotalMin(); $('#plTotal').textContent = 'Шагов: ' + settings.plan.steps.length + ', общее время ' + fmtTime(m * 60) + '. Тренировка закончится, когда пройдёт последний шаг; короткий маршрут будет повторяться кругами.';
+  const m = planTotalMin(); $('#plTotal').textContent = t('plan.total', { n: settings.plan.steps.length, t: fmtTime(m * 60) });
 }
 function opts(n, teeth, sel) { let h = ''; for (let i = 1; i <= n; i++) h += '<option value="' + i + '"' + (i === sel ? ' selected' : '') + '>' + i + ' (' + teeth[i - 1] + ')</option>'; return h; }
 function renderPlanEditor() {
@@ -2013,11 +2881,11 @@ function renderPlanEditor() {
   $('#planEd').classList.toggle('hidden', settings.mode !== 'plan');
   $('#raceOpts').classList.toggle('hidden', settings.mode !== 'race');
   $('#plFront').innerHTML = Object.keys(FRONTS).concat('custom').map(k => '<option value="' + k + '"' + (k === P.front ? ' selected' : '') + '>' + FRONT_LABEL[k] + '</option>').join('');
-  $('#plCass').innerHTML = CASS_GROUPS.map(g => '<optgroup label="' + g[0] + '">' + g[1].map(k => '<option value="' + k + '"' + (k === P.cass ? ' selected' : '') + '>' + cassName(k) + '</option>').join('') + '</optgroup>').join('') + '<option value="custom"' + (P.cass === 'custom' ? ' selected' : '') + '>Свои зубья…</option>';
+  $('#plCass').innerHTML = CASS_GROUPS.map(g => '<optgroup label="' + g[0] + '">' + g[1].map(k => '<option value="' + k + '"' + (k === P.cass ? ' selected' : '') + '>' + cassName(k) + '</option>').join('') + '</optgroup>').join('') + '<option value="custom"' + (P.cass === 'custom' ? ' selected' : '') + '>' + t('bike.custom') + '</option>';
   $('#plFrontCustomF').classList.toggle('hidden', P.front !== 'custom'); $('#plCassCustomF').classList.toggle('hidden', P.cass !== 'custom');
   if (document.activeElement !== $('#plFrontCustom')) $('#plFrontCustom').value = (P.frontCustom || []).slice().reverse().join('-');
   if (document.activeElement !== $('#plCassCustom')) $('#plCassCustom').value = (P.cassCustom || []).slice().reverse().join('-');
-  $('#plBikeInfo').textContent = 'Спереди ' + F.length + ' (' + F.slice().reverse().join('/') + '), сзади ' + R.length + ' (' + R[R.length - 1] + '–' + R[0] + ').';
+  $('#plBikeInfo').textContent = t('bike.info', { f: F.length, fl: F.slice().reverse().join('/'), r: R.length, rl: R[R.length - 1] + '–' + R[0] });
   P.steps.forEach(s => { s.f = clamp(s.f, 1, F.length); s.r = clamp(s.r, 1, R.length); });
   const s0 = P.steps[0] || { f: 1, r: 1 };
   $('#plStartF').innerHTML = opts(F.length, F, s0.f); $('#plStartR').innerHTML = opts(R.length, R, s0.r);
@@ -2025,10 +2893,10 @@ function renderPlanEditor() {
   P.steps.forEach((s, i) => {
     const li = document.createElement('li');
     li.innerHTML = '<span class="n">' + (i + 1) + '</span>' +
-      '<span class="g"><select class="sf" aria-label="Передняя звезда, шаг ' + (i + 1) + '">' + opts(F.length, F, s.f) + '</select><span>×</span><select class="sr" aria-label="Задняя звезда, шаг ' + (i + 1) + '">' + opts(R.length, R, s.r) + '</select></span>' +
-      '<label class="c"><input class="sc" type="number" min="40" max="140" step="5" inputmode="numeric" value="' + s.cad + '" aria-label="Каденс, шаг ' + (i + 1) + '"><span>об/мин</span></label>' +
-      '<label class="m"><input class="sm" type="number" min="0.5" max="60" step="0.5" inputmode="decimal" value="' + s.min + '" aria-label="Минуты, шаг ' + (i + 1) + '"><span>мин</span></label>' +
-      '<button class="x" type="button" aria-label="Удалить шаг ' + (i + 1) + '">×</button>';
+      '<span class="g"><select class="sf" aria-label="' + t('plan.stepFront', { n: i + 1 }) + '">' + opts(F.length, F, s.f) + '</select><span>×</span><select class="sr" aria-label="' + t('plan.stepRear', { n: i + 1 }) + '">' + opts(R.length, R, s.r) + '</select></span>' +
+      '<label class="c"><input class="sc" type="number" min="40" max="140" step="5" inputmode="numeric" value="' + s.cad + '" aria-label="' + t('plan.stepCad', { n: i + 1 }) + '"><span>' + t('u.rpm') + '</span></label>' +
+      '<label class="m"><input class="sm" type="number" min="0.5" max="60" step="0.5" inputmode="decimal" value="' + s.min + '" aria-label="' + t('plan.stepMin', { n: i + 1 }) + '"><span>' + t('u.min') + '</span></label>' +
+      '<button class="x" type="button" aria-label="' + t('plan.stepDel', { n: i + 1 }) + '">×</button>';
     li.querySelector('.sf').onchange = e => { s.f = +e.target.value; savePlan(); if (i === 0) renderPlanEditor(); };
     li.querySelector('.sr').onchange = e => { s.r = +e.target.value; savePlan(); if (i === 0) renderPlanEditor(); };
     li.querySelector('.sc').onchange = e => { s.cad = clamp(Math.round(+e.target.value || 80), 40, 140); e.target.value = s.cad; savePlan(); };
@@ -2060,12 +2928,12 @@ const Work = {
     if (i !== this.idx) {
       this.idx = i; this.warned = false; const s = this.steps[i];
       if (mode === 'cadence' || mode === 'demo') { gearF = s.f; gearR = s.r; updateModeUI(); }
-      toast('Шаг ' + (i + 1) + ': передача ' + gearLabel(s.f, s.r) + ', каденс ' + s.cad + ' об/мин', 5);
+      toast(t('plan.stepToast', { n: i + 1, g: gearLabel(s.f, s.r), c: s.cad }), 5);
     }
     const s = this.steps[i], st = this.ss[i];
     st.time += dt; if (cad > 0) { st.sumCad += cad * dt; st.n += dt; } if (Math.abs((cad || 0) - s.cad) <= 5) st.zone += dt;
     const left = this.ends[i] - this.t, nx = this.steps[i + 1];
-    if (!this.warned && left < 10 && nx) { this.warned = true; toast('Через 10 с: ' + gearLabel(nx.f, nx.r) + ', ' + nx.cad + ' об/мин', 4); }
+    if (!this.warned && left < 10 && nx) { this.warned = true; toast(t('plan.soon', { g: gearLabel(nx.f, nx.r), c: nx.cad }), 4); }
     return false;
   }
 };
@@ -2073,14 +2941,14 @@ function updatePlanHUD(cad) {
   if (!Work.active || Work.idx < 0) return;
   const i = Work.idx, s = Work.steps[i], nx = Work.steps[i + 1], left = Work.ends[i] - Work.t, dur = s.min * 60;
   const [ft, rt] = gearTeeth(s.f, s.r);
-  $('#wStep').textContent = 'Шаг ' + (i + 1) + ' из ' + Work.steps.length;
-  $('#wLeft').textContent = 'осталось ' + fmtTime(Math.ceil(left));
-  $('#wGear').textContent = gearLabel(s.f, s.r); $('#wTeeth').textContent = ft + '×' + rt + ' зуб.';
+  $('#wStep').textContent = t('plan.stepOf', { i: i + 1, n: Work.steps.length });
+  $('#wLeft').textContent = t('plan.left', { t: fmtTime(Math.ceil(left)) });
+  $('#wGear').textContent = gearLabel(s.f, s.r); $('#wTeeth').textContent = t('plan.teeth', { g: ft + '×' + rt });
   $('#wCad').textContent = s.cad;
   const a = Math.round(cad || 0), d = Math.abs(a - s.cad), act = $('#wAct');
   act.textContent = a; act.className = 'v ' + (d <= 5 ? 'ok' : d <= 10 ? 'near' : 'off');
   $('#wProg').style.width = clamp((dur - left) / dur * 100, 0, 100).toFixed(1) + '%';
-  $('#wNext').textContent = nx ? 'Далее: ' + gearLabel(nx.f, nx.r) + ', ' + nx.cad + ' об/мин, ' + fmtTime(nx.min * 60) : 'Последний шаг';
+  $('#wNext').textContent = nx ? t('plan.next', { g: gearLabel(nx.f, nx.r), c: nx.cad, t: fmtTime(nx.min * 60) }) : t('plan.last');
 }
 Records.addWorkout = function (ride, powerLog) {
   const D = this.data, news = [], now = ride.date;
@@ -2089,9 +2957,9 @@ Records.addWorkout = function (ride, powerLog) {
       if (powerLog.length < sec) return;
       let sum = 0, best = 0; for (let i = 0; i < powerLog.length; i++) { sum += powerLog[i]; if (i >= sec) sum -= powerLog[i - sec]; if (i >= sec - 1) best = Math.max(best, sum / sec); }
       best = Math.round(best); const old = D.peaks[k];
-      if (best > 0 && (!old || best > old.w)) { D.peaks[k] = { w: best, date: now, route: ride.route, est: !ride.real }; news.push('пиковая мощность ' + label + ': ' + best + ' Вт' + (ride.real ? '' : ' (оценка)')); }
+      if (best > 0 && (!old || best > old.w)) { D.peaks[k] = { w: best, date: now, route: ride.route, est: !ride.real }; news.push(t('rec.peak', { d: label, w: best }) + (ride.real ? '' : t('rec.est'))); }
     });
-    if (!D.maxSpeed || ride.maxSpeed > D.maxSpeed.v) { D.maxSpeed = { v: ride.maxSpeed, date: now, route: ride.route }; if (D.totals.rides) news.push('максимальная скорость: ' + fmt1(ride.maxSpeed) + ' км/ч'); }
+    if (!D.maxSpeed || ride.maxSpeed > D.maxSpeed.v) { D.maxSpeed = { v: ride.maxSpeed, date: now, route: ride.route }; if (D.totals.rides) news.push(t('rec.maxSpeed', { v: fmt1(ride.maxSpeed) })); }
   }
   D.totals.rides++; D.totals.dist += ride.dist; D.totals.gain += ride.gain; D.totals.time += ride.time;
   D.history.unshift(ride); D.history = D.history.slice(0, 30);
@@ -2107,12 +2975,12 @@ function finishFree() {
   const avgP = Math.round(st.sumP / Math.max(1, st.t));
   const ride = { id: Date.now().toString(36), date: Date.now(), kind: 'free', route: world.route.id, time: Math.round(t * 10) / 10, dist: Math.round(km * 100) / 100, avgSpeed: Math.round(km / Math.max(t / 3600, 1e-6) * 10) / 10, avgPower: avgP, real: st.real, demo: st.demoT > st.t * .5, maxSpeed: Math.round(st.maxV * 36) / 10, gain: Math.round(st.gain), avgCad: st.nCad ? Math.round(st.sumCad / st.nCad) : null, avgHR: st.nHR ? Math.round(st.sumHR / st.nHR) : null, place: 1, of: 1, char: settings.char };
   const rec = Records.addWorkout(ride, me.powerLog || []);
-  $('#resTitle').textContent = 'Свободная езда';
-  $('#resSub').textContent = world.route.name + ', кругов: ' + (me.lap + 1) + '. Заезд сохранён в истории.';
-  $('#resRec').innerHTML = rec.news.length ? '<b>Новые рекорды</b><ul>' + rec.news.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '';
+  $('#resTitle').textContent = tr('mode.free');
+  $('#resSub').textContent = tr('res.freeSub', { route: world.route.name, n: me.lap + 1 });
+  $('#resRec').innerHTML = rec.news.length ? '<b>' + tr('res.newRecords') + '</b><ul>' + rec.news.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '';
   $('#resRec').classList.toggle('hidden', !rec.news.length);
-  const sx = [[fmtTime(t), 'время'], [fmt1(km) + ' км', 'дистанция'], [fmt1(ride.avgSpeed), 'средняя, км/ч'], [avgP + ' Вт', st.real ? 'средняя мощность' : 'средняя мощность (оценка)'], [ride.avgCad || '—', 'средний каденс'], [ride.gain + ' м', 'набор высоты']];
-  if (st.nHR) sx.push([Math.round(st.sumHR / st.nHR) + ' / ' + st.maxHR, 'пульс: средний / макс.']);
+  const sx = [[fmtTime(t), tr('res.time')], [fmt1(km) + ' ' + tr('u.km'), tr('res.dist')], [fmt1(ride.avgSpeed), tr('res.avgKmh')], [avgP + ' ' + tr('u.w'), st.real ? tr('res.avgPower') : tr('res.avgPowerEst')], [ride.avgCad || '—', tr('res.avgCad')], [ride.gain + ' ' + tr('u.m'), tr('rec.gain')]];
+  if (st.nHR) sx.push([Math.round(st.sumHR / st.nHR) + ' / ' + st.maxHR, tr('res.hr')]);
   $('#resStats').innerHTML = sx.map(s => '<div class="stat"><div class="v">' + s[0] + '</div><div class="u">' + s[1] + '</div></div>').join('');
   $('#resList').innerHTML = '';
   $('#resM').classList.remove('hidden');
@@ -2124,15 +2992,15 @@ function finishWorkout() {
   const avgP = Math.round(st.sumP / Math.max(1, st.t));
   const ride = { id: Date.now().toString(36), date: Date.now(), kind: 'plan', route: world.route.id, time: Math.round(t * 10) / 10, dist: Math.round(km * 100) / 100, avgSpeed: Math.round(km / Math.max(t / 3600, 1e-6) * 10) / 10, avgPower: avgP, real: st.real, demo: st.demoT > st.t * .5, maxSpeed: Math.round(st.maxV * 36) / 10, gain: Math.round(st.gain), avgCad: st.nCad ? Math.round(st.sumCad / st.nCad) : null, avgHR: st.nHR ? Math.round(st.sumHR / st.nHR) : null, place: 1, of: 1, char: settings.char, steps: Work.steps.length, zone: zonePct };
   const rec = Records.addWorkout(ride, me.powerLog || []);
-  $('#resTitle').textContent = 'Тренировка выполнена';
-  $('#resSub').textContent = 'План по каденсу: ' + Work.steps.length + ' шагов, ' + fmtTime(t) + ' на маршруте «' + world.route.name + '». В зоне каденса (±5 об/мин) ' + zonePct + '% времени.';
-  $('#resRec').innerHTML = rec.news.length ? '<b>Новые рекорды</b><ul>' + rec.news.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '';
+  $('#resTitle').textContent = tr('res.workoutDone');
+  $('#resSub').textContent = tr('res.planSub', { n: Work.steps.length, t: fmtTime(t), route: world.route.name, z: zonePct });
+  $('#resRec').innerHTML = rec.news.length ? '<b>' + tr('res.newRecords') + '</b><ul>' + rec.news.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '';
   $('#resRec').classList.toggle('hidden', !rec.news.length);
-  const sx = [[fmtTime(t), 'время'], [fmt1(km) + ' км', 'дистанция'], [fmt1(ride.avgSpeed), 'средняя, км/ч'], [avgP + ' Вт', st.real ? 'средняя мощность' : 'средняя мощность (оценка)'], [ride.avgCad || '—', 'средний каденс'], [ride.gain + ' м', 'набор высоты']];
-  if (st.nHR) sx.push([Math.round(st.sumHR / st.nHR) + ' / ' + st.maxHR, 'пульс: средний / макс.']);
+  const sx = [[fmtTime(t), tr('res.time')], [fmt1(km) + ' ' + tr('u.km'), tr('res.dist')], [fmt1(ride.avgSpeed), tr('res.avgKmh')], [avgP + ' ' + tr('u.w'), st.real ? tr('res.avgPower') : tr('res.avgPowerEst')], [ride.avgCad || '—', tr('res.avgCad')], [ride.gain + ' ' + tr('u.m'), tr('rec.gain')]];
+  if (st.nHR) sx.push([Math.round(st.sumHR / st.nHR) + ' / ' + st.maxHR, tr('res.hr')]);
   $('#resStats').innerHTML = sx.map(s => '<div class="stat"><div class="v">' + s[0] + '</div><div class="u">' + s[1] + '</div></div>').join('');
   $('#resList').innerHTML = Work.steps.map((s, i) => { const x = Work.ss[i], avg = x.n ? Math.round(x.sumCad / x.n) : 0, z = x.time ? Math.round(x.zone / x.time * 100) : 0;
-    return '<li><span>' + (i + 1) + '</span><span>' + gearLabel(s.f, s.r) + ', цель ' + s.cad + ' об/мин, ' + fmtTime(s.min * 60) + '</span><span>' + avg + ' об/мин, ' + z + '%</span></li>'; }).join('');
+    return '<li><span>' + (i + 1) + '</span><span>' + tr('res.stepRow', { g: gearLabel(s.f, s.r), c: s.cad, t: fmtTime(s.min * 60) }) + '</span><span>' + avg + ' ' + tr('u.rpm') + ', ' + z + '%</span></li>'; }).join('');
   setTimeout(() => $('#resM').classList.remove('hidden'), 1200);
 }
 
@@ -2159,7 +3027,7 @@ const Site = {
     return (Records.loginUrl || '/accounts/login/') + '?next=' + encodeURIComponent(next);
   }
 };
-const RECORD_LABELS = { route_first: 'первый результат на маршруте', route_best: 'лучшее время на маршруте', peak_5s_w: 'пиковая мощность 5 с', peak_1m_w: 'пиковая мощность 1 мин', peak_5m_w: 'пиковая мощность 5 мин', peak_20m_w: 'пиковая мощность 20 мин', max_speed_kmh: 'максимальная скорость' };
+const RECORD_LABELS = { route_first: t('rec.firstLabel'), route_best: t('rec.bestLabel'), peak_5s_w: t('rec.peakLabel', { d: durLabel(5) }), peak_1m_w: t('rec.peakLabel', { d: durLabel(60) }), peak_5m_w: t('rec.peakLabel', { d: durLabel(300) }), peak_20m_w: t('rec.peakLabel', { d: durLabel(1200) }), max_speed_kmh: t('rec.maxSpeedLabel') };
 function bestPeaks(powerLog) {
   const out = {};
   PEAKS.forEach(([k, sec]) => {
@@ -2171,10 +3039,10 @@ function bestPeaks(powerLog) {
 }
 // Ответ сервера о рекордах заменяет местный: он сравнивает со всеми заездами в личном кабинете
 function showServerRecords(keys, ride, peaks) {
-  const val = { route_first: fmtTime(ride.time), route_best: fmtTime(ride.time), peak_5s_w: peaks.p5 + ' Вт', peak_1m_w: peaks.p60 + ' Вт', peak_5m_w: peaks.p300 + ' Вт', peak_20m_w: peaks.p1200 + ' Вт', max_speed_kmh: fmt1(ride.maxSpeed) + ' км/ч' };
+  const W = ' ' + t('u.w'), val = { route_first: fmtTime(ride.time), route_best: fmtTime(ride.time), peak_5s_w: peaks.p5 + W, peak_1m_w: peaks.p60 + W, peak_5m_w: peaks.p300 + W, peak_20m_w: peaks.p1200 + W, max_speed_kmh: fmt1(ride.maxSpeed) + ' ' + t('u.kmh') };
   const items = (keys || []).filter(k => RECORD_LABELS[k]).map(k => RECORD_LABELS[k] + ': ' + val[k]);
   const box = $('#resRec');
-  box.innerHTML = items.length ? '<b>Новые рекорды в личном кабинете</b><ul>' + items.map(t => '<li>' + t + '</li>').join('') + '</ul>' : '';
+  box.innerHTML = items.length ? '<b>' + t('rec.newInProfile') + '</b><ul>' + items.map(t => '<li>' + t + '</li>').join('') + '</ul>' : '';
   box.classList.toggle('hidden', !items.length);
 }
 // Сводка с сервера в том же виде, в каком «Мои рекорды» хранят её в браузере
@@ -2230,7 +3098,7 @@ function mpMaybeStart() {
   if (now >= at - 7000 && now < at + 30000) { MP.started.add(g.id); groupRide = { gid: g.id, startAt: at }; routeSel = g.route; renderMenu(); startRace(); }
 }
 async function mpAction(path, body) {
-  try { await Site.post(path, body); } catch (e) { $('#mpStatus').textContent = 'Не получилось: ' + e.message; }
+  try { await Site.post(path, body); } catch (e) { $('#mpStatus').textContent = t('mp.failed', { msg: e.message }); }
   mpSchedule(50);
 }
 function mpCreateGroup() {
@@ -2251,12 +3119,12 @@ function mpSyncRemotes() {
     let b = bots.find(x => x.remote && x.uid === uid);
     if (!b) {
       const col = mpColor(uid), ch = Object.assign({}, kitted(PLAYER_CH), { helmet: col, stripe: col });
-      b = newRider(r.name || 'Гонщик', col, 75, r.distance_m, clamp(r.lane_m || 2, .5, world.route.width / 2 - .8));
+      b = newRider(r.name || t('mp.rider'), col, 75, r.distance_m, clamp(r.lane_m || 2, .5, world.route.width / 2 - .8));
       Object.assign(b, { remote: true, uid, ch, mesh: makeRider(ch), seed: 0, wkg: 0 });
       scene.add(b.mesh.g); bots.push(b);
     }
     b.seenAt = nowMs; b.sampleS = r.distance_m; b.sampleT = performance.now() - (r.age_s || 0) * 1000; b.v = r.speed_ms || 0; b.cad = r.cadence_rpm || 0; b.P = r.power_w || 0;
-    b.lane = clamp(r.lane_m || b.lane, .5, world.route.width / 2 - .8); b.name = r.name || 'Гонщик';
+    b.lane = clamp(r.lane_m || b.lane, .5, world.route.width / 2 - .8); b.name = r.name || t('mp.rider');
     const f = typeof r.finished_s === 'number' ? r.finished_s : null; if (f !== b.finishT) { b.finishT = f; changedFinish = true; }
   });
   if (changedFinish && phase === 'done' && rideMode === 'race' && me.finishT != null && !MP.resultsFor) renderRaceList(raceList());
@@ -2273,8 +3141,8 @@ async function mpPollResults(gid, until) {
   try {
     const res = await Site.get('/groups/' + gid + '/results'), myId = Records.me && Records.me.user_id;
     const done = new Set(res.finished.map(f => f.user_id));
-    const list = res.finished.map(f => ({ name: f.user_id === myId ? 'Вы' : f.name, t: f.duration_s, me: f.user_id === myId, color: f.user_id === myId ? hexs(kitted(charById(settings.char)).a) : hexs(mpColor(f.user_id)), human: f.user_id !== myId }));
-    if (!done.has(myId) && me.finishT != null) list.push({ name: 'Вы', t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) });
+    const list = res.finished.map(f => ({ name: f.user_id === myId ? t('you') : f.name, t: f.duration_s, me: f.user_id === myId, color: f.user_id === myId ? hexs(kitted(charById(settings.char)).a) : hexs(mpColor(f.user_id)), human: f.user_id !== myId }));
+    if (!done.has(myId) && me.finishT != null) list.push({ name: t('you'), t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) });
     bots.filter(b => b.remote && !done.has(b.uid)).forEach(b => list.push({ name: b.name, t: raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: true, human: true }));
     list.sort((a, b) => a.t - b.t); renderRaceList(list);
     if (bots.some(b => b.remote && !done.has(b.uid))) setTimeout(() => mpPollResults(gid, until), 2000); else MP.resultsFor = null;
@@ -2286,14 +3154,14 @@ function renderMP() {
   online.innerHTML = '';
   if (MP.status !== 'on') {
     create.disabled = true; box.innerHTML = '';
-    if (MP.status === 'guest') { st.innerHTML = 'Совместная езда и групповые гонки доступны участникам сайта. <a href="' + escapeHTML(Site.loginHref()) + '" target="_top">Войти</a>'; }
-    else st.textContent = MP.status === 'connecting' ? 'Подключаемся…' : 'Совместная езда работает, когда страница открыта на сайте.';
+    if (MP.status === 'guest') { st.innerHTML = escapeHTML(t('mp.guest')) + ' <a href="' + escapeHTML(Site.loginHref()) + '" target="_top">' + escapeHTML(t('signIn')) + '</a>'; }
+    else st.textContent = MP.status === 'connecting' ? t('mp.connecting') : t('mp.offSite');
     renderStartSum(); return;
   }
-  st.textContent = MP.online.length ? 'Сейчас на странице, кроме вас: ' + MP.online.length + '.' : 'Пока на странице только вы. Позовите друзей с аккаунтами на сайте, и они появятся здесь.';
+  st.textContent = MP.online.length ? t('mp.others', { n: MP.online.length }) : t('mp.alone');
   MP.online.forEach(p => {
     const el = document.createElement('span'); el.className = 'mp-chip';
-    const where = p.status === 'ride' ? (p.group_id ? 'в групповой гонке' : p.mode === 'free' ? 'свободная езда' : p.mode === 'plan' ? 'план по каденсу' : 'гонка') + ': ' + routeName(p.route) : 'в настройках';
+    const where = p.status === 'ride' ? (p.group_id ? t('where.group') : p.mode === 'free' ? t('where.free') : p.mode === 'plan' ? t('where.plan') : t('where.race')) + ': ' + routeName(p.route) : t('where.lobby');
     el.innerHTML = '<i></i><b></b><small></small>'; el.querySelector('i').style.background = hexs(mpColor(p.user_id));
     el.querySelector('b').textContent = p.name; el.querySelector('small').textContent = where;
     online.appendChild(el);
@@ -2307,22 +3175,22 @@ function renderMP() {
     let card = box.querySelector('[data-gid="' + g.id + '"]');
     if (!card) { card = document.createElement('div'); card.dataset.gid = g.id; card.innerHTML = '<div><b></b><small></small></div><button class="btn" type="button"></button>'; box.appendChild(card); }
     card.className = 'mp-group' + (g.is_member ? ' on' : '');
-    card.querySelector('b').textContent = (g.is_host ? 'Ваша групповая гонка' : g.host.name + ' собирает гонку') + ': ' + (g.route_name || routeName(g.route));
-    card.querySelector('small').textContent = (left ? 'Старт через ' + fmtTime(left) : 'Старт') + '. Участники: ' + g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? 'вы' : m.name).join(', ') + '.';
+    card.querySelector('b').textContent = (g.is_host ? t('mp.yours') : t('mp.hostGathers', { name: g.host.name })) + ': ' + routeTitle(g);
+    card.querySelector('small').textContent = (left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name).join(', ') });
     const btn = card.querySelector('button'); btn.disabled = false;
-    if (g.is_host) { btn.textContent = 'Отменить'; btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }
-    else if (g.is_member) { btn.textContent = 'Не участвовать'; btn.onclick = () => mpAction('/groups/' + g.id + '/leave'); }
-    else { btn.textContent = 'Участвовать'; btn.disabled = !!mine || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }
+    if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }
+    else if (g.is_member) { btn.textContent = t('mp.leave'); btn.onclick = () => mpAction('/groups/' + g.id + '/leave'); }
+    else { btn.textContent = t('mp.join'); btn.disabled = !!mine || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }
   });
   create.disabled = !!mine;
   renderStartSum();
 }
 function raceList() {
-  const list = [{ name: 'Вы', t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) }].concat(bots.map(b => ({ name: b.name, t: b.finishT != null ? b.finishT : raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: b.finishT == null, human: !!b.remote })));
+  const list = [{ name: t('you'), t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) }].concat(bots.map(b => ({ name: b.name, t: b.finishT != null ? b.finishT : raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: b.finishT == null, human: !!b.remote })));
   list.sort((a, b) => a.t - b.t); return list;
 }
 function renderRaceList(list) {
-  $('#resList').innerHTML = list.map((x, i) => '<li class="' + (x.me ? 'me' : '') + '"><span>' + (i + 1) + '</span><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + x.color + ';margin-right:8px"></span>' + escapeHTML(x.name) + (x.human ? ' <small style="color:var(--muted)">гонщик</small>' : '') + '</span><span>' + (x.est ? (x.human ? 'в пути, ≈ ' : '≈ ') : '') + fmtTime(x.t) + '</span></li>').join('');
+  $('#resList').innerHTML = list.map((x, i) => '<li class="' + (x.me ? 'me' : '') + '"><span>' + (i + 1) + '</span><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + x.color + ';margin-right:8px"></span>' + escapeHTML(x.name) + (x.human ? ' <small style="color:var(--muted)">' + t('res.human') + '</small>' : '') + '</span><span>' + (x.est ? (x.human ? t('res.onTheWay') : '≈ ') : '') + fmtTime(x.t) + '</span></li>').join('');
 }
 function escapeHTML(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
 setInterval(() => { if (phase === 'menu' && MP.status === 'on') { mpMaybeStart(); renderMP(); } }, 1000);
@@ -2333,7 +3201,7 @@ function updateStamp() { const s = stampText(); $('#stamp').innerHTML = '<span c
 function syncPhotoUI() {
   const set = (id, out, v, f) => { $(id).value = v; $(out).textContent = f(v); };
   set('#pFov', '#oFov', look.fov, v => Math.round(v) + '°'); set('#pDist', '#oDist', look.dist, v => Math.round(v * 100)); set('#pCA', '#oCA', look.ca, v => Math.round(v * 1000));
-  set('#pGrain', '#oGrain', look.grain, v => Math.round(v * 100)); set('#pVig', '#oVig', look.vig, v => Math.round(v * 100)); set('#pExp', '#oExp', look.exp, v => (+v).toFixed(2).replace('.', ','));
+  set('#pGrain', '#oGrain', look.grain, v => Math.round(v * 100)); set('#pVig', '#oVig', look.vig, v => Math.round(v * 100)); set('#pExp', '#oExp', look.exp, v => numF(+v, 2));
   document.querySelectorAll('#lookSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.look === look.name ? 'true' : 'false'));
 }
 function enterPhoto() {
@@ -2381,8 +3249,8 @@ function renderMenu() {
     const pb = Records.best(r.id);
     b.innerHTML = '<b></b><span class="meta"></span><span class="desc"></span>';
     b.querySelector('b').textContent = r.name;
-    b.querySelector('.meta').textContent = fmt1(T.L / 1000) + ' км, набор ' + Math.round(T.gain) + ' м' + (r.loop ? ', круг' : '') + (r.osm ? ', дома из OSM' : '') + (pb ? ', рекорд ' + fmtTime(pb) : '');
-    const sights = nearLandmarks(T).filter(l => l.dist <= 700).map(l => l.name); b.querySelector('.desc').textContent = r.desc + (sights.length ? ' По пути: ' + sights.join(', ') + '.' : ''); b.appendChild(cv);
+    b.querySelector('.meta').textContent = t('route.meta', { d: fmt1(T.L / 1000), g: Math.round(T.gain) }) + (r.loop ? ', ' + t('route.loop') : '') + (r.osm ? ', ' + t('route.osm') : '') + (pb ? ', ' + t('route.record', { t: fmtTime(pb) }) : '');
+    const sights = nearLandmarks(T).filter(l => l.dist <= 700).map(l => l.name); b.querySelector('.desc').textContent = r.desc + (sights.length ? t('route.sights', { list: sights.join(', ') }) : ''); b.appendChild(cv);
     b.onclick = () => { routeSel = r.id; store.set('route', r.id); renderMenu(); if (MP.status === 'on') mpSchedule(200); };
     box.appendChild(b);
   });
@@ -2393,7 +3261,7 @@ function readSettings() {
   settings.mass = clamp(+$('#mass').value || 75, 35, 160); settings.height = clamp(Math.round(+$('#height').value || 178), 120, 220); settings.bikeType = BIKE_TYPES[$('#bikeType').value] ? $('#bikeType').value : 'road'; settings.bikeKg = Math.round(clamp(+$('#bikeKg').value || bikeType().kg, 5, 30) * 10) / 10; settings.bots = +$('#bots').value; settings.level = $('#level').value; settings.difficulty = +$('#difficulty').value; settings.hrmax = clamp(+$('#hrmax').value || 185, 120, 230); settings.view = $('#view').value; settings.cadSpeed = $('#cadSpeed').value;
   store.set('settings', settings);
 }
-function fillSettings() { $('#circ').value = settings.circ; $('#trainer').value = settings.trainer; $('#mass').value = settings.mass; $('#height').value = settings.height || 178; $('#bikeType').innerHTML = Object.keys(BIKE_TYPES).map(k => '<option value="' + k + '">' + BIKE_TYPES[k].name + ', ≈' + fmt1(BIKE_TYPES[k].kg) + ' кг</option>').join(''); $('#bikeType').value = BIKE_TYPES[settings.bikeType] ? settings.bikeType : 'road'; $('#bikeKg').value = settings.bikeKg || bikeType().kg; renderBodyHint(); $('#bots').value = settings.bots; $('#level').value = settings.level; $('#difficulty').value = settings.difficulty; $('#hrmax').value = settings.hrmax; $('#view').value = settings.view; $('#cadSpeed').value = settings.cadSpeed || 'direct'; }
+function fillSettings() { $('#circ').value = settings.circ; $('#trainer').value = settings.trainer; $('#mass').value = settings.mass; $('#height').value = settings.height || 178; $('#bikeType').innerHTML = Object.keys(BIKE_TYPES).map(k => '<option value="' + k + '">' + BIKE_TYPES[k].name + ', ≈' + fmt1(BIKE_TYPES[k].kg) + ' ' + t('u.kg') + '</option>').join(''); $('#bikeType').value = BIKE_TYPES[settings.bikeType] ? settings.bikeType : 'road'; $('#bikeKg').value = settings.bikeKg || bikeType().kg; renderBodyHint(); $('#bots').value = settings.bots; $('#level').value = settings.level; $('#difficulty').value = settings.difficulty; $('#hrmax').value = settings.hrmax; $('#view').value = settings.view; $('#cadSpeed').value = settings.cadSpeed || 'direct'; }
 function directStep(r, kmh, dt) { const t = (kmh || 0) / 3.6; r.v += (t - r.v) * (1 - Math.exp(-dt * 3)); if (t === 0 && r.v < .05) r.v = 0; return r.v * dt; }
 function showLoading(on) { $('#loading').classList.toggle('hidden', !on); }
 
@@ -2405,20 +3273,20 @@ $('#mpCreate').onclick = mpCreateGroup;
 try { document.fonts && document.fonts.ready.then(() => { setPlayerChar(settings.char); setPreview(settings.char); }); } catch (e) {}
 $('#btnRecords').onclick = () => { renderRecords(); $('#recM').classList.remove('hidden'); };
 $('#btnRecClose').onclick = () => $('#recM').classList.add('hidden');
-$('#btnRecReset').onclick = e => { const b = e.currentTarget; if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Точно сбросить? Нажмите ещё раз'; return; } Records.reset(); renderRecords(); renderMenu(); };
+$('#btnRecReset').onclick = e => { const b = e.currentTarget; if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = t('records.resetSure'); return; } Records.reset(); renderRecords(); renderMenu(); };
 ['#circ', '#trainer', '#cadSpeed', '#bikeType', '#bikeKg', '#height', '#mass', '#bots', '#level', '#difficulty', '#hrmax', '#view'].forEach(id => $(id).addEventListener('change', () => { readSettings(); renderStartSum(); if (id === '#bikeType') { const bt = bikeType(); settings.bikeKg = bt.kg; settings.circ = bt.circ; $('#bikeKg').value = bt.kg; $('#circ').value = bt.circ; store.set('settings', settings); }
     if (id === '#bikeKg') $('#bikeKg').value = settings.bikeKg;
     if (id === '#height' || id === '#mass' || id === '#bikeType' || id === '#bikeKg') { if (id === '#height' || id === '#mass') $(id).value = id === '#height' ? settings.height : settings.mass; renderBodyHint(); setPlayerChar(settings.char); setPreview(settings.char); renderStartSum(); } if (id === '#view' && phase === 'menu') setView(settings.view, true); updateModeUI(); }));
-$('#demoP').addEventListener('input', e => { demoP = +e.target.value; $('#demoV').textContent = demoP + ' Вт'; });
+$('#demoP').addEventListener('input', e => { demoP = +e.target.value; $('#demoV').textContent = demoP + ' ' + t('u.w'); });
 $('#gUp').onclick = () => { gearR = Math.min(bikeR().length, gearR + 1); updateModeUI(); };
 $('#gDown').onclick = () => { gearR = Math.max(1, gearR - 1); updateModeUI(); };
-$('#gearV').parentElement.style.pointerEvents = 'auto'; $('#gearV').title = 'Нажмите, чтобы сменить переднюю звезду';
+$('#gearV').parentElement.style.pointerEvents = 'auto'; $('#gearV').title = t('plan.chainringTitle');
 $('#gearV').onclick = () => { gearF = gearF >= bikeF().length ? 1 : gearF + 1; updateModeUI(); };
 document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => { settings.mode = b.dataset.mode; store.set('settings', settings); renderPlanEditor(); });
 $('#plFront').onchange = e => { settings.plan.front = e.target.value; savePlan(); renderPlanEditor(); updateModeUI(); };
 $('#plCass').onchange = e => { settings.plan.cass = e.target.value; savePlan(); renderPlanEditor(); updateModeUI(); };
 $('#plFrontCustom').onchange = e => { const a = parseTeeth(e.target.value, 20, 60).sort((x, y) => x - y).slice(0, 3); if (a.length) { settings.plan.frontCustom = a; savePlan(); } renderPlanEditor(); updateModeUI(); };
-$('#plCassCustom').onchange = e => { const a = parseTeeth(e.target.value, 9, 52).sort((x, y) => y - x).slice(0, 13); if (a.length >= 2) { settings.plan.cassCustom = a; savePlan(); } else btHint('Укажите хотя бы две задние звезды, например 11-12-13-14-15-17-19-21-24-28.', true); renderPlanEditor(); updateModeUI(); };
+$('#plCassCustom').onchange = e => { const a = parseTeeth(e.target.value, 9, 52).sort((x, y) => y - x).slice(0, 13); if (a.length >= 2) { settings.plan.cassCustom = a; savePlan(); } else btHint(t('bt.twoSprockets'), true); renderPlanEditor(); updateModeUI(); };
 $('#plStartF').onchange = e => shiftPlan(+e.target.value - settings.plan.steps[0].f, 0);
 $('#plStartR').onchange = e => shiftPlan(0, +e.target.value - settings.plan.steps[0].r);
 $('#plAdd').onclick = () => { const st = settings.plan.steps, l = st[st.length - 1]; st.push({ f: l.f, r: Math.min(bikeR().length, l.r + 1), cad: l.cad, min: l.min }); savePlan(); renderPlanEditor(); };
@@ -2442,8 +3310,8 @@ $('#pStamp').addEventListener('change', e => $('#stamp').classList.toggle('hidde
 $('#pHud').addEventListener('change', e => $('#hud').classList.toggle('hidden', !e.target.checked));
 window.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (e.key === 'ArrowUp' || e.key === 'w') { demoP = clamp(demoP + 10, 0, 450); $('#demoP').value = demoP; $('#demoV').textContent = demoP + ' Вт'; }
-  if (e.key === 'ArrowDown' || e.key === 's') { demoP = clamp(demoP - 10, 0, 450); $('#demoP').value = demoP; $('#demoV').textContent = demoP + ' Вт'; }
+  if (e.key === 'ArrowUp' || e.key === 'w') { demoP = clamp(demoP + 10, 0, 450); $('#demoP').value = demoP; $('#demoV').textContent = demoP + ' ' + t('u.w'); }
+  if (e.key === 'ArrowDown' || e.key === 's') { demoP = clamp(demoP - 10, 0, 450); $('#demoP').value = demoP; $('#demoV').textContent = demoP + ' ' + t('u.w'); }
   if (e.key === ']') $('#gUp').click(); if (e.key === '[') $('#gDown').click();
   if ((e.key === 'v' || e.key === 'м') && !photo) $('#btnView').click();
   if (e.key === 'p' || e.key === 'з') photo ? exitPhoto() : enterPhoto();
@@ -2460,13 +3328,14 @@ document.addEventListener('visibilitychange', () => {
 
 /* ---------------- Запуск ---------------- */
 (function boot() {
-  if (!window.THREE) { $('#loading').textContent = 'Не удалось загрузить 3D-движок. Проверьте подключение к интернету и обновите страницу.'; return; }
+  if (!window.THREE) { $('#loading').textContent = t('boot.noThree'); return; }
   try {
+    $('#demoV').textContent = demoP + ' ' + t('u.w');
     Records.load(); initGL(); makeMaterials(); fillSettings(); renderMenu(); initPreview(); renderChars(); setPreview(settings.char); renderPlanEditor();
-    if (!Sensors.supported()) btHint(isIOS() ? 'На iPhone и iPad Safari не поддерживает Bluetooth для сайтов: для датчиков откройте страницу в браузере Bluefy. Демо-режим работает и так.' : 'Этот браузер не поддерживает Web Bluetooth. Для датчиков используйте Chrome или Edge. Демо-режим работает и так.', true);
+    if (!Sensors.supported()) btHint(isIOS() ? t('bt.iosBoot') : t('bt.noneBoot'), true);
     applyOSM(null); try { IDB.del('osm').catch(() => {}); } catch (e) {} // загрузка карты города отключена
     startMenu(); showLoading(false); Records.connect().then(mpInit); requestAnimationFrame(t => { last = t; frame(t); });
-  } catch (e) { console.error(e); $('#loading').textContent = 'Не удалось запустить 3D: ' + e.message; }
+  } catch (e) { console.error(e); $('#loading').textContent = t('boot.failed', { msg: e.message }); }
 })();
 </script>
 </body>
