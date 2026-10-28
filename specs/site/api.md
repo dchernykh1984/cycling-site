@@ -1,11 +1,12 @@
 # Site Specification: The API
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-21
-**Code**: `api/` (`router.py`, `auth.py`, `schemas.py`), `api/endpoints/`; django-ninja, served at
-`/api/v1/`
+**Verified against**: `main` on 2026-10-21; `/managing/` (issue #315) against branch `315-managing-registrations` on 2026-10-28
+**Code**: `api/` (`router.py`, `auth.py` -- the token, and `member_auth`: a confirmed member's session or
+token --, `schemas.py`), `api/endpoints/`; django-ninja, served at `/api/v1/`
 **Tests**: `api/tests.py`, `registrations/tests.py` (participants), `protocols/tests.py`,
 `tests/test_gallery_api.py`, `tests/test_input_length_limits.py`, `tests/test_virtual_ride_api.py`,
+`tests/test_managing_api.py`,
 `tests/e2e/test_api_to_front.py`
 **Related**: [events](events.md), [locations](locations.md), [news and knowledge](news-and-knowledge.md),
 [protocols](protocols.md), [registrations](registrations.md), [events agents](events-agents.md),
@@ -52,6 +53,14 @@ and protocols with the event's upload token. The API has no language prefix.
    Strava as a Virtual Ride when it is saved, and the member can send one again, read how its upload
    went (`/rides/{id}/strava`) and turn Strava off (`DELETE /strava`); `/me` says whether Strava is
    available and connected and where to connect it ([accounts](accounts.md), FR-ACC-007).
+8. **Given** managing another member's registrations and photos ([accounts](accounts.md), issue
+   #315), **Then** a confirmed member (session or token) reads their link, managers, requests
+   waiting and members (`GET /managing/`), makes a link or a new one and deletes it
+   (`/managing/invite`), asks through a link (`POST /managing/join`: 404 for a key not valid or run
+   out, 409 for one's own, a manager already or a request already waiting, with the page's words),
+   accepts or rejects requests one by one or all at once (`/managing/waiting/...`), and ends a link
+   from either side (`DELETE /managing/members/{user_id}`, `DELETE /managing/managers/{user_id}`).
+   An id in the address reaches only the caller's own rows: anything else is a 404.
 
 ### Story 2 -- The timing tools exchange race data (P1)
 
@@ -84,8 +93,9 @@ and protocols with the event's upload token. The API has no language prefix.
 - **FR-API-001**: Routers: `/competitions/`, `/news/`, `/knowledge/`, `/locations/`, `/disciplines/`,
   `/event-types/`, `/participants/`, `/protocols/`, `/start-list/`, `/group-times/`,
   `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`, `/event-photos/`
-  ([event photos](event-photos.md)), `/virtual-ride/`. A start-list upload also records which
-  registration got which bib, from the lines' trailing `r<id>` field; its response is unchanged.
+  ([event photos](event-photos.md)), `/virtual-ride/`, `/managing/` ([accounts](accounts.md)). A
+  start-list upload also records which registration got which bib, from the lines' trailing `r<id>`
+  field; its response is unchanged.
 - **FR-API-002**: Personal tokens belong to participants and up (generated on the profile); the
   upload token belongs to an event and is managed by its managers and its author (see
   [events](events.md)).

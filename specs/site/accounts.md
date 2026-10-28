@@ -1,12 +1,14 @@
 # Site Specification: Accounts, roles and the profile
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-21
-**Code**: `accounts/` (models, views, adapters, access, signals), `cycling_site/templates/allauth/`
+**Verified against**: `main` on 2026-10-21; managing another member's registrations (issue #315) against branch `315-managing-registrations` on 2026-10-28
+**Code**: `accounts/` (models, views, adapters, access, signals, managing), `cycling_site/templates/allauth/`,
+`api/endpoints/managing.py`
 **Tests**: `accounts/tests.py`, `tests/test_role_request.py`, `tests/test_user_display.py`,
 `tests/test_oauth_callback.py`, `tests/test_save_filter_preferences.py`, `tests/test_skin_choice.py`,
 `tests/e2e/test_api_token_profile.py`, `tests/e2e/test_profile_preferences.py`,
-`tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`
+`tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_managing.py`,
+`tests/test_managing_api.py`, `tests/e2e/test_managing.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md)
 
 ## Overview
@@ -83,11 +85,42 @@ once; confirming the address unlocks everything that writes.
    totals, best time per route with attempts, peak power over 5 s, 1, 5 and 20 min, top speed and the
    latest rides; demo rides are listed but never count ([site shell](site-shell.md)).
 
+### Story 7 -- Manage another member's registrations and photos (P2)
+
+A coach, a parent or a team captain looks after other members' registrations and race photos, with
+their consent. Not a role: a link between two accounts (issue #315; the decisions are in
+`specs/315-managing-registrations/spec.md`).
+
+1. **Given** a confirmed member, **Then** the profile shows "Who may manage my registrations and
+   photos" and "Whose registrations and photos I manage"; nothing names a role.
+2. **Given** "Create link", **Then** the member (the manager) gets a link with a key, valid for 30
+   days, with the site's share button; "New link" makes the old one stop working and "Delete link"
+   removes it; neither, nor its running out, rejects a request waiting. A link run out says when.
+3. **Given** someone opens the link, **Then** a visitor signs in first and comes back, and an
+   unconfirmed account is asked to confirm; the page names the manager, what they may do (register
+   the member, change and cancel their registrations, see their race photos and mark them) and what
+   they will see (last name, first name, date of birth, gender, city, team -- not the e-mail), and
+   asks by an "Allow" button. Opening it grants nothing. A key that is not valid or ran out: a 404
+   saying so; one's own link, a manager already, a request already waiting: a plain message.
+4. **Given** "Allow", **Then** the request waits in the manager's section with the member's last
+   name, first name, team and year of birth; the manager accepts or rejects each, or all at once. A
+   rejected request disappears and may be sent again. The member sees it waiting, with "Withdraw".
+5. **Given** an accepted link, **Then** the manager sees the member's last name, first name, date
+   of birth, gender, city and team, and acts for them in registrations
+   ([registrations](registrations.md)) and race photos ([event photos](event-photos.md)); never on
+   the profile.
+6. **Given** either side removes the other, **Then** nothing is left: the former manager sees and
+   may do nothing of the member's; the registrations they submitted stay the member's.
+7. Rights never pass along a chain (A manages B and B manages C: A has nothing of C's); two members
+   may manage each other; nobody manages themselves. No mail is sent anywhere in this.
+
 ### Edge Cases
 
 - An unverified member (guest) can open the profile, but sees a minimal cabinet: profile data, the
   confirmation block, the sign-in methods and the role ladder (without the request button); the
-  contact, appearance, registrations, submitted events, submissions and API sections are hidden.
+  contact, appearance, registrations, submitted events, submissions, managing and API sections are
+  hidden.
+- On a phone the managing sections' tables become cards, as the participant list's do.
 - Anything that writes -- submitting, registering, commenting, contacting the owners, the API --
   sends a guest to their profile with a message asking to confirm the address.
 - A member's public name never exposes their e-mail; where a name is shown to them (the sign-in
@@ -117,12 +150,17 @@ once; confirming the address unlocks everything that writes.
   reads the member's Strava activities.
 - **FR-ACC-008**: The profile lists the member's own submitted events (those needing attention
   first) and their registrations: open entries as cards with approval and payment badges as their
-  event requires, and every entry in a table below that marks only the rejected, waiting and unpaid
-  ones (see [registrations](registrations.md)); registrations of other users, of deleted events, or
-  not tied to a user are not shown.
+  event requires -- with those of the members they manage, under the member's name -- and every own
+  entry in a table below that marks only the rejected, waiting and unpaid ones (see
+  [registrations](registrations.md)); other registrations, those of deleted events, or not tied to a
+  user are not shown.
 - **FR-ACC-009**: A member's chosen interface language is remembered when they switch language.
 - **FR-ACC-010**: Every form and API request string is length-bounded or validated elsewhere
   (`tests/test_input_length_limits.py` keeps the registry complete).
+- **FR-ACC-011**: Managing (issue #315): one link per manager, valid for 30 days from when it was
+  made; a request (`ManagedMember`) waits until the manager accepts it and gives rights only then
+  (`accounts.managing.acts_for`); rejecting it, or either side ending an accepted one, deletes it.
+  Every rule lives in `accounts/managing.py`, which the pages and `/api/v1/managing/` share.
 
 ## Key Entities
 
@@ -136,6 +174,10 @@ once; confirming the address unlocks everything that writes.
   time, the route's place on the map, height, distance, speed, power, cadence, pulse) and what
   became of it at Strava (`trainer.StravaUpload`: processing, the activity, or the reason).
 - **Strava connection** (`trainer.StravaConnection`): the member's upload grant, one per member.
+- **Manager's link** (`accounts.ManagerInvite`): a member's key for the people they will manage, one
+  per member, and when it was made.
+- **Managed member** (`accounts.ManagedMember`): manager, member, when asked, when accepted (empty
+  while it waits); one per pair, never one's own.
 
 ## Local assumptions
 
