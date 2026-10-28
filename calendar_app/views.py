@@ -433,6 +433,20 @@ class ListingIndexMixin:
         return response
 
 
+def overlapping(qs, date_from: datetime.date | None, date_to: datetime.date | None):
+    """The events of ``qs`` that run on any day from ``date_from`` to ``date_to``, either end open.
+
+    A race from Friday to Sunday is a weekend race, and one that began last week is still on: the list
+    and the map show what the calendar's grid shows (issue #352), which asks FullCalendar's range the
+    same way with its end excluded.
+    """
+    if date_from is not None:
+        qs = qs.filter(Q(date_end__gte=date_from) | Q(date_end__isnull=True, date_start__gte=date_from))
+    if date_to is not None:
+        qs = qs.filter(date_start__lte=date_to)
+    return qs
+
+
 def end_of_month(day: datetime.date) -> datetime.date:
     """The last day of the month `day` falls in."""
     return day.replace(day=monthrange(day.year, day.month)[1])
@@ -677,10 +691,7 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
             qs = qs.filter(location_id__in=_location_descendant_pks(chosen["location"]))
         qs = _apply_favorite_filter(qs, self.request)
 
-        qs = qs.filter(date_start__gte=date_from)
-        if date_to is not None:
-            qs = qs.filter(date_start__lte=date_to)
-        qs = qs.order_by("date_start")
+        qs = overlapping(qs, date_from, date_to).order_by("date_start")
         paginator = Paginator(qs, 20)
         page = paginator.get_page(self.request.GET.get("page", 1))
         context["competitions"] = page
@@ -759,12 +770,9 @@ class CalendarMapAPIView(View):
             location__is_deleted=False,
         ).select_related("location")
         qs = listed_for(qs, request.user)
-        date_from = _parse_date(request.GET.get("date_from"), None)
-        date_to = _parse_date(request.GET.get("date_to"), None)
-        if date_from:
-            qs = qs.filter(date_start__gte=date_from)
-        if date_to:
-            qs = qs.filter(date_start__lte=date_to)
+        qs = overlapping(
+            qs, _parse_date(request.GET.get("date_from"), None), _parse_date(request.GET.get("date_to"), None)
+        )
         qs = _apply_id_filters(
             qs,
             request.GET.getlist("event_type"),
