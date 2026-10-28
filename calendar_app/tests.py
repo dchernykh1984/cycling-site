@@ -1794,7 +1794,7 @@ class CompetitionDirectionLocationLabelTests(TestCase):
 
 
 class CompetitionListColumnsViewTests(TestCase):
-    def test_list_shows_direction_country_region_city_columns(self):
+    def test_list_shows_direction_and_place_columns(self):
         country = Location.add_root(name_ru="Kazakhstan", name_kk="Kazakhstan", name_en="Kazakhstan")
         region = country.add_child(name_ru="Almaty Region", name_kk="Almaty Region", name_en="Almaty Region")
         city = region.add_child(name_ru="Almaty", name_kk="Almaty", name_en="Almaty")
@@ -1808,12 +1808,13 @@ class CompetitionListColumnsViewTests(TestCase):
         )
         response = self.client.get(in_language(reverse("calendar_list"), "en"), HTTP_ACCEPT_LANGUAGE="en")
         # Multi-valued columns are pluralized; single-valued ones stay singular.
-        for header in ("Type", "Directions", "Disciplines", "Country", "Region", "City", "Location"):
+        for header in ("Type", "Directions", "Disciplines", "Location"):
             self.assertContains(response, f"<th>{header}</th>")
-        self.assertNotContains(response, "<th>Discipline</th>")
+        # The place is one column, from the start point out (issue #383)
+        for header in ("Discipline", "Country", "Region", "City"):
+            self.assertNotContains(response, f"<th>{header}</th>")
         self.assertContains(response, "Road")
-        self.assertContains(response, "Kazakhstan")
-        self.assertContains(response, "Almaty Region")
+        self.assertContains(response, "Almaty, Almaty Region, Kazakhstan")
 
 
 class MultiLocationFilterTests(TestCase):

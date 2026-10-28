@@ -78,14 +78,6 @@ _DESCRIBE = """
 # What broke a rule when the rule came in, by cause. Each entry names its skin, and the set only
 # shrinks: a fixed break is dropped here, a new one fails. The orange skin carries its own templates
 # and breaks none of these.
-# The list's table is fixed at nine columns and lets words break anywhere: its headings and dates
-# split mid-word on a desktop and on a tablet on its side.
-_TABLE_BREAKS_WORDS = {
-    f"{skin}|letters/{viewport}/{lang}/list"
-    for skin in ("light", "dark")
-    for viewport in ("desktop", "tablet-flat")
-    for lang in LANGUAGES
-}
 # Lux's btn-outline-secondary in the light skin: grey on white at rest (2.86), white on grey under
 # the pointer (1.49). The unselected tabs and the share button; on a phone the filter button and
 # the share button are icons alone, known by their outline (3:1).
@@ -106,7 +98,7 @@ _LIGHT_OUTLINE_BUTTONS = (
     | {f"light|contrast/light/desktop/{tab}/[data-copied-label]/{state}" for tab in TABS for state in STATES}
     | {f"light|border/light/phone/{tab}/[data-copied-label]" for tab in TABS}
 )
-KNOWN: set[str] = _TABLE_BREAKS_WORDS | _LIGHT_OUTLINE_BUTTONS
+KNOWN: set[str] = _LIGHT_OUTLINE_BUTTONS
 
 
 def _breaks(found):

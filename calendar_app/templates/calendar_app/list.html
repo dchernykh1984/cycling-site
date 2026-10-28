@@ -225,17 +225,16 @@ breakpoint where the filters fold away too.{% endcomment %}
 </div>
 <div class="table-responsive d-none d-lg-block">
   <table class="table table-hover align-middle table-sm small calendar-list-table">
+    {% comment %}Seven columns, the place in one: at 1024px the headings and a date fit whole in every
+    language (issue #383); four place columns broke "Directions" and a date mid-word.{% endcomment %}
     <colgroup>
-      <col style="width:14%">
-      <col style="width:9%">
-      <col style="width:8%">
-      <col style="width:9%">
-      <col style="width:10%">
-      <col style="width:9%">
-      <col style="width:10%">
-      <col style="width:9%">
+      <col style="width:15%">
       <col style="width:12%">
-      <col style="width:10%">
+      <col style="width:12%">
+      <col style="width:16%">
+      <col style="width:16%">
+      <col style="width:15%">
+      <col style="width:14%">
     </colgroup>
     <thead>
       <tr>
@@ -244,9 +243,6 @@ breakpoint where the filters fold away too.{% endcomment %}
         <th>{% trans "Type" %}</th>
         <th>{% trans "Directions" %}</th>
         <th>{% trans "Disciplines" %}</th>
-        <th>{% trans "Country" %}</th>
-        <th>{% trans "Region" %}</th>
-        <th>{% trans "City" %}</th>
         <th>{% trans "Location" %}</th>
         <th>{% trans "Links" %}</th>
       </tr>
@@ -271,10 +267,7 @@ breakpoint where the filters fold away too.{% endcomment %}
         <td data-label="{% trans 'Type' %}">{{ comp.event_type_label|default:"—" }}</td>
         <td data-label="{% trans 'Directions' %}">{{ comp.direction_label|default:"—" }}</td>
         <td data-label="{% trans 'Disciplines' %}">{{ comp.disciplines_label|default:"—" }}</td>
-        <td data-label="{% trans 'Country' %}">{{ comp.country_label|default:"—" }}</td>
-        <td data-label="{% trans 'Region' %}">{{ comp.region_label|default:"—" }}</td>
-        <td data-label="{% trans 'City' %}">{{ comp.city_label|default:"—" }}</td>
-        <td data-label="{% trans 'Location' %}">{{ comp.location_label|default:"—" }}</td>
+        <td data-label="{% trans 'Location' %}">{{ comp.place_label|default:"—" }}</td>
         <td data-label="{% trans 'Links' %}">
           <div class="d-flex flex-column gap-1">
             {% if comp.url_announcement %}
