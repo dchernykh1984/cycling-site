@@ -278,6 +278,10 @@ class ProfileSectionTests(TestCase):
         self.assertRedirects(response, f"{self.profile}#managed-members", fetch_redirect_response=False)
         self.assertIsNone(managing.invite_of(nameless))
         self.assertContains(self.client.get(self.profile), refusal)
+        nameless.first_name = "Ivan"
+        nameless.save()
+        self._post("account_managing_issue")
+        self.assertIsNone(managing.invite_of(nameless), "a first name alone does not say who asks")
 
     def test_a_link_run_out_says_when_and_offers_a_new_one(self):
         managing.issue_invite(self.coach)
