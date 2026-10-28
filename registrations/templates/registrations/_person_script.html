@@ -1,0 +1,87 @@
+{% comment %}What the registration page does as a person's fields are filled in, for each person's set of
+fields (``.register-person``) on its own: the category list follows the gender and the birth year typed in
+an event that lets anyone be registered, and the city and the team are suggested as they are typed.{% endcomment %}
+<script>
+(function () {
+  const cards = document.querySelectorAll('.register-person');
+{% if is_free %}
+  const allCategories = {{ all_categories_json|safe }};
+  const relayEnabled = {{ relay_enabled|yesno:"true,false" }};
+
+  // Parse a 'YYYY-MM-DD' string as a LOCAL date. new Date('YYYY-MM-DD') parses as UTC, which in
+  // timezones ahead of UTC is an earlier instant than new Date(year, 0, 1) (local); comparing the
+  // two then wrongly drops the boundary birth year (e.g. 2020 for a 2020-2025 category). Both
+  // bounds are inclusive: 2020-2025 means 2020 through 2025 inclusive.
+  function parseLocalDate(s) {
+    const p = String(s).split('-').map(Number);
+    return new Date(p[0], (p[1] || 1) - 1, p[2] || 1);
+  }
+
+  function updateCategories(card) {
+    const gender = card.querySelector('.js-gender:checked')?.value || '';
+    let birthDate = null;
+    if (!relayEnabled) {
+      const birthYearInput = card.querySelector('.js-birth-year');
+      const birthDateInput = card.querySelector('.js-birth-date');
+      if (birthYearInput && birthYearInput.value) {
+        birthDate = new Date(parseInt(birthYearInput.value), 0, 1);
+      } else if (birthDateInput && birthDateInput.value) {
+        birthDate = parseLocalDate(birthDateInput.value);
+      }
+    }
+
+    const select = card.querySelector('.js-category');
+    const current = select.value;
+    // the page's own "select" line, in the page's language, heads the list again
+    const placeholder = select.options[0].cloneNode(true);
+    select.innerHTML = '';
+    select.appendChild(placeholder);
+
+    allCategories.forEach(c => {
+      if (!c.is_open) return;
+      if (gender === 'M' && !c.male) return;
+      if (gender === 'F' && !c.female) return;
+      if (!relayEnabled && birthDate) {
+        if (c.birth_from && birthDate < parseLocalDate(c.birth_from)) return;
+        if (c.birth_to && birthDate > parseLocalDate(c.birth_to)) return;
+      }
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      if (String(c.id) === String(current)) opt.selected = true;
+      select.appendChild(opt);
+    });
+  }
+
+  cards.forEach(card => {
+    card.querySelectorAll('.js-gender').forEach(el => el.addEventListener('change', () => updateCategories(card)));
+    if (!relayEnabled) {
+      const byInput = card.querySelector('.js-birth-year') || card.querySelector('.js-birth-date');
+      if (byInput) byInput.addEventListener('input', () => updateCategories(card));
+    }
+    updateCategories(card);
+  });
+{% endif %}
+
+  // City and team suggestions: each field gets a list of its own
+  function suggest(input, url, listId) {
+    input.addEventListener('input', function () {
+      const q = this.value;
+      if (!q) return;
+      fetch(`${url}?q=${encodeURIComponent(q)}`)
+        .then(r => r.json()).then(data => {
+          let list = document.getElementById(listId);
+          if (!list) { list = document.createElement('datalist'); list.id = listId; document.body.appendChild(list); input.setAttribute('list', listId); }
+          list.innerHTML = data.results.map(item => `<option value="${item.name}">`).join('');
+        });
+    });
+  }
+  cards.forEach((card, i) => {
+    const suffix = i ? `-${i}` : '';
+    const city = card.querySelector('.js-city');
+    if (city) suggest(city, "{% url 'registrations:city_autocomplete' %}", `city-datalist${suffix}`);
+    const team = card.querySelector('.js-team');
+    if (team) suggest(team, "{% url 'registrations:team_autocomplete' %}", `team-datalist${suffix}`);
+  });
+})();
+</script>
