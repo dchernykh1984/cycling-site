@@ -21,7 +21,7 @@ from django.views.generic import View
 
 from locations.maps import start_point
 
-from .models import Competition
+from .models import Competition, usual_event_type_id
 from .views import _apply_id_filters, _location_descendant_pks
 from .visibility import can_open
 
@@ -43,7 +43,7 @@ def filtered_competitions(request: HttpRequest) -> list[Competition]:
         # The venue's fallback mark decides whether its point goes out (start_point): one join,
         # not a query per event.
         .select_related("location", "location__fallback_identity")
-        .prefetch_related("disciplines")
+        .prefetch_related("event_types", "disciplines__category")
     )
     qs = _apply_id_filters(
         qs,
@@ -93,7 +93,9 @@ def _stamp(moment: datetime.datetime) -> str:
     return moment.astimezone(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
-def _event_lines(competition: Competition, base_url: str, now: datetime.datetime) -> list[str]:
+def _event_lines(
+    competition: Competition, base_url: str, now: datetime.datetime, usual_type_id: int | None
+) -> list[str]:
     # An all-day VEVENT ends on the day *after* the last one, and a single-day event with no end
     # date still needs a DTEND, or clients disagree about how long it lasts.
     last_day = competition.date_end or competition.date_start
@@ -116,7 +118,7 @@ def _event_lines(competition: Competition, base_url: str, now: datetime.datetime
     point = start_point(competition.location)
     if point is not None:
         lines.append(f"GEO:{point[0]:.6f};{point[1]:.6f}")
-    lines.append(f"DESCRIPTION:{_escape(competition.search_summary())}")
+    lines.append(f"DESCRIPTION:{_escape(competition.search_summary(usual_type_id))}")
     lines.append("END:VEVENT")
     return lines
 
@@ -131,8 +133,9 @@ def build_calendar(competitions: list[Competition], base_url: str) -> str:
         "METHOD:PUBLISH",
         "X-WR-CALNAME:Universal Bicycle Team",
     ]
+    usual_type_id = usual_event_type_id()
     for competition in competitions:
-        lines.extend(_event_lines(competition, base_url, now))
+        lines.extend(_event_lines(competition, base_url, now, usual_type_id))
     lines.append("END:VCALENDAR")
     return "\r\n".join(_fold(line) for line in lines) + "\r\n"
 
@@ -201,7 +204,7 @@ class NewCompetitionsFeed(Feed):
                 approved_at__isnull=False,
             )
             .select_related("location")
-            .prefetch_related("disciplines")
+            .prefetch_related("event_types", "disciplines__category")
             .order_by("-approved_at", "-pk")[: self.item_count]
         )
 

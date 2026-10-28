@@ -39,6 +39,15 @@ class EventType(models.Model):
         return self.name or f"EventType #{self.pk}"
 
 
+def usual_event_type_id() -> int | None:
+    """The event type first in the list's order, which an event's description leaves unsaid (issue #334).
+
+    Most events are of that kind, so naming it would only lengthen every description; the rule
+    follows the order the types are kept in, not a name written here.
+    """
+    return EventType.objects.order_by("order", "pk").values_list("pk", flat=True).first()
+
+
 class DisciplineCategory(models.Model):  # type: ignore[django-manager-missing]
     objects: ClassVar[models.Manager["DisciplineCategory"]]
     name = models.CharField(max_length=100)
@@ -269,24 +278,39 @@ class Competition(index.Indexed, models.Model):
         self.invite_key = uuid.uuid4()
         self.save(update_fields=["invite_key"])
 
-    def search_summary(self) -> str:
+    def search_summary(self, usual_type_id: int | None = None) -> str:
         """One sentence about this event, for the page's meta description.
 
         Built from the facts a search result needs -- what, when, where, which sport -- rather than
         from the organizer's HTML, which is often several screens of regulations and starts with a
         greeting. Every competition page used to carry the same site-wide sentence, which told a
         search engine nothing that distinguished one race from another.
+
+        Its kind follows, unless it is the usual one (``usual_type_id``, looked up when not given:
+        a feed of many events looks it up once), and a direction's catch-all discipline reads as
+        its direction -- "Road Cycling", not "Other (Road Cycling)" (issue #334).
         """
         from django.utils.formats import date_format
         from django.utils.translation import gettext as _
+
+        from .listing_seo import CATCH_ALL_DISCIPLINE_PREFIX
 
         when = date_format(self.date_start, "j E Y")
         if self.date_end and self.date_end != self.date_start:
             when = f"{when} - {date_format(self.date_end, 'j E Y')}"
         where = ", ".join(part for part in (self.city_label, self.country_label) if part)
-        kinds = ", ".join(d.name for d in self.disciplines.all()[:3])
+        usual = usual_type_id if usual_type_id is not None else usual_event_type_id()
+        types = ", ".join(t.name for t in self.event_types.all() if t.pk != usual)
+        names: list[str] = []
+        for d in self.disciplines.all():
+            name = d.category.name if (d.name_en or "").startswith(CATCH_ALL_DISCIPLINE_PREFIX) else d.name
+            if name not in names:
+                names.append(name)
+        kinds = ", ".join(names[:3])
 
         parts = [f"{self.title}: {when}" + (f", {where}" if where else "") + "."]
+        if types:
+            parts.append(_("Type: %(types)s.") % {"types": types})
         if kinds:
             parts.append(_("Disciplines: %(kinds)s.") % {"kinds": kinds})
         parts.append(_("Details, start point and results on the Universal Bicycle Team calendar."))
