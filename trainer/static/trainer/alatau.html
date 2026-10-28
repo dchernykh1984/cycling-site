@@ -3560,7 +3560,7 @@ $('#btnConnect').onclick = () => Sensors.add();
 $('#btnStart').onclick = async () => { groupRide = null; if (mpMyGroup()) await mpLeaveMyGroup(); startRace(); };
 $('#mpCreate').onclick = mpCreateGroup;
 // когда шрифт загрузится, перерисовываем форму, чтобы надпись была нужным шрифтом
-try { document.fonts && document.fonts.ready.then(() => { setPlayerChar(settings.char); setPreview(settings.char); }); } catch (e) {}
+try { document.fonts && document.fonts.ready.then(() => { if (!renderer) return; setPlayerChar(settings.char); setPreview(settings.char); }); } catch (e) {} // no 3D on this device: the page already said so
 $('#btnRecords').onclick = () => { renderRecords(); $('#recM').classList.remove('hidden'); };
 $('#btnRecClose').onclick = () => $('#recM').classList.add('hidden');
 $('#btnRecReset').onclick = e => { const b = e.currentTarget; if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = t('records.resetSure'); return; } Records.reset(); renderRecords(); renderMenu(); };

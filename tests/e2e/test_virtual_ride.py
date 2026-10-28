@@ -379,3 +379,18 @@ def test_leaving_the_voice_chat_drops_what_was_still_waiting_to_be_asked(page: P
     assert page.evaluate("window.posts.filter(p => p.endsWith('/voice/pull'))") == []
     # no failure to report: the line says who is still talking, without the rider who left
     expect(page.locator("#voiceWho")).to_have_text(page.evaluate("TEXT[LANG]['voice.in'].replace('{list}', 'Anna')"))
+
+
+def test_a_device_without_3d_is_told_so_and_the_page_raises_nothing_more(page: Page, live_server):
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    # a browser that cannot draw 3D, as a headless Firefox on CI cannot
+    page.add_init_script(
+        """(() => { const get = HTMLCanvasElement.prototype.getContext;
+            HTMLCanvasElement.prototype.getContext = function (kind, ...rest) {
+                return /webgl/.test(kind) ? null : get.call(this, kind, ...rest); }; })()"""
+    )
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    expect(page.locator("#loading")).to_contain_text(page.evaluate("TEXT.en['boot.failed'].split('{')[0]"))
+    page.wait_for_timeout(1500)  # the fonts arrive after the failed start
+    assert errors == [], errors
