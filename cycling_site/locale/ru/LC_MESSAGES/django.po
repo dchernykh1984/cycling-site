@@ -4444,3 +4444,6 @@ msgstr "Все, кого вы можете здесь зарегистриров
 
 msgid "Already registered for this competition."
 msgstr "Заявка на это мероприятие уже есть."
+
+msgid "Register others"
+msgstr "Зарегистрировать других"

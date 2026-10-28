@@ -22,6 +22,7 @@ from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 from modeltranslation.utils import build_localized_fieldname
 
+from accounts import managing
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from locations.maps import map_links
@@ -905,12 +906,18 @@ class CompetitionDetailView(View):
         # tokens of other organizers' competitions.
         show_upload_token = _can_manage_token(request.user, competition)
         already_registered = False
+        registers_others = False
         if request.user.is_authenticated:
             from registrations.models import CompetitionRegistration
 
             already_registered = CompetitionRegistration.objects.filter(
                 competition=competition, user=request.user
             ).exists()
+            # Registered oneself, one may still register the members one manages (issue #315),
+            # on the page for several, which a relay does not have.
+            registers_others = (
+                already_registered and not competition.relay_enabled and bool(managing.member_ids(request.user))
+            )
 
         comments = competition.comments.select_related("author")
         can_comment = request.user.is_authenticated and (
@@ -950,6 +957,7 @@ class CompetitionDetailView(View):
             # the upload token stay manager-only via is_manager.
             "can_edit": is_manager or is_author,
             "already_registered": already_registered,
+            "registers_others": registers_others,
             "site_base_url": request.build_absolute_uri("/").rstrip("/"),
             "comments": comments,
             "can_comment": can_comment,

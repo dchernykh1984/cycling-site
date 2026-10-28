@@ -215,3 +215,32 @@ class RegisterManyTests(TestCase):
                 said = translation.gettext("%(name)s (you)") % {"name": "Ivan Petrov"}
                 self.assertContains(response, said)
                 self.assertNotEqual(said, "Ivan Petrov (you)")
+
+
+class EventPageTests(TestCase):
+    """The event page leads to the page for several even once the reader is registered (issue #315)."""
+
+    def setUp(self):
+        self.coach = make_user("coach", gender="M", birth_date=datetime.date(1985, 5, 5))
+        self.anna = make_user("anna", gender="F", birth_date=datetime.date(2009, 4, 17))
+        self.comp = make_open_competition(registration_mode="self_only")
+        make_registration(self.comp, user=self.coach)
+        self.client.force_login(self.coach)
+        with translation.override("en"):
+            self.page = reverse("competition_detail", args=[self.comp.pk])
+            self.register = reverse("registrations:register", args=[self.comp.pk])
+
+    def test_registered_oneself_one_may_still_register_the_members_one_manages(self):
+        self.assertNotContains(self.client.get(self.page), f'href="{self.register}"')
+        _manage(self.coach, self.anna)
+        page = self.client.get(self.page)
+        self.assertContains(page, "You are registered")
+        self.assertContains(page, f'href="{self.register}"')
+        self.assertContains(page, "Register others")
+
+    def test_a_relay_offers_no_page_for_several(self):
+        _manage(self.coach, self.anna)
+        relay = make_relay_competition()
+        make_registration(relay, user=self.coach)
+        with translation.override("en"):
+            self.assertNotContains(self.client.get(reverse("competition_detail", args=[relay.pk])), "Register others")
