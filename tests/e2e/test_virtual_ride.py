@@ -362,7 +362,9 @@ def test_a_ride_strava_keeps_processing_is_said_to_be_there_later(page: Page):
 def test_every_button_of_the_setup_page_is_big_enough_to_tap_on_a_phone(page: Page, live_server):
     page.set_viewport_size({"width": 360, "height": 740})
     page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=kk")
-    expect(page.locator("#routes button")).to_have_count(4)
+    # the words are in place before the 3D starts, and the buttons with them: a browser that cannot
+    # draw 3D (a headless Firefox on CI) has them too
+    expect(page.locator("#btnStart")).to_have_text(page.evaluate("TEXT.kk.start"))
     small = page.evaluate(
         """() => [...document.querySelectorAll('#menu .btn')].filter(b => b.offsetParent)
             .map(b => [b.id || b.textContent.trim(), b.getBoundingClientRect().height]).filter(([, h]) => h < 44)"""
