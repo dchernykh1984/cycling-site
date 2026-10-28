@@ -45,7 +45,7 @@ def invite_of(user) -> ManagerInvite | None:
 def why_no_link(user) -> str:
     """Why ``user`` may not hand out a link, in the reader's language; empty when they may. Whoever
     opens it has to see who asks, so a member without a name in their profile is asked for one."""
-    if user.get_full_name():
+    if user.first_name.strip() and user.last_name.strip():
         return ""
     return gettext("Add your first and last name to your profile first: whoever opens your link must see who asks.")
 
