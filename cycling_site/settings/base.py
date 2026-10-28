@@ -11,10 +11,12 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+from itertools import pairwise
 from pathlib import Path
 
 import dj_database_url
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 BASE_DIR = PROJECT_DIR.parent
@@ -279,6 +281,17 @@ SKIN_OFFER = DEFAULT_SKIN
 # Monday to Sunday, with Saturday and Sunday the weekend -- for the grid, the periods and their arrows.
 CALENDAR_FIRST_WEEKDAY = env.int("CALENDAR_FIRST_WEEKDAY", default=1)
 CALENDAR_WEEKEND = env.list("CALENDAR_WEEKEND", cast=int, default=[6, 0])
+# The period row's script counts on these: a day out of 0-6, no weekend, or a weekend with a gap
+# would break it on every calendar tab, so the site refuses to start instead.
+if (
+    CALENDAR_FIRST_WEEKDAY not in range(7)
+    or not CALENDAR_WEEKEND
+    or not set(CALENDAR_WEEKEND) <= set(range(7))
+    or any((later - day) % 7 != 1 for day, later in pairwise(CALENDAR_WEEKEND))
+):
+    raise ImproperlyConfigured(
+        "CALENDAR_FIRST_WEEKDAY and CALENDAR_WEEKEND take days 0-6 (0 is Sunday), the weekend's in a row"
+    )
 
 # The view the map opens on for a reader whose places all lie in one of these areas -- the places
 # in the location filter, which a member's saved preferences fill in on a fresh visit. A city and
