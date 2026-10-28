@@ -12,7 +12,7 @@ and see, and one button. Opening it changes nothing; a link that cannot be used 
     {% with name=invite.manager.public_display_name %}
     <h1 class="h3 mb-3">{% blocktrans %}Let {{ name }} manage your registrations and photos?{% endblocktrans %}</h1>
     <p>{% blocktrans %}{{ name }} will be able to register you for events, change and cancel your registrations, and see your race photos and mark them "This is me" or "Not me".{% endblocktrans %}</p>
-    <p>{% trans "They will see your last name, first name, date of birth, gender, city and team, but not your email, and they will not be able to change your profile." %}</p>
+    <p>{% trans "They will see your last name, first name, date of birth, gender, city, team and Strava link, but not your email, and they will not be able to change your profile." %}</p>
     <p class="small text-muted">{% blocktrans %}Your request waits until {{ name }} accepts it. You can take it back in your profile at any time.{% endblocktrans %}</p>
     {% endwith %}
     <form method="post" class="d-flex flex-wrap align-items-center gap-3">

@@ -100,11 +100,12 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
    link has to see who asks.
 3. **Given** someone opens the link, **Then** a visitor signs in first and comes back, and an
    unconfirmed account is told, on the page, to confirm the address and open the link again (sent
-   away to the profile, it would lose the link); the page names the manager, what they may do (register
-   the member, change and cancel their registrations, see their race photos and mark them) and what
-   they will see (last name, first name, date of birth, gender, city, team -- not the e-mail), and
-   asks by an "Allow" button. Opening it grants nothing. A key that is not valid or ran out: a 404
-   saying so; one's own link, a manager already, a request already waiting: a plain message.
+   away to the profile, it would lose the link); the page names the manager, what they may do
+   (register the member, change and cancel their registrations, see their race photos and mark
+   them) and what they will see (last name, first name, date of birth, gender, city, team, and the
+   Strava link an event's form may take -- not the e-mail), and asks by an "Allow" button. Opening
+   it grants nothing. A key that is not valid or ran out: a 404 saying so; one's own link, a
+   manager already, a request already waiting: a plain message.
 4. **Given** "Allow", **Then** the request waits in the manager's section with the member's last
    name, first name, team and year of birth; the manager accepts or rejects each, or all at once. A
    rejected request disappears and may be sent again. The member sees it waiting, with "Withdraw".
