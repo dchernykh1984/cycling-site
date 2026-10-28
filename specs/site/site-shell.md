@@ -33,8 +33,12 @@ browser, as does an unconfirmed account's; for a confirmed member the page saves
 (see [the API](api.md)), and their records -- best time per route, peak power, top speed, totals --
 are derived from those rides and shown on the profile ([accounts](accounts.md)); rides in demo mode
 are kept but never count. Members ride together: the settings page lists who else is on it and the
-open group races; a member gathers a race on the chosen route with a start 20 s to 1 h away, others
-join, and every member's page starts it at the same server time. During a group race, or a free ride
+open group races; a member gathers a race on the chosen route with a start 20 s to 1 h away (the
+page offers 30 s to 1 h), others join, and every member's page starts it at the same server time. Each
+race card has "Share": the phone's share sheet, or the link copied, to `/<lang>/virtual-ride/?group=<id>`;
+that address opens the trainer with the race marked on its card in words and colour and scrolled
+into view, tells a guest to sign in and brings them back to it, and says when the race was cancelled,
+has started or does not exist. During a group race, or a free ride
 on the same route, each page reports its position about once a second and draws the others
 (`trainer/live.py`; rows older than 15 s count as gone). Group results are the members' saved rides,
 fastest first. The settings page is separate from the ride and offers racing, a cadence plan and free riding. It includes rider

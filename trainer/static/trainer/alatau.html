@@ -113,6 +113,9 @@ button{cursor:pointer}
 .mp-group b{display:block;font-size:14.5px}
 .mp-group small{color:var(--muted);font-size:13px}
 .mp-group .btn{flex:none}
+.mp-group.linked{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
+.mp-group{flex-wrap:wrap}
+.mp-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
 .mp-create{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .mp-create select{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -318,7 +321,8 @@ button{cursor:pointer}
         <p class="hint" id="mpStatus" data-t="mp.connecting"></p>
         <div class="mp-online" id="mpOnline"></div>
         <div class="mp-groups" id="mpGroups"></div>
-        <div class="mp-create"><select id="mpDelay" data-t-label="mp.delay"><option value="30"></option><option value="60" selected></option><option value="120"></option><option value="300"></option></select><button class="btn" id="mpCreate" type="button" disabled data-t="mp.create"></button></div>
+        <p class="hint hidden" id="mpNote" role="status"></p>
+        <div class="mp-create"><select id="mpDelay" data-t-label="mp.delay"><option value="30"></option><option value="60" selected></option><option value="120"></option><option value="300"></option><option value="900"></option><option value="1800"></option><option value="3600"></option></select><button class="btn" id="mpCreate" type="button" disabled data-t="mp.create"></button></div>
         <p class="hint" data-t="mp.hint"></p>
       </section>
       <section class="box wide" aria-labelledby="hDev">
@@ -549,7 +553,7 @@ const TEXT = {
     "mp.delay": "Через сколько старт",
     "mp.startIn": "Старт через {t}",
     "mp.create": "Собрать групповую гонку",
-    "mp.hint": "Для участников сайта. Групповая гонка идёт по маршруту, выбранному в блоке 1, без ботов: все участники стартуют одновременно, когда закончится отсчёт, а результаты сохраняются в личном кабинете. В свободной езде вы видите всех, кто сейчас катается по тому же маршруту.",
+    "mp.hint": "Для участников сайта. Групповая гонка идёт по маршруту, выбранному в блоке 1, без ботов: все участники стартуют одновременно, когда закончится отсчёт, а результаты сохраняются в личном кабинете. «Поделиться» даёт ссылку на гонку: друзья откроют её здесь и присоединятся. В свободной езде вы видите всех, кто сейчас катается по тому же маршруту.",
     "mp.guest": "Совместная езда и групповые гонки доступны участникам сайта.",
     "mp.offSite": "Совместная езда работает, когда страница открыта на сайте.",
     "mp.others": "Сейчас на странице, кроме вас: {n}.",
@@ -779,7 +783,16 @@ const TEXT = {
     "photo.shotAlt": "Снимок из фоторежима",
     "photo.save": "Чтобы сохранить, нажмите и удерживайте снимок (на компьютере — правый клик и «Сохранить изображение»).",
     "boot.noThree": "Не удалось загрузить 3D-движок. Проверьте подключение к интернету и обновите страницу.",
-    "boot.failed": "Не удалось запустить 3D: {msg}"
+    "boot.failed": "Не удалось запустить 3D: {msg}",
+    "mp.share": "Поделиться",
+    "mp.shareTitle": "Групповая гонка: {route}",
+    "mp.copied": "Ссылка на гонку скопирована: {url}",
+    "mp.copyFailed": "Скопируйте ссылку на гонку: {url}",
+    "mp.byLink": "Гонка из вашей ссылки. ",
+    "mp.guestLinked": "Вас позвали в групповую гонку. Войдите на сайт, чтобы участвовать.",
+    "mp.linkCancelled": "Групповую гонку из ссылки отменили.",
+    "mp.linkStarted": "Групповая гонка из ссылки уже стартовала.",
+    "mp.linkMissing": "Групповой гонки по этой ссылке нет."
   },
   kk: {
     "title": "Алатау — Алматы бойынша виртуалды заездтер",
@@ -829,7 +842,7 @@ const TEXT = {
     "mp.delay": "Старт қашан",
     "mp.startIn": "Старт {t} кейін",
     "mp.create": "Топтық жарыс жинау",
-    "mp.hint": "Сайт қатысушыларына арналған. Топтық жарыс 1-блокта таңдалған маршрут бойынша, боттарсыз өтеді: кері санақ біткенде барлық қатысушылар бір мезетте стартқа шығады, ал нәтижелер жеке кабинетте сақталады. Еркін жүрісте сол маршрутта қазір жүріп жүрген барлығын көресіз.",
+    "mp.hint": "Сайт қатысушыларына арналған. Топтық жарыс 1-блокта таңдалған маршрут бойынша, боттарсыз өтеді: кері санақ біткенде барлық қатысушылар бір мезетте стартқа шығады, ал нәтижелер жеке кабинетте сақталады. «Бөлісу» жарысқа сілтеме береді: достарыңыз оны осында ашып, қосыла алады. Еркін жүрісте сол маршрутта қазір жүріп жүрген барлығын көресіз.",
     "mp.guest": "Бірге жүру және топтық жарыстар сайт қатысушыларына қолжетімді.",
     "mp.offSite": "Бірге жүру бет сайтта ашық болғанда жұмыс істейді.",
     "mp.others": "Қазір бетте сізден басқа: {n}.",
@@ -1059,7 +1072,16 @@ const TEXT = {
     "photo.shotAlt": "Фоторежимнен түсірілген сурет",
     "photo.save": "Сақтау үшін суретті басып ұстап тұрыңыз (компьютерде — оң жақ батырма және «Суретті сақтау»).",
     "boot.noThree": "3D қозғалтқышын жүктеу мүмкін болмады. Интернет байланысын тексеріп, бетті жаңартыңыз.",
-    "boot.failed": "3D іске қосылмады: {msg}"
+    "boot.failed": "3D іске қосылмады: {msg}",
+    "mp.share": "Бөлісу",
+    "mp.shareTitle": "Топтық жарыс: {route}",
+    "mp.copied": "Жарыс сілтемесі көшірілді: {url}",
+    "mp.copyFailed": "Жарыс сілтемесін көшіріңіз: {url}",
+    "mp.byLink": "Сілтемеңіздегі жарыс. ",
+    "mp.guestLinked": "Сізді топтық жарысқа шақырды. Қатысу үшін сайтқа кіріңіз.",
+    "mp.linkCancelled": "Сілтемедегі топтық жарыс болдырылмады.",
+    "mp.linkStarted": "Сілтемедегі топтық жарыс басталып кетті.",
+    "mp.linkMissing": "Бұл сілтеме бойынша топтық жарыс жоқ."
   },
   en: {
     "title": "Alatau — virtual rides around Almaty",
@@ -1109,7 +1131,7 @@ const TEXT = {
     "mp.delay": "When to start",
     "mp.startIn": "Start in {t}",
     "mp.create": "Gather a group race",
-    "mp.hint": "For members of the site. A group race follows the route chosen in block 1, without bots: everyone starts together when the countdown ends, and the results are saved in each member's profile. In a free ride you see everyone riding the same route right now.",
+    "mp.hint": "For members of the site. A group race follows the route chosen in block 1, without bots: everyone starts together when the countdown ends, and the results are saved in each member's profile. “Share” gives a link to the race: friends open it here and join. In a free ride you see everyone riding the same route right now.",
     "mp.guest": "Riding together and group races are for members of the site.",
     "mp.offSite": "Riding together works when the page is open on the site.",
     "mp.others": "On the page besides you: {n}.",
@@ -1339,7 +1361,16 @@ const TEXT = {
     "photo.shotAlt": "Picture from photo mode",
     "photo.save": "To save it, press and hold the picture (on a computer, right-click and choose “Save image”).",
     "boot.noThree": "Could not load the 3D engine. Check your internet connection and reload the page.",
-    "boot.failed": "Could not start 3D: {msg}"
+    "boot.failed": "Could not start 3D: {msg}",
+    "mp.share": "Share",
+    "mp.shareTitle": "Group race: {route}",
+    "mp.copied": "Link to the race copied: {url}",
+    "mp.copyFailed": "Copy the link to the race: {url}",
+    "mp.byLink": "The race from your link. ",
+    "mp.guestLinked": "You were invited to a group race. Sign in to the site to join it.",
+    "mp.linkCancelled": "The group race in your link was cancelled.",
+    "mp.linkStarted": "The group race in your link has already started.",
+    "mp.linkMissing": "There is no group race at this link."
   }
 };
 // t(key, { name }) fills {name}; a key missing in a language falls back to Russian, then to the key
@@ -3022,8 +3053,8 @@ const Site = {
   get(p) { return this.req('GET', p); },
   post(p, b) { return this.req('POST', p, b || {}); },
   loginHref() {
-    let next = location.pathname;
-    try { next = window.top.location.pathname; } catch (e) {}
+    let next = location.pathname + location.search;
+    try { next = window.top.location.pathname + window.top.location.search; } catch (e) {}
     return (Records.loginUrl || '/accounts/login/') + '?next=' + encodeURIComponent(next);
   }
 };
@@ -3059,7 +3090,30 @@ function recordsFromServer(sum, rides, plan) {
   };
 }
 
-const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), lastInp: null, resultsFor: null };
+const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), lastInp: null, resultsFor: null, linkShown: false, linkChecked: false };
+// a group race named by the link the page was opened with (?group=)
+const LINKED = (g => /^[0-9]{1,12}$/.test(g || '') ? +g : null)(new URLSearchParams(location.search).get('group'));
+// the address of a group race: the site's page when it frames the trainer, else this file
+function groupLink(id) {
+  let base = location.origin + location.pathname + '?lang=' + LANG + '&';
+  try { if (window.top !== window) base = window.top.location.origin + window.top.location.pathname + '?'; } catch (e) {}
+  return base + 'group=' + id;
+}
+function mpNote(text) { const el = $('#mpNote'); el.textContent = text; el.classList.toggle('hidden', !text); }
+async function mpShare(g) {
+  const url = groupLink(g.id);
+  try {
+    if (navigator.share) { await navigator.share({ title: t('mp.shareTitle', { route: routeTitle(g) }), url }); return; }
+    await navigator.clipboard.writeText(url); mpNote(t('mp.copied', { url }));
+  } catch (e) { if (e.name !== 'AbortError') mpNote(t('mp.copyFailed', { url })); }
+}
+// a linked race that is not open any more says why, once
+async function mpCheckLink() {
+  if (!LINKED || MP.linkChecked || MP.groups.some(g => g.id === LINKED)) return;
+  MP.linkChecked = true;
+  try { const g = await Site.get('/groups/' + LINKED); mpNote(g.cancelled ? t('mp.linkCancelled') : t('mp.linkStarted')); }
+  catch (e) { if (e.status === 404) mpNote(t('mp.linkMissing')); }
+}
 let groupRide = null;   // { gid, startAt } во время групповой гонки
 let rideMode = 'race';  // режим текущего заезда: race | plan | free
 const MP_COLORS = [0x2f6db5, 0x3f8f5a, 0x7a4fb0, 0x1f9aa3, 0xb53f7a, 0xe5a23a, 0x5a6470, 0xd36b2c, 0x2c3e8f, 0x8fa33a];
@@ -3084,7 +3138,7 @@ async function mpPoll() {
     MP.offset = Date.parse(res.server_now) - (t0 + t1) / 2;
     MP.online = res.online || []; MP.riders = res.riders || []; MP.recv = t1;
     if (!riding) MP.groups = res.groups || [];
-    if (phase === 'menu') { mpMaybeStart(); renderMP(); } else mpSyncRemotes();
+    if (phase === 'menu') { mpMaybeStart(); renderMP(); mpCheckLink(); } else mpSyncRemotes();
   } catch (e) {
     if (e.status === 401 || e.status === 403) { MP.status = 'guest'; renderMP(); MP.busy = false; return; }
   }
@@ -3154,7 +3208,7 @@ function renderMP() {
   online.innerHTML = '';
   if (MP.status !== 'on') {
     create.disabled = true; box.innerHTML = '';
-    if (MP.status === 'guest') { st.innerHTML = escapeHTML(t('mp.guest')) + ' <a href="' + escapeHTML(Site.loginHref()) + '" target="_top">' + escapeHTML(t('signIn')) + '</a>'; }
+    if (MP.status === 'guest') { st.innerHTML = escapeHTML(LINKED ? t('mp.guestLinked') : t('mp.guest')) + ' <a href="' + escapeHTML(Site.loginHref()) + '" target="_top">' + escapeHTML(t('signIn')) + '</a>'; }
     else st.textContent = MP.status === 'connecting' ? t('mp.connecting') : t('mp.offSite');
     renderStartSum(); return;
   }
@@ -3173,11 +3227,17 @@ function renderMP() {
   MP.groups.forEach(g => {
     const left = Math.max(0, Math.ceil((mpStartLocal(g) - Date.now()) / 1000));
     let card = box.querySelector('[data-gid="' + g.id + '"]');
-    if (!card) { card = document.createElement('div'); card.dataset.gid = g.id; card.innerHTML = '<div><b></b><small></small></div><button class="btn" type="button"></button>'; box.appendChild(card); }
-    card.className = 'mp-group' + (g.is_member ? ' on' : '');
+    if (!card) {
+      card = document.createElement('div'); card.dataset.gid = g.id;
+      card.innerHTML = '<div><b></b><small></small></div><div class="mp-acts"><button class="btn act" type="button"></button><button class="btn share" type="button"></button></div>';
+      box.appendChild(card);
+    }
+    card.className = 'mp-group' + (g.is_member ? ' on' : '') + (g.id === LINKED ? ' linked' : '');
+    if (g.id === LINKED && !MP.linkShown) { MP.linkShown = true; card.scrollIntoView({ block: 'center' }); } // what the link named
     card.querySelector('b').textContent = (g.is_host ? t('mp.yours') : t('mp.hostGathers', { name: g.host.name })) + ': ' + routeTitle(g);
-    card.querySelector('small').textContent = (left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name).join(', ') });
-    const btn = card.querySelector('button'); btn.disabled = false;
+    card.querySelector('small').textContent = (g.id === LINKED ? t('mp.byLink') : '') + (left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name).join(', ') });
+    const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
+    const btn = card.querySelector('.act'); btn.disabled = false;
     if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }
     else if (g.is_member) { btn.textContent = t('mp.leave'); btn.onclick = () => mpAction('/groups/' + g.id + '/leave'); }
     else { btn.textContent = t('mp.join'); btn.disabled = !!mine || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }

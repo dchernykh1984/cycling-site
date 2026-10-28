@@ -39,8 +39,18 @@ class VirtualRideTests(TestCase):
             # the frame and the full-screen link both open the trainer in the reader's language
             self.assertContains(self.client.get(url), f"trainer/alatau.html?lang={lang}", count=2)
 
-    def test_the_frame_may_reach_the_trainer_over_bluetooth_and_keep_the_screen_on(self):
-        self.assertContains(self.client.get(reverse("virtual_ride")), 'allow="bluetooth; screen-wake-lock; fullscreen"')
+    def test_a_link_to_a_group_race_reaches_the_trainer(self):
+        with translation_override("kk"):
+            url = reverse("virtual_ride")
+        self.assertContains(self.client.get(url, {"group": "12"}), "alatau.html?lang=kk&amp;group=12", count=2)
+        for junk in ("abc", "12x", "\u00b2", "1" * 13):
+            self.assertContains(self.client.get(url, {"group": junk}), 'alatau.html?lang=kk"', count=2)
+
+    def test_the_frame_may_use_bluetooth_keep_the_screen_on_and_share_a_link(self):
+        self.assertContains(
+            self.client.get(reverse("virtual_ride")),
+            'allow="bluetooth; screen-wake-lock; fullscreen; clipboard-write; web-share"',
+        )
 
     def test_the_trainer_file_ships_with_the_site(self):
         self.assertIn("<!doctype html>", TRAINER.read_text(encoding="utf-8")[:100].lower())

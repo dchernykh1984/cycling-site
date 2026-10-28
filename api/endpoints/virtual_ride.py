@@ -135,6 +135,7 @@ class GroupOut(Schema):
     members: list[MemberOut]
     is_member: bool
     is_host: bool
+    cancelled: bool = False
 
 
 class GroupIn(Schema):
@@ -212,6 +213,7 @@ def _group_out(group: GroupRide, user) -> GroupOut:
         members=[_member(u) for u in members],
         is_member=any(u.pk == user.pk for u in members),
         is_host=group.host_id == user.pk,
+        cancelled=group.cancelled,
     )
 
 
@@ -311,6 +313,13 @@ def create_group(request, payload: GroupIn):
         )
         GroupRideMember.objects.create(group=group, user=request.auth)
     return Status(201, _group_out(group, request.auth))
+
+
+@router.get("/groups/{group_id}", response=GroupOut, auth=member_auth, summary="One group race, as a link names it")
+def get_group(request, group_id: int):
+    """What a shared link opens: the race even when it has started or was cancelled, so the page can say so."""
+    group = get_object_or_404(GroupRide.objects.select_related("host"), pk=group_id)
+    return _group_out(group, request.auth)
 
 
 @router.post("/groups/{group_id}/join", response=GroupOut, auth=member_auth, summary="Join a group race")
