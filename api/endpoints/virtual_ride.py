@@ -399,7 +399,13 @@ def list_rides(request, limit: int = 30):
 
 @router.delete("/rides/{ride_id}", response={204: None}, auth=member_auth, summary="Delete one of my rides")
 def delete_ride(request, ride_id: int):
-    get_object_or_404(VirtualRide, pk=ride_id, user=request.auth).delete()
+    ride = get_object_or_404(VirtualRide, pk=ride_id, user=request.auth)
+    with transaction.atomic():
+        # a group race's places come from its saved rides: one gone, the others move up
+        group = GroupRide.objects.select_for_update().get(pk=ride.group_id) if ride.group_id else None
+        ride.delete()
+        if group is not None:
+            records.rank_group(group)
     return Status(204, None)
 
 

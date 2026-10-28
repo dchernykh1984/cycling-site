@@ -207,6 +207,14 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         self.assertEqual(self.post(self.client_h, f"/groups/{group_id}/cancel").status_code, 200)
         self.assertEqual(self.client_g.get(f"{API}/groups").json(), [])
 
+    def test_deleting_a_ride_of_a_group_race_moves_the_others_up(self):
+        group_id = self.create().json()["id"]
+        self.post(self.client_g, f"/groups/{group_id}/join")
+        self.post(self.client_h, "/rides", _ride(group_id=group_id, duration_s=1520))
+        winner = self.post(self.client_g, "/rides", _ride(group_id=group_id, duration_s=1490)).json()["ride"]["id"]
+        self.assertEqual(self.client_g.delete(f"{API}/rides/{winner}").status_code, 204)
+        self.assertEqual(VirtualRide.objects.get(user=self.host).place, 1)
+
     def test_a_shared_link_leads_to_the_site_s_page_which_hands_out_the_cookie_to_join(self):
         # the trainer file opened on its own has no CSRF cookie, and a newcomer could not join from it
         for client in (self.client, self.client_g):
