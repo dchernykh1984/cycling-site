@@ -32,8 +32,8 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     )
 
     class Gender(models.TextChoices):
-        MALE = "M", "Male"
-        FEMALE = "F", "Female"
+        MALE = "M", _("Male")
+        FEMALE = "F", _("Female")
 
     # The key of a skin under skins/ (cycling_site/skins.py); the folders are the choices.
     theme = models.CharField(max_length=32, default=default_skin)
