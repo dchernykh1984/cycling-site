@@ -1,12 +1,15 @@
 from datetime import date
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
+from django.utils import translation
 from ninja import Query, Router, Schema, Status
 from ninja.errors import HttpError
 
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
 from api.schemas import LocalizedPreviewText, LocalizedStr, LocalizedTitle, Url, localize_field
+from calendar_app.feeds import build_calendar, calendar_response, site_base_url
 from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline, EventType
 from locations.models import (
     Location,
@@ -401,6 +404,20 @@ def get_competition(request, competition_id: int):
     user = request.auth
     _require_visible_or_404(user, competition)
     return _to_detail(competition, user)
+
+
+@router.get("/{competition_id}/ics", auth=optional_auth, summary="One competition's calendar file (iCalendar)")
+def competition_ics(
+    request,
+    competition_id: int,
+    lang: str = Query(settings.LANGUAGE_CODE, pattern="^(" + "|".join(code for code, _ in settings.LANGUAGES) + ")$"),
+):
+    """What "Add to calendar" on the event's page hands a reader (issue #398), in the language asked for."""
+    competition = _get_or_404(competition_id)
+    _require_visible_or_404(request.auth, competition)
+    with translation.override(lang):
+        body = build_calendar([competition], site_base_url(request))
+    return calendar_response(body, f"event-{competition.pk}.ics")
 
 
 @router.post("/", response={201: CompetitionDetailOut}, auth=auth, summary="Create competition")

@@ -6,6 +6,7 @@ the people the page answers.
 """
 
 import datetime
+import uuid
 from decimal import Decimal
 
 from django.test import TestCase
@@ -150,3 +151,45 @@ class ButtonTests(TestCase):
         response = self.client.get(reverse("competition_detail", args=[pending.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "calendar-btn")
+
+
+class ApiFileTests(TestCase):
+    """`GET /api/v1/competitions/{id}/ics`: the same file, under the API's own rule of who sees what."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.author = _user("author", User.Role.ORGANIZER)
+        cls.invitee = _user("invitee", User.Role.PARTICIPANT)
+        for user in (cls.author, cls.invitee):
+            user.api_token = uuid.uuid4()
+            user.save(update_fields=["api_token"])
+
+    def _get(self, competition, user=None, **params):
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {user.api_token}"} if user else {}
+        return self.client.get(f"/api/v1/competitions/{competition.pk}/ics", params, **headers)
+
+    def test_it_is_the_page_s_file_in_the_language_asked_for(self):
+        race = _event(submitted_by=self.author)
+        response = self._get(race, lang="kk")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/calendar; charset=utf-8")
+        [lines] = _events(response.content.decode())
+        self.assertEqual(_field(lines, "SUMMARY"), "Zharys")
+        self.assertTrue(_field(lines, "URL").endswith(f"/kk/calendar/{race.pk}/"), _field(lines, "URL"))
+        # Without a language, the site's own
+        [lines] = _events(self._get(race).content.decode())
+        self.assertEqual(_field(lines, "SUMMARY"), "Gonka")
+
+    def test_a_language_the_site_does_not_speak_is_refused(self):
+        self.assertEqual(self._get(_event(), lang="de").status_code, 422)
+
+    def test_what_the_api_does_not_show_it_does_not_hand_out(self):
+        private = _event(invite_only=True, submitted_by=self.author)
+        CompetitionInvite.objects.create(competition=private, user=self.invitee)
+        pending = _event(status=Competition.Status.PENDING_APPROVAL, approved_at=None, submitted_by=self.author)
+        hidden = _event(is_hidden=True, submitted_by=self.author)
+        for competition in (private, pending, hidden):
+            self.assertEqual(self._get(competition).status_code, 404)
+            # An invitation opens the site for the person who accepted it, not the API (issue #313)
+            self.assertEqual(self._get(competition, self.invitee).status_code, 404)
+            self.assertEqual(self._get(competition, self.author).status_code, 200)
