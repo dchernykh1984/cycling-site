@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AnonymousUser
-from ninja.security import HttpBearer
+from ninja.security import HttpBearer, SessionAuth
 
 
 class ApiTokenAuth(HttpBearer):
@@ -18,6 +18,21 @@ class ApiTokenAuth(HttpBearer):
         request.user = user
         _thread_locals.user = user  # keep audit middleware in sync with Bearer auth
         return user
+
+
+class ConfirmedSessionAuth(SessionAuth):
+    """The site's session, for a member who confirmed their address: an unconfirmed one may not use the API."""
+
+    def authenticate(self, request, key):
+        from accounts.access import needs_email_confirmation
+
+        user = super().authenticate(request, key)
+        return None if user is None or needs_email_confirmation(user) else user
+
+
+# A confirmed member signed in on the site or holding a personal API token: what a member's own
+# actions ask for, from the trainer page to managing other members' registrations.
+member_auth = [ApiTokenAuth(), ConfirmedSessionAuth()]
 
 
 class OptionalApiTokenAuth(HttpBearer):
