@@ -197,6 +197,15 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         self.assertEqual(self.post(self.client_h, f"/groups/{group_id}/cancel").status_code, 200)
         self.assertEqual(self.client_g.get(f"{API}/groups").json(), [])
 
+    def test_a_shared_link_opens_the_race_and_says_when_it_was_cancelled(self):
+        group_id = self.create().json()["id"]
+        opened = self.client_g.get(f"{API}/groups/{group_id}").json()
+        self.assertEqual((opened["id"], opened["cancelled"], opened["is_member"]), (group_id, False, False))
+        self.post(self.client_h, f"/groups/{group_id}/cancel")
+        self.assertTrue(self.client_g.get(f"{API}/groups/{group_id}").json()["cancelled"])
+        self.assertEqual(self.client_g.get(f"{API}/groups/{group_id + 1000}").status_code, 404)
+        self.assertEqual(self.client.get(f"{API}/groups/{group_id}").status_code, 401)
+
     def test_results_put_the_fastest_finisher_first_and_only_members_may_post_to_a_race(self):
         group_id = self.create().json()["id"]
         outsider = _user("carl")

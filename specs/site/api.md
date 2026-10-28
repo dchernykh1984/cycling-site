@@ -44,8 +44,8 @@ and protocols with the event's upload token. The API has no language prefix.
    pages' own rules ([gallery](gallery.md), issue #365).
 7. **Given** the virtual ride, **Then** a confirmed member (session or token) saves finished rides,
    lists and deletes their own, reads their records, gathers, joins, leaves and cancels group races,
-   reads a race's results, and reports their live position to get the riders beside them
-   ([site shell](site-shell.md)).
+   opens one group race by its id as a shared link names it (cancelled ones say so), reads a race's
+   results, and reports their live position to get the riders beside them ([site shell](site-shell.md)).
 
 ### Story 2 -- The timing tools exchange race data (P1)
 

@@ -45,6 +45,12 @@ def test_a_route_record_keeps_its_date_and_demo_label(page: Page, demo: bool):
     expect(page.locator("#recRoutes small")).to_have_text(label)
 
 
+def _cut(source: str, pattern: str) -> str:
+    found = re.search(pattern, source, re.DOTALL | re.MULTILINE)
+    assert found is not None, pattern
+    return found.group()
+
+
 def _trainer_source() -> str:
     return (Path(settings.BASE_DIR) / "trainer/static/trainer/alatau.html").read_text(encoding="utf-8")
 
@@ -81,7 +87,7 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
             window.MP = {status: 'on', online: [], groups: [
                 {id: 7, route: 'center', route_name: 'Center', host, members: [host], is_host: false, is_member: false}
             ]};
-            const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000;
+            const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000, LINKED = null;
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = path => { window.asked = path; };
             eval(words + render);
@@ -90,7 +96,7 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
         }""",
         {"words": _language_block(source), "render": function.group()},
     )
-    button = page.locator("#mpGroups button").element_handle()
+    button = page.locator("#mpGroups button.act").element_handle()
     page.evaluate("renderMP()")  # the lobby's countdown redraws every second
     # A tap that lands between two redraws reaches the same button.
     assert button.evaluate("b => b.isConnected")
@@ -124,3 +130,58 @@ def test_the_trainer_speaks_the_language_of_the_page(page: Page, live_server, la
     assert words[0] != words[1]
     expect(frame.locator("#btnStart")).to_have_text(words[0])
     expect(frame.locator("#hRoute")).to_contain_text(words[2])
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_link_to_a_group_race_reaches_the_framed_trainer(page: Page, live_server):
+    page.goto(f"{live_server.url}/en/virtual-ride/?group=5")
+    frame = page.frame_locator("iframe.virtual-ride-frame").locator("html")
+    expect(frame).to_have_attribute("lang", "en")
+    linked, link, back = frame.evaluate(
+        "() => [LINKED, groupLink(5), decodeURIComponent(Site.loginHref().split('next=')[1])]"
+    )
+    # the race the link named, a link to share that opens the site's page, and a sign-in that returns to it
+    assert (linked, link, back) == (5, f"{live_server.url}/en/virtual-ride/?group=5", "/en/virtual-ride/?group=5")
+
+
+def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
+    source = _trainer_source()
+    pieces = [
+        _cut(source, pattern)
+        for pattern in (
+            r"^function renderMP\(\) \{.*?^\}",
+            r"^function mpNote\(text\) \{.*?\}$",
+            r"^async function mpShare\(g\) \{.*?^\}",
+        )
+    ]
+    page.set_content(
+        '<p id="mpStatus"></p><div id="mpOnline"></div><div id="mpGroups"></div><button id="mpCreate"></button>'
+        '<p id="mpNote" class="hidden"></p>'
+    )
+    page.evaluate(
+        """({words, code}) => {
+            Object.defineProperty(navigator, 'share', {value: undefined, configurable: true});
+            Object.defineProperty(navigator, 'clipboard', {value: {writeText: async url => { window.copied = url; }}});
+            const $ = s => document.querySelector(s);
+            const host = {user_id: 1, name: 'Anna'}, LINKED = 7;
+            window.MP = {status: 'on', online: [], groups: [
+                {id: 7, route: 'center', route_name: 'Center', host, members: [host], is_host: false, is_member: false},
+                {id: 8, route: 'center', route_name: 'Center', host, members: [host], is_host: false, is_member: false}
+            ]};
+            const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000, groupLink = id => 'LINK-' + id;
+            const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
+            const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = () => {};
+            eval(words + code);
+            window.t = t;
+            renderMP();
+        }""",
+        {"words": _language_block(source), "code": "\n".join(pieces)},
+    )
+    linked = page.locator('#mpGroups [data-gid="7"]')
+    expect(linked).to_have_class(re.compile(r"\blinked\b"))
+    expect(page.locator('#mpGroups [data-gid="8"]')).not_to_have_class(re.compile(r"\blinked\b"))
+    # the mark is said in words, not only by the frame's colour
+    expect(linked.locator("small")).to_contain_text(page.evaluate("t('mp.byLink').trim()"))
+    linked.get_by_role("button", name=page.evaluate("t('mp.share')")).click()
+    expect(page.locator("#mpNote")).to_have_text(page.evaluate("t('mp.copied', {url: 'LINK-7'})"))
+    assert page.evaluate("window.copied") == "LINK-7"

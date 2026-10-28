@@ -4,17 +4,17 @@
 {% block title %}{{ meta_title }}{% endblock %}
 
 {% block content %}
-{% get_current_language as LANGUAGE_CODE %}
 {% comment %}The trainer is a standalone page with its own styles and scripts, so it runs in an iframe rather
 than inside the site's markup. It talks to a smart trainer over Web Bluetooth and keeps the screen on,
-which an iframe may do only when allowed to. It speaks the language named in its address.{% endcomment %}
+which an iframe may do only when allowed to, and copies or shares a link to a group race. It speaks the
+language named in its address.{% endcomment %}
 <section class="virtual-ride">
   <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2 mb-2">
     <h1 class="h4 mb-0">{% trans "Virtual ride" %}</h1>
-    <a href="{% static 'trainer/alatau.html' %}?lang={{ LANGUAGE_CODE }}" target="_blank" rel="noopener">{% trans "Open full screen" %}</a>
+    <a href="{% static 'trainer/alatau.html' %}?{{ trainer_query }}" target="_blank" rel="noopener">{% trans "Open full screen" %}</a>
   </div>
-  <iframe class="virtual-ride-frame" src="{% static 'trainer/alatau.html' %}?lang={{ LANGUAGE_CODE }}" title="{% trans 'Virtual ride' %}"
-          allow="bluetooth; screen-wake-lock; fullscreen" allowfullscreen></iframe>
+  <iframe class="virtual-ride-frame" src="{% static 'trainer/alatau.html' %}?{{ trainer_query }}" title="{% trans 'Virtual ride' %}"
+          allow="bluetooth; screen-wake-lock; fullscreen; clipboard-write; web-share" allowfullscreen></iframe>
 </section>
 {% endblock %}
 
