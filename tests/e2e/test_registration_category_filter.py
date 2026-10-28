@@ -73,3 +73,14 @@ def test_birth_year_boundaries_keep_category(page: Page, live_server, organizer,
 
     birth_year.fill("2026")
     expect(_category_option(page)).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_list_keeps_its_first_line_in_the_pages_language(page: Page, live_server, organizer, year_competition):
+    """The filter rebuilds the list: its first line stays the page's own, not a Russian one on every page."""
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/en/competitions/{year_competition.pk}/register/")
+    page.check("#gender_f")
+    page.locator('input[name="birth_year"]').fill("2021")
+    expect(_category_option(page)).to_have_count(1)
+    expect(page.locator("#category-select option").first).to_contain_text("select")

@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.html import escape
+from django.utils.translation import gettext
 from django.views import View
 from django.views.generic import TemplateView
 
@@ -199,9 +200,11 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
             relay_birth_years = [escape(y) for y in relay_birth_years_raw]
             relay_cities = [escape(c) for c in relay_cities_raw]
             if not relay_names:
-                form.add_error(None, "At least one participant name is required.")
+                form.add_error(None, gettext("At least one participant name is required."))
             elif len(relay_names) > competition.relay_max_members:
-                form.add_error(None, f"Maximum {competition.relay_max_members} members allowed.")
+                form.add_error(
+                    None, gettext("Maximum %(count)s members allowed.") % {"count": competition.relay_max_members}
+                )
 
         relay_members_post = [
             {"name": n, "birth_year": y, "city": c}
@@ -234,7 +237,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
             with transaction.atomic():
                 competition = Competition.objects.select_for_update().get(pk=competition.pk)
                 if not relay_enabled and check_duplicate(competition, user, first_name, last_name, birth_date):
-                    form.add_error(None, "You are already registered for this competition.")
+                    form.add_error(None, gettext("You are already registered for this competition."))
                     return self._page(request, competition, form, relay_members_post)
 
                 team = None
@@ -249,11 +252,11 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                     and (category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date))
                 )
                 if not cat_ok:
-                    form.add_error("category", "This category is not available.")
+                    form.add_error("category", gettext("This category is not available."))
                     return self._page(request, competition, form, relay_members_post)
 
                 if not competition.is_registration_open():
-                    form.add_error(None, "Registration is no longer available.")
+                    form.add_error(None, gettext("Registration is no longer available."))
                     return self._page(request, competition, form, relay_members_post)
 
                 CompetitionRegistration.objects.create(
@@ -599,9 +602,11 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
 
         if relay_enabled:
             if not relay_names:
-                form.add_error(None, "At least one participant name is required.")
+                form.add_error(None, gettext("At least one participant name is required."))
             elif len(relay_names) > competition.relay_max_members:
-                form.add_error(None, f"Maximum {competition.relay_max_members} members allowed.")
+                form.add_error(
+                    None, gettext("Maximum %(count)s members allowed.") % {"count": competition.relay_max_members}
+                )
 
         if form.is_valid() and not form.errors:
             cleaned = form.cleaned_data
@@ -629,11 +634,11 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
                     and (category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date))
                 )
                 if not cat_ok:
-                    form.add_error("category", "This category is not available.")
+                    form.add_error("category", gettext("This category is not available."))
                     return render(request, self.template_name, ctx)
 
                 if not relay_enabled and check_duplicate(competition, None, first_name, last_name, birth_date):
-                    form.add_error(None, "A participant with this name and birth year is already registered.")
+                    form.add_error(None, gettext("A participant with this name and birth year is already registered."))
                     return render(request, self.template_name, ctx)
 
                 team_name = cleaned.get("team_name", "").strip()
