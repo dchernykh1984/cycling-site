@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% comment %}A member's link for the people they will manage (issue #315): who asks, what they may do
+and see, and one button. Opening it changes nothing; a link that cannot be used says why.{% endcomment %}
+
+{% block title %}{% trans "Registrations and photos" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center managing-join">
+  <div class="col-md-8 col-lg-6">
+    {% if outcome == "asked" %}
+    {% with name=invite.manager.public_display_name %}
+    <h1 class="h3 mb-3">{% blocktrans %}Let {{ name }} manage your registrations and photos?{% endblocktrans %}</h1>
+    <p>{% blocktrans %}{{ name }} will be able to register you for events, change and cancel your registrations, and see your race photos and mark them "This is me" or "Not me".{% endblocktrans %}</p>
+    <p>{% trans "They will see your last name, first name, date of birth, gender, city and team, but not your email, and they will not be able to change your profile." %}</p>
+    <p class="small text-muted">{% blocktrans %}Your request waits until {{ name }} accepts it. You can take it back in your profile at any time.{% endblocktrans %}</p>
+    {% endwith %}
+    <form method="post" class="d-flex flex-wrap align-items-center gap-3">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">{% trans "Allow" %}</button>
+      <a href="{% url 'account_profile' %}" class="btn btn-link">{% trans "Not now" %}</a>
+    </form>
+    {% else %}
+    <h1 class="h3 mb-3">{% trans "Registrations and photos" %}</h1>
+    <div class="alert alert-warning" role="alert">
+      {% if outcome == "invalid" %}{% trans "This link is not valid or has probably expired. Ask whoever sent it for a new one." %}
+      {% elif outcome == "own" %}{% trans "This is your own link: send it to the people whose registrations and photos you will manage." %}
+      {% elif outcome == "managed" %}{% blocktrans with name=invite.manager.public_display_name %}{{ name }} already manages your registrations and photos.{% endblocktrans %}
+      {% elif outcome == "waiting" %}{% blocktrans with name=invite.manager.public_display_name %}Your request to {{ name }} is already waiting to be accepted.{% endblocktrans %}
+      {% endif %}
+    </div>
+    <a href="{% url 'account_profile' %}" class="btn btn-link px-0">{% trans "To your profile" %}</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

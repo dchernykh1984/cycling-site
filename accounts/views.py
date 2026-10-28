@@ -13,11 +13,13 @@ from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import gettext, gettext_lazy
 from django.views import View
 from django.views.generic import TemplateView
 
+from accounts import managing
 from accounts.access import (
     EMAIL_CONFIRMATION_REQUIRED_MESSAGE,
     ParticipantRequiredMixin,
@@ -559,3 +561,33 @@ class SaveFilterPreferencesView(LoginRequiredMixin, View):
         if "location" in scope:
             user.preferred_locations.set(Location.objects.filter(pk__in=chosen("location"), is_deleted=False))
         return JsonResponse({"saved": True})
+
+
+class JoinManagerView(ParticipantRequiredMixin, View):
+    """A member's link for the people they will manage (issue #315): consent by a button, never by opening.
+
+    The page names who asks, what they may do and see, and asks; or says plainly why it cannot --
+    a link that is not valid or ran out, one's own, someone who already manages you or whom you
+    already asked. A visitor is sent to sign in first and brought back by the mixin.
+    """
+
+    template_name = "accounts/managing_join.html"
+
+    def _page(self, request, invite, outcome):
+        response = render(request, self.template_name, {"invite": invite, "outcome": outcome})
+        if outcome == managing.INVALID:
+            response.status_code = 404
+        return response
+
+    def get(self, request, key):
+        invite = managing.find_invite(key)
+        return self._page(request, invite, managing.outcome_for(request.user, invite))
+
+    def post(self, request, key):
+        invite = managing.find_invite(key)
+        outcome = managing.ask(request.user, key)
+        if outcome != managing.ASKED or invite is None:
+            return self._page(request, invite, outcome)
+        name = invite.manager.public_display_name
+        messages.success(request, gettext("Your request is waiting for %(name)s to accept it.") % {"name": name})
+        return redirect(f"{reverse('account_profile')}#my-managers")
