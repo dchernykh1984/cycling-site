@@ -356,3 +356,14 @@ def test_a_ride_strava_keeps_processing_is_said_to_be_there_later(page: Page):
         {"words": _language_block(source), "show": show},
     )
     expect(page.locator("#resStrava")).to_have_text(page.evaluate("t('strava.later')"))
+
+
+def test_every_button_of_the_setup_page_is_big_enough_to_tap_on_a_phone(page: Page, live_server):
+    page.set_viewport_size({"width": 360, "height": 740})
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=kk")
+    expect(page.locator("#routes button")).to_have_count(4)
+    small = page.evaluate(
+        """() => [...document.querySelectorAll('#menu .btn')].filter(b => b.offsetParent)
+            .map(b => [b.id || b.textContent.trim(), b.getBoundingClientRect().height]).filter(([, h]) => h < 44)"""
+    )
+    assert small == [], small
