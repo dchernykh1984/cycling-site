@@ -46,10 +46,10 @@ class VirtualRideTests(TestCase):
         for junk in ("abc", "12x", "\u00b2", "1" * 13):
             self.assertContains(self.client.get(url, {"group": junk}), 'alatau.html?lang=kk"', count=2)
 
-    def test_the_frame_may_use_bluetooth_keep_the_screen_on_share_a_link_and_hear_the_microphone(self):
+    def test_the_frame_may_use_bluetooth_keep_the_screen_on_and_share_a_link(self):
         self.assertContains(
             self.client.get(reverse("virtual_ride")),
-            'allow="bluetooth; screen-wake-lock; fullscreen; clipboard-write; web-share; microphone"',
+            'allow="bluetooth; screen-wake-lock; fullscreen; clipboard-write; web-share"',
         )
 
     def test_the_trainer_file_ships_with_the_site(self):

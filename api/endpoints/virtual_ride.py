@@ -6,7 +6,6 @@ their session; API clients use the personal Bearer token like everywhere else in
 
 from datetime import datetime, timedelta
 
-from django.conf import settings
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -19,7 +18,7 @@ from pydantic import field_validator
 
 from accounts.access import needs_email_confirmation
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
-from trainer import live, records, strava, voice
+from trainer import live, records, strava
 from trainer.models import (
     GroupRide,
     GroupRideMember,
@@ -28,7 +27,6 @@ from trainer.models import (
     StravaConnection,
     StravaUpload,
     VirtualRide,
-    VoiceSession,
 )
 
 router = Router(tags=["virtual-ride"])
@@ -79,8 +77,6 @@ class MeOut(Schema):
     strava_connected: bool = False
     strava_athlete: str = ""
     strava_connect_url: str = ""
-    # voice chat in group races: whether the site offers it
-    voice_available: bool = False
 
 
 class RideIn(Schema):
@@ -243,20 +239,11 @@ class RiderOut(OnlineOut):
     age_s: float
 
 
-class VoiceMemberOut(Schema):
-    user_id: int
-    name: str
-    # changes each time the rider joins, so a page knows to listen to them again
-    key: str
-
-
 class PresenceOut(Schema):
     server_now: datetime
     online: list[OnlineOut]
     groups: list[GroupOut]
     riders: list[RiderOut]
-    voice_group_id: int | None = None
-    voice: list[VoiceMemberOut] = Field(default_factory=list)
 
 
 # -- Helpers ---------------------------------------------------------------
@@ -318,7 +305,6 @@ def me(request):
         strava_connected=connection is not None,
         strava_athlete=connection.athlete_name if connection else "",
         strava_connect_url=reverse("virtual_ride_strava_connect") if strava.available() else "",
-        voice_available=voice.available(),
     )
 
 
@@ -525,116 +511,4 @@ def presence(request, payload: PresenceIn):
     riding = me_row.status == LiveRider.Status.RIDE
     groups = [] if riding else [_group_out(g, request.auth) for g in live.open_groups(now)]
     online_out = [OnlineOut(**_online_out(r)) for r in online_rows]
-    voice_group, in_voice = live.voice_room(request.auth, me_row, now) if voice.available() else (None, [])
-    return PresenceOut(
-        server_now=now,
-        online=online_out,
-        groups=groups,
-        riders=riders,
-        voice_group_id=voice_group.pk if voice_group else None,
-        voice=[VoiceMemberOut(user_id=v.user_id, name=v.user.public_display_name, key=v.track_name) for v in in_voice],
-    )
-
-
-# -- Voice chat in a group race --------------------------------------------
-
-# A session description is a few kilobytes, more with every rider heard; a chat's worth fits well within
-_MAX_SDP = 100_000
-
-
-class VoiceJoinIn(Schema):
-    offer: str = Field(..., min_length=1, max_length=_MAX_SDP)
-    mid: str = Field(..., min_length=1, max_length=16)
-
-
-class VoiceSdpOut(Schema):
-    answer: str
-
-
-class VoicePullIn(Schema):
-    keys: list[str] = Field(..., min_length=1, max_length=50)
-
-    @field_validator("keys")
-    @classmethod
-    def _short_keys(cls, keys):
-        if any(len(k) > 64 for k in keys):
-            raise ValueError("each key is at most 64 characters")
-        return keys
-
-
-class VoiceTrackOut(Schema):
-    key: str
-    user_id: int
-    mid: str
-
-
-class VoicePullOut(Schema):
-    offer: str | None
-    tracks: list[VoiceTrackOut]
-    failed: list[str]
-
-
-class VoiceAnswerIn(Schema):
-    answer: str = Field(..., min_length=1, max_length=_MAX_SDP)
-
-
-def _voice_group(request, group_id: int) -> GroupRide:
-    if not voice.available():
-        raise HttpError(404, "Voice chat is not offered on this site")
-    group = _open_group(group_id)
-    if not group.memberships.filter(user=request.auth).exists():
-        raise HttpError(403, _("Only the riders of this group race talk in its voice chat"))
-    return group
-
-
-def _my_voice(request, group: GroupRide) -> VoiceSession:
-    mine = VoiceSession.objects.filter(user=request.auth, group=group).first()
-    if mine is None:
-        raise HttpError(409, _("Join the voice chat first"))
-    return mine
-
-
-@router.post("/groups/{group_id}/voice", response=VoiceSdpOut, auth=member_auth, summary="Join a race's voice chat")
-def join_voice(request, group_id: int, payload: VoiceJoinIn):
-    """Publish the rider's microphone: the page's offer goes to the media server, its answer comes back."""
-    group = _voice_group(request, group_id)
-    rejoining = VoiceSession.objects.filter(user=request.auth, group=group).exists()
-    if not rejoining and live.in_voice(group).exclude(user=request.auth).count() >= settings.VOICE_MAX_RIDERS:
-        raise HttpError(409, _("This voice chat is full"))
-    try:
-        return VoiceSdpOut(answer=voice.publish(group, request.auth, payload.offer, payload.mid))
-    except voice.VoiceError as exc:
-        raise HttpError(502, str(exc)) from None
-
-
-@router.post("/groups/{group_id}/voice/pull", response=VoicePullOut, auth=member_auth, summary="Hear these riders")
-def pull_voice(request, group_id: int, payload: VoicePullIn):
-    group = _voice_group(request, group_id)
-    mine = _my_voice(request, group)
-    others = list(VoiceSession.objects.filter(group=group, track_name__in=payload.keys).exclude(user=request.auth))
-    if not others:
-        return VoicePullOut(offer=None, tracks=[], failed=payload.keys)
-    try:
-        heard = voice.subscribe(mine, others)
-    except voice.VoiceError as exc:
-        raise HttpError(502, str(exc)) from None
-    known = {o.track_name for o in others}
-    return VoicePullOut(**{**heard, "failed": heard["failed"] + [k for k in payload.keys if k not in known]})
-
-
-@router.post("/groups/{group_id}/voice/answer", response={204: None}, auth=member_auth, summary="Finish hearing them")
-def answer_voice(request, group_id: int, payload: VoiceAnswerIn):
-    group = _voice_group(request, group_id)
-    try:
-        voice.answer(_my_voice(request, group), payload.answer)
-    except voice.VoiceError as exc:
-        raise HttpError(502, str(exc)) from None
-    return Status(204, None)
-
-
-@router.delete("/groups/{group_id}/voice", response={204: None}, auth=member_auth, summary="Leave a race's voice chat")
-def leave_voice(request, group_id: int):
-    mine = VoiceSession.objects.filter(user=request.auth, group_id=group_id).first()
-    if mine is not None:
-        voice.leave(mine)
-    return Status(204, None)
+    return PresenceOut(server_now=now, online=online_out, groups=groups, riders=riders)

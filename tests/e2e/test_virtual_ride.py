@@ -90,7 +90,6 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
             const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000, LINKED = null;
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = path => { window.asked = path; };
-            const Voice = {gid: null}, renderVoice = () => {}, voiceLeave = () => {};
             eval(words + render);
             window.renderMP = renderMP;
             renderMP();
@@ -172,7 +171,6 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
             const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000, groupLink = id => 'LINK-' + id;
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = () => {};
-            const Voice = {gid: null}, renderVoice = () => {}, voiceLeave = () => {};
             eval(words + code);
             window.t = t;
             renderMP();
@@ -259,87 +257,6 @@ def test_the_profile_s_strava_controls_are_big_enough_to_tap(page: Page, live_se
     assert wide >= 44 and high >= 44, (wide, high)
 
 
-def _join_voice(page: Page, *, answer_breaks: bool = False) -> None:
-    """The page's voice code against a media server played by a second connection in the same page."""
-    source = _trainer_source()
-    block = _cut(source, r"^const Voice = \{.*?^function renderVoice\(\) \{.*?^\}")
-    page.set_content(
-        '<div id="voiceBox" class="hidden"><button id="voiceJoin"></button><button id="voiceMute"></button>'
-        '<p id="voiceWho"></p></div><button id="btnMic" class="hidden"></button>'
-    )
-    page.evaluate(
-        """async ({words, block, answerBreaks}) => {
-            // the media server is played by a second connection in the page: it answers, then offers a rider
-            const sfu = new RTCPeerConnection();
-            const gathered = pc => new Promise(done => pc.iceGatheringState === 'complete' ? done()
-                : pc.addEventListener('icegatheringstatechange',
-                    () => pc.iceGatheringState === 'complete' && done()));
-            const tone = () => { const ctx = new AudioContext(), out = ctx.createMediaStreamDestination();
-                const o = ctx.createOscillator(); o.connect(out); o.start(); return out.stream; };
-            Object.defineProperty(navigator, 'mediaDevices',
-                {value: {getUserMedia: async () => tone()}, configurable: true});
-            const Site = {
-                async post(path, body) {
-                    (window.posts = window.posts || []).push(path);
-                    if (path.endsWith('/voice')) {
-                        await sfu.setRemoteDescription({type: 'offer', sdp: body.offer});
-                        await sfu.setLocalDescription(await sfu.createAnswer()); await gathered(sfu);
-                        return {answer: answerBreaks ? 'not a session description' : sfu.localDescription.sdp};
-                    }
-                    if (path.endsWith('/voice/pull')) {
-                        const sender = sfu.addTransceiver(tone().getAudioTracks()[0], {direction: 'sendonly'});
-                        await sfu.setLocalDescription(await sfu.createOffer()); await gathered(sfu);
-                        const tracks = [{key: body.keys[0], user_id: 2, mid: sender.mid}];
-                        return {offer: sfu.localDescription.sdp, tracks, failed: []};
-                    }
-                    if (path.endsWith('/voice/answer')) {
-                        await sfu.setRemoteDescription({type: 'answer', sdp: body.answer}); return null;
-                    }
-                },
-                req: async (method, path) => { window.left = method + ' ' + path; }
-            };
-            const $ = s => document.querySelector(s);
-            const MP = {status: 'on'}, Records = {me: {voice_available: true}};
-            const mpMyGroup = () => ({id: 7}), mpSchedule = () => {};
-            const share = '; Object.assign(window, '
-                + '{Voice, voiceJoin, voiceSync, voiceMute, voiceLeave, voiceMicOn, TEXT, LANG});';
-            eval(words + block + share);
-            await window.voiceJoin(7);
-        }""",
-        {"words": _language_block(source), "block": block, "answerBreaks": answer_breaks},
-    )
-
-
-@pytest.mark.only_browser("chromium")
-def test_a_rider_joins_the_voice_chat_hears_another_and_mutes(page: Page):
-    _join_voice(page)
-    assert page.evaluate("Voice.on")
-    # the microphone starts muted, and the rider is told so in words
-    expect(page.locator("#btnMic")).to_have_attribute("aria-pressed", "false")
-    page.evaluate("voiceSync([{user_id: 2, name: 'Anna', key: 'k2'}])")
-    page.wait_for_function("document.querySelectorAll('audio').length === 1")
-    assert page.evaluate("document.querySelector('audio').srcObject.getAudioTracks().length") == 1
-    # the lobby's button says what a tap does; the ride's microphone button says whether it is on
-    expect(page.locator("#voiceMute")).to_have_text(page.evaluate("TEXT[LANG]['voice.unmute']"))
-    assert page.locator("#voiceMute").get_attribute("aria-pressed") is None
-    page.click("#voiceMute")
-    expect(page.locator("#voiceMute")).to_have_text(page.evaluate("TEXT[LANG]['voice.mute']"))
-    expect(page.locator("#btnMic")).to_have_attribute("aria-pressed", "true")
-    assert page.evaluate("voiceMicOn()")
-    page.evaluate("voiceSync([])")  # Anna left: her sound stops
-    expect(page.locator("audio")).to_have_count(0)
-    page.click("#voiceJoin")  # now "Leave voice chat"
-    assert page.evaluate("[Voice.on, window.left]") == [False, "DELETE /groups/7/voice"]
-
-
-@pytest.mark.only_browser("chromium")
-def test_a_voice_chat_that_fails_to_connect_leaves_no_rider_behind_on_the_server(page: Page):
-    _join_voice(page, answer_breaks=True)
-    # the server may already have published the microphone: the page takes it back
-    assert page.evaluate("[Voice.on, window.left]") == [False, "DELETE /groups/7/voice"]
-    expect(page.locator("#voiceWho")).to_contain_text(page.evaluate("TEXT[LANG]['voice.failed'].split('{')[0]"))
-
-
 def test_a_ride_strava_keeps_processing_is_said_to_be_there_later(page: Page):
     source = _trainer_source()
     show = _cut(source, r"^let stravaFor = null;.*?^function stravaShow\(rideId, s, tries = 0\) \{.*?^\}")
@@ -368,17 +285,6 @@ def test_every_button_of_the_setup_page_is_big_enough_to_tap_on_a_phone(page: Pa
             .map(b => [b.id || b.textContent.trim(), b.getBoundingClientRect().height]).filter(([, h]) => h < 44)"""
     )
     assert small == [], small
-
-
-@pytest.mark.only_browser("chromium")
-def test_leaving_the_voice_chat_drops_what_was_still_waiting_to_be_asked(page: Page):
-    _join_voice(page)
-    # a newcomer is asked for, and the rider leaves before the media server is asked
-    page.evaluate("voiceSync([{user_id: 2, name: 'Anna', key: 'k2'}]); voiceLeave();")
-    page.wait_for_timeout(500)
-    assert page.evaluate("window.posts.filter(p => p.endsWith('/voice/pull'))") == []
-    # no failure to report: the line says who is still talking, without the rider who left
-    expect(page.locator("#voiceWho")).to_have_text(page.evaluate("TEXT[LANG]['voice.in'].replace('{list}', 'Anna')"))
 
 
 def test_a_device_without_3d_is_told_so_and_the_page_raises_nothing_more(page: Page, live_server):
