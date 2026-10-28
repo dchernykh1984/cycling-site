@@ -414,6 +414,8 @@
         <p class="text-muted small">{% trans "No registrations yet." %}</p>
         {% endif %}
 
+        {% if managing %}{% include "accounts/_managing.html" %}{% endif %}
+
         <h2 class="h5 mb-3 mt-2">{% trans "Events I submitted" %}</h2>
         {% if my_competitions %}
         <div class="table-responsive mb-3">

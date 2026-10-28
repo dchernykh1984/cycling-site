@@ -125,6 +125,21 @@ def role_ladder(user) -> list[dict]:
     return [{"value": role, "label": labels[role], "is_current": role == user.role} for role in User.ROLE_HIERARCHY]
 
 
+def _managing_context(request, user):
+    """The profile's two sections on managing registrations and photos (issue #315)."""
+    invite = managing.invite_of(user)
+    live = invite is not None and invite.is_valid()
+    return {
+        "invite": invite,
+        "invite_url": request.build_absolute_uri(reverse("account_managing_join", kwargs={"key": invite.key}))
+        if live
+        else "",
+        "managers": list(managing.managers(user)),
+        "waiting": list(managing.waiting(user)),
+        "members": list(managing.members(user)),
+    }
+
+
 class ProfileView(TemplateView):
     template_name = "accounts/profile.html"
 
@@ -153,6 +168,7 @@ class ProfileView(TemplateView):
             from trainer.records import profile_context
 
             context["virtual_ride"] = profile_context(user)
+            context["managing"] = _managing_context(self.request, user)
         from knowledge.models import DraftSubmission
 
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
@@ -591,3 +607,28 @@ class JoinManagerView(ParticipantRequiredMixin, View):
         name = invite.manager.public_display_name
         messages.success(request, gettext("Your request is waiting for %(name)s to accept it.") % {"name": name})
         return redirect(f"{reverse('account_profile')}#my-managers")
+
+
+class ManagingActionView(ParticipantRequiredMixin, View):
+    """The buttons of the profile's sections on managing registrations and photos (issue #315).
+
+    Each acts only on the reader's own rows -- their link, the requests waiting for them, the members
+    they manage, the people managing them -- so an id in the address can never reach anyone else's.
+    """
+
+    action = ""
+
+    def post(self, request, person_id=None):
+        user = request.user
+        {
+            "issue": lambda: managing.issue_invite(user),
+            "delete": lambda: managing.delete_invite(user),
+            "accept": lambda: managing.accept(user, person_id),
+            "reject": lambda: managing.reject(user, person_id),
+            "accept_all": lambda: managing.accept_all(user),
+            "reject_all": lambda: managing.reject_all(user),
+            "drop": lambda: managing.drop(user, person_id),
+            "leave": lambda: managing.leave(user, person_id),
+        }[self.action]()
+        section = "my-managers" if self.action == "leave" else "managed-members"
+        return redirect(f"{reverse('account_profile')}#{section}")

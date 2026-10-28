@@ -645,3 +645,10 @@ main .event-photo-preview img { object-fit: contain; }
     align-items: center;
     justify-content: center;
 }
+/* Managing registrations and photos (issue #315): the profile's buttons and the link's page are tapped
+   on phones -- 44 px whatever height the skin gives a button. */
+.managing .btn, .managing-join .btn {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+}
