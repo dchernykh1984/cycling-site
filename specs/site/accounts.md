@@ -97,7 +97,8 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
    days, with the site's share button; "New link" makes the old one stop working and "Delete link"
    removes it; neither, nor its running out, rejects a request waiting. A link run out says when.
 3. **Given** someone opens the link, **Then** a visitor signs in first and comes back, and an
-   unconfirmed account is asked to confirm; the page names the manager, what they may do (register
+   unconfirmed account is told, on the page, to confirm the address and open the link again (sent
+   away to the profile, it would lose the link); the page names the manager, what they may do (register
    the member, change and cancel their registrations, see their race photos and mark them) and what
    they will see (last name, first name, date of birth, gender, city, team -- not the e-mail), and
    asks by an "Allow" button. Opening it grants nothing. A key that is not valid or ran out: a 404

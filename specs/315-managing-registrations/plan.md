@@ -45,7 +45,8 @@ registering several people, and the sizes on a phone.
 ### Pages
 
 - The link's page, `/<lang>/accounts/managing/join/<key>/` (`JoinManagerView`): a visitor signs in
-  first and comes back; an unconfirmed account is sent to confirm. GET only shows: who asks, what they
+  first and comes back; an unconfirmed account is told there to confirm the address and open the link
+  again, and cannot answer until then. GET only shows: who asks, what they
   may do and see, and "Allow"; POST asks and goes to the profile's `#my-managers`. An invalid or
   expired key is a 404 with the plain message; one's own link, a manager already, a request already
   waiting: a banner.
