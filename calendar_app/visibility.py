@@ -74,6 +74,21 @@ def can_review(user, competition) -> bool:
     return bool(user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ORGANIZER_RANK))
 
 
+def can_open(user, competition) -> bool:
+    """Whether ``user`` may open this event's own page, and its calendar file (issue #398).
+
+    A not-yet-approved event is its author's and its moderators' -- so they can track a submission and
+    read a rejection reason -- a published one whoever can see it, a deleted one nobody's.
+    """
+    from calendar_app.models import Competition
+
+    if competition.is_deleted:
+        return False
+    if competition.status != Competition.Status.APPROVED:
+        return can_review(user, competition)
+    return can_see(user, competition)
+
+
 def listed_for(qs: QuerySet, user) -> QuerySet:
     """The published events in ``qs`` that ``user`` may see in a listing."""
     if is_admin_plus(user):
