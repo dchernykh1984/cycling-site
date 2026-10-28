@@ -2,8 +2,7 @@
 
 **Feature Branch**: `315-managing-registrations`
 **Created**: 2026-10-28
-**Status**: Draft under discussion with the maintainer -- no implementation until the open questions
-below are settled (the maintainer, 2026-10-28); the hand-over and the registration page were agreed the same day (decisions 14-25)
+**Status**: Agreed with the maintainer on 2026-10-28 (decisions 1-26); being implemented
 **Issue**: [#315](https://github.com/dchernykh1984/cycling-site/issues/315) ("coach role"), with the
 photo requirements [#349](https://github.com/dchernykh1984/cycling-site/issues/349) FR-024 and FR-025
 **Input**: A coach, a parent or a team captain registers the people they look after for a start in
@@ -103,13 +102,14 @@ Taken in conversation with the maintainer on 2026-10-28, in the order they came.
 25. **An invite-only event:** a manager who was let in may register a member there, and the member
     is then let in as though they had opened the invitation link themselves.
 
+26. **A member whose profile cannot fill the event's form** -- a self-only event and a profile
+    without gender or birth date, which only the member may fill in (decisions 8 and 20) -- is
+    listed without a checkbox, with a note that their profile is incomplete and that they should be
+    asked to complete it.
+
 ## Open questions
 
-1. **A self-only event and a member whose profile lacks gender or birth date.** Decision 10 has the
-   manager complete what is missing, while decision 20 keeps a self-only registration's identity to
-   the member's own profile, which only its owner changes (decision 8). Proposed: the manager
-   cannot register such a member there, and the form says which fields the member should fill in
-   their profile.
+None left (2026-10-28): the maintainer asked for the plan and the implementation.
 
 ## Requirements already fixed elsewhere
 
