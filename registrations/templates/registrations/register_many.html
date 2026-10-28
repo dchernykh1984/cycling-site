@@ -45,12 +45,14 @@ Those registered by a send lose the checkbox; those who could not be keep it, wi
              id="{{ row.ids }}check"{% if row.checked %} checked{% endif %}>
       <span>{{ row.label }}</span>
     </label>
-    <div class="register-person-form mt-3">
+    {% comment %}A fieldset named after the person: a screen reader says whose "Last name" it is.{% endcomment %}
+    <fieldset class="register-person-form mt-3">
+      <legend class="visually-hidden">{{ row.label }}</legend>
       {% include "registrations/_person_fields.html" with form=row.form p=row.ids required=False person=row.profile %}
       {% if row.form.non_field_errors %}
       <div class="alert alert-danger mb-0">{{ row.form.non_field_errors }}</div>
       {% endif %}
-    </div>
+    </fieldset>
     {% endif %}
   </div>
 </section>

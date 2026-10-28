@@ -97,7 +97,7 @@ def test_ticking_a_person_shows_their_form_and_registers_them(page: Page, live_s
     page.goto(f"{live_server.url}/en/competitions/{comp.pk}/register/")
     hers = page.locator(f"#person-{anna.pk}")
     expect(hers.locator(".register-person-form")).to_be_hidden()
-    hers.get_by_text("Ivanova Anna").click()
+    hers.locator(".register-person-pick").click()
     expect(hers.locator(".register-person-form")).to_be_visible()
     expect(hers.locator(f'input[name="p{anna.pk}-last_name"]')).to_have_value("Ivanova")
     page.locator("#registration-form > button[type='submit']").click()

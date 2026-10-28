@@ -85,8 +85,16 @@ class RegisterManyTests(TestCase):
                 (str(self.boris.pk), "Sokolov Boris"),
             ],
         )
-        self.assertContains(response, f'name="p{self.anna.pk}-last_name" value="Ivanova"')
+        self.assertContains(
+            response, f'name="p{self.anna.pk}-last_name" id="p{self.anna.pk}-last_name" value="Ivanova"'
+        )
         self.assertContains(response, f'name="p{self.anna.pk}-city" value="Taraz"')
+
+    def test_each_persons_fields_are_named_after_them_and_tied_to_their_labels(self):
+        response = self.client.get(self._url())
+        self.assertContains(response, '<legend class="visually-hidden">Ivanova Anna</legend>', html=True)
+        self.assertContains(response, f'for="p{self.anna.pk}-last_name"')
+        self.assertContains(response, f'id="p{self.anna.pk}-last_name"')
 
     def test_a_waiting_request_offers_nobody(self):
         carl = make_user("carl", gender="M", birth_date=datetime.date(2011, 1, 1))
@@ -124,7 +132,7 @@ class RegisterManyTests(TestCase):
         free = make_open_competition(submitted_by=self.organizer)
         response = self.client.get(self._url(free))
         self.assertEqual(self._rows(response)[-1], ("other", "Another person"))
-        self.assertContains(response, 'name="pother-first_name" value=""')
+        self.assertContains(response, 'name="pother-first_name" id="pother-first_name" value=""')
 
     def test_the_ticked_are_registered_as_their_own_with_their_profile_data(self):
         data = {
