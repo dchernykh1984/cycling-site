@@ -13,4 +13,5 @@ urlpatterns = [
     path("role-request/", views.RequestRoleView.as_view(), name="account_request_role"),
     path("hints/<str:key>/dismiss/", views.DismissHintView.as_view(), name="account_dismiss_hint"),
     path("preferences/filters/", views.SaveFilterPreferencesView.as_view(), name="account_save_filters"),
+    path("managing/join/<uuid:key>/", views.JoinManagerView.as_view(), name="account_managing_join"),
 ]

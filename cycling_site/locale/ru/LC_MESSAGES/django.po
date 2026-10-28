@@ -4273,3 +4273,48 @@ msgid_plural "rides"
 msgstr[0] "заезд"
 msgstr[1] "заезда"
 msgstr[2] "заездов"
+
+msgid "Registrations and photos"
+msgstr "Заявки и фото"
+
+#, python-format
+msgid "Let %(name)s manage your registrations and photos?"
+msgstr "%(name)s просит разрешения управлять вашими заявками и фото"
+
+#, python-format
+msgid "%(name)s will be able to register you for events, change and cancel your registrations, and see your race photos and mark them \"This is me\" or \"Not me\"."
+msgstr "%(name)s сможет регистрировать вас на мероприятия, менять и отменять ваши заявки, видеть ваши фото со стартов и отмечать на них «Это я» или «Не я»."
+
+msgid "They will see your last name, first name, date of birth, gender, city and team, but not your email, and they will not be able to change your profile."
+msgstr "Будут видны ваши фамилия, имя, дата рождения, пол, город и команда, но не почта. Изменить ваш профиль будет нельзя."
+
+#, python-format
+msgid "Your request waits until %(name)s accepts it. You can take it back in your profile at any time."
+msgstr "Запрос будет ждать, пока его не примет %(name)s. Отменить разрешение можно в профиле в любой момент."
+
+msgid "Allow"
+msgstr "Разрешить"
+
+msgid "Not now"
+msgstr "Не сейчас"
+
+msgid "This link is not valid or has probably expired. Ask whoever sent it for a new one."
+msgstr "Ссылка недействительна или, вероятно, устарела. Попросите того, кто её прислал, прислать новую."
+
+msgid "This is your own link: send it to the people whose registrations and photos you will manage."
+msgstr "Это ваша собственная ссылка: отправьте её тем, чьими заявками и фото вы будете управлять."
+
+#, python-format
+msgid "%(name)s already manages your registrations and photos."
+msgstr "%(name)s уже управляет вашими заявками и фото."
+
+#, python-format
+msgid "Your request to %(name)s is already waiting to be accepted."
+msgstr "Ваш запрос уже ждёт, пока его примет %(name)s."
+
+msgid "To your profile"
+msgstr "В профиль"
+
+#, python-format
+msgid "Your request is waiting for %(name)s to accept it."
+msgstr "Запрос отправлен и ждёт, пока его примет %(name)s."

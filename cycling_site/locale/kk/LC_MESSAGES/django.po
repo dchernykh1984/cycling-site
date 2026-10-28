@@ -4271,3 +4271,48 @@ msgid "ride"
 msgid_plural "rides"
 msgstr[0] "заезд"
 msgstr[1] "заезд"
+
+msgid "Registrations and photos"
+msgstr "Тіркелулер мен фотолар"
+
+#, python-format
+msgid "Let %(name)s manage your registrations and photos?"
+msgstr "%(name)s сіздің тіркелулеріңіз бен фотоларыңызды басқаруға рұқсат сұрайды"
+
+#, python-format
+msgid "%(name)s will be able to register you for events, change and cancel your registrations, and see your race photos and mark them \"This is me\" or \"Not me\"."
+msgstr "%(name)s сізді іс-шараларға тіркей алады, тіркелулеріңізді өзгертіп, болдырмай алады, жарыстардағы фотоларыңызды көріп, оларға «Бұл мен» немесе «Мен емес» деп белгі қоя алады."
+
+msgid "They will see your last name, first name, date of birth, gender, city and team, but not your email, and they will not be able to change your profile."
+msgstr "Сіздің тегіңіз, атыңыз, туған күніңіз, жынысыңыз, қалаңыз және командаңыз көрінеді, ал поштаңыз көрінбейді. Профиліңізді өзгерту мүмкін болмайды."
+
+#, python-format
+msgid "Your request waits until %(name)s accepts it. You can take it back in your profile at any time."
+msgstr "Сұрауды %(name)s қабылдағанша ол күтіп тұрады. Рұқсатты профиліңізде кез келген уақытта қайтарып алуға болады."
+
+msgid "Allow"
+msgstr "Рұқсат беру"
+
+msgid "Not now"
+msgstr "Қазір емес"
+
+msgid "This link is not valid or has probably expired. Ask whoever sent it for a new one."
+msgstr "Сілтеме жарамсыз немесе мерзімі өтіп кеткен болуы мүмкін. Оны жіберген адамнан жаңасын сұраңыз."
+
+msgid "This is your own link: send it to the people whose registrations and photos you will manage."
+msgstr "Бұл сіздің өз сілтемеңіз: оны тіркелулері мен фотоларын басқаратын адамдарға жіберіңіз."
+
+#, python-format
+msgid "%(name)s already manages your registrations and photos."
+msgstr "%(name)s сіздің тіркелулеріңіз бен фотоларыңызды басқарып отыр."
+
+#, python-format
+msgid "Your request to %(name)s is already waiting to be accepted."
+msgstr "Сұрауыңыз әлі күтуде: оны %(name)s қабылдауы керек."
+
+msgid "To your profile"
+msgstr "Профильге"
+
+#, python-format
+msgid "Your request is waiting for %(name)s to accept it."
+msgstr "Сұрау жіберілді: енді оны %(name)s қабылдауы керек."
