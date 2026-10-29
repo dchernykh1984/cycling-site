@@ -316,8 +316,9 @@ Paying:
   time (a setting, default 30 minutes) and sends the participant to the service with that amount,
   the organizer's identifier and the payment's own identifier; the service's confirmation names the
   payment and is verified before anything changes.
-- **FR-PAY-011**: An entry is paid when it has a confirmed, unrefunded payment; `is_paid` stays the
-  flag the timing tools and the lists read and is kept in step with the payments.
+- **FR-PAY-011**: `is_paid` stays the flag the timing tools and the lists read: a confirmed payment
+  sets it, a refund of the entry's last confirmed payment clears it; values from before this ships
+  are kept as they are.
 - **FR-PAY-012**: Only the participant or their manager (issue #315) starts a payment for an entry
   through an automatic or the link connector; only a manager of the event records a manual payment
   or a refund.
@@ -354,7 +355,7 @@ API:
   one; which connectors an event takes.
 - **Payment**: entry, connector, amount, currency, step, state, external id, recorded by, timestamps
   of start, confirmation, refund; a log of the callbacks received.
-- **CompetitionRegistration.is_paid**: kept; derived from payments.
+- **CompetitionRegistration.is_paid**: kept; set and cleared by payments (FR-PAY-011).
 
 ## Success Criteria *(mandatory)*
 
