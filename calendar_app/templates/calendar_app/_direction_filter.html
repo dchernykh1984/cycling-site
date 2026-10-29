@@ -3,9 +3,11 @@
 Direction -> Discipline multi-select cascade (issue #108), built on the generic
 window.MultiSelectCascade factory. Disciplines of the same name appear under several
 directions; they are merged into one checkbox carrying all matching ids. The deepest
-selected level wins: chosen disciplines go to the GET as ?discipline=, otherwise the
-chosen directions go as ?<dirParam>= (the calendar API reads "direction", the list
-view "discipline_category"). Exposes window.directionFilter + window.applyDirectionParams().
+selected level wins, as in the location filter: with any discipline chosen, only the chosen
+disciplines are shown. Both levels travel -- ?discipline= and ?<dirParam>= (the calendar API
+reads "direction", the list view "discipline_category") -- and the server lets the disciplines
+win, so a ticked direction survives a reload. Exposes window.directionFilter +
+window.applyDirectionParams().
 {% endcomment %}
 <div class="col-sm-6 col-lg-3">
   <label class="form-label form-label-sm mb-1">{% trans "Direction" %}</label>
@@ -77,18 +79,11 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   window.directionFilter = inst;
   window.applyDirectionParams = function (params, dirParam) {
-    // Emit every chosen discipline; and every chosen direction that has no discipline drilled into
-    // it (so e.g. "Road -> ITT" + a second whole direction "MTB" both survive the round-trip,
-    // instead of the deepest level swallowing the direction-only pick).
-    var discPks = inst.levelPks(2);
-    var coveredCats = {};
-    discPks.forEach(function (id) {
-      var d = discById(id);
-      if (d) coveredCats[String(d.category_id)] = 1;
-    });
-    var dirPks = inst.levelPks(1).filter(function (id) { return !coveredCats[String(id)]; });
-    window.appendIdsParam(params, 'discipline', discPks);
-    window.appendIdsParam(params, dirParam, dirPks);
+    // Every chosen discipline and every ticked direction travel. The server lets the disciplines
+    // win, and the page restores its boxes from the address: "Road -> ITT" and then "MTB" keeps MTB
+    // ticked after the list reloads, ready for its own disciplines, though it shows none of them.
+    window.appendIdsParam(params, 'discipline', inst.levelPks(2));
+    window.appendIdsParam(params, dirParam, inst.levelPks(1));
   };
 });
 </script>

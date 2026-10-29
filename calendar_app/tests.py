@@ -830,15 +830,15 @@ class CalendarDirectionFilterTests(TestCase):
         self.assertIn("Road Race Event", titles)
         self.assertNotIn("MTB Race Event", titles)
 
-    def test_direction_and_discipline_filters_are_ored(self):
-        """A whole direction picked alongside another direction's discipline keeps both: an event
-        matches if it has a selected discipline OR a discipline in a selected direction."""
+    def test_a_chosen_discipline_wins_over_the_directions(self):
+        """With a discipline chosen, a ticked direction only offers its disciplines in the picker:
+        the events shown are those of the chosen disciplines, as a city wins over its country."""
         response = self.client.get(
             reverse("calendar_events_api"),
             {"direction": self.road_cat.pk, "discipline": self.mtb_disc.pk},
         )
         titles = [e["title"] for e in json.loads(response.content)]
-        self.assertIn("Road Race Event", titles)  # matched by the road direction
+        self.assertNotIn("Road Race Event", titles)  # the road direction filters nothing here
         self.assertIn("MTB Race Event", titles)  # matched by the mtb discipline
 
     def test_direction_filter_on_list_view(self):
@@ -1955,12 +1955,15 @@ class MultiSelectIdFilterTests(TestCase):
         resp = self.client.get(reverse("calendar_events_api") + f"?discipline={self.road_relay.pk},{self.mtb_relay.pk}")
         self.assertEqual({e["title"] for e in resp.json()}, {"Road Relay", "MTB Relay"})
 
-    def test_direction_and_discipline_ored_with_multi(self):
-        # direction=[Road] OR discipline=[XCO]: all Road events plus the MTB XCO event.
+    def test_a_discipline_wins_over_a_direction_with_multi(self):
+        # direction=[Road] and discipline=[XCO]: the XCO event only, on the calendar API and the list.
         self.assertEqual(
             self._api_titles({"direction": [self.road.pk], "discipline": [self.mtb_disc.pk]}),
-            {"Race Road", "Road Relay", "Train MTB"},
+            {"Train MTB"},
         )
+        resp = self._list({"discipline_category": [self.road.pk], "discipline": [self.mtb_disc.pk]})
+        self.assertContains(resp, "Train MTB")
+        self.assertNotContains(resp, "Race Road")
 
     def test_invalid_value_is_ignored_not_emptied(self):
         titles = self._api_titles({"event_type": ["not-an-int"]})
@@ -3276,21 +3279,20 @@ class DefaultFilterRedirectTests(TestCase):
         self.client.force_login(self.user)
         resp = self.client.get(reverse("calendar"))
         self.assertEqual(resp.status_code, 302)
-        self.assertNotIn("discipline_category=", resp.url)  # MTB covered by the merged ITT group
+        self.assertIn(f"discipline_category={cat2.pk}", resp.url)  # ticked, though the disciplines win
         self.assertIn(f"discipline={road_itt.pk}", resp.url)
         self.assertIn(f"discipline={mtb_itt.pk}", resp.url)
 
-    def test_a_covered_direction_is_not_emitted_alongside_its_discipline(self):
-        # If a discipline under a direction is also preferred, the direction is dropped -- otherwise
-        # the list (OR of category+discipline) and the calendar (widget keeps only the discipline)
-        # would show different result sets for the same saved preferences.
+    def test_a_direction_goes_along_with_its_discipline_which_wins(self):
+        # The saved direction travels so the page shows it ticked, exactly as a hand-picked filter
+        # does; the discipline wins on every page, so the list and the calendar agree.
         disc = Discipline.objects.create(name_ru="ITT", category=self.cat)
         self.user.preferred_directions.add(self.cat)
         self.user.preferred_disciplines.add(disc)
         self.client.force_login(self.user)
         resp = self.client.get(reverse("calendar"))
         self.assertEqual(resp.status_code, 302)
-        self.assertNotIn("discipline_category=", resp.url)
+        self.assertIn(f"discipline_category={self.cat.pk}", resp.url)
         self.assertIn(f"discipline={disc.pk}", resp.url)
 
 

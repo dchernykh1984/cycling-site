@@ -55,8 +55,12 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    the grid and the list; a date range on the list and the map. A level whose every option is ticked
    is sent as its parent, and ids travel comma-joined, so a wide selection stays a short address.
 2. **Given** several values of one filter, **Then** an event matching any of them is shown, once.
-3. **Given** a direction and a discipline both chosen, **Then** they are OR-ed; a location includes
-   everything beneath it in the tree.
+3. **Given** a direction and a discipline both chosen, **Then** the discipline wins, as a city does
+   over its country: only the chosen disciplines are shown, and a ticked direction offers its
+   disciplines in the picker, filtering alone only while none of them is chosen; both travel in the
+   address, so a ticked direction stays ticked after the list reloads. A location includes
+   everything beneath it in the tree. The API's `direction_ids` and `discipline_ids` keep their
+   OR (FR-API-005).
 4. **Given** a junk or unknown id in the address, **Then** it is ignored, not treated as "nothing".
 5. **Given** a member with saved preferences opens a calendar page without a query, **Then** they
    are redirected to it with their preferences applied; an explicit query or the reset link is

@@ -375,8 +375,10 @@ def list_competitions(
     )
     qs = qs.filter(status=status)
     # discipline_ids and direction_ids (DisciplineCategory) are the same taxonomy dimension and are
-    # OR-ed, matching the web calendar/list/map: a competition matches if it has a selected discipline
-    # OR a discipline in a selected direction. distinct() drops the duplicate M2M-join rows.
+    # OR-ed: a competition matches if it has a selected discipline OR a discipline in a selected
+    # direction. That is what v1 has always meant, so it stays (FR-API-005), though the web pages
+    # now let a chosen discipline win over the directions; a client wanting that sends the
+    # disciplines alone. distinct() drops the duplicate M2M-join rows.
     if discipline_ids or direction_ids:
         match = Q()
         if discipline_ids:
