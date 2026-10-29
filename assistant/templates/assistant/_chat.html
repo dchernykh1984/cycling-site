@@ -64,6 +64,7 @@ the event's form, whose fields it reads and sets: a form inside a form is not HT
   var chat = document.getElementById('assistant-form');
   var text = document.getElementById('assistant-text');
   var send = document.getElementById('assistant-send');
+  var attach = document.getElementById('assistant-attach');
   var picker = document.getElementById('assistant-file');
   var titleInput = document.getElementById('id_title_ru');
   var eventForm = titleInput && titleInput.form;
@@ -188,7 +189,8 @@ the event's form, whose fields it reads and sets: a form inside a form is not HT
 
   // One turn: the line is shown at once and taken back if the turn fails, since nothing was kept then.
   function turn(line, attachments) {
-    busy = true; send.disabled = true;
+    // Both buttons wait for the reply: a file attached meanwhile would have no turn to go with.
+    busy = true; send.disabled = true; attach.disabled = true;
     var mine = say('user', line);
     var waiting = say('assistant', words.thinking, 'note');
     return conversation().then(function (id) {
@@ -205,7 +207,7 @@ the event's form, whose fields it reads and sets: a form inside a form is not HT
       say('assistant', error.message || words.failed, 'error');
       return false;
     }).then(function (done) {
-      busy = false; send.disabled = false;
+      busy = false; send.disabled = false; attach.disabled = false;
       return done;
     });
   }
@@ -221,7 +223,7 @@ the event's form, whose fields it reads and sets: a form inside a form is not HT
   });
 
   // A file goes into the event form's own input, then the chat tells the assistant about it.
-  document.getElementById('assistant-attach').addEventListener('click', function () { picker.click(); });
+  attach.addEventListener('click', function () { picker.click(); });
   picker.addEventListener('change', function () {
     var file = picker.files[0];
     picker.value = '';
