@@ -85,8 +85,10 @@ the event's form, whose fields it reads and sets: a form inside a form is not HT
     log.scrollTop = log.scrollHeight;
     return p;
   }
-  say('assistant', words.first);
   history.forEach(function (m) { say(m.role, m.text); });
+  // The page's own question opens a conversation and, on an event's edit page, follows what was said
+  // before; a form that came back with errors simply goes on where it stopped.
+  if (!history.length || cfg.competitionId) say('assistant', words.first);
 
   function show(open) {
     panel.hidden = !open; toggle.hidden = open; toggle.setAttribute('aria-expanded', String(open));
