@@ -89,3 +89,19 @@ class ChatOnThePageTests(TestCase):
             first = gettext("What event would you like to add?")
         self.assertNotEqual(first, "What event would you like to add?")
         self.assertEqual((config["language"], config["words"]["first"]), ("kk", first))
+
+
+class PrivacyPolicyTests(TestCase):
+    LINE = (
+        "<strong>The event assistant.</strong> The site's administrators may add and edit events by talking to an "
+        "assistant on the event's page. What they write to it, and the event's form as it stands, go to a "
+        "language-model provider, which prepares the event's texts; the conversation is kept on the site with its "
+        "event."
+    )
+
+    def test_the_policy_says_the_chat_goes_to_a_language_model_without_naming_one(self):
+        for language in ("en", "ru", "kk"):
+            with self.subTest(language=language), translation.override(language):
+                page = self.client.get(reverse("privacy_policy"))
+                self.assertContains(page, gettext(self.LINE))
+                self.assertNotContains(page, "DeepSeek")
