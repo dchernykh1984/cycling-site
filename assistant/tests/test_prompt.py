@@ -30,6 +30,12 @@ class SystemPromptTests(TestCase):
     def test_it_reads_the_same_on_every_turn(self):
         self.assertEqual(prompt.system_prompt(), prompt.system_prompt())
 
+    def test_the_lists_take_three_queries_however_many_directions(self):
+        for name in ("Trail", "Track"):
+            DisciplineCategory.objects.create(name_ru=name, name_en=name)
+        with self.assertNumQueries(3):
+            prompt.taxonomy()
+
 
 class DescribeFormTests(TestCase):
     def test_a_chosen_venue_is_named_by_its_whole_path(self):
