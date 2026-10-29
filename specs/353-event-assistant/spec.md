@@ -44,16 +44,31 @@ Taken in conversation with the maintainer on 2026-10-29, in the order they came.
    the model; what nobody said stays empty and becomes a recommendation at the end.
 10. **A new venue has its name in each language** (pull request #403), so the assistant can fill
     all three.
+11. **What an announcement says** -- the maintainer's guidance while event 807 was put right by hand,
+    and so what the assistant asks for a ride:
+    - the start: the exact place and the time. Not the date: the event's fields carry it, and the
+      description does not repeat it;
+    - the route: where to, by name; groups that part on the way (an MTB group going on alone)
+      said plainly; the track as the page offers it -- a Strava link and a GPX file to download are
+      two things, named apart;
+    - the finish: where (often at the start);
+    - what happens after: the club's custom, such as tea and coffee at the start for everyone who
+      finished, whatever their strength or speed;
+    - registration on the site, when it is on: optional, what it is for (how many come, waiting for
+      latecomers), and a request to delete one's registration on a change of mind;
+    - the line a chat shows under the link (the preview text): very short -- what and where to
+      ("UBT coffee ride to Yunnatskoye Lake"), the date, the time, the start;
+    - the club's layout: an opening line, a list with bold labels (start, route, finish), then
+      paragraphs; every text in the three languages.
 
 ## Open questions
 
-1. **What the assistant must ask** (NEEDS CLARIFICATION). The maintainer's own list is wanted;
-   the draft offered on 2026-10-29:
-   - a ride: the date and the meeting time; the meeting point on the map; the track (a link, or
-     where the ride goes); distance, climbing and surface; the pace and whether the group waits;
-     who leads and where a cancellation is announced;
-   - a race: the date and start times by distance; start and finish on the map; distances and
-     categories; registration (link, deadline, fee); the regulations; the course.
+1. **What the assistant must ask** (NEEDS CLARIFICATION, in part). For a ride, decision 11 holds
+   what an announcement must say; still open, from the draft offered on 2026-10-29: distance,
+   climbing and surface; the pace and whether the group waits; who leads and where a cancellation
+   is announced. For a race the draft stands, the maintainer's list wanted: the date and start
+   times by distance; start and finish on the map; distances and categories; registration (link,
+   deadline, fee); the regulations; the course.
 2. **Where the conversation is kept.** Proposed: in the browser tab only, nothing of it on the
    server but the token counts of item 8.
 3. **Which key.** Proposed: a DeepSeek key of the site's own, apart from the agents', so that its
