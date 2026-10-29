@@ -2200,7 +2200,7 @@ msgstr ""
 #: skins/orange/templates/base.html:212
 #: skins/orange/templates/home/home_page.html:36
 msgid "News"
-msgstr "Жаналыктар"
+msgstr "Жаңалықтар"
 
 #: cycling_site/templates/base.html:93 skins/orange/templates/base.html:99
 #: skins/orange/templates/base.html:207
@@ -3267,7 +3267,7 @@ msgstr "Орын сақталды."
 
 #: news/feeds.py:18
 msgid "Universal Bicycle Team news"
-msgstr "Universal Bicycle Team жаналыктары"
+msgstr "Universal Bicycle Team жаңалықтары"
 
 #: news/feeds.py:19
 msgid ""
