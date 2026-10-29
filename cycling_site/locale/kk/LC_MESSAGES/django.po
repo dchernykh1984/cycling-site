@@ -1128,7 +1128,7 @@ msgstr "Нөмірге дейін"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:287
 msgid "Max participants"
-msgstr "Қатысушылар саны"
+msgstr "Қатысушылардың ең көп саны"
 
 #: calendar_app/templates/calendar_app/_save_filter.html:14
 msgid "Saved to your preferences"
@@ -2326,7 +2326,7 @@ msgstr "Альбомдар"
 
 #: gallery/models.py:92
 msgid "Caption"
-msgstr "Қолтаңба"
+msgstr "Сурет жазуы"
 
 #: gallery/models.py:101
 msgid "Photo"
