@@ -19,12 +19,12 @@ from django.utils.translation import gettext as _
 
 from assistant import images as pictures
 from assistant import places
-from assistant.prompt import LANGUAGES, TEXT_FIELDS, URL_FIELDS
+from assistant.prompt import LANGUAGES, NEWS_FIELDS, RICH_FIELDS, TEXT_FIELDS, URL_FIELDS
 from calendar_app.models import Competition, Discipline, EventType
 from cycling_site.sanitize import sanitize_rich_html
 
-# A description is not cut: the form's own check bounds it, and a cut would break its HTML.
-_MAX = {"title": 255, "preview_text": Competition._meta.get_field("preview_text").max_length}
+# A description or a body is not cut: the form's own check bounds it, and a cut would break its HTML.
+_MAX = {"title": 255, "preview_text": Competition._meta.get_field("preview_text").max_length, "intro": 500}
 _URL_MAX = Competition._meta.get_field("url_route").max_length or 200
 _SCHEME = re.compile(r"^(?:https?://|mailto:|tel:)?(?:www\.)?", re.IGNORECASE)
 
@@ -84,16 +84,17 @@ class _Checker:
         self.images = images
         self.texts = texts
         # A link may also come from the form as it stands: an edited event's own links, and the ones
-        # its descriptions carry, were written by people too.
-        descriptions = current.get("description")
-        written = list(descriptions.values()) if isinstance(descriptions, dict) else []
+        # its descriptions or a news item's text carry, were written by people too.
+        written = [
+            text for name in RICH_FIELDS if isinstance(current.get(name), dict) for text in current[name].values()
+        ]
         self.sources = [*texts, *(str(current.get(name) or "") for name in URL_FIELDS), *map(str, written)]
         self.rows = rows
         self.point = point
         self.out = Checked()
 
-    def texts_in_three_languages(self, answer: dict) -> None:
-        for name in TEXT_FIELDS:
+    def texts_in_three_languages(self, answer: dict, names: tuple[str, ...]) -> None:
+        for name in names:
             value = answer.get(name)
             if not isinstance(value, dict):
                 continue
@@ -103,7 +104,7 @@ class _Checker:
                 if not isinstance(text, str):
                     continue
                 text = text.strip()
-                if name == "description":
+                if name in RICH_FIELDS:
                     # The page gets the pictures back; what is kept for the conversation does without
                     # them, since the next turn's form brings them again.
                     shown = self._own_links_only(
@@ -205,6 +206,7 @@ class _Checker:
 def check(
     answer: dict,
     *,
+    kind: str = "event",
     current: dict,
     texts: list[str],
     rows: list[dict],
@@ -218,8 +220,10 @@ def check(
     start of a track they attached, and ``images`` the pictures the descriptions' marks stand for.
     """
     checker = _Checker(current, texts, rows, point, images or [])
-    if isinstance(answer, dict):
-        checker.texts_in_three_languages(answer)
+    if isinstance(answer, dict) and kind == "news":
+        checker.texts_in_three_languages(answer, NEWS_FIELDS)
+    elif isinstance(answer, dict):
+        checker.texts_in_three_languages(answer, TEXT_FIELDS)
         checker.dates(answer)
         checker.ids(answer)
         checker.links(answer)

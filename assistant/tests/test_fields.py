@@ -145,3 +145,23 @@ class PlaceTests(TestCase):
     def test_an_answer_that_is_not_an_object_changes_nothing(self):
         checked = _check(["not", "an", "object"])
         self.assertEqual((checked.set, checked.form, checked.notes), ({}, {}, []))
+
+
+class NewsTests(TestCase):
+    def test_a_news_answer_sets_its_texts_and_nothing_an_event_has(self):
+        answer = {
+            "title": {"kk": " Zhanalyq "},
+            "intro": {"en": "x" * 600},
+            "body": {"en": '<p>Text</p><img src="image:1"><script>x</script>'},
+            "date_start": "2026-11-01",
+            "url_route": "https://example.org/r",
+        }
+        checked = fields.check(
+            answer, kind="news", current={}, texts=[], rows=[], images=['<img src="https://example.org/a.png">']
+        )
+        self.assertEqual(set(checked.form), {"title_kk", "intro_en", "body_en"})
+        self.assertEqual(checked.form["title_kk"], "Zhanalyq")
+        self.assertEqual(len(checked.form["intro_en"]), 500)
+        self.assertIn('src="https://example.org/a.png"', checked.form["body_en"])
+        self.assertNotIn("script", checked.form["body_en"])
+        self.assertEqual(checked.notes, [])

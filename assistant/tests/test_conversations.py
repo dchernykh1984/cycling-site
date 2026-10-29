@@ -8,7 +8,7 @@ from django.test import TestCase, override_settings
 from accounts.models import User
 from assistant import conversations
 from assistant.models import Conversation, Message
-from assistant.tests.helpers import city, competition, user, venue
+from assistant.tests.helpers import city, competition, news, user, venue
 
 
 def _turn(conversation, admin, text, **extra):
@@ -95,3 +95,37 @@ class LinkTests(TestCase):
         Conversation.objects.create(competition=self.event)
         self.assertFalse(conversations.link(conversation.pk, self.event, self.admin))
         self.assertFalse(Message.objects.exists())
+
+
+class NewsConversationTests(TestCase):
+    def setUp(self):
+        self.admin = user()
+
+    def test_a_news_item_keeps_one_conversation_of_its_kind(self):
+        item = news()
+        conversation, created = conversations.start(self.admin, item)
+        again, created_again = conversations.start(self.admin, item)
+        self.assertEqual((created, created_again, again.pk), (True, False, conversation.pk))
+        self.assertEqual((conversation.kind, conversation.news, conversation.competition), ("news", item, None))
+
+    def test_a_new_news_items_conversation_is_linked_when_saved_and_only_to_news(self):
+        item, event = news(), competition()
+        about_news, _ = conversations.start(self.admin, kind=Conversation.Kind.NEWS)
+        about_an_event, _ = conversations.start(self.admin)
+        self.assertFalse(conversations.link(about_an_event.pk, item, self.admin))
+        self.assertFalse(conversations.link(about_news.pk, event, self.admin))
+        self.assertTrue(conversations.link(about_news.pk, item, self.admin))
+        about_news.refresh_from_db()
+        self.assertEqual(about_news.news, item)
+
+    @override_settings(ASSISTANT_LLM_API_KEY="sk-test")
+    def test_a_news_turn_uses_the_news_contract_and_its_fields(self):
+        item = news()
+        conversation, _ = conversations.start(self.admin, item)
+        answer = {"reply": "Translated.", "set": {"title": {"kk": "Zhanalyq"}, "date_start": "2026-11-01"}}
+        with mock.patch("assistant.llm.complete", return_value=answer) as complete:
+            turn = _turn(conversation, self.admin, "Translate to Kazakh", form={"title_ru": "Novost"})
+        sent = complete.call_args.args[0]
+        self.assertIn("publishes news", sent[0]["content"])
+        self.assertIn("editing a news item already on the site", sent[-1]["content"])
+        self.assertEqual(turn.form, {"title_kk": "Zhanalyq"})
