@@ -4457,3 +4457,9 @@ msgstr "Сначала укажите в профиле имя и фамилию
 
 msgid "Managing registrations and photos"
 msgstr "Управление заявками и фото"
+
+msgid "Requests to manage their registrations and photos"
+msgstr "Просьбы управлять их заявками и фото"
+
+msgid "Answer"
+msgstr "Ответить"

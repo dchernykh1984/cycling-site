@@ -4455,3 +4455,9 @@ msgstr "Алдымен профиліңізге атыңыз бен тегіңі
 
 msgid "Managing registrations and photos"
 msgstr "Тіркелулер мен фотоларды басқару"
+
+msgid "Requests to manage their registrations and photos"
+msgstr "Тіркелулері мен фотоларын басқаруды сұрайтындар"
+
+msgid "Answer"
+msgstr "Жауап беру"

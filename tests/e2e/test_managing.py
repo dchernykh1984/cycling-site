@@ -63,6 +63,23 @@ def _sign_in(page, live_server, user):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_banner_leads_to_the_requests_and_goes_once_each_is_answered(page: Page, live_server, coach, anna):
+    """Every page says a request waits for the reader; its button opens the list; an answer clears it."""
+    managing.ask(anna, managing.issue_invite(coach).key)
+    page.set_viewport_size({"width": 360, "height": 800})
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/calendar/")
+    banner = page.get_by_role("region", name="Waiting for your answer")
+    expect(banner).to_contain_text("Requests to manage their registrations and photos: 1")
+    banner.get_by_role("link", name="Answer").click()
+    expect(page).to_have_url(re.compile(r"/en/accounts/profile/#managing-waiting$"))
+    expect(page.locator("#managing-waiting")).to_be_in_viewport()
+    page.locator("#managed-members").get_by_role("button", name=re.compile(r"^Accept")).click()
+    expect(page.locator("#managed-members table").first).to_contain_text("Taraz")
+    expect(page.get_by_role("region", name="Waiting for your answer")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_the_link_goes_from_one_profile_to_the_other(page: Page, live_server, coach, anna):
     _sign_in(page, live_server, coach)
     page.goto(f"{live_server.url}/en/accounts/profile/")

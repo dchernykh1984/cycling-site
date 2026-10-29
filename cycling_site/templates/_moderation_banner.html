@@ -22,3 +22,15 @@
     </ul>
 </div>
 {% endif %}
+{% if managing_waiting %}
+{% comment %}Members waiting for the reader to accept or reject managing their registrations and photos
+(issue #315), in the same place and the same look as the queue above, until each one is answered. It
+lives in this file because every skin's own base.html already includes it.{% endcomment %}
+<div class="alert alert-warning border shadow-sm managing" role="region" aria-label="{% trans 'Waiting for your answer' %}">
+    <div class="fw-semibold mb-2">{% trans "Waiting for your answer" %}</div>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span>{% trans "Requests to manage their registrations and photos" %}: {{ managing_waiting }}</span>
+        <a href="{% url 'account_profile' %}#managing-waiting" class="btn btn-sm btn-outline-dark">{% trans "Answer" %}</a>
+    </div>
+</div>
+{% endif %}
