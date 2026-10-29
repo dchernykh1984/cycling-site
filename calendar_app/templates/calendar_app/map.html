@@ -139,15 +139,18 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(function (locations) {
         markersLayer.clearLayers();
         var bounds = [];
+        var pins = [];
         locations.forEach(function (loc) {
           var html = '<strong>' + esc(loc.name) + '</strong>';
           loc.competitions.forEach(function (c) {
             html += '<br><a href="' + esc(c.url) + '" target="_blank" rel="noopener">' +
                     esc(c.title) + '</a> &mdash; ' + esc(c.when);
           });
-          window._mapPin([loc.lat, loc.lng], loc.name).bindPopup(html).addTo(markersLayer);
+          pins.push(window._mapPin([loc.lat, loc.lng], loc.name).bindPopup(html));
           bounds.push([loc.lat, loc.lng]);
         });
+        // All at once: one by one, the clusters would be worked out again after every pin.
+        markersLayer.addLayers(pins);
         if (fitView) {
           // A reader whose places lie in a configured area gets that area -- even in a week with
           // nothing there, rather than a continent because of one race in Amsterdam; the rest is a
