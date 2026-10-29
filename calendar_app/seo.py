@@ -27,8 +27,8 @@ def sports_event(competition, base_url: str) -> str:
         # moved online). A past event simply keeps the default, and its date says the rest.
         "eventStatus": "https://schema.org/EventScheduled",
     }
-    if competition.date_end and competition.date_end != competition.date_start:
-        data["endDate"] = competition.date_end.isoformat()
+    # A one-day race ends the day it starts: search engines ask every event for its end.
+    data["endDate"] = (competition.date_end or competition.date_start).isoformat()
 
     # The event's own preview picture, when it has one and its file is there: the site's mark is not a
     # picture of the event.

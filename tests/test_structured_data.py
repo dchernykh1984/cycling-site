@@ -49,9 +49,9 @@ class SportsEventMarkupTests(TestCase):
         self.assertEqual(data["startDate"], "2026-05-01")
         self.assertEqual(data["endDate"], "2026-05-03")
 
-    def test_a_one_day_race_has_no_end_date(self):
+    def test_a_one_day_race_ends_the_day_it_starts(self):
         comp = _competition("One day race", date_start=datetime.date(2026, 5, 1))
-        self.assertNotIn("endDate", _payload(self.client, comp))
+        self.assertEqual(_payload(self.client, comp)["endDate"], "2026-05-01")
 
     def test_an_event_with_its_own_preview_picture_carries_it_as_its_image(self):
         import io
