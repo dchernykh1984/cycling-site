@@ -4480,3 +4480,6 @@ msgstr "Топ-іс-шара"
 
 msgid "Goes first wherever events are shown: at the head of the list, above a divider; first in its day on the calendar; first at its place on the map."
 msgstr "Іс-шаралар көрсетілетін барлық жерде бірінші тұрады: тізімнің басында, бөлгіштің үстінде; күнтізбеде өз күнінде бірінші; картада өз орнында бірінші."
+
+msgid "Top events"
+msgstr "Топ-іс-шаралар"

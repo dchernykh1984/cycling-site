@@ -2,9 +2,11 @@
 
 import datetime
 import uuid
+from typing import ClassVar
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import User
 from calendar_app.models import Competition
@@ -21,7 +23,7 @@ def _user(name, role):
 def _venue():
     country = Location.add_root(name_ru="KZ", name_en="KZ")
     city = country.add_child(name_ru="Region", name_en="Region").add_child(name_ru="City", name_en="City")
-    return city.add_child(name_ru="Venue", name_en="Venue")
+    return city.add_child(name_ru="Venue", name_en="Venue", lat=43.2, lng=76.9)
 
 
 class TopEventMarkTests(TestCase):
@@ -108,3 +110,60 @@ class TopEventMarkTests(TestCase):
         response = self.client.post("/api/v1/competitions/", created, content_type="application/json", **admin)
         self.assertEqual(response.status_code, 201)
         self.assertIs(response.json()["is_top"], True)
+
+
+class TopEventOrderTests(TestCase):
+    """A top event goes first wherever events are listed."""
+
+    window: ClassVar[dict] = {"date_from": "2027-03-01", "date_to": "2027-03-31"}
+
+    def setUp(self):
+        self.venue = _venue()
+        approved = {"status": Competition.Status.APPROVED, "location": self.venue}
+        self.early = Competition.objects.create(title_ru="Early", date_start=datetime.date(2027, 3, 2), **approved)
+        self.top = Competition.objects.create(
+            title_ru="Top",
+            date_start=datetime.date(2027, 3, 20),
+            date_end=datetime.date(2027, 3, 21),
+            is_top=True,
+            **approved,
+        )
+        self.late = Competition.objects.create(title_ru="Late", date_start=datetime.date(2027, 3, 25), **approved)
+
+    def test_the_list_puts_top_events_first_above_a_divider(self):
+        response = self.client.get("/en/calendar/list/", self.window)
+        self.assertEqual([c.title for c in response.context["competitions"]], ["Top", "Early", "Late"])
+        self.assertContains(response, '<tbody class="calendar-list-rest">', count=1)
+        days = response.context["days"]
+        self.assertEqual(days[0]["label"], "Top events")
+        self.assertEqual([row["comp"].title for row in days[0]["rows"]], ["Top"])
+        self.assertEqual(days[0]["rows"][0]["when"], "20 March \u2013 21 March")
+        self.assertEqual([day["rows"][0]["comp"].title for day in days[1:]], ["Early", "Late"])
+
+    def test_a_page_of_top_events_alone_draws_no_divider(self):
+        Competition.objects.exclude(pk=self.top.pk).update(is_top=True)
+        self.assertNotContains(self.client.get("/en/calendar/list/", self.window), '<tbody class="calendar-list-rest">')
+
+    def test_the_calendar_is_told_which_event_is_top(self):
+        events = self.client.get(reverse("calendar_events_api"), {"start": "2027-03-01", "end": "2027-04-01"}).json()
+        self.assertEqual(
+            {e["title"]: e["extendedProps"]["top"] for e in events}, {"Early": False, "Top": True, "Late": False}
+        )
+
+    def test_the_map_lists_a_top_event_first_at_its_place(self):
+        places = self.client.get(reverse("calendar_map_api"), self.window).json()
+        self.assertEqual([c["title"] for c in places[0]["competitions"]], ["Top", "Early", "Late"])
+
+    def test_the_nearest_events_start_with_the_top_ones(self):
+        from django.contrib.auth.models import AnonymousUser
+
+        from calendar_app.views import upcoming_competitions
+
+        today = timezone.localdate()
+        Competition.objects.all().delete()
+        approved = {"status": Competition.Status.APPROVED, "location": self.venue}
+        Competition.objects.create(title_ru="Soon", date_start=today + datetime.timedelta(days=2), **approved)
+        Competition.objects.create(
+            title_ru="Top later", date_start=today + datetime.timedelta(days=10), is_top=True, **approved
+        )
+        self.assertEqual([c.title for c in upcoming_competitions(AnonymousUser())], ["Top later", "Soon"])
