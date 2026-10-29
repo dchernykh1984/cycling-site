@@ -16,8 +16,9 @@ content, legal pages), `search/`
 
 Every page shares one frame: a sticky navbar (site title, News, Calendar, Map and About when their
 pages exist, Knowledge Base, Gallery ([gallery](gallery.md)), Virtual ride, Search, the skin chooser, the three language buttons, sign-in or the member's
-menu), a banner of moderation tasks for moderators, one setup hint, the page, and a footer with the
-legal pages and a link to report a bug.
+menu), a banner of moderation tasks for moderators and one of requests waiting for a member's answer
+([accounts](accounts.md)), one setup hint, the page, and a footer with the legal pages and a link to
+report a bug.
 
 **Virtual ride** (`trainer/`, `/<lang>/virtual-ride/`) frames a self-contained indoor-trainer page,
 `trainer/static/trainer/alatau.html`, in an iframe that may use Web Bluetooth, the screen wake
