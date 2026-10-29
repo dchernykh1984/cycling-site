@@ -64,7 +64,8 @@ def test_a_city_typed_under_a_chosen_country_comes_from_that_country_only(page: 
     page.goto(f"{live_server.url}{_LIST_URL}")
     open_filter_panel(page)
     page.click("#mf-btn-3")
-    page.locator("#mf-menu-3 .mf-search").fill("Al")
+    # Precise enough to stay under the menu's 200 rows beside the seeded geography.
+    page.locator("#mf-menu-3 .mf-search").fill("Alab")
     cities = page.locator("#mf-menu-3 li.mf-item-row")
     expect(cities.filter(has_text="Alabuga")).to_have_count(1)  # nothing chosen: every country's
 
@@ -103,13 +104,14 @@ def test_namesakes_of_different_regions_are_two_boxes_named_after_their_regions(
     west = Location.objects.get(pk=location_tree["kz"].pk).add_child(
         name="West", name_ru="West", name_kk="West", name_en="West"
     )
-    aktau = {"name": "Aktau", "name_ru": "Aktau", "name_kk": "Aktau", "name_en": "Aktau"}
-    first = west.add_child(**aktau)
-    second = Location.objects.get(pk=location_tree["region"].pk).add_child(**aktau)
+    # A name of its own: the seeded geography has a real Aktau, which a search for one would find too.
+    twin = {"name": "Twinford", "name_ru": "Twinford", "name_kk": "Twinford", "name_en": "Twinford"}
+    first = west.add_child(**twin)
+    second = Location.objects.get(pk=location_tree["region"].pk).add_child(**twin)
     page.goto(f"{live_server.url}{_LIST_URL}?location={first.pk}")
     open_filter_panel(page)
     page.click("#mf-btn-3")
-    page.locator("#mf-menu-3 .mf-search").fill("Aktau")
+    page.locator("#mf-menu-3 .mf-search").fill("Twinford")
     expect(page.locator("#mf-menu-3 li.mf-item-row")).to_have_count(2)
     expect(page.locator(f"#mf-menu-3 li.mf-item-row:has(input[value='{first.pk}'])")).to_contain_text("(West)")
     expect(page.locator(f"#mf-menu-3 input[value='{first.pk}']")).to_be_checked()
