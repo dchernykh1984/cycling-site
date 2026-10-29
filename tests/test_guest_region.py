@@ -57,6 +57,8 @@ class GuestRegionTests(TestCase):
                 self.assertRedirects(response, f"{path}?location={self.north.pk}", fetch_redirect_response=False)
                 self.assertEqual(response.cookies[OFFERED_COOKIE].value, "1")
                 self.assertEqual(response.cookies[OFFERED_COOKIE]["max-age"], "")  # gone with the browser
+                self.assertIn("no-store", response["Cache-Control"])
+                self.assertIn("private", response["Cache-Control"])
 
     def test_a_guest_who_was_offered_their_region_keeps_what_they_chose_after_it(self):
         self.client.cookies[OFFERED_COOKIE] = "1"

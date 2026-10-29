@@ -16,6 +16,7 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.cache import patch_cache_control
 from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 from django.utils.translation import get_language
 from django.utils.translation import gettext as _
@@ -349,6 +350,9 @@ class DefaultFilterRedirectMixin:
                 response = redirect(f"{request.path}?{urlencode([('location', region.pk)])}")
                 # For the visit only: a guest who clears the region keeps the whole calendar after it.
                 response.set_cookie(OFFERED_COOKIE, "1", samesite="Lax", secure=request.is_secure(), httponly=True)
+                # It depends on where the guest is, which no address or cache key carries: no shared cache
+                # may hand one guest's region to the next.
+                patch_cache_control(response, private=True, no_store=True)
                 return response
         return super().get(request, *args, **kwargs)
 
