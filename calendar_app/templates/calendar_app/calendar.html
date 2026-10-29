@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% trans "Calendar" %}{% endblock %}
 
@@ -113,8 +113,9 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales-all.global.min.js"></script>
+{# FullCalendar 6.1.15 is served from the site itself: a CDN that once sent it as text/plain left the grid empty in Firefox (#385). #}
+<script src="{% static 'calendar_app/vendor/fullcalendar/index.global.min.js' %}"></script>
+<script src="{% static 'calendar_app/vendor/fullcalendar/locales-all.global.min.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var eventsUrl = '{% url "calendar_events_api" %}';

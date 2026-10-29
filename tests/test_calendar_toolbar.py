@@ -129,3 +129,13 @@ class MonthPickerTests(TestCase):
         self._race(self.today - datetime.timedelta(days=365 * 7), is_deleted=True)
         self._race(self.today - datetime.timedelta(days=365 * 9), status=Competition.Status.PENDING_APPROVAL)
         self.assertEqual(calendar_year_choices(), [self.today.year])
+
+
+class CalendarBundleTests(TestCase):
+    def test_the_grid_is_drawn_by_the_sites_own_copy_of_fullcalendar(self):
+        """A CDN once sent the bundle as text/plain, and Firefox left the grid empty (#385)."""
+        html = self.client.get(in_language(reverse("calendar"), "ru")).content.decode()
+        for bundle in ("index.global.min.js", "locales-all.global.min.js"):
+            self.assertRegex(html, rf'<script src="/static/calendar_app/vendor/fullcalendar/{re.escape(bundle)}"')
+        self.assertNotIn("cdn.jsdelivr.net/npm/fullcalendar", html)
+        self.assertNotIn("cdn.jsdelivr.net/npm/@fullcalendar", html)
