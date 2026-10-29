@@ -62,7 +62,6 @@ jobs:
           AGENT_API_TOKEN: ${{ secrets.AGENT_API_TOKEN }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL }}
           MAX_EVENTS_PER_RUN: ${{ github.event.inputs.max_events || '25' }}
           # No single source may take more than this many of the run's slots, so a calendar with an
           # endless supply of races cannot crowd out the organizers whose events the site is for.

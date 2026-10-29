@@ -120,7 +120,7 @@ prints the enabled names), so the list lives in one place.
 ```
 SITE_BASE_URL=https://universalbicycle.team \
 AGENT_API_TOKEN=... LLM_API_KEY=... LLM_BASE_URL=https://api.deepseek.com \
-LLM_MODEL=deepseek-flash INSTAGRAM_MAX_EVENTS=10 INSTAGRAM_DRY_RUN=true \
+INSTAGRAM_MAX_EVENTS=10 INSTAGRAM_DRY_RUN=true \
 python -m instagram_agent.run
 ```
 (only `pyyaml` is needed beyond the standard library)
@@ -131,7 +131,8 @@ allowance of its own, and the reason the code still handles a list.
 
 ## Secrets
 The same ones the events agent uses -- `AGENT_API_TOKEN`, `LLM_API_KEY`, `LLM_BASE_URL`,
-`LLM_MODEL`, `SITE_BASE_URL`. It posts as the same organizer account.
+`SITE_BASE_URL` -- and the same model, named in `agent/config.py`. It posts as the same organizer
+account.
 
 Runs daily at **23:17 UTC (04:17 Almaty)**, an hour after the events agent so the two never overlap
 and this one sees what that one just proposed, and outside the hours where the model bills double.

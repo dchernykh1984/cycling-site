@@ -58,7 +58,7 @@ privacy notes). Entries of those kinds left in this agent's file are still skipp
 ```
 SITE_BASE_URL=https://universalbicycle.team \
 AGENT_API_TOKEN=... LLM_API_KEY=... LLM_BASE_URL=https://api.deepseek.com \
-LLM_MODEL=deepseek-flash MAX_EVENTS_PER_RUN=10 AGENT_DRY_RUN=true \
+MAX_EVENTS_PER_RUN=10 AGENT_DRY_RUN=true \
 AGENT_ENRICH_DETAILS=true \
 python -m agent.run
 ```
@@ -68,10 +68,12 @@ python -m agent.run
 - `AGENT_API_TOKEN` (secret) - API token of a dedicated **organizer** account (the "bot").
 - `LLM_API_KEY` (secret) - DeepSeek (or other) API key.
 - `LLM_BASE_URL` (secret) - e.g. `https://api.deepseek.com`.
-- `LLM_MODEL` (secret, optional) - the model's name; unset, it is `deepseek-flash`, DeepSeek's cheapest
-  (`DEFAULT_LLM_MODEL` in `agent/config.py`, shared by the three agents).
 - `SITE_BASE_URL` (secret, optional) - the site to post to, e.g. `https://universalbicycle.team`
   (defaults to the production URL if unset).
+
+The model is no secret: it is named in code, `DEFAULT_LLM_MODEL` in `agent/config.py`, shared by the
+three agents, and a provider renaming its models is a one-line change there. `LLM_MODEL` in the
+environment overrides it, to try another model in a local run.
 
 Runs daily at **22:17 UTC (03:17 Almaty)**, and on demand via the **Run workflow** button (owner
 only). Scheduled runs only fire from the default branch (`main`).
