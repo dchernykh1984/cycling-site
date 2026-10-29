@@ -435,7 +435,7 @@ msgstr "Регистраций пока нет."
 # Pending/rejected competitions + profile (issue #180)
 #: accounts/templates/accounts/profile.html:336
 msgid "Events I submitted"
-msgstr "Добавленные мной события"
+msgstr "Добавленные мной мероприятия"
 
 #: accounts/templates/accounts/profile.html:344
 #: accounts/templates/accounts/profile.html:404
@@ -476,7 +476,7 @@ msgstr "Удалить"
 # Pending/rejected competitions + profile (issue #180)
 #: accounts/templates/accounts/profile.html:386
 msgid "You have not submitted any events yet."
-msgstr "Вы пока не добавили ни одного события."
+msgstr "Вы пока не добавили ни одного мероприятия."
 
 #: accounts/templates/accounts/profile.html:389
 msgid "My submissions"
@@ -737,7 +737,7 @@ msgstr "Мероприятия, недавно добавленные в кал�
 #: calendar_app/forms.py:70
 #: calendar_app/templates/calendar_app/_event_type_filter.html:8
 msgid "Event type"
-msgstr "Тип события"
+msgstr "Тип мероприятия"
 
 #: calendar_app/forms.py:71 calendar_app/tests.py:3876
 msgid ""
@@ -840,7 +840,7 @@ msgstr "%(subject)s: %(place)s"
 #: calendar_app/listing_seo.py:50
 #, python-format
 msgid "%(count)s events in the calendar."
-msgstr "Событий в календаре: %(count)s."
+msgstr "Мероприятий в календаре: %(count)s."
 
 #: calendar_app/listing_seo.py:52
 #, python-format
@@ -1333,7 +1333,7 @@ msgstr "Ожидает модерации."
 # Pending/rejected competitions + profile (issue #180)
 #: calendar_app/templates/calendar_app/detail.html:67
 msgid "This event is not shown in the public calendar yet."
-msgstr "Событие пока не отображается в публичном календаре."
+msgstr "Мероприятие пока не отображается в публичном календаре."
 
 # Pending/rejected competitions + profile (issue #180)
 #: calendar_app/templates/calendar_app/detail.html:71
@@ -1351,7 +1351,7 @@ msgstr "Причина"
 
 #: calendar_app/templates/calendar_app/detail.html:91
 msgid "This event has been reported."
-msgstr "На это событие поступила жалоба."
+msgstr "На это мероприятие поступила жалоба."
 
 #: calendar_app/templates/calendar_app/detail.html:92
 msgid ""
@@ -1481,7 +1481,7 @@ msgstr "Отправить жалобу"
 
 #: calendar_app/templates/calendar_app/detail.html:263
 msgid "You have reported this event; a moderator will review it."
-msgstr "Вы пожаловались на это событие; модератор его проверит."
+msgstr "Вы пожаловались на это мероприятие; модератор его проверит."
 
 #: calendar_app/templates/calendar_app/detail.html:268
 msgid "Timing system token"
@@ -1853,11 +1853,11 @@ msgstr "Нет мероприятий на рассмотрении."
 
 #: calendar_app/templates/calendar_app/moderate.html:82
 msgid "Reported events"
-msgstr "Жалобы на события"
+msgstr "Жалобы на мероприятия"
 
 #: calendar_app/templates/calendar_app/moderate.html:122
 msgid "No reported events."
-msgstr "Нет событий с жалобами."
+msgstr "Нет мероприятий с жалобами."
 
 #: calendar_app/templates/calendar_app/moderate.html:129
 msgid "Proposed locations"
@@ -1929,7 +1929,7 @@ msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
 msgstr ""
-"Локация этого события ещё на рассмотрении: сначала её должен одобрить "
+"Локация этого мероприятия ещё на рассмотрении: сначала её должен одобрить "
 "администратор."
 
 # Pending/rejected competitions + profile (issue #180)
@@ -1944,7 +1944,7 @@ msgstr "Некорректная отправка."
 
 #: calendar_app/views.py:1607
 msgid "You have already reported this event; a moderator will review it."
-msgstr "Вы уже пожаловались на это событие; модератор его проверит."
+msgstr "Вы уже пожаловались на это мероприятие; модератор его проверит."
 
 #: calendar_app/views.py:1609
 msgid "Thank you. Your report has been sent to the moderators."
@@ -1952,7 +1952,7 @@ msgstr "Спасибо. Ваша жалоба отправлена модера�
 
 #: calendar_app/views.py:1628
 msgid "Report dismissed; the event was cleared from the moderation queue."
-msgstr "Жалоба снята; событие убрано из очереди модерации."
+msgstr "Жалоба снята; мероприятие убрано из очереди модерации."
 
 #: calendar_app/views.py:1688
 msgid "Only a rejected event can be resubmitted."
@@ -2022,7 +2022,7 @@ msgstr "Ожидает вашей модерации"
 
 #: cycling_site/templates/_moderation_banner.html:9
 msgid "Events awaiting approval"
-msgstr "События, ожидающие одобрения"
+msgstr "Мероприятия, ожидающие одобрения"
 
 #: cycling_site/templates/_moderation_banner.html:13
 #: tests/test_moderation_banner.py:218
@@ -2033,7 +2033,7 @@ msgid ""
 msgstr ""
 "Одобряйте старт, когда понятно, что это за гонка и куда ехать. Проверьте "
 "место на карте и то, что даты, дистанции и ссылки настоящие. Выдуманная "
-"точка старта хуже, чем отсутствие события."
+"точка старта хуже, чем отсутствие мероприятия."
 
 #: cycling_site/templates/_moderation_banner.html:14
 msgid "Locations awaiting approval"
@@ -3509,7 +3509,7 @@ msgstr ""
 
 #: calendar_app/templates/calendar_app/detail.html
 msgid "How a link to this event looks in a chat"
-msgstr "Так ссылка на событие выглядит в чате"
+msgstr "Так ссылка на мероприятие выглядит в чате"
 
 #: gallery/events.py:73
 #| msgid "Event type"
@@ -3689,7 +3689,7 @@ msgid "All photo albums"
 msgstr "Все фотоальбомы"
 
 msgid "Manage event photos"
-msgstr "Фото события: управление"
+msgstr "Фото мероприятия: управление"
 
 msgid ""
 "A Dropbox folder shared as \"Anyone with the link can view\", with photo-"
@@ -3727,7 +3727,7 @@ msgid "indexing is not finished"
 msgstr "индексация не завершена"
 
 msgid "Event photos"
-msgstr "Фото события"
+msgstr "Фото мероприятия"
 
 msgid "Find photos by bib"
 msgstr "Найти фото по номеру"
@@ -3780,7 +3780,7 @@ msgid ""
 "referees send. Meanwhile, search the event's photos by bib."
 msgstr ""
 "Ваш номер на этом старте пока неизвестен: он приходит из стартового "
-"протокола от судей. Пока можно искать фото события по номеру."
+"протокола от судей. Пока можно искать фото мероприятия по номеру."
 
 #, python-format
 msgid "Confirmed: %(confirmed)s. To check: %(to_check)s."
@@ -3850,7 +3850,7 @@ msgid ""
 "On the event page open 'Manage event photos', paste the link and press 'Add "
 "and import'."
 msgstr ""
-"На странице события откройте «Фото события: управление», вставьте ссылку и "
+"На странице мероприятия откройте «Фото мероприятия: управление», вставьте ссылку и "
 "нажмите «Добавить и импортировать»."
 
 msgid ""
@@ -3896,7 +3896,7 @@ msgid ""
 "and what is wrong with it, and the last good version stays on the site. Fix "
 "it in the indexer and refresh."
 msgstr ""
-"Если импорт не удался, страница фото события называет поле индекса и что с "
+"Если импорт не удался, страница фото мероприятия называет поле индекса и что с "
 "ним не так, а на сайте остаётся последняя рабочая версия. Исправьте в "
 "индексаторе и обновите."
 
@@ -3947,7 +3947,7 @@ msgid ""
 "event's photos by bib."
 msgstr ""
 "По стартовым протоколам у этой заявки больше одного номера, или её номер у "
-"кого-то ещё. Организатор разбирается; пока ищите фото события по номеру."
+"кого-то ещё. Организатор разбирается; пока ищите фото мероприятия по номеру."
 
 msgid "Bib needs review"
 msgstr "Номер нужно проверить"
@@ -4469,7 +4469,7 @@ msgid "Registered"
 msgstr "Дата заявки"
 
 msgid "<strong>People who manage your registrations and photos.</strong> You may let another member manage your race registrations and race photos: they send you a link, you allow it on the page it opens, and they accept your request. That member then sees your last name, first name, date of birth, gender, city and team, and the Strava link an event's form may ask for, but never your email address; they can register you for events, change and cancel your registrations, and see and mark your race photos. Either of you can end this in the profile at any time: from then on that member sees nothing of yours and can do nothing for you, and the registrations they made stay yours."
-msgstr "<strong>Кто управляет вашими заявками и фото.</strong> Вы можете разрешить другому участнику управлять вашими заявками на старты и фото с гонок: он присылает вам ссылку, вы разрешаете это на открывшейся странице, а он принимает вашу просьбу. После этого он видит ваши фамилию, имя, дату рождения, пол, город и команду, а также ссылку на Strava, если её спрашивает форма события, но никогда не видит ваш адрес электронной почты; он может регистрировать вас на старты, менять и отменять ваши заявки, видеть и отмечать ваши фото с гонок. Любой из вас может прекратить это в профиле в любой момент: с этого момента этот участник ничего вашего не видит и ничего не может делать за вас, а сделанные им заявки остаются вашими."
+msgstr "<strong>Кто управляет вашими заявками и фото.</strong> Вы можете разрешить другому участнику управлять вашими заявками на старты и фото с гонок: он присылает вам ссылку, вы разрешаете это на открывшейся странице, а он принимает вашу просьбу. После этого он видит ваши фамилию, имя, дату рождения, пол, город и команду, а также ссылку на Strava, если её спрашивает форма мероприятия, но никогда не видит ваш адрес электронной почты; он может регистрировать вас на старты, менять и отменять ваши заявки, видеть и отмечать ваши фото с гонок. Любой из вас может прекратить это в профиле в любой момент: с этого момента этот участник ничего вашего не видит и ничего не может делать за вас, а сделанные им заявки остаются вашими."
 
 msgid "We do not sell, rent or trade your data. We do not use it for advertising and we do not use it to train machine-learning or AI models. We do not share it with anyone except the service providers listed below, the organizer of an event you are registered for, and the members you allowed to manage your registrations and photos."
 msgstr "Мы не продаём, не сдаём в аренду и не обмениваем ваши данные. Мы не используем их для рекламы и не используем для обучения моделей машинного обучения и искусственного интеллекта. Мы не передаём их никому, кроме перечисленных ниже поставщиков услуг, организатора мероприятия, на которое вы зарегистрированы, и участников, которым вы разрешили управлять вашими заявками и фото."
@@ -4481,7 +4481,7 @@ msgid "Top event"
 msgstr "Топ-эвент"
 
 msgid "Goes first wherever events are shown: at the head of the list, above a divider; first in its day on the calendar; first at its place on the map."
-msgstr "Идёт первым везде, где показаны события: в начале списка, над разделителем; первым в своём дне в календаре; первым на своём месте на карте."
+msgstr "Идёт первым везде, где показаны мероприятия: в начале списка, над разделителем; первым в своём дне в календаре; первым на своём месте на карте."
 
 msgid "Top events"
 msgstr "Топ-эвенты"

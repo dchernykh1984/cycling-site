@@ -62,3 +62,11 @@ def test_a_translation_keeps_its_placeholders_and_tags(language):
         or sorted(TAG.findall(msgid)) != sorted(TAG.findall(msgstr))
     ]
     assert lost == []
+
+
+def test_the_russian_catalogue_calls_an_event_one_thing():
+    # The calendar's events are "meropriyatiya" in Russian everywhere: menus, buttons, moderation.
+    # "Sobytiya" (occurrences) is kept only for the gallery's "our events & moments", a matter of life.
+    occurrence = "".join(chr(code) for code in (0x0441, 0x043E, 0x0431, 0x044B, 0x0442))
+    found = [msgid for msgid, msgstr in _entries("ru") if occurrence in msgstr.lower()]
+    assert found == ["our events & moments"]
