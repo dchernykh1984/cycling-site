@@ -72,8 +72,19 @@ class LinkTests(TestCase):
         checked = _check({"url_registration": "https://example.org/register"}, texts=self.TEXTS)
         self.assertNotIn("url_registration", checked.form)
         self.assertEqual(
-            checked.notes, ["A link that is not in your messages was left out: https://example.org/register"]
+            checked.notes,
+            ["A link that is in neither your messages nor the form was left out: https://example.org/register"],
         )
+
+    def test_a_link_the_form_already_holds_is_kept(self):
+        current = {
+            "url_route": "https://strava.com/routes/9",
+            "description": {"ru": '<p>Registration: <a href="https://reg.test/42">here</a></p>', "kk": "", "en": ""},
+        }
+        answer = {"url_route": "https://strava.com/routes/9", "url_registration": "https://reg.test/42"}
+        checked = _check(answer, current=current)
+        self.assertEqual(checked.form, answer)
+        self.assertEqual(checked.notes, [])
 
     def test_an_empty_link_empties_the_field(self):
         self.assertEqual(_check({"url_route": ""}).form, {"url_route": ""})

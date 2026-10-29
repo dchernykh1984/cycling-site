@@ -75,7 +75,10 @@ class AssistantApiTests(ApiTestMixin, TestCase):
         self.assertEqual(body["fields"]["title_en"], "Coffee ride")
         self.assertEqual(body["fields"]["url_route"], "https://strava.com/routes/1")
         self.assertEqual(body["fields"]["location"], self.shop.pk)
-        self.assertEqual(body["notes"], ["A link that is not in your messages was left out: https://made.up/register"])
+        self.assertEqual(
+            body["notes"],
+            ["A link that is in neither your messages nor the form was left out: https://made.up/register"],
+        )
         self.assertEqual([m["role"] for m in body["messages"]], ["user", "assistant"])
         sent = complete.call_args.args[0]
         self.assertEqual(sent[0]["role"], "system")
@@ -146,6 +149,6 @@ class AssistantApiTests(ApiTestMixin, TestCase):
         with mock.patch("assistant.llm.complete", return_value=answer):
             body = self._say(conversation_id, language="kk").json()
         with translation.override("kk"):
-            expected = gettext("A link that is not in your messages was left out: %(url)s")
+            expected = gettext("A link that is in neither your messages nor the form was left out: %(url)s")
         self.assertNotIn("A link", expected)
         self.assertEqual(body["notes"], [expected % {"url": "https://made.up/route"}])

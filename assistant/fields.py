@@ -44,7 +44,7 @@ def _bare(url: str) -> str:
 
 
 def written_by_them(url: str, texts: list[str]) -> bool:
-    """Whether the administrator wrote this link, give or take its scheme, "www." and a final slash."""
+    """Whether one of ``texts`` holds this link, give or take its scheme, "www." and a final slash."""
     bare = _bare(url)
     return bool(bare) and any(bare in text.lower() for text in texts)
 
@@ -81,6 +81,11 @@ class _Checker:
     def __init__(self, current: dict, texts: list[str], rows: list[dict], point: places.Point | None):
         self.current = current
         self.texts = texts
+        # A link may also come from the form as it stands: an edited event's own links, and the ones
+        # its descriptions carry, were written by people too.
+        descriptions = current.get("description")
+        written = list(descriptions.values()) if isinstance(descriptions, dict) else []
+        self.sources = [*texts, *(str(current.get(name) or "") for name in URL_FIELDS), *map(str, written)]
         self.rows = rows
         self.point = point
         self.out = Checked()
@@ -142,8 +147,10 @@ class _Checker:
                 self.out.set[name] = self.out.form[name] = ""
                 continue
             url = _url(value)
-            if url is None or not written_by_them(value, self.texts):
-                self.out.notes.append(_("A link that is not in your messages was left out: %(url)s") % {"url": value})
+            if url is None or not written_by_them(value, self.sources):
+                self.out.notes.append(
+                    _("A link that is in neither your messages nor the form was left out: %(url)s") % {"url": value}
+                )
                 continue
             self.out.set[name] = self.out.form[name] = url
 
