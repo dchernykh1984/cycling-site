@@ -132,13 +132,13 @@
                     {% get_available_languages as available_languages %}
                     {% for lang_code, lang_name in available_languages %}
                     {% if lang_code == CURRENT_LANGUAGE %}
-                    <span class="btn btn-sm btn-secondary pe-none">{{ lang_code|lang_display_code }}</span>
+                    <span class="btn btn-sm btn-secondary pe-none" lang="{{ lang_code }}" aria-current="true">{{ lang_code|lang_display_code }}<span class="visually-hidden"> {{ lang_code|lang_own_name }}</span></span>
                     {% else %}
                     <form action="{% url 'set_language' %}" method="post" style="display:inline">
                         {% csrf_token %}
                         <input name="next" type="hidden" value="{{ request.get_full_path }}">
                         <input name="language" type="hidden" value="{{ lang_code }}">
-                        <button type="submit" class="btn btn-sm btn-outline-secondary">{{ lang_code|lang_display_code }}</button>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" lang="{{ lang_code }}" title="{{ lang_code|lang_own_name }}">{{ lang_code|lang_display_code }}<span class="visually-hidden"> {{ lang_code|lang_own_name }}</span></button>
                     </form>
                     {% endif %}
                     {% endfor %}

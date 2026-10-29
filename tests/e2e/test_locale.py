@@ -82,7 +82,7 @@ def test_switch_to_kk_updates_homepage_content(page: Page, live_server, site_con
     expect(page.locator(".navbar-brand")).to_contain_text("NavKK")
     expect(page.locator("body")).to_contain_text("BodyKK")
     # KK is now the active locale (shown as span, not button)
-    expect(page.locator("span.btn.pe-none")).to_contain_text("KZ")
+    expect(page.locator("span.btn.pe-none")).to_contain_text("KK")
     expect(page.locator("form:has(input[name='language'][value='kk'])")).to_have_count(0)
 
 
@@ -127,7 +127,7 @@ def test_kk_locale_persists_navigating_to_calendar(page: Page, live_server, site
 
     expect(page.locator(".navbar-brand")).to_contain_text("NavKK")
     # KK is still active on the calendar page
-    expect(page.locator("span.btn.pe-none")).to_contain_text("KZ")
+    expect(page.locator("span.btn.pe-none")).to_contain_text("KK")
 
 
 @pytest.mark.django_db(transaction=True)
@@ -151,7 +151,7 @@ def test_locale_persists_across_multiple_pages(page: Page, live_server, site_con
     for url in ["/calendar/", "/search/", "/"]:
         page.goto(f"{live_server.url}{url}")
         expect(page.locator(".navbar-brand")).to_contain_text("NavKK")
-        expect(page.locator("span.btn.pe-none")).to_contain_text("KZ")
+        expect(page.locator("span.btn.pe-none")).to_contain_text("KK")
 
 
 @pytest.mark.django_db(transaction=True)
@@ -202,7 +202,7 @@ def test_authenticated_user_preferred_language_overrides_cookie(
     page.goto(f"{live_server.url}/")
 
     expect(page.locator(".navbar-brand")).to_contain_text("NavKK")
-    expect(page.locator("span.btn.pe-none")).to_contain_text("KZ")
+    expect(page.locator("span.btn.pe-none")).to_contain_text("KK")
 
 
 @pytest.mark.django_db(transaction=True)

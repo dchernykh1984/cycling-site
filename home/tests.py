@@ -451,8 +451,8 @@ class LangDisplayCodeFilterTest(TestCase):
 
         self.f = lang_display_code
 
-    def test_kk_maps_to_kz(self):
-        self.assertEqual(self.f("kk"), "KZ")
+    def test_kazakh_shows_its_language_code_not_the_countrys(self):
+        self.assertEqual(self.f("kk"), "KK")
 
     def test_ru_maps_to_ru(self):
         self.assertEqual(self.f("ru"), "RU")
@@ -471,6 +471,36 @@ class LangDisplayCodeFilterTest(TestCase):
 
     def test_unknown_code_uppercased(self):
         self.assertEqual(self.f("fr"), "FR")
+
+
+class LangOwnNameFilterTest(TestCase):
+    """Each language is named in itself on every page, so a reader finds theirs in a page they cannot read."""
+
+    # Spelled in escapes because the sources are ASCII-only: "Russkiy" and "Qazaq tili".
+    RUSSIAN = "\u0420\u0443\u0441\u0441\u043a\u0438\u0439"
+    KAZAKH = "\u049a\u0430\u0437\u0430\u049b \u0442\u0456\u043b\u0456"
+
+    def test_every_language_is_named_in_itself_whatever_the_page_speaks(self):
+        from django.utils import translation
+
+        from home.templatetags.home_tags import lang_own_name
+
+        for page_language in ("ru", "kk", "en"):
+            with self.subTest(page=page_language), translation.override(page_language):
+                names = {code: lang_own_name(code) for code in ("ru", "kk", "en")}
+                self.assertEqual(names, {"ru": self.RUSSIAN, "kk": self.KAZAKH, "en": "English"})
+
+    def test_a_language_the_site_does_not_offer_has_no_name(self):
+        from home.templatetags.home_tags import lang_own_name
+
+        self.assertEqual(lang_own_name("fr"), "")
+        self.assertEqual(lang_own_name(None), "")
+
+    def test_the_buttons_carry_the_name_and_the_language_to_read_it_in(self):
+        """A screen reader hears "KK Qazaq tili" in a Kazakh voice; a pointer gets the name as a hint."""
+        body = self.client.get("/en/news/").content.decode()
+        self.assertIn(f'lang="kk" title="{self.KAZAKH}">KK<span class="visually-hidden"> {self.KAZAKH}</span>', body)
+        self.assertIn('lang="en" aria-current="true">EN<span class="visually-hidden"> English</span>', body)
 
 
 class AdminUploadAndEditScenarioTests(TestCase):
