@@ -49,6 +49,8 @@ privacy notes). Entries of those kinds left in this agent's file are still skipp
 - Dedup against existing + past rejections: exact (title+date) plus fuzzy, so a near-duplicate of
   an existing event -- same words, close date, worded differently, or in **another language** (the
   ru/kk/en titles are compared per-locale) -- is dropped too.
+- Every page and track is fetched over http(s) from public addresses only: a link a page carries may
+  point anywhere, a cloud-metadata endpoint or an internal service among them (`agent/fetch.py`).
 - `AGENT_DRY_RUN=true` (or the workflow's `dry_run` input) logs candidates without posting.
 - A human moderator approves everything - nothing goes public automatically.
 
