@@ -99,7 +99,8 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     )
     # Proposing a new venue: any registered user can suggest a venue under the chosen
     # city (issue #111). new_venue_city carries the selected city; if new_venue_name is
-    # filled, the view creates the venue (pending unless the submitter is organizer+).
+    # filled, the view creates the venue (pending unless the submitter is organizer+). The name
+    # is asked in each language, as on the places map: Russian, the site's default, required.
     new_venue_city: forms.ModelChoiceField[Location] = forms.ModelChoiceField(
         queryset=Location.objects.filter(is_deleted=False),
         required=False,
@@ -109,6 +110,16 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         max_length=255,
         required=False,
         widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "id": "new-venue-name"}),
+    )
+    new_venue_name_kk = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "id": "new-venue-name-kk"}),
+    )
+    new_venue_name_en = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "id": "new-venue-name-en"}),
     )
     new_venue_lat = forms.DecimalField(
         max_digits=9,
@@ -226,6 +237,9 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
 
         city = cleaned_data.get("new_venue_city")
         new_name = (cleaned_data.get("new_venue_name") or "").strip()
+        other_names = any((cleaned_data.get(f"new_venue_name_{lang}") or "").strip() for lang in ("kk", "en"))
+        if other_names and not new_name:
+            self.add_error("new_venue_name", forms.Field.default_error_messages["required"])
         if city is not None and (city.depth != 3 or not location_visible_to(city, self.user)):
             # Same rule as for `location` below: a city that is someone else's pending proposal is
             # not a city this user may build under, however the POST reached us.

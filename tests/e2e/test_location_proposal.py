@@ -55,3 +55,18 @@ def test_selecting_existing_venue_hides_propose_box(page: Page, live_server, org
     page.select_option("#loc-venue", label="Velodrome")
     expect(page.locator("#new-venue-box")).to_be_hidden()
     expect(page.locator("#add-venue-btn")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_new_venue_is_named_in_each_language_and_set_aside_whole(page: Page, live_server, organizer):
+    _tree()
+    inject_session(page, live_server, organizer)
+    _open_city(page, live_server)
+    page.click("#add-venue-btn")
+    names = {"#new-venue-name": "Park RU", "#new-venue-name-kk": "Park KK", "#new-venue-name-en": "Park EN"}
+    for field, text in names.items():
+        page.fill(field, text)
+    # Picking an existing venue sets the proposal aside, every language of its name with it.
+    page.select_option("#loc-venue", label="Velodrome")
+    for field in names:
+        expect(page.locator(field)).to_have_value("")

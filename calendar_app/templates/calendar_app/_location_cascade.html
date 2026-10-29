@@ -44,15 +44,24 @@
   </div>
   <div id="new-venue-box" class="border rounded p-2 mt-2" style="display:none">
     <div class="row g-2">
-      <div class="col-sm-6">
-        <label class="form-label form-label-sm mb-1" for="new-venue-name">{% trans "New venue name" %}</label>
+      <div class="col-sm-4">
+        <label class="form-label form-label-sm mb-1" for="new-venue-name">{% trans "Name (RU)" %} *</label>
         {{ form.new_venue_name }}
+        {% if form.new_venue_name.errors %}<div class="text-danger small mt-1">{% for e in form.new_venue_name.errors %}{{ e }}{% endfor %}</div>{% endif %}
       </div>
-      <div class="col-sm-3">
+      <div class="col-sm-4">
+        <label class="form-label form-label-sm mb-1" for="new-venue-name-kk">{% trans "Name (KK)" %}</label>
+        {{ form.new_venue_name_kk }}
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label form-label-sm mb-1" for="new-venue-name-en">{% trans "Name (EN)" %}</label>
+        {{ form.new_venue_name_en }}
+      </div>
+      <div class="col-sm-6">
         <label class="form-label form-label-sm mb-1" for="new-venue-lat">{% trans "Latitude" %}</label>
         {{ form.new_venue_lat }}
       </div>
-      <div class="col-sm-3">
+      <div class="col-sm-6">
         <label class="form-label form-label-sm mb-1" for="new-venue-lng">{% trans "Longitude" %}</label>
         {{ form.new_venue_lng }}
       </div>
@@ -84,7 +93,10 @@
   var addVenueToggle = document.getElementById('new-venue-toggle-wrap');
   var newVenueBox = document.getElementById('new-venue-box');
   var newVenueCity = document.getElementById('id_new_venue_city');
-  var nvNameInp = document.getElementById('new-venue-name');
+  // The new venue's name in each language; a proposal set aside clears all of them.
+  var nvNameInps = ['new-venue-name', 'new-venue-name-kk', 'new-venue-name-en']
+    .map(function (id) { return document.getElementById(id); }).filter(Boolean);
+  function clearNewVenueNames() { nvNameInps.forEach(function (inp) { inp.value = ''; }); }
   var nvLatInp = document.getElementById('new-venue-lat');
   var nvLngInp = document.getElementById('new-venue-lng');
 
@@ -250,7 +262,7 @@
       locInp.value = venEl.value;
       // Picking an existing venue cancels any in-progress proposal and restores the button.
       closeProposeBox();
-      if (nvNameInp) nvNameInp.value = '';
+      clearNewVenueNames();
       showAddVenue(true);
     } else {
       autoVenue(pathOf(cityEl.value));
@@ -292,7 +304,7 @@
     venEl.value = loc.is_hidden ? (hv ? hv.pk : '') : loc.pk;
     locInp.value = venEl.value;
     closeProposeBox();
-    if (nvNameInp) nvNameInp.value = '';
+    clearNewVenueNames();
     showAddVenue(true); syncNewVenueCity();
   }
 

@@ -236,10 +236,16 @@ class Location(MP_Node, index.Indexed):
         return mapping is not None
 
     @classmethod
-    def propose_venue(cls, city, name, lat=None, lng=None, *, submitted_by=None, approved=False) -> "Location":
-        """Create a depth-4 venue under ``city``; pending (with a proposal) unless ``approved``."""
+    def propose_venue(
+        cls, city, name, lat=None, lng=None, *, name_kk="", name_en="", submitted_by=None, approved=False
+    ) -> "Location":
+        """Create a depth-4 venue under ``city``; pending (with a proposal) unless ``approved``.
+
+        ``name`` is the Russian one, the site's default language. A language left empty stays empty,
+        and the site shows the default in its place: copying it in would hide that it is missing.
+        """
         venue = add_location_child(
-            city, name=name, name_ru=name, name_kk=name, name_en=name, lat=lat, lng=lng, is_hidden=False
+            city, name=name, name_ru=name, name_kk=name_kk, name_en=name_en, lat=lat, lng=lng, is_hidden=False
         )
         if not approved:
             LocationProposal.objects.create(location=venue, submitted_by=submitted_by)
