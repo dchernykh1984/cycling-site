@@ -54,7 +54,8 @@ Cross-cutting findings that shape the requirements:
 
 ## Decisions proposed (to be confirmed by the maintainer)
 
-Numbered so that a review can answer by number. Each names the question in `questions` it answers.
+Numbered so that a review can answer by number. A `(Qn)` names the question of the research's
+`questions.md` (in the maintainer's `tmp/payment-gateways/`) that the decision answers.
 
 1. **A connector is a kind of gateway, not a gateway.** The site ships a catalogue of connectors
    (`manual`, `link`, later one per payment service). An organizer *enables* a connector for an event
