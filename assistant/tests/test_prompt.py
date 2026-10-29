@@ -81,6 +81,11 @@ class DescribeFormTests(TestCase):
         self.assertEqual(form["url_route"], "")
         self.assertEqual(prompt.describe_form(None)["place"], "")
 
+    def test_a_long_description_goes_whole_so_a_rewrite_cannot_drop_its_end(self):
+        long_text = "<p>" + "x" * 30_000 + "</p>"
+        self.assertEqual(prompt.describe_form({"description_ru": long_text})["description"]["ru"], long_text)
+        self.assertEqual(prompt.describe_news({"body_en": long_text})["body"]["en"], long_text)
+
     def test_an_edited_events_stored_file_counts_as_attached(self):
         event = competition(file_route="competitions/routes/coffee-ride.gpx")
         form = prompt.describe_form({}, event)
