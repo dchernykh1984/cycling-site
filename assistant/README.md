@@ -1,8 +1,12 @@
 # The event assistant
 
-A chat on the pages where an event is added and edited, for admins and the owner (issue #353). It
-asks what a rider needs to know, fills the event's form in three languages, and the form's own
-button saves it. The conversation is kept with the event, so the edit page goes on with it.
+A chat on the pages where an event or a news item is added and edited, for admins and the owner
+(issue #353). The form's own button saves either, and the conversation is kept with its event or
+news item, so the edit page goes on with it.
+
+- **On an event's page** it asks what a rider needs to know and fills the form in three languages.
+- **On a news item's page** it translates the item, puts its formatting right and changes it as
+  asked.
 
 How it behaves is in `specs/site/assistant.md`; why, in `specs/353-event-assistant/`.
 
@@ -16,6 +20,9 @@ announcements lack:
 - `general.md`: how to talk, how an announcement reads, the link preview, registration, the ending;
 - `ride.md`: what to ask about a ride;
 - `race.md`: what to ask about a race.
+
+`skills/news/*.md` are the news assistant's: how to translate, format and change a news item. Both
+kinds share the code and the key; only what the model is told differs.
 
 What was learned writing them, on the model itself:
 
@@ -41,7 +48,9 @@ The system part stays the same between turns, so the provider's cache serves it 
 
 `fields.py` checks the answer before the page sees it:
 
-- **links** must come from the admin's messages or from the form as it stands;
+- **links**, in the link fields and inside the texts, must come from the admin's messages or from
+  the form as it stands;
+- **pictures** in a description or a news text travel as marks (`images.py`) and come back in place;
 - **a place** must be one of the site's, found by `places.py` with the import agents' matching;
 - **coordinates** come only from a track or from numbers the admin typed.
 

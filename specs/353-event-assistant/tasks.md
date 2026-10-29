@@ -12,3 +12,6 @@
 - [x] The submit view links the conversation; the edit page continues it
 - [x] The privacy policy's line on the language model
 - [x] Docs: `specs/site/` (a new `assistant.md`, events, API)
+- [x] Pictures in a description kept in place and out of the prompt; links inside a description checked
+- [x] News: a conversation's kind, the news skill and contract, the API, the chat on the news pages
+- [x] Only admins and up reach the model: every operation, every role, token and session, CSRF
