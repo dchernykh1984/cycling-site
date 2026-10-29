@@ -31,7 +31,9 @@ class MapHomeAreaTests(TestCase):
         cls.country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan", lat=48.1, lng=66.8)
         cls.almaty = add_location_child(cls.country, name="Almaty", name_ru="Almaty", lat=43.24, lng=76.95)
         cls.talgar = add_location_child(cls.country, name="Talgar", name_ru="Talgar", lat=43.30, lng=77.24)
-        cls.bishkek = add_location_child(None, name="Bishkek", name_ru="Bishkek", lat=42.87, lng=74.60)
+        # Bishkek one level below its country, as Almaty is: the deepest chosen level is what counts.
+        cls.kyrgyzstan = add_location_child(None, name="Kyrgyzstan", name_ru="Kyrgyzstan", lat=41.2, lng=74.7)
+        cls.bishkek = add_location_child(cls.kyrgyzstan, name="Bishkek", name_ru="Bishkek", lat=42.87, lng=74.60)
         cls.nowhere = add_location_child(None, name="Unmapped", name_ru="Unmapped")
 
     def test_a_place_inside_an_area_opens_that_area(self):
@@ -45,6 +47,10 @@ class MapHomeAreaTests(TestCase):
 
     def test_places_in_two_areas_fit_the_markers(self):
         self.assertIsNone(map_home_area({self.almaty.pk, self.bishkek.pk}))
+
+    def test_a_country_and_a_city_in_it_open_the_citys_area(self):
+        # The place filter keeps every ticked level; the deepest says where the reader is looking.
+        self.assertEqual(map_home_area({self.country.pk, self.almaty.pk}), [[43.05, 76.55], [43.90, 77.45]])
 
     def test_a_whole_country_fits_the_markers(self):
         self.assertIsNone(map_home_area({self.country.pk}))
