@@ -79,12 +79,24 @@ window.placeCascade = window.placeCascade || function (allLocations) {
     var prefixes = {}, prefixLength = parents.length ? parents[0].path.length : 0;
     parents.forEach(function (p) { prefixes[p.path] = true; });
     var underCities = parents.length > 0 && parents[0].depth === 3;
-    return allLocations.filter(function (l) {
+    var found = allLocations.filter(function (l) {
       if (l.depth !== d) return false;
       if (d === 4 && l.is_hidden && !underCities) return false;
       return !parents.length || prefixes[l.path.slice(0, prefixLength)] === true;
-    }).map(function (l) {
-      return { pk: l.pk, name: nm(l), search: [l.name_ru, l.name_kk, l.name_en].join(' ') };
+    });
+    // The cascade gives one checkbox to one name. Under the parents chosen right above, that is what
+    // the reader asked for; a level open on its own spans other parents too, where two places of one
+    // name are two places -- each is named after its parent as well, or ticking one would tick both.
+    var far = d > 1 && (!parents.length || parents[0].depth < d - 1);
+    var seen = {};
+    if (far) found.forEach(function (l) { seen[nm(l)] = (seen[nm(l)] || 0) + 1; });
+    return found.map(function (l) {
+      var name = nm(l);
+      if (far && seen[name] > 1) {
+        var parent = byPath[l.path.slice(0, l.path.length / l.depth * (l.depth - 1))];
+        if (parent) name += ' (' + nm(parent) + ')';
+      }
+      return { pk: l.pk, name: name, search: [l.name_ru, l.name_kk, l.name_en].join(' ') };
     });
   }
 
