@@ -4559,3 +4559,7 @@ msgstr "Қандай жаңалық жазғыңыз келеді?"
 
 msgid "The answer would be too long: ask for one language, or one part, at a time."
 msgstr "Жауап тым ұзын болар еді: бір тілден немесе бір бөліктен сұраңыз."
+
+#, python-format
+msgid "%(count)s more: refine the search"
+msgstr "Тағы %(count)s — іздеуді нақтылаңыз"

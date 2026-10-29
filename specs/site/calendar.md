@@ -60,6 +60,11 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    disciplines on every view, and a signed-in member also "favorites only"; several countries / regions / cities / venues on
    the grid and the list; a date range on the list and the map. A level whose every option is ticked
    is sent as its parent, and ids travel comma-joined, so a wide selection stays a short address.
+   Every place level opens and searches at once, without its parents picked first, and lists only
+   what lies under the nearest level above it that has a choice (Kazakhstan ticked, "Al" in the
+   city finds Almaty, not a namesake abroad). A city's catch-all venue is listed only under chosen
+   cities; "All" only on a level whose parent level has a choice; a menu draws at most 200 rows
+   and counts the rest, which its search reaches. A reload ticks exactly what the address names.
 2. **Given** several values of one filter, **Then** an event matching any of them is shown, once.
 3. **Given** a direction and a discipline both chosen, **Then** the discipline wins, as a city does
    over its country: only the chosen disciplines are shown, and a ticked direction offers its

@@ -54,7 +54,9 @@ places, and lets managers maintain the tree.
    neither moved, unhidden nor deleted.
 3. **Given** the map page, **Then** a visitor sees markers for places with points; a participant
    and up also gets an "add a location" button; an admin also sees a paginated, filterable hierarchy
-   table with edit/hide/delete actions that keep the filter, and an edit link in marker popups.
+   table with edit/hide/delete actions that keep the filter, and an edit link in marker popups. The
+   filter is the calendar's place filter: a venue is typed into its own field straight away, without
+   its country, region and city picked first ([calendar](calendar.md), Story 2).
 
 ### Edge Cases
 

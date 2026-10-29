@@ -4561,3 +4561,7 @@ msgstr "Какую новость вы хотите написать?"
 
 msgid "The answer would be too long: ask for one language, or one part, at a time."
 msgstr "Ответ получился бы слишком длинным: просите по одному языку или по одной части."
+
+#, python-format
+msgid "%(count)s more: refine the search"
+msgstr "Ещё %(count)s — уточните поиск"

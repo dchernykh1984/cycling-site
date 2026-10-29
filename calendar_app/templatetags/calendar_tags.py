@@ -7,6 +7,12 @@ from django.utils.translation import gettext as _
 register = template.Library()
 
 
+@register.simple_tag
+def cascade_context():
+    """What the shared checkbox cascade (``_filter_multiselect_js.html``) needs from the server: its words."""
+    return {"more": _("%(count)s more: refine the search")}
+
+
 @register.filter
 def getitem(form, field_name):
     try:
