@@ -3029,7 +3029,7 @@ msgid ""
 "        "
 msgstr ""
 "\n"
-"        Одобрить \"%(title)s\" и опубликовать как статью базы знаний?\n"
+"        Одобрить «%(title)s» и опубликовать как статью базы знаний?\n"
 "        "
 
 #: knowledge/templates/knowledge/admin/approve_confirm.html:15
@@ -3362,7 +3362,7 @@ msgstr "Нет"
 
 #: registrations/templates/registrations/_participant_row.html:36
 msgid "Mark paid"
-msgstr "Пометить оплачено"
+msgstr "Отметить оплату"
 
 #: registrations/templates/registrations/_participant_row.html:41
 msgid "Delete?"
