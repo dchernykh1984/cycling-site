@@ -1120,11 +1120,11 @@ msgstr "Айналым"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:283
 msgid "Bib from"
-msgstr "Нөмір бастап"
+msgstr "Нөмірден бастап"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:285
 msgid "Bib to"
-msgstr "Нөмір дейін"
+msgstr "Нөмірге дейін"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:287
 msgid "Max participants"
@@ -3029,7 +3029,7 @@ msgid ""
 "        "
 msgstr ""
 "\n"
-"        \"%(title)s\" бекіту және білім мақаласы ретінде жариялау?\n"
+"        «%(title)s» материалын бекітіп, білім қорының мақаласы ретінде жариялау керек пе?\n"
 "        "
 
 #: knowledge/templates/knowledge/admin/approve_confirm.html:15
@@ -4171,7 +4171,7 @@ msgid ""
 "Strava is connected: every ride you finish on the virtual ride page goes "
 "there as a virtual ride, along the streets of its route."
 msgstr ""
-"Strava қосылған: виртуалды заезд бетінде аяқтаған әр заездіңіз сонда маршрут"
+"Strava қосылған: виртуалды заезд бетінде аяқтаған әр заездіңіз соған маршрут"
 " көшелері бойымен виртуалды заезд ретінде жіберіледі."
 
 #: accounts/templates/accounts/profile.html:304
@@ -4184,7 +4184,7 @@ msgid ""
 "there as a virtual ride, along the streets of its route. Rides in demo mode "
 "stay here."
 msgstr ""
-"Strava-ны қосыңыз — виртуалды заезд бетінде аяқтаған әр заездіңіз сонда "
+"Strava-ны қосыңыз — виртуалды заезд бетінде аяқтаған әр заездіңіз соған "
 "маршрут көшелері бойымен виртуалды заезд ретінде жіберіледі. Демо режимдегі "
 "заездтер осында қалады."
 
@@ -4249,7 +4249,7 @@ msgid ""
 "Strava did not allow uploading activities, so rides are not sent there. "
 "Connect again and keep that permission on."
 msgstr ""
-"Strava жаттығуларды жүктеуге рұқсат бермеді, сондықтан заездтер онда "
+"Strava жаттығуларды жүктеуге рұқсат бермеді, сондықтан заездтер оған "
 "жіберілмейді. Қайта қосып, бұл рұқсатты қосулы қалдырыңыз."
 
 #: trainer/views.py:87
@@ -4260,11 +4260,11 @@ msgstr "Strava-мен байланысу мүмкін болмады. Кейін
 msgid ""
 "Strava is connected: every ride you finish goes there as a virtual ride."
 msgstr ""
-"Strava қосылды: аяқталған әр заезд сонда виртуалды заезд ретінде жіберіледі."
+"Strava қосылды: аяқталған әр заезд соған виртуалды заезд ретінде жіберіледі."
 
 #: trainer/views.py:99
 msgid "Strava is disconnected: rides are no longer sent there."
-msgstr "Strava ажыратылды: заездтер енді онда жіберілмейді."
+msgstr "Strava ажыратылды: заездтер енді оған жіберілмейді."
 
 #: accounts/templates/accounts/profile.html:252
 msgid "ride"
