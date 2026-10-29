@@ -102,6 +102,10 @@ def _open(page: Page, live_server, viewport, lang, tab, query=""):
     page.wait_for_load_state("networkidle")
     # A skin's font arrives with font-display: swap; a label measured before it has the fallback's width.
     page.evaluate("() => document.fonts.ready")
+    # What the tests measure must be there: a header region gone would leave them measuring nothing,
+    # and passing (#384).
+    for region in ("#period-nav", "#period-hint", "#filter-chips"):
+        expect(page.locator(region)).to_have_count(1)
 
 
 def _controls(page: Page):
@@ -488,6 +492,7 @@ def test_the_period_is_named_in_words(page: Page, live_server, tab):
 def test_a_hint_takes_one_line(page: Page, live_server, viewport, tab):
     """A hint under a control is read at a glance; two lines push the content down on every tab."""
     _open(page, live_server, viewport, "kk", tab)
+    expect(page.locator("#period-hint")).not_to_be_empty()
     found = []
     for hint in page.locator(".period-hint:visible").all():
         lines = hint.evaluate("el => el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)")
