@@ -90,6 +90,22 @@ The maintainer's answers to the open questions, later on 2026-10-29:
     answers for it.
 21. **Calls to the model while building it** are allowed, sparingly.
 
+Later the same day, on news and articles:
+
+22. **Articles are not translated.** A knowledge article is written by hand, or through the API, in
+    the language it belongs to.
+23. **News get the assistant too**, for admins, on the pages where a news item is added and edited:
+    it translates the item into the three languages, puts its formatting right and changes its text
+    as the admin asks -- nothing invented. The conversation is kept with the news item, as an
+    event's is with its event.
+24. **One assistant, one key, skills by kind.** The same code and the same `ASSISTANT_LLM_API_KEY`
+    serve both. What the assistant is told differs, and lives apart: `assistant/skills/event/` for
+    events, `assistant/skills/news/` for news.
+25. **#361 is settled by the two**: events and news are written in the three languages by the
+    assistant, and articles need no translation.
+26. **Only admins and up use the key**: every operation that reaches the model is tested against
+    every role, by token and by the site's session.
+
 ## Requirements already fixed elsewhere
 
 - **Constitution VI**: no local or sport-specific hardcoding -- what to ask for a race or a ride

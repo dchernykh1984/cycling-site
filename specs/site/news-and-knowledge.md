@@ -5,7 +5,7 @@
 **Code**: `news/`, `knowledge/` (models, views, forms), `cycling_site/richtext.py`
 **Tests**: `news/tests.py`, `knowledge/tests.py`, `tests/test_article_meta.py`,
 `tests/test_slug_ascii.py`, `tests/e2e/test_news_editor.py`, `tests/e2e/test_knowledge_editor.py`,
-`tests/test_moderation_banner.py` (news submissions)
+`tests/test_moderation_banner.py` (news submissions), `assistant/tests/test_chat.py` (the news chat)
 **Related**: [site shell](site-shell.md) (search), [search visibility](search-visibility.md) (feeds,
 sitemap), [API](api.md) (content endpoints); the `site-content` skill covers publishing on the live
 site
@@ -37,6 +37,9 @@ member may submit a draft for review; members comment.
    that failed; a knowledge article is written in the one language chosen for it.
 2. **Given** an admin, **Then** they may hide an article (404 for others, visible to admins), unhide
    it, delete it (soft), and set tags and category (knowledge).
+3. **Given** an admin on a news item's add or edit page, **Then** the assistant's chat translates it,
+   puts its formatting right and changes it as asked (see [event assistant](assistant.md)). A
+   knowledge article is written by hand or through the API, and is not translated.
 
 ### Story 3 -- Submit a draft (P2)
 
