@@ -287,8 +287,10 @@ Payout accounts:
 - **FR-PAY-004**: An organizer (role organizer and up) keeps at most one payout account per
   connector: the connector's identifier, when it was added, and a label for themselves. Nothing else
   of the service's is stored.
-- **FR-PAY-005**: Removing an account used by an event disables that connector on the event after
-  the organizer confirms; payments already recorded keep their connector's name.
+- **FR-PAY-005**: An event's connectors use the payout accounts of the event's author (the
+  organizer who submitted it), never a manager's; a manager may enable only connectors the author
+  has an account for. Removing an account used by an event disables that connector on the event
+  after the organizer confirms; payments already recorded keep their connector's name.
 
 Fee schedule:
 
