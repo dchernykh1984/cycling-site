@@ -20,6 +20,7 @@ config:
   onChange():    called after every user-driven selection change
 returns {effective(), effectivePks(), effectiveDepth(), chosenPks(), refresh(), select(chains)}:
 select() replaces the whole selection with the given chains, as a page script sets it (issue #353).
+window.placeCascade(allLocations) gives a place cascade its nodesUnder() and chains(ids).
 {% endcomment %}
 {% cascade_context as cascade %}{{ cascade|json_script:"cascade-context" }}
 <script>
@@ -53,6 +54,46 @@ window.cascadeSearchWords = window.cascadeSearchWords || (function () {
     });
   };
 })();
+
+// The place tree's side of a cascade, shared by the calendar's place filter and the profile's
+// preferred places: what each level lists, and the ticks an address or a saved preference names.
+window.placeCascade = window.placeCascade || function (allLocations) {
+  var lang = (document.documentElement.lang || 'ru').split('-')[0];
+  var nameField = (['ru', 'kk', 'en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
+  function nm(l) { return l[nameField] || l.name_ru || ''; }
+  function byPk(pk) { return allLocations.find(function (l) { return String(l.pk) === String(pk); }); }
+
+  // Every node at depth d under the chosen parents, or anywhere when nothing above is chosen. Hidden
+  // countries, regions and cities stay selectable (issue #113). A city's hidden catch-all venue
+  // ("other location") means something only under its own city, so it is listed under chosen cities
+  // alone: across a country or the whole tree one checkbox would carry every city's.
+  function nodesUnder(d, parentPks) {
+    var parents = parentPks.map(byPk).filter(Boolean);
+    var underCities = parents.length > 0 && parents[0].depth === 3;
+    return allLocations.filter(function (l) {
+      if (l.depth !== d) return false;
+      if (d === 4 && l.is_hidden && !underCities) return false;
+      if (!parents.length) return true;
+      return parents.some(function (p) { return l.path.indexOf(p.path) === 0; });
+    }).map(function (l) {
+      return { pk: l.pk, name: nm(l), search: [l.name_ru, l.name_kk, l.name_en].join(' ') };
+    });
+  }
+
+  // The ticks the ids name, each at its own level and nothing above it, since any level opens on its
+  // own. A catch-all venue comes with its city, the only level that lists it.
+  function chains(ids) {
+    return ids.map(byPk).filter(Boolean).map(function (target) {
+      var step = { depth: target.depth, pk: target.pk };
+      if (target.depth !== 4 || !target.is_hidden) return [step];
+      var cityPath = target.path.slice(0, target.path.length / 4 * 3);
+      var city = allLocations.find(function (l) { return l.depth === 3 && l.path === cityPath; });
+      return city ? [{ depth: 3, pk: city.pk }, step] : [step];
+    });
+  }
+
+  return { nodesUnder: nodesUnder, chains: chains };
+};
 
 window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
   var N = config.levels.length;
