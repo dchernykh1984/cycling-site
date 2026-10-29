@@ -1153,7 +1153,7 @@ msgstr "Көрініс"
 #: skins/orange/templates/base.html:213
 #: skins/orange/templates/home/home_page.html:33
 msgid "Calendar"
-msgstr "Кунтiзбе"
+msgstr "Күнтізбе"
 
 #: calendar_app/templates/calendar_app/_view_switcher.html:14
 #: skins/orange/templates/home/home_page.html:34
@@ -1227,7 +1227,7 @@ msgstr "Барлық іс-шаралар тізімі"
 
 #: calendar_app/templates/calendar_app/calendar.html:101
 msgid "Subscribe in your calendar (.ics)"
-msgstr "Оз кунтизбенизге жазылу (.ics)"
+msgstr "Өз күнтізбеңізге жазылу (.ics)"
 
 #: calendar_app/templates/calendar_app/calendar.html:103
 msgid "New events (RSS)"
@@ -1381,7 +1381,7 @@ msgstr "Старт нүктесіне сілтеме"
 #: registrations/templates/registrations/register.html:207
 #: skins/orange/templates/base.html:180
 msgid "Register"
-msgstr "Тiркелу"
+msgstr "Тіркелу"
 
 #: calendar_app/templates/calendar_app/detail.html:144
 #: calendar_app/templates/calendar_app/moderate.html:42
@@ -2003,7 +2003,7 @@ msgstr "Қате орын алды. Кейінірек қайталап көрі
 
 #: cycling_site/templates/_map_layers.html:22
 msgid "Satellite"
-msgstr "Жер серiгi"
+msgstr "Жер серігі"
 
 #: cycling_site/templates/_moderation_banner.html:3
 msgid "Items awaiting your moderation"

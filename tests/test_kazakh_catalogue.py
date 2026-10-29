@@ -32,6 +32,10 @@ PINNED = {
     "Regenerate token": (KZ_I, NG),
     "API docs (Swagger)": (UU,),
     "Log out": (GH,),
+    "Calendar": (UE, KZ_I),
+    "Subscribe in your calendar (.ics)": (OE, UE, KZ_I, NG),
+    "Register": (KZ_I,),
+    "Satellite": (KZ_I,),
 }
 
 
@@ -39,7 +43,7 @@ class KazakhLettersTests(SimpleTestCase):
     def test_each_word_put_right_keeps_its_kazakh_letters(self):
         with translation.override("kk"):
             for msgid, letters in PINNED.items():
-                text = gettext(msgid)
+                text = gettext(msgid).lower()
                 for letter in letters:
                     with self.subTest(msgid=msgid[:40], letter=f"U+{ord(letter):04X}"):
                         self.assertIn(letter, text)
