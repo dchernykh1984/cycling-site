@@ -252,3 +252,23 @@ def test_while_the_assistant_writes_neither_a_message_nor_a_file_can_be_sent(
     expect(page.locator("#assistant-log")).to_contain_text("When is it?")
     expect(page.locator("#assistant-send")).to_be_enabled()
     expect(page.locator("#assistant-attach")).to_be_enabled()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_refused_form_comes_back_with_its_conversation(page: Page, live_server, admin_user, chat_on, monkeypatch):
+    _model(monkeypatch, {"reply": "Which day is it?", "set": {"title": {"ru": "Kofe", "kk": "Kofe", "en": "Coffee"}}})
+    inject_session(page, live_server, admin_user)
+    page.goto(f"{live_server.url}/en/calendar/submit/")
+    page.click("#assistant-toggle")
+    page.fill("#assistant-text", "A coffee ride")
+    page.click("#assistant-send")
+    expect(page.locator("#assistant-log")).to_contain_text("Which day is it?")
+    # No date: the server refuses the form, which the browser would otherwise stop before sending.
+    page.evaluate("document.getElementById('id_date_start').form.noValidate = true")
+    page.locator("form button[type='submit']", has_text="Submit").click()
+    expect(page.locator("#id_title_en")).to_have_value("Coffee")
+    page.click("#assistant-toggle")
+    said = page.locator("#assistant-log .assistant-msg")
+    expect(said).to_have_count(2)
+    expect(said.first).to_have_text("A coffee ride")
+    expect(said.last).to_have_text("Which day is it?")
