@@ -3,7 +3,7 @@
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: branch `353-assistant` on 2026-10-29
 **Code**:
-- `assistant/`: `models.py`, `llm.py`, `prompt.py`, `skills/*.md`, `fields.py`, `places.py`,
+- `assistant/`: `models.py`, `llm.py`, `prompt.py`, `skills/event/*.md`, `fields.py`, `places.py`,
   `conversations.py`, `api.py`, `assistant/templatetags/assistant.py`,
   `assistant/templates/assistant/_chat.html`;
 - the event form's hooks in `calendar_app/templates/calendar_app/`:

@@ -55,7 +55,7 @@ the chat on the add and edit pages, on a desktop and on a phone.
     started it; when.
   - `Message`: the conversation; `user` or `assistant`; who wrote it; the text shown in the chat;
     the form values a reply set; when.
-- `skills/*.md`, in Russian, outside the ASCII hook as the agents' guidance files are:
+- `skills/event/*.md`, in Russian, outside the ASCII hook as the agents' guidance files are:
   - `general.md`: the club's layout, no date in the text, the link preview line, three languages,
     the registration reminder (decision 16), only the event (decision 18);
   - `ride.md`: decision 11, then decision 13;

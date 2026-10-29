@@ -8,9 +8,10 @@ How it behaves is in `specs/site/assistant.md`; why, in `specs/353-event-assista
 
 ## The skills
 
-`skills/*.md` are the assistant's instructions: what to ask, and how an announcement is written.
-They are in Russian, outside the ASCII hook, and every file in the folder goes into every request in
-the order of the names. Change them as experience shows what announcements lack:
+`skills/event/*.md` are the event assistant's instructions: what to ask, and how an announcement is
+written. They are in Russian, outside the ASCII hook, and every file in the folder goes into every
+request about an event, in the order of the names. Change them as experience shows what
+announcements lack:
 
 - `general.md`: how to talk, how an announcement reads, the link preview, registration, the ending;
 - `ride.md`: what to ask about a ride;
