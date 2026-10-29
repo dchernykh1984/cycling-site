@@ -20,12 +20,21 @@ class SystemPromptTests(TestCase):
     def test_it_holds_the_contract_every_skill_and_the_lists_with_their_ids(self):
         text = prompt.system_prompt()
         self.assertIn(prompt.CONTRACT, text)
-        skills = sorted((prompt.SKILLS_DIR / "event").glob("*.md"))
+        skills = sorted((prompt.SKILLS_DIR / "event").rglob("*.md"))
         self.assertTrue(skills)
         for path in skills:
             self.assertIn(path.read_text(encoding="utf-8").strip(), text)
         self.assertIn(f"{self.ride.pk}: Zaezd / Ride", text)
         self.assertIn(f"  {self.gravel.pk}: Grevel / Gravel", text)
+
+    def test_the_shared_rules_come_first_and_each_kind_of_event_has_a_folder_of_its_own(self):
+        base = prompt.SKILLS_DIR / "event"
+        kinds = sorted(path for path in base.iterdir() if path.is_dir())
+        self.assertGreaterEqual(len(kinds), 2)
+        for folder in kinds:
+            self.assertTrue(list(folder.glob("*.md")), folder.name)
+        shared = (base / "general.md").read_text(encoding="utf-8").strip()
+        self.assertTrue(prompt.skills("event").startswith(shared))
 
     def test_it_reads_the_same_on_every_turn(self):
         self.assertEqual(prompt.system_prompt(), prompt.system_prompt())
@@ -157,7 +166,7 @@ class NewsPromptTests(TestCase):
         self.assertIn(prompt.NEWS_CONTRACT, text)
         for path in sorted((prompt.SKILLS_DIR / "news").glob("*.md")):
             self.assertIn(path.read_text(encoding="utf-8").strip(), text)
-        for path in sorted((prompt.SKILLS_DIR / "event").glob("*.md")):
+        for path in sorted((prompt.SKILLS_DIR / "event").rglob("*.md")):
             self.assertNotIn(path.read_text(encoding="utf-8").strip(), text)
         self.assertNotIn("Disciplines", text)
 

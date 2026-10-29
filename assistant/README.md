@@ -12,14 +12,16 @@ How it behaves is in `specs/site/assistant.md`; why, in `specs/353-event-assista
 
 ## The skills
 
-`skills/event/*.md` are the event assistant's instructions: what to ask, and how an announcement is
-written. They are in Russian, outside the ASCII hook, and every file in the folder goes into every
-request about an event, in the order of the names. Change them as experience shows what
-announcements lack:
+`skills/event/` holds the event assistant's instructions: what to ask, and how an announcement is
+written. They are in Russian, outside the ASCII hook, and every file goes into every request about
+an event: the shared ones first, then each kind of event's folder. Each kind has a folder of its
+own, so that changing one kind's file leaves the others as they were. Change them as experience
+shows what announcements lack:
 
-- `general.md`: how to talk, how an announcement reads, the link preview, registration, the ending;
-- `ride.md`: what to ask about a ride;
-- `race.md`: what to ask about a race.
+- `general.md`: how to talk, the type, direction and discipline, how an announcement reads, the
+  link preview, registration, the ending;
+- `ride/`: what to ask about a ride, and how its description reads;
+- `race/`: the same for a race.
 
 `skills/news/*.md` are the news assistant's: how to translate, format and change a news item. Both
 kinds share the code and the key; only what the model is told differs.

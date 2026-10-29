@@ -89,8 +89,10 @@ The site's instructions follow, in Russian.
 
 
 def skills(kind: str = "event") -> str:
-    """Every skill file of a kind (``skills/<kind>/``), in the order of their names."""
-    paths = sorted((SKILLS_DIR / kind).glob("*.md"))
+    """Every skill file of a kind: the shared ones in ``skills/<kind>/`` first, then each kind of
+    event's own folder, so that a change to one kind's file leaves the others' as they were."""
+    base = SKILLS_DIR / kind
+    paths = sorted(base.rglob("*.md"), key=lambda path: (len(path.relative_to(base).parts), path.as_posix()))
     return "\n\n".join(path.read_text(encoding="utf-8").strip() for path in paths)
 
 
