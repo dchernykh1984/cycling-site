@@ -75,8 +75,9 @@ list groups riders by category with start numbers; the timing apps fetch the sam
    -- where the event requires approval or payment -- unapproved or unpaid ones unless the organizer
    chose to show them; approval and payment status columns, and the additional-info column, appear
    to the public only when the organizer turned them on.
-2. **Given** a phone, **Then** the list stacks into cards with a sticky category band under the
-   navbar.
+2. **Given** a screen narrower than 1200px, **Then** the list stacks into cards with a sticky
+   category band under the navbar; from 1200px it is a table whose headings are never split inside
+   a word, at 12px, the free-text column headed "Info" unless the organizer named the field.
 
 ### Edge Cases
 
@@ -109,7 +110,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 - **FR-REG-003**: Additional info: off, free text, or a Strava link (prefilled from the profile,
   with a banner when the profile has none); optional or required; the organizer may name the field,
   and that wording reaches the form, the list column and the export (the built-in name follows the
-  reader's language; the export header stays English).
+  reader's language, and the list heads the column "Info" instead of the built-in free-text name;
+  the export header stays English).
 - **FR-REG-004**: Start numbers are unique across the whole event: categories sharing a range take
   numbers in order, a lower range after a higher one keeps its own, a rider who does not count
   consumes no number, an empty category reserves none.

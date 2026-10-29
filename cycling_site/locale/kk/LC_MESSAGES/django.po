@@ -4461,3 +4461,7 @@ msgstr "Тіркелулері мен фотоларын басқаруды сұ
 
 msgid "Answer"
 msgstr "Жауап беру"
+
+msgctxt "participant list: the column of the date a registration was made"
+msgid "Registered"
+msgstr "Тіркелді"
