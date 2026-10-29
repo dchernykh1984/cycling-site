@@ -104,10 +104,10 @@ class PrivacyPolicyRegionTests(TestCase):
                 body = self.client.get(in_language(reverse("privacy_policy"), language)).content.decode()
                 paragraph = translation.gettext(
                     "<strong>Your region.</strong> If you are not signed in, the calendar, the list and the map"
-                    " open on the events of your region. The network provider that delivers the site works out"
-                    " an approximate location from your IP address and passes it to us with the request; we use"
-                    " it only to choose your region as the page opens, and we keep neither the location nor the"
-                    " address. A cookie that lasts until you close the browser remembers that the region was"
-                    " offered, so that once you clear it you keep the whole calendar."
+                    " open on the events of your region, when it can be told. The network provider that delivers"
+                    " the site works out an approximate location from your IP address and passes it to us with the"
+                    " request; we use it only to choose your region as the page opens and do not store it. A cookie"
+                    " that lasts until you close the browser remembers that the region was offered, so that once"
+                    " you clear it you keep the whole calendar."
                 )
                 self.assertIn(paragraph, body)
