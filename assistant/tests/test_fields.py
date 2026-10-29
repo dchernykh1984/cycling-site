@@ -86,6 +86,21 @@ class LinkTests(TestCase):
         self.assertEqual(checked.form, answer)
         self.assertEqual(checked.notes, [])
 
+    def test_a_link_inside_a_description_must_have_been_written_too(self):
+        description = (
+            '<p>Track: <a href="https://strava.com/routes/3398">Strava</a>, '
+            '<a href="https://made.up/page">details</a>, <a href="mailto:club@example.org">mail</a></p>'
+        )
+        checked = _check({"description": {"ru": description}}, texts=[*self.TEXTS, "club@example.org"])
+        shown = checked.form["description_ru"]
+        self.assertIn('href="https://strava.com/routes/3398"', shown)
+        self.assertIn('href="mailto:club@example.org"', shown)
+        self.assertIn(", details, ", shown)
+        self.assertNotIn("made.up", shown)
+        self.assertEqual(
+            checked.notes, ["A link that is in neither your messages nor the form was left out: https://made.up/page"]
+        )
+
     def test_an_empty_link_empties_the_field(self):
         self.assertEqual(_check({"url_route": ""}).form, {"url_route": ""})
 

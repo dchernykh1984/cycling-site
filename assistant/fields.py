@@ -12,6 +12,7 @@ import datetime
 import re
 from dataclasses import dataclass, field
 
+from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.utils.translation import gettext as _
@@ -25,7 +26,7 @@ from cycling_site.sanitize import sanitize_rich_html
 # A description is not cut: the form's own check bounds it, and a cut would break its HTML.
 _MAX = {"title": 255, "preview_text": Competition._meta.get_field("preview_text").max_length}
 _URL_MAX = Competition._meta.get_field("url_route").max_length or 200
-_SCHEME = re.compile(r"^(?:https?://)?(?:www\.)?", re.IGNORECASE)
+_SCHEME = re.compile(r"^(?:https?://|mailto:|tel:)?(?:www\.)?", re.IGNORECASE)
 
 
 @dataclass
@@ -105,14 +106,30 @@ class _Checker:
                 if name == "description":
                     # The page gets the pictures back; what is kept for the conversation does without
                     # them, since the next turn's form brings them again.
-                    self.out.form[f"{name}_{lang}"] = sanitize_rich_html(
-                        pictures.restore(text, self.images), allow_img=True
+                    shown = self._own_links_only(
+                        sanitize_rich_html(pictures.restore(text, self.images), allow_img=True)
                     )
-                    kept[lang] = sanitize_rich_html(text)
+                    self.out.form[f"{name}_{lang}"] = shown
+                    kept[lang] = sanitize_rich_html(shown)
                 else:
                     kept[lang] = self.out.form[f"{name}_{lang}"] = text[: _MAX[name]]
             if kept:
                 self.out.set[name] = kept
+
+    def _left_out(self, url: str) -> None:
+        note = _("A link that is in neither your messages nor the form was left out: %(url)s") % {"url": url}
+        if note not in self.out.notes:
+            self.out.notes.append(note)
+
+    def _own_links_only(self, html: str) -> str:
+        """``html`` with each link nobody wrote turned back into its words."""
+        soup = BeautifulSoup(html, "html.parser")
+        for anchor in soup.find_all("a"):
+            href = str(anchor.get("href") or "")
+            if href and not written_by_them(href, self.sources):
+                self._left_out(href)
+                anchor.unwrap()
+        return str(soup)
 
     def dates(self, answer: dict) -> None:
         for name in ("date_start", "date_end"):
@@ -154,9 +171,7 @@ class _Checker:
                 continue
             url = _url(value)
             if url is None or not written_by_them(value, self.sources):
-                self.out.notes.append(
-                    _("A link that is in neither your messages nor the form was left out: %(url)s") % {"url": value}
-                )
+                self._left_out(value)
                 continue
             self.out.set[name] = self.out.form[name] = url
 
