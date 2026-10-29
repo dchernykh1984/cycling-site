@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n assistant %}
 
 {% block title %}{% trans "Submit event" %}{% endblock %}
 
@@ -203,6 +203,7 @@
     </form>
   </div>
 </div>
+{% assistant_chat %}
 {% endblock %}
 {% block extra_js %}{{ block.super }}
 {{ form.description_ru.value|default:""|json_script:"init-desc-ru" }}
