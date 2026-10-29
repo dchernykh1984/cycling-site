@@ -79,48 +79,16 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function build(allLocations) {
-  var lang = (document.documentElement.lang || 'ru').split('-')[0];
-  var nameField = (['ru', 'kk', 'en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
-  function nm(l) { return l[nameField] || l.name_ru || ''; }
-  function byPk(pk) { return allLocations.find(function (l) { return String(l.pk) === String(pk); }); }
-
-  // Every node at depth d under the chosen parents, or anywhere when nothing above is chosen. Hidden
-  // countries, regions and cities stay selectable (issue #113). A city's hidden catch-all venue
-  // ("other location") means something only under its own city, so it is listed under chosen cities
-  // alone: across a country or the whole tree one checkbox would carry every city's.
-  function nodesUnder(d, parentPks) {
-    var parents = parentPks.map(byPk).filter(Boolean);
-    var underCities = parents.length > 0 && parents[0].depth === 3;
-    return allLocations.filter(function (l) {
-      if (l.depth !== d) return false;
-      if (d === 4 && l.is_hidden && !underCities) return false;
-      if (!parents.length) return true;
-      return parents.some(function (p) { return l.path.indexOf(p.path) === 0; });
-    }).map(function (l) {
-      return { pk: l.pk, name: nm(l), search: [l.name_ru, l.name_kk, l.name_en].join(' ') };
-    });
-  }
-
-  // What the address names, each at its own level: the reader's ticks and nothing above them, since
-  // any level opens on its own. A catch-all venue comes with its city, the only level that lists it.
-  function restoreChains() {
-    var ids = new URLSearchParams(window.location.search).getAll('location')
-      .reduce(function (acc, v) { return acc.concat(v.split(',')); }, []);
-    return ids.map(byPk).filter(Boolean).map(function (target) {
-      var step = { depth: target.depth, pk: target.pk };
-      if (target.depth !== 4 || !target.is_hidden) return [step];
-      var cityPath = target.path.slice(0, target.path.length / 4 * 3);
-      var city = allLocations.find(function (l) { return l.depth === 3 && l.path === cityPath; });
-      return city ? [{ depth: 3, pk: city.pk }, step] : [step];
-    });
-  }
-
+  var places = window.placeCascade(allLocations);
   var inst = window.MultiSelectCascade({
     levels: [1, 2, 3, 4].map(function (d) {
       return { btn: document.getElementById('mf-btn-' + d), menu: document.getElementById('mf-menu-' + d) };
     }),
-    nodesUnder: nodesUnder,
-    restoreChains: restoreChains,
+    nodesUnder: places.nodesUnder,
+    restoreChains: function () {
+      return places.chains(new URLSearchParams(window.location.search).getAll('location')
+        .reduce(function (acc, v) { return acc.concat(v.split(',')); }, []));
+    },
     searchable: true,
     // A venue can be typed in straight away, without picking its country, region and city first.
     openLevels: true,
