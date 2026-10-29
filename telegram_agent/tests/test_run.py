@@ -229,7 +229,6 @@ def test_the_workflow_hands_the_run_every_name_the_config_reads():
         "AGENT_API_TOKEN",
         "LLM_API_KEY",
         "LLM_BASE_URL",
-        "LLM_MODEL",
         "TELEGRAM_API_ID",
         "TELEGRAM_API_HASH",
         "TELEGRAM_SESSION",
@@ -240,6 +239,7 @@ def test_the_workflow_hands_the_run_every_name_the_config_reads():
         "TELEGRAM_DRY_RUN",
     ):
         assert f"{name}:" in workflow, f"the workflow never sets {name}"
+    assert "LLM_MODEL:" not in workflow, "the model is named in agent/config.py, not handed in by the workflow"
     assert "python -m telegram_agent.run" in workflow
     assert "telethon" in workflow, "the runner must install the one dependency the site does not carry"
 
