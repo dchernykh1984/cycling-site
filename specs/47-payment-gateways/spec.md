@@ -44,7 +44,7 @@ maintainer's (`tmp/payment-gateways/`, not committed) and summarised in the pull
 Cross-cutting findings that shape the requirements:
 
 - No connector to a Russian service (Mir, SBP, YooKassa and the like): the Mir operator and the
-  Russian acquirers are under blocking sanctions, the site is hosted and proxied by US companies,
+  largest Russian banks are under blocking sanctions, the site is hosted and proxied by US companies,
   and the Kazakhstan providers of option C will not stand next to Mir. Participants without a
   supported method pay through the manual gateway.
 - Taxes on a fee are the organizer's, under their own regime; an organizer who is a private person
