@@ -11,7 +11,7 @@ from accounts import managing
 from accounts.models import User
 from calendar_app.models import Competition
 from registrations.models import CompetitionRegistration, RegistrationCategory
-from tests.e2e.conftest import E2E_SKIN, UPCOMING, inject_session
+from tests.e2e.conftest import UPCOMING, inject_session
 from tests.e2e.contrast import drawn, ratio
 
 
@@ -211,10 +211,7 @@ def test_the_box_stands_level_with_the_name_and_can_be_seen(page: Page, live_ser
     box_mid, name_mid = box_at["y"] + box_at["height"] / 2, name_at["y"] + name_at["height"] / 2
     assert abs(box_mid - name_mid) <= 2, (box_mid, name_mid)
     frame = drawn(box, "colour:" + box.evaluate("el => getComputedStyle(el).borderTopColor"))
-    # The dark skin draws every box of the site in its own field colours (skins/dark/skin.css, 2.1:1
-    # here): that skin is the maintainer's to change.
-    if E2E_SKIN != "dark":
-        assert ratio(frame, drawn(box, "fill-beneath")) >= 3
+    assert ratio(frame, drawn(box, "fill-beneath")) >= 3
 
 
 @pytest.mark.django_db(transaction=True)

@@ -14,6 +14,7 @@
     --skin-field-bg: #2c3034; /* inputs, selects, checkboxes, menus, the editor */
     --skin-field-color: #dee2e6; /* text inside them */
     --skin-field-border: #495057; /* their borders */
+    --skin-check-border: #7a828a; /* an empty checkbox's or radio's frame: 3:1 on any ground near it */
     --skin-field-disabled-bg: #212529; /* a disabled field */
     --skin-faint: #6c757d; /* a disabled field's text, the editor's placeholder */
     --skin-muted: #adb5bd; /* secondary buttons, editor icons */
@@ -116,7 +117,7 @@
 /* Dark theme: radio and checkbox inputs */
 [data-bs-theme="dark"] .form-check-input {
     background-color: var(--skin-field-bg) !important;
-    border-color: var(--skin-field-border) !important;
+    border-color: var(--skin-check-border) !important;
 }
 [data-bs-theme="dark"] .form-check-input:checked {
     background-color: var(--skin-accent) !important;
