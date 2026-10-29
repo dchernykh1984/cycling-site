@@ -11,6 +11,7 @@ materials, upload token, rich description, several event types), `calendar_app/t
 `tests/test_clone_competition.py`, `tests/test_preview_image.py`, `tests/test_preview_text_form.py`,
 `tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
 `tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/test_event_ics.py`,
+`tests/test_top_events.py`,
 `tests/e2e/test_competition_form.py`, `test_add_to_calendar.py`,
 `test_competition_materials.py`, `test_description_editor.py`, `test_resubmit.py`,
 `test_pending_moderation.py`, `test_invite_only_events.py`, `test_competition_link_order.py`
@@ -112,6 +113,15 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    page's language that the reader's calendar offers to add once. An event awaiting review or
    rejected has no button.
 
+### Story 7 -- Top events (P3)
+
+1. **Given** an admin or the owner on an event's form, **Then** a "Top event" box with a line on
+   what it does marks the event; anybody else is not offered it, a forged one is ignored, and the
+   author editing a top event leaves the mark as it was. A clone starts without it.
+2. **Given** a top event, **Then** it goes first wherever events are listed: at the head of the
+   list above a divider, first in its day on the calendar, first at its place on the map, first
+   among the nearest events (see [calendar](calendar.md)).
+
 ### Edge Cases
 
 - An event is soft-deleted; a deleted comment is erased.
@@ -138,7 +148,7 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
   or its author while an organizer. Hide and unhide, delete comments, see the invitation link and
   replace it -- managers;
   edit (materials included), delete, resubmit, see and manage the upload token -- managers and the
-  author whatever their role; dismiss reports -- admins and up.
+  author whatever their role; dismiss reports, mark a top event -- admins and up.
 - **FR-EVT-003**: Deleting is soft (`is_deleted`); a deleted event is seen by nobody.
 - **FR-EVT-004**: Who sees a published event: everybody, unless it is hidden (managers on its page,
   admins in listings) or invite-only (managers, invitees, registered riders whose entry is not
@@ -152,7 +162,7 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 - **Competition** (event): titles and descriptions per locale, dates, status and rejection history,
   author, location, event types, disciplines, document links/files, preview image and preview text
   per locale, registration
-  settings, upload token, hidden / deleted / invite-only flags and invite key.
+  settings, upload token, hidden / deleted / invite-only / top flags and invite key.
 - **CompetitionInvite**: a member let in by the invitation link.
 - **CompetitionComment**, **CompetitionReport** (open or dismissed), **CompetitionMaterial**
   (ordered named link).

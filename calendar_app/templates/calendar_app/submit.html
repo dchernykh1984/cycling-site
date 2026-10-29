@@ -90,7 +90,7 @@
       </div>
 
       {% for field in form %}
-        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "disciplines" and field.html_name != "location" and field.html_name|slice:":10" != "new_venue_" and field.html_name != "preview_image" and field.html_name|slice:":13" != "preview_text_" and field.html_name != "invite_only" %}
+        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "disciplines" and field.html_name != "location" and field.html_name|slice:":10" != "new_venue_" and field.html_name != "preview_image" and field.html_name|slice:":13" != "preview_text_" and field.html_name != "invite_only" and field.html_name != "is_top" %}
         <div class="mb-3">
           <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
             {{ field.label }}{% if field.field.required %} *{% endif %}
@@ -166,6 +166,14 @@
         {{ form.url_registration }}
         {% if form.url_registration.errors %}<div class="text-danger small mt-1">{% for e in form.url_registration.errors %}{{ e }}{% endfor %}</div>{% endif %}
       </div>
+
+      {% if "is_top" in form.fields %}
+      <div class="form-check mb-4">
+        {{ form.is_top }}
+        <label class="form-check-label fw-semibold" for="{{ form.is_top.id_for_label }}">{% trans "Top event" %}</label>
+        <div class="form-text">{% trans "Goes first wherever events are shown: at the head of the list, above a divider; first in its day on the calendar; first at its place on the map." %}</div>
+      </div>
+      {% endif %}
 
       {% if is_organizer_plus %}
       <div class="form-check mb-4">

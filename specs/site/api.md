@@ -27,7 +27,8 @@ and protocols with the event's upload token. The API has no language prefix.
    member; reads also work without a token, as a visitor.
 2. **Given** an organizer creates an event through the API, **Then** it waits for review; an admin's
    is created approved -- unless its geography is still pending. The event's author or an admin may
-   update it, resubmit it after rejection and soft-delete it; only an admin may hide or unhide it;
+   update it, resubmit it after rejection and soft-delete it; only an admin may hide or unhide it,
+   or mark it a top event (`is_top`, read by everybody; a 403 for anybody else);
    descriptions are sanitised and size-limited. An event's link preview text is read and written
    per language like its title (up to 200 characters each; a PATCH carrying one language clears
    the others). Reads preserve empty languages, so writing a response back keeps the chat's

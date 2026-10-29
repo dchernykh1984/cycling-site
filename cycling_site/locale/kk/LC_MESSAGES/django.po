@@ -4474,3 +4474,9 @@ msgstr "Біз деректеріңізді сатпаймыз, жалға бе�
 
 msgid "The new venue needs its name in Russian."
 msgstr "Жаңа орынның орысша атауы болуы керек."
+
+msgid "Top event"
+msgstr "Топ-іс-шара"
+
+msgid "Goes first wherever events are shown: at the head of the list, above a divider; first in its day on the calendar; first at its place on the map."
+msgstr "Іс-шаралар көрсетілетін барлық жерде бірінші тұрады: тізімнің басында, бөлгіштің үстінде; күнтізбеде өз күнінде бірінші; картада өз орнында бірінші."

@@ -231,6 +231,9 @@ class Competition(index.Indexed, models.Model):
     # who has opened its invitation link while signed in. Not the same as is_hidden, which takes an
     # event down for everybody; the two combine, and a hidden event stays hidden from invitees too.
     invite_only = models.BooleanField(default=False, db_index=True)
+    # A top event goes first wherever events are listed -- at the head of the list above a divider,
+    # first in its day on the calendar, first at its place on the map. Admins and the owner set it.
+    is_top = models.BooleanField(default=False)
     # The secret in the invitation link. Issued when the event first becomes invite-only rather than
     # by a column default: a default is evaluated once for every existing row in the migration, and
     # one key shared by every old event would open each of them with any other's link.
