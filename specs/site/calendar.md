@@ -9,11 +9,11 @@ filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/tes
 `tests/test_calendar_crawlable.py`, `tests/test_list_site_registration.py`,
 `tests/test_pagination_links.py`, `tests/test_locations_payload.py`, `tests/test_location.py`,
 `tests/e2e/test_calendar_view.py`, `test_calendar_map.py`, `test_competition_list.py`,
-`test_discipline_filter.py`, `test_location_filter.py`, `test_filter_search.py`, `test_date_filters.py`,
+`test_discipline_filter.py`, `test_location_filter.py`, `test_filter_search.py`, `test_guest_region.py`, `test_date_filters.py`,
 `test_filter_url_length.py`, `test_view_switcher_location.py`, `test_favorite_events.py`,
 `test_save_filter_preferences.py`, `test_calendar_phone_list.py`, `test_period_nav.py`,
 `test_calendar_busy_day.py`, `test_filter_chips.py`, `test_filter_toggle.py`, `test_top_events.py`;
-`tests/test_top_events.py`
+`tests/test_top_events.py`, `tests/test_guest_region.py`
 **Related**: [events](events.md), [locations](locations.md), [accounts](accounts.md) (saved
 preferences), [search visibility](search-visibility.md)
 
@@ -84,6 +84,12 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 5. **Given** a member with saved preferences opens a calendar page without a query, **Then** they
    are redirected to it with their preferences applied; an explicit query or the reset link is
    left alone (see [accounts](accounts.md)).
+6. **Given** a guest -- not signed in, not a crawler or a link preview -- opens the calendar, the
+   list or the map without a query, **Then** they are redirected to it with their region in the
+   place filter (#332): the region of the site's city nearest to the point the network provider
+   reports for them, within `GUEST_REGION_RADIUS_KM`, and only when it has an event still to come.
+   It is offered once a visit (a cookie until the browser closes), so a guest who clears it keeps
+   the whole calendar; with no point, no city near it or nothing to come, the calendar stays whole.
 
 ### Story 3 -- Follow the season elsewhere (P2)
 
@@ -156,6 +162,9 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 - `MAP_HOME_AREAS` maps named areas to their south-west and north-east corners. The deployment currently names
   `almaty`, bounded by `[43.05, 76.55]` and `[43.90, 77.45]`. If every mapped selected place lies
   in one area, the map opens on it; otherwise it fits matching event markers.
+- `GUEST_REGION_RADIUS_KM` (default 100): how far a guest may be from the site's nearest city for its
+  region to be theirs; `BOT_USER_AGENT_MARKERS`: the parts of a user agent that mark a crawler or a
+  link preview, which always reads the whole calendar (#332).
 - `MAP_DEFAULT_VIEW` sets the center and zoom when neither an area nor markers are available.
   The deployment's current default is `[48.0, 68.0]`, zoom 5; changing it needs configuration,
   not a template change.

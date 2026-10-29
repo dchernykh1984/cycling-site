@@ -47,6 +47,7 @@ from .forms import (
     ReportCompetitionForm,
     SubmitCompetitionForm,
 )
+from .guest_region import OFFERED_COOKIE, guest_region
 from .listing_seo import describe_filters, index_policy, landing_filters
 from .models import (
     Competition,
@@ -334,7 +335,8 @@ class DefaultFilterRedirectMixin:
     Fires only on a fresh visit -- a request with no query string at all. Once any param is present
     (including after the user clears the filter, which still submits the date range), the page is
     left exactly as asked, so the default is a starting point the user can always override or empty.
-    Anonymous users and users without saved preferences are unaffected (issue #229).
+    Users without saved preferences are unaffected (issue #229). A guest opens on their own region
+    instead, once a visit (calendar_app.guest_region, issue #332).
     """
 
     def get(self, request, *args, **kwargs):
@@ -342,6 +344,12 @@ class DefaultFilterRedirectMixin:
             pairs = _user_filter_default_params(request.user)
             if pairs:
                 return redirect(f"{request.path}?{urlencode(pairs)}")
+            region = guest_region(request)
+            if region is not None:
+                response = redirect(f"{request.path}?{urlencode([('location', region.pk)])}")
+                # For the visit only: a guest who clears the region keeps the whole calendar after it.
+                response.set_cookie(OFFERED_COOKIE, "1", samesite="Lax", secure=request.is_secure(), httponly=True)
+                return response
         return super().get(request, *args, **kwargs)
 
 

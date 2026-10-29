@@ -4563,3 +4563,6 @@ msgstr "Жауап тым ұзын болар еді: бір тілден нем
 #, python-format
 msgid "%(count)s more: refine the search"
 msgstr "Тағы %(count)s — іздеуді нақтылаңыз"
+
+msgid "<strong>Your region.</strong> If you are not signed in, the calendar, the list and the map open on the events of your region. The network provider that delivers the site works out an approximate location from your IP address and passes it to us with the request; we use it only to choose your region as the page opens, and we keep neither the location nor the address. A cookie that lasts until you close the browser remembers that the region was offered, so that once you clear it you keep the whole calendar."
+msgstr "<strong>Сіздің аймағыңыз.</strong> Сайтқа кірмеген болсаңыз, күнтізбе, тізім және карта сіздің аймағыңыздың іс-шараларымен ашылады. Сайтты жеткізетін желі провайдері IP-мекенжайыңыз бойынша шамамен орналасқан жеріңізді анықтап, оны сұраныспен бірге бізге береді; біз оны тек бет ашылғанда аймағыңызды таңдау үшін пайдаланамыз және орналасқан жерді де, мекенжайды да сақтамаймыз. Браузерді жапқанға дейін сақталатын cookie файлы аймақтың ұсынылғанын есте сақтайды: оны алып тастағаннан кейін сіз бүкіл күнтізбені көре бересіз."
