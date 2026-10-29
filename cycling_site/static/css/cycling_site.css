@@ -631,6 +631,21 @@ main .event-photo-preview img { object-fit: contain; }
     align-items: center;
 }
 .map-links .dropdown-item { display: flex; }
+/* A map's pins and clusters (#387, cycling_site/templates/_map_markers.html): Leaflet's pin sits at the
+   foot of a 44 px square that answers the tap; a cluster is a 44 px disc with its count, in the skin's
+   colours. */
+.map-pin img { position: absolute; left: 10px; bottom: 0; }
+.map-cluster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 3px solid var(--bs-primary);
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font-weight: 600;
+    box-shadow: var(--bs-box-shadow-sm);
+}
 /* An invitation's "Log in" (issue #351) is tapped on phones: 44 px whatever height the skin gives it. */
 .invite-preview .btn {
     min-height: 2.75rem;

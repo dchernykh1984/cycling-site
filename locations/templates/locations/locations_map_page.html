@@ -125,6 +125,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 {% include "_map_layers.html" %}
+{% include "_map_markers.html" %}
 <script>
 (function () {
     var locations = JSON.parse(document.getElementById('locations-data').textContent);
@@ -148,8 +149,9 @@
         map.setView([48.0, 68.0], 5);
     } else {
         var bounds = [];
+        var pins = window._mapClusters().addTo(map);
         locations.forEach(function (loc) {
-            var marker = L.marker([loc.lat, loc.lng]).addTo(map);
+            var marker = window._mapPin([loc.lat, loc.lng], loc.name).addTo(pins);
             var popupContent = '<strong>' + esc(loc.name) + '</strong>';
             if (loc.url) {
                 popupContent += '<br><a href="' + esc(loc.url) + '">{% trans "Read article" %}</a>';

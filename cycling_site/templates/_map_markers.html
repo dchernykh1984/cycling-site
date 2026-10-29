@@ -1,0 +1,42 @@
+{% load i18n static %}
+{% comment %}
+The pins of a map that shows many places, and the numbered clusters they gather into where they
+crowd (#387). Included after leaflet.js; the cluster plugin is the site's own copy, not a CDN's.
+{% endcomment %}
+<link rel="stylesheet" href="{% static 'vendor/leaflet.markercluster/MarkerCluster.css' %}">
+<script src="{% static 'vendor/leaflet.markercluster/leaflet.markercluster.js' %}"></script>
+<script>
+(function () {
+  var IMAGES = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/';
+  // Leaflet's own pin and shadow, inside a 44 px square whose foot is the point: a tap anywhere in
+  // the square opens the place, as on every control a finger has to hit (the interface skill).
+  var pin = L.divIcon({
+    className: 'map-pin',
+    html: '<img src="' + IMAGES + 'marker-shadow.png" alt="" width="41" height="41">' +
+          '<img src="' + IMAGES + 'marker-icon.png" srcset="' + IMAGES + 'marker-icon-2x.png 2x" alt="" width="25" height="41">',
+    iconSize: [44, 48],
+    iconAnchor: [22, 48],
+    popupAnchor: [1, -34]
+  });
+  // The place's name is the pin's name for a screen reader, and its hint under a pointer.
+  window._mapPin = function (latlng, name) {
+    return L.marker(latlng, {icon: pin, title: name});
+  };
+  var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window._mapClusters = function () {
+    return L.markerClusterGroup({
+      showCoverageOnHover: false,
+      // Every pin stays on the page, those off the screen too, as before there were clusters.
+      removeOutsideVisibleBounds: false,
+      animate: !still,
+      iconCreateFunction: function (cluster) {
+        return L.divIcon({
+          className: 'map-cluster',
+          html: '<span>' + cluster.getChildCount() + '</span><span class="visually-hidden"> {% trans "places close together; zoom in to see them" %}</span>',
+          iconSize: [44, 44]
+        });
+      }
+    });
+  };
+})();
+</script>
