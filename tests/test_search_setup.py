@@ -143,7 +143,9 @@ class CompetitionLastmodTests(TestCase):
         )
         body = self.client.get(reverse("sitemap_section", args=["competitions"])).content.decode()
         entry = body[body.index(comp.get_absolute_url()) :].split("</url>")[0]
-        self.assertIn(f"<lastmod>{comp.updated_at:%Y-%m-%d}", entry)
+        # The sitemap prints the date in the site's zone; updated_at is UTC and names the day before
+        # for a few hours every evening.
+        self.assertIn(f"<lastmod>{timezone.localtime(comp.updated_at):%Y-%m-%d}", entry)
 
     def test_an_event_without_an_approval_date_is_still_listed(self):
         comp = Competition.objects.create(
