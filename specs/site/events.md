@@ -14,7 +14,8 @@ materials, upload token, rich description, several event types), `calendar_app/t
 `tests/test_top_events.py`, `assistant/tests/test_chat.py`,
 `tests/e2e/test_competition_form.py`, `test_add_to_calendar.py`,
 `test_competition_materials.py`, `test_description_editor.py`, `test_resubmit.py`,
-`test_pending_moderation.py`, `test_invite_only_events.py`, `test_competition_link_order.py`
+`test_pending_moderation.py`, `test_invite_only_events.py`, `test_competition_link_order.py`,
+`test_map_links_menu.py`
 **Related**: [calendar](calendar.md), [registrations](registrations.md), [protocols](protocols.md),
 [locations](locations.md), [events agents](events-agents.md), [gallery](gallery.md)
 
@@ -141,8 +142,9 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 - The event page lists registration, documents, protocols and materials before the description;
   uploaded documents follow the same order and a URL takes precedence over a file.
 - Map links on the event page -- the services the deployment offers, in its order (see
-  [locations](locations.md), Configuration) -- appear only for a venue with its own point; they open
-  in a new tab.
+  [locations](locations.md), Configuration) -- appear only for a venue with its own point, in one
+  menu behind a "Link to the start point" button, however many there are (#335); each answers a tap
+  across 44 px and opens in a new tab.
 - On a phone an event's title shares its row with the page's buttons (share, add to calendar,
   favourite); a word too long for the room they leave breaks, rather than pushing the page sideways.
 

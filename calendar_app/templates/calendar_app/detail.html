@@ -124,11 +124,15 @@
     {% endif %}
 
     {# Only a venue's own point earns these, so a forwarded link never lands on a city centre (locations.maps.start_point). #}
+    {# One menu however many services the deployment offers (#335). #}
     {% if map_links %}
-    <div class="mb-4 small" role="group" aria-label="{% trans 'Link to the start point' %}">
-      <strong class="text-muted">{% trans "Link to the start point" %}:</strong>
-      {% for link in map_links %}<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
-         class="btn btn-outline-secondary btn-sm me-1 mb-1" id="map-link-{{ link.key }}">{{ link.label }}</a>{% endfor %}
+    <div class="dropdown map-links mb-4" id="map-links">
+      <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="map-links-toggle"
+              data-bs-toggle="dropdown" aria-expanded="false">{% trans "Link to the start point" %}</button>
+      <ul class="dropdown-menu" aria-labelledby="map-links-toggle">
+        {% for link in map_links %}<li><a class="dropdown-item" href="{{ link.url }}" target="_blank"
+            rel="noopener noreferrer" id="map-link-{{ link.key }}">{{ link.label }}</a></li>{% endfor %}
+      </ul>
     </div>
     {% endif %}
 
