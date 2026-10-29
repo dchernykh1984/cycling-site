@@ -249,8 +249,10 @@ the site. A payment service posts its confirmation to the site.
   new one may be started. Two confirmed payments for one entry cannot happen: a second confirmation
   of the same external id is idempotent, a confirmation for an entry already paid is recorded and
   flagged for the organizer.
-- Deleting an entry with payments is refused while a confirmed, unrefunded payment exists; the
-  organizer records the refund first (or, for the manual connector, says it was not refunded).
+- An entry with a confirmed, unrefunded payment is neither cancelled by its participant nor deleted
+  by a manager: the page says to ask the organizer, who records the refund first. Payment records
+  outlive their entry: when an entry is deleted after its refund, its payments keep the event, the
+  participant's name and the amounts.
 - The link connector cannot carry the amount to every service (Kaspi's link lets the payer type the
   amount); the page therefore shows the amount large and asks the participant to type exactly it.
 - An event whose currency changes after payments exist is refused the change.
