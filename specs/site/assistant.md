@@ -54,7 +54,8 @@ What to ask, and how an announcement reads, are skills. These are Markdown files
 
 ### Edge Cases
 
-- **A link the admin did not write** is not put in the form, and the chat says it was left out.
+- **A link the admin did not write** is not put in the form, and the chat says it was left out. A
+  link the form already holds -- an edited event's own, or one in its descriptions -- is kept.
 - **The place**:
   - a venue of the site's, when the name matches it (the import agents' matching);
   - the city's catch-all, when no spot is named;
@@ -77,7 +78,8 @@ What to ask, and how an announcement reads, are skills. These are Markdown files
 - **FR-AST-003**: The model's answer is checked before it reaches the page:
   - texts are cut to their columns, and descriptions are sanitised;
   - dates are parsed, and only ids that exist are kept;
-  - links must come from the admin's messages, and places from the site's tree.
+  - links must come from the admin's messages or the form as it stands, and places from the
+    site's tree.
 - **FR-AST-004**: A turn -- the admin's message and the reply together -- is stored only when the
   model answered.
 - **FR-AST-005**: The model is the agents' constant (`DEFAULT_LLM_MODEL`), with thinking off and JSON
