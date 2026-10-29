@@ -776,7 +776,7 @@ main form .helptext { display: inline-block; margin-top: 0.35rem; font-size: 0.8
 
 /* Participant list and other data tables: a panel. */
 .participant-list-table { background: var(--ubt-surface); border-radius: var(--ubt-radius); overflow: hidden; }
-@media (max-width: 767.98px) {
+@media (max-width: 1199.98px) {
     .participant-list-table { background: transparent; overflow: visible; }
     .participant-list-table tr { background: var(--ubt-surface); border-radius: var(--ubt-radius) !important; box-shadow: var(--ubt-shadow); }
     .participant-category { background: var(--ubt-ink) !important; color: #fff !important; border-radius: var(--ubt-radius-sm); border-left: 5px solid var(--ubt-orange); }
