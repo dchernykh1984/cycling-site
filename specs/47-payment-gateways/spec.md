@@ -278,9 +278,10 @@ Connectors:
   and `link` (an `https://` URL; confirmed by a manager). An automatic connector is added as one
   catalogue entry plus its callback handling, with no change to registration code; a test connector
   in the test suite proves it.
-- **FR-PAY-003**: Which connectors a deployment offers is a setting (`PAYMENT_CONNECTORS`), checked
-  at start-up like `MAP_LINK_SERVICES`; an unknown name is a warning, a connector whose platform
-  credentials are missing is an error.
+- **FR-PAY-003**: Which connectors a deployment offers is a setting (`PAYMENT_CONNECTORS`, default
+  `manual,link`), checked at start-up like `MAP_LINK_SERVICES`; an unknown name is a warning, a
+  connector whose platform credentials are missing is an error. The manual connector is offered
+  whatever the setting says (decision 2).
 
 Payout accounts:
 
