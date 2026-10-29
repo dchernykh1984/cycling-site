@@ -72,6 +72,7 @@ select = [
 "instagram_agent/geo.py" = ["S310"]
 "agent/llm.py" = ["S310"]
 "agent/site_api.py" = ["S310"]
+"agent/check_model.py" = ["S310"]
 "**/migrations/*.py" = ["N806", "RUF001", "RUF012", "E501"]
 "cycling_site/settings/*.py" = ["F403", "F405", "S105"]
 
