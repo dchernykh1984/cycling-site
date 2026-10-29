@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "gallery",
     "event_photos",
     "trainer",
+    "assistant",
     "modeltranslation",  # before apps it will translate and before django.contrib.admin
     "wagtail_localize",  # before wagtail.admin
     "wagtail_localize.locales",  # replaces wagtail.locales
@@ -395,6 +396,12 @@ GALLERY_MAX_BATCH_MB = env.int("GALLERY_MAX_BATCH_MB", default=90)
 # Free space the gallery always leaves on the media disk, which posters, news pictures and protocols
 # share with it: an upload that would cut into it is refused.
 GALLERY_DISK_RESERVE_MB = env.int("GALLERY_DISK_RESERVE_MB", default=200)
+
+# The event assistant (issue #353): a chat that fills the event form by asking the admin about the
+# event. The key stays on the server -- no page and no answer of the API carries it -- and without
+# it the chat is not offered. Any OpenAI-compatible chat API will do; the model is named in code.
+ASSISTANT_LLM_API_KEY = env("ASSISTANT_LLM_API_KEY", default="")
+ASSISTANT_LLM_BASE_URL = env("ASSISTANT_LLM_BASE_URL", default="https://api.deepseek.com")
 
 # Event photos in external folders (issue #349). The site reads a Dropbox folder shared "anyone with
 # the link" with its own app's key and secret -- never an organizer's token.
