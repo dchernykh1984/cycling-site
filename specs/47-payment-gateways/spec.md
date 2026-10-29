@@ -352,8 +352,8 @@ API:
   connector.
 - **FeeStep**: event, instant (stored as UTC, entered in the event's zone), price, optional per
   category prices; ordered by instant. The event carries the currency.
-- **EventConnector**: event, connector, the organizer's payout account where the connector needs
-  one; which connectors an event takes.
+- **EventConnector**: event, connector; which connectors an event takes. The payout account used is
+  the author's for that connector (FR-PAY-005), looked up, not copied.
 - **Payment**: entry, connector, amount, currency, step, state, external id, recorded by, timestamps
   of start, confirmation, refund; a log of the callbacks received.
 - **CompetitionRegistration.is_paid**: kept; set and cleared by payments (FR-PAY-011).
