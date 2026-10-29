@@ -43,9 +43,13 @@ def _bare(url: str) -> str:
 
 
 def written_by_them(url: str, texts: list[str]) -> bool:
-    """Whether one of ``texts`` holds this link, give or take its scheme, "www." and a final slash."""
+    """Whether one of ``texts`` holds this link, give or take its scheme, "www." and a final slash.
+
+    The link must be there whole: "routes/12" is not written by whoever wrote "routes/123".
+    """
     bare = _bare(url)
-    return bool(bare) and any(bare in text.lower() for text in texts)
+    whole = re.compile(re.escape(bare) + r"(?![\w-])")
+    return bool(bare) and any(whole.search(text.lower()) for text in texts)
 
 
 def _line(value) -> str:

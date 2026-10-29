@@ -76,6 +76,16 @@ class LinkTests(TestCase):
             ["A link that is in neither your messages nor the form was left out: https://example.org/register"],
         )
 
+    def test_a_link_counts_as_written_only_whole_never_as_the_start_of_a_longer_one(self):
+        checked = _check(
+            {"url_route": "https://strava.com/routes/339", "url_announcement": "t.me/ubt_club"}, texts=self.TEXTS
+        )
+        self.assertEqual(checked.form, {"url_announcement": "https://t.me/ubt_club"})
+        self.assertEqual(
+            checked.notes,
+            ["A link that is in neither your messages nor the form was left out: https://strava.com/routes/339"],
+        )
+
     def test_a_link_the_form_already_holds_is_kept(self):
         current = {
             "url_route": "https://strava.com/routes/9",
