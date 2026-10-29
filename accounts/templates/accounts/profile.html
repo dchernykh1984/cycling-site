@@ -148,6 +148,8 @@
             </div>
         </div>
 
+        {% if managing %}{% include "accounts/_managing.html" %}{% endif %}
+
         {% comment %}
         The whole ladder, not just the rung the reader is on: "Role: Participant" says nothing
         about what else exists, what it would allow, or that stepping down is possible at all.
@@ -414,8 +416,6 @@
         {% else %}
         <p class="text-muted small">{% trans "No registrations yet." %}</p>
         {% endif %}
-
-        {% if managing %}{% include "accounts/_managing.html" %}{% endif %}
 
         <h2 class="h5 mb-3 mt-2">{% trans "Events I submitted" %}</h2>
         {% if my_competitions %}

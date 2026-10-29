@@ -1,155 +1,161 @@
 {% load i18n %}
 {% comment %}Managing another member's registrations and photos (issue #315): who may manage the reader's,
 and whose the reader manages -- the members accepted, the requests waiting, and the link that brings
-them. Named by what they do, with no word for a role.{% endcomment %}
-<section class="managing mb-4" id="my-managers">
-    <h2 class="h5 mb-2">{% trans "Who may manage my registrations and photos" %}</h2>
-    {% if managing.managers %}
-    <ul class="list-group">
-        {% for row in managing.managers %}
-        <li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap">
-            <span>{{ row.manager.public_display_name }}{% if not row.accepted_at %} <span class="badge bg-warning text-dark">{% trans "Waiting for confirmation" %}</span>{% endif %}</span>
-            <form method="post" action="{% url 'account_managing_leave' row.manager_id %}"
-                  {% if row.accepted_at %}onsubmit="return confirm('{% filter escapejs %}{% trans "Take back this person's right to manage your registrations and photos?" %}{% endfilter %}')"{% endif %}>
+them. Named by what they do, with no word for a role. One card, like the role's, right after the
+sign-in methods: it is about the account, not about an event.{% endcomment %}
+<div class="card mb-4 managing" id="managing">
+    <div class="card-header">{% trans "Managing registrations and photos" %}</div>
+    <div class="card-body">
+        <section id="my-managers">
+            <h2 class="h6 mb-2">{% trans "Who may manage my registrations and photos" %}</h2>
+            {% if managing.managers %}
+            <ul class="list-group">
+                {% for row in managing.managers %}
+                <li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                    <span>{{ row.manager.public_display_name }}{% if not row.accepted_at %} <span class="badge bg-warning text-dark">{% trans "Waiting for confirmation" %}</span>{% endif %}</span>
+                    <form method="post" action="{% url 'account_managing_leave' row.manager_id %}"
+                          {% if row.accepted_at %}onsubmit="return confirm('{% filter escapejs %}{% trans "Take back this person's right to manage your registrations and photos?" %}{% endfilter %}')"{% endif %}>
+                        {% csrf_token %}
+                        {% if row.accepted_at %}{% trans "Remove" context "a person from a list" as act %}{% else %}{% trans "Withdraw" as act %}{% endif %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{{ act }}: {{ row.manager.public_display_name }}">{{ act }}</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted small mb-0">{% trans "Nobody yet. When you open someone's link and allow it, they are listed here." %}</p>
+            {% endif %}
+        </section>
+
+        <section class="border-top pt-3 mt-3" id="managed-members">
+            <h2 class="h6 mb-2">{% trans "Whose registrations and photos I manage" %}</h2>
+            {% if managing.members %}
+            <div class="mb-3">
+                <table class="table table-sm align-middle mb-0 managing-table">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Last name" %}</th>
+                            <th>{% trans "First name" %}</th>
+                            <th>{% trans "Date of birth" %}</th>
+                            <th>{% trans "Gender" %}</th>
+                            <th>{% trans "City" %}</th>
+                            <th>{% trans "Team" %}</th>
+                            <th><span class="visually-hidden">{% trans "Actions" %}</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in managing.members %}{% with person=row.member %}
+                        <tr>
+                            <td data-label="{% trans 'Last name' %}">{{ person.last_name }}</td>
+                            <td data-label="{% trans 'First name' %}">{{ person.first_name }}</td>
+                            <td class="text-nowrap" data-label="{% trans 'Date of birth' %}">{{ person.birth_date|date:"SHORT_DATE_FORMAT" }}</td>
+                            <td data-label="{% trans 'Gender' %}">{{ person.get_gender_display }}</td>
+                            <td data-label="{% trans 'City' %}">{{ person.city }}</td>
+                            <td data-label="{% trans 'Team' %}">{{ person.team }}</td>
+                            <td class="text-end reg-actions">
+                                <form method="post" action="{% url 'account_managing_drop' person.pk %}"
+                                      onsubmit="return confirm('{% filter escapejs %}{% trans "Stop managing this person's registrations and photos?" %}{% endfilter %}')">
+                                    {% csrf_token %}
+                                    {% trans "Remove" context "a person from a list" as act %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{{ act }}: {{ person.last_name }} {{ person.first_name }}">{{ act }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endwith %}{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted small">{% trans "Nobody yet." %}</p>
+            {% endif %}
+
+            {% if managing.waiting %}
+            <h3 class="small fw-semibold">{% trans "Waiting for your answer" %}</h3>
+            <div class="mb-2">
+                <table class="table table-sm align-middle mb-0 managing-table">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Last name" %}</th>
+                            <th>{% trans "First name" %}</th>
+                            <th>{% trans "Team" %}</th>
+                            <th>{% trans "Year of birth" %}</th>
+                            <th><span class="visually-hidden">{% trans "Actions" %}</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in managing.waiting %}{% with person=row.member %}
+                        <tr>
+                            <td data-label="{% trans 'Last name' %}">{{ person.last_name }}</td>
+                            <td data-label="{% trans 'First name' %}">{{ person.first_name }}</td>
+                            <td data-label="{% trans 'Team' %}">{{ person.team }}</td>
+                            <td data-label="{% trans 'Year of birth' %}">{{ person.birth_date|date:"Y" }}</td>
+                            <td class="reg-actions">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <form method="post" action="{% url 'account_managing_accept' person.pk %}">
+                                        {% csrf_token %}
+                                        {% trans "Accept" as act %}
+                                        <button type="submit" class="btn btn-sm btn-outline-success" aria-label="{{ act }}: {{ person.last_name }} {{ person.first_name }}">{{ act }}</button>
+                                    </form>
+                                    <form method="post" action="{% url 'account_managing_reject' person.pk %}">
+                                        {% csrf_token %}
+                                        {% trans "Reject" as act %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{{ act }}: {{ person.last_name }} {{ person.first_name }}">{{ act }}</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endwith %}{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if managing.waiting|length > 1 %}
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <form method="post" action="{% url 'account_managing_accept_all' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-success">{% trans "Accept all" %}</button>
+                </form>
+                <form method="post" action="{% url 'account_managing_reject_all' %}"
+                      onsubmit="return confirm('{% filter escapejs %}{% trans "Reject all the requests waiting?" %}{% endfilter %}')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Reject all" %}</button>
+                </form>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <h3 class="small fw-semibold mt-3">{% trans "Your link" %}</h3>
+            <p class="text-muted small mb-2">{% trans "Send it to the people whose registrations and photos you will manage: they open it signed in and allow it, and then you accept them here." %}</p>
+            {% if managing.invite_url %}
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <code class="user-select-all text-break">{{ managing.invite_url }}</code>
+                {% include "_share_button.html" with share_url=managing.invite_url %}
+            </div>
+            <p class="text-muted small mb-2">{% blocktrans with date=managing.invite.expires_at|date:"SHORT_DATE_FORMAT" %}Valid until {{ date }}.{% endblocktrans %}</p>
+            <div class="d-flex flex-wrap gap-2">
+                <form method="post" action="{% url 'account_managing_issue' %}"
+                      onsubmit="return confirm('{% filter escapejs %}{% trans "Make a new link? This one will stop working; the requests already waiting stay." %}{% endfilter %}')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-warning">{% trans "New link" %}</button>
+                </form>
+                <form method="post" action="{% url 'account_managing_delete' %}"
+                      onsubmit="return confirm('{% filter escapejs %}{% trans "Delete the link? Nobody will be able to use it; the requests already waiting stay." %}{% endfilter %}')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Delete link" %}</button>
+                </form>
+            </div>
+            {% else %}
+            {% if managing.invite %}
+            <p class="text-muted small mb-2">{% blocktrans with date=managing.invite.expires_at|date:"SHORT_DATE_FORMAT" %}Your link expired on {{ date }}.{% endblocktrans %}</p>
+            {% endif %}
+            {% if managing.no_link %}
+            <p class="small mb-0">{{ managing.no_link }} <a href="{% url 'account_profile_edit' %}">{% trans "Edit profile" %}</a></p>
+            {% else %}
+            <form method="post" action="{% url 'account_managing_issue' %}">
                 {% csrf_token %}
-                {% if row.accepted_at %}{% trans "Remove" context "a person from a list" as act %}{% else %}{% trans "Withdraw" as act %}{% endif %}
-                <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{{ act }}: {{ row.manager.public_display_name }}">{{ act }}</button>
+                <button type="submit" class="btn btn-sm btn-outline-primary">{% trans "Create link" %}</button>
             </form>
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p class="text-muted small mb-0">{% trans "Nobody yet. When you open someone's link and allow it, they are listed here." %}</p>
-    {% endif %}
-</section>
-
-<section class="managing mb-4" id="managed-members">
-    <h2 class="h5 mb-2">{% trans "Whose registrations and photos I manage" %}</h2>
-    {% if managing.members %}
-    <div class="mb-3">
-        <table class="table table-sm align-middle mb-0 managing-table">
-            <thead>
-                <tr>
-                    <th>{% trans "Last name" %}</th>
-                    <th>{% trans "First name" %}</th>
-                    <th>{% trans "Date of birth" %}</th>
-                    <th>{% trans "Gender" %}</th>
-                    <th>{% trans "City" %}</th>
-                    <th>{% trans "Team" %}</th>
-                    <th><span class="visually-hidden">{% trans "Actions" %}</span></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in managing.members %}{% with person=row.member %}
-                <tr>
-                    <td data-label="{% trans 'Last name' %}">{{ person.last_name }}</td>
-                    <td data-label="{% trans 'First name' %}">{{ person.first_name }}</td>
-                    <td class="text-nowrap" data-label="{% trans 'Date of birth' %}">{{ person.birth_date|date:"SHORT_DATE_FORMAT" }}</td>
-                    <td data-label="{% trans 'Gender' %}">{{ person.get_gender_display }}</td>
-                    <td data-label="{% trans 'City' %}">{{ person.city }}</td>
-                    <td data-label="{% trans 'Team' %}">{{ person.team }}</td>
-                    <td class="text-end reg-actions">
-                        <form method="post" action="{% url 'account_managing_drop' person.pk %}"
-                              onsubmit="return confirm('{% filter escapejs %}{% trans "Stop managing this person's registrations and photos?" %}{% endfilter %}')">
-                            {% csrf_token %}
-                            {% trans "Remove" context "a person from a list" as act %}
-                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{{ act }}: {{ person.last_name }} {{ person.first_name }}">{{ act }}</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endwith %}{% endfor %}
-            </tbody>
-        </table>
+            {% endif %}
+            {% endif %}
+        </section>
     </div>
-    {% else %}
-    <p class="text-muted small">{% trans "Nobody yet." %}</p>
-    {% endif %}
-
-    {% if managing.waiting %}
-    <h3 class="h6">{% trans "Waiting for your answer" %}</h3>
-    <div class="mb-2">
-        <table class="table table-sm align-middle mb-0 managing-table">
-            <thead>
-                <tr>
-                    <th>{% trans "Last name" %}</th>
-                    <th>{% trans "First name" %}</th>
-                    <th>{% trans "Team" %}</th>
-                    <th>{% trans "Year of birth" %}</th>
-                    <th><span class="visually-hidden">{% trans "Actions" %}</span></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in managing.waiting %}{% with person=row.member %}
-                <tr>
-                    <td data-label="{% trans 'Last name' %}">{{ person.last_name }}</td>
-                    <td data-label="{% trans 'First name' %}">{{ person.first_name }}</td>
-                    <td data-label="{% trans 'Team' %}">{{ person.team }}</td>
-                    <td data-label="{% trans 'Year of birth' %}">{{ person.birth_date|date:"Y" }}</td>
-                    <td class="reg-actions">
-                        <div class="d-flex justify-content-end gap-2">
-                            <form method="post" action="{% url 'account_managing_accept' person.pk %}">
-                                {% csrf_token %}
-                                {% trans "Accept" as act %}
-                                <button type="submit" class="btn btn-sm btn-outline-success" aria-label="{{ act }}: {{ person.last_name }} {{ person.first_name }}">{{ act }}</button>
-                            </form>
-                            <form method="post" action="{% url 'account_managing_reject' person.pk %}">
-                                {% csrf_token %}
-                                {% trans "Reject" as act %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{{ act }}: {{ person.last_name }} {{ person.first_name }}">{{ act }}</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% endwith %}{% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% if managing.waiting|length > 1 %}
-    <div class="d-flex flex-wrap gap-2 mb-3">
-        <form method="post" action="{% url 'account_managing_accept_all' %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-outline-success">{% trans "Accept all" %}</button>
-        </form>
-        <form method="post" action="{% url 'account_managing_reject_all' %}"
-              onsubmit="return confirm('{% filter escapejs %}{% trans "Reject all the requests waiting?" %}{% endfilter %}')">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Reject all" %}</button>
-        </form>
-    </div>
-    {% endif %}
-    {% endif %}
-
-    <h3 class="h6 mt-3">{% trans "Your link" %}</h3>
-    <p class="text-muted small mb-2">{% trans "Send it to the people whose registrations and photos you will manage: they open it signed in and allow it, and then you accept them here." %}</p>
-    {% if managing.invite_url %}
-    <div class="d-flex align-items-center gap-2 mb-1">
-        <code class="user-select-all text-break">{{ managing.invite_url }}</code>
-        {% include "_share_button.html" with share_url=managing.invite_url %}
-    </div>
-    <p class="text-muted small mb-2">{% blocktrans with date=managing.invite.expires_at|date:"SHORT_DATE_FORMAT" %}Valid until {{ date }}.{% endblocktrans %}</p>
-    <div class="d-flex flex-wrap gap-2">
-        <form method="post" action="{% url 'account_managing_issue' %}"
-              onsubmit="return confirm('{% filter escapejs %}{% trans "Make a new link? This one will stop working; the requests already waiting stay." %}{% endfilter %}')">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-outline-warning">{% trans "New link" %}</button>
-        </form>
-        <form method="post" action="{% url 'account_managing_delete' %}"
-              onsubmit="return confirm('{% filter escapejs %}{% trans "Delete the link? Nobody will be able to use it; the requests already waiting stay." %}{% endfilter %}')">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Delete link" %}</button>
-        </form>
-    </div>
-    {% else %}
-    {% if managing.invite %}
-    <p class="text-muted small mb-2">{% blocktrans with date=managing.invite.expires_at|date:"SHORT_DATE_FORMAT" %}Your link expired on {{ date }}.{% endblocktrans %}</p>
-    {% endif %}
-    {% if managing.no_link %}
-    <p class="small mb-0">{{ managing.no_link }} <a href="{% url 'account_profile_edit' %}">{% trans "Edit profile" %}</a></p>
-    {% else %}
-    <form method="post" action="{% url 'account_managing_issue' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-sm btn-outline-primary">{% trans "Create link" %}</button>
-    </form>
-    {% endif %}
-    {% endif %}
-</section>
+</div>

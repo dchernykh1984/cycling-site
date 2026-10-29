@@ -4452,3 +4452,6 @@ msgstr "%(name)s сіздің тіркелулеріңіз бен фотолар
 
 msgid "Add your first and last name to your profile first: whoever opens your link must see who asks."
 msgstr "Алдымен профиліңізге атыңыз бен тегіңізді жазыңыз: сілтемеңізді ашқан адам кім сұрап тұрғанын көруі керек."
+
+msgid "Managing registrations and photos"
+msgstr "Тіркелулер мен фотоларды басқару"
