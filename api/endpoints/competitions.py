@@ -514,8 +514,9 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
         # delete/level-change can't bind the competition to a removed or non-venue node.
         with transaction.atomic():
             update_fields = _apply_patch_fields(competition, data, user)
-            if update_fields:
-                competition.save(update_fields=update_fields)
+            if update_fields or set_disciplines or set_event_types:
+                # The edit time moves with any change, the many-to-many ones too (#348).
+                competition.save(update_fields=[*update_fields, "updated_at"])
             if set_disciplines:
                 _set_disciplines(competition, discipline_ids)
             if set_event_types:

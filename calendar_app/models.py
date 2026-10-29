@@ -136,6 +136,9 @@ class Competition(index.Indexed, models.Model):
         related_name="+",
     )
     approved_at = models.DateTimeField(null=True, blank=True)
+    # When its page last changed, for the sitemap's lastmod (#348). Empty for events last edited
+    # before the field existed; a save that names its fields leaves it alone unless it names it too.
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     rejection_reason = models.TextField(blank=True)
     url_route = models.URLField(blank=True)
     url_announcement = models.URLField(blank=True)

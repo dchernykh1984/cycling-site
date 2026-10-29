@@ -793,6 +793,18 @@ class CompetitionUpdateTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.json()["discipline_ids"], [d2.pk])
         self.assertEqual(list(self.comp.disciplines.values_list("pk", flat=True)), [d2.pk])
 
+    def test_any_patch_moves_the_events_edit_time(self):
+        """The sitemap dates an event by it (#348), the many-to-many edits included."""
+        cat = DisciplineCategory.objects.create(name="Road")
+        road_race = Discipline.objects.create(name="Road Race", category=cat)
+        for body in ({"title": {"ru": "Moved", "kk": "", "en": ""}}, {"discipline_ids": [road_race.pk]}):
+            with self.subTest(body=list(body)):
+                Competition.objects.filter(pk=self.comp.pk).update(updated_at=None)
+                resp = self.patch(f"/api/v1/competitions/{self.comp.pk}", body, user=self.owner)
+                self.assertEqual(resp.status_code, 200)
+                self.comp.refresh_from_db()
+                self.assertIsNotNone(self.comp.updated_at)
+
     def test_patch_can_clear_disciplines(self):
         cat = DisciplineCategory.objects.create(name="Road")
         d1 = Discipline.objects.create(name="Road Race", category=cat)

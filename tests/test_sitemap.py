@@ -10,8 +10,10 @@ import datetime
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from calendar_app.models import Competition
+from cycling_site.sitemaps import CompetitionSitemap
 from knowledge.models import KnowledgeArticle
 from news.models import NewsArticle
 
@@ -57,6 +59,33 @@ class CompetitionSitemapTests(TestCase):
         body = self.client.get(reverse("sitemap_section", args=["competitions"])).content.decode()
         for comp in (hidden, pending, deleted):
             self.assertNotIn(comp.get_absolute_url(), body)
+
+
+class CompetitionLastmodTests(TestCase):
+    """An event is dated by the later of its last edit and its approval (#348)."""
+
+    def test_an_edit_after_the_approval_dates_the_entry(self):
+        approved = timezone.now() - datetime.timedelta(days=30)
+        comp = _competition("Edited", approved_at=approved)
+        self.assertGreater(comp.updated_at, approved)
+        self.assertEqual(CompetitionSitemap().lastmod(comp), comp.updated_at)
+
+    def test_an_approval_after_the_last_edit_dates_the_entry(self):
+        comp = _competition("Approved later")
+        later = comp.updated_at + datetime.timedelta(hours=1)
+        Competition.objects.filter(pk=comp.pk).update(approved_at=later)
+        comp.refresh_from_db()
+        self.assertEqual(CompetitionSitemap().lastmod(comp), later)
+
+    def test_an_event_last_edited_before_the_edit_time_was_kept_dates_from_its_approval(self):
+        approved = timezone.now() - datetime.timedelta(days=30)
+        comp = _competition("Old", approved_at=approved)
+        Competition.objects.filter(pk=comp.pk).update(updated_at=None)
+        comp.refresh_from_db()
+        self.assertEqual(CompetitionSitemap().lastmod(comp), approved)
+        Competition.objects.filter(pk=comp.pk).update(approved_at=None)
+        comp.refresh_from_db()
+        self.assertIsNone(CompetitionSitemap().lastmod(comp))
 
 
 class NewsSitemapTests(TestCase):

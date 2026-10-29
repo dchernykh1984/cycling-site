@@ -143,9 +143,9 @@ class CompetitionSitemap(LanguageSitemap):
         return obj.get_absolute_url()
 
     def lastmod(self, obj):
-        # When the event went public. Competition keeps no edit time of its own, and the approval is
-        # the moment its page appeared; better a date than none, which leaves the crawler guessing.
-        return obj.approved_at
+        # The later of its last edit and its approval: an event edited after it went public is read
+        # again, and one last edited before the edit time was kept dates from going public (#348).
+        return max((moment for moment in (obj.updated_at, obj.approved_at) if moment), default=None)
 
     def priority(self, obj):
         # An event still to come is the one worth crawling first; a finished one is an archive page.
