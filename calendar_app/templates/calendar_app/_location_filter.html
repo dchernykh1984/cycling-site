@@ -124,7 +124,9 @@ document.addEventListener('DOMContentLoaded', function () {
     onChange: function () { if (window.onCalendarFilterChange) window.onCalendarFilterChange(); }
   });
   window.locationFilter = inst;
-  window.getLocationFilterIds = function () { return inst.effectivePks(); };
+  // Every ticked level travels, so a second country stays ticked after a region of the first is
+  // picked; the server shows the deepest of them.
+  window.getLocationFilterIds = function () { return inst.chosenPks(); };
   }
 });
 </script>

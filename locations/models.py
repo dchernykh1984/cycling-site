@@ -830,9 +830,21 @@ def locations_filter_data(user=None, include_all=False) -> list:
     return sort_locations_for_filter(rows)
 
 
+def deepest_chosen(ids) -> list["Location"]:
+    """The chosen places at the deepest level among them, which is what a location filter means.
+
+    The filter keeps every level it ticked in the address, so that its boxes survive a reload and a
+    switch of tabs; a country and one of its regions then mean the region -- a city wins over its
+    country, as a discipline does over its direction.
+    """
+    nodes = list(Location.objects.filter(pk__in=ids, is_deleted=False))
+    deepest = max((node.depth for node in nodes), default=0)
+    return [node for node in nodes if node.depth == deepest]
+
+
 def filter_descendant_pks(location_ids) -> set:
-    """Union of descendant pks (incl. self) for the selected filter ids. Each value may be a
-    comma-joined group of same-name ids (as the multi-select cascade emits)."""
+    """Union of descendant pks (incl. self) for the deepest of the selected filter ids. Each value may
+    be a comma-joined group of same-name ids (as the multi-select cascade emits)."""
     ids: set[int] = set()
     for value in location_ids or []:
         for part in str(value).split(","):
@@ -842,7 +854,7 @@ def filter_descendant_pks(location_ids) -> set:
     if not ids:
         return set()
     pks: set[int] = set()
-    for loc in Location.objects.filter(pk__in=ids, is_deleted=False):
+    for loc in deepest_chosen(ids):
         pks.update(loc.get_descendants(include_self=True).values_list("pk", flat=True))
     return pks
 

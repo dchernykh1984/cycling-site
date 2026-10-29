@@ -31,6 +31,7 @@ from locations.models import (
     LocationConflictError,
     LocationProposal,
     chain_is_approved,
+    deepest_chosen,
     lock_competition_location,
     map_display_node,
     sort_locations_for_filter,
@@ -226,12 +227,12 @@ def _parse_int_ids(values) -> set:
 
 
 def _location_descendant_pks(location_ids) -> set:
-    """Union of descendant pks (incl. self) for all given location ids."""
+    """Union of descendant pks (incl. self) for the deepest of the given location ids."""
     ids = _parse_int_ids(location_ids)
     if not ids:
         return set()
     pks: set[int] = set()
-    for loc in Location.objects.filter(pk__in=ids):
+    for loc in deepest_chosen(ids):
         pks.update(loc.get_descendants(include_self=True).values_list("pk", flat=True))
     return pks
 
@@ -452,13 +453,10 @@ def map_home_area(location_ids) -> list | None:
     A place counts by its own point; one without coordinates says nothing. No place, a place outside
     every area, or places in two areas -- the map fits its events instead.
     """
-    from locations.models import Location
-
     points = [
-        (float(lat), float(lng))
-        for lat, lng in Location.objects.filter(pk__in=location_ids, lat__isnull=False, lng__isnull=False).values_list(
-            "lat", "lng"
-        )
+        (float(loc.lat), float(loc.lng))
+        for loc in deepest_chosen(location_ids)
+        if loc.lat is not None and loc.lng is not None
     ]
     if not points:
         return None
@@ -731,7 +729,7 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         # A filtered list is a page about a city or a discipline; say so, instead of leaving every
         # combination sharing one title and one site-wide description.
         meta_title, meta_description = describe_filters(
-            locations=_parse_int_ids(self.request.GET.getlist("location")),
+            locations={loc.pk for loc in deepest_chosen(_parse_int_ids(self.request.GET.getlist("location")))},
             disciplines=_parse_int_ids(self.request.GET.getlist("discipline")),
             event_types=_parse_int_ids(self.request.GET.getlist("event_type")),
             count=page.paginator.count,
