@@ -70,3 +70,17 @@ def test_a_new_venue_is_named_in_each_language_and_set_aside_whole(page: Page, l
     page.select_option("#loc-venue", label="Velodrome")
     for field in names:
         expect(page.locator(field)).to_have_value("")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_name_in_another_language_asks_for_the_russian_one_before_sending(page: Page, live_server, organizer):
+    _tree()
+    inject_session(page, live_server, organizer)
+    _open_city(page, live_server)
+    page.click("#add-venue-btn")
+    russian = page.locator("#new-venue-name")
+    expect(russian).not_to_have_attribute("required", "")
+    page.fill("#new-venue-name-en", "Park EN")
+    expect(russian).to_have_attribute("required", "")
+    page.fill("#new-venue-name-en", "")
+    expect(russian).not_to_have_attribute("required", "")

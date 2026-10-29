@@ -47,7 +47,6 @@
       <div class="col-sm-4">
         <label class="form-label form-label-sm mb-1" for="new-venue-name">{% trans "Name (RU)" %} *</label>
         {{ form.new_venue_name }}
-        {% if form.new_venue_name.errors %}<div class="text-danger small mt-1">{% for e in form.new_venue_name.errors %}{{ e }}{% endfor %}</div>{% endif %}
       </div>
       <div class="col-sm-4">
         <label class="form-label form-label-sm mb-1" for="new-venue-name-kk">{% trans "Name (KK)" %}</label>
@@ -96,7 +95,14 @@
   // The new venue's name in each language; a proposal set aside clears all of them.
   var nvNameInps = ['new-venue-name', 'new-venue-name-kk', 'new-venue-name-en']
     .map(function (id) { return document.getElementById(id); }).filter(Boolean);
-  function clearNewVenueNames() { nvNameInps.forEach(function (inp) { inp.value = ''; }); }
+  // A name in Kazakh or English asks for the Russian one, the site's default, before the page is
+  // sent: the server would refuse it, and the page comes back with the proposal folded away.
+  function requireRussianName() {
+    if (nvNameInps.length !== 3) return;
+    nvNameInps[0].required = !!(nvNameInps[1].value.trim() || nvNameInps[2].value.trim());
+  }
+  nvNameInps.forEach(function (inp) { inp.addEventListener('input', requireRussianName); });
+  function clearNewVenueNames() { nvNameInps.forEach(function (inp) { inp.value = ''; }); requireRussianName(); }
   var nvLatInp = document.getElementById('new-venue-lat');
   var nvLngInp = document.getElementById('new-venue-lng');
 

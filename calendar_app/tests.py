@@ -2324,7 +2324,9 @@ class LocationProposalInSubmitTests(TestCase):
             reverse("calendar_submit"), self._payload(new_venue_name="", new_venue_name_en="Park EN")
         )
         self.assertFalse(Competition.objects.filter(title_ru="Race").exists())
-        self.assertIn("new_venue_name", response.context["form"].errors)
+        with translation_override("ru"):
+            refusal = gettext("The new venue needs its name in Russian.")
+        self.assertIn(refusal, response.context["form"].non_field_errors())
         self.assertFalse(Location.objects.filter(name_en="Park EN").exists())
 
     def test_approving_competition_auto_approves_location(self):

@@ -4471,3 +4471,6 @@ msgstr "<strong>Тіркелулеріңіз бен фотоларыңызды �
 
 msgid "We do not sell, rent or trade your data. We do not use it for advertising and we do not use it to train machine-learning or AI models. We do not share it with anyone except the service providers listed below, the organizer of an event you are registered for, and the members you allowed to manage your registrations and photos."
 msgstr "Біз деректеріңізді сатпаймыз, жалға бермейміз және айырбастамаймыз. Оларды жарнама үшін пайдаланбаймыз және машиналық оқыту мен жасанды интеллект модельдерін оқыту үшін қолданбаймыз. Оларды төменде көрсетілген қызмет жеткізушілерден, сіз тіркелген іс-шараның ұйымдастырушысынан және тіркелулеріңіз бен фотоларыңызды басқаруға рұқсат берген қатысушылардан басқа ешкімге бермейміз."
+
+msgid "The new venue needs its name in Russian."
+msgstr "Жаңа орынның орысша атауы болуы керек."
