@@ -635,9 +635,10 @@ main .event-photo-preview img { object-fit: contain; }
 .map-links .dropdown-item { display: flex; }
 /* A map's pins and clusters (#387, cycling_site/templates/_map_markers.html): Leaflet's pin sits at the
    foot of a 44 px square that answers the tap -- the square alone: the shadow reaching past it takes no
-   taps from a neighbour; a cluster is a 44 px disc with its count, in the skin's colours. */
+   taps from a neighbour; a cluster is a 44 px disc with its count, in the skin's colours. Leaflet's
+   stylesheet comes after this one and makes every marker a block, hence the second class. */
 .map-pin img { position: absolute; left: 10px; bottom: 0; pointer-events: none; }
-.map-cluster {
+.leaflet-marker-icon.map-cluster {
     display: flex;
     align-items: center;
     justify-content: center;

@@ -40,6 +40,11 @@ def test_two_places_a_street_apart_are_one_cluster_that_opens_into_two_pins(page
     # What a screen reader announces: the count first, as the reader sees it, then what it is.
     expect(page.get_by_role("button", name="2 places close together; zoom in to see them")).to_have_count(1)
     _assert_tappable(cluster)
+    # The count sits in the middle of its disc, whatever Leaflet's own stylesheet says about markers.
+    disc, count = cluster.bounding_box(), cluster.locator("span").first.bounding_box()
+    assert disc is not None and count is not None
+    assert abs((count["x"] + count["width"] / 2) - (disc["x"] + disc["width"] / 2)) < 2, (disc, count)
+    assert abs((count["y"] + count["height"] / 2) - (disc["y"] + disc["height"] / 2)) < 2, (disc, count)
 
     cluster.click()
     pins = page.locator(".map-pin")
