@@ -71,6 +71,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 {% include "_map_layers.html" %}
+{% include "_map_markers.html" %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var mapUrl = '{% url "calendar_map_api" %}';
@@ -85,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var map = L.map('calendar-map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
   window.calendarMap = map;  // exposed for e2e/debugging
   _addMapLayers(map);
-  var markersLayer = L.layerGroup().addTo(map);
+  var markersLayer = window._mapClusters().addTo(map);
 
   function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -145,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
             html += '<br><a href="' + esc(c.url) + '" target="_blank" rel="noopener">' +
                     esc(c.title) + '</a> &mdash; ' + fmtDate(c.date_start);
           });
-          L.marker([loc.lat, loc.lng]).bindPopup(html).addTo(markersLayer);
+          window._mapPin([loc.lat, loc.lng], loc.name).bindPopup(html).addTo(markersLayer);
           bounds.push([loc.lat, loc.lng]);
         });
         if (fitView) {

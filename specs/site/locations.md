@@ -52,7 +52,8 @@ places, and lets managers maintain the tree.
    when it has no children and no events; never under its own descendant), hide it (twice restores),
    and soft-delete it -- refused while active descendants or events depend on it; the catch-all can be
    neither moved, unhidden nor deleted.
-3. **Given** the map page, **Then** a visitor sees markers for places with points; a participant
+3. **Given** the map page, **Then** a visitor sees markers for places with points -- gathered into
+   numbered clusters where they crowd, as on the calendar's map ([calendar](calendar.md)); a participant
    and up also gets an "add a location" button; an admin also sees a paginated, filterable hierarchy
    table with edit/hide/delete actions that keep the filter, and an edit link in marker popups. The
    filter is the calendar's place filter: a venue is typed into its own field straight away, without

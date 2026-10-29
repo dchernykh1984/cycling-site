@@ -8,7 +8,7 @@ filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/tes
 `tests/test_feeds.py`,
 `tests/test_calendar_crawlable.py`, `tests/test_list_site_registration.py`,
 `tests/test_pagination_links.py`, `tests/test_locations_payload.py`, `tests/test_location.py`,
-`tests/e2e/test_calendar_view.py`, `test_calendar_map.py`, `test_competition_list.py`,
+`tests/e2e/test_calendar_view.py`, `test_calendar_map.py`, `test_map_clusters.py`, `test_competition_list.py`,
 `test_discipline_filter.py`, `test_location_filter.py`, `test_filter_search.py`, `test_guest_region.py`, `test_date_filters.py`,
 `test_filter_url_length.py`, `test_view_switcher_location.py`, `test_favorite_events.py`,
 `test_save_filter_preferences.py`, `test_calendar_phone_list.py`, `test_period_nav.py`,
@@ -39,7 +39,8 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    instead; an explicit date range or floating-month marker wins over both.
 3. **Given** the map view, **Then** events until the current month's end (or the chosen range) are pinned:
    each location with coordinates gets a marker listing its events with links; several events at
-   one place share one marker.
+   one place share one marker. Markers that crowd gather into a numbered cluster, which opens into
+   them with a tap; a marker and a cluster each answer a tap across 44 px (#387).
 4. **Given** any of the three, **Then** a switcher moves between them keeping the filters; the map,
    which has no location filter of its own, carries the incoming location filter through its links,
    and a chosen date range is remembered for the browser session. Explicit dates or a floating
