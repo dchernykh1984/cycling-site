@@ -8,7 +8,7 @@ entirely normal and points into another hemisphere.
 
 from decimal import Decimal
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from locations.maps import map_links, start_point
 from locations.models import Location, LocationFallback
@@ -86,16 +86,21 @@ class StartPointRuleTests(TestCase):
             start_point(object())  # type: ignore[arg-type]
 
 
+EVERY_SERVICE = ["2gis", "yandex", "google", "apple", "osm"]
+
+
+@override_settings(MAP_LINK_SERVICES=EVERY_SERVICE)
 class MapLinkTests(TestCase):
-    """What the links actually contain."""
+    """What the links actually contain: the catalogue's templates, filled in."""
 
     def setUp(self):
         _, _, _, self.venue = _tree(lat=ALMATY_LAT, lng=ALMATY_LNG)
         self.links = {link.key: link.url for link in map_links(self.venue, CYRILLIC_NAME)}
 
-    def test_every_service_is_offered_in_the_agreed_order(self):
-        keys = [link.key for link in map_links(self.venue)]
-        self.assertEqual(keys, ["2gis", "yandex", "google", "apple", "osm"])
+    def test_the_services_come_in_the_order_the_deployment_lists_them(self):
+        self.assertEqual([link.key for link in map_links(self.venue)], EVERY_SERVICE)
+        with override_settings(MAP_LINK_SERVICES=["osm", "2gis"]):
+            self.assertEqual([link.key for link in map_links(self.venue)], ["osm", "2gis"])
 
     def test_services_that_take_longitude_first_get_longitude_first(self):
         """2GIS and Yandex read lon,lat. Swapping puts the start in the Arctic Ocean."""
@@ -165,6 +170,7 @@ class MapLinkTests(TestCase):
         self.assertIn("-68.302948,-54.801912", links["2gis"])
 
 
+@override_settings(MAP_LINK_SERVICES=EVERY_SERVICE)
 class MapLinkLocaleTests(TestCase):
     """The labels have to exist in all three site languages -- and actually be translated.
 
@@ -201,3 +207,41 @@ class MapLinkLocaleTests(TestCase):
         self.assertEqual(labels["2gis"], "2GIS")
         self.assertEqual(labels["yandex"], "Yandex Maps")
         self.assertEqual(labels["osm"], "OpenStreetMap")
+
+
+class MapServiceSettingsTests(TestCase):
+    """Which services are offered is configuration, never a list in the code (principle VI)."""
+
+    def setUp(self):
+        _, _, _, self.venue = _tree(lat=ALMATY_LAT, lng=ALMATY_LNG)
+
+    def test_by_default_only_the_services_that_work_everywhere_are_offered(self):
+        from django.conf import settings
+
+        with override_settings(MAP_LINK_SERVICES=settings.MAP_LINK_SERVICES):
+            self.assertEqual([link.key for link in map_links(self.venue)], ["google", "apple", "osm"])
+
+    def test_another_service_is_a_line_of_configuration(self):
+        from django.conf import settings
+
+        catalogue = {
+            **settings.MAP_SERVICES,
+            "mapy": {"label": "Mapy", "url": "https://mapy.example/?x={lng}&y={lat}&z={zoom}#t", "name": "q"},
+        }
+        with override_settings(MAP_SERVICES=catalogue, MAP_LINK_SERVICES=["mapy"]):
+            (link,) = map_links(self.venue, "Start")
+        self.assertEqual(link.label, "Mapy")
+        self.assertEqual(link.url, "https://mapy.example/?x=76.889709&y=43.238949&z=17&q=Start#t")
+
+    def test_a_list_written_with_spaces_names_the_same_services(self):
+        """The environment's "2gis, yandex" is two services, not "2gis" and an unknown " yandex"."""
+        with override_settings(MAP_LINK_SERVICES=["2gis", " yandex", ""]):
+            self.assertEqual([link.key for link in map_links(self.venue)], ["2gis", "yandex"])
+
+    def test_a_service_the_catalogue_does_not_describe_is_skipped_and_reported(self):
+        from locations.checks import map_link_services_are_known
+
+        with override_settings(MAP_LINK_SERVICES=["google", "goggle"]):
+            self.assertEqual([link.key for link in map_links(self.venue)], ["google"])
+            self.assertEqual([w.id for w in map_link_services_are_known(None)], ["locations.W001"])
+        self.assertEqual(map_link_services_are_known(None), [])

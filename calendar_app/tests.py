@@ -2,7 +2,7 @@ import datetime
 import json
 
 from django.db import IntegrityError, transaction
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext
@@ -3686,6 +3686,7 @@ class HikingMigrationTests(TestCase):
         self.assertEqual(EventType.objects.get(pk=before.pk).name_en, "Training / Leisure Outing")
 
 
+@override_settings(MAP_LINK_SERVICES=["2gis", "yandex", "google", "apple", "osm"])
 class CompetitionDetailMapLinksTests(TestCase):
     """The "open the start in ..." links on the event page (locations.maps).
 

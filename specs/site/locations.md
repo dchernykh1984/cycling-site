@@ -63,8 +63,8 @@ places, and lets managers maintain the tree.
 - A hidden node is never a marker; a hidden venue resolves to its city's point, or the region's.
 - New nodes sort after the real ones and before the catch-all; ties fall back to creation order.
 - Concurrent tree mutations are serialised so a node is never orphaned or nested too deep.
-- Map links (2GIS, Yandex, Google, Apple, OpenStreetMap, with local brand names) appear only for a
-  venue with its own point -- never for a city, region, country, catch-all or hidden venue.
+- Map links (the services the deployment offers, with local brand names) appear only for a venue
+  with its own point -- never for a city, region, country, catch-all or hidden venue.
 
 ## Functional Requirements
 
@@ -84,14 +84,24 @@ places, and lets managers maintain the tree.
   sort order; the catch-all mapping (**LocationFallback**) per city.
 - **LocationProposal**: a pending node, its proposer and status.
 
+## Configuration
+
+- `MAP_SERVICES`: the catalogue of map services an event's start point can be opened in -- for each,
+  its label (translated where it is shown), its URL with `{lat}`, `{lng}` and `{zoom}` filled in, and
+  for a service that captions its pin, the parameter that carries the place's name. Another service
+  is another entry; the catalogue knows 2GIS, Yandex, Google, Apple and OpenStreetMap.
+- `MAP_LINK_SERVICES` (environment, comma-separated): which of them an event page offers, in this
+  order. By default the services that work everywhere -- Google, Apple, OpenStreetMap. The
+  deployment currently lists 2GIS and Yandex first, then Google, Apple and OpenStreetMap
+  (`cycling_site/settings/prod.py`). A name the catalogue does not describe is skipped and reported
+  at startup (`locations.W001`).
+
 ## Local assumptions
 
 Where the code still assumes a place, a brand or a sport (constitution, principle VI):
 
 - The location cascade's mini-map, the locations map page and the location form's coordinate
   picker open over Central Asia (`[48.0, 68.0]`, zoom 5) when there is nothing to fit to.
-- The map-link services are a fixed list in code (`locations/maps.py`); which services suit a
-  country is not configurable.
 - **Accepted** (maintainer, 2026-10-21: the three languages are deliberate and a fourth is not planned -- it would mean translating every event and article, beside which naming the three in code costs nothing). The catch-all venue is named by looping over a literal `("ru", "kk", "en")`
   (`locations/models.py`), and the location form names each language's field.
 

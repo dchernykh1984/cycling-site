@@ -6,12 +6,15 @@ own map pin may climb the tree to a city or a region when a venue has no point o
 for drawing a marker, useless here. A link that quietly resolves to the middle of Aktau is worse
 than no link: it is forwarded without checking, and someone drives to a car park where nobody is.
 
-Nothing here talks to the services. Every URL is built by string concatenation from the two
-numbers, so the page costs no network call and works with any point, anywhere.
+Nothing here talks to the services. Every URL is filled in from the two numbers, so the page costs
+no network call and works with any point, anywhere.
 
-The coordinate order is NOT the same across services -- 2GIS and Yandex take longitude first,
-Google, Apple and OpenStreetMap take latitude first. Getting it backwards produces a URL that looks
-perfectly normal and points into another hemisphere, so the order is pinned by tests.
+Which services are offered, and in what order, is configuration, not code: the catalogue
+``MAP_SERVICES`` says how each one opens a point, and ``MAP_LINK_SERVICES`` which of them a
+deployment offers its readers. The coordinate order is NOT the same across services -- 2GIS and
+Yandex take longitude first, Google, Apple and OpenStreetMap latitude first. Getting it backwards
+produces a URL that looks perfectly normal and points into another hemisphere, so the catalogue's
+templates are pinned by tests.
 """
 
 from __future__ import annotations
@@ -20,7 +23,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from urllib.parse import quote
 
-from django.utils.translation import gettext_lazy as _
+from django.conf import settings
+from django.utils.translation import gettext
 
 from locations.models import Location
 
@@ -69,31 +73,36 @@ def _coord(value: Decimal) -> str:
 
 
 def map_links(location: Location | None, name: str = "") -> list[MapLink]:
-    """Every "open in ..." link for this location, in the order they should be offered.
+    """Every "open in ..." link for this location, in the order the deployment lists the services.
 
     Empty when the location has no start point of its own -- callers can simply check the list.
     """
     point = start_point(location)
     if point is None:
         return []
-    lat, lng = _coord(point[0]), _coord(point[1])
-    # Apple prints q= as the pin's caption. An empty one is not harmless -- it is a caption saying
-    # nothing over a pin, so the parameter is left out rather than sent blank.
-    caption = f"&q={quote(name.strip(), safe='')}" if name and name.strip() else ""
-    return [
-        MapLink("2gis", str(_("2GIS")), f"https://2gis.com/geo/{lng},{lat}"),
-        # ll centres the map; without it Yandex opens wherever it thinks the reader is and the
-        # pt marker can sit off-screen entirely, which is the whole failure this feature avoids.
-        MapLink(
-            "yandex",
-            str(_("Yandex Maps")),
-            f"https://yandex.ru/maps/?ll={lng},{lat}&z={_ZOOM}&pt={lng},{lat}&l=map",
-        ),
-        MapLink("google", str(_("Google Maps")), f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"),
-        MapLink("apple", str(_("Apple Maps")), f"https://maps.apple.com/?ll={lat},{lng}{caption}"),
-        MapLink(
-            "osm",
-            str(_("OpenStreetMap")),
-            f"https://www.openstreetmap.org/?mlat={lat}&mlon={lng}#map={_ZOOM}/{lat}/{lng}",
-        ),
-    ]
+    fields = {"lat": _coord(point[0]), "lng": _coord(point[1]), "zoom": _ZOOM}
+    caption = name.strip() if name else ""
+    links = []
+    for key in offered_services():
+        service = settings.MAP_SERVICES.get(key)
+        if service is None:
+            continue  # a key the catalogue does not know: the system check names it
+        url = service["url"].format(**fields)
+        # A service that captions its pin gets the place's name -- and no caption at all when there is
+        # no name: an empty one is a label saying nothing over the pin.
+        if caption and service.get("name"):
+            url = _with_param(url, service["name"], caption)
+        links.append(MapLink(key, gettext(service["label"]), url))
+    return links
+
+
+def offered_services() -> list[str]:
+    """The services the deployment lists, as an environment writes them: "2gis, yandex" names two."""
+    return [key.strip() for key in settings.MAP_LINK_SERVICES if key.strip()]
+
+
+def _with_param(url: str, param: str, value: str) -> str:
+    """``url`` with one more query parameter, ahead of any #fragment."""
+    base, hash_mark, fragment = url.partition("#")
+    joiner = "&" if "?" in base else "?"
+    return f"{base}{joiner}{param}={quote(value, safe='')}{hash_mark}{fragment}"

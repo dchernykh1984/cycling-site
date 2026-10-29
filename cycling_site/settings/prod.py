@@ -21,6 +21,10 @@ ALLOWED_HOSTS = list(dict.fromkeys(_VIRTUAL_HOSTS + _EXTRA_HOSTS))
 # to promote the team domain later; defaults to the first VIRTUAL_HOST, then the CodeRed subdomain.
 PRIMARY_HOST = os.environ.get("PRIMARY_HOST") or (_VIRTUAL_HOSTS[0] if _VIRTUAL_HOSTS else "cycling.codered.cloud")
 
+# This deployment's readers are mostly in Kazakhstan, where 2GIS and Yandex know the streets best, so
+# they come first; the environment can name another list (see MAP_SERVICES in base.py).
+MAP_LINK_SERVICES = env.list("MAP_LINK_SERVICES", default=["2gis", "yandex", "google", "apple", "osm"])
+
 # Django 4+ validates the Origin header on secure POSTs against this list (admin, forms).
 CSRF_TRUSTED_ORIGINS = [f"https://{_h}" for _h in ALLOWED_HOSTS]
 

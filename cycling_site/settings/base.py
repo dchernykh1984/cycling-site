@@ -17,6 +17,7 @@ from pathlib import Path
 import dj_database_url
 import environ
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.translation import gettext_noop
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 BASE_DIR = PROJECT_DIR.parent
@@ -305,6 +306,32 @@ MAP_HOME_AREAS = {
 }
 # Used only when the map has neither a reader's home area nor matching markers to fit.
 MAP_DEFAULT_VIEW = {"center": [48.0, 68.0], "zoom": 5}
+
+# The map services an event's start point can be opened in (locations/maps.py): a catalogue, not a
+# choice. {lat}, {lng} and {zoom} are filled into each URL -- the services disagree on which of lat and
+# lng comes first -- and a service with a "name" parameter is also given the place's name to caption
+# its pin. A label is translated where it is shown. Another service is a new line here.
+MAP_SERVICES = {
+    "google": {
+        "label": gettext_noop("Google Maps"),
+        "url": "https://www.google.com/maps/search/?api=1&query={lat},{lng}",
+    },
+    "apple": {"label": gettext_noop("Apple Maps"), "url": "https://maps.apple.com/?ll={lat},{lng}", "name": "q"},
+    "osm": {
+        "label": gettext_noop("OpenStreetMap"),
+        "url": "https://www.openstreetmap.org/?mlat={lat}&mlon={lng}#map={zoom}/{lat}/{lng}",
+    },
+    # ll centres the map: without it Yandex opens wherever it thinks the reader is, and the pin can
+    # sit off-screen.
+    "yandex": {
+        "label": gettext_noop("Yandex Maps"),
+        "url": "https://yandex.ru/maps/?ll={lng},{lat}&z={zoom}&pt={lng},{lat}&l=map",
+    },
+    "2gis": {"label": gettext_noop("2GIS"), "url": "https://2gis.com/geo/{lng},{lat}"},
+}
+# Which of them an event page offers, in this order: the services that work everywhere, unless the
+# deployment names the ones its readers use (a comma-separated list in the environment).
+MAP_LINK_SERVICES = env.list("MAP_LINK_SERVICES", default=["google", "apple", "osm"])
 
 # A guest's calendar, list and map open on the region of the site's city nearest to them, when one
 # lies within this many kilometres of the point their network provider reports (#332).
