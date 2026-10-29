@@ -12,11 +12,12 @@ config:
   nodesUnder(depth, parentPks): [{pk, name, search}, ...]  // children for the selected parents;
                                                    // with openLevels, no parents means the whole
                                                    // depth; "search": optional other names to match
-  restoreChains(): [[{depth, pk}, ...], ...]       // ancestor chains to pre-select
+  restoreChains(): [[{depth, pk}, ...], ...]       // ticks to pre-select, each chain step by step:
+                                                   // an id alone, or with the ancestors it needs
   openLevels:    bool  // a lower level opens before the one above it is chosen, narrowed by the
                        // nearest level above it that has a choice
   collapseWholeLevels: bool  // filters only: a fully ticked level yields its parent's ids instead
-  labels:        {all: "...", selected: "..."}
+  labels:        {all: "...", selected: "...", search: "..."}
   onChange():    called after every user-driven selection change
 returns {effective(), effectivePks(), effectiveDepth(), chosenPks(), refresh(), select(chains)}:
 select() replaces the whole selection with the given chains, as a page script sets it (issue #353).
