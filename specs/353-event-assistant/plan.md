@@ -28,8 +28,8 @@ the chat on the add and edit pages, on a desktop and on a phone.
 ## Constitution Check
 
 - **I (facts come from their source)**: the model fills only what the admin said. Links are kept
-  only when they appear in the admin's messages. The place comes from the site's tree, a track the
-  admin attached, or coordinates they typed. What nobody said stays empty and becomes a
+  only when they appear in the admin's messages or the form as it stands. The place comes from the
+  site's tree, a track the admin attached, or coordinates they typed. What nobody said stays empty and becomes a
   recommendation in the reply.
 - **II (the maintainer's decisions)**: the chat draws in Bootstrap's and the skin's variables only;
   light and dark are not touched.
@@ -68,14 +68,14 @@ the chat on the add and edit pages, on a desktop and on a phone.
   - What does not change comes first, so the provider's cache serves it at a fiftieth of the price.
 - `llm.py`: one call.
   - Thinking off, `json_object`, `max_tokens` 6000, a 90-second timeout.
-  - Every failure becomes `Unavailable` with a reason the admin can act on: no balance, key
+  - Every failure becomes `UnavailableError` with a reason the admin can act on: no balance, key
     refused, provider busy.
 - `fields.py`: the model's `set` becomes the form's values.
   - Texts are cut to their columns; descriptions are sanitized.
   - Dates are parsed; an end before the start is dropped.
   - Ids are kept only when they exist.
-  - Links are kept only when they appear in the admin's messages, comparing without the scheme and
-    `www.`.
+  - Links are kept only when they appear in the admin's messages or the form as it stands,
+    comparing without the scheme and `www.`.
   - The place goes through `places.py`.
   - What was dropped becomes a note the chat shows.
 - `places.py`: the page's own list of places (`_get_locations_data`, so nothing the page cannot show
