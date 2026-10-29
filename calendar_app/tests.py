@@ -1804,7 +1804,9 @@ class CompetitionListColumnsViewTests(TestCase):
             "Visible Race",
             location=city,
             disciplines=[discipline],
-            date_start=timezone.localdate() + datetime.timedelta(days=3),
+            # Today: the unfiltered list holds the rest of this month, which a few days ahead leaves
+            # in the month's last days.
+            date_start=timezone.localdate(),
         )
         response = self.client.get(in_language(reverse("calendar_list"), "en"), HTTP_ACCEPT_LANGUAGE="en")
         # Multi-valued columns are pluralized; single-valued ones stay singular.
