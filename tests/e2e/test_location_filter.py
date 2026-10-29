@@ -96,6 +96,27 @@ def test_a_venue_is_typed_in_and_ticked_without_its_country_region_and_city(page
 
 
 @pytest.mark.django_db(transaction=True)
+def test_namesakes_of_different_regions_are_two_boxes_named_after_their_regions(page: Page, live_server, location_tree):
+    """Two cities of one name: on a level open on its own, a link to one of them ticks that one alone."""
+    from locations.models import Location
+
+    west = Location.objects.get(pk=location_tree["kz"].pk).add_child(
+        name="West", name_ru="West", name_kk="West", name_en="West"
+    )
+    aktau = {"name": "Aktau", "name_ru": "Aktau", "name_kk": "Aktau", "name_en": "Aktau"}
+    first = west.add_child(**aktau)
+    second = Location.objects.get(pk=location_tree["region"].pk).add_child(**aktau)
+    page.goto(f"{live_server.url}{_LIST_URL}?location={first.pk}")
+    open_filter_panel(page)
+    page.click("#mf-btn-3")
+    page.locator("#mf-menu-3 .mf-search").fill("Aktau")
+    expect(page.locator("#mf-menu-3 li.mf-item-row")).to_have_count(2)
+    expect(page.locator(f"#mf-menu-3 li.mf-item-row:has(input[value='{first.pk}'])")).to_contain_text("(West)")
+    expect(page.locator(f"#mf-menu-3 input[value='{first.pk}']")).to_be_checked()
+    expect(page.locator(f"#mf-menu-3 input[value='{second.pk}']")).not_to_be_checked()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_citys_other_location_is_offered_under_that_city_only(page: Page, live_server, location_tree):
     """Across the whole tree one "other location" box would carry every city's catch-all at once."""
     page.goto(f"{live_server.url}{_LIST_URL}")

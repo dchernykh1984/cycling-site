@@ -62,7 +62,9 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    is sent as its parent, and ids travel comma-joined, so a wide selection stays a short address.
    Every place level opens and searches at once, without its parents picked first, and lists only
    what lies under the nearest level above it that has a choice (Kazakhstan ticked, "Al" in the
-   city finds Almaty, not a namesake abroad). A city's catch-all venue is listed only under chosen
+   city finds Almaty, not a namesake abroad). Such a level names places that share a name after
+   their parents ("Aktau (Mangystau Region)"), each its own box; under the parents chosen right
+   above, one name stays one box. A city's catch-all venue is listed only under chosen
    cities; "All" only on a level whose parent level has a choice; a menu draws at most 200 rows
    and counts the rest, which its search reaches. A reload ticks exactly what the address names.
    Every checkbox filter's search matches a name typed in either script, folded as the site's other
