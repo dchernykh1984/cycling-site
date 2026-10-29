@@ -122,13 +122,9 @@ document.addEventListener('DOMContentLoaded', function () {
     nodesUnder: dirNodesUnder, restoreChains: dirRestore, searchable: true, labels: LABELS, onChange: syncDir
   });
   function syncDir() {
-    // Match the filter's emit: chosen disciplines, plus directions with no discipline drilled into.
-    var discPks = dir.levelPks(2);
-    var covered = {};
-    discPks.forEach(function (id) { var d = discById(id); if (d) covered[String(d.category_id)] = 1; });
-    var dirOnly = dir.levelPks(1).filter(function (id) { return !covered[String(id)]; });
-    syncInputs('pref-dir-inputs', 'preferred_directions', dirOnly);
-    syncInputs('pref-disc-inputs', 'preferred_disciplines', discPks);
+    // Match the filter's emit: every ticked direction and every chosen discipline, which win.
+    syncInputs('pref-dir-inputs', 'preferred_directions', dir.levelPks(1));
+    syncInputs('pref-disc-inputs', 'preferred_disciplines', dir.levelPks(2));
   }
   syncDir();
 
