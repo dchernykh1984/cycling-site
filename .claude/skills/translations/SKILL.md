@@ -42,3 +42,10 @@ area's specification. A new field's review checks display, editing, migration an
 - **The active language leaks between tests.** A root `conftest.py` fixture resets it; when a test
   queries a modeltranslation field (`name`, not `name_ru`) it is reading whatever language is
   active, which is a common source of confusing failures.
+- **Kazakh letters, not their look-alikes.** Write Kazakh with its own letters: a plain Russian
+  "k" for "q", "n" for "ng", "u" for "u-straight", or a Latin "i" for the Kazakh one, is a misspelling
+  a Kazakh reader sees at once ("Shygu" for log out was one). `tests/test_catalogues.py` checks every
+  catalogue for a Latin letter inside a Cyrillic word, a letter typed three times, and a lost
+  placeholder or tag; `tests/test_kazakh_catalogue.py` pins the words already put right.
+- **One word for one thing.** The Russian catalogue calls an event "meropriyatie" and the Kazakh one
+  "is-shara"; a region is "aimaq" in Kazakh. The catalogue checks guard both.
