@@ -138,10 +138,9 @@ class NewsChatTests(TestCase):
 
 class PrivacyPolicyTests(TestCase):
     LINE = (
-        "<strong>The event assistant.</strong> The site's administrators may add and edit events by talking to an "
-        "assistant on the event's page. What they write to it, and the event's form as it stands, go to a "
-        "language-model provider, which prepares the event's texts; the conversation is kept on the site with its "
-        "event."
+        "<strong>The assistant.</strong> The site's administrators may write events and news by talking to an "
+        "assistant on their pages. What they write to it, and the form as it stands, go to a language-model "
+        "provider, which prepares the texts; the conversation is kept on the site with its event or news item."
     )
 
     def test_the_policy_says_the_chat_goes_to_a_language_model_without_naming_one(self):
