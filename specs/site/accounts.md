@@ -1,7 +1,7 @@
 # Site Specification: Accounts, roles and the profile
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-21; managing another member's registrations (issue #315) against branch `315-managing-registrations` on 2026-10-28
+**Verified against**: `main` on 2026-10-21; managing another member's registrations (issue #315) against branch `315-managing-registrations` on 2026-10-28, its card and banner against `353-event-assistant` on 2026-10-29
 **Code**: `accounts/` (models, views, adapters, access, signals, managing), `cycling_site/templates/allauth/`,
 `api/endpoints/managing.py`
 **Tests**: `accounts/tests.py`, `tests/test_role_request.py`, `tests/test_user_display.py`,
