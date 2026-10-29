@@ -11,8 +11,10 @@ import datetime
 import json
 from pathlib import Path
 
+from django.db.models import Prefetch
+
 from assistant.models import Conversation, Message
-from calendar_app.models import DisciplineCategory, EventType
+from calendar_app.models import Discipline, DisciplineCategory, EventType
 from locations.models import Location
 
 SKILLS_DIR = Path(__file__).resolve().parent / "skills"
@@ -70,11 +72,10 @@ def taxonomy() -> str:
     lines = ["Event types (id: name):"]
     lines += [f"{kind.pk}: {_names(kind)}" for kind in EventType.objects.order_by("order", "pk")]
     lines += ["", "Disciplines, by direction (id: name):"]
-    for category in DisciplineCategory.objects.order_by("order", "pk"):
+    in_order = Prefetch("disciplines", queryset=Discipline.objects.order_by("order", "pk"))
+    for category in DisciplineCategory.objects.order_by("order", "pk").prefetch_related(in_order):
         lines.append(_names(category))
-        lines += [
-            f"  {discipline.pk}: {_names(discipline)}" for discipline in category.disciplines.order_by("order", "pk")
-        ]
+        lines += [f"  {discipline.pk}: {_names(discipline)}" for discipline in category.disciplines.all()]
     return "\n".join(lines)
 
 
