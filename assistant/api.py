@@ -21,6 +21,7 @@ from api.auth import is_admin, member_auth
 from assistant import conversations, llm
 from assistant.models import Conversation
 from calendar_app.models import Competition
+from news.models import NewsArticle
 
 router = Router(tags=["assistant"])
 
@@ -48,16 +49,23 @@ class MessageOut(Schema):
 
 class ConversationOut(Schema):
     id: int
+    kind: str
     competition_id: int | None
+    news_id: int | None
     messages: list[MessageOut]
 
 
 class ConversationIn(Schema):
+    """An event's or a news item's own conversation by its id, or a new one of ``kind`` for one still being written."""
+
+    kind: Literal["event", "news"] = "event"
     competition_id: int | None = None
+    news_id: int | None = None
 
 
 class LinkIn(Schema):
-    competition_id: int
+    competition_id: int | None = None
+    news_id: int | None = None
 
 
 class AttachmentIn(Schema):
@@ -99,17 +107,29 @@ def _conversation(conversation_id: int) -> Conversation:
     return conversation
 
 
-def _competition(competition_id: int) -> Competition:
-    competition = Competition.objects.filter(pk=competition_id, is_deleted=False).first()
-    if competition is None:
-        raise HttpError(404, "No such event")
-    return competition
+def _subject(competition_id: int | None, news_id: int | None) -> Competition | NewsArticle | None:
+    """The event or the news item a request names, or None when it names neither."""
+    if competition_id is not None and news_id is not None:
+        raise HttpError(422, "An event or a news item, not both")
+    if competition_id is not None:
+        competition = Competition.objects.filter(pk=competition_id, is_deleted=False).first()
+        if competition is None:
+            raise HttpError(404, "No such event")
+        return competition
+    if news_id is not None:
+        article = NewsArticle.objects.filter(pk=news_id, is_deleted=False).first()
+        if article is None:
+            raise HttpError(404, "No such news item")
+        return article
+    return None
 
 
 def _out(conversation: Conversation) -> dict:
     return {
         "id": conversation.pk,
+        "kind": conversation.kind,
         "competition_id": conversation.competition_id,
+        "news_id": conversation.news_id,
         "messages": list(conversation.messages.all()),
     }
 
@@ -118,12 +138,12 @@ def _out(conversation: Conversation) -> dict:
     "/conversations",
     response={200: ConversationOut, 201: ConversationOut},
     auth=member_auth,
-    summary="Start a conversation, or get an event's own (admin)",
+    summary="Start a conversation, or get an event's or a news item's own (admin)",
 )
 def start_conversation(request, payload: ConversationIn):
     user = _admin(request)
-    competition = _competition(payload.competition_id) if payload.competition_id is not None else None
-    conversation, created = conversations.start(user, competition)
+    subject = _subject(payload.competition_id, payload.news_id)
+    conversation, created = conversations.start(user, subject, payload.kind)
     return Status(201 if created else 200, _out(conversation))
 
 
@@ -170,14 +190,18 @@ def send_message(request, conversation_id: int, payload: TurnIn):
     "/conversations/{conversation_id}",
     response=ConversationOut,
     auth=member_auth,
-    summary="Link a conversation to the event it added (admin)",
+    summary="Link a conversation to the event or news item it wrote (admin)",
 )
 def link_conversation(request, conversation_id: int, payload: LinkIn):
     user = _admin(request)
     conversation = _conversation(conversation_id)
-    competition = _competition(payload.competition_id)
-    if conversation.competition_id != competition.pk and not conversations.link(conversation.pk, competition, user):
-        raise HttpError(409, "The conversation or the event is linked already")
+    subject = _subject(payload.competition_id, payload.news_id)
+    if subject is None:
+        raise HttpError(422, "Name the event or the news item")
+    field, _kind = conversations.subject_field(subject)
+    already = getattr(conversation, f"{field}_id") == subject.pk
+    if not already and not conversations.link(conversation.pk, subject, user):
+        raise HttpError(409, "The conversation or its subject is linked already, or they are of different kinds")
     conversation.refresh_from_db()
     return _out(conversation)
 
