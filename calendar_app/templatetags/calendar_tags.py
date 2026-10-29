@@ -52,3 +52,11 @@ def event_time(context, moment, event_zone):
         shown,
         _("your time: %(time)s") % {"time": f"{date_format(here, 'd.m.Y H:i')} ({_utc_offset(here)})"},
     )
+
+
+@register.filter
+def date_range_words(start, end=None):
+    """``{{ comp.date_start|date_range_words:comp.date_end }}``: an event's days in words (rule 12)."""
+    from calendar_app.views import date_range_words as words
+
+    return words(start, end) if start else ""

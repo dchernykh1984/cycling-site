@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n calendar_tags %}
 
 {% block title %}{% if meta_title %}{{ meta_title }}{% else %}{% trans "Event list" %}{% endif %}{% endblock %}
 
@@ -264,12 +264,7 @@ breakpoint where the filters fold away too.{% endcomment %}
           {% if comp.invite_only %}<span class="badge bg-info text-dark ms-1">{% trans "By invitation" %}</span>{% endif %}
           {% if comp.is_top %}<span class="badge text-bg-primary ms-1">{% trans "Top event" %}</span>{% endif %}
         </td>
-        <td data-label="{% trans 'Dates' %}">
-          {{ comp.date_start|date:"d.m.Y" }}
-          {% if comp.date_end and comp.date_end != comp.date_start %}
-          — {{ comp.date_end|date:"d.m.Y" }}
-          {% endif %}
-        </td>
+        <td data-label="{% trans 'Dates' %}">{{ comp.date_start|date_range_words:comp.date_end }}</td>
         <td data-label="{% trans 'Type' %}">{{ comp.event_type_label|default:"—" }}</td>
         <td data-label="{% trans 'Directions' %}">{{ comp.direction_label|default:"—" }}</td>
         <td data-label="{% trans 'Disciplines' %}">{{ comp.disciplines_label|default:"—" }}</td>
