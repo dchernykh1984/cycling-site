@@ -235,10 +235,12 @@ main img {
 }
 
 /* Rich article bodies (news / knowledge) can hold author-pasted tables, wide media and long
-   URLs; keep them inside the page instead of overflowing it on narrow screens. */
+   URLs; keep them inside the page instead of overflowing it on narrow screens. A line holds 45 to 75
+   characters, the measure text reads best at (#388). Set against the text's own size, so it holds at
+   every size; not in ch, which follows the width of a font's zero and gave one skin's face 89. */
 .article-body {
     overflow-wrap: anywhere;
-    max-width: 760px;
+    max-width: 32em;
 }
 .article-body table {
     display: block;

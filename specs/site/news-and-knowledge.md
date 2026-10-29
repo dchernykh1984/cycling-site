@@ -5,6 +5,7 @@
 **Code**: `news/`, `knowledge/` (models, views, forms), `cycling_site/richtext.py`
 **Tests**: `news/tests.py`, `knowledge/tests.py`, `tests/test_article_meta.py`,
 `tests/test_slug_ascii.py`, `tests/e2e/test_news_editor.py`, `tests/e2e/test_knowledge_editor.py`,
+`tests/e2e/test_article_measure.py`,
 `tests/test_moderation_banner.py` (news submissions), `assistant/tests/test_chat.py` (the news chat)
 **Related**: [site shell](site-shell.md) (search), [search visibility](search-visibility.md) (feeds,
 sitemap), [API](api.md) (content endpoints); the `site-content` skill covers publishing on the live
@@ -62,6 +63,7 @@ member may submit a draft for review; members comment.
 - Articles are soft-deleted; a deleted comment is erased.
 - Bodies are sanitised on every save, inline images kept; an over-long body is a translated form
   error, not a server error.
+- On a desktop a body reads at 45 to 75 characters a line, in every skin (#388).
 - Knowledge-article and Wagtail page slugs are ASCII even for a Cyrillic title; knowledge slugs are
   unique, within their maximum length, and never collide with the knowledge service URLs (submit,
   add, submissions, articles).
