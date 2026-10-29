@@ -362,7 +362,7 @@ API:
 - **SC-001**: From the registration confirmation, a participant reaches the payment service in at
   most two taps and sees the amount before the second.
 - **SC-002**: An organizer sets a three-step schedule with the manual and link connectors in one form
-  submission; the event page shows today's price and the next change without a reload.
+  submission; the event page then shows today's price and the next change on its first load.
 - **SC-003**: The database holds no card data and no organizer credential: a test asserts that the
   payment models have no such field and that a connector declaring a secret organizer field is
   refused by the catalogue check.
