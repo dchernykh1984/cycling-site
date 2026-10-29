@@ -67,7 +67,7 @@ the chat on the add and edit pages, on a desktop and on a phone.
     attached.
   - What does not change comes first, so the provider's cache serves it at a fiftieth of the price.
 - `llm.py`: one call.
-  - Thinking off, `json_object`, `max_tokens` 6000, a 90-second timeout.
+  - Thinking off, `json_object`, `max_tokens` 16000, a 120-second timeout; a long text goes whole.
   - Every failure becomes `UnavailableError` with a reason the admin can act on: no balance, key
     refused, provider busy.
 - `fields.py`: the model's `set` becomes the form's values.
