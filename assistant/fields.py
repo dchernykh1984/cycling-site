@@ -11,8 +11,10 @@ from __future__ import annotations
 import datetime
 import re
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.utils.translation import gettext as _
@@ -27,6 +29,8 @@ from cycling_site.sanitize import sanitize_rich_html
 _MAX = {"title": 255, "preview_text": Competition._meta.get_field("preview_text").max_length, "intro": 500}
 _URL_MAX = Competition._meta.get_field("url_route").max_length or 200
 _SCHEME = re.compile(r"^(?:https?://|mailto:|tel:)?(?:www\.)?", re.IGNORECASE)
+_LANGUAGES = "|".join(re.escape(code) for code, _name in settings.LANGUAGES)
+_LANGUAGE_PREFIX = re.compile(rf"^/(?:{_LANGUAGES})(?=/|$)")
 
 
 @dataclass
@@ -42,14 +46,51 @@ def _bare(url: str) -> str:
     return _SCHEME.sub("", url.strip()).rstrip("/").lower()
 
 
+def _site_host() -> str:
+    base = getattr(settings, "SITE_BASE_URL", "") or settings.WAGTAILADMIN_BASE_URL
+    return urlsplit(base).netloc.lower().removeprefix("www.")
+
+
+def _without_language(path: str) -> str:
+    return _LANGUAGE_PREFIX.sub("", path) or "/"
+
+
+def _site_page(bare: str) -> str | None:
+    """The page of this site a bare link names, without its language ("/calendar/301" for
+    "<site>/kk/calendar/301" or "/en/calendar/301"); None for a link to anywhere else."""
+    host = _site_host()
+    if bare.startswith(host + "/"):
+        return _without_language(bare[len(host) :])
+    return _without_language(bare) if bare.startswith("/") else None
+
+
+def _site_pages(texts: list[str]) -> set[str]:
+    """The site's own pages ``texts`` link to, each without its language."""
+    rest = r"[^\s\"'<>\u00ab\u00bb]*"  # up to a space, a quote or an angle bracket
+    mention = re.compile(rf"{re.escape(_site_host())}(/{rest})|(?<![\w.:/-])(/(?:{_LANGUAGES})/{rest})")
+    pages = set()
+    for text in texts:
+        for found in mention.finditer(text.lower()):
+            path = (found.group(1) or found.group(2)).rstrip(".,;:!?)").rstrip("/")
+            pages.add(_without_language(path))
+    return pages
+
+
 def written_by_them(url: str, texts: list[str]) -> bool:
     """Whether one of ``texts`` holds this link, give or take its scheme, "www." and a final slash.
 
-    The link must be there whole: "routes/12" is not written by whoever wrote "routes/123".
+    The link must be there whole: "routes/12" is not written by whoever wrote "routes/123". A page of
+    the site itself is one page in every language, so a stage's Kazakh text may link to the Kazakh page
+    of the race whose Russian page the administrator gave.
     """
     bare = _bare(url)
+    if not bare:
+        return False
+    page = _site_page(bare)
+    if page is not None and page in _site_pages(texts):
+        return True
     whole = re.compile(re.escape(bare) + r"(?![\w-])")
-    return bool(bare) and any(whole.search(text.lower()) for text in texts)
+    return any(whole.search(text.lower()) for text in texts)
 
 
 def _line(value) -> str:
