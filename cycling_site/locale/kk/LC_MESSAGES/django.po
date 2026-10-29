@@ -4485,8 +4485,8 @@ msgid "Top events"
 msgstr "Топ-іс-шаралар"
 
 #, python-format
-msgid "A link that is not in your messages was left out: %(url)s"
-msgstr "Хабарламаларыңызда жоқ сілтеме қосылмады: %(url)s"
+msgid "A link that is in neither your messages nor the form was left out: %(url)s"
+msgstr "Хабарламаларыңызда да, формада да жоқ сілтеме қосылмады: %(url)s"
 
 #, python-format
 msgid "%(city)s is not among the site's places: choose the place in the form."
