@@ -53,7 +53,7 @@ and an IndexNow notice whenever something is published.
    on the page itself, never the unprefixed address that only redirects.
 2. **Given** an event page, **Then** it carries `SportsEvent` data: machine-readable dates (no end
    date for a one-day race), absolute URL, the venue with coordinates and the full address chain,
-   the sport from its disciplines, and an offer when registration is open here or linked elsewhere
+   the sport from its disciplines, its own preview picture as its image when it has one, and an offer when registration is open here or linked elsewhere
    (registration here wins); markup in a title cannot break out of the block.
 3. **Given** a knowledge or news article, **Then** it carries `Article` / `NewsArticle` data with its
    language or date.

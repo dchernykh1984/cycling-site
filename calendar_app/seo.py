@@ -6,6 +6,8 @@ listing that shows a date and a place under the link. We hold every field it wan
 including the venue's exact coordinates.
 """
 
+from urllib.parse import urljoin
+
 from django.urls import reverse
 
 from cycling_site.jsonld import dumps
@@ -27,6 +29,12 @@ def sports_event(competition, base_url: str) -> str:
     }
     if competition.date_end and competition.date_end != competition.date_start:
         data["endDate"] = competition.date_end.isoformat()
+
+    # The event's own preview picture, when it has one and its file is there: the site's mark is not a
+    # picture of the event.
+    image = competition.preview_image
+    if image and image.storage.exists(image.name):
+        data["image"] = [urljoin(base_url, image.url)]
 
     description = competition.search_summary()
     if description:

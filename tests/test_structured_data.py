@@ -53,6 +53,27 @@ class SportsEventMarkupTests(TestCase):
         comp = _competition("One day race", date_start=datetime.date(2026, 5, 1))
         self.assertNotIn("endDate", _payload(self.client, comp))
 
+    def test_an_event_with_its_own_preview_picture_carries_it_as_its_image(self):
+        import io
+        import tempfile
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import override_settings
+        from PIL import Image
+
+        buffer = io.BytesIO()
+        Image.new("RGB", (600, 400), "red").save(buffer, format="PNG")
+        with override_settings(MEDIA_ROOT=tempfile.mkdtemp()):
+            comp = _competition("Pictured race")
+            self.assertNotIn("image", _payload(self.client, comp))  # the site's mark is not the event's
+            comp.preview_image = SimpleUploadedFile("poster.png", buffer.getvalue(), content_type="image/png")
+            comp.save(update_fields=["preview_image"])
+            image = _payload(self.client, comp)["image"]
+            self.assertEqual(len(image), 1)
+            self.assertRegex(image[0], r"^https?://[^/]+/media/competitions/preview/")
+            comp.preview_image.storage.delete(comp.preview_image.name)
+            self.assertNotIn("image", _payload(self.client, comp))  # a file gone is no picture
+
     def test_the_url_is_absolute(self):
         comp = _competition("Addressed race")
         self.assertTrue(_payload(self.client, comp)["url"].startswith("http"))
