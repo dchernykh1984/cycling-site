@@ -529,7 +529,8 @@ def date_range_words(start, end=None) -> str:
     """An event's days in the words the period line names them in (the interface skill, rule 12):
     "24 October 2026", "24-25 October 2026", "30 September - 2 October 2026", and both years when
     the days cross into a new one -- the month in its Russian case, the year first in Kazakh, an en
-    dash between.
+    dash between. The period line builds the same words in the browser (``label()`` in
+    ``_period_nav.html``): a change to one belongs in the other.
     """
     language = get_language() or ""
     months = _months_in(language)

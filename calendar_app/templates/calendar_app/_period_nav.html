@@ -183,6 +183,8 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   function withYear(text, year) {
     return WORDS.year_first ? year + ' ' + text : text + ' ' + year;
   }
+  // The same words, server-side, name an event's days in the list, the map and the event's page
+  // (calendar_app.views.date_range_words): a change to one belongs in the other.
   function label() {
     var from = state.from;
     var to = state.to;
