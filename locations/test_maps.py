@@ -242,3 +242,20 @@ class MapServiceSettingsTests(TestCase):
             self.assertEqual([link.key for link in map_links(self.venue)], ["google"])
             self.assertEqual([w.id for w in map_link_services_are_known(None)], ["locations.W001"])
         self.assertEqual(map_link_services_are_known(None), [])
+
+    def test_a_catalogue_entry_that_cannot_be_filled_in_stops_the_deploy(self):
+        """A misspelt placeholder, or no label, would make every event page with a start point an error."""
+        from django.conf import settings
+
+        from locations.checks import map_services_can_be_filled_in
+
+        broken = {
+            "typo": {"label": "Typo", "url": "https://maps.example/?lon={lon}&lat={lat}"},
+            "nolabel": {"url": "https://maps.example/?q={lat},{lng}"},
+        }
+        with override_settings(MAP_SERVICES={**settings.MAP_SERVICES, **broken}):
+            errors = map_services_can_be_filled_in(None)
+        self.assertEqual(
+            [(error.obj, error.id) for error in errors], [("typo", "locations.E001"), ("nolabel", "locations.E001")]
+        )
+        self.assertEqual(map_services_can_be_filled_in(None), [])

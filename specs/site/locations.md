@@ -95,7 +95,9 @@ places, and lets managers maintain the tree.
   order. By default the services that work everywhere -- Google, Apple, OpenStreetMap. The
   deployment currently lists 2GIS and Yandex first, then Google, Apple and OpenStreetMap
   (`cycling_site/settings/prod.py`). A name the catalogue does not describe is skipped and reported
-  at startup (`locations.W001`).
+  at startup (`locations.W001`); a catalogue entry that cannot be filled in -- no label, or a URL
+  naming anything but `{lat}`, `{lng}` and `{zoom}` -- is an error that stops `migrate`, and with it
+  the deploy (`locations.E001`).
 
 ## Local assumptions
 
