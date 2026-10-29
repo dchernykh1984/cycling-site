@@ -153,7 +153,8 @@ URL and the entry stays unpaid.
    "arrange with the organizer".
 2. **Given** I choose an automatic connector, **When** I press pay, **Then** a payment is recorded as
    started with the price in force, and I am sent to the service; **When** the service confirms,
-   **Then** the payment is confirmed, the entry is paid, and the page I return to says so.
+   **Then** the payment is confirmed and the entry is paid; the page I return to says paid, or that
+   the confirmation is on its way when I come back before it, and shows the result when it arrives.
 3. **Given** I choose the link connector, **When** I press pay, **Then** I see the amount, the domain
    of the link and a button that opens it; the entry stays unpaid until the organizer records it.
 4. **Given** the service reports failure or I come back without paying, **Then** the entry stays
@@ -261,6 +262,8 @@ the site. A payment service posts its confirmation to the site.
 - The entry form of an event with a fee says the price before the participant submits, so nobody
   registers without knowing.
 - An automatic connector's service is down: the pay button says so and offers the other connectors.
+- The participant returns from the service before its confirmation arrives: the page says the
+  confirmation is awaited and refreshes itself; no second payment is offered during the holding time.
 
 ## Requirements *(mandatory)*
 
