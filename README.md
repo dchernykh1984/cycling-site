@@ -106,6 +106,12 @@ in `ALLOWED_HOSTS`; set `VIRTUAL_HOST` to add more hosts. Static files are serve
 WhiteNoise. DNS is managed by Cloudflare, with the apex `universalbicycle.team` as
 the canonical host and `www` redirecting to it.
 
+The apex is a proxied record (`CNAME @ -> cycling-site.onrender.com`, the orange cloud, SSL mode
+Full), and the zone's "Add visitor location headers" managed transform is on: the guest's region
+(#332) is read from those headers, so a grey cloud leaves every guest with the whole calendar. The
+proxy gives up on an answer after 100 seconds, which is why the assistant waits for its model 90.
+Keep the zone's Bot Fight Mode off: it would challenge the import agents' calls to the API.
+
 `gunicorn.conf.py` provides four threads per worker; the thumbnail service uses at most two for
 storage downloads, leaving capacity for form submissions. On the small Render instance keep
 `WEB_CONCURRENCY=1`. With Render's `--preload`, Gunicorn worker errors use the same admin email
