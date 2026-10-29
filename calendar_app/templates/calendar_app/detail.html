@@ -47,10 +47,7 @@
     <div class="d-flex flex-wrap gap-3 mb-2 text-muted small">
       <span>
         <strong>{% trans "Dates" %}:</strong>
-        {{ competition.date_start|date:"d.m.Y" }}
-        {% if competition.date_end and competition.date_end != competition.date_start %}
-        — {{ competition.date_end|date:"d.m.Y" }}
-        {% endif %}
+        {{ competition.date_start|date_range_words:competition.date_end }}
       </span>
       {% if competition.event_type_label %}
       <span><strong>{% trans "Type" %}:</strong> {{ competition.event_type_label }}</span>
