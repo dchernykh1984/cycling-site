@@ -4473,3 +4473,6 @@ msgstr "<strong>Кто управляет вашими заявками и фо�
 
 msgid "We do not sell, rent or trade your data. We do not use it for advertising and we do not use it to train machine-learning or AI models. We do not share it with anyone except the service providers listed below, the organizer of an event you are registered for, and the members you allowed to manage your registrations and photos."
 msgstr "Мы не продаём, не сдаём в аренду и не обмениваем ваши данные. Мы не используем их для рекламы и не используем для обучения моделей машинного обучения и искусственного интеллекта. Мы не передаём их никому, кроме перечисленных ниже поставщиков услуг, организатора мероприятия, на которое вы зарегистрированы, и участников, которым вы разрешили управлять вашими заявками и фото."
+
+msgid "The new venue needs its name in Russian."
+msgstr "У новой площадки должно быть название на русском."

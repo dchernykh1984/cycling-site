@@ -239,7 +239,8 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         new_name = (cleaned_data.get("new_venue_name") or "").strip()
         other_names = any((cleaned_data.get(f"new_venue_name_{lang}") or "").strip() for lang in ("kk", "en"))
         if other_names and not new_name:
-            self.add_error("new_venue_name", forms.Field.default_error_messages["required"])
+            # Not on the field: the page comes back with the proposal folded away, and its box with it.
+            self.add_error(None, _("The new venue needs its name in Russian."))
         if city is not None and (city.depth != 3 or not location_visible_to(city, self.user)):
             # Same rule as for `location` below: a city that is someone else's pending proposal is
             # not a city this user may build under, however the POST reached us.
