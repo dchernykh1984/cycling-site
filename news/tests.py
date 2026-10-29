@@ -699,3 +699,22 @@ class NewsArticleCommentTests(TestCase):
         response = self.client.get(reverse("news_article_detail", args=[self.article.pk]))
         self.assertContains(response, "Anna Smith")
         self.assertNotContains(response, self.participant.email)
+
+
+class KazakhWordForNewsTests(TestCase):
+    """The Kazakh word for news is written with its own letters, not their Russian look-alikes."""
+
+    # The source is ASCII-only, so the two Kazakh letters are built from their code points: the
+    # "ng" (U+04A3) and the "q" (U+049B) of the word the catalogue had spelled without them.
+    NG, Q = chr(0x04A3), chr(0x049B)
+
+    def test_news_reads_in_kazakh_letters(self):
+        from django.utils import translation
+        from django.utils.translation import gettext
+
+        with translation.override("kk"):
+            for msgid in ("News", "Universal Bicycle Team news"):
+                with self.subTest(msgid=msgid):
+                    word = gettext(msgid)
+                    self.assertIn(self.NG, word)
+                    self.assertIn(self.Q, word)
