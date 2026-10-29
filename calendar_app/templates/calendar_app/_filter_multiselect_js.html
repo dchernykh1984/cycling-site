@@ -61,7 +61,12 @@ window.placeCascade = window.placeCascade || function (allLocations) {
   var lang = (document.documentElement.lang || 'ru').split('-')[0];
   var nameField = (['ru', 'kk', 'en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
   function nm(l) { return l[nameField] || l.name_ru || ''; }
-  function byPk(pk) { return allLocations.find(function (l) { return String(l.pk) === String(pk); }); }
+  // Places are looked up, not searched for: with every country ticked, each open level below would
+  // otherwise compare all the places with every country on each tick -- 20 ms on a desktop for a tree
+  // of 2,500 places, several times that on a phone, against 0.3 ms this way.
+  var byId = {}, byPath = {};
+  allLocations.forEach(function (l) { byId[l.pk] = l; byPath[l.path] = l; });
+  function byPk(pk) { return byId[pk]; }
 
   // Every node at depth d under the chosen parents, or anywhere when nothing above is chosen. Hidden
   // countries, regions and cities stay selectable (issue #113). A city's hidden catch-all venue
@@ -69,12 +74,15 @@ window.placeCascade = window.placeCascade || function (allLocations) {
   // alone: across a country or the whole tree one checkbox would carry every city's.
   function nodesUnder(d, parentPks) {
     var parents = parentPks.map(byPk).filter(Boolean);
+    // The parents are one level's, so their paths are of one length: a node lies under one of them
+    // when its path begins with one of theirs.
+    var prefixes = {}, prefixLength = parents.length ? parents[0].path.length : 0;
+    parents.forEach(function (p) { prefixes[p.path] = true; });
     var underCities = parents.length > 0 && parents[0].depth === 3;
     return allLocations.filter(function (l) {
       if (l.depth !== d) return false;
       if (d === 4 && l.is_hidden && !underCities) return false;
-      if (!parents.length) return true;
-      return parents.some(function (p) { return l.path.indexOf(p.path) === 0; });
+      return !parents.length || prefixes[l.path.slice(0, prefixLength)] === true;
     }).map(function (l) {
       return { pk: l.pk, name: nm(l), search: [l.name_ru, l.name_kk, l.name_en].join(' ') };
     });
@@ -86,8 +94,7 @@ window.placeCascade = window.placeCascade || function (allLocations) {
     return ids.map(byPk).filter(Boolean).map(function (target) {
       var step = { depth: target.depth, pk: target.pk };
       if (target.depth !== 4 || !target.is_hidden) return [step];
-      var cityPath = target.path.slice(0, target.path.length / 4 * 3);
-      var city = allLocations.find(function (l) { return l.depth === 3 && l.path === cityPath; });
+      var city = byPath[target.path.slice(0, target.path.length / 4 * 3)];
       return city ? [{ depth: 3, pk: city.pk }, step] : [step];
     });
   }
