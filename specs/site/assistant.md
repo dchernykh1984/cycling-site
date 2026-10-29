@@ -30,8 +30,9 @@ Admins and the owner write events and news by talking.
 The admin saves either with the form's own button.
 
 What the assistant is told is in skills: Markdown files in Russian under `assistant/skills/event/`
-and `assistant/skills/news/`, which the maintainer edits as experience shows what is missing. One
-key, `ASSISTANT_LLM_API_KEY`, serves both.
+and `assistant/skills/news/`, which the maintainer edits as experience shows what is missing. Each
+kind of event has a folder of its own under `event/`, beside the shared `general.md`, so that a
+change to one kind leaves the others as they were. One key, `ASSISTANT_LLM_API_KEY`, serves both.
 
 ## User Scenarios
 
