@@ -10,7 +10,7 @@ from django.utils.translation import gettext
 
 from accounts.models import User
 from assistant.models import Conversation, Message
-from assistant.tests.helpers import competition, user, venue
+from assistant.tests.helpers import competition, news, user, venue
 
 KEY = "sk-never-in-a-page"
 TOGGLE = 'id="assistant-toggle"'
@@ -37,7 +37,7 @@ class ChatOnThePageTests(TestCase):
         self.assertContains(page, TOGGLE)
         self.assertNotContains(page, KEY)
         config = _config(page)
-        self.assertEqual((config["conversationId"], config["competitionId"]), (None, None))
+        self.assertEqual((config["conversationId"], config["subjectId"]), (None, None))
         self.assertEqual(config["start"], "/api/v1/assistant/conversations")
 
     def test_nobody_else_is_offered_it_and_no_site_without_a_key(self):
@@ -54,7 +54,7 @@ class ChatOnThePageTests(TestCase):
         self.client.force_login(self.admin)
         page = self.client.get(reverse("competition_edit", args=[event.pk]))
         config = _config(page)
-        self.assertEqual((config["conversationId"], config["competitionId"]), (conversation.pk, event.pk))
+        self.assertEqual((config["conversationId"], config["subjectId"]), (conversation.pk, event.pk))
         self.assertContains(page, "Move it to Sunday")
 
     def test_saving_the_form_links_the_conversation_to_the_new_event(self):
@@ -89,6 +89,51 @@ class ChatOnThePageTests(TestCase):
             first = gettext("What event would you like to add?")
         self.assertNotEqual(first, "What event would you like to add?")
         self.assertEqual((config["language"], config["words"]["first"]), ("kk", first))
+
+
+@override_settings(ASSISTANT_LLM_API_KEY=KEY)
+class NewsChatTests(TestCase):
+    def setUp(self):
+        self.admin = user()
+        self.client.force_login(self.admin)
+
+    def _page(self, name, *args):
+        with translation.override("en"):
+            return self.client.get(reverse(name, args=args))
+
+    def test_the_news_form_offers_a_chat_of_its_own_kind(self):
+        config = _config(self._page("news_article_create"))
+        self.assertEqual((config["kind"], config["attach"], config["subjectId"]), ("news", False, None))
+        self.assertEqual(config["editors"], {"body_ru": "quill-ru", "body_kk": "quill-kk", "body_en": "quill-en"})
+        self.assertEqual(config["words"]["first"], "What news would you like to write?")
+
+    def test_a_news_items_edit_page_goes_on_with_its_conversation(self):
+        item = news()
+        conversation = Conversation.objects.create(kind=Conversation.Kind.NEWS, news=item)
+        Message.objects.create(conversation=conversation, role=Message.Role.USER, text="Translate it")
+        page = self._page("news_article_edit", item.pk)
+        config = _config(page)
+        self.assertEqual((config["conversationId"], config["subjectId"]), (conversation.pk, item.pk))
+        self.assertEqual(config["words"]["first"], "What would you like to change in this news item?")
+        self.assertContains(page, "Translate it")
+
+    def _save_news(self, conversation):
+        return self.client.post(
+            reverse("news_article_create"),
+            {"title_ru": "Novost", "published_at": "2026-10-29T10:00", "assistant_conversation": str(conversation.pk)},
+        )
+
+    def test_saving_a_news_item_links_its_conversation(self):
+        conversation = Conversation.objects.create(kind=Conversation.Kind.NEWS, started_by=self.admin)
+        self.assertEqual(self._save_news(conversation).status_code, 302)
+        conversation.refresh_from_db()
+        self.assertEqual(conversation.news.title_ru, "Novost")
+
+    def test_an_events_conversation_is_never_linked_to_a_news_item(self):
+        conversation = Conversation.objects.create(kind=Conversation.Kind.EVENT, started_by=self.admin)
+        self.assertEqual(self._save_news(conversation).status_code, 302)
+        conversation.refresh_from_db()
+        self.assertIsNone(conversation.news)
 
 
 class PrivacyPolicyTests(TestCase):

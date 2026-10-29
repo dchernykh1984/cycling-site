@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n assistant %}
 
 {% block title %}{% if action == "edit" %}{% trans "Edit article" %}{% else %}{% trans "Add news" %}{% endif %}{% endblock %}
 
@@ -146,6 +146,7 @@
     </form>
   </div>
 </div>
+{% assistant_chat kind="news" %}
 {% endblock %}
 
 {% block extra_js %}

@@ -11,6 +11,7 @@ from django.views.generic import CreateView, View
 
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
+from assistant.conversations import link as link_conversation
 from cycling_site.summaries import article_markup, summarize
 from knowledge.models import DraftSubmission
 from news.forms import AddCommentForm, AddNewsArticleCommentForm, NewsArticleForm, SubmitNewsForm
@@ -121,6 +122,8 @@ class NewsArticleCreateView(LoginRequiredMixin, View):
             article = form.save(commit=False)
             article.published_by = request.user
             article.save()
+            # The assistant's conversation that helped write it goes on from the edit page (#353).
+            link_conversation(request.POST.get("assistant_conversation"), article, request.user)
             return redirect(article.get_absolute_url())
         return render(request, "news/article_form.html", {"form": form, "action": "create"})
 

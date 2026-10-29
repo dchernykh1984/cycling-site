@@ -4550,3 +4550,9 @@ msgstr "GPX не KML трегін немесе ережені PDF түрінде
 
 msgid "<strong>The event assistant.</strong> The site's administrators may add and edit events by talking to an assistant on the event's page. What they write to it, and the event's form as it stands, go to a language-model provider, which prepares the event's texts; the conversation is kept on the site with its event."
 msgstr "<strong>Іс-шара көмекшісі.</strong> Сайт әкімшілері іс-шараларды іс-шара бетіндегі көмекшімен хат алмасып қоса және өңдей алады. Олардың көмекшіге жазғаны мен іс-шара формасының ағымдағы күйі іс-шара мәтіндерін дайындайтын тілдік модель жеткізушісіне жіберіледі; хат алмасу сайтта іс-шарамен бірге сақталады."
+
+msgid "What would you like to change in this news item?"
+msgstr "Жаңалықта нені өзгерту керек?"
+
+msgid "What news would you like to write?"
+msgstr "Қандай жаңалық жазғыңыз келеді?"

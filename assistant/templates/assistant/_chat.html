@@ -1,9 +1,10 @@
 {% load i18n %}
 {% if offered %}
 {% comment %}
-The event assistant's chat (issue #353): a button at the bottom right that opens the conversation.
-A reply fills the event's form on this page; the form's own button saves it. The chat keeps out of
-the event's form, whose fields it reads and sets: a form inside a form is not HTML.
+The assistant's chat (issue #353): a button at the bottom right that opens the conversation. A reply
+fills the form on this page -- an event's or a news item's, as the config describes it -- and the
+form's own button saves it. The chat keeps out of that form, whose fields it reads and sets: a form
+inside a form is not HTML.
 {% endcomment %}
 <div class="assistant-spacer" aria-hidden="true"></div>
 <button type="button" class="btn btn-primary assistant-toggle" id="assistant-toggle"
@@ -65,6 +66,7 @@ the event's form, whose fields it reads and sets: a form inside a form is not HT
   var text = document.getElementById('assistant-text');
   var send = document.getElementById('assistant-send');
   var attach = document.getElementById('assistant-attach');
+  if (!cfg.attach) attach.hidden = true;
   var picker = document.getElementById('assistant-file');
   var titleInput = document.getElementById('id_title_ru');
   var eventForm = titleInput && titleInput.form;
@@ -89,7 +91,7 @@ the event's form, whose fields it reads and sets: a form inside a form is not HT
   history.forEach(function (m) { say(m.role, m.text); });
   // The page's own question opens a conversation and, on an event's edit page, follows what was said
   // before; a form that came back with errors simply goes on where it stopped.
-  if (!history.length || cfg.competitionId) say('assistant', words.first);
+  if (!history.length || cfg.subjectId) say('assistant', words.first);
 
   function show(open) {
     panel.hidden = !open; toggle.hidden = open; toggle.setAttribute('aria-expanded', String(open));
@@ -113,26 +115,29 @@ the event's form, whose fields it reads and sets: a form inside a form is not HT
 
   function conversation() {
     if (conversationId) return Promise.resolve(conversationId);
-    return request(cfg.start, cfg.competitionId ? { competition_id: cfg.competitionId } : {}, true).then(function (data) {
+    var body = { kind: cfg.kind };
+    if (cfg.subjectId) body[cfg.kind === 'news' ? 'news_id' : 'competition_id'] = cfg.subjectId;
+    return request(cfg.start, body, true).then(function (data) {
       conversationId = data.id; carried.value = data.id;
       return data.id;
     });
   }
 
   function value(id) { var el = document.getElementById(id); return el ? el.value : ''; }
-  function editorOf(lang) { var box = document.getElementById('quill-desc-' + lang); return box && window.Quill ? Quill.find(box) : null; }
+  function editorOf(name) {
+    var box = cfg.editors[name] && document.getElementById(cfg.editors[name]);
+    return box && window.Quill ? Quill.find(box) : null;
+  }
 
   // The form as it stands, by the form's field names: the server reads it as the model's "form now".
   function readForm() {
     var data = {};
-    ['ru', 'kk', 'en'].forEach(function (lang) {
-      data['title_' + lang] = value('id_title_' + lang);
-      data['preview_text_' + lang] = value('id_preview_text_' + lang);
-      var q = editorOf(lang);
-      data['description_' + lang] = q ? (q.getText().trim() ? q.root.innerHTML : '') : value('id_description_' + lang);
+    cfg.fields.forEach(function (name) { data[name] = value('id_' + name); });
+    Object.keys(cfg.editors).forEach(function (name) {
+      var q = editorOf(name);
+      data[name] = q ? (q.getText().trim() ? q.root.innerHTML : '') : value('id_' + name);
     });
-    ['date_start', 'date_end', 'url_announcement', 'url_registration', 'url_route', 'url_regulations', 'url_results', 'location', 'new_venue_city']
-      .forEach(function (name) { data[name] = value('id_' + name); });
+    if (cfg.kind !== 'event') return data;
     var types = document.getElementById('id_event_types');
     data.event_types = types ? Array.from(types.selectedOptions).map(function (o) { return o.value; }) : [];
     data.disciplines = Array.from(document.querySelectorAll('#disciplines-hidden input[name=disciplines]')).map(function (i) { return i.value; });
@@ -162,9 +167,8 @@ the event's form, whose fields it reads and sets: a form inside a form is not HT
   function apply(fields) {
     Object.keys(fields).forEach(function (name) {
       var v = fields[name];
-      var description = /^description_(ru|kk|en)$/.exec(name);
-      if (description) {
-        var q = editorOf(description[1]);
+      if (cfg.editors[name]) {
+        var q = editorOf(name);
         // setContents leaves the selection alone: pasting would move the focus, and the page with it.
         if (q) q.setContents(v ? q.clipboard.convert(v) : [], 'api'); else setValue('id_' + name, v);
       } else if (name === 'event_types') {

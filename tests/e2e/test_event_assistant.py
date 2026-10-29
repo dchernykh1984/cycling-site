@@ -11,6 +11,7 @@ from assistant import llm
 from assistant.models import Conversation, Message
 from calendar_app.models import Competition, Discipline, DisciplineCategory, EventType
 from locations.models import Location
+from news.models import NewsArticle
 from tests.e2e.conftest import inject_session
 
 
@@ -275,3 +276,38 @@ def test_a_refused_form_comes_back_with_its_conversation(page: Page, live_server
     expect(said).to_have_count(2)
     expect(said.first).to_have_text("A coffee ride")
     expect(said.last).to_have_text("Which day is it?")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_news_chat_translates_and_saving_links_it(page: Page, live_server, admin_user, chat_on, monkeypatch):
+    answer = {
+        "reply": "Translated.",
+        "set": {
+            "title": {"kk": "Zhanalyq", "en": "News"},
+            "intro": {"en": "Short"},
+            "body": {"kk": "<p>Matin</p>", "en": "<p>Text</p>"},
+        },
+    }
+    _model(monkeypatch, answer)
+    inject_session(page, live_server, admin_user)
+    page.goto(f"{live_server.url}/en/news/articles/create/")
+    page.fill("#id_title_ru", "Novost")
+    page.click("#assistant-toggle")
+    expect(page.locator("#assistant-attach")).to_be_hidden()
+    log = page.locator("#assistant-log")
+    expect(log).to_contain_text("What news would you like to write?")
+    page.fill("#assistant-text", "Translate it into Kazakh and English")
+    page.click("#assistant-send")
+    expect(log).to_contain_text("Translated.")
+    expect(page.locator("#id_title_kk")).to_have_value("Zhanalyq")
+    expect(page.locator("#id_intro_en")).to_have_value("Short")
+    expect(page.locator("#quill-en .ql-editor")).to_contain_text("Text")
+    page.click("#assistant-hide")
+    page.locator("#article-form button[type='submit']").click()
+    page.wait_for_url(re.compile(r"/news/articles/\d+/$"))
+    item = NewsArticle.objects.get(title_ru="Novost")
+    assert (item.title_kk, item.body_en) == ("Zhanalyq", "<p>Text</p>")
+    assert [m.text for m in item.assistant_conversation.messages.all()] == [
+        "Translate it into Kazakh and English",
+        "Translated.",
+    ]
