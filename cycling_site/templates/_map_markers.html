@@ -32,7 +32,7 @@ crowd (#387). Included after leaflet.js; the cluster plugin is the site's own co
       iconCreateFunction: function (cluster) {
         return L.divIcon({
           className: 'map-cluster',
-          html: '<span>' + cluster.getChildCount() + '</span><span class="visually-hidden"> {% trans "places close together; zoom in to see them" %}</span>',
+          html: '<span>' + cluster.getChildCount() + '</span><span class="visually-hidden"> {% filter escapejs %}{% trans "places close together; zoom in to see them" %}{% endfilter %}</span>',
           iconSize: [44, 44]
         });
       }
