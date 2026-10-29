@@ -362,7 +362,7 @@ def upcoming_competitions(user, limit: int = 20) -> list[Competition]:
         # and dropping it the morning after day one is how a multi-day event disappears mid-race.
         .filter(Q(date_start__gte=today) | Q(date_end__gte=today))
         .select_related("location")
-        .order_by("date_start", "pk")[:limit]
+        .order_by("-is_top", "date_start", "pk")[:limit]
     )
 
 
@@ -519,7 +519,19 @@ def day_groups(rows) -> list[dict]:
         return f"{day.day} {words['months'][day.month - 1]}"
 
     groups: list[dict] = []
+    # Top events come first in the list (and first among its rows); they go under a heading of
+    # their own, each with its dates, before the days -- the same divider the table draws.
+    top = [comp for comp in rows if comp.is_top]
+    if top:
+        groups.append({"date": None, "label": _("Top events"), "top": True, "rows": []})
+        for comp in top:
+            when = label(comp.date_start)
+            if comp.date_end and comp.date_end > comp.date_start:
+                when = f"{when} \u2013 {label(comp.date_end)}"
+            groups[-1]["rows"].append({"comp": comp, "until": "", "when": when})
     for comp in rows:
+        if comp.is_top:
+            continue
         day = comp.date_start
         if not groups or groups[-1]["date"] != day:
             groups.append({"date": day, "label": f"{label(day)}, {words['weekdays'][day.weekday()]}", "rows": []})
@@ -630,6 +642,8 @@ class CalendarEventsAPIView(View):
                     "event_type": comp.event_type_label,
                     "discipline": comp.disciplines_label,
                     "favorite": comp.pk in favorited_ids,
+                    # The grid puts a top event first in its day (eventOrder in calendar.html).
+                    "top": comp.is_top,
                 },
             }
             for comp in competitions
@@ -686,10 +700,12 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
             qs = qs.filter(location_id__in=_location_descendant_pks(chosen["location"]))
         qs = _apply_favorite_filter(qs, self.request)
 
-        qs = overlapping(qs, date_from, date_to).order_by("date_start")
+        # Top events first, then the rest by date; the page draws a divider between the two.
+        qs = overlapping(qs, date_from, date_to).order_by("-is_top", "date_start")
         paginator = Paginator(qs, 20)
         page = paginator.get_page(self.request.GET.get("page", 1))
         context["competitions"] = page
+        context["top_count"] = sum(1 for comp in page if comp.is_top)
         # The same rows by day, for a phone: a table of ten columns does not read on one.
         context["days"] = day_groups(page)
         # Pass the evaluated page rows (not the sliced queryset) so the star lookup reuses them
@@ -779,7 +795,8 @@ class CalendarMapAPIView(View):
         by_path = {loc.path: loc for loc in Location.objects.filter(is_deleted=False)}
         step = Location.steplen
         groups: dict = {}
-        for comp in qs.order_by("date_start"):
+        # Top events first at each place, as everywhere else events are listed.
+        for comp in qs.order_by("-is_top", "date_start"):
             base = by_path.get(comp.location.path, comp.location)
             display = map_display_node(base, by_path, step)
             if display is None:

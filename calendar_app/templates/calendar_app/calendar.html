@@ -288,6 +288,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // over several screens on a phone. Three, then "+17" -- a number with no word, since the
     // bundled "+17 more" is English in every language and is cut off in a narrow cell anyway.
     dayMaxEvents: 3,
+    // A top event first in its day, ahead of the "+N" -- then FullCalendar's own order.
+    eventOrder: '-top,start,-duration,allDay,title',
     moreLinkContent: function (arg) { return '+' + arg.num; },
     dayPopoverFormat: function (arg) { return dayLabel(arg.date.year, arg.date.month, arg.date.day); },
     events: function (fetchInfo, successCallback, failureCallback) {

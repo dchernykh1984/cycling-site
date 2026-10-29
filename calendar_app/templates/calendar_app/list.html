@@ -27,6 +27,9 @@
   .calendar-event-facts summary { min-height: 2.75rem; padding: .5rem 0; }
   .calendar-event-facts dd { margin-bottom: .25rem; }
   .calendar-day-until { margin-left: .25rem; color: var(--bs-body-color); }
+  /* The divider between the top events and the rest: a rule across the table, and above the cards
+     a skin may draw the rows as (the padding only takes effect there). */
+  .calendar-list-table tbody.calendar-list-rest { border-top: 3px solid var(--bs-border-color); padding-top: .75rem; }
 </style>
 {% endblock %}
 
@@ -189,6 +192,7 @@ breakpoint where the filters fold away too.{% endcomment %}
       <div class="calendar-event-main">
         {% if row.comp.pk in favorited_ids %}<span class="text-warning" aria-hidden="true">&#9733;</span> {% endif %}
         <a href="{% url 'competition_detail' row.comp.pk %}">{{ row.comp.title }}</a>
+        {% if row.when %}<span class="calendar-day-until">{{ row.when }}</span>{% endif %}
         {% if row.until %}<span class="calendar-day-until">&ndash; {{ row.until }}</span>{% endif %}
         {% if is_manager and row.comp.is_hidden %}<span class="badge bg-warning text-dark ms-1">{% trans "Hidden" %}</span>{% endif %}
         {% if row.comp.invite_only %}<span class="badge bg-info text-dark ms-1">{% trans "By invitation" %}</span>{% endif %}
@@ -249,6 +253,7 @@ breakpoint where the filters fold away too.{% endcomment %}
     </thead>
     <tbody>
       {% for comp in competitions %}
+      {% if top_count and forloop.counter0 == top_count %}</tbody><tbody class="calendar-list-rest">{% endif %}
       <tr>
         <td data-label="{% trans 'Title' %}">
           {% if comp.pk in favorited_ids %}<span class="text-warning" title="{% trans 'In favorites' %}" aria-hidden="true">★</span> {% endif %}
@@ -257,6 +262,7 @@ breakpoint where the filters fold away too.{% endcomment %}
           </a>
           {% if is_manager and comp.is_hidden %}<span class="badge bg-warning text-dark ms-1">{% trans "Hidden" %}</span>{% endif %}
           {% if comp.invite_only %}<span class="badge bg-info text-dark ms-1">{% trans "By invitation" %}</span>{% endif %}
+          {% if comp.is_top %}<span class="badge text-bg-primary ms-1">{% trans "Top event" %}</span>{% endif %}
         </td>
         <td data-label="{% trans 'Dates' %}">
           {{ comp.date_start|date:"d.m.Y" }}

@@ -12,7 +12,8 @@ filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/tes
 `test_discipline_filter.py`, `test_location_filter.py`, `test_date_filters.py`,
 `test_filter_url_length.py`, `test_view_switcher_location.py`, `test_favorite_events.py`,
 `test_save_filter_preferences.py`, `test_calendar_phone_list.py`, `test_period_nav.py`,
-`test_calendar_busy_day.py`, `test_filter_chips.py`, `test_filter_toggle.py`
+`test_calendar_busy_day.py`, `test_filter_chips.py`, `test_filter_toggle.py`, `test_top_events.py`;
+`tests/test_top_events.py`
 **Related**: [events](events.md), [locations](locations.md), [accounts](accounts.md) (saved
 preferences), [search visibility](search-visibility.md)
 
@@ -45,6 +46,11 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    current-month link win over saved dates; a bare calendar visit restores the session period.
 5. **Given** the grid page, **Then** it also links upcoming and running events in plain HTML so
    crawlers can follow them (finished events are not advertised as upcoming).
+6. **Given** a top event an admin marked ([events](events.md)) among those a page shows, **Then** it
+   goes first: in the list at the head, marked "Top event", above a divider (on a phone under a
+   "Top events" heading, each with its dates, before the days); first in its day in the grid and
+   the calendar's list of days, ahead of "+N"; first at its place on the map; first among the
+   nearest events. The filters still decide whether it is shown at all; feeds keep their order.
 
 ### Story 2 -- Filter (P1)
 
