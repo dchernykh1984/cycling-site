@@ -50,11 +50,12 @@ from a browser, is redirected to the same page with that city's region in the pl
 ## Requirements
 
 - **FR-001**: The region is found in the request only: the point the network provider adds, the
-  site's approved cities and their regions. Neither the point nor the IP address is stored.
+  site's approved cities and their regions. The point is not stored; the feature keeps nothing but
+  the visit cookie.
 - **FR-002**: Members are never given a guest's region; their saved preferences apply as before.
 - **FR-003**: The radius and the crawler markers are settings, not values in the code.
-- **FR-004**: The privacy policy, in the three languages, says how the region is found, that nothing
-  is kept, and what the cookie is for.
+- **FR-004**: The privacy policy, in the three languages, says how the region is found, that the
+  location is not stored, and what the cookie is for.
 
 ## Out of Scope
 

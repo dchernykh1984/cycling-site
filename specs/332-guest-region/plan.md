@@ -18,6 +18,6 @@
 - I (facts from their source): the region comes from the provider's point and the site's own places.
 - VI (no local hardcoding): no country, city or radius in the code; the radius and the markers are
   settings.
-- X (inputs checked, privacy): the headers are parsed and range-checked; nothing is stored; the
+- X (inputs checked, privacy): the headers are parsed and range-checked; the point is not stored; the
   policy says so.
 - III (tests): unit tests for every branch, an end-to-end test of the visit.
