@@ -147,12 +147,15 @@ def get_conversation(request, conversation_id: int):
 def send_message(request, conversation_id: int, payload: TurnIn):
     user = _admin(request)
     conversation = _conversation(conversation_id)
+    text = payload.text.strip()
+    if not text:
+        raise HttpError(422, "The message is empty")
     with translation.override(payload.language):
         try:
             turn = conversations.take_turn(
                 conversation,
                 user,
-                payload.text.strip(),
+                text,
                 form=payload.form,
                 attachments=[item.model_dump() for item in payload.attachments],
                 today=payload.today or timezone.localdate(),

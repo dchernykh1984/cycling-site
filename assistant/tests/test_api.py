@@ -111,6 +111,8 @@ class AssistantApiTests(ApiTestMixin, TestCase):
         conversation_id = self._start().json()["id"]
         self.assertEqual(self._say(conversation_id, text="x" * 10_001).status_code, 422)
         self.assertEqual(self._say(conversation_id, text="").status_code, 422)
+        self.assertEqual(self._say(conversation_id, text="  \n ").status_code, 422)
+        self.assertFalse(Message.objects.exists())
 
     def test_a_conversation_is_linked_to_the_event_it_added_once(self):
         event = competition(location=self.shop)
