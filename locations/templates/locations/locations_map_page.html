@@ -149,9 +149,9 @@
         map.setView([48.0, 68.0], 5);
     } else {
         var bounds = [];
-        var pins = window._mapClusters().addTo(map);
+        var pins = [];
         locations.forEach(function (loc) {
-            var marker = window._mapPin([loc.lat, loc.lng], loc.name).addTo(pins);
+            var marker = window._mapPin([loc.lat, loc.lng], loc.name);
             var popupContent = '<strong>' + esc(loc.name) + '</strong>';
             if (loc.url) {
                 popupContent += '<br><a href="' + esc(loc.url) + '">{% trans "Read article" %}</a>';
@@ -162,8 +162,11 @@
                     '" class="btn btn-sm btn-outline-secondary mt-1">{% trans "Edit" %}</a>';
             }
             marker.bindPopup(popupContent);
+            pins.push(marker);
             bounds.push([loc.lat, loc.lng]);
         });
+        // All at once: one by one, the clusters would be worked out again after every pin.
+        window._mapClusters().addLayers(pins).addTo(map);
         map.fitBounds(bounds, {padding: [30, 30], maxZoom: 13});
     }
 })();
