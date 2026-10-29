@@ -36,6 +36,13 @@ PINNED = {
     "Subscribe in your calendar (.ics)": (OE, UE, KZ_I, NG),
     "Register": (KZ_I,),
     "Satellite": (KZ_I,),
+    "Search...": (KZ_I,),
+    "Search": (KZ_I,),
+    "Log in": (KZ_I,),
+    "Knowledge Base": (KZ_I,),
+    "About": (KZ_I,),
+    "Switch theme": (Q,),
+    "No results found": (NG,),
 }
 
 

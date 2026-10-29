@@ -124,7 +124,7 @@ msgstr "таңдалды"
 #: calendar_app/templates/calendar_app/_location_filter.html:123
 #: search/templates/search/search.html:17
 msgid "Search..."
-msgstr "Iздеу..."
+msgstr "Іздеу..."
 
 # issue #122 - contact site owners
 #: accounts/templates/accounts/contact_owners.html:4
@@ -1654,7 +1654,7 @@ msgstr "Пікірді жіберу"
 #: news/templates/news/article_detail.html:108
 #: news/templates/news/news_page.html:111 skins/orange/templates/base.html:179
 msgid "Log in"
-msgstr "Кiру"
+msgstr "Кіру"
 
 #: calendar_app/templates/calendar_app/detail.html:429
 #: knowledge/templates/knowledge/knowledge_article_detail.html:103
@@ -2177,7 +2177,7 @@ msgstr "Күнтізбеге қосу"
 
 #: cycling_site/templates/_skin_select.html:11
 msgid "Switch theme"
-msgstr "Такырыпты ауыстыру"
+msgstr "Тақырыпты ауыстыру"
 
 #: cycling_site/templates/base.html:18 cycling_site/templates/base.html:39
 #: skins/orange/templates/base.html:18 skins/orange/templates/base.html:39
@@ -2215,7 +2215,7 @@ msgstr "Мәзір"
 #: skins/orange/templates/base.html:215
 #: skins/orange/templates/home/home_page.html:38
 msgid "Knowledge Base"
-msgstr "Бiлiм кiтапханасы"
+msgstr "Білім кітапханасы"
 
 #: cycling_site/templates/base.html:118
 #: gallery/templates/gallery/album_form.html:10
@@ -2230,7 +2230,7 @@ msgstr "Галерея"
 #: cycling_site/templates/base.html:123 skins/orange/templates/base.html:130
 #: skins/orange/templates/base.html:217
 msgid "About"
-msgstr "Бiз туралы"
+msgstr "Біз туралы"
 
 #: cycling_site/templates/base.html:127 search/templates/search/search.html:4
 #: search/templates/search/search.html:10
@@ -2238,7 +2238,7 @@ msgstr "Бiз туралы"
 #: skins/orange/templates/base.html:218
 #: skins/orange/templates/home/home_page.html:40
 msgid "Search"
-msgstr "Iздеу"
+msgstr "Іздеу"
 
 #: cycling_site/templates/base.html:185 skins/orange/templates/base.html:194
 msgid "Close"
@@ -3483,7 +3483,7 @@ msgstr "Беттер"
 
 #: search/templates/search/search.html:101
 msgid "No results found"
-msgstr "Ештенiе табылмады"
+msgstr "Ештеңе табылмады"
 
 #: calendar_app/templates/calendar_app/edit.html:48
 #: calendar_app/templates/calendar_app/submit.html:45
