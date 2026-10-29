@@ -48,7 +48,7 @@ and an IndexNow notice whenever something is published.
 
 1. **Given** `sitemap.xml`, **Then** it is an index of sections -- Wagtail pages, the calendar's
    month, list and map views and the gallery's index and album list, knowledge, news, events (past
-   ones stay, each dated by its approval), calendar filter pages, public photo albums -- each entry once per language with its translations; nothing hidden,
+   ones stay, each dated by its last edit or its approval, whichever is later), calendar filter pages, public photo albums -- each entry once per language with its translations; nothing hidden,
    unapproved or invite-only is offered. Its `x-default` is the default language's own address, as
    on the page itself, never the unprefixed address that only redirects.
 2. **Given** an event page, **Then** it carries `SportsEvent` data: machine-readable dates (no end

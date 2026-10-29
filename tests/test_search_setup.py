@@ -134,6 +134,7 @@ class SitemapLanguagesTests(TestCase):
 
 class CompetitionLastmodTests(TestCase):
     def test_an_approved_event_carries_a_date(self):
+        """The later of its last edit and its approval (#348): here the edit, made today."""
         comp = Competition.objects.create(
             title_ru="Dated race",
             date_start=datetime.date.today() + datetime.timedelta(days=5),
@@ -142,7 +143,7 @@ class CompetitionLastmodTests(TestCase):
         )
         body = self.client.get(reverse("sitemap_section", args=["competitions"])).content.decode()
         entry = body[body.index(comp.get_absolute_url()) :].split("</url>")[0]
-        self.assertIn("<lastmod>2026-09-01", entry)
+        self.assertIn(f"<lastmod>{comp.updated_at:%Y-%m-%d}", entry)
 
     def test_an_event_without_an_approval_date_is_still_listed(self):
         comp = Competition.objects.create(
