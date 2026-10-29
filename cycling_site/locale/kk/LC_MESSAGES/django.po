@@ -4483,3 +4483,26 @@ msgstr "Іс-шаралар көрсетілетін барлық жерде б�
 
 msgid "Top events"
 msgstr "Топ-іс-шаралар"
+
+#, python-format
+msgid "A link that is not in your messages was left out: %(url)s"
+msgstr "Хабарламаларыңызда жоқ сілтеме қосылмады: %(url)s"
+
+#, python-format
+msgid "%(city)s is not among the site's places: choose the place in the form."
+msgstr "«%(city)s» сайттағы орындардың арасында жоқ: орынды формадан таңдаңыз."
+
+msgid "The assistant is not set up on this site."
+msgstr "Бұл сайтта көмекші бапталмаған."
+
+msgid "The assistant's account with the model's provider is out of money. Tell the site's owner."
+msgstr "Модель жеткізушісіндегі көмекші шотының ақшасы таусылды. Сайт иесіне хабарлаңыз."
+
+msgid "The model's provider refused the site's key. Tell the site's owner."
+msgstr "Модель жеткізушісі сайттың кілтін қабылдамады. Сайт иесіне хабарлаңыз."
+
+msgid "The model did not answer. Send the message again in a minute."
+msgstr "Модель жауап бермеді. Хабарламаны бір минуттан кейін қайта жіберіңіз."
+
+msgid "The model's answer could not be read. Send the message again."
+msgstr "Модельдің жауабын оқу мүмкін болмады. Хабарламаны қайта жіберіңіз."

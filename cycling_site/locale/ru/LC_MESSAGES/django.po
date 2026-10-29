@@ -4485,3 +4485,26 @@ msgstr "Идёт первым везде, где показаны события
 
 msgid "Top events"
 msgstr "Топ-эвенты"
+
+#, python-format
+msgid "A link that is not in your messages was left out: %(url)s"
+msgstr "Ссылка, которой нет в ваших сообщениях, не добавлена: %(url)s"
+
+#, python-format
+msgid "%(city)s is not among the site's places: choose the place in the form."
+msgstr "Места «%(city)s» нет на сайте: выберите место в форме."
+
+msgid "The assistant is not set up on this site."
+msgstr "Ассистент на этом сайте не настроен."
+
+msgid "The assistant's account with the model's provider is out of money. Tell the site's owner."
+msgstr "На счёте ассистента у поставщика модели закончились деньги. Сообщите владельцу сайта."
+
+msgid "The model's provider refused the site's key. Tell the site's owner."
+msgstr "Поставщик модели не принял ключ сайта. Сообщите владельцу сайта."
+
+msgid "The model did not answer. Send the message again in a minute."
+msgstr "Модель не ответила. Отправьте сообщение ещё раз через минуту."
+
+msgid "The model's answer could not be read. Send the message again."
+msgstr "Ответ модели не удалось прочитать. Отправьте сообщение ещё раз."
