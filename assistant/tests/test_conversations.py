@@ -119,6 +119,18 @@ class NewsConversationTests(TestCase):
         self.assertEqual(about_news.news, item)
 
     @override_settings(ASSISTANT_LLM_API_KEY="sk-test")
+    def test_a_news_reply_naming_a_place_reads_no_places(self):
+        conversation, _ = conversations.start(self.admin, kind=Conversation.Kind.NEWS)
+        answer = {"reply": "Ok.", "set": {"place": {"city": "Testville"}}}
+        with (
+            mock.patch("calendar_app.views._get_locations_data") as read,
+            mock.patch("assistant.llm.complete", return_value=answer),
+        ):
+            turn = _turn(conversation, self.admin, "Where is it?")
+        read.assert_not_called()
+        self.assertEqual(turn.form, {})
+
+    @override_settings(ASSISTANT_LLM_API_KEY="sk-test")
     def test_a_news_turn_uses_the_news_contract_and_its_fields(self):
         item = news()
         conversation, _ = conversations.start(self.admin, item)
