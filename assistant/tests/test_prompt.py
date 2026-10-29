@@ -131,3 +131,26 @@ class MessagesTests(TestCase):
             {"reply": "Got the regulations.", "set": {"url_route": "https://example.test/route"}},
         )
         self.assertEqual(sent[3]["content"], "This turn")
+
+
+class NewsPromptTests(TestCase):
+    def test_a_news_conversation_gets_the_news_contract_and_skill_and_nothing_of_events(self):
+        text = prompt.system_prompt("news")
+        self.assertIn(prompt.NEWS_CONTRACT, text)
+        for path in sorted((prompt.SKILLS_DIR / "news").glob("*.md")):
+            self.assertIn(path.read_text(encoding="utf-8").strip(), text)
+        for path in sorted((prompt.SKILLS_DIR / "event").glob("*.md")):
+            self.assertNotIn(path.read_text(encoding="utf-8").strip(), text)
+        self.assertNotIn("Disciplines", text)
+
+    def test_a_news_form_is_its_headline_short_description_and_text(self):
+        images: list[str] = []
+        raw = {"title_ru": "Novost", "intro_en": "Short", "body_ru": '<p>A</p><img src="https://example.org/a.png">'}
+        form = prompt.describe_news(raw, images)
+        self.assertEqual(set(form), {"title", "intro", "body"})
+        self.assertEqual(form["body"]["ru"], '<p>A</p><img src="image:1">')
+        self.assertEqual(images, ['<img src="https://example.org/a.png">'])
+        self.assertIn(
+            "writing a new news item",
+            prompt.turn("x", form, [], datetime.date(2026, 10, 29), "ru", editing=False, kind="news"),
+        )

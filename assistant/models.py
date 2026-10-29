@@ -1,8 +1,8 @@
-"""The assistant's conversations, kept with their event so that its edit page goes on where adding it stopped.
+"""The assistant's conversations, kept with their event or news item so that its edit page goes on.
 
-A conversation starts before its event exists: the admin adds an event by talking, and only the
-form's own button saves it. The conversation is linked to the event then, and the event's edit page
-continues it with everything said so far (issue #353).
+A conversation starts before its subject exists: the admin adds an event or writes a news item by
+talking, and only the form's own button saves it. The conversation is linked to it then, and the
+edit page continues it with everything said so far (issue #353).
 """
 
 from typing import ClassVar
@@ -14,8 +14,21 @@ from django.db import models
 class Conversation(models.Model):
     objects: ClassVar[models.Manager["Conversation"]]
 
+    class Kind(models.TextChoices):
+        EVENT = "event", "Event"
+        NEWS = "news", "News"
+
+    # What the conversation is about: it decides the skills, the reply's contract and the form.
+    kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.EVENT)
     competition = models.OneToOneField(
         "calendar_app.Competition",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="assistant_conversation",
+    )
+    news = models.OneToOneField(
+        "news.NewsArticle",
         null=True,
         blank=True,
         on_delete=models.CASCADE,
@@ -26,6 +39,16 @@ class Conversation(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints: ClassVar[list] = [
+            # An event's conversation has no news item, and a news item's no event.
+            models.CheckConstraint(
+                condition=(models.Q(kind="event") & models.Q(news__isnull=True))
+                | (models.Q(kind="news") & models.Q(competition__isnull=True)),
+                name="assistant_conversation_one_subject",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"Conversation #{self.pk}"

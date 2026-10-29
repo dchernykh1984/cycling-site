@@ -15,11 +15,20 @@ MAX_TEXT = 10_000
 _KINDS = ("route", "regulations")
 
 
-def start(user, competition=None) -> tuple[Conversation, bool]:
-    """The event's own conversation, or a new one for an event still being added; True when created."""
-    if competition is None:
-        return Conversation.objects.create(started_by=user), True
-    return Conversation.objects.get_or_create(competition=competition, defaults={"started_by": user})
+def subject_field(subject) -> tuple[str, str]:
+    """The conversation's field for an event or a news item, and the kind of conversation it takes."""
+    if subject._meta.label_lower == "news.newsarticle":
+        return "news", Conversation.Kind.NEWS
+    return "competition", Conversation.Kind.EVENT
+
+
+def start(user, subject=None, kind: str = Conversation.Kind.EVENT) -> tuple[Conversation, bool]:
+    """The subject's own conversation -- an event's or a news item's -- or a new one of ``kind`` for one
+    still being written; True when created."""
+    if subject is None:
+        return Conversation.objects.create(started_by=user, kind=kind), True
+    field, kind = subject_field(subject)
+    return Conversation.objects.get_or_create(**{field: subject}, defaults={"started_by": user, "kind": kind})
 
 
 def _point(start) -> list[float] | None:
@@ -74,9 +83,15 @@ def take_turn(
     from calendar_app.views import _get_locations_data  # the views link conversations: import late
 
     images: list[str] = []
-    current = prompt.describe_form(form, conversation.competition, images)
-    attachments = _attachments(attachments)
-    content = prompt.turn(text, current, attachments, today, language, editing=conversation.competition_id is not None)
+    kind = conversation.kind
+    editing = conversation.competition_id is not None or conversation.news_id is not None
+    if kind == Conversation.Kind.NEWS:
+        current = prompt.describe_news(form, images)
+        attachments = []
+    else:
+        current = prompt.describe_form(form, conversation.competition, images)
+        attachments = _attachments(attachments)
+    content = prompt.turn(text, current, attachments, today, language, editing=editing, kind=kind)
     answer = llm.complete(prompt.messages(conversation, content))
     reply = answer.get("reply")
     if not isinstance(reply, str) or not reply.strip():
@@ -87,6 +102,7 @@ def take_turn(
     names_a_place = isinstance(changes, dict) and isinstance(changes.get("place"), dict)
     checked = fields.check(
         changes,
+        kind=kind,
         current=current,
         texts=said,
         rows=_get_locations_data(user) if names_a_place else [],
@@ -104,13 +120,16 @@ def take_turn(
     return Turn(reply=replied.text, form=checked.form, notes=checked.notes, asked=asked, replied=replied)
 
 
-def link(conversation_id, competition, user) -> bool:
-    """Link a conversation to the event the form just saved; False when it is not an admin's to link."""
+def link(conversation_id, subject, user) -> bool:
+    """Link a conversation to the event or news item its form just saved; False when it may not be.
+
+    Only an admin's, only a conversation of the subject's kind that has no subject yet, and only a
+    subject that has no conversation yet.
+    """
     if not is_admin(user) or not str(conversation_id or "").isdigit():
         return False
-    if Conversation.objects.filter(competition=competition).exists():
+    field, kind = subject_field(subject)
+    if Conversation.objects.filter(**{field: subject}).exists():
         return False
-    linked = Conversation.objects.filter(pk=int(conversation_id), competition__isnull=True).update(
-        competition=competition
-    )
-    return linked == 1
+    free = Conversation.objects.filter(pk=int(conversation_id), kind=kind, competition__isnull=True, news__isnull=True)
+    return free.update(**{field: subject}) == 1

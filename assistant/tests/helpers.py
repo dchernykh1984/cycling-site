@@ -6,6 +6,7 @@ import uuid
 from accounts.models import User
 from calendar_app.models import Competition
 from locations.models import Location
+from news.models import NewsArticle
 
 
 def user(name: str = "admin", role: str = User.Role.ADMIN) -> User:
@@ -41,3 +42,7 @@ def competition(**kwargs) -> Competition:
     if "location" not in fields:
         fields["location"] = venue()
     return Competition.objects.create(**fields)
+
+
+def news(**kwargs) -> NewsArticle:
+    return NewsArticle.objects.create(**{"title_ru": "Novost", "body_ru": "<p>Tekst</p>", **kwargs})

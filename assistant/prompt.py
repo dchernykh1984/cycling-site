@@ -21,10 +21,13 @@ from locations.models import Location
 SKILLS_DIR = Path(__file__).resolve().parent / "skills"
 LANGUAGES = ("ru", "kk", "en")
 TEXT_FIELDS = ("title", "description", "preview_text")
+NEWS_FIELDS = ("title", "intro", "body")
+# The fields written in the editor, whose pictures travel as marks (``assistant/images.py``).
+RICH_FIELDS = ("description", "body")
 URL_FIELDS = ("url_announcement", "url_registration", "url_route", "url_regulations", "url_results")
 FILE_FIELDS = ("file_announcement", "file_route", "file_regulations", "file_results")
 # How much of a field the model is shown; a description is the longest, and the editor allows far more.
-_MAX_TEXT = {"title": 255, "description": 20_000, "preview_text": 300}
+_MAX_TEXT = {"title": 255, "description": 20_000, "preview_text": 300, "intro": 500, "body": 20_000}
 _MAX_LINE = 1000
 
 CONTRACT = """\
@@ -58,6 +61,29 @@ The site's instructions follow, in Russian: they say what to ask and how an anno
 """
 
 
+NEWS_CONTRACT = """\
+You are the assistant of a website that publishes news about sport: races, rides, runs, hikes and
+more. An administrator of the site writes a news item, or edits one, with your help: you translate
+it, put its formatting right and change it as they ask, and they save it with the form's own button.
+
+Answer with ONE json object and nothing else: {"reply": "...", "set": {...}}
+
+"reply" is what you say to the administrator, in the page's language, which each of their messages
+names. "set" holds only the fields of the form you change now; leave out the ones that stay as they
+are. Each field is {"ru": "...", "kk": "...", "en": "..."}, giving only the languages you change:
+- "title": the headline, at most 255 characters;
+- "intro": the short description under the headline, plain text, at most 500 characters;
+- "body": the text, simple HTML: <p>, <h2>, <h3>, <ul>, <ol>, <li>, <strong>, <em>, <blockquote>,
+  <br>, <a href="...">. A picture in it is a mark, <img src="image:N">: keep each mark where its
+  picture belongs, and add none of your own.
+
+The form as it stands comes with each message of the administrator's: trust it over the
+conversation, since they may have changed it by hand.
+
+The site's instructions follow, in Russian.
+"""
+
+
 def skills(kind: str = "event") -> str:
     """Every skill file of a kind (``skills/<kind>/``), in the order of their names."""
     paths = sorted((SKILLS_DIR / kind).glob("*.md"))
@@ -82,8 +108,10 @@ def taxonomy() -> str:
     return "\n".join(lines)
 
 
-def system_prompt() -> str:
-    return f"{CONTRACT}\n{skills()}\n\n{taxonomy()}\n"
+def system_prompt(kind: str = "event") -> str:
+    if kind == "news":
+        return f"{NEWS_CONTRACT}\n{skills('news')}\n"
+    return f"{CONTRACT}\n{skills('event')}\n\n{taxonomy()}\n"
 
 
 def _text(value, limit: int = _MAX_LINE) -> str:
@@ -136,11 +164,7 @@ def describe_form(raw: dict, competition=None, images: list[str] | None = None) 
     ``images`` for the answer to be put back with.
     """
     raw = raw if isinstance(raw, dict) else {}
-    images = images if images is not None else []
-    form: dict = {
-        name: {lang: _text(raw.get(f"{name}_{lang}"), _MAX_TEXT[name]) for lang in LANGUAGES} for name in TEXT_FIELDS
-    }
-    form["description"] = {lang: pictures.hide(text, images) for lang, text in form["description"].items()}
+    form = _texts(raw, TEXT_FIELDS, images if images is not None else [])
     form["date_start"] = _text(raw.get("date_start"), 10)
     form["date_end"] = _text(raw.get("date_end"), 10)
     form["event_type_ids"] = _ids(raw.get("event_types"))
@@ -152,6 +176,20 @@ def describe_form(raw: dict, competition=None, images: list[str] | None = None) 
     }
     form["registration_on_the_site"] = raw.get("registration_enabled") is True
     return form
+
+
+def _texts(raw: dict, names: tuple[str, ...], images: list[str]) -> dict:
+    """The form's texts in each language, the editor's pictures as marks."""
+    form = {name: {lang: _text(raw.get(f"{name}_{lang}"), _MAX_TEXT[name]) for lang in LANGUAGES} for name in names}
+    for name in RICH_FIELDS:
+        if name in form:
+            form[name] = {lang: pictures.hide(text, images) for lang, text in form[name].items()}
+    return form
+
+
+def describe_news(raw: dict, images: list[str] | None = None) -> dict:
+    """A news item's form as the page sent it: its headline, short description and text."""
+    return _texts(raw if isinstance(raw, dict) else {}, NEWS_FIELDS, images if images is not None else [])
 
 
 def attachments_line(attachments: list[dict]) -> str:
@@ -175,9 +213,13 @@ def turn(
     language: str,
     *,
     editing: bool,
+    kind: str = "event",
 ) -> str:
     """The administrator's message as the model reads it: the day, the page, the form, the files."""
-    task = "editing an event already on the site" if editing else "adding a new event"
+    if kind == "news":
+        task = "editing a news item already on the site" if editing else "writing a new news item"
+    else:
+        task = "editing an event already on the site" if editing else "adding a new event"
     parts = [
         f"Today is {today.isoformat()}, {today.strftime('%A')}. The page's language: {language}.",
         f"The administrator is {task}.",
@@ -191,7 +233,7 @@ def turn(
 
 def messages(conversation: Conversation, current_turn: str) -> list[dict]:
     """The whole prompt: the system part, the conversation so far and this turn."""
-    out = [{"role": "system", "content": system_prompt()}]
+    out = [{"role": "system", "content": system_prompt(conversation.kind)}]
     for message in conversation.messages.all():
         if message.role == Message.Role.USER:
             content = message.text
