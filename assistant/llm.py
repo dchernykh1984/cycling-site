@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 # A full set of titles, descriptions and link previews measured 764 tokens. Room for a long text in
 # two more languages besides, which takes about a minute to write; an answer over it is cut off.
 MAX_TOKENS = 16_000
-TIMEOUT_SECONDS = 120
+# Under the 100 s the site's proxy waits for a page: past it the reader would get the proxy's error
+# page instead of the assistant's own "send it again".
+TIMEOUT_SECONDS = 90
 
 
 class UnavailableError(Exception):
