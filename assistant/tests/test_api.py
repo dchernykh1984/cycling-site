@@ -12,7 +12,7 @@ from accounts.models import User
 from api.tests import ApiTestMixin
 from assistant import llm
 from assistant.models import Conversation, Message
-from assistant.tests.helpers import city, competition, user, venue
+from assistant.tests.helpers import city, competition, news, user, venue
 
 API = "/api/v1/assistant"
 KEY = "sk-never-shown"
@@ -154,3 +154,33 @@ class AssistantApiTests(ApiTestMixin, TestCase):
             expected = gettext("A link that is in neither your messages nor the form was left out: %(url)s")
         self.assertNotIn("A link", expected)
         self.assertEqual(body["notes"], [expected % {"url": "https://made.up/route"}])
+
+
+@override_settings(ASSISTANT_LLM_API_KEY=KEY)
+class NewsApiTests(ApiTestMixin, TestCase):
+    def setUp(self):
+        self.admin = user()
+        self.item = news()
+
+    def test_a_news_items_conversation_is_its_own_and_of_its_kind(self):
+        first = self.post(f"{API}/conversations", {"news_id": self.item.pk}, self.admin)
+        again = self.post(f"{API}/conversations", {"news_id": self.item.pk}, self.admin)
+        self.assertEqual((first.status_code, again.status_code), (201, 200))
+        self.assertEqual(first.json()["id"], again.json()["id"])
+        self.assertEqual((first.json()["kind"], first.json()["news_id"]), ("news", self.item.pk))
+        fresh = self.post(f"{API}/conversations", {"kind": "news"}, self.admin).json()
+        self.assertEqual((fresh["kind"], fresh["news_id"]), ("news", None))
+
+    def test_naming_both_or_a_missing_news_item_is_refused(self):
+        event = competition()
+        both = self.post(f"{API}/conversations", {"news_id": self.item.pk, "competition_id": event.pk}, self.admin)
+        self.assertEqual(both.status_code, 422)
+        self.assertEqual(self.post(f"{API}/conversations", {"news_id": 999999}, self.admin).status_code, 404)
+
+    def test_a_news_conversation_links_to_a_news_item_and_never_to_an_event(self):
+        conversation_id = self.post(f"{API}/conversations", {"kind": "news"}, self.admin).json()["id"]
+        url = f"{API}/conversations/{conversation_id}"
+        self.assertEqual(self.patch(url, {"competition_id": competition().pk}, self.admin).status_code, 409)
+        self.assertEqual(self.patch(url, {}, self.admin).status_code, 422)
+        linked = self.patch(url, {"news_id": self.item.pk}, self.admin)
+        self.assertEqual((linked.status_code, linked.json()["news_id"]), (200, self.item.pk))
