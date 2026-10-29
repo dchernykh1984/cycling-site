@@ -1886,6 +1886,29 @@ class MultiLocationFilterTests(TestCase):
         self.assertContains(resp, "RU Race")
         self.assertNotContains(resp, "KZ Race")
 
+    def test_the_deepest_level_chosen_says_what_is_shown(self):
+        # The filter keeps every level it ticked in the address; a country and a region of it mean
+        # the region, as a city wins over its country, and a second country waits for its own.
+        other_obl = self.kz.add_child(name_ru="Other obl", name_en="Other obl")
+        elsewhere = other_obl.add_child(name_ru="Other", name_en="Other").add_child(name_ru="C", name_en="C")
+        _make_competition("KZ Elsewhere", location=elsewhere, date_start=datetime.date(2026, 7, 1))
+
+        def shown(*nodes):
+            location = ",".join(str(node.pk) for node in nodes)
+            return {e["title"] for e in self.client.get(reverse("calendar_events_api"), {"location": location}).json()}
+
+        self.assertEqual(shown(self.kz, self.ru), {"KZ Race", "RU Race", "KZ Elsewhere"})
+        self.assertEqual(shown(self.kz, self.ru, self.kz_obl), {"KZ Race"})
+        self.assertEqual(shown(self.kz, self.ru, self.kz_obl, self.ru_obl), {"KZ Race", "RU Race"})
+
+    def test_the_places_map_reads_the_deepest_level_too(self):
+        from locations.models import filter_descendant_pks
+
+        pks = filter_descendant_pks([f"{self.kz.pk},{self.ru.pk},{self.kz_obl.pk}"])
+        self.assertIn(self.kz_venue.pk, pks)
+        self.assertNotIn(self.ru_venue.pk, pks)
+        self.assertNotIn(self.kz.pk, pks)
+
 
 class MultiSelectIdFilterTests(TestCase):
     """Multi-select event-type / direction / discipline filtering (issue #108).

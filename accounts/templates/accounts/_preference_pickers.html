@@ -161,7 +161,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }),
     nodesUnder: locNodesUnder, restoreChains: locRestore, searchable: true, labels: LABELS, onChange: syncLoc
   });
-  function syncLoc() { syncInputs('pref-loc-inputs', 'preferred_locations', loc.effectivePks()); }
+  // As the calendar's filter sends them: every ticked level, the deepest of which counts.
+  function syncLoc() { syncInputs('pref-loc-inputs', 'preferred_locations', loc.chosenPks()); }
   syncLoc();
 
   // Event types (mirrors _event_type_filter.html): one level, no parents.

@@ -13,7 +13,7 @@ config:
   collapseWholeLevels: bool  // filters only: a fully ticked level yields its parent's ids instead
   labels:        {all: "...", selected: "..."}
   onChange():    called after every user-driven selection change
-returns {effective(), effectivePks(), effectiveDepth(), refresh()}.
+returns {effective(), effectivePks(), effectiveDepth(), chosenPks(), refresh()}.
 {% endcomment %}
 <script>
 // Every id-valued filter travels as ONE comma-joined value ("location=1,2,3") rather than one
@@ -214,6 +214,20 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     return top.length ? { depth: 1, pks: top } : { depth: 0, pks: [] };
   }
 
+  // Every level's ticked ids, for a filter that keeps its boxes in the address: a reload or a switch
+  // of tabs restores each of them, a second country included after a region of the first. What the
+  // filter means is still the deepest level among them -- the server reads it so
+  // (locations.models.deepest_chosen). A lower level with every option ticked stays out, as in
+  // effective(): its parent says the same, and spelling it out overruns the request line.
+  function chosenPks() {
+    var pks = [];
+    for (var d = 1; d <= N; d++) {
+      if (d > 1 && COLLAPSE_WHOLE_LEVELS && isWholeLevel(d)) continue;
+      pks = pks.concat(selectedPks(d));
+    }
+    return pks;
+  }
+
   rebuildFrom(1);
 
   // Restore selection from ancestor chains (e.g. ?location= / ?discipline= ids). For
@@ -233,6 +247,7 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     effective: effective,
     effectivePks: function () { return effective().pks; },
     effectiveDepth: function () { return effective().depth; },
+    chosenPks: chosenPks,
     levelPks: function (d) { return selectedPks(d); },
     refresh: function () { rebuildFrom(1); }
   };

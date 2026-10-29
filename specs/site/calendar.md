@@ -65,8 +65,11 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    over its country: only the chosen disciplines are shown, and a ticked direction offers its
    disciplines in the picker, filtering alone only while none of them is chosen; both travel in the
    address, so a ticked direction stays ticked after the list reloads. A location includes
-   everything beneath it in the tree. The API's `direction_ids` and `discipline_ids` keep their
-   OR (FR-API-005).
+   everything beneath it in the tree, and places on several levels mean the deepest of them -- a
+   country and one of its regions show the region; every ticked level travels in the address, so a
+   second country stays ticked after a region of the first is picked, ready for its own. The API's
+   `direction_ids` and `discipline_ids` keep their OR, and its `location_ids` their union
+   (FR-API-005).
 4. **Given** a junk or unknown id in the address, **Then** it is ignored, not treated as "nothing".
 5. **Given** a member with saved preferences opens a calendar page without a query, **Then** they
    are redirected to it with their preferences applied; an explicit query or the reset link is

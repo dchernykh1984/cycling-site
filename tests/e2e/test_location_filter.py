@@ -144,3 +144,22 @@ def test_hidden_country_is_selectable_in_filter(page: Page, live_server, locatio
     open_filter_panel(page)
     page.click("#mf-btn-1")
     expect(page.locator(f"#mf-menu-1 input[value='{hidden_country.pk}']")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_second_country_stays_ticked_after_a_region_of_the_first(
+    page: Page, live_server, location_tree, kz_competition, ru_competition
+):
+    """The list reloads on every tick; the address keeps every ticked level, the deepest wins."""
+    kz, ru, region = location_tree["kz"].pk, location_tree["ru"].pk, location_tree["region"].pk
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{live_server.url}{_LIST_URL}?{_DATES}")
+    for menu, pk in (("#mf-menu-1", kz), ("#mf-menu-1", ru), ("#mf-menu-2", region)):
+        open_filter_panel(page)
+        page.click(menu.replace("menu", "btn"))
+        with page.expect_navigation():
+            page.check(f"{menu} input[value='{pk}']")
+    expect(page.locator(f"#mf-menu-1 input[value='{ru}']")).to_be_checked()
+    expect(page.locator(f"#mf-menu-2 input[value='{region}']")).to_be_checked()
+    expect(page.locator("main")).to_contain_text("KZ Race")
+    expect(page.locator("main")).not_to_contain_text("RU Race")
