@@ -1,4 +1,5 @@
 import datetime
+import functools
 import json
 import uuid
 from calendar import monthrange
@@ -518,6 +519,36 @@ def calendar_date_words() -> dict:
     }
 
 
+@functools.lru_cache(maxsize=8)
+def _months_in(language: str) -> tuple[str, ...]:
+    """``calendar_date_words``' months for ``language``, the language active when it is asked."""
+    return tuple(calendar_date_words()["months"])
+
+
+def date_range_words(start, end=None) -> str:
+    """An event's days in the words the period line names them in (the interface skill, rule 12):
+    "24 October 2026", "24-25 October 2026", "30 September - 2 October 2026", and both years when
+    the days cross into a new one -- the month in its Russian case, the year first in Kazakh, an en
+    dash between.
+    """
+    language = get_language() or ""
+    months = _months_in(language)
+
+    def with_year(text, year):
+        return f"{year} {text}" if language.startswith("kk") else f"{text} {year}"
+
+    def day(d):
+        return f"{d.day} {months[d.month - 1]}"
+
+    if not end or end <= start:
+        return with_year(day(start), start.year)
+    if end.year != start.year:
+        return f"{with_year(day(start), start.year)} \u2013 {with_year(day(end), end.year)}"
+    if end.month == start.month:
+        return with_year(f"{start.day}\u2013{day(end)}", start.year)
+    return with_year(f"{day(start)} \u2013 {day(end)}", start.year)
+
+
 def day_groups(rows) -> list[dict]:
     """A list page's rows under their first day, for the list of days a phone shows (issue #330).
 
@@ -830,6 +861,7 @@ class CalendarMapAPIView(View):
                     "url": reverse("competition_detail", args=[comp.id]),
                     "date_start": comp.date_start.isoformat(),
                     "date_end": comp.date_end.isoformat() if comp.date_end else None,
+                    "when": date_range_words(comp.date_start, comp.date_end),
                 }
             )
         return JsonResponse(list(groups.values()), safe=False)

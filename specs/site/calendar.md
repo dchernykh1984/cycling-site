@@ -4,7 +4,7 @@
 **Verified against**: PR #343 on 2026-10-24
 **Code**: `calendar_app/` (views, filters, feeds, `visibility.py`), `calendar_app/templates/calendar_app/`
 **Tests**: `calendar_app/tests.py` (calendar, list, map, events API, filters, favorites, default
-filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/test_event_ics.py`, `tests/test_period_overlap.py`,
+filters), `calendar_app/test_date_words.py`, `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/test_event_ics.py`, `tests/test_period_overlap.py`,
 `tests/test_feeds.py`,
 `tests/test_calendar_crawlable.py`, `tests/test_list_site_registration.py`,
 `tests/test_pagination_links.py`, `tests/test_locations_payload.py`, `tests/test_location.py`,
@@ -139,7 +139,9 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 - **FR-CAL-005**: Feeds and subscriptions never carry hidden, unapproved or invite-only events. An
   event's own file is not a feed: it answers the people its page answers (`visibility.can_open`).
 - **FR-CAL-006**: Calendar labels, including grid weekdays, come from the translated catalogues; Kazakh period labels put
-  the year before the month or days. Shared period controls offer days, weekend, week, month and
+  the year before the month or days. The list's table and the map's popups name an event's days in
+  the same words ("24-25 October 2026", the month in its Russian case, an en dash between), never
+  as 24.10.2026 (#388). Shared period controls offer days, weekend, week, month and
   a year picker, step by the selected kind and return keyboard focus when a picker closes.
 - **FR-CAL-007**: Phone List rows show city and sport, and preserve the remaining FR-CAL-004
   facts and Info link in expandable row details. Desktop retains the table.

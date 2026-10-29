@@ -91,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function () {
   function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-  function fmtDate(iso) { var p = iso.split('-'); return p[2] + '.' + p[1] + '.' + p[0]; }
 
   function appendFilters(params, directionParam) {
     if (dfEl.value) params.set('date_from', dfEl.value);
@@ -144,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function () {
           var html = '<strong>' + esc(loc.name) + '</strong>';
           loc.competitions.forEach(function (c) {
             html += '<br><a href="' + esc(c.url) + '" target="_blank" rel="noopener">' +
-                    esc(c.title) + '</a> &mdash; ' + fmtDate(c.date_start);
+                    esc(c.title) + '</a> &mdash; ' + esc(c.when);
           });
           window._mapPin([loc.lat, loc.lng], loc.name).bindPopup(html).addTo(markersLayer);
           bounds.push([loc.lat, loc.lng]);
