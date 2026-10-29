@@ -149,3 +149,9 @@ On every pull request, and locally:
   as everyone's starting skin, including `test_skin_contrast.py`: text at least 4.5:1 against what
   it is drawn on (3:1 for large text), at rest, under the pointer and in focus. CI runs this for
   every skin in its own job.
+- `E2E_SKIN=<key> .venv/bin/python -m pytest tests/e2e/test_interface_rules.py -n 8` -- the part of
+  that suite a skin most often breaks: the header of the calendar, the list and the map measured by
+  the interface rules (`.claude/skills/interface/SKILL.md`) -- every control big enough to tap,
+  every label inside its control, text and borders that can be seen, the selected choice plainly
+  selected. The list of breaks known when a rule came in (`KNOWN`) can excuse a colour only in light
+  and dark, the maintainer's skins: a designer's skin answers for its own colours.
