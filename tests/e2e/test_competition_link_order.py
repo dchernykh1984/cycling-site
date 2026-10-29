@@ -36,7 +36,7 @@ def test_event_links_follow_the_start_point_before_the_announcement(
     page.goto(f"{live_server.url}/{language}/calendar/{comp.pk}/")
     selectors = [
         "#competition-map",
-        "[role='group']:has(#map-link-google)",
+        "#map-links",
         f"a[href='{comp.url_registration}']",
         f"a[href='{in_language(reverse('registrations:register', args=[comp.pk]), language)}']",
         *[f"a[href='{getattr(comp, f'url_{name}')}']" for name in document_names],

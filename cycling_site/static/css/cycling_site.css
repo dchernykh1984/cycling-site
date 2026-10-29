@@ -623,6 +623,14 @@ main .event-photo-preview img { object-fit: contain; }
     content: ""; position: absolute; top: 50%; height: 2.75rem; transform: translateY(-50%);
     left: min(0px, calc((100% - 2.75rem) / 2)); right: min(0px, calc((100% - 2.75rem) / 2));
 }
+/* The event page's start point, opened in the map service the reader picks from one menu (#335): the
+   button and each service answer a tap across 44 px, whatever height the skin gives them. */
+.map-links .btn, .map-links .dropdown-item {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+}
+.map-links .dropdown-item { display: flex; }
 /* An invitation's "Log in" (issue #351) is tapped on phones: 44 px whatever height the skin gives it. */
 .invite-preview .btn {
     min-height: 2.75rem;

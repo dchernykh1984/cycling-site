@@ -3741,11 +3741,16 @@ class CompetitionDetailMapLinksTests(TestCase):
         body = self._page(self.venue).content.decode()
         self.assertIn('rel="noopener noreferrer"', body)
 
-    def test_the_row_of_links_carries_an_accessible_name(self):
-        """Five bare brand names in a row tell a screen-reader user nothing on their own."""
+    def test_every_service_sits_in_one_menu_named_by_its_button(self):
+        """However many services the deployment offers, the page shows one button (#335); the menu it
+        opens is named by that button, so a screen reader never meets bare brand names alone."""
         body = self._page(self.venue).content.decode()
-        self.assertIn('role="group"', body)
-        self.assertIn('id="map-link-2gis"', body)
+        start = body.index('id="map-links"')
+        menu = body[start : body.index("</ul>", start)]
+        self.assertEqual(menu.count('data-bs-toggle="dropdown"'), 1)
+        self.assertIn('aria-labelledby="map-links-toggle"', menu)
+        self.assertEqual(menu.count('class="dropdown-item"'), 5)
+        self.assertIn('id="map-link-2gis"', menu)
 
     def test_a_venue_without_a_point_offers_no_links_at_all(self):
         body = self._page(self.blank_venue).content.decode()
@@ -3772,10 +3777,10 @@ class CompetitionDetailMapLinksTests(TestCase):
         "\u0441\u0456\u043b\u0442\u0435\u043c\u0435"
     )
 
-    def test_the_heading_reads_as_a_link_to_the_start_point(self):
+    def test_the_button_reads_as_a_link_to_the_start_point(self):
         """The wording is a deliberate choice, so it is pinned rather than left to drift."""
         body = self._page(self.venue).content.decode()
-        self.assertIn(f"{self.HEADING_RU}:", body)
+        self.assertIn(f">{self.HEADING_RU}</button>", body)
 
     def test_the_heading_is_translated_in_every_site_language(self):
         expected = {"ru": self.HEADING_RU, "kk": self.HEADING_KK, "en": "Link to the start point"}
@@ -3783,11 +3788,6 @@ class CompetitionDetailMapLinksTests(TestCase):
             with self.subTest(locale=code):
                 body = self._page(self.venue, code).content.decode()
                 self.assertIn(text, body)
-
-    def test_the_row_keeps_its_accessible_name_in_every_language(self):
-        """The aria-label carries the same wording, so it must be translated too, not left English."""
-        body = self._page(self.venue, "ru").content.decode()
-        self.assertIn(f'aria-label="{self.HEADING_RU}"', body)
 
     def test_an_event_with_no_location_renders_without_links(self):
         response = self._page(None)
