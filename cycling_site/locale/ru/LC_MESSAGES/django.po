@@ -4549,3 +4549,6 @@ msgstr "Приложено к форме как регламент: %(name)s"
 
 msgid "Attach a GPX or KML track, or the regulations as a PDF."
 msgstr "Приложите трек в GPX или KML либо регламент в PDF."
+
+msgid "<strong>The event assistant.</strong> The site's administrators may add and edit events by talking to an assistant on the event's page. What they write to it, and the event's form as it stands, go to a language-model provider, which prepares the event's texts; the conversation is kept on the site with its event."
+msgstr "<strong>Ассистент по мероприятиям.</strong> Администраторы сайта могут добавлять и править мероприятия, переписываясь с ассистентом на странице мероприятия. То, что они ему пишут, и форма мероприятия в её текущем виде передаются поставщику языковой модели, который готовит тексты мероприятия; переписка хранится на сайте вместе с мероприятием."
