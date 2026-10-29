@@ -4476,3 +4476,9 @@ msgstr "Мы не продаём, не сдаём в аренду и не обм
 
 msgid "The new venue needs its name in Russian."
 msgstr "У новой площадки должно быть название на русском."
+
+msgid "Top event"
+msgstr "Топ-эвент"
+
+msgid "Goes first wherever events are shown: at the head of the list, above a divider; first in its day on the calendar; first at its place on the map."
+msgstr "Идёт первым везде, где показаны события: в начале списка, над разделителем; первым в своём дне в календаре; первым на своём месте на карте."

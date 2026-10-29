@@ -43,6 +43,8 @@ class CompetitionIn(Schema):
     url_registration: Url = ""
     url_regulations: Url = ""
     url_results: Url = ""
+    # First wherever events are listed; admins only.
+    is_top: bool = False
 
 
 class CompetitionPatchIn(Schema):
@@ -60,6 +62,7 @@ class CompetitionPatchIn(Schema):
     url_regulations: Url | None = None
     url_results: Url | None = None
     is_hidden: bool | None = None
+    is_top: bool | None = None
 
 
 class CompetitionOut(Schema):
@@ -90,6 +93,7 @@ class CompetitionOut(Schema):
     url_results: str
     is_hidden: bool
     is_deleted: bool
+    is_top: bool
 
     @staticmethod
     def resolve_location_city_id(obj: Competition) -> int | None:
@@ -432,6 +436,8 @@ def create_competition(request, payload: CompetitionIn):
     if user.get_role_rank() < user.ROLE_HIERARCHY.index(user.Role.ORGANIZER):
         raise HttpError(403, "ORGANIZER role or higher is required")
 
+    if payload.is_top and not is_admin(user):
+        raise HttpError(403, "Only admins can mark a top event")
     _validate_location_id(payload.location_id, user)
     status = Competition.Status.APPROVED if is_admin(user) else Competition.Status.PENDING_APPROVAL
     competition = Competition(submitted_by=user, status=status)
@@ -449,6 +455,7 @@ def create_competition(request, payload: CompetitionIn):
         "url_registration",
         "url_regulations",
         "url_results",
+        "is_top",
     ):
         setattr(competition, field, getattr(payload, field))
 
@@ -486,6 +493,8 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 
     if "is_hidden" in data and not is_admin(user):
         raise HttpError(403, "Only admins can change visibility")
+    if "is_top" in data and not is_admin(user):
+        raise HttpError(403, "Only admins can mark a top event")
     if "location_id" in data:
         _validate_location_id(data["location_id"], user)
     # Unambiguous discipline semantics: omit = leave unchanged, [] = clear, null = error.

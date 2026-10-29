@@ -62,6 +62,13 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         # The submitting user is needed to validate location ownership (issue #111).
         self.user = user
         super().__init__(*args, **kwargs)
+        # Only an admin or the owner marks a top event: for anybody else the field is not there, so
+        # neither shown nor read from a POST, and an edit by the author leaves the mark as it was.
+        is_admin = bool(getattr(user, "is_superuser", False)) or (
+            getattr(user, "is_authenticated", False) and user.get_role_rank() >= _ADMIN_RANK
+        )
+        if not is_admin:
+            del self.fields["is_top"]
 
     title_ru = forms.CharField(max_length=255, widget=forms.TextInput(attrs={"class": "form-control"}))
     title_kk = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
@@ -158,6 +165,7 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     )
     # Offered to organizers and up; the views ignore it from anyone else (issue #313).
     invite_only = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
+    is_top = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
 
     _MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
     _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = frozenset(

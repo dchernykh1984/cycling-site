@@ -1375,6 +1375,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         url_results=cd.get("url_results", ""),
                         submitted_by=request.user,
                         invite_only=is_organizer and cd.get("invite_only", False),
+                        is_top=cd.get("is_top", False),
                     )
                     uploads = ("file_announcement", "file_route", "file_regulations", "file_results", "preview_image")
                     for fname in uploads:
@@ -1422,7 +1423,8 @@ class EditCompetitionView(View):
 
     def get(self, request, pk):
         comp = self._get_competition_or_403(request, pk)
-        form = SubmitCompetitionForm(initial=_competition_initial(comp), user=request.user)
+        # The top mark is the edition's, set by an admin: editing shows it, a clone starts without it.
+        form = SubmitCompetitionForm(initial={**_competition_initial(comp), "is_top": comp.is_top}, user=request.user)
         reg_form = RegistrationSettingsForm(initial=_registration_initial(comp))
         import json
 
@@ -1502,6 +1504,8 @@ class EditCompetitionView(View):
             is_org = _is_organizer_plus(request.user)
             if is_org:
                 comp.invite_only = cd.get("invite_only", False)
+            if "is_top" in form.fields:  # an admin's form only; an author's edit leaves the mark alone
+                comp.is_top = cd.get("is_top", False)
             try:
                 # Resolve, lock and re-validate the location, then save in one transaction so a
                 # concurrent delete/level-change of the venue can't bind this competition to a

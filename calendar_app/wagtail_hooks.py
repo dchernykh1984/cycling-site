@@ -104,6 +104,7 @@ class CompetitionViewSet(SnippetViewSet):
         FieldPanel("date_start"),
         FieldPanel("date_end"),
         FieldPanel("status"),
+        FieldPanel("is_top"),
         FieldPanel("submitted_by"),
         FieldPanel("approved_by"),
         FieldPanel("approved_at"),
