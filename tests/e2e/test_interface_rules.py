@@ -550,3 +550,20 @@ def test_the_period_and_the_filters_travel_to_the_other_tabs(page: Page, live_se
             found.append(f"travel/{tab}/{other}/{','.join(missing)}")
             details.append(f"{tab} -> {other} drops {missing}: {href}")
     assert not _breaks(found), "\n".join(details)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("tab", TABS)
+def test_a_link_opens_its_own_period_whatever_was_picked_before(page: Page, live_server, tab):
+    """Principle 6: what a link names is what opens, though the reader picked another kind of period
+    earlier in the visit (#384)."""
+    import datetime
+
+    _open(page, live_server, "desktop", "ru", tab)
+    page.locator("[data-period-kind=week]").click()
+    page.wait_for_load_state("networkidle")
+    first = (datetime.date.today().replace(day=1) + datetime.timedelta(days=32)).replace(day=1)
+    last = (first + datetime.timedelta(days=32)).replace(day=1) - datetime.timedelta(days=1)
+    _open(page, live_server, "desktop", "ru", tab, f"?date_from={first:%Y-%m-%d}&date_to={last:%Y-%m-%d}")
+    expect(page.locator("[data-period-kind=month]")).to_have_attribute("aria-pressed", "true")
+    expect(page.locator("[data-period-kind=week]")).to_have_attribute("aria-pressed", "false")
