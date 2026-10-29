@@ -324,6 +324,23 @@ def test_map_filter_checkbox_narrows_table(page: Page, live_server, map_page, ad
 
 
 @pytest.mark.django_db(transaction=True)
+def test_map_filter_finds_a_venue_typed_without_its_country_region_and_city(
+    page: Page, live_server, map_page, admin_user, location_tree
+):
+    """The reported case: the venue's own field is searched straight away, not after three others."""
+    inject_session(page, live_server, admin_user)
+    page.goto(_map_url(live_server))
+    page.click("#mf-btn-4", force=True)
+    page.locator("#mf-menu-4 .mf-search").fill("velo")
+    with page.expect_navigation():
+        page.locator(f"#mf-menu-4 label:has(input[value='{location_tree['real'].pk}'])").click()
+    assert f"location={location_tree['real'].pk}" in page.url
+    table = page.locator("table")
+    expect(table).to_contain_text("Velodrome")
+    expect(table).not_to_contain_text("KZ Region")
+
+
+@pytest.mark.django_db(transaction=True)
 def test_marker_popup_edit_link_navigates(page: Page, live_server, map_page, admin_user, location_with_coords):
     # Clicking a filtered map marker opens its popup; Edit navigates to the form and saving returns
     # to the same map filter/page rather than resetting the management view.

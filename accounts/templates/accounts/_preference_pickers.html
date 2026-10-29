@@ -137,29 +137,29 @@ document.addEventListener('DOMContentLoaded', function () {
   function byPk(pk) { return allLocations.find(function (l) { return String(l.pk) === String(pk); }); }
   function locNodesUnder(d, parentPks) {
     var parents = parentPks.map(byPk).filter(Boolean);
+    var underCities = parents.length > 0 && parents[0].depth === 3;
     return allLocations.filter(function (l) {
       if (l.depth !== d) return false;
-      if (d === 1) return true;
+      if (d === 4 && l.is_hidden && !underCities) return false;
+      if (!parents.length) return true;
       return parents.some(function (p) { return l.path.indexOf(p.path) === 0; });
     }).map(function (l) { return { pk: l.pk, name: nm(l) }; });
   }
   function locRestore() {
     return prefLoc.map(byPk).filter(Boolean).map(function (target) {
-      var stepLen = target.path.length / target.depth;
-      var chain = [];
-      for (var k = 1; k <= target.depth; k++) {
-        var ap = target.path.slice(0, stepLen * k);
-        var anc = allLocations.find(function (l) { return l.depth === k && l.path === ap; });
-        if (anc) chain.push({ depth: k, pk: anc.pk });
-      }
-      return chain;
+      var step = { depth: target.depth, pk: target.pk };
+      if (target.depth !== 4 || !target.is_hidden) return [step];
+      var cityPath = target.path.slice(0, target.path.length / 4 * 3);
+      var city = allLocations.find(function (l) { return l.depth === 3 && l.path === cityPath; });
+      return city ? [{ depth: 3, pk: city.pk }, step] : [step];
     });
   }
   var loc = window.MultiSelectCascade({
     levels: [1, 2, 3, 4].map(function (d) {
       return { btn: document.getElementById('pl-btn-' + d), menu: document.getElementById('pl-menu-' + d) };
     }),
-    nodesUnder: locNodesUnder, restoreChains: locRestore, searchable: true, labels: LABELS, onChange: syncLoc
+    nodesUnder: locNodesUnder, restoreChains: locRestore, searchable: true, openLevels: true,
+    labels: LABELS, onChange: syncLoc
   });
   // As the calendar's filter sends them: every ticked level, the deepest of which counts.
   function syncLoc() { syncInputs('pref-loc-inputs', 'preferred_locations', loc.chosenPks()); }

@@ -1,9 +1,10 @@
 {% load i18n %}
 {% comment %}
 Multi-select location cascade: country -> region -> city -> location, built on the
-generic window.MultiSelectCascade factory (_filter_multiselect_js.html). Hidden
-fallback venues ("other location") are surfaced only at the location level. Exposes
-window.getLocationFilterIds() and calls window.onCalendarFilterChange() on change.
+generic window.MultiSelectCascade factory (_filter_multiselect_js.html). Every level
+opens and searches at once, narrowed by whatever is chosen above it. Hidden fallback
+venues ("other location") are surfaced only at the location level, under chosen cities.
+Exposes window.getLocationFilterIds() and calls window.onCalendarFilterChange() on change.
 {% endcomment %}
 <div class="col-sm-6 col-lg-3">
   <label class="form-label form-label-sm mb-1">{% trans "Country" %}</label>
@@ -83,29 +84,32 @@ document.addEventListener('DOMContentLoaded', function () {
   function nm(l) { return l[nameField] || l.name_ru || ''; }
   function byPk(pk) { return allLocations.find(function (l) { return String(l.pk) === String(pk); }); }
 
+  // Every node at depth d under the chosen parents, or anywhere when nothing above is chosen. Hidden
+  // countries, regions and cities stay selectable (issue #113). A city's hidden catch-all venue
+  // ("other location") means something only under its own city, so it is listed under chosen cities
+  // alone: across a country or the whole tree one checkbox would carry every city's.
   function nodesUnder(d, parentPks) {
     var parents = parentPks.map(byPk).filter(Boolean);
+    var underCities = parents.length > 0 && parents[0].depth === 3;
     return allLocations.filter(function (l) {
       if (l.depth !== d) return false;
-      // hidden country/region/city stay selectable (issue #113); the hidden flag matters only
-      // for the virtual "other location" venue, which is shown at the location level anyway.
-      if (d === 1) return true;
+      if (d === 4 && l.is_hidden && !underCities) return false;
+      if (!parents.length) return true;
       return parents.some(function (p) { return l.path.indexOf(p.path) === 0; });
     }).map(function (l) { return { pk: l.pk, name: nm(l) }; });
   }
 
+  // What the address names, each at its own level: the reader's ticks and nothing above them, since
+  // any level opens on its own. A catch-all venue comes with its city, the only level that lists it.
   function restoreChains() {
     var ids = new URLSearchParams(window.location.search).getAll('location')
       .reduce(function (acc, v) { return acc.concat(v.split(',')); }, []);
     return ids.map(byPk).filter(Boolean).map(function (target) {
-      var stepLen = target.path.length / target.depth;
-      var chain = [];
-      for (var k = 1; k <= target.depth; k++) {
-        var ancestorPath = target.path.slice(0, stepLen * k);
-        var ancestor = allLocations.find(function (l) { return l.depth === k && l.path === ancestorPath; });
-        if (ancestor) chain.push({ depth: k, pk: ancestor.pk });
-      }
-      return chain;
+      var step = { depth: target.depth, pk: target.pk };
+      if (target.depth !== 4 || !target.is_hidden) return [step];
+      var cityPath = target.path.slice(0, target.path.length / 4 * 3);
+      var city = allLocations.find(function (l) { return l.depth === 3 && l.path === cityPath; });
+      return city ? [{ depth: 3, pk: city.pk }, step] : [step];
     });
   }
 
@@ -116,6 +120,8 @@ document.addEventListener('DOMContentLoaded', function () {
     nodesUnder: nodesUnder,
     restoreChains: restoreChains,
     searchable: true,
+    // A venue can be typed in straight away, without picking its country, region and city first.
+    openLevels: true,
     // Ticking every region says no more than the countries already do, and the tree is large
     // enough (hundreds of regions, over a thousand cities) that spelling it out overruns the
     // request line the server accepts.

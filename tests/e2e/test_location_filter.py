@@ -6,6 +6,7 @@ checkbox auto-submits the list form, which carries the selected ids as one
 comma-joined ?location= value.
 """
 
+import re
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -37,10 +38,113 @@ def test_hidden_node_absent_from_dropdown(page: Page, live_server, location_tree
 
 
 @pytest.mark.django_db(transaction=True)
-def test_region_dropdown_disabled_before_country_chosen(page: Page, live_server, location_tree):
+def test_every_level_opens_before_the_one_above_is_chosen(page: Page, live_server, location_tree):
+    """A place is looked for at its own level straight away, without picking a country first."""
     page.goto(f"{live_server.url}{_LIST_URL}")
     open_filter_panel(page)
-    expect(page.locator("#mf-btn-2")).to_be_disabled()
+    for level in (2, 3, 4):
+        expect(page.locator(f"#mf-btn-{level}")).to_be_enabled()
+    page.click("#mf-btn-3")
+    # By its name: the seeded geography alone is more cities than a menu draws.
+    search = page.locator("#mf-menu-3 .mf-search")
+    cities = page.locator("#mf-menu-3 li.mf-item-row")
+    for city in ("Almaty", "Moscow"):
+        search.fill(city)
+        expect(cities.filter(has_text=city)).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_city_typed_under_a_chosen_country_comes_from_that_country_only(page: Page, live_server, location_tree):
+    """The reported case: with Kazakhstan ticked, "Al" in the city finds Almaty and not Alabuga in Russia."""
+    from locations.models import Location
+
+    Location.objects.get(name_en="RU Region").add_child(
+        name="Alabuga", name_ru="Alabuga", name_kk="Alabuga", name_en="Alabuga"
+    )
+    page.goto(f"{live_server.url}{_LIST_URL}")
+    open_filter_panel(page)
+    page.click("#mf-btn-3")
+    page.locator("#mf-menu-3 .mf-search").fill("Al")
+    cities = page.locator("#mf-menu-3 li.mf-item-row")
+    expect(cities.filter(has_text="Alabuga")).to_have_count(1)  # nothing chosen: every country's
+
+    page.click("#mf-btn-1")  # the menu open below closes as another opens
+    with page.expect_navigation():
+        page.check(f"#mf-menu-1 input[value='{location_tree['kz'].pk}']")
+    open_filter_panel(page)
+    page.click("#mf-btn-3")
+    page.locator("#mf-menu-3 .mf-search").fill("Al")
+    expect(cities.filter(has_text="Almaty")).to_have_count(1)
+    expect(cities.filter(has_text="Alabuga")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_venue_is_typed_in_and_ticked_without_its_country_region_and_city(page: Page, live_server, location_tree):
+    """The venue alone travels, and comes back alone: the levels above it stay as the reader left them."""
+    venue = location_tree["real"].pk
+    page.goto(f"{live_server.url}{_LIST_URL}?{_DATES}")
+    open_filter_panel(page)
+    page.click("#mf-btn-4")
+    page.locator("#mf-menu-4 .mf-search").fill("velo")
+    with page.expect_navigation():
+        page.check(f"#mf-menu-4 input[value='{venue}']")
+    assert parse_qs(urlsplit(page.url).query)["location"] == [str(venue)]
+    open_filter_panel(page)
+    expect(page.locator("#mf-btn-4 .mf-text")).to_have_text("Velodrome")
+    for level in (1, 2, 3):
+        expect(page.locator(f"#mf-btn-{level} .mf-text")).to_have_class(re.compile(r"\btext-muted\b"))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_citys_other_location_is_offered_under_that_city_only(page: Page, live_server, location_tree):
+    """Across the whole tree one "other location" box would carry every city's catch-all at once."""
+    page.goto(f"{live_server.url}{_LIST_URL}")
+    open_filter_panel(page)
+    page.click("#mf-btn-4")
+    search = page.locator("#mf-menu-4 .mf-search")
+    search.fill("Velodrome")
+    expect(page.locator(f"#mf-menu-4 input[value='{location_tree['real'].pk}']")).to_have_count(1)
+    search.fill("Other Venue")
+    expect(page.locator("#mf-menu-4 li.mf-item-row")).to_have_count(0)
+
+    page.goto(f"{live_server.url}{_LIST_URL}?location={location_tree['city'].pk}")
+    open_filter_panel(page)
+    page.click("#mf-btn-4")
+    expect(page.locator(f"#mf-menu-4 input[value='{location_tree['hidden'].pk}']")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_level_open_on_its_own_offers_no_box_for_all_of_it(page: Page, live_server, location_tree):
+    """Every city of every country says nothing, and unticking one of them would send all the others."""
+    page.goto(f"{live_server.url}{_LIST_URL}")
+    open_filter_panel(page)
+    page.click("#mf-btn-3")
+    expect(page.locator("#mf-menu-3 li.mf-item-row").first).to_be_visible()
+    expect(page.locator("#mf-menu-3 input.mf-all")).to_have_count(0)
+
+    page.goto(f"{live_server.url}{_LIST_URL}?location={location_tree['region'].pk}")
+    open_filter_panel(page)
+    page.click("#mf-btn-3")
+    expect(page.locator("#mf-menu-3 input.mf-all")).to_have_count(1)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_long_level_draws_a_bounded_list_and_the_search_finds_the_rest(page: Page, live_server, location_tree):
+    """Venues of every city are thousands: a menu draws 200 of them and says how many more there are."""
+    from locations.models import Location
+
+    city = Location.objects.get(pk=location_tree["city"].pk)
+    for n in range(210):
+        city.add_child(name=f"Spot {n:03d}", name_ru=f"Spot {n:03d}", name_kk=f"Spot {n:03d}", name_en=f"Spot {n:03d}")
+    page.goto(f"{live_server.url}{_LIST_URL}")
+    open_filter_panel(page)
+    page.click("#mf-btn-4")
+    expect(page.locator("#mf-menu-4 li.mf-item-row")).to_have_count(200)
+    expect(page.locator("#mf-menu-4 li.mf-more")).to_be_visible()
+
+    page.locator("#mf-menu-4 .mf-search").fill("Spot 209")
+    expect(page.locator("#mf-menu-4 li.mf-item-row")).to_have_count(1)
+    expect(page.locator("#mf-menu-4 li.mf-more")).to_have_count(0)
 
 
 @pytest.mark.django_db(transaction=True)

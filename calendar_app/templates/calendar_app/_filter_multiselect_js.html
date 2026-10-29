@@ -1,3 +1,4 @@
+{% load calendar_tags %}
 {% comment %}
 Generic multi-select cascade factory shared by the location, direction/discipline
 and event-type filters (issue #108). window.MultiSelectCascade(config) wires a set
@@ -8,14 +9,18 @@ so a stored selection stays order-stable across re-renders).
 
 config:
   levels:        [{btn: HTMLElement, menu: HTMLElement}, ...]  // index 0 == depth 1
-  nodesUnder(depth, parentPks): [{pk, name}, ...]  // children for the selected parents
+  nodesUnder(depth, parentPks): [{pk, name}, ...]  // children for the selected parents; with
+                                                   // openLevels, no parents means the whole depth
   restoreChains(): [[{depth, pk}, ...], ...]       // ancestor chains to pre-select
+  openLevels:    bool  // a lower level opens before the one above it is chosen, narrowed by the
+                       // nearest level above it that has a choice
   collapseWholeLevels: bool  // filters only: a fully ticked level yields its parent's ids instead
   labels:        {all: "...", selected: "..."}
   onChange():    called after every user-driven selection change
 returns {effective(), effectivePks(), effectiveDepth(), chosenPks(), refresh(), select(chains)}:
 select() replaces the whole selection with the given chains, as a page script sets it (issue #353).
 {% endcomment %}
+{% cascade_context as cascade %}{{ cascade|json_script:"cascade-context" }}
 <script>
 // Every id-valued filter travels as ONE comma-joined value ("location=1,2,3") rather than one
 // parameter per id. The server splits each value on commas already (it has to: same-name nodes are
@@ -47,7 +52,13 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
   }
   var ALL_LABEL = config.labels.all;
   var SELECTED_LABEL = config.labels.selected;
+  var MORE_LABEL = JSON.parse(document.getElementById('cascade-context').textContent).more;
   var COLLAPSE_WHOLE_LEVELS = !!config.collapseWholeLevels;
+  var OPEN_LEVELS = !!config.openLevels;
+  // A menu draws at most this many rows and its search box reaches the rest. A level open before the
+  // one above it is chosen lists its whole depth -- every venue there is -- and drawing thousands of
+  // rows on every change above it would stall a phone.
+  var MAX_ROWS = 200;
 
   function selectedPks(d) {
     var out = [];
@@ -68,6 +79,22 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     return order.map(function (k) {
       return { name: k, pks: map[k].sort(function (a, b) { return a - b; }) };
     });
+  }
+
+  // The level that narrows level d: the one right above it, or -- with openLevels -- the nearest above
+  // it with anything chosen. 0 when there is none, and level d lists its whole depth.
+  function narrowingLevel(d) {
+    var k = d - 1;
+    if (OPEN_LEVELS) while (k >= 1 && selected[k].size === 0) k--;
+    return k;
+  }
+
+  function candidates(d) {
+    if (d === 1) return dedupByName(config.nodesUnder(1, []));
+    var k = narrowingLevel(d);
+    if (k === 0) return dedupByName(config.nodesUnder(d, []));
+    var parentPks = selectedPks(k);
+    return parentPks.length ? dedupByName(config.nodesUnder(d, parentPks)) : [];
   }
 
   function setLabel(d) {
@@ -100,14 +127,54 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     if (config.onChange) config.onChange();
   }
 
+  function itemRow(d, g) {
+    var val = g.pks.join(',');
+    var li = document.createElement('li');
+    li.className = 'mf-item-row';
+    li.dataset.name = g.name;
+    var lab = document.createElement('label');
+    lab.className = 'dropdown-item d-flex align-items-center gap-2 px-2';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.className = 'form-check-input mt-0 mf-item'; cb.value = val; cb.dataset.name = g.name;
+    cb.checked = selected[d].has(val);
+    cb.addEventListener('change', function () {
+      if (cb.checked) selected[d].add(val); else selected[d].delete(val);
+      updateMaster(d, currentGroups[d]);
+      notifyChange(d);
+    });
+    var span = document.createElement('span'); span.textContent = g.name;
+    lab.appendChild(cb); lab.appendChild(span); li.appendChild(lab);
+    return li;
+  }
+
+  // The rows whose name contains the typed text (case-insensitive), at most MAX_ROWS of them besides
+  // the ticked ones, and a line counting the rest. Typing only changes which rows are drawn, not the
+  // selection.
+  function drawRows(d, query) {
+    var q = query.trim().toLowerCase();
+    var drawn = 0, more = 0;
+    menu[d].querySelectorAll('li.mf-item-row, li.mf-more').forEach(function (li) { li.remove(); });
+    (currentGroups[d] || []).forEach(function (g) {
+      if (q && g.name.toLowerCase().indexOf(q) < 0) return;
+      if (drawn >= MAX_ROWS && !selected[d].has(g.pks.join(','))) { more++; return; }
+      drawn++;
+      menu[d].appendChild(itemRow(d, g));
+    });
+    if (more) {
+      var li = document.createElement('li');
+      li.className = 'mf-more px-2 py-1 small text-muted';
+      li.textContent = MORE_LABEL.replace('%(count)s', more);
+      menu[d].appendChild(li);
+    }
+  }
+
   function buildMenu(d, groups) {
     currentGroups[d] = groups;
     menu[d].innerHTML = '';
     btn[d].disabled = groups.length === 0;
     if (groups.length === 0) { setLabel(d); return; }
 
-    // Optional type-to-filter box: shows only the checkboxes whose name contains the typed text
-    // (case-insensitive). It only affects which rows are visible, not the selection.
+    // Optional type-to-filter box (see drawRows).
     if (config.searchable) {
       var sLi = document.createElement('li');
       sLi.className = 'px-2 pb-1 mf-search-row';
@@ -116,67 +183,43 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
       sInp.className = 'form-control form-control-sm mf-search';
       sInp.placeholder = config.labels.search || '';
       sInp.autocomplete = 'off';
-      sInp.addEventListener('input', function () {
-        var q = sInp.value.trim().toLowerCase();
-        menu[d].querySelectorAll('li.mf-item-row').forEach(function (row) {
-          var name = (row.dataset.name || '').toLowerCase();
-          row.style.display = (!q || name.indexOf(q) >= 0) ? '' : 'none';
-        });
-      });
+      sInp.addEventListener('input', function () { drawRows(d, sInp.value); });
       // Keep typing (incl. space) inside the field instead of letting the dropdown handle keys.
       sInp.addEventListener('keydown', function (e) { e.stopPropagation(); });
       sLi.appendChild(sInp);
       menu[d].appendChild(sLi);
     }
 
-    var mLi = document.createElement('li');
-    var mLab = document.createElement('label');
-    mLab.className = 'dropdown-item d-flex align-items-center gap-2 px-2 fw-semibold';
-    var mCb = document.createElement('input');
-    mCb.type = 'checkbox'; mCb.className = 'form-check-input mt-0 mf-all';
-    mCb.addEventListener('change', function () {
-      selected[d].clear();
-      if (mCb.checked) groups.forEach(function (g) { selected[d].add(g.pks.join(',')); });
-      menu[d].querySelectorAll('input.mf-item').forEach(function (cb) { cb.checked = mCb.checked; });
-      mCb.indeterminate = false;
-      notifyChange(d);
-    });
-    var mSpan = document.createElement('span'); mSpan.textContent = ALL_LABEL;
-    mLab.appendChild(mCb); mLab.appendChild(mSpan); mLi.appendChild(mLab); menu[d].appendChild(mLi);
-    var divLi = document.createElement('li'); divLi.innerHTML = '<hr class="dropdown-divider my-1">';
-    menu[d].appendChild(divLi);
-
-    groups.forEach(function (g) {
-      var val = g.pks.join(',');
-      var li = document.createElement('li');
-      li.className = 'mf-item-row';
-      li.dataset.name = g.name;  // lowercased-matched by the optional search box
-      var lab = document.createElement('label');
-      lab.className = 'dropdown-item d-flex align-items-center gap-2 px-2';
-      var cb = document.createElement('input');
-      cb.type = 'checkbox'; cb.className = 'form-check-input mt-0 mf-item'; cb.value = val; cb.dataset.name = g.name;
-      cb.checked = selected[d].has(val);
-      cb.addEventListener('change', function () {
-        if (cb.checked) selected[d].add(val); else selected[d].delete(val);
-        updateMaster(d, groups);
+    // "All" ticks the children of what is chosen right above. A level open on its own lists a whole
+    // depth, or a whole country's cities: ticking all of it says nothing the level above does not,
+    // and unticking one afterwards would put every other id into the address.
+    if (d === 1 || selected[d - 1].size > 0) {
+      var mLi = document.createElement('li');
+      var mLab = document.createElement('label');
+      mLab.className = 'dropdown-item d-flex align-items-center gap-2 px-2 fw-semibold';
+      var mCb = document.createElement('input');
+      mCb.type = 'checkbox'; mCb.className = 'form-check-input mt-0 mf-all';
+      mCb.addEventListener('change', function () {
+        selected[d].clear();
+        if (mCb.checked) groups.forEach(function (g) { selected[d].add(g.pks.join(',')); });
+        menu[d].querySelectorAll('input.mf-item').forEach(function (cb) { cb.checked = mCb.checked; });
+        mCb.indeterminate = false;
         notifyChange(d);
       });
-      var span = document.createElement('span'); span.textContent = g.name;
-      lab.appendChild(cb); lab.appendChild(span); li.appendChild(lab); menu[d].appendChild(li);
-    });
+      var mSpan = document.createElement('span'); mSpan.textContent = ALL_LABEL;
+      mLab.appendChild(mCb); mLab.appendChild(mSpan); mLi.appendChild(mLab); menu[d].appendChild(mLi);
+      var divLi = document.createElement('li'); divLi.innerHTML = '<hr class="dropdown-divider my-1">';
+      menu[d].appendChild(divLi);
+    }
+
+    drawRows(d, '');
     updateMaster(d, groups);
     setLabel(d);
   }
 
   function rebuildFrom(depth) {
     for (var d = depth; d <= N; d++) {
-      var groups;
-      if (d === 1) {
-        groups = dedupByName(config.nodesUnder(1, []));
-      } else {
-        var parentPks = selectedPks(d - 1);
-        groups = parentPks.length ? dedupByName(config.nodesUnder(d, parentPks)) : [];
-      }
+      var groups = candidates(d);
       var valid = {};
       groups.forEach(function (g) { valid[g.pks.join(',')] = 1; });
       Array.from(selected[d]).forEach(function (v) { if (!valid[v]) selected[d].delete(v); });
@@ -184,10 +227,13 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     }
   }
 
-  // Whether every option offered at level d is selected -- i.e. the level's own "All" checkbox.
+  // Whether every option offered at level d is selected -- i.e. the level's own "All" checkbox. Only
+  // a level narrowed by a choice above it counts: one open on its own lists its whole depth, and
+  // dropping it would also admit what the level cannot list at all, as at the top (see effective()).
   function isWholeLevel(d) {
     var groups = currentGroups[d] || [];
-    return groups.length > 0 && groups.every(function (g) { return selected[d].has(g.pks.join(',')); });
+    return narrowingLevel(d) > 0 && groups.length > 0 &&
+      groups.every(function (g) { return selected[d].has(g.pks.join(',')); });
   }
 
   // Effective selection = the ids at the deepest level that has any.
@@ -229,14 +275,12 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     return pks;
   }
 
-  // Select along ancestor chains (e.g. ?location= / ?discipline= ids). For each chain we
-  // select every ancestor level by level so the cascade populates down.
+  // Select along chains (e.g. ?location= / ?discipline= ids), step by step, so that each level is
+  // narrowed by the steps before it as a reader's ticks would narrow it.
   function applyChains(chains) {
     chains.forEach(function (chain) {
       chain.forEach(function (step) {
-        var parentPks = step.depth === 1 ? [] : selectedPks(step.depth - 1);
-        var groups = dedupByName(config.nodesUnder(step.depth, parentPks));
-        groups.forEach(function (g) {
+        candidates(step.depth).forEach(function (g) {
           if (g.pks.map(String).indexOf(String(step.pk)) >= 0) selected[step.depth].add(g.pks.join(','));
         });
         rebuildFrom(step.depth);
