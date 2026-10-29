@@ -24,8 +24,9 @@ places, and lets managers maintain the tree.
    after the one above) offers the city's real venues and a mini-map of existing venues; picking a
    marker selects that venue.
 2. **Given** a city without the right venue, **Then** the member may propose a new one with a point
-   on the mini-map; a participant's proposal waits for approval, an organizer's is approved -- unless
-   the city above it is itself still pending.
+   on the mini-map and its name in each language -- Russian required, a language left empty stays
+   empty and reads as the Russian one; a participant's proposal waits for approval, an organizer's
+   is approved -- unless the city above it is itself still pending.
 3. **Given** the start point is unknown, **Then** the event is attached to the city's hidden
    catch-all venue ("Other location", named in every language). The map pins it at its city and it
    offers no map links, even if a point was given to it; keeping it without one is a rule of

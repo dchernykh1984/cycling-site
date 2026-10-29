@@ -2300,6 +2300,33 @@ class LocationProposalInSubmitTests(TestCase):
         self.assertEqual(comp.location.name_ru, "Org Venue")
         self.assertFalse(comp.location.is_pending)
 
+    def test_a_new_venue_takes_its_name_in_each_language(self):
+        self.client.force_login(self.participant)
+        self.client.post(
+            reverse("calendar_submit"),
+            self._payload(new_venue_name="Park RU", new_venue_name_kk="Park KK", new_venue_name_en="Park EN"),
+        )
+        venue = Competition.objects.get(title_ru="Race").location
+        self.assertEqual((venue.name_ru, venue.name_kk, venue.name_en), ("Park RU", "Park KK", "Park EN"))
+
+    def test_a_language_left_empty_stays_empty_and_reads_as_the_default(self):
+        # Copying the Russian name in would hide that the translation is missing.
+        self.client.force_login(self.participant)
+        self.client.post(reverse("calendar_submit"), self._payload(new_venue_name="Park RU"))
+        venue = Competition.objects.get(title_ru="Race").location
+        self.assertEqual((venue.name_kk, venue.name_en), ("", ""))
+        with translation_override("kk"):
+            self.assertEqual(Location.objects.get(pk=venue.pk).name, "Park RU")
+
+    def test_a_new_venue_named_only_in_another_language_asks_for_its_russian_name(self):
+        self.client.force_login(self.participant)
+        response = self.client.post(
+            reverse("calendar_submit"), self._payload(new_venue_name="", new_venue_name_en="Park EN")
+        )
+        self.assertFalse(Competition.objects.filter(title_ru="Race").exists())
+        self.assertIn("new_venue_name", response.context["form"].errors)
+        self.assertFalse(Location.objects.filter(name_en="Park EN").exists())
+
     def test_approving_competition_auto_approves_location(self):
         self.client.force_login(self.participant)
         self.client.post(reverse("calendar_submit"), self._payload(new_venue_name="Auto Venue"))

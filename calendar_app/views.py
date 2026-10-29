@@ -138,6 +138,8 @@ def _resolve_competition_location(cd, user, *, approved):
             new_name,
             cd.get("new_venue_lat"),
             cd.get("new_venue_lng"),
+            name_kk=(cd.get("new_venue_name_kk") or "").strip(),
+            name_en=(cd.get("new_venue_name_en") or "").strip(),
             submitted_by=user,
             # A venue is only public where the geography above it is. The submitter may pick their
             # own pending city here, and publishing a venue inside it would leak that city through
