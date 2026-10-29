@@ -11,11 +11,11 @@ Each entry names its skin ("light|tap/phone/ru/list/#filter-toggle"). A colour b
 icon, a boundary, a selection -- is allowed for light and dark only, whatever KNOWN says.
 """
 
-import datetime
 import re
 
 import pytest
 from django.conf import settings
+from django.utils import timezone
 from playwright.sync_api import Page, ViewportSize, expect
 
 from calendar_app.models import Competition
@@ -288,7 +288,9 @@ def test_no_word_breaks_into_letters(page: Page, live_server, race_event_type, o
         title_ru="Gran Fondo Alatau",
         title_en="Gran Fondo Alatau",
         submitted_by=organizer,
-        date_start=datetime.date.today() + datetime.timedelta(days=3),
+        # Today in the site's zone: the unfiltered list holds the rest of this month, which a few
+        # days ahead leaves empty in the month's last days, and an empty list measures nothing.
+        date_start=timezone.localdate(),
         status=Competition.Status.APPROVED,
     )
     event.event_types.add(race_event_type)

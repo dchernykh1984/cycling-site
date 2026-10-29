@@ -3,10 +3,9 @@
 Runs in the skin the suite runs in (E2E_SKIN; light by default), so e2e.yml checks each skin.
 """
 
-import datetime
-
 import pytest
 from django.conf import settings
+from django.utils import timezone
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition
@@ -46,7 +45,9 @@ def pages_with_content(db, organizer, race_event_type):
     NewsArticle.objects.create(title="Contrast news", intro="An intro in muted text.", body="<p>Body</p>")
     race = Competition.objects.create(
         title_ru="Contrast race",
-        date_start=datetime.date.today() + datetime.timedelta(days=3),
+        # Today in the site's zone: the unfiltered list holds the rest of this month, which a few
+        # days ahead leaves in the month's last days.
+        date_start=timezone.localdate(),
         submitted_by=organizer,
         status=Competition.Status.APPROVED,
     )
