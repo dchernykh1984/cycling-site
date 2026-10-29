@@ -45,6 +45,9 @@ key, `ASSISTANT_LLM_API_KEY`, serves both.
    - The reply comes in the page's language.
    - The form fills in: titles, descriptions and link previews in ru / kk / en, the dates, the
      types, the disciplines, the links and the place.
+   - While the form has no event type, direction or discipline, each turn tells the model so: the
+     calendar's filters select by them, and the model asks for them rather than guessing them from
+     "a ride".
 3. **Given** the form saved, **Then** the conversation belongs to the new event.
 4. **Given** a form that came back with errors, **Then** the chat comes back with its conversation.
 
