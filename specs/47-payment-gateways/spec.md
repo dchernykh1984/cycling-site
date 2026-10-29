@@ -388,7 +388,9 @@ API:
 - The holding time of a started payment is one deployment-wide setting, not per event.
 - Events that require payment today keep working when this ships: they get the manual connector and
   no schedule; the price and the pay button appear once the organizer adds a currency and a step.
-  Entries marked paid before this ships stay paid, with no payment record and no amount shown.
+  Editing such an event's other settings does not demand a step; only turning the fee on or changing
+  its settings does. Entries marked paid before this ships stay paid, with no payment record and no
+  amount shown.
 - A category's price overrides the step's general price for entries in that category; uncategorised
   entries pay the general price.
 - The first automatic connector will be a Kazakhstan payment organisation in a marketplace model
