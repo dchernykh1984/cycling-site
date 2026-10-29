@@ -248,9 +248,9 @@ the site. A payment service posts its confirmation to the site.
 - A manager registering several members (issue #315) pays for each entry separately in this
   delivery; one payment for several entries is a later addition.
 - A started payment that is never confirmed expires after the holding time and is kept as such; a
-  new one may be started. Two confirmed payments for one entry cannot happen: a second confirmation
-  of the same external id is idempotent, a confirmation for an entry already paid is recorded and
-  flagged for the organizer.
+  new one may be started. A second confirmation of the same external id changes nothing; a
+  confirmation for an entry that is already paid (a participant who paid twice) is recorded and
+  flagged to the organizer for a refund.
 - An entry with a confirmed, unrefunded payment is neither cancelled by its participant nor deleted
   by a manager: the page says to ask the organizer, who records the refund first. Payment records
   outlive their entry: when an entry is deleted after its refund, its payments keep the event, the
