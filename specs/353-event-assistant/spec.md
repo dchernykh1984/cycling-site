@@ -60,6 +60,9 @@ Taken in conversation with the maintainer on 2026-10-29, in the order they came.
       ("UBT coffee ride to Yunnatskoye Lake"), the date, the time, the start;
     - the club's layout: an opening line, a list with bold labels (start, route, finish), then
       paragraphs; every text in the three languages.
+12. **A folder of its own.** The assistant lives apart from the rest of the site, in a folder of its
+    own in the project, and so do its skills -- the instructions on adding an event, which grow as
+    experience shows what announcements lack and what can be had without asking (2026-10-29).
 
 ## Open questions
 
