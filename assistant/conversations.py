@@ -99,7 +99,9 @@ def take_turn(
     said = [*conversation.messages.filter(role=Message.Role.USER).values_list("text", flat=True), text]
     changes = answer.get("set") or {}
     # Every place the page offers is read only when the reply names one: most turns do not.
-    names_a_place = isinstance(changes, dict) and isinstance(changes.get("place"), dict)
+    names_a_place = (
+        kind == Conversation.Kind.EVENT and isinstance(changes, dict) and isinstance(changes.get("place"), dict)
+    )
     checked = fields.check(
         changes,
         kind=kind,
