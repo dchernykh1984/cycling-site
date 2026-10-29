@@ -4,13 +4,16 @@ from django.utils.dateformat import format as date_format
 from django.utils.html import format_html
 from django.utils.translation import gettext as _
 
+from cycling_site.text_search import fold_table
+
 register = template.Library()
 
 
 @register.simple_tag
 def cascade_context():
-    """What the shared checkbox cascade (``_filter_multiselect_js.html``) needs from the server: its words."""
-    return {"more": _("%(count)s more: refine the search")}
+    """What the shared checkbox cascade (``_filter_multiselect_js.html``) needs from the server: its
+    words, and the letters its search folds to Latin as the site's other searches do."""
+    return {"more": _("%(count)s more: refine the search"), "fold": fold_table()}
 
 
 @register.filter

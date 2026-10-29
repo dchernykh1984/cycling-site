@@ -96,7 +96,9 @@ document.addEventListener('DOMContentLoaded', function () {
       if (d === 4 && l.is_hidden && !underCities) return false;
       if (!parents.length) return true;
       return parents.some(function (p) { return l.path.indexOf(p.path) === 0; });
-    }).map(function (l) { return { pk: l.pk, name: nm(l) }; });
+    }).map(function (l) {
+      return { pk: l.pk, name: nm(l), search: [l.name_ru, l.name_kk, l.name_en].join(' ') };
+    });
   }
 
   // What the address names, each at its own level: the reader's ticks and nothing above them, since
