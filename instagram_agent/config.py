@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agent.config import ConfigError, _flag
+from agent.config import DEFAULT_LLM_MODEL, ConfigError, _flag
 from instagram_agent.fetch import DEFAULT_GRAPH_VERSION
 
 # A club feed carries a couple of announcements a week, so a run that proposes more than this is
@@ -58,7 +58,7 @@ def from_env(env: dict[str, str]) -> Config:
         api_token=env["AGENT_API_TOKEN"],
         llm_api_key=env["LLM_API_KEY"],
         llm_base_url=env["LLM_BASE_URL"].rstrip("/"),
-        llm_model=env.get("LLM_MODEL") or "deepseek-chat",
+        llm_model=env.get("LLM_MODEL") or DEFAULT_LLM_MODEL,
         max_events=_whole_number(env.get("INSTAGRAM_MAX_EVENTS"), _DEFAULT_MAX_EVENTS, "INSTAGRAM_MAX_EVENTS"),
         recent_days=_whole_number(env.get("INSTAGRAM_RECENT_DAYS"), _DEFAULT_RECENT_DAYS, "INSTAGRAM_RECENT_DAYS"),
         max_posts=_whole_number(env.get("INSTAGRAM_MAX_POSTS"), _DEFAULT_MAX_POSTS, "INSTAGRAM_MAX_POSTS"),

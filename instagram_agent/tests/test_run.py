@@ -80,7 +80,7 @@ def _config(**overrides):
         api_token="t",
         llm_api_key="k",
         llm_base_url="https://llm.test",
-        llm_model="deepseek-chat",
+        llm_model="deepseek-flash",
         max_events=10,
         recent_days=21,
         max_posts=10,

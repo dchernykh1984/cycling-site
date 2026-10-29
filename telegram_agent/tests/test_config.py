@@ -76,4 +76,4 @@ def test_dry_run_reads_the_usual_spellings():
 def test_the_agent_config_carries_the_llm_settings_for_the_shared_adapter():
     agent_config = as_agent_config(from_env({**_BASE, **_TELEGRAM}))
     assert agent_config.llm_base_url == "https://llm.example"
-    assert agent_config.llm_model == "deepseek-chat"
+    assert agent_config.llm_model == "deepseek-flash"

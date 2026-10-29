@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agent.config import ConfigError, _flag
+from agent.config import DEFAULT_LLM_MODEL, ConfigError, _flag
 
 # A private club channel carries a couple of announcements a week; a run proposing more than this
 # is reading something wrong, and the cap keeps that out of the moderation queue in bulk.
@@ -72,7 +72,7 @@ def from_env(env: dict[str, str]) -> Config:
         api_token=env["AGENT_API_TOKEN"],
         llm_api_key=env["LLM_API_KEY"],
         llm_base_url=env["LLM_BASE_URL"].rstrip("/"),
-        llm_model=env.get("LLM_MODEL") or "deepseek-chat",
+        llm_model=env.get("LLM_MODEL") or DEFAULT_LLM_MODEL,
         telegram_api_id=_whole_number(env.get("TELEGRAM_API_ID"), 0, "TELEGRAM_API_ID"),
         telegram_api_hash=env.get("TELEGRAM_API_HASH") or "",
         telegram_session=env.get("TELEGRAM_SESSION") or "",

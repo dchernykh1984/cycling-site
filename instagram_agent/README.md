@@ -120,7 +120,7 @@ prints the enabled names), so the list lives in one place.
 ```
 SITE_BASE_URL=https://universalbicycle.team \
 AGENT_API_TOKEN=... LLM_API_KEY=... LLM_BASE_URL=https://api.deepseek.com \
-LLM_MODEL=deepseek-v4-flash INSTAGRAM_MAX_EVENTS=10 INSTAGRAM_DRY_RUN=true \
+LLM_MODEL=deepseek-flash INSTAGRAM_MAX_EVENTS=10 INSTAGRAM_DRY_RUN=true \
 python -m instagram_agent.run
 ```
 (only `pyyaml` is needed beyond the standard library)
