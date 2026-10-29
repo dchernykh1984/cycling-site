@@ -312,8 +312,9 @@ Paying:
   payment and is verified before anything changes.
 - **FR-PAY-011**: An entry is paid when it has a confirmed, unrefunded payment; `is_paid` stays the
   flag the timing tools and the lists read and is kept in step with the payments.
-- **FR-PAY-012**: Only the participant, their manager (issue #315) or a manager of the event may
-  start a payment for an entry; only a manager of the event records a manual payment or a refund.
+- **FR-PAY-012**: Only the participant or their manager (issue #315) starts a payment for an entry
+  through an automatic or the link connector; only a manager of the event records a manual payment
+  or a refund.
 - **FR-PAY-013**: Callbacks are idempotent (the same confirmation twice changes nothing), refuse an
   unverified signature, and are logged with the connector, the payment and the outcome; the log
   holds no card data.
