@@ -216,10 +216,7 @@ class MapServiceSettingsTests(TestCase):
         _, _, _, self.venue = _tree(lat=ALMATY_LAT, lng=ALMATY_LNG)
 
     def test_by_default_only_the_services_that_work_everywhere_are_offered(self):
-        from django.conf import settings
-
-        with override_settings(MAP_LINK_SERVICES=settings.MAP_LINK_SERVICES):
-            self.assertEqual([link.key for link in map_links(self.venue)], ["google", "apple", "osm"])
+        self.assertEqual([link.key for link in map_links(self.venue)], ["google", "apple", "osm"])
 
     def test_another_service_is_a_line_of_configuration(self):
         from django.conf import settings
