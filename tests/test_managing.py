@@ -217,6 +217,50 @@ class JoinPageTests(TestCase):
                 self.assertNotEqual(gettext("Allow"), "Allow")
 
 
+class WaitingBannerTests(TestCase):
+    """The banner of requests waiting for the reader's answer: on every page until each is answered."""
+
+    page = "/en/calendar/"
+    line = "Requests to manage their registrations and photos"
+
+    def setUp(self):
+        self.coach = _user("coach")
+        key = managing.issue_invite(self.coach).key
+        self.anna, self.boris = _user("anna"), _user("boris")
+        managing.ask(self.anna, key)
+        managing.ask(self.boris, key)
+
+    def _seen_by(self, user, page=None):
+        self.client.force_login(user)
+        return self.client.get(page or self.page)
+
+    def test_it_counts_the_requests_and_leads_to_them_until_each_is_answered(self):
+        response = self._seen_by(self.coach)
+        self.assertContains(response, 'href="/en/accounts/profile/#managing-waiting"')
+        self.assertContains(response, f"{self.line}: 2")
+        managing.accept(self.coach, self.anna.pk)
+        self.assertContains(self._seen_by(self.coach), f"{self.line}: 1")
+        managing.reject(self.coach, self.boris.pk)
+        self.assertNotContains(self._seen_by(self.coach), "#managing-waiting")
+
+    def test_the_list_it_leads_to_is_on_the_profile(self):
+        self.assertContains(self._seen_by(self.coach, "/en/accounts/profile/"), 'id="managing-waiting"')
+
+    def test_the_members_who_asked_and_an_unconfirmed_member_do_not_see_it(self):
+        self.assertNotContains(self._seen_by(self.anna), "#managing-waiting")
+        self.coach.role = User.Role.GUEST
+        self.coach.save()
+        self.assertNotContains(self._seen_by(self.coach), "#managing-waiting")
+
+    def test_it_speaks_each_language(self):
+        for lang in ("ru", "kk"):
+            with self.subTest(lang), translation.override(lang):
+                response = self._seen_by(self.coach, f"/{lang}/calendar/")
+                for text in (self.line, "Answer"):
+                    self.assertContains(response, gettext(text))
+                    self.assertNotEqual(gettext(text), text)
+
+
 class ProfileSectionTests(TestCase):
     """The profile's two sections: the link, the requests waiting, the members, and both ways out."""
 

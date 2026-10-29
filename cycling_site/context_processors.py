@@ -88,6 +88,24 @@ def moderation_tasks(request):
     return {"moderation_tasks": tasks}
 
 
+def managing_waiting(request):
+    """How many members wait for the reader to accept or reject managing them (issue #315).
+
+    On every page, as the moderation banner is, until each request is answered; only for a member
+    whose profile lists them, so the banner never points at a list that is not there.
+    """
+    user = getattr(request, "user", None)
+    if user is None or not user.is_authenticated:
+        return {}
+    from accounts import managing
+    from accounts.access import needs_email_confirmation
+
+    count = managing.waiting(user).count()
+    if not count or needs_email_confirmation(user):
+        return {}
+    return {"managing_waiting": count}
+
+
 def _knowledge_index_url() -> str:
     """URL of the knowledge index page (where pending article submissions surface for review)."""
     from knowledge.models import KnowledgeIndexPage

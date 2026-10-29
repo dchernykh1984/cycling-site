@@ -110,6 +110,9 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
 4. **Given** "Allow", **Then** the request waits in the manager's section with the member's last
    name, first name, team and year of birth; the manager accepts or rejects each, or all at once. A
    rejected request disappears and may be sent again. The member sees it waiting, with "Withdraw".
+   While any request waits, every page shows the manager a banner under the menu, beside the
+   moderation queue's ("Waiting for your answer", the count, "Answer"), whose button opens the
+   list on the profile (`#managing-waiting`); it goes when the last one is accepted or rejected.
 5. **Given** an accepted link, **Then** the manager sees the member's last name, first name, date
    of birth, gender, city and team, and acts for them in registrations
    ([registrations](registrations.md)) and race photos ([event photos](event-photos.md)); never on
