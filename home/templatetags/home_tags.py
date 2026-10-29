@@ -4,8 +4,6 @@ from wagtail.models import Locale
 
 register = template.Library()
 
-_LANG_DISPLAY = {"kk": "KZ", "ru": "RU", "en": "EN"}
-
 
 @register.filter
 def dict_get(d, key):
@@ -38,10 +36,26 @@ def get_page_translation_urls(page):
 
 @register.filter
 def lang_display_code(language_code: str | None) -> str:
+    """The language's own code, as its address names it (/kk/): KK, not the country's KZ (#388)."""
     if not language_code:
         return ""
-    base = str(language_code).split("-")[0].lower()
-    return _LANG_DISPLAY.get(base, language_code.upper())
+    return str(language_code).split("-")[0].upper()
+
+
+@register.filter
+def lang_own_name(language_code: str | None) -> str:
+    """The language's name in that language, the same on every page: what its readers look for (#388).
+
+    The names in ``LANGUAGES`` are translated by each language's own catalogue, so none is written here.
+    """
+    from django.conf import settings
+    from django.utils import translation
+
+    name = dict(settings.LANGUAGES).get(language_code or "")
+    if not name:
+        return ""
+    with translation.override(language_code):
+        return translation.gettext(name)
 
 
 @register.simple_tag

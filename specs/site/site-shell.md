@@ -62,9 +62,11 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
 
 1. **Given** a visitor opens the bare address, **Then** they are redirected to the language their
    browser asks for (Russian by default), and that redirect is never cached.
-2. **Given** a reader presses a language button (RU, KZ, EN), **Then** the same page opens in that
+2. **Given** a reader presses a language button (RU, KK, EN), **Then** the same page opens in that
    language and the choice holds across pages and when the bare address is opened again; a member's
-   choice is written to their profile and outranks the cookie.
+   choice is written to their profile and outranks the cookie. Each button shows the language's code
+   as its address writes it -- KK, not the country's KZ -- and names the language in that language,
+   for a screen reader and as a pointer's hint (#388).
 3. **Given** an address that names its language, **Then** it stays in that language.
 
 ### Story 2 -- The home page (P2)
