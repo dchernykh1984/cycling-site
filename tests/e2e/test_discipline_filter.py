@@ -138,11 +138,12 @@ def test_discipline_level_filter_on_list(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_second_direction_survives_after_drilling_into_a_disciplines(
+def test_a_chosen_discipline_wins_and_a_second_direction_stays_ticked_for_its_own(
     page: Page, live_server, organizer, road_category, road_discipline, mtb_category, mtb_discipline
 ):
-    # Regression: pick Road -> drill into the Road discipline -> then add the whole MTB direction.
-    # MTB must stay checked after the auto-submit (the deepest-level emit used to drop it).
+    # Road -> its discipline -> then MTB: MTB stays ticked after the list reloads, since the address
+    # carries it, but the chosen discipline wins -- as a city does over its country -- so the MTB
+    # event is listed only once an MTB discipline is chosen too.
     _make_comp(organizer, "Road Race Event", discipline=road_discipline)
     _make_comp(organizer, "MTB Race Event", discipline=mtb_discipline)
     page.goto(f"{live_server.url}/ru/calendar/list/?{_DATES}")
@@ -164,7 +165,12 @@ def test_second_direction_survives_after_drilling_into_a_disciplines(
     expect(page.locator(f"#dd-menu-1 input[value='{road_category.pk}']")).to_be_checked()
     expect(page.locator(f"#dd-menu-1 input[value='{mtb_category.pk}']")).to_be_checked()
     expect(page.locator(f"#dd-menu-2 input[value='{road_discipline.pk}']")).to_be_checked()
-    # OR semantics: the Road discipline event and the whole-MTB event are both listed.
+    expect(page.locator("body")).to_contain_text("Road Race Event")
+    expect(page.locator("body")).not_to_contain_text("MTB Race Event")
+
+    page.click("#dd-btn-2")
+    with page.expect_navigation():
+        page.check(f"#dd-menu-2 input[value='{mtb_discipline.pk}']")
     expect(page.locator("body")).to_contain_text("Road Race Event")
     expect(page.locator("body")).to_contain_text("MTB Race Event")
 

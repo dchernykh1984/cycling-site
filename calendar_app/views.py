@@ -238,25 +238,22 @@ def _apply_id_filters(qs, event_type_ids, discipline_ids, direction_ids):
     """Apply integer-keyed multi-select filters; non-integer values are ignored.
 
     Each argument is a list of GET values (each value may itself be a comma-joined
-    group of ids). A competition matches if it has at least one of the selected
-    disciplines OR at least one discipline in a selected direction (category); the two are
-    OR-ed so a direction picked without drilling into a discipline still filters alongside
-    another direction's discipline. Both ``event_types`` and ``disciplines`` are many-to-many, so
-    each join is de-duplicated -- without that a race carrying two of the selected values would be
-    listed twice.
+    group of ids). Chosen disciplines win over directions, as a city does over its country: with
+    any discipline in the query a competition matches by its disciplines alone, and the directions
+    only say which disciplines the picker offers (the page keeps them in the address so their boxes
+    stay ticked); without one, it matches by a discipline in a chosen direction. Both
+    ``event_types`` and ``disciplines`` are many-to-many, so each join is de-duplicated -- without
+    that a race carrying two of the selected values would be listed twice.
     """
     event_types = _parse_int_ids(event_type_ids)
     if event_types:
         qs = qs.filter(event_types__id__in=event_types).distinct()
     disciplines = _parse_int_ids(discipline_ids)
     directions = _parse_int_ids(direction_ids)
-    if disciplines or directions:
-        match = Q()
-        if disciplines:
-            match |= Q(disciplines__in=disciplines)
-        if directions:
-            match |= Q(disciplines__category_id__in=directions)
-        qs = qs.filter(match).distinct()
+    if disciplines:
+        qs = qs.filter(disciplines__in=disciplines).distinct()
+    elif directions:
+        qs = qs.filter(disciplines__category_id__in=directions).distinct()
     return qs
 
 
@@ -310,11 +307,9 @@ def _user_filter_default_params(user) -> list:
         return []
     # The direction filter merges same-name disciplines across categories into one checkbox (e.g.
     # "Relay" lives under 11 directions), so a saved discipline stands in for all its same-name
-    # siblings. Expand to that merged group (matching a name in any locale) before deciding what to
-    # emit, so the redirect reproduces exactly what the widget round-trips: a direction is dropped
-    # once any of its disciplines is covered, and the emitted disciplines are the full merged set.
-    # Otherwise the list (OR of discipline_category and discipline) and the calendar (widget re-emit)
-    # would resolve to different result sets for the same saved preferences.
+    # siblings. Expand to that merged group (matching a name in any locale), so the redirect
+    # reproduces exactly what the widget round-trips; the directions go along whole, and the
+    # disciplines win over them on every page, as they do when picked by hand.
     names = {n for d in user.preferred_disciplines.all() for n in (d.name_ru, d.name_kk, d.name_en) if n}
     merged = (
         Discipline.objects.filter(Q(name_ru__in=names) | Q(name_kk__in=names) | Q(name_en__in=names))
@@ -322,12 +317,7 @@ def _user_filter_default_params(user) -> list:
         else Discipline.objects.none()
     )
     discipline_ids = list(merged.order_by("pk").values_list("pk", flat=True))
-    covered = set(merged.values_list("category_id", flat=True))
-    pairs = [
-        ("discipline_category", pk)
-        for pk in user.preferred_directions.values_list("pk", flat=True)
-        if pk not in covered
-    ]
+    pairs = [("discipline_category", pk) for pk in user.preferred_directions.values_list("pk", flat=True)]
     pairs += [("discipline", pk) for pk in discipline_ids]
     pairs += [("location", pk) for pk in user.preferred_locations.values_list("pk", flat=True)]
     pairs += [("event_type", pk) for pk in user.preferred_event_types.values_list("pk", flat=True)]
