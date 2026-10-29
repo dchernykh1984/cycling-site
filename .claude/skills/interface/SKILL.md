@@ -94,7 +94,8 @@ One page for every device, no separate version for phones or tablets.
      a hue; a phone never shows a `title`; an `aria-label` that says something else replaces what
      is on screen, and a reader who speaks to the page says the visible words.
    - Example: the share icon is labelled "Share".
-   - Check: `test_every_control_says_what_it_does`.
+   - Check: `test_every_control_says_what_it_does`,
+     `test_the_words_on_a_control_begin_its_screen_reader_name`.
 
 9. **Built for a finger and a mouse.** Every control answers a tap across at least 44x44px on a
    phone and a click across at least 24x24px on a desktop. The zone is centred on the control and
