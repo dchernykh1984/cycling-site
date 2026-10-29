@@ -1,8 +1,8 @@
 """A guest's own region, which the calendar, the list and the map open on (#332).
 
 The site's network provider adds the visitor's approximate coordinates to each request it passes on,
-worked out from the IP address on its side; the site never sees a lookup, keeps neither the address
-nor the point, and a header it does not get simply leaves the calendar as it was. The region is the
+worked out from the IP address on its side; this module makes no lookup of its own, stores neither
+the point nor the address, and a header it does not get simply leaves the calendar as it was. The region is the
 one the nearest of the site's own cities lies in -- not the region whose centre is nearest: the centre
 of a large region can lie further off than a small neighbour's.
 """
