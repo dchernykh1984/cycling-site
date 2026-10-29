@@ -91,7 +91,7 @@ jobs:
           AGENT_API_TOKEN: ${{ secrets.AGENT_API_TOKEN }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
           # Instagram closed the logged-out endpoint this agent used to read; these are Meta's own
           # Graph API credentials for our professional account, which is the only way left. The
           # token is long-lived but not permanent -- it expires about every 60 days, and a run says

@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# DeepSeek's cheapest model, when LLM_MODEL is unset; the three agents share it so a rename lands once.
+DEFAULT_LLM_MODEL = "deepseek-flash"
+
 
 class ConfigError(RuntimeError):
     """A required setting is missing."""
@@ -48,7 +51,7 @@ def from_env(env: dict[str, str]) -> Config:
         api_token=env["AGENT_API_TOKEN"],
         llm_api_key=env["LLM_API_KEY"],
         llm_base_url=env["LLM_BASE_URL"].rstrip("/"),
-        llm_model=env.get("LLM_MODEL") or "deepseek-chat",
+        llm_model=env.get("LLM_MODEL") or DEFAULT_LLM_MODEL,
         max_events=max(max_events, 0),
         max_per_source=max(max_per_source, 0),
         dry_run=_flag(env.get("AGENT_DRY_RUN")),

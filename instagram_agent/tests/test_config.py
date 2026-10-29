@@ -46,6 +46,10 @@ def test_a_limit_that_is_not_a_number_is_refused_rather_than_ignored():
         from_env({**_BASE, "INSTAGRAM_MAX_EVENTS": "ten"})
 
 
+def test_without_a_model_named_it_takes_the_one_the_agents_share():
+    assert from_env(dict(_BASE)).llm_model == "deepseek-flash"
+
+
 def test_the_shared_api_adapter_gets_the_same_model_and_key():
     config = from_env({**_BASE, "LLM_MODEL": "deepseek-v4-flash"})
     shared = as_agent_config(config)
