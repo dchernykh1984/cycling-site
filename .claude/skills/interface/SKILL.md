@@ -195,6 +195,7 @@ seen, and where it lives or will live here.
 | **Time first for a ride** | The meeting time large, the pace or group as a badge. | Zwift, Strava | the time stays free text in the announcement (the maintainer's choice); the link preview carries it (#318) |
 | **Page action** | What acts on the whole page -- share it, subscribe to it -- sits at the right end of the heading's row, apart from the navigation, centred on the middle of the heading's capital letters. | Apple's and Google's design guides, Airbnb | `_page_heading.html` |
 | **Subscribe and add to calendar** | Subscription to the filtered calendar and "add to my calendar" near the top, not in the footer. | Orgeo | #333 |
+| **Map cluster** | Pins that crowd gather into a disc with their count, 44 px, which opens into them with a tap; a pin answers across a 44 px square and is named by its place. | 2GIS, Yandex Maps | `_map_markers.html` |
 
 A pattern not in this table gets a name, a row here and a partial of its own before it appears on a
 second page.
