@@ -13,8 +13,8 @@ from assistant import llm
 KEY = "sk-test-key"
 
 
-def _reply(content, usage=None):
-    body = {"choices": [{"message": {"content": content}}], "usage": usage or {}}
+def _reply(content, usage=None, finish_reason="stop"):
+    body = {"choices": [{"message": {"content": content}, "finish_reason": finish_reason}], "usage": usage or {}}
     response = mock.MagicMock()
     response.read.return_value = json.dumps(body).encode()
     response.__enter__.return_value = response
@@ -79,3 +79,9 @@ class CompleteTests(SimpleTestCase):
                 llm.complete([])
         self.assertNotIn(KEY, repr(caught.exception))
         self.assertIsNone(caught.exception.__cause__)
+
+    def test_an_answer_cut_off_at_its_length_says_so(self):
+        cut = _reply('{"reply": "Here is the whole te', finish_reason="length")
+        with mock.patch("urllib.request.urlopen", return_value=cut), self.assertRaises(llm.UnavailableError) as caught:
+            llm.complete([])
+        self.assertEqual(caught.exception.reason, llm.UnavailableError.TOO_LONG)

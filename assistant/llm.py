@@ -18,10 +18,10 @@ from agent.config import DEFAULT_LLM_MODEL
 
 logger = logging.getLogger(__name__)
 
-# A turn writes at most the three descriptions with their titles and link previews: 764 tokens when
-# measured, so this only stops an answer that runs away.
-MAX_TOKENS = 6000
-TIMEOUT_SECONDS = 90
+# A full set of titles, descriptions and link previews measured 764 tokens. Room for a long text in
+# two more languages besides, which takes about a minute to write; an answer over it is cut off.
+MAX_TOKENS = 16_000
+TIMEOUT_SECONDS = 120
 
 
 class UnavailableError(Exception):
@@ -32,6 +32,7 @@ class UnavailableError(Exception):
     KEY_REFUSED = "key_refused"
     BUSY = "busy"
     BAD_ANSWER = "bad_answer"
+    TOO_LONG = "too_long"
 
     def __init__(self, reason: str):
         super().__init__(reason)
@@ -78,8 +79,11 @@ def complete(messages: list[dict]) -> dict:
         usage.get("completion_tokens"),
     )
     try:
-        answer = json.loads(body["choices"][0]["message"]["content"])
-    except (KeyError, IndexError, TypeError, ValueError):
+        choice = body["choices"][0]
+        if choice.get("finish_reason") == "length":
+            raise UnavailableError(UnavailableError.TOO_LONG)
+        answer = json.loads(choice["message"]["content"])
+    except (KeyError, IndexError, TypeError, ValueError, AttributeError):
         raise UnavailableError(UnavailableError.BAD_ANSWER) from None
     if not isinstance(answer, dict):
         raise UnavailableError(UnavailableError.BAD_ANSWER)

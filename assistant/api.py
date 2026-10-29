@@ -34,6 +34,7 @@ _UNAVAILABLE = {
     llm.UnavailableError.KEY_REFUSED: _("The model's provider refused the site's key. Tell the site's owner."),
     llm.UnavailableError.BUSY: _("The model did not answer. Send the message again in a minute."),
     llm.UnavailableError.BAD_ANSWER: _("The model's answer could not be read. Send the message again."),
+    llm.UnavailableError.TOO_LONG: _("The answer would be too long: ask for one language, or one part, at a time."),
 }
 
 

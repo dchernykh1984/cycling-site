@@ -107,6 +107,14 @@ class AssistantApiTests(ApiTestMixin, TestCase):
             self.assertEqual(self._say(conversation_id).status_code, 503)
         self.assertFalse(Message.objects.exists())
 
+    def test_an_answer_too_long_to_finish_asks_for_less_at_a_time(self):
+        conversation_id = self._start().json()["id"]
+        too_long = llm.UnavailableError(llm.UnavailableError.TOO_LONG)
+        with mock.patch("assistant.llm.complete", side_effect=too_long):
+            response = self._say(conversation_id)
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("one language", response.json()["detail"])
+
     def test_a_message_has_a_length_limit(self):
         conversation_id = self._start().json()["id"]
         self.assertEqual(self._say(conversation_id, text="x" * 10_001).status_code, 422)

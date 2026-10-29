@@ -4558,3 +4558,6 @@ msgstr "Что поменять в новости?"
 
 msgid "What news would you like to write?"
 msgstr "Какую новость вы хотите написать?"
+
+msgid "The answer would be too long: ask for one language, or one part, at a time."
+msgstr "Ответ получился бы слишком длинным: просите по одному языку или по одной части."

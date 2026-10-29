@@ -26,8 +26,9 @@ NEWS_FIELDS = ("title", "intro", "body")
 RICH_FIELDS = ("description", "body")
 URL_FIELDS = ("url_announcement", "url_registration", "url_route", "url_regulations", "url_results")
 FILE_FIELDS = ("file_announcement", "file_route", "file_regulations", "file_results")
-# How much of a field the model is shown; a description is the longest, and the editor allows far more.
-_MAX_TEXT = {"title": 255, "description": 20_000, "preview_text": 300, "intro": 500, "body": 20_000}
+# How much of a plain field the model is shown. A description or a news text goes whole: a model
+# shown half of one would hand back half, and saving that would lose the rest.
+_MAX_TEXT = {"title": 255, "preview_text": 300, "intro": 500}
 _MAX_LINE = 1000
 
 CONTRACT = """\
@@ -180,7 +181,10 @@ def describe_form(raw: dict, competition=None, images: list[str] | None = None) 
 
 def _texts(raw: dict, names: tuple[str, ...], images: list[str]) -> dict:
     """The form's texts in each language, the editor's pictures as marks."""
-    form = {name: {lang: _text(raw.get(f"{name}_{lang}"), _MAX_TEXT[name]) for lang in LANGUAGES} for name in names}
+    form = {
+        name: {lang: _text(raw.get(f"{name}_{lang}"), _MAX_TEXT.get(name, 1_000_000)) for lang in LANGUAGES}
+        for name in names
+    }
     for name in RICH_FIELDS:
         if name in form:
             form[name] = {lang: pictures.hide(text, images) for lang, text in form[name].items()}
