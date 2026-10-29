@@ -125,8 +125,9 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
 
 - **FR-SHL-001**: Three languages (ru default, kk, en); the language buttons read RU, KZ, EN.
 - **FR-SHL-002**: The privacy policy and the terms of use live at stable addresses, are public and
-  translated, linked from every footer; the privacy policy states what Strava data is used and links
-  to the contact form.
+  translated, linked from every footer; the privacy policy states what Strava data is used, what a
+  member allowed to manage one's registrations and photos sees and may do ([accounts](accounts.md)),
+  and links to the contact form.
 - **FR-SHL-003**: All rich text (site content, articles, descriptions) goes through one sanitiser:
   scripts and dangerous links dropped, links open in a new tab, a limited set of formatting, image
   size/float and text colour kept.
