@@ -338,6 +338,39 @@ def test_every_control_says_what_it_does(page: Page, live_server, viewport, tab)
     assert not _breaks(found), found
 
 
+# The words a control shows, without what it hides from a screen reader (the digits of an icon), and
+# the name it gives a screen reader in their place.
+_SHOWN_AND_SAID = """
+(el) => {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let words = '';
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const parent = node.parentElement;
+    if (parent.closest('[aria-hidden="true"], .visually-hidden') || !parent.checkVisibility()) continue;
+    words += node.textContent;
+  }
+  return {words: words.replace(/\\s+/g, ' ').trim(), label: (el.getAttribute('aria-label') || '').trim()};
+}
+"""
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("viewport", VIEWPORTS)
+@pytest.mark.parametrize("lang", LANGUAGES)
+@pytest.mark.parametrize("tab", TABS)
+def test_the_words_on_a_control_begin_its_screen_reader_name(page: Page, live_server, viewport, lang, tab):
+    """WCAG 2.5.3 (principle 8): a reader who says the words they see reaches the control (#384)."""
+    _open(page, live_server, viewport, lang, tab)
+    found = []
+    for control in page.locator(HEADER).locator(CONTROLS).all():
+        shown = control.evaluate(_SHOWN_AND_SAID)
+        # An arrow is a symbol, not words: only letters a reader could say are held to the rule.
+        words = shown["words"] if re.search(r"[^\W\d_]{2}", shown["words"]) else ""
+        if words and shown["label"] and not shown["label"].lower().startswith(words.lower()):
+            found.append(f"said/{viewport}/{tab}/{control.evaluate(_DESCRIBE)['key']}: {shown}")
+    assert not _breaks(found), found
+
+
 def _in_state(page: Page, control, state):
     """Put a control at rest or under the pointer, and wait for its fade to finish."""
     page.mouse.move(0, 0)
