@@ -556,6 +556,19 @@ class LegalPagesTests(TestCase):
         self.assertIn("athlete identifier and name", body)
         self.assertIn("we do not request access to your activities", body)
 
+    def test_privacy_page_says_what_a_member_who_manages_your_registrations_sees(self):
+        # Issue #315: a member may let another manage their registrations and race photos; the
+        # policy says what that member sees and may do, and names them among those data go to.
+        body = self.client.get(in_language(reverse("privacy_policy"), "en")).content.decode()
+        self.assertIn("People who manage your registrations and photos.", body)
+        self.assertIn("but never your email address", body)
+        self.assertIn("the members you allowed to manage your registrations and photos", body)
+        for lang in ("ru", "kk"):
+            with self.subTest(lang):
+                page = self.client.get(in_language(reverse("privacy_policy"), lang))
+                self.assertNotContains(page, "People who manage your registrations and photos.")
+                self.assertNotContains(page, "the members you allowed to manage")
+
     def test_privacy_page_links_to_the_contact_form(self):
         resp = self.client.get(reverse("privacy_policy"))
         self.assertContains(resp, reverse("account_contact_owners"))
