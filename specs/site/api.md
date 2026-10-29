@@ -6,7 +6,7 @@
 token --, `schemas.py`), `api/endpoints/`; django-ninja, served at `/api/v1/`
 **Tests**: `api/tests.py`, `registrations/tests.py` (participants), `protocols/tests.py`,
 `tests/test_gallery_api.py`, `tests/test_input_length_limits.py`, `tests/test_virtual_ride_api.py`,
-`tests/test_managing_api.py`,
+`tests/test_managing_api.py`, `assistant/tests/test_api.py`,
 `tests/e2e/test_api_to_front.py`
 **Related**: [events](events.md), [locations](locations.md), [news and knowledge](news-and-knowledge.md),
 [protocols](protocols.md), [registrations](registrations.md), [events agents](events-agents.md),
@@ -94,7 +94,8 @@ and protocols with the event's upload token. The API has no language prefix.
 - **FR-API-001**: Routers: `/competitions/`, `/news/`, `/knowledge/`, `/locations/`, `/disciplines/`,
   `/event-types/`, `/participants/`, `/protocols/`, `/start-list/`, `/group-times/`,
   `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`, `/event-photos/`
-  ([event photos](event-photos.md)), `/virtual-ride/`, `/managing/` ([accounts](accounts.md)). A
+  ([event photos](event-photos.md)), `/virtual-ride/`, `/managing/` ([accounts](accounts.md)),
+  `/assistant/` ([event assistant](assistant.md)). A
   start-list upload also records which registration got which bib, from the lines' trailing `r<id>`
   field; its response is unchanged.
 - **FR-API-002**: Personal tokens belong to participants and up (generated on the profile); the

@@ -94,6 +94,9 @@ dashboard:
   weekend's days, 0 for Sunday (defaults `1` and `6,0`: Monday, and Saturday with Sunday)
 - `GOOGLE_`/`GITHUB_`/`STRAVA_` `CLIENT_ID` and `CLIENT_SECRET` - social login; the Strava pair also
   sends members' virtual rides to Strava once they connect it on their profile
+- `ASSISTANT_LLM_API_KEY` - the event assistant's key at its model provider; without it the chat is
+  not offered. `ASSISTANT_LLM_BASE_URL` names another OpenAI-compatible provider (default
+  `https://api.deepseek.com`)
 
 The team domain (`universalbicycle.team` and `www.universalbicycle.team`) is always
 in `ALLOWED_HOSTS`; set `VIRTUAL_HOST` to add more hosts. Static files are served by
