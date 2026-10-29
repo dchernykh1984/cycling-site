@@ -50,10 +50,10 @@ repos:
         language: pygrep
         entry: '[^\x00-\x7f]'
         types_or: [python, yaml, markdown, toml, shell, json]
-        # The agents' guidance files and their source/account lists are free-text steering files for
-        # the maintainer; they naturally hold Russian (the events' language), so they are exempt
-        # from ASCII-only.
-        exclude: ^(uv\.lock|.*/migrations/.*|agent/guidance\.md|events_sources\.yaml|instagram_agent/guidance\.md|instagram_accounts\.yaml|telegram_agent/guidance\.md|telegram_channels\.yaml)$
+        # The agents' guidance files and their source/account lists, and the event assistant's
+        # skills, are free-text steering files for the maintainer; they naturally hold Russian (the
+        # events' language), so they are exempt from ASCII-only.
+        exclude: ^(uv\.lock|.*/migrations/.*|agent/guidance\.md|events_sources\.yaml|instagram_agent/guidance\.md|instagram_accounts\.yaml|telegram_agent/guidance\.md|telegram_channels\.yaml|assistant/skills/.*\.md)$
 
       # A colour written into a site template paints every skin the same; it belongs in skins/.
       - id: no-hex-colours-in-templates
