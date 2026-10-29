@@ -2,6 +2,7 @@
 
 import datetime
 import re
+import time
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -230,3 +231,24 @@ def test_when_the_model_cannot_answer_the_message_waits_to_be_sent_again(
     expect(log.locator(".assistant-from-user")).to_have_count(0)
     expect(page.locator("#assistant-text")).to_have_value("A ride on Saturday")
     assert not Message.objects.exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_while_the_assistant_writes_neither_a_message_nor_a_file_can_be_sent(
+    page: Page, live_server, admin_user, chat_on, monkeypatch
+):
+    def slow(messages):
+        time.sleep(1.5)
+        return {"reply": "When is it?", "set": {}}
+
+    monkeypatch.setattr("assistant.llm.complete", slow)
+    inject_session(page, live_server, admin_user)
+    page.goto(f"{live_server.url}/en/calendar/submit/")
+    page.click("#assistant-toggle")
+    page.fill("#assistant-text", "A ride")
+    page.click("#assistant-send")
+    expect(page.locator("#assistant-send")).to_be_disabled()
+    expect(page.locator("#assistant-attach")).to_be_disabled()
+    expect(page.locator("#assistant-log")).to_contain_text("When is it?")
+    expect(page.locator("#assistant-send")).to_be_enabled()
+    expect(page.locator("#assistant-attach")).to_be_enabled()
