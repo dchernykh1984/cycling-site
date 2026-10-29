@@ -41,5 +41,8 @@ def test_the_list_opens_with_the_top_event_marked_and_a_divider_after_it(page: P
     first = page.locator(".calendar-list-table tbody tr").first
     expect(first).to_contain_text("Zeta Race")
     expect(first).to_contain_text("Top event")
-    expect(page.locator(".calendar-list-table tbody.calendar-list-rest")).to_be_visible()
-    expect(page.locator(".calendar-list-table tbody.calendar-list-rest tr").first).to_contain_text("Alpha Ride")
+    rest = page.locator(".calendar-list-table tbody.calendar-list-rest")
+    expect(rest).to_be_visible()
+    expect(rest.locator("tr")).to_have_count(2)
+    expect(rest).to_contain_text("Alpha Ride")
+    expect(rest).to_contain_text("Bravo Ride")

@@ -700,8 +700,10 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
             qs = qs.filter(location_id__in=_location_descendant_pks(chosen["location"]))
         qs = _apply_favorite_filter(qs, self.request)
 
-        # Top events first, then the rest by date; the page draws a divider between the two.
-        qs = overlapping(qs, date_from, date_to).order_by("-is_top", "date_start")
+        # Top events first, then the rest by date; the page draws a divider between the two. The id
+        # settles a day's events: without it the database may order them anew for every page, and
+        # one event shows on two pages while another on none.
+        qs = overlapping(qs, date_from, date_to).order_by("-is_top", "date_start", "pk")
         paginator = Paginator(qs, 20)
         page = paginator.get_page(self.request.GET.get("page", 1))
         context["competitions"] = page
@@ -796,7 +798,7 @@ class CalendarMapAPIView(View):
         step = Location.steplen
         groups: dict = {}
         # Top events first at each place, as everywhere else events are listed.
-        for comp in qs.order_by("-is_top", "date_start"):
+        for comp in qs.order_by("-is_top", "date_start", "pk"):
             base = by_path.get(comp.location.path, comp.location)
             display = map_display_node(base, by_path, step)
             if display is None:
