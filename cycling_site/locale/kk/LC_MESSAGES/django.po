@@ -291,7 +291,7 @@ msgstr "Құпиясөз орнату"
 
 #: accounts/templates/accounts/profile.html:122
 msgid "Change password"
-msgstr "Құпия сөзді өзгерту"
+msgstr "Құпиясөзді өзгерту"
 
 #: accounts/templates/accounts/profile.html:131
 msgid "Connected."
@@ -841,7 +841,7 @@ msgstr "%(subject)s: %(place)s"
 #: calendar_app/listing_seo.py:50
 #, python-format
 msgid "%(count)s events in the calendar."
-msgstr "Күнтізбедегі оқиғалар: %(count)s."
+msgstr "Күнтізбедегі іс-шаралар: %(count)s."
 
 #: calendar_app/listing_seo.py:52
 #, python-format
@@ -927,7 +927,7 @@ msgstr "Ел"
 #: calendar_app/templates/calendar_app/list.html:198 locations/models.py:284
 #: locations/templates/locations/location_form.html:100
 msgid "Region"
-msgstr "Өлке"
+msgstr "Аймақ"
 
 #: calendar_app/templates/calendar_app/_location_cascade.html:27
 #: locations/models.py:286
@@ -1926,7 +1926,7 @@ msgstr "б.б."
 msgid ""
 "This event's location is still awaiting review; an administrator must "
 "approve it first."
-msgstr "Бұл оқиғаның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."
+msgstr "Бұл іс-шараның орны әлі қаралуда: алдымен оны әкімші мақұлдауы керек."
 
 # Pending/rejected competitions + profile (issue #180)
 #: calendar_app/views.py:1540
@@ -2026,7 +2026,7 @@ msgid ""
 msgstr ""
 "Қандай жарыс екені және қайда бару керегі түсінікті болса, стартты "
 "мақұлдаңыз. Орынды картадан тексеріңіз, күндер, қашықтықтар мен сілтемелер "
-"шын екеніне көз жеткізіңіз. Ойдан шығарылған старт нүктесі оқиғаның мүлде "
+"шын екеніне көз жеткізіңіз. Ойдан шығарылған старт нүктесі іс-шараның мүлде "
 "болмағанынан да жаман."
 
 #: cycling_site/templates/_moderation_banner.html:14
@@ -3136,7 +3136,7 @@ msgstr "Аталық локация"
 msgid ""
 "Select a country, region and city: a venue is added inside the chosen city."
 msgstr ""
-"Ел, өңір және қаланы таңдаңыз: локация таңдалған қаланың ішіне қосылады."
+"Ел, аймақ және қаланы таңдаңыз: локация таңдалған қаланың ішіне қосылады."
 
 #: locations/forms.py:55
 msgid "System fallback locations cannot be moved."
@@ -3201,15 +3201,15 @@ msgid ""
 "The deepest selected level is the parent. Leave Country empty to create a "
 "country, Region empty to create a region, City empty to create a city."
 msgstr ""
-"Ең терең таңдалған деңгей аталық болады. Ел құру үшін «Ел» өрісін, өңір құру"
-" үшін «Өңір» өрісін, қала құру үшін «Қала» өрісін бос қалдырыңыз."
+"Ең терең таңдалған деңгей аталық болады. Ел құру үшін «Ел» өрісін, аймақ құру"
+" үшін «Аймақ» өрісін, қала құру үшін «Қала» өрісін бос қалдырыңыз."
 
 #: locations/templates/locations/location_form.html:88
 msgid ""
 "Select the country, region and city; the new location is added as a venue "
 "inside the chosen city."
 msgstr ""
-"Ел, өңір және қаланы таңдаңыз; жаңа локация таңдалған қаланың ішіне алаң "
+"Ел, аймақ және қаланы таңдаңыз; жаңа локация таңдалған қаланың ішіне алаң "
 "ретінде қосылады."
 
 #: locations/templates/locations/location_form.html:129
@@ -3507,7 +3507,7 @@ msgstr ""
 
 #: calendar_app/templates/calendar_app/detail.html
 msgid "How a link to this event looks in a chat"
-msgstr "Оқиғаға сілтеме чатта осылай көрінеді"
+msgstr "Іс-шараға сілтеме чатта осылай көрінеді"
 
 #: gallery/events.py:73
 #| msgid "Event type"
@@ -4021,7 +4021,7 @@ msgid ""
 " href=\"%(url)s\" target=\"_blank\" rel=\"noopener\">Sport Photo Indexer "
 "project</a>."
 msgstr ""
-"1 және 2-қадамдардың орнына папканы <a href=\"%(url)s\" target=\"_blank\" "
+"1 және 2-қадамдардың орнына қалтаны <a href=\"%(url)s\" target=\"_blank\" "
 "rel=\"noopener\">Sport Photo Indexer жобасындағы</a> скилл арқылы "
 "индекстеуге болады."
 
@@ -4109,7 +4109,7 @@ msgid ""
 "times and peak power. Rides in demo mode are kept but never count as "
 "records."
 msgstr ""
-"Виртуалды жүріс бетінде аяқталған заездтер осында үздік уақыт пен ең жоғары "
+"Виртуалды заезд бетінде аяқталған заездтер осында үздік уақыт пен ең жоғары "
 "қуатпен бірге сақталады. Демо режимдегі заездтер тарихта сақталады, бірақ "
 "рекорд болып саналмайды."
 
