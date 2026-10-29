@@ -1,0 +1,246 @@
+{% load i18n %}
+{% if offered %}
+{% comment %}
+The event assistant's chat (issue #353): a button at the bottom right that opens the conversation.
+A reply fills the event's form on this page; the form's own button saves it. The chat keeps out of
+the event's form, whose fields it reads and sets: a form inside a form is not HTML.
+{% endcomment %}
+<div class="assistant-spacer" aria-hidden="true"></div>
+<button type="button" class="btn btn-primary assistant-toggle" id="assistant-toggle"
+        aria-expanded="false" aria-controls="assistant-panel">{% trans "Assistant" %}</button>
+<section class="card assistant-panel" id="assistant-panel" aria-labelledby="assistant-title" hidden>
+  <div class="card-header d-flex align-items-center justify-content-between gap-2">
+    <h2 class="h6 mb-0" id="assistant-title">{% trans "Event assistant" %}</h2>
+    <button type="button" class="btn btn-sm btn-outline-secondary assistant-hide" id="assistant-hide">{% trans "Hide" %}</button>
+  </div>
+  <div class="card-body assistant-log" id="assistant-log" aria-live="polite"></div>
+  <form class="card-footer assistant-form" id="assistant-form">
+    <label class="visually-hidden" for="assistant-text">{% trans "Your message" %}</label>
+    <textarea class="form-control" id="assistant-text" rows="2" maxlength="10000"
+              placeholder="{% trans 'Write to the assistant' %}"></textarea>
+    <input type="file" id="assistant-file" accept=".gpx,.kml,.pdf" hidden>
+    <div class="d-flex gap-2 mt-2">
+      <button type="button" class="btn btn-outline-secondary" id="assistant-attach">{% trans "Attach a file" %}</button>
+      <button type="submit" class="btn btn-primary ms-auto" id="assistant-send">{% trans "Send" %}</button>
+    </div>
+  </form>
+</section>
+{{ history|json_script:"assistant-history" }}
+{{ config|json_script:"assistant-config" }}
+<style>
+  .assistant-spacer { height: 4.5rem; }
+  .assistant-toggle { position: fixed; right: 1rem; bottom: 1rem; z-index: 1040; min-height: 2.75rem; box-shadow: var(--bs-box-shadow); }
+  /* Wagtail's own button for editors takes the corner (56px, 2rem from the edges): the chat's sits to
+     its left, and the open chat hides it, since it would cover the chat's Send button. */
+  body:has(wagtail-userbar) .assistant-toggle { right: 6.25rem; bottom: 2.25rem; }
+  body.assistant-open wagtail-userbar { display: none; }
+  .assistant-panel {
+    position: fixed; right: 1rem; bottom: 1rem; z-index: 1040; display: flex; flex-direction: column;
+    width: min(24rem, calc(100vw - 2rem)); height: min(36rem, calc(100dvh - 2rem)); box-shadow: var(--bs-box-shadow-lg);
+  }
+  .assistant-panel[hidden] { display: none; }
+  .assistant-log { flex: 1 1 auto; overflow-y: auto; }
+  .assistant-msg {
+    max-width: 90%; margin: 0 0 .5rem; padding: .5rem .75rem; border-radius: var(--bs-border-radius);
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .assistant-from-user { margin-left: auto; background: var(--bs-primary-bg-subtle); color: var(--bs-emphasis-color); }
+  .assistant-from-assistant { background: var(--bs-tertiary-bg); color: var(--bs-body-color); }
+  .assistant-note { background: transparent; border: 1px solid var(--bs-border-color); color: var(--bs-secondary-color); font-size: .875rem; }
+  .assistant-error { background: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis); }
+  .assistant-form .btn, .assistant-hide { min-height: 2.75rem; }
+  @media (max-width: 575.98px) {
+    .assistant-panel { right: 0; left: 0; bottom: 0; width: auto; height: 60dvh; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  }
+</style>
+<script>
+(function () {
+  var cfg = JSON.parse(document.getElementById('assistant-config').textContent);
+  var history = JSON.parse(document.getElementById('assistant-history').textContent);
+  var words = cfg.words;
+  var toggle = document.getElementById('assistant-toggle');
+  var panel = document.getElementById('assistant-panel');
+  var log = document.getElementById('assistant-log');
+  var chat = document.getElementById('assistant-form');
+  var text = document.getElementById('assistant-text');
+  var send = document.getElementById('assistant-send');
+  var picker = document.getElementById('assistant-file');
+  var titleInput = document.getElementById('id_title_ru');
+  var eventForm = titleInput && titleInput.form;
+  if (!eventForm) return;
+  var csrf = eventForm.querySelector('[name=csrfmiddlewaretoken]').value;
+  var conversationId = cfg.conversationId;
+  var busy = false;
+
+  // The conversation rides in the event's form, so saving the form links the two.
+  var carried = document.createElement('input');
+  carried.type = 'hidden'; carried.name = 'assistant_conversation'; carried.value = conversationId || '';
+  eventForm.appendChild(carried);
+
+  function say(role, line, kind) {
+    var p = document.createElement('p');
+    p.className = 'assistant-msg assistant-from-' + role + (kind ? ' assistant-' + kind : '');
+    p.textContent = line;
+    log.appendChild(p);
+    log.scrollTop = log.scrollHeight;
+    return p;
+  }
+  say('assistant', words.first);
+  history.forEach(function (m) { say(m.role, m.text); });
+
+  function show(open) {
+    panel.hidden = !open; toggle.hidden = open; toggle.setAttribute('aria-expanded', String(open));
+    document.body.classList.toggle('assistant-open', open);
+    (open ? text : toggle).focus();
+  }
+  toggle.addEventListener('click', function () { show(true); });
+  document.getElementById('assistant-hide').addEventListener('click', function () { show(false); });
+
+  function request(url, body, isJson) {
+    var headers = { 'X-CSRFToken': csrf };
+    if (isJson) headers['Content-Type'] = 'application/json';
+    return fetch(url, { method: 'POST', credentials: 'same-origin', headers: headers, body: isJson ? JSON.stringify(body) : body })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (data) {
+          if (!r.ok) throw new Error(typeof data.detail === 'string' ? data.detail : words.failed);
+          return data;
+        });
+      });
+  }
+
+  function conversation() {
+    if (conversationId) return Promise.resolve(conversationId);
+    return request(cfg.start, cfg.competitionId ? { competition_id: cfg.competitionId } : {}, true).then(function (data) {
+      conversationId = data.id; carried.value = data.id;
+      return data.id;
+    });
+  }
+
+  function value(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+  function editorOf(lang) { var box = document.getElementById('quill-desc-' + lang); return box && window.Quill ? Quill.find(box) : null; }
+
+  // The form as it stands, by the form's field names: the server reads it as the model's "form now".
+  function readForm() {
+    var data = {};
+    ['ru', 'kk', 'en'].forEach(function (lang) {
+      data['title_' + lang] = value('id_title_' + lang);
+      data['preview_text_' + lang] = value('id_preview_text_' + lang);
+      var q = editorOf(lang);
+      data['description_' + lang] = q ? (q.getText().trim() ? q.root.innerHTML : '') : value('id_description_' + lang);
+    });
+    ['date_start', 'date_end', 'url_announcement', 'url_registration', 'url_route', 'url_regulations', 'url_results', 'location', 'new_venue_city']
+      .forEach(function (name) { data[name] = value('id_' + name); });
+    var types = document.getElementById('id_event_types');
+    data.event_types = types ? Array.from(types.selectedOptions).map(function (o) { return o.value; }) : [];
+    data.disciplines = Array.from(document.querySelectorAll('#disciplines-hidden input[name=disciplines]')).map(function (i) { return i.value; });
+    var box = document.getElementById('new-venue-box');
+    if (box && box.style.display !== 'none') {
+      data.new_venue_name = value('new-venue-name'); data.new_venue_name_kk = value('new-venue-name-kk'); data.new_venue_name_en = value('new-venue-name-en');
+      data.new_venue_lat = value('new-venue-lat'); data.new_venue_lng = value('new-venue-lng');
+    }
+    ['file_announcement', 'file_route', 'file_regulations', 'file_results'].forEach(function (name) {
+      var input = document.getElementById('id_' + name);
+      data[name] = input && input.files && input.files.length ? input.files[0].name : '';
+    });
+    var registration = document.getElementById('reg_enabled');
+    data.registration_enabled = !!(registration && registration.checked);
+    return data;
+  }
+
+  function setValue(id, v) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  // A reply's values, by the form's field names; the place and the disciplines go through their pickers.
+  function apply(fields) {
+    Object.keys(fields).forEach(function (name) {
+      var v = fields[name];
+      var description = /^description_(ru|kk|en)$/.exec(name);
+      if (description) {
+        var q = editorOf(description[1]);
+        // setContents leaves the selection alone: pasting would move the focus, and the page with it.
+        if (q) q.setContents(v ? q.clipboard.convert(v) : [], 'api'); else setValue('id_' + name, v);
+      } else if (name === 'event_types') {
+        var types = document.getElementById('id_event_types');
+        if (types) Array.from(types.options).forEach(function (o) { o.selected = v.map(String).indexOf(o.value) >= 0; });
+      } else if (name === 'disciplines') {
+        if (window.eventDisciplines) window.eventDisciplines.set(v);
+      } else if (name === 'location') {
+        if (window.eventLocation) window.eventLocation.select(v);
+      } else if (name === 'new_venue') {
+        if (window.eventLocation) window.eventLocation.propose(v.city, { ru: v.name_ru, kk: v.name_kk, en: v.name_en }, v.lat, v.lng);
+      } else {
+        setValue('id_' + name, v);
+      }
+    });
+  }
+
+  function today() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  // One turn: the line is shown at once and taken back if the turn fails, since nothing was kept then.
+  function turn(line, attachments) {
+    busy = true; send.disabled = true;
+    var mine = say('user', line);
+    var waiting = say('assistant', words.thinking, 'note');
+    return conversation().then(function (id) {
+      var body = { text: line, form: readForm(), today: today(), language: cfg.language, attachments: attachments };
+      return request(cfg.start + '/' + id + '/messages', body, true);
+    }).then(function (data) {
+      waiting.remove();
+      say('assistant', data.reply);
+      data.notes.forEach(function (note) { say('assistant', note, 'note'); });
+      apply(data.fields);
+      return true;
+    }, function (error) {
+      waiting.remove(); mine.remove();
+      say('assistant', error.message || words.failed, 'error');
+      return false;
+    }).then(function (done) {
+      busy = false; send.disabled = false;
+      return done;
+    });
+  }
+
+  chat.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var line = text.value.trim();
+    if (!line || busy) return;
+    turn(line, []).then(function (done) { if (done) text.value = ''; text.focus(); });
+  });
+  text.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); chat.requestSubmit(); }
+  });
+
+  // A file goes into the event form's own input, then the chat tells the assistant about it.
+  document.getElementById('assistant-attach').addEventListener('click', function () { picker.click(); });
+  picker.addEventListener('change', function () {
+    var file = picker.files[0];
+    picker.value = '';
+    if (!file || busy) return;
+    var ext = file.name.toLowerCase().split('.').pop();
+    var kind = ext === 'gpx' || ext === 'kml' ? 'route' : (ext === 'pdf' ? 'regulations' : '');
+    if (!kind) { say('assistant', words.wrongFile, 'note'); return; }
+    var target = document.getElementById(kind === 'route' ? 'id_file_route' : 'id_file_regulations');
+    var holder = new DataTransfer();
+    holder.items.add(file);
+    target.files = holder.files;
+    var item = { kind: kind, name: file.name, start: null };
+    var ready = Promise.resolve();
+    if (kind === 'route') {
+      var data = new FormData();
+      data.append('file', file);
+      ready = request(cfg.trackStart, data, false).then(function (p) { item.start = [p.lat, p.lng]; }, function () {});
+    }
+    var line = (kind === 'route' ? words.attachedRoute : words.attachedRegulations).replace('%(name)s', file.name);
+    ready.then(function () { turn(line, [item]); });
+  });
+}());
+</script>
+{% endif %}

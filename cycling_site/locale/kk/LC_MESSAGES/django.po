@@ -4506,3 +4506,44 @@ msgstr "Модель жауап бермеді. Хабарламаны бір м
 
 msgid "The model's answer could not be read. Send the message again."
 msgstr "Модельдің жауабын оқу мүмкін болмады. Хабарламаны қайта жіберіңіз."
+
+msgid "Assistant"
+msgstr "Көмекші"
+
+msgid "Event assistant"
+msgstr "Іс-шара көмекшісі"
+
+msgid "Your message"
+msgstr "Сіздің хабарламаңыз"
+
+msgid "Write to the assistant"
+msgstr "Көмекшіге жазыңыз"
+
+msgid "Attach a file"
+msgstr "Файл тіркеу"
+
+msgid "Send"
+msgstr "Жіберу"
+
+msgid "What would you like to change in this event?"
+msgstr "Іс-шарада нені өзгерту керек?"
+
+msgid "What event would you like to add?"
+msgstr "Қандай іс-шара қосқыңыз келеді?"
+
+msgid "The assistant is writing..."
+msgstr "Көмекші жазып жатыр…"
+
+msgid "The message did not go through. Send it again."
+msgstr "Хабарлама жіберілмеді. Оны қайта жіберіңіз."
+
+#, python-format
+msgid "Attached to the form as the route: %(name)s"
+msgstr "Формаға маршрут ретінде тіркелді: %(name)s"
+
+#, python-format
+msgid "Attached to the form as the regulations: %(name)s"
+msgstr "Формаға ереже ретінде тіркелді: %(name)s"
+
+msgid "Attach a GPX or KML track, or the regulations as a PDF."
+msgstr "GPX не KML трегін немесе ережені PDF түрінде тіркеңіз."

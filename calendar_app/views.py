@@ -25,6 +25,7 @@ from modeltranslation.utils import build_localized_fieldname
 from accounts import managing
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
+from assistant.conversations import link as link_conversation
 from locations.maps import map_links
 from locations.models import (
     Location,
@@ -1420,6 +1421,9 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                     comp.event_types.set(cd.get("event_types") or [])
                     if is_organizer and reg_form.is_valid():
                         _save_categories(comp, reg_form, True)
+                    # The event assistant's conversation that filled the form goes on from the
+                    # event's edit page (issue #353).
+                    link_conversation(request.POST.get("assistant_conversation"), comp, request.user)
             except LocationConflictError:
                 form.add_error("location", _("This location is not available."))
             else:

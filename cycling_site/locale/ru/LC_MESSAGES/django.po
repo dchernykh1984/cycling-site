@@ -4508,3 +4508,44 @@ msgstr "Модель не ответила. Отправьте сообщени�
 
 msgid "The model's answer could not be read. Send the message again."
 msgstr "Ответ модели не удалось прочитать. Отправьте сообщение ещё раз."
+
+msgid "Assistant"
+msgstr "Ассистент"
+
+msgid "Event assistant"
+msgstr "Ассистент по мероприятию"
+
+msgid "Your message"
+msgstr "Ваше сообщение"
+
+msgid "Write to the assistant"
+msgstr "Напишите ассистенту"
+
+msgid "Attach a file"
+msgstr "Приложить файл"
+
+msgid "Send"
+msgstr "Отправить"
+
+msgid "What would you like to change in this event?"
+msgstr "Что поменять в мероприятии?"
+
+msgid "What event would you like to add?"
+msgstr "Какое мероприятие вы хотите добавить?"
+
+msgid "The assistant is writing..."
+msgstr "Ассистент пишет…"
+
+msgid "The message did not go through. Send it again."
+msgstr "Сообщение не отправилось. Отправьте его ещё раз."
+
+#, python-format
+msgid "Attached to the form as the route: %(name)s"
+msgstr "Приложено к форме как маршрут: %(name)s"
+
+#, python-format
+msgid "Attached to the form as the regulations: %(name)s"
+msgstr "Приложено к форме как регламент: %(name)s"
+
+msgid "Attach a GPX or KML track, or the regulations as a PDF."
+msgstr "Приложите трек в GPX или KML либо регламент в PDF."

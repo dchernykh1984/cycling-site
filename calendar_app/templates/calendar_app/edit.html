@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n assistant %}
 
 {% block title %}{% trans "Edit event" %} — {{ competition.title }}{% endblock %}
 
@@ -273,6 +273,7 @@
     </form>
   </div>
 </div>
+{% assistant_chat %}
 {% endblock %}
 {% block extra_js %}{{ block.super }}
 {{ form.description_ru.value|default:""|json_script:"init-desc-ru" }}
