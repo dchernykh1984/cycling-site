@@ -1,6 +1,6 @@
 """The model's answer checked into form values: what passes, what is dropped, and the notes."""
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import translation
 
 from assistant import fields
@@ -85,6 +85,28 @@ class LinkTests(TestCase):
             checked.notes,
             ["A link that is in neither your messages nor the form was left out: https://strava.com/routes/339"],
         )
+
+    @override_settings(SITE_BASE_URL="https://ubt.test")
+    def test_a_page_of_the_site_is_one_page_in_every_language(self):
+        texts = ["The whole race: https://ubt.test/ru/calendar/250/."]
+        description = {
+            "ru": '<p><a href="https://ubt.test/ru/calendar/250/">Spicy Ride</a></p>',
+            "kk": '<p><a href="https://www.ubt.test/kk/calendar/250/">Spicy Ride</a></p>',
+            "en": '<p><a href="/en/calendar/250/">Spicy Ride</a></p>',
+        }
+        checked = _check({"description": description}, texts=texts)
+        self.assertEqual(checked.notes, [])
+        self.assertIn('href="https://www.ubt.test/kk/calendar/250/"', checked.form["description_kk"])
+        self.assertIn('href="/en/calendar/250/"', checked.form["description_en"])
+
+    @override_settings(SITE_BASE_URL="https://ubt.test")
+    def test_another_page_of_the_site_or_another_sites_page_in_another_language_is_not(self):
+        texts = ["https://ubt.test/ru/calendar/250/ and https://other.test/ru/calendar/250/"]
+        links = ("https://ubt.test/kk/calendar/25/", "https://other.test/kk/calendar/250/", "/kk/news/250/")
+        description = {"kk": "<p>" + " ".join(f'<a href="{link}">x</a>' for link in links) + "</p>"}
+        checked = _check({"description": description}, texts=texts)
+        self.assertNotIn("href", checked.form["description_kk"])
+        self.assertEqual(len(checked.notes), 3)
 
     def test_a_link_the_form_already_holds_is_kept(self):
         current = {
