@@ -306,6 +306,26 @@ MAP_HOME_AREAS = {
 # Used only when the map has neither a reader's home area nor matching markers to fit.
 MAP_DEFAULT_VIEW = {"center": [48.0, 68.0], "zoom": 5}
 
+# A guest's calendar, list and map open on the region of the site's city nearest to them, when one
+# lies within this many kilometres of the point their network provider reports (#332).
+GUEST_REGION_RADIUS_KM = 100
+# Readers who take a page as it is -- crawlers and link previews -- by a lower-case part of their user
+# agent: they never get a region of their own, so what they index or show is the whole calendar.
+BOT_USER_AGENT_MARKERS = (
+    "bot",
+    "crawl",
+    "spider",
+    "slurp",
+    "facebookexternalhit",
+    "whatsapp",
+    "viber",
+    "vkshare",
+    "bingpreview",
+    "inspectiontool",
+    "lighthouse",
+    "embedly",
+)
+
 USE_I18N = True
 
 USE_TZ = True

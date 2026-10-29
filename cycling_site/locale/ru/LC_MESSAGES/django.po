@@ -4565,3 +4565,6 @@ msgstr "Ответ получился бы слишком длинным: про
 #, python-format
 msgid "%(count)s more: refine the search"
 msgstr "Ещё %(count)s — уточните поиск"
+
+msgid "<strong>Your region.</strong> If you are not signed in, the calendar, the list and the map open on the events of your region. The network provider that delivers the site works out an approximate location from your IP address and passes it to us with the request; we use it only to choose your region as the page opens, and we keep neither the location nor the address. A cookie that lasts until you close the browser remembers that the region was offered, so that once you clear it you keep the whole calendar."
+msgstr "<strong>Ваш регион.</strong> Если вы не вошли на сайт, календарь, список и карта открываются на мероприятиях вашего региона. Сетевой провайдер, через который работает сайт, определяет примерное местоположение по вашему IP-адресу и передаёт его нам вместе с запросом; мы используем его только для того, чтобы выбрать ваш регион при открытии страницы, и не храним ни местоположение, ни адрес. Cookie, которая живёт до закрытия браузера, запоминает, что регион уже был предложен: сняв его, вы и дальше видите весь календарь."
