@@ -112,6 +112,19 @@ class TurnTests(TestCase):
         self.assertTrue(text.endswith("The administrator writes:\nSaturday ride"))
         self.assertIn("editing an event", prompt.turn("x", {}, [], datetime.date(2026, 10, 29), "ru", editing=True))
 
+    def test_a_turn_asks_for_what_the_calendars_filters_need_until_the_form_has_it(self):
+        def said(form, kind="event"):
+            return prompt.turn("x", form, [], datetime.date(2026, 10, 29), "ru", editing=False, kind=kind)
+
+        empty = said({"event_type_ids": [], "discipline_ids": []})
+        self.assertIn("Still missing from the form", empty)
+        self.assertIn("the event type, the direction and discipline", empty)
+        typed = said({"event_type_ids": [3], "discipline_ids": []})
+        self.assertNotIn("the event type", typed)
+        self.assertIn("the direction and discipline", typed)
+        self.assertNotIn("Still missing", said({"event_type_ids": [3], "discipline_ids": [7]}))
+        self.assertNotIn("Still missing", said({"title": {}}, kind="news"))
+
 
 class MessagesTests(TestCase):
     def test_the_conversation_comes_between_the_system_part_and_the_turn(self):

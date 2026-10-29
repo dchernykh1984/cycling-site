@@ -30,6 +30,9 @@ FILE_FIELDS = ("file_announcement", "file_route", "file_regulations", "file_resu
 # shown half of one would hand back half, and saving that would lose the rest.
 _MAX_TEXT = {"title": 255, "preview_text": 300, "intro": 500}
 _MAX_LINE = 1000
+# What the calendar's filters select by: an event without it never shows to a reader who filters, so
+# each turn names what the form still lacks until the model has asked and filled it in.
+_FILTERED_BY = (("event_type_ids", "the event type"), ("discipline_ids", "the direction and discipline"))
 
 CONTRACT = """\
 You are the assistant of a website that lists sporting events: races, rides, runs, hikes and more.
@@ -231,6 +234,12 @@ def turn(
     ]
     if attachments:
         parts.append(attachments_line(attachments))
+    lacking = [what for name, what in _FILTERED_BY if not form.get(name)] if kind != "news" else []
+    if lacking:
+        parts.append(
+            f"Still missing from the form, and the calendar's filters need it: {', '.join(lacking)}. "
+            "Ask the administrator for what they have not said; never guess it."
+        )
     parts.append("The administrator writes:\n" + text)
     return "\n".join(parts)
 
