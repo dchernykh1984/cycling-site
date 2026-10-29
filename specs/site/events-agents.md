@@ -64,6 +64,11 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
   dates from the text, Telegram addresses from code.
 - **FR-AGT-004**: Each source may carry a free-text hint for the model; the maintainer's guidance
   files steer what matters and in what order.
+- **FR-AGT-005**: The model is named in code (`DEFAULT_LLM_MODEL` in `agent/config.py`, shared by
+  the three agents), not in a secret; the pipeline's `llm-model` job asks the provider's list of
+  models on every pull request and on main, spending no tokens, and goes red once the name is gone.
+- **FR-AGT-006**: Every page and track is fetched over http(s) from public addresses only, at most
+  20 MB of it: a link on a page may point at a cloud-metadata endpoint or an internal service.
 
 ## Key Entities
 
