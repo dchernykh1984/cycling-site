@@ -46,6 +46,12 @@ change to one kind leaves the others as they were. One key, `ASSISTANT_LLM_API_K
    - The reply comes in the page's language.
    - The form fills in: titles, descriptions and link previews in ru / kk / en, the dates, the
      types, the disciplines, the links and the place.
+   - What the model asks follows the kind of event, each kind's skill in its own folder: a ride; a
+     race (format, schedule, entrants, fee and limit, then prizes, rules, weather and a contact);
+     a multi-day event, where it asks whether the whole or one stage is added, whether the stages
+     get pages of their own, and, for a stage, which stages it links to and where the whole is
+     announced. A link to one of the site's own pages may stand in each language's text with that
+     language's prefix.
    - While the form has no event type, direction or discipline, each turn tells the model so: the
      calendar's filters select by them, and the model asks for them rather than guessing them from
      "a ride".

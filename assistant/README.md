@@ -21,7 +21,9 @@ shows what announcements lack:
 - `general.md`: how to talk, the type, direction and discipline, how an announcement reads, the
   link preview, registration, the ending;
 - `ride/`: what to ask about a ride, and how its description reads;
-- `race/`: the same for a race.
+- `race/`: the same for a race;
+- `multiday/`: a multi-day event and its stages -- whether the whole is added or one stage,
+  whether the stages get pages of their own, and how the pages link to one another.
 
 `skills/news/*.md` are the news assistant's: how to translate, format and change a news item. Both
 kinds share the code and the key; only what the model is told differs.
