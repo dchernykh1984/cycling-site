@@ -4454,3 +4454,6 @@ msgstr "%(name)s просит разрешения управлять вашим
 
 msgid "Add your first and last name to your profile first: whoever opens your link must see who asks."
 msgstr "Сначала укажите в профиле имя и фамилию: тот, кто откроет вашу ссылку, должен видеть, кто просит."
+
+msgid "Managing registrations and photos"
+msgstr "Управление заявками и фото"

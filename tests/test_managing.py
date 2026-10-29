@@ -253,6 +253,13 @@ class ProfileSectionTests(TestCase):
         self.assertNotContains(response, 'id="my-managers"')
         self.assertNotContains(response, 'id="managed-members"')
 
+    def test_the_sections_are_one_card_between_the_sign_in_methods_and_the_role(self):
+        page = self.client.get(self.profile).content.decode()
+        card = page.index('id="managing"')
+        self.assertLess(page.index('id="signin-methods"'), card)
+        self.assertLess(card, page.index('id="my-managers"'))
+        self.assertLess(page.index('id="managed-members"'), page.index('id="role"'))
+
     def test_the_link_is_made_shared_made_new_and_deleted(self):
         response = self._post("account_managing_issue")
         self.assertRedirects(response, f"{self.profile}#managed-members", fetch_redirect_response=False)
@@ -386,10 +393,11 @@ class ProfileSectionTests(TestCase):
             with self.subTest(lang), translation.override(lang):
                 page = self.client.get(f"/{lang}/accounts/profile/")
                 for text in (
+                    gettext("Managing registrations and photos"),
                     gettext("Who may manage my registrations and photos"),
                     gettext("Whose registrations and photos I manage"),
                     translation.pgettext("a person from a list", "Remove"),
                 ):
                     self.assertContains(page, text)
-                heading = "Whose registrations and photos I manage"
-                self.assertNotEqual(gettext(heading), heading)
+                for heading in ("Managing registrations and photos", "Whose registrations and photos I manage"):
+                    self.assertNotEqual(gettext(heading), heading)

@@ -92,7 +92,8 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
 `specs/315-managing-registrations/spec.md`).
 
 1. **Given** a confirmed member, **Then** the profile shows "Who may manage my registrations and
-   photos" and "Whose registrations and photos I manage"; nothing names a role.
+   photos" and "Whose registrations and photos I manage", in one card ("Managing registrations and
+   photos") between the sign-in methods and the role; nothing names a role.
 2. **Given** "Create link", **Then** the member (the manager) gets a link with a key, valid for 30
    days, with the site's share button; "New link" makes the old one stop working and "Delete link"
    removes it; neither, nor its running out, rejects a request waiting. A link run out says when.
