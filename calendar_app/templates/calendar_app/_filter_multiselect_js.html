@@ -13,7 +13,8 @@ config:
   collapseWholeLevels: bool  // filters only: a fully ticked level yields its parent's ids instead
   labels:        {all: "...", selected: "..."}
   onChange():    called after every user-driven selection change
-returns {effective(), effectivePks(), effectiveDepth(), chosenPks(), refresh()}.
+returns {effective(), effectivePks(), effectiveDepth(), chosenPks(), refresh(), select(chains)}:
+select() replaces the whole selection with the given chains, as a page script sets it (issue #353).
 {% endcomment %}
 <script>
 // Every id-valued filter travels as ONE comma-joined value ("location=1,2,3") rather than one
@@ -228,20 +229,29 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     return pks;
   }
 
-  rebuildFrom(1);
-
-  // Restore selection from ancestor chains (e.g. ?location= / ?discipline= ids). For
-  // each chain we select every ancestor level by level so the cascade populates down.
-  (config.restoreChains ? config.restoreChains() : []).forEach(function (chain) {
-    chain.forEach(function (step) {
-      var parentPks = step.depth === 1 ? [] : selectedPks(step.depth - 1);
-      var groups = dedupByName(config.nodesUnder(step.depth, parentPks));
-      groups.forEach(function (g) {
-        if (g.pks.map(String).indexOf(String(step.pk)) >= 0) selected[step.depth].add(g.pks.join(','));
+  // Select along ancestor chains (e.g. ?location= / ?discipline= ids). For each chain we
+  // select every ancestor level by level so the cascade populates down.
+  function applyChains(chains) {
+    chains.forEach(function (chain) {
+      chain.forEach(function (step) {
+        var parentPks = step.depth === 1 ? [] : selectedPks(step.depth - 1);
+        var groups = dedupByName(config.nodesUnder(step.depth, parentPks));
+        groups.forEach(function (g) {
+          if (g.pks.map(String).indexOf(String(step.pk)) >= 0) selected[step.depth].add(g.pks.join(','));
+        });
+        rebuildFrom(step.depth);
       });
-      rebuildFrom(step.depth);
     });
-  });
+  }
+
+  rebuildFrom(1);
+  applyChains(config.restoreChains ? config.restoreChains() : []);
+
+  function select(chains) {
+    for (var d = 1; d <= N; d++) selected[d].clear();
+    rebuildFrom(1);
+    applyChains(chains);
+  }
 
   return {
     effective: effective,
@@ -249,7 +259,8 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     effectiveDepth: function () { return effective().depth; },
     chosenPks: chosenPks,
     levelPks: function (d) { return selectedPks(d); },
-    refresh: function () { rebuildFrom(1); }
+    refresh: function () { rebuildFrom(1); },
+    select: select
   };
 };
 </script>

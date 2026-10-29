@@ -62,13 +62,14 @@ document.addEventListener('DOMContentLoaded', function () {
       .map(function (d) { return { pk: d.pk, name: d.name }; });
   }
 
-  // Restore each chosen discipline by selecting its parent direction then itself.
-  function restoreChains() {
-    return selectedIds.map(function (discId) {
+  // Each chosen discipline is selected through its parent direction, then itself.
+  function chainsOf(ids) {
+    return ids.map(function (discId) {
       var d = discById(discId);
       return d ? [{ depth: 1, pk: d.category_id }, { depth: 2, pk: discId }] : null;
     }).filter(Boolean);
   }
+  function restoreChains() { return chainsOf(selectedIds); }
 
   var inst = window.MultiSelectCascade({
     levels: [
@@ -94,5 +95,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
   syncHidden();
+
+  // The event assistant (issue #353) sets the disciplines from outside the picker.
+  window.eventDisciplines = {
+    set: function (ids) { inst.select(chainsOf(ids || [])); syncHidden(); }
+  };
 });
 </script>

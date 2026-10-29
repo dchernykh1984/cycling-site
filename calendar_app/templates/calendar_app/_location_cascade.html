@@ -275,15 +275,12 @@
     }
   });
 
-  // Select an existing venue by pk: populate the whole cascade, set it, and close the
-  // propose box. Shared by the initial value and by clicking a marker on the map (#118).
-  function selectExistingVenue(pk) {
-    var loc = allLocs.find(function (l) { return String(l.pk) === String(pk); });
-    if (!loc || loc.depth !== 4) return;
-    var stepLen = loc.path.length / loc.depth;
-    var cp = loc.path.slice(0, stepLen);
-    var rp = loc.path.slice(0, stepLen * 2);
-    var cityPath = loc.path.slice(0, stepLen * 3);
+  // Populate the cascade down to a city: its country, region and the city chosen, and its venues
+  // offered. Returns the city's hidden catch-all venue, if it has one.
+  function showCity(cityPath) {
+    var stepLen = cityPath.length / 3;
+    var cp = cityPath.slice(0, stepLen);
+    var rp = cityPath.slice(0, stepLen * 2);
 
     buildOpts(cntEl, allLocs.filter(function (l) { return l.depth === 1; }), '--');
     var cntLoc = allLocs.find(function (l) { return l.path === cp && l.depth === 1; });
@@ -307,12 +304,44 @@
       venEl.appendChild(hvOpt);
     }
     venWrap.style.display = '';
+    return hv;
+  }
+
+  // Select an existing venue by pk: populate the whole cascade, set it, and close the
+  // propose box. Shared by the initial value and by clicking a marker on the map (#118).
+  function selectExistingVenue(pk) {
+    var loc = allLocs.find(function (l) { return String(l.pk) === String(pk); });
+    if (!loc || loc.depth !== 4) return;
+    var hv = showCity(loc.path.slice(0, (loc.path.length / loc.depth) * 3));
     venEl.value = loc.is_hidden ? (hv ? hv.pk : '') : loc.pk;
     locInp.value = venEl.value;
     closeProposeBox();
     clearNewVenueNames();
     showAddVenue(true); syncNewVenueCity();
   }
+
+  // Propose a new venue in a city, its names and, when known, its point filled in: what a person
+  // does with the propose button and the map, done for the event assistant (issue #353).
+  function proposeVenue(cityPk, names, lat, lng) {
+    var city = allLocs.find(function (l) { return String(l.pk) === String(cityPk) && l.depth === 3; });
+    if (!city) return false;
+    showCity(city.path);
+    venEl.value = ''; locInp.value = '';
+    showAddVenue(true); syncNewVenueCity();
+    proposing = true;
+    if (newVenueBox) newVenueBox.style.display = '';
+    if (addVenueToggle) addVenueToggle.style.display = 'none';
+    if (nvNameInps.length === 3) {
+      nvNameInps[0].value = names.ru || ''; nvNameInps[1].value = names.kk || ''; nvNameInps[2].value = names.en || '';
+      requireRussianName();
+    }
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      setLatLng(lat, lng);
+      if (venueMap) { placeMarker([lat, lng]); venueMap.setView([lat, lng], 13); }
+    }
+    return true;
+  }
+  window.eventLocation = { select: selectExistingVenue, propose: proposeVenue };
 
   // Build the map first so its markers are clickable even before any selection.
   initVenueMap();
