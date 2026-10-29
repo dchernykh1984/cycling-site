@@ -1,5 +1,6 @@
 import re
 
+from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
@@ -11,7 +12,32 @@ from news.models import NewsArticle
 _LANGUAGE_PREFIX = re.compile(r"^/[a-z]{2}(?:-[a-z]+)?/")
 
 
-class WagtailPagesSitemap(Sitemap):
+class LanguageSitemap(Sitemap):
+    """Pages in every language: each listed once per language, with its other languages and an
+    x-default as alternates.
+
+    Django writes x-default without the default language's prefix, as for a site that leaves that
+    language unprefixed. Every language has its prefix here, and an unprefixed address only redirects
+    by the reader's language -- so the sitemap named some 2,400 redirects to Google (#348). x-default
+    is the default language's own address instead, the one each page names in its own hreflang links.
+    """
+
+    i18n = True
+    alternates = True
+    x_default = True
+
+    def get_urls(self, page=1, site=None, protocol=None):
+        urls = super().get_urls(page=page, site=site, protocol=protocol)
+        for url in urls:
+            alternates = url.get("alternates", [])
+            own = [alt["location"] for alt in alternates if alt["lang_code"] == settings.LANGUAGE_CODE]
+            for alt in alternates:
+                if alt["lang_code"] == "x-default" and own:
+                    alt["location"] = own[0]
+        return urls
+
+
+class WagtailPagesSitemap(LanguageSitemap):
     """The live, public Wagtail pages -- home, map, news, knowledge base -- in every language.
 
     Wagtail's own generator lists a page at the one address its locale gives it, so the home page and
@@ -22,9 +48,6 @@ class WagtailPagesSitemap(Sitemap):
     """
 
     changefreq = "weekly"
-    i18n = True
-    alternates = True
-    x_default = True
 
     def items(self):
         from wagtail.models import Locale, Page
@@ -48,7 +71,7 @@ class WagtailPagesSitemap(Sitemap):
         return page.last_published_at
 
 
-class SectionPagesSitemap(Sitemap):
+class SectionPagesSitemap(LanguageSitemap):
     """The calendar's own views, which are views rather than Wagtail pages and were in no sitemap.
 
     The month grid, the list and the start-point map are where most visitors land; the city and
@@ -57,9 +80,6 @@ class SectionPagesSitemap(Sitemap):
 
     changefreq = "daily"
     priority = 0.8
-    i18n = True
-    alternates = True
-    x_default = True
 
     def items(self):
         return ["calendar", "calendar_list", "calendar_map", "gallery_index", "virtual_ride"]
@@ -68,14 +88,11 @@ class SectionPagesSitemap(Sitemap):
         return reverse(name)
 
 
-class KnowledgeArticleSitemap(Sitemap):
+class KnowledgeArticleSitemap(LanguageSitemap):
     """Knowledge articles are a plain model (not Wagtail pages), so they need their own
     sitemap entry; only visible, non-deleted articles are listed."""
 
     changefreq = "monthly"
-    i18n = True
-    alternates = True
-    x_default = True
 
     def items(self):
         return KnowledgeArticle.objects.filter(is_deleted=False, is_hidden=False)
@@ -87,13 +104,10 @@ class KnowledgeArticleSitemap(Sitemap):
         return obj.updated_at
 
 
-class NewsArticleSitemap(Sitemap):
+class NewsArticleSitemap(LanguageSitemap):
     """News articles, on the same footing as knowledge articles."""
 
     changefreq = "monthly"
-    i18n = True
-    alternates = True
-    x_default = True
 
     def items(self):
         return NewsArticle.objects.filter(is_deleted=False, is_hidden=False)
@@ -105,7 +119,7 @@ class NewsArticleSitemap(Sitemap):
         return obj.published_at
 
 
-class CompetitionSitemap(Sitemap):
+class CompetitionSitemap(LanguageSitemap):
     """Every publicly visible competition -- the bulk of the site, and until now the part of it
     search engines were never told about.
 
@@ -119,10 +133,6 @@ class CompetitionSitemap(Sitemap):
 
     limit = 500
     changefreq = "weekly"
-    # One entry per language, each pointing at the other two.
-    i18n = True
-    alternates = True
-    x_default = True
 
     def items(self):
         return Competition.objects.filter(
@@ -144,7 +154,7 @@ class CompetitionSitemap(Sitemap):
         return 0.8 if obj.date_start >= datetime.date.today() else 0.4
 
 
-class CalendarFilterSitemap(Sitemap):
+class CalendarFilterSitemap(LanguageSitemap):
     """The filtered lists that are pages in their own right: a city, or a discipline.
 
     `/calendar/list/?location=2` has always been server-rendered -- it returns the matching events
@@ -155,9 +165,6 @@ class CalendarFilterSitemap(Sitemap):
 
     changefreq = "weekly"
     priority = 0.6
-    i18n = True
-    alternates = True
-    x_default = True
 
     def items(self):
         from calendar_app.listing_seo import landing_filters
@@ -174,14 +181,11 @@ class CalendarFilterSitemap(Sitemap):
         return f"{reverse('calendar_list')}?{parameter}={pk}"
 
 
-class GalleryAlbumSitemap(Sitemap):
+class GalleryAlbumSitemap(LanguageSitemap):
     """Every public photo album: the page a search for last year's race photos should land on."""
 
     changefreq = "monthly"
     priority = 0.5
-    i18n = True
-    alternates = True
-    x_default = True
 
     def items(self):
         from gallery.models import Album

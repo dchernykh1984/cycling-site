@@ -9,6 +9,7 @@ at the other two; the bare path still works and redirects to whichever one the r
 import datetime
 import re
 
+from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import translation
@@ -135,6 +136,19 @@ class SitemapLanguageTests(TestCase):
         body = self.client.get("/sitemap-competitions.xml").content.decode()
         self.assertIn('hreflang="kk"', body)
         self.assertIn('hreflang="x-default"', body)
+
+    def test_x_default_is_the_default_languages_own_address_never_a_redirect(self):
+        """Django writes x-default unprefixed, and here an unprefixed address only redirects (#348)."""
+        from cycling_site.urls import sitemaps
+
+        seen = 0
+        for section in sitemaps:
+            body = self.client.get(reverse("sitemap_section", args=[section])).content.decode()
+            for href in re.findall(r'hreflang="x-default" href="([^"]+)"', body):
+                seen += 1
+                with self.subTest(section=section, href=href):
+                    self.assertRegex(href, rf"^https?://[^/]+/{settings.LANGUAGE_CODE}/")
+        self.assertGreater(seen, 0)
 
 
 # The light skin's own navbar markup, whatever DEFAULT_SKIN is at the time.
