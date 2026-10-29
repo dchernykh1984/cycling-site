@@ -77,7 +77,8 @@ One page for every device, no separate version for phones or tablets.
      as the wrong link.
    - Example: the weekend picked on the list is the weekend on the map; a link to the weekend's
      races opens the weekend for a reader who last looked at the month.
-   - Check: `test_the_period_and_the_filters_travel_to_the_other_tabs`.
+   - Check: `test_the_period_and_the_filters_travel_to_the_other_tabs`,
+     `test_a_link_opens_its_own_period_whatever_was_picked_before`.
 
 7. **Narrow by default, delete nothing.** Show what is near first and fold the rest; never remove
    it. What counts as near comes from the reader's preferences or a setting, never from the code.
