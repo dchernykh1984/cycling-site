@@ -92,6 +92,9 @@ dashboard:
   `EMAIL_TIMEOUT` - SMTP operation timeout in seconds (default 5)
 - `CALENDAR_FIRST_WEEKDAY`, `CALENDAR_WEEKEND` - the calendar's week: the day it starts on and the
   weekend's days, 0 for Sunday (defaults `1` and `6,0`: Monday, and Saturday with Sunday)
+- `MAP_LINK_SERVICES` - the map services an event's start point is offered in, in order: keys of
+  `MAP_SERVICES` in `cycling_site/settings/base.py`, comma-separated (`prod.py` defaults to
+  `2gis,yandex,google,apple,osm`; a key the catalogue lacks is reported by `manage.py check`)
 - `GOOGLE_`/`GITHUB_`/`STRAVA_` `CLIENT_ID` and `CLIENT_SECRET` - social login; the Strava pair also
   sends members' virtual rides to Strava once they connect it on their profile
 - `ASSISTANT_LLM_API_KEY` - the event assistant's key at its model provider; without it the chat is
