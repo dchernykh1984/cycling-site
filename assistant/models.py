@@ -44,7 +44,7 @@ class Message(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     text = models.TextField()
-    # A reply's changes to the form, by the form's field names.
+    # A reply's changes to the form, as the model wrote them once checked (assistant/fields.py).
     fields = models.JSONField(default=dict, blank=True)
     # An admin's message's files: [{"kind": "route" | "regulations", "name": ..., "start": [lat, lng] | null}].
     attachments = models.JSONField(default=list, blank=True)

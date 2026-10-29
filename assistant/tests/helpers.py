@@ -15,10 +15,13 @@ def user(name: str = "admin", role: str = User.Role.ADMIN) -> User:
     return person
 
 
-def city(name_ru: str = "Almaty", name_en: str = "Almaty", lat: float | None = 43.24, lng: float | None = 76.89):
-    """A country, its region and a city in it, with the city's hidden catch-all venue."""
-    country = Location.add_root(name_ru="Kazakhstan", name_kk="Qazaqstan", name_en="Kazakhstan")
-    region = country.add_child(name_ru="Almaty Region", name_en="Almaty Region")
+def city(name_ru: str = "Testville", name_en: str = "Testville", lat: float | None = 43.24, lng: float | None = 76.89):
+    """A country, its region and a city in it, with the city's hidden catch-all venue.
+
+    The names are made up: the test database already carries the real geography the migrations seed.
+    """
+    country = Location.add_root(name_ru="Testland", name_kk="Testland", name_en="Testland")
+    region = country.add_child(name_ru="Test Region", name_en="Test Region")
     town = region.add_child(name_ru=name_ru, name_en=name_en, lat=lat, lng=lng)
     town.add_child(name_ru="Other location", name_en="Other location", is_hidden=True)
     return town
