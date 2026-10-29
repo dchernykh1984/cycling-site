@@ -43,6 +43,7 @@ PINNED = {
     "About": (KZ_I,),
     "Switch theme": (Q,),
     "No results found": (NG,),
+    "Announcements, results and stories from the Universal Bicycle Team calendar.": (UE, KZ_I, AE, Q, GH),
 }
 
 

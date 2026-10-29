@@ -3273,7 +3273,7 @@ msgstr "Universal Bicycle Team жаңалықтары"
 msgid ""
 "Announcements, results and stories from the Universal Bicycle Team calendar."
 msgstr ""
-"Universal Bicycle Team кунтизбесиндеги анонстар, натижелер жане окигалар."
+"Universal Bicycle Team күнтізбесіндегі анонстар, нәтижелер және оқиғалар."
 
 #: news/forms.py:56 news/forms.py:62 news/forms.py:68
 msgid "Short description"
