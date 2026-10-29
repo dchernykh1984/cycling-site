@@ -140,8 +140,9 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
   non-image refused, camera metadata stripped, transparency kept as PNG, photos stored as JPEG.
 - The event page lists registration, documents, protocols and materials before the description;
   uploaded documents follow the same order and a URL takes precedence over a file.
-- Map links on the event page (2GIS, Yandex, Google, Apple, OpenStreetMap) appear only for a venue
-  with its own point; they open in a new tab.
+- Map links on the event page -- the services the deployment offers, in its order (see
+  [locations](locations.md), Configuration) -- appear only for a venue with its own point; they open
+  in a new tab.
 - On a phone an event's title shares its row with the page's buttons (share, add to calendar,
   favourite); a word too long for the room they leave breaks, rather than pushing the page sideways.
 
@@ -178,8 +179,6 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 
 Where the code still assumes a place, a brand or a sport (constitution, principle VI):
 
-- The map-link services offered on an event page are a fixed list in code (`locations/maps.py`):
-  2GIS, Yandex, Google, Apple, OpenStreetMap.
 - **Accepted** (maintainer, 2026-10-21: the three languages are deliberate and a fourth is not planned -- it would mean translating every event and article, beside which naming the three in code costs nothing). Russian is the base language of an event: its Russian title is required, the Kazakh and English
   ones optional (`calendar_app/forms.py`).
 - **Accepted** (maintainer, 2026-10-21: the brand in code does not matter). An event page's meta description ends with the brand written in code ("Details, start point and
