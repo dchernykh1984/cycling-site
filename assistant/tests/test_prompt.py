@@ -35,13 +35,13 @@ class DescribeFormTests(TestCase):
     def test_a_chosen_venue_is_named_by_its_whole_path(self):
         spot = venue()
         form = prompt.describe_form({"location": str(spot.pk)})
-        self.assertEqual(form["place"], "Kazakhstan / Almaty Region / Almaty / Giant shop, Abay 47")
+        self.assertEqual(form["place"], "Testland / Test Region / Testville / Giant shop, Abay 47")
 
     def test_a_city_without_its_spot_says_so(self):
         town = city()
         catch_all = town.get_children().get(is_hidden=True)
         form = prompt.describe_form({"location": str(catch_all.pk)})
-        self.assertEqual(form["place"], "Kazakhstan / Almaty Region / Almaty (the exact spot not chosen)")
+        self.assertEqual(form["place"], "Testland / Test Region / Testville (the exact spot not chosen)")
 
     def test_a_new_venue_carries_its_names_city_and_point(self):
         town = city()
@@ -54,7 +54,7 @@ class DescribeFormTests(TestCase):
         }
         place = prompt.describe_form(raw)["place"]
         self.assertEqual(place["new_venue"], {"ru": "Vkhod v park", "kk": "", "en": "Park entrance"})
-        self.assertEqual(place["city"], "Kazakhstan / Almaty Region / Almaty")
+        self.assertEqual(place["city"], "Testland / Test Region / Testville")
         self.assertIsNone(place["point"])
 
     def test_what_the_page_sent_is_bounded_and_typed(self):
