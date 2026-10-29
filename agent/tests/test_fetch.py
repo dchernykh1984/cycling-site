@@ -96,7 +96,7 @@ def test_get_decodes_via_meta_charset_when_header_missing(monkeypatch):
     class _Resp:
         headers = _Headers()
 
-        def read(self):
+        def read(self, amount=-1):
             return body
 
         def __enter__(self):
@@ -105,8 +105,33 @@ def test_get_decodes_via_meta_charset_when_header_missing(monkeypatch):
         def __exit__(self, *exc):
             return False
 
-    monkeypatch.setattr(fetch.urllib.request, "urlopen", lambda *a, **k: _Resp())
+    monkeypatch.setattr(fetch._OPENER, "open", lambda *a, **k: _Resp())
     assert word in fetch._get("https://bike-events.ru/")  # windows-1251 bytes decoded correctly
+
+
+def test_a_page_on_a_non_public_address_is_never_connected_to(monkeypatch):
+    """A page link is as untrusted as a track link: the same guard refuses an internal address."""
+    _no_sleep(monkeypatch)
+    monkeypatch.setattr(fetch.socket, "getaddrinfo", lambda *a, **k: _addrinfo("169.254.169.254", 80))
+
+    def no_socket(*a, **k):
+        raise AssertionError("must not open a socket to a blocked address")
+
+    monkeypatch.setattr(fetch.socket, "socket", no_socket)
+    with pytest.raises(URLError, match="non-public"):
+        fetch.fetch_url("http://metadata.evil.test/latest/")
+
+
+def test_a_url_that_is_not_http_is_refused_before_anything_is_opened(monkeypatch):
+    """The opener keeps urllib's file:// and ftp:// handlers, so the scheme is checked first."""
+
+    def no_open(*a, **k):
+        raise AssertionError("must not open a non-http(s) URL")
+
+    monkeypatch.setattr(fetch._OPENER, "open", no_open)
+    for url in ("file:///etc/passwd", "ftp://example.test/x.gpx"):
+        with pytest.raises(ValueError, match="non-http"):
+            fetch.fetch_url(url)
 
 
 def _no_sleep(monkeypatch):
@@ -217,18 +242,16 @@ def test_guarded_create_connection_refuses_a_rebound_private_ip(monkeypatch):
         fetch._guarded_create_connection(("rebind.evil.test", 80))
 
 
-def test_track_opener_ignores_a_configured_proxy(monkeypatch):
-    """A configured HTTP(S)_PROXY must not route the track fetch through an unchecked proxy.
+def test_the_opener_ignores_a_configured_proxy(monkeypatch):
+    """A configured HTTP(S)_PROXY must not route a fetch through an unchecked proxy.
 
     Built with the same env set, a plain build_opener would register a ProxyHandler carrying the
-    env's proxies; the track opener must have no active proxy handler so the IP guard stays the only
+    env's proxies; the opener must have no active proxy handler so the IP guard stays the only
     arbiter of where the socket connects.
     """
     monkeypatch.setenv("HTTP_PROXY", "http://192.168.0.1:3128")
     monkeypatch.setenv("HTTPS_PROXY", "http://192.168.0.1:3128")
-    active = [
-        h for h in fetch._build_track_opener().handlers if isinstance(h, urllib.request.ProxyHandler) and h.proxies
-    ]
+    active = [h for h in fetch._build_opener().handlers if isinstance(h, urllib.request.ProxyHandler) and h.proxies]
     assert not active  # no proxy applied even though the environment sets one
 
 

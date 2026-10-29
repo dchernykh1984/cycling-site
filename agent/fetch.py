@@ -57,9 +57,17 @@ def _sniff_charset(raw: bytes) -> str | None:
 
 
 def _get(url: str, timeout: int = 20) -> str:
+    """The text at ``url``: http(s) only, through the guarded opener, at most ``_MAX_BYTES`` of it.
+
+    Pages and tracks alike: a link on a hostile page can point anywhere, a cloud-metadata endpoint
+    or a service beside the fetcher among them, and the guard refuses every non-public address.
+    """
+    # Checked here because the opener still carries urllib's default file:// and ftp:// handlers.
+    if urlsplit(url).scheme not in ("http", "https"):
+        raise ValueError(f"refusing to fetch a non-http(s) URL: {url}")
     request = urllib.request.Request(url, headers={"User-Agent": _UA})
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        raw = response.read()
+    with _OPENER.open(request, timeout=timeout) as response:
+        raw = response.read(_MAX_BYTES)
         charset = response.headers.get_content_charset()
     try:
         return raw.decode(charset or _sniff_charset(raw) or "utf-8", errors="replace")
@@ -175,8 +183,8 @@ def _with_links(text: str, anchors, base_url: str, limit: int = _MAX_LINKS, max_
     return body
 
 
-_TRACK_MAX_BYTES = 20 * 1024 * 1024  # a GPS track is a few MB; cap the read so a hostile URL can't
-# stream unbounded data into memory.
+_MAX_BYTES = 20 * 1024 * 1024  # a page or a GPS track is a few MB; cap the read so a hostile URL
+# can't stream unbounded data into memory.
 
 
 class _NoUnsafeRedirect(urllib.request.HTTPRedirectHandler):
@@ -253,14 +261,14 @@ class _GuardedHTTPSHandler(urllib.request.HTTPSHandler):
         return self.do_open(_GuardedHTTPSConnection, req, context=self._context)
 
 
-def _build_track_opener() -> urllib.request.OpenerDirector:
+def _build_opener() -> urllib.request.OpenerDirector:
     """An opener that connects directly through the guarded handlers, never through a proxy.
 
     The empty ``ProxyHandler({})`` pins it to direct connections: it makes build_opener drop its
     default proxy handler, so with HTTP(S)_PROXY set the socket would otherwise dial the proxy --
     whose IP is the only one ``_guarded_create_connection`` then sees, letting the real (possibly
-    internal) target go unchecked. The agent fetches public track files directly, so this costs
-    nothing. (An empty ProxyHandler registers no ``*_open`` method, so no proxy handler remains.)
+    internal) target go unchecked. The agent fetches public pages and tracks directly, so this
+    costs nothing. (An empty ProxyHandler registers no ``*_open`` method, so no proxy handler remains.)
     """
     return urllib.request.build_opener(
         _NoUnsafeRedirect(),
@@ -270,24 +278,16 @@ def _build_track_opener() -> urllib.request.OpenerDirector:
     )
 
 
-_TRACK_OPENER = _build_track_opener()
+_OPENER = _build_opener()
 
 
 def fetch_track(url: str, timeout: int = 20) -> str:
     """Raw text of a linked GPS-track file (GPX/KML) -- no HTML stripping, for coordinate parsing.
 
-    Reads at most ``_TRACK_MAX_BYTES``: the start point is near the top of the file, and the cap
-    stops a URL that resolves to something huge from exhausting memory. Redirects are followed only
-    to hosts that pass the same public-IP check as the original URL.
+    The start point is near the top of the file, so the byte cap of ``_get`` costs nothing; redirects
+    are followed only to hosts that pass the same public-IP check as the original URL.
     """
-    request = urllib.request.Request(url, headers={"User-Agent": _UA})
-    with _TRACK_OPENER.open(request, timeout=timeout) as response:
-        raw = response.read(_TRACK_MAX_BYTES)
-        charset = response.headers.get_content_charset()
-    try:
-        return raw.decode(charset or _sniff_charset(raw) or "utf-8", errors="replace")
-    except LookupError:
-        return raw.decode("utf-8", errors="replace")
+    return _get(url, timeout)
 
 
 def fetch_url(url: str, timeout: int = 20) -> str:
