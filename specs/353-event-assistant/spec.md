@@ -2,14 +2,14 @@
 
 **Feature Branch**: `353-assistant`
 **Created**: 2026-10-29
-**Status**: Draft for the maintainer's review; no plan and no code yet
+**Status**: Agreed with the maintainer on 2026-10-29; built in pull request #405
 **Issue**: [#353](https://github.com/dchernykh1984/cycling-site/issues/353); it also settles
 [#361](https://github.com/dchernykh1984/cycling-site/issues/361) (machine translation of the locales)
 for events
 **Input**: An admin tells a chat what event they want to add; the chat asks what a rider needs to
 know, fills the event's form on the page in three languages, and leaves the publishing to the admin.
 
-## Decisions so far
+## Decisions
 
 Taken in conversation with the maintainer on 2026-10-29, in the order they came.
 
@@ -22,7 +22,7 @@ Taken in conversation with the maintainer on 2026-10-29, in the order they came.
 3. **It fills the form on the page.** As the admin writes, the site asks the model and fills the
    event's fields in front of them -- titles, descriptions and the link preview in the three
    languages, types, disciplines, the place, dates and links. Nothing is saved until the admin
-   presses the form's own button; the assistant writes nothing to the site itself.
+   presses the form's own button; the assistant writes nothing to the event itself.
 4. **The cheapest model of DeepSeek, called by the site's server only.** The key lives in the
    site's environment; the browser talks to the site, never to the model, and the key never appears
    in a page, a request from the browser or a response. The model is named in code and the pipeline
@@ -37,8 +37,8 @@ Taken in conversation with the maintainer on 2026-10-29, in the order they came.
    This is what the maintainer cares most about: most rides are added without what a rider needs
    to know, which is then asked again in chat floods. The assistant asks for all of it, and asks
    differently for a race and for a ride.
-8. **No limits for admins.** There are few of them, and a spend is someone's. Each call's tokens
-   are counted per admin, to decide about organizers on numbers.
+8. **No limits for admins.** There are few of them, and a spend is someone's. (Counting each
+   admin's tokens on the site was dropped later the same day: decision 17.)
 9. **Nothing invented** (the site's standing rule). Links come only from the admin's messages; a
    place comes from the tree, a point on the map, a track's first point or the geocoder, never from
    the model; what nobody said stays empty and becomes a recommendation at the end.
@@ -64,23 +64,31 @@ Taken in conversation with the maintainer on 2026-10-29, in the order they came.
     own in the project, and so do its skills -- the instructions on adding an event, which grow as
     experience shows what announcements lack and what can be had without asking (2026-10-29).
 
-## Open questions
+The maintainer's answers to the open questions, later on 2026-10-29:
 
-1. **What the assistant must ask** (NEEDS CLARIFICATION, in part). For a ride, decision 11 holds
-   what an announcement must say; still open, from the draft offered on 2026-10-29: distance,
-   climbing and surface; the pace and whether the group waits; who leads and where a cancellation
-   is announced. For a race the draft stands, the maintainer's list wanted: the date and start
-   times by distance; start and finish on the map; distances and categories; registration (link,
-   deadline, fee); the regulations; the course.
-2. **Where the conversation is kept.** Proposed: in the browser tab only, nothing of it on the
-   server but the token counts of item 8.
-3. **Which key.** Proposed: a DeepSeek key of the site's own, apart from the agents', so that its
-   spending can be told apart and the key revoked alone.
-4. **Editing an existing event** through the chat, on its edit page: in the first version, or later?
-5. **Registration on the site and race categories**: in the first version the assistant would put
-   them into the description and the admin would switch registration on by hand. Agreed?
-6. **The privacy policy** needs a line saying the chat's text goes to the model's provider; the
-   wording is the maintainer's.
+13. **What it asks about a ride**, besides decision 11: the pace, and how the group waits for those
+    behind, when it does. Not the distance, the climbing or anything else a track shows: it asks for
+    the track's link, or for a GPX file to attach, or reminds the admin to attach one afterwards.
+    Not who leads, nor where a cancellation is announced -- not for now.
+14. **What it asks about a race**: the start's point on the map; the track, which shows the start
+    and the finish; the categories -- or simply the regulations as a PDF. Read here as: the PDF is
+    attached to the event for its readers, not read by the assistant.
+15. **Editing an event through the chat, from the first version.** The conversation is kept on the
+    server with the event, and the event's edit page continues it with the whole context: asking to
+    add, remove or change anything.
+16. **Registration is switched on by hand.** The assistant reminds the admin that the site has a
+    registration of its own, or that the organizer may give a link to their own service instead --
+    and then cannot have what the site's timing and its photo recognition offer.
+17. **The key and the spending.** The maintainer issued a DeepSeek key for the site,
+    `ASSISTANT_LLM_API_KEY` in Render's environment, and reads its spending on DeepSeek's dashboard;
+    the site counts nothing for now.
+18. **Only the event.** Asked anything else -- to write code, say -- the assistant asks to keep to
+    the event, so that the key is not spent on other work.
+19. **The privacy policy** says that part of the conversation goes to a language model while an
+    event is added or edited, without naming the provider: changing the model needs no new policy.
+20. **No mark on a published announcement.** Drafted by a model or not, whoever publishes it
+    answers for it.
+21. **Calls to the model while building it** are allowed, sparingly.
 
 ## Requirements already fixed elsewhere
 

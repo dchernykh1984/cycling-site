@@ -60,9 +60,9 @@ Proposed for the plan, from the above:
 - **DeepSeek's privacy policy** (updated 2026-02-10) covers its own apps and websites. It stores
   personal data in the People's Republic of China and lists training as a purpose, with an opt-out.
   It says the processing of end users' data collected by an API customer is outside it.
-- Proposed: the site's privacy policy names the provider and what goes to it (open question 6);
-  the chat says plainly that it is an AI assistant (8.1). Whether a published announcement needs a
-  mark of its own is a new question for the maintainer.
+- Proposed: the site's privacy policy says what goes to a language model (decision 19 leaves the provider unnamed);
+  the chat says plainly that it is an AI assistant (8.1). A published announcement carries no
+  mark (decision 20).
 
 ## R3. The server
 
@@ -86,8 +86,8 @@ Proposed for the plan, from the above:
   for `INDEXNOW_KEY`.
 - Proposed: without the key the chat is not offered, so development and CI never reach the model.
 - Whether DeepSeek's dashboard splits spending by key was not found in its documentation. The site
-  counts tokens per admin itself (decision 8), so a key of the site's own (open question 3) is for
-  revoking it alone. One account is one balance: the assistant and the agents pay from the same
+  counts tokens per admin itself (decision 8), so a key of the site's own is for revoking it alone;
+  the maintainer issued one (decision 17), and the site counts nothing for now. One account is one balance: the assistant and the agents pay from the same
   money unless the site gets an account of its own.
 
 ## R5. The form, the page and the place
@@ -125,7 +125,9 @@ Proposed for the plan, from the above:
   `agent/config.py`. The assistant either uses that constant or the check learns to read the
   assistant's.
 
-## What only a call or the maintainer can tell
+## What only a call or the maintainer could tell
+
+Both answered on 2026-10-29: calls are allowed, sparingly (decision 21); no mark (decision 20).
 
 - How fast Flash writes (tokens a second) and how good its Kazakh is: about ten real calls, well
   under a cent in all, once the maintainer allows them.
