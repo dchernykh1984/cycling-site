@@ -48,6 +48,14 @@ def test_two_places_a_street_apart_are_one_cluster_that_opens_into_two_pins(page
     for i in range(2):
         _assert_tappable(pins.nth(i))
     expect(page.get_by_role("button", name="Pier", exact=True)).to_have_count(1)  # a pin is named by its place
+    # The pin answers in its square, not along its shadow, which reaches 7 px further right.
+    square = page.locator(".map-pin[title='Quay']").bounding_box()
+    assert square is not None
+    hit = page.evaluate(
+        "([x, y]) => document.elementFromPoint(x, y).closest('.map-pin')?.title || null",
+        [square["x"] + square["width"] + 3, square["y"] + square["height"] - 4],
+    )
+    assert hit != "Quay", hit
 
     page.locator(".map-pin[title='Quay']").click()
     expect(page.locator(".leaflet-popup-content")).to_contain_text("Quay Race")
