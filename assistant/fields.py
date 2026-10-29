@@ -16,16 +16,14 @@ from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.utils.translation import gettext as _
 
+from assistant import images as pictures
 from assistant import places
 from assistant.prompt import LANGUAGES, TEXT_FIELDS, URL_FIELDS
 from calendar_app.models import Competition, Discipline, EventType
 from cycling_site.sanitize import sanitize_rich_html
 
-_MAX = {
-    "title": 255,
-    "preview_text": Competition._meta.get_field("preview_text").max_length,
-    "description": 1_000_000,  # the editor's own bound
-}
+# A description is not cut: the form's own check bounds it, and a cut would break its HTML.
+_MAX = {"title": 255, "preview_text": Competition._meta.get_field("preview_text").max_length}
 _URL_MAX = Competition._meta.get_field("url_route").max_length or 200
 _SCHEME = re.compile(r"^(?:https?://)?(?:www\.)?", re.IGNORECASE)
 
@@ -78,8 +76,11 @@ def _typed_point(place: dict, texts: list[str]) -> places.Point | None:
 
 
 class _Checker:
-    def __init__(self, current: dict, texts: list[str], rows: list[dict], point: places.Point | None):
+    def __init__(
+        self, current: dict, texts: list[str], rows: list[dict], point: places.Point | None, images: list[str]
+    ):
         self.current = current
+        self.images = images
         self.texts = texts
         # A link may also come from the form as it stands: an edited event's own links, and the ones
         # its descriptions carry, were written by people too.
@@ -102,9 +103,14 @@ class _Checker:
                     continue
                 text = text.strip()
                 if name == "description":
-                    text = sanitize_rich_html(text)
-                kept[lang] = text[: _MAX[name]]
-                self.out.form[f"{name}_{lang}"] = kept[lang]
+                    # The page gets the pictures back; what is kept for the conversation does without
+                    # them, since the next turn's form brings them again.
+                    self.out.form[f"{name}_{lang}"] = sanitize_rich_html(
+                        pictures.restore(text, self.images), allow_img=True
+                    )
+                    kept[lang] = sanitize_rich_html(text)
+                else:
+                    kept[lang] = self.out.form[f"{name}_{lang}"] = text[: _MAX[name]]
             if kept:
                 self.out.set[name] = kept
 
@@ -182,15 +188,21 @@ class _Checker:
 
 
 def check(
-    answer: dict, *, current: dict, texts: list[str], rows: list[dict], point: places.Point | None = None
+    answer: dict,
+    *,
+    current: dict,
+    texts: list[str],
+    rows: list[dict],
+    point: places.Point | None = None,
+    images: list[str] | None = None,
 ) -> Checked:
     """The parts of the model's ``set`` that pass, as kept and as the page's form values, with notes.
 
     ``current`` is the form as it stands (``prompt.describe_form``), ``texts`` everything the
-    administrator wrote in the conversation, ``rows`` the places the page offers, and ``point`` the
-    start of a track they attached.
+    administrator wrote in the conversation, ``rows`` the places the page offers, ``point`` the
+    start of a track they attached, and ``images`` the pictures the descriptions' marks stand for.
     """
-    checker = _Checker(current, texts, rows, point)
+    checker = _Checker(current, texts, rows, point, images or [])
     if isinstance(answer, dict):
         checker.texts_in_three_languages(answer)
         checker.dates(answer)

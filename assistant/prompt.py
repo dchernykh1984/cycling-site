@@ -13,6 +13,7 @@ from pathlib import Path
 
 from django.db.models import Prefetch
 
+from assistant import images as pictures
 from assistant.models import Conversation, Message
 from calendar_app.models import Discipline, DisciplineCategory, EventType
 from locations.models import Location
@@ -38,7 +39,8 @@ names. "set" holds only the fields of the form you change now; leave out the one
 are. A field set to "" (or [] for a list) is emptied. The fields:
 - "title", "description", "preview_text": each {"ru": "...", "kk": "...", "en": "..."} -- the three
   languages always together. "description" is simple HTML: <p>, <ul>, <ol>, <li>, <strong>, <em>,
-  <br>, <a href="...">.
+  <br>, <a href="...">. A picture in it is a mark, <img src="image:N">: keep each mark where its
+  picture belongs, and add none of your own.
 - "date_start", "date_end": "YYYY-MM-DD"; an event of one day has no date_end.
 - "event_type_ids", "discipline_ids": lists of ids, only from the lists below.
 - "url_announcement", "url_registration", "url_route", "url_regulations", "url_results": links copied
@@ -126,12 +128,18 @@ def _existing_file(competition, name: str) -> str:
     return Path(stored.name).name if stored else ""
 
 
-def describe_form(raw: dict, competition=None) -> dict:
-    """The form as the page sent it, in the words of the contract, with the place in names."""
+def describe_form(raw: dict, competition=None, images: list[str] | None = None) -> dict:
+    """The form as the page sent it, in the words of the contract, with the place in names.
+
+    The descriptions' pictures become marks (``assistant/images.py``), their originals added to
+    ``images`` for the answer to be put back with.
+    """
     raw = raw if isinstance(raw, dict) else {}
+    images = images if images is not None else []
     form: dict = {
         name: {lang: _text(raw.get(f"{name}_{lang}"), _MAX_TEXT[name]) for lang in LANGUAGES} for name in TEXT_FIELDS
     }
+    form["description"] = {lang: pictures.hide(text, images) for lang, text in form["description"].items()}
     form["date_start"] = _text(raw.get("date_start"), 10)
     form["date_end"] = _text(raw.get("date_end"), 10)
     form["event_type_ids"] = _ids(raw.get("event_types"))
