@@ -9,8 +9,9 @@ so a stored selection stays order-stable across re-renders).
 
 config:
   levels:        [{btn: HTMLElement, menu: HTMLElement}, ...]  // index 0 == depth 1
-  nodesUnder(depth, parentPks): [{pk, name}, ...]  // children for the selected parents; with
-                                                   // openLevels, no parents means the whole depth
+  nodesUnder(depth, parentPks): [{pk, name, search}, ...]  // children for the selected parents;
+                                                   // with openLevels, no parents means the whole
+                                                   // depth; "search": optional other names to match
   restoreChains(): [[{depth, pk}, ...], ...]       // ancestor chains to pre-select
   openLevels:    bool  // a lower level opens before the one above it is chosen, narrowed by the
                        // nearest level above it that has a choice
@@ -31,6 +32,27 @@ window.appendIdsParam = window.appendIdsParam || function (params, name, ids) {
   var joined = (ids || []).join(',');
   if (joined) params.append(name, joined);
 };
+
+// The words of a name or a query as the site matches typed text (cycling_site/text_search.py): each
+// letter folded to Latin with the server's own table, then one spelling for what the two scripts write
+// differently -- the import agent's rule (agent/venues.py, fold_script) -- so that "Kompass" in
+// Cyrillic finds "Compass" and the other way round.
+window.cascadeSearchWords = window.cascadeSearchWords || (function () {
+  var spellings = [['kh', 'h'], ['ph', 'f'], ['dzh', 'j'], ['x', 'ks'], ['w', 'v'], ['q', 'k'], ['y', 'i']];
+  var table = null;
+  return function (text) {
+    if (table === null) table = JSON.parse(document.getElementById('cascade-context').textContent).fold;
+    var folded = '';
+    for (var i = 0; i < text.length; i++) {
+      folded += Object.prototype.hasOwnProperty.call(table, text[i]) ? table[text[i]] : text[i];
+    }
+    return (folded.toLowerCase().match(/[a-z0-9]+/g) || []).map(function (word) {
+      word = word.replace(/c(?=[eiy])/g, 's');
+      spellings.forEach(function (pair) { word = word.split(pair[0]).join(pair[1]); });
+      return word.replace(/c/g, 'k').replace(/(.)\1+/g, '$1');
+    });
+  };
+})();
 
 window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
   var N = config.levels.length;
@@ -73,11 +95,12 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     var order = [], map = {};
     nodes.forEach(function (n) {
       var k = n.name;
-      if (!map[k]) { map[k] = []; order.push(k); }
-      map[k].push(n.pk);
+      if (!map[k]) { map[k] = { pks: [], search: [k] }; order.push(k); }
+      map[k].pks.push(n.pk);
+      if (n.search) map[k].search.push(n.search);
     });
     return order.map(function (k) {
-      return { name: k, pks: map[k].sort(function (a, b) { return a - b; }) };
+      return { name: k, pks: map[k].pks.sort(function (a, b) { return a - b; }), search: map[k].search.join(' ') };
     });
   }
 
@@ -147,15 +170,18 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
     return li;
   }
 
-  // The rows whose name contains the typed text (case-insensitive), at most MAX_ROWS of them besides
-  // the ticked ones, and a line counting the rest. Typing only changes which rows are drawn, not the
-  // selection.
+  // The rows holding every typed word in one of their names, whatever script either is written in
+  // (window.cascadeSearchWords), at most MAX_ROWS of them besides the ticked ones, and a line counting
+  // the rest. Typing only changes which rows are drawn, not the selection.
   function drawRows(d, query) {
-    var q = query.trim().toLowerCase();
+    var words = window.cascadeSearchWords(query);
     var drawn = 0, more = 0;
     menu[d].querySelectorAll('li.mf-item-row, li.mf-more').forEach(function (li) { li.remove(); });
     (currentGroups[d] || []).forEach(function (g) {
-      if (q && g.name.toLowerCase().indexOf(q) < 0) return;
+      if (words.length) {
+        if (g.key === undefined) g.key = window.cascadeSearchWords(g.search).join(' ');
+        if (!words.every(function (w) { return g.key.indexOf(w) >= 0; })) return;
+      }
       if (drawn >= MAX_ROWS && !selected[d].has(g.pks.join(','))) { more++; return; }
       drawn++;
       menu[d].appendChild(itemRow(d, g));

@@ -9,7 +9,7 @@ filters), `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/tes
 `tests/test_calendar_crawlable.py`, `tests/test_list_site_registration.py`,
 `tests/test_pagination_links.py`, `tests/test_locations_payload.py`, `tests/test_location.py`,
 `tests/e2e/test_calendar_view.py`, `test_calendar_map.py`, `test_competition_list.py`,
-`test_discipline_filter.py`, `test_location_filter.py`, `test_date_filters.py`,
+`test_discipline_filter.py`, `test_location_filter.py`, `test_filter_search.py`, `test_date_filters.py`,
 `test_filter_url_length.py`, `test_view_switcher_location.py`, `test_favorite_events.py`,
 `test_save_filter_preferences.py`, `test_calendar_phone_list.py`, `test_period_nav.py`,
 `test_calendar_busy_day.py`, `test_filter_chips.py`, `test_filter_toggle.py`, `test_top_events.py`;
@@ -65,6 +65,9 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    city finds Almaty, not a namesake abroad). A city's catch-all venue is listed only under chosen
    cities; "All" only on a level whose parent level has a choice; a menu draws at most 200 rows
    and counts the rest, which its search reaches. A reload ticks exactly what the address names.
+   Every checkbox filter's search matches a name typed in either script, folded as the site's other
+   searches fold it plus one spelling for what the scripts write differently ("Kompass" in Cyrillic
+   finds "Compass", and back); a place answers to its name in any of the three languages.
 2. **Given** several values of one filter, **Then** an event matching any of them is shown, once.
 3. **Given** a direction and a discipline both chosen, **Then** the discipline wins, as a city does
    over its country: only the chosen disciplines are shown, and a ticked direction offers its
