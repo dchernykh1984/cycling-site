@@ -58,9 +58,10 @@ The site's instructions follow, in Russian: they say what to ask and how an anno
 """
 
 
-def skills() -> str:
-    """Every skill file, in the order of their names."""
-    return "\n\n".join(path.read_text(encoding="utf-8").strip() for path in sorted(SKILLS_DIR.glob("*.md")))
+def skills(kind: str = "event") -> str:
+    """Every skill file of a kind (``skills/<kind>/``), in the order of their names."""
+    paths = sorted((SKILLS_DIR / kind).glob("*.md"))
+    return "\n\n".join(path.read_text(encoding="utf-8").strip() for path in paths)
 
 
 def _names(item) -> str:

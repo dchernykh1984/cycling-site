@@ -20,7 +20,7 @@ class SystemPromptTests(TestCase):
     def test_it_holds_the_contract_every_skill_and_the_lists_with_their_ids(self):
         text = prompt.system_prompt()
         self.assertIn(prompt.CONTRACT, text)
-        skills = sorted(prompt.SKILLS_DIR.glob("*.md"))
+        skills = sorted((prompt.SKILLS_DIR / "event").glob("*.md"))
         self.assertTrue(skills)
         for path in skills:
             self.assertIn(path.read_text(encoding="utf-8").strip(), text)
