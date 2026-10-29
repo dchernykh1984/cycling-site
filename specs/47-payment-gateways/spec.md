@@ -125,10 +125,10 @@ amount prefilled.
 3. **Given** a saved schedule, **When** anyone opens the event page, **Then** it shows the price in
    force now and, where there is a later step, the date it changes and the next price, in the
    reader's language (dates in words, the interface skill's rule 12).
-4. **Given** the organizer is a private person (no company or sole-trader status is known to the
-   site, so: always), **When** they turn payment on, **Then** the form shows a one-paragraph note
-   that fees are their income and that transfers to a personal account are reported above a
-   threshold, with a link to the knowledge base.
+4. **Given** an organizer, **When** they turn payment on, **Then** the form shows a one-paragraph
+   note that fees are their income under their own tax status and that transfers to a private
+   person's account are reported to the tax authority above a threshold, with a link to a knowledge
+   article; the site does not know whether an organizer is a company, so everyone sees it.
 
 ---
 
