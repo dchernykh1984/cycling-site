@@ -48,7 +48,10 @@ def lang_display_code(language_code: str | None) -> str:
 def get_about_url():
     from home.models import AboutPage
 
-    locale = Locale.get_active()
+    try:
+        locale = Locale.get_active()
+    except Locale.DoesNotExist:  # no locale rows: no About page to link to, and no page to fail (#385)
+        return None
     cache_key = f"about_url_{locale.language_code}"
     url = cache.get(cache_key)
     if url is None:
