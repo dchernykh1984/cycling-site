@@ -24,6 +24,10 @@ restored, locally or onto production.
    suite on five browser/device combinations and once per skin.
 2. **Given** a merge to `main`, **Then** Render deploys it, running `migrate` as a pre-deploy step;
    configuration comes from environment variables set on Render.
+3. **Given** a reader's request, **Then** it passes through the site's Cloudflare zone -- the apex
+   record is proxied -- which adds the visitor location headers the guest's region is read from
+   (#332, [calendar](calendar.md)) and gives up on an answer after 100 seconds (the README's
+   Deployment section).
 
 ### Story 2 -- Keep the data safe (P1)
 
