@@ -38,6 +38,17 @@ class TurnTests(TestCase):
         history = complete.call_args.args[0]
         self.assertIn("The track starts at 43.250000, 76.950000.", history[1]["content"])
 
+    def test_the_sites_places_are_read_only_when_a_reply_names_one(self):
+        conversation, _ = conversations.start(self.admin)
+        place = {"city": "Testville", "venue": {"ru": "Most"}}
+        with mock.patch("calendar_app.views._get_locations_data", return_value=[]) as read:
+            with mock.patch("assistant.llm.complete", return_value={"reply": "When?", "set": {"title": {"ru": "X"}}}):
+                _turn(conversation, self.admin, "A ride")
+            self.assertEqual(read.call_count, 0)
+            with mock.patch("assistant.llm.complete", return_value={"reply": "Noted.", "set": {"place": place}}):
+                _turn(conversation, self.admin, "From the bridge")
+            self.assertEqual(read.call_count, 1)
+
     def test_an_attachment_is_kept_to_its_shape(self):
         conversation, _ = conversations.start(self.admin)
         attachments = [

@@ -81,11 +81,14 @@ def take_turn(
     if not isinstance(reply, str) or not reply.strip():
         raise llm.UnavailableError(llm.UnavailableError.BAD_ANSWER)
     said = [*conversation.messages.filter(role=Message.Role.USER).values_list("text", flat=True), text]
+    changes = answer.get("set") or {}
+    # Every place the page offers is read only when the reply names one: most turns do not.
+    names_a_place = isinstance(changes, dict) and isinstance(changes.get("place"), dict)
     checked = fields.check(
-        answer.get("set") or {},
+        changes,
         current=current,
         texts=said,
-        rows=_get_locations_data(user),
+        rows=_get_locations_data(user) if names_a_place else [],
         point=_track_start(conversation, attachments),
     )
     with transaction.atomic():
