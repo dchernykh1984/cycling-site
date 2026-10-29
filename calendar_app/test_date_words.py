@@ -71,6 +71,12 @@ class EventDaysInWordsOnThePageTests(TestCase):
         self.assertIn(f"14{DASH}15 March 2027", body)
         self.assertNotIn("14.03.2027", body)
 
+    def test_the_events_own_page_names_its_days_in_words(self):
+        event = Competition.objects.get(title_ru="Spring Race")
+        body = self.client.get(in_language(reverse("competition_detail", args=[event.pk]), "en")).content.decode()
+        self.assertIn(f"14{DASH}15 March 2027", body)
+        self.assertNotIn("14.03.2027", body)
+
     def test_the_maps_popup_gets_the_days_in_words(self):
         response = self.client.get(f"{in_language(reverse('calendar_map_api'), 'en')}?{self.RANGE}")
         (place,) = response.json()

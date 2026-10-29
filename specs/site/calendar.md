@@ -139,8 +139,8 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 - **FR-CAL-005**: Feeds and subscriptions never carry hidden, unapproved or invite-only events. An
   event's own file is not a feed: it answers the people its page answers (`visibility.can_open`).
 - **FR-CAL-006**: Calendar labels, including grid weekdays, come from the translated catalogues; Kazakh period labels put
-  the year before the month or days. The list's table and the map's popups name an event's days in
-  the same words ("24-25 October 2026", the month in its Russian case, an en dash between), never
+  the year before the month or days. The list's table, the map's popups and the event's own page
+  name an event's days in the same words ("24-25 October 2026", the month in its Russian case, an en dash between), never
   as 24.10.2026 (#388). Shared period controls offer days, weekend, week, month and
   a year picker, step by the selected kind and return keyboard focus when a picker closes.
 - **FR-CAL-007**: Phone List rows show city and sport, and preserve the remaining FR-CAL-004
