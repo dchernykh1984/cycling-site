@@ -45,6 +45,10 @@ Proposed for the plan, from the above:
 - **An estimate, not a measurement**: about 8 turns an event; about 6K input tokens a turn, 4-5K of
   them from the cache; about 6K output tokens in all. That is roughly $0.006 an event off-peak and
   $0.012 at peak. The first real calls replace it with numbers.
+- **Measured** on 2026-10-29 with the real prompt (contract, skills, 6 types, 91 disciplines):
+  - a first turn: 4.1K tokens in, 0.85-1K out, about 5 seconds;
+  - a second: 5.9K in, 3.6K of them from the cache;
+  - a refusal of an off-topic request: 0.1K out, 2.4 seconds.
 
 ## R2. Data and the terms
 

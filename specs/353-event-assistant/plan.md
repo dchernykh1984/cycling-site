@@ -2,7 +2,7 @@
 
 **Branch**: `353-assistant` | **Date**: 2026-10-29 | **Spec**: [spec.md](spec.md) |
 **Research**: [research.md](research.md)
-**Status**: Building in pull request #405; the maintainer asked for the code to start once the spec's
+**Status**: Built in pull request #405; the maintainer asked for the code to start once the spec's
 questions were answered.
 
 ## Summary
