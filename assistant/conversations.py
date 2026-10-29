@@ -73,7 +73,8 @@ def take_turn(
     """
     from calendar_app.views import _get_locations_data  # the views link conversations: import late
 
-    current = prompt.describe_form(form, conversation.competition)
+    images: list[str] = []
+    current = prompt.describe_form(form, conversation.competition, images)
     attachments = _attachments(attachments)
     content = prompt.turn(text, current, attachments, today, language, editing=conversation.competition_id is not None)
     answer = llm.complete(prompt.messages(conversation, content))
@@ -90,6 +91,7 @@ def take_turn(
         texts=said,
         rows=_get_locations_data(user) if names_a_place else [],
         point=_track_start(conversation, attachments),
+        images=images,
     )
     with transaction.atomic():
         asked = Message.objects.create(
