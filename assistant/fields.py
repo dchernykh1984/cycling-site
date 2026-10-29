@@ -66,8 +66,10 @@ def _site_page(bare: str) -> str | None:
 
 def _site_pages(texts: list[str]) -> set[str]:
     """The site's own pages ``texts`` link to, each without its language."""
-    rest = r"[^\s\"'<>\u00ab\u00bb]*"  # up to a space, a quote or an angle bracket
-    mention = re.compile(rf"{re.escape(_site_host())}(/{rest})|(?<![\w.:/-])(/(?:{_LANGUAGES})/{rest})")
+    rest = r"[^\s\"'<>\u00ab\u00bb]*"  # up to a space, a quote, an angle bracket or a guillemet
+    # The site's own host, not one that merely ends with it ("fake" + host), or a path from the root.
+    site = rf"(?:^|[^\w.-])(?:www\.)?{re.escape(_site_host())}(/{rest})"
+    mention = re.compile(rf"{site}|(?<![\w.:/-])(/(?:{_LANGUAGES})/{rest})")
     pages = set()
     for text in texts:
         for found in mention.finditer(text.lower()):

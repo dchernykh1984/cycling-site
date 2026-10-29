@@ -101,12 +101,19 @@ class LinkTests(TestCase):
 
     @override_settings(SITE_BASE_URL="https://ubt.test")
     def test_another_page_of_the_site_or_another_sites_page_in_another_language_is_not(self):
-        texts = ["https://ubt.test/ru/calendar/250/ and https://other.test/ru/calendar/250/"]
-        links = ("https://ubt.test/kk/calendar/25/", "https://other.test/kk/calendar/250/", "/kk/news/250/")
+        texts = [
+            "https://ubt.test/ru/calendar/250/, https://other.test/ru/calendar/250/, https://fakeubt.test/ru/news/7/"
+        ]
+        links = (
+            "https://ubt.test/kk/calendar/25/",
+            "https://other.test/kk/calendar/250/",
+            "/kk/news/250/",
+            "https://ubt.test/kk/news/7/",
+        )
         description = {"kk": "<p>" + " ".join(f'<a href="{link}">x</a>' for link in links) + "</p>"}
         checked = _check({"description": description}, texts=texts)
         self.assertNotIn("href", checked.form["description_kk"])
-        self.assertEqual(len(checked.notes), 3)
+        self.assertEqual(len(checked.notes), 4)
 
     def test_a_link_the_form_already_holds_is_kept(self):
         current = {
