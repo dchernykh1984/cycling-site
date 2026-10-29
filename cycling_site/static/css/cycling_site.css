@@ -116,35 +116,38 @@ html {
     }
 }
 
-/* Participant list: many (conditional) columns. Let long names / team / city values wrap
-   instead of widening the table past its container and forcing a horizontal scrollbar. Only
-   data cells break inside words; headers wrap between words so a heading word is never split. */
+/* Participant list: many (conditional) columns, a table from 1200px and cards below it. A heading
+   is never split inside a word: it wraps between its words, set at 12px -- the floor for type made
+   smaller to fit -- and without the letter spacing a skin may give headings, so that every column
+   fits 1200px. Long values (a name, a team, a city, a link) wrap anywhere instead of widening the
+   table past its container. */
 .participant-list-table {
-    table-layout: fixed;
     width: 100%;
 }
-.participant-list-table th,
+.participant-list-table th {
+    font-size: 0.75rem;
+    letter-spacing: normal;
+}
 .participant-list-table td {
     overflow-wrap: anywhere;
-    word-break: break-word;
 }
-/* Keep action-button labels on one line and give the actions column enough width so Edit/Delete
-   sit side by side instead of collapsing into a vertical stack when other columns wrap. */
+/* Keep action-button labels on one line, the buttons stacked in a column as wide as the widest
+   of them: the room goes to the participants' data. */
 .participant-list-table .btn {
     white-space: nowrap;
 }
 .participant-list-table .reg-actions {
-    width: 11rem;
+    width: 1%;
 }
 .participant-list-table .reg-actions .btn {
     padding-left: 0.4rem;
     padding-right: 0.4rem;
 }
-/* On phones the participant table (up to ~12 columns) collapses to one character per line.
-   Below the md breakpoint each row becomes a stacked "card" with the column name as a label,
-   mirroring the calendar list above. The actions cell stays a full-width block so its button
-   group and the inline reject form are not forced into the label/value flex row. */
-@media (max-width: 767.98px) {
+/* Below 1200px the participant table (up to ~12 columns) has no room for its headings' words.
+   Each row becomes a stacked "card" with the column name as a label, mirroring the calendar list
+   above. The actions cell stays a full-width block so its button group and the inline reject form
+   are not forced into the label/value flex row. */
+@media (max-width: 1199.98px) {
     .participant-list-table,
     .participant-list-table tbody,
     .participant-list-table tr {

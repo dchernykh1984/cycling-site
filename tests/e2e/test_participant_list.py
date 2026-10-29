@@ -212,3 +212,44 @@ def test_participant_list_stacks_into_cards_on_mobile(page: Page, live_server, o
     expect(page.locator(".participant-list-table td[data-label]").first).to_be_visible()
     overflow = page.evaluate("() => document.documentElement.scrollWidth - document.documentElement.clientWidth")
     assert overflow <= 1, f"mobile participant list overflows horizontally by {overflow}px"
+
+
+# ---------------------------------------------------------------------------
+# no word split in the organizer's table
+# ---------------------------------------------------------------------------
+
+_SPLIT_WORDS = """
+() => {
+  const split = [];
+  document.querySelectorAll('.participant-list-table th, .participant-list-table td').forEach(cell => {
+    const walk = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+    for (let node = walk.nextNode(); node; node = walk.nextNode()) {
+      if (!node.parentElement.offsetParent) continue;
+      for (const word of node.textContent.matchAll(/[^\\s\\-]{4,}/g)) {
+        const range = document.createRange();
+        range.setStart(node, word.index); range.setEnd(node, word.index + word[0].length);
+        const lines = new Set([...range.getClientRects()].filter(q => q.width > 0).map(q => Math.round(q.top)));
+        if (lines.size > 1) split.push(word[0]);
+      }
+    }
+  });
+  const root = document.scrollingElement;
+  return {split, pageFits: root.scrollWidth <= root.clientWidth};
+}
+"""
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [768, 1200, 1280])
+@pytest.mark.parametrize("lang", ["ru", "kk", "en"])
+def test_the_organizers_table_splits_no_word_and_never_widens_the_page(
+    page: Page, live_server, organizer, competition_with_approval, registration, width, lang
+):
+    """Every column an organizer sees, each heading and value whole: a table from 1200px, where
+    the headings were split inside words at 1280px, and cards below it."""
+    page.set_viewport_size({"width": width, "height": 900})
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/{lang}/competitions/{competition_with_approval.pk}/participants/")
+    result = page.evaluate(_SPLIT_WORDS)
+    assert result["split"] == [], f"words split across lines: {result['split']}"
+    assert result["pageFits"], "the page scrolls sideways"

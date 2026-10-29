@@ -4463,3 +4463,7 @@ msgstr "Просьбы управлять их заявками и фото"
 
 msgid "Answer"
 msgstr "Ответить"
+
+msgctxt "participant list: the column of the date a registration was made"
+msgid "Registered"
+msgstr "Дата заявки"
