@@ -52,6 +52,13 @@ def indexed_event(settings, monkeypatch):
     return athlete, race, reg, album
 
 
+def _follow(page: Page, target) -> None:
+    """Click what opens another page and wait until that page has loaded, its stylesheets too. WebKit
+    lays a page out before they arrive, and on a slow runner the next check would read the old page."""
+    with page.expect_navigation():
+        target.click()
+
+
 @pytest.mark.django_db(transaction=True)
 def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, indexed_event):
     athlete, race, reg, album = indexed_event
@@ -63,8 +70,8 @@ def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, ind
     page.goto(f"{live_server.url}/ru/calendar/{race.pk}/photos/")
     expect(page.locator(".event-photo-cards")).to_contain_text(counters)
     page.goto(f"{live_server.url}/ru{race.get_absolute_url()[3:]}")
-    page.get_by_role("link", name=overview, exact=True).click()
-    page.locator(".event-photo-cards a").click()
+    _follow(page, page.get_by_role("link", name=overview, exact=True))
+    _follow(page, page.locator(".event-photo-cards a"))
     crumbs = page.get_by_role("navigation", name=gettext("Breadcrumb"))
     expect(crumbs.locator('[aria-current="page"]')).to_contain_text("Rider Ivan")
     cards = page.locator(".event-photo")
@@ -75,17 +82,17 @@ def test_an_athlete_marks_photos_and_undoes_a_cross(page: Page, live_server, ind
         assert box is not None and box["height"] >= 44 and box["width"] >= 44, box
 
     candidate = cards.filter(has_text="IMG_0002.jpg")
-    candidate.get_by_role("button", name=yes).click()
+    _follow(page, candidate.get_by_role("button", name=yes))
     expect(page.locator(".event-photo").filter(has_text="IMG_0002.jpg").get_by_role("button", name=yes)).to_have_count(
         0
     )
 
-    page.locator(".event-photo").filter(has_text="IMG_0002.jpg").get_by_role("button", name=no).click()
+    _follow(page, page.locator(".event-photo").filter(has_text="IMG_0002.jpg").get_by_role("button", name=no))
     expect(page.locator(".event-photo")).to_have_count(1)
-    page.get_by_role("button", name=undo).click()
+    _follow(page, page.get_by_role("button", name=undo))
     expect(page.locator(".event-photo")).to_have_count(2)
 
-    page.locator(".event-photo").filter(has_text="IMG_0002.jpg").get_by_role("button", name=no).click()
+    _follow(page, page.locator(".event-photo").filter(has_text="IMG_0002.jpg").get_by_role("button", name=no))
     expect(page.locator(".event-photo")).to_have_count(1)
     expect(page.locator(".event-photo a").first).to_have_attribute("target", "_blank")
 
