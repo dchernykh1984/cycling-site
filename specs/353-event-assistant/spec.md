@@ -71,8 +71,8 @@ The maintainer's answers to the open questions, later on 2026-10-29:
     the track's link, or for a GPX file to attach, or reminds the admin to attach one afterwards.
     Not who leads, nor where a cancellation is announced -- not for now.
 14. **What it asks about a race**: the start's point on the map; the track, which shows the start
-    and the finish; the categories -- or simply the regulations as a PDF. Read here as: the PDF is
-    attached to the event for its readers, not read by the assistant.
+    and the finish; the categories -- or simply the regulations as a PDF. The PDF is the organizer's
+    business: the assistant asks for it and attaches it, and neither reads nor checks it.
 15. **Editing an event through the chat, from the first version.** The conversation is kept on the
     server with the event, and the event's edit page continues it with the whole context: asking to
     add, remove or change anything.
