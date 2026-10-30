@@ -275,6 +275,12 @@ def _validate_dates(date_start, date_end) -> None:
         raise HttpError(422, "date_end cannot be before date_start")
 
 
+def _validate_title(competition: Competition) -> None:
+    """A title in at least one language: without one every list showed the event as an empty link."""
+    if not any((getattr(competition, f"title_{code}") or "").strip() for code, _name in settings.LANGUAGES):
+        raise HttpError(422, "A title is required in at least one language")
+
+
 def _validate_location_id(location_id, user) -> None:
     """Reject a forged location_id: missing, deleted, or another user's pending proposal (review #3)."""
     if location_id is None:
@@ -484,6 +490,7 @@ def create_competition(request, payload: CompetitionIn):
     competition = Competition(submitted_by=user, status=status)
     _validate_description_length(payload.description)
     _apply_localized(competition, "title", payload.title)
+    _validate_title(competition)
     # Descriptions are sanitized centrally in Competition.save().
     _apply_localized(competition, "description", payload.description)
     _apply_localized(competition, "preview_text", payload.preview_text)
@@ -556,6 +563,7 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
         with transaction.atomic():
             update_fields = _apply_patch_fields(competition, data, user)
             _validate_dates(competition.date_start, competition.date_end)
+            _validate_title(competition)
             if update_fields or set_disciplines or set_event_types:
                 # The edit time moves with any change, the many-to-many ones too (#348).
                 competition.save(update_fields=[*update_fields, "updated_at"])

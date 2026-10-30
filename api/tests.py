@@ -610,6 +610,16 @@ class CompetitionCreateTest(TestCase, ApiTestMixin):
         resp = self.post("/api/v1/competitions/", self._payload(), user=self.admin)
         self.assertEqual(resp.json()["discipline_ids"], [])
 
+    def test_a_title_is_required_in_some_language(self):
+        for title in ({"ru": "", "kk": "", "en": ""}, {"ru": "  ", "kk": "", "en": " "}):
+            with self.subTest(title=title):
+                resp = self.post("/api/v1/competitions/", self._payload(title=title), user=self.admin)
+                self.assertEqual(resp.status_code, 422)
+        resp = self.post(
+            "/api/v1/competitions/", self._payload(title={"ru": "", "kk": "", "en": "Only English"}), user=self.admin
+        )
+        self.assertEqual(resp.status_code, 201)
+
     def test_an_end_before_the_start_is_refused(self):
         resp = self.post(
             "/api/v1/competitions/", self._payload(date_start="2026-07-10", date_end="2026-07-01"), user=self.admin
@@ -774,6 +784,14 @@ class CompetitionUpdateTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200)
         comp.refresh_from_db()
         self.assertEqual(comp.status, Competition.Status.PENDING_APPROVAL)
+
+    def test_a_patch_that_blanks_every_title_is_refused(self):
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}", {"title": {"ru": "", "kk": "", "en": ""}}, user=self.owner
+        )
+        self.assertEqual(resp.status_code, 422)
+        self.comp.refresh_from_db()
+        self.assertEqual(self.comp.title_ru, "Race")
 
     def test_a_patch_that_puts_the_end_before_the_start_is_refused(self):
         self.comp.date_end = self.comp.date_start
