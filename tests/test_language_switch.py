@@ -144,6 +144,12 @@ class SigningInAndOutKeepsThePageLanguageTests(TestCase):
                 response = self.client.post(f"/{language}/accounts/logout/")
                 self.assertEqual(response["Location"], f"/{language}/")
 
+    def test_a_member_who_chose_a_language_still_lands_in_it(self):
+        self.user.preferred_language = "en"
+        self.user.save(update_fields=["preferred_language"])
+        response = self.client.post("/kk/accounts/login/", {"login": "reader@example.com", "password": "Pass-12345!"})
+        self.assertEqual(self.client.get(response["Location"])["Location"], "/en/")
+
     def test_a_next_page_is_kept_as_it_was(self):
         response = self.client.post(
             "/kk/accounts/login/?next=/en/calendar/", {"login": "reader@example.com", "password": "Pass-12345!"}
