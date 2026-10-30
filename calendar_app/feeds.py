@@ -19,6 +19,7 @@ from django.utils.feedgenerator import Atom1Feed
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
+from cycling_site.sanitize import without_control_characters
 from locations.maps import start_point
 
 from .models import Competition, usual_event_type_id
@@ -60,7 +61,7 @@ def filtered_competitions(request: HttpRequest) -> list[Competition]:
 
 def _escape(value: str) -> str:
     """RFC 5545 text escaping: backslash first, then the separators, then newlines."""
-    out = value.replace("\\", "\\\\")
+    out = without_control_characters(value).replace("\\", "\\\\")
     for char in (";", ","):
         out = out.replace(char, "\\" + char)
     return out.replace("\r\n", "\\n").replace("\n", "\\n").replace("\r", "\\n")
@@ -214,10 +215,10 @@ class NewCompetitionsFeed(Feed):
         return items
 
     def item_title(self, item):
-        return item.title
+        return without_control_characters(item.title)
 
     def item_description(self, item):
-        return item.search_summary(item.usual_type_id)
+        return without_control_characters(item.search_summary(item.usual_type_id))
 
     def item_link(self, item):
         return item.get_absolute_url()

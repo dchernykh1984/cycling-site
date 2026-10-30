@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils.feedgenerator import Atom1Feed
 from django.utils.translation import gettext_lazy as _
 
+from cycling_site.sanitize import without_control_characters
 from cycling_site.summaries import summarize
 
 from .models import NewsArticle
@@ -29,10 +30,10 @@ class NewsFeed(Feed):
         ]
 
     def item_title(self, item):
-        return item.title
+        return without_control_characters(item.title)
 
     def item_description(self, item):
-        return item.intro or summarize(item.body)
+        return without_control_characters(item.intro or summarize(item.body))
 
     def item_link(self, item):
         return item.get_absolute_url()
