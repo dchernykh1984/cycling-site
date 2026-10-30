@@ -86,6 +86,17 @@ class ApprovalRecordTests(TestCase):
         self.assertEqual(event.approved_by, self.admin)
         self.assertGreater(event.approved_at, rejected_at)
 
+    def test_a_save_that_leaves_the_status_unwritten_records_no_approval(self):
+        event = _event(status=Competition.Status.PENDING_APPROVAL)
+        _as_request_user(self, self.admin)
+        event.status = Competition.Status.APPROVED
+        event.title_ru = "Race, renamed"
+        event.save(update_fields=["title_ru"])
+        event.refresh_from_db()
+        self.assertEqual(event.status, Competition.Status.PENDING_APPROVAL)
+        self.assertIsNone(event.approved_by)
+        self.assertIsNone(event.approved_at)
+
     def test_an_old_approval_is_not_credited_to_whoever_edits_the_event_now(self):
         event = _event(status=Competition.Status.APPROVED)
         Competition.objects.filter(pk=event.pk).update(approved_by=None, approved_at=None)

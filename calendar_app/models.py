@@ -266,12 +266,13 @@ class Competition(index.Indexed, models.Model):
         # Descriptions are stored as rich HTML and rendered with |safe, so sanitize them on
         # every write -- the single choke point covering the organizer form, the API, Django
         # admin and Wagtail snippets (see _DESCRIPTION_FIELDS for the __dict__ rationale).
-        sanitize_rich_text_columns(self, _DESCRIPTION_FIELDS, update_fields=kwargs.get("update_fields"))
-        changed = self._record_approval()
+        update_fields = kwargs.get("update_fields")
+        sanitize_rich_text_columns(self, _DESCRIPTION_FIELDS, update_fields=update_fields)
+        # Only a save that writes the status can be the one that approves the event.
+        changed = self._record_approval() if update_fields is None or "status" in update_fields else set()
         if self.invite_only and self.invite_key is None:
             self.invite_key = uuid.uuid4()
             changed.add("invite_key")
-        update_fields = kwargs.get("update_fields")
         if update_fields is not None and changed:
             kwargs["update_fields"] = {*update_fields, *changed}
         super().save(*args, **kwargs)
