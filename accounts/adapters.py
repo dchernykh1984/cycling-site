@@ -1,5 +1,6 @@
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import get_language, get_language_from_path
@@ -9,14 +10,15 @@ from django.utils.translation import gettext_lazy as _
 def _in_page_language(url: str, request) -> str:
     """A path without a language, in the language of the page the member signed in or out on.
 
-    The settings name the bare "/", which goes on to the member's chosen language if they have one,
-    and otherwise to one picked from the browser: a member who signed in on the Kazakh page with a
-    Russian browser and no choice made landed on the Russian home page. A chosen language still wins,
-    as it does for any address without one; a `next` that carries its language, or another site's
-    address, is left as it is.
+    The settings name the bare "/", which goes on to the language the reader chose -- in their profile
+    or with the language buttons -- and, without a choice, to one picked from the browser: a member who
+    signed in on the Kazakh page with a Russian browser landed on the Russian home page. A choice still
+    wins, as it does for any address without a language; a `next` that carries its language, or
+    another site's address, is left as it is.
     """
     user = getattr(request, "user", None)
-    if getattr(user, "is_authenticated", False) and getattr(user, "preferred_language", ""):
+    chosen = getattr(user, "is_authenticated", False) and getattr(user, "preferred_language", "")
+    if chosen or request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME):
         return url
     if url.startswith("/") and not url.startswith("//") and not get_language_from_path(url):
         return f"/{get_language()}{url}"
