@@ -7,7 +7,8 @@
 `home/management/commands/startskin.py`,
 `scripts/demo_seed.py`
 **Tests**: `tests/test_skins.py`, `tests/test_skin_choice.py`, `tests/test_skin_templates.py`,
-`tests/test_skin_offer.py`, `tests/e2e/test_skin_offer.py`,
+`tests/test_skin_offer.py`, `tests/e2e/test_skin_offer.py`, `tests/test_signing_out.py`,
+`tests/e2e/test_sign_out_stays.py`,
 `tests/test_startskin.py`, `tests/e2e/test_theme_choice.py`, `test_skin_of_its_own.py`,
 `test_skin_contrast.py`, `test_contrast_helper.py`; CI `e2e-skin` jobs
 **Related**: [accounts](accounts.md), [site shell](site-shell.md); `skins/README.md` for designers and
@@ -31,6 +32,8 @@ behind the moon/sun button.
    or out of any other skin reloads the page once saved.
 3. **Given** a member, **Then** the choice is kept in their profile; **given** a guest, in a `skin`
    cookie (an old choice left in the browser's storage is carried over on the first visit).
+   **Given** a member signs out, **Then** their skin goes into the cookie, over any choice made there
+   as a guest, and a skin on offer they tried is not offered again: the page keeps its look.
 4. **Given** a key no folder answers to any more, **Then** the page is drawn in `DEFAULT_SKIN`
    and the stored choice is left as it is.
 5. **Given** a first visit, or a new member, **Then** the site opens in `DEFAULT_SKIN`: UBT Almaty

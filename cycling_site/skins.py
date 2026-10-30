@@ -24,6 +24,7 @@ MODES = ("light", "dark")
 LANGUAGES = ("ru", "kk", "en")
 # Where a guest's choice is kept: the server has to know it before it renders the page.
 COOKIE = "skin"
+COOKIE_AGE = 365 * 24 * 3600
 
 
 @dataclass(frozen=True)
@@ -163,7 +164,19 @@ def _remember_offer(request, response, skin: Skin) -> None:
         user.tried_skins = [*(user.tried_skins or []), key]
         user.save(update_fields=["tried_skins"])
     else:
-        response.set_cookie(OFFER_COOKIE, key, max_age=365 * 24 * 3600, samesite="Lax")
+        response.set_cookie(OFFER_COOKIE, key, max_age=COOKIE_AGE, samesite="Lax")
+
+
+def _keep_after_signing_out(response, skin: Skin, member) -> None:
+    """The guest a member becomes keeps their skin, and is not asked again to try one they tried.
+
+    A member's skin is in the profile and a guest's in a cookie, so signing out drew the page in the
+    default, or in whatever the browser chose as a guest long ago.
+    """
+    response.set_cookie(COOKIE, skin.key, max_age=COOKIE_AGE, samesite="Lax")
+    key = _offer_key()
+    if key and key in (member.tried_skins or []):
+        response.set_cookie(OFFER_COOKIE, key, max_age=COOKIE_AGE, samesite="Lax")
 
 
 # The skin of the request being answered, for the template loaders below; None outside a request
@@ -179,11 +192,14 @@ class SkinMiddleware:
 
     def __call__(self, request):
         skin = chosen(request)
+        member = request.user if request.user.is_authenticated else None
         token = current_skin.set(skin.key)
         try:
             response = self.get_response(request)
         finally:
             current_skin.reset(token)
+        if member is not None and not request.user.is_authenticated:
+            _keep_after_signing_out(response, skin, member)
         _remember_offer(request, response, skin)
         return response
 
