@@ -939,22 +939,21 @@ def _share_url(request, competition, *, is_public: bool, invite_url: str | None)
     return None
 
 
-def _approval_record(competition) -> dict | None:
-    """Who approved a published event and when, as admins see it at the foot of its page (#741).
+def _moderation_history(competition) -> list[dict]:
+    """The event's way through review, oldest first, as admins see it at the foot of its page (#741).
 
-    None when nothing was recorded -- approvals made before they were -- so the page says nothing
-    rather than guess. The e-mail stands beside the name: two accounts may carry one name.
+    Only what was recorded: an old event's steps may start late or miss a resubmission (see
+    CompetitionStatusChange). The e-mail stands beside the name: two accounts may carry one name.
     """
-    if competition.status != Competition.Status.APPROVED or not (competition.approved_by_id or competition.approved_at):
-        return None
-    approver = competition.approved_by
-    name = None
-    if approver is not None:
-        full = approver.get_full_name()
-        name = (
-            f"{full} ({approver.email})" if full and approver.email else (full or approver.email or approver.username)
-        )
-    return {"name": name, "at": competition.approved_at}
+    history = []
+    for step in competition.status_changes.select_related("changed_by"):
+        who = step.changed_by
+        name = None
+        if who is not None:
+            full = who.get_full_name()
+            name = f"{full} ({who.email})" if full and who.email else (full or who.email or who.username)
+        history.append({"at": step.changed_at, "label": step.label, "by": name, "reason": step.reason})
+    return history
 
 
 class CompetitionDetailView(View):
@@ -1046,7 +1045,7 @@ class CompetitionDetailView(View):
             "report_form": ReportCompetitionForm() if can_report else None,
             "open_reports": open_reports,
             "can_dismiss_reports": bool(open_reports),
-            "approval_record": _approval_record(competition) if is_admin_plus(request.user) else None,
+            "moderation_history": _moderation_history(competition) if is_admin_plus(request.user) else None,
             **_link_preview_tags(request, competition),
             "structured_data": sports_event(competition, f"{request.scheme}://{request.get_host()}"),
         }

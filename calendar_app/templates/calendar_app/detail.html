@@ -454,11 +454,16 @@
     </section>
     {% endif %}
 
-    {% if approval_record %}
-    {# Who published the event, for admins only (#741); nothing when it was never recorded. #}
-    <p class="text-muted small mt-4 mb-0" id="approval-record">
-      {% if approval_record.name and approval_record.at %}{% blocktrans with name=approval_record.name date=approval_record.at|date:"d.m.Y H:i" %}Approved by {{ name }}, {{ date }}{% endblocktrans %}{% elif approval_record.name %}{% blocktrans with name=approval_record.name %}Approved by {{ name }}{% endblocktrans %}{% else %}{% blocktrans with date=approval_record.at|date:"d.m.Y H:i" %}Approved on {{ date }}{% endblocktrans %}{% endif %}
-    </p>
+    {% if moderation_history %}
+    {# The event's way through review, for admins only (#741): what was recorded, oldest first. #}
+    <section class="text-muted small mt-4" id="moderation-history" aria-labelledby="moderation-history-title">
+      <h2 class="h6 mb-1" id="moderation-history-title">{% trans "Moderation history" %}</h2>
+      <ul class="list-unstyled mb-0">
+        {% for step in moderation_history %}
+        <li><time datetime="{{ step.at|date:'c' }}">{{ step.at|date:"d.m.Y H:i" }}</time> &middot; {{ step.label }}{% if step.by %} &middot; {{ step.by }}{% endif %}{% if step.reason %}: {{ step.reason }}{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </section>
     {% endif %}
 
   </div>
