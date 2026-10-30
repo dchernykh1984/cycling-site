@@ -2,8 +2,10 @@
 
 **Feature Branch**: `47-payment-gateways`
 **Created**: 2026-10-30
-**Status**: Draft -- for the maintainer's review before any plan or code. Open points are listed
-under "Questions for the maintainer" with the default the spec assumes.
+**Status**: Draft -- for the maintainer's review before any plan or code. Decisions 6, 7, 11 and 13
+were confirmed or taken by the maintainer on 2026-10-30 (see "Answered by the maintainer"); the rest
+are proposed with the default the spec assumes. Research only for now: no talks with providers and
+no code until the maintainer says so.
 **Issue**: [#47](https://github.com/dchernykh1984/cycling-site/issues/47) ("Payment gateways"), with
 the maintainer's brief of 2026-10-29 (the issue's comment of 2026-10-30)
 **Input**: An organizer who takes a fee for an event sets a fee schedule and chooses how
@@ -81,12 +83,12 @@ Numbered so that a review can answer by number. A `(Qn)` names the question of t
    from which it applies, and a price; a step may give a different price per registration category.
    Before the first step the price is the first step's; after the last, the last step's. A schedule
    with one step is a fixed fee. Steps by number of entries ("the first 50 pay less") are a later
-   addition the model leaves room for. (Q6)
+   addition the model leaves room for. (Q6; confirmed 2026-10-30, per-category prices included)
 7. **The price is the one in force when the participant pays**, not when they registered: that is
    what makes a rising schedule bring registered participants to the start. The price shown when a
    participant starts a payment holds for a short, fixed time so that a step change during payment
    does not refuse it. For the manual connector, the organizer records the amount actually received,
-   prefilled with the price in force at that moment. (Q7)
+   prefilled with the price in force at that moment. (Q7; confirmed 2026-10-30)
 8. **An unpaid entry is kept**, as today; the organizer may set a time after which an unpaid entry
    no longer counts towards the limit (it stays visible to its participant and to the organizer, and
    pays at the then-current price). Default: no such time. (Q8)
@@ -96,7 +98,8 @@ Numbered so that a review can answer by number. A `(Qn)` names the question of t
 10. **The site takes nothing from a fee.** No percentage, no fixed charge, in this delivery. Paid
     extras for organizers (subscriptions) are a separate feature on the same connectors. (Q2)
 11. **A private person may organise a paid event** through the manual and link connectors; the fee
-    settings show them the warning of the "Background" section. (Q3)
+    settings show them the warning of the "Background" section. (Q3; confirmed 2026-10-30: "the point
+    is that anyone, even without a legal entity, can set up paid registration")
 12. **Everything an organizer or a participant does here is also an API operation** under
     `/api/v1/` with the same rules (principle VII); the payment service's callbacks arrive on a
     machine-facing URL without a language prefix.
@@ -409,20 +412,19 @@ API:
 - Steps by the number of entries, promo codes, club discounts, one payment for several entries.
 - Any onboarding of an organizer at a service from inside the site.
 
-## Questions for the maintainer
+## Answered by the maintainer (2026-10-30)
 
-The research's `questions.md` has twelve; the three that change the shape of the work are marked
-for clarification, the rest are decided above with a default and may be overturned in review.
+The research's `questions.md` has twelve questions; the three that change the shape of the work
+were put to the maintainer, the rest are decided above with a default and may be overturned in
+review.
 
-- [NEEDS CLARIFICATION: Q1 -- which legal entity signs as the platform with a payment organisation
-  for the first automatic connector (TOO UBT?), and whether talks with Wooppay and Halyk ePay may
-  start now. Without a platform contract the first delivery ships `manual` and `link` only.]
-- [NEEDS CLARIFICATION: Q3 -- may a private person (no company, no sole-trader status known to the
-  site) run a paid event through the manual and link connectors, with the warning, or must a fee be
-  limited to some organizers? Default here: allowed, with the warning.]
-- [NEEDS CLARIFICATION: Q6/Q7 -- is a schedule of steps by date, with per-category prices, priced at
-  the moment of payment, the first delivery? Steps by number of entries, promo codes and discounts
-  are left for later. Default here: yes.]
+- **Q1 -- the platform's legal entity.** The maintainer has none today and asked whether one is
+  needed. Answer (decision 13): not for the first delivery; one is needed before an automatic
+  connector, and then the maintainer will register it. No talks with providers for now.
+- **Q3 -- private persons as organizers.** Yes: "the point is that anyone, even without a legal
+  entity, can set up paid registration" (decision 11).
+- **Q6/Q7 -- the schedule.** Confirmed: steps by date, prices per category, the price fixed at the
+  moment of payment (decisions 6 and 7).
 
 ## Requirements already fixed elsewhere
 
