@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from django.conf import settings
 from django.db import transaction
@@ -132,10 +132,22 @@ class CompetitionOut(Schema):
 
 class CompetitionDetailOut(CompetitionOut):
     competition_token: str | None = None
+    # Who approved the event and when -- admins only, as on the event's page; null for everyone
+    # else, and for approvals made before they were recorded.
+    approved_by_id: int | None = None
+    approved_at: datetime | None = None
 
     @staticmethod
     def resolve_competition_token(obj: Competition) -> str | None:
         return getattr(obj, "_api_token", None)
+
+    @staticmethod
+    def resolve_approved_by_id(obj: Competition) -> int | None:
+        return obj.approved_by_id if getattr(obj, "_approval_visible", False) else None
+
+    @staticmethod
+    def resolve_approved_at(obj: Competition) -> datetime | None:
+        return obj.approved_at if getattr(obj, "_approval_visible", False) else None
 
 
 # -- Helpers ---------------------------------------------------------------
@@ -332,6 +344,7 @@ def _to_detail(competition: Competition, user=None) -> Competition:
     can_see = user is not None and (_is_owner(user, competition) or is_admin(user))
     # upload_token is nullable (a manager can delete it); don't serialize a null as "None".
     competition._api_token = str(competition.upload_token) if can_see and competition.upload_token else None
+    competition._approval_visible = user is not None and is_admin(user)
     return competition
 
 
@@ -441,6 +454,9 @@ def create_competition(request, payload: CompetitionIn):
     _validate_location_id(payload.location_id, user)
     status = Competition.Status.APPROVED if is_admin(user) else Competition.Status.PENDING_APPROVAL
     competition = Competition(submitted_by=user, status=status)
+    if status == Competition.Status.APPROVED:
+        # The token's owner is not the request's session user, so the model cannot find them itself.
+        competition.approved_by = user
     _validate_description_length(payload.description)
     _apply_localized(competition, "title", payload.title)
     # Descriptions are sanitized centrally in Competition.save().

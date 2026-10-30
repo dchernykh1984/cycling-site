@@ -4579,3 +4579,18 @@ msgstr "Имя1<BR>Имя2<BR>Имя3"
 #: registrations/forms.py:104
 msgid "City1<BR>City2<BR>City3"
 msgstr "Город1<BR>Город2<BR>Город3"
+
+#: calendar_app/templates/calendar_app/detail.html:460
+#, python-format
+msgid "Approved by %(name)s, %(date)s"
+msgstr "Одобрено пользователем %(name)s, %(date)s"
+
+#: calendar_app/templates/calendar_app/detail.html:460
+#, python-format
+msgid "Approved by %(name)s"
+msgstr "Одобрено пользователем %(name)s"
+
+#: calendar_app/templates/calendar_app/detail.html:460
+#, python-format
+msgid "Approved on %(date)s"
+msgstr "Одобрено %(date)s"

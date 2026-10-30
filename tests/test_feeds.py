@@ -97,8 +97,10 @@ class NewCompetitionsFeedTests(TestCase):
             date_start=today + datetime.timedelta(days=1),
             status=Competition.Status.APPROVED,
             location=venue,
-            approved_at=None,
         )
+        # An approval from before approvals were stamped: a save stamps every new one now, so the
+        # old state is made the way it is in the database, behind the model's back.
+        Competition.objects.filter(pk=cls.never_stamped.pk).update(approved_at=None)
 
     def test_the_newest_addition_comes_first(self):
         """The feed answers "what is new", so it is ordered by approval, not by race date."""

@@ -267,17 +267,44 @@ class Competition(index.Indexed, models.Model):
         # every write -- the single choke point covering the organizer form, the API, Django
         # admin and Wagtail snippets (see _DESCRIPTION_FIELDS for the __dict__ rationale).
         sanitize_rich_text_columns(self, _DESCRIPTION_FIELDS, update_fields=kwargs.get("update_fields"))
+        changed = self._record_approval()
         if self.invite_only and self.invite_key is None:
             self.invite_key = uuid.uuid4()
-            update_fields = kwargs.get("update_fields")
-            if update_fields is not None:
-                kwargs["update_fields"] = {*update_fields, "invite_key"}
+            changed.add("invite_key")
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and changed:
+            kwargs["update_fields"] = {*update_fields, *changed}
         super().save(*args, **kwargs)
 
     def get_absolute_url(self) -> str:
         """Where this competition lives. Needed by the sitemap, and by anything that has a
         competition in hand and wants to link to it without knowing the URL layout."""
         return reverse("competition_detail", kwargs={"pk": self.pk})
+
+    def _record_approval(self) -> set[str]:
+        """Note who approved the event and when, on its way into APPROVED, whatever door it took.
+
+        The moderation page sets both; the status field of the Wagtail admin and an admin's event
+        created through the API set neither, so an event could be published with no trace of who
+        did it (#741). The approver is the signed-in user of the request. A save that finds the event
+        already approved records nothing: whoever approved it then is unknown, and the person
+        editing it now is not them.
+        """
+        if self.status != self.Status.APPROVED or (self.approved_by_id and self.approved_at):
+            return set()
+        if self.pk and type(self).objects.filter(pk=self.pk, status=self.Status.APPROVED).exists():
+            return set()
+        from audit.middleware import get_current_user
+
+        changed = set()
+        user = get_current_user()
+        if self.approved_by_id is None and getattr(user, "is_authenticated", False):
+            self.approved_by = user
+            changed.add("approved_by")
+        if self.approved_at is None:
+            self.approved_at = timezone.now()
+            changed.add("approved_at")
+        return changed
 
     def regenerate_invite_key(self) -> None:
         """Issue a new invitation link. The old one stops working; people already let in stay in."""
