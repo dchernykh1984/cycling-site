@@ -2,17 +2,20 @@
 
 A reader cannot see a Latin letter inside a Cyrillic word, but search and sorting can; a letter typed
 three times is a slip; and a translation that loses a placeholder or a tag breaks the page it is on.
+Every catalogue the site serves is read: its own, and the one with Kazakh for its packages' strings.
 """
 
 import re
 from pathlib import Path
 
 import pytest
+from django.conf import settings
 
-LOCALE = Path(__file__).resolve().parent.parent / "cycling_site" / "locale"
+LOCALES = [Path(root) for root in settings.LOCALE_PATHS]
 CYRILLIC = re.compile(f"[{chr(0x0400)}-{chr(0x04FF)}]")
 LATIN = re.compile("[A-Za-z]")
-NOT_WORDS = re.compile(r"%\(\w+\)[sd]|%[sd]|<[^>]+>|&\w+;|\{\w+\}|https?://\S+")
+# An escape such as \n is not a letter: read as one, "\nword" looks like a Latin n glued to a word.
+NOT_WORDS = re.compile(r"%\(\w+\)[sd]|%[sd]|<[^>]+>|&\w+;|\{\w+\}|https?://\S+|\\.")
 PLACEHOLDER = re.compile(r"%\(\w+\)[sd]|%[sd]|\{\w+\}")
 TAG = re.compile(r"</?(\w+)")
 
@@ -23,12 +26,18 @@ def _joined(block: str, key: str) -> str | None:
 
 
 def _entries(language: str) -> list[tuple[str, str]]:
-    text = (LOCALE / language / "LC_MESSAGES" / "django.po").read_text(encoding="utf-8")
-    pairs = [(_joined(block, "msgid"), _joined(block, "msgstr")) for block in text.split("\n\n")]
+    pairs = []
+    for root in LOCALES:
+        catalogue = root / language / "LC_MESSAGES" / "django.po"
+        if catalogue.exists():
+            blocks = catalogue.read_text(encoding="utf-8").split("\n\n")
+            pairs += [(_joined(block, "msgid"), _joined(block, "msgstr")) for block in blocks]
     return [(msgid, msgstr) for msgid, msgstr in pairs if msgid and msgstr]
 
 
-LANGUAGES = sorted(path.name for path in LOCALE.iterdir() if (path / "LC_MESSAGES" / "django.po").exists())
+LANGUAGES = sorted(
+    {path.name for root in LOCALES for path in root.iterdir() if (path / "LC_MESSAGES" / "django.po").exists()}
+)
 
 
 @pytest.mark.parametrize("language", LANGUAGES)

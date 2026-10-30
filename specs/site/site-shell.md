@@ -7,7 +7,7 @@
 content, legal pages), `search/`
 **Tests**: `home/tests.py`, `cycling_site/tests.py`, `tests/test_setup_hints.py`,
 `tests/test_share_button.py`, `tests/test_language_switch.py`, `tests/test_locale_cache.py`,
-`tests/test_page_meta.py`, `tests/test_favicon.py`, `search/tests.py`,
+`tests/test_kazakh_account_pages.py`, `tests/test_page_meta.py`, `tests/test_favicon.py`, `search/tests.py`,
 `tests/test_template_comments.py`, `tests/e2e/test_home_page.py`, `test_header.py`, `test_locale.py`,
 `test_setup_hints.py`, `test_share_button.py`, `test_reader_timezone.py`
 **Related**: [accounts](accounts.md), [skins](skins.md), [search visibility](search-visibility.md)
@@ -130,6 +130,9 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
 ## Functional Requirements
 
 - **FR-SHL-001**: Three languages (ru default, kk, en); the language buttons read RU, KK, EN (#388).
+  A string a package ships no Kazakh for -- django-allauth's pages and mails, Django's password
+  rules, form errors and CSRF refusal -- would fall back to Russian, the default language; its
+  Kazakh is kept in `cycling_site/locale_third_party/` (`tests/test_kazakh_account_pages.py`).
 - **FR-SHL-002**: The privacy policy and the terms of use live at stable addresses, are public and
   translated, linked from every footer; the privacy policy states what Strava data is used, what a
   member allowed to manage one's registrations and photos sees and may do ([accounts](accounts.md)),

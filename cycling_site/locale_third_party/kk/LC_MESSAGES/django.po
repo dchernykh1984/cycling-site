@@ -1,0 +1,1194 @@
+# Kazakh for the strings of django-allauth and Django that a reader meets and that those packages
+# ship no Kazakh for; without it they fall back to Russian, the site's default language. Kept by
+# hand: makemessages never writes here (see the translations skill).
+msgid ""
+msgstr ""
+"Language: kk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: allauth/account/adapter.py
+msgid "This account is currently inactive."
+msgstr "Бұл тіркелгі қазір белсенді емес."
+
+#: allauth/account/adapter.py
+msgid "You cannot remove your primary email address."
+msgstr "Негізгі электрондық пошта мекенжайыңызды жою мүмкін емес."
+
+#: allauth/account/adapter.py
+msgid "This email address is already associated with this account."
+msgstr ""
+"Бұл электрондық пошта мекенжайы осы тіркелгіге бұрыннан байланыстырылған."
+
+#: allauth/account/adapter.py
+msgid "The email address and/or password you specified are not correct."
+msgstr ""
+"Көрсетілген электрондық пошта мекенжайы және/немесе құпиясөз дұрыс емес."
+
+#: allauth/account/adapter.py
+msgid "The phone number and/or password you specified are not correct."
+msgstr "Көрсетілген телефон нөмірі және/немесе құпиясөз дұрыс емес."
+
+#: allauth/account/adapter.py
+msgid "A user is already registered with this email address."
+msgstr "Бұл электрондық пошта мекенжайымен пайдаланушы бұрыннан тіркелген."
+
+#: allauth/account/adapter.py
+msgid "Please type your current password."
+msgstr "Ағымдағы құпиясөзіңізді енгізіңіз."
+
+#: allauth/account/adapter.py allauth/mfa/adapter.py
+msgid "Incorrect code."
+msgstr "Код қате."
+
+#: allauth/account/adapter.py
+msgid "Incorrect password."
+msgstr "Құпиясөз қате."
+
+#: allauth/account/adapter.py
+msgid "Invalid or expired key."
+msgstr "Кілт жарамсыз немесе мерзімі өткен."
+
+#: allauth/account/adapter.py
+msgid "Invalid login."
+msgstr "Кіру деректері қате."
+
+#: allauth/account/adapter.py
+msgid "The password reset token was invalid."
+msgstr "Құпиясөзді қалпына келтіру токені жарамсыз."
+
+#: allauth/account/adapter.py
+msgid "You cannot add more than %d email addresses."
+msgstr "%d электрондық пошта мекенжайынан артық қосу мүмкін емес."
+
+#: allauth/account/adapter.py
+msgid "A user is already registered with this phone number."
+msgstr "Бұл телефон нөмірімен пайдаланушы бұрыннан тіркелген."
+
+#: allauth/account/adapter.py
+msgid "Too many failed login attempts. Try again later."
+msgstr "Сәтсіз кіру әрекеттері тым көп. Кейінірек қайталап көріңіз."
+
+#: allauth/account/adapter.py
+msgid "The email address is not assigned to any user account."
+msgstr "Бұл электрондық пошта мекенжайы ешбір тіркелгіге тиесілі емес."
+
+#: allauth/account/adapter.py
+msgid "The phone number is not assigned to any user account."
+msgstr "Бұл телефон нөмірі ешбір тіркелгіге тиесілі емес."
+
+#: allauth/account/adapter.py
+#: allauth/templates/account/messages/unverified_primary_email.txt
+msgid "Your primary email address must be verified."
+msgstr "Негізгі электрондық пошта мекенжайыңыз расталуы керек."
+
+#: allauth/account/adapter.py
+msgid "Username can not be used. Please use other username."
+msgstr "Бұл пайдаланушы атын қолдануға болмайды. Басқа атауды таңдаңыз."
+
+#: allauth/account/adapter.py
+msgid "The username and/or password you specified are not correct."
+msgstr "Көрсетілген пайдаланушы аты және/немесе құпиясөз дұрыс емес."
+
+#: allauth/account/adapter.py
+msgid "Please select only one."
+msgstr "Тек біреуін таңдаңыз."
+
+#: allauth/account/adapter.py
+msgid "The new value must be different from the current one."
+msgstr "Жаңа мән ағымдағысынан өзгеше болуы керек."
+
+#: allauth/account/adapter.py
+msgid "Be patient, you are sending too many requests."
+msgstr "Сәл күтіңіз, сұраулар тым көп жіберіліп жатыр."
+
+#: allauth/account/adapter.py
+msgid "Use your password"
+msgstr "Құпиясөзді пайдалану"
+
+#: allauth/account/adapter.py
+msgid "Use authenticator app or code"
+msgstr "Аутентификатор қолданбасын немесе кодты пайдалану"
+
+#: allauth/account/adapter.py allauth/templates/mfa/authenticate.html
+#: allauth/templates/mfa/webauthn/reauthenticate.html
+msgid "Use a security key"
+msgstr "Қауіпсіздік кілтін пайдалану"
+
+#: allauth/account/fields.py
+msgid "Email address"
+msgstr "Электрондық пошта мекенжайы"
+
+#: allauth/account/fields.py
+msgid "Enter a phone number including country code (e.g. +1 for the US)."
+msgstr "Телефон нөмірін ел кодымен бірге енгізіңіз (мысалы, АҚШ үшін +1)."
+
+#: allauth/account/fields.py allauth/account/fields.py allauth/account/forms.py
+msgid "Phone"
+msgstr "Телефон"
+
+#: allauth/account/forms.py allauth/account/forms.py
+msgid "You must type the same password each time."
+msgstr "Екі рет бірдей құпиясөз енгізуіңіз керек."
+
+#: allauth/account/forms.py allauth/account/forms.py allauth/account/forms.py
+msgid "Password"
+msgstr "Құпиясөз"
+
+#: allauth/account/forms.py
+msgid "Remember Me"
+msgstr "Мені есте сақтау"
+
+#: allauth/account/forms.py allauth/account/forms.py allauth/account/forms.py
+msgid "Username"
+msgstr "Пайдаланушы аты"
+
+#: allauth/account/forms.py
+msgctxt "field label"
+msgid "Login"
+msgstr "Логин"
+
+#: allauth/account/forms.py
+msgid "Username, email or phone"
+msgstr "Пайдаланушы аты, email немесе телефон"
+
+#: allauth/account/forms.py
+msgid "Username or email"
+msgstr "Пайдаланушы аты немесе email"
+
+#: allauth/account/forms.py
+msgid "Username or phone"
+msgstr "Пайдаланушы аты немесе телефон"
+
+#: allauth/account/forms.py
+msgid "Email or phone"
+msgstr "Email немесе телефон"
+
+#: allauth/account/forms.py
+msgid "Forgot your password?"
+msgstr "Құпиясөзді ұмыттыңыз ба?"
+
+#: allauth/account/forms.py
+msgid "Email (again)"
+msgstr "Email (қайтадан)"
+
+#: allauth/account/forms.py
+msgid "Email address confirmation"
+msgstr "Электрондық пошта мекенжайын растау"
+
+#: allauth/account/forms.py
+msgid "Email (optional)"
+msgstr "Email (міндетті емес)"
+
+#: allauth/account/forms.py
+msgid "Username (optional)"
+msgstr "Пайдаланушы аты (міндетті емес)"
+
+#: allauth/account/forms.py
+msgid "You must type the same email each time."
+msgstr "Екі рет бірдей email енгізуіңіз керек."
+
+#: allauth/account/forms.py allauth/account/forms.py
+msgid "Password (again)"
+msgstr "Құпиясөз (қайтадан)"
+
+#: allauth/account/forms.py
+msgid "Current Password"
+msgstr "Ағымдағы құпиясөз"
+
+#: allauth/account/forms.py allauth/account/forms.py
+msgid "New Password"
+msgstr "Жаңа құпиясөз"
+
+#: allauth/account/forms.py allauth/account/forms.py
+msgid "New Password (again)"
+msgstr "Жаңа құпиясөз (қайтадан)"
+
+#: allauth/account/forms.py allauth/account/forms.py allauth/idp/oidc/forms.py
+msgid "Code"
+msgstr "Код"
+
+#: allauth/socialaccount/adapter.py
+msgid ""
+"An account already exists with this email address. Please sign in to that "
+"account first, then connect your %s account."
+msgstr ""
+"Бұл электрондық пошта мекенжайымен тіркелгі бұрыннан бар. Алдымен сол "
+"тіркелгіге кіріп, содан кейін %s тіркелгісін қосыңыз."
+
+#: allauth/socialaccount/adapter.py
+msgid "Invalid token."
+msgstr "Токен жарамсыз."
+
+#: allauth/socialaccount/adapter.py
+msgid "Your account has no password set up."
+msgstr "Тіркелгіңізде құпиясөз орнатылмаған."
+
+#: allauth/socialaccount/adapter.py
+msgid "Your account has no verified email address."
+msgstr "Тіркелгіңізде расталған электрондық пошта мекенжайы жоқ."
+
+#: allauth/socialaccount/adapter.py
+msgid "You cannot disconnect your last remaining third-party account."
+msgstr "Соңғы қалған сыртқы сервис тіркелгісін ажырату мүмкін емес."
+
+#: allauth/socialaccount/adapter.py
+#: allauth/templates/socialaccount/messages/account_connected_other.txt
+msgid "The third-party account is already connected to a different account."
+msgstr "Бұл сыртқы сервис тіркелгісі басқа тіркелгіге бұрыннан қосылған."
+
+#: allauth/templates/account/account_inactive.html
+#: allauth/templates/account/account_inactive.html
+msgid "Account Inactive"
+msgstr "Тіркелгі белсенді емес"
+
+#: allauth/templates/account/account_inactive.html
+msgid "This account is inactive."
+msgstr "Бұл тіркелгі белсенді емес."
+
+#: allauth/templates/account/base_confirm_code.html
+msgid ""
+"We've sent a code to %(recipient)s. The code expires shortly, so please enter"
+" it soon."
+msgstr ""
+"%(recipient)s мекенжайына код жібердік. Кодтың мерзімі тез өтеді, сондықтан "
+"оны жақын арада енгізіңіз."
+
+#: allauth/templates/account/base_confirm_code.html
+msgid "Request new code"
+msgstr "Жаңа код сұрау"
+
+#: allauth/templates/account/base_reauthenticate.html
+#: allauth/templates/account/base_reauthenticate.html
+msgid "Confirm Access"
+msgstr "Қолжетімділікті растау"
+
+#: allauth/templates/account/base_reauthenticate.html
+msgid "Please reauthenticate to safeguard your account."
+msgstr "Тіркелгіңізді қорғау үшін қайта аутентификациядан өтіңіз."
+
+#: allauth/templates/account/base_reauthenticate.html
+#: allauth/templates/mfa/authenticate.html
+msgid "Alternative options"
+msgstr "Басқа нұсқалар"
+
+#: allauth/templates/account/confirm_email_verification_code.html
+msgid "Email Verification"
+msgstr "Электрондық поштаны растау"
+
+#: allauth/templates/account/confirm_email_verification_code.html
+msgid "Enter Email Verification Code"
+msgstr "Электрондық поштаны растау кодын енгізіңіз"
+
+#: allauth/templates/account/confirm_email_verification_code.html
+msgid "Use a different email address"
+msgstr "Басқа электрондық пошта мекенжайын пайдалану"
+
+#: allauth/templates/account/confirm_login_code.html
+#: allauth/templates/account/login.html allauth/templates/account/login.html
+msgid "Sign In"
+msgstr "Кіру"
+
+#: allauth/templates/account/confirm_login_code.html
+msgid "Enter Sign-In Code"
+msgstr "Кіру кодын енгізіңіз"
+
+#: allauth/templates/account/confirm_password_reset_code.html
+#: allauth/templates/account/email/password_reset_subject.txt
+#: allauth/templates/account/password_reset.html
+msgid "Password Reset"
+msgstr "Құпиясөзді қалпына келтіру"
+
+#: allauth/templates/account/confirm_password_reset_code.html
+msgid "Enter Password Reset Code"
+msgstr "Құпиясөзді қалпына келтіру кодын енгізіңіз"
+
+#: allauth/templates/account/confirm_phone_verification_code.html
+msgid "Phone Verification"
+msgstr "Телефон нөмірін растау"
+
+#: allauth/templates/account/confirm_phone_verification_code.html
+msgid "Enter Phone Verification Code"
+msgstr "Телефонды растау кодын енгізіңіз"
+
+#: allauth/templates/account/confirm_phone_verification_code.html
+msgid "Use a different phone number"
+msgstr "Басқа телефон нөмірін пайдалану"
+
+#: allauth/templates/account/email.html allauth/templates/account/email.html
+msgid "Email Addresses"
+msgstr "Электрондық пошта мекенжайлары"
+
+#: allauth/templates/account/email.html
+msgid "The following email addresses are associated with your account:"
+msgstr "Тіркелгіңізге келесі электрондық пошта мекенжайлары байланыстырылған:"
+
+#: allauth/templates/account/email.html
+msgid "Verified"
+msgstr "Расталған"
+
+#: allauth/templates/account/email.html
+msgid "Unverified"
+msgstr "Расталмаған"
+
+#: allauth/templates/account/email.html
+msgid "Primary"
+msgstr "Негізгі"
+
+#: allauth/templates/account/email.html
+msgid "Make Primary"
+msgstr "Негізгі ету"
+
+#: allauth/templates/account/email.html
+#: allauth/templates/account/email_change.html
+#: allauth/templates/account/phone_change.html
+msgid "Re-send Verification"
+msgstr "Растауды қайта жіберу"
+
+#: allauth/templates/account/email.html
+msgid "Add Email Address"
+msgstr "Электрондық пошта мекенжайын қосу"
+
+#: allauth/templates/account/email.html
+msgid "Add Email"
+msgstr "Email қосу"
+
+#: allauth/templates/account/email.html
+msgid "Do you really want to remove the selected email address?"
+msgstr "Таңдалған электрондық пошта мекенжайын шынымен жойғыңыз келе ме?"
+
+#: allauth/templates/account/email/account_already_exists_message.txt
+msgid ""
+"You are receiving this email because you or someone else tried to signup for an\n"
+"account using email address:\n"
+"\n"
+"%(email)s\n"
+"\n"
+"However, an account using that email address already exists.  In case you have\n"
+"forgotten about this, please use the password forgotten procedure to recover\n"
+"your account:\n"
+"\n"
+"%(password_reset_url)s"
+msgstr ""
+"Бұл хатты сіз немесе басқа біреу келесі электрондық пошта мекенжайымен\n"
+"тіркелгі ашуға әрекеттенгендіктен алып отырсыз:\n"
+"\n"
+"%(email)s\n"
+"\n"
+"Алайда бұл мекенжаймен тіркелгі бұрыннан бар. Егер бұл есіңізден шығып\n"
+"кетсе, тіркелгіні қайтару үшін құпиясөзді қалпына келтіріңіз:\n"
+"\n"
+"%(password_reset_url)s"
+
+#: allauth/templates/account/email/account_already_exists_subject.txt
+msgid "Account Already Exists"
+msgstr "Тіркелгі бұрыннан бар"
+
+#: allauth/templates/account/email/base_message.txt
+msgid "Hello from %(site_name)s!"
+msgstr "%(site_name)s сайтынан сәлем!"
+
+#: allauth/templates/account/email/base_message.txt
+msgid ""
+"Thank you for using %(site_name)s!\n"
+"%(site_domain)s"
+msgstr ""
+"%(site_name)s сайтын пайдаланғаныңызға рақмет!\n"
+"%(site_domain)s"
+
+#: allauth/templates/account/email/base_notification.txt
+msgid ""
+"You are receiving this mail because the following change was made to your "
+"account:"
+msgstr "Бұл хатты тіркелгіңізге келесі өзгеріс енгізілгендіктен алып отырсыз:"
+
+#: allauth/templates/account/email/base_notification.txt
+msgid ""
+"If you do not recognize this change then please take proper security precautions immediately. The change to your account originates from:\n"
+"\n"
+"- IP address: %(ip)s\n"
+"- Browser: %(user_agent)s\n"
+"- Date: %(timestamp)s"
+msgstr ""
+"Егер бұл өзгерісті танымасаңыз, дереу қажетті қауіпсіздік шараларын қолданыңыз. Тіркелгіңіздегі өзгеріс мына жерден жасалды:\n"
+"\n"
+"- IP мекенжайы: %(ip)s\n"
+"- Браузер: %(user_agent)s\n"
+"- Күні: %(timestamp)s"
+
+#: allauth/templates/account/email/email_changed_message.txt
+msgid "Your email has been changed from %(from_email)s to %(to_email)s."
+msgstr ""
+"Электрондық пошта мекенжайыңыз %(from_email)s мекенжайынан %(to_email)s "
+"мекенжайына өзгертілді."
+
+#: allauth/templates/account/email/email_changed_subject.txt
+msgid "Email Changed"
+msgstr "Электрондық пошта өзгертілді"
+
+#: allauth/templates/account/email/email_confirm_message.txt
+msgid "Your email has been confirmed."
+msgstr "Электрондық пошта мекенжайыңыз расталды."
+
+#: allauth/templates/account/email/email_confirm_subject.txt
+msgid "Email Confirmation"
+msgstr "Электрондық поштаны растау"
+
+#: allauth/templates/account/email/email_confirmation_message.txt
+msgid ""
+"You're receiving this email because user %(user_display)s has given your "
+"email address to register an account on %(site_domain)s."
+msgstr ""
+"Бұл хатты %(user_display)s пайдаланушысы %(site_domain)s сайтында тіркелгі "
+"ашу үшін сіздің электрондық пошта мекенжайыңызды көрсеткендіктен алып "
+"отырсыз."
+
+#: allauth/templates/account/email/email_confirmation_message.txt
+msgid ""
+"Your email verification code is listed below. Please enter it in your open "
+"browser window."
+msgstr ""
+"Электрондық поштаны растау кодыңыз төменде берілген. Оны браузердің ашық "
+"терезесіне енгізіңіз."
+
+#: allauth/templates/account/email/email_confirmation_message.txt
+msgid "To confirm this is correct, go to %(activate_url)s"
+msgstr "Мұны растау үшін %(activate_url)s сілтемесіне өтіңіз"
+
+#: allauth/templates/account/email/email_confirmation_subject.txt
+msgid "Please Confirm Your Email Address"
+msgstr "Электрондық пошта мекенжайыңызды растаңыз"
+
+#: allauth/templates/account/email/email_deleted_message.txt
+msgid "Email address %(deleted_email)s has been removed from your account."
+msgstr "%(deleted_email)s электрондық пошта мекенжайы тіркелгіңізден жойылды."
+
+#: allauth/templates/account/email/email_deleted_subject.txt
+msgid "Email Removed"
+msgstr "Электрондық пошта жойылды"
+
+#: allauth/templates/account/email/login_code_message.txt
+msgid ""
+"Your sign-in code is listed below. Please enter it in your open browser "
+"window."
+msgstr ""
+"Кіру кодыңыз төменде берілген. Оны браузердің ашық терезесіне енгізіңіз."
+
+#: allauth/templates/account/email/login_code_message.txt
+#: allauth/templates/account/email/password_reset_code_message.txt
+#: allauth/templates/account/email/unknown_account_message.txt
+msgid "This mail can be safely ignored if you did not initiate this action."
+msgstr "Егер бұл әрекетті сіз бастамасаңыз, бұл хатты елемеуге болады."
+
+#: allauth/templates/account/email/login_code_subject.txt
+msgid "Sign-In Code"
+msgstr "Кіру коды"
+
+#: allauth/templates/account/email/password_changed_message.txt
+msgid "Your password has been changed."
+msgstr "Құпиясөзіңіз өзгертілді."
+
+#: allauth/templates/account/email/password_changed_subject.txt
+msgid "Password Changed"
+msgstr "Құпиясөз өзгертілді"
+
+#: allauth/templates/account/email/password_reset_code_message.txt
+msgid ""
+"Your password reset code is listed below. Please enter it in your open "
+"browser window."
+msgstr ""
+"Құпиясөзді қалпына келтіру кодыңыз төменде берілген. Оны браузердің ашық "
+"терезесіне енгізіңіз."
+
+#: allauth/templates/account/email/password_reset_code_subject.txt
+msgid "Password Reset Code"
+msgstr "Құпиясөзді қалпына келтіру коды"
+
+#: allauth/templates/account/email/password_reset_key_message.txt
+msgid ""
+"You're receiving this email because you or someone else has requested a password reset for your user account.\n"
+"It can be safely ignored if you did not request a password reset. Click the link below to reset your password."
+msgstr ""
+"Бұл хатты сіз немесе басқа біреу тіркелгіңіздің құпиясөзін қалпына келтіруді сұрағандықтан алып отырсыз.\n"
+"Егер сұрамаған болсаңыз, хатты елемеуге болады. Құпиясөзді қалпына келтіру үшін төмендегі сілтемені басыңыз."
+
+#: allauth/templates/account/email/password_reset_key_message.txt
+msgid "In case you forgot, your username is %(username)s."
+msgstr "Ұмытып қалсаңыз: пайдаланушы атыңыз — %(username)s."
+
+#: allauth/templates/account/email/password_reset_key_subject.txt
+msgid "Password Reset Email"
+msgstr "Құпиясөзді қалпына келтіру хаты"
+
+#: allauth/templates/account/email/password_reset_message.txt
+msgid "Your password has been reset."
+msgstr "Құпиясөзіңіз қалпына келтірілді."
+
+#: allauth/templates/account/email/password_set_message.txt
+msgid "Your password has been set."
+msgstr "Құпиясөзіңіз орнатылды."
+
+#: allauth/templates/account/email/password_set_subject.txt
+msgid "Password Set"
+msgstr "Құпиясөз орнатылды"
+
+#: allauth/templates/account/email/unknown_account_message.txt
+msgid ""
+"You are receiving this email because you, or someone else, tried to access an"
+" account with email %(email)s. However, we do not have any record of such an "
+"account in our database."
+msgstr ""
+"Бұл хатты сіз немесе басқа біреу %(email)s электрондық поштасы бар тіркелгіге"
+" кіруге әрекеттенгендіктен алып отырсыз. Алайда біздің дерекқорымызда мұндай "
+"тіркелгі жоқ."
+
+#: allauth/templates/account/email/unknown_account_message.txt
+msgid "If it was you, you can sign up for an account using the link below."
+msgstr "Егер бұл сіз болсаңыз, төмендегі сілтеме арқылы тіркеле аласыз."
+
+#: allauth/templates/account/email/unknown_account_subject.txt
+msgid "Unknown Account"
+msgstr "Белгісіз тіркелгі"
+
+#: allauth/templates/account/email_change.html
+#: allauth/templates/account/email_change.html
+msgid "Email Address"
+msgstr "Электрондық пошта мекенжайы"
+
+#: allauth/templates/account/email_change.html
+#: allauth/templates/account/email_change.html
+msgid "Current email"
+msgstr "Ағымдағы email"
+
+#: allauth/templates/account/email_change.html
+msgid "Changing to"
+msgstr "Жаңа мекенжай"
+
+#: allauth/templates/account/email_change.html
+msgid "Your email address is still pending verification."
+msgstr "Электрондық пошта мекенжайыңыз әлі расталуын күтуде."
+
+#: allauth/templates/account/email_change.html
+msgid "Cancel Change"
+msgstr "Өзгерісті болдырмау"
+
+#: allauth/templates/account/email_change.html
+#: allauth/templates/account/phone_change.html
+msgid "Change to"
+msgstr "Өзгерту"
+
+#: allauth/templates/account/email_change.html
+#: allauth/templates/allauth/layouts/base.html
+msgid "Change Email"
+msgstr "Email-ді өзгерту"
+
+#: allauth/templates/account/email_confirm.html
+#: allauth/templates/account/email_confirm.html
+msgid "Confirm Email Address"
+msgstr "Электрондық пошта мекенжайын растау"
+
+#: allauth/templates/account/email_confirm.html
+msgid ""
+"Please confirm that <a href=\"mailto:%(email)s\">%(email)s</a> is an email "
+"address for user %(user_display)s."
+msgstr ""
+"<a href=\"mailto:%(email)s\">%(email)s</a> мекенжайы %(user_display)s "
+"пайдаланушысына тиесілі екенін растаңыз."
+
+#: allauth/templates/account/email_confirm.html
+#: allauth/templates/account/messages/email_confirmation_failed.txt
+msgid ""
+"Unable to confirm %(email)s because it is already confirmed by a different "
+"account."
+msgstr ""
+"%(email)s мекенжайын растау мүмкін емес: ол басқа тіркелгіде бұрыннан "
+"расталған."
+
+#: allauth/templates/account/email_confirm.html
+msgid ""
+"This email confirmation link expired or is invalid. Please <a "
+"href=\"%(email_url)s\">issue a new email confirmation request</a>."
+msgstr ""
+"Бұл растау сілтемесінің мерзімі өткен немесе ол жарамсыз. <a "
+"href=\"%(email_url)s\">Растауды қайта сұраңыз</a>."
+
+#: allauth/templates/account/login.html
+msgid ""
+"If you have not created an account yet, then please %(link)ssign "
+"up%(end_link)s first."
+msgstr "Егер әлі тіркелмеген болсаңыз, алдымен %(link)sтіркеліңіз%(end_link)s."
+
+#: allauth/templates/account/login.html
+msgid "Sign in with a passkey"
+msgstr "Passkey арқылы кіру"
+
+#: allauth/templates/account/login.html
+#: allauth/templates/account/request_login_code.html
+msgid "Send me a sign-in code"
+msgstr "Маған кіру кодын жіберу"
+
+#: allauth/templates/account/logout.html allauth/templates/account/logout.html
+#: allauth/templates/account/logout.html
+msgid "Sign Out"
+msgstr "Шығу"
+
+#: allauth/templates/account/logout.html allauth/templates/idp/oidc/logout.html
+msgid "Are you sure you want to sign out?"
+msgstr "Шынымен шыққыңыз келе ме?"
+
+#: allauth/templates/account/messages/cannot_delete_primary_email.txt
+msgid "You cannot remove your primary email address (%(email)s)."
+msgstr "Негізгі электрондық пошта мекенжайыңызды (%(email)s) жою мүмкін емес."
+
+#: allauth/templates/account/messages/email_confirmation_sent.txt
+msgid "Confirmation email sent to %(email)s."
+msgstr "Растау хаты %(email)s мекенжайына жіберілді."
+
+#: allauth/templates/account/messages/email_confirmed.txt
+msgid "You have confirmed %(email)s."
+msgstr "%(email)s мекенжайы расталды."
+
+#: allauth/templates/account/messages/email_deleted.txt
+msgid "Removed email address %(email)s."
+msgstr "%(email)s электрондық пошта мекенжайы жойылды."
+
+#: allauth/templates/account/messages/logged_in.txt
+msgid "Successfully signed in as %(name)s."
+msgstr "%(name)s ретінде сәтті кірдіңіз."
+
+#: allauth/templates/account/messages/logged_out.txt
+msgid "You have signed out."
+msgstr "Сіз шықтыңыз."
+
+#: allauth/templates/account/messages/login_code_sent.txt
+msgid "A sign-in code has been sent to %(recipient)s."
+msgstr "Кіру коды %(recipient)s мекенжайына жіберілді."
+
+#: allauth/templates/account/messages/password_changed.txt
+msgid "Password successfully changed."
+msgstr "Құпиясөз сәтті өзгертілді."
+
+#: allauth/templates/account/messages/password_set.txt
+msgid "Password successfully set."
+msgstr "Құпиясөз сәтті орнатылды."
+
+#: allauth/templates/account/messages/phone_verification_sent.txt
+msgid "A verification code has been sent to %(phone)s."
+msgstr "Растау коды %(phone)s нөміріне жіберілді."
+
+#: allauth/templates/account/messages/phone_verified.txt
+msgid "You have verified phone number %(phone)s."
+msgstr "%(phone)s телефон нөмірі расталды."
+
+#: allauth/templates/account/messages/primary_email_set.txt
+msgid "Primary email address set."
+msgstr "Негізгі электрондық пошта мекенжайы орнатылды."
+
+#: allauth/templates/account/password_change.html
+#: allauth/templates/account/password_change.html
+#: allauth/templates/account/password_change.html
+msgid "Change Password"
+msgstr "Құпиясөзді өзгерту"
+
+#: allauth/templates/account/password_change.html
+msgid "Forgot Password?"
+msgstr "Құпиясөзді ұмыттыңыз ба?"
+
+#: allauth/templates/account/password_reset.html
+msgid ""
+"Forgotten your password? Enter your email address below, and we'll send you "
+"an email allowing you to reset it."
+msgstr ""
+"Құпиясөзді ұмыттыңыз ба? Төменде электрондық пошта мекенжайыңызды енгізіңіз, "
+"біз құпиясөзді қалпына келтіруге мүмкіндік беретін хат жібереміз."
+
+#: allauth/templates/account/password_reset.html
+msgid "Reset My Password"
+msgstr "Құпиясөзді қалпына келтіру"
+
+#: allauth/templates/account/password_reset.html
+msgid "Please contact us if you have any trouble resetting your password."
+msgstr ""
+"Құпиясөзді қалпына келтіру кезінде қиындық туындаса, бізге хабарласыңыз."
+
+#: allauth/templates/account/password_reset_done.html
+msgid ""
+"We have sent you an email. If you have not received it please check your spam"
+" folder. Otherwise contact us if you do not receive it in a few minutes."
+msgstr ""
+"Сізге хат жібердік. Егер ол келмесе, «Спам» қалтасын тексеріңіз. Бірнеше "
+"минут ішінде хат келмесе, бізге хабарласыңыз."
+
+#: allauth/templates/account/password_reset_from_key.html
+msgid "Bad Token"
+msgstr "Жарамсыз токен"
+
+#: allauth/templates/account/password_reset_from_key.html
+msgid ""
+"The password reset link was invalid, possibly because it has already been "
+"used.  Please request a <a href=\"%(passwd_reset_url)s\">new password "
+"reset</a>."
+msgstr ""
+"Құпиясөзді қалпына келтіру сілтемесі жарамсыз, мүмкін, ол бұрын "
+"пайдаланылған. <a href=\"%(passwd_reset_url)s\">Құпиясөзді қалпына келтіруді "
+"қайта сұраңыз</a>."
+
+#: allauth/templates/account/password_reset_from_key_done.html
+msgid "Your password is now changed."
+msgstr "Құпиясөзіңіз өзгертілді."
+
+#: allauth/templates/account/password_set.html
+#: allauth/templates/account/password_set.html
+#: allauth/templates/account/password_set.html
+msgid "Set Password"
+msgstr "Құпиясөз орнату"
+
+#: allauth/templates/account/phone_change.html
+#: allauth/templates/account/phone_change.html
+msgid "Change Phone"
+msgstr "Телефонды өзгерту"
+
+#: allauth/templates/account/phone_change.html
+msgid "Current phone"
+msgstr "Ағымдағы телефон"
+
+#: allauth/templates/account/phone_change.html
+msgid "Your phone number is still pending verification."
+msgstr "Телефон нөміріңіз әлі расталуын күтуде."
+
+#: allauth/templates/account/phone_change.html
+msgctxt "action"
+msgid "Change Phone"
+msgstr "Телефонды өзгерту"
+
+#: allauth/templates/account/reauthenticate.html
+msgid "Enter your password:"
+msgstr "Құпиясөзіңізді енгізіңіз:"
+
+#: allauth/templates/account/request_login_code.html
+msgid "You will receive a special code for a password-free sign-in."
+msgstr "Құпиясөзсіз кіру үшін арнайы код аласыз."
+
+#: allauth/templates/account/request_login_code.html
+msgid "Request Code"
+msgstr "Код сұрау"
+
+#: allauth/templates/account/request_login_code.html
+msgid "Other sign-in options"
+msgstr "Кірудің басқа тәсілдері"
+
+#: allauth/templates/account/signup_by_passkey.html
+msgid "Passkey Sign Up"
+msgstr "Passkey арқылы тіркелу"
+
+#: allauth/templates/account/signup_by_passkey.html
+msgid "Other options"
+msgstr "Басқа нұсқалар"
+
+#: allauth/templates/account/signup_closed.html
+#: allauth/templates/account/signup_closed.html
+msgid "Sign Up Closed"
+msgstr "Тіркелу жабық"
+
+#: allauth/templates/account/signup_closed.html
+msgid "We are sorry, but the sign up is currently closed."
+msgstr "Кешіріңіз, қазір тіркелу жабық."
+
+#: allauth/templates/account/snippets/already_logged_in.html
+msgid "Note"
+msgstr "Ескерту"
+
+#: allauth/templates/account/snippets/already_logged_in.html
+msgid "You are already logged in as %(user_display)s."
+msgstr "Сіз %(user_display)s ретінде кіріп тұрсыз."
+
+#: allauth/templates/account/snippets/warn_no_email.html
+msgid "Warning:"
+msgstr "Назар аударыңыз:"
+
+#: allauth/templates/account/snippets/warn_no_email.html
+msgid ""
+"You currently do not have any email address set up. You should really add an "
+"email address so you can receive notifications, reset your password, etc."
+msgstr ""
+"Қазір сізде бірде-бір электрондық пошта мекенжайы жоқ. Хабарламалар алу, "
+"құпиясөзді қалпына келтіру және т.б. үшін мекенжай қосқан жөн."
+
+#: allauth/templates/account/verification_sent.html
+#: allauth/templates/account/verification_sent.html
+#: allauth/templates/account/verified_email_required.html
+msgid "Verify Your Email Address"
+msgstr "Электрондық пошта мекенжайыңызды растаңыз"
+
+#: allauth/templates/account/verification_sent.html
+msgid ""
+"We have sent an email to you for verification. Follow the link provided to "
+"finalize the signup process. If you do not see the verification email in your"
+" main inbox, check your spam folder. Please contact us if you do not receive "
+"the verification email within a few minutes."
+msgstr ""
+"Растау үшін сізге хат жібердік. Тіркелуді аяқтау үшін хаттағы сілтемеге "
+"өтіңіз. Егер растау хаты негізгі пошта жәшігінде болмаса, «Спам» қалтасын "
+"тексеріңіз. Бірнеше минут ішінде растау хаты келмесе, бізге хабарласыңыз."
+
+#: allauth/templates/account/verified_email_required.html
+msgid ""
+"This part of the site requires us to verify that\n"
+"you are who you claim to be. For this purpose, we require that you\n"
+"verify ownership of your email address. "
+msgstr ""
+"Сайттың бұл бөлімінде сіздің кім екеніңізді\n"
+"растауымыз керек. Ол үшін электрондық пошта мекенжайы\n"
+"сізге тиесілі екенін растауыңызды сұраймыз. "
+
+#: allauth/templates/account/verified_email_required.html
+msgid ""
+"We have sent an email to you for\n"
+"verification. Please click on the link inside that email. If you do not see the verification email in your main inbox, check your spam folder. Otherwise\n"
+"contact us if you do not receive it within a few minutes."
+msgstr ""
+"Растау үшін сізге хат\n"
+"жібердік. Хаттағы сілтемені басыңыз. Егер растау хаты негізгі пошта жәшігінде болмаса, «Спам» қалтасын тексеріңіз. Бірнеше минут ішінде\n"
+"хат келмесе, бізге хабарласыңыз."
+
+#: allauth/templates/account/verified_email_required.html
+msgid ""
+"<strong>Note:</strong> you can still <a href=\"%(email_url)s\">change your "
+"email address</a>."
+msgstr ""
+"<strong>Ескерту:</strong> <a href=\"%(email_url)s\">электрондық пошта "
+"мекенжайыңызды өзгерте аласыз</a>."
+
+#: allauth/templates/allauth/layouts/base.html
+#: allauth/templates/socialaccount/connections.html
+#: allauth/templates/socialaccount/connections.html
+msgid "Account Connections"
+msgstr "Қосылған тіркелгілер"
+
+#: allauth/templates/idp/oidc/device_authorization_code_form.html
+#: allauth/templates/socialaccount/login.html
+#: allauth/templates/socialaccount/login_redirect.html
+msgid "Continue"
+msgstr "Жалғастыру"
+
+#: allauth/templates/socialaccount/authentication_error.html
+#: allauth/templates/socialaccount/authentication_error.html
+msgid "Third-Party Login Failure"
+msgstr "Сыртқы сервис арқылы кіру қатесі"
+
+#: allauth/templates/socialaccount/authentication_error.html
+msgid ""
+"An error occurred while attempting to login via your third-party account."
+msgstr "Сыртқы сервис тіркелгісі арқылы кіру кезінде қате пайда болды."
+
+#: allauth/templates/socialaccount/connections.html
+msgid ""
+"You can sign in to your account using any of the following third-party "
+"accounts:"
+msgstr ""
+"Тіркелгіңізге келесі сыртқы сервис тіркелгілерінің кез келгені арқылы кіре "
+"аласыз:"
+
+#: allauth/templates/socialaccount/connections.html
+msgid "You currently have no third-party accounts connected to this account."
+msgstr "Қазір бұл тіркелгіге бірде-бір сыртқы сервис тіркелгісі қосылмаған."
+
+#: allauth/templates/socialaccount/connections.html
+msgid "Add a Third-Party Account"
+msgstr "Сыртқы сервис тіркелгісін қосу"
+
+#: allauth/templates/socialaccount/email/account_connected_message.txt
+msgid ""
+"A third-party account from %(provider)s has been connected to your account."
+msgstr "Тіркелгіңізге %(provider)s сервисінің тіркелгісі қосылды."
+
+#: allauth/templates/socialaccount/email/account_connected_subject.txt
+msgid "Third-Party Account Connected"
+msgstr "Сыртқы сервис тіркелгісі қосылды"
+
+#: allauth/templates/socialaccount/email/account_disconnected_message.txt
+msgid ""
+"A third-party account from %(provider)s has been disconnected from your "
+"account."
+msgstr "%(provider)s сервисінің тіркелгісі тіркелгіңізден ажыратылды."
+
+#: allauth/templates/socialaccount/email/account_disconnected_subject.txt
+msgid "Third-Party Account Disconnected"
+msgstr "Сыртқы сервис тіркелгісі ажыратылды"
+
+#: allauth/templates/socialaccount/login.html
+msgid "Connect %(provider)s"
+msgstr "%(provider)s қосу"
+
+#: allauth/templates/socialaccount/login.html
+msgid "You are about to connect a new third-party account from %(provider)s."
+msgstr "Сіз %(provider)s сервисінің жаңа тіркелгісін қосқалы тұрсыз."
+
+#: allauth/templates/socialaccount/login.html
+msgid "Sign In Via %(provider)s"
+msgstr "%(provider)s арқылы кіру"
+
+#: allauth/templates/socialaccount/login.html
+msgid "You are about to sign in using a third-party account from %(provider)s."
+msgstr "Сіз %(provider)s сервисінің тіркелгісі арқылы кіргелі тұрсыз."
+
+#: allauth/templates/socialaccount/login_cancelled.html
+#: allauth/templates/socialaccount/login_cancelled.html
+msgid "Login Cancelled"
+msgstr "Кіру тоқтатылды"
+
+#: allauth/templates/socialaccount/login_cancelled.html
+msgid ""
+"You decided to cancel logging in to our site using one of your existing "
+"accounts. If this was a mistake, please proceed to <a "
+"href=\"%(login_url)s\">sign in</a>."
+msgstr ""
+"Сіз бар тіркелгілеріңіздің бірі арқылы сайтқа кіруді тоқтаттыңыз. Егер бұл "
+"қателік болса, <a href=\"%(login_url)s\">кіру</a> бетіне өтіңіз."
+
+#: allauth/templates/socialaccount/messages/account_connected.txt
+msgid "The third-party account has been connected."
+msgstr "Сыртқы сервис тіркелгісі қосылды."
+
+#: allauth/templates/socialaccount/messages/account_disconnected.txt
+msgid "The third-party account has been disconnected."
+msgstr "Сыртқы сервис тіркелгісі ажыратылды."
+
+#: allauth/templates/socialaccount/signup.html
+msgid ""
+"You are about to use your %(provider_name)s account to login to\n"
+"%(site_name)s. As a final step, please complete the following form:"
+msgstr ""
+"Сіз %(site_name)s сайтына кіру үшін %(provider_name)s тіркелгісін\n"
+"пайдаланғалы тұрсыз. Соңғы қадам ретінде мына форманы толтырыңыз:"
+
+#: allauth/templates/socialaccount/snippets/login.html
+msgid "Or use a third-party"
+msgstr "Немесе сыртқы сервисті пайдаланыңыз"
+
+#: django/contrib/auth/password_validation.py
+msgid "This password is too short. It must contain at least %d character."
+msgid_plural ""
+"This password is too short. It must contain at least %d characters."
+msgstr[0] "Бұл құпиясөз тым қысқа. Онда кемінде %d таңба болуы керек."
+msgstr[1] "Бұл құпиясөз тым қысқа. Онда кемінде %d таңба болуы керек."
+
+#: django/contrib/auth/password_validation.py
+msgid "Your password must contain at least %(min_length)d character."
+msgid_plural "Your password must contain at least %(min_length)d characters."
+msgstr[0] "Құпиясөзде кемінде %(min_length)d таңба болуы керек."
+msgstr[1] "Құпиясөзде кемінде %(min_length)d таңба болуы керек."
+
+#: django/contrib/auth/password_validation.py
+msgid "The password is too similar to the %(verbose_name)s."
+msgstr "Құпиясөз «%(verbose_name)s» өрісіне тым ұқсас."
+
+#: django/contrib/auth/password_validation.py
+msgid "Your password can’t be too similar to your other personal information."
+msgstr "Құпиясөз жеке деректеріңізге тым ұқсас болмауы керек."
+
+#: django/contrib/auth/password_validation.py
+msgid "This password is too common."
+msgstr "Бұл құпиясөз тым жиі кездеседі."
+
+#: django/contrib/auth/password_validation.py
+msgid "Your password can’t be a commonly used password."
+msgstr "Құпиясөз жиі қолданылатын құпиясөздердің бірі болмауы керек."
+
+#: django/contrib/auth/password_validation.py
+msgid "This password is entirely numeric."
+msgstr "Бұл құпиясөз тек цифрлардан тұрады."
+
+#: django/contrib/auth/password_validation.py
+msgid "Your password can’t be entirely numeric."
+msgstr "Құпиясөз тек цифрлардан тұрмауы керек."
+
+#: django/core/validators.py
+msgid "Enter a valid integer."
+msgstr "Бүтін сан енгізіңіз."
+
+#: django/core/validators.py
+msgid "Enter a valid email address."
+msgstr "Дұрыс электрондық пошта мекенжайын енгізіңіз."
+
+#: django/core/validators.py
+msgid "Ensure this value is a multiple of step size %(limit_value)s."
+msgstr "Мән %(limit_value)s санына еселі болуы керек."
+
+#: django/core/validators.py
+msgid ""
+"Ensure this value is a multiple of step size %(limit_value)s, starting from "
+"%(offset)s, e.g. %(offset)s, %(valid_value1)s, %(valid_value2)s, and so on."
+msgstr ""
+"Мән %(offset)s санынан бастап %(limit_value)s қадаммен алынуы керек, мысалы: "
+"%(offset)s, %(valid_value1)s, %(valid_value2)s және т.б."
+
+#: django/core/validators.py
+msgid ""
+"Ensure this value has at least %(limit_value)d character (it has "
+"%(show_value)d)."
+msgid_plural ""
+"Ensure this value has at least %(limit_value)d characters (it has "
+"%(show_value)d)."
+msgstr[0] ""
+"Мән кемінде %(limit_value)d таңбадан тұруы керек (қазір %(show_value)d)."
+msgstr[1] ""
+"Мән кемінде %(limit_value)d таңбадан тұруы керек (қазір %(show_value)d)."
+
+#: django/core/validators.py
+msgid ""
+"Ensure this value has at most %(limit_value)d character (it has "
+"%(show_value)d)."
+msgid_plural ""
+"Ensure this value has at most %(limit_value)d characters (it has "
+"%(show_value)d)."
+msgstr[0] "Мән %(limit_value)d таңбадан аспауы керек (қазір %(show_value)d)."
+msgstr[1] "Мән %(limit_value)d таңбадан аспауы керек (қазір %(show_value)d)."
+
+#: django/core/validators.py
+msgid "Ensure that there are no more than %(max)s digit in total."
+msgid_plural "Ensure that there are no more than %(max)s digits in total."
+msgstr[0] "Барлығы %(max)s цифрдан аспауы керек."
+msgstr[1] "Барлығы %(max)s цифрдан аспауы керек."
+
+#: django/core/validators.py
+msgid "Ensure that there are no more than %(max)s decimal place."
+msgid_plural "Ensure that there are no more than %(max)s decimal places."
+msgstr[0] "Үтірден кейін %(max)s цифрдан аспауы керек."
+msgstr[1] "Үтірден кейін %(max)s цифрдан аспауы керек."
+
+#: django/core/validators.py
+msgid ""
+"Ensure that there are no more than %(max)s digit before the decimal point."
+msgid_plural ""
+"Ensure that there are no more than %(max)s digits before the decimal point."
+msgstr[0] "Үтірге дейін %(max)s цифрдан аспауы керек."
+msgstr[1] "Үтірге дейін %(max)s цифрдан аспауы керек."
+
+#: django/core/validators.py
+msgid ""
+"File extension “%(extension)s” is not allowed. Allowed extensions are: "
+"%(allowed_extensions)s."
+msgstr ""
+"«%(extension)s» кеңейтімі бар файлдарға рұқсат жоқ. Рұқсат етілген "
+"кеңейтімдер: %(allowed_extensions)s."
+
+#: django/core/validators.py
+msgid "Null characters are not allowed."
+msgstr "Мәтінде нөлдік таңбаға (null) рұқсат жоқ."
+
+#: django/db/models/base.py
+msgid "%(model_name)s with this %(field_labels)s already exists."
+msgstr ""
+"%(field_labels)s өрістерінің осындай мәндері бар %(model_name)s бұрыннан бар."
+
+#: django/db/models/constraints.py
+msgid "Constraint “%(name)s” is violated."
+msgstr "«%(name)s» шектеуі бұзылды."
+
+#: django/db/models/fields/__init__.py
+msgid "Value %(value)r is not a valid choice."
+msgstr "%(value)r мәні рұқсат етілген нұсқалардың қатарында жоқ."
+
+#: django/forms/fields.py
+msgid "Ensure this filename has at most %(max)d character (it has %(length)d)."
+msgid_plural ""
+"Ensure this filename has at most %(max)d characters (it has %(length)d)."
+msgstr[0] "Файл атауы %(max)d таңбадан аспауы керек (қазір %(length)d)."
+msgstr[1] "Файл атауы %(max)d таңбадан аспауы керек (қазір %(length)d)."
+
+#: django/forms/fields.py
+msgid "Enter a complete value."
+msgstr "Мәнді толық енгізіңіз."
+
+#: django/forms/formsets.py
+msgid "Please submit at most %(num)d form."
+msgid_plural "Please submit at most %(num)d forms."
+msgstr[0] "%(num)d формадан артық жібермеңіз."
+msgstr[1] "%(num)d формадан артық жібермеңіз."
+
+#: django/forms/formsets.py
+msgid "Please submit at least %(num)d form."
+msgid_plural "Please submit at least %(num)d forms."
+msgstr[0] "Кемінде %(num)d форма жіберіңіз."
+msgstr[1] "Кемінде %(num)d форма жіберіңіз."
+
+#: django/forms/utils.py
+msgid ""
+"%(datetime)s couldn’t be interpreted in time zone %(current_timezone)s; it "
+"may be ambiguous or it may not exist."
+msgstr ""
+"%(datetime)s мәнін %(current_timezone)s уақыт белдеуінде анықтау мүмкін емес:"
+" ол екіұшты немесе мүлдем болмауы мүмкін."
+
+#: django/views/csrf.py
+msgid "Forbidden"
+msgstr "Қолжетімділік жоқ"
+
+#: django/views/csrf.py
+msgid "CSRF verification failed. Request aborted."
+msgstr "CSRF тексерісі сәтсіз аяқталды. Сұрау қабылданбады."
+
+#: django/views/csrf.py
+msgid ""
+"You are seeing this message because this HTTPS site requires a “Referer "
+"header” to be sent by your web browser, but none was sent. This header is "
+"required for security reasons, to ensure that your browser is not being "
+"hijacked by third parties."
+msgstr ""
+"Бұл хабарламаны көріп отырсыз, себебі осы HTTPS сайты браузеріңізден "
+"“Referer” тақырыбын жіберуді талап етеді, бірақ ол жіберілмеді. Бұл тақырып "
+"қауіпсіздік үшін қажет: браузеріңізді бөгде біреу басқарып тұрмағанына көз "
+"жеткізу керек."
+
+#: django/views/csrf.py
+msgid ""
+"If you have configured your browser to disable “Referer” headers, please re-"
+"enable them, at least for this site, or for HTTPS connections, or for “same-"
+"origin” requests."
+msgstr ""
+"Егер браузеріңізде “Referer” тақырыптары өшірілген болса, оларды қайта "
+"қосыңыз: кемінде осы сайт үшін, не HTTPS қосылымдары үшін, не “same-origin” "
+"сұраулары үшін."
+
+#: django/views/csrf.py
+msgid ""
+"If you are using the <meta name=\"referrer\" content=\"no-referrer\"> tag or "
+"including the “Referrer-Policy: no-referrer” header, please remove them. The "
+"CSRF protection requires the “Referer” header to do strict referer checking. "
+"If you’re concerned about privacy, use alternatives like <a "
+"rel=\"noreferrer\" …> for links to third-party sites."
+msgstr ""
+"Егер <meta name=\"referrer\" content=\"no-referrer\"> тегін немесе “Referrer-"
+"Policy: no-referrer” тақырыбын қолдансаңыз, оларды алып тастаңыз. CSRF "
+"қорғанысы сілтеме жасаған бетті қатаң тексеру үшін “Referer” тақырыбын қажет "
+"етеді. Құпиялылық сізді алаңдатса, бөгде сайттарға сілтемелер үшін <a "
+"rel=\"noreferrer\" …> сияқты баламаларды пайдаланыңыз."
+
+#: django/views/csrf.py
+msgid ""
+"You are seeing this message because this site requires a CSRF cookie when "
+"submitting forms. This cookie is required for security reasons, to ensure "
+"that your browser is not being hijacked by third parties."
+msgstr ""
+"Бұл хабарламаны көріп отырсыз, себебі осы сайт формаларды жіберген кезде CSRF"
+" cookie файлын талап етеді. Бұл cookie қауіпсіздік үшін қажет: браузеріңізді "
+"бөгде біреу басқарып тұрмағанына көз жеткізу керек."
+
+#: django/views/csrf.py
+msgid ""
+"If you have configured your browser to disable cookies, please re-enable "
+"them, at least for this site, or for “same-origin” requests."
+msgstr ""
+"Егер браузеріңізде cookie өшірілген болса, оларды қайта қосыңыз: кемінде осы "
+"сайт үшін немесе “same-origin” сұраулары үшін."
+
+#: django/views/csrf.py
+msgid "More information is available with DEBUG=True."
+msgstr "Толығырақ ақпарат DEBUG=True режимінде қолжетімді."
+
+#: django/contrib/auth/models.py
+msgid "email address"
+msgstr "электрондық пошта мекенжайы"
