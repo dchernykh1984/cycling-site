@@ -10,6 +10,16 @@
         }
     } catch (e) { /* no Intl: the site's default zone stands */ }
 
+    // A language button sends the page as it is now. The calendar and the map keep the period and the
+    // filters picked on them in the page (window.currentViewUrl), not in the address they were opened
+    // at -- which was all the button sent, so switching language there dropped both.
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        var next = form.querySelector('input[name="next"]');
+        if (!window.currentViewUrl || !next || !/set_language\/$/.test(form.getAttribute('action') || '')) return;
+        next.value = window.currentViewUrl();
+    });
+
     // The skin chooser (_skin_select.html), in the navbar and on the profile.
     function saveSkin(key) {
         if (document.body.dataset.authenticated !== 'true') {

@@ -111,7 +111,8 @@ document.addEventListener('DOMContentLoaded', function () {
     return window.location.origin + window.location.pathname + (qs ? '?' + qs : '');
   };
 
-  function updateSwitcherLinks() {
+  // The map as it is now -- its filters and its days -- for the other tabs and the language buttons.
+  function viewQuery() {
     var params = new URLSearchParams();
     appendFilters(params, 'discipline_category');
     // The map has no location filter of its own (it is the location view), so appendFilters never
@@ -121,7 +122,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // Re-joined into a single value, so a link arriving with one parameter per id (an older
     // bookmark) leaves the map in the compact form the rest of the site now uses.
     window.appendIdsParam(params, 'location', new URLSearchParams(window.location.search).getAll('location'));
-    var qs = params.toString();
+    return params.toString();
+  }
+  window.currentViewUrl = function () {
+    var qs = viewQuery();
+    return window.location.pathname + (qs ? '?' + qs : '');
+  };
+
+  function updateSwitcherLinks() {
+    var qs = viewQuery();
     ['view-link-calendar', 'view-link-list'].forEach(function (id) {
       var a = document.getElementById(id);
       if (a) a.href = a.pathname + (qs ? '?' + qs : '');
