@@ -1669,3 +1669,45 @@ class FormLabelsInThePageLanguageTests(TestCase):
     def test_the_edit_page(self):
         url = reverse("registrations:edit_registration", args=[self.comp.pk, self.reg.pk])
         self._labels_on(url, ("First name", "Last name", "Gender", "Male", "Female", "Approved", "Paid"))
+
+
+class BirthDateBoundsTests(TestCase):
+    """A date of birth lies between 1900 and today -- one in the future was taken, and categories by
+    birth date read it -- and the year field's end is this year when the form is sent."""
+
+    def test_the_registration_form_refuses_a_birth_in_the_future_or_before_1900(self):
+        from registrations.forms import RegistrationForm
+
+        comp = make_competition(registration_enabled=True, birth_date_mode="date", status=Competition.Status.APPROVED)
+        tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+        for born in (tomorrow, datetime.date(1899, 12, 31)):
+            with self.subTest(born=born.isoformat()):
+                form = RegistrationForm(
+                    data={"first_name": "A", "last_name": "B", "gender": "M", "birth_date": born.isoformat()},
+                    competition=comp,
+                )
+                self.assertIn("birth_date", form.errors)
+        form = RegistrationForm(
+            data={"first_name": "A", "last_name": "B", "gender": "M", "birth_date": "1990-05-05"}, competition=comp
+        )
+        self.assertNotIn("birth_date", form.errors)
+
+    def test_the_year_field_ends_at_this_year_when_the_form_is_sent(self):
+        from unittest import mock
+
+        from registrations.forms import RegistrationForm
+
+        comp = make_competition(registration_enabled=True, birth_date_mode="year", status=Competition.Status.APPROVED)
+        later = datetime.date(datetime.date.today().year + 3, 6, 1)
+        data = {"first_name": "A", "last_name": "B", "gender": "M", "birth_year": str(later.year - 1)}
+        self.assertIn("birth_year", RegistrationForm(data=data, competition=comp).errors)
+        with mock.patch("django.utils.timezone.localdate", return_value=later):
+            self.assertNotIn("birth_year", RegistrationForm(data=data, competition=comp).errors)
+
+    def test_the_profile_refuses_a_birth_in_the_future(self):
+        from accounts.views import ProfileEditForm
+
+        user = make_user("born-later")
+        tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+        form = ProfileEditForm(data={"birth_date": tomorrow.isoformat()}, instance=user)
+        self.assertIn("birth_date", form.errors)

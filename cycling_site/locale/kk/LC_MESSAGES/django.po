@@ -4618,3 +4618,11 @@ msgstr "Жобаларға ауыстырылды"
 #: locations/forms.py
 msgid "Give both the latitude and the longitude, or neither."
 msgstr "Ендік пен бойлықты бірге көрсетіңіз немесе екеуін де бос қалдырыңыз."
+
+#: accounts/models.py
+msgid "Enter a date of birth between 1900 and today."
+msgstr "Туған күнді 1900 жылдан бүгінгі күнге дейінгі аралықта көрсетіңіз."
+
+#: accounts/models.py
+msgid "Enter a year of birth between 1900 and this year."
+msgstr "Туған жылды 1900 жылдан биылғы жылға дейінгі аралықта көрсетіңіз."

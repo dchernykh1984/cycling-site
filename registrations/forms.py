@@ -6,7 +6,7 @@ from django import forms
 from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
 
-from accounts.models import User
+from accounts.models import FIRST_BIRTH_YEAR, User, validate_birth_date, validate_birth_year
 
 from .models import CompetitionRegistration, RegistrationCategory
 
@@ -20,10 +20,12 @@ class RegistrationForm(forms.Form):
     last_name = forms.CharField(max_length=100, label=_("Last name"))
     gender = forms.ChoiceField(choices=GENDER_CHOICES, widget=forms.RadioSelect, label=_("Gender"))
     birth_date = forms.DateField(
-        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"), label=_("Date of birth")
+        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        label=_("Date of birth"),
+        validators=[validate_birth_date],
     )
     birth_year = forms.IntegerField(
-        min_value=1900, max_value=datetime.date.today().year, required=False, label=_("Year of birth")
+        min_value=FIRST_BIRTH_YEAR, required=False, label=_("Year of birth"), validators=[validate_birth_year]
     )
     category = forms.ModelChoiceField(queryset=RegistrationCategory.objects.none(), required=False, label=_("Category"))
     city = forms.CharField(max_length=100, required=False, label=_("City"))

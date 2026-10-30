@@ -6,6 +6,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.functions import Lower
 
+from accounts.models import validate_birth_date
+
 
 class Team(models.Model):
     name = models.CharField(max_length=100)
@@ -102,7 +104,7 @@ class CompetitionRegistration(models.Model):
     participant_names = models.TextField(blank=True, default="")
     participant_birth_years = models.TextField(blank=True, default="")
     participant_cities = models.TextField(blank=True, default="")
-    birth_date = models.DateField()
+    birth_date = models.DateField(validators=[validate_birth_date])
     gender = models.CharField(max_length=1, choices=[("M", "Male"), ("F", "Female")])
     category = models.ForeignKey(
         RegistrationCategory,

@@ -4,6 +4,7 @@ from typing import ClassVar
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext
@@ -12,6 +13,22 @@ from django.utils.translation import gettext_lazy as _
 
 def default_skin() -> str:
     return settings.DEFAULT_SKIN
+
+
+#: The earliest year of birth taken anywhere: the registration form's year field begins there too.
+FIRST_BIRTH_YEAR = 1900
+
+
+def validate_birth_date(value: datetime.date | None) -> None:
+    """A date of birth from 1900 to today: one in the future was taken, and age categories read it."""
+    if value is not None and not (value.year >= FIRST_BIRTH_YEAR and value <= timezone.localdate()):
+        raise ValidationError(_("Enter a date of birth between 1900 and today."), code="birth_date")
+
+
+def validate_birth_year(value: int | None) -> None:
+    """The year field's upper end, today's year when the form is sent -- not the year the server started."""
+    if value is not None and value > timezone.localdate().year:
+        raise ValidationError(_("Enter a year of birth between 1900 and this year."), code="birth_year")
 
 
 class User(AbstractUser):  # type: ignore[django-manager-missing]
@@ -46,7 +63,7 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
 
     gender = models.CharField(max_length=1, choices=Gender.choices, blank=True, default="")
     api_token = models.UUIDField(null=True, blank=True, unique=True, db_index=True)
-    birth_date = models.DateField(null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True, validators=[validate_birth_date])
     # Default team/city for race registrations, so the registrant doesn't retype them each time.
     team = models.CharField(max_length=100, blank=True, default="")
     city = models.CharField(max_length=100, blank=True, default="")
