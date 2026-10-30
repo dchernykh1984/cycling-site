@@ -34,6 +34,8 @@ and the page that refuses a form without its CSRF cookie. A string a package lea
 falls back to Russian, the default language, not to English -- on a `/kk/` page it reads as plain
 Cyrillic and passes every other check. Their Kazakh lives in
 `cycling_site/locale_third_party/kk/LC_MESSAGES/django.po`, the second entry of `LOCALE_PATHS`.
+A string Django's own Russian lacks as well -- Django 6's "- Select an option -", the empty choice
+of a select -- shows in English on both; its Russian sits beside it, in `locale_third_party/ru/`.
 
 - `makemessages` writes only to the first entry and never touches this one: edit it by hand (or
   with `polib`), copying each msgid exactly as the package has it -- curly quotes, placeholders and

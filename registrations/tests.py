@@ -1640,6 +1640,15 @@ class FormLabelsInThePageLanguageTests(TestCase):
         url = reverse("registrations:manual_add", args=[self.comp.pk])
         self._labels_on(url, ("First name", "Last name", "Gender", "Male", "Female", "City", "Team"))
 
+    def test_the_empty_choice_of_a_select(self):
+        """Django 6 names a select's empty choice "- Select an option -" and has no Russian or Kazakh for it."""
+        url = reverse("registrations:manual_add", args=[self.comp.pk])
+        self._labels_on(url, ("- Select an option -",))
+        for lang in ("ru", "kk"):
+            with translation.override(lang):
+                self.assertNotEqual(translation.gettext("- Select an option -"), "- Select an option -")
+            self.assertNotIn("Select an option", self.client.get(in_language(url, lang)).content.decode())
+
     def test_the_edit_page(self):
         url = reverse("registrations:edit_registration", args=[self.comp.pk, self.reg.pk])
         self._labels_on(url, ("First name", "Last name", "Gender", "Male", "Female", "Approved", "Paid"))

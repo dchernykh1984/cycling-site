@@ -132,7 +132,9 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
 - **FR-SHL-001**: Three languages (ru default, kk, en); the language buttons read RU, KK, EN (#388).
   A string a package ships no Kazakh for -- django-allauth's pages and mails, Django's password
   rules, form errors and CSRF refusal -- would fall back to Russian, the default language; its
-  Kazakh is kept in `cycling_site/locale_third_party/` (`tests/test_kazakh_account_pages.py`).
+  Kazakh is kept in `cycling_site/locale_third_party/`, with the Russian of a Django string its own
+  Russian lacks (`tests/test_kazakh_account_pages.py`,
+  `registrations/tests.py::FormLabelsInThePageLanguageTests`).
 - **FR-SHL-002**: The privacy policy and the terms of use live at stable addresses, are public and
   translated, linked from every footer; the privacy policy states what Strava data is used, what a
   member allowed to manage one's registrations and photos sees and may do ([accounts](accounts.md)),
