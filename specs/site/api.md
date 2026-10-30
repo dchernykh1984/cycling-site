@@ -87,6 +87,7 @@ and protocols with the event's upload token. The API has no language prefix.
   over its limits (items, item length, device id, body kept under 2 MB) is a 400.
 - An event's link is a web address, taken as the site's form takes it (`example.com` becomes
   `https://example.com`); a `javascript:` or `data:` address is a 422.
+- An event's end before its start is a 422, on creation and on a patch of either date.
 - The event listing gives admins everything; anyone else gets approved events that are neither
   hidden nor invite-only, plus their own submissions; deleted events only on request, to an admin
   (all) or a signed-in author (their own).

@@ -269,6 +269,12 @@ def _validate_description_length(value: LocalizedStr) -> None:
             raise HttpError(422, f"Description is too large (max {MAX_DESCRIPTION_LENGTH} characters)")
 
 
+def _validate_dates(date_start, date_end) -> None:
+    """An end before the start, which the site's form refuses: the API stored one."""
+    if date_start is not None and date_end is not None and date_end < date_start:
+        raise HttpError(422, "date_end cannot be before date_start")
+
+
 def _validate_location_id(location_id, user) -> None:
     """Reject a forged location_id: missing, deleted, or another user's pending proposal (review #3)."""
     if location_id is None:
@@ -473,6 +479,7 @@ def create_competition(request, payload: CompetitionIn):
     if payload.is_top and not is_admin(user):
         raise HttpError(403, "Only admins can mark a top event")
     _validate_location_id(payload.location_id, user)
+    _validate_dates(payload.date_start, payload.date_end)
     status = Competition.Status.APPROVED if is_admin(user) else Competition.Status.PENDING_APPROVAL
     competition = Competition(submitted_by=user, status=status)
     _validate_description_length(payload.description)
@@ -548,6 +555,7 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
         # delete/level-change can't bind the competition to a removed or non-venue node.
         with transaction.atomic():
             update_fields = _apply_patch_fields(competition, data, user)
+            _validate_dates(competition.date_start, competition.date_end)
             if update_fields or set_disciplines or set_event_types:
                 # The edit time moves with any change, the many-to-many ones too (#348).
                 competition.save(update_fields=[*update_fields, "updated_at"])
