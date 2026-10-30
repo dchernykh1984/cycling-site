@@ -94,6 +94,9 @@ when everything is on the table; they never mean "skip this one."
   categories, **who it is for** (e.g. a required level like "2 W/kg uphill"), the rough schedule and
   the registration deadline when given. Use only `<p>`, `<br>`, `<ul>`/`<ol>`/`<li>`, `<strong>`,
   `<em>` -- never scripts or styles. Keep it informative but not a multi-page essay.
+- **Names in Russian**: Korean surnames -- Ким, Пак, Ли, Цой, Тен, Огай, Югай, Хан, Шин and the like --
+  and the surname Черных are not declined: «спасибо Олегу Ким», «с Денисом Черных», never
+  «Олегу Киму» or «Черныхом». The first name declines as usual.
 - **Location -- name the real place.** The site's locations are a tree: country -> region -> city ->
   specific venue (the start point). Give the **real** country, region, city and the **specific start
   venue / address**, and repeat them in the (Russian) description.
