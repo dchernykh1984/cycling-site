@@ -14,6 +14,19 @@ import re
 
 from django.utils.html import urlize
 
+# What XML 1.0 and iCalendar refuse in text: the C0 controls but tab, line feed and carriage return.
+_CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def without_control_characters(text: str) -> str:
+    """Text a feed or a calendar file can carry.
+
+    One title holding a stray control character took the whole events feed down with a 500 -- Django
+    refuses it in XML -- and went into the calendar file as it was.
+    """
+    return _CONTROL_CHARACTERS.sub("", text or "")
+
+
 _ALLOWED_BODY_TAGS: frozenset[str] = frozenset(
     {
         "p",

@@ -136,3 +136,44 @@ class FeedDiscoveryTests(TestCase):
         self.assertIn('type="text/calendar"', html)
         self.assertIn(f'href="{reverse("calendar_ics")}"', html)
         self.assertIn(f'href="{reverse("calendar_rss")}"', html)
+
+
+class ControlCharacterTests(TestCase):
+    """A stray control character -- pasted from a document, or sent by an API caller -- in one title.
+
+    Django refuses it in XML, so the whole events feed answered 500 for every reader; the calendar
+    file carried it as it was, which the format does not allow.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
+        city = add_location_child(region, name="Al\x0bmaty", name_ru="Al\x0bmaty")
+        venue = add_location_child(city, name="Square", name_ru="Square")
+        cls.event = Competition.objects.create(
+            title_ru="Night\x0bride",
+            date_start=datetime.date.today() + datetime.timedelta(days=5),
+            status=Competition.Status.APPROVED,
+            location=venue,
+        )
+        NewsArticle.objects.create(title_ru="Season\x0copener", intro_ru="Re\x1fport", published_at=timezone.now())
+
+    def test_the_feeds_still_parse_and_drop_the_character(self):
+        for name, tag in (
+            ("calendar_rss", "item"),
+            ("calendar_atom", f"{ATOM}entry"),
+            ("news_rss", "item"),
+            ("news_atom", f"{ATOM}entry"),
+        ):
+            with self.subTest(feed=name):
+                response = self.client.get(reverse(name))
+                self.assertEqual(response.status_code, 200)
+                root = _parse(response.content)
+                titles = [item.findtext("title") or item.findtext(f"{ATOM}title") for item in root.iter(tag)]
+                self.assertTrue({"Nightride", "Seasonopener"} & set(titles), titles)
+
+    def test_the_calendar_file_drops_it_too(self):
+        body = self.client.get(reverse("competition_ics", args=[self.event.pk])).content
+        self.assertNotRegex(body, rb"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+        self.assertIn(b"SUMMARY:Nightride", body)

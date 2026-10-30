@@ -109,7 +109,8 @@ and an IndexNow notice whenever something is published.
 - **FR-SEO-002**: Every catalogue entry is translated and none is fuzzy; link-preview strings reach
   the reader translated.
 - **FR-SEO-003**: Feeds: news RSS/Atom, new events RSS/Atom by approval date, iCalendar with the list
-  filters (see [calendar](calendar.md)).
+  filters (see [calendar](calendar.md)). A control character in a title or a place's name is
+  dropped from them, rather than failing the feed for every reader.
 
 ## Key Entities
 
