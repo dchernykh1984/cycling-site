@@ -1,10 +1,12 @@
 from decimal import Decimal
+from typing import Annotated
 
 from django.db import transaction
 from django.db.models import Q
 from ninja import Router, Schema, Status
 from ninja.errors import HttpError
 from ninja.schema import Field
+from pydantic import model_validator
 
 from accounts.models import User
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
@@ -15,6 +17,7 @@ from locations.models import (
     LocationProposal,
     add_location_child,
     chain_is_approved,
+    point_is_whole,
     soft_delete_location,
 )
 
@@ -29,18 +32,29 @@ router = Router(tags=["locations"])
 # -- Schemas ---------------------------------------------------------------
 
 
+# On the globe: a latitude of 999 was stored and sent every map that drew it off the edge.
+Latitude = Annotated[Decimal, Field(ge=-90, le=90)]
+Longitude = Annotated[Decimal, Field(ge=-180, le=180)]
+
+
 class LocationIn(Schema):
     name: LocalizedTitle
     parent_id: int | None = None
-    lat: Decimal | None = None
-    lng: Decimal | None = None
+    lat: Latitude | None = None
+    lng: Longitude | None = None
     is_hidden: bool = False
+
+    @model_validator(mode="after")
+    def _whole_point(self):
+        if not point_is_whole(self.lat, self.lng):
+            raise ValueError("lat and lng go together: give both or neither")
+        return self
 
 
 class LocationPatchIn(Schema):
     name: LocalizedTitle | None = None
-    lat: Decimal | None = None
-    lng: Decimal | None = None
+    lat: Latitude | None = None
+    lng: Longitude | None = None
     is_hidden: bool | None = None
 
 
@@ -303,6 +317,8 @@ def update_location(request, location_id: int, payload: LocationPatchIn):
             setattr(location, field, value)
             update_fields.append(field)
 
+    if not point_is_whole(location.lat, location.lng):
+        raise HttpError(422, "lat and lng go together: give both or neither")
     if update_fields:
         location.save(update_fields=update_fields)
 

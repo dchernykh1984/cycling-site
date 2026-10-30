@@ -131,12 +131,16 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     new_venue_lat = forms.DecimalField(
         max_digits=9,
         decimal_places=6,
+        min_value=-90,
+        max_value=90,
         required=False,
         widget=forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "any", "id": "new-venue-lat"}),
     )
     new_venue_lng = forms.DecimalField(
         max_digits=9,
         decimal_places=6,
+        min_value=-180,
+        max_value=180,
         required=False,
         widget=forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "any", "id": "new-venue-lng"}),
     )
@@ -249,6 +253,16 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         if other_names and not new_name:
             # Not on the field: the page comes back with the proposal folded away, and its box with it.
             self.add_error(None, _("The new venue needs its name in Russian."))
+        from locations.forms import BOTH_OR_NEITHER
+        from locations.models import point_is_whole
+
+        if (
+            new_name
+            and "new_venue_lat" not in self.errors
+            and "new_venue_lng" not in self.errors
+            and not point_is_whole(cleaned_data.get("new_venue_lat"), cleaned_data.get("new_venue_lng"))
+        ):
+            self.add_error(None, BOTH_OR_NEITHER)
         if city is not None and (city.depth != 3 or not location_visible_to(city, self.user)):
             # Same rule as for `location` below: a city that is someone else's pending proposal is
             # not a city this user may build under, however the POST reached us.

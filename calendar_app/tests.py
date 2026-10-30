@@ -2362,6 +2362,21 @@ class LocationProposalInSubmitTests(TestCase):
         self.assertIn(refusal, response.context["form"].non_field_errors())
         self.assertFalse(Location.objects.filter(name_en="Park EN").exists())
 
+    def test_a_new_venue_s_point_is_on_the_globe_and_whole(self):
+        self.client.force_login(self.participant)
+        with translation_override("ru"):
+            both = gettext("Give both the latitude and the longitude, or neither.")
+        for point in ({"new_venue_lat": "999", "new_venue_lng": "10"}, {"new_venue_lat": "43.2"}):
+            with self.subTest(point=point):
+                response = self.client.post(reverse("calendar_submit"), self._payload(**point))
+                self.assertFalse(Competition.objects.filter(title_ru="Race").exists())
+                form = response.context["form"]
+                if "new_venue_lng" not in point:
+                    self.assertIn(both, form.non_field_errors())
+                else:
+                    self.assertIn("new_venue_lat", form.errors)
+        self.assertFalse(Location.objects.filter(name_ru="Proposed Venue").exists())
+
     def test_approving_competition_auto_approves_location(self):
         self.client.force_login(self.participant)
         self.client.post(reverse("calendar_submit"), self._payload(new_venue_name="Auto Venue"))

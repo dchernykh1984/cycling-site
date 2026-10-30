@@ -181,6 +181,11 @@ def can_manage_locations(user) -> bool:
     )
 
 
+def point_is_whole(lat, lng) -> bool:
+    """A point is both coordinates or neither: a latitude without its longitude pins nothing."""
+    return (lat is None) == (lng is None)
+
+
 class Location(MP_Node, index.Indexed):
     name = models.CharField(max_length=255)
     lat = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)

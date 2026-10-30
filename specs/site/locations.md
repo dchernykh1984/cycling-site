@@ -79,6 +79,9 @@ places, and lets managers maintain the tree.
 - **FR-LOC-005**: All embedded maps use the shared `_map_layers.html` component, which disables
   Leaflet's flag-bearing attribution prefix. Map and satellite layers keep their provider credits
   visible, including when the reader switches layers.
+- **FR-LOC-006**: A point is on the globe -- latitude from -90 to 90, longitude from -180 to 180 --
+  and has both numbers or neither, in the location form, a venue proposed with an event and the
+  API (422).
 
 ## Key Entities
 

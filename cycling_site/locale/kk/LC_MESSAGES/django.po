@@ -4614,3 +4614,7 @@ msgstr "Қарауға қайтарылды"
 #: calendar_app/models.py
 msgid "Moved to drafts"
 msgstr "Жобаларға ауыстырылды"
+
+#: locations/forms.py
+msgid "Give both the latitude and the longitude, or neither."
+msgstr "Ендік пен бойлықты бірге көрсетіңіз немесе екеуін де бос қалдырыңыз."

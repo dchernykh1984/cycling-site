@@ -4616,3 +4616,7 @@ msgstr "Возвращено на рассмотрение"
 #: calendar_app/models.py
 msgid "Moved to drafts"
 msgstr "Перенесено в черновики"
+
+#: locations/forms.py
+msgid "Give both the latitude and the longitude, or neither."
+msgstr "Укажите и широту, и долготу или оставьте оба поля пустыми."
