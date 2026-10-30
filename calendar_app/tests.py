@@ -210,6 +210,16 @@ class CalendarEventsAPIViewTests(TestCase):
         self.assertIn("Race A", titles)
         self.assertNotIn("Race B", titles)
 
+    def test_a_range_end_that_is_not_a_date_is_dropped_rather_than_failing(self):
+        for bad in ("abc", "2026-13-45", "0", "null"):
+            with self.subTest(bad=bad):
+                response = self.client.get(reverse("calendar_events_api"), {"start": "2026-07-01", "end": bad})
+                self.assertEqual(response.status_code, 200)
+                titles = [e["title"] for e in json.loads(response.content)]
+                self.assertEqual(sorted(titles), ["Race A", "Race B"])
+                response = self.client.get(reverse("calendar_events_api"), {"start": bad})
+                self.assertEqual(response.status_code, 200)
+
     def test_event_type_filter(self):
         response = self.client.get(
             reverse("calendar_events_api"),

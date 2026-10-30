@@ -83,7 +83,8 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    second country stays ticked after a region of the first is picked, ready for its own. The API's
    `direction_ids` and `discipline_ids` keep their OR, and its `location_ids` their union
    (FR-API-005).
-4. **Given** a junk or unknown id in the address, **Then** it is ignored, not treated as "nothing".
+4. **Given** a junk or unknown id in the address, **Then** it is ignored, not treated as "nothing";
+   so is a date that is not one, in the grid's data as in the list's filters.
 5. **Given** a member with saved preferences opens a calendar page without a query, **Then** they
    are redirected to it with their preferences applied; an explicit query or the reset link is
    left alone (see [accounts](accounts.md)).
