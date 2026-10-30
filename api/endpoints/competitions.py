@@ -130,6 +130,10 @@ class CompetitionOut(Schema):
         return [e.pk for e in obj.event_types.all()]
 
 
+def _shows_approval(obj: Competition) -> bool:
+    return getattr(obj, "_approval_visible", False) and obj.status == Competition.Status.APPROVED
+
+
 class StatusChangeOut(Schema):
     """One step of an event's way through review: added, or moved to ``status`` from ``previous_status``."""
 
@@ -155,11 +159,12 @@ class CompetitionDetailOut(CompetitionOut):
 
     @staticmethod
     def resolve_approved_by_id(obj: Competition) -> int | None:
-        return obj.approved_by_id if getattr(obj, "_approval_visible", False) else None
+        # The same columns hold a rejection's reviewer; the history names both.
+        return obj.approved_by_id if _shows_approval(obj) else None
 
     @staticmethod
     def resolve_approved_at(obj: Competition) -> datetime | None:
-        return obj.approved_at if getattr(obj, "_approval_visible", False) else None
+        return obj.approved_at if _shows_approval(obj) else None
 
     @staticmethod
     def resolve_moderation_history(obj: Competition) -> list | None:

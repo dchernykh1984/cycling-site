@@ -157,6 +157,16 @@ class ModerationHistoryTests(TestCase):
         with translation.override("en"):
             self.assertEqual(last.label, "Returned for review")
 
+    def test_a_rejected_event_names_no_approver_in_the_api(self):
+        event = _event(status=Status.PENDING_APPROVAL)
+        event.reject(self.admin, "No route yet")
+        body = self.client.get(
+            f"/api/v1/competitions/{event.pk}", HTTP_AUTHORIZATION=f"Bearer {self.admin.api_token}"
+        ).json()
+        self.assertIsNone(body["approved_by_id"])
+        self.assertIsNone(body["approved_at"])
+        self.assertEqual(body["moderation_history"][-1]["changed_by_id"], self.admin.pk)
+
     def test_an_event_rejected_and_then_approved_by_hand_names_who_approved_it(self):
         rejecter = _user("strict", User.Role.ADMIN)
         event = _event(status=Status.PENDING_APPROVAL)
