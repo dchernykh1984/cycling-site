@@ -96,3 +96,20 @@ def test_the_kazakh_catalogue_names_a_region_and_an_event_one_way():
         "Announcements, results and stories from the Universal Bicycle Team calendar.",
         "our events & moments",
     ]
+
+
+def test_the_kazakh_catalogue_names_an_account_a_profile_and_a_comment_one_way():
+    # An account is "tirkelgi", never "akkaunt" or "eseptik zhazba"; the profile is "profil'", as the
+    # menu names it, never "zheke kabinet"; a comment is "pikir", never "tusinikteme"; an
+    # announcement is "anons", while "khabarlama" is a message. In a sentence the mail is
+    # "elektrondyq poshta"; a field keeps its short label "Email".
+    akkaunt = _word(0x0430, 0x043A, 0x043A, 0x0430, 0x0443, 0x043D, 0x0442)
+    eseptik = _word(0x0435, 0x0441, 0x0435, 0x043F, 0x0442, 0x0456, 0x043A)
+    kabinet = _word(0x043A, 0x0430, 0x0431, 0x0438, 0x043D, 0x0435, 0x0442)
+    tusinikteme = _word(0x0442, 0x04AF, 0x0441, 0x0456, 0x043D, 0x0456, 0x043A, 0x0442, 0x0435, 0x043C, 0x0435)
+    anons = _word(0x0430, 0x043D, 0x043E, 0x043D, 0x0441)
+    entries = _entries("kk")
+    for word in (akkaunt, eseptik, kabinet, tusinikteme):
+        assert [msgid for msgid, msgstr in entries if word in msgstr.lower()] == [], word
+    assert [msgid for msgid, msgstr in entries if re.search(r"\be-mail\b", msgstr, re.I)] == []
+    assert anons in dict(entries)["Announcement"].lower()
