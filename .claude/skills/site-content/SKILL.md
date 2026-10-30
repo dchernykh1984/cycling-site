@@ -68,6 +68,14 @@ prefix, not by their browser.
 
 Translate faithfully rather than transliterating, and keep the same structure in all three.
 
+## Names in Russian
+
+Korean surnames -- Kim, Pak, Li, Tsoy, Ten, Ogay, Yugay, Khan, Shin and the like -- and the
+maintainer's surname, Chernykh, keep one form in Russian: "spasibo Olegu Kim", "s Denisom
+Chernykh", never "Kimu" or "Chernykhom". The first name declines as usual. (Transliterated here:
+this file is ASCII; write them in Cyrillic on the site.) Check every Russian text you publish or
+edit -- news, events, articles; two news items thanked "Olegu Kimu" until 2026-10-30.
+
 ## Body markup
 
 The body is sanitized on save. Surviving tags: `p, br, hr, blockquote, h2, h3, h4, ul, ol, li,

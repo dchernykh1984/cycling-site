@@ -81,6 +81,8 @@ are `locations`; reaching production is `production-access`.
 - **Geography names match the place in all three languages** (a Turkish region named "Aksaray" in
   Russian carried "Ankara" in Kazakh and English). A spelling follows the place's own, as maps and
   the organizer write it (the village is "Shil'kovo").
+- **Surnames that do not decline** -- Korean ones (Kim, Pak, Tsoy...) and Chernykh -- keep one
+  form in a Russian text (`site-content`); a text that declines them is corrected.
 
 ## What is not added
 
