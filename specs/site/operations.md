@@ -27,7 +27,9 @@ restored, locally or onto production.
 3. **Given** a reader's request, **Then** it passes through the site's Cloudflare zone -- the apex
    record is proxied -- which adds the visitor location headers the guest's region is read from
    (#332, [calendar](calendar.md)) and gives up on an answer after 100 seconds (the README's
-   Deployment section).
+   Deployment section). Its Browser Integrity Check refuses Python's default user agent (403,
+   "error code: 1010"), so the import agents name themselves (`agent/site_api.py`); for `/api/`
+   the check is to be switched off, since the timing tools in the field send that default.
 
 ### Story 2 -- Keep the data safe (P1)
 
