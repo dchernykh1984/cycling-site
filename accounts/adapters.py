@@ -2,10 +2,32 @@ from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.utils.translation import get_language, get_language_from_path
 from django.utils.translation import gettext_lazy as _
 
 
+def _in_page_language(url: str) -> str:
+    """A path without a language, in the language of the page the member signed in or out on.
+
+    The settings name the bare "/", which goes on to a language picked from the browser: a member
+    who signed in on the Kazakh page with a Russian browser landed on the Russian home page. A `next`
+    that carries its language, or another site's address, is left as it is.
+    """
+    if url.startswith("/") and not url.startswith("//") and not get_language_from_path(url):
+        return f"/{get_language()}{url}"
+    return url
+
+
 class AccountAdapter(DefaultAccountAdapter):
+    def get_login_redirect_url(self, request):
+        return _in_page_language(super().get_login_redirect_url(request))
+
+    def get_logout_redirect_url(self, request):
+        return _in_page_language(super().get_logout_redirect_url(request))
+
+    def get_signup_redirect_url(self, request):
+        return _in_page_language(super().get_signup_redirect_url(request))
+
     def save_user(self, request, user, form, commit=True):
         user = super().save_user(request, user, form, commit=False)
         user.role = user.Role.GUEST

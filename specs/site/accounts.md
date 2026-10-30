@@ -54,6 +54,8 @@ once; confirming the address unlocks everything that writes.
    counts only together with an e-mail address.
 3. **Given** a provider callback, **Then** the address sent to and received from the provider has
    no language prefix, whatever language the sign-in started from.
+4. **Given** a member signs in or out on a page in one language without a page to return to,
+   **Then** they land on the home page in that language, not in the one their browser asks for.
 
 ### Story 4 -- The role ladder (P2)
 

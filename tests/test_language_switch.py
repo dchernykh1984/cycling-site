@@ -114,3 +114,38 @@ class LinksBackHomeTests(TestCase):
         self.assertEqual(response.status_code, 404)
         # The button itself, not just any /en/ link -- the navbar carries one of those too.
         self.assertContains(response, '<a href="/en/" class="btn btn-primary">', status_code=404)
+
+
+class SigningInAndOutKeepsThePageLanguageTests(TestCase):
+    """The member read the Kazakh or English page; their browser says Russian, their profile nothing."""
+
+    def setUp(self):
+        from allauth.account.models import EmailAddress
+
+        self.user = User.objects.create_user(
+            username="reader", email="reader@example.com", password="Pass-12345!", role=User.Role.PARTICIPANT
+        )
+        EmailAddress.objects.create(user=self.user, email=self.user.email, verified=True, primary=True)
+        self.client = Client(HTTP_ACCEPT_LANGUAGE="ru-RU,ru;q=0.9")
+
+    def test_signing_in_lands_on_the_home_page_in_the_page_language(self):
+        for language in ("kk", "en"):
+            with self.subTest(language=language):
+                self.client.logout()
+                response = self.client.post(
+                    f"/{language}/accounts/login/", {"login": "reader@example.com", "password": "Pass-12345!"}
+                )
+                self.assertEqual(response["Location"], f"/{language}/")
+
+    def test_signing_out_lands_on_the_home_page_in_the_page_language(self):
+        for language in ("kk", "en"):
+            with self.subTest(language=language):
+                self.client.force_login(self.user)
+                response = self.client.post(f"/{language}/accounts/logout/")
+                self.assertEqual(response["Location"], f"/{language}/")
+
+    def test_a_next_page_is_kept_as_it_was(self):
+        response = self.client.post(
+            "/kk/accounts/login/?next=/en/calendar/", {"login": "reader@example.com", "password": "Pass-12345!"}
+        )
+        self.assertEqual(response["Location"], "/en/calendar/")
