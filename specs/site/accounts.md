@@ -138,7 +138,9 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
 ## Functional Requirements
 
 - **FR-ACC-001**: Roles, weakest first: guest, participant, organizer, admin, owner. A new account
-  is a guest. An owner is always staff and superuser.
+  is a guest. An owner is always staff and superuser. A role can do everything the roles below it
+  can: a right is granted to a role and every role above it ("admin and above"), never to one role
+  alone, so whatever admins see, owners see too.
 - **FR-ACC-002**: A guest becomes a participant when an e-mail is confirmed or a provider returns a
   verified e-mail. No other role is granted automatically.
 - **FR-ACC-003**: Only organizer and above assign roles, and only up to their own rank; the
