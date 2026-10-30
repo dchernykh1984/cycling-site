@@ -150,11 +150,16 @@ class SigningInAndOutKeepsThePageLanguageTests(TestCase):
         response = self.client.post("/kk/accounts/login/", {"login": "reader@example.com", "password": "Pass-12345!"})
         self.assertEqual(self.client.get(response["Location"])["Location"], "/en/")
 
-    def test_a_language_chosen_with_the_buttons_still_wins_after_signing_out(self):
-        self.client.cookies["django_language"] = "en"
-        self.client.force_login(self.user)
-        response = self.client.post("/kk/accounts/logout/")
-        self.assertEqual(self.client.get(response["Location"])["Location"], "/en/")
+    def test_signing_out_stays_in_the_page_language_over_a_cookie_or_a_profile(self):
+        # Signed out, the reader is a guest: the profile no longer speaks for a bare address, and the
+        # cookie may hold a choice from long ago. They were reading Kazakh.
+        for cookie, profile in (("en", ""), ("", "en")):
+            with self.subTest(cookie=cookie, profile=profile):
+                self.client.cookies["django_language"] = cookie
+                self.user.preferred_language = profile
+                self.user.save(update_fields=["preferred_language"])
+                self.client.force_login(self.user)
+                self.assertEqual(self.client.post("/kk/accounts/logout/")["Location"], "/kk/")
 
     def test_a_next_page_is_kept_as_it_was(self):
         response = self.client.post(

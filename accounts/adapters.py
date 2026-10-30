@@ -7,22 +7,29 @@ from django.utils.translation import get_language, get_language_from_path
 from django.utils.translation import gettext_lazy as _
 
 
+def _with_language(url: str) -> str:
+    """A path of this site that has no language, under the language of the page being answered.
+
+    A `next` that carries its language, or another site's address, is left as it is.
+    """
+    if url.startswith("/") and not url.startswith("//") and not get_language_from_path(url):
+        return f"/{get_language()}{url}"
+    return url
+
+
 def _in_page_language(url: str, request) -> str:
-    """A path without a language, in the language of the page the member signed in or out on.
+    """A path without a language, in the language of the page the member signed in on.
 
     The settings name the bare "/", which goes on to the language the reader chose -- in their profile
     or with the language buttons -- and, without a choice, to one picked from the browser: a member who
     signed in on the Kazakh page with a Russian browser landed on the Russian home page. A choice still
-    wins, as it does for any address without a language; a `next` that carries its language, or
-    another site's address, is left as it is.
+    wins, as it does for any address without a language.
     """
     user = getattr(request, "user", None)
     chosen = getattr(user, "is_authenticated", False) and getattr(user, "preferred_language", "")
     if chosen or request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME):
         return url
-    if url.startswith("/") and not url.startswith("//") and not get_language_from_path(url):
-        return f"/{get_language()}{url}"
-    return url
+    return _with_language(url)
 
 
 class AccountAdapter(DefaultAccountAdapter):
@@ -30,7 +37,9 @@ class AccountAdapter(DefaultAccountAdapter):
         return _in_page_language(super().get_login_redirect_url(request), request)
 
     def get_logout_redirect_url(self, request):
-        return _in_page_language(super().get_logout_redirect_url(request), request)
+        # The home page in the language that was being read: signed out, the reader is a guest, and a
+        # bare address would go by the browser or an old cookie -- never by the profile just left.
+        return _with_language(super().get_logout_redirect_url(request))
 
     def get_signup_redirect_url(self, request):
         return _in_page_language(super().get_signup_redirect_url(request), request)

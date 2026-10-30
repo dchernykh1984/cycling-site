@@ -54,10 +54,13 @@ once; confirming the address unlocks everything that writes.
    counts only together with an e-mail address.
 3. **Given** a provider callback, **Then** the address sent to and received from the provider has
    no language prefix, whatever language the sign-in started from.
-4. **Given** a member signs in or out on a page in one language without a page to return to,
+4. **Given** a member signs in on a page in one language without a page to return to,
    **Then** they land on the home page in that language, not in the one their browser asks for;
    a reader who chose a language -- in their profile or with the language buttons -- lands in that
    one, as on any address without a language.
+5. **Given** a member signs out without a page to return to, **Then** they land on the home page
+   in the page's language, whatever a profile or the language cookie names: signed out, the reader
+   is a guest, and the profile no longer speaks for them.
 
 ### Story 4 -- The role ladder (P2)
 
