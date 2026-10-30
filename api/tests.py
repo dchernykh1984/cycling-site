@@ -610,6 +610,25 @@ class CompetitionCreateTest(TestCase, ApiTestMixin):
         resp = self.post("/api/v1/competitions/", self._payload(), user=self.admin)
         self.assertEqual(resp.json()["discipline_ids"], [])
 
+    def test_a_link_must_be_a_web_address(self):
+        # Each link lands in an href on the event's and the moderation page.
+        for field in ("url_route", "url_announcement", "url_registration", "url_regulations", "url_results"):
+            for bad in ("javascript:alert(document.cookie)", "data:text/html,<script>alert(1)</script>", "vbscript:x"):
+                with self.subTest(field=field, bad=bad):
+                    resp = self.post("/api/v1/competitions/", self._payload(**{field: bad}), user=self.organizer)
+                    self.assertEqual(resp.status_code, 422)
+        self.assertFalse(Competition.objects.filter(title_ru="Race RU").exists())
+
+    def test_a_link_is_taken_as_the_site_form_takes_it(self):
+        resp = self.post(
+            "/api/v1/competitions/",
+            self._payload(url_announcement="example.com/race", url_registration="https://example.com/reg"),
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["url_announcement"], "https://example.com/race")
+        self.assertEqual(resp.json()["url_registration"], "https://example.com/reg")
+
     def test_create_rejects_unknown_discipline_id(self):
         resp = self.post("/api/v1/competitions/", self._payload(discipline_ids=[999999]), user=self.admin)
         self.assertEqual(resp.status_code, 404)
@@ -744,6 +763,14 @@ class CompetitionUpdateTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200)
         comp.refresh_from_db()
         self.assertEqual(comp.status, Competition.Status.PENDING_APPROVAL)
+
+    def test_a_patched_link_must_be_a_web_address(self):
+        resp = self.patch(
+            f"/api/v1/competitions/{self.comp.pk}", {"url_announcement": "javascript:alert(1)"}, user=self.owner
+        )
+        self.assertEqual(resp.status_code, 422)
+        self.comp.refresh_from_db()
+        self.assertNotIn("javascript", self.comp.url_announcement)
 
     def test_owner_can_update(self):
         resp = self.patch(
