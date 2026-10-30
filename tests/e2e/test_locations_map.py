@@ -383,3 +383,19 @@ def test_hide_action_preserves_active_filter(page: Page, live_server, map_page, 
         page.locator("form[action*='/hide/'] button[type=submit]").first.click()
     # The hide action returns to the same filtered page rather than the first unfiltered one.
     assert f"location={location_tree['kz'].pk}" in page.url
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_manage_table_fits_a_phone(page: Page, live_server, map_page, admin_user):
+    # Russian names the three actions at their widest ("Redaktirovat'", "Skryt'", "Udalit'"): in one
+    # row beside a country's name, a hidden one's badge under "Status", they pushed a 360px page
+    # 34px sideways.
+    from locations.models import Location
+
+    for name, hidden in (("Kazakhstan", False), ("Kyrgyzstan", True)):
+        Location.add_root(name=name, name_ru=name, name_kk=name, name_en=name, is_hidden=hidden)
+    inject_session(page, live_server, admin_user)
+    page.set_viewport_size({"width": 360, "height": 800})
+    page.goto(_map_url(live_server))
+    expect(page.locator("table")).to_be_visible()
+    assert page.evaluate("document.documentElement.scrollWidth") <= 360

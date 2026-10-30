@@ -76,6 +76,11 @@ html {
     overflow-wrap: anywhere;
     word-break: break-word;
 }
+/* A place's name in the admin's table on the map page breaks rather than pushing a phone sideways;
+   the buttons beside it wrap instead (locations_map_page.html). */
+.location-manage-table td:first-child {
+    overflow-wrap: anywhere;
+}
 .calendar-list-table .btn {
     white-space: normal;
 }

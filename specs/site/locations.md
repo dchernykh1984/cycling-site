@@ -55,7 +55,8 @@ places, and lets managers maintain the tree.
 3. **Given** the map page, **Then** a visitor sees markers for places with points -- gathered into
    numbered clusters where they crowd, as on the calendar's map ([calendar](calendar.md)); a participant
    and up also gets an "add a location" button; an admin also sees a paginated, filterable hierarchy
-   table with edit/hide/delete actions that keep the filter, and an edit link in marker popups. The
+   table with edit/hide/delete actions that keep the filter -- on a phone its names break and its
+   buttons wrap rather than pushing the page sideways -- and an edit link in marker popups. The
    filter is the calendar's place filter: a venue is typed into its own field straight away, without
    its country, region and city picked first ([calendar](calendar.md), Story 2).
 

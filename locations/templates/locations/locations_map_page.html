@@ -73,7 +73,7 @@
         <h2 class="h5">{% trans "Manage locations" %}</h2>
 
         {% if locations_page %}
-        <table class="table table-sm table-hover">
+        <table class="table table-sm table-hover location-manage-table">
             <thead>
                 <tr>
                     <th>{% trans "Name" %}</th>
@@ -89,6 +89,8 @@
                         {% if loc.is_hidden %}<span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>{% endif %}
                     </td>
                     <td class="text-end">
+                        {# The three buttons wrap on a phone rather than pushing the page sideways (Russian is widest). #}
+                        <div class="d-flex flex-wrap justify-content-end gap-1">
                         <a href="{% url 'location_edit' loc.pk %}?next={{ request.get_full_path|urlencode }}"
                            class="btn btn-outline-secondary btn-sm py-0 px-2">{% trans "Edit" %}</a>
                         {% if not loc.is_system_fallback %}
@@ -106,6 +108,7 @@
                             <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">{% trans "Delete" %}</button>
                         </form>
                         {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
