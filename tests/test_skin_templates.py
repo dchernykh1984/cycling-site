@@ -121,5 +121,5 @@ def test_a_skin_s_own_base_keeps_the_site_s_lines_under_the_menu():
 
     for base in sorted(settings.SKINS_DIR.glob("*/templates/base.html")):
         text = base.read_text()
-        for part in ("_moderation_banner.html", "_setup_hint.html", "_skin_offer.html"):
+        for part in ("_moderation_banner.html", "_setup_hint.html", "_skin_offer.html", "sign_in_url"):
             assert part in text, f"{base.parent.parent.name}: base.html leaves out {part}"

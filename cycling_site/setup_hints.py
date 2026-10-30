@@ -40,21 +40,30 @@ def _url_name(request) -> str:
     return (match.url_name or "") if match else ""
 
 
-def _quiet_here(request) -> bool:
-    """Pages where a hint would only repeat the page.
+def on_account_page(request) -> bool:
+    """Whether the page is under accounts/ -- sign-in, sign-up, the profile, a password reset, and the
+    "continue with Google" step of each sign-in service.
 
-    Everything under accounts/ -- sign-in, sign-up, the profile, and the "continue with Google" step
-    of each sign-in service: the hint would ask to sign in someone who is signing in, or point at the
-    page it is on. Matched by path rather than by route names, because allauth names the service
-    pages after the service (google_login, strava_login...) and a new service must not slip past.
-    The race entry form: it already names what the profile is missing, right above its button.
+    Matched by path rather than by route names, because allauth names the service pages after the
+    service (google_login, strava_login...) and a new service must not slip past.
     """
     match = getattr(request, "resolver_match", None)
     if match is None:
         return False
     first, _, rest = (match.route or "").partition("/")
     route = rest if first in {code for code, _ in settings.LANGUAGES} else match.route or ""
-    return route.startswith("accounts/") or match.view_name == "registrations:register"
+    return route.startswith("accounts/")
+
+
+def _quiet_here(request) -> bool:
+    """Pages where a hint would only repeat the page.
+
+    The account pages: the hint would ask to sign in someone who is signing in, or point at the page
+    it is on. The race entry form: it already names what the profile is missing, right above its
+    button.
+    """
+    match = getattr(request, "resolver_match", None)
+    return on_account_page(request) or getattr(match, "view_name", "") == "registrations:register"
 
 
 def _has_preferences(user) -> bool:

@@ -203,6 +203,7 @@ TEMPLATES = [
                 "cycling_site.context_processors.moderation_tasks",
                 "cycling_site.context_processors.managing_waiting",
                 "cycling_site.context_processors.setup_hint",
+                "cycling_site.context_processors.sign_in_link",
                 "cycling_site.context_processors.skins",
                 "cycling_site.context_processors.search_verification",
             ],
