@@ -177,9 +177,10 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
   of the Wagtail admin, the API. An approval or a rejection also records its reviewer and time on
   the event, unless the save already named them; a save that keeps the status records nothing. The
   steps of the events added before the history was kept come from the audit log's creation entry,
-  the rejection history and the last approval; their resubmissions are unknown. Only admins see it:
-  at the foot of the event's page, and as `approved_by_id`, `approved_at` and `moderation_history`
-  in the API's event detail, null for everyone else.
+  the rejection history and the last approval; their resubmissions are unknown. Only admins and
+  owners see it: at the foot of the event's page, and as `moderation_history` in the API's event
+  detail, with `approved_by_id` and `approved_at` when the event is approved; null for everyone
+  else.
 
 ## Key Entities
 
