@@ -45,6 +45,16 @@ maintainer's (`tmp/payment-gateways/`, not committed) and summarised in the pull
 
 Cross-cutting findings that shape the requirements:
 
+- The "IT intermediary" model the maintainer asked about (2026-10-30) -- the organizer contracts
+  with the service directly and the site only redirects -- is how site builders work (Tilda with
+  Halyk ePay and Freedom Pay), but it works by the organizer typing their merchant id *and secret
+  key* into the builder: option E. Three properties cannot all hold at once: no platform contract,
+  no organizer secret stored, automatic confirmation. The link connector gives the first two (A);
+  the marketplace model gives the last two (C); an organizer's own API account gives the first and
+  the last (E). An OAuth-style "connect your account", which would give all three with a revocable
+  scoped token, is documented by no Kazakhstan provider found; the connector interface leaves room
+  for one (research file 23).
+
 - No connector to a Russian service (Mir, SBP, YooKassa and the like): the Mir operator and the
   largest Russian banks are under blocking sanctions, the site is hosted and proxied by US companies,
   and the Kazakhstan providers of option C will not stand next to Mir. Participants without a
