@@ -28,6 +28,7 @@ from accounts import managing
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from assistant.conversations import link as link_conversation
+from cycling_site.setup_hints import sign_in_url
 from locations.maps import map_links
 from locations.models import (
     Location,
@@ -1935,7 +1936,7 @@ class AcceptInviteView(View):
                 return redirect_to_login(request.get_full_path())
             context = {
                 "competition": competition,
-                "login_url": f"{reverse('account_login')}?{urlencode({'next': request.get_full_path()})}",
+                "login_url": sign_in_url(request),
                 **_link_preview_tags(request, competition),
             }
             response = render(request, "calendar_app/invite_preview.html", context)

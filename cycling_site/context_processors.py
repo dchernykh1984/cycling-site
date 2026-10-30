@@ -131,17 +131,12 @@ def sign_in_link(request):
     An account page sends no `next` -- after signing in from the sign-up page there is nothing to go
     back to.
     """
-    from urllib.parse import urlencode
-
-    from cycling_site.setup_hints import on_account_page
+    from cycling_site.setup_hints import on_account_page, sign_in_url
 
     user = getattr(request, "user", None)
     if user is None or user.is_authenticated:
         return {}
-    url = reverse("account_login")
-    if not on_account_page(request):
-        url += "?" + urlencode({"next": request.get_full_path()})
-    return {"sign_in_url": url}
+    return {"sign_in_url": reverse("account_login") if on_account_page(request) else sign_in_url(request)}
 
 
 def skins(request):

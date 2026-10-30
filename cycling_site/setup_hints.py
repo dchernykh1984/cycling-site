@@ -55,6 +55,11 @@ def on_account_page(request) -> bool:
     return route.startswith("accounts/")
 
 
+def sign_in_url(request) -> str:
+    """The sign-in page, sending the reader back to this page afterwards, filters and all."""
+    return f"{reverse('account_login')}?{urlencode({'next': request.get_full_path()})}"
+
+
 def _quiet_here(request) -> bool:
     """Pages where a hint would only repeat the page.
 
@@ -94,7 +99,7 @@ def current_hint(request) -> dict | None:
         return {
             "key": "sign_in",
             # Back to the page they were reading, filters and all.
-            "login_url": f"{reverse('account_login')}?{urlencode({'next': request.get_full_path()})}",
+            "login_url": sign_in_url(request),
             "signup_url": reverse("account_signup"),
         }
     from accounts.access import needs_email_confirmation
