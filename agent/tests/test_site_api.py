@@ -1,9 +1,29 @@
 """The API client's handling of malformed responses, where a silent default would do damage."""
 
+import io
+
 import pytest
 
 from agent.pipeline import normalize_key
 from agent.site_api import SiteApiClient
+
+
+def test_requests_name_the_agent_rather_than_urllib(monkeypatch):
+    """The proxy in front of the site answers 403 ("error code: 1010") to urllib's default user agent.
+
+    From 2026-10-29, when the site went behind it, every agent run stopped at its first call.
+    """
+    sent = []
+
+    def urlopen(request, timeout):
+        sent.append(request)
+        return io.BytesIO(b"[]")
+
+    monkeypatch.setattr("agent.site_api.urllib.request.urlopen", urlopen)
+    SiteApiClient("https://example.test", "token").taxonomy()
+    agent = sent[0].get_header("User-agent")
+    assert agent
+    assert not agent.startswith("Python-urllib")
 
 
 class _Client(SiteApiClient):

@@ -9,6 +9,8 @@ from agent.links import MAX_URL_LENGTH, fits, strip_tracking
 from agent.models import Candidate, KnownEvents, Taxonomy
 from agent.pipeline import normalize_key
 
+USER_AGENT = "UniversalBicycleTeam-EventsAgent/1.0"
+
 
 def _tagged(live: list[dict], deleted: list[dict]) -> list[tuple[dict, bool]]:
     """Live rows then deleted rows, each carrying which list it came from."""
@@ -29,7 +31,13 @@ class SiteApiClient:
             f"{self.base_url}{path}",
             data=data,
             method=method,
-            headers={"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"},
+            # A name of its own: the Cloudflare proxy in front of the site refuses urllib's default
+            # one (403, "error code: 1010"), which stopped every agent run from 2026-10-29.
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json",
+                "User-Agent": USER_AGENT,
+            },
         )
         with urllib.request.urlopen(request, timeout=self.timeout) as response:
             return json.loads(response.read().decode())
