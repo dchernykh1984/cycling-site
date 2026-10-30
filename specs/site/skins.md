@@ -31,7 +31,8 @@ behind the moon/sun button.
 2. **Given** a reader switches between light and dark, **Then** the page changes in place; going into
    or out of any other skin reloads the page once saved.
 3. **Given** a member, **Then** the choice is kept in their profile; **given** a guest, in a `skin`
-   cookie (an old choice left in the browser's storage is carried over on the first visit).
+   cookie (an old choice left in the browser's storage is carried over on the first visit, and a
+   page drawn in a skin with templates of its own is drawn again in the choice, not recoloured).
    **Given** a member signs out, **Then** their skin goes into the cookie, over any choice made there
    as a guest, and a skin on offer they tried is not offered again: the page keeps its look.
 4. **Given** a key no folder answers to any more, **Then** the page is drawn in `DEFAULT_SKIN`

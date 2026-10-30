@@ -67,10 +67,12 @@
     {% endif %}
     {% comment %}A guest's choice used to live in the browser's storage, out of the server's sight. Carry
     it over into the cookie once, before the stylesheets load, so the page never flashes the default.
-    Only light or dark can be there: they are the keys equal to their own mode.{% endcomment %}
+    Only light or dark can be there: they are the keys equal to their own mode. A page drawn in a skin
+    of its own is drawn again instead, once the cookie holds: recoloured in place, it kept that skin's
+    templates and stylesheet under the other's colours.{% endcomment %}
     {% if not request.user.is_authenticated and not request.COOKIES.skin %}
     {{ skin_modes|json_script:"skin-modes" }}
-    <script>(function(){var t=localStorage.getItem('theme'),modes=JSON.parse(document.getElementById('skin-modes').textContent);if(modes[t]!==t)return;document.cookie='skin='+t+';path=/;max-age=31536000;samesite=lax';document.documentElement.setAttribute('data-skin',t);document.documentElement.setAttribute('data-bs-theme',modes[t]);}());</script>
+    <script>(function(){var t=localStorage.getItem('theme'),modes=JSON.parse(document.getElementById('skin-modes').textContent),root=document.documentElement,drawn=root.getAttribute('data-skin');if(modes[t]!==t)return;document.cookie='skin='+t+';path=/;max-age=31536000;samesite=lax';if(modes[drawn]!==drawn){if(/(^|;\s*)skin=/.test(document.cookie))location.reload();return;}root.setAttribute('data-skin',t);root.setAttribute('data-bs-theme',modes[t]);}());</script>
     {% endif %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/lux/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="{% static 'css/cycling_site.css' %}">

@@ -76,6 +76,17 @@ def test_a_guests_old_choice_in_the_browser_is_carried_over_to_the_cookie(page: 
 
 
 @pytest.mark.django_db(transaction=True)
+def test_an_old_choice_over_a_skin_with_templates_of_its_own_draws_the_page_again(page: Page, live_server, settings):
+    # Recoloured in place, the page kept that skin's templates and stylesheet under the old choice's
+    # colours: a member whose session ran out met a mix of the two.
+    settings.DEFAULT_SKIN = "orange"
+    page.add_init_script("localStorage.setItem('theme', 'dark')")
+    page.goto(f"{live_server.url}/ru/news/")
+    expect(page.locator("html")).to_have_attribute("data-skin", "dark")
+    expect(page.locator("link[href*='skins/orange/']")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_an_old_value_no_skin_answers_to_is_ignored(page: Page, live_server):
     page.add_init_script("localStorage.setItem('theme', 'retired-skin')")
     page.goto(f"{live_server.url}/ru/news/")
