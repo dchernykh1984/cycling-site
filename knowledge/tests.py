@@ -256,6 +256,19 @@ class KnowledgeAddressedInItsLanguageTests(TestCase):
         self.assertEqual(article.get_absolute_url(), f"/kk/knowledge/{article.slug}/")
         self.assertContains(self.client.get("/kk/knowledge/"), f'href="/kk/knowledge/{article.slug}/"')
 
+    def test_the_kazakh_knowledge_base_is_named_in_kazakh(self):
+        """The page tree keeps an English title for the kk index; the catalogue has the Kazakh name."""
+        article = KnowledgeArticle.objects.create(title="Qazaq maqala", locale="kk", body="<p>Matin</p>")
+        with translation.override("kk"):
+            name = _("Knowledge Base")
+        self.assertNotEqual(name, "Knowledge Base")
+        index = self.client.get("/kk/knowledge/")
+        self.assertContains(index, f'<h1 class="mb-0">{name}</h1>', html=False)
+        self.assertContains(index, f"<title>{name}", html=False)
+        self.assertContains(
+            self.client.get(f"/kk/knowledge/{article.slug}/"), f'<a href="/kk/knowledge/">{name}</a>', html=False
+        )
+
 
 class KnowledgeForeignLocaleBannerTests(TestCase):
     def setUp(self):
