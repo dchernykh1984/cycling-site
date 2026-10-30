@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import threading
 import uuid
-from datetime import date
+from datetime import date, timedelta
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection, connections, transaction
@@ -610,6 +610,17 @@ class CompetitionCreateTest(TestCase, ApiTestMixin):
         resp = self.post("/api/v1/competitions/", self._payload(), user=self.admin)
         self.assertEqual(resp.json()["discipline_ids"], [])
 
+    def test_an_end_before_the_start_is_refused(self):
+        resp = self.post(
+            "/api/v1/competitions/", self._payload(date_start="2026-07-10", date_end="2026-07-01"), user=self.admin
+        )
+        self.assertEqual(resp.status_code, 422)
+        self.assertFalse(Competition.objects.filter(title_ru="Race RU").exists())
+        resp = self.post(
+            "/api/v1/competitions/", self._payload(date_start="2026-07-10", date_end="2026-07-10"), user=self.admin
+        )
+        self.assertEqual(resp.status_code, 201)
+
     def test_a_link_must_be_a_web_address(self):
         # Each link lands in an href on the event's and the moderation page.
         for field in ("url_route", "url_announcement", "url_registration", "url_regulations", "url_results"):
@@ -763,6 +774,17 @@ class CompetitionUpdateTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200)
         comp.refresh_from_db()
         self.assertEqual(comp.status, Competition.Status.PENDING_APPROVAL)
+
+    def test_a_patch_that_puts_the_end_before_the_start_is_refused(self):
+        self.comp.date_end = self.comp.date_start
+        self.comp.save()
+        before = self.comp.date_start
+        for change in ({"date_end": str(before - timedelta(days=1))}, {"date_start": str(before + timedelta(days=1))}):
+            with self.subTest(change=change):
+                resp = self.patch(f"/api/v1/competitions/{self.comp.pk}", change, user=self.owner)
+                self.assertEqual(resp.status_code, 422)
+                self.comp.refresh_from_db()
+                self.assertEqual((self.comp.date_start, self.comp.date_end), (before, before))
 
     def test_a_patched_link_must_be_a_web_address(self):
         resp = self.patch(
