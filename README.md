@@ -111,6 +111,9 @@ Full), and the zone's "Add visitor location headers" managed transform is on: th
 (#332) is read from those headers, so a grey cloud leaves every guest with the whole calendar. The
 proxy gives up on an answer after 100 seconds, which is why the assistant waits for its model 90.
 Keep the zone's Bot Fight Mode off: it would challenge the import agents' calls to the API.
+The zone's Browser Integrity Check refuses Python's default user agent (`Python-urllib/3.x`,
+403 "error code: 1010"), so every client of the API sends a name of its own -- the agents do --
+and the check is off for `/api/` (a Configuration Rule), for the timing tools already in the field.
 
 `gunicorn.conf.py` provides four threads per worker; the thumbnail service uses at most two for
 storage downloads, leaving capacity for form submissions. On the small Render instance keep
