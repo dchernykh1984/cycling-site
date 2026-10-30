@@ -6,7 +6,7 @@ description: Filling and cleaning the events calendar by hand - how the maintain
 # Curating the calendar
 
 Sometimes events are added or repaired by hand rather than by an agent: a source the agents do not
-read, a correction, a backfill of past editions.
+read, or a correction.
 
 ## How a sweep is run
 
@@ -17,8 +17,10 @@ read, a correction, a backfill of past editions.
 - **Questions go into a file, not into the chat.** When a batch raises things only the maintainer
   can decide, write them in Russian to a file under `tmp/` and point at it, so they can answer at
   their own pace.
-- **Past editions count.** Backfilling last year's races is wanted: they are the record somebody
-  searching for results is looking for.
+- **Only what is still ahead.** Propose an event only if its last day (`date_end`, else
+  `date_start`) is today or later. A finished one is not wanted, however real it was and however
+  badly its source was indexed (the maintainer, 2026-10-30). Delete any you proposed by mistake;
+  leave alone the past events already on the site.
 
 ## What an event carries
 
@@ -34,6 +36,7 @@ read, a correction, a backfill of past editions.
 
 ## Before proposing
 
+Check that the event's last day has not passed; a source's whole season, as listed, is not a batch.
 Check the site does not already have the event under another name or another spelling of the city,
 and that the geography is not about to become a duplicate. After a bulk change, list what was
 touched with links, so the maintainer can open them.
