@@ -27,6 +27,22 @@ area's specification. A new field's review checks display, editing, migration an
 4. `.venv/bin/python manage.py compilemessages`
 5. Commit the `.po` **and** the `.mo`.
 
+## Strings the site's packages bring
+
+django-allauth ships no Kazakh, and Django's own Kazakh lacks the password rules, most form errors
+and the page that refuses a form without its CSRF cookie. A string a package leaves untranslated
+falls back to Russian, the default language, not to English -- on a `/kk/` page it reads as plain
+Cyrillic and passes every other check. Their Kazakh lives in
+`cycling_site/locale_third_party/kk/LC_MESSAGES/django.po`, the second entry of `LOCALE_PATHS`.
+
+- `makemessages` writes only to the first entry and never touches this one: edit it by hand (or
+  with `polib`), copying each msgid exactly as the package has it -- curly quotes, placeholders and
+  line breaks included -- then `compilemessages` and commit the `.po` and the `.mo`.
+- The site's own catalogue comes first and wins, so a string it already translates is left out.
+- `tests/test_kazakh_account_pages.py` holds the account pages, their errors, the confirmation mail
+  and the CSRF refusal against the packages' Russian: a release that brings a new string fails it,
+  and the string goes into this catalogue.
+
 ## The traps
 
 - **Fuzzy entries are ignored at runtime.** `makemessages` marks a changed string fuzzy and keeps
