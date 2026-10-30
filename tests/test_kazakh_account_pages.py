@@ -2,8 +2,8 @@
 
 django-allauth ships no Kazakh at all, and Django's own Kazakh lacks the password rules, most form
 errors and the page that refuses a form sent without its security cookie, so every one of those
-strings fell back to Russian, the site's default language: /kk/accounts/signup/ asked for the
-password twice, in Russian, under Kazakh menus. Each page here is held against the Russian of both
+strings fell back to Russian, the site's default language: /kk/accounts/signup/ listed its password
+rules and its errors in Russian under Kazakh labels. Each page here is held against the Russian of both
 packages phrase by phrase, so a string a later release of either adds is caught as well.
 """
 
