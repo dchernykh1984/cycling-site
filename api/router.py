@@ -1,9 +1,50 @@
 from ninja import NinjaAPI
+from ninja.errors import HttpError
+from ninja.parser import Parser
+
+
+def _carries_nul(value) -> bool:
+    if isinstance(value, str):
+        return "\x00" in value
+    if isinstance(value, dict):
+        return any(_carries_nul(key) or _carries_nul(item) for key, item in value.items())
+    if isinstance(value, list):
+        return any(_carries_nul(item) for item in value)
+    return False
+
+
+NUL_IN_TEXT = "Text must not contain the NUL character"
+
+
+class _NulInTextError(ValueError):
+    """The parser's refusal; ninja wraps a body's in a 400, which `_http_error` turns back into a 422."""
+
+
+class _TextParser(Parser):
+    """Ninja's parser, refusing the NUL character no text column can hold.
+
+    PostgreSQL rejects it on save, so a title that carried one came back as a 500 instead of a 422;
+    the site's own forms refuse it field by field (Django's ProhibitNullCharactersValidator).
+    """
+
+    def parse_body(self, request):
+        data = super().parse_body(request)
+        if _carries_nul(data):
+            raise _NulInTextError(NUL_IN_TEXT)
+        return data
+
+    def parse_querydict(self, data, list_fields, request):
+        result = super().parse_querydict(data, list_fields, request)
+        if _carries_nul(result):
+            raise _NulInTextError(NUL_IN_TEXT)
+        return result
+
 
 api = NinjaAPI(
     title="UniversalBikeTeam API",
     version="1.0.0",
     urls_namespace="api_v1",
+    parser=_TextParser(),
     description=(
         "REST API for UniversalBikeTeam cycling portal. "
         "Authenticate via `Authorization: Bearer <your_api_token>` header. "
@@ -54,3 +95,16 @@ def _register_routers() -> None:
 
 
 _register_routers()
+
+
+@api.exception_handler(_NulInTextError)
+def _nul_in_text(request, exc):
+    return api.create_response(request, {"detail": str(exc)}, status=422)
+
+
+@api.exception_handler(HttpError)
+def _http_error(request, exc):
+    # Ninja's own answer for every other HttpError, word for word.
+    if isinstance(exc.__cause__, _NulInTextError):
+        return _nul_in_text(request, exc.__cause__)
+    return api.create_response(request, {"detail": str(exc)}, status=exc.status_code)
