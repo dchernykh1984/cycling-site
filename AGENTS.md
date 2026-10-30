@@ -39,6 +39,7 @@ Django 6 + Wagtail, three locales (ru / kk / en), deployed on Render at universa
 | `events-agents` | the three import agents, their schedules, their logs |
 | `calendar-curation` | filling and fixing the calendar by hand |
 | `locations` | the four-level geography tree and the rules that keep it clean |
+| `data-validation` | checking and correcting what is already on the site: duplicates, starts, dates, names |
 | `translations` | three locales, gettext, and the traps in this repo |
 | `search-visibility` | per-language URLs, sitemap, structured data, feeds, IndexNow |
 | `protocols` | how a results file is served, and what may appear inside one |
