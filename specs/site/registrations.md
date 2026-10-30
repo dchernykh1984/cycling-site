@@ -62,7 +62,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 ### Story 3 -- Run the field (P1)
 
 1. **Given** a manager of the event, **Then** they may approve, reject (with a note), mark paid,
-   delete, add entries by hand (free mode only), edit any entry, and export a CSV.
+   delete, add entries by hand (free mode only), edit any entry, and export a CSV, where an entry
+   starting with =, +, - or @ is kept as text (a leading apostrophe), not run as a formula.
 2. **Given** the participant list, **Then** riders are grouped by category, each group numbered from
    its category's bib range (from 1 by default); uncategorised riders come last; the total and the
    limit stand by the title; a manager gets approve/reject and paid columns only when the event
