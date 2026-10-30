@@ -135,6 +135,14 @@ document.addEventListener('DOMContentLoaded', function () {
       var a = document.getElementById(id);
       if (a) a.href = a.pathname + (qs ? '?' + qs : '');
     });
+    // Kept for the visit, as the list and the calendar keep theirs: the calendar opened from the menu,
+    // or this map reloaded, shows the days picked here (principle 6).
+    try {
+      if (dfEl.value && dtEl.value) {
+        sessionStorage.setItem('cal_date_from', dfEl.value);
+        sessionStorage.setItem('cal_date_to', dtEl.value);
+      }
+    } catch (e) { /* storage blocked */ }
   }
 
   // fitView=true picks the first view (first load only): the reader's home area, or the matching
@@ -172,6 +180,22 @@ document.addEventListener('DOMContentLoaded', function () {
       .catch(function () { /* leave the current view on a transient fetch error */ });
     updateSwitcherLinks();
   }
+
+  // An address that names no days -- this map reloaded -- opens on the days picked earlier in the
+  // visit, as the calendar does; a link that names days keeps them. Before the listeners below, so
+  // filling the fields draws the map once.
+  (function () {
+    var incoming = new URLSearchParams(window.location.search);
+    if (incoming.has('date_from') || incoming.has('date_to') || incoming.get('period') === 'month') return;
+    var from = null;
+    var to = null;
+    try {
+      from = sessionStorage.getItem('cal_date_from');
+      to = sessionStorage.getItem('cal_date_to');
+    } catch (e) { return; }
+    var day = /^\d{4}-\d{2}-\d{2}$/;
+    if (day.test(from || '') && day.test(to || '') && from <= to) window.setDateFields(dfEl, dtEl, {from: from, to: to});
+  }());
 
   // Filter changes update markers in place without moving the map (fitView=false); only the
   // initial load picks the view.
