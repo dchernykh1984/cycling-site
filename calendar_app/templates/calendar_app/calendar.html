@@ -177,12 +177,21 @@ document.addEventListener('DOMContentLoaded', function () {
     return window.location.origin + window.location.pathname + (qs ? '?' + qs : '');
   };
 
-  // Keep the List/Map switcher links in sync with the current filters + date range.
-  function updateSwitcherLinks() {
+  // The calendar as it is now -- its filters and its days -- for the other tabs and the language buttons.
+  function viewQuery() {
     var params = new URLSearchParams();
     appendFilterParams(params, 'discipline_category');
     appendPeriod(params);
-    var qs = params.toString();
+    return params.toString();
+  }
+  window.currentViewUrl = function () {
+    var qs = viewQuery();
+    return window.location.pathname + (qs ? '?' + qs : '');
+  };
+
+  // Keep the List/Map switcher links in sync with the current filters + date range.
+  function updateSwitcherLinks() {
+    var qs = viewQuery();
     ['view-link-list', 'view-link-map'].forEach(function (id) {
       var a = document.getElementById(id);
       if (a) a.href = a.pathname + (qs ? '?' + qs : '');

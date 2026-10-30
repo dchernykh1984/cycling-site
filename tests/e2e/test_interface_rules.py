@@ -11,6 +11,7 @@ Each entry names its skin ("light|tap/phone/ru/list/#filter-toggle"). A colour b
 icon, a boundary, a selection -- is allowed for light and dark only, whatever KNOWN says.
 """
 
+import contextlib
 import re
 
 import pytest
@@ -550,6 +551,40 @@ def test_the_period_and_the_filters_travel_to_the_other_tabs(page: Page, live_se
             found.append(f"travel/{tab}/{other}/{','.join(missing)}")
             details.append(f"{tab} -> {other} drops {missing}: {href}")
     assert not _breaks(found), "\n".join(details)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("tab", TABS)
+def test_the_language_buttons_keep_the_period_and_the_filters(page: Page, live_server, race_event_type, tab):
+    """Principle 6: the weekend and a type picked on a tab are still there in another language.
+
+    The calendar and the map keep them in the page, and the language button sent the address the page
+    had been opened at: in English both were gone.
+    """
+    _open(page, live_server, "desktop", "ru", tab)
+    reloads = tab == "list"  # the list answers every choice with a new page
+    with page.expect_navigation() if reloads else contextlib.nullcontext():
+        page.locator("[data-period-kind=weekend]").click()
+    page.wait_for_load_state("networkidle")
+    page.click("#et-btn-1")
+    with page.expect_navigation() if reloads else contextlib.nullcontext():
+        page.check(f"#et-menu-1 input[value='{race_event_type.pk}']")
+    page.wait_for_load_state("networkidle")
+    page.keyboard.press("Escape")
+    dates = page.evaluate("window.periodNav.rangeOf('weekend', new Date())")
+    if tab != "calendar":
+        # The list and the map count from the site's day, the calendar from the browser's.
+        fields = (
+            ("#map-date-from", "#map-date-to") if tab == "map" else ("input[name=date_from]", "input[name=date_to]")
+        )
+        dates = [page.locator(field).first.input_value() for field in fields]
+    with page.expect_navigation():
+        page.locator("form[action$='set_language/'] button[lang=en]").first.click()
+    page.wait_for_load_state("networkidle")
+    assert "/en/" in page.url
+    for wanted in (f"date_from={dates[0]}", f"date_to={dates[1]}", f"event_type={race_event_type.pk}"):
+        assert wanted in page.url, (wanted, page.url)
+    expect(page.locator("[data-period-kind=weekend]")).to_have_attribute("aria-pressed", "true")
 
 
 @pytest.mark.django_db(transaction=True)
