@@ -35,7 +35,8 @@ city (Kazakh name and Russian name), Kaztalov and Kaztalovka the same village, a
 carrying a Kazakh letter inside its Russian name. Before creating anything, search all three name
 columns for the place, and for what it is called in the other languages.
 
-When you find a duplicate: repoint the events onto the surviving node, then delete the duplicate.
+When you find a duplicate: repoint the events onto the surviving node, then delete the duplicate
+(the whole procedure, with what to check first, is in `data-validation`).
 Deleting a city whose catch-all still exists needs the parent's `.delete()` (treebeard removes the
 subtree); `soft_delete_location` refuses, on purpose, while anything hangs off it.
 

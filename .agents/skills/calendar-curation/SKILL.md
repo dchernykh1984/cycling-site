@@ -41,6 +41,8 @@ Check the site does not already have the event under another name or another spe
 and that the geography is not about to become a duplicate. After a bulk change, list what was
 touched with links, so the maintainer can open them.
 
+Correcting what is already on the site -- duplicates, starts, dates, names -- is `data-validation`.
+
 ## Proposing through the API
 
 The service account posts as an organizer, so its events arrive `pending_approval` and wait for a
