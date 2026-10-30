@@ -26,7 +26,7 @@ member may submit a draft for review; members comment.
    page shows its title, cover, body and comments (author shown by full name when set, never by
    e-mail).
 2. **Given** the knowledge index, **Then** articles are listed; an article is reached by an ASCII
-   slug under the index; opened at another language's address, it is served in its own language
+   slug under the index of its own language (`/kk/knowledge/<slug>/` for a Kazakh one); opened at another language's address, it is served in its own language
    with a banner saying so and a link to search.
 3. **Given** search, **Then** news and knowledge articles are found by their text.
 

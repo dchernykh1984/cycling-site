@@ -10,7 +10,7 @@ from wagtail.fields import StreamField
 from wagtail.models import Page
 from wagtail_localize.fields import SynchronizedField
 
-from cycling_site.page_mixins import AsciiSlugMixin
+from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
 from cycling_site.sanitize import sanitize_rich_text_columns
 
 _SITE_CONTENT_CACHE_KEY = "site_content_obj"
@@ -65,7 +65,7 @@ class LocalizedSiteContent:
             self.body: str = sc.body
 
 
-class HomePage(AsciiSlugMixin, Page):
+class HomePage(OwnLanguageUrlMixin, AsciiSlugMixin, Page):
     override_translatable_fields: ClassVar[list] = [
         SynchronizedField("slug", overridable=False),
     ]
@@ -83,7 +83,7 @@ class HomePage(AsciiSlugMixin, Page):
         return context
 
 
-class AboutPage(AsciiSlugMixin, Page):
+class AboutPage(OwnLanguageUrlMixin, AsciiSlugMixin, Page):
     body = StreamField(
         [("text", RichTextBlock())],
         blank=True,
