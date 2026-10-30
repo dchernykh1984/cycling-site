@@ -4609,7 +4609,7 @@ msgstr "Қайта қарауға жіберілді"
 
 #: calendar_app/models.py
 msgid "Returned for review"
-msgstr "Қайта қарауға қайтарылды"
+msgstr "Қарауға қайтарылды"
 
 #: calendar_app/models.py
 msgid "Moved to drafts"
