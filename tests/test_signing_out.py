@@ -7,6 +7,8 @@ browser chose as a guest long ago -- rather than in the member's own.
 import datetime
 
 from django.test import TestCase, override_settings
+from django.utils.translation import gettext
+from django.utils.translation import override as translation_override
 
 from accounts.models import User
 from calendar_app.models import Competition
@@ -55,6 +57,8 @@ class SigningOutStaysOnThePageTests(TestCase):
             "a refusal": f"/kk/calendar/{own.pk}/edit/",
             "not found": f"/kk/calendar/{own.pk}/",
         }
+        with translation_override("kk"):
+            signed_out = gettext("You have signed out.")
         for guest_gets, page in pages.items():
             with self.subTest(guest_gets=guest_gets):
                 self.client.force_login(self.member)
@@ -63,6 +67,8 @@ class SigningOutStaysOnThePageTests(TestCase):
                 self.assertEqual(landed.cookies[SignedOutMiddleware.COOKIE]["max-age"], 0)
                 # Only for this reader, once: kept by a browser, it would bar the member from the page.
                 self.assertIn("no-store", landed["Cache-Control"])
+                # A refusal or a "not found" is drawn before it gives way, and must not use it up.
+                self.assertContains(self.client.get(landed["Location"]), signed_out)
 
     def test_without_the_mark_such_a_page_answers_a_guest_as_before(self):
         self.client.logout()
