@@ -1108,6 +1108,23 @@ class ExportCSVViewTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
 
+    def test_an_entry_that_looks_like_a_formula_stays_text(self):
+        import csv
+        import io
+
+        make_registration(
+            self.comp, first_name='=HYPERLINK("http://x")', last_name="@SUM(A1)", city="-2+3", additional_info="+7 701"
+        )
+        self.client.force_login(self.organizer)
+        response = self.client.get(reverse("registrations:export_csv", args=[self.comp.pk]))
+        rows = list(csv.reader(io.StringIO(response.content.decode())))
+        row = next(r for r in rows if "'@SUM(A1)" in r)
+        self.assertIn('\'=HYPERLINK("http://x")', row)
+        self.assertIn("'-2+3", row)
+        self.assertIn("'+7 701", row)
+        # Plain values and the other participant are left as they were.
+        self.assertTrue(any(r[0] == "1" for r in rows[1:]))
+
 
 # ---------------------------------------------------------------------------
 # Relay registration tests

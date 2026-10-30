@@ -580,6 +580,12 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
         return render(request, self.template_name, ctx)
 
 
+def _csv_row(row: list) -> list:
+    """Cells a spreadsheet shows as text: a participant's own entry starting with =, +, - or @ (or a
+    tab or a return) is otherwise run as a formula when the organizer opens the file in Excel."""
+    return ["'" + v if isinstance(v, str) and v[:1] in ("=", "+", "-", "@", "\t", "\r") else v for v in row]
+
+
 class ExportParticipantsCSVView(LoginRequiredMixin, View):
     def get(self, request, pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
@@ -589,50 +595,54 @@ class ExportParticipantsCSVView(LoginRequiredMixin, View):
         response["Content-Disposition"] = f'attachment; filename="participants_{pk}.csv"'
         writer = csv.writer(response)
         writer.writerow(
-            [
-                "#",
-                "Participant(s)",
-                "Last name",
-                "First name",
-                "Gender",
-                "Birth date",
-                "Birth year(s)",
-                "City/Cities",
-                "Category",
-                "Team",
-                # The organizer's own wording when there is one, and the English default otherwise:
-                # every other header in this file is English, and a script that reads the export
-                # should not see the column rename itself with the exporter's interface language.
-                competition.additional_info_label.strip() or "Additional info",
-                "Approved",
-                "Paid",
-                "Rejected",
-                "Registered at",
-            ]
+            _csv_row(
+                [
+                    "#",
+                    "Participant(s)",
+                    "Last name",
+                    "First name",
+                    "Gender",
+                    "Birth date",
+                    "Birth year(s)",
+                    "City/Cities",
+                    "Category",
+                    "Team",
+                    # The organizer's own wording when there is one, and the English default otherwise:
+                    # every other header in this file is English, and a script that reads the export
+                    # should not see the column rename itself with the exporter's interface language.
+                    competition.additional_info_label.strip() or "Additional info",
+                    "Approved",
+                    "Paid",
+                    "Rejected",
+                    "Registered at",
+                ]
+            )
         )
         for i, reg in enumerate(competition.registrations.select_related("category", "team"), start=1):
             writer.writerow(
-                [
-                    i,
-                    reg.participant_names.replace("<BR>", "; ")
-                    if reg.participant_names
-                    else f"{reg.last_name} {reg.first_name}".strip(),
-                    reg.last_name,
-                    reg.first_name,
-                    reg.gender,
-                    reg.birth_date.isoformat(),
-                    reg.participant_birth_years.replace("<BR>", "; ")
-                    if reg.participant_birth_years
-                    else str(reg.birth_date.year),
-                    reg.participant_cities.replace("<BR>", "; ") if reg.participant_cities else reg.city,
-                    reg.category.name if reg.category else "",
-                    reg.team.name if reg.team else "",
-                    reg.additional_info,
-                    reg.is_approved,
-                    reg.is_paid,
-                    reg.is_rejected,
-                    reg.registered_at.strftime("%Y-%m-%d %H:%M"),
-                ]
+                _csv_row(
+                    [
+                        i,
+                        reg.participant_names.replace("<BR>", "; ")
+                        if reg.participant_names
+                        else f"{reg.last_name} {reg.first_name}".strip(),
+                        reg.last_name,
+                        reg.first_name,
+                        reg.gender,
+                        reg.birth_date.isoformat(),
+                        reg.participant_birth_years.replace("<BR>", "; ")
+                        if reg.participant_birth_years
+                        else str(reg.birth_date.year),
+                        reg.participant_cities.replace("<BR>", "; ") if reg.participant_cities else reg.city,
+                        reg.category.name if reg.category else "",
+                        reg.team.name if reg.team else "",
+                        reg.additional_info,
+                        reg.is_approved,
+                        reg.is_paid,
+                        reg.is_rejected,
+                        reg.registered_at.strftime("%Y-%m-%d %H:%M"),
+                    ]
+                )
             )
         return response
 
