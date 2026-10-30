@@ -290,18 +290,25 @@ class Competition(index.Indexed, models.Model):
         already approved records nothing: whoever approved it then is unknown, and the person
         editing it now is not them.
         """
-        if self.status != self.Status.APPROVED or (self.approved_by_id and self.approved_at):
+        if self.status != self.Status.APPROVED:
             return set()
-        if self.pk and type(self).objects.filter(pk=self.pk, status=self.Status.APPROVED).exists():
-            return set()
+        stored = None
+        if self.pk:
+            stored = type(self).objects.filter(pk=self.pk).values("status", "approved_by_id", "approved_at").first()
+            if stored and stored["status"] == self.Status.APPROVED:
+                return set()
+        # What the row already held was not set for this approval: a rejection keeps its reviewer in
+        # the same two fields, and an event approved by hand afterwards would credit them.
+        by_set = self.approved_by_id is not None and (stored is None or self.approved_by_id != stored["approved_by_id"])
+        at_set = self.approved_at is not None and (stored is None or self.approved_at != stored["approved_at"])
         from audit.middleware import get_current_user
 
         changed = set()
-        user = get_current_user()
-        if self.approved_by_id is None and getattr(user, "is_authenticated", False):
-            self.approved_by = user
+        if not by_set:
+            user = get_current_user()
+            self.approved_by = user if getattr(user, "is_authenticated", False) else None
             changed.add("approved_by")
-        if self.approved_at is None:
+        if not at_set:
             self.approved_at = timezone.now()
             changed.add("approved_at")
         return changed
