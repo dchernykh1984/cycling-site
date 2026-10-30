@@ -13,8 +13,10 @@ for, so widening a column cannot leave the API refusing what the database would 
 
 from typing import Annotated, Any
 
+from django import forms
+from django.core.exceptions import ValidationError
 from ninja import Schema
-from pydantic import Field
+from pydantic import AfterValidator, Field
 
 # calendar_app.Competition.url_route and its four siblings (Django's URLField default).
 MAX_URL_LENGTH = 200
@@ -22,7 +24,23 @@ MAX_URL_LENGTH = 200
 MAX_TITLE_LENGTH = 255
 # calendar_app.Competition.preview_text, the line a chat shows under a pasted link (#318).
 MAX_PREVIEW_TEXT_LENGTH = 200
-Url = Annotated[str, Field(max_length=MAX_URL_LENGTH)]
+
+
+def _web_link(value: str) -> str:
+    """What the site's own form takes as a link, and as it stores it.
+
+    The event's page and the moderation page put the link in an href, so a ``javascript:`` or
+    ``data:`` address an API caller sent ran in the session of whoever clicked it.
+    """
+    if not value:
+        return value
+    try:
+        return forms.URLField(max_length=MAX_URL_LENGTH).clean(value)
+    except ValidationError as error:
+        raise ValueError(" ".join(error.messages)) from None
+
+
+Url = Annotated[str, Field(max_length=MAX_URL_LENGTH), AfterValidator(_web_link)]
 Title = Annotated[str, Field(max_length=MAX_TITLE_LENGTH)]
 PreviewText = Annotated[str, Field(max_length=MAX_PREVIEW_TEXT_LENGTH)]
 
