@@ -105,3 +105,11 @@ class KnowledgeSitemapStillWorksTests(TestCase):
         article = KnowledgeArticle.objects.create(title="Guide", slug="guide")
         body = self.client.get(reverse("sitemap_section", args=["knowledge"])).content.decode()
         self.assertIn(article.get_absolute_url(), body)
+
+    def test_an_article_is_listed_once_under_its_own_language(self):
+        article = KnowledgeArticle.objects.create(title="Qollanba", slug="qollanba", locale="kk")
+        body = self.client.get(reverse("sitemap_section", args=["knowledge"])).content.decode()
+        self.assertEqual(body.count("<loc>"), 1)
+        self.assertIn(f"/kk/knowledge/{article.slug}/</loc>", body)
+        self.assertNotIn('hreflang="ru"', body)
+        self.assertNotIn('hreflang="en"', body)
