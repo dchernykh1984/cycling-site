@@ -88,7 +88,10 @@ are `locations`; reaching production is `production-access`.
   agents.
 - **Past events** (`calendar-curation`).
 
-## Who approved what
+## Who did what to an event
 
-An admin sees at the foot of an event's page who approved it and when; the API's event detail gives
-admins `approved_by_id` and `approved_at`. Approvals older than the record show nothing.
+An admin sees at the foot of an event's page its moderation history: added, rejected (with the
+reason), resubmitted, approved, returned for review -- when and by whom. The API's event detail
+gives admins the same as `moderation_history`, with `approved_by_id` and `approved_at` for the last
+review. For an event older than the history, what was recorded then: its creation, its rejections
+and its last approval.
