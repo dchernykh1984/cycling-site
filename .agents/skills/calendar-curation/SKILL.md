@@ -33,6 +33,7 @@ read, or a correction.
 - Markup: one `<p>` per paragraph. Stripping paragraphs and relying on `<br>` collapses the text
   into a wall, which is exactly what happened the last time it was done in bulk.
 - Three locales, always.
+- Korean surnames and Chernykh are not declined in Russian (`site-content`).
 
 ## Before proposing
 
