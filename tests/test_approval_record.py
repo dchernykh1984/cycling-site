@@ -74,6 +74,18 @@ class ApprovalRecordTests(TestCase):
         self.assertEqual(event.approved_by, self.admin)
         self.assertIsNotNone(event.approved_at)
 
+    def test_an_event_rejected_and_then_approved_by_hand_names_who_approved_it(self):
+        rejecter = _user("strict", User.Role.ADMIN)
+        event = _event(status=Competition.Status.PENDING_APPROVAL)
+        event.reject(rejecter, "No route yet")
+        rejected_at = event.approved_at
+        _as_request_user(self, self.admin)
+        event.status = Competition.Status.APPROVED
+        event.save()
+        event.refresh_from_db()
+        self.assertEqual(event.approved_by, self.admin)
+        self.assertGreater(event.approved_at, rejected_at)
+
     def test_an_old_approval_is_not_credited_to_whoever_edits_the_event_now(self):
         event = _event(status=Competition.Status.APPROVED)
         Competition.objects.filter(pk=event.pk).update(approved_by=None, approved_at=None)
