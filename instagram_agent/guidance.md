@@ -45,6 +45,9 @@ published; if that is not possible, skip it rather than guessing.
   show up: the gathering time and the start time, the meeting place, the route, the pace, whether
   anyone may join, the fee, and how to register when the post says. Keep the club's own concrete
   wording; do not invent details the post does not state.
+- **Names in Russian**: Korean surnames -- Ким, Пак, Ли, Цой, Тен, Огай, Югай, Хан, Шин and the like --
+  and the surname Черных are not declined: «спасибо Олегу Ким», «с Денисом Черных», never
+  «Олегу Киму» or «Черныхом». The first name declines as usual.
 - **Type and discipline**: a coffee ride goes to the road discipline "Кофе-райд" with the
   "Тренировка / Прогулка" type.
 - **No links and no platform.** Do not write a link anywhere, and never name the site or app the

@@ -55,6 +55,9 @@ the day the message was published; if that is not possible, skip it rather than 
   needs to show up: the gathering time and the start time, the meeting place, the route, the pace
   or difficulty, whether anyone may join, the fee, and how to register when the message says.
   Keep the community's own concrete wording; do not invent details the message does not state.
+- **Names in Russian**: Korean surnames -- Ким, Пак, Ли, Цой, Тен, Огай, Югай, Хан, Шин and the like --
+  and the surname Черных are not declined: «спасибо Олегу Ким», «с Денисом Черных», never
+  «Олегу Киму» or «Черныхом». The first name declines as usual.
 - **Type and discipline**: the lists cover more than cycling -- running, ski racing and hiking
   included. A hike or a walk goes to the hiking disciplines with the "Тренировка / Прогулка"
   type; a race goes to its discipline with the race type. A coffee ride (кофе-райд: a social
