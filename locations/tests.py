@@ -2064,3 +2064,36 @@ class CatchAllNameRepairMigrationTests(TestCase):
         self._repair()
         node.refresh_from_db()
         self.assertEqual((node.name, node.name_ru, node.name_kk, node.name_en), before)
+
+
+class LocationFormPointTests(TestCase):
+    """A place's point is on the globe and has both its numbers (the form, as the API)."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(username="point-admin", email="pa@example.com", role=User.Role.ADMIN)
+
+    def _form(self, **point):
+        from locations.forms import LocationForm
+
+        return LocationForm(data={"name_ru": "Venue", **point}, user=self.admin, can_manage=True)
+
+    def test_a_point_off_the_globe_is_refused(self):
+        for point in ({"lat": "91", "lng": "10"}, {"lat": "-90.5", "lng": "10"}, {"lat": "43", "lng": "180.1"}):
+            with self.subTest(point=point):
+                self.assertFalse(self._form(**point).is_valid())
+
+    def test_half_a_point_is_refused(self):
+        from django.utils.translation import gettext, override
+
+        for point in ({"lat": "43.2"}, {"lng": "76.9"}):
+            with self.subTest(point=point):
+                form = self._form(**point)
+                self.assertFalse(form.is_valid())
+                with override("ru"):
+                    self.assertIn(
+                        gettext("Give both the latitude and the longitude, or neither."), form.non_field_errors()
+                    )
+
+    def test_both_numbers_or_neither_are_taken(self):
+        self.assertTrue(self._form(lat="-90", lng="180").is_valid())
+        self.assertTrue(self._form().is_valid())

@@ -1196,3 +1196,11 @@ msgstr "электрондық пошта мекенжайы"
 #: django/db/models/fields/__init__.py
 msgid "- Select an option -"
 msgstr "- Нұсқаны таңдаңыз -"
+
+#, python-format
+msgid "Ensure this value is less than or equal to %(limit_value)s."
+msgstr "Мән %(limit_value)s мәнінен кіші немесе оған тең болуы керек."
+
+#, python-format
+msgid "Ensure this value is greater than or equal to %(limit_value)s."
+msgstr "Мән %(limit_value)s мәнінен үлкен немесе оған тең болуы керек."

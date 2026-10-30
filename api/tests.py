@@ -1618,6 +1618,24 @@ class LocationCreateTest(TestCase, ApiTestMixin):
         self.assertFalse(loc.is_pending)
         self.assertEqual(loc.depth, 4)
 
+    def test_a_point_is_on_the_globe_and_whole(self):
+        city = _city()
+        for point in ({"lat": "999", "lng": "10"}, {"lat": "43.2", "lng": "-500"}, {"lat": "43.2"}, {"lng": "76.9"}):
+            with self.subTest(point=point):
+                resp = self.post(
+                    "/api/v1/locations/",
+                    {"name": {"ru": "Venue", "kk": "", "en": ""}, "parent_id": city.pk, **point},
+                    user=self.organizer,
+                )
+                self.assertEqual(resp.status_code, 422)
+        self.assertFalse(Location.objects.filter(name_ru="Venue").exists())
+        resp = self.post(
+            "/api/v1/locations/",
+            {"name": {"ru": "Venue", "kk": "", "en": ""}, "parent_id": city.pk, "lat": "-90", "lng": "180"},
+            user=self.organizer,
+        )
+        self.assertEqual(resp.status_code, 201)
+
     def test_organizer_without_city_parent_forbidden(self):
         resp = self.post("/api/v1/locations/", {"name": {"ru": "X", "kk": "", "en": ""}}, user=self.organizer)
         self.assertEqual(resp.status_code, 403)
@@ -1797,6 +1815,18 @@ class LocationUpdateTest(TestCase, ApiTestMixin):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["name"]["ru"], "New RU")
+
+    def test_a_patch_keeps_the_point_on_the_globe_and_whole(self):
+        self.loc.lat, self.loc.lng = 43.2, 76.9
+        self.loc.save()
+        for change in ({"lat": "95"}, {"lng": "181"}, {"lng": None}):
+            with self.subTest(change=change):
+                resp = self.patch(f"/api/v1/locations/{self.loc.pk}", change, user=self.admin)
+                self.assertEqual(resp.status_code, 422)
+        self.loc.refresh_from_db()
+        self.assertEqual((float(self.loc.lat), float(self.loc.lng)), (43.2, 76.9))
+        resp = self.patch(f"/api/v1/locations/{self.loc.pk}", {"lat": None, "lng": None}, user=self.admin)
+        self.assertEqual(resp.status_code, 200)
 
     def test_system_fallback_cannot_be_unhidden(self):
         region = self.loc.add_child(name="R", name_ru="R")
