@@ -16,7 +16,7 @@ from wagtail.models import Page
 from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
-from cycling_site.page_mixins import AsciiSlugMixin
+from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from cycling_site.sanitize import sanitize_rich_text_columns
 
@@ -133,7 +133,7 @@ def _can_manage_knowledge(user) -> bool:
     return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= admin_rank)
 
 
-class KnowledgeIndexPage(RoutablePageMixin, AsciiSlugMixin, Page):
+class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin, Page):
     intro = RichTextField(blank=True)
 
     content_panels: ClassVar[list] = [*Page.content_panels, FieldPanel("intro")]

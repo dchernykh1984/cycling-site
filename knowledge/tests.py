@@ -230,6 +230,33 @@ class KnowledgeArticleViewTests(TestCase):
         self.assertNotContains(resp, "/admin/pages/")
 
 
+class KnowledgeAddressedInItsLanguageTests(TestCase):
+    """Every language's knowledge base under its own prefix; until 2026-10-30 all three came out as /ru/."""
+
+    def setUp(self):
+        from knowledge.models import _index_url_cache
+
+        # Built once per process, so a URL from another test would hide the fault.
+        _index_url_cache.clear()
+        self.addCleanup(_index_url_cache.clear)
+
+    def test_each_language_index_is_addressed_under_its_own_prefix(self):
+        for code in ("ru", "kk", "en"):
+            page = KnowledgeIndexPage.objects.live().get(locale__language_code=code)
+            self.assertEqual(page.url, f"/{code}/knowledge/")
+
+    def test_the_menu_sends_an_english_reader_to_the_english_knowledge_base_and_map(self):
+        body = self.client.get("/en/news/").content.decode()
+        for section in ("knowledge", "map"):
+            self.assertIn(f'href="/en/{section}/"', body)
+            self.assertNotIn(f'href="/ru/{section}/"', body)
+
+    def test_a_kazakh_article_opens_in_kazakh_from_the_kazakh_index(self):
+        article = KnowledgeArticle.objects.create(title="Qazaq maqala", locale="kk", body="<p>Matin</p>")
+        self.assertEqual(article.get_absolute_url(), f"/kk/knowledge/{article.slug}/")
+        self.assertContains(self.client.get("/kk/knowledge/"), f'href="/kk/knowledge/{article.slug}/"')
+
+
 class KnowledgeForeignLocaleBannerTests(TestCase):
     def setUp(self):
         self.article = KnowledgeArticle.objects.create(

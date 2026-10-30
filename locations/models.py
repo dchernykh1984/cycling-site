@@ -16,7 +16,7 @@ from wagtail.models import Page
 from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
-from cycling_site.page_mixins import AsciiSlugMixin
+from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
 
 
 class LocationConflictError(Exception):
@@ -859,7 +859,7 @@ def filter_descendant_pks(location_ids) -> set:
     return pks
 
 
-class LocationsMapPage(AsciiSlugMixin, Page):
+class LocationsMapPage(OwnLanguageUrlMixin, AsciiSlugMixin, Page):
     intro = RichTextField(blank=True)
 
     content_panels: ClassVar[list] = [*Page.content_panels, FieldPanel("intro")]
