@@ -939,6 +939,24 @@ def _share_url(request, competition, *, is_public: bool, invite_url: str | None)
     return None
 
 
+def _approval_record(competition) -> dict | None:
+    """Who approved a published event and when, as admins see it at the foot of its page (#741).
+
+    None when nothing was recorded -- approvals made before they were -- so the page says nothing
+    rather than guess. The e-mail stands beside the name: two accounts may carry one name.
+    """
+    if competition.status != Competition.Status.APPROVED or not (competition.approved_by_id or competition.approved_at):
+        return None
+    approver = competition.approved_by
+    name = None
+    if approver is not None:
+        full = approver.get_full_name()
+        name = (
+            f"{full} ({approver.email})" if full and approver.email else (full or approver.email or approver.username)
+        )
+    return {"name": name, "at": competition.approved_at}
+
+
 class CompetitionDetailView(View):
     def get(self, request, pk):
         from registrations.views import can_manage
@@ -1028,6 +1046,7 @@ class CompetitionDetailView(View):
             "report_form": ReportCompetitionForm() if can_report else None,
             "open_reports": open_reports,
             "can_dismiss_reports": bool(open_reports),
+            "approval_record": _approval_record(competition) if is_admin_plus(request.user) else None,
             **_link_preview_tags(request, competition),
             "structured_data": sports_event(competition, f"{request.scheme}://{request.get_host()}"),
         }

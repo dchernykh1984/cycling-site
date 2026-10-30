@@ -11,7 +11,7 @@ materials, upload token, rich description, several event types), `calendar_app/t
 `tests/test_clone_competition.py`, `tests/test_preview_image.py`, `tests/test_preview_text_form.py`,
 `tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
 `tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/test_event_ics.py`,
-`tests/test_top_events.py`, `assistant/tests/test_chat.py`,
+`tests/test_top_events.py`, `tests/test_approval_record.py`, `assistant/tests/test_chat.py`,
 `tests/e2e/test_competition_form.py`, `test_add_to_calendar.py`,
 `test_competition_materials.py`, `test_description_editor.py`, `test_resubmit.py`,
 `test_pending_moderation.py`, `test_invite_only_events.py`, `test_competition_link_order.py`,
@@ -67,6 +67,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    comments or registration.
 5. **Given** there is something to moderate, **Then** a banner under the menu tells each moderator
    how many items wait for them and where, counting only what they may act on.
+6. **Given** an admin opens a published event, **Then** the foot of its page names who approved it
+   and when (#741); an approval made before approvals were recorded shows nothing.
 
 ### Story 3 -- Keep it current (P2)
 
@@ -166,6 +168,11 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 - **FR-EVT-005**: Rich descriptions are sanitised on save and in the admin; translations do not leak
   across locales on save.
 - **FR-EVT-006**: Redirects after moderation follow only a safe `next`, never downgrading https.
+- **FR-EVT-007**: Every way into approved records the approver and the time: the moderation page,
+  an organizer publishing their own event, the status field of the Wagtail admin (the signed-in
+  user), an admin's event posted through the API (the token's owner). A save that finds the event
+  already approved records nothing. Only admins see the record: at the foot of the event's page
+  and as `approved_by_id` / `approved_at` in the API's event detail, null for everyone else.
 
 ## Key Entities
 

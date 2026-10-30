@@ -4577,3 +4577,18 @@ msgstr "Аты-жөні1<BR>Аты-жөні2<BR>Аты-жөні3"
 #: registrations/forms.py:104
 msgid "City1<BR>City2<BR>City3"
 msgstr "Қала1<BR>Қала2<BR>Қала3"
+
+#: calendar_app/templates/calendar_app/detail.html:460
+#, python-format
+msgid "Approved by %(name)s, %(date)s"
+msgstr "%(name)s мақұлдаған, %(date)s"
+
+#: calendar_app/templates/calendar_app/detail.html:460
+#, python-format
+msgid "Approved by %(name)s"
+msgstr "%(name)s мақұлдаған"
+
+#: calendar_app/templates/calendar_app/detail.html:460
+#, python-format
+msgid "Approved on %(date)s"
+msgstr "%(date)s мақұлданған"
