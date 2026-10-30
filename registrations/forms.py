@@ -4,21 +4,32 @@ from typing import ClassVar
 
 from django import forms
 from django.utils.html import escape
+from django.utils.translation import gettext_lazy as _
 
 from .models import CompetitionRegistration, RegistrationCategory
 
+# The organizer's add and edit pages print these labels as they are, so each is translated here.
+GENDER_CHOICES = [("M", _("Male")), ("F", _("Female"))]
+
 
 class RegistrationForm(forms.Form):
-    first_name = forms.CharField(max_length=100)
-    last_name = forms.CharField(max_length=100)
-    gender = forms.ChoiceField(choices=[("M", "M"), ("F", "F")], widget=forms.RadioSelect)
-    birth_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"))
-    birth_year = forms.IntegerField(min_value=1900, max_value=datetime.date.today().year, required=False)
-    category = forms.ModelChoiceField(queryset=RegistrationCategory.objects.none(), required=False)
-    city = forms.CharField(max_length=100, required=False)
-    team_name = forms.CharField(max_length=100, required=False, label="Team")
+    first_name = forms.CharField(max_length=100, label=_("First name"))
+    last_name = forms.CharField(max_length=100, label=_("Last name"))
+    gender = forms.ChoiceField(choices=GENDER_CHOICES, widget=forms.RadioSelect, label=_("Gender"))
+    birth_date = forms.DateField(
+        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"), label=_("Date of birth")
+    )
+    birth_year = forms.IntegerField(
+        min_value=1900, max_value=datetime.date.today().year, required=False, label=_("Year of birth")
+    )
+    category = forms.ModelChoiceField(queryset=RegistrationCategory.objects.none(), required=False, label=_("Category"))
+    city = forms.CharField(max_length=100, required=False, label=_("City"))
+    team_name = forms.CharField(max_length=100, required=False, label=_("Team"))
     additional_info = forms.CharField(
-        max_length=100, required=False, widget=forms.TextInput(attrs={"maxlength": "100"})
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={"maxlength": "100"}),
+        label=_("Additional info"),
     )
 
     def __init__(self, *args, competition=None, user=None, readonly_fields=None, **kwargs):
@@ -66,7 +77,9 @@ class RejectRegistrationForm(forms.Form):
 
 
 class EditRegistrationForm(forms.ModelForm):
-    team_name = forms.CharField(max_length=100, required=False, label="Team")
+    team_name = forms.CharField(max_length=100, required=False, label=_("Team"))
+    # Declared rather than taken from the model, whose choices are untranslated and add a blank radio.
+    gender = forms.ChoiceField(choices=GENDER_CHOICES, widget=forms.RadioSelect, label=_("Gender"))
 
     class Meta:
         model = CompetitionRegistration
@@ -86,10 +99,22 @@ class EditRegistrationForm(forms.ModelForm):
         ]
         widgets: ClassVar[dict] = {
             "birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-            "gender": forms.RadioSelect(choices=[("M", "M"), ("F", "F")]),
-            "participant_names": forms.Textarea(attrs={"rows": 4, "placeholder": "Name1<BR>Name2<BR>Name3"}),
+            "participant_names": forms.Textarea(attrs={"rows": 4, "placeholder": _("Name1<BR>Name2<BR>Name3")}),
             "participant_birth_years": forms.TextInput(attrs={"placeholder": "1990<BR>1995<BR>2000"}),
-            "participant_cities": forms.TextInput(attrs={"placeholder": "City1<BR>City2<BR>City3"}),
+            "participant_cities": forms.TextInput(attrs={"placeholder": _("City1<BR>City2<BR>City3")}),
+        }
+        labels: ClassVar[dict] = {
+            "first_name": _("First name"),
+            "last_name": _("Last name"),
+            "participant_names": _("Team members"),
+            "participant_birth_years": _("Year of birth"),
+            "participant_cities": _("City"),
+            "birth_date": _("Date of birth"),
+            "category": _("Category"),
+            "city": _("City"),
+            "additional_info": _("Additional info"),
+            "is_approved": _("Approved"),
+            "is_paid": _("Paid"),
         }
 
     def _sanitize_relay_field(self, field_name):

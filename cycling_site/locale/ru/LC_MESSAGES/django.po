@@ -4571,3 +4571,11 @@ msgstr "<strong>Ваш регион.</strong> Если вы не вошли на
 
 msgid "places close together; zoom in to see them"
 msgstr "— места рядом друг с другом; приблизьте карту, чтобы их увидеть"
+
+#: registrations/forms.py:102
+msgid "Name1<BR>Name2<BR>Name3"
+msgstr "Имя1<BR>Имя2<BR>Имя3"
+
+#: registrations/forms.py:104
+msgid "City1<BR>City2<BR>City3"
+msgstr "Город1<BR>Город2<BR>Город3"

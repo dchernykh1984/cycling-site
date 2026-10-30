@@ -118,6 +118,9 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 - **FR-REG-005**: An entry counts when it is not rejected, and approved and paid where the event
   requires it; counting entries fill the limits and get start numbers.
 - **FR-REG-006**: Only participant and up register; guests are sent to confirm their address.
+- **FR-REG-007**: The organizer's manual add page and the edit page name every field and the
+  gender choices in the page's language, as the registration page does
+  (`registrations/tests.py::FormLabelsInThePageLanguageTests`).
 
 ## Key Entities
 

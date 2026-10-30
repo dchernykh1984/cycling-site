@@ -4569,3 +4569,11 @@ msgstr "<strong>Сіздің аймағыңыз.</strong> Сайтқа кірм�
 
 msgid "places close together; zoom in to see them"
 msgstr "— бір-біріне жақын орындар; оларды көру үшін картаны жақындатыңыз"
+
+#: registrations/forms.py:102
+msgid "Name1<BR>Name2<BR>Name3"
+msgstr "Аты-жөні1<BR>Аты-жөні2<BR>Аты-жөні3"
+
+#: registrations/forms.py:104
+msgid "City1<BR>City2<BR>City3"
+msgstr "Қала1<BR>Қала2<BR>Қала3"
