@@ -615,9 +615,10 @@ main .event-photo-preview img { object-fit: contain; }
     display: inline-flex;
     align-items: center;
 }
-/* An event's title beside its buttons (share, add to calendar, favourite): a word wider than the room
-   they leave on a phone breaks, rather than pushing the page sideways. */
-.event-heading h1 { min-width: 0; overflow-wrap: break-word; }
+/* A heading beside its buttons -- an event's (share, add to calendar, favourite), a page's share button:
+   a word wider than the room they leave on a phone breaks, rather than pushing the page sideways (the
+   Russian privacy policy's "konfidentsialnosti" did). */
+.d-flex > h1 { min-width: 0; overflow-wrap: break-word; }
 /* "Add to calendar" beside an event's heading keeps the share button's size, and answers a tap across
    44 px around it, centred, without growing (issue #398). */
 .calendar-btn { position: relative; }
