@@ -124,6 +124,26 @@ def setup_hint(request):
     return {"setup_hint": hint} if hint else {}
 
 
+def sign_in_link(request):
+    """Where the header's "Log in" leads a visitor: back to the page it was pressed on, filters and all.
+
+    It led to the home page, so a reader who signed in to enter a race had to find the race again.
+    An account page sends no `next` -- after signing in from the sign-up page there is nothing to go
+    back to.
+    """
+    from urllib.parse import urlencode
+
+    from cycling_site.setup_hints import on_account_page
+
+    user = getattr(request, "user", None)
+    if user is None or user.is_authenticated:
+        return {}
+    url = reverse("account_login")
+    if not on_account_page(request):
+        url += "?" + urlencode({"next": request.get_full_path()})
+    return {"sign_in_url": url}
+
+
 def skins(request):
     skin = skin_registry.chosen(request)
     return {
