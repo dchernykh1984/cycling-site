@@ -56,8 +56,8 @@ once; confirming the address unlocks everything that writes.
    no language prefix, whatever language the sign-in started from.
 4. **Given** a member signs in or out on a page in one language without a page to return to,
    **Then** they land on the home page in that language, not in the one their browser asks for;
-   a member who chose a language in their profile lands in that one, as on any address without a
-   language.
+   a reader who chose a language -- in their profile or with the language buttons -- lands in that
+   one, as on any address without a language.
 
 ### Story 4 -- The role ladder (P2)
 

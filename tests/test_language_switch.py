@@ -150,6 +150,12 @@ class SigningInAndOutKeepsThePageLanguageTests(TestCase):
         response = self.client.post("/kk/accounts/login/", {"login": "reader@example.com", "password": "Pass-12345!"})
         self.assertEqual(self.client.get(response["Location"])["Location"], "/en/")
 
+    def test_a_language_chosen_with_the_buttons_still_wins_after_signing_out(self):
+        self.client.cookies["django_language"] = "en"
+        self.client.force_login(self.user)
+        response = self.client.post("/kk/accounts/logout/")
+        self.assertEqual(self.client.get(response["Location"])["Location"], "/en/")
+
     def test_a_next_page_is_kept_as_it_was(self):
         response = self.client.post(
             "/kk/accounts/login/?next=/en/calendar/", {"login": "reader@example.com", "password": "Pass-12345!"}
