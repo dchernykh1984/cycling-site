@@ -168,11 +168,23 @@ def open_filter_panel(page) -> None:
     if toggle.count() == 0:
         return
     panel = page.locator("#filter-panel")
-    if not panel.is_visible():
+    if panel.is_visible():
+        return
+    # Visible already as it starts to unfold; wait for the unfolding to end, or a click lands on a
+    # control that is still moving (seen on iPhone: "clicking the checkbox did not change its state").
+    unfolded = page.locator("#filter-panel.show:not(.collapsing)")
+    # WebKit on a phone now and then drops the tap on the toggle (seen in CI: the panel had not
+    # unfolded after 60 s). Tap again while nothing has started to unfold, rather than wait on a tap
+    # that did nothing; a second tap on a panel already unfolding would fold it back.
+    for _ in range(3):
         toggle.click()
-        # Visible already as it starts to unfold; wait for the unfolding to end, or a click lands on a
-        # control that is still moving (seen on iPhone: "clicking the checkbox did not change its state").
-        page.locator("#filter-panel.show:not(.collapsing)").wait_for(state="visible")
+        try:
+            unfolded.wait_for(state="visible", timeout=5000)
+            return
+        except PlaywrightError:
+            if panel.evaluate("el => el.classList.contains('show') || el.classList.contains('collapsing')"):
+                break
+    unfolded.wait_for(state="visible")
 
 
 def open_navbar_if_collapsed(page) -> None:
