@@ -6,10 +6,13 @@ from django import forms
 from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
 
+from accounts.models import User
+
 from .models import CompetitionRegistration, RegistrationCategory
 
-# The organizer's add and edit pages print these labels as they are, so each is translated here.
-GENDER_CHOICES = [("M", _("Male")), ("F", _("Female"))]
+# The organizer's add and edit pages print the fields' labels and choices as they are, so each is
+# translated here; the gender choices are the member's own.
+GENDER_CHOICES = User.Gender.choices
 
 
 class RegistrationForm(forms.Form):
