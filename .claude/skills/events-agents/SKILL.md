@@ -10,9 +10,9 @@ a service account. Everything they propose lands as `pending_approval` for a hum
 
 | Agent | Reads | Schedule (UTC) |
 | --- | --- | --- |
-| `agent/` (events) | web calendars, organizer sites, public Telegram feeds via `t.me/s/` | 22:17 daily |
-| `instagram_agent/` | club accounts listed in `instagram_accounts.yaml`, via Meta's Graph API | 23:17 daily |
-| `telegram_agent/` | private channels and member-only groups, over MTProto | 00:17 daily |
+| `agent/` (events) | web calendars, organizer sites, public Telegram feeds via `t.me/s/` | 11:17, Mondays and Fridays |
+| `instagram_agent/` | club accounts listed in `instagram_accounts.yaml`, via Meta's Graph API | 12:17 daily |
+| `telegram_agent/` | private channels and member-only groups, over MTProto | 13:17 daily |
 
 **Never start one without being asked.** Each run spends money at the LLM provider. When the
 maintainer does ask: `gh workflow run agent.yml --ref main -f dry_run=false -f max_events=25`.
