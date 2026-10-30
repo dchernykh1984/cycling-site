@@ -1192,3 +1192,7 @@ msgstr "Толығырақ ақпарат DEBUG=True режимінде қолж
 #: django/contrib/auth/models.py
 msgid "email address"
 msgstr "электрондық пошта мекенжайы"
+
+#: django/db/models/fields/__init__.py
+msgid "- Select an option -"
+msgstr "- Нұсқаны таңдаңыз -"
