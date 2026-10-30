@@ -8,7 +8,7 @@
 `tests/test_oauth_callback.py`, `tests/test_save_filter_preferences.py`, `tests/test_skin_choice.py`,
 `tests/e2e/test_api_token_profile.py`, `tests/e2e/test_profile_preferences.py`,
 `tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_managing.py`,
-`tests/test_managing_api.py`, `tests/e2e/test_managing.py`
+`tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md)
 
 ## Overview
@@ -58,9 +58,11 @@ once; confirming the address unlocks everything that writes.
    **Then** they land on the home page in that language, not in the one their browser asks for;
    a reader who chose a language -- in their profile or with the language buttons -- lands in that
    one, as on any address without a language.
-5. **Given** a member signs out without a page to return to, **Then** they land on the home page
-   in the page's language, whatever a profile or the language cookie names: signed out, the reader
-   is a guest, and the profile no longer speaks for them.
+5. **Given** a member signs out, **Then** they stay on the page they were on; a page a guest may
+   not open -- one that asks to sign in, refuses or is not found, such as the profile, an
+   organizer's tools or their own event under review -- gives way to the home page in the page's
+   language, whatever a profile or the language cookie names: signed out, the reader is a guest,
+   and the profile no longer speaks for them (`cycling_site.middleware.SignedOutMiddleware`).
 
 ### Story 4 -- The role ladder (P2)
 

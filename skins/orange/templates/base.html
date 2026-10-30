@@ -169,6 +169,7 @@
                             <li>
                                 <form method="post" action="{% url 'account_logout' %}">
                                     {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
                                     <button class="dropdown-item" type="submit">{% trans "Log out" %}</button>
                                 </form>
                             </li>

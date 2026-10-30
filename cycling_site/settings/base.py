@@ -169,6 +169,7 @@ MIDDLEWARE = [
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "cycling_site.skins.SkinMiddleware",
+    "cycling_site.middleware.SignedOutMiddleware",
     "cycling_site.middleware.ReaderTimezoneMiddleware",
     "cycling_site.middleware.NoindexAccountPagesMiddleware",
     "cycling_site.middleware.LocaleFallbackMiddleware",
