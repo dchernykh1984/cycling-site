@@ -43,8 +43,10 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    them with a tap; a marker and a cluster each answer a tap across 44 px (#387).
 4. **Given** any of the three, **Then** a switcher moves between them keeping the filters; the map,
    which has no location filter of its own, carries the incoming location filter through its links,
-   and a chosen date range is remembered for the browser session. Explicit dates or a floating
-   current-month link win over saved dates; a bare calendar visit restores the session period.
+   and a chosen date range is remembered for the browser session -- the map's too. Explicit dates
+   or a floating current-month link win over saved dates; a bare calendar or map visit restores the
+   session period. A language button carries the period and the filters on screen, the calendar's
+   and the map's included, though those two keep them in the page rather than in its address.
 5. **Given** the grid page, **Then** it also links upcoming and running events in plain HTML so
    crawlers can follow them (finished events are not advertised as upcoming).
 6. **Given** a top event an admin marked ([events](events.md)) among those a page shows, **Then** it

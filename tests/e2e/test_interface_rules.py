@@ -588,6 +588,20 @@ def test_the_language_buttons_keep_the_period_and_the_filters(page: Page, live_s
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_map_keeps_a_picked_period_for_the_visit(page: Page, live_server):
+    """Principle 6: the weekend picked on the map is still there after a reload, and on the calendar
+    opened from the menu -- the map kept its days nowhere, so both came back on the month."""
+    _open(page, live_server, "desktop", "ru", "map")
+    page.locator("[data-period-kind=weekend]").click()
+    page.wait_for_load_state("networkidle")
+    page.reload()
+    page.wait_for_load_state("networkidle")
+    expect(page.locator("[data-period-kind=weekend]")).to_have_attribute("aria-pressed", "true")
+    _open(page, live_server, "desktop", "ru", "calendar")
+    expect(page.locator("[data-period-kind=weekend]")).to_have_attribute("aria-pressed", "true")
+
+
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("tab", TABS)
 def test_a_link_opens_its_own_period_whatever_was_picked_before(page: Page, live_server, tab):
     """Principle 6: what a link names is what opens, though the reader picked another kind of period
