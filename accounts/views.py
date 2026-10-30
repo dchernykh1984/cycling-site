@@ -507,11 +507,20 @@ class ThemeUpdateView(LoginRequiredMixin, View):
 
 
 def set_language(request):
-    """Wrap Django's set_language to also persist preference for authenticated users."""
-    from django.utils.translation import check_for_language
+    """Wrap Django's set_language to also persist preference for authenticated users.
+
+    Django reads the page in `next` in the language the request is in: the reader's stored or
+    browser language, since this address has no prefix. A page in another language -- a link from a
+    chat -- was not recognised and came back untranslated, so it is read in its own language.
+    """
+    from urllib.parse import urlsplit
+
+    from django.utils.translation import check_for_language, get_language_from_path
     from django.views.i18n import set_language as _django_set_language
 
-    response = _django_set_language(request)
+    page = request.POST.get("next", request.GET.get("next")) or ""
+    with translation.override(get_language_from_path(urlsplit(page).path) or translation.get_language()):
+        response = _django_set_language(request)
 
     if request.method == "POST" and request.user.is_authenticated:
         lang = request.POST.get("language")

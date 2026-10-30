@@ -77,6 +77,25 @@ class ReaderSignedInOnAnEnglishPhoneTests(TestCase):
         self.assertEqual(response.context["request"].LANGUAGE_CODE, "en")
 
 
+class ReaderOnAnotherLanguagesPageTests(TestCase):
+    """A link from a chat opens in its sender's language, and the reader's own is another.
+
+    Django reads the page named in `next` in the language the request is in -- the reader's own,
+    since the switch's address has no prefix -- so it could not read a page in any other language
+    and sent the reader back to it unchanged: the button did nothing.
+    """
+
+    def test_an_english_phone_on_a_russian_page_gets_the_english_page(self):
+        response = _phone().post(reverse("set_language"), {"language": "en", "next": "/ru/news/"})
+        self.assertEqual(response["Location"], "/en/news/")
+
+    def test_a_reader_who_chose_kazakh_before_can_leave_a_russian_page(self):
+        client = Client()
+        client.post(reverse("set_language"), {"language": "kk", "next": "/ru/"})
+        response = client.post(reverse("set_language"), {"language": "en", "next": "/ru/calendar/list/?event_type=1"})
+        self.assertEqual(response["Location"], "/en/calendar/list/?event_type=1")
+
+
 class LinksBackHomeTests(TestCase):
     """A link the site prints for itself must name the language the reader is already reading in.
 
