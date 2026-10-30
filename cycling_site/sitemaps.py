@@ -97,6 +97,11 @@ class KnowledgeArticleSitemap(LanguageSitemap):
     def items(self):
         return KnowledgeArticle.objects.filter(is_deleted=False, is_hidden=False)
 
+    def get_languages_for_item(self, item):
+        # An article is written in one language and lives under that prefix: listed once per
+        # language, it was one address three times, with alternates naming translations that do not exist.
+        return [item.locale]
+
     def location(self, obj):
         return obj.get_absolute_url()
 
