@@ -95,6 +95,11 @@ class ReaderOnAnotherLanguagesPageTests(TestCase):
         response = client.post(reverse("set_language"), {"language": "en", "next": "/ru/calendar/list/?event_type=1"})
         self.assertEqual(response["Location"], "/en/calendar/list/?event_type=1")
 
+    def test_a_form_without_next_leaves_the_page_it_was_sent_from(self):
+        """Django falls back to the referring page when `next` is missing, so that page's language counts."""
+        response = _phone().post(reverse("set_language"), {"language": "kk"}, HTTP_REFERER="http://testserver/ru/news/")
+        self.assertEqual(response["Location"], "http://testserver/kk/news/")
+
 
 class LinksBackHomeTests(TestCase):
     """A link the site prints for itself must name the language the reader is already reading in.

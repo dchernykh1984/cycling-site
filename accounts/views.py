@@ -515,10 +515,14 @@ def set_language(request):
     """
     from urllib.parse import urlsplit
 
+    from django.utils.http import url_has_allowed_host_and_scheme
     from django.utils.translation import check_for_language, get_language_from_path
     from django.views.i18n import set_language as _django_set_language
 
+    # The page Django will translate: `next`, or the referring page when `next` is missing or unsafe.
     page = request.POST.get("next", request.GET.get("next")) or ""
+    if not url_has_allowed_host_and_scheme(page, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        page = request.META.get("HTTP_REFERER", "")
     with translation.override(get_language_from_path(urlsplit(page).path) or translation.get_language()):
         response = _django_set_language(request)
 
