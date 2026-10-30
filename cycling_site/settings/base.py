@@ -248,8 +248,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "ru"
 
-# The second holds Kazakh for allauth's and Django's own strings, which ship none and would fall
-# back to Russian; makemessages writes only to the first, so it never prunes the second.
+# The second holds what allauth and Django ship untranslated: Kazakh for their strings, which would
+# fall back to Russian, and Russian for a Django string its own Russian lacks. makemessages writes
+# only to the first, so it never prunes the second.
 LOCALE_PATHS = [PROJECT_DIR / "locale", PROJECT_DIR / "locale_third_party"]
 
 LANGUAGES = [
