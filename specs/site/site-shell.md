@@ -148,7 +148,9 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
   and skin (`tests/e2e/test_interface_rules.py::test_no_tab_scrolls_sideways`).
   A page's heading beside its share button breaks a word too long for the room the button leaves,
   as an event's does, rather than pushing the button off a phone
-  (`tests/e2e/test_page_heading_fits.py`).
+  (`tests/e2e/test_page_heading_fits.py`). So does an event's description, as an article's body
+  does: a chat's name written with commas and no spaces never scrolls a phone sideways
+  (`tests/e2e/test_description_fits.py`).
 - **FR-SHL-005**: Templates use no multi-line `{# #}` comments (they leak into pages).
 - **FR-SHL-006**: Reader-facing names, titles, captions and descriptions are localized data fields
   by default, edited per ru / kk / en in forms and administration. Existing text survives their

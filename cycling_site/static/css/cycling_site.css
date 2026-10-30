@@ -309,6 +309,9 @@ main .ql-indent-8 { padding-left: 24em; }
 /* A floated image (left/right alignment from the image tool) needs breathing room so body text
    never touches it. blot-formatter writes an inline margin too, but keep a fallback here for
    images floated via the API or older content that lacks it. */
+/* An event's description breaks a word wider than a phone -- a chat's name written with commas and
+   no spaces, a bare link -- rather than pushing the page sideways, as an article's body does. */
+main .competition-description { overflow-wrap: anywhere; }
 main .article-body img[style*="float"],
 main .home-body img[style*="float"],
 main .competition-description img[style*="float"] {
