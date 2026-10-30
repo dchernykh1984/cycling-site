@@ -268,37 +268,40 @@ class Competition(index.Indexed, models.Model):
         # admin and Wagtail snippets (see _DESCRIPTION_FIELDS for the __dict__ rationale).
         update_fields = kwargs.get("update_fields")
         sanitize_rich_text_columns(self, _DESCRIPTION_FIELDS, update_fields=update_fields)
-        # Only a save that writes the status can be the one that approves the event.
-        changed = self._record_approval() if update_fields is None or "status" in update_fields else set()
+        # Only a save that writes the status can move the event through review.
+        stored = None
+        moved = False
+        if update_fields is None or "status" in update_fields:
+            if not self._state.adding:
+                stored = type(self).objects.filter(pk=self.pk).values("status", "approved_by_id", "approved_at").first()
+            moved = stored is None or stored["status"] != self.status
+        changed = self._record_reviewer(stored) if moved else set()
         if self.invite_only and self.invite_key is None:
             self.invite_key = uuid.uuid4()
             changed.add("invite_key")
         if update_fields is not None and changed:
             kwargs["update_fields"] = {*update_fields, *changed}
         super().save(*args, **kwargs)
+        if moved:
+            self._log_status_change(stored)
 
     def get_absolute_url(self) -> str:
         """Where this competition lives. Needed by the sitemap, and by anything that has a
         competition in hand and wants to link to it without knowing the URL layout."""
         return reverse("competition_detail", kwargs={"pk": self.pk})
 
-    def _record_approval(self) -> set[str]:
-        """Note who approved the event and when, on its way into APPROVED, whatever door it took.
+    def _record_reviewer(self, stored) -> set[str]:
+        """Note who approved or rejected the event and when, on its way into that status, whatever door it took.
 
         The moderation page sets both; the status field of the Wagtail admin and an admin's event
         created through the API set neither, so an event could be published with no trace of who
-        did it (#741). The approver is the signed-in user of the request. A save that finds the event
-        already approved records nothing: whoever approved it then is unknown, and the person
-        editing it now is not them.
+        did it (#741). The reviewer is the signed-in user of the request, or the API token's holder.
+        Called only on a save that moves the event to another status: whoever approved an event
+        that is already approved is unknown, and the person editing it now is not them.
         """
-        if self.status != self.Status.APPROVED:
+        if self.status not in (self.Status.APPROVED, self.Status.REJECTED):
             return set()
-        stored = None
-        if self.pk:
-            stored = type(self).objects.filter(pk=self.pk).values("status", "approved_by_id", "approved_at").first()
-            if stored and stored["status"] == self.Status.APPROVED:
-                return set()
-        # What the row already held was not set for this approval: a rejection keeps its reviewer in
+        # What the row already held was not set for this review: a rejection keeps its reviewer in
         # the same two fields, and an event approved by hand afterwards would credit them.
         by_set = self.approved_by_id is not None and (stored is None or self.approved_by_id != stored["approved_by_id"])
         at_set = self.approved_at is not None and (stored is None or self.approved_at != stored["approved_at"])
@@ -313,6 +316,25 @@ class Competition(index.Indexed, models.Model):
             self.approved_at = timezone.now()
             changed.add("approved_at")
         return changed
+
+    def _log_status_change(self, stored) -> None:
+        """Add this save's step to the event's way through review: its new status, who moved it, when."""
+        from audit.middleware import get_current_user
+
+        user = get_current_user()
+        by = user.pk if getattr(user, "is_authenticated", False) else None
+        if stored is None:
+            by = self.submitted_by_id or by
+        elif self.status in (self.Status.APPROVED, self.Status.REJECTED):
+            by = self.approved_by_id
+        CompetitionStatusChange.objects.create(
+            competition=self,
+            added=stored is None,
+            status=self.status,
+            previous_status=stored["status"] if stored else "",
+            changed_by_id=by,
+            reason=self.rejection_reason if self.status == self.Status.REJECTED else "",
+        )
 
     def regenerate_invite_key(self) -> None:
         """Issue a new invitation link. The old one stops working; people already let in stay in."""
@@ -622,6 +644,62 @@ class CompetitionRejection(models.Model):
 
     def __str__(self) -> str:
         return f"Rejection of competition {self.competition_id} at {self.rejected_at:%Y-%m-%d}"
+
+
+class CompetitionStatusChange(models.Model):
+    """One step of an event's way through review, which admins see at the foot of its page (#741).
+
+    Competition.save() writes one whenever a save moves the event to another status, whatever door
+    it took: the moderation page, the API, the Wagtail admin. The first is the event being added.
+    Steps from before the history was kept were filled in from what was recorded then -- the audit
+    log's entry for the event's creation, the rejections, the last approval -- and a resubmission
+    from then is not known.
+    """
+
+    objects: ClassVar[models.Manager["CompetitionStatusChange"]]
+
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="status_changes")
+    # The event being added, in the status it was added in; blank for an old one, whose first
+    # status nobody recorded.
+    added = models.BooleanField(default=False)
+    status = models.CharField(max_length=30, choices=Competition.Status.choices, blank=True)
+    previous_status = models.CharField(max_length=30, choices=Competition.Status.choices, blank=True)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    changed_at = models.DateTimeField(default=timezone.now)
+    reason = models.TextField(blank=True)
+
+    class Meta:
+        ordering: ClassVar[list] = ["changed_at", "pk"]
+
+    def __str__(self) -> str:
+        return f"Competition {self.competition_id}: {self.previous_status or '-'} -> {self.status or '-'}"
+
+    @property
+    def label(self) -> str:
+        from django.utils.translation import gettext as _
+
+        status = Competition.Status
+        if self.added:
+            added: dict[str, str] = {
+                status.PENDING_APPROVAL: _("Added for review"),
+                status.APPROVED: _("Added and published"),
+                status.DRAFT: _("Added as a draft"),
+            }
+            return added.get(self.status, _("Added"))
+        if self.status == status.PENDING_APPROVAL:
+            back: dict[str, str] = {
+                status.REJECTED: _("Resubmitted for review"),
+                status.APPROVED: _("Returned for review"),
+            }
+            return back.get(self.previous_status, _("Sent for review"))
+        moved: dict[str, str] = {
+            status.APPROVED: _("Approved"),
+            status.REJECTED: _("Rejected"),
+            status.DRAFT: _("Moved to drafts"),
+        }
+        return moved.get(self.status, self.status)
 
 
 class CompetitionComment(models.Model):

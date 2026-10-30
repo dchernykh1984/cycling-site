@@ -130,12 +130,24 @@ class CompetitionOut(Schema):
         return [e.pk for e in obj.event_types.all()]
 
 
+class StatusChangeOut(Schema):
+    """One step of an event's way through review: added, or moved to ``status`` from ``previous_status``."""
+
+    added: bool
+    status: str
+    previous_status: str
+    changed_by_id: int | None = None
+    changed_at: datetime
+    reason: str
+
+
 class CompetitionDetailOut(CompetitionOut):
     competition_token: str | None = None
-    # Who approved the event and when -- admins only, as on the event's page; null for everyone
-    # else, and for approvals made before they were recorded.
+    # Who approved the event and when, and its whole way through review -- admins only, as on the
+    # event's page; null for everyone else, and for approvals made before they were recorded.
     approved_by_id: int | None = None
     approved_at: datetime | None = None
+    moderation_history: list[StatusChangeOut] | None = None
 
     @staticmethod
     def resolve_competition_token(obj: Competition) -> str | None:
@@ -148,6 +160,10 @@ class CompetitionDetailOut(CompetitionOut):
     @staticmethod
     def resolve_approved_at(obj: Competition) -> datetime | None:
         return obj.approved_at if getattr(obj, "_approval_visible", False) else None
+
+    @staticmethod
+    def resolve_moderation_history(obj: Competition) -> list | None:
+        return list(obj.status_changes.all()) if getattr(obj, "_approval_visible", False) else None
 
 
 # -- Helpers ---------------------------------------------------------------
@@ -454,9 +470,6 @@ def create_competition(request, payload: CompetitionIn):
     _validate_location_id(payload.location_id, user)
     status = Competition.Status.APPROVED if is_admin(user) else Competition.Status.PENDING_APPROVAL
     competition = Competition(submitted_by=user, status=status)
-    if status == Competition.Status.APPROVED:
-        # The token's owner is not the request's session user, so the model cannot find them itself.
-        competition.approved_by = user
     _validate_description_length(payload.description)
     _apply_localized(competition, "title", payload.title)
     # Descriptions are sanitized centrally in Competition.save().

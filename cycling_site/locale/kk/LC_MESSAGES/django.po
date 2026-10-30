@@ -4578,17 +4578,39 @@ msgstr "Аты-жөні1<BR>Аты-жөні2<BR>Аты-жөні3"
 msgid "City1<BR>City2<BR>City3"
 msgstr "Қала1<BR>Қала2<BR>Қала3"
 
-#: calendar_app/templates/calendar_app/detail.html:460
-#, python-format
-msgid "Approved by %(name)s, %(date)s"
-msgstr "%(name)s мақұлдаған, %(date)s"
 
-#: calendar_app/templates/calendar_app/detail.html:460
-#, python-format
-msgid "Approved by %(name)s"
-msgstr "%(name)s мақұлдаған"
+#: calendar_app/templates/calendar_app/detail.html
+msgid "Moderation history"
+msgstr "Модерация тарихы"
 
-#: calendar_app/templates/calendar_app/detail.html:460
-#, python-format
-msgid "Approved on %(date)s"
-msgstr "%(date)s мақұлданған"
+#: calendar_app/models.py
+msgid "Added"
+msgstr "Қосылды"
+
+#: calendar_app/models.py
+msgid "Added for review"
+msgstr "Қарауға қосылды"
+
+#: calendar_app/models.py
+msgid "Added and published"
+msgstr "Қосылды және жарияланды"
+
+#: calendar_app/models.py
+msgid "Added as a draft"
+msgstr "Жоба ретінде қосылды"
+
+#: calendar_app/models.py
+msgid "Sent for review"
+msgstr "Қарауға жіберілді"
+
+#: calendar_app/models.py
+msgid "Resubmitted for review"
+msgstr "Қайта қарауға жіберілді"
+
+#: calendar_app/models.py
+msgid "Returned for review"
+msgstr "Қайта қарауға қайтарылды"
+
+#: calendar_app/models.py
+msgid "Moved to drafts"
+msgstr "Жобаларға ауыстырылды"

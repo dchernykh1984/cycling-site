@@ -4580,17 +4580,39 @@ msgstr "Имя1<BR>Имя2<BR>Имя3"
 msgid "City1<BR>City2<BR>City3"
 msgstr "Город1<BR>Город2<BR>Город3"
 
-#: calendar_app/templates/calendar_app/detail.html:460
-#, python-format
-msgid "Approved by %(name)s, %(date)s"
-msgstr "Одобрено пользователем %(name)s, %(date)s"
 
-#: calendar_app/templates/calendar_app/detail.html:460
-#, python-format
-msgid "Approved by %(name)s"
-msgstr "Одобрено пользователем %(name)s"
+#: calendar_app/templates/calendar_app/detail.html
+msgid "Moderation history"
+msgstr "История модерации"
 
-#: calendar_app/templates/calendar_app/detail.html:460
-#, python-format
-msgid "Approved on %(date)s"
-msgstr "Одобрено %(date)s"
+#: calendar_app/models.py
+msgid "Added"
+msgstr "Добавлено"
+
+#: calendar_app/models.py
+msgid "Added for review"
+msgstr "Добавлено на рассмотрение"
+
+#: calendar_app/models.py
+msgid "Added and published"
+msgstr "Добавлено и опубликовано"
+
+#: calendar_app/models.py
+msgid "Added as a draft"
+msgstr "Добавлено как черновик"
+
+#: calendar_app/models.py
+msgid "Sent for review"
+msgstr "Отправлено на рассмотрение"
+
+#: calendar_app/models.py
+msgid "Resubmitted for review"
+msgstr "Отправлено на повторное рассмотрение"
+
+#: calendar_app/models.py
+msgid "Returned for review"
+msgstr "Возвращено на рассмотрение"
+
+#: calendar_app/models.py
+msgid "Moved to drafts"
+msgstr "Перенесено в черновики"
