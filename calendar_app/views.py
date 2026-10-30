@@ -646,8 +646,9 @@ class CalendarEventsAPIView(View):
             .prefetch_related("disciplines__category")
         )
         qs = listed_for(qs, request.user)
-        start = (request.GET.get("start") or "")[:10]
-        end = (request.GET.get("end") or "")[:10]
+        # The grid sends ISO datetimes; a value that is not a date is dropped, as the list's filters drop it.
+        start = _parse_date((request.GET.get("start") or "")[:10], None)
+        end = _parse_date((request.GET.get("end") or "")[:10], None)
         if start and end:
             # Include multi-day events that overlap the visible range:
             # event starts before range end AND (has no end date but starts in range,
