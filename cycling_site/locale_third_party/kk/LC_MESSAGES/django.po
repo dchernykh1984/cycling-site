@@ -188,7 +188,7 @@ msgstr "Пайдаланушы аты (міндетті емес)"
 
 #: allauth/account/forms.py
 msgid "You must type the same email each time."
-msgstr "Екі рет бірдей email енгізуіңіз керек."
+msgstr "Екі рет бірдей электрондық пошта мекенжайын енгізуіңіз керек."
 
 #: allauth/account/forms.py allauth/account/forms.py
 msgid "Password (again)"
@@ -560,7 +560,7 @@ msgstr "Электрондық пошта мекенжайы"
 #: allauth/templates/account/email_change.html
 #: allauth/templates/account/email_change.html
 msgid "Current email"
-msgstr "Ағымдағы email"
+msgstr "Ағымдағы электрондық пошта"
 
 #: allauth/templates/account/email_change.html
 msgid "Changing to"

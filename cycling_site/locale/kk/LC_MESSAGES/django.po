@@ -14,10 +14,10 @@ msgid ""
 " is confirmed, you can view the site but cannot submit, register, comment, "
 "contact site owners, or use API features."
 msgstr ""
-"Аккаунтыңызды белсендіру үшін e-mail мекенжайыңызды растаңыз. E-mail "
-"расталғанға дейін сайтты қарай аласыз, бірақ материалдар жібере алмайсыз, "
-"старттарға тіркеле алмайсыз, пікір қалдыра алмайсыз, сайт иелеріне жаза "
-"алмайсыз немесе API пайдалана алмайсыз."
+"Тіркелгіңізді белсендіру үшін электрондық пошта мекенжайыңызды растаңыз. "
+"Электрондық пошта расталғанға дейін сайтты қарай аласыз, бірақ материалдар "
+"жібере алмайсыз, старттарға тіркеле алмайсыз, пікір қалдыра алмайсыз, сайт "
+"иелеріне жаза алмайсыз немесе API пайдалана алмайсыз."
 
 #: accounts/adapters.py:72
 msgid ""
@@ -60,7 +60,7 @@ msgstr "Тіркелу"
 #: accounts/templates/account/signup.html:17
 #, python-format
 msgid "Already have an account? Then please %(link)ssign in%(end_link)s."
-msgstr "Есептік жазбаңыз бар ма? %(link)sКіріңіз%(end_link)s."
+msgstr "Тіркелгіңіз бар ма? %(link)sКіріңіз%(end_link)s."
 
 #: accounts/templates/account/signup.html:28
 msgid ""
@@ -283,7 +283,7 @@ msgstr "Пайдалануға дайын."
 
 #: accounts/templates/accounts/profile.html:118
 msgid "Add email"
-msgstr "E-mail қосу"
+msgstr "Email қосу"
 
 #: accounts/templates/accounts/profile.html:120
 msgid "Set password"
@@ -685,8 +685,8 @@ msgid ""
 "Please tell us how to reach you (e.g. email or messenger) and describe your "
 "question or problem in detail."
 msgstr ""
-"Өзіңізбен қалай байланысуға болатынын (мысалы, email немесе мессенджер) "
-"көрсетіп, сұрағыңыз бен мәселеңізді толық сипаттаңыз."
+"Өзіңізбен қалай байланысуға болатынын (мысалы, электрондық пошта немесе "
+"мессенджер) көрсетіп, сұрағыңыз бен мәселеңізді толық сипаттаңыз."
 
 #: accounts/views.py:464
 msgid "Your message has been sent to the site owners."
@@ -978,7 +978,7 @@ msgstr "Тіркелу режимі"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:6
 msgid "Self only (linked to user account)"
-msgstr "Тек өзін (аккаунтқа байланысты)"
+msgstr "Тек өзін (тіркелгіге байланысты)"
 
 #: calendar_app/templates/calendar_app/_registration_fields.html:6
 msgid "Free (can register any person)"
@@ -1357,8 +1357,8 @@ msgid ""
 "It stays visible to everyone; review it and edit, delete, comment, or "
 "dismiss the report."
 msgstr ""
-"Ол барлығына көрінеді; оны тексеріп, өңдеңіз, жойыңыз, түсініктеме "
-"қалдырыңыз немесе шағымды алып тастаңыз."
+"Ол барлығына көрінеді; оны тексеріп, өңдеңіз, жойыңыз, пікір қалдырыңыз "
+"немесе шағымды алып тастаңыз."
 
 #: calendar_app/templates/calendar_app/detail.html:106
 #: calendar_app/templates/calendar_app/moderate.html:114
@@ -1420,7 +1420,7 @@ msgstr "Маршрут"
 #: calendar_app/templates/calendar_app/moderate.html:38
 #: calendar_app/templates/calendar_app/submit.html:104
 msgid "Announcement"
-msgstr "Хабарлама"
+msgstr "Анонс"
 
 #: calendar_app/templates/calendar_app/detail.html:184
 #: calendar_app/templates/calendar_app/detail.html:187
@@ -2095,33 +2095,33 @@ msgid ""
 " comment. Look for the letter in your inbox, or send it again from your "
 "profile."
 msgstr ""
-"Пошта мекенжайыңызды растаңыз: оған дейін стартқа тіркелуге, іс-шара қосуға "
-"және пікір жазуға болмайды. Хатты кіріс жәшігінен табыңыз немесе жеке "
-"кабинеттен қайта жіберіңіз."
+"Электрондық пошта мекенжайыңызды растаңыз: оған дейін стартқа тіркелуге, іс-"
+"шара қосуға және пікір жазуға болмайды. Хатты кіріс жәшігінен табыңыз немесе "
+"профильден қайта жіберіңіз."
 
 #: cycling_site/templates/_setup_hint.html:13
 msgid ""
 "Choose your sports, event types and places in your profile or straight from "
 "the calendar filter, and the calendar, list and map will open with them."
 msgstr ""
-"Спорт түрлеріңізді, іс-шара түрлерін және орындарды жеке кабинетте немесе "
-"тікелей күнтізбе сүзгісінде таңдаңыз — сонда күнтізбе, тізім және карта "
-"солармен ашылады."
+"Спорт түрлеріңізді, іс-шара түрлерін және орындарды профильде немесе тікелей "
+"күнтізбе сүзгісінде таңдаңыз — сонда күнтізбе, тізім және карта солармен "
+"ашылады."
 
 #: cycling_site/templates/_setup_hint.html:14
 msgid ""
 "Add your name, gender and date of birth to your profile: race entries will "
 "be filled in for you."
 msgstr ""
-"Жеке кабинетте атыңызды, тегіңізді, жынысыңызды және туған күніңізді "
-"көрсетіңіз — олар стартқа тіркелуге өздігінен қойылады."
+"Профильде атыңызды, тегіңізді, жынысыңызды және туған күніңізді көрсетіңіз — "
+"олар стартқа тіркелуге өздігінен қойылады."
 
 #: cycling_site/templates/_setup_hint.html:15
 msgid ""
 "Your account has only one way to sign in. Add a second one, so losing it "
 "does not lock you out."
 msgstr ""
-"Аккаунтыңызда кірудің бір ғана тәсілі бар. Біріншісіне бірдеңе болса, "
+"Тіркелгіңізде кірудің бір ғана тәсілі бар. Біріншісіне бірдеңе болса, "
 "қолжетімділікті жоғалтпау үшін екіншісін қосыңыз."
 
 #: cycling_site/templates/_setup_hint.html:16
@@ -2154,8 +2154,8 @@ msgid ""
 "Stop this reminder for good? You can still change it in your profile at any "
 "time."
 msgstr ""
-"Бұл туралы енді ешқашан еске салмау керек пе? Мұны жеке кабинетте кез келген"
-" уақытта өзгертуге болады."
+"Бұл туралы енді ешқашан еске салмау керек пе? Мұны профильде кез келген "
+"уақытта өзгертуге болады."
 
 #: cycling_site/templates/_setup_hint.html:32
 msgid "Do not remind me again"
@@ -4190,7 +4190,7 @@ msgstr ""
 
 #: api/endpoints/virtual_ride.py:332
 msgid "Connect Strava in your profile first"
-msgstr "Алдымен жеке кабинетте Strava-ны қосыңыз"
+msgstr "Алдымен профильде Strava-ны қосыңыз"
 
 #: api/endpoints/virtual_ride.py:334
 msgid ""
@@ -4212,16 +4212,16 @@ msgid ""
 "still do not read your Strava activities. You can disconnect Strava in your "
 "profile at any time, and we then revoke that access."
 msgstr ""
-"<strong>Виртуалды заездтер.</strong> Сайтқа кірген болсаңыз, виртуалды заезд"
-" бетінде аяқтаған заездтеріңіз жеке кабинетіңізде сақталады: маршрут, уақыт,"
-" қашықтық, жылдамдық, қуат, каденс және пульс, сондай-ақ маршруттағы "
+"<strong>Виртуалды заездтер.</strong> Сайтқа кірген болсаңыз, виртуалды заезд "
+"бетінде аяқтаған заездтеріңіз профиліңізде сақталады: маршрут, уақыт, "
+"қашықтық, жылдамдық, қуат, каденс және пульс, сондай-ақ маршруттағы "
 "орныңыздың трегі. Сіз осы бетте болғанда, сайтқа кірген басқа қатысушылар "
-"атыңызды, қай маршрутпен жүріп жатқаныңызды және оның қай жерінде екеніңізді"
-" көреді. Заездтер үшін Strava-ны қоссаңыз, Strava осы мақсатқа беретін "
-"рұқсатты сақтаймыз және оны тек әр аяқталған заездті виртуалды заезд ретінде"
-" жүктеу үшін пайдаланамыз; Strava-дағы жаттығуларыңызды бұрынғыдай "
-"оқымаймыз. Strava-ны жеке кабинетте кез келген уақытта ажыратуға болады — "
-"сонда біз бұл рұқсатты кері қайтарып аламыз."
+"атыңызды, қай маршрутпен жүріп жатқаныңызды және оның қай жерінде екеніңізді "
+"көреді. Заездтер үшін Strava-ны қоссаңыз, Strava осы мақсатқа беретін "
+"рұқсатты сақтаймыз және оны тек әр аяқталған заездті виртуалды заезд ретінде "
+"жүктеу үшін пайдаланамыз; Strava-дағы жаттығуларыңызды бұрынғыдай оқымаймыз. "
+"Strava-ны профильде кез келген уақытта ажыратуға болады — сонда біз бұл "
+"рұқсатты кері қайтарып аламыз."
 
 #: trainer/models.py:156
 msgid "Processing at Strava"

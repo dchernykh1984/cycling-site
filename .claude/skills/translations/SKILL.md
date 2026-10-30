@@ -66,4 +66,7 @@ of a select -- shows in English on both; its Russian sits beside it, in `locale_
   catalogue for a Latin letter inside a Cyrillic word, a letter typed three times, and a lost
   placeholder or tag; `tests/test_kazakh_catalogue.py` pins the words already put right.
 - **One word for one thing.** The Russian catalogue calls an event "meropriyatie" and the Kazakh one
-  "is-shara"; a region is "aimaq" in Kazakh. The catalogue checks guard both.
+  "is-shara"; a region is "aimaq" in Kazakh. In Kazakh an account is "tirkelgi", the profile
+  "profil'" (as the menu names it), a comment "pikir", an announcement "anons" ("khabarlama" is a
+  message), and the mail in a sentence "elektrondyq poshta" -- a field's label stays "Email". The
+  catalogue checks guard all of them.
