@@ -61,6 +61,8 @@ class SigningOutStaysOnThePageTests(TestCase):
                 landed = self.client.get(self.sign_out(page)["Location"])
                 self.assertEqual(landed["Location"], "/kk/")
                 self.assertEqual(landed.cookies[SignedOutMiddleware.COOKIE]["max-age"], 0)
+                # Only for this reader, once: kept by a browser, it would bar the member from the page.
+                self.assertIn("no-store", landed["Cache-Control"])
 
     def test_without_the_mark_such_a_page_answers_a_guest_as_before(self):
         self.client.logout()

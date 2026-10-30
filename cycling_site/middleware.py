@@ -150,6 +150,9 @@ class SignedOutMiddleware:
         elif request.COOKIES.get(self.COOKIE):
             if request.method == "GET" and self._shut_to_guests(response):
                 response = redirect(get_adapter(request).get_logout_redirect_url(request))
+                # Made for this reader only: a browser that kept it would send the member, signed in
+                # again, from their profile to the home page.
+                add_never_cache_headers(response)
             response.delete_cookie(self.COOKIE, samesite="Lax")
         return response
 
