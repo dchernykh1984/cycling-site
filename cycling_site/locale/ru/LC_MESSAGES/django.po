@@ -4620,3 +4620,11 @@ msgstr "Перенесено в черновики"
 #: locations/forms.py
 msgid "Give both the latitude and the longitude, or neither."
 msgstr "Укажите и широту, и долготу или оставьте оба поля пустыми."
+
+#: accounts/models.py
+msgid "Enter a date of birth between 1900 and today."
+msgstr "Укажите дату рождения от 1900 года до сегодняшнего дня."
+
+#: accounts/models.py
+msgid "Enter a year of birth between 1900 and this year."
+msgstr "Укажите год рождения от 1900 до текущего года."

@@ -107,7 +107,9 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 - **FR-REG-001**: Registration modes: self only (linked to the account) and free (any person); the
   mode locks once registration is first enabled.
 - **FR-REG-002**: Birth is asked as a year or a full date, as the organizer chooses; categories
-  match by gender and an inclusive birth-date range (an open bound matches everything).
+  match by gender and an inclusive birth-date range (an open bound matches everything). A date of
+  birth lies from 1900 to today and a year from 1900 to this year, counted when the form is sent;
+  the member's profile holds its date to the same bounds.
 - **FR-REG-003**: Additional info: off, free text, or a Strava link (prefilled from the profile,
   with a banner when the profile has none); optional or required; the organizer may name the field,
   and that wording reaches the form, the list column and the export (the built-in name follows the
