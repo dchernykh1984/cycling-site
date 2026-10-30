@@ -1613,5 +1613,33 @@ class RequiredFieldAsteriskTests(TestCase):
         self.client.force_login(organizer)
         url = reverse("registrations:edit_registration", args=[comp.pk, reg.pk])
         content = self.client.get(url).content.decode()
-        self.assertIn("Gender *", content)  # required field is marked
-        self.assertNotIn("City *", content)  # optional field is not
+        with translation.override("ru"):
+            self.assertIn(translation.gettext("Gender") + " *", content)  # required field is marked
+            self.assertNotIn(translation.gettext("City") + " *", content)  # optional field is not
+
+
+class FormLabelsInThePageLanguageTests(TestCase):
+    """The organizer's add page and the edit page print the forms' own labels, and none of them was
+    translated: "First name", "Gender" with "M" and "F" to choose from, in English on every page."""
+
+    def setUp(self):
+        organizer = make_user("labels_org", role=User.Role.ORGANIZER)
+        self.comp = make_competition(submitted_by=organizer, registration_mode="free")
+        self.reg = make_registration(self.comp)
+        self.client.force_login(organizer)
+
+    def _labels_on(self, url, msgids):
+        for lang in ("ru", "kk"):
+            content = self.client.get(in_language(url, lang)).content.decode()
+            with self.subTest(url=url, lang=lang), translation.override(lang):
+                for msgid in msgids:
+                    self.assertIn(translation.gettext(msgid), content)
+                self.assertNotIn("First name", content)
+
+    def test_the_manual_add_page(self):
+        url = reverse("registrations:manual_add", args=[self.comp.pk])
+        self._labels_on(url, ("First name", "Last name", "Gender", "Male", "Female", "City", "Team"))
+
+    def test_the_edit_page(self):
+        url = reverse("registrations:edit_registration", args=[self.comp.pk, self.reg.pk])
+        self._labels_on(url, ("First name", "Last name", "Gender", "Male", "Female", "Approved", "Paid"))
