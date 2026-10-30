@@ -17,7 +17,8 @@ NUL_IN_TEXT = "Text must not contain the NUL character"
 
 
 class _NulInTextError(ValueError):
-    """The parser's refusal; ninja wraps a body's in a 400, which `_http_error` turns back into a 422."""
+    """The parser's refusal. Raised while ninja reads a body, it comes wrapped in ninja's 400 "Cannot
+    parse request body"; `_http_error` answers it as the 422 it is."""
 
 
 class _TextParser(Parser):
