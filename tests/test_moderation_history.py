@@ -167,6 +167,27 @@ class ModerationHistoryTests(TestCase):
         self.assertIsNone(body["approved_at"])
         self.assertEqual(body["moderation_history"][-1]["changed_by_id"], self.admin.pk)
 
+    def test_each_step_is_named_for_what_happened(self):
+        from django.utils import translation
+
+        cases = [
+            (True, Status.PENDING_APPROVAL, "", "Added for review"),
+            (True, Status.APPROVED, "", "Added and published"),
+            (True, Status.DRAFT, "", "Added as a draft"),
+            (True, "", "", "Added"),
+            (False, Status.APPROVED, Status.PENDING_APPROVAL, "Approved"),
+            (False, Status.REJECTED, Status.PENDING_APPROVAL, "Rejected"),
+            (False, Status.PENDING_APPROVAL, Status.REJECTED, "Resubmitted for review"),
+            (False, Status.PENDING_APPROVAL, Status.APPROVED, "Returned for review"),
+            (False, Status.PENDING_APPROVAL, Status.DRAFT, "Sent for review"),
+            (False, Status.DRAFT, Status.PENDING_APPROVAL, "Moved to drafts"),
+        ]
+        with translation.override("en"):
+            for added, status, previous, label in cases:
+                with self.subTest(label=label):
+                    step = CompetitionStatusChange(added=added, status=status, previous_status=previous)
+                    self.assertEqual(step.label, label)
+
     def test_an_event_rejected_and_then_approved_by_hand_names_who_approved_it(self):
         rejecter = _user("strict", User.Role.ADMIN)
         event = _event(status=Status.PENDING_APPROVAL)
