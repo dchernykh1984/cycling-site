@@ -116,10 +116,12 @@ class DevelopmentReloadTests(TestCase):
 
 def test_a_skin_s_own_base_keeps_the_site_s_lines_under_the_menu():
     """A skin that replaces base.html still carries what the site says under the menu, or its readers
-    never see the moderation queue, a setup hint or the next skin on offer."""
+    never see the moderation queue, a setup hint or the next skin on offer -- and the way back to the
+    page after signing in or out."""
     from django.conf import settings
 
+    back = 'name="next" value="{{ request.get_full_path }}"'
     for base in sorted(settings.SKINS_DIR.glob("*/templates/base.html")):
         text = base.read_text()
-        for part in ("_moderation_banner.html", "_setup_hint.html", "_skin_offer.html", "sign_in_url"):
+        for part in ("_moderation_banner.html", "_setup_hint.html", "_skin_offer.html", "sign_in_url", back):
             assert part in text, f"{base.parent.parent.name}: base.html leaves out {part}"

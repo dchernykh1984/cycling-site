@@ -1,9 +1,11 @@
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from allauth.account.adapter import get_adapter
+from django.conf import settings
 from django.http import Http404
 from django.middleware.locale import LocaleMiddleware
-from django.shortcuts import render
+from django.shortcuts import redirect, render, resolve_url
 from django.utils import timezone, translation
 from django.utils.cache import add_never_cache_headers
 from django.utils.translation import check_for_language, get_language_from_path
@@ -124,6 +126,38 @@ class ReaderTimezoneMiddleware:
         else:
             timezone.activate(request.reader_timezone)
         return self.get_response(request)
+
+
+class SignedOutMiddleware:
+    """Keep a reader who signs out on the page they were on, unless a guest may not open it.
+
+    The header's sign-out form names its page as `next`. A page for members only -- the profile, an
+    organizer's tools, their own event still under review -- would then meet the new guest with the
+    sign-in form, a refusal or a "not found". So signing out leaves a mark for a minute, and the first
+    page asked for with it, if it is shut to guests, gives way to the home page.
+    """
+
+    COOKIE = "signed_out"
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        was_member = request.user.is_authenticated
+        response = self.get_response(request)
+        if was_member and not request.user.is_authenticated:
+            response.set_cookie(self.COOKIE, "1", max_age=60, httponly=True, samesite="Lax")
+        elif request.COOKIES.get(self.COOKIE):
+            if request.method == "GET" and self._shut_to_guests(response):
+                response = redirect(get_adapter(request).get_logout_redirect_url(request))
+            response.delete_cookie(self.COOKIE, samesite="Lax")
+        return response
+
+    @staticmethod
+    def _shut_to_guests(response) -> bool:
+        if response.status_code in (403, 404):
+            return True
+        return urlsplit(response.get("Location", "")).path == resolve_url(settings.LOGIN_URL)
 
 
 class NoindexAccountPagesMiddleware:

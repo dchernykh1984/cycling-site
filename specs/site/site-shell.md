@@ -8,8 +8,9 @@ content, legal pages), `search/`
 **Tests**: `home/tests.py`, `cycling_site/tests.py`, `tests/test_setup_hints.py`,
 `tests/test_share_button.py`, `tests/test_language_switch.py`, `tests/test_locale_cache.py`,
 `tests/test_kazakh_account_pages.py`, `tests/test_page_meta.py`, `tests/test_favicon.py`, `search/tests.py`,
-`tests/test_template_comments.py`, `tests/e2e/test_home_page.py`, `test_header.py`, `test_locale.py`,
-`test_setup_hints.py`, `test_share_button.py`, `test_reader_timezone.py`
+`tests/test_template_comments.py`, `tests/test_sign_in_link.py`, `tests/test_signing_out.py`,
+`tests/e2e/test_home_page.py`, `test_header.py`, `test_locale.py`, `test_setup_hints.py`,
+`test_share_button.py`, `test_reader_timezone.py`, `test_sign_in_returns.py`, `test_sign_out_stays.py`
 **Related**: [accounts](accounts.md), [skins](skins.md), [search visibility](search-visibility.md)
 
 ## Overview
@@ -17,7 +18,8 @@ content, legal pages), `search/`
 Every page shares one frame: a sticky navbar (site title, News, Calendar, Map and About when their
 pages exist, Knowledge Base, Gallery ([gallery](gallery.md)), Virtual ride, Search, the skin chooser, the three language buttons, sign-in or the member's
 menu; sign-in brings the reader back to the page it was pressed on, filters and all, except from an
-account page), a banner of moderation tasks for moderators and one of requests waiting for a member's answer
+account page, and signing out stays on the page -- or, where a guest may not open it, goes to the
+home page in its language), a banner of moderation tasks for moderators and one of requests waiting for a member's answer
 ([accounts](accounts.md)), one setup hint, the page, and a footer with the legal pages and a link to
 report a bug. The menu's and the footer's links stay in the page's language: a Wagtail page (the
 home page, Map, Knowledge Base) is addressed under its own language's prefix
