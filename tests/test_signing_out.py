@@ -1,14 +1,16 @@
-"""Signing out keeps the reader on the page they were on.
+"""Signing out keeps the reader where they were: on the page, and in the look they had.
 
-Signing out from the header landed on the home page.
+Signing out from the header landed on the home page, and drawn in the default skin -- or in one the
+browser chose as a guest long ago -- rather than in the member's own.
 """
 
 import datetime
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from accounts.models import User
 from calendar_app.models import Competition
+from cycling_site import skins
 from cycling_site.middleware import SignedOutMiddleware
 
 UPCOMING = datetime.date.today() + datetime.timedelta(days=30)
@@ -63,3 +65,23 @@ class SigningOutStaysOnThePageTests(TestCase):
     def test_without_the_mark_such_a_page_answers_a_guest_as_before(self):
         self.client.logout()
         self.assertTrue(self.client.get("/kk/accounts/profile/")["Location"].startswith("/kk/accounts/login/"))
+
+
+class SigningOutKeepsTheSkinTests(TestCase):
+    def test_the_guest_keeps_the_member_s_skin_over_the_one_chosen_as_a_guest(self):
+        member = User.objects.create_user(username="dark", email="dark@example.com", password="pw", theme="dark")
+        self.client.cookies[skins.COOKIE] = "light"
+        self.client.force_login(member)
+        response = self.client.post("/ru/accounts/logout/", {"next": "/ru/news/"})
+        self.assertEqual(response.cookies[skins.COOKIE].value, "dark")
+        self.assertContains(self.client.get("/ru/news/"), 'data-skin="dark"')
+
+    # Set here, not taken from the settings: a default that is the skin on offer would hide the offer.
+    @override_settings(DEFAULT_SKIN="light", SKIN_OFFER="orange")
+    def test_and_is_not_asked_again_to_try_a_skin_tried_as_a_member(self):
+        member = User.objects.create_user(
+            username="tried", email="tried@example.com", password="pw", theme="dark", tried_skins=["orange"]
+        )
+        self.client.force_login(member)
+        self.client.post("/ru/accounts/logout/", {"next": "/ru/news/"})
+        self.assertNotContains(self.client.get("/ru/news/"), 'id="skin-offer"')
