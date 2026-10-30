@@ -66,7 +66,10 @@ are `locations`; reaching production is `production-access`.
 
 - **The date lives in the event's fields.** A description that repeats it ("Date: 5 September",
   "on 23 May 2026") loses the repetition in all three languages; other dates -- race-pack pickup, a
-  registration deadline -- stay.
+  registration deadline -- stay. So do a schedule by days, a note that the date moved or is
+  provisional, the day an age is counted on, a date inside a name ("Brevet 3 September") and the
+  span of the whole race on a stage's page. "Tomorrow" in a chat post goes with its date: it meant
+  the day after the post. A text whose date differs from the fields is not repeating it -- ask.
 - **A stage the organizer marks "???" or "not agreed"** is deleted. **An event deleted for a thin
   announcement** comes back only when the organizer's page holds a full one -- a place, a time and a
   way to register, not placeholder text.
