@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from allauth.account.adapter import get_adapter
 from django.conf import settings
+from django.contrib import messages
 from django.http import Http404
 from django.middleware.locale import LocaleMiddleware
 from django.shortcuts import redirect, render, resolve_url
@@ -149,6 +150,9 @@ class SignedOutMiddleware:
             response.set_cookie(self.COOKIE, "1", max_age=60, httponly=True, samesite="Lax")
         elif request.COOKIES.get(self.COOKIE):
             if request.method == "GET" and self._shut_to_guests(response):
+                # A "not found" is drawn before it gives way: what it showed -- "You have signed out" --
+                # is for the home page to show.
+                messages.get_messages(request).used = False
                 response = redirect(get_adapter(request).get_logout_redirect_url(request))
                 # Made for this reader only: a browser that kept it would send the member, signed in
                 # again, from their profile to the home page.
