@@ -53,6 +53,14 @@ Cross-cutting findings that shape the requirements:
   collecting fees onto a personal card may trip Kazakhstan's reporting of incoming transfers (100 or
   more senders in each of three months and more than 12 minimum wages in those months), so the
   site tells them so where they set a fee, and leaves the choice to them.
+- A private person in Kazakhstan has three lawful ways to take a fee, each their own to choose:
+  register as a sole trader (free, online, minutes; a Kaspi Pay partner the next working day);
+  the self-employed regime (0% income tax, 4% social payments, up to 300 MRP a month) -- which,
+  though, covers only the 40 activities of government decree No. 994 of 2025-11-21, where sport
+  appears only as "education in sport and recreation" (85510), not as organising events; or their
+  personal account, where income from private business above 360 MRP a year obliges them to
+  register (Entrepreneurial Code, art. 35) and the transfer reporting above applies. The knowledge
+  article the fee form links to names the three.
 
 ## Decisions proposed (to be confirmed by the maintainer)
 
@@ -103,6 +111,14 @@ Numbered so that a review can answer by number. A `(Qn)` names the question of t
 12. **Everything an organizer or a participant does here is also an API operation** under
     `/api/v1/` with the same rules (principle VII); the payment service's callbacks arrive on a
     machine-facing URL without a language prefix.
+13. **The site needs no legal entity of its own for the first delivery.** With the manual and link
+    connectors the site holds no money and signs nothing with anyone. An automatic connector is a
+    platform contract with a payment organisation, and that needs the maintainer registered at least
+    as a sole trader (free, online, minutes) or as a company where the contract makes the platform
+    answer for refunds and chargebacks; which form, and with whom, is decided when that connector is
+    scheduled, after the talks the maintainer has not yet allowed. Taking any money for the site
+    itself (a subscription, a charge) would need the same registration first. (Q1, taken
+    2026-10-30)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -132,7 +148,8 @@ amount prefilled.
 4. **Given** an organizer, **When** they turn payment on, **Then** the form shows a one-paragraph
    note that fees are their income under their own tax status and that transfers to a private
    person's account are reported to the tax authority above a threshold, with a link to a knowledge
-   article; the site does not know whether an organizer is a company, so everyone sees it.
+   article that names the three ways of the "Background" section; the site does not know whether an
+   organizer is a company, so everyone sees it.
 
 ---
 

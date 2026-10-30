@@ -14,8 +14,8 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain -- three remain on purpose (Q1, Q3, Q6/Q7), each with
-      the default the spec assumes; the maintainer answers them in review
+- [x] No [NEEDS CLARIFICATION] markers remain -- the three put to the maintainer (Q1, Q3, Q6/Q7)
+      were answered on 2026-10-30 and are written into decisions 6, 7, 11 and 13
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -33,7 +33,8 @@
 
 ## Notes
 
-- The three open markers are decisions only the maintainer can take (legal entity, who may charge,
-  the first shape of the schedule). `/speckit-plan` waits for them.
+- The maintainer's answers of 2026-10-30: no legal entity today and none needed for the first
+  delivery; private persons may charge; the schedule's first shape confirmed. Research only for
+  now: `/speckit-plan` waits for the maintainer's go-ahead, and no talks with providers are held.
 - The research behind "Background" is in the maintainer's `tmp/payment-gateways/` and the pull
   request; the plan's `research.md` will carry what the chosen provider's contract says.
