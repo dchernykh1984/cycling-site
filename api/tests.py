@@ -610,6 +610,17 @@ class CompetitionCreateTest(TestCase, ApiTestMixin):
         resp = self.post("/api/v1/competitions/", self._payload(), user=self.admin)
         self.assertEqual(resp.json()["discipline_ids"], [])
 
+    def test_a_nul_character_is_refused_rather_than_failing_on_save(self):
+        for payload in (
+            self._payload(title={"ru": "Race\x00", "kk": "", "en": ""}),
+            self._payload(description={"ru": "<p>a\x00b</p>", "kk": "", "en": ""}),
+            self._payload(url_route="https://example.com/\x00"),
+        ):
+            with self.subTest(payload=payload):
+                resp = self.post("/api/v1/competitions/", payload, user=self.admin)
+                self.assertEqual(resp.status_code, 422)
+        self.assertFalse(Competition.objects.exists())
+
     def test_a_title_is_required_in_some_language(self):
         for title in ({"ru": "", "kk": "", "en": ""}, {"ru": "  ", "kk": "", "en": " "}):
             with self.subTest(title=title):

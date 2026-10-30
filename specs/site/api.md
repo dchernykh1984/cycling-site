@@ -89,6 +89,7 @@ and protocols with the event's upload token. The API has no language prefix.
   `https://example.com`); a `javascript:` or `data:` address is a 422.
 - An event's end before its start is a 422, on creation and on a patch of either date.
 - An event needs a title in at least one language: none, or blanking them all in a patch, is a 422.
+- Text carrying the NUL character, which no column can store, is a 422 wherever it is sent.
 - The event listing gives admins everything; anyone else gets approved events that are neither
   hidden nor invite-only, plus their own submissions; deleted events only on request, to an admin
   (all) or a signed-in author (their own).
