@@ -7,14 +7,13 @@ from dataclasses import dataclass
 
 from django.db import transaction
 
-from accounts.models import User
+from accounts import roles
 from assistant import fields, llm, prompt
 from assistant.models import Conversation, Message
-from calendar_app.visibility import is_admin_plus, manages
+from calendar_app.visibility import manages
 
 MAX_TEXT = 10_000
 _KINDS = ("route", "regulations")
-_ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
 
 
 def subject_field(subject) -> tuple[str, str]:
@@ -25,18 +24,16 @@ def subject_field(subject) -> tuple[str, str]:
 
 
 def offered(user, kind: str = Conversation.Kind.EVENT) -> bool:
-    """Whether ``user`` may talk to the assistant about a ``kind``: an event -- organizers and up, who
-    publish one; a news item -- admins and up, who alone write news."""
-    if kind == Conversation.Kind.NEWS:
-        return is_admin_plus(user)
-    return bool(user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ORGANIZER_RANK))
+    """Whether ``user`` may talk to the assistant about a ``kind``: about an event as
+    ``roles.EVENT_ASSISTANT`` says, about a news item when they manage news."""
+    return roles.at_least(user, roles.MANAGE_NEWS if kind == Conversation.Kind.NEWS else roles.EVENT_ASSISTANT)
 
 
 def may_write(user, subject) -> bool:
-    """Whether ``user`` may have the assistant write ``subject``: a news item while an admin, an event
-    they manage -- any while an admin, their own while an organizer."""
+    """Whether ``user`` may have the assistant write ``subject``: a news item when they manage news, an
+    event they manage (``calendar_app.visibility.manages``)."""
     field, _kind = subject_field(subject)
-    return is_admin_plus(user) if field == "news" else manages(user, subject)
+    return roles.at_least(user, roles.MANAGE_NEWS) if field == "news" else manages(user, subject)
 
 
 def may_see(user, conversation: Conversation) -> bool:
@@ -47,7 +44,7 @@ def may_see(user, conversation: Conversation) -> bool:
     subject = conversation.competition or conversation.news
     if subject is not None:
         return may_write(user, subject)
-    return is_admin_plus(user) or conversation.started_by_id == user.pk
+    return roles.at_least(user, roles.Role.ADMIN) or conversation.started_by_id == user.pk
 
 
 def start(user, subject=None, kind: str = Conversation.Kind.EVENT) -> tuple[Conversation, bool]:
@@ -163,6 +160,6 @@ def link(conversation_id, subject, user) -> bool:
     if Conversation.objects.filter(**{field: subject}).exists():
         return False
     free = Conversation.objects.filter(pk=int(conversation_id), kind=kind, competition__isnull=True, news__isnull=True)
-    if not is_admin_plus(user):
+    if not roles.at_least(user, roles.Role.ADMIN):
         free = free.filter(started_by=user)
     return free.update(**{field: subject}) == 1
