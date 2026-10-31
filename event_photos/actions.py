@@ -26,6 +26,9 @@ from event_photos.models import (
 )
 
 INDEX_FILE = "photo-index.v1.json"
+# A bib the index found on a photo, accepted or not yet; a rider's answer about a photo.
+_FOUND = (BibObservation.State.ACCEPTED, BibObservation.State.CANDIDATE)
+_DECIDED = (PhotoDecision.State.ME, PhotoDecision.State.NOT_ME)
 _THUMBNAIL_SLOTS = BoundedSemaphore(2)
 
 
@@ -212,14 +215,16 @@ def registration_photos(registration) -> QuerySet:
     bibs = registration_bibs(registration)
     albums = ExternalAlbum.objects.filter(competition_id=registration.competition_id)
     mine = PhotoDecision.objects.filter(registration=registration, photo=OuterRef("pk"))
-    matched = Q(bibs__value__in=bibs, bibs__state__in=["accepted", "candidate"])
+    matched = Q(bibs__value__in=bibs, bibs__state__in=_FOUND)
     return (
         visible_photos(albums)
         .filter(matched | Q(decisions__registration=registration, decisions__state=PhotoDecision.State.ME))
         .exclude(Exists(mine.filter(state=PhotoDecision.State.NOT_ME)))
         .annotate(
             confirmed=Exists(mine.filter(state=PhotoDecision.State.ME))
-            | Exists(BibObservation.objects.filter(photo=OuterRef("pk"), value__in=bibs, state="accepted"))
+            | Exists(
+                BibObservation.objects.filter(photo=OuterRef("pk"), value__in=bibs, state=BibObservation.State.ACCEPTED)
+            )
         )
         .distinct()
         .order_by("-confirmed", "original_path", "pk")
@@ -273,7 +278,7 @@ def bib_photos(competition, bib: str) -> QuerySet:
     )
     albums = ExternalAlbum.objects.filter(competition=competition)
     qs = visible_photos(albums).filter(
-        Q(bibs__value=bib, bibs__state="accepted")
+        Q(bibs__value=bib, bibs__state=BibObservation.State.ACCEPTED)
         | Q(decisions__registration_id__in=holders, decisions__state=PhotoDecision.State.ME)
     )
     if holders:
@@ -381,7 +386,7 @@ def mark_stats(album_obj) -> dict:
     is the photos with a bib on them that nobody has marked yet.
     """
     decisions = list(
-        PhotoDecision.objects.filter(photo__album=album_obj, state__in=["me", "not_me"]).values_list(
+        PhotoDecision.objects.filter(photo__album=album_obj, state__in=_DECIDED).values_list(
             "registration_id", "photo_id", "state"
         )
     )
@@ -400,18 +405,18 @@ def mark_stats(album_obj) -> dict:
         for value, method in observations.get(photo, []):
             if value in bibs_of.get(reg, set()):
                 row = by_method.setdefault(method, {"method": method, "confirmed": 0, "rejected": 0})
-                key = "confirmed" if state == "me" else "rejected"
+                key = "confirmed" if state == PhotoDecision.State.ME else "rejected"
                 row[key] = int(row[key]) + 1
     unchecked = (
-        IndexedPhoto.objects.filter(album=album_obj, in_index=True, bibs__state__in=["accepted", "candidate"])
-        .exclude(decisions__state__in=["me", "not_me"])
+        IndexedPhoto.objects.filter(album=album_obj, in_index=True, bibs__state__in=_FOUND)
+        .exclude(decisions__state__in=_DECIDED)
         .distinct()
         .count()
     )
     return {
         "totals": {
-            "confirmed": sum(d[2] == "me" for d in decisions),
-            "rejected": sum(d[2] == "not_me" for d in decisions),
+            "confirmed": sum(d[2] == PhotoDecision.State.ME for d in decisions),
+            "rejected": sum(d[2] == PhotoDecision.State.NOT_ME for d in decisions),
             "unchecked": unchecked,
         },
         "by_method": sorted(by_method.values(), key=lambda row: row["method"]),

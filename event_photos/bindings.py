@@ -190,7 +190,7 @@ def recompute(competition) -> list[str]:
                     competition=competition,
                     registration_id=reg,
                     bib=bib,
-                    change="assigned" if state == "active" else state,
+                    change="assigned" if state == IssuedBib.State.ACTIVE else state,
                     device_id=device,
                     client_revision=revision,
                 )
