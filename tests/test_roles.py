@@ -14,8 +14,15 @@ from accounts.models import User
 
 Role = User.Role
 ROOT = Path(__file__).resolve().parent.parent
-# A rank, an index into the order of roles, a member's role compared with a value.
-COMPARING = re.compile(r"get_role_rank|ROLE_HIERARCHY\.index|user\.role\s*(?:[!=]=|(?:not\s+)?in\b)")
+# A rank; an index into the order of roles; a role compared with one of the roles, by its name in code
+# or by its value in a template; a role read by name, the way that dodges the rest.
+_ROLES = "GUEST|PARTICIPANT|ORGANIZER|ADMIN|OWNER"
+COMPARING = re.compile(
+    rf"get_role_rank|ROLE_HIERARCHY\.index"
+    rf"|(?:[!=]=|\bin\s*\()\s*(?:\w+\.)*Role\.(?:{_ROLES})\b"
+    rf"|role\s*(?:[!=]=|in)\s*\(?\s*['\"](?:{_ROLES.lower()})['\"]"
+    rf"|getattr\([^,]+,\s*['\"]role['\"]"
+)
 # Where a role is defined and compared; where a guest becomes a participant on a confirmed address,
 # which is not a right but a change of role.
 ALLOWED = {"accounts/models.py", "accounts/roles.py", "accounts/signals.py", "accounts/adapters.py"}
