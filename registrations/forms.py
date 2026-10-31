@@ -44,7 +44,7 @@ class RegistrationForm(forms.Form):
         self._readonly_fields = readonly_fields or []
 
         if competition:
-            if competition.birth_date_mode == "year":
+            if competition.birth_date_mode == competition.BirthDateMode.YEAR:
                 self.fields["birth_year"].required = True
                 del self.fields["birth_date"]
             else:
@@ -70,7 +70,7 @@ class RegistrationForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
-        if self.competition and self.competition.birth_date_mode == "year":
+        if self.competition and self.competition.birth_date_mode == self.competition.BirthDateMode.YEAR:
             year = cleaned.get("birth_year")
             if year:
                 cleaned["birth_date"] = datetime.date(year, 1, 1)
@@ -172,7 +172,7 @@ class EditRegistrationForm(forms.ModelForm):
         # In self-only mode a participant registers their own profile identity, so the same fields
         # that are read-only at registration stay locked when they self-edit. Django's `disabled`
         # is enforced server-side: a crafted POST cannot change these.
-        if competition.registration_mode == "self_only":
+        if competition.registration_mode == competition.RegistrationMode.SELF_ONLY:
             for name in ("first_name", "last_name", "birth_date", "gender"):
                 if name in self.fields:
                     self.fields[name].disabled = True

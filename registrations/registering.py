@@ -24,7 +24,7 @@ PROFILE_FIELDS = ("first_name", "last_name", "birth_date", "birth_year", "gender
 
 def is_free(competition) -> bool:
     """Whether the event lets anyone's data be typed in, not only the person's own profile."""
-    return competition.registration_mode == "free"
+    return competition.registration_mode == competition.RegistrationMode.FREE
 
 
 def profile_incomplete(person) -> bool:
@@ -72,7 +72,7 @@ def blank_form(competition, person, prefix=None) -> RegistrationForm:
         "city": person.city,
         "team_name": person.team,
     }
-    if competition.birth_date_mode == "year":
+    if competition.birth_date_mode == competition.BirthDateMode.YEAR:
         initial["birth_year"] = person.birth_date.year if person.birth_date else None
     else:
         initial["birth_date"] = person.birth_date
