@@ -211,7 +211,7 @@ def registration_bibs(registration) -> list[str]:
 
 def registration_photos(registration) -> QuerySet:
     """A registration's album: its bibs' accepted matches and candidates, plus its own "this is me",
-    minus its own "not me". Annotated with ``decision`` (me / not_me / None) and ``confirmed``."""
+    minus its own "not me". Annotated with ``confirmed``."""
     bibs = registration_bibs(registration)
     albums = ExternalAlbum.objects.filter(competition_id=registration.competition_id)
     mine = PhotoDecision.objects.filter(registration=registration, photo=OuterRef("pk"))
