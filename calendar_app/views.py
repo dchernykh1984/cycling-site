@@ -291,7 +291,7 @@ def _user_filter_default_params(user) -> list:
     Directions go as ``discipline_category`` and disciplines as ``discipline`` -- the same names the
     filter widgets restore from -- so the redirect below reconstructs exactly the saved selection.
     """
-    if not getattr(user, "is_authenticated", False):
+    if not user.is_authenticated:
         return []
     # The direction filter merges same-name disciplines across categories into one checkbox (e.g.
     # "Relay" lives under 11 directions), so a saved discipline stands in for all its same-name

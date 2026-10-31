@@ -391,13 +391,13 @@ def _listable_by(qs, user, deleted: bool):
     unwanted event only hides it until the next nightly run puts it back.
     """
     if deleted:
-        if not getattr(user, "is_authenticated", False):
+        if not user.is_authenticated:
             raise HttpError(401, "Authentication is required to list deleted competitions.")
         return qs if roles.at_least(user, roles.MANAGE_ALL_EVENTS) else qs.filter(submitted_by=user)
     if roles.at_least(user, roles.MANAGE_ALL_EVENTS):
         return qs
     visible = Q(status=Competition.Status.APPROVED, is_hidden=False, invite_only=False)
-    if getattr(user, "is_authenticated", False):
+    if user.is_authenticated:
         visible |= Q(submitted_by=user)
     return qs.filter(visible)
 
@@ -446,7 +446,7 @@ def list_competitions(
     # to favorite via the API -- it is filter-only -- so an anonymous caller has no favorites and
     # asking for them is a 401 rather than a silently empty list.
     if only_favorite:
-        if not getattr(user, "is_authenticated", False):
+        if not user.is_authenticated:
             raise HttpError(401, "Authentication is required to filter by favorites.")
         qs = qs.filter(favorited_by__user=user)
     return _annotate_city_ids(list(qs.select_related("location")))

@@ -280,8 +280,8 @@ def _online_out(row: LiveRider) -> dict:
 
 @router.get("/me", response=MeOut, auth=OptionalApiTokenAuth(), summary="Who the trainer page is riding for")
 def me(request):
-    user = request.auth if getattr(request.auth, "is_authenticated", False) else request.user
-    if not getattr(user, "is_authenticated", False) or needs_email_confirmation(user):
+    user = request.auth if request.auth.is_authenticated else request.user
+    if not user.is_authenticated or needs_email_confirmation(user):
         return MeOut(authenticated=False, login_url=reverse("account_login"), page_url=reverse("virtual_ride"))
     connection = StravaConnection.objects.filter(user=user).first()
     return MeOut(
