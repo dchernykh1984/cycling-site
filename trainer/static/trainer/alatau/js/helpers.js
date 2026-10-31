@@ -1,4 +1,5 @@
 'use strict';
+/* ---------------- Хранилище браузера, шум для рельефа, запись времени ---------------- */
 const store = {
   get(k, d) { try { const v = localStorage.getItem('alatau:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('alatau:' + k, JSON.stringify(v)); } catch (e) {} }

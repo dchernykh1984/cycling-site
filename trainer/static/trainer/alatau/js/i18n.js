@@ -1,4 +1,5 @@
 'use strict';
+/* ---------------- Слова страницы: t(), формы числа, единицы и перевод разметки ---------------- */
 // t(key, { name }) fills {name}; a key missing in a language falls back to Russian, then to the key
 function t(key, vars) {
   const s = (TEXT[LANG][key] != null ? TEXT[LANG] : TEXT.ru)[key] ?? key;

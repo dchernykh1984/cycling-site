@@ -1,4 +1,5 @@
 'use strict';
+/* ---------------- Рекорды с сайта: подписи, пики мощности и сводка личного кабинета ---------------- */
 const RECORD_LABELS = { route_first: t('rec.firstLabel'), route_best: t('rec.bestLabel'), peak_5s_w: t('rec.peakLabel', { d: durLabel(5) }), peak_1m_w: t('rec.peakLabel', { d: durLabel(60) }), peak_5m_w: t('rec.peakLabel', { d: durLabel(300) }), peak_20m_w: t('rec.peakLabel', { d: durLabel(1200) }), max_speed_kmh: t('rec.maxSpeedLabel') };
 function bestPeaks(powerLog) {
   const out = {};

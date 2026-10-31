@@ -1,4 +1,5 @@
 'use strict';
+/* ---------------- Ориентиры маршрута и арки старта и финиша ---------------- */
 function addLandmark(grp, lm, q, T) {
   const lam = c => new THREE.MeshLambertMaterial({ color: c });
   const G = new THREE.Group();

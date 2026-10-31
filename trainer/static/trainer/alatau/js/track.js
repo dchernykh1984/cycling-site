@@ -1,4 +1,5 @@
 'use strict';
+/* ---------------- Трасса: карта и сцена, профиль, уклон и высоты ---------------- */
 const ORIGIN = { lat: 43.238, lon: 76.945 };
 // back from metres on the scene to the map: where the rider is, for the track a Strava upload carries
 function unproj(x, z) { const R = 6371000; return { lat: ORIGIN.lat - z / R * 180 / Math.PI, lon: ORIGIN.lon + x / (R * Math.cos(ORIGIN.lat * Math.PI / 180)) * 180 / Math.PI }; }
