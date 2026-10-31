@@ -164,7 +164,7 @@ def upload_protocol(
     """
     competition = competition_by_token(competition_token)
 
-    if protocol_type not in ("absolute", "group"):
+    if protocol_type not in Protocol.ProtocolType.values:
         raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
     if html_file is None and document is None:
         raise HttpError(400, "Send html_file, document or both")
@@ -213,7 +213,7 @@ def delete_protocol(
     link disappears from the competition detail page.
     """
     competition = competition_by_token(competition_token)
-    if protocol_type not in ("absolute", "group"):
+    if protocol_type not in Protocol.ProtocolType.values:
         raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
 
     with transaction.atomic():
