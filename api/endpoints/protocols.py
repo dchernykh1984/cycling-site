@@ -2,7 +2,6 @@ import hashlib
 import logging
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import transaction
@@ -11,6 +10,7 @@ from ninja import File, Form, Router, Schema
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 
+from api.auth import competition_by_token
 from calendar_app.models import Competition
 from protocols.document import DocumentError
 from protocols.document import parse as parse_document
@@ -20,17 +20,6 @@ router = Router(tags=["protocols"])
 logger = logging.getLogger(__name__)
 
 _MAX_VERSIONS = 10
-
-
-def _competition_by_token(token: str) -> Competition:
-    try:
-        return Competition.objects.get(
-            upload_token=token,
-            status=Competition.Status.APPROVED,
-            is_deleted=False,
-        )
-    except (Competition.DoesNotExist, ValidationError):
-        raise HttpError(401, "Invalid competition_token") from None
 
 
 class ProtocolUploadOut(Schema):
@@ -173,7 +162,7 @@ def upload_protocol(
     with HTML but cannot be accepted, the HTML is stored and `document_error` says why.
     Called by FinishProtocolGenerator and StravaProtocolGenerator.
     """
-    competition = _competition_by_token(competition_token)
+    competition = competition_by_token(competition_token)
 
     if protocol_type not in ("absolute", "group"):
         raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
@@ -223,7 +212,7 @@ def delete_protocol(
     FinishProtocolGenerator to drop a protocol the organizer no longer publishes, so its results
     link disappears from the competition detail page.
     """
-    competition = _competition_by_token(competition_token)
+    competition = competition_by_token(competition_token)
     if protocol_type not in ("absolute", "group"):
         raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
 
