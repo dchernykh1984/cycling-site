@@ -26,7 +26,7 @@ viewed full size and downloaded. With can_mark, each card carries the athlete's 
     {% endif %}
     {% if can_mark %}
     <div class="event-photo-marks d-flex gap-2 mt-2">
-      {% if photo.decision != "me" %}
+      {% if not photo.is_me %}
       <form method="post" action="{% url 'event_photos:decide' competition.pk registration.pk photo.pk %}">{% csrf_token %}
         <input type="hidden" name="page" value="{{ photos.number }}">
         <input type="hidden" name="state" value="me">

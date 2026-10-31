@@ -199,7 +199,7 @@ def registration_album(request, pk, reg_pk):
         PhotoDecision.objects.filter(registration=registration, photo__in=list(page)).values_list("photo_id", "state")
     )
     for photo in page:
-        photo.decision = decisions.get(photo.pk, "")
+        photo.is_me = decisions.get(photo.pk) == PhotoDecision.State.ME
     confirmed = photos.filter(confirmed=True).count()
     undo_event = request.GET.get("undo", "")
     participant = participant_name(registration)
