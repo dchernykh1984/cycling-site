@@ -7,8 +7,8 @@ few places always have. Whose an object is -- an event's author, a conversation'
 the object lives (``calendar_app.visibility``, ``assistant.conversations``), on top of these.
 ``tests/test_role_matrix.py`` pins what every kind of visitor may do.
 
-In a template: ``{% load roles %}`` and ``user|at_least:"MODERATE_EVENTS"``, or a role's value,
-``user|role_at_least:"participant"``.
+In a template: ``{% load roles %}`` and ``user|at_least:ROLES.MODERATE_EVENTS`` or
+``user|role_at_least:ROLES.Role.PARTICIPANT``; every page has ``ROLES``.
 """
 
 from __future__ import annotations

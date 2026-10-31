@@ -13,6 +13,14 @@ from django.urls import reverse
 from cycling_site import skins as skin_registry
 
 
+def role_rules(request):
+    """``ROLES``, the rules and roles of ``accounts.roles``, so that a template names a constant:
+    ``request.user|at_least:ROLES.MODERATE_EVENTS``, ``user|role_at_least:ROLES.Role.PARTICIPANT``."""
+    from accounts import roles
+
+    return {"ROLES": roles}
+
+
 def moderation_tasks(request):
     user = getattr(request, "user", None)
     if user is None or not user.is_authenticated:
