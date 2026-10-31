@@ -10,13 +10,14 @@
 
 {% block content %}
 {% comment %}UBT Almaty skin: the home page opens with the team's mark and the ways into the site -- the
-calendar first, then its list and map, news and the knowledge base -- before the owner's own text,
-which follows unchanged in .home-body (skin.js lays its sections out as cards). Every link here is
-one the navbar already carries; nothing new is fetched for this page.{% endcomment %}
+calendar first, then its list and map, news and the knowledge base -- before the owner's cards, laid
+out as a grid in .home-body. Every link here is one the navbar already carries; nothing new is
+fetched for this page.{% endcomment %}
+{% with page_heading=site_content.page_title|default:page.title %}
 <section class="ubt-hero">
   <div class="ubt-hero-text">
     <p class="ubt-hero-kicker">UBT &middot; Almaty</p>
-    <h1 class="ubt-hero-title">{% if site_content.page_title %}{{ site_content.page_title }}{% else %}{{ page.title }}{% endif %}</h1>
+    <h1 class="ubt-hero-title">{{ page_heading }}</h1>
     <p class="ubt-hero-lead">{% trans 'Calendar of endurance sport events -- cycling, running, cross-country skiing -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base.' %}</p>
     <div class="ubt-hero-actions">
       <a href="{% url 'calendar' %}" class="btn btn-lg btn-dark">{% include "_ubt_icon.html" with name="calendar" %}{% trans "Nearest events" %}</a>
@@ -48,7 +49,17 @@ in the top row, beside the owner's edit button.{% endcomment %}
   <a href="{% url 'home_edit' %}" class="btn btn-sm btn-outline-secondary">{% trans "Edit page" %}</a>
   {% endif %}
 </div>
-{% if site_content.body %}
-<div class="home-body">{{ site_content.body|safe|localized_links }}</div>
+{% comment %}The first card spans the row when it has no heading or its heading repeats the page's own
+title: it introduces the rest.{% endcomment %}
+{% if cards %}
+<div class="home-body ubt-sectioned">
+  {% for card in cards %}
+  <section class="ubt-section{% if forloop.first %}{% if not card.title or card.title|lower == page_heading|lower %} ubt-section-intro{% endif %}{% endif %}">
+    {% if card.title %}<h2>{{ card.title }}</h2>{% endif %}
+    {{ card.body|safe|localized_links }}
+  </section>
+  {% endfor %}
+</div>
 {% endif %}
+{% endwith %}
 {% endblock %}
