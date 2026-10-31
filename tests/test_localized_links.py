@@ -60,4 +60,5 @@ class LocalizedLinksOnPagesTests(TestCase):
             with self.subTest(skin=key):
                 self.client.cookies[skins.COOKIE] = key
                 html = self.client.get("/ru/").content.decode()
-                self.assertRegex(html, r'class="home-body[^"]*">\s*(<section[^>]*>\s*)?<p><a href="/ru/calendar/"')
+                # The text opens the card, past the tile's own wrappers.
+                self.assertRegex(html, r'class="home-body[^"]*">(\s*<(section|div)[^>]*>)*\s*<p><a href="/ru/calendar/')

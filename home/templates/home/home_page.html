@@ -17,9 +17,21 @@ in the top row, beside the owner's edit button.{% endcomment %}
   <a href="{% url 'home_edit' %}" class="btn btn-sm btn-outline-secondary">{% trans "Edit page" %}</a>
   {% endif %}
 </div>
-{% comment %}The owner's cards read here as one text, a heading over each, as the page read before it
-had cards.{% endcomment %}
+{% comment %}The owner's cards, a tile each in the skin's own colours, as many to a row as fit. The first
+spans the row when it has no heading or its heading repeats the page's own title: it introduces the
+rest.{% endcomment %}
 {% if cards %}
-<div class="home-body">{% for card in cards %}{% if card.title %}<h2>{{ card.title }}</h2>{% endif %}{{ card.body|safe|localized_links }}{% endfor %}</div>
+{% with page_heading=site_content.page_title|default:page.title %}
+<div class="home-body home-tiles">
+  {% for card in cards %}
+  <section class="card{% if forloop.first %}{% if not card.title or card.title|lower == page_heading|lower %} home-tile-intro{% endif %}{% endif %}">
+    <div class="card-body">
+      {% if card.title %}<h2 class="h5 card-title">{{ card.title }}</h2>{% endif %}
+      {{ card.body|safe|localized_links }}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endwith %}
 {% endif %}
 {% endblock %}

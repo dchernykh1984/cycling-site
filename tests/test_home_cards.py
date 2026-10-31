@@ -1,10 +1,10 @@
 """The home page's cards: the owner adds, changes, orders and removes them on the site and through
-the API, and every skin draws them -- the site's own skins as one text, UBT Almaty as a grid."""
+the API, and every skin draws them as tiles -- the site's own skins as cards, UBT Almaty its own way."""
 
 import re
 import uuid
 
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import User
@@ -15,6 +15,13 @@ from home.models import HomeCard, SiteContent, localized_cards
 from tests.language_urls import in_language
 
 EMPTY_EDITOR = "<p><br></p>"
+# The class each skin gives a card's tile, and the one it adds when the first introduces the rest.
+TILES = {
+    "light": ("card", "home-tile-intro"),
+    "dark": ("card", "home-tile-intro"),
+    "orange": ("ubt-section", "ubt-section-intro"),
+}
+TILE = r'<section class="([^"]*)">\s*(?:<div class="card-body">\s*)?(?:<h2[^>]*>([^<]*)</h2>)?'
 
 
 def _member(name, role):
@@ -78,43 +85,36 @@ class HomePageDrawsTheCardsTests(TestCase):
         self.client.cookies[skins.COOKIE] = skin
         return self.client.get(f"/{language}/").content.decode()
 
-    @override_settings(DEFAULT_SKIN="light")
-    def test_the_sites_own_skins_read_the_cards_as_one_text(self):
-        for key in ("light", "dark"):
+    def _tiles(self, html):
+        """(classes, heading) of each tile in the page's .home-body, in order."""
+        body = html[html.index('class="home-body') :]
+        return re.findall(TILE, body)
+
+    def test_every_skin_draws_a_tile_for_each_card(self):
+        for key, (tile, _) in TILES.items():
             with self.subTest(skin=key):
                 html = self._page(key)
-                self.assertIn(
-                    '<div class="home-body"><h2>First</h2><p>One</p><h2>Second</h2>'
-                    '<p><a href="/ru/calendar/" rel="noopener" target="_blank">calendar</a></p></div>',
-                    html,
-                )
-
-    def test_ubt_almaty_draws_a_card_for_each(self):
-        html = self._page("orange")
-        sections = re.findall(r'<section class="(ubt-section[^"]*)">\s*<h2>([^<]*)</h2>', html)
-        self.assertEqual(sections, [("ubt-section", "First"), ("ubt-section", "Second")])
-        self.assertIn('<div class="home-body ubt-sectioned">', html)
-        self.assertIn('href="/ru/calendar/"', html)
+                self.assertEqual(self._tiles(html), [(tile, "First"), (tile, "Second")])
+                self.assertIn('<a href="/ru/calendar/" rel="noopener" target="_blank">calendar</a>', html)
 
     def test_each_language_reads_its_own_words_and_falls_back_for_the_rest(self):
         html = self._page("light", "kk")
-        self.assertIn("<h2>Birinshi</h2>", html)
-        self.assertIn("<p>Bir</p>", html)
-        self.assertIn("<h2>Second</h2>", html)  # no Kazakh heading yet: the Russian one stands in
+        self.assertEqual([heading for _, heading in self._tiles(html)], ["Birinshi", "Second"])
+        self.assertIn("<p>Bir</p>", html)  # Second has no Kazakh heading yet: the Russian one stands in
 
     def test_a_first_card_without_a_heading_or_with_the_pages_title_spans_the_row(self):
-        HomeCard.objects.all().delete()
         for heading in ("", "ubt"):
-            with self.subTest(heading=heading):
-                HomeCard.objects.all().delete()
-                _card(title_ru=heading, body_ru="<p>Intro</p>")
-                _card(title_ru="Next", body_ru="<p>More</p>")
-                classes = re.findall(r'<section class="(ubt-section[^"]*)">', self._page("orange"))
-                self.assertEqual(classes, ["ubt-section ubt-section-intro", "ubt-section"])
+            HomeCard.objects.all().delete()
+            _card(title_ru=heading, body_ru="<p>Intro</p>")
+            _card(title_ru="Next", body_ru="<p>More</p>")
+            for key, (tile, intro) in TILES.items():
+                with self.subTest(heading=heading, skin=key):
+                    classes = [classes for classes, _ in self._tiles(self._page(key))]
+                    self.assertEqual(classes, [f"{tile} {intro}", tile])
 
     def test_no_cards_no_text(self):
         HomeCard.objects.all().delete()
-        for key in ("light", "orange"):
+        for key in TILES:
             with self.subTest(skin=key):
                 self.assertNotIn("home-body", self._page(key))
 

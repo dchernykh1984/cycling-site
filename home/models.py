@@ -59,8 +59,8 @@ def blank_rich_text(html: str) -> bool:
 class HomeCard(models.Model):  # type: ignore[django-manager-missing]
     """One card of the home page: a heading and the owner's rich text under it, in each language.
 
-    The owner adds as many as they like and puts them in order. Each skin draws them its own way:
-    the site's own skins as one text with a heading over each part, UBT Almaty as a grid of cards.
+    The owner adds as many as they like and puts them in order. Every skin draws them as tiles in a
+    grid: the site's own skins as cards in their colours, UBT Almaty in its own style.
     """
 
     title = models.CharField(max_length=255, blank=True, verbose_name="Title")

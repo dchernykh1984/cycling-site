@@ -339,6 +339,16 @@ main .competition-description ul, main .competition-description ol {
     list-style-position: inside;
 }
 
+/* The home page's cards in the site's own skins (home/home_page.html): a tile each, as many to a row
+   as fit -- one on a phone --, the first across the whole row when it introduces the rest. */
+.home-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: 1rem;
+}
+.home-tile-intro { grid-column: 1 / -1; }
+.home-tiles .card-body > :last-child { margin-bottom: 0; }
+
 /* Social login buttons. Each provider keeps its own brand treatment so the "Connect with
    Strava" button matches Strava's API brand guidelines (orange #FC4C02, 48px tall, logo +
    fixed wording), and Google/GitHub carry their own marks. The buttons stack full-width in a
