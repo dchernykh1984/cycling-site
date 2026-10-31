@@ -58,7 +58,7 @@ def _conversation(request, subject, kind: str) -> Conversation | None:
 
 
 def _first_question(kind: str, editing: bool) -> str:
-    if kind == "news":
+    if kind == Conversation.Kind.NEWS:
         return (
             _("What would you like to change in this news item?")
             if editing
@@ -73,7 +73,7 @@ def assistant_chat(context, kind: str = "event"):
     user = getattr(request, "user", None)
     if not settings.ASSISTANT_LLM_API_KEY or user is None or not offered(user, kind):
         return {"offered": False}
-    subject = context.get("article" if kind == "news" else "competition")
+    subject = context.get("article" if kind == Conversation.Kind.NEWS else "competition")
     conversation = _conversation(request, subject, kind)
     first = _first_question(kind, subject is not None)
     return {

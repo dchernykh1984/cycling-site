@@ -32,8 +32,8 @@ def offered(user, kind: str = Conversation.Kind.EVENT) -> bool:
 def may_write(user, subject) -> bool:
     """Whether ``user`` may have the assistant write ``subject``: a news item when they manage news, an
     event they manage (``calendar_app.visibility.manages``)."""
-    field, _kind = subject_field(subject)
-    return roles.at_least(user, roles.MANAGE_NEWS) if field == "news" else manages(user, subject)
+    _field, kind = subject_field(subject)
+    return roles.at_least(user, roles.MANAGE_NEWS) if kind == Conversation.Kind.NEWS else manages(user, subject)
 
 
 def may_see(user, conversation: Conversation) -> bool:
