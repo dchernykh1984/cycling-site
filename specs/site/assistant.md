@@ -62,8 +62,8 @@ change to one kind leaves the others as they were. One key, `ASSISTANT_LLM_API_K
 ### Story 2 -- An organizer edits their event by talking (P1)
 
 1. **Given** the edit page of an event they manage (their own; any, for an admin), **Then** the chat
-   shows the event's conversation and goes on with it: whoever may edit the event sees what was said
-   about it, an admin's messages included.
+   shows the event's conversation and goes on with it: whoever manages the event sees what was said
+   about it, an admin's messages included. Its author below an organizer edits it without the chat.
 2. The model is told it edits, and changes only what it is asked to.
 
 ### Story 3 -- An admin writes a news item with the chat (P1)
