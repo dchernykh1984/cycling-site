@@ -980,18 +980,10 @@ hr { border-color: var(--ubt-line); opacity: 1; }
 .ubt-tile:hover .ubt-icon, .ubt-tile:focus-visible .ubt-icon { background: var(--ubt-orange); color: var(--ubt-ink); }
 .ubt-tile:focus-visible { outline: 3px solid var(--ubt-orange); outline-offset: 2px; }
 
-/* The owner's text. skin.js wraps each h2 with what follows it into .ubt-section; without the
-   script the text simply reads as one white panel. */
+/* The owner's cards: a grid of .ubt-section panels. */
 .home-body {
     font-size: 1.02rem;
     line-height: 1.65;
-}
-.home-body:not(.ubt-sectioned) {
-    background: var(--ubt-surface);
-    border: 1px solid var(--ubt-line);
-    border-radius: var(--ubt-radius);
-    padding: clamp(1rem, 0.6rem + 1.5vw, 2rem);
-    box-shadow: var(--ubt-shadow);
 }
 .home-body.ubt-sectioned {
     display: grid;

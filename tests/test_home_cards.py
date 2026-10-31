@@ -1,6 +1,7 @@
-"""The home page's cards: the owner adds, changes, orders and removes them on the site, and the
-site's own skins draw them as one text, a heading over each."""
+"""The home page's cards: the owner adds, changes, orders and removes them on the site, and every
+skin draws them -- the site's own skins as one text, UBT Almaty as a grid."""
 
+import re
 import uuid
 
 from django.test import TestCase, override_settings
@@ -82,11 +83,28 @@ class HomePageDrawsTheCardsTests(TestCase):
                     html,
                 )
 
+    def test_ubt_almaty_draws_a_card_for_each(self):
+        html = self._page("orange")
+        sections = re.findall(r'<section class="(ubt-section[^"]*)">\s*<h2>([^<]*)</h2>', html)
+        self.assertEqual(sections, [("ubt-section", "First"), ("ubt-section", "Second")])
+        self.assertIn('<div class="home-body ubt-sectioned">', html)
+        self.assertIn('href="/ru/calendar/"', html)
+
     def test_each_language_reads_its_own_words_and_falls_back_for_the_rest(self):
         html = self._page("light", "kk")
         self.assertIn("<h2>Birinshi</h2>", html)
         self.assertIn("<p>Bir</p>", html)
         self.assertIn("<h2>Second</h2>", html)  # no Kazakh heading yet: the Russian one stands in
+
+    def test_a_first_card_without_a_heading_or_with_the_pages_title_spans_the_row(self):
+        HomeCard.objects.all().delete()
+        for heading in ("", "ubt"):
+            with self.subTest(heading=heading):
+                HomeCard.objects.all().delete()
+                _card(title_ru=heading, body_ru="<p>Intro</p>")
+                _card(title_ru="Next", body_ru="<p>More</p>")
+                classes = re.findall(r'<section class="(ubt-section[^"]*)">', self._page("orange"))
+                self.assertEqual(classes, ["ubt-section ubt-section-intro", "ubt-section"])
 
     def test_no_cards_no_text(self):
         HomeCard.objects.all().delete()
