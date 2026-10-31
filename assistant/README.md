@@ -1,8 +1,9 @@
 # The event assistant
 
-A chat on the pages where an event or a news item is added and edited, for admins and the owner
-(issue #353). The form's own button saves either, and the conversation is kept with its event or
-news item, so the edit page goes on with it.
+A chat on the pages where an event or a news item is added and edited: an event's for organizers
+and up, on the events they manage; a news item's for admins and up (issue #353). The form's own
+button saves either, and the conversation is kept with its event or news item, so the edit page goes
+on with it.
 
 - **On an event's page** it asks what a rider needs to know and fills the form in three languages.
 - **On a news item's page** it translates the item, puts its formatting right and changes it as
@@ -45,18 +46,18 @@ What was learned writing them, on the model itself:
 - **the system part**: the reply's contract in English, the skills, the event types and the
   disciplines with their ids;
 - **the conversation so far**;
-- **the turn**: the admin's date and the page's language, the form as it stands, the files, and
+- **the turn**: the user's date and the page's language, the form as it stands, the files, and
   the message.
 
 The system part stays the same between turns, so the provider's cache serves it cheaply.
 
 `fields.py` checks the answer before the page sees it:
 
-- **links**, in the link fields and inside the texts, must come from the admin's messages or from
+- **links**, in the link fields and inside the texts, must come from the user's messages or from
   the form as it stands;
 - **pictures** in a description or a news text travel as marks (`images.py`) and come back in place;
 - **a place** must be one of the site's, found by `places.py` with the import agents' matching;
-- **coordinates** come only from a track or from numbers the admin typed.
+- **coordinates** come only from a track or from numbers the user typed.
 
 ## The model and the key
 

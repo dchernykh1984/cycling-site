@@ -2,7 +2,8 @@
 
 **Feature Branch**: `353-assistant`
 **Created**: 2026-10-29
-**Status**: Agreed with the maintainer on 2026-10-29; built in pull request #405
+**Status**: Agreed with the maintainer on 2026-10-29; built in pull request #405; opened to
+organizers on 2026-10-31 (decision 27)
 **Issue**: [#353](https://github.com/dchernykh1984/cycling-site/issues/353); it also settles
 [#361](https://github.com/dchernykh1984/cycling-site/issues/361) (machine translation of the locales)
 for events
@@ -106,13 +107,22 @@ Later the same day, on news and articles:
 26. **Only admins and up use the key**: every operation that reaches the model is tested against
     every role, by token and by the site's session.
 
+Two days later, on 2026-10-31:
+
+27. **Organizers too.** An event costs about a cent of the model, as read on the provider's
+    dashboard, and the site has few users: the event assistant is opened to organizers and up, as
+    decision 1 foresaw, and still without limits (decision 8). An organizer reaches only
+    their own -- the conversations they started and those of their own events; whoever may edit an
+    event sees its whole conversation, an admin's messages included. News stays with admins, who
+    alone write it. Decisions 1 and 26 hold for news only.
+
 ## Requirements already fixed elsewhere
 
 - **Constitution VI**: no local or sport-specific hardcoding -- what to ask for a race or a ride
   lives in the instructions and in the event types, the provider and the model in settings and in
   one constant.
 - **Constitution VII**: what the chat does is also an API operation under `/api/v1/` for the same
-  people (admins and the owner), with its tests.
+  people (organizers and up; news: admins and up), with its tests.
 - **The interface rules** (`.claude/skills/interface`): phone first -- on a phone the chat takes the
   lower part of the screen and can be folded to look at the form --, 44px targets, every word in
   three languages, nothing on the page moves unless the admin moved it.
