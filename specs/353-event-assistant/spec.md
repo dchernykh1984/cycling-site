@@ -112,7 +112,7 @@ Two days later, on 2026-10-31:
 27. **Organizers too.** An event costs about a cent of the model, as read on the provider's
     dashboard, and the site has few users: the event assistant is opened to organizers and up, as
     decision 1 foresaw, and still without limits (decision 8). An organizer reaches only
-    their own -- the conversations they started and those of their own events; whoever may edit an
+    their own -- the conversations they started and those of their own events; whoever manages an
     event sees its whole conversation, an admin's messages included. News stays with admins, who
     alone write it. Decisions 1 and 26 hold for news only.
 
