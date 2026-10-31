@@ -209,6 +209,18 @@ def test_the_card_list_answers_a_finger_on_a_phone(page: Page, live_server, owne
         assert box is not None and box["height"] >= 44 and box["width"] >= 44, (index, box)
 
 
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [320, 360])
+def test_a_long_link_in_a_card_does_not_push_the_page_sideways(page: Page, live_server, site_content, width):
+    """A word wider than a phone -- a pasted link -- breaks inside its tile, in every skin."""
+    link = "https://example.com/" + "averylongpathwithnoroomtobreak" * 6
+    HomeCard.objects.create(title_ru="Links", body_ru=f"<p>{link}</p>")
+    page.set_viewport_size({"width": width, "height": 740})
+    page.goto(f"{live_server.url}/ru/")
+    expect(page.locator(".home-body")).to_contain_text("Links")
+    assert page.evaluate("document.documentElement.scrollWidth") <= width
+
+
 # ---------------------------------------------------------------------------
 # Per-locale content display
 # ---------------------------------------------------------------------------
