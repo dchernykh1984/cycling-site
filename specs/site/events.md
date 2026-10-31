@@ -3,7 +3,7 @@
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21
 **Code**: `calendar_app/` (models, forms, views, `visibility.py`, `preview_image.py`),
-`registrations/views.py` (`can_manage`, `can_manage_or_own`), `cycling_site/context_processors.py`
+`registrations/views.py` (`can_manage`), `cycling_site/context_processors.py`
 (moderation banner)
 **Tests**: `calendar_app/tests.py` (model, submit, moderation, detail, edit, comments, reports,
 materials, upload token, rich description, several event types), `calendar_app/test_timezones.py`,
@@ -11,7 +11,8 @@ materials, upload token, rich description, several event types), `calendar_app/t
 `tests/test_clone_competition.py`, `tests/test_preview_image.py`, `tests/test_preview_text_form.py`,
 `tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
 `tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/test_event_ics.py`,
-`tests/test_top_events.py`, `tests/test_moderation_history.py`, `assistant/tests/test_chat.py`,
+`tests/test_top_events.py`, `tests/test_moderation_history.py`, `tests/test_concurrent_review.py`,
+`assistant/tests/test_chat.py`,
 `tests/e2e/test_competition_form.py`, `test_add_to_calendar.py`,
 `test_competition_materials.py`, `test_description_editor.py`, `test_resubmit.py`,
 `test_pending_moderation.py`, `test_invite_only_events.py`, `test_competition_link_order.py`,
@@ -71,6 +72,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    oldest first -- added, rejected with the reason, resubmitted, approved, returned for review --
    each with its time and who did it (#741). An old event lists what was recorded then: its
    creation, its rejections and its last approval.
+7. **Given** two moderators act on one pending event at once, **Then** the first decision stands
+   and the second is refused, as on an event already reviewed.
 
 ### Story 3 -- Keep it current (P2)
 

@@ -125,7 +125,8 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
 
 1. **Given** a query, **Then** it finds published pages in the reader's language, approved events,
    news, knowledge articles written in the reader's language, and locations; hidden and deleted ones
-   are not found; a bad or out-of-range page number does not fail.
+   are not found, nor a place awaiting review but by its proposer and its moderators (FR-LOC-003);
+   a bad or out-of-range page number does not fail.
 
 ### Edge Cases
 
