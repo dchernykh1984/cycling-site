@@ -11,9 +11,10 @@ description: Spec-driven development in this repository (issue #337) - where the
 
 - `.specify/memory/constitution.md` -- the principles every plan is checked against. Principle VI
   matters most day to day: **no local or sport-specific hardcoding**. The site began in Almaty, but
-  places, sports, languages, time zones, map services, providers and brands are data or settings,
-  never branches in the code. Examples the maintainer gives (a sport, a city, a race) explain an idea;
-  they are not values to copy into code.
+  places, sports, time zones, map services, providers and brands are data or settings, never
+  branches in the code. The three languages are the exception the maintainer chose (principle IV):
+  code may name them. Examples the maintainer gives (a sport, a city, a race) explain an idea; they
+  are not values to copy into code.
 - `specs/site/<area>.md` -- the site as it works today, one file per area, each with the tests that
   pin it, its "Local assumptions" and its "API gaps" (principle VII: what a participant or an
   organizer does on the site is also available through the API).
