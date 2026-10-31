@@ -129,9 +129,9 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 
 ### Story 8 -- Add or edit an event by talking (P2, issue #353)
 
-1. **Given** an admin or the owner on the event's add or edit page, **Then** the event assistant's
-   chat fills the form from what they tell it, and the form's own button saves it (see
-   [event assistant](assistant.md)).
+1. **Given** an organizer or anyone above on the event's add page, or on the edit page of an event
+   they manage, **Then** the event assistant's chat fills the form from what they tell it, and the
+   form's own button saves it (see [event assistant](assistant.md)).
 
 ### Edge Cases
 
@@ -157,12 +157,11 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 - **FR-EVT-001**: Statuses: pending approval, approved, rejected; approving twice or approving a
   rejected event is refused; resubmitting works only from rejected.
 - **FR-EVT-002**: Who may: submit -- participant and up; publish directly, moderate, enable
-  registration, make invite-only -- organizer and up. A *manager* of an event is an admin or above,
-  or its author while an organizer. Hide and unhide, delete comments, see the invitation link and
-  replace it -- managers;
+  registration, make invite-only, use the event assistant on the events they manage -- organizer
+  and up. A *manager* of an event is an admin or above, or its author while an organizer. Hide and
+  unhide, delete comments, see the invitation link and replace it -- managers;
   edit (materials included), delete, resubmit, see and manage the upload token -- managers and the
-  author whatever their role; dismiss reports, mark a top event, use the event assistant -- admins
-  and up.
+  author whatever their role; dismiss reports, mark a top event -- admins and up.
 - **FR-EVT-003**: Deleting is soft (`is_deleted`); a deleted event is seen by nobody.
 - **FR-EVT-004**: Who sees a published event: everybody, unless it is hidden (managers on its page,
   admins in listings) or invite-only (managers, invitees, registered riders whose entry is not
