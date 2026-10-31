@@ -7,6 +7,7 @@ from ninja import Router, Schema
 from ninja.errors import HttpError
 
 from calendar_app.models import Competition
+from registrations.models import counted
 
 router = Router(tags=["participants"])
 
@@ -77,16 +78,12 @@ def get_participants(request, competition_token: str, include_unpaid: bool = Fal
     if competition.status != Competition.Status.APPROVED or competition.is_deleted:
         raise HttpError(401, "competition not found or not approved")
 
-    qs = competition.registrations.filter(is_rejected=False).select_related("category", "team")
-    if competition.require_approval:
-        qs = qs.filter(is_approved=True)
     # Unpaid entries used to be dropped here outright, which left a referee at the start line
     # unable to see that part of the entry list was outstanding. Widening it is opt-in rather
     # than the new default because a client that does not ask for them cannot tell them apart:
     # every copy of the timing tools already in the field would list unpaid riders as if they
     # had paid, which is worse than not listing them at all.
-    if competition.require_payment and not include_unpaid:
-        qs = qs.filter(is_paid=True)
+    qs = counted(competition, paid_only=not include_unpaid).select_related("category", "team")
 
     participant_list = list(qs)
     # Return every active group (category) of the competition, not only those a participant is

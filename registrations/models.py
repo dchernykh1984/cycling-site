@@ -4,6 +4,7 @@ from typing import ClassVar
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.db.models.functions import Lower
 
 from accounts.models import validate_birth_date
@@ -154,16 +155,40 @@ class CompetitionRegistration(models.Model):
     def birth_year(self) -> int:
         return self.birth_date.year
 
-    @property
-    def is_qualified(self) -> bool:
-        if self.is_rejected:
-            return False
-        comp = self.competition
-        if comp.require_approval and not self.is_approved:
-            return False
-        if comp.require_payment and not self.is_paid:
-            return False
-        return True
+
+def counts(entry, competition) -> bool:
+    """Whether an entry counts -- toward the limit, for a start number, in the lists the timing tools
+    read: not rejected, and approved and paid where the event asks for it.
+
+    So a rider's number is their place among the actual field, the same in the public and the
+    manager's view, and a rejected row never shifts anyone. ``counted`` and ``counted_q`` ask the same
+    of the database.
+    """
+    if entry.is_rejected:
+        return False
+    if competition.require_approval and not entry.is_approved:
+        return False
+    return not (competition.require_payment and not entry.is_paid)
+
+
+def counted(competition, *, paid_only: bool = True):
+    """The entries of ``competition`` that count; ``paid_only=False`` keeps the unpaid ones, for a
+    referee who asks to see what is still outstanding."""
+    entries = competition.registrations.filter(is_rejected=False)
+    if competition.require_approval:
+        entries = entries.filter(is_approved=True)
+    if competition.require_payment and paid_only:
+        entries = entries.filter(is_paid=True)
+    return entries
+
+
+def counted_q() -> Q:
+    """``counts`` as a condition over the entries of many events at once."""
+    return (
+        Q(is_rejected=False)
+        & ~Q(competition__require_approval=True, is_approved=False)
+        & ~Q(competition__require_payment=True, is_paid=False)
+    )
 
 
 def check_duplicate(competition, user, first_name: str, last_name: str, birth_date: datetime.date) -> bool:

@@ -21,7 +21,7 @@ from calendar_app.visibility import can_see, manages, public_events_q
 
 from . import registering
 from .forms import EditRegistrationForm, RegistrationForm
-from .models import CompetitionRegistration, RegistrationCategory, Team, check_duplicate
+from .models import CompetitionRegistration, RegistrationCategory, Team, check_duplicate, counted_q, counts
 
 
 def can_manage(user, competition) -> bool:
@@ -206,20 +206,6 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
         return self._page(request, competition, form, relay_members_post)
 
 
-def counts_for_bib(reg, competition) -> bool:
-    """Whether a registration gets a start number: the same rule as ``qualified_count``.
-
-    Rejected riders never get one, and unapproved/unpaid ones don't while that is required,
-    so a rider's number is their position among the actual field -- the same in the public
-    and the manager view -- and rejected rows never shift anyone.
-    """
-    if reg.is_rejected:
-        return False
-    if competition.require_approval and not reg.is_approved:
-        return False
-    return not (competition.require_payment and not reg.is_paid)
-
-
 def _number_rows(rows, start, counts, taken):
     """Pair each row with its number: from ``start`` upward, skipping numbers already handed out.
 
@@ -315,7 +301,7 @@ class ParticipantListView(TemplateView):
         context["competition"] = competition
         context["registrations"] = registrations
         context["participant_groups"] = build_participant_groups(
-            registrations, section_categories, counts=lambda reg: counts_for_bib(reg, competition)
+            registrations, section_categories, counts=lambda reg: counts(reg, competition)
         )
         context["is_manager"] = is_manager
         # A signed-in participant (not a manager) gets Edit/Cancel controls on their own rows and on
@@ -661,9 +647,7 @@ class CityAutocompleteView(View):
     def get(self, request):
         q = request.GET.get("q", "").strip()
         qs = (
-            CompetitionRegistration.objects.filter(public_events_q("competition__"), is_rejected=False)
-            .exclude(competition__require_approval=True, is_approved=False)
-            .exclude(competition__require_payment=True, is_paid=False)
+            CompetitionRegistration.objects.filter(public_events_q("competition__"), counted_q())
             .exclude(city="")
             .values_list("city", flat=True)
             .distinct()

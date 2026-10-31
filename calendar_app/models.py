@@ -466,14 +466,12 @@ class Competition(index.Indexed, models.Model):
         return True if ignore_limit else not self.is_limit_reached()
 
     def qualified_count(self, category=None) -> int:
-        qs = self.registrations.filter(is_rejected=False)
+        from registrations.models import counted
+
+        entries = counted(self)
         if category is not None:
-            qs = qs.filter(category=category)
-        if self.require_approval:
-            qs = qs.filter(is_approved=True)
-        if self.require_payment:
-            qs = qs.filter(is_paid=True)
-        return qs.count()
+            entries = entries.filter(category=category)
+        return entries.count()
 
     def is_limit_reached(self, category=None) -> bool:
         if category is not None:
