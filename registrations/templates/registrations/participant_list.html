@@ -19,7 +19,7 @@
     <h1 class="h3 mb-0">{% trans "Participants" %}: {{ competition.title }}
       {% if max_participants or qualified_count %}<span class="badge bg-secondary align-middle ms-1" title="{% trans 'Total qualified' %}">{{ qualified_count }}{% if max_participants %}/{{ max_participants }}{% endif %}</span>{% endif %}
     </h1>
-    {% if competition.status == 'approved' and not competition.is_hidden and not competition.invite_only %}{% include "_share_button.html" %}{% endif %}
+    {% if competition.is_public %}{% include "_share_button.html" %}{% endif %}
   </div>
   {% if is_manager %}
   <div class="d-flex gap-2">
