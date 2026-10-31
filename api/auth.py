@@ -64,11 +64,3 @@ class OptionalApiTokenAuth(HttpBearer):
         request.user = user
         _thread_locals.user = user
         return user
-
-
-def is_admin(user) -> bool:
-    from accounts.models import User
-
-    if not hasattr(user, "get_role_rank"):
-        return False
-    return user.is_superuser or user.get_role_rank() >= user.ROLE_HIERARCHY.index(User.Role.ADMIN)

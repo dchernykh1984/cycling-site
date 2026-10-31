@@ -149,33 +149,6 @@ class ApiTestMixin:
 # ---------------------------------------------------------------------------
 
 
-class IsAdminTest(TestCase):
-    def test_admin_returns_true(self):
-        from api.auth import is_admin
-
-        user = _user("adm", role=User.Role.ADMIN)
-        self.assertTrue(is_admin(user))
-
-    def test_participant_returns_false(self):
-        from api.auth import is_admin
-
-        user = _user("par", role=User.Role.PARTICIPANT)
-        self.assertFalse(is_admin(user))
-
-    def test_superuser_returns_true(self):
-        from api.auth import is_admin
-
-        user = User.objects.create_superuser("sup", "s@s.com", "Pass1!")
-        self.assertTrue(is_admin(user))
-
-    def test_anonymous_user_returns_false(self):
-        from django.contrib.auth.models import AnonymousUser
-
-        from api.auth import is_admin
-
-        self.assertFalse(is_admin(AnonymousUser()))
-
-
 class ApiTokenAuthTest(TestCase, ApiTestMixin):
     def test_valid_token_authenticates(self):
         user = _user("org", role=User.Role.ORGANIZER)

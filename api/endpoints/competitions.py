@@ -8,7 +8,8 @@ from django.utils.cache import patch_cache_control
 from ninja import Query, Router, Schema, Status
 from ninja.errors import HttpError
 
-from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
+from accounts import roles
+from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedPreviewText, LocalizedStr, LocalizedTitle, Url, localize_field
 from calendar_app.feeds import build_calendar, calendar_response, site_base_url
 from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline, EventType
@@ -234,12 +235,12 @@ def _get_or_404(pk: int) -> Competition:
 
 
 def _require_owner_or_admin(user, competition: Competition) -> None:
-    if not (_is_owner(user, competition) or is_admin(user)):
+    if not (_is_owner(user, competition) or roles.at_least(user, roles.MANAGE_ALL_EVENTS)):
         raise HttpError(403, "Forbidden")
 
 
 def _require_visible_or_404(user, competition: Competition) -> None:
-    is_privileged = _is_owner(user, competition) or is_admin(user)
+    is_privileged = _is_owner(user, competition) or roles.at_least(user, roles.MANAGE_ALL_EVENTS)
     # An invite-only event is not served to invitees here: the API is read by tools and agents,
     # and what an invitation opens is the site, for the person who accepted it (issue #313).
     if not is_privileged and (
@@ -288,7 +289,7 @@ def _validate_location_id(location_id, user) -> None:
     location = Location.objects.filter(pk=location_id).first()
     if location is None:
         raise HttpError(404, "Location not found")
-    reason = competition_location_block_reason(location, user, is_admin=is_admin(user))
+    reason = competition_location_block_reason(location, user, is_admin=roles.at_least(user, roles.APPROVE_PLACES))
     if reason:
         raise HttpError(403, reason)
 
@@ -299,7 +300,8 @@ def _lock_location_for_competition(location_id, user):
     locked pk (or None). Raises LocationConflictError if it is no longer usable."""
     if location_id is None:
         return None
-    locked = lock_competition_location(Location(pk=location_id), user, is_admin=is_admin(user))
+    may_approve = roles.at_least(user, roles.APPROVE_PLACES)
+    locked = lock_competition_location(Location(pk=location_id), user, is_admin=may_approve)
     return locked.pk
 
 
@@ -334,7 +336,7 @@ def _demote_for_pending_geography(competition: Competition, user) -> bool:
     location = competition.location
     if (
         competition.status == Competition.Status.APPROVED
-        and not is_admin(user)
+        and not roles.at_least(user, roles.APPROVE_PLACES)
         and location is not None
         and not chain_is_approved(location.get_parent())
     ):
@@ -374,10 +376,10 @@ def _apply_patch_fields(competition: Competition, data: dict, user) -> list[str]
 
 def _to_detail(competition: Competition, user=None) -> Competition:
     """Attach competition_token to obj for serialization (avoids extra dict merging)."""
-    can_see = user is not None and (_is_owner(user, competition) or is_admin(user))
+    can_see = user is not None and (_is_owner(user, competition) or roles.at_least(user, roles.MANAGE_ALL_EVENTS))
     # upload_token is nullable (a manager can delete it); don't serialize a null as "None".
     competition._api_token = str(competition.upload_token) if can_see and competition.upload_token else None
-    competition._approval_visible = user is not None and is_admin(user)
+    competition._approval_visible = user is not None and roles.at_least(user, roles.MANAGE_ALL_EVENTS)
     return competition
 
 
@@ -392,8 +394,8 @@ def _listable_by(qs, user, deleted: bool):
     if deleted:
         if not getattr(user, "is_authenticated", False):
             raise HttpError(401, "Authentication is required to list deleted competitions.")
-        return qs if is_admin(user) else qs.filter(submitted_by=user)
-    if is_admin(user):
+        return qs if roles.at_least(user, roles.MANAGE_ALL_EVENTS) else qs.filter(submitted_by=user)
+    if roles.at_least(user, roles.MANAGE_ALL_EVENTS):
         return qs
     visible = Q(status=Competition.Status.APPROVED, is_hidden=False, invite_only=False)
     if getattr(user, "is_authenticated", False):
@@ -479,14 +481,16 @@ def competition_ics(
 @router.post("/", response={201: CompetitionDetailOut}, auth=auth, summary="Create competition")
 def create_competition(request, payload: CompetitionIn):
     user = request.auth
-    if user.get_role_rank() < user.ROLE_HIERARCHY.index(user.Role.ORGANIZER):
+    if not roles.role_at_least(user, roles.Role.ORGANIZER):
         raise HttpError(403, "ORGANIZER role or higher is required")
 
-    if payload.is_top and not is_admin(user):
+    if payload.is_top and not roles.at_least(user, roles.MARK_TOP_EVENTS):
         raise HttpError(403, "Only admins can mark a top event")
     _validate_location_id(payload.location_id, user)
     _validate_dates(payload.date_start, payload.date_end)
-    status = Competition.Status.APPROVED if is_admin(user) else Competition.Status.PENDING_APPROVAL
+    # An admin's event is published at once; anybody else's waits for review, as api.md says.
+    published = roles.at_least(user, roles.Role.ADMIN)
+    status = Competition.Status.APPROVED if published else Competition.Status.PENDING_APPROVAL
     competition = Competition(submitted_by=user, status=status)
     _validate_description_length(payload.description)
     _apply_localized(competition, "title", payload.title)
@@ -539,9 +543,9 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 
     data = payload.dict(exclude_unset=True)
 
-    if "is_hidden" in data and not is_admin(user):
+    if "is_hidden" in data and not roles.at_least(user, roles.Role.ADMIN):
         raise HttpError(403, "Only admins can change visibility")
-    if "is_top" in data and not is_admin(user):
+    if "is_top" in data and not roles.at_least(user, roles.MARK_TOP_EVENTS):
         raise HttpError(403, "Only admins can mark a top event")
     if "location_id" in data:
         _validate_location_id(data["location_id"], user)

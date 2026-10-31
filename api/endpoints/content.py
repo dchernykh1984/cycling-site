@@ -13,7 +13,8 @@ from django.utils.translation import gettext as _
 from ninja import Router, Schema, Status
 from ninja.errors import HttpError
 
-from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
+from accounts import roles
+from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedStr, localize_field
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from knowledge.models import DraftSubmission, KnowledgeArticle
@@ -126,8 +127,9 @@ class DraftOut(Schema):
 # -- Helpers ------------------------------------------------------------------
 
 
-def _require_admin(user) -> None:
-    if not is_admin(user):
+def _require_manager(user, rule: str) -> None:
+    """403 unless ``user`` may do what ``rule`` gates: managing news, or knowledge articles."""
+    if not roles.at_least(user, rule):
         raise HttpError(403, "Admin role is required")
 
 
@@ -203,8 +205,8 @@ def _get_knowledge_article_or_404(article_id: int) -> KnowledgeArticle:
 # -- Knowledge draft-submission helpers (participant/organizer authoring) ------
 
 
-def _require_min_participant(user) -> None:
-    if user.get_role_rank() < 1:
+def _require_submitter(user) -> None:
+    if not roles.role_at_least(user, roles.SUBMIT_KNOWLEDGE):
         raise HttpError(403, "Verified participant role or higher is required")
 
 
@@ -216,7 +218,7 @@ def _get_draft_or_404(pk: int, submission_type: str) -> DraftSubmission:
 
 
 def _require_owner_or_admin(user, draft: DraftSubmission) -> None:
-    if draft.author_id != user.pk and not is_admin(user):
+    if draft.author_id != user.pk and not roles.at_least(user, roles.MANAGE_KNOWLEDGE):
         raise HttpError(403, "Forbidden")
 
 
@@ -246,7 +248,7 @@ def _validate_draft_lengths(title: str | None, category: str | None) -> None:
 
 def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmission:
     user = request.auth
-    _require_min_participant(user)
+    _require_submitter(user)
     _validate_locale(payload.locale)
     _validate_draft_lengths(payload.title, payload.category)
     _validate_body_length(payload.body)
@@ -262,7 +264,7 @@ def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmi
 
     # An admin/owner author needs no moderation, so publish immediately (mirrors the on-site
     # "add article" flow); a lower role's submission stays PENDING for a manager to approve.
-    if is_admin(user):
+    if roles.at_least(user, roles.MANAGE_KNOWLEDGE):
         try:
             draft.approve(reviewer=user)
         except ValueError as exc:
@@ -331,7 +333,7 @@ def _apply_news_localized(article: NewsArticle, field: str, value: LocalizedStr)
 def list_news(request):
     user = request.auth
     qs = NewsArticle.objects.filter(is_deleted=False)
-    if not is_admin(user):
+    if not roles.at_least(user, roles.MANAGE_NEWS):
         qs = qs.filter(is_hidden=False)
     return list(qs)
 
@@ -340,7 +342,7 @@ def list_news(request):
 def get_news(request, pk: int):
     user = request.auth
     article = _get_news_article_or_404(pk)
-    if article.is_hidden and not is_admin(user):
+    if article.is_hidden and not roles.at_least(user, roles.MANAGE_NEWS):
         raise HttpError(404, "Not found")
     return article
 
@@ -353,7 +355,7 @@ def create_news_article(request, payload: NewsArticleIn):
     the on-site form store identical markup.
     """
     user = request.auth
-    _require_admin(user)
+    _require_manager(user, roles.MANAGE_NEWS)
     _validate_news_title(payload.title)
     _validate_localized_length(payload.intro, "intro", _("Intro is too long (max %(limit)d characters)."))
     for raw in (payload.body.ru, payload.body.kk, payload.body.en):
@@ -369,7 +371,7 @@ def create_news_article(request, payload: NewsArticleIn):
 @news_router.patch("/{pk}", response=NewsArticleOut, auth=auth, summary="Update a news article (admin)")
 def update_news_article(request, pk: int, payload: NewsArticlePatchIn):
     user = request.auth
-    _require_admin(user)
+    _require_manager(user, roles.MANAGE_NEWS)
     article = _get_news_article_or_404(pk)
 
     data = payload.dict(exclude_unset=True)
@@ -392,7 +394,7 @@ def update_news_article(request, pk: int, payload: NewsArticlePatchIn):
 @news_router.delete("/{pk}", response={204: None}, auth=auth, summary="Delete a news article (admin, soft)")
 def delete_news_article(request, pk: int):
     user = request.auth
-    _require_admin(user)
+    _require_manager(user, roles.MANAGE_NEWS)
     article = _get_news_article_or_404(pk)
     article.is_deleted = True
     article.save(update_fields=["is_deleted"])
@@ -406,7 +408,7 @@ def delete_news_article(request, pk: int):
 def list_knowledge_articles(request):
     user = request.auth
     qs = KnowledgeArticle.objects.filter(is_deleted=False)
-    if not is_admin(user):
+    if not roles.at_least(user, roles.MANAGE_KNOWLEDGE):
         qs = qs.filter(is_hidden=False)
     return list(qs)
 
@@ -421,7 +423,7 @@ def list_knowledge_drafts(request, status: DraftSubmission.Status | None = None)
     # submissions. Published content is read via the public KnowledgeArticle endpoints.
     user = request.auth
     qs = DraftSubmission.objects.filter(submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    if not is_admin(user):
+    if not roles.at_least(user, roles.MANAGE_KNOWLEDGE):
         qs = qs.filter(author=user)
     if status is not None:
         qs = qs.filter(status=status)
@@ -466,7 +468,7 @@ def delete_knowledge_draft(request, draft_id: int):
 def get_knowledge_article(request, article_id: int):
     user = request.auth
     article = _get_knowledge_article_or_404(article_id)
-    if article.is_hidden and not is_admin(user):
+    if article.is_hidden and not roles.at_least(user, roles.MANAGE_KNOWLEDGE):
         raise HttpError(404, "Not found")
     return article
 
@@ -481,7 +483,7 @@ def create_knowledge_article(request, payload: KnowledgeArticleIn):
     KnowledgeArticle.save() (same allowlist as the on-site form), and the slug is generated there.
     """
     user = request.auth
-    _require_admin(user)
+    _require_manager(user, roles.MANAGE_KNOWLEDGE)
     _validate_knowledge_payload(payload)
 
     article = KnowledgeArticle(
@@ -506,7 +508,7 @@ def update_knowledge_article(request, article_id: int, payload: KnowledgeArticle
     re-sanitized in KnowledgeArticle.save().
     """
     user = request.auth
-    _require_admin(user)
+    _require_manager(user, roles.MANAGE_KNOWLEDGE)
     article = _get_knowledge_article_or_404(article_id)
     data = payload.dict(exclude_unset=True)
     _validate_knowledge_patch(data)

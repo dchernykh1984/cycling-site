@@ -15,8 +15,9 @@ from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 from pydantic import field_validator
 
+from accounts import roles
 from accounts.access import needs_email_confirmation
-from api.auth import OptionalApiTokenAuth, is_admin, member_auth
+from api.auth import OptionalApiTokenAuth, member_auth
 from trainer import live, records, strava
 from trainer.models import (
     GroupRide,
@@ -448,7 +449,7 @@ def leave_group(request, group_id: int):
 @router.post("/groups/{group_id}/cancel", response=GroupOut, auth=member_auth, summary="Cancel a group race")
 def cancel_group(request, group_id: int):
     group = _open_group(group_id)
-    if group.host_id != request.auth.pk and not is_admin(request.auth):
+    if group.host_id != request.auth.pk and not roles.at_least(request.auth, roles.Role.ADMIN):
         raise HttpError(403, _("Only the host can cancel this group race"))
     group.cancelled = True
     group.save(update_fields=["cancelled"])
