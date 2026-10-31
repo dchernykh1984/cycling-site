@@ -1,4 +1,9 @@
-"""How ``accounts.roles`` compares roles: the visitor, the superuser, and the rules by name in a template."""
+"""How ``accounts.roles`` compares roles: the visitor, the superuser, the rules by name in a template --
+and that it is the only place that does."""
+
+import os
+import re
+from pathlib import Path
 
 from django.contrib.auth.models import AnonymousUser
 from django.template import Context, Template, TemplateSyntaxError
@@ -8,6 +13,14 @@ from accounts import roles
 from accounts.models import User
 
 Role = User.Role
+ROOT = Path(__file__).resolve().parent.parent
+# A rank, an index into the order of roles, a member's role compared with a value.
+COMPARING = re.compile(r"get_role_rank|ROLE_HIERARCHY\.index|user\.role\s*(?:[!=]=|(?:not\s+)?in\b)")
+# Where a role is defined and compared; where a guest becomes a participant on a confirmed address,
+# which is not a right but a change of role.
+ALLOWED = {"accounts/models.py", "accounts/roles.py", "accounts/signals.py", "accounts/adapters.py"}
+# The tests, migrations and what is not the site's code; a designer's skin is its designers' own.
+SKIPPED = {".git", ".venv", "node_modules", "tmp", "tests", "migrations", "skins", "__pycache__", "staticfiles"}
 
 
 def _member(role: str, superuser: bool = False) -> User:
@@ -50,3 +63,17 @@ class RolesTests(TestCase):
         page = Template('{% load roles %}{% if user|at_least:"MODERATE_EVENT" %}m{% endif %}')
         with self.assertRaises(TemplateSyntaxError):
             page.render(Context({"user": _member(Role.ADMIN)}))
+
+    def test_no_role_is_compared_outside_accounts_roles(self):
+        found = []
+        for folder, subfolders, files in os.walk(ROOT):
+            subfolders[:] = [name for name in subfolders if name not in SKIPPED]
+            for name in files:
+                path = Path(folder) / name
+                where = path.relative_to(ROOT).as_posix()
+                if path.suffix not in (".py", ".html") or where in ALLOWED or name == "tests.py":
+                    continue
+                for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+                    if COMPARING.search(line):
+                        found.append(f"{where}:{number}: {line.strip()}")
+        self.assertEqual(found, [], "compare roles through accounts.roles")
