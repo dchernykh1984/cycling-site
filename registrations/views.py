@@ -378,30 +378,30 @@ class EditRegistrationView(LoginRequiredMixin, View):
         # Manager rights take precedence: a manager (incl. the event owner) editing their own
         # registration still gets the admin controls, not the restricted participant form.
         if can_manage(user, competition):
-            mode = "manager"
+            as_participant = False
         elif can_self_edit(user, competition, reg):
-            mode = "owner"
+            as_participant = True
         else:
             raise PermissionDenied
-        return competition, reg, mode
+        return competition, reg, as_participant
 
-    def _build_form(self, competition, reg, mode, data=None):
-        if mode == "owner":
+    def _build_form(self, competition, reg, as_participant, data=None):
+        if as_participant:
             return EditRegistrationForm(data, instance=reg, competition=competition, participant_fields_only=True)
         service_only = competition.registration_mode == competition.RegistrationMode.SELF_ONLY
         return EditRegistrationForm(data, instance=reg, competition=competition, service_fields_only=service_only)
 
     def get(self, request, pk, reg_pk):
-        competition, reg, mode = self._get_objects(pk, reg_pk, request.user)
-        form = self._build_form(competition, reg, mode)
+        competition, reg, as_participant = self._get_objects(pk, reg_pk, request.user)
+        form = self._build_form(competition, reg, as_participant)
         if "team_name" in form.fields:
             form.initial["team_name"] = reg.team.name if reg.team else ""
         return render(request, self.template_name, {"competition": competition, "registration": reg, "form": form})
 
     def post(self, request, pk, reg_pk):
-        competition, reg, mode = self._get_objects(pk, reg_pk, request.user)
+        competition, reg, as_participant = self._get_objects(pk, reg_pk, request.user)
         was_approved = reg.is_approved
-        form = self._build_form(competition, reg, mode, data=request.POST)
+        form = self._build_form(competition, reg, as_participant, data=request.POST)
         if form.is_valid():
             obj = form.save(commit=False)
             if "team_name" in form.fields:
@@ -409,7 +409,7 @@ class EditRegistrationView(LoginRequiredMixin, View):
                 obj.team = Team.get_or_restore(team_name) if team_name else None
             # A participant editing an already-approved entry sends it back to moderation, so
             # the organiser re-checks the changed data instead of it going through silently.
-            if mode == "owner" and competition.require_approval and was_approved and form.has_changed():
+            if as_participant and competition.require_approval and was_approved and form.has_changed():
                 obj.is_approved = False
             obj.save()
             return redirect("registrations:participant_list", pk=pk)
