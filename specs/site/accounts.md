@@ -1,14 +1,17 @@
 # Site Specification: Accounts, roles and the profile
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-21; managing another member's registrations (issue #315) against branch `315-managing-registrations` on 2026-10-28, its card and banner against `353-event-assistant` on 2026-10-29
-**Code**: `accounts/` (models, views, adapters, access, signals, managing), `cycling_site/templates/allauth/`,
+**Verified against**: `main` on 2026-10-21; managing another member's registrations (issue #315) against branch `315-managing-registrations` on 2026-10-28, its card and banner against `353-event-assistant` on 2026-10-29; the role checks in one module
+against branch `roles-in-one-module` on 2026-10-31
+**Code**: `accounts/` (models, roles, views, adapters, access, signals, managing; `templatetags/roles.py`),
+`cycling_site/templates/allauth/`,
 `api/endpoints/managing.py`
 **Tests**: `accounts/tests.py`, `tests/test_role_request.py`, `tests/test_user_display.py`,
 `tests/test_oauth_callback.py`, `tests/test_save_filter_preferences.py`, `tests/test_skin_choice.py`,
 `tests/e2e/test_api_token_profile.py`, `tests/e2e/test_profile_preferences.py`,
 `tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_managing.py`,
-`tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`
+`tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`,
+`tests/test_roles.py`, `tests/test_role_matrix.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md)
 
 ## Overview
@@ -150,6 +153,13 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
   is a guest. An owner is always staff and superuser. A role can do everything the roles below it
   can: a right is granted to a role and every role above it ("admin and above"), never to one role
   alone, so whatever admins see, owners see too.
+  - Every role check asks `accounts/roles.py`: `at_least`, where a superuser holds every role, or
+    `role_at_least`, the role alone. A rule checked in more than one place has a name there
+    (`MODERATE_EVENTS`, `MANAGE_NEWS`, `APPROVE_PLACES`, ...), so one line moves it; templates ask
+    the same through `{% load roles %}`. Whose an object is stays with the object's area
+    (`calendar_app/visibility.py`, `assistant/conversations.py`).
+  - `tests/test_role_matrix.py` pins what a visitor, a guest, each role and a superuser whose role
+    was never set may do; `tests/test_roles.py` refuses a role compared anywhere else.
 - **FR-ACC-002**: A guest becomes a participant when an e-mail is confirmed or a provider returns a
   verified e-mail. No other role is granted automatically.
 - **FR-ACC-003**: Only organizer and above assign roles, and only up to their own rank; the
@@ -220,4 +230,9 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 
 ## Open Questions
 
-- None known.
+- A superuser whose role was never set (one `createsuperuser` makes) holds every role almost
+  everywhere, but a few places ask the role alone and refuse them: creating an event or a knowledge
+  draft through the API, adding a knowledge article on the site, commenting on a news page, the
+  profile's role request, contact and appearance cards, editing the home page; and the profile
+  takes their address for unconfirmed unless it is. Whether they should count there too is the
+  maintainer's to decide; `role_at_least` marks each place.

@@ -73,8 +73,8 @@ photos are kept exactly as they were taken, and only admins and the owner put th
 
 ## Functional Requirements
 
-- **FR-GAL-001**: Only admins and the owner (`gallery.permissions.is_admin_plus`) create, change or
-  delete albums and photos.
+- **FR-GAL-001**: Only admins and the owner (`MANAGE_GALLERY` in `accounts/roles.py`, asked by
+  `gallery.permissions`) create, change or delete albums and photos.
 - **FR-GAL-002**: The original is stored and served unchanged; the thumbnail is the only derived file.
 - **FR-GAL-003**: Deleting a photo or an album erases it and its files.
 - **FR-GAL-004**: Public albums are a sitemap section (`gallery`); the gallery index is in `sections`.
