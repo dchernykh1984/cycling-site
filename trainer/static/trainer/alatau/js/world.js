@@ -1,4 +1,5 @@
 'use strict';
+/* ---------------- Мир: рельеф, дорога, здания, деревья, горы, старт и финиш ---------------- */
 function disposeWorld() {
   if (!world) return;
   scene.remove(world.group);

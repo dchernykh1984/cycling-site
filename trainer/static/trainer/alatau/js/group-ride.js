@@ -1,4 +1,5 @@
 'use strict';
+/* ---------------- Совместная езда: лобби, групповые гонки и соперники онлайн ---------------- */
 const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), lastInp: null, resultsFor: null, linkShown: false, linkChecked: false };
 // a group race named by the link the page was opened with (?group=)
 const LINKED = (g => /^[0-9]{1,12}$/.test(g || '') ? +g : null)(new URLSearchParams(location.search).get('group'));
