@@ -9,31 +9,18 @@ from django.utils import timezone
 from django.utils.translation import get_language, gettext
 from django.views.generic import CreateView, View
 
+from accounts import roles
 from accounts.access import ParticipantRequiredMixin
-from accounts.models import User
 from assistant.conversations import link as link_conversation
 from cycling_site.summaries import article_markup, summarize
 from knowledge.models import DraftSubmission
 from news.forms import AddCommentForm, AddNewsArticleCommentForm, NewsArticleForm, SubmitNewsForm
 from news.models import Comment, NewsArticle, NewsArticleComment, NewsPage, NewsSettings
 
-_PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-
-
-def _can_comment(user) -> bool:
-    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _PARTICIPANT_RANK)
-
-
-_ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
-
-
-def _can_manage_news(user) -> bool:
-    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
-
 
 class NewsListView(View):
     def get(self, request):
-        can_manage = _can_manage_news(request.user)
+        can_manage = roles.at_least(request.user, roles.MANAGE_NEWS)
         qs = NewsArticle.objects.filter(is_deleted=False)
         if not can_manage:
             qs = qs.filter(is_hidden=False)
@@ -55,11 +42,11 @@ class NewsListView(View):
 
 class NewsArticleDetailView(View):
     def get(self, request, pk):
-        can_manage = _can_manage_news(request.user)
+        can_manage = roles.at_least(request.user, roles.MANAGE_NEWS)
         article = get_object_or_404(NewsArticle, pk=pk, is_deleted=False)
         if article.is_deleted or (article.is_hidden and not can_manage):
             raise Http404
-        can_comment = _can_comment(request.user)
+        can_comment = roles.at_least(request.user, roles.COMMENT)
         return render(
             request,
             "news/article_detail.html",
@@ -87,7 +74,7 @@ class NewsArticleDetailView(View):
 
 class NewsArticleDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        if not _can_manage_news(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_NEWS):
             raise PermissionDenied
         article = get_object_or_404(NewsArticle, pk=pk, is_deleted=False)
         article.is_deleted = True
@@ -97,7 +84,7 @@ class NewsArticleDeleteView(LoginRequiredMixin, View):
 
 class NewsArticleHideView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        if not _can_manage_news(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_NEWS):
             raise PermissionDenied
         article = get_object_or_404(NewsArticle, pk=pk, is_deleted=False)
         article.is_hidden = not article.is_hidden
@@ -107,7 +94,7 @@ class NewsArticleHideView(LoginRequiredMixin, View):
 
 class NewsArticleCreateView(LoginRequiredMixin, View):
     def dispatch(self, request, *args, **kwargs):
-        if not _can_manage_news(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_NEWS):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -130,7 +117,7 @@ class NewsArticleCreateView(LoginRequiredMixin, View):
 
 class NewsArticleEditView(LoginRequiredMixin, View):
     def dispatch(self, request, *args, **kwargs):
-        if not _can_manage_news(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_NEWS):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -170,7 +157,7 @@ class NewsSubmissionDetailView(LoginRequiredMixin, View):
     before approving or rejecting it (the inline list buttons only show the title)."""
 
     def get(self, request, pk):
-        if not _can_manage_news(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_NEWS):
             raise PermissionDenied
         submission = get_object_or_404(DraftSubmission, pk=pk, submission_type=DraftSubmission.SubmissionType.NEWS)
         return render(request, "news/submission_detail.html", {"submission": submission})
@@ -180,7 +167,7 @@ class NewsSubmissionApproveView(LoginRequiredMixin, View):
     """Publish a pending news submission straight from the news index (manager+ only)."""
 
     def post(self, request, pk):
-        if not _can_manage_news(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_NEWS):
             raise PermissionDenied
         submission = get_object_or_404(DraftSubmission, pk=pk, submission_type=DraftSubmission.SubmissionType.NEWS)
         try:
@@ -196,7 +183,7 @@ class NewsSubmissionRejectView(LoginRequiredMixin, View):
     """Reject a pending news submission from the news index (manager+ only)."""
 
     def post(self, request, pk):
-        if not _can_manage_news(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_NEWS):
             raise PermissionDenied
         submission = get_object_or_404(DraftSubmission, pk=pk, submission_type=DraftSubmission.SubmissionType.NEWS)
         try:
@@ -222,7 +209,7 @@ class AddCommentView(ParticipantRequiredMixin, View):
 
 class DeleteCommentView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        if not _can_manage_news(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_NEWS):
             raise PermissionDenied
         comment = get_object_or_404(Comment, pk=pk)
         page_url = comment.page.url
@@ -232,7 +219,7 @@ class DeleteCommentView(LoginRequiredMixin, View):
 
 class AddNewsArticleCommentView(ParticipantRequiredMixin, View):
     def post(self, request, pk):
-        can_manage = _can_manage_news(request.user)
+        can_manage = roles.at_least(request.user, roles.MANAGE_NEWS)
         article = get_object_or_404(NewsArticle, pk=pk, is_deleted=False)
         if article.is_hidden and not can_manage:
             raise Http404
@@ -250,7 +237,7 @@ class AddNewsArticleCommentView(ParticipantRequiredMixin, View):
 
 class DeleteNewsArticleCommentView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        if not _can_manage_news(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_NEWS):
             raise PermissionDenied
         comment = get_object_or_404(NewsArticleComment, pk=pk)
         article_pk = comment.article_id

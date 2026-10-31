@@ -115,23 +115,17 @@ class NewsPage(OwnLanguageUrlMixin, AsciiSlugMixin, Page):
     ]
 
     def get_context(self, request):
-        from accounts.models import User
+        from accounts import roles
         from news.forms import AddCommentForm
 
         context = super().get_context(request)
         qs = Comment.objects.filter(page=self).select_related("author").order_by("created_at")
-        admin_rank = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
-        is_manager = request.user.is_authenticated and (
-            request.user.is_superuser or request.user.get_role_rank() >= admin_rank
-        )
+        is_manager = roles.at_least(request.user, roles.MANAGE_NEWS)
         if not is_manager:
             qs = qs.filter(is_approved=True)
         context["comments"] = qs
 
-        can_comment = False
-        if request.user.is_authenticated:
-            participant_rank = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-            can_comment = request.user.get_role_rank() >= participant_rank
+        can_comment = roles.role_at_least(request.user, roles.COMMENT)
         context["can_comment"] = can_comment
         if can_comment:
             context["comment_form"] = AddCommentForm()

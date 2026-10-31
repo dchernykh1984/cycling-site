@@ -126,13 +126,6 @@ class KnowledgeArticleComment(models.Model):
         return f"Comment by {self.author} on {self.article}"
 
 
-def _can_manage_knowledge(user) -> bool:
-    from accounts.models import User
-
-    admin_rank = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
-    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= admin_rank)
-
-
 class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin, Page):
     intro = RichTextField(blank=True)
 
@@ -149,10 +142,10 @@ class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin,
         from django.core.paginator import Paginator
         from django.urls import reverse
 
-        from accounts.models import User
+        from accounts import roles
 
         context = super().get_context(request)
-        can_manage = _can_manage_knowledge(request.user)
+        can_manage = roles.at_least(request.user, roles.MANAGE_KNOWLEDGE)
         articles = KnowledgeArticle.objects.filter(locale=self.locale.language_code, is_deleted=False)
         if not can_manage:
             articles = articles.filter(is_hidden=False)
@@ -160,10 +153,7 @@ class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin,
         paginator = Paginator(articles, 12)
         context["articles"] = paginator.get_page(request.GET.get("page", 1))
 
-        can_add = False
-        if request.user.is_authenticated:
-            participant_rank = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-            can_add = request.user.get_role_rank() >= participant_rank
+        can_add = roles.role_at_least(request.user, roles.SUBMIT_KNOWLEDGE)
         if can_manage:
             context["add_article_url"] = reverse("knowledge_add")
             context["pending_submissions"] = (
@@ -190,18 +180,15 @@ class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin,
         from django.utils.translation import get_language, gettext
         from django.utils.translation import override as translation_override
 
-        from accounts.models import User
+        from accounts import roles
         from cycling_site.summaries import article_markup, summarize
         from knowledge.forms import AddKnowledgeArticleCommentForm
 
-        can_manage = _can_manage_knowledge(request.user)
+        can_manage = roles.at_least(request.user, roles.MANAGE_KNOWLEDGE)
         article = KnowledgeArticle.objects.filter(slug=slug, is_deleted=False).first()
         if article is None or (article.is_hidden and not can_manage):
             raise Http404
-        can_comment = request.user.is_authenticated and (
-            request.user.is_superuser
-            or request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-        )
+        can_comment = roles.at_least(request.user, roles.COMMENT)
         context = {
             "page": self,
             "article": article,
