@@ -12,6 +12,7 @@ from cycling_site.storage import StaticFilesStorage
 from tests import trainer_page
 
 SKIN_TEMPLATE = '<img src="{% static \'skins/orange/img/logo.png\' %}" alt="">\n'
+PAGE_WITH_DATA = '<a data-href="ride/7" href="alatau/alatau.css">x</a><img data-src="photo.jpg" alt="">\n'
 
 
 class TrainerPageHashedLinksTests(SimpleTestCase):
@@ -24,6 +25,7 @@ class TrainerPageHashedLinksTests(SimpleTestCase):
         shutil.copytree(Path(settings.BASE_DIR) / "trainer" / "static" / "trainer", cls.root / "trainer")
         (cls.root / "orange" / "templates").mkdir(parents=True)
         (cls.root / "orange" / "templates" / "base.html").write_text(SKIN_TEMPLATE, encoding="utf-8")
+        (cls.root / "trainer" / "with-data.html").write_text(PAGE_WITH_DATA, encoding="utf-8")
         cls.storage = StaticFilesStorage(location=cls.root, base_url="/static/")
         names = [path.relative_to(cls.root).as_posix() for path in cls.root.rglob("*") if path.is_file()]
         for _name, _hashed, processed in cls.storage.post_process({name: (cls.storage, name) for name in names}):
@@ -52,3 +54,9 @@ class TrainerPageHashedLinksTests(SimpleTestCase):
 
     def test_a_skin_template_collected_beside_it_is_left_alone(self):
         self.assertEqual(self.storage.open("orange/templates/base.html").read().decode(), SKIN_TEMPLATE)
+
+    def test_a_data_attribute_is_not_taken_for_a_link(self):
+        page = self.storage.open(self.storage.stored_name("trainer/with-data.html")).read().decode()
+        self.assertIn('data-href="ride/7"', page)
+        self.assertIn('data-src="photo.jpg"', page)
+        self.assertIn(f'href="{self.storage.stored_name("trainer/alatau/alatau.css").removeprefix("trainer/")}"', page)

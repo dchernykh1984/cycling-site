@@ -12,10 +12,14 @@ class StaticFilesStorage(CompressedManifestStaticFilesStorage):
     so it must name the very versions of its files it was built with, cached as long. Addresses with a
     scheme or starting with // (a CDN, the fonts) are left as they are, as Django leaves them in CSS.
     Only trainer/*.html: the skins' templates are collected as static files too, and their
-    ``{% static %}`` links are not files to hash.
+    ``{% static %}`` links are not files to hash. Only ``src`` and ``href`` themselves: a
+    ``data-src`` or ``data-href`` is the page's own data, not a file.
     """
 
     patterns = (
         *CompressedManifestStaticFilesStorage.patterns,
-        ("trainer/*.html", ((r"""(?P<matched>(?P<attr>src|href)="(?P<url>[^"]+)")""", """%(attr)s="%(url)s\""""),)),
+        (
+            "trainer/*.html",
+            ((r"""(?P<matched>(?<![\w-])(?P<attr>src|href)="(?P<url>[^"]+)")""", """%(attr)s="%(url)s\""""),),
+        ),
     )
