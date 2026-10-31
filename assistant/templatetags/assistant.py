@@ -20,8 +20,8 @@ register = template.Library()
 _LANGUAGES = ("ru", "kk", "en")
 # What the chat reads off each kind's form and fills in: plain fields by name, and the editors of its
 # rich texts by the id of the box each one's Quill lives in.
-_FORMS = {
-    "event": {
+_FORMS: dict[str, dict[str, object]] = {
+    Conversation.Kind.EVENT: {
         "fields": [
             *(f"{name}_{lang}" for name in ("title", "preview_text") for lang in _LANGUAGES),
             "date_start",
@@ -37,7 +37,7 @@ _FORMS = {
         "editors": {f"description_{lang}": f"quill-desc-{lang}" for lang in _LANGUAGES},
         "attach": True,
     },
-    "news": {
+    Conversation.Kind.NEWS: {
         "fields": [f"{name}_{lang}" for name in ("title", "intro") for lang in _LANGUAGES],
         "editors": {f"body_{lang}": f"quill-{lang}" for lang in _LANGUAGES},
         "attach": False,
@@ -68,7 +68,9 @@ def _first_question(kind: str, editing: bool) -> str:
 
 
 @register.inclusion_tag("assistant/_chat.html", takes_context=True)
-def assistant_chat(context, kind: str = "event"):
+def assistant_chat(context, kind: str = Conversation.Kind.EVENT):
+    if kind not in _FORMS:  # also where the site has no key, so that a test meets the typo first
+        raise template.TemplateSyntaxError(f"{kind!r} is no kind of conversation: event or news")
     request = context.get("request")
     user = getattr(request, "user", None)
     if not settings.ASSISTANT_LLM_API_KEY or user is None or not offered(user, kind):
