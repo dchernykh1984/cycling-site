@@ -1,23 +1,13 @@
 """The "Virtual ride" tab: the trainer page in the site's frame, linked from the navbar in every skin."""
 
-import json
 import re
-from pathlib import Path
 
-from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.translation import gettext
 from django.utils.translation import override as translation_override
 
-TRAINER = Path(settings.BASE_DIR) / "trainer" / "static" / "trainer" / "alatau.html"
-
-
-def trainer_texts(source: str) -> dict:
-    """The page's own dictionary, ``const TEXT = { ru: {...}, kk: {...}, en: {...} }``, as Python."""
-    block = re.search(r"^const TEXT = (\{.*?^\});$", source, re.DOTALL | re.MULTILINE)
-    assert block is not None
-    return json.loads(re.sub(r"^  (ru|kk|en): \{", r'  "\1": {', block.group(1), flags=re.MULTILINE))
+from tests import trainer_page
 
 
 class VirtualRideTests(TestCase):
@@ -53,11 +43,11 @@ class VirtualRideTests(TestCase):
         )
 
     def test_the_trainer_file_ships_with_the_site(self):
-        self.assertIn("<!doctype html>", TRAINER.read_text(encoding="utf-8")[:100].lower())
+        self.assertIn("<!doctype html>", trainer_page.PAGE.read_text(encoding="utf-8")[:100].lower())
 
     def test_every_text_of_the_trainer_exists_in_every_language(self):
-        source = TRAINER.read_text(encoding="utf-8")
-        texts = trainer_texts(source)
+        source = trainer_page.source()
+        texts = trainer_page.texts()
         self.assertEqual(set(texts), {"ru", "kk", "en"})
         self.assertEqual(set(texts["kk"]), set(texts["ru"]))
         self.assertEqual(set(texts["en"]), set(texts["ru"]))

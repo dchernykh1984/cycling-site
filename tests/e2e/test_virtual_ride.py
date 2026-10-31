@@ -1,13 +1,12 @@
 """Record labels render independently of WebGL and external trainer sensors."""
 
 import re
-from pathlib import Path
 
 import pytest
-from django.conf import settings
 from playwright.sync_api import Page, expect
 
 from accounts.models import User
+from tests import trainer_page
 from tests.e2e.conftest import inject_session
 from tests.e2e.test_interface_rules import _REACH
 
@@ -52,7 +51,7 @@ def _cut(source: str, pattern: str) -> str:
 
 
 def _trainer_source() -> str:
-    return (Path(settings.BASE_DIR) / "trainer/static/trainer/alatau.html").read_text(encoding="utf-8")
+    return trainer_page.source()
 
 
 def test_riding_again_after_a_group_race_rides_alone(page: Page):
