@@ -4,7 +4,7 @@ from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import DeleteView as SnippetDeleteView
 from wagtail.snippets.views.snippets import SnippetViewSet
 
-from accounts.models import User
+from accounts import roles
 
 from .models import Team
 
@@ -26,12 +26,7 @@ class TeamViewSet(SnippetViewSet):
     search_fields: ClassVar[list[str]] = ["name"]
 
     def user_has_any_permission(self, user, actions):
-        if user.is_superuser:
-            return True
-        try:
-            return user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.ADMIN)
-        except (AttributeError, ValueError):
-            return False
+        return roles.at_least(user, roles.Role.ADMIN)
 
     def user_has_permission(self, user, action):
         return self.user_has_any_permission(user, [action])

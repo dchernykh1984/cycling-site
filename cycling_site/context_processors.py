@@ -18,53 +18,26 @@ def moderation_tasks(request):
     if user is None or not user.is_authenticated:
         return {}
 
-    from accounts.models import User
+    from accounts import roles
     from calendar_app.models import Competition
-    from knowledge.models import DraftSubmission
-    from locations.models import Location, LocationProposal
-
-    is_super = bool(getattr(user, "is_superuser", False))
-    rank = user.get_role_rank()
-    is_organizer_plus = is_super or rank >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
-    is_admin_plus = is_super or rank >= User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
     tasks: list[dict] = []
 
-    # Events: organizer+ can approve/reject pending competitions on the moderation page.
-    if is_organizer_plus:
+    # Events: a moderator approves or rejects pending competitions on the moderation page.
+    if roles.at_least(user, roles.MODERATE_EVENTS):
         # An invite-only event waits for admins, not for every organizer (issue #313).
-        only_public = {} if is_admin_plus else {"invite_only": False}
+        only_public = {} if roles.at_least(user, roles.MANAGE_ALL_EVENTS) else {"invite_only": False}
         events = Competition.objects.filter(
             status=Competition.Status.PENDING_APPROVAL, is_deleted=False, **only_public
         ).count()
         if events:
             tasks.append({"kind": "events", "count": events, "url": reverse("calendar_moderate")})
 
-    # Locations and article/news submissions: admin+ only.
-    if is_admin_plus:
-        locations = Location.objects.filter(
-            proposal__status=LocationProposal.Status.PENDING_APPROVAL, is_deleted=False
-        ).count()
-        if locations:
-            tasks.append({"kind": "locations", "count": locations, "url": reverse("calendar_moderate")})
-
-        articles = DraftSubmission.objects.filter(
-            status=DraftSubmission.Status.PENDING,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-        ).count()
-        if articles:
-            tasks.append({"kind": "articles", "count": articles, "url": _knowledge_index_url()})
-
-        news = DraftSubmission.objects.filter(
-            status=DraftSubmission.Status.PENDING,
-            submission_type=DraftSubmission.SubmissionType.NEWS,
-        ).count()
-        if news:
-            tasks.append({"kind": "news", "count": news, "url": reverse("news_index")})
+    tasks += _waiting_submissions(user)
 
     # Registrations are competition-scoped: only the competition's creator-organizer moderates
     # them, so list one entry per own competition that has registrations awaiting approval/payment.
-    if is_organizer_plus:
+    if roles.at_least(user, roles.PUBLISH_EVENTS):
         pending = Q(registrations__is_rejected=False) & (
             Q(require_approval=True, registrations__is_approved=False)
             | Q(require_payment=True, registrations__is_paid=False)
@@ -86,6 +59,39 @@ def moderation_tasks(request):
             )
 
     return {"moderation_tasks": tasks}
+
+
+def _waiting_submissions(user) -> list[dict]:
+    """Places proposed, articles and news submitted: each for whoever approves or manages it."""
+    from accounts import roles
+    from knowledge.models import DraftSubmission
+    from locations.models import Location, LocationProposal
+
+    tasks: list[dict] = []
+    if roles.at_least(user, roles.APPROVE_PLACES):
+        locations = Location.objects.filter(
+            proposal__status=LocationProposal.Status.PENDING_APPROVAL, is_deleted=False
+        ).count()
+        if locations:
+            tasks.append({"kind": "locations", "count": locations, "url": reverse("calendar_moderate")})
+
+    if roles.at_least(user, roles.MANAGE_KNOWLEDGE):
+        articles = DraftSubmission.objects.filter(
+            status=DraftSubmission.Status.PENDING,
+            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
+        ).count()
+        if articles:
+            tasks.append({"kind": "articles", "count": articles, "url": _knowledge_index_url()})
+
+    if roles.at_least(user, roles.MANAGE_NEWS):
+        news = DraftSubmission.objects.filter(
+            status=DraftSubmission.Status.PENDING,
+            submission_type=DraftSubmission.SubmissionType.NEWS,
+        ).count()
+        if news:
+            tasks.append({"kind": "news", "count": news, "url": reverse("news_index")})
+
+    return tasks
 
 
 def managing_waiting(request):
