@@ -1,6 +1,8 @@
-from django.test import TestCase
+from django.test import Client, TestCase
 
+from accounts.models import User
 from knowledge.models import KnowledgeArticle
+from locations.models import Location, LocationProposal
 from tests.language_urls import in_language
 
 
@@ -46,3 +48,37 @@ class SearchViewTests(TestCase):
         resp = self.client.get(in_language("/ru/search/", "ru"), {"query": "DeletedSecret"}, HTTP_ACCEPT_LANGUAGE="ru")
         titles = [a.title for a in resp.context["knowledge_results"]]
         self.assertNotIn("DeletedSecret", titles)
+
+
+class PlacesInSearchTests(TestCase):
+    """A place awaiting review is its proposer's and its moderators' until it is approved (FR-LOC-003)."""
+
+    def setUp(self):
+        self.proposer = User.objects.create_user("proposer", "p@example.com", "pw", role=User.Role.PARTICIPANT)
+        region = Location.add_root(name_ru="Testland", name_en="Testland").add_child(name_ru="Region", name_en="Region")
+        city = region.add_child(name_ru="Testville", name_en="Testville")
+        city.add_child(name_ru="Zzpublicvenue", name_en="Zzpublicvenue")
+        pending = city.add_child(name_ru="Zzpendingvenue", name_en="Zzpendingvenue")
+        LocationProposal.objects.create(location=pending, submitted_by=self.proposer)
+
+    def _found(self, name: str, user=None) -> bool:
+        browser = Client()
+        if user is not None:
+            browser.force_login(user)
+        page = browser.get("/en/search/", {"query": name})
+        return name in [place.name_en for place in page.context["location_results"]]
+
+    def test_a_place_awaiting_review_is_found_by_its_proposer_and_the_moderators_alone(self):
+        other = User.objects.create_user("other", "o@example.com", "pw", role=User.Role.PARTICIPANT)
+        admin = User.objects.create_user("admin", "a@example.com", "pw", role=User.Role.ADMIN)
+        for who, user, expected in (
+            ("visitor", None, False),
+            ("another member", other, False),
+            ("proposer", self.proposer, True),
+            ("admin", admin, True),
+        ):
+            with self.subTest(who=who):
+                self.assertEqual(self._found("Zzpendingvenue", user), expected)
+
+    def test_an_approved_place_is_found_by_anybody(self):
+        self.assertTrue(self._found("Zzpublicvenue"))
