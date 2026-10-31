@@ -37,7 +37,9 @@ def search(request):
         news_results = list(backend.search(search_query, NewsArticle.objects.filter(is_deleted=False, is_hidden=False)))
         location_results = [
             place
-            for place in backend.search(search_query, Location.objects.filter(is_deleted=False, is_hidden=False))
+            for place in backend.search(
+                search_query, Location.objects.filter(is_deleted=False, is_hidden=False).select_related("proposal")
+            )
             # A place awaiting review is its proposer's and its moderators' (FR-LOC-003): dropped after
             # the search, like an invite-only event above, since a proposal is a join too.
             if location_visible_to(place, request.user)

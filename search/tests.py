@@ -1,4 +1,6 @@
+from django.db import connection
 from django.test import Client, TestCase
+from django.test.utils import CaptureQueriesContext
 
 from accounts.models import User
 from knowledge.models import KnowledgeArticle
@@ -82,3 +84,16 @@ class PlacesInSearchTests(TestCase):
 
     def test_an_approved_place_is_found_by_anybody(self):
         self.assertTrue(self._found("Zzpublicvenue"))
+
+    def test_finding_more_places_asks_the_database_no_more_often(self):
+        city = Location.objects.get(name_en="Testville")
+        Client().get("/en/search/", {"query": "Zzmanyvenue"})  # the first page of a test also fills caches
+        counts = []
+        for _ in range(2):
+            for _ in range(3):
+                venue = city.add_child(name_ru="Zzmanyvenue", name_en="Zzmanyvenue")
+                LocationProposal.objects.create(location=venue, submitted_by=self.proposer)
+            with CaptureQueriesContext(connection) as captured:
+                Client().get("/en/search/", {"query": "Zzmanyvenue"})
+            counts.append(len(captured.captured_queries))
+        self.assertEqual(counts[0], counts[1])
