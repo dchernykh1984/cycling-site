@@ -712,18 +712,18 @@ class BuildParticipantGroupsTests(TestCase):
         self.assertEqual(groups[0]["rows"], [(1, r1), (None, rej), (2, r2)])
         self.assertEqual(groups[0]["count"], 2)
 
-    def test_counts_for_bib_respects_rejection_approval_payment(self):
-        from registrations.models import counts as counts_for_bib
+    def test_an_entry_counts_unless_rejected_unapproved_or_unpaid_where_asked(self):
+        from registrations.models import counts
 
         comp = make_competition(require_approval=True, require_payment=True)
         ok = make_registration(comp, is_approved=True, is_paid=True)
         unapproved = make_registration(comp, is_approved=False, is_paid=True)
         unpaid = make_registration(comp, is_approved=True, is_paid=False)
         rejected = make_registration(comp, is_approved=True, is_paid=True, is_rejected=True)
-        self.assertTrue(counts_for_bib(ok, comp))
-        self.assertFalse(counts_for_bib(unapproved, comp))
-        self.assertFalse(counts_for_bib(unpaid, comp))
-        self.assertFalse(counts_for_bib(rejected, comp))
+        self.assertTrue(counts(ok, comp))
+        self.assertFalse(counts(unapproved, comp))
+        self.assertFalse(counts(unpaid, comp))
+        self.assertFalse(counts(rejected, comp))
 
 
 class ParticipantListViewTests(TestCase):
