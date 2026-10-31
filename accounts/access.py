@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
 
+from accounts import roles
 from accounts.models import User
 
 EMAIL_CONFIRMATION_REQUIRED_MESSAGE = _(
@@ -12,11 +13,7 @@ EMAIL_CONFIRMATION_REQUIRED_MESSAGE = _(
 
 
 def needs_email_confirmation(user) -> bool:
-    return (
-        getattr(user, "is_authenticated", False)
-        and not getattr(user, "is_superuser", False)
-        and user.get_role_rank() < User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-    )
+    return getattr(user, "is_authenticated", False) and not roles.at_least(user, User.Role.PARTICIPANT)
 
 
 def redirect_to_profile_for_email_confirmation(request):

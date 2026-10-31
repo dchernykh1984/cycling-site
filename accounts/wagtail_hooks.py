@@ -8,6 +8,7 @@ from wagtail.admin.userbar import AccessibilityItem
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import CreateView, EditView, SnippetViewSet
 
+from accounts import roles
 from accounts.models import User
 
 
@@ -31,10 +32,10 @@ class _RoleEnforcedMixin:
         new_role = form.cleaned_data.get("role")
         if new_role:
             target = getattr(self, "object", None)
-            if target is not None and not editor.can_manage_user(target):
+            if target is not None and not roles.may_manage_user(editor, target):
                 form.add_error("role", "You don't have permission to edit this user's role.")
                 return self.form_invalid(form)
-            if not editor.can_assign_role(new_role):
+            if not roles.may_assign_role(editor, new_role):
                 form.add_error("role", "You don't have permission to assign this role.")
                 return self.form_invalid(form)
         return super().form_valid(form)

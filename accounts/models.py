@@ -141,33 +141,11 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         """
         return self.get_full_name() or gettext("Participant")
 
-    def can_assign_role(self, target_role: str) -> bool:
-        if target_role not in self.ROLE_HIERARCHY:
-            return False
-        if self.is_superuser:
-            return True
-        assigner_rank = self.get_role_rank()
-        target_rank = self.ROLE_HIERARCHY.index(target_role)
-        if assigner_rank <= self.ROLE_HIERARCHY.index(self.Role.PARTICIPANT):
-            return False
-        # participant is auto-assigned via email confirmation; manual assignment is admin+ only
-        if target_role == self.Role.PARTICIPANT:
-            return assigner_rank >= self.ROLE_HIERARCHY.index(self.Role.ADMIN)
-        return assigner_rank >= target_rank
-
     def save(self, *args, **kwargs) -> None:
         if self.role == self.Role.OWNER:
             self.is_staff = True
             self.is_superuser = True
         super().save(*args, **kwargs)
-
-    def can_manage_user(self, target_user: "User") -> bool:
-        if self.is_superuser:
-            return True
-        editor_rank = self.get_role_rank()
-        if editor_rank <= self.ROLE_HIERARCHY.index(self.Role.PARTICIPANT):
-            return False
-        return editor_rank >= target_user.get_role_rank()
 
 
 class ManagerInvite(models.Model):

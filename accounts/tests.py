@@ -14,6 +14,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts import roles
 from accounts.access import EMAIL_CONFIRMATION_REQUIRED_MESSAGE
 from accounts.adapters import AccountAdapter, SocialAccountAdapter
 from accounts.models import User
@@ -67,58 +68,58 @@ class UserModelTests(TestCase):
 
     def test_can_assign_role_guest_cannot_assign(self):
         guest = User(role=User.Role.GUEST)
-        self.assertFalse(guest.can_assign_role(User.Role.PARTICIPANT))
+        self.assertFalse(roles.may_assign_role(guest, User.Role.PARTICIPANT))
 
     def test_can_assign_role_participant_cannot_assign(self):
         participant = User(role=User.Role.PARTICIPANT)
-        self.assertFalse(participant.can_assign_role(User.Role.PARTICIPANT))
+        self.assertFalse(roles.may_assign_role(participant, User.Role.PARTICIPANT))
 
     def test_can_assign_role_organizer_can_assign_organizer(self):
         organizer = User(role=User.Role.ORGANIZER)
-        self.assertTrue(organizer.can_assign_role(User.Role.ORGANIZER))
+        self.assertTrue(roles.may_assign_role(organizer, User.Role.ORGANIZER))
 
     def test_can_assign_role_organizer_cannot_assign_admin(self):
         organizer = User(role=User.Role.ORGANIZER)
-        self.assertFalse(organizer.can_assign_role(User.Role.ADMIN))
+        self.assertFalse(roles.may_assign_role(organizer, User.Role.ADMIN))
 
     def test_can_assign_role_admin_can_assign_organizer_and_admin(self):
         admin = User(role=User.Role.ADMIN)
-        self.assertTrue(admin.can_assign_role(User.Role.ORGANIZER))
-        self.assertTrue(admin.can_assign_role(User.Role.ADMIN))
+        self.assertTrue(roles.may_assign_role(admin, User.Role.ORGANIZER))
+        self.assertTrue(roles.may_assign_role(admin, User.Role.ADMIN))
 
     def test_can_assign_role_organizer_cannot_assign_participant(self):
         organizer = User(role=User.Role.ORGANIZER)
-        self.assertFalse(organizer.can_assign_role(User.Role.PARTICIPANT))
+        self.assertFalse(roles.may_assign_role(organizer, User.Role.PARTICIPANT))
 
     def test_can_assign_role_admin_can_assign_participant_edge_case(self):
         admin = User(role=User.Role.ADMIN)
-        self.assertTrue(admin.can_assign_role(User.Role.PARTICIPANT))
+        self.assertTrue(roles.may_assign_role(admin, User.Role.PARTICIPANT))
 
     def test_can_assign_role_superuser_bypasses_role_check(self):
         superuser = User(role=User.Role.GUEST, is_superuser=True)
         for role in User.Role.values:
-            self.assertTrue(superuser.can_assign_role(role), f"superuser should be able to assign {role}")
+            self.assertTrue(roles.may_assign_role(superuser, role), f"superuser should be able to assign {role}")
 
     def test_can_assign_role_unknown_target_returns_false(self):
         owner = User(role=User.Role.OWNER)
-        self.assertFalse(owner.can_assign_role("nonexistent"))
+        self.assertFalse(roles.may_assign_role(owner, "nonexistent"))
         superuser = User(role=User.Role.GUEST, is_superuser=True)
-        self.assertFalse(superuser.can_assign_role("nonexistent"))
+        self.assertFalse(roles.may_assign_role(superuser, "nonexistent"))
 
     def test_can_manage_user_admin_cannot_manage_owner(self):
         admin = User(role=User.Role.ADMIN)
         owner = User(role=User.Role.OWNER)
-        self.assertFalse(admin.can_manage_user(owner))
+        self.assertFalse(roles.may_manage_user(admin, owner))
 
     def test_can_manage_user_admin_can_manage_organizer(self):
         admin = User(role=User.Role.ADMIN)
         organizer = User(role=User.Role.ORGANIZER)
-        self.assertTrue(admin.can_manage_user(organizer))
+        self.assertTrue(roles.may_manage_user(admin, organizer))
 
     def test_can_manage_user_superuser_can_manage_owner(self):
         superuser = User(role=User.Role.GUEST, is_superuser=True)
         owner = User(role=User.Role.OWNER)
-        self.assertTrue(superuser.can_manage_user(owner))
+        self.assertTrue(roles.may_manage_user(superuser, owner))
 
     def test_role_choices_contains_all_five(self):
         values = [v for v, _ in User.Role.choices]
@@ -838,8 +839,8 @@ class DjangoAdminRoleEnforcementTests(TestCase):
         superuser = make_user(username="bootstrap_su", role=User.Role.GUEST)
         superuser.is_superuser = True
         superuser.save()
-        self.assertTrue(superuser.can_assign_role(User.Role.OWNER))
-        self.assertTrue(superuser.can_assign_role(User.Role.ADMIN))
+        self.assertTrue(roles.may_assign_role(superuser, User.Role.OWNER))
+        self.assertTrue(roles.may_assign_role(superuser, User.Role.ADMIN))
 
     def test_admin_cannot_demote_owner_via_django_admin(self):
         admin = self._make_staff_user("admin_dem", User.Role.ADMIN)

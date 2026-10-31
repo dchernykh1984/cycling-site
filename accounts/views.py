@@ -19,7 +19,7 @@ from django.utils.translation import gettext, gettext_lazy
 from django.views import View
 from django.views.generic import TemplateView
 
-from accounts import managing
+from accounts import managing, roles
 from accounts.access import (
     EMAIL_CONFIRMATION_REQUIRED_MESSAGE,
     ParticipantRequiredMixin,
@@ -149,7 +149,7 @@ class ProfileView(TemplateView):
         context["user"] = self.request.user
         user = self.request.user
         context["has_verified_email"] = (
-            user.role not in (user.Role.GUEST, user.Role.PARTICIPANT)
+            roles.role_at_least(user, User.Role.ORGANIZER)
             or EmailAddress.objects.filter(user=user, verified=True).exists()
         )
         context["email_confirmation_required_message"] = EMAIL_CONFIRMATION_REQUIRED_MESSAGE
