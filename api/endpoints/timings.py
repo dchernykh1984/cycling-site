@@ -13,12 +13,12 @@ and the same size guards. Three separate streams = three routers/models:
 
 from datetime import datetime
 
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from ninja import Router, Schema
 from ninja.errors import HttpError
 from pydantic import Field
 
+from api.auth import competition_by_token
 from calendar_app.models import Competition
 from protocols.models import FinishTimesUpload, GroupTimesUpload, RemotePointUpload
 
@@ -87,17 +87,6 @@ class RemotePointsOut(Schema):
 # -- Helpers ---------------------------------------------------------------
 
 
-def _competition_by_token(token: str) -> Competition:
-    try:
-        return Competition.objects.get(
-            upload_token=token,
-            status=Competition.Status.APPROVED,
-            is_deleted=False,
-        )
-    except (Competition.DoesNotExist, ValidationError):
-        raise HttpError(401, "Invalid competition_token") from None
-
-
 def _validate_payload(request, device_id: str, items: list[str]) -> None:
     if not device_id:
         raise HttpError(400, "device_id is required")
@@ -161,7 +150,7 @@ def _stream_response(model, competition: Competition, **key_extra) -> dict:
 
 @group_times_router.post("/", response=TimingUploadOut, auth=None, summary="Upload a device's group-start times")
 def upload_group_times(request, payload: _TimingIn):
-    competition = _competition_by_token(payload.competition_token)
+    competition = competition_by_token(payload.competition_token)
     device_id = (payload.device_id or "").strip()
     items = payload.items or []
     _validate_payload(request, device_id, items)
@@ -170,7 +159,7 @@ def upload_group_times(request, payload: _TimingIn):
 
 @group_times_router.get("/", response=TimingStreamOut, auth=None, summary="Get all devices' group-start times")
 def get_group_times(request, competition_token: str):
-    competition = _competition_by_token(competition_token)
+    competition = competition_by_token(competition_token)
     return _stream_response(GroupTimesUpload, competition)
 
 
@@ -179,7 +168,7 @@ def get_group_times(request, competition_token: str):
 
 @finish_times_router.post("/", response=TimingUploadOut, auth=None, summary="Upload a device's finish times")
 def upload_finish_times(request, payload: _TimingIn):
-    competition = _competition_by_token(payload.competition_token)
+    competition = competition_by_token(payload.competition_token)
     device_id = (payload.device_id or "").strip()
     items = payload.items or []
     _validate_payload(request, device_id, items)
@@ -188,7 +177,7 @@ def upload_finish_times(request, payload: _TimingIn):
 
 @finish_times_router.get("/", response=TimingStreamOut, auth=None, summary="Get all devices' finish times")
 def get_finish_times(request, competition_token: str):
-    competition = _competition_by_token(competition_token)
+    competition = competition_by_token(competition_token)
     return _stream_response(FinishTimesUpload, competition)
 
 
@@ -197,7 +186,7 @@ def get_finish_times(request, competition_token: str):
 
 @remote_points_router.post("/", response=TimingUploadOut, auth=None, summary="Upload a device's remote-point times")
 def upload_remote_points(request, payload: RemoteTimingIn):
-    competition = _competition_by_token(payload.competition_token)
+    competition = competition_by_token(payload.competition_token)
     device_id = (payload.device_id or "").strip()
     items = payload.items or []
     _validate_payload(request, device_id, items)
@@ -215,7 +204,7 @@ def get_remote_points(request, competition_token: str):
     Lines for the same ``point_number`` from different devices are grouped into one point, so the
     generator gets one merged control-point stream per point regardless of how many machines timed it.
     """
-    competition = _competition_by_token(competition_token)
+    competition = competition_by_token(competition_token)
     uploads = list(RemotePointUpload.objects.filter(competition=competition).order_by("point_number", "device_id"))
     points: dict[int, dict] = {}
     for u in uploads:

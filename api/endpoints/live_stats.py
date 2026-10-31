@@ -14,10 +14,10 @@ at most the configured threshold (10 seconds by default); missing neighbours omi
 
 from datetime import datetime
 
-from django.core.exceptions import ValidationError
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
+from api.auth import competition_by_token
 from calendar_app.models import Competition
 from protocols.models import CompetitionLiveStats
 
@@ -56,17 +56,6 @@ class LiveStatsOut(Schema):
 # -- Helpers ---------------------------------------------------------------
 
 
-def _competition_by_token(token: str) -> Competition:
-    try:
-        return Competition.objects.get(
-            upload_token=token,
-            status=Competition.Status.APPROVED,
-            is_deleted=False,
-        )
-    except (Competition.DoesNotExist, ValidationError):
-        raise HttpError(401, "Invalid competition_token") from None
-
-
 def _validate_stats(request, stats: dict[str, dict[str, str]]) -> None:
     if len(request.body) > _MAX_BODY_BYTES:
         raise HttpError(400, f"Payload is too large (max {_MAX_BODY_BYTES} bytes)")
@@ -89,7 +78,7 @@ def _validate_stats(request, stats: dict[str, dict[str, str]]) -> None:
 
 @router.post("/", response=LiveStatsUploadOut, auth=None, summary="Upload the live per-competitor stats snapshot")
 def upload_live_stats(request, payload: LiveStatsIn):
-    competition = _competition_by_token(payload.competition_token)
+    competition = competition_by_token(payload.competition_token)
     stats = payload.stats or {}
     _validate_stats(request, stats)
     obj, _ = CompetitionLiveStats.objects.update_or_create(competition=competition, defaults={"data": stats})

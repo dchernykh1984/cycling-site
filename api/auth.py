@@ -64,3 +64,17 @@ class OptionalApiTokenAuth(HttpBearer):
         request.user = user
         _thread_locals.user = user
         return user
+
+
+def competition_by_token(token: str):
+    """The approved, not deleted event an upload token belongs to -- the token the timing tools send with a
+    start list, finish times, live stats or a protocol -- or a 401 for any other token."""
+    from django.core.exceptions import ValidationError
+    from ninja.errors import HttpError
+
+    from calendar_app.models import Competition
+
+    try:
+        return Competition.objects.get(upload_token=token, status=Competition.Status.APPROVED, is_deleted=False)
+    except (Competition.DoesNotExist, ValidationError):
+        raise HttpError(401, "Invalid competition_token") from None

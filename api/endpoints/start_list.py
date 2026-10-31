@@ -9,12 +9,12 @@ endpoint uses), so the endpoints are unauthenticated otherwise.
 import logging
 from datetime import datetime
 
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from ninja import Router, Schema
 from ninja.errors import HttpError
 from pydantic import Field
 
+from api.auth import competition_by_token
 from calendar_app.models import Competition
 from event_photos.bindings import recompute as recompute_bindings
 from protocols.models import StartListUpload
@@ -68,17 +68,6 @@ class StartListOut(Schema):
     items: list[str]  # every device's items concatenated, in device-id order (convenience)
 
 
-def _competition_by_token(token: str) -> Competition:
-    try:
-        return Competition.objects.get(
-            upload_token=token,
-            status=Competition.Status.APPROVED,
-            is_deleted=False,
-        )
-    except (Competition.DoesNotExist, ValidationError):
-        raise HttpError(401, "Invalid competition_token") from None
-
-
 def _record_bindings(competition) -> None:
     for warning in recompute_bindings(competition):
         logger.info("start list %s: %s", competition.pk, warning)
@@ -93,7 +82,7 @@ def upload_start_list(request, payload: StartListIn):
     same revision is a no-op). The accepted revision is returned, and GET exposes each device's
     current revision, so a client that lost its local counter can resume from the server's value.
     """
-    competition = _competition_by_token(payload.competition_token)
+    competition = competition_by_token(payload.competition_token)
 
     device_id = (payload.device_id or "").strip()
     if not device_id:
@@ -158,7 +147,7 @@ def upload_start_list(request, payload: StartListIn):
 @router.get("/", response=StartListOut, auth=None, summary="Get all devices' start lists")
 def get_start_list(request, competition_token: str):
     """Return every device's start list for a competition plus a merged convenience list."""
-    competition = _competition_by_token(competition_token)
+    competition = competition_by_token(competition_token)
     uploads = list(StartListUpload.objects.filter(competition=competition).order_by("device_id"))
     devices = [
         {"device_id": u.device_id, "items": u.items, "client_revision": u.client_revision, "updated_at": u.updated_at}
