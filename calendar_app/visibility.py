@@ -15,21 +15,14 @@ flag directly rather than through here.
 
 from django.db.models import Q, QuerySet
 
-from accounts.models import User
-
-_ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
-_ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
-
-
-def is_admin_plus(user) -> bool:
-    return bool(user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK))
+from accounts import roles
 
 
 def manages(user, competition) -> bool:
     """Whether ``user`` may manage this event: admins and up, or its author while an organizer."""
-    if is_admin_plus(user):
+    if roles.at_least(user, roles.MANAGE_ALL_EVENTS):
         return True
-    return bool(user.is_authenticated and user.get_role_rank() >= _ORGANIZER_RANK and user == competition.submitted_by)
+    return roles.at_least(user, roles.PUBLISH_EVENTS) and user == competition.submitted_by
 
 
 def _let_in(user) -> Q:
@@ -70,8 +63,8 @@ def can_review(user, competition) -> bool:
     if user.is_authenticated and user == competition.submitted_by:
         return True
     if competition.invite_only:
-        return is_admin_plus(user)
-    return bool(user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ORGANIZER_RANK))
+        return roles.at_least(user, roles.MANAGE_ALL_EVENTS)
+    return roles.at_least(user, roles.MODERATE_EVENTS)
 
 
 def can_open(user, competition) -> bool:
@@ -91,12 +84,12 @@ def can_open(user, competition) -> bool:
 
 def listed_for(qs: QuerySet, user) -> QuerySet:
     """The published events in ``qs`` that ``user`` may see in a listing."""
-    if is_admin_plus(user):
+    if roles.at_least(user, roles.MANAGE_ALL_EVENTS):
         return qs
     qs = qs.filter(is_hidden=False)
     let_in = Q(invite_only=False)
     if user.is_authenticated:
         let_in |= _let_in(user)
-        if user.get_role_rank() >= _ORGANIZER_RANK:
+        if roles.at_least(user, roles.PUBLISH_EVENTS):
             let_in |= Q(submitted_by=user)
     return qs.filter(let_in)

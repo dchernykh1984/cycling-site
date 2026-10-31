@@ -24,7 +24,7 @@ from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 from modeltranslation.utils import build_localized_fieldname
 
-from accounts import managing
+from accounts import managing, roles
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from assistant.conversations import link as link_conversation
@@ -63,16 +63,7 @@ from .models import (
     EventType,
 )
 from .seo import sports_event
-from .visibility import can_open, can_review, can_see, is_admin_plus, listed_for, manages
-
-_ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
-_ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
-_PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-
-
-def _can_report(user) -> bool:
-    """A confirmed user (email-verified, role >= participant) may report an event (issue #233)."""
-    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _PARTICIPANT_RANK)
+from .visibility import can_open, can_review, can_see, listed_for, manages
 
 
 def _get_locations_data(user=None) -> list:
@@ -101,14 +92,6 @@ def _get_locations_data(user=None) -> list:
     return sort_locations_for_filter(rows)
 
 
-def _can_manage_any_competition(user) -> bool:
-    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
-
-
-def _is_organizer_plus(user) -> bool:
-    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ORGANIZER_RANK)
-
-
 def _unpublish_if_geography_is_pending(comp, user) -> None:
     """Send a published event back for review when it is re-pointed at unreviewed geography.
 
@@ -121,7 +104,7 @@ def _unpublish_if_geography_is_pending(comp, user) -> None:
     parent = comp.location.get_parent() if comp.location is not None else None
     if (
         comp.status == Competition.Status.APPROVED
-        and not _can_manage_any_competition(user)
+        and not roles.at_least(user, roles.APPROVE_PLACES)
         and comp.location is not None
         and not chain_is_approved(parent)
     ):
@@ -298,9 +281,7 @@ class OrganizerRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        if not request.user.is_superuser and request.user.get_role_rank() < User.ROLE_HIERARCHY.index(
-            User.Role.ORGANIZER
-        ):
+        if not roles.at_least(request.user, roles.MODERATE_EVENTS):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -720,7 +701,7 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         faceted = any(chosen.values())
         date_to = None if faceted and self.request.GET.get("period") != "month" else end_of_month(today)
 
-        is_manager = _can_manage_any_competition(self.request.user)
+        is_manager = roles.at_least(self.request.user, roles.MANAGE_ALL_EVENTS)
         qs = (
             Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False)
             .select_related("location")
@@ -972,7 +953,9 @@ class CompetitionDetailView(View):
         is_author = request.user.is_authenticated and request.user == competition.submitted_by
         # Any organizer moderates -- except an invite-only event, which is for the people who may
         # edit it, so only admins and up review it (see visibility.can_review).
-        can_moderate = _is_organizer_plus(request.user) and (not competition.invite_only or is_admin_plus(request.user))
+        can_moderate = roles.at_least(request.user, roles.MODERATE_EVENTS) and (
+            not competition.invite_only or roles.at_least(request.user, roles.MANAGE_ALL_EVENTS)
+        )
         protocols = competition.protocols.all()
         # upload_token is a secret credential: only show it to the submitter or to users
         # who can manage this specific competition (superuser, admin+, or the organizer
@@ -994,10 +977,7 @@ class CompetitionDetailView(View):
             )
 
         comments = competition.comments.select_related("author")
-        can_comment = request.user.is_authenticated and (
-            request.user.is_superuser
-            or request.user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-        )
+        can_comment = roles.at_least(request.user, roles.COMMENT)
         # Reporting (issue #233): a confirmed user can flag a public event as inaccurate. Only
         # offered on approved, non-hidden events (the only ones the wider public can see).
         is_public = (
@@ -1005,7 +985,7 @@ class CompetitionDetailView(View):
             and not competition.is_hidden
             and not competition.invite_only
         )
-        can_report = is_public and _can_report(request.user)
+        can_report = is_public and roles.at_least(request.user, User.Role.PARTICIPANT)  # issue #233
         already_reported = (
             request.user.is_authenticated
             and CompetitionReport.objects.filter(
@@ -1016,7 +996,7 @@ class CompetitionDetailView(View):
         # know what was flagged. Organizers who merely own the event are not report moderators here.
         open_reports = (
             list(competition.reports.filter(resolved=False).select_related("reported_by"))
-            if _can_manage_any_competition(request.user)
+            if roles.at_least(request.user, roles.MANAGE_ALL_EVENTS)
             else []
         )
         ctx: dict = {
@@ -1047,7 +1027,9 @@ class CompetitionDetailView(View):
             "report_form": ReportCompetitionForm() if can_report else None,
             "open_reports": open_reports,
             "can_dismiss_reports": bool(open_reports),
-            "moderation_history": _moderation_history(competition) if is_admin_plus(request.user) else None,
+            "moderation_history": (
+                _moderation_history(competition) if roles.at_least(request.user, roles.MANAGE_ALL_EVENTS) else None
+            ),
             **_link_preview_tags(request, competition),
             "structured_data": sports_event(competition, f"{request.scheme}://{request.get_host()}"),
         }
@@ -1350,9 +1332,6 @@ def _category_rows(comp, birth_date_mode: str = "") -> list[dict]:
 class SubmitCompetitionView(ParticipantRequiredMixin, View):
     template_name = "calendar_app/submit.html"
 
-    def _is_organizer_plus(self, user):
-        return user.is_superuser or user.get_role_rank() >= User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
-
     def _discipline_context(self, user, form):
         return {
             **_discipline_picker_context(form),
@@ -1413,7 +1392,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
             {
                 "form": form,
                 "reg_form": reg_form,
-                "is_organizer_plus": self._is_organizer_plus(request.user),
+                "is_organizer_plus": roles.at_least(request.user, roles.PUBLISH_EVENTS),
                 "clone_source": source,
                 "categories_json": categories_json,
                 "initial_location_id": (source.location_id or "") if source else "",
@@ -1424,7 +1403,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
     def post(self, request):
         form = SubmitCompetitionForm(request.POST, request.FILES, user=request.user)
         reg_form = RegistrationSettingsForm(request.POST)
-        is_organizer = self._is_organizer_plus(request.user)
+        is_organizer = roles.at_least(request.user, roles.PUBLISH_EVENTS)
         if form.is_valid() and (not is_organizer or reg_form.is_valid()):
             cd = form.cleaned_data
             if is_organizer and not _validate_deadline(form, reg_form, cd["date_start"], cd.get("date_end")):
@@ -1436,7 +1415,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 with transaction.atomic():
                     location = _resolve_competition_location(cd, request.user, approved=is_organizer)
                     location = lock_competition_location(
-                        location, request.user, is_admin=_can_manage_any_competition(request.user)
+                        location, request.user, is_admin=roles.at_least(request.user, roles.APPROVE_PLACES)
                     )
                     comp = Competition(
                         title_ru=cd["title_ru"],
@@ -1530,7 +1509,7 @@ class EditCompetitionView(View):
                 "material_formset": _material_formset(request, comp),
                 "categories_json": json.dumps(categories),
                 "mode_locked": comp.registration_mode_locked,
-                "is_organizer_plus": _is_organizer_plus(request.user),
+                "is_organizer_plus": roles.at_least(request.user, roles.PUBLISH_EVENTS),
                 **disc_ctx,
             },
         )
@@ -1558,7 +1537,7 @@ class EditCompetitionView(View):
                         "material_formset": material_formset,
                         "categories_json": _json.dumps(_cats),
                         "mode_locked": comp.registration_mode_locked,
-                        "is_organizer_plus": _is_organizer_plus(request.user),
+                        "is_organizer_plus": roles.at_least(request.user, roles.PUBLISH_EVENTS),
                         **_discipline_picker_context(form),
                         "locations_data": _get_locations_data(request.user),
                         "initial_location_id": form["location"].value() or "",
@@ -1587,7 +1566,7 @@ class EditCompetitionView(View):
                     setattr(comp, fname, f)
             # Registration config (enable, categories, ...) stays organizer-only even when the author
             # editing their own submission is a participant (#200) -- mirror the submit view.
-            is_org = _is_organizer_plus(request.user)
+            is_org = roles.at_least(request.user, roles.PUBLISH_EVENTS)
             if is_org:
                 comp.invite_only = cd.get("invite_only", False)
             if "is_top" in form.fields:  # an admin's form only; an author's edit leaves the mark alone
@@ -1599,7 +1578,7 @@ class EditCompetitionView(View):
                 with transaction.atomic():
                     location = _resolve_competition_location(cd, request.user, approved=is_org)
                     comp.location = lock_competition_location(
-                        location, request.user, is_admin=_can_manage_any_competition(request.user)
+                        location, request.user, is_admin=roles.at_least(request.user, roles.APPROVE_PLACES)
                     )
                     # After the location: the deadline is read in the zone of the event's place.
                     _apply_registration_settings(comp, reg_form, is_org)
@@ -1646,7 +1625,7 @@ class EditCompetitionView(View):
                 "material_formset": material_formset,
                 "categories_json": json.dumps(categories, default=str),
                 "mode_locked": comp.registration_mode_locked,
-                "is_organizer_plus": _is_organizer_plus(request.user),
+                "is_organizer_plus": roles.at_least(request.user, roles.PUBLISH_EVENTS),
                 **disc_ctx,
             },
         )
@@ -1667,7 +1646,7 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
         # An event on geography still under review can only be approved by someone who may also bless
         # that geography (ADMIN+); an organizer would just hit LocationPendingError. Don't show them
         # what they cannot act on -- leave those to the admins, who also see the pending locations.
-        if not _can_manage_any_competition(self.request.user):
+        if not roles.at_least(self.request.user, roles.APPROVE_PLACES):
             competitions = [
                 comp
                 for comp in competitions
@@ -1675,7 +1654,7 @@ class ModerationView(OrganizerRequiredMixin, TemplateView):
             ]
         context["competitions"] = competitions
         context["reject_form"] = RejectCompetitionForm()
-        if _can_manage_any_competition(self.request.user):
+        if roles.at_least(self.request.user, roles.APPROVE_PLACES):
             context["pending_locations"] = (
                 Location.objects.filter(proposal__status=LocationProposal.Status.PENDING_APPROVAL, is_deleted=False)
                 .select_related("proposal__submitted_by")
@@ -1825,7 +1804,7 @@ class DismissReportsView(OrganizerRequiredMixin, View):
     """
 
     def post(self, request, pk):
-        if not _can_manage_any_competition(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_ALL_EVENTS):
             raise PermissionDenied
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         updated = competition.reports.filter(resolved=False).update(

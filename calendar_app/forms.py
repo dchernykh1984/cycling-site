@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
-from accounts.models import User
+from accounts import roles
 from cycling_site.forms import LocalizedMaxLengthMixin
 from locations.models import Location, competition_location_block_reason
 from registrations.models import RegistrationCategory
@@ -23,8 +23,6 @@ from .models import (
 )
 from .preview_image import PreviewImageError
 from .preview_image import normalise as normalise_preview
-
-_ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
 
 # Registration categories arrive as a JSON blob, so their names never met a form field. The limit
 # is read off the column (``max_length`` is typed as optional, hence the narrowing) rather than
@@ -64,10 +62,7 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         super().__init__(*args, **kwargs)
         # Only an admin or the owner marks a top event: for anybody else the field is not there, so
         # neither shown nor read from a POST, and an edit by the author leaves the mark as it was.
-        is_admin = bool(getattr(user, "is_superuser", False)) or (
-            getattr(user, "is_authenticated", False) and user.get_role_rank() >= _ADMIN_RANK
-        )
-        if not is_admin:
+        if not roles.at_least(user, roles.MARK_TOP_EVENTS):
             del self.fields["is_top"]
 
     title_ru = forms.CharField(max_length=255, widget=forms.TextInput(attrs={"class": "form-control"}))
@@ -272,9 +267,7 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
             return
         location = cleaned_data.get("location")
         user = self.user
-        is_admin = bool(getattr(user, "is_superuser", False)) or (
-            getattr(user, "is_authenticated", False) and user.get_role_rank() >= _ADMIN_RANK
-        )
+        is_admin = roles.at_least(user, roles.APPROVE_PLACES)
         if competition_location_block_reason(location, user, is_admin=is_admin):
             self.add_error("location", _("This location is not available."))
 
