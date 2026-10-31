@@ -32,10 +32,10 @@ class _RoleEnforcedMixin:
         new_role = form.cleaned_data.get("role")
         if new_role:
             target = getattr(self, "object", None)
-            if target is not None and not roles.may_manage_user(editor, target):
+            if target is not None and not roles.can_manage_user(editor, target):
                 form.add_error("role", "You don't have permission to edit this user's role.")
                 return self.form_invalid(form)
-            if not roles.may_assign_role(editor, new_role):
+            if not roles.can_assign_role(editor, new_role):
                 form.add_error("role", "You don't have permission to assign this role.")
                 return self.form_invalid(form)
         return super().form_valid(form)
