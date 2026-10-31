@@ -38,8 +38,8 @@ runs in the browser: the page talks to the site only through `Site.req` (`js/sit
 finished ride and its Strava upload. The page is updated from delivered revisions. It speaks the language its address names (`?lang=ru|kk|en`, which the
 site's page passes from its own; Russian without one): its texts, units, number and date formats
 and the names of its routes, landmarks and riders come from the page itself -- its words in `text/`,
-the names in `data/`, the formats in `js/page.js` and `js/i18n.js` -- rather than from the
-translation catalogues: an exception to FR-SHL-006 that keeps the page standing on its own, apart
+the names in `data/`, the formats from its language and locale (`LANG`, `LOCALE` in `js/page.js`) --
+rather than from the translation catalogues: an exception to FR-SHL-006 that keeps the page standing on its own, apart
 from the site's templates. A route name the page sends with a saved ride or a group race is in the
 language the page spoke then; the page itself shows the routes it knows in its current language,
 the profile shows the stored name. A member's page records the ride's track, a point a second: where
