@@ -17,7 +17,9 @@ in the top row, beside the owner's edit button.{% endcomment %}
   <a href="{% url 'home_edit' %}" class="btn btn-sm btn-outline-secondary">{% trans "Edit page" %}</a>
   {% endif %}
 </div>
-{% if site_content.body %}
-<div class="home-body">{{ site_content.body|safe|localized_links }}</div>
+{% comment %}The owner's cards read here as one text, a heading over each, as the page read before it
+had cards.{% endcomment %}
+{% if cards %}
+<div class="home-body">{% for card in cards %}{% if card.title %}<h2>{{ card.title }}</h2>{% endif %}{{ card.body|safe|localized_links }}{% endfor %}</div>
 {% endif %}
 {% endblock %}

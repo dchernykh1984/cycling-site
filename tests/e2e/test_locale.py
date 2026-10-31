@@ -8,24 +8,22 @@ navbar POST to /i18n/set_language/, which sets the django_language cookie and
 import pytest
 from playwright.sync_api import Page, expect
 
-from home.models import SiteContent
+from home.models import HomeCard, SiteContent
 from tests.e2e.conftest import inject_session, open_navbar_if_collapsed, switch_locale
 
 
 @pytest.fixture
 def site_content_multilingual(db):
-    """SiteContent with distinct navbar title and body for each of the three locales."""
+    """SiteContent with a distinct navbar title, and a card with distinct text, in each of the three locales."""
     obj, _ = SiteContent.objects.update_or_create(
         pk=1,
         defaults={
             "navbar_title_ru": "NavRU",
             "navbar_title_kk": "NavKK",
             "navbar_title_en": "NavEN",
-            "body_ru": "<p>BodyRU</p>",
-            "body_kk": "<p>BodyKK</p>",
-            "body_en": "<p>BodyEN</p>",
         },
     )
+    HomeCard.objects.create(body_ru="<p>BodyRU</p>", body_kk="<p>BodyKK</p>", body_en="<p>BodyEN</p>")
     return obj
 
 

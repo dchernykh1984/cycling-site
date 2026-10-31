@@ -5,7 +5,9 @@ from django.utils.translation import gettext_lazy as _
 
 from cycling_site.forms import LocalizedMaxLengthMixin
 from cycling_site.richtext import validate_rich_text_length
-from home.models import SiteContent
+from home.models import HomeCard, SiteContent, blank_rich_text
+
+LANGUAGES = ("ru", "kk", "en")
 
 
 class SiteContentForm(LocalizedMaxLengthMixin, forms.ModelForm):
@@ -18,14 +20,8 @@ class SiteContentForm(LocalizedMaxLengthMixin, forms.ModelForm):
             "page_title_ru",
             "page_title_kk",
             "page_title_en",
-            "body_ru",
-            "body_kk",
-            "body_en",
         ]
         widgets: ClassVar[dict] = {
-            "body_ru": forms.HiddenInput(attrs={"id": "id_body_ru"}),
-            "body_kk": forms.HiddenInput(attrs={"id": "id_body_kk"}),
-            "body_en": forms.HiddenInput(attrs={"id": "id_body_en"}),
             "navbar_title_ru": forms.TextInput(attrs={"class": "form-control"}),
             "navbar_title_kk": forms.TextInput(attrs={"class": "form-control"}),
             "navbar_title_en": forms.TextInput(attrs={"class": "form-control"}),
@@ -42,8 +38,22 @@ class SiteContentForm(LocalizedMaxLengthMixin, forms.ModelForm):
             "page_title_en": _("Tab title (EN)"),
         }
 
-    # Reject an oversized body per locale (inline images are base64); the body HTML itself is
-    # sanitized centrally in SiteContent.save().
+
+class HomeCardForm(LocalizedMaxLengthMixin, forms.ModelForm):
+    class Meta:
+        model = HomeCard
+        fields: ClassVar[list] = ["title_ru", "title_kk", "title_en", "body_ru", "body_kk", "body_en"]
+        widgets: ClassVar[dict] = {
+            "title_ru": forms.TextInput(attrs={"class": "form-control"}),
+            "title_kk": forms.TextInput(attrs={"class": "form-control"}),
+            "title_en": forms.TextInput(attrs={"class": "form-control"}),
+            "body_ru": forms.HiddenInput(attrs={"id": "id_body_ru"}),
+            "body_kk": forms.HiddenInput(attrs={"id": "id_body_kk"}),
+            "body_en": forms.HiddenInput(attrs={"id": "id_body_en"}),
+        }
+
+    # Reject an oversized body per locale (inline images are base64); the HTML itself is sanitized
+    # centrally in HomeCard.save().
     def clean_body_ru(self):
         return validate_rich_text_length(self.cleaned_data.get("body_ru") or "")
 
@@ -52,3 +62,11 @@ class SiteContentForm(LocalizedMaxLengthMixin, forms.ModelForm):
 
     def clean_body_en(self):
         return validate_rich_text_length(self.cleaned_data.get("body_en") or "")
+
+    def clean(self):
+        cleaned = super().clean()
+        titles = [cleaned.get(f"title_{lang}") for lang in LANGUAGES]
+        bodies = [cleaned.get(f"body_{lang}") or "" for lang in LANGUAGES]
+        if not any(titles) and all(blank_rich_text(body) for body in bodies):
+            raise forms.ValidationError(_("A card needs a heading or some text."))
+        return cleaned

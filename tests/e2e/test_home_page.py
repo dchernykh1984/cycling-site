@@ -3,7 +3,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from home.models import SiteContent
+from home.models import HomeCard, SiteContent
 from tests.e2e.conftest import inject_session, switch_locale
 
 
@@ -15,26 +15,24 @@ def site_content(db):
             "navbar_title_ru": "TestNavbar",
             "navbar_title_en": "Cycling",
             "page_title_ru": "TestTitle",
-            "body_ru": "<p>Site content</p>",
         },
     )
+    HomeCard.objects.create(title_ru="About us", body_ru="<p>Site content</p>")
     return obj
 
 
 @pytest.fixture
 def site_content_multilingual(db):
-    """SiteContent with distinct navbar title and body for each of the three locales."""
+    """SiteContent with a distinct navbar title, and a card with distinct text, in each of the three locales."""
     obj, _ = SiteContent.objects.update_or_create(
         pk=1,
         defaults={
             "navbar_title_ru": "NavRU",
             "navbar_title_kk": "NavKK",
             "navbar_title_en": "NavEN",
-            "body_ru": "<p>BodyRU</p>",
-            "body_kk": "<p>BodyKK</p>",
-            "body_en": "<p>BodyEN</p>",
         },
     )
+    HomeCard.objects.create(body_ru="<p>BodyRU</p>", body_kk="<p>BodyKK</p>", body_en="<p>BodyEN</p>")
     return obj
 
 
@@ -176,22 +174,25 @@ def test_edit_form_saves_all_locale_navbar_titles_and_reflect(page: Page, live_s
 
 
 @pytest.mark.django_db(transaction=True)
-def test_edit_form_saves_body_via_editor(page: Page, live_server, owner, site_content):
-    """Editing the RU body through the shared Quill editor saves and renders on the home page."""
+def test_owner_adds_a_card_through_the_editor(page: Page, live_server, owner, site_content):
+    """A card written in the shared Quill editor goes after the others, on the edit page and the home page."""
     inject_session(page, live_server, owner)
     page.goto(f"{live_server.url}/home/edit/")
-    # Set the body through the shared editor DOM and submit in one synchronous step (deterministic
+    page.locator("#cards a[href$='/home/cards/new/']").click()
+    page.locator("#id_title_ru").fill("Card via editor")
+    # Set the text through the shared editor DOM and submit in one synchronous step (deterministic
     # across engines; see tests/e2e/test_knowledge_editor.py for the rationale).
     page.evaluate(
         """() => {
-          document.querySelector('#quill-ru .ql-editor').innerHTML = '<p>Home body via editor</p>';
-          document.getElementById('home-edit-form').requestSubmit();
+          document.querySelector('#quill-ru .ql-editor').innerHTML = '<p>Home text via editor</p>';
+          document.getElementById('home-card-form').requestSubmit();
         }"""
     )
-    page.wait_for_load_state("networkidle")
+    expect(page.locator("#cards li").last).to_contain_text("Card via editor")
 
     page.goto(f"{live_server.url}/")
-    expect(page.locator(".home-body")).to_contain_text("Home body via editor")
+    expect(page.locator(".home-body")).to_contain_text("Home text via editor")
+    expect(page.locator(".home-body h2").last).to_have_text("Card via editor")
 
 
 # ---------------------------------------------------------------------------

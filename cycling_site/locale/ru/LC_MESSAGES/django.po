@@ -4628,3 +4628,47 @@ msgstr "Укажите дату рождения от 1900 года до сег�
 #: accounts/models.py
 msgid "Enter a year of birth between 1900 and this year."
 msgstr "Укажите год рождения от 1900 до текущего года."
+
+#: api/endpoints/home.py:75 home/forms.py:71
+msgid "A card needs a heading or some text."
+msgstr "В карточке должен быть заголовок или текст."
+
+#: home/templates/home/home_card_edit.html:4 home/templates/home/home_card_edit.html:15
+msgid "Edit card"
+msgstr "Редактировать карточку"
+
+#: home/templates/home/home_card_edit.html:4 home/templates/home/home_card_edit.html:15
+msgid "New card"
+msgstr "Новая карточка"
+
+#: home/templates/home/home_card_edit.html:44 home/templates/home/home_card_edit.html:59 home/templates/home/home_card_edit.html:74
+msgid "Heading"
+msgstr "Заголовок"
+
+#: home/templates/home/home_card_edit.html:49 home/templates/home/home_card_edit.html:64 home/templates/home/home_card_edit.html:79
+msgid "Text"
+msgstr "Текст"
+
+#: home/templates/home/home_edit.html:105
+msgid "Cards"
+msgstr "Карточки"
+
+#: home/templates/home/home_edit.html:106
+msgid "Add card"
+msgstr "Добавить карточку"
+
+#: home/templates/home/home_edit.html:109
+msgid "Delete this card in all three languages?"
+msgstr "Удалить карточку на всех трёх языках?"
+
+#: home/templates/home/home_edit.html:119
+msgid "Move up"
+msgstr "Выше"
+
+#: home/templates/home/home_edit.html:126
+msgid "Move down"
+msgstr "Ниже"
+
+#: home/templates/home/home_edit.html:137
+msgid "No cards yet."
+msgstr "Карточек пока нет."
