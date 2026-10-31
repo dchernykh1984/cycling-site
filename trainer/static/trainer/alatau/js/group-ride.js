@@ -4,7 +4,7 @@ const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0
 // a group race named by the link the page was opened with (?group=)
 const LINKED = (g => /^[0-9]{1,12}$/.test(g || '') ? +g : null)(new URLSearchParams(location.search).get('group'));
 // the address of a group race: the site's page that frames the trainer, which also hands a newcomer
-// the cookie the page needs to join -- never this file on its own
+// the cookie the page needs to join -- never the trainer page (alatau.html) on its own
 function groupLink(id) {
   const page = Records.me && Records.me.page_url;
   let base = page ? location.origin + langPath(page) + '?' : location.origin + location.pathname + '?lang=' + LANG + '&';
