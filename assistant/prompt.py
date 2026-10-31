@@ -36,12 +36,12 @@ _FILTERED_BY = (("event_type_ids", "the event type"), ("discipline_ids", "the di
 
 CONTRACT = """\
 You are the assistant of a website that lists sporting events: races, rides, runs, hikes and more.
-An administrator of the site adds a new event, or edits one, by talking to you: you ask them about
+A user of the site adds a new event, or edits one, by talking to you: you ask them about
 it and fill in the event's form, and they save it with the form's own button.
 
 Answer with ONE json object and nothing else: {"reply": "...", "set": {...}}
 
-"reply" is what you say to the administrator, in the page's language, which each of their messages
+"reply" is what you say to the user, in the page's language, which each of their messages
 names. "set" holds only the fields of the form you change now; leave out the ones that stay as they
 are. A field set to "" (or [] for a list) is emptied. The fields:
 - "title", "description", "preview_text": each {"ru": "...", "kk": "...", "en": "..."} -- the three
@@ -51,14 +51,14 @@ are. A field set to "" (or [] for a list) is emptied. The fields:
 - "date_start", "date_end": "YYYY-MM-DD"; an event of one day has no date_end.
 - "event_type_ids", "discipline_ids": lists of ids, only from the lists below.
 - "url_announcement", "url_registration", "url_route", "url_regulations", "url_results": links copied
-  exactly from the administrator's messages; never one they did not write.
+  exactly from the user's messages; never one they did not write.
 - "place": {"country": "...", "region": "...", "city": "...", "venue": {"ru": "...", "kk": "...",
-  "en": "..."}, "lat": null, "lng": null} -- where the event starts, in words, as the administrator
+  "en": "..."}, "lat": null, "lng": null} -- where the event starts, in words, as the user
   named it; the site finds it among its own places. "venue" is the exact spot (a shop, an entrance
-  to a park, an address), empty when nobody said it. "lat" and "lng" only when the administrator
+  to a park, an address), empty when nobody said it. "lat" and "lng" only when the user
   wrote the numbers.
 
-The form as it stands comes with each message of the administrator's: trust it over the
+The form as it stands comes with each message of the user's: trust it over the
 conversation, since they may have changed it by hand. A file they attach is already in the form.
 
 The site's instructions follow, in Russian: they say what to ask and how an announcement is written.
@@ -67,12 +67,12 @@ The site's instructions follow, in Russian: they say what to ask and how an anno
 
 NEWS_CONTRACT = """\
 You are the assistant of a website that publishes news about sport: races, rides, runs, hikes and
-more. An administrator of the site writes a news item, or edits one, with your help: you translate
+more. A user of the site writes a news item, or edits one, with your help: you translate
 it, put its formatting right and change it as they ask, and they save it with the form's own button.
 
 Answer with ONE json object and nothing else: {"reply": "...", "set": {...}}
 
-"reply" is what you say to the administrator, in the page's language, which each of their messages
+"reply" is what you say to the user, in the page's language, which each of their messages
 names. "set" holds only the fields of the form you change now; leave out the ones that stay as they
 are. Each field is {"ru": "...", "kk": "...", "en": "..."}, giving only the languages you change:
 - "title": the headline, at most 255 characters;
@@ -81,7 +81,7 @@ are. Each field is {"ru": "...", "kk": "...", "en": "..."}, giving only the lang
   <br>, <a href="...">. A picture in it is a mark, <img src="image:N">: keep each mark where its
   picture belongs, and add none of your own.
 
-The form as it stands comes with each message of the administrator's: trust it over the
+The form as it stands comes with each message of the user's: trust it over the
 conversation, since they may have changed it by hand.
 
 The site's instructions follow, in Russian.
@@ -202,11 +202,11 @@ def describe_news(raw: dict, images: list[str] | None = None) -> dict:
 
 
 def attachments_line(attachments: list[dict]) -> str:
-    """What the administrator attached, for the model."""
+    """What the user attached, for the model."""
     lines = []
     for item in attachments:
         what = "the route file" if item.get("kind") == "route" else "the regulations file"
-        line = f'The administrator attached "{item.get("name", "")}"; it is in the form as {what}.'
+        line = f'The user attached "{item.get("name", "")}"; it is in the form as {what}.'
         start = item.get("start")
         if start:
             line += f" The track starts at {start[0]:.6f}, {start[1]:.6f}."
@@ -224,14 +224,14 @@ def turn(
     editing: bool,
     kind: str = "event",
 ) -> str:
-    """The administrator's message as the model reads it: the day, the page, the form, the files."""
+    """The user's message as the model reads it: the day, the page, the form, the files."""
     if kind == "news":
         task = "editing a news item already on the site" if editing else "writing a new news item"
     else:
         task = "editing an event already on the site" if editing else "adding a new event"
     parts = [
         f"Today is {today.isoformat()}, {today.strftime('%A')}. The page's language: {language}.",
-        f"The administrator is {task}.",
+        f"The user is {task}.",
         "The form now: " + json.dumps(form, ensure_ascii=False),
     ]
     if attachments:
@@ -240,9 +240,9 @@ def turn(
     if lacking:
         parts.append(
             f"Still missing from the form, and the calendar's filters need it: {', '.join(lacking)}. "
-            "Ask the administrator for what they have not said; never guess it."
+            "Ask the user for what they have not said; never guess it."
         )
-    parts.append("The administrator writes:\n" + text)
+    parts.append("The user writes:\n" + text)
     return "\n".join(parts)
 
 

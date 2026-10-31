@@ -1,6 +1,6 @@
 """The assistant's conversations, kept with their event or news item so that its edit page goes on.
 
-A conversation starts before its subject exists: the admin adds an event or writes a news item by
+A conversation starts before its subject exists: someone adds an event or writes a news item by
 talking, and only the form's own button saves it. The conversation is linked to it then, and the
 edit page continues it with everything said so far (issue #353).
 """
@@ -69,7 +69,7 @@ class Message(models.Model):
     text = models.TextField()
     # A reply's changes to the form, as the model wrote them once checked (assistant/fields.py).
     fields = models.JSONField(default=dict, blank=True)
-    # An admin's message's files: [{"kind": "route" | "regulations", "name": ..., "start": [lat, lng] | null}].
+    # A user's message's files: [{"kind": "route" | "regulations", "name": ..., "start": [lat, lng] | null}].
     attachments = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

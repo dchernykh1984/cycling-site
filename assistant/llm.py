@@ -1,7 +1,7 @@
 """The one call to the language model: an OpenAI-compatible chat API, DeepSeek by default (issue #353).
 
 The key is read from settings and goes only into the request's header. A failure comes back as what
-the admin can do about it -- tell the owner, or try again -- never as the provider's own answer.
+the user can do about it -- tell the owner, or try again -- never as the provider's own answer.
 """
 
 from __future__ import annotations
