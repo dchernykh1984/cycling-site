@@ -80,9 +80,9 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
 
 1. **Given** the home page, **Then** it shows the owner's cards in their order, each a heading and a
    rich text per language (a language without its own words falls back as every data field does).
-   Each skin draws them its own way: the site's own skins as one text with a heading over each card,
-   UBT Almaty as a grid of cards, the first spanning the row when it has no heading or repeats the
-   page's title.
+   Every skin draws them as tiles, as many to a row as fit and one to a row on a phone -- the site's
+   own skins as cards in their colours, UBT Almaty in its own style --, the first spanning the row
+   when it has no heading or repeats the page's title.
 2. **Given** the owner, **Then** they edit the site content -- the navbar title and the tab title per
    language -- in three language tabs, and below it add, change, move up or down and delete cards,
    each in a form of its own with three language tabs; a card with no heading and no text in any
