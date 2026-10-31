@@ -713,7 +713,7 @@ class BuildParticipantGroupsTests(TestCase):
         self.assertEqual(groups[0]["count"], 2)
 
     def test_counts_for_bib_respects_rejection_approval_payment(self):
-        from registrations.views import counts_for_bib
+        from registrations.models import counts as counts_for_bib
 
         comp = make_competition(require_approval=True, require_payment=True)
         ok = make_registration(comp, is_approved=True, is_paid=True)
