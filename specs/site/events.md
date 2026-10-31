@@ -108,7 +108,9 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    key says nothing; a new link shuts the old one but keeps those already in.
 3. **Given** an invite-only event, **Then** the sitemap, feeds, iCalendar, public API and landing
    pages never carry it, and its page asks not to be indexed; while it waits for review only
-   admins review it.
+   admins review it. One exception: a rider's live stats stay readable by anybody, as a watch reads
+   them (`GET /live-stats/{id}/{bib}`). An invite-only event keeps out whoever is not invited; it is
+   not a secret one, and a race can be watched from the roadside (maintainer, 2026-10-31).
 
 ### Story 6 -- Put an event into one's own calendar (P3, issue #398)
 

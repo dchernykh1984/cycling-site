@@ -3810,6 +3810,14 @@ class LiveStatsApiTest(TestCase, ApiTestMixin):
         self.comp.save(update_fields=["status"])
         self.assertEqual(self.get(f"/api/v1/live-stats/{self.comp.pk}/12").status_code, 404)
 
+    def test_get_invite_only_competition_is_public(self):
+        # The maintainer's choice (2026-10-31): an invite-only race keeps out who is not invited, it
+        # is not a secret one -- it can be watched from the roadside -- and a rider's watch reads here.
+        self._upload()
+        self.comp.invite_only = True
+        self.comp.save(update_fields=["invite_only"])
+        self.assertEqual(self.get(f"/api/v1/live-stats/{self.comp.pk}/12").status_code, 200)
+
     def test_non_string_value_rejected_422(self):
         resp = self.post(
             "/api/v1/live-stats/",
