@@ -5,7 +5,7 @@
 **Code**: `cycling_site/` (templates `base.html`, `_setup_hint.html`, `_share_button.html`;
 `setup_hints.py`, `context_processors.py`, `middleware.py`, `richtext.py`), `home/` (home page, site
 content, legal pages), `search/`
-**Tests**: `home/tests.py`, `cycling_site/tests.py`, `tests/test_setup_hints.py`,
+**Tests**: `home/tests.py`, `tests/test_home_cards.py`, `cycling_site/tests.py`, `tests/test_setup_hints.py`,
 `tests/test_share_button.py`, `tests/test_language_switch.py`, `tests/test_locale_cache.py`,
 `tests/test_kazakh_account_pages.py`, `tests/test_page_meta.py`, `tests/test_favicon.py`, `search/tests.py`,
 `tests/test_template_comments.py`, `tests/test_sign_in_link.py`, `tests/test_signing_out.py`,
@@ -78,9 +78,15 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
 
 ### Story 2 -- The home page (P2)
 
-1. **Given** the home page, **Then** it shows the site content -- a navbar title and a rich-text body
-   per language -- edited by the owner on the site in three language tabs; others get no edit button
-   and a 403 on the edit page.
+1. **Given** the home page, **Then** it shows the owner's cards in their order, each a heading and a
+   rich text per language (a language without its own words falls back as every data field does).
+   Each skin draws them its own way: the site's own skins as one text with a heading over each card,
+   UBT Almaty as a grid of cards, the first spanning the row when it has no heading or repeats the
+   page's title.
+2. **Given** the owner, **Then** they edit the site content -- the navbar title and the tab title per
+   language -- in three language tabs, and below it add, change, move up or down and delete cards,
+   each in a form of its own with three language tabs; a card with no heading and no text in any
+   language is refused. Others get no edit button and a 403 on these pages.
 
 ### Story 3 -- Setup hints (P2, issue #319)
 
@@ -143,7 +149,7 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
   member allowed to manage one's registrations and photos sees and may do ([accounts](accounts.md)),
   how a guest's region is found from the network provider's location and that the location is not
   stored ([calendar](calendar.md)), and links to the contact form.
-- **FR-SHL-003**: All rich text (site content, articles, descriptions) goes through one sanitiser:
+- **FR-SHL-003**: All rich text (home cards, articles, descriptions) goes through one sanitiser:
   scripts and dangerous links dropped, links open in a new tab, a limited set of formatting, image
   size/float and text colour kept.
 - **FR-SHL-004**: The navbar stays on top with a solid background while scrolling. Its open menu
@@ -163,7 +169,8 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
 
 ## Key Entities
 
-- **SiteContent**: singleton with the navbar title and home body per language.
+- **SiteContent**: singleton with the navbar title and the home page's tab title per language.
+- **HomeCard**: a card of the home page: a heading and a rich text per language, and its position.
 - **User.dismissed_hints**: the setup hints a member turned off.
 
 ## Local assumptions
@@ -182,6 +189,10 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 - The fallback page description names countries and sports ("cycling, running, cross-country skiing
   -- in Kazakhstan, Kyrgyzstan, Russia and beyond", `base.html`), and the navbar falls back to
   "Cycling" and the footer to "Cycling events" when the site content has no title.
+
+## API gaps
+
+- The navbar title and the tab title (site content) have no API: the owner edits them on the site only.
 
 ## Open Questions
 

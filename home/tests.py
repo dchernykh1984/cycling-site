@@ -5,8 +5,10 @@ import tempfile
 
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
+from django.db.migrations.executor import MigrationExecutor
 from django.http import HttpResponse
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import translation
 from django.utils.translation import override as translation_override
@@ -17,7 +19,7 @@ from wagtail.test.utils import WagtailPageTestCase
 from wagtail_localize.fields import SynchronizedField
 
 from accounts.models import User
-from home.models import HomePage, SiteContent
+from home.models import HomeCard, HomePage, SiteContent
 from tests.language_urls import in_language
 
 
@@ -221,39 +223,36 @@ class SiteContentModelTests(TestCase):
         self.assertTrue(SiteContent.objects.filter(pk=1).exists())
         self.assertFalse(SiteContent.objects.filter(pk=99).exists())
 
-    def test_save_sanitizes_body(self):
-        # Body is rendered with |safe on the home page, so save() must strip scripts.
-        SiteContent.objects.all().delete()
-        SiteContent(body_ru="<p>safe</p><script>alert(1)</script>").save()
-        sc = SiteContent.objects.get(pk=1)
-        self.assertIn("safe", sc.body_ru)
-        self.assertNotIn("<script", sc.body_ru.lower())
 
+class SiteContentBodyBackfillTests(TransactionTestCase):
     def test_backfill_migration_sanitizes_existing_body(self):
         # Run the migration's own sanitizer against the historical (pre-0009) bare model, whose
-        # save() does NOT sanitize -- so this proves the migration cleans data, not the model.
-        import importlib
+        # save() does NOT sanitize -- so this proves the migration cleans data, not the model. The
+        # body columns are gone since 0011, so the schema goes back to 0008 for it.
+        old_target = [("home", "0008_fix_wagtail_site_hostname")]
+        executor = MigrationExecutor(connection)
+        try:
+            executor.migrate(old_target)
+            state = executor.loader.project_state(old_target)
+            HistoricalSiteContent = state.apps.get_model("home", "SiteContent")  # noqa: N806 (model class)
+            HistoricalSiteContent.objects.all().delete()
+            HistoricalSiteContent.objects.create(
+                pk=1,
+                body="<p>x</p><script>a()</script>",
+                body_ru="<p>ru</p><script>b()</script>",
+                body_en="<p>en</p><script>c()</script>",
+            )
 
-        from django.db import connection
-        from django.db.migrations.executor import MigrationExecutor
+            mig = importlib.import_module("home.migrations.0009_sanitize_sitecontent_body")
+            mig.sanitize_existing_body(state.apps, None)
 
-        state = MigrationExecutor(connection).loader.project_state(("home", "0008_fix_wagtail_site_hostname"))
-        HistoricalSiteContent = state.apps.get_model("home", "SiteContent")  # noqa: N806 (model class)
-        HistoricalSiteContent.objects.all().delete()
-        HistoricalSiteContent.objects.create(
-            pk=1,
-            body="<p>x</p><script>a()</script>",
-            body_ru="<p>ru</p><script>b()</script>",
-            body_en="<p>en</p><script>c()</script>",
-        )
-
-        mig = importlib.import_module("home.migrations.0009_sanitize_sitecontent_body")
-        mig.sanitize_existing_body(state.apps, None)
-
-        obj = HistoricalSiteContent.objects.get(pk=1)
-        for value in (obj.body, obj.body_ru, obj.body_en):
-            self.assertNotIn("<script", value.lower())
-        self.assertIn("ru", obj.body_ru)
+            obj = HistoricalSiteContent.objects.get(pk=1)
+            for value in (obj.body, obj.body_ru, obj.body_en):
+                self.assertNotIn("<script", value.lower())
+            self.assertIn("ru", obj.body_ru)
+        finally:
+            executor = MigrationExecutor(connection)
+            executor.migrate(executor.loader.graph.leaf_nodes("home"))
 
 
 class HomeEditViewTests(TestCase):
@@ -308,15 +307,11 @@ class HomeEditViewTests(TestCase):
                 "page_title_ru": "TestTitle",
                 "page_title_kk": "TestTitleKK",
                 "page_title_en": "Home",
-                "body_ru": "<p>Hello</p>",
-                "body_kk": "",
-                "body_en": "",
             },
         )
         sc = SiteContent.objects.get(pk=1)
         self.assertEqual(sc.navbar_title_ru, "TestNavbar")
         self.assertEqual(sc.navbar_title_en, "Cycling")
-        self.assertEqual(sc.body_ru, "<p>Hello</p>")
 
     def test_post_redirects_to_home_on_success(self):
         self.client.force_login(self.owner)
@@ -329,76 +324,9 @@ class HomeEditViewTests(TestCase):
                 "page_title_ru": "",
                 "page_title_kk": "",
                 "page_title_en": "",
-                "body_ru": "",
-                "body_kk": "",
-                "body_en": "",
             },
         )
         self.assertRedirects(response, "/", fetch_redirect_response=False)
-
-    def test_post_sanitizes_script_in_body(self):
-        self.client.force_login(self.owner)
-        self.client.post(
-            reverse("home_edit"),
-            {
-                "navbar_title_ru": "X",
-                "navbar_title_kk": "",
-                "navbar_title_en": "",
-                "page_title_ru": "",
-                "page_title_kk": "",
-                "page_title_en": "",
-                "body_ru": "<p>safe text</p><script>alert(1)</script>",
-                "body_kk": "",
-                "body_en": "",
-            },
-        )
-        sc = SiteContent.objects.get(pk=1)
-        self.assertIn("safe text", sc.body_ru)
-        self.assertNotIn("<script", sc.body_ru.lower())
-
-    def test_post_rejects_oversized_body(self):
-        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
-
-        self.client.force_login(self.owner)
-        response = self.client.post(
-            reverse("home_edit"),
-            {
-                "navbar_title_ru": "X",
-                "navbar_title_kk": "",
-                "navbar_title_en": "",
-                "page_title_ru": "",
-                "page_title_kk": "",
-                "page_title_en": "",
-                "body_ru": "a" * (MAX_RICH_TEXT_LENGTH + 1),
-                "body_kk": "",
-                "body_en": "",
-            },
-        )
-        self.assertEqual(response.status_code, 200)  # re-render with errors, not a redirect
-        self.assertFalse(SiteContent.objects.get(pk=1).body_ru)
-        self.assertContains(response, "too large")  # the body error is rendered next to the editor
-
-    def test_post_renders_kk_body_error(self):
-        # The KK body error lives in a hidden tab; it must still be rendered (JS auto-opens it).
-        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
-
-        self.client.force_login(self.owner)
-        response = self.client.post(
-            reverse("home_edit"),
-            {
-                "navbar_title_ru": "X",
-                "navbar_title_kk": "",
-                "navbar_title_en": "",
-                "page_title_ru": "",
-                "page_title_kk": "",
-                "page_title_en": "",
-                "body_ru": "",
-                "body_kk": "a" * (MAX_RICH_TEXT_LENGTH + 1),
-                "body_en": "",
-            },
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "too large")  # KK body error rendered
 
     def test_post_renders_kk_and_en_title_errors(self):
         # navbar/page title errors in KK/EN tabs must be rendered too (max_length 100/200).
@@ -412,9 +340,6 @@ class HomeEditViewTests(TestCase):
                 "page_title_ru": "",
                 "page_title_kk": "",
                 "page_title_en": "p" * 201,  # over page_title max_length=200
-                "body_ru": "",
-                "body_kk": "",
-                "body_en": "",
             },
             HTTP_ACCEPT_LANGUAGE="en",  # deterministic English error strings
         )
@@ -438,10 +363,11 @@ class HomePageContextTests(WagtailPageTestCase):
         response = self.client.get(self.homepage.url)
         self.assertIn("site_content", response.context)
 
-    def test_home_page_shows_body_when_set(self):
-        self.sc.body_ru = "<p>Site content</p>"
-        self.sc.save()
+    @override_settings(DEFAULT_SKIN="light")
+    def test_home_page_shows_its_cards(self):
+        HomeCard.objects.create(title_ru="Card heading", body_ru="<p>Site content</p>")
         response = self.client.get(self.homepage.url)
+        self.assertContains(response, "Card heading")
         self.assertContains(response, "Site content")
 
 

@@ -4626,3 +4626,47 @@ msgstr "Туған күнді 1900 жылдан бүгінгі күнге дей
 #: accounts/models.py
 msgid "Enter a year of birth between 1900 and this year."
 msgstr "Туған жылды 1900 жылдан биылғы жылға дейінгі аралықта көрсетіңіз."
+
+#: api/endpoints/home.py:75 home/forms.py:71
+msgid "A card needs a heading or some text."
+msgstr "Карточкада тақырып немесе мәтін болуы керек."
+
+#: home/templates/home/home_card_edit.html:4 home/templates/home/home_card_edit.html:15
+msgid "Edit card"
+msgstr "Карточканы өңдеу"
+
+#: home/templates/home/home_card_edit.html:4 home/templates/home/home_card_edit.html:15
+msgid "New card"
+msgstr "Жаңа карточка"
+
+#: home/templates/home/home_card_edit.html:44 home/templates/home/home_card_edit.html:59 home/templates/home/home_card_edit.html:74
+msgid "Heading"
+msgstr "Тақырып"
+
+#: home/templates/home/home_card_edit.html:49 home/templates/home/home_card_edit.html:64 home/templates/home/home_card_edit.html:79
+msgid "Text"
+msgstr "Мәтін"
+
+#: home/templates/home/home_edit.html:105
+msgid "Cards"
+msgstr "Карточкалар"
+
+#: home/templates/home/home_edit.html:106
+msgid "Add card"
+msgstr "Карточка қосу"
+
+#: home/templates/home/home_edit.html:109
+msgid "Delete this card in all three languages?"
+msgstr "Карточканы үш тілде де жою керек пе?"
+
+#: home/templates/home/home_edit.html:119
+msgid "Move up"
+msgstr "Жоғары"
+
+#: home/templates/home/home_edit.html:126
+msgid "Move down"
+msgstr "Төмен"
+
+#: home/templates/home/home_edit.html:137
+msgid "No cards yet."
+msgstr "Карточкалар әлі жоқ."

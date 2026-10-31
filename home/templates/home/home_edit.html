@@ -54,12 +54,6 @@
             {{ form.page_title_ru }}
             {% if form.page_title_ru.errors %}<div class="text-danger small mt-1">{{ form.page_title_ru.errors }}</div>{% endif %}
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">{% trans "Body (RU)" %}</label>
-            <div id="quill-ru" class="quill-editor" data-target="id_body_ru" data-init="init-body-ru"></div>
-            {{ form.body_ru }}
-            {% if form.body_ru.errors %}<div class="text-danger small mt-1">{% for e in form.body_ru.errors %}{{ e }}{% endfor %}</div>{% endif %}
-          </div>
         </div>
 
         {# KK tab #}
@@ -77,12 +71,6 @@
             </label>
             {{ form.page_title_kk }}
             {% if form.page_title_kk.errors %}<div class="text-danger small mt-1">{% for e in form.page_title_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">{% trans "Body (KK)" %}</label>
-            <div id="quill-kk" class="quill-editor" data-target="id_body_kk" data-init="init-body-kk"></div>
-            {{ form.body_kk }}
-            {% if form.body_kk.errors %}<div class="text-danger small mt-1">{% for e in form.body_kk.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
         </div>
 
@@ -102,12 +90,6 @@
             {{ form.page_title_en }}
             {% if form.page_title_en.errors %}<div class="text-danger small mt-1">{% for e in form.page_title_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">{% trans "Body (EN)" %}</label>
-            <div id="quill-en" class="quill-editor" data-target="id_body_en" data-init="init-body-en"></div>
-            {{ form.body_en }}
-            {% if form.body_en.errors %}<div class="text-danger small mt-1">{% for e in form.body_en.errors %}{{ e }}{% endfor %}</div>{% endif %}
-          </div>
         </div>
 
       </div>
@@ -117,14 +99,48 @@
         <a href="{% url 'wagtail_serve' '' %}" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
       </div>
     </form>
+
+    <section id="cards" class="mt-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h2 class="h4 mb-0">{% trans "Cards" %}</h2>
+        <a href="{% url 'home_card_add' %}" class="btn btn-primary">{% trans "Add card" %}</a>
+      </div>
+      {% if cards %}
+      {% trans "Delete this card in all three languages?" as delete_confirm %}
+      <ol class="list-group list-group-numbered">
+        {% for card in cards %}
+        <li class="list-group-item d-flex flex-wrap align-items-center gap-2">
+          <span class="flex-grow-1">{% if card.title %}{{ card.title }}{% else %}{{ card.body|striptags|truncatewords:12 }}{% endif %}</span>
+          <a href="{% url 'home_card_edit' card.pk %}" class="btn btn-sm btn-outline-secondary">{% trans "Edit" %}</a>
+          {% if not forloop.first %}
+          <form method="post" action="{% url 'home_card_move' card.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="position" value="{{ forloop.counter0|add:'-1' }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">{% trans "Move up" %}</button>
+          </form>
+          {% endif %}
+          {% if not forloop.last %}
+          <form method="post" action="{% url 'home_card_move' card.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="position" value="{{ forloop.counter }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">{% trans "Move down" %}</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{% url 'home_card_delete' card.pk %}" onsubmit="return confirm('{{ delete_confirm|escapejs }}')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Delete" %}</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}
+      <p class="text-body-secondary">{% trans "No cards yet." %}</p>
+      {% endif %}
+    </section>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-{{ form.body_ru.value|default:""|json_script:"init-body-ru" }}
-{{ form.body_kk.value|default:""|json_script:"init-body-kk" }}
-{{ form.body_en.value|default:""|json_script:"init-body-en" }}
-{% include "includes/rich_text_editor.html" %}
 {% include "includes/locale_tab_errors.html" %}
 {% endblock %}

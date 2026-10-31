@@ -30,6 +30,7 @@ from ninja import Schema
 from calendar_app.models import Competition, CompetitionComment, CompetitionMaterial
 from event_photos.models import ExternalAlbum
 from gallery.models import Album, Photo
+from home.models import HomeCard
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment
 from locations.models import Location
 from news.models import NewsArticle, NewsArticleComment
@@ -64,6 +65,7 @@ FORM_TARGETS = {
     "calendar_app.forms.ReportCompetitionForm": None,
     "calendar_app.forms.SubmitCompetitionForm": Competition,
     "home.forms.SiteContentForm": None,
+    "home.forms.HomeCardForm": HomeCard,
     "knowledge.forms.AddKnowledgeArticleCommentForm": KnowledgeArticleComment,
     "knowledge.forms.DraftSubmissionForm": DraftSubmission,
     "knowledge.forms.KnowledgeArticleForm": KnowledgeArticle,

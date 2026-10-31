@@ -1,12 +1,14 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import redirect, render
+from django.http import HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views import View
 from django.views.generic import TemplateView
 
 from accounts.models import User
-from home.forms import SiteContentForm
-from home.models import SiteContent
+from home.forms import HomeCardForm, SiteContentForm
+from home.models import HomeCard, SiteContent
 
 
 class PrivacyPolicyView(TemplateView):
@@ -26,7 +28,9 @@ class TermsOfUseView(TemplateView):
     template_name = "home/terms_page.html"
 
 
-class HomeEditView(LoginRequiredMixin, View):
+class OwnerRequiredMixin(LoginRequiredMixin):
+    """The home page is the owner's to edit: a guest is sent to sign in, anyone else gets a 403."""
+
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
@@ -34,10 +38,17 @@ class HomeEditView(LoginRequiredMixin, View):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+
+def _cards_list():
+    # Back to the list of cards on the edit page, which is below the titles' form.
+    return redirect(reverse("home_edit") + "#cards")
+
+
+class HomeEditView(OwnerRequiredMixin, View):
     def get(self, request):
         content = SiteContent.load()
         form = SiteContentForm(instance=content)
-        return render(request, "home/home_edit.html", {"form": form, "content": content})
+        return self._render(request, form, content)
 
     def post(self, request):
         content = SiteContent.load()
@@ -45,4 +56,44 @@ class HomeEditView(LoginRequiredMixin, View):
         if form.is_valid():
             form.save()
             return redirect("/")
-        return render(request, "home/home_edit.html", {"form": form, "content": content})
+        return self._render(request, form, content)
+
+    @staticmethod
+    def _render(request, form, content):
+        cards = HomeCard.objects.all()
+        return render(request, "home/home_edit.html", {"form": form, "content": content, "cards": cards})
+
+
+class HomeCardEditView(OwnerRequiredMixin, View):
+    """A card of the home page, new (no pk) or one to change; a new one goes after the others."""
+
+    def get(self, request, pk=None):
+        card = get_object_or_404(HomeCard, pk=pk) if pk else None
+        return render(request, "home/home_card_edit.html", {"form": HomeCardForm(instance=card), "card": card})
+
+    def post(self, request, pk=None):
+        card = get_object_or_404(HomeCard, pk=pk) if pk else HomeCard(position=HomeCard.next_position())
+        form = HomeCardForm(request.POST, instance=card)
+        if form.is_valid():
+            form.save()
+            return _cards_list()
+        return render(request, "home/home_card_edit.html", {"form": form, "card": card if pk else None})
+
+
+class HomeCardMoveView(OwnerRequiredMixin, View):
+    """Put a card at the given position in the order, counted from 0 as the API counts it."""
+
+    def post(self, request, pk):
+        card = get_object_or_404(HomeCard, pk=pk)
+        try:
+            position = int(request.POST.get("position", ""))
+        except ValueError:
+            return HttpResponseBadRequest()
+        card.place(position)
+        return _cards_list()
+
+
+class HomeCardDeleteView(OwnerRequiredMixin, View):
+    def post(self, request, pk):
+        get_object_or_404(HomeCard, pk=pk).delete()
+        return _cards_list()
