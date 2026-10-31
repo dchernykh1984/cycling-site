@@ -22,7 +22,7 @@
 
     <div class="d-flex align-items-center gap-2 mb-1">
       <h1 class="mb-0">{{ protocol.competition.title }}</h1>
-      {% if protocol.competition.status == 'approved' and not protocol.competition.is_hidden and not protocol.competition.invite_only %}{% include "_share_button.html" %}{% endif %}
+      {% if protocol.competition.is_public %}{% include "_share_button.html" %}{% endif %}
     </div>
     <h2 class="h5 text-muted mb-3">
       {% if protocol.protocol_type == "absolute" %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}

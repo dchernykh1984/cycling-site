@@ -379,6 +379,13 @@ class Competition(index.Indexed, models.Model):
         parts.append(_("Details, start point and results on the Universal Bicycle Team calendar."))
         return " ".join(parts)
 
+    @property
+    def is_public(self) -> bool:
+        """``calendar_app.visibility.is_public``, for a template."""
+        from calendar_app.visibility import is_public
+
+        return is_public(self)
+
     def get_calendar_end(self) -> str | None:
         if self.date_end:
             return (self.date_end + datetime.timedelta(days=1)).isoformat()
