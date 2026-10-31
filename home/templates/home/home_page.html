@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n seo_tags %}
+{% load i18n roles seo_tags %}
 
 {% block title %}{% if site_content.page_title %}{{ site_content.page_title }}{% else %}{{ page.title }}{% endif %}{% endblock %}
 
@@ -13,7 +13,7 @@
 in the top row, beside the owner's edit button.{% endcomment %}
 <div class="d-flex justify-content-end gap-2 mb-4">
   {% include "_share_button.html" %}
-  {% if request.user.role == 'owner' %}
+  {% if request.user|role_at_least:"EDIT_HOME_PAGE" %}
   <a href="{% url 'home_edit' %}" class="btn btn-sm btn-outline-secondary">{% trans "Edit page" %}</a>
   {% endif %}
 </div>

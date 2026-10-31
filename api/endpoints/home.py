@@ -4,7 +4,7 @@ from django.utils.translation import gettext as _
 from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 
-from accounts.models import User
+from accounts import roles
 from api.auth import ApiTokenAuth
 from api.schemas import LocalizedStr, LocalizedTitle, localize_field
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
@@ -46,7 +46,7 @@ class HomeCardPatchIn(Schema):
 
 def _require_owner(user) -> None:
     # As on the site, where the edit page refuses everyone but the owner.
-    if getattr(user, "role", None) != User.Role.OWNER:
+    if not roles.role_at_least(user, roles.EDIT_HOME_PAGE):
         raise HttpError(403, "Owner role is required")
 
 
