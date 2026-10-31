@@ -45,7 +45,14 @@ class ConcurrentReviewTests(TestCase):
 
     def test_the_approve_page_goes_back_when_the_event_was_handled_meanwhile(self):
         self.client.force_login(self.admin)
-        refused = ValueError("Cannot approve: competition is already 'Rejected'.")
-        with mock.patch.object(Competition, "approve", side_effect=refused):
+
+        def rejected_meanwhile(user, competition) -> bool:
+            # The other moderator acts after this page found the event pending and before it approves.
+            self._seen_earlier().reject(reviewer=self.admin, reason="A duplicate")
+            return True
+
+        with mock.patch("calendar_app.views.can_review", side_effect=rejected_meanwhile):
             answer = self.client.post(f"/en/calendar/{self.event.pk}/approve/")
         self.assertEqual(answer.status_code, 302)
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.status, Competition.Status.REJECTED)
