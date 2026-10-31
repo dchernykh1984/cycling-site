@@ -9,16 +9,10 @@ from django.utils.translation import gettext as _
 from django.views.generic import CreateView, View
 from wagtail.models import Locale
 
+from accounts import roles
 from accounts.access import ParticipantRequiredMixin
-from accounts.models import User
 from knowledge.forms import AddKnowledgeArticleCommentForm, DraftSubmissionForm, KnowledgeArticleForm
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment, KnowledgeIndexPage
-
-_ADMIN_RANK = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
-
-
-def _can_manage_knowledge(user) -> bool:
-    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ADMIN_RANK)
 
 
 def _knowledge_index_url(locale_code: str) -> str:
@@ -33,7 +27,7 @@ class ManagerRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        if not _can_manage_knowledge(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_KNOWLEDGE):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -149,7 +143,7 @@ class KnowledgeArticleHideView(ManagerRequiredMixin, View):
 
 class AddKnowledgeArticleCommentView(ParticipantRequiredMixin, View):
     def post(self, request, pk):
-        can_manage = _can_manage_knowledge(request.user)
+        can_manage = roles.at_least(request.user, roles.MANAGE_KNOWLEDGE)
         article = get_object_or_404(KnowledgeArticle, pk=pk, is_deleted=False)
         if article.is_hidden and not can_manage:
             raise Http404
@@ -167,7 +161,7 @@ class AddKnowledgeArticleCommentView(ParticipantRequiredMixin, View):
 
 class DeleteKnowledgeArticleCommentView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        if not _can_manage_knowledge(request.user):
+        if not roles.at_least(request.user, roles.MANAGE_KNOWLEDGE):
             raise PermissionDenied
         comment = get_object_or_404(KnowledgeArticleComment.objects.select_related("article"), pk=pk)
         article_url = comment.article.get_absolute_url()
