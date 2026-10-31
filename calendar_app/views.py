@@ -961,11 +961,7 @@ class CompetitionDetailView(View):
         can_comment = roles.at_least(request.user, roles.COMMENT)
         # Reporting (issue #233): a confirmed user can flag a public event as inaccurate. Only
         # offered on approved, non-hidden events (the only ones the wider public can see).
-        is_public = (
-            competition.status == Competition.Status.APPROVED
-            and not competition.is_hidden
-            and not competition.invite_only
-        )
+        is_public = competition.is_public
         can_report = is_public and roles.at_least(request.user, User.Role.PARTICIPANT)  # issue #233
         already_reported = (
             request.user.is_authenticated
