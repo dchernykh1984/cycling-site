@@ -852,7 +852,7 @@ def _preview_image_tags(request, competition) -> dict:
     event showed before. The size travels with the URL so a messenger can lay the card out without
     downloading the file.
     """
-    image = getattr(competition, "preview_image", None)
+    image = competition.preview_image
     if not image:
         return {}
     try:

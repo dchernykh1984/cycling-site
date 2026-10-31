@@ -197,9 +197,7 @@ def city_fallback_venue(request, city_id: int):
     # not. That is the agent's normal path -- propose a city, then ask for its catch-all venue -- so
     # the venue inherits the city's pending state and rises with it when the city is approved.
     if city.is_pending and not venue.is_pending:
-        LocationProposal.objects.get_or_create(
-            location=venue, defaults={"submitted_by": getattr(city.proposal, "submitted_by", None)}
-        )
+        LocationProposal.objects.get_or_create(location=venue, defaults={"submitted_by": city.proposal.submitted_by})
     return venue
 
 
