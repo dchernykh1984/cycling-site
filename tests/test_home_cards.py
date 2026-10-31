@@ -262,6 +262,15 @@ class HomeCardsApiTests(ApiTestMixin, TestCase):
         self.assertEqual(self.delete(url, user=self.owner).status_code, 204)
         self.assertEqual(self.delete(url, user=self.owner).status_code, 404)
 
+    def test_a_position_read_is_a_position_that_keeps_the_card_where_it_is(self):
+        second, third = _card(title_ru="Second"), _card(title_ru="Third")
+        self.assertEqual(self.delete(f"{self.URL}{second.pk}", user=self.owner).status_code, 204)
+        listed = self.get(self.URL).json()
+        self.assertEqual([card["position"] for card in listed], [0, 1])
+        response = self.patch(f"{self.URL}{third.pk}", {"position": listed[1]["position"]}, user=self.owner)
+        self.assertEqual(response.json()["position"], 1)
+        self.assertEqual(list(HomeCard.objects.values_list("title_ru", flat=True)), ["Existing", "Third"])
+
     def test_a_card_with_nothing_in_it_or_too_much_is_refused(self):
         refused = [
             {"title": {"ru": "  "}, "body": {"ru": EMPTY_EDITOR}},

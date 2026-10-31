@@ -98,15 +98,25 @@ class HomeCard(models.Model):  # type: ignore[django-manager-missing]
         last = cls.objects.aggregate(last=models.Max("position"))["last"]
         return 0 if last is None else last + 1
 
+    def delete(self, using=None, keep_parents=False):
+        deleted = super().delete(using=using, keep_parents=keep_parents)
+        # The others close up, so a card's position stays its place in the order, as the API reads it.
+        HomeCard._number(HomeCard.objects.all())
+        return deleted
+
     def place(self, index: int) -> None:
         """Move this saved card to `index` in the home page's order (clamped to either end)."""
         cards = list(HomeCard.objects.exclude(pk=self.pk))
-        index = max(0, min(index, len(cards)))
-        cards.insert(index, self)
+        cards.insert(max(0, min(index, len(cards))), self)
+        HomeCard._number(cards)
+
+    @staticmethod
+    def _number(cards) -> None:
+        """Number the cards 0, 1, 2... in the order given."""
         for position, card in enumerate(cards):
             if card.position != position:
                 HomeCard.objects.filter(pk=card.pk).update(position=position)
-        self.position = index
+                card.position = position
 
 
 def localized_cards(lang: str) -> list[dict[str, str]]:
