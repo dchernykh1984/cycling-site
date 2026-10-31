@@ -80,8 +80,9 @@ and protocols with the event's upload token. The API has no language prefix.
    device that lost its state can resume.
 3. **Given** the finish-protocol generator posts a live-stats snapshot (each bib mapped to an opaque
    set of named values), **Then** the site stores it as it is, without interpreting the keys, and
-   anyone may read one bib's values for an approved, visible event -- which is how a watch data
-   field (Garmin Connect IQ) shows a rider their place and gaps.
+   anyone may read one bib's values for an approved event that is neither deleted nor hidden,
+   invite-only ones included (maintainer, 2026-10-31) -- which is how a watch data field (Garmin
+   Connect IQ) shows a rider their place and gaps.
 
 ### Edge Cases
 
