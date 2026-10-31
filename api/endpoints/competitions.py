@@ -13,7 +13,7 @@ from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedPreviewText, LocalizedStr, LocalizedTitle, Url, localize_field
 from calendar_app.feeds import build_calendar, calendar_response, site_base_url
 from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline, EventType
-from calendar_app.visibility import can_manage_or_own
+from calendar_app.visibility import can_manage_or_own, is_public, public_events_q
 from locations.models import (
     Level,
     Location,
@@ -217,11 +217,6 @@ def _descendant_location_ids(location_ids: list[int]) -> set[int]:
     return set(Location.objects.filter(q).values_list("pk", flat=True))
 
 
-def _is_owner(user, competition: Competition) -> bool:
-    uid = getattr(user, "pk", None)
-    return uid is not None and competition.submitted_by_id == uid
-
-
 def _get_or_404(pk: int) -> Competition:
     try:
         return (
@@ -239,12 +234,9 @@ def _require_owner_or_admin(user, competition: Competition) -> None:
 
 
 def _require_visible_or_404(user, competition: Competition) -> None:
-    is_privileged = _is_owner(user, competition) or roles.at_least(user, roles.MANAGE_ALL_EVENTS)
     # An invite-only event is not served to invitees here: the API is read by tools and agents,
     # and what an invitation opens is the site, for the person who accepted it (issue #313).
-    if not is_privileged and (
-        competition.status != Competition.Status.APPROVED or competition.is_hidden or competition.invite_only
-    ):
+    if not (is_public(competition) or can_manage_or_own(user, competition)):
         raise HttpError(404, "Competition not found")
 
 
@@ -375,7 +367,7 @@ def _apply_patch_fields(competition: Competition, data: dict, user) -> list[str]
 
 def _to_detail(competition: Competition, user=None) -> Competition:
     """Attach competition_token to obj for serialization (avoids extra dict merging)."""
-    can_see = user is not None and (_is_owner(user, competition) or roles.at_least(user, roles.MANAGE_ALL_EVENTS))
+    can_see = user is not None and can_manage_or_own(user, competition)
     # upload_token is nullable (a manager can delete it); don't serialize a null as "None".
     competition._api_token = str(competition.upload_token) if can_see and competition.upload_token else None
     competition._approval_visible = user is not None and roles.at_least(user, roles.MANAGE_ALL_EVENTS)
@@ -396,7 +388,7 @@ def _listable_by(qs, user, deleted: bool):
         return qs if roles.at_least(user, roles.MANAGE_ALL_EVENTS) else qs.filter(submitted_by=user)
     if roles.at_least(user, roles.MANAGE_ALL_EVENTS):
         return qs
-    visible = Q(status=Competition.Status.APPROVED, is_hidden=False, invite_only=False)
+    visible = public_events_q()
     if user.is_authenticated:
         visible |= Q(submitted_by=user)
     return qs.filter(visible)
