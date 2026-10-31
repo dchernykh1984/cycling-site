@@ -384,46 +384,52 @@ class Competition(index.Indexed, models.Model):
             return (self.date_end + datetime.timedelta(days=1)).isoformat()
         return None
 
+    def _lock_for_review(self, action: str) -> None:
+        """Lock the row and read its status again, so two moderators acting at once cannot both win:
+        the second is refused, as on an event already reviewed. Inside a transaction."""
+        self.status = type(self).objects.select_for_update().values_list("status", flat=True).get(pk=self.pk)
+        if self.status not in (self.Status.PENDING_APPROVAL, self.Status.DRAFT):
+            raise ValueError(f"Cannot {action}: competition is already '{self.get_status_display()}'.")
+
     def approve(self, reviewer) -> None:
         from accounts import roles
         from locations.models import LocationPendingError, chain_is_approved
 
-        if self.status not in (self.Status.PENDING_APPROVAL, self.Status.DRAFT):
-            raise ValueError(f"Cannot approve: competition is already '{self.get_status_display()}'.")
-        self.status = self.Status.APPROVED
-        # Refuse while the event sits on geography this reviewer may not bless. Approving anyway
-        # publishes the event on a branch nobody else can see, and the branch then holds approved
-        # work -- which leaves an admin no way to reject it, delete it or unwind the event.
-        location = self.location
-        # Only the geography *above* the venue matters: approving the venue itself is a level an
-        # organizer may create outright, and that is the designed flow for a proposed start point.
-        if (
-            location is not None
-            and not roles.at_least(reviewer, roles.APPROVE_PLACES)
-            and not chain_is_approved(location.get_parent())
-        ):
-            raise LocationPendingError(
-                "This event's location is still awaiting review; an administrator must approve it first."
-            )
-        self.approved_by = reviewer
-        self.approved_at = timezone.now()
-        self.rejection_reason = ""
-        self.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
+        with transaction.atomic():
+            self._lock_for_review("approve")
+            self.status = self.Status.APPROVED
+            # Refuse while the event sits on geography this reviewer may not bless. Approving anyway
+            # publishes the event on a branch nobody else can see, and the branch then holds approved
+            # work -- which leaves an admin no way to reject it, delete it or unwind the event.
+            location = self.location
+            # Only the geography *above* the venue matters: approving the venue itself is a level an
+            # organizer may create outright, and that is the designed flow for a proposed start point.
+            if (
+                location is not None
+                and not roles.at_least(reviewer, roles.APPROVE_PLACES)
+                and not chain_is_approved(location.get_parent())
+            ):
+                raise LocationPendingError(
+                    "This event's location is still awaiting review; an administrator must approve it first."
+                )
+            self.approved_by = reviewer
+            self.approved_at = timezone.now()
+            self.rejection_reason = ""
+            self.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
         # Approving a competition auto-approves its proposed location (issue #111).
         location = self.location
         if location is not None:
             location.approve_with_competition(reviewer)
 
     def reject(self, reviewer, reason: str = "") -> None:
-        if self.status not in (self.Status.PENDING_APPROVAL, self.Status.DRAFT):
-            raise ValueError(f"Cannot reject: competition is already '{self.get_status_display()}'.")
-        self.status = self.Status.REJECTED
-        self.approved_by = reviewer
-        self.approved_at = timezone.now()
-        self.rejection_reason = reason
         # Save the status change and its history row together so a failure can't leave one without
         # the other. Every rejection reason is kept as history, surviving edits/resubmissions (#200).
         with transaction.atomic():
+            self._lock_for_review("reject")
+            self.status = self.Status.REJECTED
+            self.approved_by = reviewer
+            self.approved_at = timezone.now()
+            self.rejection_reason = reason
             self.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
             CompetitionRejection.objects.create(competition=self, reason=reason, rejected_by=reviewer)
 
