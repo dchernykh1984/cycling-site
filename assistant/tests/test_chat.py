@@ -3,6 +3,7 @@
 import json
 import re
 
+from django.template import Context, Template, TemplateSyntaxError
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import translation
@@ -23,6 +24,13 @@ def _config(page) -> dict:
     found = CONFIG.search(page.content.decode())
     assert found is not None, "the page carries no chat"
     return json.loads(found.group(1))
+
+
+class ChatKindTests(TestCase):
+    def test_a_kind_that_is_no_kind_fails_the_page_even_on_a_site_without_a_key(self):
+        page = Template('{% load assistant %}{% assistant_chat kind="nwes" %}')
+        with override_settings(ASSISTANT_LLM_API_KEY=""), self.assertRaises(TemplateSyntaxError):
+            page.render(Context({}))
 
 
 @override_settings(ASSISTANT_LLM_API_KEY=KEY)
