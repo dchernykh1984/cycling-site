@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n static %}
+{% load i18n roles static %}
 
 {% block title %}{% trans "Calendar" %}{% endblock %}
 
@@ -32,7 +32,7 @@
       {% if request.user.is_authenticated %}
       {# On a phone Add event is the "+" beside Share (_page_heading.html), and Moderation is reached from the banner. #}
       <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm d-none d-lg-inline-block">{% trans "Submit event" %}</a>
-      {% if request.user.is_superuser or request.user.role == 'organizer' or request.user.role == 'admin' or request.user.role == 'owner' %}
+      {% if request.user|at_least:"MODERATE_EVENTS" %}
       <a href="{% url 'calendar_moderate' %}" class="btn btn-outline-warning btn-sm d-none d-lg-inline-block">{% trans "Moderation" %}</a>
       {% endif %}
       {% endif %}
