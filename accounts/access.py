@@ -13,7 +13,7 @@ EMAIL_CONFIRMATION_REQUIRED_MESSAGE = _(
 
 
 def needs_email_confirmation(user) -> bool:
-    return getattr(user, "is_authenticated", False) and not roles.at_least(user, User.Role.PARTICIPANT)
+    return user.is_authenticated and not roles.at_least(user, User.Role.PARTICIPANT)
 
 
 def redirect_to_profile_for_email_confirmation(request):
