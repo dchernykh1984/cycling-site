@@ -338,7 +338,9 @@ def profile(site, v):
     if page.status_code != 200:
         return str(page.status_code)
     text = page.content.decode()
-    return f"200:{_yn('Contact site owners' in text, 'Appearance' in text, page.context['has_verified_email'])}"
+    # The contact card's button, and the skin's name, which the chooser shows on the profile alone.
+    contact, appearance = 'id="contact-btn"' in text, 'class="skin-name"' in text
+    return f"200:{_yn(contact, appearance, page.context['has_verified_email'])}"
 
 
 def needs_confirmation(site, v):
