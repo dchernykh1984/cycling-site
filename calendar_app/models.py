@@ -381,7 +381,7 @@ class Competition(index.Indexed, models.Model):
 
     @property
     def is_public(self) -> bool:
-        """``calendar_app.visibility.is_public``, for a template."""
+        """``calendar_app.visibility.is_public`` as an attribute, which a template can ask too."""
         from calendar_app.visibility import is_public
 
         return is_public(self)
