@@ -112,6 +112,8 @@ def compute(uploads, valid_ids: set[int], previous) -> Result:
     ``uploads``: (device_id, client_revision, items). ``previous``: the current
     (registration, bib) pairs. Raises AssignmentOverflowError rather than return a prefix.
     """
+    from event_photos.models import IssuedBib  # this module reads no model at load
+
     warnings: list[str] = []
     pairs, unreferenced = _collect(uploads, valid_ids, warnings)
     _restore(pairs, unreferenced, previous, valid_ids)
@@ -121,13 +123,13 @@ def compute(uploads, valid_ids: set[int], previous) -> Result:
     for (reg, bib), (_, _, ln, _) in pairs.items():
         lines_by_reg.setdefault(reg, set()).add(ln)
         lines_by_bib.setdefault(bib, set()).add(ln)
-    assignments = {}
+    assignments: dict[tuple[int, str], tuple[str, str, int]] = {}
     for (reg, bib), (device, revision, _, restored) in pairs.items():
         if len(lines_by_reg[reg]) > 1 or len(lines_by_bib[bib]) > 1:
-            state = "conflict"
+            state = IssuedBib.State.CONFLICT
             warnings.append(f"bib {bib}: r{reg} is in conflict (device {device}, revision {revision})")
         else:
-            state = "review" if restored else "active"
+            state = IssuedBib.State.REVIEW if restored else IssuedBib.State.ACTIVE
             if restored:
                 warnings.append(f"bib {bib}: r{reg} needs review after restore (device {device}, revision {revision})")
         assignments[(reg, bib)] = (state, device, revision)
