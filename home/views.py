@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import TemplateView
 
-from accounts.models import User
+from accounts import roles
 from home.forms import HomeCardForm, SiteContentForm
 from home.models import HomeCard, SiteContent
 
@@ -34,7 +34,7 @@ class OwnerRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        if request.user.role != User.Role.OWNER:
+        if not roles.role_at_least(request.user, roles.EDIT_HOME_PAGE):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
