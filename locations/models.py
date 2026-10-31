@@ -141,14 +141,33 @@ def add_location_child(parent, **kwargs):
         return obj
 
 
+def public_places() -> models.Q:
+    """The places everybody sees: those nobody proposed, and proposals already approved."""
+    return models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
+
+
+def places_seen_by(user) -> models.Q:
+    """The public places and ``user``'s own proposals still awaiting review (FR-LOC-003)."""
+    seen = public_places()
+    if getattr(user, "is_authenticated", False):
+        seen |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
+    return seen
+
+
+def visible_places(queryset, user):
+    """``queryset`` narrowed to what ``user`` may see: all of it for whoever approves places -- they
+    reach the very nodes they review -- and ``places_seen_by`` for anybody else."""
+    return queryset if roles.at_least(user, roles.APPROVE_PLACES) else queryset.filter(places_seen_by(user))
+
+
 def location_visible_to(location, user) -> bool:
-    """Whether ``user`` may see (and therefore build under) ``location``.
+    """Whether ``user`` may see (and therefore build under) ``location``: ``visible_places`` for one node.
 
     A pending proposal belongs to its proposer until a moderator approves it: everyone else must not
     see it, must not be able to attach anything to it, and must not be able to probe for it.
     """
     proposal = getattr(location, "proposal", None)
-    if proposal is None or proposal.status != LocationProposal.Status.PENDING_APPROVAL:
+    if proposal is None or proposal.status == LocationProposal.Status.APPROVED:
         return True
     if roles.at_least(user, roles.APPROVE_PLACES):
         return True
@@ -769,15 +788,10 @@ def selectable_parent_locations(user=None):
     """Depth 1-3 nodes a user may pick as a parent in the location form: not deleted and either
     public (no proposal or an approved one) or the user's own pending proposal. Excludes other
     users' pending proposals so nobody can build under -- or even see -- a foreign pending node."""
+    # A moderator has to reach the very nodes they are reviewing: without this they cannot fix a
+    # misspelt proposed city, nor add anything inside it, and the queue becomes a dead end.
     qs = Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3])
-    if roles.at_least(user, roles.APPROVE_PLACES):
-        # A moderator has to reach the very nodes they are reviewing: without this they cannot fix a
-        # misspelt proposed city, nor add anything inside it, and the queue becomes a dead end.
-        return qs.order_by("sort_order", "path")
-    visible = models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
-    if user is not None and getattr(user, "is_authenticated", False):
-        visible |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
-    return qs.filter(visible).order_by("sort_order", "path")
+    return visible_places(qs, user).order_by("sort_order", "path")
 
 
 def location_filter_rank(row) -> int:
@@ -806,10 +820,7 @@ def locations_filter_data(user=None, include_all=False) -> list:
     ``sort_locations_for_filter``)."""
     qs = Location.objects.filter(is_deleted=False)
     if not include_all:
-        visible = models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
-        if user is not None and getattr(user, "is_authenticated", False):
-            visible |= models.Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
-        qs = qs.filter(visible)
+        qs = qs.filter(places_seen_by(user))
     rows = list(
         qs.order_by("sort_order", "path").values(
             "pk", "depth", "path", "name_ru", "name_kk", "name_en", "is_hidden", "lat", "lng"
@@ -865,11 +876,7 @@ class LocationsMapPage(OwnLanguageUrlMixin, AsciiSlugMixin, Page):
     def get_context(self, request):
         context = super().get_context(request)
         can_manage = roles.at_least(request.user, roles.APPROVE_PLACES)
-        all_locs = list(
-            Location.objects.filter(is_deleted=False).filter(
-                models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
-            )
-        )
+        all_locs = list(Location.objects.filter(is_deleted=False).filter(public_places()))
         # The cascade filter (shown to managers above the map) narrows the map markers too:
         # selecting a node keeps only that node and its descendants. Pass the narrowed set as the
         # drawn ``candidates`` but keep the full ``all_locs`` for ancestor resolution, so filtering

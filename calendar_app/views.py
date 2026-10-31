@@ -38,6 +38,7 @@ from locations.models import (
     deepest_chosen,
     lock_competition_location,
     map_display_node,
+    places_seen_by,
     sort_locations_for_filter,
 )
 
@@ -74,9 +75,7 @@ def _get_locations_data(user=None) -> list:
     only to the user who proposed them, so they can pick their own before approval.
     """
     # Public = no proposal or an approved one; a pending proposal is visible only to its proposer.
-    visible = Q(proposal__isnull=True) | Q(proposal__status=LocationProposal.Status.APPROVED)
-    if user is not None and getattr(user, "is_authenticated", False):
-        visible |= Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
+    visible = places_seen_by(user)
     rows = list(
         Location.objects.filter(is_deleted=False)
         .filter(visible)

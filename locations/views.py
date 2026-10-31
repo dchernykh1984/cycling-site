@@ -28,14 +28,12 @@ def _get_all_locations_json(user=None) -> list:
 def _get_venues_json() -> list:
     """Selectable venues (depth-4, not hidden, with coordinates) shown as reference markers
     on the location form map so users can see existing venues and avoid duplicates (#118)."""
-    from django.db.models import Q
 
-    from locations.models import Location, LocationProposal
+    from locations.models import Location, public_places
 
-    visible = Q(proposal__isnull=True) | Q(proposal__status=LocationProposal.Status.APPROVED)
     rows = (
         Location.objects.filter(is_deleted=False, is_hidden=False, depth=4, lat__isnull=False, lng__isnull=False)
-        .filter(visible)
+        .filter(public_places())
         .values("pk", "name_ru", "name_kk", "name_en", "lat", "lng")
     )
     return [{**r, "lat": float(r["lat"]), "lng": float(r["lng"])} for r in rows]
