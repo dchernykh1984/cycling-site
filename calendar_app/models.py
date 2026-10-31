@@ -385,7 +385,8 @@ class Competition(index.Indexed, models.Model):
         return None
 
     def approve(self, reviewer) -> None:
-        from locations.models import LocationPendingError, can_manage_locations, chain_is_approved
+        from accounts import roles
+        from locations.models import LocationPendingError, chain_is_approved
 
         if self.status not in (self.Status.PENDING_APPROVAL, self.Status.DRAFT):
             raise ValueError(f"Cannot approve: competition is already '{self.get_status_display()}'.")
@@ -396,7 +397,11 @@ class Competition(index.Indexed, models.Model):
         location = self.location
         # Only the geography *above* the venue matters: approving the venue itself is a level an
         # organizer may create outright, and that is the designed flow for a proposed start point.
-        if location is not None and not can_manage_locations(reviewer) and not chain_is_approved(location.get_parent()):
+        if (
+            location is not None
+            and not roles.at_least(reviewer, roles.APPROVE_PLACES)
+            and not chain_is_approved(location.get_parent())
+        ):
             raise LocationPendingError(
                 "This event's location is still awaiting review; an administrator must approve it first."
             )

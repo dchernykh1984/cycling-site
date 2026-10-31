@@ -11,22 +11,8 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
+from accounts import roles
 from accounts.access import ParticipantRequiredMixin
-from accounts.models import User
-
-_ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
-_PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-
-
-def _can_manage_locations(user) -> bool:
-    from locations.models import can_manage_locations
-
-    return can_manage_locations(user)
-
-
-def _can_add_location_directly(user) -> bool:
-    """Organizer+ may add approved locations directly; everyone else proposes (issue #111)."""
-    return user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ORGANIZER_RANK)
 
 
 def _get_all_locations_json(user=None) -> list:
@@ -84,7 +70,7 @@ class LocationDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk):
         from locations.models import Location, LocationConflictError, soft_delete_location
 
-        if not _can_manage_locations(request.user):
+        if not roles.at_least(request.user, roles.APPROVE_PLACES):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
         # Soft-deleting a node with a live subtree/competitions would orphan them under a vanished
@@ -101,7 +87,7 @@ class LocationHideView(LoginRequiredMixin, View):
     def post(self, request, pk):
         from locations.models import Location
 
-        if not _can_manage_locations(request.user):
+        if not roles.at_least(request.user, roles.APPROVE_PLACES):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
         if location.is_system_fallback:
@@ -120,8 +106,8 @@ class LocationCreateView(ParticipantRequiredMixin, View):
 
         form = LocationForm(
             user=request.user,
-            can_manage=_can_manage_locations(request.user),
-            can_propose_place=_can_add_location_directly(request.user),
+            can_manage=roles.at_least(request.user, roles.APPROVE_PLACES),
+            can_propose_place=roles.at_least(request.user, roles.ADD_PLACES),
         )
         return render(
             request,
@@ -129,7 +115,7 @@ class LocationCreateView(ParticipantRequiredMixin, View):
             {
                 "form": form,
                 "is_edit": False,
-                "can_manage": _can_manage_locations(request.user),
+                "can_manage": roles.at_least(request.user, roles.APPROVE_PLACES),
                 "map_url": _get_map_url(),
                 "all_locations_json": _get_all_locations_json(request.user),
                 "venues_json": _get_venues_json(),
@@ -145,12 +131,9 @@ class LocationCreateView(ParticipantRequiredMixin, View):
             chain_is_approved,
         )
 
-        form = LocationForm(
-            request.POST,
-            user=request.user,
-            can_manage=_can_manage_locations(request.user),
-            can_propose_place=_can_add_location_directly(request.user),
-        )
+        may_approve = roles.at_least(request.user, roles.APPROVE_PLACES)
+        may_add = roles.at_least(request.user, roles.ADD_PLACES)
+        form = LocationForm(request.POST, user=request.user, can_manage=may_approve, can_propose_place=may_add)
         if form.is_valid():
             cd = form.cleaned_data
             name = cd["name_ru"] or cd.get("name_kk") or cd.get("name_en") or ""
@@ -161,16 +144,14 @@ class LocationCreateView(ParticipantRequiredMixin, View):
             # Same rule as the API: a country is admin-only; a region or a city may be *proposed*
             # by an organizer and then waits for a moderator (an admin's lands approved); a venue keeps
             # the older rule (organizer+ adds it approved, everyone else proposes it).
-            if not _can_manage_locations(request.user):
+            if not may_approve:
                 if new_depth == 1:
                     raise PermissionDenied
-                if new_depth in (2, 3) and not _can_add_location_directly(request.user):
+                if new_depth in (2, 3) and not may_add:
                     raise PermissionDenied
             # Even a manager does not get a public node inside a branch still under review: it
             # would make the branch impossible to reject and leave the queue entry a dead end.
-            can_direct = chain_is_approved(parent) and (
-                _can_manage_locations(request.user) or (_can_add_location_directly(request.user) and new_depth == 4)
-            )
+            can_direct = chain_is_approved(parent) and (may_approve or (may_add and new_depth == 4))
             try:
                 # add_location_child locks the parent and the proposal shares the transaction, so a
                 # concurrent delete of the parent can't leave the new node orphaned.
@@ -184,7 +165,7 @@ class LocationCreateView(ParticipantRequiredMixin, View):
                         lat=cd.get("lat"),
                         lng=cd.get("lng"),
                         # Only managers may create hidden fallback venues.
-                        is_hidden=cd.get("is_hidden", False) if _can_manage_locations(request.user) else False,
+                        is_hidden=cd.get("is_hidden", False) if may_approve else False,
                     )
                     # An unapproved location is a proposal: usable by its author, pending review.
                     if not can_direct:
@@ -200,7 +181,7 @@ class LocationCreateView(ParticipantRequiredMixin, View):
             {
                 "form": form,
                 "is_edit": False,
-                "can_manage": _can_manage_locations(request.user),
+                "can_manage": may_approve,
                 "map_url": _get_map_url(),
                 "all_locations_json": _get_all_locations_json(request.user),
                 "venues_json": _get_venues_json(),
@@ -212,7 +193,7 @@ class LocationApproveView(LoginRequiredMixin, View):
     def post(self, request, pk):
         from locations.models import Location, LocationProposal
 
-        if not _can_manage_locations(request.user):
+        if not roles.at_least(request.user, roles.APPROVE_PLACES):
             raise PermissionDenied
         # Only act on a pending proposal; approving a non-pending location is a 404.
         location = get_object_or_404(
@@ -227,7 +208,7 @@ class LocationRejectView(LoginRequiredMixin, View):
     def post(self, request, pk):
         from locations.models import Location, LocationConflictError, LocationInUseError, LocationProposal
 
-        if not _can_manage_locations(request.user):
+        if not roles.at_least(request.user, roles.APPROVE_PLACES):
             raise PermissionDenied
         # Only reject a pending proposal; rejecting a non-pending location (which would
         # destructively reset its competitions) is a 404.
@@ -252,7 +233,7 @@ class LocationEditView(LoginRequiredMixin, View):
         from locations.forms import LocationForm
         from locations.models import Location
 
-        if not _can_manage_locations(request.user):
+        if not roles.at_least(request.user, roles.APPROVE_PLACES):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
 
@@ -270,7 +251,7 @@ class LocationEditView(LoginRequiredMixin, View):
             },
             exclude_pk=pk,
             user=request.user,
-            can_manage=_can_manage_locations(request.user),
+            can_manage=roles.at_least(request.user, roles.APPROVE_PLACES),
         )
         return render(
             request,
@@ -278,7 +259,7 @@ class LocationEditView(LoginRequiredMixin, View):
             {
                 "form": form,
                 "is_edit": True,
-                "can_manage": _can_manage_locations(request.user),
+                "can_manage": roles.at_least(request.user, roles.APPROVE_PLACES),
                 "location": location,
                 "is_fallback": location.is_system_fallback,
                 "map_url": _get_map_url(),
@@ -292,7 +273,7 @@ class LocationEditView(LoginRequiredMixin, View):
         from locations.forms import LocationForm
         from locations.models import Location, LocationConflictError, move_location
 
-        if not _can_manage_locations(request.user):
+        if not roles.at_least(request.user, roles.APPROVE_PLACES):
             raise PermissionDenied
         location = get_object_or_404(Location, pk=pk, is_deleted=False)
         form = LocationForm(
@@ -300,7 +281,7 @@ class LocationEditView(LoginRequiredMixin, View):
             exclude_pk=pk,
             instance=location,
             user=request.user,
-            can_manage=_can_manage_locations(request.user),
+            can_manage=roles.at_least(request.user, roles.APPROVE_PLACES),
         )
         if form.is_valid():
             cd = form.cleaned_data
@@ -340,7 +321,7 @@ class LocationEditView(LoginRequiredMixin, View):
             {
                 "form": form,
                 "is_edit": True,
-                "can_manage": _can_manage_locations(request.user),
+                "can_manage": roles.at_least(request.user, roles.APPROVE_PLACES),
                 "location": location,
                 "is_fallback": location.is_system_fallback,
                 "map_url": _get_map_url(),
