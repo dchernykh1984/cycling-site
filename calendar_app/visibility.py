@@ -54,7 +54,16 @@ def manages(user, competition) -> bool:
     """Whether ``user`` may manage this event: admins and up, or its author while an organizer."""
     if roles.at_least(user, roles.MANAGE_ALL_EVENTS):
         return True
-    return roles.at_least(user, roles.PUBLISH_EVENTS) and user == competition.submitted_by
+    return roles.at_least(user, roles.PUBLISH_EVENTS) and user.pk == competition.submitted_by_id
+
+
+def can_manage_or_own(user, competition) -> bool:
+    """A manager of the event, or its author whatever their role and its status (FR-EVT-002): who
+    edits, deletes and resubmits it -- even a participant their own rejected event (#200) -- holds
+    its upload token and keeps its photo albums."""
+    if manages(user, competition):
+        return True
+    return bool(getattr(user, "is_authenticated", False)) and user.pk == competition.submitted_by_id
 
 
 def _let_in(user) -> Q:

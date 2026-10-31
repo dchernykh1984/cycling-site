@@ -4,7 +4,7 @@ from django.db.models import Q
 
 from accounts import managing
 from calendar_app.models import Competition
-from calendar_app.visibility import can_see, manages
+from calendar_app.visibility import can_manage_or_own, can_see
 
 
 def can_see_event(user, competition: Competition) -> bool:
@@ -15,9 +15,7 @@ def can_see_event(user, competition: Competition) -> bool:
 
 def can_manage_albums(user, competition: Competition) -> bool:
     """The event's creator, whatever their role, or an admin adds and refreshes its albums."""
-    if manages(user, competition):
-        return True
-    return bool(user.is_authenticated and user.pk == competition.submitted_by_id)
+    return can_manage_or_own(user, competition)
 
 
 def can_represent(user, registration) -> bool:

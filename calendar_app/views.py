@@ -64,7 +64,7 @@ from .models import (
     EventType,
 )
 from .seo import sports_event
-from .visibility import can_open, can_review, can_see, listed_for, manages, public_events
+from .visibility import can_manage_or_own, can_open, can_review, can_see, listed_for, manages, public_events
 
 
 def _get_locations_data(user=None) -> list:
@@ -845,19 +845,6 @@ class CalendarMapAPIView(View):
         return JsonResponse(list(groups.values()), safe=False)
 
 
-def _can_manage_token(user, competition) -> bool:
-    """Who may see and manage a competition's upload token: its submitter, or an admin+/superuser.
-
-    Kept in sync with the ``show_upload_token`` gate: the token is a secret credential, so only the
-    people it is shown to may regenerate or delete it.
-    """
-    from registrations.views import can_manage
-
-    return bool(getattr(user, "is_authenticated", False)) and (
-        can_manage(user, competition) or user == competition.submitted_by
-    )
-
-
 def _preview_image_tags(request, competition) -> dict:
     """What a chat should show for this event, if it brought a picture of its own.
 
@@ -955,7 +942,7 @@ class CompetitionDetailView(View):
         # who can manage this specific competition (superuser, admin+, or the organizer
         # who submitted it). Removed the broad rank >= ORGANIZER check that exposed
         # tokens of other organizers' competitions.
-        show_upload_token = _can_manage_token(request.user, competition)
+        show_upload_token = can_manage_or_own(request.user, competition)
         already_registered = False
         registers_others = False
         if request.user.is_authenticated:
@@ -1341,8 +1328,6 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
         pk = request.GET.get("clone")
         if not pk or not pk.isdigit():
             return None
-        from registrations.views import can_manage_or_own
-
         comp = get_object_or_404(Competition, pk=int(pk), is_deleted=False)
         if not can_manage_or_own(request.user, comp):
             raise PermissionDenied
@@ -1474,8 +1459,6 @@ class EditCompetitionView(View):
 
     def _get_competition_or_403(self, request, pk):
         comp = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        from registrations.views import can_manage_or_own
-
         if not can_manage_or_own(request.user, comp):
             raise PermissionDenied
         return comp
@@ -1836,8 +1819,6 @@ class DeleteCompetitionCommentView(LoginRequiredMixin, View):
 
 class CompetitionDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        from registrations.views import can_manage_or_own
-
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage_or_own(request.user, competition):
             raise PermissionDenied
@@ -1850,8 +1831,6 @@ class ResubmitCompetitionView(LoginRequiredMixin, View):
     """The author sends a rejected competition back for a fresh review (#200)."""
 
     def post(self, request, pk):
-        from registrations.views import can_manage_or_own
-
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage_or_own(request.user, competition):
             raise PermissionDenied
@@ -1928,7 +1907,7 @@ class RegenerateInviteKeyView(LoginRequiredMixin, View):
 class RegenerateUploadTokenView(LoginRequiredMixin, View):
     def post(self, request, pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not _can_manage_token(request.user, competition):
+        if not can_manage_or_own(request.user, competition):
             raise PermissionDenied
         competition.upload_token = uuid.uuid4()
         competition.save(update_fields=["upload_token"])
@@ -1939,7 +1918,7 @@ class RegenerateUploadTokenView(LoginRequiredMixin, View):
 class DeleteUploadTokenView(LoginRequiredMixin, View):
     def post(self, request, pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not _can_manage_token(request.user, competition):
+        if not can_manage_or_own(request.user, competition):
             raise PermissionDenied
         competition.upload_token = None
         competition.save(update_fields=["upload_token"])
