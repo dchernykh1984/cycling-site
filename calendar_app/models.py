@@ -589,7 +589,7 @@ class Competition(index.Indexed, models.Model):
     def _location_nodes_by_depth(self) -> dict:
         """Maps tree depth -> location node for this competition's location chain.
 
-        Depth convention: 1=country, 2=region, 3=city, 4=venue.
+        The depth is a ``locations.models.Level``.
         """
         loc = self.location
         if not loc:
@@ -598,17 +598,23 @@ class Competition(index.Indexed, models.Model):
 
     @property
     def country_label(self) -> str:
-        node = self._location_nodes_by_depth.get(1)
+        from locations.models import Level  # local import to avoid circular
+
+        node = self._location_nodes_by_depth.get(Level.COUNTRY)
         return node.name if node else ""
 
     @property
     def region_label(self) -> str:
-        node = self._location_nodes_by_depth.get(2)
+        from locations.models import Level  # local import to avoid circular
+
+        node = self._location_nodes_by_depth.get(Level.REGION)
         return node.name if node else ""
 
     @property
     def city_label(self) -> str:
-        node = self._location_nodes_by_depth.get(3)
+        from locations.models import Level  # local import to avoid circular
+
+        node = self._location_nodes_by_depth.get(Level.CITY)
         return node.name if node else ""
 
 

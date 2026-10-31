@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 
 from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
@@ -19,7 +20,7 @@ from calendar_app.models import (
     DisciplineCategory,
     EventType,
 )
-from locations.models import Location
+from locations.models import Location, LocationProposal
 from tests.language_urls import in_language
 
 
@@ -2677,6 +2678,20 @@ class ModerationPendingLocationsTests(TestCase):
         self.client.force_login(self.organizer)
         resp = self.client.get(reverse("calendar_moderate"))
         self.assertIsNone(resp.context.get("pending_locations"))
+
+    def test_rejecting_a_venue_and_a_city_ask_different_questions(self):
+        region = self.pending.get_parent().get_parent()
+        city = region.add_child(name_ru="Pending City", name_en="Pending City")
+        LocationProposal.objects.create(location=city, submitted_by=self.organizer)
+        self.client.force_login(self.admin)
+        page = self.client.get(in_language(reverse("calendar_moderate"), "en")).content.decode()
+
+        def question(location):
+            action = in_language(reverse("location_reject", args=[location.pk]), "en")
+            return re.search(rf'action="{action}"[^>]*onsubmit="([^"]*)"', page).group(1)
+
+        self.assertIn("Reject this venue?", question(self.pending))
+        self.assertIn("Reject this place?", question(city))
 
 
 class CompetitionRichDescriptionTests(TestCase):
