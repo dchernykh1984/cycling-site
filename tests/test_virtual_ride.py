@@ -2,6 +2,7 @@
 
 import re
 
+from django.contrib.staticfiles import finders
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.translation import gettext
@@ -56,6 +57,20 @@ class VirtualRideTests(TestCase):
         )
         self.assertEqual(used - set(texts["ru"]), set(), "a text the page asks for is missing")
         self.assertEqual(set(texts["ru"]) - used, set(), "a text nothing asks for")
+
+    def test_every_file_the_trainer_loads_ships_with_the_site(self):
+        files = trainer_page.local_files()
+        self.assertTrue(files)
+        for path in files:
+            name = path.relative_to(trainer_page.PAGE.parent.parent).as_posix()
+            self.assertIsNotNone(finders.find(name), name)
+
+    def test_the_trainer_talks_to_the_site_in_one_place(self):
+        # a ride is ridden in the browser: what reaches the site goes through Site.req, to the trainer's API
+        code = "\n".join(trainer_page.scripts())
+        self.assertEqual(re.findall(r"\bfetch\(", code), ["fetch("])
+        self.assertIsNone(re.search(r"sendBeacon|XMLHttpRequest|WebSocket|EventSource", code))
+        self.assertIn("const API_BASE = '/api/v1/virtual-ride';", code)
 
     def test_the_page_is_in_the_sections_sitemap(self):
         self.assertIn(reverse("virtual_ride"), self.client.get("/sitemap-sections.xml").content.decode())

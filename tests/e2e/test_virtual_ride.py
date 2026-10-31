@@ -1,11 +1,13 @@
 """Record labels render independently of WebGL and external trainer sensors."""
 
+import json
 import re
 
 import pytest
 from playwright.sync_api import Page, expect
 
 from accounts.models import User
+from api.endpoints.virtual_ride import PresenceIn
 from tests import trainer_page
 from tests.e2e.conftest import inject_session
 from tests.e2e.test_interface_rules import _REACH
@@ -299,3 +301,40 @@ def test_a_device_without_3d_is_told_so_and_the_page_raises_nothing_more(page: P
     expect(page.locator("#loading")).to_contain_text(page.evaluate("TEXT.en['boot.failed'].split('{')[0]"))
     page.wait_for_timeout(1500)  # the fonts arrive after the failed start
     assert errors == [], errors
+
+
+_A_MEMBER_ASKS = {
+    "GET /api/v1/virtual-ride/me",
+    "GET /api/v1/virtual-ride/records",
+    "GET /api/v1/virtual-ride/rides?limit=30",
+    "POST /api/v1/virtual-ride/presence",
+}
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("member", [False, True])
+def test_the_trainer_asks_the_site_only_what_a_ride_needs(page: Page, live_server, member: bool):
+    if member:
+        rider = User.objects.create_user(
+            username="e2e_vr_asks", email="e2e_vr_asks@test.local", password="testpass123!", role=User.Role.PARTICIPANT
+        )
+        inject_session(page, live_server, rider)
+    asked, sent = [], []
+
+    def note(request):
+        if "alatau" in request.frame.url and request.url.startswith(live_server.url) and "/static/" not in request.url:
+            asked.append(f"{request.method} {request.url.removeprefix(live_server.url)}")
+            if request.post_data:
+                sent.append(json.loads(request.post_data))
+
+    page.on("request", note)
+    page.goto(f"{live_server.url}/en/virtual-ride/")
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(1500)  # the lobby reports itself once settled
+    # the ride itself runs in the browser: a guest is only asked who they are, a member also gets their
+    # records and tells the lobby where they are -- in the fields the site takes, nothing more
+    assert set(asked) <= (_A_MEMBER_ASKS if member else {"GET /api/v1/virtual-ride/me"}), asked
+    assert all(set(body) <= set(PresenceIn.model_fields) for body in sent), sent
+    ready = page.frame_locator("iframe.virtual-ride-frame").locator("html").evaluate("() => phase === 'menu'")
+    if ready:  # a browser that draws 3D reaches the menu, and asks; one that cannot stops before asking
+        assert "GET /api/v1/virtual-ride/me" in asked, asked
