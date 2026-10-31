@@ -15,6 +15,8 @@ from typing import NoReturn
 
 from django.conf import settings
 
+from event_photos.models import BibObservation
+
 SCHEMA_VERSION = 1
 _SHA = re.compile(r"^[0-9a-f]{64}\Z")
 _PREVIEW_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -27,7 +29,7 @@ _MEDIA_TYPES = _PREVIEW_TYPES | {
     "image/avif",
 }
 _PROCESSING = {"pending", "processed", "failed"}
-_STATES = {"candidate", "accepted", "rejected"}
+_STATES = set(BibObservation.State.values)
 _METHODS = {"ocr", "appearance", "manual"}
 _VIEW_URL = re.compile(r"^https://(www\.dropbox\.com|dl\.dropboxusercontent\.com)/scl/fi/[^\s]+\Z")
 _MAX_PATH = 500
@@ -126,7 +128,7 @@ def _bib(value, where: str, original_sha: str) -> Bib:
         _fail(f"{where}.state", "must be candidate, accepted or rejected")
     if not isinstance(method, str) or method not in _METHODS:
         _fail(f"{where}.method", "must be ocr, appearance or manual")
-    if method == "appearance" and state != "candidate":
+    if method == "appearance" and state != BibObservation.State.CANDIDATE:
         _fail(f"{where}.state", "an appearance match is always a candidate")
     if method == "manual" and value.get("content_sha256") != original_sha:
         _fail(f"{where}.content_sha256", "a manual decision must name the original's SHA-256")
@@ -164,9 +166,12 @@ def _manual_review(photo, where, sha):
         accepted = {
             normalize_bib(b["value"])
             for b in photo.get("bibs", [])
-            if b["method"] == "manual" and b["state"] == "accepted"
+            if b["method"] == "manual" and b["state"] == BibObservation.State.ACCEPTED
         }
-        if any(b["state"] == "accepted" and normalize_bib(b["value"]) not in accepted for b in photo.get("bibs", [])):
+        if any(
+            b["state"] == BibObservation.State.ACCEPTED and normalize_bib(b["value"]) not in accepted
+            for b in photo.get("bibs", [])
+        ):
             _fail(f"{where}.bibs", "automatic matches cannot extend the manually accepted set")
 
 
