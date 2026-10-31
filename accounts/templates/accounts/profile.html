@@ -281,7 +281,7 @@
                 <ul class="list-unstyled small mb-0">
                     {% for ride in virtual_ride.recent %}
                     <li class="d-flex justify-content-between gap-2 py-1 border-bottom">
-                        <span><span class="text-muted">{{ ride.finished_at|date:"SHORT_DATE_FORMAT" }}</span> {{ ride.route_name|default:ride.route }}, {{ ride.get_kind_display|lower }}{% if ride.place and ride.field_size and ride.field_size > 1 %}, {{ ride.place }}/{{ ride.field_size }}{% endif %}{% if ride.power_source == "demo" %}, {% trans "demo" %}{% endif %}</span>
+                        <span><span class="text-muted">{{ ride.finished_at|date:"SHORT_DATE_FORMAT" }}</span> {{ ride.route_name|default:ride.route }}, {{ ride.get_kind_display|lower }}{% if ride.place and ride.field_size and ride.field_size > 1 %}, {{ ride.place }}/{{ ride.field_size }}{% endif %}{% if ride.power_source == ride.PowerSource.DEMO %}, {% trans "demo" %}{% endif %}</span>
                         <span class="text-nowrap">{{ ride.time_label }}, {{ ride.distance_km }} {% trans "km" %}{% if ride.strava.activity_url %}, <a href="{{ ride.strava.activity_url }}" class="fw-semibold" target="_blank" rel="noopener">View on Strava</a>{% endif %}</span>
                     </li>
                     {% endfor %}
@@ -435,12 +435,12 @@
                         <td><a href="{% url 'competition_detail' comp.pk %}">{{ comp.title }}</a></td>
                         <td>{{ comp.date_start|date:"d.m.Y" }}</td>
                         <td>
-                            {% if comp.status == 'rejected' %}
+                            {% if comp.status == comp.Status.REJECTED %}
                             <span class="badge bg-danger">{% trans "Rejected" %}</span>
                             {% if comp.rejection_reason %}
                             <div class="text-muted small mt-1">{{ comp.rejection_reason }}</div>
                             {% endif %}
-                            {% elif comp.status == 'approved' %}
+                            {% elif comp.status == comp.Status.APPROVED %}
                             <span class="badge bg-success">{% trans "Approved" %}</span>
                             {% else %}
                             <span class="badge bg-warning text-dark">{% trans "Pending" %}</span>
@@ -449,7 +449,7 @@
                         <td class="text-nowrap">
                             <a href="{% url 'competition_edit' comp.pk %}"
                                class="btn btn-outline-secondary btn-sm">{% trans "Edit" %}</a>
-                            {% if comp.status == 'rejected' %}
+                            {% if comp.status == comp.Status.REJECTED %}
                             <form method="post" action="{% url 'competition_resubmit' comp.pk %}" class="d-inline">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-primary btn-sm">{% trans "Resubmit" %}</button>
@@ -496,14 +496,14 @@
                         <td>{{ sub.locale|upper }}</td>
                         <td>{{ sub.submitted_at|date:"d.m.Y" }}</td>
                         <td>
-                            {% if sub.status == 'pending' %}
+                            {% if sub.status == sub.Status.PENDING %}
                             <span class="badge bg-warning text-dark">{{ sub.get_status_display }}</span>
-                            {% elif sub.status == 'approved' %}
+                            {% elif sub.status == sub.Status.APPROVED %}
                             <span class="badge bg-success">{{ sub.get_status_display }}</span>
                             {% else %}
                             <span class="badge bg-danger">{{ sub.get_status_display }}</span>
                             {% endif %}
-                            {% if sub.status == 'rejected' and sub.reviewer_note %}
+                            {% if sub.status == sub.Status.REJECTED and sub.reviewer_note %}
                             <div class="text-muted small mt-1">{{ sub.reviewer_note }}</div>
                             {% endif %}
                         </td>

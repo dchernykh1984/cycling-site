@@ -27,8 +27,8 @@
     <div class="event-heading d-flex align-items-start gap-2 mb-2">
       <h1 class="mb-0">{{ competition.title }}</h1>
       {% if share_url %}{% include "_share_button.html" with share_url=share_url %}{% endif %}
-      {% if competition.status == 'approved' %}{% include "_calendar_button.html" %}{% endif %}
-      {% if user.is_authenticated and competition.status == 'approved' %}
+      {% if competition.status == competition.Status.APPROVED %}{% include "_calendar_button.html" %}{% endif %}
+      {% if user.is_authenticated and competition.status == competition.Status.APPROVED %}
       <form method="post" action="{% url 'competition_toggle_favorite' competition.pk %}"
             id="favorite-form" class="mt-1">
         {% csrf_token %}
@@ -59,12 +59,12 @@
       <span><strong>{% trans "Disciplines" %}:</strong> {{ competition.disciplines_label }}</span>
       {% endif %}
     </div>
-    {% if competition.status == 'pending_approval' %}
+    {% if competition.status == competition.Status.PENDING_APPROVAL %}
     <div class="alert alert-warning py-2 mb-4">
       <strong>{% trans "Awaiting moderation." %}</strong>
       {% trans "This event is not shown in the public calendar yet." %}
     </div>
-    {% elif competition.status == 'rejected' %}
+    {% elif competition.status == competition.Status.REJECTED %}
     <div class="alert alert-danger py-2 mb-4">
       <strong>{% trans "This submission was rejected." %}</strong>
       {% with rejections=competition.rejections.all %}
@@ -140,7 +140,7 @@
     </div>
     {% endif %}
 
-    {% if competition.registration_enabled and competition.status == 'approved' %}
+    {% if competition.registration_enabled and competition.status == competition.Status.APPROVED %}
     <div class="mt-4 pt-3 mb-4 border-top">
       <h2 class="h5">{% trans "Registration" %}</h2>
       <p class="text-muted small">{% trans "Registered" %}: {{ competition.qualified_count }}</p>
@@ -208,7 +208,7 @@
       <div class="d-flex flex-wrap gap-2">
         {% for protocol in protocols %}
         <a href="{% url 'protocol_detail' protocol.pk %}" class="btn btn-primary competition-result-link">
-          {% if protocol.protocol_type == "absolute" %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}
+          {% if protocol.protocol_type == protocol.ProtocolType.ABSOLUTE %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}
           {% if protocol.stage_label %}&mdash; {{ protocol.stage_label }}{% endif %}
           {% if protocol.is_live %}<span class="badge bg-danger ms-1">{% trans "Live" %}</span>{% endif %}
         </a>
@@ -384,7 +384,7 @@
       </a>
       <a href="{% url 'calendar_submit' %}?clone={{ competition.pk }}" class="btn btn-outline-secondary btn-sm">
         {% trans "Clone" %}</a>
-      {% if competition.status == 'rejected' %}
+      {% if competition.status == competition.Status.REJECTED %}
       <form method="post" action="{% url 'competition_resubmit' competition.pk %}" class="d-inline">
         {% csrf_token %}
         <button type="submit" class="btn btn-primary btn-sm">{% trans "Resubmit for review" %}</button>
@@ -406,7 +406,7 @@
     </div>
     {% endif %}
 
-    {% if competition.status == 'approved' %}
+    {% if competition.status == competition.Status.APPROVED %}
     <hr class="mt-4">
     <section id="comments">
       <h2 class="mb-4 h5">{% trans "Comments" %} ({{ comments|length }})</h2>
