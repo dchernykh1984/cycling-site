@@ -1,8 +1,9 @@
 """``{% assistant_chat %}``: the assistant's chat on the pages where an event or a news item is written (#353).
 
-Offered to admins and the owner, and only when the site has the model's key. The page carries the
-conversation so far -- the subject's own on its edit page, or the one a refused form posted back --
-and what the chat reads and fills in the form of its kind.
+Offered on an event's pages to organizers and up, on a news item's to admins and up, and only when
+the site has the model's key. The page carries the conversation so far -- the subject's own on its
+edit page, or the one a refused form posted back, when it is the reader's -- and what the chat reads
+and fills in the form of its kind.
 """
 
 from django import template
@@ -11,8 +12,7 @@ from django.urls import reverse
 from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 
-from api.auth import is_admin
-from assistant.conversations import subject_field
+from assistant.conversations import may_see, offered, subject_field
 from assistant.models import Conversation
 
 register = template.Library()
@@ -53,7 +53,8 @@ def _conversation(request, subject, kind: str) -> Conversation | None:
     if not posted.isdigit():
         return None
     unlinked = Conversation.objects.filter(competition__isnull=True, news__isnull=True)
-    return unlinked.filter(pk=int(posted), kind=kind).first()
+    conversation = unlinked.filter(pk=int(posted), kind=kind).first()
+    return conversation if conversation is not None and may_see(request.user, conversation) else None
 
 
 def _first_question(kind: str, editing: bool) -> str:
@@ -70,7 +71,7 @@ def _first_question(kind: str, editing: bool) -> str:
 def assistant_chat(context, kind: str = "event"):
     request = context.get("request")
     user = getattr(request, "user", None)
-    if not settings.ASSISTANT_LLM_API_KEY or user is None or not is_admin(user):
+    if not settings.ASSISTANT_LLM_API_KEY or user is None or not offered(user, kind):
         return {"offered": False}
     subject = context.get("article" if kind == "news" else "competition")
     conversation = _conversation(request, subject, kind)
