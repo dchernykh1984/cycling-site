@@ -114,7 +114,8 @@ Two days later, on 2026-10-31:
     decision 1 foresaw, and still without limits (decision 8). An organizer reaches only
     their own -- the conversations they started and those of their own events; whoever manages an
     event sees its whole conversation, an admin's messages included. News stays with admins, who
-    alone write it. Decisions 1 and 26 hold for news only.
+    alone write it: decision 1 now limits only the news, and decision 26's tests try every role
+    against the new rule.
 
 ## Requirements already fixed elsewhere
 
