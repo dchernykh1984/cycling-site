@@ -70,7 +70,7 @@ def _first_question(kind: str, editing: bool) -> str:
 @register.inclusion_tag("assistant/_chat.html", takes_context=True)
 def assistant_chat(context, kind: str = Conversation.Kind.EVENT):
     if kind not in _FORMS:  # also where the site has no key, so that a test meets the typo first
-        raise template.TemplateSyntaxError(f"{kind!r} is no kind of conversation: event or news")
+        raise template.TemplateSyntaxError(f"{kind!r} is no kind of conversation: {', '.join(_FORMS)}")
     request = context.get("request")
     user = getattr(request, "user", None)
     if not settings.ASSISTANT_LLM_API_KEY or user is None or not offered(user, kind):
