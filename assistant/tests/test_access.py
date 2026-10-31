@@ -134,9 +134,10 @@ class AnOrganizerReachesOnlyTheirOwnTests(TestCase):
         self.assertEqual((own.status_code, own.json()["id"]), (200, started.json()["id"]))
         complete.assert_called_once()
 
-    def test_anything_not_their_own_is_a_404_and_the_news_a_403(self):
+    def test_what_is_out_of_their_reach_is_a_404_and_starting_on_a_news_item_a_403(self):
         others_event = competition(submitted_by=self.other, location=self.own_event.location)
-        theirs = [
+        # Another's event's, another's draft, and a news item's -- even one they started.
+        out_of_reach = [
             Conversation.objects.create(competition=others_event, started_by=self.other),
             Conversation.objects.create(started_by=self.other),
             Conversation.objects.create(kind=Conversation.Kind.NEWS, started_by=self.organizer),
@@ -144,7 +145,7 @@ class AnOrganizerReachesOnlyTheirOwnTests(TestCase):
         own_draft = Conversation.objects.create(started_by=self.organizer)
         bearer = _bearer(self.organizer)
         with mock.patch("assistant.llm.complete", return_value=REPLY) as complete:
-            for conversation in theirs:
+            for conversation in out_of_reach:
                 url = f"{API}/conversations/{conversation.pk}"
                 with self.subTest(conversation=conversation.pk):
                     self.assertEqual(self.client.get(url, **bearer).status_code, 404)
