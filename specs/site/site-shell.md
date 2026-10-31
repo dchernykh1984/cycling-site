@@ -3,7 +3,7 @@
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21
 **Code**: `cycling_site/` (templates `base.html`, `_setup_hint.html`, `_share_button.html`;
-`setup_hints.py`, `context_processors.py`, `middleware.py`, `richtext.py`), `home/` (home page, site
+`setup_hints.py`, `context_processors.py`, `middleware.py`, `richtext.py`, `storage.py`), `home/` (home page, site
 content, legal pages), `search/`
 **Tests**: `home/tests.py`, `tests/test_home_cards.py`, `cycling_site/tests.py`, `tests/test_setup_hints.py`,
 `tests/test_share_button.py`, `tests/test_language_switch.py`, `tests/test_locale_cache.py`,
@@ -25,14 +25,21 @@ report a bug. The menu's and the footer's links stay in the page's language: a W
 home page, Map, Knowledge Base) is addressed under its own language's prefix
 (`cycling_site/page_mixins.OwnLanguageUrlMixin`), not under the default language's.
 
-**Virtual ride** (`trainer/`, `/<lang>/virtual-ride/`) frames a self-contained indoor-trainer page,
+**Virtual ride** (`trainer/`, `/<lang>/virtual-ride/`) frames an indoor-trainer page,
 `trainer/static/trainer/alatau.html`, in an iframe that may use Web Bluetooth, the screen wake
-lock and full screen; a link opens the same file on its own. The self-contained page is updated
-from delivered revisions. It speaks the language its address names (`?lang=ru|kk|en`, which the
+lock and full screen; a link opens the same page on its own. The page is a static file that loads
+its own files from `trainer/static/trainer/alatau/`, in the order it lists them: `alatau.css`, its
+words (`text/<lang>.js`), its route and rider catalogues (`data/`) and its code, a file per part of
+it (`js/`: the scene, the riders, the devices, the race, the HUD, the site's API and the rest).
+Production names each file after a hash of its content, as it names the page, and the page links
+those names (`cycling_site/storage.py`), so the page and its files are cached together. The ride
+runs in the browser: the page talks to the site only through `Site.req` (`js/site.js`), to
+`/api/v1/virtual-ride/` -- who rides, a member's records and rides, the lobby and group races, a
+finished ride and its Strava upload. The page is updated from delivered revisions. It speaks the language its address names (`?lang=ru|kk|en`, which the
 site's page passes from its own; Russian without one): its texts, units, number and date formats
-and the names of its routes, landmarks and riders come from a ru / kk / en dictionary inside the page
-rather than from the translation catalogues -- an exception to FR-SHL-006 that keeps the page one
-self-contained file. A route name the page sends with a saved ride or a group race is in the
+and the names of its routes, landmarks and riders come from its own ru / kk / en words (`text/`,
+`data/`) rather than from the translation catalogues -- an exception to FR-SHL-006 that keeps the
+page standing on its own, apart from the site's templates. A route name the page sends with a saved ride or a group race is in the
 language the page spoke then; the page itself shows the routes it knows in its current language,
 the profile shows the stored name. A member's page records the ride's track, a point a second: where
 the rider is on the route's map (the route's own OpenStreetMap coordinates, simplified, so a turn may
@@ -59,7 +66,8 @@ on the same route, each page reports its position about once a second and draws 
 fastest first; deleting one moves the others up. The settings page is separate from the ride and offers racing, a cadence plan and free riding. It includes rider
 height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
 default. Free rides can be finished from the pause menu. Record labels keep the date and demo marker distinct. Tests:
-`tests/test_virtual_ride.py`, `tests/test_virtual_ride_api.py`, `tests/e2e/test_virtual_ride.py`.
+`tests/test_virtual_ride.py`, `tests/test_virtual_ride_api.py`, `tests/test_static_storage.py`,
+`tests/e2e/test_virtual_ride.py`.
 
 ## User Scenarios
 
@@ -185,7 +193,7 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   `home/forms.py`, `locations/forms.py`, `api/schemas.py` and their templates), and helpers loop over
   a literal `("ru", "kk", "en")` (`api/endpoints/content.py`, `locations/models.py`,
   `cycling_site/skins.py`). A fourth language would need changes in each.
-- The virtual ride page (`trainer/static/trainer/alatau.html`) carries its own catalogue: the
+- The virtual ride page carries its own catalogue (`trainer/static/trainer/alatau/data/`): the
   routes, cities and landmarks of Almaty and the UBT kit its rider wears. A route elsewhere comes with
   a new revision of the page; the site stores only the route key and name the page sends.
 - The fallback page description names countries and sports ("cycling, running, cross-country skiing
