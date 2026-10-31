@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Location, location_subtree_is_nonempty, point_is_whole, selectable_parent_locations
+from .models import Level, Location, location_subtree_is_nonempty, point_is_whole, selectable_parent_locations
 
 # A place's point is the two numbers together: one alone pins nothing.
 BOTH_OR_NEITHER = _("Give both the latitude and the longitude, or neither.")
@@ -44,12 +44,14 @@ class LocationForm(forms.Form):
 
     def clean_parent(self):
         parent = self.cleaned_data.get("parent")
-        new_depth = parent.depth + 1 if parent is not None else 1
+        new_depth = parent.depth + 1 if parent is not None else Level.COUNTRY
         # A venue is open to everyone; a region or a city may be proposed by an organizer and a
         # country stays admin-only. Surface a clear field error for an incomplete cascade instead of
         # letting it fall through to the view's 403 guard (which stays as defense against a forged
         # POST).
-        if not self.can_manage and (new_depth == 1 or (new_depth in (2, 3) and not self.can_propose_place)):
+        if not self.can_manage and (
+            new_depth == Level.COUNTRY or (new_depth in (Level.REGION, Level.CITY) and not self.can_propose_place)
+        ):
             raise forms.ValidationError(
                 _("Select a country, region and city: a venue is added inside the chosen city.")
             )
@@ -68,7 +70,7 @@ class LocationForm(forms.Form):
         # being depth-4) and orphans competitions that require a depth-4 venue. Forbid the level
         # change while the node has any physical subtree (even soft-deleted, which still moves)
         # or competitions in that subtree.
-        new_depth = parent.depth + 1 if parent is not None else 1
+        new_depth = parent.depth + 1 if parent is not None else Level.COUNTRY
         if new_depth != self.instance.depth and location_subtree_is_nonempty(self.instance):
             raise forms.ValidationError(
                 _("This location has nested locations or events, so its level cannot be changed.")

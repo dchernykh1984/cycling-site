@@ -29,10 +29,12 @@ def _get_venues_json() -> list:
     """Selectable venues (depth-4, not hidden, with coordinates) shown as reference markers
     on the location form map so users can see existing venues and avoid duplicates (#118)."""
 
-    from locations.models import Location, public_places
+    from locations.models import Level, Location, public_places
 
     rows = (
-        Location.objects.filter(is_deleted=False, is_hidden=False, depth=4, lat__isnull=False, lng__isnull=False)
+        Location.objects.filter(
+            is_deleted=False, is_hidden=False, depth=Level.VENUE, lat__isnull=False, lng__isnull=False
+        )
         .filter(public_places())
         .values("pk", "name_ru", "name_kk", "name_en", "lat", "lng")
     )
@@ -123,6 +125,7 @@ class LocationCreateView(ParticipantRequiredMixin, View):
     def post(self, request):
         from locations.forms import LocationForm
         from locations.models import (
+            Level,
             LocationConflictError,
             LocationProposal,
             add_location_child,
@@ -138,18 +141,18 @@ class LocationCreateView(ParticipantRequiredMixin, View):
             # The deepest selected cascade node is the parent; None means a new country.
             # The new location's level is always parent.depth + 1 (depth 1 for a country).
             parent = cd.get("parent")
-            new_depth = parent.depth + 1 if parent is not None else 1
+            new_depth = parent.depth + 1 if parent is not None else Level.COUNTRY
             # Same rule as the API: a country is admin-only; a region or a city may be *proposed*
             # by an organizer and then waits for a moderator (an admin's lands approved); a venue keeps
             # the older rule (organizer+ adds it approved, everyone else proposes it).
             if not may_approve:
-                if new_depth == 1:
+                if new_depth == Level.COUNTRY:
                     raise PermissionDenied
-                if new_depth in (2, 3) and not may_add:
+                if new_depth in (Level.REGION, Level.CITY) and not may_add:
                     raise PermissionDenied
             # Even a manager does not get a public node inside a branch still under review: it
             # would make the branch impossible to reject and leave the queue entry a dead end.
-            can_direct = chain_is_approved(parent) and (may_approve or (may_add and new_depth == 4))
+            can_direct = chain_is_approved(parent) and (may_approve or (may_add and new_depth == Level.VENUE))
             try:
                 # add_location_child locks the parent and the proposal shares the transaction, so a
                 # concurrent delete of the parent can't leave the new node orphaned.
