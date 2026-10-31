@@ -101,7 +101,7 @@ def can_review(user, competition) -> bool:
     Any organizer moderates, but an invite-only event is for the people who may edit it -- so while
     it waits, only admins and up review it.
     """
-    if user.is_authenticated and user == competition.submitted_by:
+    if user.is_authenticated and user.pk == competition.submitted_by_id:
         return True
     if competition.invite_only:
         return roles.at_least(user, roles.MANAGE_ALL_EVENTS)
