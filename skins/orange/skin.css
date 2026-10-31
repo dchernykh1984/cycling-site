@@ -991,6 +991,10 @@ hr { border-color: var(--ubt-line); opacity: 1; }
     gap: 1rem;
 }
 .ubt-section {
+    /* A word wider than a phone -- a pasted link -- breaks inside the card rather than widening the
+       grid's column, and the page with it. */
+    min-width: 0;
+    overflow-wrap: anywhere;
     background: var(--ubt-surface);
     border: 1px solid var(--ubt-line);
     border-radius: var(--ubt-radius);
