@@ -26,12 +26,11 @@ from urllib.parse import quote
 from django.conf import settings
 from django.utils.translation import gettext
 
-from locations.models import Location
+from locations.models import Level, Location
 
 # Zoom close enough to show the actual corner of a car park, on the services that take one.
 _ZOOM = 17
 # The tree is country / region / city / venue; only the deepest level can be a start line.
-_VENUE_DEPTH = 4
 
 
 @dataclass(frozen=True)
@@ -58,7 +57,7 @@ def start_point(location: Location | None) -> tuple[Decimal, Decimal] | None:
     """
     if location is None:
         return None
-    if location.depth < _VENUE_DEPTH:
+    if location.depth < Level.VENUE:
         return None
     if location.is_hidden or location.is_system_fallback:
         return None

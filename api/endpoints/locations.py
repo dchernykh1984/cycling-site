@@ -11,6 +11,7 @@ from accounts import roles
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedStr, LocalizedTitle, localize_field
 from locations.models import (
+    Level,
     Location,
     LocationConflictError,
     LocationProposal,
@@ -183,7 +184,7 @@ def city_fallback_venue(request, city_id: int):
     if not roles.at_least(request.auth, roles.ADD_PLACES):
         raise HttpError(403, "ORGANIZER role or higher is required")
     try:
-        city = Location.objects.get(pk=city_id, is_deleted=False, depth=3)
+        city = Location.objects.get(pk=city_id, is_deleted=False, depth=Level.CITY)
     except Location.DoesNotExist:
         raise HttpError(404, "City (depth-3 location) not found") from None
     if not location_visible_to(city, request.auth):
@@ -243,15 +244,15 @@ def create_location(request, payload: LocationIn):
     # beside "Kyrgyzstan") drags a whole subtree with it. Regions and cities may be *proposed* by an
     # organizer -- the events agent needs them to place a race in a town the tree does not have yet
     # -- and then wait for a moderator, unless the author is an admin. Venues keep the earlier rule.
-    new_depth = 1 if parent is None else parent.depth + 1
+    new_depth = Level.COUNTRY if parent is None else parent.depth + 1
     if not may_approve:
-        if new_depth == 1:
+        if new_depth == Level.COUNTRY:
             raise HttpError(403, "Creating a country is admin-only")
-        if new_depth in (2, 3) and not may_add:
+        if new_depth in (Level.REGION, Level.CITY) and not may_add:
             raise HttpError(403, "ORGANIZER role or higher is required to propose a region or city")
     # Even an admin does not get a public node inside a branch still under review -- that is
     # what makes the branch impossible to reject afterwards.
-    approved = chain_is_approved(parent) and (may_approve or (may_add and new_depth == 4))
+    approved = chain_is_approved(parent) and (may_approve or (may_add and new_depth == Level.VENUE))
 
     # add_location_child locks the parent (or the root namespace) and the proposal shares the
     # transaction, so a concurrent delete can't orphan the node and two roots can't collide on path.

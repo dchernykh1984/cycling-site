@@ -10,7 +10,7 @@ from django.utils.translation import pgettext_lazy
 
 from accounts import roles
 from cycling_site.forms import LocalizedMaxLengthMixin
-from locations.models import Location, competition_location_block_reason
+from locations.models import Level, Location, competition_location_block_reason
 from registrations.models import RegistrationCategory
 
 from .models import (
@@ -258,7 +258,7 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
             and not point_is_whole(cleaned_data.get("new_venue_lat"), cleaned_data.get("new_venue_lng"))
         ):
             self.add_error(None, BOTH_OR_NEITHER)
-        if city is not None and (city.depth != 3 or not location_visible_to(city, self.user)):
+        if city is not None and (city.depth != Level.CITY or not location_visible_to(city, self.user)):
             # Same rule as for `location` below: a city that is someone else's pending proposal is
             # not a city this user may build under, however the POST reached us.
             self.add_error("new_venue_city", _("Please choose a city for the new venue."))

@@ -45,7 +45,7 @@ def visitor_point(request) -> tuple[float, float] | None:
 def nearest_region(point: tuple[float, float]):
     """The region of the site's public city nearest to ``point``, or None when none lies within
     ``GUEST_REGION_RADIUS_KM``."""
-    from locations.models import Location, public_places
+    from locations.models import Level, Location, public_places
 
     radius_km = settings.GUEST_REGION_RADIUS_KM
     lat, lng = point
@@ -56,7 +56,7 @@ def nearest_region(point: tuple[float, float]):
     dlng = radius_km / (_KM_PER_DEGREE * max(math.cos(math.radians(lat)), 0.01))
     cities = Location.objects.filter(
         public_places(),
-        depth=3,
+        depth=Level.CITY,
         is_deleted=False,
         lat__range=(lat - dlat, lat + dlat),
         lng__range=(lng - dlng, lng + dlng),

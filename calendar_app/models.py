@@ -524,13 +524,13 @@ class Competition(index.Indexed, models.Model):
             return ""
         if not loc.is_hidden:
             return loc.name
-        # Hidden depth-4 fallback venue -> show parent city (depth=3)
-        if loc.depth == 4:
-            from locations.models import Location  # local import to avoid circular
+        from locations.models import Level, Location  # local import to avoid circular
 
-            step = len(loc.path) // 4
+        # A hidden fallback venue -> show its city
+        if loc.depth == Level.VENUE:
+            step = len(loc.path) // Level.VENUE
             try:
-                return Location.objects.get(path=loc.path[: step * 3], depth=3).name
+                return Location.objects.get(path=loc.path[: step * Level.CITY], depth=Level.CITY).name
             except Location.DoesNotExist:
                 pass
         return loc.name

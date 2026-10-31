@@ -79,7 +79,7 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
     from django.db.models import Count, Q
     from django.utils import timezone
 
-    from locations.models import Location
+    from locations.models import Level, Location
 
     from .models import Discipline
     from .visibility import public_events, public_events_q
@@ -96,14 +96,14 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
     # gives the ordering below something to sort on.
     step = Location.steplen
     city_paths = list(published.filter(location__isnull=False).values_list("location__path", flat=True))
-    city_counts = Counter(path[: step * 3] for path in city_paths if len(path) >= step * 3)
-    region_counts = Counter(key[: step * 2] for key, races in city_counts.items() for _ in range(races))
+    city_counts = Counter(path[: step * Level.CITY] for path in city_paths if len(path) >= step * Level.CITY)
+    region_counts = Counter(key[: step * Level.REGION] for key, races in city_counts.items() for _ in range(races))
     city_keys = set(city_counts)
     # The catch-all city ("Other city") is a bucket for events whose town nobody wrote down, not a
     # place anybody searches for. It is hidden in the tree for exactly that reason, and hidden nodes
     # have no business being offered as a page of their own.
     places = _by_weight(
-        Location.objects.filter(depth=3, path__in=city_keys, is_deleted=False, is_hidden=False),
+        Location.objects.filter(depth=Level.CITY, path__in=city_keys, is_deleted=False, is_hidden=False),
         city_counts,
         limit_places,
     )
@@ -119,7 +119,7 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
         .order_by("-events", "pk")[:limit_kinds]
     )
     regions = _by_weight(
-        Location.objects.filter(depth=2, path__in=set(region_counts), is_deleted=False, is_hidden=False),
+        Location.objects.filter(depth=Level.REGION, path__in=set(region_counts), is_deleted=False, is_hidden=False),
         region_counts,
         limit_regions,
     )

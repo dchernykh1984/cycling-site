@@ -15,6 +15,7 @@ from calendar_app.feeds import build_calendar, calendar_response, site_base_url
 from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline, EventType
 from calendar_app.visibility import can_manage_or_own
 from locations.models import (
+    Level,
     Location,
     LocationConflictError,
     chain_is_approved,
@@ -176,15 +177,12 @@ class CompetitionDetailOut(CompetitionOut):
 # -- Helpers ---------------------------------------------------------------
 
 
-_CITY_DEPTH = 3  # country -> region -> city -> venue
-
-
 def _city_path(location) -> str | None:
     """The treebeard path of the city ``location`` belongs to, or None above city level."""
-    if location is None or location.depth < _CITY_DEPTH:
+    if location is None or location.depth < Level.CITY:
         return None
     step = len(location.path) // location.depth
-    return location.path[: step * _CITY_DEPTH]
+    return location.path[: step * Level.CITY]
 
 
 def city_id_of(location) -> int | None:
@@ -192,15 +190,15 @@ def city_id_of(location) -> int | None:
     path = _city_path(location)
     if path is None:
         return None
-    if location.depth == _CITY_DEPTH:
+    if location.depth == Level.CITY:
         return location.pk
-    return Location.objects.filter(path=path, depth=_CITY_DEPTH).values_list("pk", flat=True).first()
+    return Location.objects.filter(path=path, depth=Level.CITY).values_list("pk", flat=True).first()
 
 
 def _annotate_city_ids(competitions: list) -> list:
     """Resolve every row's city in one query, so serializing a list is not one query per row."""
     wanted = {path for comp in competitions if (path := _city_path(comp.location)) is not None}
-    by_path = dict(Location.objects.filter(path__in=wanted, depth=_CITY_DEPTH).values_list("path", "pk"))
+    by_path = dict(Location.objects.filter(path__in=wanted, depth=Level.CITY).values_list("path", "pk"))
     for comp in competitions:
         comp._city_id = by_path.get(_city_path(comp.location))
     return competitions

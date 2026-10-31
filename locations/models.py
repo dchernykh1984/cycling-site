@@ -1,4 +1,5 @@
 import threading
+from enum import IntEnum
 from typing import ClassVar
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -57,6 +58,15 @@ def _lock_tree_mutation_namespace():
 
 # The catch-all nodes at every level ("Other country" / "Other region" / "Other city" / "Other
 # location") are pinned to the end of their list with this sort_order; real nodes stay below it.
+class Level(IntEnum):
+    """The four levels of the place tree, its nodes' ``depth``: an event always hangs at a venue."""
+
+    COUNTRY = 1
+    REGION = 2
+    CITY = 3
+    VENUE = 4
+
+
 CATCH_ALL_SORT_ORDER = 9999
 
 # The name a city's catch-all venue is created under, marked here because it is translated through
@@ -109,7 +119,7 @@ def add_location_child(parent, **kwargs):
                 raise LocationConflictError("Parent location was removed")
             # The tree is four levels (country/region/city/venue); never nest under a venue. Also
             # closes a race where the parent was concurrently moved down to depth 4 before we lock.
-            if locked.depth >= 4:
+            if locked.depth >= Level.VENUE:
                 raise LocationConflictError("Parent location is already at the deepest level")
             depth = locked.depth + 1
             siblings = list(
@@ -119,8 +129,8 @@ def add_location_child(parent, **kwargs):
                 ).order_by("path")
             )
         else:
-            depth = 1
-            siblings = list(cls.objects.filter(depth=1).order_by("path"))
+            depth = Level.COUNTRY
+            siblings = list(cls.objects.filter(depth=Level.COUNTRY).order_by("path"))
         last = siblings[-1] if siblings else None
         if last is not None:
             newpath = last._inc_path()
@@ -267,7 +277,7 @@ class Location(MP_Node, index.Indexed):
         with transaction.atomic():
             _lock_tree_mutation_namespace()
             try:
-                locked_city = cls.objects.select_for_update().get(pk=city.pk, is_deleted=False, depth=3)
+                locked_city = cls.objects.select_for_update().get(pk=city.pk, is_deleted=False, depth=Level.CITY)
             except cls.DoesNotExist:
                 raise LocationConflictError("Fallback city is no longer available") from None
 
@@ -436,7 +446,7 @@ class Location(MP_Node, index.Indexed):
             if proposal is None:
                 raise LocationConflictError("Location proposal is no longer pending")
 
-            if locked.depth < 4:
+            if locked.depth < Level.VENUE:
                 locked._reject_proposed_place()
                 return
             if locked.is_system_fallback:
@@ -508,7 +518,7 @@ def competition_location_block_reason(location, user, *, is_admin=False) -> str 
     if getattr(location, "is_deleted", False):
         return "Location is deleted"
     # A competition must point at a specific venue (depth 4), never a country/region/city.
-    if location.depth != 4:
+    if location.depth != Level.VENUE:
         return "Competition location must be a specific venue, not a country/region/city"
     proposal = getattr(location, "proposal", None)
     if proposal is not None and proposal.status == LocationProposal.Status.PENDING_APPROVAL and not is_admin:
@@ -696,8 +706,8 @@ def move_location(location, new_parent) -> None:
         _lock_tree_mutation_namespace()
         locked, locked_target = _lock_move_nodes(location, new_parent)
 
-        new_depth = (locked_target.depth + 1) if locked_target is not None else 1
-        if new_depth > 4:
+        new_depth = (locked_target.depth + 1) if locked_target is not None else Level.COUNTRY
+        if new_depth > Level.VENUE:
             raise LocationConflictError("Resulting depth exceeds the four-level tree")
         # An approved node must not slide under a branch still awaiting review: the branch would
         # then hold public work and could never be rejected, and list_locations would drop the
@@ -738,7 +748,12 @@ def move_location(location, new_parent) -> None:
         locked.sort_order = _MOVE_SORT_ORDER
         if locked_target is None:
             # Become a root by joining an existing root as a sorted sibling.
-            root = Location.objects.filter(is_deleted=False, depth=1).exclude(pk=locked.pk).order_by("path").first()
+            root = (
+                Location.objects.filter(is_deleted=False, depth=Level.COUNTRY)
+                .exclude(pk=locked.pk)
+                .order_by("path")
+                .first()
+            )
             if root is not None:
                 _safe_move(locked, root, pos="sorted-sibling")
         else:
@@ -746,7 +761,7 @@ def move_location(location, new_parent) -> None:
         # treebeard's move() leaves the in-memory node stale, so read the new depth from the target
         # rather than from ``locked``: re-rooting used to compare against every node at the node's
         # *old* depth, which handed the new country the global maximum and sorted it past them all.
-        new_depth = 1 if locked_target is None else locked_target.depth + 1
+        new_depth = Level.COUNTRY if locked_target is None else locked_target.depth + 1
         siblings = Location.objects.filter(depth=new_depth).exclude(pk=locked.pk)
         if locked_target is not None:
             siblings = siblings.filter(path__range=Location._get_children_path_interval(locked_target.path))
@@ -790,7 +805,7 @@ def selectable_parent_locations(user=None):
     users' pending proposals so nobody can build under -- or even see -- a foreign pending node."""
     # A moderator has to reach the very nodes they are reviewing: without this they cannot fix a
     # misspelt proposed city, nor add anything inside it, and the queue becomes a dead end.
-    qs = Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3])
+    qs = Location.objects.filter(is_deleted=False, depth__in=[Level.COUNTRY, Level.REGION, Level.CITY])
     return visible_places(qs, user).order_by("sort_order", "path")
 
 

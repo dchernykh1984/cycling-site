@@ -17,7 +17,7 @@ from django.utils import timezone
 from accounts.models import User
 from calendar_app.models import Competition, CompetitionMaterial, Discipline, EventType
 from knowledge.models import KnowledgeArticle
-from locations.models import Location
+from locations.models import Level, Location
 from news.models import NewsArticle
 from protocols.models import Protocol
 from registrations.models import CompetitionRegistration, RegistrationCategory
@@ -50,7 +50,7 @@ visitors = {f"{who}_{theme}": (who, theme) for who in ("member", "admin") for th
 for name, (who, theme) in visitors.items():
     user(name, User.Role.ADMIN if who == "admin" else User.Role.PARTICIPANT, theme)
 
-city = Location.objects.filter(depth=3, is_hidden=False).order_by("pk").first()
+city = Location.objects.filter(depth=Level.CITY, is_hidden=False).order_by("pk").first()
 # A made-up point: the map only needs a marker somewhere, not a real venue.
 venue = Location.propose_venue(city, "Visual Square", lat=43, lng=77, approved=True)
 types = list(EventType.objects.order_by("pk")[:2])

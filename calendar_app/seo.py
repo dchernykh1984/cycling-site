@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 from django.urls import reverse
 
 from cycling_site.jsonld import dumps
+from locations.models import Level
 
 
 def sports_event(competition, base_url: str) -> str:
@@ -54,7 +55,11 @@ def sports_event(competition, base_url: str) -> str:
         named = {node.depth: node.name for node in location.get_ancestors() if node.name}
         postal = {
             key: named[depth]
-            for key, depth in (("addressCountry", 1), ("addressRegion", 2), ("addressLocality", 3))
+            for key, depth in (
+                ("addressCountry", Level.COUNTRY),
+                ("addressRegion", Level.REGION),
+                ("addressLocality", Level.CITY),
+            )
             if depth in named
         }
         if postal:
