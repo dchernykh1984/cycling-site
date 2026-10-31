@@ -81,7 +81,8 @@ if "whitenoise.middleware.WhiteNoiseMiddleware" not in MIDDLEWARE:
         MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,
         "whitenoise.middleware.WhiteNoiseMiddleware",
     )
-STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# WhiteNoise's hashed names, extended to the trainer page's links to its own files (cycling_site/storage.py).
+STORAGES["staticfiles"]["BACKEND"] = "cycling_site.storage.StaticFilesStorage"
 
 # Media can live on a mounted persistent disk (Render) via MEDIA_ROOT; defaults to the repo's
 # media/ directory, as on CodeRed.
