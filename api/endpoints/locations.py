@@ -2,7 +2,6 @@ from decimal import Decimal
 from typing import Annotated
 
 from django.db import transaction
-from django.db.models import Q
 from ninja import Router, Schema, Status
 from ninja.errors import HttpError
 from ninja.schema import Field
@@ -17,8 +16,10 @@ from locations.models import (
     LocationProposal,
     add_location_child,
     chain_is_approved,
+    location_visible_to,
     point_is_whole,
     soft_delete_location,
+    visible_places,
 )
 
 auth = ApiTokenAuth()
@@ -98,27 +99,6 @@ def _require_place_manager(user) -> None:
         raise HttpError(403, "ADMIN role or higher is required")
 
 
-def _proposal_visible(location: Location, user) -> bool:
-    """A pending proposed location is visible only to its proposer (or an admin)."""
-    proposal = getattr(location, "proposal", None)
-    if proposal is None or proposal.status == LocationProposal.Status.APPROVED:
-        return True
-    if roles.at_least(user, roles.APPROVE_PLACES):
-        return True
-    return getattr(user, "is_authenticated", False) and proposal.submitted_by_id == user.pk
-
-
-def _visible_locations_qs(user):
-    """Non-deleted locations honouring proposal visibility (pending = proposer/admin only)."""
-    qs = Location.objects.filter(is_deleted=False)
-    if roles.at_least(user, roles.APPROVE_PLACES):
-        return qs
-    visible = Q(proposal__isnull=True) | Q(proposal__status=LocationProposal.Status.APPROVED)
-    if getattr(user, "is_authenticated", False):
-        visible |= Q(proposal__status=LocationProposal.Status.PENDING_APPROVAL, proposal__submitted_by=user)
-    return qs.filter(visible)
-
-
 def _get_or_404(pk: int) -> Location:
     try:
         return Location.objects.get(pk=pk, is_deleted=False)
@@ -141,7 +121,7 @@ def _apply_name(location: Location, name: LocalizedStr) -> None:
 def list_locations(request, include_hidden: bool = False):
     if include_hidden and not roles.at_least(request.auth, roles.APPROVE_PLACES):
         include_hidden = False
-    all_locs = list(_visible_locations_qs(request.auth))
+    all_locs = list(visible_places(Location.objects.filter(is_deleted=False), request.auth))
     step = Location.steplen
     path_to_loc: dict[str, Location] = {loc.path: loc for loc in all_locs}
     children_map: dict[int, list[Location]] = {loc.pk: [] for loc in all_locs}
@@ -182,7 +162,7 @@ def get_location(request, location_id: int):
     if location.is_hidden and not roles.at_least(request.auth, roles.APPROVE_PLACES):
         raise HttpError(404, "Location not found")
     # A pending proposed location is visible only to its proposer (or an admin).
-    if not _proposal_visible(location, request.auth):
+    if not location_visible_to(location, request.auth):
         raise HttpError(404, "Location not found")
     return location
 
@@ -206,7 +186,7 @@ def city_fallback_venue(request, city_id: int):
         city = Location.objects.get(pk=city_id, is_deleted=False, depth=3)
     except Location.DoesNotExist:
         raise HttpError(404, "City (depth-3 location) not found") from None
-    if not _proposal_visible(city, request.auth):
+    if not location_visible_to(city, request.auth):
         raise HttpError(404, "City (depth-3 location) not found")
     try:
         venue = Location.get_or_create_other_location(city)
@@ -256,7 +236,7 @@ def create_location(request, payload: LocationIn):
         # Another user's pending proposal is invisible here, so it must not be buildable under
         # either -- otherwise a public node appears inside a node nobody else can see, and the
         # endpoint doubles as an oracle for whether that proposal exists. 404, not 403, for both.
-        if not _proposal_visible(parent, user):
+        if not location_visible_to(parent, user):
             raise HttpError(404, "Parent location not found")
 
     # Countries stay admin-only: they are a small closed set, and a duplicate root (say "Kirgiziya"
