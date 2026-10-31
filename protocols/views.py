@@ -201,7 +201,8 @@ def protocol_html(request, pk):
 def protocol_detail(request, pk):
     protocol = _published_protocol(request, pk)
     versions = protocol.versions.all()[:_MAX_VERSIONS]
-    kind = gettext("Absolute results") if protocol.protocol_type == "absolute" else gettext("Group results")
+    absolute = protocol.protocol_type == protocol.ProtocolType.ABSOLUTE
+    kind = gettext("Absolute results") if absolute else gettext("Group results")
     state = protocol_state(protocol)
     doc = rendering.build(protocol.document, image_sources(request)) if state["shown"] == "document" else None
     return render(
