@@ -3,7 +3,7 @@
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 
-from calendar_app.models import Competition
+from calendar_app import visibility
 from cycling_site.text_search import search_words
 from locations.models import Location, LocationProposal
 
@@ -11,9 +11,8 @@ RESULT_LIMIT = 20
 
 
 def public_events():
-    return Competition.objects.filter(
-        status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False, invite_only=False
-    ).order_by("-date_start", "pk")
+    """The events an album may be linked to: the public ones, the latest first."""
+    return visibility.public_events().order_by("-date_start", "pk")
 
 
 def matching_ids(query):

@@ -81,7 +81,8 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
 
     from locations.models import Location
 
-    from .models import Competition, Discipline
+    from .models import Discipline
+    from .visibility import public_events, public_events_q
 
     # Only what the page behind the link will actually show. The list starts at today, so a town
     # whose races are all in the past leads to an empty page -- and five of the six facets sampled
@@ -89,13 +90,7 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
     # One reading of the clock for the whole call: two would let a run that straddles midnight
     # count a race as ahead for the cities and behind for the disciplines.
     today = timezone.localdate()
-    published = Competition.objects.filter(
-        status=Competition.Status.APPROVED,
-        is_hidden=False,
-        invite_only=False,
-        is_deleted=False,
-        date_start__gte=today,
-    )
+    published = public_events().filter(date_start__gte=today)
     # A venue sits at depth 4; its city is the first three path steps and its region the first two.
     # Counting the paths here rather than asking the database per node keeps this to one query and
     # gives the ordering below something to sort on.
@@ -117,13 +112,7 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
         .annotate(
             events=Count(
                 "competitions",
-                filter=Q(
-                    competitions__status=Competition.Status.APPROVED,
-                    competitions__is_hidden=False,
-                    competitions__invite_only=False,
-                    competitions__is_deleted=False,
-                    competitions__date_start__gte=today,
-                ),
+                filter=public_events_q("competitions__") & Q(competitions__date_start__gte=today),
             )
         )
         .filter(events__gt=0)

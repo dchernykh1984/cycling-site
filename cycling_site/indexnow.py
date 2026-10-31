@@ -105,12 +105,9 @@ def submit_object(obj) -> None:
 
 
 def _competition_is_public(competition) -> bool:
-    return (
-        competition.status == competition.Status.APPROVED
-        and not competition.is_hidden
-        and not competition.invite_only
-        and not competition.is_deleted
-    )
+    from calendar_app.visibility import is_public  # this module imports no app at load
+
+    return is_public(competition)
 
 
 def _article_is_public(article) -> bool:
