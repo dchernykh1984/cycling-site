@@ -17,7 +17,7 @@ from django.views.generic import TemplateView
 from accounts import managing
 from accounts.access import ParticipantRequiredMixin
 from calendar_app.models import Competition
-from calendar_app.visibility import can_see, manages
+from calendar_app.visibility import can_see, manages, public_events_q
 
 from . import registering
 from .forms import EditRegistrationForm, RegistrationForm
@@ -661,13 +661,7 @@ class CityAutocompleteView(View):
     def get(self, request):
         q = request.GET.get("q", "").strip()
         qs = (
-            CompetitionRegistration.objects.filter(
-                competition__status=Competition.Status.APPROVED,
-                competition__is_hidden=False,
-                competition__invite_only=False,
-                competition__is_deleted=False,
-                is_rejected=False,
-            )
+            CompetitionRegistration.objects.filter(public_events_q("competition__"), is_rejected=False)
             .exclude(competition__require_approval=True, is_approved=False)
             .exclude(competition__require_payment=True, is_paid=False)
             .exclude(city="")

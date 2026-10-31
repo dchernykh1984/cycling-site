@@ -9,13 +9,45 @@ Three things keep a published event out of sight, each with its own audience:
   owners) and everybody who opened its invitation link while signed in.
 
 Channels read by machines and cached for everyone -- the sitemap, the feeds, IndexNow, the landing
-pages, the public API -- never carry an invite-only event, whoever is asking; they filter on the
-flag directly rather than through here.
+pages, the gallery's choices -- never carry an invite-only event, whoever is asking: they ask
+``public_events`` here, which leaves out all three.
 """
 
 from django.db.models import Q, QuerySet
 
 from accounts import roles
+
+
+def public_events_q(through: str = "") -> Q:
+    """What makes an event public: approved, and neither deleted, hidden nor invite-only. ``through``
+    reaches the event over a relation, as ``"competition__"`` does from a registration."""
+    from calendar_app.models import Competition
+
+    return Q(
+        **{
+            f"{through}status": Competition.Status.APPROVED,
+            f"{through}is_deleted": False,
+            f"{through}is_hidden": False,
+            f"{through}invite_only": False,
+        }
+    )
+
+
+def public_events() -> QuerySet:
+    """The events every channel may carry for anybody, unordered."""
+    from calendar_app.models import Competition
+
+    return Competition.objects.filter(public_events_q())
+
+
+def is_public(competition) -> bool:
+    """``public_events_q`` for one event in hand."""
+    return (
+        competition.status == competition.Status.APPROVED
+        and not competition.is_deleted
+        and not competition.is_hidden
+        and not competition.invite_only
+    )
 
 
 def manages(user, competition) -> bool:

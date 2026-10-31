@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
-from calendar_app.models import Competition
+from calendar_app.visibility import public_events
 from knowledge.models import KnowledgeArticle
 from news.models import NewsArticle
 
@@ -140,9 +140,7 @@ class CompetitionSitemap(LanguageSitemap):
     changefreq = "weekly"
 
     def items(self):
-        return Competition.objects.filter(
-            status=Competition.Status.APPROVED, is_hidden=False, invite_only=False, is_deleted=False
-        ).order_by("-date_start", "pk")
+        return public_events().order_by("-date_start", "pk")
 
     def location(self, obj):
         return obj.get_absolute_url()

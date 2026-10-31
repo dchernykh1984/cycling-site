@@ -24,7 +24,7 @@ from locations.maps import start_point
 
 from .models import Competition, usual_event_type_id
 from .views import _apply_id_filters, _location_descendant_pks
-from .visibility import can_open
+from .visibility import can_open, public_events
 
 #: How far back a subscription still shows events. A calendar that drops an event the morning
 #: after it finished is confusing; a month of history is enough to look up last weekend's race.
@@ -38,9 +38,7 @@ def filtered_competitions(request: HttpRequest) -> list[Competition]:
     """Public events matching the filters in the query string, nearest first."""
     qs = (
         # Read by calendar apps with no session, so an invite-only event never rides along.
-        Competition.objects.filter(
-            status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False, invite_only=False
-        )
+        public_events()
         # The venue's fallback mark decides whether its point goes out (start_point): one join,
         # not a query per event.
         .select_related("location", "location__fallback_identity")
@@ -195,15 +193,10 @@ class NewCompetitionsFeed(Feed):
 
     def items(self):
         items = list(
-            Competition.objects.filter(
-                status=Competition.Status.APPROVED,
-                is_deleted=False,
-                is_hidden=False,
-                invite_only=False,
-                # Postgres sorts NULLs first in a descending order, so an event approved before
-                # the timestamp existed would head the feed of what is new.
-                approved_at__isnull=False,
-            )
+            # Postgres sorts NULLs first in a descending order, so an event approved before the
+            # timestamp existed would head the feed of what is new.
+            public_events()
+            .filter(approved_at__isnull=False)
             .select_related("location")
             .prefetch_related("event_types", "disciplines__category")
             .order_by("-approved_at", "-pk")[: self.item_count]

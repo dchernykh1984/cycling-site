@@ -64,7 +64,7 @@ from .models import (
     EventType,
 )
 from .seo import sports_event
-from .visibility import can_open, can_review, can_see, listed_for, manages
+from .visibility import can_open, can_review, can_see, listed_for, manages, public_events
 
 
 def _get_locations_data(user=None) -> list:
@@ -389,12 +389,7 @@ def calendar_year_choices() -> list[int]:
     """
     from django.db.models import Max, Min
 
-    bounds = Competition.objects.filter(
-        status=Competition.Status.APPROVED,
-        is_deleted=False,
-        is_hidden=False,
-        invite_only=False,
-    ).aggregate(first=Min("date_start"), last=Max("date_start"), last_end=Max("date_end"))
+    bounds = public_events().aggregate(first=Min("date_start"), last=Max("date_start"), last_end=Max("date_end"))
     years = [timezone.localdate().year]
     years += [when.year for when in bounds.values() if when]
     return list(range(min(years), max(years) + 1))
@@ -1760,14 +1755,7 @@ class ReportCompetitionView(ParticipantRequiredMixin, View):
     """
 
     def post(self, request, pk):
-        competition = get_object_or_404(
-            Competition,
-            pk=pk,
-            status=Competition.Status.APPROVED,
-            is_deleted=False,
-            is_hidden=False,
-            invite_only=False,
-        )
+        competition = get_object_or_404(public_events(), pk=pk)
         form = ReportCompetitionForm(request.POST)
         if not form.is_valid():
             first_errors = next(iter(form.errors.values()), [])
