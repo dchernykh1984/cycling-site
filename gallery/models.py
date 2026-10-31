@@ -20,9 +20,9 @@ class AlbumManager(MultilingualManager["Album"]):
         return self.filter(is_hidden=False)
 
     def visible_to(self, user):
-        from gallery.permissions import is_admin_plus
+        from accounts import roles
 
-        if is_admin_plus(user):
+        if roles.at_least(user, roles.MANAGE_GALLERY):
             return self.all()
         if user.is_authenticated:
             return self.filter(models.Q(is_hidden=False) | models.Q(created_by=user))
