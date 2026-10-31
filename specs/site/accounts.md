@@ -159,7 +159,9 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
     the same through `{% load roles %}`. Whose an object is stays with the object's area
     (`calendar_app/visibility.py`, `assistant/conversations.py`).
   - `tests/test_role_matrix.py` pins what a visitor, a guest, each role and a superuser whose role
-    was never set may do; `tests/test_roles.py` refuses a role compared anywhere else.
+    was never set may do; `tests/test_roles.py` refuses a role compared anywhere else, except in a
+    designer's skin, whose templates are its designers' (the orange skin's home page still asks
+    `request.user.role == 'owner'` itself).
 - **FR-ACC-002**: A guest becomes a participant when an e-mail is confirmed or a provider returns a
   verified e-mail. No other role is granted automatically.
 - **FR-ACC-003**: Only organizer and above assign roles, and only up to their own rank; the
