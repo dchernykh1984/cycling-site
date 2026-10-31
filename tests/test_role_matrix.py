@@ -93,8 +93,8 @@ PLACES_HOME_ACCOUNTS = {
     "home edit page":               "302     403   403       403       403     200     403",
     "home page: edit link":         "n       n     n         n         n       y       n",
     "API new home card":            "401     403   403       403       403     201     403",
-    # and its cards: contact the owners, appearance
-    "profile":                      "302     200:nn 200:yy   200:yy    200:yy  200:yy  200:nn",
+    # and its cards: contact the owners, appearance; and whether the address counts as confirmed
+    "profile":                      "302     200:nnn 200:yyn 200:yyy   200:yyy 200:yyy 200:nnn",
     "needs email confirmation":     "n       y     n         n         n       n       n",
     "user admin: privileges":       "n       n     n         n         n       y       y",
     "teams in the admin":           "n       n     n         n         y       y       y",
@@ -338,7 +338,7 @@ def profile(site, v):
     if page.status_code != 200:
         return str(page.status_code)
     text = page.content.decode()
-    return f"200:{_yn('Contact site owners' in text, 'Appearance' in text)}"
+    return f"200:{_yn('Contact site owners' in text, 'Appearance' in text, page.context['has_verified_email'])}"
 
 
 def needs_confirmation(site, v):
