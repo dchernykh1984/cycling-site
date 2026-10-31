@@ -61,7 +61,7 @@ def at_least(user, role: str) -> bool:
     return bool(getattr(user, "is_superuser", False)) or role_at_least(user, role)
 
 
-def may_assign_role(editor, role: str) -> bool:
+def can_assign_role(editor, role: str) -> bool:
     """Whether ``editor`` may give somebody ``role``: up to their own, from an organizer up. A
     participant comes with a confirmed address, so only an admin or above gives it by hand."""
     if role not in User.ROLE_HIERARCHY:
@@ -73,7 +73,7 @@ def may_assign_role(editor, role: str) -> bool:
     return role_at_least(editor, Role.ADMIN if role == Role.PARTICIPANT else role)
 
 
-def may_manage_user(editor, target) -> bool:
+def can_manage_user(editor, target) -> bool:
     """Whether ``editor`` may change ``target``'s account: anybody at or below their own role, from an
     organizer up."""
     if getattr(editor, "is_superuser", False):

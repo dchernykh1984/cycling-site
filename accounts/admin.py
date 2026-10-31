@@ -37,9 +37,9 @@ class UserAdmin(BaseUserAdmin):
             def clean_role(self):
                 role = self.cleaned_data.get("role")
                 if role:
-                    if obj is not None and not roles.may_manage_user(editor, obj):
+                    if obj is not None and not roles.can_manage_user(editor, obj):
                         raise ValidationError("You don't have permission to edit this user's role.")
-                    if not roles.may_assign_role(editor, role):
+                    if not roles.can_assign_role(editor, role):
                         raise ValidationError("You don't have permission to assign this role.")
                 return role
 
