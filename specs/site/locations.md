@@ -6,7 +6,8 @@
 `calendar_app/templates/calendar_app/_location_cascade.html` and `_location_filter.html`
 **Tests**: `locations/tests.py`, `locations/test_maps.py`, `calendar_app/tests.py` (location proposals
 in the event form, map resolution), `tests/e2e/test_location_cascade.py`, `test_locations_map.py`,
-`test_location_proposal.py`, `test_location_filter.py`
+`test_location_proposal.py`, `test_location_filter.py`; `search/tests.py` (places in the site
+search)
 **Related**: [events](events.md), [calendar](calendar.md); the `locations` skill holds the rules for
 keeping the tree clean by hand
 
