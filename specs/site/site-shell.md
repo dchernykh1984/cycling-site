@@ -86,7 +86,8 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
 2. **Given** the owner, **Then** they edit the site content -- the navbar title and the tab title per
    language -- in three language tabs, and below it add, change, move up or down and delete cards,
    each in a form of its own with three language tabs; a card with no heading and no text in any
-   language is refused. Others get no edit button and a 403 on these pages.
+   language is refused. Others get no edit button and a 403 on these pages; the cards are the
+   owner's through the API too (`/api/v1/home/cards/`, [API](api.md)).
 
 ### Story 3 -- Setup hints (P2, issue #319)
 

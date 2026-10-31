@@ -61,6 +61,7 @@ def _register_routers() -> None:
     from api.endpoints.disciplines import router as disciplines_router
     from api.endpoints.event_photos import router as event_photos_router
     from api.endpoints.gallery import router as gallery_router
+    from api.endpoints.home import router as home_router
     from api.endpoints.live_stats import router as live_stats_router
     from api.endpoints.locations import router as locations_router
     from api.endpoints.managing import router as managing_router
@@ -89,6 +90,7 @@ def _register_routers() -> None:
     api.add_router("/remote-points/", remote_points_router)
     api.add_router("/live-stats/", live_stats_router)
     api.add_router("/gallery/", gallery_router)
+    api.add_router("/home/", home_router)
     api.add_router("/event-photos/", event_photos_router)
     api.add_router("/virtual-ride/", virtual_ride_router)
     api.add_router("/managing/", managing_router)

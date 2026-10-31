@@ -1,5 +1,5 @@
-"""The home page's cards: the owner adds, changes, orders and removes them on the site, and every
-skin draws them -- the site's own skins as one text, UBT Almaty as a grid."""
+"""The home page's cards: the owner adds, changes, orders and removes them on the site and through
+the API, and every skin draws them -- the site's own skins as one text, UBT Almaty as a grid."""
 
 import re
 import uuid
@@ -8,6 +8,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import User
+from api.tests import ApiTestMixin
 from cycling_site import skins
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from home.models import HomeCard, SiteContent, localized_cards
@@ -209,3 +210,63 @@ class OwnerEditsTheCardsTests(TestCase):
             with self.subTest(page=name):
                 response = self.client.post(reverse(name, args=[self.card.pk + 100]), {"position": "0"})
                 self.assertEqual(response.status_code, 404)
+
+
+class HomeCardsApiTests(ApiTestMixin, TestCase):
+    URL = "/api/v1/home/cards/"
+
+    def setUp(self):
+        self.owner = _member("owner", User.Role.OWNER)
+        self.card = _card(title_ru="Existing", body_ru="<p>Old</p>")
+
+    def test_anyone_reads_the_cards_in_order(self):
+        _card(title_ru="Second", title_en="Second EN")
+        response = self.get(self.URL)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual([card["title"]["ru"] for card in data], ["Existing", "Second"])
+        self.assertEqual(data[1]["title"]["en"], "Second EN")
+        self.assertEqual(data[0]["body"]["ru"], "<p>Old</p>")
+
+    def test_only_the_owner_writes(self):
+        for role in (User.Role.PARTICIPANT, User.Role.ORGANIZER, User.Role.ADMIN):
+            member = _member(f"m-{role}", role)
+            with self.subTest(role=str(role)):
+                self.assertEqual(self.post(self.URL, {"title": {"ru": "X"}}, user=member).status_code, 403)
+                self.assertEqual(self.patch(f"{self.URL}{self.card.pk}", {}, user=member).status_code, 403)
+                self.assertEqual(self.delete(f"{self.URL}{self.card.pk}", user=member).status_code, 403)
+        self.assertEqual(self.post(self.URL, {"title": {"ru": "X"}}).status_code, 401)
+        self.assertEqual(HomeCard.objects.count(), 1)
+
+    def test_the_owner_adds_a_card_last_or_where_they_say(self):
+        response = self.post(self.URL, {"title": {"ru": "Last", "kk": "Songy"}}, user=self.owner)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["title"]["kk"], "Songy")
+        response = self.post(self.URL, {"title": {"ru": "First"}, "position": 0}, user=self.owner)
+        self.assertEqual(response.json()["position"], 0)
+        self.assertEqual(list(HomeCard.objects.values_list("title_ru", flat=True)), ["First", "Existing", "Last"])
+
+    def test_the_owner_changes_moves_and_removes_a_card(self):
+        _card(title_ru="Second")
+        url = f"{self.URL}{self.card.pk}"
+        response = self.patch(url, {"body": {"ru": "<p>New</p><script>x()</script>"}, "position": 5}, user=self.owner)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["title"]["ru"], "Existing")  # what was not sent stays
+        self.assertNotIn("script", response.json()["body"]["ru"])
+        self.assertEqual(list(HomeCard.objects.values_list("title_ru", flat=True)), ["Second", "Existing"])
+        self.assertEqual(self.delete(url, user=self.owner).status_code, 204)
+        self.assertEqual(self.delete(url, user=self.owner).status_code, 404)
+
+    def test_a_card_with_nothing_in_it_or_too_much_is_refused(self):
+        refused = [
+            {"title": {"ru": "  "}, "body": {"ru": EMPTY_EDITOR}},
+            {"title": {"ru": "x" * 256}},
+            {"title": {"ru": "T"}, "body": {"kk": "a" * (MAX_RICH_TEXT_LENGTH + 1)}},
+            {"title": {"ru": "T"}, "position": -1},
+        ]
+        for payload in refused:
+            with self.subTest(payload=str(payload)[:60]):
+                self.assertEqual(self.post(self.URL, payload, user=self.owner).status_code, 422)
+        response = self.patch(f"{self.URL}{self.card.pk}", {"title": {}, "body": {}}, user=self.owner)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(HomeCard.objects.count(), 1)
