@@ -33,14 +33,13 @@ class AssistantApiTests(ApiTestMixin, TestCase):
         body = {"text": text, "form": {}, "today": "2026-10-29", "language": "en", **extra}
         return self.post(f"{API}/conversations/{conversation_id}/messages", body, self.admin)
 
-    def test_only_admins_and_the_owner_may_use_it(self):
-        for role in (User.Role.PARTICIPANT, User.Role.ORGANIZER):
-            other = user(f"u-{role}", role)
-            with self.subTest(role=str(role)):
-                self.assertEqual(self.post(f"{API}/conversations", {}, other).status_code, 403)
+    def test_organizers_and_up_may_use_it(self):
+        rider = user("rider", User.Role.PARTICIPANT)
+        self.assertEqual(self.post(f"{API}/conversations", {}, rider).status_code, 403)
         self.assertEqual(self.client.post(f"{API}/conversations", {}, content_type="application/json").status_code, 401)
-        owner = user("owner", User.Role.OWNER)
-        self.assertEqual(self.post(f"{API}/conversations", {}, owner).status_code, 201)
+        for role in (User.Role.ORGANIZER, User.Role.OWNER):
+            with self.subTest(role=str(role)):
+                self.assertEqual(self.post(f"{API}/conversations", {}, user(f"u-{role}", role)).status_code, 201)
 
     def test_the_sites_session_is_enough(self):
         self.client.force_login(self.admin)

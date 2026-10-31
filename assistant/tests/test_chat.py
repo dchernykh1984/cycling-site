@@ -40,8 +40,8 @@ class ChatOnThePageTests(TestCase):
         self.assertEqual((config["conversationId"], config["subjectId"]), (None, None))
         self.assertEqual(config["start"], "/api/v1/assistant/conversations")
 
-    def test_nobody_else_is_offered_it_and_no_site_without_a_key(self):
-        self.client.force_login(user("org", User.Role.ORGANIZER))
+    def test_nobody_below_an_organizer_is_offered_it_and_no_site_without_a_key(self):
+        self.client.force_login(user("rider", User.Role.PARTICIPANT))
         self.assertNotContains(self.client.get(reverse("calendar_submit")), TOGGLE)
         self.client.force_login(self.admin)
         with override_settings(ASSISTANT_LLM_API_KEY=""):
@@ -81,6 +81,40 @@ class ChatOnThePageTests(TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertEqual(_config(page)["conversationId"], conversation.pk)
         self.assertContains(page, "A ride on Saturday")
+
+    def test_an_organizer_is_offered_it_on_their_own_events_pages(self):
+        organizer = user("org", User.Role.ORGANIZER)
+        event = competition(location=self.shop, submitted_by=organizer)
+        conversation = Conversation.objects.create(competition=event, started_by=organizer)
+        self.client.force_login(organizer)
+        self.assertEqual(_config(self.client.get(reverse("calendar_submit")))["conversationId"], None)
+        config = _config(self.client.get(reverse("competition_edit", args=[event.pk])))
+        self.assertEqual((config["conversationId"], config["subjectId"]), (conversation.pk, event.pk))
+
+    def _submit(self, conversation, **extra):
+        return self.client.post(reverse("calendar_submit"), {"assistant_conversation": str(conversation.pk), **extra})
+
+    def test_an_organizer_never_gets_someone_elses_conversation(self):
+        organizer = user("org", User.Role.ORGANIZER)
+        others = Conversation.objects.create(started_by=self.admin)
+        Message.objects.create(conversation=others, role=Message.Role.USER, text="A secret ride")
+        self.client.force_login(organizer)
+        refused = self._submit(others)
+        self.assertEqual(_config(refused)["conversationId"], None)
+        self.assertNotContains(refused, "A secret ride")
+        saved = self._submit(others, title_ru="Ride", date_start="2026-11-20", location=str(self.shop.pk))
+        self.assertEqual(saved.status_code, 302)
+        others.refresh_from_db()
+        self.assertIsNone(others.competition)
+
+    def test_saving_an_organizers_form_links_their_own_conversation(self):
+        organizer = user("org", User.Role.ORGANIZER)
+        own = Conversation.objects.create(started_by=organizer)
+        self.client.force_login(organizer)
+        saved = self._submit(own, title_ru="Ride", date_start="2026-11-20", location=str(self.shop.pk))
+        self.assertEqual(saved.status_code, 302)
+        own.refresh_from_db()
+        self.assertEqual((own.competition.title_ru, own.competition.submitted_by), ("Ride", organizer))
 
     def test_the_chat_speaks_the_pages_language(self):
         self.client.force_login(self.admin)

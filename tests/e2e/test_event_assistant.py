@@ -86,7 +86,8 @@ def chat_on(settings):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_the_chat_fills_the_form_and_saving_links_it(page: Page, live_server, admin_user, chat_on, monkeypatch):
+@pytest.mark.parametrize("person", ["admin_user", "organizer"])
+def test_the_chat_fills_the_form_and_saving_links_it(page: Page, live_server, person, chat_on, monkeypatch, request):
     _city, shop = _tree()
     ride = EventType.objects.create(name_ru="Zaezd", name_en="Ride test")
     gravel = Discipline.objects.create(
@@ -107,7 +108,8 @@ def test_the_chat_fills_the_form_and_saving_links_it(page: Page, live_server, ad
         },
     }
     _model(monkeypatch, answer)
-    inject_session(page, live_server, admin_user)
+    author = request.getfixturevalue(person)
+    inject_session(page, live_server, author)
     page.goto(f"{live_server.url}/en/calendar/submit/")
     page.click("#assistant-toggle")
     log = page.locator("#assistant-log")
@@ -130,6 +132,7 @@ def test_the_chat_fills_the_form_and_saving_links_it(page: Page, live_server, ad
     page.locator("form button[type='submit']", has_text="Submit").click()
     page.wait_for_url(re.compile(r"/calendar/list/"))
     event = Competition.objects.get(title_en="Coffee ride")
+    assert event.submitted_by == author
     assert event.description_en == "<p>Start at 08:00</p>"
     assert [m.text for m in event.assistant_conversation.messages.all()] == [
         "Coffee ride on Saturday, track https://strava.com/routes/1",

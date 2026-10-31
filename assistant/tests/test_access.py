@@ -1,8 +1,9 @@
-"""Only admins, the owner and a superuser reach the model, through every door the assistant has.
+"""Only organizers and up reach the model, through every door the assistant has; an organizer only
+their own events and conversations, and only admins and up the news.
 
-The key spends the maintainer's money (decision 17), so every operation is tried as every kind of
-visitor: the model is asked only for an admin, the owner or a superuser, and nothing is kept or
-linked for anyone else.
+The key spends the maintainer's money (decisions 17 and 27), so every operation is tried as every
+kind of visitor: the model is asked only for an organizer, an admin, the owner or a superuser, and
+nothing is kept or linked for anyone else.
 """
 
 import uuid
@@ -25,7 +26,7 @@ def _bearer(person) -> dict:
 
 
 @override_settings(ASSISTANT_LLM_API_KEY="sk-test")
-class OnlyAdminsReachTheModelTests(TestCase):
+class OnlyOrganizersAndUpReachTheModelTests(TestCase):
     def setUp(self):
         self.conversation = Conversation.objects.create()
         self.event = competition()
@@ -50,10 +51,10 @@ class OnlyAdminsReachTheModelTests(TestCase):
         self.conversation.refresh_from_db()
         self.assertIsNone(self.conversation.competition_id)
 
-    def test_below_admin_every_door_is_shut_by_token_and_by_session(self):
+    def test_below_organizer_every_door_is_shut_by_token_and_by_session(self):
         with mock.patch("assistant.llm.complete", return_value=REPLY) as complete:
             self.assertEqual(set(self._every_operation(self.client, {})), {401})
-            for role in (User.Role.GUEST, User.Role.PARTICIPANT, User.Role.ORGANIZER):
+            for role in (User.Role.GUEST, User.Role.PARTICIPANT):
                 person = user(f"u-{role}", role)
                 with self.subTest(role=str(role), by="token"):
                     self.assertEqual(set(self._every_operation(Client(), _bearer(person))), {403})
@@ -105,3 +106,65 @@ class OnlyAdminsReachTheModelTests(TestCase):
             sent = browser.post(url, {"text": "A ride"}, content_type="application/json", HTTP_X_CSRFTOKEN=token)
         self.assertEqual(sent.status_code, 200)
         complete.assert_called_once()
+
+
+@override_settings(ASSISTANT_LLM_API_KEY="sk-test")
+class AnOrganizerReachesOnlyTheirOwnTests(TestCase):
+    def setUp(self):
+        self.organizer = user("org", User.Role.ORGANIZER)
+        self.other = user("other", User.Role.ORGANIZER)
+        self.own_event = competition(submitted_by=self.organizer)
+        self.as_json = {"content_type": "application/json", **_bearer(self.organizer)}
+
+    def test_an_organizer_writes_their_own_event_through_every_door(self):
+        with mock.patch("assistant.llm.complete", return_value=REPLY) as complete:
+            started = self.client.post(f"{API}/conversations", {}, **self.as_json)
+            url = f"{API}/conversations/{started.json()['id']}"
+            codes = [
+                started.status_code,
+                self.client.post(f"{url}/messages", {"text": "A ride"}, **self.as_json).status_code,
+                self.client.get(url, **_bearer(self.organizer)).status_code,
+                self.client.patch(url, {"competition_id": self.own_event.pk}, **self.as_json).status_code,
+                self.client.post(
+                    f"{API}/track-start", {"file": SimpleUploadedFile("a.gpx", GPX)}, **_bearer(self.organizer)
+                ).status_code,
+            ]
+            own = self.client.post(f"{API}/conversations", {"competition_id": self.own_event.pk}, **self.as_json)
+        self.assertEqual(codes, [201, 200, 200, 200, 200])
+        self.assertEqual((own.status_code, own.json()["id"]), (200, started.json()["id"]))
+        complete.assert_called_once()
+
+    def test_anything_not_their_own_is_a_404_and_the_news_a_403(self):
+        others_event = competition(submitted_by=self.other, location=self.own_event.location)
+        theirs = [
+            Conversation.objects.create(competition=others_event, started_by=self.other),
+            Conversation.objects.create(started_by=self.other),
+            Conversation.objects.create(kind=Conversation.Kind.NEWS, started_by=self.organizer),
+        ]
+        own_draft = Conversation.objects.create(started_by=self.organizer)
+        bearer = _bearer(self.organizer)
+        with mock.patch("assistant.llm.complete", return_value=REPLY) as complete:
+            for conversation in theirs:
+                url = f"{API}/conversations/{conversation.pk}"
+                with self.subTest(conversation=conversation.pk):
+                    self.assertEqual(self.client.get(url, **bearer).status_code, 404)
+                    sent = self.client.post(f"{url}/messages", {"text": "A ride"}, **self.as_json)
+                    self.assertEqual(sent.status_code, 404)
+                    linked = self.client.patch(url, {"competition_id": self.own_event.pk}, **self.as_json)
+                    self.assertEqual(linked.status_code, 404)
+            started = self.client.post(f"{API}/conversations", {"competition_id": others_event.pk}, **self.as_json)
+            self.assertEqual(started.status_code, 404)
+            moved = self.client.patch(
+                f"{API}/conversations/{own_draft.pk}", {"competition_id": others_event.pk}, **self.as_json
+            )
+            self.assertEqual(moved.status_code, 404)
+            for body in ({"kind": "news"}, {"news_id": news().pk}):
+                with self.subTest(body=body):
+                    self.assertEqual(self.client.post(f"{API}/conversations", body, **self.as_json).status_code, 403)
+        complete.assert_not_called()
+        self.assertFalse(Message.objects.exists())
+        self.assertEqual(Conversation.objects.count(), 4)
+        self.assertEqual(
+            list(Conversation.objects.order_by("pk").values_list("competition_id", flat=True)),
+            [others_event.pk, None, None, None],
+        )

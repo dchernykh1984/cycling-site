@@ -1,4 +1,7 @@
-"""The assistant's operations under /api/v1/assistant/, for admins and the owner (constitution VII).
+"""The assistant's operations under /api/v1/assistant/, for organizers and up (constitution VII).
+
+An organizer reaches their own events and the conversations they started; an admin, every event,
+every conversation and the news.
 
 The chat on the event's pages calls these with the site's session; a program calls them with a
 personal token. What the chat does, a program can do the same way (issue #353).
@@ -17,7 +20,7 @@ from ninja.files import UploadedFile
 from pydantic import Field
 
 from agent.geo import parse_start
-from api.auth import is_admin, member_auth
+from api.auth import member_auth
 from assistant import conversations, llm
 from assistant.models import Conversation
 from calendar_app.models import Competition
@@ -95,31 +98,35 @@ class PointOut(Schema):
     lng: float
 
 
-def _admin(request):
-    if not is_admin(request.auth):
-        raise HttpError(403, "Admin role is required")
+def _member(request, kind: str = Conversation.Kind.EVENT):
+    """The caller, when they may talk to the assistant about a ``kind``."""
+    if not conversations.offered(request.auth, kind):
+        news = kind == Conversation.Kind.NEWS
+        raise HttpError(403, "Admin role is required" if news else "Organizer role or higher is required")
     return request.auth
 
 
-def _conversation(conversation_id: int) -> Conversation:
-    conversation = Conversation.objects.select_related("competition").filter(pk=conversation_id).first()
-    if conversation is None:
+# Only the caller's own, as everywhere an id names a row of theirs: anything else is a 404, so that
+# nobody learns what they may not reach.
+def _conversation(user, conversation_id: int) -> Conversation:
+    conversation = Conversation.objects.select_related("competition", "news").filter(pk=conversation_id).first()
+    if conversation is None or not conversations.may_see(user, conversation):
         raise HttpError(404, "No such conversation")
     return conversation
 
 
-def _subject(competition_id: int | None, news_id: int | None) -> Competition | NewsArticle | None:
-    """The event or the news item a request names, or None when it names neither."""
+def _subject(user, competition_id: int | None, news_id: int | None) -> Competition | NewsArticle | None:
+    """The event or the news item a request names, when ``user`` may write it; None when it names neither."""
     if competition_id is not None and news_id is not None:
         raise HttpError(422, "An event or a news item, not both")
     if competition_id is not None:
         competition = Competition.objects.filter(pk=competition_id, is_deleted=False).first()
-        if competition is None:
+        if competition is None or not conversations.may_write(user, competition):
             raise HttpError(404, "No such event")
         return competition
     if news_id is not None:
         article = NewsArticle.objects.filter(pk=news_id, is_deleted=False).first()
-        if article is None:
+        if article is None or not conversations.may_write(user, article):
             raise HttpError(404, "No such news item")
         return article
     return None
@@ -139,11 +146,11 @@ def _out(conversation: Conversation) -> dict:
     "/conversations",
     response={200: ConversationOut, 201: ConversationOut},
     auth=member_auth,
-    summary="Start a conversation, or get an event's or a news item's own (admin)",
+    summary="Start a conversation, or get an event's or a news item's own (organizer; news: admin)",
 )
 def start_conversation(request, payload: ConversationIn):
-    user = _admin(request)
-    subject = _subject(payload.competition_id, payload.news_id)
+    user = _member(request, Conversation.Kind.NEWS if payload.news_id is not None else payload.kind)
+    subject = _subject(user, payload.competition_id, payload.news_id)
     conversation, created = conversations.start(user, subject, payload.kind)
     return Status(201 if created else 200, _out(conversation))
 
@@ -152,22 +159,21 @@ def start_conversation(request, payload: ConversationIn):
     "/conversations/{conversation_id}",
     response=ConversationOut,
     auth=member_auth,
-    summary="A conversation and its messages (admin)",
+    summary="A conversation and its messages (organizer: their own)",
 )
 def get_conversation(request, conversation_id: int):
-    _admin(request)
-    return _out(_conversation(conversation_id))
+    return _out(_conversation(_member(request), conversation_id))
 
 
 @router.post(
     "/conversations/{conversation_id}/messages",
     response=TurnOut,
     auth=member_auth,
-    summary="Say something to the assistant and get its reply and the form's new values (admin)",
+    summary="Say something to the assistant and get its reply and the form's new values (organizer: their own)",
 )
 def send_message(request, conversation_id: int, payload: TurnIn):
-    user = _admin(request)
-    conversation = _conversation(conversation_id)
+    user = _member(request)
+    conversation = _conversation(user, conversation_id)
     text = payload.text.strip()
     if not text:
         raise HttpError(422, "The message is empty")
@@ -191,12 +197,12 @@ def send_message(request, conversation_id: int, payload: TurnIn):
     "/conversations/{conversation_id}",
     response=ConversationOut,
     auth=member_auth,
-    summary="Link a conversation to the event or news item it wrote (admin)",
+    summary="Link a conversation to the event or news item it wrote (organizer: their own)",
 )
 def link_conversation(request, conversation_id: int, payload: LinkIn):
-    user = _admin(request)
-    conversation = _conversation(conversation_id)
-    subject = _subject(payload.competition_id, payload.news_id)
+    user = _member(request)
+    conversation = _conversation(user, conversation_id)
+    subject = _subject(user, payload.competition_id, payload.news_id)
     if subject is None:
         raise HttpError(422, "Name the event or the news item")
     field, _kind = conversations.subject_field(subject)
@@ -211,10 +217,10 @@ def link_conversation(request, conversation_id: int, payload: LinkIn):
     "/track-start",
     response=PointOut,
     auth=member_auth,
-    summary="Where a GPX or KML track starts (admin)",
+    summary="Where a GPX or KML track starts (organizer)",
 )
 def track_start(request, file: UploadedFile = File(...)):  # noqa: B008
-    _admin(request)
+    _member(request)
     if file.size is None or file.size > _MAX_TRACK_BYTES:
         raise HttpError(422, "The file is too large for a track")
     point = parse_start(file.read().decode("utf-8", errors="replace"))

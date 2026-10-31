@@ -7,12 +7,14 @@ from dataclasses import dataclass
 
 from django.db import transaction
 
-from api.auth import is_admin
+from accounts.models import User
 from assistant import fields, llm, prompt
 from assistant.models import Conversation, Message
+from calendar_app.visibility import is_admin_plus, manages
 
 MAX_TEXT = 10_000
 _KINDS = ("route", "regulations")
+_ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
 
 
 def subject_field(subject) -> tuple[str, str]:
@@ -20,6 +22,32 @@ def subject_field(subject) -> tuple[str, str]:
     if subject._meta.label_lower == "news.newsarticle":
         return "news", Conversation.Kind.NEWS
     return "competition", Conversation.Kind.EVENT
+
+
+def offered(user, kind: str = Conversation.Kind.EVENT) -> bool:
+    """Whether ``user`` may talk to the assistant about a ``kind``: an event -- organizers and up, who
+    publish one; a news item -- admins and up, who alone write news."""
+    if kind == Conversation.Kind.NEWS:
+        return is_admin_plus(user)
+    return bool(user.is_authenticated and (user.is_superuser or user.get_role_rank() >= _ORGANIZER_RANK))
+
+
+def may_write(user, subject) -> bool:
+    """Whether ``user`` may have the assistant write ``subject``: a news item while an admin, an event
+    they manage -- any while an admin, their own while an organizer."""
+    field, _kind = subject_field(subject)
+    return is_admin_plus(user) if field == "news" else manages(user, subject)
+
+
+def may_see(user, conversation: Conversation) -> bool:
+    """Whether ``user`` may read ``conversation`` and go on with it: one with a subject, when they may
+    write that subject; one still without, when they started it -- or any, for an admin."""
+    if not offered(user, conversation.kind):
+        return False
+    subject = conversation.competition or conversation.news
+    if subject is not None:
+        return may_write(user, subject)
+    return is_admin_plus(user) or conversation.started_by_id == user.pk
 
 
 def start(user, subject=None, kind: str = Conversation.Kind.EVENT) -> tuple[Conversation, bool]:
@@ -125,13 +153,16 @@ def take_turn(
 def link(conversation_id, subject, user) -> bool:
     """Link a conversation to the event or news item its form just saved; False when it may not be.
 
-    Only an admin's, only a conversation of the subject's kind that has no subject yet, and only a
-    subject that has no conversation yet.
+    Only for someone who may write the subject with the assistant, only a conversation of the subject's
+    kind that has no subject yet -- their own, unless they are an admin -- and only a subject that has
+    no conversation yet.
     """
-    if not is_admin(user) or not str(conversation_id or "").isdigit():
+    if not may_write(user, subject) or not str(conversation_id or "").isdigit():
         return False
     field, kind = subject_field(subject)
     if Conversation.objects.filter(**{field: subject}).exists():
         return False
     free = Conversation.objects.filter(pk=int(conversation_id), kind=kind, competition__isnull=True, news__isnull=True)
+    if not is_admin_plus(user):
+        free = free.filter(started_by=user)
     return free.update(**{field: subject}) == 1
