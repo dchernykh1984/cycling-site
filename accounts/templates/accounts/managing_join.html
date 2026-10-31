@@ -8,7 +8,7 @@ and see, and one button. Opening it changes nothing; a link that cannot be used 
 {% block content %}
 <div class="row justify-content-center managing-join">
   <div class="col-md-8 col-lg-6">
-    {% if outcome == "asked" %}
+    {% if asked %}
     {% with name=invite.manager.public_display_name %}
     <h1 class="h3 mb-3">{% blocktrans %}Let {{ name }} manage your registrations and photos?{% endblocktrans %}</h1>
     <p>{% blocktrans %}{{ name }} will be able to register you for events, change and cancel your registrations, and see your race photos and mark them "This is me" or "Not me".{% endblocktrans %}</p>

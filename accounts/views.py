@@ -610,7 +610,7 @@ class JoinManagerView(LoginRequiredMixin, View):
     template_name = "accounts/managing_join.html"
 
     def _page(self, request, invite, outcome):
-        context = {"invite": invite, "outcome": outcome, "refusal": managing.refusal(outcome, invite)}
+        context = {"invite": invite, "asked": outcome == managing.ASKED, "refusal": managing.refusal(outcome, invite)}
         response = render(request, self.template_name, context)
         if outcome == managing.INVALID:
             response.status_code = 404
