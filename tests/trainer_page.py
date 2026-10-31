@@ -16,14 +16,25 @@ def local_files() -> list[Path]:
     return [PAGE.parent / ref for ref in refs]
 
 
+def scripts() -> list[str]:
+    """The code the page runs, in its order: its own files and any script written into the page."""
+    code = []
+    for src, written in re.findall(
+        r'<script(?: src="([^"]*)")?>(.*?)</script>', PAGE.read_text(encoding="utf-8"), re.DOTALL
+    ):
+        if not src:
+            code.append(written)
+        elif not re.match(r"[a-z]+:|//", src):
+            code.append((PAGE.parent / src).read_text(encoding="utf-8"))
+    return code
+
+
 def source() -> str:
-    """The page, then its scripts: what the browser runs, in the order it runs it."""
-    scripts = [path.read_text(encoding="utf-8") for path in local_files() if path.suffix == ".js"]
-    return "\n".join([PAGE.read_text(encoding="utf-8"), *scripts])
+    """The page, then the code it runs, in the order it runs it."""
+    return "\n".join([PAGE.read_text(encoding="utf-8"), *scripts()])
 
 
 def texts() -> dict:
-    """The page's own dictionary, ``const TEXT = { ru: {...}, kk: {...}, en: {...} }``, as Python."""
-    block = re.search(r"^const TEXT = (\{.*?^\});$", source(), re.DOTALL | re.MULTILINE)
-    assert block is not None
-    return json.loads(re.sub(r"^  (ru|kk|en): \{", r'  "\1": {', block.group(1), flags=re.MULTILINE))
+    """The page's words, a ``const TEXT_RU = {...};`` per language, as Python: ``{"ru": {...}, ...}``."""
+    found = re.findall(r"^const TEXT_(RU|KK|EN) = (\{.*?^\});$", source(), re.DOTALL | re.MULTILINE)
+    return {lang.lower(): json.loads(block) for lang, block in found}

@@ -12,8 +12,8 @@ from tests.e2e.test_interface_rules import _REACH
 
 
 def _language_block(source: str) -> str:
-    """The page's dictionary and t(), to run the renderers below in the page's own words (Russian here)."""
-    start = source.index("/* ---------------- Language of the page")
+    """The page's words and t(), to run the renderers below in the page's own words (Russian here)."""
+    start = source.index("const TEXT_RU = ")
     return source[start : source.index("const fmt1 = ", start)]
 
 
