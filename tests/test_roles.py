@@ -57,19 +57,44 @@ class RolesTests(TestCase):
         self.assertTrue(roles.at_least(root, Role.OWNER))
         self.assertFalse(roles.role_at_least(root, Role.PARTICIPANT))
 
-    def test_a_template_asks_a_rule_by_name_or_a_role_by_value(self):
+    def test_a_template_names_a_rule_or_a_role_through_roles(self):
         page = Template(
-            '{% load roles %}{% if user|at_least:"MODERATE_EVENTS" %}m{% endif %}'
-            '{% if user|role_at_least:"admin" %}a{% endif %}'
+            "{% load roles %}{% if user|at_least:ROLES.MODERATE_EVENTS %}m{% endif %}"
+            "{% if user|role_at_least:ROLES.Role.ADMIN %}a{% endif %}"
         )
-        self.assertEqual(page.render(Context({"user": _member(Role.ORGANIZER)})), "m")
-        self.assertEqual(page.render(Context({"user": _member(Role.GUEST, superuser=True)})), "m")
-        self.assertEqual(page.render(Context({"user": AnonymousUser()})), "")
+        for user, expected in (
+            (_member(Role.ORGANIZER), "m"),
+            (_member(Role.GUEST, superuser=True), "m"),
+            (AnonymousUser(), ""),
+        ):
+            with self.subTest(user=repr(user)):
+                self.assertEqual(page.render(Context({"user": user, "ROLES": roles})), expected)
 
-    def test_a_name_that_is_neither_fails_the_page(self):
-        page = Template('{% load roles %}{% if user|at_least:"MODERATE_EVENT" %}m{% endif %}')
+    def test_every_rule_a_template_names_exists(self):
+        # Django's {% if %} reads a name that does not resolve as false, so a typo would hide a
+        # button without a word: every ROLES.<name> in every template is looked up here instead.
+        missing = []
+        for folder, subfolders, files in os.walk(ROOT):
+            subfolders[:] = [name for name in subfolders if name not in {".git", ".venv", "node_modules", "tmp"}]
+            for name in files:
+                if not name.endswith(".html"):
+                    continue
+                path = Path(folder) / name
+                for reference in re.findall(r"\bROLES\.([A-Za-z_.]+)", path.read_text(encoding="utf-8")):
+                    value = roles
+                    for part in reference.split("."):
+                        value = getattr(value, part, None)
+                    if not isinstance(value, roles.Role):
+                        missing.append(f"{path.relative_to(ROOT)}: ROLES.{reference}")
+        self.assertEqual(missing, [])
+
+    def test_a_rule_written_as_a_string_fails_the_page(self):
+        page = Template('{% load roles %}{% if user|at_least:"MODERATE_EVENTS" %}m{% endif %}')
         with self.assertRaises(TemplateSyntaxError):
             page.render(Context({"user": _member(Role.ADMIN)}))
+
+    def test_every_page_has_roles(self):
+        self.assertIs(self.client.get("/en/news/").context["ROLES"], roles)
 
     def test_no_role_is_compared_outside_accounts_roles(self):
         found = []

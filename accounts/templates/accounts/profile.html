@@ -170,7 +170,7 @@
                     {% endfor %}
                 </ul>
             </div>
-            {% if user|role_at_least:"participant" %}
+            {% if user|role_at_least:ROLES.Role.PARTICIPANT %}
             <div class="card-footer">
                 {% comment %}
                 The same cooldown as the contact button, because both write to the same mailbox
@@ -190,7 +190,7 @@
             {% endif %}
         </div>
 
-        {% if user|role_at_least:"participant" %}
+        {% if user|role_at_least:ROLES.Role.PARTICIPANT %}
         <div class="card mb-4">
             <div class="card-header">{% trans "Contact site owners" %}</div>
             <div class="card-body">
@@ -317,7 +317,7 @@
 
         {# Unverified users (GUEST) get a minimal cabinet: profile data + the resend block #}
         {# above. Everything below requires a confirmed account (participant+). #}
-        {% if user|role_at_least:"participant" %}
+        {% if user|role_at_least:ROLES.Role.PARTICIPANT %}
         <div class="card mb-4">
             <div class="card-header">{% trans "Appearance" %}</div>
             <div class="card-body d-flex align-items-center gap-3">

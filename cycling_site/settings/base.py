@@ -201,6 +201,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "cycling_site.context_processors.role_rules",
                 "cycling_site.context_processors.moderation_tasks",
                 "cycling_site.context_processors.managing_waiting",
                 "cycling_site.context_processors.setup_hint",

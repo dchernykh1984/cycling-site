@@ -21,7 +21,7 @@
       {% if request.user.is_authenticated %}
       {# On a phone Add event is the "+" beside Share (_page_heading.html), and Moderation is reached from the banner. #}
       <a href="{% url 'calendar_submit' %}" class="btn btn-primary btn-sm d-none d-lg-inline-block">{% trans "Submit event" %}</a>
-      {% if request.user|at_least:"MODERATE_EVENTS" %}
+      {% if request.user|at_least:ROLES.MODERATE_EVENTS %}
       <a href="{% url 'calendar_moderate' %}" class="btn btn-outline-warning btn-sm d-none d-lg-inline-block">{% trans "Moderation" %}</a>
       {% endif %}
       {% endif %}

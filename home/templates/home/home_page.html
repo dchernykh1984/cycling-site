@@ -13,7 +13,7 @@
 in the top row, beside the owner's edit button.{% endcomment %}
 <div class="d-flex justify-content-end gap-2 mb-4">
   {% include "_share_button.html" %}
-  {% if request.user|role_at_least:"EDIT_HOME_PAGE" %}
+  {% if request.user|role_at_least:ROLES.EDIT_HOME_PAGE %}
   <a href="{% url 'home_edit' %}" class="btn btn-sm btn-outline-secondary">{% trans "Edit page" %}</a>
   {% endif %}
 </div>
