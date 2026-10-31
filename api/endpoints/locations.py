@@ -8,8 +8,8 @@ from ninja.errors import HttpError
 from ninja.schema import Field
 from pydantic import model_validator
 
-from accounts.models import User
-from api.auth import ApiTokenAuth, OptionalApiTokenAuth, is_admin
+from accounts import roles
+from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedStr, LocalizedTitle, localize_field
 from locations.models import (
     Location,
@@ -20,9 +20,6 @@ from locations.models import (
     point_is_whole,
     soft_delete_location,
 )
-
-_PARTICIPANT_RANK = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-_ORGANIZER_RANK = User.ROLE_HIERARCHY.index(User.Role.ORGANIZER)
 
 auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
@@ -96,18 +93,9 @@ LocationNodeOut.model_rebuild()
 # -- Helpers ---------------------------------------------------------------
 
 
-def _require_admin(user) -> None:
-    if not is_admin(user):
+def _require_place_manager(user) -> None:
+    if not roles.at_least(user, roles.APPROVE_PLACES):
         raise HttpError(403, "ADMIN role or higher is required")
-
-
-def _role_rank(user) -> int:
-    return user.get_role_rank() if hasattr(user, "get_role_rank") else -1
-
-
-def _can_add_directly(user) -> bool:
-    """Organizer+ create approved locations directly (issue #111)."""
-    return bool(getattr(user, "is_superuser", False)) or _role_rank(user) >= _ORGANIZER_RANK
 
 
 def _proposal_visible(location: Location, user) -> bool:
@@ -115,7 +103,7 @@ def _proposal_visible(location: Location, user) -> bool:
     proposal = getattr(location, "proposal", None)
     if proposal is None or proposal.status == LocationProposal.Status.APPROVED:
         return True
-    if is_admin(user):
+    if roles.at_least(user, roles.APPROVE_PLACES):
         return True
     return getattr(user, "is_authenticated", False) and proposal.submitted_by_id == user.pk
 
@@ -123,7 +111,7 @@ def _proposal_visible(location: Location, user) -> bool:
 def _visible_locations_qs(user):
     """Non-deleted locations honouring proposal visibility (pending = proposer/admin only)."""
     qs = Location.objects.filter(is_deleted=False)
-    if is_admin(user):
+    if roles.at_least(user, roles.APPROVE_PLACES):
         return qs
     visible = Q(proposal__isnull=True) | Q(proposal__status=LocationProposal.Status.APPROVED)
     if getattr(user, "is_authenticated", False):
@@ -151,7 +139,7 @@ def _apply_name(location: Location, name: LocalizedStr) -> None:
 
 @router.get("/", response=list[LocationNodeOut], auth=optional_auth, summary="List locations as hierarchy tree")
 def list_locations(request, include_hidden: bool = False):
-    if include_hidden and not is_admin(request.auth):
+    if include_hidden and not roles.at_least(request.auth, roles.APPROVE_PLACES):
         include_hidden = False
     all_locs = list(_visible_locations_qs(request.auth))
     step = Location.steplen
@@ -191,7 +179,7 @@ def list_locations(request, include_hidden: bool = False):
 @router.get("/{location_id}", response=LocationOut, auth=optional_auth, summary="Get location detail")
 def get_location(request, location_id: int):
     location = _get_or_404(location_id)
-    if location.is_hidden and not is_admin(request.auth):
+    if location.is_hidden and not roles.at_least(request.auth, roles.APPROVE_PLACES):
         raise HttpError(404, "Location not found")
     # A pending proposed location is visible only to its proposer (or an admin).
     if not _proposal_visible(location, request.auth):
@@ -212,7 +200,7 @@ def city_fallback_venue(request, city_id: int):
     down a concrete start venue, without cluttering the tree with a fresh venue on every run. The
     venue is idempotent -- one per city -- and named in all three locales by the site.
     """
-    if not _can_add_directly(request.auth):
+    if not roles.at_least(request.auth, roles.ADD_PLACES):
         raise HttpError(403, "ORGANIZER role or higher is required")
     try:
         city = Location.objects.get(pk=city_id, is_deleted=False, depth=3)
@@ -243,8 +231,10 @@ def city_fallback_venue(request, city_id: int):
 )
 def create_location(request, payload: LocationIn):
     user = request.auth
-    if _role_rank(user) < _PARTICIPANT_RANK and not getattr(user, "is_superuser", False):
+    if not roles.at_least(user, roles.PROPOSE_PLACES):
         raise HttpError(403, "PARTICIPANT role or higher is required")
+    may_approve = roles.at_least(user, roles.APPROVE_PLACES)
+    may_add = roles.at_least(user, roles.ADD_PLACES)
 
     kwargs = dict(
         name=payload.name.ru or payload.name.kk or payload.name.en,
@@ -254,7 +244,7 @@ def create_location(request, payload: LocationIn):
         lat=payload.lat,
         lng=payload.lng,
         # Only managers may create hidden fallback venues.
-        is_hidden=payload.is_hidden if is_admin(user) else False,
+        is_hidden=payload.is_hidden if may_approve else False,
     )
 
     parent = None
@@ -274,14 +264,14 @@ def create_location(request, payload: LocationIn):
     # organizer -- the events agent needs them to place a race in a town the tree does not have yet
     # -- and then wait for a moderator, unless the author is an admin. Venues keep the earlier rule.
     new_depth = 1 if parent is None else parent.depth + 1
-    if not is_admin(user):
+    if not may_approve:
         if new_depth == 1:
             raise HttpError(403, "Creating a country is admin-only")
-        if new_depth in (2, 3) and not _can_add_directly(user):
+        if new_depth in (2, 3) and not may_add:
             raise HttpError(403, "ORGANIZER role or higher is required to propose a region or city")
     # Even an admin does not get a public node inside a branch still under review -- that is
     # what makes the branch impossible to reject afterwards.
-    approved = chain_is_approved(parent) and (is_admin(user) or (_can_add_directly(user) and new_depth == 4))
+    approved = chain_is_approved(parent) and (may_approve or (may_add and new_depth == 4))
 
     # add_location_child locks the parent (or the root namespace) and the proposal shares the
     # transaction, so a concurrent delete can't orphan the node and two roots can't collide on path.
@@ -300,7 +290,7 @@ def create_location(request, payload: LocationIn):
 @router.patch("/{location_id}", response=LocationOut, auth=auth, summary="Update location (ADMIN+)")
 def update_location(request, location_id: int, payload: LocationPatchIn):
     user = request.auth
-    _require_admin(user)
+    _require_place_manager(user)
     location = _get_or_404(location_id)
 
     data = payload.dict(exclude_unset=True)
@@ -328,7 +318,7 @@ def update_location(request, location_id: int, payload: LocationPatchIn):
 @router.delete("/{location_id}", response={204: None}, auth=auth, summary="Delete location (ADMIN+, soft)")
 def delete_location(request, location_id: int):
     user = request.auth
-    _require_admin(user)
+    _require_place_manager(user)
     location = _get_or_404(location_id)
     # Same contract as the web form: refuse to orphan a live subtree/competitions. soft_delete_location
     # re-checks under a row lock, so a concurrent create can't slip a child in before the delete.
