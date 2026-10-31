@@ -63,7 +63,7 @@ def can_manage_or_own(user, competition) -> bool:
     its upload token and keeps its photo albums."""
     if manages(user, competition):
         return True
-    return bool(getattr(user, "is_authenticated", False)) and user.pk == competition.submitted_by_id
+    return user.is_authenticated and user.pk == competition.submitted_by_id
 
 
 def _let_in(user) -> Q:

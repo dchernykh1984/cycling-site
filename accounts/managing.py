@@ -23,14 +23,14 @@ UNCONFIRMED = "unconfirmed"  # the member's own address is not confirmed yet: th
 
 def acts_for(manager, member_id) -> bool:
     """Whether ``manager`` may act for the member with this id: an accepted request, not a waiting one."""
-    if member_id is None or not getattr(manager, "is_authenticated", False):
+    if member_id is None or not manager.is_authenticated:
         return False
     return ManagedMember.objects.filter(manager=manager, member_id=member_id, accepted_at__isnull=False).exists()
 
 
 def member_ids(manager) -> set[int]:
     """The members ``manager`` may act for -- one query, for pages that ask about many rows."""
-    if not getattr(manager, "is_authenticated", False):
+    if not manager.is_authenticated:
         return set()
     return set(
         ManagedMember.objects.filter(manager=manager, accepted_at__isnull=False).values_list("member_id", flat=True)
