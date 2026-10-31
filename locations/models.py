@@ -255,6 +255,10 @@ class Location(MP_Node, index.Indexed):
             return False
         return mapping is not None
 
+    @property
+    def is_venue(self) -> bool:
+        return self.depth == Level.VENUE
+
     @classmethod
     def propose_venue(
         cls, city, name, lat=None, lng=None, *, name_kk="", name_en="", submitted_by=None, approved=False
@@ -306,10 +310,10 @@ class Location(MP_Node, index.Indexed):
             return fallback
 
     _LEVEL_LABELS: ClassVar[dict] = {
-        1: gettext_noop("Country"),
-        2: gettext_noop("Region"),
-        3: gettext_noop("City"),
-        4: gettext_noop("Venue"),
+        Level.COUNTRY: gettext_noop("Country"),
+        Level.REGION: gettext_noop("Region"),
+        Level.CITY: gettext_noop("City"),
+        Level.VENUE: gettext_noop("Venue"),
     }
 
     def get_level_label(self) -> str:

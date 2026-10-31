@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 from agent import locations as agent_locations
 from agent import venues as agent_venues
+from locations.models import Level
 
 Point = tuple[float, float]
 
@@ -38,7 +39,7 @@ def tree(rows: list[dict]) -> list[dict]:
             "children": [],
         }
         by_path[row["path"]] = node
-        if row["depth"] == 1:
+        if row["depth"] == Level.COUNTRY:
             roots.append(node)
             continue
         step = len(row["path"]) // row["depth"]
