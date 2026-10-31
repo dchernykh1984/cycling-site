@@ -208,7 +208,7 @@ class NewsArticle(index.Indexed, models.Model):  # type: ignore[django-manager-m
         sanitize_rich_text_columns(self, self._BODY_FIELDS, update_fields=kwargs.get("update_fields"))
         if not self.slug:
             # Prefer Russian title for the slug (stable across locale switches).
-            base = slugify(getattr(self, "title_ru", None) or self.title or "article")
+            base = slugify(self.title_ru or self.title or "article")
             if not base:
                 base = "article"
             candidate = base

@@ -519,7 +519,7 @@ def competition_location_block_reason(location, user, *, is_admin=False) -> str 
     """
     if location is None:
         return None
-    if getattr(location, "is_deleted", False):
+    if location.is_deleted:
         return "Location is deleted"
     # A competition must point at a specific venue (depth 4), never a country/region/city.
     if location.depth != Level.VENUE:
