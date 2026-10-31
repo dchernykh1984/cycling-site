@@ -9,22 +9,38 @@ from django.conf import settings
 PAGE = Path(settings.BASE_DIR) / "trainer" / "static" / "trainer" / "alatau.html"
 
 
+def _attribute(attributes: str, name: str) -> str | None:
+    found = re.search(rf'(?<![\w-]){name}="([^"]*)"', attributes)
+    return found.group(1) if found else None
+
+
+def _own(ref: str) -> bool:
+    """A file of the page's own, not a CDN's: no scheme, not //."""
+    return not re.match(r"[a-z]+:|//", ref)
+
+
 def local_files() -> list[Path]:
-    """The page's own stylesheets and scripts, in the order the page loads them (not a CDN's)."""
-    html = PAGE.read_text(encoding="utf-8")
-    refs = re.findall(r'<(?:script src|link rel="stylesheet" href)="(?![a-z]+:|//)([^"]+)"', html)
+    """The page's own stylesheets and scripts, in the order the page loads them."""
+    refs = []
+    for tag, attributes in re.findall(r"<(script|link)\b([^>]*)>", PAGE.read_text(encoding="utf-8")):
+        if tag == "link" and _attribute(attributes, "rel") != "stylesheet":
+            continue
+        ref = _attribute(attributes, "src" if tag == "script" else "href")
+        if ref and _own(ref):
+            refs.append(ref)
     return [PAGE.parent / ref for ref in refs]
 
 
 def scripts() -> list[str]:
     """The code the page runs, in its order: its own files and any script written into the page."""
     code = []
-    for src, written in re.findall(
-        r'<script(?: src="([^"]*)")?>(.*?)</script>', PAGE.read_text(encoding="utf-8"), re.DOTALL
+    for attributes, written in re.findall(
+        r"<script\b([^>]*)>(.*?)</script>", PAGE.read_text(encoding="utf-8"), re.DOTALL
     ):
-        if not src:
+        src = _attribute(attributes, "src")
+        if src is None:
             code.append(written)
-        elif not re.match(r"[a-z]+:|//", src):
+        elif _own(src):
             code.append((PAGE.parent / src).read_text(encoding="utf-8"))
     return code
 
