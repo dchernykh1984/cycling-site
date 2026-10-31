@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.core.exceptions import ValidationError
 
+from accounts import roles
 from accounts.models import User
 
 
@@ -23,7 +24,7 @@ class UserAdmin(BaseUserAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
-        if not (request.user.is_superuser or getattr(request.user, "role", "") == User.Role.OWNER):
+        if not roles.at_least(request.user, User.Role.OWNER):
             readonly.extend(f for f in self.PRIVILEGE_FIELDS if f not in readonly)
         return readonly
 
@@ -36,9 +37,9 @@ class UserAdmin(BaseUserAdmin):
             def clean_role(self):
                 role = self.cleaned_data.get("role")
                 if role:
-                    if obj is not None and not editor.can_manage_user(obj):
+                    if obj is not None and not roles.may_manage_user(editor, obj):
                         raise ValidationError("You don't have permission to edit this user's role.")
-                    if not editor.can_assign_role(role):
+                    if not roles.may_assign_role(editor, role):
                         raise ValidationError("You don't have permission to assign this role.")
                 return role
 
