@@ -21,6 +21,7 @@ from django.utils.translation import gettext as _
 
 from assistant import images as pictures
 from assistant import places
+from assistant.models import Conversation
 from assistant.prompt import LANGUAGES, NEWS_FIELDS, RICH_FIELDS, TEXT_FIELDS, URL_FIELDS
 from calendar_app.models import Competition, Discipline, EventType
 from cycling_site.sanitize import sanitize_rich_html
@@ -267,7 +268,7 @@ def check(
     start of a track they attached, and ``images`` the pictures the descriptions' marks stand for.
     """
     checker = _Checker(current, texts, rows, point, images or [])
-    if isinstance(answer, dict) and kind == "news":
+    if isinstance(answer, dict) and kind == Conversation.Kind.NEWS:
         checker.texts_in_three_languages(answer, NEWS_FIELDS)
     elif isinstance(answer, dict):
         checker.texts_in_three_languages(answer, TEXT_FIELDS)

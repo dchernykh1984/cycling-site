@@ -115,7 +115,7 @@ def taxonomy() -> str:
 
 
 def system_prompt(kind: str = "event") -> str:
-    if kind == "news":
+    if kind == Conversation.Kind.NEWS:
         return f"{NEWS_CONTRACT}\n{skills('news')}\n"
     return f"{CONTRACT}\n{skills('event')}\n\n{taxonomy()}\n"
 
@@ -225,7 +225,7 @@ def turn(
     kind: str = "event",
 ) -> str:
     """The user's message as the model reads it: the day, the page, the form, the files."""
-    if kind == "news":
+    if kind == Conversation.Kind.NEWS:
         task = "editing a news item already on the site" if editing else "writing a new news item"
     else:
         task = "editing an event already on the site" if editing else "adding a new event"
@@ -236,7 +236,7 @@ def turn(
     ]
     if attachments:
         parts.append(attachments_line(attachments))
-    lacking = [what for name, what in _FILTERED_BY if not form.get(name)] if kind != "news" else []
+    lacking = [what for name, what in _FILTERED_BY if not form.get(name)] if kind != Conversation.Kind.NEWS else []
     if lacking:
         parts.append(
             f"Still missing from the form, and the calendar's filters need it: {', '.join(lacking)}. "
