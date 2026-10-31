@@ -23,7 +23,7 @@
   </div>
   {% if is_manager %}
   <div class="d-flex gap-2">
-    {% if competition.registration_mode == "free" %}
+    {% if competition.registration_mode == competition.RegistrationMode.FREE %}
     <a href="{% url 'registrations:manual_add' competition.pk %}" class="btn btn-sm btn-outline-primary">
       + {% trans "Manual add" %}
     </a>
