@@ -13,6 +13,7 @@ from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedPreviewText, LocalizedStr, LocalizedTitle, Url, localize_field
 from calendar_app.feeds import build_calendar, calendar_response, site_base_url
 from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline, EventType
+from calendar_app.visibility import can_manage_or_own
 from locations.models import (
     Location,
     LocationConflictError,
@@ -235,7 +236,7 @@ def _get_or_404(pk: int) -> Competition:
 
 
 def _require_owner_or_admin(user, competition: Competition) -> None:
-    if not (_is_owner(user, competition) or roles.at_least(user, roles.MANAGE_ALL_EVENTS)):
+    if not can_manage_or_own(user, competition):
         raise HttpError(403, "Forbidden")
 
 

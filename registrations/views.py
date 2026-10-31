@@ -28,15 +28,6 @@ def can_manage(user, competition) -> bool:
     return manages(user, competition)
 
 
-def can_manage_or_own(user, competition) -> bool:
-    """A manager, or the author of the competition (any role, any status).
-
-    Managers (via :func:`can_manage`) plus the submitter, so the person who proposed a competition
-    can edit / delete / resubmit their own -- even a participant on their own rejected event (#200).
-    """
-    return can_manage(user, competition) or (user.is_authenticated and user == competition.submitted_by)
-
-
 def can_self_edit(user, competition, reg, member_ids=None) -> bool:
     """Whether ``user`` may edit/cancel ``reg`` as its owner, or for its owner (not as a manager).
 
