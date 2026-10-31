@@ -1688,6 +1688,8 @@ class ApproveCompetitionView(ModeratorRequiredMixin, View):
                 request,
                 _("This event's location is still awaiting review; an administrator must approve it first."),
             )
+        except ValueError:
+            pass  # another moderator reviewed it meanwhile, as the reject view allows
         return redirect(_safe_next(request, "calendar_moderate"))
 
 
