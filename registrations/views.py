@@ -111,7 +111,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 "competition": competition,
                 "form": form,
                 "profile_incomplete": not user.gender or not user.birth_date,
-                "is_free": competition.registration_mode == "free",
+                "is_free": competition.registration_mode == competition.RegistrationMode.FREE,
                 "relay_enabled": competition.relay_enabled,
                 "relay_max_members": competition.relay_max_members,
                 "relay_members_post": relay_members_post,
@@ -388,7 +388,7 @@ class EditRegistrationView(LoginRequiredMixin, View):
     def _build_form(self, competition, reg, mode, data=None):
         if mode == "owner":
             return EditRegistrationForm(data, instance=reg, competition=competition, participant_fields_only=True)
-        service_only = competition.registration_mode == "self_only"
+        service_only = competition.registration_mode == competition.RegistrationMode.SELF_ONLY
         return EditRegistrationForm(data, instance=reg, competition=competition, service_fields_only=service_only)
 
     def get(self, request, pk, reg_pk):
@@ -435,7 +435,7 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
         if not can_manage(user, competition):
             raise PermissionDenied
-        if competition.registration_mode != "free":
+        if competition.registration_mode != competition.RegistrationMode.FREE:
             raise PermissionDenied
         return competition
 

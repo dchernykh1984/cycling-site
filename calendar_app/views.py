@@ -1079,9 +1079,8 @@ def _apply_registration_settings(comp, reg_form, is_organizer_plus):
     comp.require_approval = cd.get("require_approval", False)
     comp.require_payment = cd.get("require_payment", False)
     effective_mode = comp.registration_mode if comp.registration_mode_locked else cd.get("registration_mode")
-    comp.allow_multiple_registrations = (
-        False if effective_mode == "self_only" else cd.get("allow_multiple_registrations", False)
-    )
+    self_only = effective_mode == Competition.RegistrationMode.SELF_ONLY
+    comp.allow_multiple_registrations = False if self_only else cd.get("allow_multiple_registrations", False)
     deadline = cd.get("registration_deadline")
     # The wall-clock typed, at the event's place (issue #344): the location has to be set first.
     comp.registration_deadline = deadline.replace(tzinfo=comp.timezone) if deadline else None
@@ -1116,7 +1115,7 @@ def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
         birth_to = None
         if cat_data.get("birth_from"):
             try:
-                if birth_date_mode == "year":
+                if birth_date_mode == Competition.BirthDateMode.YEAR:
                     birth_from = dt.date(int(cat_data["birth_from"]), 1, 1)
                 else:
                     birth_from = dt.date.fromisoformat(cat_data["birth_from"])
@@ -1124,7 +1123,7 @@ def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
                 pass
         if cat_data.get("birth_to"):
             try:
-                if birth_date_mode == "year":
+                if birth_date_mode == Competition.BirthDateMode.YEAR:
                     birth_to = dt.date(int(cat_data["birth_to"]), 12, 31)
                 else:
                     birth_to = dt.date.fromisoformat(cat_data["birth_to"])
@@ -1286,7 +1285,7 @@ def _category_rows(comp, birth_date_mode: str = "") -> list[dict]:
     """
     from registrations.models import RegistrationCategory
 
-    by_date = (birth_date_mode or comp.birth_date_mode) == "date"
+    by_date = (birth_date_mode or comp.birth_date_mode) == Competition.BirthDateMode.DATE
 
     def bound(value):
         if value is None:

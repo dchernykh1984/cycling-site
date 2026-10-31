@@ -7,7 +7,7 @@ from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
 
-from accounts.models import validate_birth_date
+from accounts.models import User, validate_birth_date
 
 
 class Team(models.Model):
@@ -59,9 +59,9 @@ class RegistrationCategory(models.Model):
         return f"{self.competition} - {self.name}"
 
     def matches_gender(self, gender: str) -> bool:
-        if gender == "M" and not self.male:
+        if gender == User.Gender.MALE and not self.male:
             return False
-        if gender == "F" and not self.female:
+        if gender == User.Gender.FEMALE and not self.female:
             return False
         return True
 
@@ -192,7 +192,7 @@ def counted_q() -> Q:
 
 
 def check_duplicate(competition, user, first_name: str, last_name: str, birth_date: datetime.date) -> bool:
-    if competition.registration_mode == "self_only" and user:
+    if competition.registration_mode == competition.RegistrationMode.SELF_ONLY and user:
         return CompetitionRegistration.objects.filter(competition=competition, user=user).exists()
     if competition.allow_multiple_registrations:
         return False
