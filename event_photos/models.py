@@ -134,10 +134,16 @@ class IssuedBib(models.Model):
 class IssuedBibEvent(models.Model):
     """Append-only history of bib assignments; the generic audit log keeps only field names."""
 
+    class Change(models.TextChoices):
+        ASSIGNED = "assigned"
+        CONFLICT = "conflict"
+        REVIEW = "review"
+        WITHDRAWN = "withdrawn"
+
     competition = models.ForeignKey("calendar_app.Competition", on_delete=models.CASCADE, related_name="+")
     registration_id = models.BigIntegerField()
     bib = models.CharField(max_length=32)
-    change = models.CharField(max_length=10)  # assigned / conflict / review / withdrawn
+    change = models.CharField(max_length=10)  # a Change
     device_id = models.CharField(max_length=64, blank=True)
     client_revision = models.PositiveBigIntegerField(default=0)
     at = models.DateTimeField(auto_now_add=True)

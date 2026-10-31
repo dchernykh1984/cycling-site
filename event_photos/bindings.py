@@ -161,7 +161,9 @@ def recompute(competition) -> list[str]:
             _keep_diagnostics(StartListDiagnostics, competition, warnings)
             return warnings
         events = [
-            IssuedBibEvent(competition=competition, registration_id=key[0], bib=key[1], change="withdrawn")
+            IssuedBibEvent(
+                competition=competition, registration_id=key[0], bib=key[1], change=IssuedBibEvent.Change.WITHDRAWN
+            )
             for key in current
             if key not in result.assignments
         ]
@@ -192,7 +194,9 @@ def recompute(competition) -> list[str]:
                     competition=competition,
                     registration_id=reg,
                     bib=bib,
-                    change="assigned" if state == IssuedBib.State.ACTIVE else state,
+                    change=IssuedBibEvent.Change.ASSIGNED
+                    if state == IssuedBib.State.ACTIVE
+                    else IssuedBibEvent.Change(state),
                     device_id=device,
                     client_revision=revision,
                 )
