@@ -56,8 +56,6 @@ def _lock_tree_mutation_namespace():
             cursor.execute("SELECT pg_advisory_xact_lock(%s)", [_TREE_MUTATION_LOCK])
 
 
-# The catch-all nodes at every level ("Other country" / "Other region" / "Other city" / "Other
-# location") are pinned to the end of their list with this sort_order; real nodes stay below it.
 class Level(IntEnum):
     """The four levels of the place tree, its nodes' ``depth``: an event always hangs at a venue."""
 
@@ -67,6 +65,8 @@ class Level(IntEnum):
     VENUE = 4
 
 
+# The catch-all nodes at every level ("Other country" / "Other region" / "Other city" / "Other
+# location") are pinned to the end of their list with this sort_order; real nodes stay below it.
 CATCH_ALL_SORT_ORDER = 9999
 
 # The name a city's catch-all venue is created under, marked here because it is translated through
