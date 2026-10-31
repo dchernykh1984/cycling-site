@@ -277,7 +277,7 @@ def _favorited_ids(request, competitions) -> set:
     )
 
 
-class OrganizerRequiredMixin(LoginRequiredMixin):
+class ModeratorRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
@@ -1631,7 +1631,7 @@ class EditCompetitionView(View):
         )
 
 
-class ModerationView(OrganizerRequiredMixin, TemplateView):
+class ModerationView(ModeratorRequiredMixin, TemplateView):
     template_name = "calendar_app/moderate.html"
 
     def get_context_data(self, **kwargs):
@@ -1697,7 +1697,7 @@ def _safe_next(request, default_view: str) -> str:
     return reverse(default_view)
 
 
-class ApproveCompetitionView(OrganizerRequiredMixin, View):
+class ApproveCompetitionView(ModeratorRequiredMixin, View):
     def post(self, request, pk):
         from locations.models import LocationPendingError
 
@@ -1714,7 +1714,7 @@ class ApproveCompetitionView(OrganizerRequiredMixin, View):
         return redirect(_safe_next(request, "calendar_moderate"))
 
 
-class RejectCompetitionView(OrganizerRequiredMixin, View):
+class RejectCompetitionView(ModeratorRequiredMixin, View):
     def post(self, request, pk):
         comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
         if not can_review(request.user, comp):
@@ -1796,7 +1796,7 @@ class ReportCompetitionView(ParticipantRequiredMixin, View):
         return redirect("competition_detail", pk=pk)
 
 
-class DismissReportsView(OrganizerRequiredMixin, View):
+class DismissReportsView(ModeratorRequiredMixin, View):
     """Dismiss ("mark as fine") every open report on an event -- admins+ only (issue #233).
 
     Clears the event from the moderation queue. Editing or deleting the event stay separate manual
