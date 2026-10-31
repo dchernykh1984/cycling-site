@@ -77,7 +77,7 @@ def _attachments(items: list[dict]) -> list[dict]:
 
 
 def _track_start(conversation: Conversation, attachments: list[dict]) -> tuple[float, float] | None:
-    """Where the latest route the administrator attached starts."""
+    """Where the latest route the user attached starts."""
     earlier = [item for message in conversation.messages.filter(role=Message.Role.USER) for item in message.attachments]
     for item in reversed(earlier + attachments):
         if item.get("kind") == "route" and item.get("start"):
@@ -104,7 +104,7 @@ def take_turn(
     today: datetime.date,
     language: str,
 ) -> Turn:
-    """Ask the model; keep the administrator's message and the reply only when it answered.
+    """Ask the model; keep the user's message and the reply only when it answered.
 
     Raises ``llm.UnavailableError``: nothing is stored then, so the message can simply be sent again.
     """

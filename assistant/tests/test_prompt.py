@@ -118,7 +118,7 @@ class TurnTests(TestCase):
         self.assertIn(
             '"ride.gpx"; it is in the form as the route file. The track starts at 43.238900, 76.945300.', text
         )
-        self.assertTrue(text.endswith("The administrator writes:\nSaturday ride"))
+        self.assertTrue(text.endswith("The user writes:\nSaturday ride"))
         self.assertIn("editing an event", prompt.turn("x", {}, [], datetime.date(2026, 10, 29), "ru", editing=True))
 
     def test_a_turn_asks_for_what_the_calendars_filters_need_until_the_form_has_it(self):

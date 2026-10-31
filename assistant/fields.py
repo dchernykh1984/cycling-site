@@ -1,7 +1,7 @@
 """The model's answer, checked into the event form's values (issue #353).
 
 The answer is input like any other (constitution X): each value is checked against its field, and
-only what passes reaches the page. A link must appear in the administrator's own messages and a
+only what passes reaches the page. A link must appear in the user's own messages and a
 place must be one of the site's (constitution I). What is left out becomes a note the chat shows, so
 that a reply never claims what the form does not hold.
 """
@@ -83,7 +83,7 @@ def written_by_them(url: str, texts: list[str]) -> bool:
 
     The link must be there whole: "routes/12" is not written by whoever wrote "routes/123". A page of
     the site itself is one page in every language, so a stage's Kazakh text may link to the Kazakh page
-    of the race whose Russian page the administrator gave.
+    of the race whose Russian page the user gave.
     """
     bare = _bare(url)
     if not bare:
@@ -111,7 +111,7 @@ def _url(value: str) -> str | None:
 
 
 def _typed_point(place: dict, texts: list[str]) -> places.Point | None:
-    """The coordinates the model gave, when the administrator wrote both numbers."""
+    """The coordinates the model gave, when the user wrote both numbers."""
     try:
         lat, lng = float(place["lat"]), float(place["lng"])
     except (KeyError, TypeError, ValueError):
@@ -263,7 +263,7 @@ def check(
     """The parts of the model's ``set`` that pass, as kept and as the page's form values, with notes.
 
     ``current`` is the form as it stands (``prompt.describe_form``), ``texts`` everything the
-    administrator wrote in the conversation, ``rows`` the places the page offers, ``point`` the
+    user wrote in the conversation, ``rows`` the places the page offers, ``point`` the
     start of a track they attached, and ``images`` the pictures the descriptions' marks stand for.
     """
     checker = _Checker(current, texts, rows, point, images or [])

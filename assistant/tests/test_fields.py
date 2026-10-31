@@ -59,7 +59,7 @@ class IdTests(TestCase):
 class LinkTests(TestCase):
     TEXTS = ("The track: https://www.strava.com/routes/3398 and the post t.me/ubt_club/812",)
 
-    def test_a_link_the_administrator_wrote_is_kept_whatever_its_scheme(self):
+    def test_a_link_the_user_wrote_is_kept_whatever_its_scheme(self):
         checked = _check(
             {"url_route": "https://strava.com/routes/3398/", "url_announcement": "https://t.me/ubt_club/812"},
             texts=self.TEXTS,
@@ -166,7 +166,7 @@ class PlaceTests(TestCase):
             },
         )
 
-    def test_typed_coordinates_count_only_when_the_administrator_wrote_them(self):
+    def test_typed_coordinates_count_only_when_the_user_wrote_them(self):
         answer = {"place": {"city": "Testville", "venue": {"ru": "Most"}, "lat": 43.21, "lng": 76.88}}
         typed = _check(answer, texts=["Start at the bridge, 43,21 76.88"], rows=self.rows)
         self.assertEqual((typed.form["new_venue"]["lat"], typed.form["new_venue"]["lng"]), (43.21, 76.88))
