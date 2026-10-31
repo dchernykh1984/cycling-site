@@ -6,7 +6,7 @@
 token --, `schemas.py`), `api/endpoints/`; django-ninja, served at `/api/v1/`
 **Tests**: `api/tests.py`, `registrations/tests.py` (participants), `protocols/tests.py`,
 `tests/test_gallery_api.py`, `tests/test_input_length_limits.py`, `tests/test_virtual_ride_api.py`,
-`tests/test_managing_api.py`, `assistant/tests/test_api.py`,
+`tests/test_managing_api.py`, `assistant/tests/test_api.py`, `tests/test_home_cards.py`,
 `tests/e2e/test_api_to_front.py`
 **Related**: [events](events.md), [locations](locations.md), [news and knowledge](news-and-knowledge.md),
 [protocols](protocols.md), [registrations](registrations.md), [events agents](events-agents.md),
@@ -62,6 +62,10 @@ and protocols with the event's upload token. The API has no language prefix.
    accepts or rejects requests one by one or all at once (`/managing/waiting/...`), and ends a link
    from either side (`DELETE /managing/members/{user_id}`, `DELETE /managing/managers/{user_id}`).
    An id in the address reaches only the caller's own rows: anything else is a 404.
+9. **Given** the home page's cards ([site shell](site-shell.md)), **Then** anybody lists them in
+   their order (`GET /home/cards/`), and the owner adds one -- after the others, or at the `position`
+   given, counted from 0 --, changes it, moves it (`position`) and deletes it; a card with no heading
+   and no text in any language is refused with a 422, as on the site.
 
 ### Story 2 -- The timing tools exchange race data (P1)
 
@@ -98,7 +102,7 @@ and protocols with the event's upload token. The API has no language prefix.
 
 - **FR-API-001**: Routers: `/competitions/`, `/news/`, `/knowledge/`, `/locations/`, `/disciplines/`,
   `/event-types/`, `/participants/`, `/protocols/`, `/start-list/`, `/group-times/`,
-  `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`, `/event-photos/`
+  `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`, `/home/`, `/event-photos/`
   ([event photos](event-photos.md)), `/virtual-ride/`, `/managing/` ([accounts](accounts.md)),
   `/assistant/` ([event assistant](assistant.md)). A
   start-list upload also records which registration got which bib, from the lines' trailing `r<id>`

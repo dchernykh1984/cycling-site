@@ -91,6 +91,8 @@ SCHEMA_TARGETS = {
     "api.endpoints.gallery.AlbumIn": Album,
     "api.endpoints.gallery.AlbumPatchIn": Album,
     "api.endpoints.gallery.PhotoPatchIn": Photo,
+    "api.endpoints.home.HomeCardIn": HomeCard,
+    "api.endpoints.home.HomeCardPatchIn": HomeCard,
     "api.endpoints.event_photos.AlbumIn": ExternalAlbum,
     "api.endpoints.event_photos.AlbumPatchIn": ExternalAlbum,
     # A mark and an undo name a state (a fixed pattern) and an id; nothing lands in a text column.
