@@ -195,6 +195,20 @@ def test_owner_adds_a_card_through_the_editor(page: Page, live_server, owner, si
     expect(page.locator(".home-body h2").last).to_have_text("Card via editor")
 
 
+@pytest.mark.django_db(transaction=True)
+def test_the_card_list_answers_a_finger_on_a_phone(page: Page, live_server, owner, site_content):
+    """Edit, move and delete answer a tap across 44 px, as every control does on a phone."""
+    HomeCard.objects.create(title_ru="Second", body_ru="<p>More</p>")
+    page.set_viewport_size({"width": 360, "height": 740})
+    inject_session(page, live_server, owner)
+    page.goto(f"{live_server.url}/ru/home/edit/")
+    buttons = page.locator("#cards li .btn")
+    expect(buttons).to_have_count(6)  # edit, one move and delete on each of the two cards
+    for index in range(buttons.count()):
+        box = buttons.nth(index).bounding_box()
+        assert box is not None and box["height"] >= 44 and box["width"] >= 44, (index, box)
+
+
 # ---------------------------------------------------------------------------
 # Per-locale content display
 # ---------------------------------------------------------------------------

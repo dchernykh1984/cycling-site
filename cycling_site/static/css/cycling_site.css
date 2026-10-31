@@ -690,6 +690,13 @@ main .event-photo-preview img { object-fit: contain; }
     display: inline-flex;
     align-items: center;
 }
+/* The owner's list of the home page's cards is tapped on phones too: 44 px whatever height the skin
+   gives a button. */
+.home-cards .btn {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+}
 /* The tables of members and requests read as cards at every width, each column named beside its
    value, as the participant list does on a phone: the profile's column is too narrow for their
    columns even on a desktop, where the buttons at the end of a row would scroll out of sight. */

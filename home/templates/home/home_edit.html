@@ -107,7 +107,7 @@
       </div>
       {% if cards %}
       {% trans "Delete this card in all three languages?" as delete_confirm %}
-      <ol class="list-group list-group-numbered">
+      <ol class="list-group list-group-numbered home-cards">
         {% for card in cards %}
         <li class="list-group-item d-flex flex-wrap align-items-center gap-2">
           <span class="flex-grow-1">{% if card.title %}{{ card.title }}{% else %}{{ card.body|striptags|truncatewords:12 }}{% endif %}</span>
