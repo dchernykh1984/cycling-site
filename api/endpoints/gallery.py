@@ -21,13 +21,14 @@ from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from pydantic import Field
 
+from accounts import roles
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedStr, localize_field
 from gallery import actions
 from gallery.events import public_events
 from gallery.forms import AlbumForm, PhotoUploadForm
 from gallery.models import Album, Photo
-from gallery.permissions import can_create_album, can_manage_album, is_admin_plus
+from gallery.permissions import can_create_album, can_manage_album
 
 auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
@@ -131,7 +132,9 @@ class UploadOut(Schema):
 def _name_events(albums: list[Album], user) -> list[Album]:
     """Give each album the event id the reader may see: any to an admin, otherwise a public one only."""
     ids = {album.competition_id for album in albums if album.competition_id}
-    shown = ids if is_admin_plus(user) else set(public_events().filter(pk__in=ids).values_list("pk", flat=True))
+    shown = ids
+    if not roles.at_least(user, roles.MANAGE_ALL_EVENTS):
+        shown = set(public_events().filter(pk__in=ids).values_list("pk", flat=True))
     for album in albums:
         album.shown_competition_id = album.competition_id if album.competition_id in shown else None  # type: ignore[attr-defined]
     return albums
