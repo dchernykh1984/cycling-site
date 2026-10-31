@@ -41,6 +41,11 @@ class HomeCardTests(TestCase):
         _card(title_ru="Heading", body_ru="<p>Text</p>", body_kk=EMPTY_EDITOR, body_en=EMPTY_EDITOR)
         self.assertEqual(localized_cards("kk"), [{"title": "Heading", "body": "<p>Text</p>"}])
 
+    def test_a_text_of_spaces_alone_is_nothing_written(self):
+        _card(title_ru="Heading", body_ru="<p>Text</p>", body_kk="<p>&nbsp;</p>", body_en="<p>\u00a0 </p>")
+        self.assertEqual(localized_cards("kk")[0]["body"], "<p>Text</p>")
+        self.assertEqual(localized_cards("en")[0]["body"], "<p>Text</p>")
+
     def test_the_plain_columns_hold_the_first_language_written(self):
         card = _card(title_kk="KK heading", body_en="<p>EN text</p>")
         self.assertEqual(card.__dict__["title"], "KK heading")

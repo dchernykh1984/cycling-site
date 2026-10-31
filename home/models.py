@@ -1,3 +1,4 @@
+from html import unescape
 from typing import ClassVar
 
 from django.core.cache import cache
@@ -48,8 +49,11 @@ class SiteContent(models.Model):  # type: ignore[django-manager-missing]
 
 
 def blank_rich_text(html: str) -> bool:
-    """True for rich text with nothing to read or see in it, such as an editor left empty."""
-    return not strip_tags(html).strip() and "<img" not in html
+    """True for rich text with nothing to read or see in it, such as an editor left empty.
+
+    Entities are read first: a "&nbsp;" is as empty as the space it stands for.
+    """
+    return not unescape(strip_tags(html)).strip() and "<img" not in html
 
 
 class HomeCard(models.Model):  # type: ignore[django-manager-missing]
