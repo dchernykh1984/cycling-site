@@ -16,6 +16,7 @@ from wagtail.models import Page
 from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
+from accounts import roles
 from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
 
 
@@ -149,7 +150,7 @@ def location_visible_to(location, user) -> bool:
     proposal = getattr(location, "proposal", None)
     if proposal is None or proposal.status != LocationProposal.Status.PENDING_APPROVAL:
         return True
-    if can_manage_locations(user):
+    if roles.at_least(user, roles.APPROVE_PLACES):
         return True
     return bool(getattr(user, "is_authenticated", False)) and proposal.submitted_by_id == getattr(user, "pk", None)
 
@@ -164,21 +165,6 @@ def chain_is_approved(parent) -> bool:
     if parent is None:
         return True
     return not any(node.is_pending for node in [parent, *parent.get_ancestors()])
-
-
-def can_manage_locations(user) -> bool:
-    """Whether ``user`` may bless geography (approve/reject a location proposal): ADMIN+ only.
-
-    Competitions are moderated a rung lower, by ORGANIZER+, so this is what keeps approving an event
-    from quietly approving the region and city proposed with it. ``locations.views`` mirrors it.
-    """
-    from accounts.models import User
-
-    if not getattr(user, "is_authenticated", False):
-        return False
-    return bool(getattr(user, "is_superuser", False)) or user.get_role_rank() >= User.ROLE_HIERARCHY.index(
-        User.Role.ADMIN
-    )
 
 
 def point_is_whole(lat, lng) -> bool:
@@ -334,7 +320,7 @@ class Location(MP_Node, index.Indexed):
         create outright anyway; the region and city stay in the admin's queue instead of being waved
         through by someone the API would not let create them.
         """
-        if can_manage_locations(reviewer):
+        if roles.at_least(reviewer, roles.APPROVE_PLACES):
             for node in [self, *self.get_ancestors()]:
                 node._approve_proposal()
                 node._approve_system_fallback()
@@ -784,7 +770,7 @@ def selectable_parent_locations(user=None):
     public (no proposal or an approved one) or the user's own pending proposal. Excludes other
     users' pending proposals so nobody can build under -- or even see -- a foreign pending node."""
     qs = Location.objects.filter(is_deleted=False, depth__in=[1, 2, 3])
-    if can_manage_locations(user):
+    if roles.at_least(user, roles.APPROVE_PLACES):
         # A moderator has to reach the very nodes they are reviewing: without this they cannot fix a
         # misspelt proposed city, nor add anything inside it, and the queue becomes a dead end.
         return qs.order_by("sort_order", "path")
@@ -877,14 +863,8 @@ class LocationsMapPage(OwnLanguageUrlMixin, AsciiSlugMixin, Page):
     ]
 
     def get_context(self, request):
-        from accounts.models import User
-
         context = super().get_context(request)
-        admin_rank = User.ROLE_HIERARCHY.index(User.Role.ADMIN)
-        participant_rank = User.ROLE_HIERARCHY.index(User.Role.PARTICIPANT)
-        can_manage = request.user.is_authenticated and (
-            request.user.is_superuser or request.user.get_role_rank() >= admin_rank
-        )
+        can_manage = roles.at_least(request.user, roles.APPROVE_PLACES)
         all_locs = list(
             Location.objects.filter(is_deleted=False).filter(
                 models.Q(proposal__isnull=True) | models.Q(proposal__status=LocationProposal.Status.APPROVED)
@@ -900,9 +880,7 @@ class LocationsMapPage(OwnLanguageUrlMixin, AsciiSlugMixin, Page):
         context["locations_data"] = _build_map_locations(all_locs, candidates=candidates)
         # Only confirmed users (participant+) may propose a location, so only they see the
         # "Add location" button - a guest would otherwise click through to a 403 (issue #118).
-        context["can_add"] = request.user.is_authenticated and (
-            request.user.is_superuser or request.user.get_role_rank() >= participant_rank
-        )
+        context["can_add"] = roles.at_least(request.user, roles.PROPOSE_PLACES)
         context["can_manage"] = can_manage
         if can_manage:
             # Managers get a paginated, filterable list (same UX as the calendar list) instead
