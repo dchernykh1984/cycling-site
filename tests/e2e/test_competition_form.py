@@ -1,10 +1,13 @@
 """E2E tests for the competition submit/edit form JS behaviour."""
 
+import datetime
 import re
 
 import pytest
 from playwright.sync_api import Page, expect
 
+from calendar_app.models import Competition
+from registrations.models import RegistrationCategory
 from tests.e2e.conftest import inject_session
 
 # ---------------------------------------------------------------------------
@@ -164,3 +167,23 @@ def test_category_row_has_two_lines(page: Page, live_server, organizer):
     expect(first_row.locator(".row").first.locator("input[placeholder]").first).to_be_visible()
     # Second row contains Laps input
     expect(first_row.locator(".row").nth(1).locator("input[placeholder]").first).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_category_name_is_shown_as_text_in_the_editor(page: Page, live_server, organizer):
+    name = '"><img src=x onerror="window.__xss=1">'
+    comp = Competition.objects.create(
+        title_ru="Category Editor Race",
+        date_start=datetime.date.today() + datetime.timedelta(days=30),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        registration_enabled=True,
+        registration_mode=Competition.RegistrationMode.FREE,
+    )
+    RegistrationCategory.objects.create(competition=comp, name=name, male=True, female=True)
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/en/calendar/{comp.pk}/edit/")
+    name_input = page.locator("#categories-container .card input[type=text]").first
+    expect(name_input).to_have_value(name)
+    assert page.evaluate("window.__xss") is None
+    assert page.locator("#categories-container img").count() == 0
