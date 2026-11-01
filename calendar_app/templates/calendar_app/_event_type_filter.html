@@ -37,7 +37,6 @@ document.addEventListener('DOMContentLoaded', function () {
     labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}', search: '{% trans "Search..." %}' },
     onChange: function () { if (window.onCalendarFilterChange) window.onCalendarFilterChange(); }
   });
-  window.eventTypeFilter = inst;
   window.getEventTypeFilterIds = function () { return inst.effectivePks(); };
 });
 </script>
