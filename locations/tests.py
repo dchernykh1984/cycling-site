@@ -91,6 +91,11 @@ class LocationsMapPageRenderTests(TestCase):
         unknown = self.client.get(self.map_page.url + "?location=abc")
         self.assertEqual(response.context["locations_data"], unknown.context["locations_data"])
 
+    def test_a_place_that_is_no_id_filters_nothing(self):
+        everything = self.client.get(self.map_page.url).context["locations_data"]
+        self.assertEqual(self.client.get(self.map_page.url + "?location=abc").context["locations_data"], everything)
+        self.assertTrue(everything)
+
     def test_map_page_contains_locations_data(self):
         response = self.client.get(self.map_page.url)
         self.assertContains(response, "43.238949")

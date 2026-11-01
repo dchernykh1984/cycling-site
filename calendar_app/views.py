@@ -629,7 +629,7 @@ class CalendarEventsAPIView(View):
             request.GET.getlist("discipline"),
             request.GET.getlist("direction"),
         )
-        location_ids = request.GET.getlist("location")
+        location_ids = _parse_int_ids(request.GET.getlist("location"))
         if location_ids:
             qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
         qs = _apply_favorite_filter(qs, request)

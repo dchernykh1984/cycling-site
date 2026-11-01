@@ -24,7 +24,7 @@ from cycling_site.sanitize import without_control_characters
 from locations.maps import start_point
 
 from .models import Competition, usual_event_type_id
-from .views import _apply_id_filters, _location_descendant_pks
+from .views import _apply_id_filters, _location_descendant_pks, _parse_int_ids
 from .visibility import can_open, public_events
 
 #: How far back a subscription still shows events. A calendar that drops an event the morning
@@ -51,7 +51,8 @@ def filtered_competitions(request: HttpRequest) -> list[Competition]:
         request.GET.getlist("discipline"),
         request.GET.getlist("discipline_category"),
     )
-    location_ids = request.GET.getlist("location")
+    # As on the list: a value that is no id is no filter, rather than an empty calendar.
+    location_ids = _parse_int_ids(request.GET.getlist("location"))
     if location_ids:
         qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
     qs = qs.filter(date_start__gte=timezone.localdate() - PAST_WINDOW)

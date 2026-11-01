@@ -881,9 +881,10 @@ def deepest_chosen(ids) -> list["Location"]:
     return [node for node in nodes if node.depth == deepest]
 
 
-def filter_descendant_pks(location_ids) -> set:
+def filter_descendant_pks(location_ids) -> set | None:
     """Union of descendant pks (incl. self) for the deepest of the selected filter ids. Each value may
-    be a comma-joined group of same-name ids (as the multi-select cascade emits)."""
+    be a comma-joined group of same-name ids (as the multi-select cascade emits). None when no value
+    is an id at all: no filter, as on the calendar's list, rather than an empty map."""
     ids: set[int] = set()
     for value in location_ids or []:
         for part in str(value).split(","):
@@ -891,7 +892,7 @@ def filter_descendant_pks(location_ids) -> set:
             if part.isdecimal():
                 ids.add(int(part))
     if not ids:
-        return set()
+        return None
     pks: set[int] = set()
     for loc in deepest_chosen(ids):
         pks.update(loc.get_descendants(include_self=True).values_list("pk", flat=True))
@@ -918,8 +919,7 @@ class LocationsMapPage(OwnLanguageUrlMixin, AsciiSlugMixin, Page):
         # selecting a node keeps only that node and its descendants. Pass the narrowed set as the
         # drawn ``candidates`` but keep the full ``all_locs`` for ancestor resolution, so filtering
         # by a coordinate-less city/venue still resolves to its ancestor's coordinates.
-        location_ids = request.GET.getlist("location")
-        filter_pks = filter_descendant_pks(location_ids) if location_ids else None
+        filter_pks = filter_descendant_pks(request.GET.getlist("location"))
         candidates = [loc for loc in all_locs if loc.pk in filter_pks] if filter_pks is not None else None
         context["locations_data"] = _build_map_locations(all_locs, candidates=candidates)
         # Only confirmed users (participant+) may propose a location, so only they see the
