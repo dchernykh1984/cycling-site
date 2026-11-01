@@ -16,7 +16,7 @@ from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.articles import visible
-from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
+from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin, live_page_in
 from cycling_site.sanitize import sanitize_rich_text_columns
 from cycling_site.slugs import unique_slug
 
@@ -330,12 +330,7 @@ def knowledge_index_url(locale_code: str) -> str:
 
     from wagtail.models import Locale
 
-    loc = Locale.objects.filter(language_code=locale_code).first()
-    index_page = None
-    if loc is not None:
-        index_page = KnowledgeIndexPage.objects.live().filter(locale=loc).first()
-    if index_page is None:
-        index_page = KnowledgeIndexPage.objects.live().first()
+    index_page = live_page_in(KnowledgeIndexPage, Locale.objects.filter(language_code=locale_code).first())
     url = index_page.url if index_page else "/knowledge/"
     _index_url_cache[locale_code] = (url, time.monotonic() + _INDEX_URL_TTL)
     return url
