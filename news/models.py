@@ -4,7 +4,6 @@ from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.text import slugify
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from taggit.models import TaggedItemBase
@@ -20,6 +19,10 @@ from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
 from cycling_site.sanitize import sanitize_rich_text_columns
+from cycling_site.slugs import unique_slug
+
+# Single source of truth for the slug column width, reused by save() to bound generated slugs.
+_SLUG_MAX_LENGTH = 255
 
 
 class NewsPageTag(TaggedItemBase):
@@ -174,7 +177,7 @@ class NewsArticle(index.Indexed, models.Model):  # type: ignore[django-manager-m
         related_name="news_articles",
     )
     published_at = models.DateTimeField(default=timezone.now)
-    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    slug = models.SlugField(max_length=_SLUG_MAX_LENGTH, unique=True, blank=True)
     is_hidden = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
 
@@ -208,15 +211,11 @@ class NewsArticle(index.Indexed, models.Model):  # type: ignore[django-manager-m
         sanitize_rich_text_columns(self, self._BODY_FIELDS, update_fields=kwargs.get("update_fields"))
         if not self.slug:
             # Prefer Russian title for the slug (stable across locale switches).
-            base = slugify(self.title_ru or self.title or "article")
-            if not base:
-                base = "article"
-            candidate = base
-            n = 1
-            while NewsArticle.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
-                candidate = f"{base}-{n}"
-                n += 1
-            self.slug = candidate
+            self.slug = unique_slug(
+                self.title_ru or self.title,
+                _SLUG_MAX_LENGTH,
+                lambda slug: NewsArticle.objects.filter(slug=slug).exclude(pk=self.pk).exists(),
+            )
         super().save(*args, **kwargs)
 
     def get_absolute_url(self) -> str:
