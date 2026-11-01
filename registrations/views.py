@@ -1,6 +1,5 @@
 import csv
 import datetime
-import json
 from collections import defaultdict
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -18,6 +17,7 @@ from accounts import managing
 from accounts.access import ParticipantRequiredMixin
 from calendar_app.models import Competition
 from calendar_app.visibility import can_see, manages, public_events_q
+from cycling_site import jsonld
 
 from . import registering
 from .forms import EditRegistrationForm, RegistrationForm
@@ -84,8 +84,9 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
 
     @staticmethod
     def _categories_json(competition):
+        # Printed inside a <script>, so a "</script>" in a category's name must not end it there.
         categories = RegistrationCategory.objects.filter(competition=competition, is_deleted=False)
-        return json.dumps(
+        return jsonld.dumps(
             [
                 {
                     "id": c.pk,

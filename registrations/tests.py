@@ -502,6 +502,17 @@ class RefusedEntryPageTests(TestCase):
         self.assertEqual([c["name"] for c in json.loads(response.context["all_categories_json"])], ["Masters"])
         self.assertContains(response, f'const allCategories = [{{"id": {cat.pk}')
 
+    def test_a_category_name_cannot_close_the_pages_script(self):
+        comp = make_open_competition()
+        make_category(comp, name="</script><script>window.x=1</script>")
+        response = self.client.get(reverse("registrations:register", args=[comp.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "</script><script>window.x=1")
+        self.assertEqual(
+            [c["name"] for c in json.loads(response.context["all_categories_json"])],
+            ["</script><script>window.x=1</script>"],
+        )
+
     def test_a_refused_relay_entry_keeps_the_team_typed_in(self):
         comp = make_relay_competition()
         women_only = make_category(comp, male=False)
