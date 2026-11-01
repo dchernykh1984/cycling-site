@@ -691,9 +691,8 @@ def _safe_move(location, target, pos: str) -> None:
         except AttributeError:
             return q
 
-    with _MODELTRANSLATION_PATCH_LOCK:
-        with unittest.mock.patch.object(MultilingualQuerySet, "_rewrite_f", _patched):
-            location.move(target, pos=pos)
+    with _MODELTRANSLATION_PATCH_LOCK, unittest.mock.patch.object(MultilingualQuerySet, "_rewrite_f", _patched):
+        location.move(target, pos=pos)
 
 
 def _lock_move_nodes(location, new_parent):
