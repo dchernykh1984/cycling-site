@@ -205,6 +205,16 @@ def geography_above_is_approved(location) -> bool:
     return chain_is_approved(location.get_parent() if location is not None else None)
 
 
+# How far a latitude and a longitude reach either side of zero, in degrees.
+MAX_LATITUDE = 90
+MAX_LONGITUDE = 180
+
+
+def on_earth(lat: float, lng: float) -> bool:
+    """Whether the two numbers are a point on the globe; NaN and infinity are not."""
+    return -MAX_LATITUDE <= lat <= MAX_LATITUDE and -MAX_LONGITUDE <= lng <= MAX_LONGITUDE
+
+
 def point_is_whole(lat, lng) -> bool:
     """A point is both coordinates or neither: a latitude without its longitude pins nothing."""
     return (lat is None) == (lng is None)

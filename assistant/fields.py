@@ -25,6 +25,7 @@ from assistant.models import Conversation
 from assistant.prompt import LANGUAGES, NEWS_FIELDS, RICH_FIELDS, TEXT_FIELDS, URL_FIELDS
 from calendar_app.models import Competition, Discipline, EventType
 from cycling_site.sanitize import sanitize_rich_html
+from locations.models import on_earth
 
 # A description or a body is not cut: the form's own check bounds it, and a cut would break its HTML.
 _MAX = {"title": 255, "preview_text": Competition._meta.get_field("preview_text").max_length, "intro": 500}
@@ -117,7 +118,7 @@ def _typed_point(place: dict, texts: list[str]) -> places.Point | None:
         lat, lng = float(place["lat"]), float(place["lng"])
     except (KeyError, TypeError, ValueError):
         return None
-    if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+    if not on_earth(lat, lng):
         return None
     joined = " ".join(texts).replace(",", ".")
     written = all(re.search(rf"(?<![\d.]){re.escape(str(number))}", joined) for number in (place["lat"], place["lng"]))
