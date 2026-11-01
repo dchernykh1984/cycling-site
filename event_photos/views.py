@@ -21,6 +21,7 @@ from event_photos import actions
 from event_photos.archive import Archive, ArchiveBusyError, ArchiveTooBigError
 from event_photos.dropbox import DropboxError, open_url
 from event_photos.forms import ExternalAlbumForm
+from event_photos.index import SAMPLE
 from event_photos.models import (
     BIB_MAX_LENGTH,
     THUMBNAIL_LIMIT_BYTES,
@@ -438,10 +439,6 @@ def guide(request):
 
 def sample_index(request):
     """A small example of photo-index.v1.json to download."""
-    from django.http import HttpResponse
-
-    from event_photos.index import SAMPLE
-
     response = HttpResponse(SAMPLE, content_type="application/json")
     response["Content-Disposition"] = 'attachment; filename="photo-index.v1.json"'
     return response

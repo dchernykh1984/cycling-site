@@ -109,8 +109,3 @@ class Photo(models.Model):
 
     def get_absolute_url(self) -> str:
         return reverse("gallery_photo", args=[self.pk])
-
-    @property
-    def is_cover(self) -> bool:
-        cover = self.album.cover_photo
-        return cover is not None and cover.pk == self.pk
