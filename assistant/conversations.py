@@ -154,7 +154,7 @@ def link(conversation_id, subject, user) -> bool:
     kind that has no subject yet -- their own, unless they are an admin -- and only a subject that has
     no conversation yet.
     """
-    if not may_write(user, subject) or not str(conversation_id or "").isdigit():
+    if not may_write(user, subject) or not str(conversation_id or "").isdecimal():
         return False
     field, kind = subject_field(subject)
     if Conversation.objects.filter(**{field: subject}).exists():

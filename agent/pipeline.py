@@ -58,7 +58,7 @@ def _as_int(value: object) -> int | None:
         return None
     if isinstance(value, int):
         return value
-    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+    if isinstance(value, str) and value.strip().lstrip("-").isdecimal():
         return int(value.strip())
     return None
 

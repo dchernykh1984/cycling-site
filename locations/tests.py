@@ -84,6 +84,13 @@ class LocationsMapPageRenderTests(TestCase):
         response = self.client.get(self.map_page.url)
         self.assertEqual(response.status_code, 200)
 
+    def test_a_place_number_in_other_digits_is_read_like_any_unknown_place(self):
+        # "\u00b2" (superscript two) passes str.isdigit() but not int(): it was a 500.
+        response = self.client.get(self.map_page.url + "?location=%C2%B2")
+        self.assertEqual(response.status_code, 200)
+        unknown = self.client.get(self.map_page.url + "?location=abc")
+        self.assertEqual(response.context["locations_data"], unknown.context["locations_data"])
+
     def test_map_page_contains_locations_data(self):
         response = self.client.get(self.map_page.url)
         self.assertContains(response, "43.238949")

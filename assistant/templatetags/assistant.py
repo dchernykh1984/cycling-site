@@ -50,7 +50,7 @@ def _conversation(request, subject, kind: str) -> Conversation | None:
         field, _kind = subject_field(subject)
         return Conversation.objects.filter(**{field: subject}).first()
     posted = request.POST.get("assistant_conversation", "") if request.method == "POST" else ""
-    if not posted.isdigit():
+    if not posted.isdecimal():
         return None
     unlinked = Conversation.objects.filter(competition__isnull=True, news__isnull=True)
     conversation = unlinked.filter(pk=int(posted), kind=kind).first()

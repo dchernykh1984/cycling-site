@@ -86,7 +86,7 @@ class DropboxAdapter:
     def _refuse(response) -> NoReturn:
         if response.status_code == 429:
             retry = response.headers.get("Retry-After")
-            raise DropboxError("throttled", retry_after=int(retry) if retry and retry.isdigit() else None)
+            raise DropboxError("throttled", retry_after=int(retry) if retry and retry.isdecimal() else None)
         text = _read_capped(response, _MAX_ERROR_BYTES).decode("utf-8", "replace")[:200]
         if response.status_code == 409 and "not_found" in text:
             raise DropboxError("not-found")

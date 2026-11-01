@@ -206,7 +206,7 @@ class _Checker:
             value = answer.get(name)
             if not isinstance(value, list):
                 continue
-            asked = [int(item) for item in value if str(item).isdigit()]
+            asked = [int(item) for item in value if str(item).isdecimal()]
             known = set(model.objects.filter(pk__in=asked).values_list("pk", flat=True))
             self.out.set[name] = self.out.form[form_name] = [pk for pk in asked if pk in known]
 

@@ -199,12 +199,12 @@ def album_edit(request, pk):
     upload = PhotoUploadForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid() and upload.is_valid():
         album = form.save(commit=False)
-        delete_ids = {int(value) for value in request.POST.getlist("delete") if value.isdigit()}
+        delete_ids = {int(value) for value in request.POST.getlist("delete") if value.isdecimal()}
         for photo in album.photos.filter(pk__in=delete_ids):
             photo.delete()
         saved = _save_uploads(request, album, upload.cleaned_data["photos"])
         picked = request.POST.get("cover", "")
-        picked_id = int(picked) if picked.isdigit() and int(picked) not in delete_ids else None
+        picked_id = int(picked) if picked.isdecimal() and int(picked) not in delete_ids else None
         if picked_id and album.photos.filter(pk=picked_id).exists():
             album.cover_id = picked_id
         elif album.cover_id is None or album.cover_id in delete_ids:

@@ -127,7 +127,7 @@ def _text(value, limit: int = _MAX_LINE) -> str:
 def _ids(value) -> list[int]:
     if not isinstance(value, list):
         return []
-    return [int(item) for item in value if str(item).isdigit()][:50]
+    return [int(item) for item in value if str(item).isdecimal()][:50]
 
 
 def _chain(location: Location) -> str:
@@ -139,7 +139,7 @@ def _chain(location: Location) -> str:
 def _place(raw: dict) -> dict | str:
     """The place the form holds, in words: a venue of the site's, a new venue, or nothing."""
     location_id = str(raw.get("location") or "")
-    if location_id.isdigit():
+    if location_id.isdecimal():
         location = Location.objects.filter(pk=int(location_id), is_deleted=False).first()
         if location is not None:
             if location.is_hidden:
@@ -147,7 +147,7 @@ def _place(raw: dict) -> dict | str:
             return _chain(location)
     city_id = str(raw.get("new_venue_city") or "")
     names = {lang: _text(raw.get("new_venue_name" + ("" if lang == "ru" else f"_{lang}"))) for lang in LANGUAGES}
-    if city_id.isdigit() and any(names.values()):
+    if city_id.isdecimal() and any(names.values()):
         city = Location.objects.filter(pk=int(city_id), is_deleted=False).first()
         point = [_text(raw.get("new_venue_lat")), _text(raw.get("new_venue_lng"))]
         return {

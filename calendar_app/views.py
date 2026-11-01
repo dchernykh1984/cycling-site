@@ -1144,7 +1144,7 @@ def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
             except (ValueError, TypeError):
                 pass
 
-        if cat_id and str(cat_id).isdigit():
+        if cat_id and str(cat_id).isdecimal():
             try:
                 cat = RegistrationCategory.objects.get(pk=cat_id, competition=comp)
                 if is_del:
@@ -1339,7 +1339,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
         registration settings are as much its content as its title.
         """
         pk = request.GET.get("clone")
-        if not pk or not pk.isdigit():
+        if not pk or not pk.isdecimal():
             return None
         comp = get_object_or_404(Competition, pk=int(pk), is_deleted=False)
         if not can_manage_or_own(request.user, comp):
