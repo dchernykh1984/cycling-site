@@ -11,7 +11,7 @@ import json
 import urllib.request
 
 from agent.config import Config
-from agent.models import Candidate, KnownEvents, Source, Taxonomy
+from agent.models import Candidate, KnownEvents, Source, SourceKind, Taxonomy
 
 _LOC = '{"ru": str, "kk": str, "en": str}'
 _SYSTEM = (
@@ -55,8 +55,8 @@ _SYSTEM = (
 
 # Per-type framing so the model treats each source deterministically (esp. aggregators, where
 # source_url must be the organizer's own page and not the calendar we found the race on).
-_KIND_GUIDANCE = {
-    "aggregator": (
+_KIND_GUIDANCE: dict[str, str] = {
+    SourceKind.AGGREGATOR: (
         "This page is an events AGGREGATOR / calendar listing many races from different organizers -- "
         "often a dense list or table with one race per line/row. Go through it row by row and extract "
         "EVERY upcoming competition, even the ones on a single terse line; do not stop early or skip a "
@@ -69,11 +69,11 @@ _KIND_GUIDANCE = {
         "calendar's own listing URL, which names no single race -- if this race has no link of its "
         'own in the list, leave source_url "" rather than falling back to the listing.'
     ),
-    "organizer": (
+    SourceKind.ORGANIZER: (
         "This page belongs to a single event ORGANIZER; extract their real upcoming competitions and "
         "set source_url to the specific event's page on this same site."
     ),
-    "tg_public": (
+    SourceKind.TG_PUBLIC: (
         "This is the recent post feed of a public TELEGRAM channel; extract real upcoming "
         "competitions from the posts. Each post begins with a line reading '--- post <address>' -- "
         "that address opens this one post and nothing else. Prefer the organizer's own event page "

@@ -13,7 +13,7 @@ import re
 from collections.abc import Callable
 
 from agent import dedup
-from agent.models import Candidate, KnownEvents, RunReport, Source, Taxonomy
+from agent.models import Candidate, KnownEvents, RunReport, Source, SourceKind, Taxonomy
 
 # Callables the runner injects (real versions live in fetch.py / llm.py / site_api.py).
 FetchFn = Callable[[Source], str]
@@ -197,13 +197,17 @@ def _is_valid(candidate: Candidate, today: datetime.date) -> tuple[bool, str]:
     return True, ""
 
 
+# Why a source with no address to read was skipped, by its kind.
+_UNREADABLE: dict[str, str] = {
+    SourceKind.TG_ACCOUNT: "needs a Telegram account -- list it in telegram_channels.yaml (Telegram agent)",
+    SourceKind.TG_PRIVATE: "private Telegram -- list it in telegram_channels.yaml (Telegram agent)",
+}
+
+
 def _source_candidates(source: Source, fetch: FetchFn, extract: ExtractFn, report: RunReport) -> list[Candidate]:
     """Fetch + extract one source's candidates; log and return [] on an unsupported source or error."""
     if not source.fetch_url:
-        reason = {
-            "tg_account": "needs a Telegram account -- list it in telegram_channels.yaml (Telegram agent)",
-            "tg_private": "private Telegram -- list it in telegram_channels.yaml (Telegram agent)",
-        }.get(source.kind, "unsupported source")
+        reason = _UNREADABLE.get(source.kind, "unsupported source")
         report.skipped_sources.append((source.ref, reason))
         return []
     try:

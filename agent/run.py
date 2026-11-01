@@ -9,7 +9,7 @@ from pathlib import Path
 
 from agent import chunk, enrich, fetch, geo, links, llm, locations, pipeline, sources
 from agent.config import Config, ConfigError, from_env
-from agent.models import Candidate, KnownEvents, RunReport, Taxonomy
+from agent.models import Candidate, KnownEvents, RunReport, SourceKind, Taxonomy
 from agent.placing import resolve_location
 from agent.site_api import SiteApiClient
 
@@ -100,7 +100,7 @@ def _extract_candidates(
     page_links: list[tuple[str, str]] | None = None,
 ) -> list:
     """Extract candidates from a source; aggregators are read in line-aligned chunks (agent.chunk)."""
-    pieces = chunk.split_source_text(text, _AGGREGATOR_CHUNK_CHARS) if source.kind == "aggregator" else [text]
+    pieces = chunk.split_source_text(text, _AGGREGATOR_CHUNK_CHARS) if source.kind == SourceKind.AGGREGATOR else [text]
     candidates: list = []
     for piece in pieces:
         raw = llm.extract_raw(piece, source, guidance, known, taxonomy, config)
@@ -110,7 +110,7 @@ def _extract_candidates(
         # index and a Telegram channel feed are listings by their address, whichever section of the
         # sources file they were written in. Both are left empty for the enrichment pass to fill.
         source_url = source.fetch_url or ""
-        is_listing = source.kind == "aggregator" or not links.announces_one_event(source_url)
+        is_listing = source.kind == SourceKind.AGGREGATOR or not links.announces_one_event(source_url)
         fallback_url = "" if is_listing else source_url
         parsed = pipeline.parse_candidates(raw, fallback_url, taxonomy)
         # The model sometimes returns nothing for source_url even though the page lists the race

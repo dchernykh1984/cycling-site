@@ -19,7 +19,7 @@ from pathlib import Path
 
 from agent import locations, pipeline
 from agent.config import ConfigError
-from agent.models import Candidate, KnownEvents, RunReport, Source, Taxonomy
+from agent.models import Candidate, KnownEvents, RunReport, Source, SourceKind, Taxonomy
 from agent.placing import resolve_location
 from agent.site_api import SiteApiClient
 from instagram_agent import config as insta_config
@@ -75,7 +75,7 @@ def summary(report: RunReport) -> str:
 def as_source(account: Account) -> Source:
     """An account in the shape the shared pipeline handles sources in."""
     return Source(
-        kind="instagram",
+        kind=SourceKind.INSTAGRAM,
         ref=f"@{account.username}",
         fetch_url=f"https://www.instagram.com/{account.username}/",
         hint=account.hint,

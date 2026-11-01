@@ -20,7 +20,7 @@ from pathlib import Path
 
 from agent import locations, pipeline
 from agent.config import ConfigError
-from agent.models import Candidate, KnownEvents, RunReport, Source, Taxonomy
+from agent.models import Candidate, KnownEvents, RunReport, Source, SourceKind, Taxonomy
 from agent.placing import resolve_location
 from agent.site_api import SiteApiClient
 from telegram_agent import config as tg_config
@@ -78,7 +78,7 @@ def as_source(channel: Channel) -> Source:
     reads go over MTProto straight to Telegram's data centres, no web domain involved), and spelling
     it without one keeps it from being mistaken for a link the model or an event could carry.
     """
-    return Source(kind="telegram", ref=channel.ref, fetch_url=f"mtproto:{channel.ref}", hint=channel.hint)
+    return Source(kind=SourceKind.TELEGRAM, ref=channel.ref, fetch_url=f"mtproto:{channel.ref}", hint=channel.hint)
 
 
 def _what_the_site_knows(client: SiteApiClient) -> tuple[KnownEvents, Taxonomy, list]:
