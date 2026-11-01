@@ -561,6 +561,7 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
                     is_approved=not competition.require_approval,
                     is_paid=not competition.require_payment,
                 )
+                registering.lock_registration_mode(competition)
             return redirect("registrations:participant_list", pk=pk)
 
         return render(request, self.template_name, ctx)
