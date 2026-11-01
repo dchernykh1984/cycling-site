@@ -30,12 +30,20 @@ def _no_city(candidate: Candidate) -> int | None:
     return None
 
 
+def reply_preview(raw: str) -> str:
+    """The start of a model reply on one line, for a run log."""
+    return " ".join(raw.split())[:_REPLY_PREVIEW_CHARS]
+
+
 def _identity(candidate: Candidate) -> Candidate:
     return candidate
 
 
 _WS = re.compile(r"\s+")
 _PUNCT = re.compile(r"[^\w\s]", re.UNICODE)
+MAX_TITLE_LENGTH = 255  # the site's title column
+# How much of a reply that parsed to nothing a run log quotes.
+_REPLY_PREVIEW_CHARS = 400
 
 
 def normalize_key(title: str, date_start: str) -> str:
@@ -149,7 +157,7 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
         city_ru, city_kk, city_en = _localized(item.get("city"))
         candidates.append(
             Candidate(
-                title=title_ru[:255],
+                title=title_ru[:MAX_TITLE_LENGTH],
                 date_start=date_start,
                 date_end=(str(item.get("date_end")).strip() or None) if item.get("date_end") else None,
                 description=desc_ru,
@@ -165,8 +173,8 @@ def parse_candidates(raw: str, source_url: str = "", taxonomy: Taxonomy | None =
                 venue=venue_ru,
                 lat=_as_float(item.get("lat")),
                 lng=_as_float(item.get("lng")),
-                title_kk=title_kk[:255],
-                title_en=title_en[:255],
+                title_kk=title_kk[:MAX_TITLE_LENGTH],
+                title_en=title_en[:MAX_TITLE_LENGTH],
                 description_kk=desc_kk,
                 description_en=desc_en,
                 venue_kk=venue_kk,

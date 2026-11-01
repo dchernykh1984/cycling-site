@@ -15,6 +15,7 @@ import re
 import socket
 import time
 import urllib.request
+from http import HTTPStatus
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
@@ -41,6 +42,9 @@ _SKIP_PREFIXES = ("#", "javascript:", "mailto:", "tel:")
 _TG_HOSTS = ("t.me", "telegram.dog", "telegram.me")
 _FETCH_RETRIES = 4  # retry a timed-out / unreachable source a few times (it runs at night, unhurried)
 _RETRY_BACKOFF = 10.0  # seconds between retry passes
+_TIMEOUT_SECONDS = 20  # per request, pages and tracks alike
+# A gateway or an overloaded server, not an answer about the page: retried like a timeout.
+_TRANSIENT_STATUSES = (HTTPStatus.BAD_GATEWAY, HTTPStatus.SERVICE_UNAVAILABLE, HTTPStatus.GATEWAY_TIMEOUT)
 
 
 # When the HTTP response omits a charset, fall back to the one the HTML declares (some RU calendars
@@ -56,7 +60,7 @@ def _sniff_charset(raw: bytes) -> str | None:
     return match.group(1).decode("ascii", "ignore") if match else None
 
 
-def _get(url: str, timeout: int = 20) -> str:
+def _get(url: str, timeout: int = _TIMEOUT_SECONDS) -> str:
     """The text at ``url``: http(s) only, through the guarded opener, at most ``_MAX_BYTES`` of it.
 
     Pages and tracks alike: a link on a hostile page can point anywhere, a cloud-metadata endpoint
@@ -83,7 +87,7 @@ def _fetch_urls(url: str) -> list[str]:
     return [urlunsplit(parts._replace(netloc=host)) for host in _TG_HOSTS]
 
 
-def _get_with_fallback(url: str, timeout: int = 20) -> str:
+def _get_with_fallback(url: str, timeout: int = _TIMEOUT_SECONDS) -> str:
     """Fetch ``url``, retrying on a timeout / connection failure (but never on an HTTP error).
 
     A timed-out or unreachable source is retried ``_FETCH_RETRIES`` times with a backoff: the
@@ -99,7 +103,7 @@ def _get_with_fallback(url: str, timeout: int = 20) -> str:
             try:
                 return _get(candidate, timeout)
             except HTTPError as exc:
-                if exc.code not in (502, 503, 504):
+                if exc.code not in _TRANSIENT_STATUSES:
                     raise  # a definitive answer (e.g. 404 / 403) -- not worth retrying
                 last_exc = exc  # transient gateway / unavailable -- retry like a timeout
             except (URLError, TimeoutError) as exc:
@@ -281,7 +285,7 @@ def _build_opener() -> urllib.request.OpenerDirector:
 _OPENER = _build_opener()
 
 
-def fetch_track(url: str, timeout: int = 20) -> str:
+def fetch_track(url: str, timeout: int = _TIMEOUT_SECONDS) -> str:
     """Raw text of a linked GPS-track file (GPX/KML) -- no HTML stripping, for coordinate parsing.
 
     The start point is near the top of the file, so the byte cap of ``_get`` costs nothing; redirects
@@ -290,7 +294,7 @@ def fetch_track(url: str, timeout: int = 20) -> str:
     return _get(url, timeout)
 
 
-def fetch_url(url: str, timeout: int = 20) -> str:
+def fetch_url(url: str, timeout: int = _TIMEOUT_SECONDS) -> str:
     """Readable text of an arbitrary web page (plus its links), for enriching an event."""
     soup = BeautifulSoup(_get_with_fallback(url, timeout), "html.parser")
     for tag in soup(["script", "style", "noscript"]):
