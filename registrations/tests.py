@@ -886,6 +886,20 @@ class ManagementActionTests(TestCase):
         self.assertFalse(self.reg.is_approved)
         self.assertEqual(self.reg.rejection_note, "Missing docs")
 
+    def test_a_rejection_note_longer_than_the_column_is_refused_with_a_message(self):
+        limit = CompetitionRegistration._meta.get_field("rejection_note").max_length
+        url = reverse("registrations:reject", args=[self.comp.pk, self.reg.pk])
+        response = self.client.post(url, {"rejection_note": "x" * (limit + 1)}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.reg.refresh_from_db()
+        self.assertFalse(self.reg.is_rejected)
+        self.assertEqual(len(list(response.context["messages"])), 1)
+
+        self.client.post(url, {"rejection_note": " " + "x" * (limit - 1)})
+        self.reg.refresh_from_db()
+        self.assertTrue(self.reg.is_rejected)
+        self.assertEqual(self.reg.rejection_note, " " + "x" * (limit - 1))
+
     def test_mark_paid_sets_flag(self):
         url = reverse("registrations:mark_paid", args=[self.comp.pk, self.reg.pk])
         self.client.post(url)
