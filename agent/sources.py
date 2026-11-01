@@ -14,7 +14,7 @@ import re
 
 import yaml
 
-from agent.models import Source
+from agent.models import Source, SourceKind
 
 _HANDLE = re.compile(r"@?([A-Za-z0-9_]{3,})")
 _TME_PATH = re.compile(r"t\.me/(\S+)", re.IGNORECASE)
@@ -29,11 +29,11 @@ _URL = re.compile(r"https?://[^\s()]+", re.IGNORECASE)
 # with dozens of rows each, which would otherwise spend every nightly slot before a single local
 # source was read. The account/private Telegram sections are unreadable and merely reported.
 _SECTION_KIND = {
-    "telegram_public": "tg_public",
-    "organizers": "organizer",
-    "aggregators": "aggregator",
-    "telegram_account": "tg_account",
-    "telegram_private": "tg_private",
+    "telegram_public": SourceKind.TG_PUBLIC,
+    "organizers": SourceKind.ORGANIZER,
+    "aggregators": SourceKind.AGGREGATOR,
+    "telegram_account": SourceKind.TG_ACCOUNT,
+    "telegram_private": SourceKind.TG_PRIVATE,
 }
 
 
@@ -65,12 +65,12 @@ def _tg_channel(ref: str) -> str | None:
 
 def _build_source(kind: str, ref: str, hint: str) -> Source | None:
     """Build one Source, or None when the ref carries no fetchable URL / channel."""
-    if kind == "tg_public":
+    if kind == SourceKind.TG_PUBLIC:
         channel = _tg_channel(ref)
         if channel is not None:
-            return Source("tg_public", ref, f"https://t.me/s/{channel}", hint=hint)
-        return Source("tg_private", ref, None, hint=hint)  # an invite/internal link mis-filed as public
-    if kind in ("tg_account", "tg_private"):
+            return Source(SourceKind.TG_PUBLIC, ref, f"https://t.me/s/{channel}", hint=hint)
+        return Source(SourceKind.TG_PRIVATE, ref, None, hint=hint)  # an invite/internal link mis-filed as public
+    if kind in (SourceKind.TG_ACCOUNT, SourceKind.TG_PRIVATE):
         return Source(kind, ref, None, hint=hint)  # public group / private chat: needs a logged-in account
     match = _URL.search(ref)
     return Source(kind, ref, match.group(0).rstrip(".,;"), hint=hint) if match else None

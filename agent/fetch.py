@@ -22,7 +22,7 @@ from bs4 import BeautifulSoup
 
 from agent.geo import is_blocked_ip
 from agent.links import LINKS_MARKER
-from agent.models import Source
+from agent.models import Source, SourceKind
 
 _UA = "Mozilla/5.0 (compatible; UniversalBicycleTeam-EventsAgent/1.0)"
 _MAX_CHARS = 12000  # keep LLM prompts bounded
@@ -345,7 +345,7 @@ def source_text_and_links(source: Source) -> tuple[str, list[tuple[str, str]]]:
     if not source.fetch_url:
         raise ValueError("source is not fetchable")
     soup = BeautifulSoup(_get_with_fallback(source.fetch_url), "html.parser")
-    if source.kind == "tg_public":
+    if source.kind == SourceKind.TG_PUBLIC:
         text = "\n\n".join(telegram_posts(soup))
         anchors = [
             anchor for body in soup.select(".tgme_widget_message_text") for anchor in body.find_all("a", href=True)
@@ -355,10 +355,10 @@ def source_text_and_links(source: Source) -> tuple[str, list[tuple[str, str]]]:
             tag.decompose()
         # Aggregators are dense race lists/tables: keep each row on its own line so the model can
         # enumerate them one by one; ordinary pages read better as flowing space-joined prose.
-        separator = "\n" if source.kind == "aggregator" else " "
+        separator = "\n" if source.kind == SourceKind.AGGREGATOR else " "
         text = soup.get_text(separator, strip=True)
         anchors = soup.find_all("a", href=True)
-    if source.kind == "aggregator":
+    if source.kind == SourceKind.AGGREGATOR:
         limit, max_chars = _AGGREGATOR_MAX_LINKS, _AGGREGATOR_MAX_CHARS
     else:
         limit, max_chars = _MAX_LINKS, _MAX_CHARS

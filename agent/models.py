@@ -3,13 +3,26 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
+
+
+class SourceKind(StrEnum):
+    """What a source is, which decides how it is read and how the model is told to read it."""
+
+    AGGREGATOR = "aggregator"
+    ORGANIZER = "organizer"
+    TG_PUBLIC = "tg_public"
+    TG_ACCOUNT = "tg_account"
+    TG_PRIVATE = "tg_private"
+    INSTAGRAM = "instagram"
+    TELEGRAM = "telegram"
 
 
 @dataclass
 class Source:
     """One place to look for events. ``fetch_url`` is None for sources we cannot read yet."""
 
-    kind: str  # "aggregator" | "organizer" | "tg_public" | "tg_account" | "tg_private"
+    kind: str  # a SourceKind
     ref: str  # the original URL / handle from events_sources.yaml (for logging)
     fetch_url: str | None = None  # normalized URL the fetcher should GET
     hint: str = ""  # optional per-source nudge from the YAML, passed to the model
