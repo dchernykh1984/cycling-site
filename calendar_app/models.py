@@ -81,6 +81,10 @@ class Discipline(models.Model):
         return self.name or f"Discipline #{self.pk}"
 
 
+# How many members a relay team may have when the organizer does not say.
+RELAY_MAX_MEMBERS_DEFAULT = 10
+
+
 class Competition(index.Indexed, models.Model):
     objects: ClassVar[models.Manager["Competition"]]
 
@@ -223,7 +227,7 @@ class Competition(index.Indexed, models.Model):
     additional_info_label = models.CharField(max_length=100, blank=True)
 
     relay_enabled = models.BooleanField(default=False)
-    relay_max_members = models.PositiveIntegerField(default=10)
+    relay_max_members = models.PositiveIntegerField(default=RELAY_MAX_MEMBERS_DEFAULT)
 
     # Permanent lock: True once registration is first activated; never reset to False.
     registration_mode_locked = models.BooleanField(default=False)

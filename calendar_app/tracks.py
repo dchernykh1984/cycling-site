@@ -39,6 +39,7 @@ MAX_BYTES = 10 * 1024 * 1024  # what the event form takes; a larger file is not 
 READER = 1
 _MAX_POINTS_READ = 500_000  # from one file; the rest of a larger one is left unread
 _MAX_LINES = 200
+_MAX_DEPTH = 32  # of nested GeoJSON objects; a deeper one is not a track
 _MAX_POINTS_KEPT = 4_000  # sent to the page, over all its lines
 _TOLERANCE = 5.0  # metres a thinned line may stray from the file's; doubled until the points fit
 # Distances from a point to a segment the thinning may measure for one file, about a second's work; a
@@ -262,7 +263,7 @@ def _geojson(data: bytes) -> list[Line]:
 
 
 def _geojson_walk(node, lines: _Lines, depth: int = 0) -> None:
-    if not isinstance(node, dict) or depth > 32:
+    if not isinstance(node, dict) or depth > _MAX_DEPTH:
         return
     kind = str(node.get("type"))
     children = {"FeatureCollection": "features", "GeometryCollection": "geometries"}.get(kind)
