@@ -7,6 +7,7 @@ operation reaches only the caller's own rows, so an id in the address can never 
 
 import datetime
 import uuid
+from http import HTTPStatus
 
 from django.urls import reverse
 from ninja import Router, Schema, Status
@@ -97,8 +98,8 @@ def _member_out(member) -> MemberOut:
 
 def _found(done) -> Status:
     if not done:
-        raise HttpError(404, "Not found")
-    return Status(204, None)
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
 @router.get("/", response=ManagingOut, auth=member_auth, summary="My link, who manages me and whom I manage")
@@ -116,27 +117,36 @@ def overview(request):
     )
 
 
-@router.post("/invite", response={201: InviteOut}, auth=member_auth, summary="Make my link, or a new one")
+@router.post(
+    "/invite", response={HTTPStatus.CREATED: InviteOut}, auth=member_auth, summary="Make my link, or a new one"
+)
 def issue_invite(request):
     refusal = managing.why_no_link(request.auth)
     if refusal:
-        raise HttpError(409, refusal)
-    return Status(201, _invite_out(request, managing.issue_invite(request.auth)))
+        raise HttpError(HTTPStatus.CONFLICT, refusal)
+    return Status(HTTPStatus.CREATED, _invite_out(request, managing.issue_invite(request.auth)))
 
 
-@router.delete("/invite", response={204: None}, auth=member_auth, summary="Delete my link")
+@router.delete("/invite", response={HTTPStatus.NO_CONTENT: None}, auth=member_auth, summary="Delete my link")
 def delete_invite(request):
     managing.delete_invite(request.auth)
-    return Status(204, None)
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
-@router.post("/join", response={201: ManagerOut}, auth=member_auth, summary="Ask, through a link, to be managed")
+@router.post(
+    "/join", response={HTTPStatus.CREATED: ManagerOut}, auth=member_auth, summary="Ask, through a link, to be managed"
+)
 def join(request, payload: JoinIn):
     invite = managing.find_invite(payload.key)
     outcome = managing.ask(request.auth, payload.key)
     if outcome != managing.ASKED or invite is None:
-        raise HttpError(404 if outcome == managing.INVALID else 409, managing.refusal(outcome, invite))
-    return Status(201, ManagerOut(user_id=invite.manager_id, name=invite.manager.public_display_name, waiting=True))
+        raise HttpError(
+            HTTPStatus.NOT_FOUND if outcome == managing.INVALID else HTTPStatus.CONFLICT,
+            managing.refusal(outcome, invite),
+        )
+    return Status(
+        HTTPStatus.CREATED, ManagerOut(user_id=invite.manager_id, name=invite.manager.public_display_name, waiting=True)
+    )
 
 
 @router.post("/waiting/accept-all", response=CountOut, auth=member_auth, summary="Accept every request waiting")
@@ -149,23 +159,32 @@ def reject_all(request):
     return CountOut(count=managing.reject_all(request.auth))
 
 
-@router.post("/waiting/{user_id}/accept", response={204: None}, auth=member_auth, summary="Accept a request")
+@router.post(
+    "/waiting/{user_id}/accept", response={HTTPStatus.NO_CONTENT: None}, auth=member_auth, summary="Accept a request"
+)
 def accept(request, user_id: int):
     return _found(managing.accept(request.auth, user_id))
 
 
-@router.post("/waiting/{user_id}/reject", response={204: None}, auth=member_auth, summary="Reject a request")
+@router.post(
+    "/waiting/{user_id}/reject", response={HTTPStatus.NO_CONTENT: None}, auth=member_auth, summary="Reject a request"
+)
 def reject(request, user_id: int):
     return _found(managing.reject(request.auth, user_id))
 
 
-@router.delete("/members/{user_id}", response={204: None}, auth=member_auth, summary="Stop managing a member")
+@router.delete(
+    "/members/{user_id}", response={HTTPStatus.NO_CONTENT: None}, auth=member_auth, summary="Stop managing a member"
+)
 def drop(request, user_id: int):
     return _found(managing.drop(request.auth, user_id))
 
 
 @router.delete(
-    "/managers/{user_id}", response={204: None}, auth=member_auth, summary="Remove a manager, or withdraw my request"
+    "/managers/{user_id}",
+    response={HTTPStatus.NO_CONTENT: None},
+    auth=member_auth,
+    summary="Remove a manager, or withdraw my request",
 )
 def leave(request, user_id: int):
     return _found(managing.leave(request.auth, user_id))

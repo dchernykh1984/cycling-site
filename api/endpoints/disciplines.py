@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
@@ -60,7 +62,7 @@ def get_discipline_category(request, category_id: int):
     try:
         return DisciplineCategory.objects.prefetch_related("disciplines").get(pk=category_id)
     except DisciplineCategory.DoesNotExist:
-        raise HttpError(404, "Discipline category not found") from None
+        raise HttpError(HTTPStatus.NOT_FOUND, "Discipline category not found") from None
 
 
 @event_types_router.get("/", response=list[EventTypeOut], auth=optional_auth, summary="List event types")

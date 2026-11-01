@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from http import HTTPStatus
 
 from django.conf import settings
 from django.db import transaction
@@ -234,19 +235,19 @@ def _get_or_404(pk: int) -> Competition:
             .get(pk=pk, is_deleted=False)
         )
     except Competition.DoesNotExist:
-        raise HttpError(404, "Competition not found") from None
+        raise HttpError(HTTPStatus.NOT_FOUND, "Competition not found") from None
 
 
 def _require_owner_or_admin(user, competition: Competition) -> None:
     if not can_manage_or_own(user, competition):
-        raise HttpError(403, "Forbidden")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Forbidden")
 
 
 def _require_visible_or_404(user, competition: Competition) -> None:
     # An invite-only event is not served to invitees here: the API is read by tools and agents,
     # and what an invitation opens is the site, for the person who accepted it (issue #313).
     if not (is_public(competition) or can_manage_or_own(user, competition)):
-        raise HttpError(404, "Competition not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Competition not found")
 
 
 def _apply_localized(obj, field: str, value: LocalizedStr) -> list[str]:
@@ -267,19 +268,21 @@ def _validate_description_length(value: LocalizedStr) -> None:
     """Reject an oversized description (inline images are base64) on the untrusted API path."""
     for loc in (value.ru, value.kk, value.en):
         if loc and len(loc) > MAX_DESCRIPTION_LENGTH:
-            raise HttpError(422, f"Description is too large (max {MAX_DESCRIPTION_LENGTH} characters)")
+            raise HttpError(
+                HTTPStatus.UNPROCESSABLE_CONTENT, f"Description is too large (max {MAX_DESCRIPTION_LENGTH} characters)"
+            )
 
 
 def _validate_dates(date_start, date_end) -> None:
     """An end before the start, which the site's form refuses: the API stored one."""
     if date_start is not None and date_end is not None and date_end < date_start:
-        raise HttpError(422, "date_end cannot be before date_start")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "date_end cannot be before date_start")
 
 
 def _validate_title(competition: Competition) -> None:
     """A title in at least one language: without one every list showed the event as an empty link."""
     if not any((getattr(competition, f"title_{code}") or "").strip() for code, _name in settings.LANGUAGES):
-        raise HttpError(422, "A title is required in at least one language")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "A title is required in at least one language")
 
 
 def _validate_location_id(location_id, user) -> None:
@@ -288,10 +291,10 @@ def _validate_location_id(location_id, user) -> None:
         return
     location = Location.objects.filter(pk=location_id).first()
     if location is None:
-        raise HttpError(404, "Location not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Location not found")
     reason = competition_location_block_reason(location, user, is_admin=roles.at_least(user, roles.APPROVE_PLACES))
     if reason:
-        raise HttpError(403, reason)
+        raise HttpError(HTTPStatus.FORBIDDEN, reason)
 
 
 def _lock_location_for_competition(location_id, user):
@@ -312,7 +315,7 @@ def _set_disciplines(competition: Competition, discipline_ids: list[int] | None)
     ids = list(dict.fromkeys(discipline_ids))  # de-dup, keep order
     disciplines = list(Discipline.objects.filter(pk__in=ids))
     if len(disciplines) != len(ids):
-        raise HttpError(404, "Discipline not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Discipline not found")
     competition.disciplines.set(disciplines)
 
 
@@ -323,7 +326,7 @@ def _set_event_types(competition: Competition, event_type_ids: list[int] | None)
     ids = list(dict.fromkeys(event_type_ids))  # de-dup, keep order
     event_types = list(EventType.objects.filter(pk__in=ids))
     if len(event_types) != len(ids):
-        raise HttpError(404, "Event type not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Event type not found")
     competition.event_types.set(event_types)
 
 
@@ -393,7 +396,7 @@ def _listable_by(qs, user, deleted: bool):
     """
     if deleted:
         if not user.is_authenticated:
-            raise HttpError(401, "Authentication is required to list deleted competitions.")
+            raise HttpError(HTTPStatus.UNAUTHORIZED, "Authentication is required to list deleted competitions.")
         return qs if roles.at_least(user, roles.MANAGE_ALL_EVENTS) else qs.filter(submitted_by=user)
     if roles.at_least(user, roles.MANAGE_ALL_EVENTS):
         return qs
@@ -448,7 +451,7 @@ def list_competitions(
     # asking for them is a 401 rather than a silently empty list.
     if only_favorite:
         if not user.is_authenticated:
-            raise HttpError(401, "Authentication is required to filter by favorites.")
+            raise HttpError(HTTPStatus.UNAUTHORIZED, "Authentication is required to filter by favorites.")
         qs = qs.filter(favorited_by__user=user)
     return _annotate_city_ids(list(qs.select_related("location")))
 
@@ -490,7 +493,7 @@ def competition_track(request, competition_id: int):
     _require_visible_or_404(request.auth, competition)
     geometry = route_track(competition)
     if geometry is None:
-        raise HttpError(404, "This event has no route file, or its route file holds no track")
+        raise HttpError(HTTPStatus.NOT_FOUND, "This event has no route file, or its route file holds no track")
     return {
         "type": "Feature",
         "geometry": geometry,
@@ -498,14 +501,14 @@ def competition_track(request, competition_id: int):
     }
 
 
-@router.post("/", response={201: CompetitionDetailOut}, auth=auth, summary="Create competition")
+@router.post("/", response={HTTPStatus.CREATED: CompetitionDetailOut}, auth=auth, summary="Create competition")
 def create_competition(request, payload: CompetitionIn):
     user = request.auth
     if not roles.role_at_least(user, roles.Role.ORGANIZER):
-        raise HttpError(403, "ORGANIZER role or higher is required")
+        raise HttpError(HTTPStatus.FORBIDDEN, "ORGANIZER role or higher is required")
 
     if payload.is_top and not roles.at_least(user, roles.MARK_TOP_EVENTS):
-        raise HttpError(403, "Only admins can mark a top event")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Only admins can mark a top event")
     _validate_location_id(payload.location_id, user)
     _validate_dates(payload.date_start, payload.date_end)
     # An admin's event is published at once; anybody else's waits for review, as api.md says.
@@ -550,8 +553,8 @@ def create_competition(request, payload: CompetitionIn):
             if competition.status == Competition.Status.APPROVED and competition.location is not None:
                 competition.location.approve_with_competition(user)
     except LocationConflictError:
-        raise HttpError(409, "Location is no longer usable for a competition") from None
-    return Status(201, _to_detail(competition, user))
+        raise HttpError(HTTPStatus.CONFLICT, "Location is no longer usable for a competition") from None
+    return Status(HTTPStatus.CREATED, _to_detail(competition, user))
 
 
 @router.patch("/{competition_id}", response=CompetitionDetailOut, auth=auth, summary="Update competition")
@@ -564,16 +567,16 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
     data = payload.dict(exclude_unset=True)
 
     if "is_hidden" in data and not roles.at_least(user, roles.Role.ADMIN):
-        raise HttpError(403, "Only admins can change visibility")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Only admins can change visibility")
     if "is_top" in data and not roles.at_least(user, roles.MARK_TOP_EVENTS):
-        raise HttpError(403, "Only admins can mark a top event")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Only admins can mark a top event")
     if "location_id" in data:
         _validate_location_id(data["location_id"], user)
     # Unambiguous discipline semantics: omit = leave unchanged, [] = clear, null = error.
     if "discipline_ids" in data and data["discipline_ids"] is None:
-        raise HttpError(422, "discipline_ids cannot be null; pass [] to clear")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "discipline_ids cannot be null; pass [] to clear")
     if "event_type_ids" in data and data["event_type_ids"] is None:
-        raise HttpError(422, "event_type_ids cannot be null; pass [] to clear")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "event_type_ids cannot be null; pass [] to clear")
 
     # disciplines is a many-to-many: set it after the row is saved, not via update_fields.
     set_disciplines = "discipline_ids" in data
@@ -596,7 +599,7 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
             if set_event_types:
                 _set_event_types(competition, event_type_ids)
     except LocationConflictError:
-        raise HttpError(409, "Location is no longer usable for a competition") from None
+        raise HttpError(HTTPStatus.CONFLICT, "Location is no longer usable for a competition") from None
 
     return _to_detail(competition, user)
 
@@ -613,12 +616,14 @@ def resubmit_competition(request, competition_id: int):
     _require_visible_or_404(user, competition)
     _require_owner_or_admin(user, competition)
     if competition.status != Competition.Status.REJECTED:
-        raise HttpError(409, "Only a rejected competition can be resubmitted for review")
+        raise HttpError(HTTPStatus.CONFLICT, "Only a rejected competition can be resubmitted for review")
     competition.resubmit()
     return _to_detail(competition, user)
 
 
-@router.delete("/{competition_id}", response={204: None}, auth=auth, summary="Delete competition (soft)")
+@router.delete(
+    "/{competition_id}", response={HTTPStatus.NO_CONTENT: None}, auth=auth, summary="Delete competition (soft)"
+)
 def delete_competition(request, competition_id: int):
     user = request.auth
     competition = _get_or_404(competition_id)
@@ -626,4 +631,4 @@ def delete_competition(request, competition_id: int):
     _require_owner_or_admin(user, competition)
     competition.is_deleted = True
     competition.save(update_fields=["is_deleted"])
-    return Status(204, None)
+    return Status(HTTPStatus.NO_CONTENT, None)

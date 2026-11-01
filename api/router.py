@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from ninja import NinjaAPI
 from ninja.errors import HttpError
 from ninja.parser import Parser
@@ -102,7 +104,7 @@ _register_routers()
 
 @api.exception_handler(_NulInTextError)
 def _nul_in_text(request, exc):
-    return api.create_response(request, {"detail": str(exc)}, status=422)
+    return api.create_response(request, {"detail": str(exc)}, status=HTTPStatus.UNPROCESSABLE_CONTENT)
 
 
 @api.exception_handler(HttpError)

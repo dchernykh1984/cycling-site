@@ -12,6 +12,7 @@ here is exactly the one the pages would make.
 """
 
 import datetime
+from http import HTTPStatus
 from typing import Annotated
 
 from django.db.models import Count
@@ -143,7 +144,7 @@ def _name_events(albums: list[Album], user) -> list[Album]:
 def _visible_album(user, album_id: int) -> Album:
     album = Album.objects.visible_to(user).filter(pk=album_id).first()
     if album is None:
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     return album
 
 
@@ -162,7 +163,7 @@ def get_album(request, album_id: int):
 def get_photo(request, photo_id: int):
     photo = Photo.objects.filter(pk=photo_id).first()
     if photo is None:
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     _visible_album(request.auth, photo.album_id)
     return photo
 
@@ -180,7 +181,7 @@ _PAYLOAD_NAMES = {
 
 def _require_editor(user) -> None:
     if not can_create_album(user):
-        raise HttpError(403, "Admin role is required")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Admin role is required")
 
 
 def _album_to_change(user, album_id: int) -> Album:
@@ -192,9 +193,9 @@ def _album_to_change(user, album_id: int) -> Album:
     _require_editor(user)
     album = Album.objects.filter(pk=album_id).first()
     if album is None:
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     if not can_manage_album(user, album):
-        raise HttpError(403, "Admin role is required")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Admin role is required")
     return album
 
 
@@ -202,16 +203,16 @@ def _photo_to_change(user, photo_id: int) -> Photo:
     _require_editor(user)
     photo = Photo.objects.select_related("album").filter(pk=photo_id).first()
     if photo is None:
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     if not can_manage_album(user, photo.album):
-        raise HttpError(403, "Admin role is required")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Admin role is required")
     return photo
 
 
 def _valid_or_422(form) -> None:
     if not form.is_valid():
         raise HttpError(
-            422,
+            HTTPStatus.UNPROCESSABLE_CONTENT,
             "; ".join(f"{_PAYLOAD_NAMES.get(name, name)}: {' '.join(errors)}" for name, errors in form.errors.items()),
         )
 
@@ -228,7 +229,7 @@ def _album_form(title: LocalizedStr, date, competition_id, is_hidden: bool, albu
     return AlbumForm(data, instance=album)
 
 
-@router.post("/albums/", response={201: AlbumDetailOut}, auth=auth, summary="Create an album (admin)")
+@router.post("/albums/", response={HTTPStatus.CREATED: AlbumDetailOut}, auth=auth, summary="Create an album (admin)")
 def create_album(request, payload: AlbumIn):
     """An empty title or date is taken from the linked event, as on the page; only public events may be linked."""
     _require_editor(request.auth)
@@ -237,7 +238,7 @@ def create_album(request, payload: AlbumIn):
     album = form.save(commit=False)
     album.created_by = request.auth
     album.save()
-    return Status(201, _name_events([album], request.auth)[0])
+    return Status(HTTPStatus.CREATED, _name_events([album], request.auth)[0])
 
 
 @router.patch("/albums/{album_id}", response=AlbumDetailOut, auth=auth, summary="Change an album (admin)")
@@ -261,20 +262,28 @@ def update_album(request, album_id: int, payload: AlbumPatchIn):
     if "cover_photo_id" in data:
         cover_id = data["cover_photo_id"]
         if cover_id is not None and not album.photos.filter(pk=cover_id).exists():
-            raise HttpError(422, "cover_photo_id: not a photo of this album")
+            raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "cover_photo_id: not a photo of this album")
         album.cover_id = cover_id
     album.save()
     return _name_events([album], request.auth)[0]
 
 
-@router.delete("/albums/{album_id}", response={204: None}, auth=auth, summary="Delete an album and its photos (admin)")
+@router.delete(
+    "/albums/{album_id}",
+    response={HTTPStatus.NO_CONTENT: None},
+    auth=auth,
+    summary="Delete an album and its photos (admin)",
+)
 def delete_album(request, album_id: int):
     actions.delete_album(_album_to_change(request.auth, album_id))
-    return Status(204, None)
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
 @router.post(
-    "/albums/{album_id}/photos/", response={201: UploadOut}, auth=auth, summary="Upload photos into an album (admin)"
+    "/albums/{album_id}/photos/",
+    response={HTTPStatus.CREATED: UploadOut},
+    auth=auth,
+    summary="Upload photos into an album (admin)",
 )
 def upload_photos(request, album_id: int, photos: list[UploadedFile] = File(...)):  # noqa: B008
     """Send the files as `photos` (multipart). The page's limits hold: the number of files, the size of
@@ -287,9 +296,9 @@ def upload_photos(request, album_id: int, photos: list[UploadedFile] = File(...)
     _valid_or_422(form)
     saved, failed = actions.save_uploads(album, form.cleaned_data["photos"], request.auth)
     if not saved:
-        raise HttpError(422, "; ".join(failed))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "; ".join(failed))
     actions.keep_a_cover(album)
-    return Status(201, {"photos": saved, "failed": failed})
+    return Status(HTTPStatus.CREATED, {"photos": saved, "failed": failed})
 
 
 @router.patch("/photos/{photo_id}", response=PhotoOut, auth=auth, summary="Change a photo's caption (admin)")
@@ -305,8 +314,10 @@ def update_photo(request, photo_id: int, payload: PhotoPatchIn):
     return photo
 
 
-@router.delete("/photos/{photo_id}", response={204: None}, auth=auth, summary="Delete a photo (admin)")
+@router.delete(
+    "/photos/{photo_id}", response={HTTPStatus.NO_CONTENT: None}, auth=auth, summary="Delete a photo (admin)"
+)
 def delete_photo(request, photo_id: int):
     """The photo and its files go; an album that loses its cover shows its first photo instead."""
     actions.delete_photo(_photo_to_change(request.auth, photo_id))
-    return Status(204, None)
+    return Status(HTTPStatus.NO_CONTENT, None)

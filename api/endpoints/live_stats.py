@@ -13,6 +13,7 @@ at most the configured threshold (10 seconds by default); missing neighbours omi
 """
 
 from datetime import datetime
+from http import HTTPStatus
 
 from ninja import Router, Schema
 from ninja.errors import HttpError
@@ -58,19 +59,21 @@ class LiveStatsOut(Schema):
 
 def _validate_stats(request, stats: dict[str, dict[str, str]]) -> None:
     if len(request.body) > _MAX_BODY_BYTES:
-        raise HttpError(400, f"Payload is too large (max {_MAX_BODY_BYTES} bytes)")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"Payload is too large (max {_MAX_BODY_BYTES} bytes)")
     if len(stats) > _MAX_COMPETITORS:
-        raise HttpError(400, f"Too many competitors (max {_MAX_COMPETITORS})")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"Too many competitors (max {_MAX_COMPETITORS})")
     for bib, values in stats.items():
         if len(bib) > _MAX_BIB_LEN:
-            raise HttpError(400, f"A bib is too long (max {_MAX_BIB_LEN} characters)")
+            raise HttpError(HTTPStatus.BAD_REQUEST, f"A bib is too long (max {_MAX_BIB_LEN} characters)")
         if len(values) > _MAX_KEYS_PER_COMPETITOR:
-            raise HttpError(400, f"Too many keys for one competitor (max {_MAX_KEYS_PER_COMPETITOR})")
+            raise HttpError(
+                HTTPStatus.BAD_REQUEST, f"Too many keys for one competitor (max {_MAX_KEYS_PER_COMPETITOR})"
+            )
         for key, value in values.items():
             if len(key) > _MAX_KEY_LEN:
-                raise HttpError(400, f"A key is too long (max {_MAX_KEY_LEN} characters)")
+                raise HttpError(HTTPStatus.BAD_REQUEST, f"A key is too long (max {_MAX_KEY_LEN} characters)")
             if len(value) > _MAX_VALUE_LEN:
-                raise HttpError(400, f"A value is too long (max {_MAX_VALUE_LEN} characters)")
+                raise HttpError(HTTPStatus.BAD_REQUEST, f"A value is too long (max {_MAX_VALUE_LEN} characters)")
 
 
 # -- Endpoints -------------------------------------------------------------
@@ -95,12 +98,12 @@ def get_live_stats(request, competition_id: int, bib: str):
             is_hidden=False,
         )
     except Competition.DoesNotExist:
-        raise HttpError(404, "Not found") from None
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found") from None
     try:
         live = competition.live_stats
     except CompetitionLiveStats.DoesNotExist:
-        raise HttpError(404, "Not found") from None
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found") from None
     bib_stats = live.data.get(bib)
     if bib_stats is None:
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     return {"competition_id": competition.pk, "bib": bib, "stats": bib_stats, "updated_at": live.updated_at}

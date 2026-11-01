@@ -8,6 +8,7 @@ endpoint uses), so the endpoints are unauthenticated otherwise.
 
 import logging
 from datetime import datetime
+from http import HTTPStatus
 
 from django.db import transaction
 from ninja import Router, Schema
@@ -86,18 +87,18 @@ def upload_start_list(request, payload: StartListIn):
 
     device_id = (payload.device_id or "").strip()
     if not device_id:
-        raise HttpError(400, "device_id is required")
+        raise HttpError(HTTPStatus.BAD_REQUEST, "device_id is required")
     if len(device_id) > _MAX_DEVICE_ID_LEN:
-        raise HttpError(400, f"device_id too long (max {_MAX_DEVICE_ID_LEN})")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"device_id too long (max {_MAX_DEVICE_ID_LEN})")
 
     if len(request.body) > _MAX_BODY_BYTES:
-        raise HttpError(400, f"Start list is too large (max {_MAX_BODY_BYTES} bytes)")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"Start list is too large (max {_MAX_BODY_BYTES} bytes)")
 
     items = payload.items or []
     if len(items) > _MAX_ITEMS:
-        raise HttpError(400, f"Too many items (max {_MAX_ITEMS})")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"Too many items (max {_MAX_ITEMS})")
     if any(len(item) > _MAX_ITEM_LEN for item in items):
-        raise HttpError(400, f"An item is too long (max {_MAX_ITEM_LEN} characters)")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"An item is too long (max {_MAX_ITEM_LEN} characters)")
 
     revision = payload.client_revision
     # Atomic compare-and-set: lock the device's row, then reject a stale (older) snapshot and a
@@ -118,11 +119,14 @@ def upload_start_list(request, payload: StartListIn):
             # Include the stored revision in the 409s so a client that lost its counter can recover
             # without a separate GET.
             if revision < existing.client_revision:
-                raise HttpError(409, f"A newer start list (revision {existing.client_revision}) is already stored")
+                raise HttpError(
+                    HTTPStatus.CONFLICT, f"A newer start list (revision {existing.client_revision}) is already stored"
+                )
             if revision == existing.client_revision:
                 if items != existing.items:
                     raise HttpError(
-                        409, f"A different start list is already stored at revision {existing.client_revision}"
+                        HTTPStatus.CONFLICT,
+                        f"A different start list is already stored at revision {existing.client_revision}",
                     )
                 # Identical re-send (e.g. a network retry): a true no-op, so `updated_at` does not
                 # move and a consumer polling it isn't misled into seeing a new snapshot.
