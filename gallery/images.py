@@ -16,7 +16,7 @@ import uuid
 
 from django.core.files.base import ContentFile
 from django.utils.translation import gettext_lazy as _
-from PIL import Image, ImageOps, UnidentifiedImageError
+from PIL import ExifTags, Image, ImageOps, UnidentifiedImageError
 
 #: Longest side of the card thumbnail; cards are at most ~560px wide, twice that for dense screens.
 THUMB_SIDE = 1000
@@ -67,7 +67,7 @@ def process(uploaded) -> tuple[ContentFile, ContentFile, tuple[int, int]]:
     try:
         with Image.open(uploaded) as probe:  # reads the header only
             kind, size = probe.format, probe.size
-            turned = probe.getexif().get(0x0112) in _QUARTER_TURNS
+            turned = probe.getexif().get(ExifTags.Base.Orientation) in _QUARTER_TURNS
     except Image.DecompressionBombError as exc:
         raise PhotoError(_("The image is too large to process.")) from exc
     except (UnidentifiedImageError, OSError, ValueError) as exc:

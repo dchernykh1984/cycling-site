@@ -22,7 +22,16 @@ from cycling_site import jsonld
 
 from . import registering
 from .forms import EditRegistrationForm, RegistrationForm, RejectRegistrationForm
-from .models import CompetitionRegistration, RegistrationCategory, Team, check_duplicate, counted_q, counts
+from .models import (
+    RELAY_SEPARATOR,
+    UNKNOWN_BIRTH_DATE,
+    CompetitionRegistration,
+    RegistrationCategory,
+    Team,
+    check_duplicate,
+    counted_q,
+    counts,
+)
 
 
 def can_manage(user, competition) -> bool:
@@ -517,12 +526,10 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
                 try:
                     birth_date = datetime.date(int(relay_birth_years[0]), 1, 1)
                 except (ValueError, TypeError):
-                    birth_date = datetime.date(1900, 1, 1)
+                    birth_date = UNKNOWN_BIRTH_DATE
             else:
                 birth_date = cleaned.get("birth_date") or (
-                    datetime.date(cleaned["birth_year"], 1, 1)
-                    if cleaned.get("birth_year")
-                    else datetime.date(1900, 1, 1)
+                    datetime.date(cleaned["birth_year"], 1, 1) if cleaned.get("birth_year") else UNKNOWN_BIRTH_DATE
                 )
 
             with transaction.atomic():
@@ -546,9 +553,9 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
                     registered_by=request.user,
                     first_name=first_name,
                     last_name=last_name,
-                    participant_names="<BR>".join(relay_names) if relay_enabled else "",
-                    participant_birth_years="<BR>".join(relay_birth_years) if relay_enabled else "",
-                    participant_cities="<BR>".join(relay_cities) if relay_enabled else "",
+                    participant_names=RELAY_SEPARATOR.join(relay_names) if relay_enabled else "",
+                    participant_birth_years=RELAY_SEPARATOR.join(relay_birth_years) if relay_enabled else "",
+                    participant_cities=RELAY_SEPARATOR.join(relay_cities) if relay_enabled else "",
                     birth_date=birth_date,
                     gender=gender,
                     category=category,
@@ -606,17 +613,17 @@ class ExportParticipantsCSVView(LoginRequiredMixin, View):
                 _csv_row(
                     [
                         i,
-                        reg.participant_names.replace("<BR>", "; ")
+                        reg.participant_names.replace(RELAY_SEPARATOR, "; ")
                         if reg.participant_names
                         else f"{reg.last_name} {reg.first_name}".strip(),
                         reg.last_name,
                         reg.first_name,
                         reg.gender,
                         reg.birth_date.isoformat(),
-                        reg.participant_birth_years.replace("<BR>", "; ")
+                        reg.participant_birth_years.replace(RELAY_SEPARATOR, "; ")
                         if reg.participant_birth_years
                         else str(reg.birth_date.year),
-                        reg.participant_cities.replace("<BR>", "; ") if reg.participant_cities else reg.city,
+                        reg.participant_cities.replace(RELAY_SEPARATOR, "; ") if reg.participant_cities else reg.city,
                         reg.category.name if reg.category else "",
                         reg.team.name if reg.team else "",
                         reg.additional_info,

@@ -15,7 +15,7 @@ from typing import NoReturn
 
 from django.conf import settings
 
-from event_photos.models import BibObservation
+from event_photos.models import BIB_MAX_LENGTH, BibObservation
 
 SCHEMA_VERSION = 1
 _SHA = re.compile(r"^[0-9a-f]{64}\Z")
@@ -121,8 +121,8 @@ def _bib(value, where: str, original_sha: str) -> Bib:
     if not isinstance(raw, str):
         _fail(f"{where}.value", "must be text")
     bib = normalize_bib(raw)
-    if not 1 <= len(bib) <= 32 or any(unicodedata.category(c).startswith("C") for c in bib):
-        _fail(f"{where}.value", "must be 1 to 32 printable characters")
+    if not 1 <= len(bib) <= BIB_MAX_LENGTH or any(unicodedata.category(c).startswith("C") for c in bib):
+        _fail(f"{where}.value", f"must be 1 to {BIB_MAX_LENGTH} printable characters")
     state, method = value.get("state"), value.get("method")
     if not isinstance(state, str) or state not in _STATES:
         _fail(f"{where}.state", "must be candidate, accepted or rejected")
