@@ -229,7 +229,7 @@ def _scrubbed(candidate: Candidate) -> Candidate:
     (:func:`_with_post_link`), so an event points at the post it came from rather than at whatever
     address the model copied out of a message.
     """
-    registration = candidate.url_registration if "t.me/" not in candidate.url_registration else ""
+    registration = "" if TME_LINK.search(candidate.url_registration) else candidate.url_registration
     unlink = lambda text: TME_LINK.sub("", text)  # noqa: E731 -- six fields, one rule
     return replace(
         candidate,
