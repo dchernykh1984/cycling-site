@@ -77,7 +77,8 @@ environment overrides it, to try another model in a local run. The pipeline's `l
 the provider's list of models (`python -m agent.check_model`, no tokens spent) on every pull request
 and goes red when the name is no longer on it.
 
-Runs daily at **22:17 UTC (03:17 Almaty)**, and on demand via the **Run workflow** button (owner
-only). Scheduled runs only fire from the default branch (`main`).
+Runs on the schedule in `.github/workflows/agent.yml` (its comment says why that slot), and on
+demand via the **Run workflow** button (owner only). Scheduled runs only fire from the default
+branch (`main`).
 
 Club feeds are read by a separate agent -- see [instagram_agent/README.md](../instagram_agent/README.md).

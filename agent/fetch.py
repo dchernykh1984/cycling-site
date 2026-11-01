@@ -41,7 +41,7 @@ _AGGREGATOR_MAX_CHARS = 30000
 _SKIP_PREFIXES = ("#", "javascript:", "mailto:", "tel:")
 # Telegram serves the same content on these alias domains; t.me has gone NXDOMAIN, so fall back.
 _TG_HOSTS = ("t.me", "telegram.dog", "telegram.me")
-_FETCH_RETRIES = 4  # retry a timed-out / unreachable source a few times (it runs at night, unhurried)
+_FETCH_RETRIES = 4  # retry a timed-out / unreachable source a few times (it runs unattended, unhurried)
 _RETRY_BACKOFF = 10.0  # seconds between retry passes
 _TIMEOUT_SECONDS = 20  # per request, pages and tracks alike
 # A gateway or an overloaded server, not an answer about the page: retried like a timeout.
@@ -92,7 +92,7 @@ def _get_with_fallback(url: str, timeout: int = _TIMEOUT_SECONDS) -> str:
     """Fetch ``url``, retrying on a timeout / connection failure (but never on an HTTP error).
 
     A timed-out or unreachable source is retried ``_FETCH_RETRIES`` times with a backoff: the
-    pipeline runs unattended at night, so a transient network hiccup should not silently drop a whole
+    pipeline runs unattended, so a transient network hiccup should not silently drop a whole
     source. For Telegram, each pass also cycles the alias hosts (t.me is intermittently NXDOMAIN on
     the runner). An HTTP error (e.g. 404) means the server answered, so it is raised without retrying.
     """

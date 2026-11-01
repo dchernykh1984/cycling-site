@@ -21,7 +21,7 @@ from agent.config import DEFAULT_LLM_MODEL, ConfigError, _flag, _whole_number
 _DEFAULT_MAX_EVENTS = 10
 # What one talkative channel may contribute, so a lively group chat cannot spend the whole budget.
 _DEFAULT_MAX_PER_CHANNEL = 5
-# How far back a run reads, in hours. The run is nightly, so a day plus an hour of overlap: the
+# How far back a run reads, in hours. The run is daily, so a day plus an hour of overlap: the
 # overlap covers a cron that fired late, and costs nothing, because an announcement seen twice is
 # dropped by the dedup that already knows it. Hours rather than days because this has to line up
 # with how often the run happens -- measured on these channels, the newest 50 messages of a busy
