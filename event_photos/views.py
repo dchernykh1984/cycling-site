@@ -1,6 +1,7 @@
 """Event photos on the site: the event's albums and bib search, a registration's own album with its
 "this is me" / "not me" marks, the organizer's page, and the thumbnails the site keeps."""
 
+from http import HTTPStatus
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -317,7 +318,7 @@ def thumbnail_response(user, competition, photo_pk) -> FileResponse | HttpRespon
     except (DropboxError, FileNotFoundError) as exc:
         if isinstance(exc, DropboxError) and exc.kind not in ("busy", "throttled", "unavailable"):
             raise Http404 from None
-        unavailable = HttpResponse(status=503)
+        unavailable = HttpResponse(status=HTTPStatus.SERVICE_UNAVAILABLE)
         unavailable["Retry-After"] = str(min(exc.retry_after or 2, 60) if isinstance(exc, DropboxError) else 1)
         unavailable["Cache-Control"] = "private, no-store"
         return unavailable

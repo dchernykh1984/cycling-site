@@ -12,6 +12,7 @@ search engine being unreachable must never turn an approval into an error page.
 
 import logging
 import threading
+from http import HTTPStatus
 
 import requests
 from django.conf import settings
@@ -56,7 +57,7 @@ def _post(urls: list[str], key: str, host: str) -> None:
     except requests.RequestException as exc:  # pragma: no cover - network failure path
         logger.warning("IndexNow submission failed: %s", exc)
         return
-    if response.status_code >= 400:
+    if response.status_code >= HTTPStatus.BAD_REQUEST:
         logger.warning("IndexNow refused %s URLs: %s %s", len(urls), response.status_code, response.text[:200])
     else:
         logger.info("IndexNow accepted %s URLs (%s)", len(urls), response.status_code)

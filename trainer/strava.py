@@ -9,6 +9,7 @@ tokens live in ``StravaConnection`` and are refreshed here when they expire. Eve
 import gzip
 import re
 from datetime import UTC, datetime, timedelta
+from http import HTTPStatus
 from typing import cast
 from urllib.parse import urlencode
 from xml.etree import ElementTree as ET
@@ -81,9 +82,12 @@ def _token(**data) -> dict:
         )
     except requests.RequestException as exc:
         raise StravaError(type(exc).__name__) from None
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         # a code or refresh token Strava no longer accepts: the member revoked the grant or never gave it
-        raise StravaError(f"Strava answered {response.status_code}", revoked=response.status_code in (400, 401))
+        raise StravaError(
+            f"Strava answered {response.status_code}",
+            revoked=response.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNAUTHORIZED),
+        )
     return response.json()
 
 
@@ -213,7 +217,7 @@ def _call(connection: StravaConnection, method: str, url: str, **kwargs) -> requ
         )
     except requests.RequestException as exc:
         raise StravaError(type(exc).__name__) from None
-    if response.status_code == 401:
+    if response.status_code == HTTPStatus.UNAUTHORIZED:
         raise StravaError("Strava no longer accepts this connection", revoked=True)
     return response
 
@@ -243,7 +247,7 @@ def upload(ride: VirtualRide) -> StravaUpload:
             connection.revoked = True
             connection.delete()
         return _fail(record, str(exc))
-    if response.status_code != 201:
+    if response.status_code != HTTPStatus.CREATED:
         return _fail(record, response.text or f"Strava answered {response.status_code}")
     return _apply(record, response.json())
 
@@ -261,6 +265,6 @@ def refresh(record: StravaUpload) -> StravaUpload:
             connection.delete()
             return _fail(record, str(exc))
         return record  # Strava unreachable for now: ask again later
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         return record
     return _apply(record, response.json())

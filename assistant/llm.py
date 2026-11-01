@@ -11,6 +11,7 @@ import json
 import logging
 import urllib.error
 import urllib.request
+from http import HTTPStatus
 
 from django.conf import settings
 
@@ -41,7 +42,11 @@ class UnavailableError(Exception):
         self.reason = reason
 
 
-_REASONS = {401: UnavailableError.KEY_REFUSED, 402: UnavailableError.NO_BALANCE, 403: UnavailableError.KEY_REFUSED}
+_REASONS: dict[int, str] = {
+    HTTPStatus.UNAUTHORIZED: UnavailableError.KEY_REFUSED,
+    HTTPStatus.PAYMENT_REQUIRED: UnavailableError.NO_BALANCE,
+    HTTPStatus.FORBIDDEN: UnavailableError.KEY_REFUSED,
+}
 
 
 def complete(messages: list[dict]) -> dict:

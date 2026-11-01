@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -53,7 +54,7 @@ class LocaleFallbackMiddleware:
     def process_exception(self, request, exception):
         if not isinstance(exception, Http404):
             return None
-        return render(request, "404.html", status=404)
+        return render(request, "404.html", status=HTTPStatus.NOT_FOUND)
 
 
 class SiteLocaleMiddleware(LocaleMiddleware):
@@ -100,7 +101,7 @@ class SiteLocaleMiddleware(LocaleMiddleware):
     @staticmethod
     def _is_language_redirect(request, response) -> bool:
         """Whether this response is the redirect that picks a language for an address without one."""
-        if response.status_code not in (301, 302):
+        if response.status_code not in (HTTPStatus.MOVED_PERMANENTLY, HTTPStatus.FOUND):
             return False
         if get_language_from_path(request.path_info):
             return False
@@ -162,7 +163,7 @@ class SignedOutMiddleware:
 
     @staticmethod
     def _shut_to_guests(response) -> bool:
-        if response.status_code in (403, 404):
+        if response.status_code in (HTTPStatus.FORBIDDEN, HTTPStatus.NOT_FOUND):
             return True
         return urlsplit(response.get("Location", "")).path == resolve_url(settings.LOGIN_URL)
 

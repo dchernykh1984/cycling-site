@@ -2,6 +2,7 @@ import json
 import logging
 import uuid
 from datetime import timedelta
+from http import HTTPStatus
 from typing import ClassVar
 
 from allauth.account.models import EmailAddress
@@ -497,10 +498,10 @@ class ThemeUpdateView(LoginRequiredMixin, View):
         try:
             data = json.loads(request.body)
         except (json.JSONDecodeError, ValueError):
-            return JsonResponse({"error": "invalid JSON"}, status=400)
+            return JsonResponse({"error": "invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
         theme = data.get("theme") if isinstance(data, dict) else None
         if not isinstance(theme, str) or theme not in registry():
-            return JsonResponse({"error": "invalid theme"}, status=400)
+            return JsonResponse({"error": "invalid theme"}, status=HTTPStatus.BAD_REQUEST)
         request.user.theme = theme
         request.user.save(update_fields=["theme"])
         return JsonResponse({"theme": theme})
@@ -613,7 +614,7 @@ class JoinManagerView(LoginRequiredMixin, View):
         context = {"invite": invite, "asked": outcome == managing.ASKED, "refusal": managing.refusal(outcome, invite)}
         response = render(request, self.template_name, context)
         if outcome == managing.INVALID:
-            response.status_code = 404
+            response.status_code = HTTPStatus.NOT_FOUND
         return response
 
     def get(self, request, key):
