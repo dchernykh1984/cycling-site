@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from calendar_app.models import Competition, Discipline, DisciplineCategory
-from locations.models import add_location_child
+from locations.models import Location, add_location_child
 
 
 def _competition(title="Race", **kwargs):
@@ -245,3 +245,44 @@ class AddressByDepthTests(TestCase):
         self.assertEqual(address["addressCountry"], "Kazakhstan")
         self.assertEqual(address["addressLocality"], "Almaty")
         self.assertNotIn("addressRegion", address)
+
+
+class StandInPlaceTests(TestCase):
+    """A hidden stand-in -- "other location", "other city", "other region" -- names no place.
+
+    An event whose start nobody told sits at its city's catch-all, or further up at a region's or a
+    country's "other" places. Read as names, they gave search engines a town called "Other city".
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        country = add_location_child(None, name="Kazakhstan", name_ru="Kazakhstan", name_en="Kazakhstan")
+        region = add_location_child(country, name="Almaty region", name_ru="Almaty region", name_en="Almaty region")
+        city = add_location_child(region, name="Almaty", name_ru="Almaty", name_en="Almaty", lat="43.2", lng="76.9")
+        cls.city_catch_all = Location.get_or_create_other_location(city)
+        other_region = add_location_child(country, name="Other region", name_ru="Other region", is_hidden=True)
+        other_city = add_location_child(other_region, name="Other city", name_ru="Other city", is_hidden=True)
+        cls.country_catch_all = Location.get_or_create_other_location(other_city)
+        # A catch-all may carry its city's point for the page's pin; it is still no start.
+        cls.country_catch_all.lat, cls.country_catch_all.lng = "43.2", "76.9"
+        cls.country_catch_all.save()
+
+    def test_an_event_nobody_placed_below_its_country_is_placed_in_the_country(self):
+        comp = _competition("Steppe ultra", location=self.country_catch_all)
+        self.assertEqual(
+            _payload(self.client, comp)["location"],
+            {
+                "@type": "Place",
+                "name": "Kazakhstan",
+                "address": {"@type": "PostalAddress", "addressCountry": "Kazakhstan"},
+            },
+        )
+        self.assertNotIn("Other", comp.search_summary())
+
+    def test_an_event_in_a_city_with_no_start_is_placed_in_the_city(self):
+        comp = _competition("City ride", location=self.city_catch_all)
+        place = _payload(self.client, comp)["location"]
+        self.assertEqual(place["name"], "Almaty")
+        self.assertEqual(place["address"]["addressLocality"], "Almaty")
+        self.assertNotIn("geo", place)
+        self.assertIn("Almaty, Kazakhstan.", comp.search_summary())

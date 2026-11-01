@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 from django.urls import reverse
 
 from cycling_site.jsonld import dumps
+from locations.maps import start_point
 from locations.models import Level
 
 
@@ -46,30 +47,25 @@ def sports_event(competition, base_url: str) -> str:
         # One name reads better than a list of one, and consumers accept either shape.
         data["sport"] = disciplines[0] if len(disciplines) == 1 else disciplines
 
-    location = competition.location
-    if location is not None:
-        place: dict = {"@type": "Place", "name": location.name}
-        # Read the chain by depth rather than by position: country, region, city. A node whose
-        # name is empty drops out of the list, and counting from the end would then hand the
-        # region's name to the country -- an address that is wrong rather than merely incomplete.
-        named = {node.depth: node.name for node in location.get_ancestors() if node.name}
+    # Named only by what is known: a hidden stand-in drops out (Competition.place_name), the place is
+    # called after the deepest level left, and only a venue's own point is a start to send.
+    named = {level: name for level in Level if (name := competition.place_name(level))}
+    if named:
+        place: dict = {"@type": "Place", "name": named[max(named)]}
         postal = {
-            key: named[depth]
-            for key, depth in (
+            key: named[level]
+            for key, level in (
                 ("addressCountry", Level.COUNTRY),
                 ("addressRegion", Level.REGION),
                 ("addressLocality", Level.CITY),
             )
-            if depth in named
+            if level in named
         }
         if postal:
             place["address"] = {"@type": "PostalAddress", **postal}
-        if location.lat is not None and location.lng is not None:
-            place["geo"] = {
-                "@type": "GeoCoordinates",
-                "latitude": float(location.lat),
-                "longitude": float(location.lng),
-            }
+        point = start_point(competition.location)
+        if point is not None:
+            place["geo"] = {"@type": "GeoCoordinates", "latitude": float(point[0]), "longitude": float(point[1])}
         data["location"] = place
 
     # Registration run on this site has no URL field: the page that takes the entry is the offer.
