@@ -1584,22 +1584,9 @@ class EditCompetitionView(View):
                 return redirect("competition_detail", pk=comp.pk)
         import json
 
-        from registrations.models import RegistrationCategory
-
-        categories = list(
-            RegistrationCategory.objects.filter(competition=comp, is_deleted=False).values(
-                "id",
-                "name",
-                "male",
-                "female",
-                "birth_from",
-                "birth_to",
-                "laps",
-                "bib_from",
-                "bib_to",
-                "max_participants",
-            )
-        )
+        # In the shape the editor reads, for the birth date mode just submitted: a YEAR event's
+        # bounds as raw dates fit no number field, and the next save would drop them.
+        categories = _category_rows(comp, reg_form["birth_date_mode"].value())
         disc_ctx = {
             **_discipline_picker_context(form),
             "locations_data": _get_locations_data(request.user),
@@ -1613,7 +1600,7 @@ class EditCompetitionView(View):
                 "form": form,
                 "reg_form": reg_form,
                 "material_formset": material_formset,
-                "categories_json": json.dumps(categories, default=str),
+                "categories_json": json.dumps(categories),
                 "mode_locked": comp.registration_mode_locked,
                 "is_organizer_plus": roles.at_least(request.user, roles.PUBLISH_EVENTS),
                 **disc_ctx,
