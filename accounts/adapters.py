@@ -60,13 +60,6 @@ class AccountAdapter(DefaultAccountAdapter):
         user.last_mail_action_at = timezone.now()
         user.save(update_fields=["last_mail_action_at"])
 
-    def confirm_email(self, request, email_address):
-        super().confirm_email(request, email_address)
-        user = email_address.user
-        if user.role == user.Role.GUEST:
-            user.role = user.Role.PARTICIPANT
-            user.save(update_fields=["role"])
-
 
 def user_display(user) -> str:
     """How allauth names a member back to them -- "Successfully signed in as ...", and its emails.

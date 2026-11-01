@@ -206,6 +206,21 @@ class EmailConfirmedSignalTests(TestCase):
         self.assertEqual(user.role, User.Role.ORGANIZER)
 
 
+class ConfirmationLinkTests(TestCase):
+    def test_confirming_someone_elses_address_signs_the_other_account_out(self):
+        from allauth.account.models import EmailConfirmationHMAC
+
+        newcomer = make_user("newcomer", role=User.Role.GUEST)
+        address = EmailAddress.objects.create(user=newcomer, email=newcomer.email, verified=False, primary=True)
+        self.client.force_login(make_user("other", role=User.Role.PARTICIPANT))
+        self.client.post(reverse("account_confirm_email", args=[EmailConfirmationHMAC(address).key]))
+        self.assertNotIn("_auth_user_id", self.client.session)
+        address.refresh_from_db()
+        newcomer.refresh_from_db()
+        self.assertTrue(address.verified)
+        self.assertEqual(newcomer.role, User.Role.PARTICIPANT)
+
+
 class AccountAdapterTests(TestCase):
     def test_save_user_sets_guest_role(self):
         adapter = AccountAdapter()
