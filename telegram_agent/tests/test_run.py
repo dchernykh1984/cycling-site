@@ -123,6 +123,12 @@ def test_nothing_pointing_back_at_the_channel_survives_scrubbing():
     assert scrubbed.url_registration == ""
 
 
+def test_a_registration_link_to_telegram_is_scrubbed_however_the_host_is_spelled():
+    """telegram.me and T.ME are t.me too: the same rule the text fields are scrubbed by."""
+    for link in ("https://telegram.me/joinchat/abc", "https://T.ME/somebot"):
+        assert _scrubbed(_candidate(url_registration=link)).url_registration == ""
+
+
 def test_an_external_registration_link_from_the_announcement_survives():
     scrubbed = _scrubbed(_candidate(url_registration="https://forms.gle/abc123"))
     assert scrubbed.url_registration == "https://forms.gle/abc123"
