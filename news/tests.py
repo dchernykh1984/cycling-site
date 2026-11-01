@@ -463,6 +463,17 @@ class NewsArticleHeroUploadTests(TestCase):
             self.assertEqual(resp.status_code, 200)
 
 
+class NewsArticleSlugTests(TestCase):
+    def test_colliding_max_length_titles_stay_within_the_slug_column(self):
+        max_length = NewsArticle._meta.get_field("slug").max_length
+        title = "a" * max_length
+        first = NewsArticle.objects.create(title_ru=title)
+        second = NewsArticle.objects.create(title_ru=title)
+        self.assertEqual(len(first.slug), max_length)
+        self.assertLessEqual(len(second.slug), max_length)
+        self.assertNotEqual(first.slug, second.slug)
+
+
 class NewsArticleSanitizeTests(TestCase):
     def test_save_sanitizes_each_locale_body(self):
         art = NewsArticle.objects.create(

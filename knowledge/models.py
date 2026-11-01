@@ -6,7 +6,6 @@ from django.db import models, transaction
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from taggit.managers import TaggableManager
 from wagtail.admin.panels import FieldPanel
@@ -19,6 +18,7 @@ from wagtail_localize.fields import SynchronizedField
 from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from cycling_site.sanitize import sanitize_rich_text_columns
+from cycling_site.slugs import unique_slug
 
 # Backwards-compatible alias for the shared, site-wide rich-text size cap.
 MAX_BODY_LENGTH = MAX_RICH_TEXT_LENGTH
@@ -85,17 +85,7 @@ class KnowledgeArticle(index.Indexed, models.Model):
         # doesn't touch the body.
         sanitize_rich_text_columns(self, ("body",), update_fields=kwargs.get("update_fields"))
         if not self.slug:
-            base = (slugify(self.title or "", allow_unicode=False) or "article")[:_SLUG_MAX_LENGTH]
-            candidate = base
-            n = 1
-            while self._slug_unavailable(candidate):
-                # Reserve room for the collision suffix so even a max-length title cannot push the
-                # slug past max_length (a 255-char title would otherwise yield a 257-char "...-1"
-                # and raise DataError on PostgreSQL).
-                suffix = f"-{n}"
-                candidate = f"{base[: _SLUG_MAX_LENGTH - len(suffix)]}{suffix}"
-                n += 1
-            self.slug = candidate
+            self.slug = unique_slug(self.title, _SLUG_MAX_LENGTH, self._slug_unavailable)
         super().save(*args, **kwargs)
 
     def get_absolute_url(self) -> str:
