@@ -651,7 +651,7 @@ class CalendarEventsAPIView(View):
                 "title": comp.title,
                 "start": comp.date_start.isoformat(),
                 "end": comp.get_calendar_end(),
-                "url": reverse("competition_detail", args=[comp.pk]),
+                "url": comp.get_absolute_url(),
                 "extendedProps": {
                     "event_type": comp.event_type_label,
                     "discipline": comp.disciplines_label,
@@ -826,7 +826,7 @@ class CalendarMapAPIView(View):
                 {
                     "id": comp.id,
                     "title": comp.title,
-                    "url": reverse("competition_detail", args=[comp.id]),
+                    "url": comp.get_absolute_url(),
                     "date_start": comp.date_start.isoformat(),
                     "date_end": comp.date_end.isoformat() if comp.date_end else None,
                     "when": date_range_words(comp.date_start, comp.date_end),

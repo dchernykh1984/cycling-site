@@ -98,10 +98,9 @@ def _event_lines(
 ) -> list[str]:
     # An all-day VEVENT ends on the day *after* the last one, and a single-day event with no end
     # date still needs a DTEND, or clients disagree about how long it lasts.
-    last_day = competition.date_end or competition.date_start
-    if last_day < competition.date_start:
-        last_day = competition.date_start
-    url = base_url + reverse("competition_detail", kwargs={"pk": competition.pk})
+    # An end typed before the start (only the admin can store one) still ends on the start.
+    last_day = max(competition.last_day, competition.date_start)
+    url = base_url + competition.get_absolute_url()
     lines = [
         "BEGIN:VEVENT",
         f"UID:competition-{competition.pk}@universalbicycle.team",

@@ -13,9 +13,10 @@ from accounts import roles
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedPreviewText, LocalizedStr, LocalizedTitle, Url, localize_field
 from calendar_app.feeds import build_calendar, calendar_response, site_base_url
-from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline, EventType
+from calendar_app.models import Competition, Discipline, EventType
 from calendar_app.tracks import route_track
 from calendar_app.visibility import can_manage_or_own, is_public, public_events_q
+from cycling_site.richtext import MAX_RICH_TEXT_LENGTH, is_too_large
 from locations.models import (
     Level,
     Location,
@@ -267,9 +268,9 @@ def _apply_localized(obj, field: str, value: LocalizedStr) -> list[str]:
 def _validate_description_length(value: LocalizedStr) -> None:
     """Reject an oversized description (inline images are base64) on the untrusted API path."""
     for loc in (value.ru, value.kk, value.en):
-        if loc and len(loc) > MAX_DESCRIPTION_LENGTH:
+        if is_too_large(loc):
             raise HttpError(
-                HTTPStatus.UNPROCESSABLE_CONTENT, f"Description is too large (max {MAX_DESCRIPTION_LENGTH} characters)"
+                HTTPStatus.UNPROCESSABLE_CONTENT, f"Description is too large (max {MAX_RICH_TEXT_LENGTH} characters)"
             )
 
 
