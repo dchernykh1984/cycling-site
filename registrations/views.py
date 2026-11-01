@@ -9,6 +9,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.html import escape
 from django.utils.translation import gettext
 from django.views import View
@@ -605,6 +606,7 @@ class ExportParticipantsCSVView(LoginRequiredMixin, View):
                 ]
             )
         )
+        zone = competition.timezone  # the export's times, as the event's own times, at its place
         for i, reg in enumerate(competition.registrations.select_related("category", "team"), start=1):
             writer.writerow(
                 _csv_row(
@@ -627,7 +629,7 @@ class ExportParticipantsCSVView(LoginRequiredMixin, View):
                         reg.is_approved,
                         reg.is_paid,
                         reg.is_rejected,
-                        reg.registered_at.strftime("%Y-%m-%d %H:%M"),
+                        timezone.localtime(reg.registered_at, zone).strftime("%Y-%m-%d %H:%M"),
                     ]
                 )
             )

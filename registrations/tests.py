@@ -1171,6 +1171,25 @@ class ExportCSVViewTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
 
+    def test_the_registration_time_is_written_at_the_events_place(self):
+        import csv
+        import io
+
+        from locations.models import Location
+
+        # A place in Almaty: UTC+5, so an entry made at 20:30 UTC was made at 01:30 the next day there.
+        country = Location.add_root(name_ru="KZ", name_en="KZ")
+        venue = country.add_child(name_ru="Start", name_en="Start", lat="43.238949", lng="76.889709")
+        self.comp.location = venue
+        self.comp.save(update_fields=["location"])
+        reg = self.comp.registrations.get()
+        reg.registered_at = datetime.datetime(2026, 10, 1, 20, 30, tzinfo=datetime.UTC)
+        reg.save(update_fields=["registered_at"])
+        self.client.force_login(self.organizer)
+        response = self.client.get(reverse("registrations:export_csv", args=[self.comp.pk]))
+        rows = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows[1][rows[0].index("Registered at")], "2026-10-02 01:30")
+
     def test_an_entry_that_looks_like_a_formula_stays_text(self):
         import csv
         import io
