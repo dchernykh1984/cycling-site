@@ -2,6 +2,7 @@ import csv
 import datetime
 from collections import defaultdict
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -20,7 +21,7 @@ from calendar_app.visibility import can_see, manages, public_events_q
 from cycling_site import jsonld
 
 from . import registering
-from .forms import EditRegistrationForm, RegistrationForm
+from .forms import EditRegistrationForm, RegistrationForm, RejectRegistrationForm
 from .models import CompetitionRegistration, RegistrationCategory, Team, check_duplicate, counted_q, counts
 
 
@@ -352,9 +353,13 @@ class RejectRegistrationView(LoginRequiredMixin, View):
         if not can_manage(request.user, competition):
             raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
+        form = RejectRegistrationForm(request.POST)
+        if not form.is_valid():  # a note longer than the column holds
+            messages.error(request, form.errors["rejection_note"][0])
+            return redirect("registrations:participant_list", pk=pk)
         reg.is_rejected = True
         reg.is_approved = False
-        reg.rejection_note = request.POST.get("rejection_note", "")
+        reg.rejection_note = form.cleaned_data["rejection_note"]
         reg.save(update_fields=["is_rejected", "is_approved", "rejection_note"])
         return redirect("registrations:participant_list", pk=pk)
 

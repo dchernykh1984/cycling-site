@@ -78,7 +78,13 @@ class RegistrationForm(forms.Form):
 
 
 class RejectRegistrationForm(forms.Form):
-    rejection_note = forms.CharField(max_length=500, required=False, widget=forms.Textarea(attrs={"rows": 2}))
+    # Not stripped: the note is saved as the manager typed it.
+    rejection_note = forms.CharField(
+        max_length=CompetitionRegistration._meta.get_field("rejection_note").max_length,
+        required=False,
+        strip=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+    )
 
 
 class EditRegistrationForm(forms.ModelForm):
