@@ -367,9 +367,11 @@ class RegistrationSettingsForm(forms.Form):
         if not raw:
             return []
         try:
-            return json.loads(raw)
+            categories = json.loads(raw)
         except (json.JSONDecodeError, ValueError):
             return []
+        # The page writes a list of objects; anything else in the field was not written by it.
+        return [row for row in categories if isinstance(row, dict)] if isinstance(categories, list) else []
 
 
 _MATERIAL_NAME = pgettext_lazy("photo or video material", "Name")

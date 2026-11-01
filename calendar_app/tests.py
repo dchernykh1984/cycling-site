@@ -1702,6 +1702,27 @@ class EditCompetitionViewTests(TestCase):
         self.assertNotIn("Registration deadline", expected)  # a Russian sentence, not the English source
         self.assertEqual(response.context["reg_form"].errors["registration_deadline"], [expected])
 
+    def test_categories_not_written_by_the_page_are_skipped_rather_than_failing(self):
+        from registrations.models import RegistrationCategory
+
+        self.client.login(username="edit_org@example.com", password="password123")
+        data = {
+            "title_ru": "Editable Race",
+            "date_start": "2026-09-01",
+            "registration_enabled": "on",
+            "registration_mode": "free",
+            "birth_date_mode": "year",
+        }
+        for forged in ('{"name": "Elite"}', "7", '[1, "Elite", null]'):
+            with self.subTest(forged=forged):
+                response = self.client.post(self.url, {**data, "categories_json": forged})
+                self.assertEqual(response.status_code, 302)
+        response = self.client.post(self.url, {**data, "categories_json": '[1, {"name": "Kept"}]'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            list(RegistrationCategory.objects.filter(competition=self.comp).values_list("name", flat=True)), ["Kept"]
+        )
+
     def test_edit_saves_registration_deadline_with_time(self):
         self.client.login(username="edit_org@example.com", password="password123")
         self.client.post(
