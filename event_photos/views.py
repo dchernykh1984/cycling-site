@@ -101,12 +101,6 @@ def _archive_or_back(request, photos, name: str, back: str):
     return redirect(back)
 
 
-def participant_name(registration) -> str:
-    if registration.participant_names:
-        return str(registration)
-    return f"{registration.last_name} {registration.first_name}"
-
-
 def bib_archive_name(competition, bib: str) -> str:
     return _("%(event)s - bib %(bib)s") % {"event": competition.title, "bib": bib}
 
@@ -202,7 +196,7 @@ def registration_album(request, pk, reg_pk):
         photo.is_me = decisions.get(photo.pk) == PhotoDecision.State.ME
     confirmed = photos.filter(confirmed=True).count()
     undo_event = request.GET.get("undo", "")
-    participant = participant_name(registration)
+    participant = registration.display_name
     title = (
         _("Photos with me: %(participant)s")
         if registration.user_id == request.user.pk
@@ -243,7 +237,7 @@ def registration_archive(request, pk, reg_pk):
     return _archive_or_back(
         request,
         actions.registration_photos(registration),
-        f"{competition.title} - {participant_name(registration)}",
+        f"{competition.title} - {registration.display_name}",
         reverse("event_photos:registration", args=[competition.pk, registration.pk]),
     )
 

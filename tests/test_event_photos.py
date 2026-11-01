@@ -743,6 +743,28 @@ class PageAndApiTests(EventPhotosTestCase):
             page = self.client.get(self._url("registration", self.reg.pk))
             self.assertEqual(page.context["photo_page_title"], "Photos of Ivanov Ivan")
 
+    def test_a_relay_teams_album_is_named_after_its_members_as_they_typed_them(self):
+        from django.http import HttpResponse
+        from django.utils.translation import override
+
+        self.reg.participant_names = "O&#x27;Brien<BR>Petrov"  # stored escaped, as an entry saves it
+        self.athlete.api_token = uuid.uuid4()
+        self.athlete.save(update_fields=["api_token"])
+        self.reg.save(update_fields=["participant_names"])
+        self.client.force_login(self.athlete)
+        with override("en"):
+            page = self.client.get(self._url("registration", self.reg.pk))
+            cards = self.client.get(self._url("event"))
+        self.assertEqual(page.context["photo_page_title"], "Photos with me: O'Brien, Petrov")
+        self.assertEqual(page.context["meta_title"], "Photos with me: O'Brien, Petrov - Alatau XCO")
+        self.assertContains(cards, "O&#x27;Brien, Petrov</span>")
+        with mock.patch("event_photos.views.archive_response", return_value=HttpResponse()) as archive:
+            self.client.get(self._url("registration_archive", self.reg.pk))
+        self.assertEqual(archive.call_args.args[1], "Alatau XCO - O'Brien, Petrov")
+        auth = {"HTTP_AUTHORIZATION": f"Bearer {self.athlete.api_token}"}
+        api_cards = self.client.get("/api/v1/event-photos/me/registrations", **auth).json()
+        self.assertEqual([card["participant"] for card in api_cards], ["O'Brien, Petrov"])
+
     def test_only_the_creator_or_an_admin_manages_albums(self):
         self.client.force_login(self.stranger)
         self.assertEqual(self.client.get(self._url("manage")).status_code, 404)

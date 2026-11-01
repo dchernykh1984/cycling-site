@@ -12,9 +12,9 @@ the profile and the event page.{% endcomment %}
     <span class="gallery-card-blank">{% include "gallery/_icons.html" with name="image" %}</span>
     {% endif %}
     <span class="gallery-card-caption">
-      <span class="gallery-card-title">{% if with_event %}{{ reg.competition.title }}{% else %}{% if reg.participant_names %}{{ reg }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %}{% endif %}</span>
+      <span class="gallery-card-title">{% if with_event %}{{ reg.competition.title }}{% else %}{{ reg.display_name }}{% endif %}</span>
       <span class="gallery-card-date">
-        {% if with_event %}{{ reg.competition.date_start|date:"d.m.Y" }} &middot; {% if reg.participant_names %}{{ reg }}{% else %}{{ reg.last_name }} {{ reg.first_name }}{% endif %} &middot; {% endif %}
+        {% if with_event %}{{ reg.competition.date_start|date:"d.m.Y" }} &middot; {{ reg.display_name }} &middot; {% endif %}
         {% if card.bibs %}{% trans "bib" %} {{ card.bibs|join:", " }}{% endif %}{% if reg.category %} &middot; {{ reg.category.name }}{% endif %}
       </span>
       <span class="gallery-card-date">
