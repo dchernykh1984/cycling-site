@@ -664,6 +664,27 @@ class SubmitCompetitionViewTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
         self.assertNotIn("file_route", form.errors)
 
+    def test_file_route_takes_every_track_format_the_map_draws(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from calendar_app.forms import SubmitCompetitionForm
+
+        for ext in ("gpx", "kml", "kmz", "tcx", "fit", "geojson"):
+            with self.subTest(ext=ext):
+                upload = SimpleUploadedFile(f"route.{ext}", b"track", content_type="application/octet-stream")
+                form = SubmitCompetitionForm(data=self._payload(), files={"file_route": upload}, user=self.participant)
+                self.assertNotIn("file_route", form.errors)
+
+    def test_only_the_route_takes_the_formats_of_a_track_alone(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from calendar_app.forms import SubmitCompetitionForm
+
+        upload = SimpleUploadedFile("rules.fit", b"track", content_type="application/octet-stream")
+        form = SubmitCompetitionForm(data=self._payload(), files={"file_regulations": upload}, user=self.participant)
+        self.assertIn("file_regulations", form.errors)
+        self.assertNotIn("fit", str(form.errors["file_regulations"]))
+
     def test_file_route_rejects_unsupported_extension(self):
         from django.core.files.uploadedfile import SimpleUploadedFile
 
