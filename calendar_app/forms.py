@@ -386,6 +386,8 @@ class RegistrationSettingsForm(forms.Form):
             return cleaned
         by_date = (cleaned.get("birth_date_mode") or Competition.BirthDateMode.YEAR) == Competition.BirthDateMode.DATE
         for row in self.get_categories():
+            if row.get("is_deleted"):  # going away: its bounds are not read
+                continue
             for key in ("birth_from", "birth_to"):
                 value = row.get(key)
                 if not value:
