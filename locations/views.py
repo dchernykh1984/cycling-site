@@ -42,10 +42,10 @@ def _get_venues_json() -> list:
 
 
 def _get_map_url() -> str:
-    from locations.models import LocationsMapPage
+    from locations.templatetags.locations_tags import get_locations_map_url
 
-    page = LocationsMapPage.objects.live().first()
-    return page.url if page else "/"
+    # The map in the reader's language, as the header links it.
+    return get_locations_map_url() or "/"
 
 
 def _safe_return_url(request, default: str) -> str:

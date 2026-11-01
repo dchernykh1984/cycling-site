@@ -289,6 +289,14 @@ class LocationCreateViewTests(TestCase):
         self.client.force_login(user)
         return self.client.post(self.url, {"name_ru": name, "parent": parent.pk if parent else ""})
 
+    def test_the_form_leads_back_to_the_map_in_the_readers_language(self):
+        self.client.force_login(self.admin)
+        for language in ("kk", "en"):
+            with self.subTest(language=language):
+                response = self.client.get(in_language(self.url, language))
+                own_map = LocationsMapPage.objects.live().get(locale__language_code=language)
+                self.assertEqual(response.context["map_url"], own_map.url)
+
     def test_organizer_proposes_a_region_through_the_form(self):
         """The web form must offer an organizer the same thing the API does.
 
