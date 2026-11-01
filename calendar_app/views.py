@@ -56,6 +56,7 @@ from .forms import (
 from .guest_region import OFFERED_COOKIE, guest_region
 from .listing_seo import describe_filters, index_policy, landing_filters
 from .models import (
+    RELAY_MAX_MEMBERS_DEFAULT,
     Competition,
     CompetitionComment,
     CompetitionFavorite,
@@ -68,6 +69,10 @@ from .models import (
 from .seo import sports_event
 from .tracks import route_track
 from .visibility import can_manage_or_own, can_open, can_review, can_see, listed_for, manages, public_events
+
+# Top events first, then by day; the pk keeps the order the same from one page to the next.
+LISTING_ORDER = ("-is_top", "date_start", "pk")
+LIST_PAGE_SIZE = 20
 
 
 def _get_locations_data(user=None) -> list:
@@ -361,7 +366,7 @@ def upcoming_competitions(user, limit: int = 20) -> list[Competition]:
         # and dropping it the morning after day one is how a multi-day event disappears mid-race.
         .filter(Q(date_start__gte=today) | Q(date_end__gte=today))
         .select_related("location")
-        .order_by("-is_top", "date_start", "pk")[:limit]
+        .order_by(*LISTING_ORDER)[:limit]
     )
 
 
@@ -736,8 +741,8 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         # Top events first, then the rest by date; the page draws a divider between the two. The id
         # settles a day's events: without it the database may order them anew for every page, and
         # one event shows on two pages while another on none.
-        qs = overlapping(qs, date_from, date_to).order_by("-is_top", "date_start", "pk")
-        paginator = Paginator(qs, 20)
+        qs = overlapping(qs, date_from, date_to).order_by(*LISTING_ORDER)
+        paginator = Paginator(qs, LIST_PAGE_SIZE)
         page = paginator.get_page(self.request.GET.get("page", 1))
         context["competitions"] = page
         context["top_count"] = sum(1 for comp in page if comp.is_top)
@@ -833,7 +838,7 @@ class CalendarMapAPIView(View):
         step = Location.steplen
         groups: dict = {}
         # Top events first at each place, as everywhere else events are listed.
-        for comp in qs.order_by("-is_top", "date_start", "pk"):
+        for comp in qs.order_by(*LISTING_ORDER):
             base = by_path.get(comp.location.path, comp.location)
             display = map_display_node(base, by_path, step)
             if display is None:
@@ -1110,7 +1115,7 @@ def _apply_registration_settings(comp, reg_form, is_organizer_plus):
     comp.additional_info_required = cd.get("additional_info_required", False)
     comp.additional_info_label = (cd.get("additional_info_label") or "").strip()
     comp.relay_enabled = cd.get("relay_enabled", False)
-    comp.relay_max_members = cd.get("relay_max_members") or 10
+    comp.relay_max_members = cd.get("relay_max_members") or RELAY_MAX_MEMBERS_DEFAULT
     if reg_enabled and not comp.registration_mode_locked:
         comp.registration_mode_locked = True
 

@@ -19,6 +19,7 @@ from .models import (
     Competition,
     CompetitionComment,
     CompetitionMaterial,
+    CompetitionReport,
     Discipline,
     EventType,
 )
@@ -36,6 +37,8 @@ _CATEGORY_NAME_MAX_LENGTH = _category_name_field.max_length if isinstance(_categ
 # that used to reach the INSERT and come back as a 500 instead of a field error -- which is what a
 # Google form link with a Facebook click-id (fbclid) does at 294 characters.
 _URL_MAX_LENGTH = Competition._meta.get_field("url_route").max_length
+_TITLE_MAX_LENGTH = Competition._meta.get_field("title").max_length
+_PLACE_NAME_MAX_LENGTH = Location._meta.get_field("name").max_length
 
 
 def _url_field() -> forms.URLField:
@@ -66,9 +69,13 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         if not roles.at_least(user, roles.MARK_TOP_EVENTS):
             del self.fields["is_top"]
 
-    title_ru = forms.CharField(max_length=255, widget=forms.TextInput(attrs={"class": "form-control"}))
-    title_kk = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
-    title_en = forms.CharField(max_length=255, required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
+    title_ru = forms.CharField(max_length=_TITLE_MAX_LENGTH, widget=forms.TextInput(attrs={"class": "form-control"}))
+    title_kk = forms.CharField(
+        max_length=_TITLE_MAX_LENGTH, required=False, widget=forms.TextInput(attrs={"class": "form-control"})
+    )
+    title_en = forms.CharField(
+        max_length=_TITLE_MAX_LENGTH, required=False, widget=forms.TextInput(attrs={"class": "form-control"})
+    )
     # Rich-text descriptions: the shared Quill editor (includes/rich_text_editor.html) writes
     # HTML into these hidden fields per locale; the HTML is sanitized in clean_* below.
     description_ru = forms.CharField(required=False, widget=forms.HiddenInput())
@@ -110,17 +117,17 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         widget=forms.HiddenInput(),
     )
     new_venue_name = forms.CharField(
-        max_length=255,
+        max_length=_PLACE_NAME_MAX_LENGTH,
         required=False,
         widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "id": "new-venue-name"}),
     )
     new_venue_name_kk = forms.CharField(
-        max_length=255,
+        max_length=_PLACE_NAME_MAX_LENGTH,
         required=False,
         widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "id": "new-venue-name-kk"}),
     )
     new_venue_name_en = forms.CharField(
-        max_length=255,
+        max_length=_PLACE_NAME_MAX_LENGTH,
         required=False,
         widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "id": "new-venue-name-en"}),
     )
@@ -167,7 +174,7 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     invite_only = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
     is_top = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
 
-    _MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
+    _MAX_FILE_BYTES = tracks.MAX_BYTES
     _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = frozenset(
         {"pdf", "doc", "docx", "xls", "xlsx", "gpx", "kml", "zip", "jpg", "jpeg", "png", "gif", "webp"}
     )
@@ -321,9 +328,9 @@ class RegistrationSettingsForm(forms.Form):
     show_additional_info_in_list = forms.BooleanField(required=False, initial=True)
     additional_info_required = forms.BooleanField(required=False, initial=False)
     additional_info_label = forms.CharField(
-        max_length=100,
+        max_length=Competition._meta.get_field("additional_info_label").max_length,
         required=False,
-        widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "maxlength": "100"}),
+        widget=forms.TextInput(attrs={"class": "form-control form-control-sm"}),
     )
     relay_enabled = forms.BooleanField(required=False)
     relay_max_members = forms.IntegerField(
@@ -455,7 +462,7 @@ class ReportCompetitionForm(forms.Form):
     # a short note helps the admin see what to check. Capped at the model's reason length.
     reason = forms.CharField(
         required=False,
-        max_length=1000,
+        max_length=CompetitionReport._meta.get_field("reason").max_length,
         widget=forms.Textarea(
             attrs={
                 "rows": 3,

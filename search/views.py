@@ -12,6 +12,8 @@ from knowledge.models import KnowledgeArticle
 from locations.models import Location, location_visible_to
 from news.models import NewsArticle
 
+RESULTS_PER_PAGE = 10
+
 
 def search(request):
     search_query = request.GET.get("query", None)
@@ -53,7 +55,7 @@ def search(request):
         news_results = []
         location_results = []
 
-    paginator = Paginator(search_results, 10)
+    paginator = Paginator(search_results, RESULTS_PER_PAGE)
     try:
         search_results = paginator.page(page)
     except PageNotAnInteger:
