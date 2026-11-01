@@ -25,7 +25,7 @@ def test_map_switcher_links_keep_location(page: Page, live_server, location_tree
     kz = location_tree["kz"].pk
     page.goto(f"{live_server.url}/ru/calendar/map/?location={kz}")
     for link_id in ("#view-link-list", "#view-link-calendar"):
-        expect(page.locator(link_id)).to_have_attribute("href", re.compile(rf"[?&]location={kz}(&|$)"))
+        expect(page.locator(link_id)).to_have_attribute("href", re.compile(rf"[?&]location={kz}(&|#|$)"))
 
 
 @pytest.mark.django_db(transaction=True)

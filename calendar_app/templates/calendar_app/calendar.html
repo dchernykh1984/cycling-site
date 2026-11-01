@@ -221,7 +221,11 @@ document.addEventListener('DOMContentLoaded', function () {
   var openList = initialKind === 'open';
   var years = JSON.parse(document.getElementById('period-years').textContent);
   var lastDay = Math.max.apply(null, years.concat([new Date().getFullYear()])) + '-12-31';
-  var initialList = (selectedFrom && selectedTo && initialKind !== 'month') || (initialKind === 'month' && phoneList) || openList;
+  // The Calendar tab of the list or the map asks for the grid (_view_switcher.html): the month the
+  // period begins in, as a click on the tab here shows it. The mark leaves the address once read.
+  var gridAsked = window.location.hash === '#grid';
+  if (gridAsked) history.replaceState(null, '', window.location.pathname + window.location.search);
+  var initialList = !gridAsked && ((selectedFrom && selectedTo && initialKind !== 'month') || (initialKind === 'month' && phoneList) || openList);
   var initialRange = window.periodNav.rangeOf('month', new Date());
   var listRange = initialList ? {
     start: selectedFrom || initialRange[0], end: dayAfter(openList ? lastDay : selectedTo || initialRange[1]),

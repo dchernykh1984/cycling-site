@@ -125,7 +125,7 @@
         var qs = params.toString();
         ['view-link-calendar', 'view-link-map'].forEach(function (id) {
           var a = document.getElementById(id);
-          if (a) a.href = a.pathname + (qs ? '?' + qs : '');
+          if (a) a.href = a.pathname + (qs ? '?' + qs : '') + a.hash;
         });
       }
 

@@ -4,6 +4,9 @@ Calendar / List / Map segmented switcher (issue #107). The active view is passed
 `active_view` ("calendar" | "list" | "map"). The two inactive links carry the current
 filter state — each view's JS rewrites their href on filter change so switching keeps
 the active date range / event type / direction+discipline (and location where present).
+The Calendar tab on the list and the map carries #grid: the reader asked for the calendar's grid, and
+the calendar page opens it whatever period the link carries -- a week or all upcoming would otherwise
+open the calendar's own list of days, under the List tab. A link without it opens what it names.
 {% endcomment %}
 {% comment %}The tab on screen filled like the chosen period kind: an outline button's "active" is a frame of the
    same colour as its neighbours' in Lux, so nothing told the three apart. Same border, same width.
@@ -16,7 +19,7 @@ the active date range / event type / direction+discipline (and location where pr
   }
 </style>
 <div class="btn-group btn-group-sm view-switcher" role="group" aria-label="{% trans 'View' %}">
-  <a href="{% url 'calendar' %}" id="view-link-calendar"
+  <a href="{% url 'calendar' %}{% if active_view != 'calendar' %}#grid{% endif %}" id="view-link-calendar"
      class="btn btn-outline-secondary{% if active_view == 'calendar' %} active{% endif %}"
      {% if active_view == 'calendar' %}aria-current="page"{% endif %}>{% trans "Calendar" %}</a>
   <a href="{% url 'calendar_list' %}" id="view-link-list"
