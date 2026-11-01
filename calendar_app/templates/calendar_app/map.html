@@ -92,9 +92,15 @@ document.addEventListener('DOMContentLoaded', function () {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  function appendFilters(params, directionParam) {
-    if (dfEl.value) params.set('date_from', dfEl.value);
-    if (dtEl.value) params.set('date_to', dtEl.value);
+  // The map's own requests name the days; a link names a range with no last day as all upcoming,
+  // which opens from the day the link is opened (calendar_app/_period_nav.html).
+  function appendFilters(params, directionParam, forLink) {
+    if (forLink && (dfEl.value || dtEl.value)) {
+      window.periodNav.appendTo(params, dfEl.value, dtEl.value);
+    } else {
+      if (dfEl.value) params.set('date_from', dfEl.value);
+      if (dtEl.value) params.set('date_to', dtEl.value);
+    }
     window.appendIdsParam(params, 'event_type', window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []);
     if (window.applyDirectionParams) window.applyDirectionParams(params, directionParam);
     if (favEl && favEl.checked) params.set('favorite', '1');
@@ -104,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // location filter that arrived from the list or the calendar, without the reader's favourites.
   window.shareUrl = function () {
     var params = new URLSearchParams();
-    appendFilters(params, 'discipline_category');
+    appendFilters(params, 'discipline_category', true);
     params.delete('favorite');
     window.appendIdsParam(params, 'location', new URLSearchParams(window.location.search).getAll('location'));
     var qs = params.toString();
@@ -114,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // The map as it is now -- its filters and its days -- for the other tabs and the language buttons.
   function viewQuery() {
     var params = new URLSearchParams();
-    appendFilters(params, 'discipline_category');
+    appendFilters(params, 'discipline_category', true);
     // The map has no location filter of its own (it is the location view), so appendFilters never
     // adds a `location`. But a location filter chosen on the list/calendar arrives in our URL and
     // must survive a round-trip through the map: carry those `location` params into the links back
@@ -138,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Kept for the visit, as the list and the calendar keep theirs: the calendar opened from the menu,
     // or this map reloaded, shows the days picked here (principle 6).
     try {
-      if (dfEl.value && dtEl.value) {
+      if (dfEl.value) {
         sessionStorage.setItem('cal_date_from', dfEl.value);
         sessionStorage.setItem('cal_date_to', dtEl.value);
       }
@@ -186,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // filling the fields draws the map once.
   (function () {
     var incoming = new URLSearchParams(window.location.search);
-    if (incoming.has('date_from') || incoming.has('date_to') || incoming.get('period') === 'month') return;
+    if (incoming.has('date_from') || incoming.has('date_to') || incoming.has('period')) return;
     var from = null;
     var to = null;
     try {
@@ -194,7 +200,10 @@ document.addEventListener('DOMContentLoaded', function () {
       to = sessionStorage.getItem('cal_date_to');
     } catch (e) { return; }
     var day = /^\d{4}-\d{2}-\d{2}$/;
-    if (day.test(from || '') && day.test(to || '') && from <= to) window.setDateFields(dfEl, dtEl, {from: from, to: to});
+    // A kept range with no last day is all upcoming from its first.
+    if (day.test(from || '') && (to === '' || (day.test(to || '') && from <= to))) {
+      window.setDateFields(dfEl, dtEl, {from: from, to: to});
+    }
   }());
 
   // Filter changes update markers in place without moving the map (fitView=false); only the

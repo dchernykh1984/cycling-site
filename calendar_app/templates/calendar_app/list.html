@@ -71,6 +71,8 @@
         <label class="form-label form-label-sm mb-1">{% trans "Date to" %}</label>
         <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}"
                class="form-control form-control-sm js-date-filter">
+        {# All upcoming: no last day, filtered or not; sent only while it is chosen. #}
+        <input type="hidden" name="period" id="filter-period" value="upcoming"{% if not upcoming %} disabled{% endif %}>
       </div>
       {% include "calendar_app/_filter_multiselect_js.html" %}
       {% include "calendar_app/_event_type_filter.html" %}
@@ -109,13 +111,12 @@
         window.appendIdsParam(params, 'location', window.getLocationFilterIds ? window.getLocationFilterIds() : []);
         var dfEl = form.querySelector('input[name="date_from"]');
         var dtEl = form.querySelector('input[name="date_to"]');
+        // A range with no last day travels as all upcoming, which the other tabs show without one.
+        if (dfEl && dtEl && (dfEl.value || dtEl.value)) window.periodNav.appendTo(params, dfEl.value, dtEl.value);
         if (dfEl && dfEl.value) {
-          params.set('date_from', dfEl.value);
           sessionStorage.setItem('cal_date_from', dfEl.value);
-        }
-        if (dtEl && dtEl.value) {
-          params.set('date_to', dtEl.value);
-          sessionStorage.setItem('cal_date_to', dtEl.value);
+          // No last day is kept as none, or a range picked earlier would lend this one its end.
+          sessionStorage.setItem('cal_date_to', dtEl ? dtEl.value : '');
         }
         var favEl = form.querySelector('#favorite-filter');
         if (favEl && favEl.checked) params.set('favorite', '1');
@@ -155,20 +156,34 @@
       window.shareUrl = function () {
         var params = new URLSearchParams(window.location.search);
         ['favorite', 'page', 'reset'].forEach(function (k) { params.delete(k); });
+        // All upcoming opens from the day the link is opened, not from the day it was shared.
+        if (params.get('period') === 'upcoming') {
+          if (params.get('date_from') === window.periodNav.today()) params.delete('date_from');
+          params.delete('date_to');
+        }
         var qs = params.toString();
         return window.location.origin + window.location.pathname + (qs ? '?' + qs : '');
       };
       document.addEventListener('DOMContentLoaded', function () { syncFilterInputs(); updateSwitcherLinks(); });
       document.addEventListener('location-filter-ready', function () { syncFilterInputs(); updateSwitcherLinks(); });
 
-      // Auto-submit date inputs (selected by class so it survives flatpickr changing the type).
-      form.querySelectorAll('.js-date-filter').forEach(function (el) {
-        el.addEventListener('change', function () { form.submit(); });
-      });
       // A period from the row above fills the two date fields, which submit the form themselves.
       var dateFrom = form.querySelector('input[name="date_from"]');
       var dateTo = form.querySelector('input[name="date_to"]');
-      window.onPeriodChange = function (period) { window.setDateFields(dateFrom, dateTo, period); };
+      var upcoming = document.getElementById('filter-period');
+      function setUpcoming(on) { upcoming.disabled = !on; }
+      // Auto-submit date inputs (selected by class so it survives flatpickr changing the type). A last
+      // day, picked or typed, ends all upcoming.
+      form.querySelectorAll('.js-date-filter').forEach(function (el) {
+        el.addEventListener('change', function () {
+          if (dateTo.value) setUpcoming(false);
+          form.submit();
+        });
+      });
+      window.onPeriodChange = function (period) {
+        setUpcoming(!period.to);
+        window.setDateFields(dateFrom, dateTo, period);
+      };
 
       // Auto-submit the favorites toggle too.
       var favEl = form.querySelector('#favorite-filter');

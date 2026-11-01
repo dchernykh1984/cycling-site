@@ -4684,3 +4684,11 @@ msgstr "Скачать трек"
 #: calendar_app/templates/calendar_app/detail.html
 msgid "Arrows show the direction of the track."
 msgstr "Стрелки показывают направление трека."
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "All upcoming"
+msgstr "Все будущие"
+
+#: calendar_app/templates/calendar_app/_period_nav.html
+msgid "No end date"
+msgstr "Без даты окончания"
