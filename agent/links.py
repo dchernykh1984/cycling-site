@@ -88,9 +88,9 @@ def strip_tracking(url: str) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, "&".join(kept), parts.fragment))
 
 
-def fits(url: str, limit: int = MAX_URL_LENGTH) -> bool:
+def fits(url: str) -> bool:
     """Whether the site can store this link at all."""
-    return len(url) <= limit
+    return len(url) <= MAX_URL_LENGTH
 
 
 # A Telegram channel's web feed: t.me/s/<channel>, and the channel page itself, t.me/<channel>.

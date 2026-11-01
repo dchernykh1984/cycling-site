@@ -77,6 +77,9 @@ _MIN_EVENTS_FOR_RARITY = 30
 # Starts this far apart can still be the same race written with the wrong date; further apart and a
 # weekly ride or a series' next stage starts reading as a duplicate of the one before it.
 _WINDOW_DAYS = 3
+# Two titles share at least this many words, and that many make up this much of the shorter one.
+_MIN_SHARED_WORDS = 2
+_TITLE_OVERLAP = 0.7
 
 
 def latin(text: str) -> str:
@@ -171,17 +174,15 @@ def _same_place(a: int | None, b: int | None) -> bool:
     return a is None or b is None or a == b
 
 
-def _looks_like(
-    tokens: set[str], merged: set[str], known: KnownTitle, index: KnownIndex, threshold: float, min_shared: int
-) -> bool:
-    if len(tokens) < min_shared or len(known.tokens) < min_shared:
+def _looks_like(tokens: set[str], merged: set[str], known: KnownTitle, index: KnownIndex) -> bool:
+    if len(tokens) < _MIN_SHARED_WORDS or len(known.tokens) < _MIN_SHARED_WORDS:
         return False
     if any(index.is_rare(word) for word in tokens & known.tokens):
         return True
     # Merged neighbours may create a match but must not inflate the score, so the coefficient is
     # still measured against the titles' own words.
     shared = (merged & known.tokens) | (tokens & known.merged)
-    return len(shared) >= min_shared and len(shared) / min(len(tokens), len(known.tokens)) >= threshold
+    return len(shared) >= _MIN_SHARED_WORDS and len(shared) / min(len(tokens), len(known.tokens)) >= _TITLE_OVERLAP
 
 
 def matching_known(
@@ -189,21 +190,17 @@ def matching_known(
     date_start: str,
     city_id: int | None,
     index: KnownIndex,
-    *,
-    threshold: float = 0.7,
-    min_shared: int = 2,
-    window_days: int = _WINDOW_DAYS,
 ) -> str | None:
     """The known event this one duplicates, or None. Any localized title may be the one that matches."""
     # Read once, not once per known title: a run compares every candidate against the site's whole
     # calendar, so tokenizing inside that loop would repeat the same work thousands of times.
     prepared = [(title_tokens(title), _with_merged_neighbours(title)) for title in titles if title]
     for known in index.entries:
-        if not _dates_close(date_start, known.date_start, window_days):
+        if not _dates_close(date_start, known.date_start, _WINDOW_DAYS):
             continue
         if not _same_place(city_id, known.city_id):
             continue
         for tokens, merged in prepared:
-            if _looks_like(tokens, merged, known, index, threshold, min_shared):
+            if _looks_like(tokens, merged, known, index):
                 return known.title
     return None

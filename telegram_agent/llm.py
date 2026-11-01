@@ -12,11 +12,8 @@ talk *about* one matters more here than anywhere.
 
 from __future__ import annotations
 
-import datetime
-
 from agent import llm
 from agent.models import KnownEvents, Taxonomy
-from telegram_agent.channels import Channel
 
 _SYSTEM = (
     "You read the recent messages of a local sports community's Telegram channel or group chat -- "
@@ -93,16 +90,8 @@ _MAX_EXISTING = 120
 _MAX_REJECTED = 30
 
 
-def build_prompt(
-    text: str,
-    channel: Channel,
-    guidance: str,
-    known: KnownEvents,
-    taxonomy: Taxonomy,
-    today: str = "",
-) -> str:
+def build_prompt(text: str, guidance: str, known: KnownEvents, taxonomy: Taxonomy, today: str) -> str:
     """The user half of the call: the taxonomy, what the site already knows, and the channel's messages."""
-    today = today or datetime.date.today().isoformat()
     existing, rejected = llm.known_lists(known, _MAX_EXISTING, _MAX_REJECTED, today)
     return (
         llm.opening(guidance, taxonomy)
@@ -116,12 +105,6 @@ def build_prompt(
 
 
 def extract_raw(
-    text: str,
-    channel: Channel,
-    guidance: str,
-    known: KnownEvents,
-    taxonomy: Taxonomy,
-    config: llm.LlmSettings,
-    today: str = "",
+    text: str, guidance: str, known: KnownEvents, taxonomy: Taxonomy, config: llm.LlmSettings, today: str
 ) -> str:
-    return llm.chat(_SYSTEM, build_prompt(text, channel, guidance, known, taxonomy, today), config)
+    return llm.chat(_SYSTEM, build_prompt(text, guidance, known, taxonomy, today), config)
