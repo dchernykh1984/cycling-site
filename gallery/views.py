@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -45,7 +47,7 @@ def event_choices(request):
         raise PermissionDenied
     query = request.GET.get("q", "").strip()
     if len(query) > 200:
-        return JsonResponse({"error": _("Search text is too long.")}, status=400)
+        return JsonResponse({"error": _("Search text is too long.")}, status=HTTPStatus.BAD_REQUEST)
     ids = matching_ids(query)
     return JsonResponse(
         {

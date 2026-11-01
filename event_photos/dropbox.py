@@ -7,6 +7,7 @@ Tests replace the module-level ``adapter`` (see ``get_adapter``) and never reach
 import base64
 import json
 import re
+from http import HTTPStatus
 from typing import NoReturn
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 
@@ -76,7 +77,7 @@ class DropboxAdapter:
             raise DropboxError("unavailable", type(exc).__name__) from None
         with response:
             try:
-                if response.status_code == 200:
+                if response.status_code == HTTPStatus.OK:
                     return _read_capped(response, limit)
                 self._refuse(response)
             except requests.RequestException as exc:
@@ -84,15 +85,18 @@ class DropboxAdapter:
 
     @staticmethod
     def _refuse(response) -> NoReturn:
-        if response.status_code == 429:
+        if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             retry = response.headers.get("Retry-After")
             raise DropboxError("throttled", retry_after=int(retry) if retry and retry.isdecimal() else None)
         text = _read_capped(response, _MAX_ERROR_BYTES).decode("utf-8", "replace")[:200]
-        if response.status_code == 409 and "not_found" in text:
+        if response.status_code == HTTPStatus.CONFLICT and "not_found" in text:
             raise DropboxError("not-found")
-        if response.status_code in (401, 403) or "shared_link_access_denied" in text:
+        if (
+            response.status_code in (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN)
+            or "shared_link_access_denied" in text
+        ):
             raise DropboxError("forbidden")
-        if response.status_code == 409:
+        if response.status_code == HTTPStatus.CONFLICT:
             raise DropboxError("invalid-link", text)
         raise DropboxError("unavailable", f"HTTP {response.status_code}")
 

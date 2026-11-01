@@ -5,6 +5,7 @@ asserted in tests without importing a settings module (which needs prod env vars
 """
 
 import logging
+from http import HTTPStatus
 from pathlib import Path
 
 
@@ -12,7 +13,7 @@ class SkipUnavailableResponses(logging.Filter):
     """Log expected service unavailability without sending an email for every retry."""
 
     def filter(self, record: logging.LogRecord) -> bool:
-        return getattr(record, "status_code", None) != 503 or bool(record.exc_info)
+        return getattr(record, "status_code", None) != HTTPStatus.SERVICE_UNAVAILABLE or bool(record.exc_info)
 
 
 def build_logging_config(log_dir: Path) -> dict:
