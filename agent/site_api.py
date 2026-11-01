@@ -227,3 +227,14 @@ def _titles(title: object) -> list[str]:
         return [str(v).strip() for v in values if v and str(v).strip()]
     text = str(title or "").strip()
     return [text] if text else []
+
+
+def what_the_site_knows(client: SiteApiClient) -> tuple[KnownEvents, Taxonomy, list]:
+    """The events, taxonomy and geography a run is judged against, with the block-list reported."""
+    known = client.known()
+    print(
+        f"known: {len(known.existing)} events, {len(known.rejected)} rejected; "
+        f"{known.deleted_count} of these are deleted and blocked from coming back",
+        flush=True,
+    )
+    return known, client.taxonomy(), client.location_tree()

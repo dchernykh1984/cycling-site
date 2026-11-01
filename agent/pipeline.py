@@ -267,12 +267,11 @@ def _consider(
         report.skipped_candidates.append((candidate.title, f"after enrich: {reason}"))
         return
     seen.add(normalize_key(candidate.title, candidate.date_start))
-    variants = [v for v in (candidate.title, candidate.title_kk, candidate.title_en) if v]
     # Feed it back, so a later source in this same run does not propose the same event again.
     index.add(
         {
             "title": candidate.title,
-            "titles": variants,
+            "titles": candidate.titles,
             "date_start": candidate.date_start,
             "city_id": city_of(candidate),
         }

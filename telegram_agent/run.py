@@ -21,8 +21,8 @@ from pathlib import Path
 from agent import locations, pipeline
 from agent.config import ConfigError
 from agent.models import Candidate, KnownEvents, RunReport, Source, SourceKind, Taxonomy
-from agent.placing import resolve_location
-from agent.site_api import SiteApiClient
+from agent.placing import create_placed, with_default_city
+from agent.site_api import SiteApiClient, what_the_site_knows
 from telegram_agent import config as tg_config
 from telegram_agent import fetch, llm
 from telegram_agent.attribution import TME_LINK, credit_source, source_label
@@ -81,17 +81,6 @@ def as_source(channel: Channel) -> Source:
     return Source(kind=SourceKind.TELEGRAM, ref=channel.ref, fetch_url=f"mtproto:{channel.ref}", hint=channel.hint)
 
 
-def _what_the_site_knows(client: SiteApiClient) -> tuple[KnownEvents, Taxonomy, list]:
-    """The events, taxonomy and geography a run is judged against, with the block-list reported."""
-    known = client.known()
-    print(
-        f"known: {len(known.existing)} events, {len(known.rejected)} rejected; "
-        f"{known.deleted_count} of these are deleted and blocked from coming back",
-        flush=True,
-    )
-    return known, client.taxonomy(), client.location_tree()
-
-
 def main() -> int:
     try:
         config = tg_config.from_env(dict(os.environ))
@@ -112,7 +101,7 @@ def main() -> int:
         return 0
 
     client = SiteApiClient(config.site_base_url, config.api_token)
-    known, taxonomy, tree = _what_the_site_knows(client)
+    known, taxonomy, tree = what_the_site_knows(client)
     try:
         telegram = fetch.open_client(config.telegram_api_id, config.telegram_api_hash, config.telegram_session)
     except fetch.ChannelUnavailableError as exc:
@@ -191,7 +180,7 @@ def _run(
         return locations.match_city(cities, candidate.city, candidate.region, candidate.country)
 
     def create(candidate: Candidate) -> None:
-        _create(client, tree, cities, known, candidate)
+        create_placed(client, tree, cities, known, candidate)
 
     report = pipeline.run_pipeline(
         [as_source(channel) for channel in channels],
@@ -244,30 +233,13 @@ def _scrubbed(candidate: Candidate) -> Candidate:
     )
 
 
-def _create(client: SiteApiClient, tree: list, cities: list, known: KnownEvents, candidate: Candidate) -> None:
-    """Place the event and post it; name any geography left behind when the post itself fails."""
-    created: list[str] = []
-    try:
-        location_id = resolve_location(client, tree, cities, candidate, created=created)
-        client.create(candidate, location_id)
-    except Exception as exc:
-        if created:
-            raise RuntimeError(f"{exc} (left behind: {', '.join(created)})") from exc
-        raise
-    # Feed it back, so the next channel in this same run does not propose the same ride.
-    titles = [t for t in (candidate.title, candidate.title_kk, candidate.title_en) if t]
-    known.existing.append({"title": candidate.title, "titles": titles, "date_start": candidate.date_start})
-
-
 def _with_channel_city(candidate: Candidate, channel: Channel) -> Candidate:
     """Fall back to the city the maintainers gave the channel when a message never names one.
 
     Inside a club's own chat nobody says which city they are in -- everyone knows. The maintainers
     do too, and wrote it next to the channel.
     """
-    if candidate.city or not channel.city:
-        return candidate
-    return replace(candidate, city=channel.city, city_en=channel.city)
+    return with_default_city(candidate, channel.city)
 
 
 if __name__ == "__main__":

@@ -20,8 +20,8 @@ from pathlib import Path
 from agent import locations, pipeline
 from agent.config import ConfigError
 from agent.models import Candidate, KnownEvents, RunReport, Source, SourceKind, Taxonomy
-from agent.placing import resolve_location
-from agent.site_api import SiteApiClient
+from agent.placing import create_placed, resolve_location, with_default_city
+from agent.site_api import SiteApiClient, what_the_site_knows
 from instagram_agent import config as insta_config
 from instagram_agent import fetch, geo, llm
 from instagram_agent.accounts import Account, parse_accounts
@@ -94,17 +94,6 @@ def read_account(account: Account, config: insta_config.Config, today: datetime.
     return fetch.account_text(account, posts[: config.max_posts], config.recent_days, today)
 
 
-def _what_the_site_knows(client: SiteApiClient) -> tuple[KnownEvents, Taxonomy, list]:
-    """The events, taxonomy and geography a run is judged against, with the block-list reported."""
-    known = client.known()
-    print(
-        f"known: {len(known.existing)} events, {len(known.rejected)} rejected; "
-        f"{known.deleted_count} of these are deleted and blocked from coming back",
-        flush=True,
-    )
-    return known, client.taxonomy(), client.location_tree()
-
-
 def selected(accounts: list[Account], only: str) -> list[Account]:
     """The accounts this run reads: the one it was pointed at, or all of them when it was not."""
     if not only:
@@ -130,7 +119,7 @@ def main() -> int:
         return 0
 
     client = SiteApiClient(config.site_base_url, config.api_token)
-    known, taxonomy, tree = _what_the_site_knows(client)
+    known, taxonomy, tree = what_the_site_knows(client)
     print(_run(config, accounts, client, known, taxonomy, tree))
     return 0
 
@@ -167,7 +156,7 @@ def _run(
         return locations.match_city(cities, candidate.city, candidate.region, candidate.country)
 
     def create(candidate: Candidate) -> None:
-        _create(client, tree, cities, known, candidate)
+        create_placed(client, tree, cities, known, candidate, locate=_venue_for)
 
     report = pipeline.run_pipeline(
         [as_source(account) for account in accounts],
@@ -218,21 +207,6 @@ def _near_its_city(point: geo.Point, tree: list, city_id: int) -> bool:
     return apart is None or apart <= _CITY_RADIUS_METRES
 
 
-def _create(client: SiteApiClient, tree: list, cities: list, known: KnownEvents, candidate: Candidate) -> None:
-    """Place the event and post it; name any geography left behind when the post itself fails."""
-    created: list[str] = []
-    try:
-        location_id = _venue_for(client, tree, cities, candidate, created)
-        client.create(candidate, location_id)
-    except Exception as exc:
-        if created:
-            raise RuntimeError(f"{exc} (left behind: {', '.join(created)})") from exc
-        raise
-    # Feed it back, so the next account in this same run does not propose the same ride.
-    titles = [t for t in (candidate.title, candidate.title_kk, candidate.title_en) if t]
-    known.existing.append({"title": candidate.title, "titles": titles, "date_start": candidate.date_start})
-
-
 def _venue_for(client: SiteApiClient, tree: list, cities: list, candidate: Candidate, created: list) -> int | None:
     """The venue this event starts from: the one the site already has, or a new one as before."""
     existing = _venue_already_there(tree, cities, candidate)
@@ -262,11 +236,7 @@ def _with_account_city(candidate: Candidate, account: Account) -> Candidate:
     A club posts "we meet at the Giant store" because everyone following it knows which city that
     is; the calendar does not, and an event with no place lands nowhere.
     """
-    from dataclasses import replace
-
-    if candidate.city or not account.city:
-        return candidate
-    return replace(candidate, city=account.city, city_en=account.city)
+    return with_default_city(candidate, account.city)
 
 
 if __name__ == "__main__":
