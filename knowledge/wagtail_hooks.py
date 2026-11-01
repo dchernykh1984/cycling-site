@@ -12,8 +12,6 @@ from wagtail.snippets.views.snippets import SnippetViewSet
 from accounts import roles
 from knowledge.models import DraftSubmission
 
-_LIST_URL_NAME = "wagtailsnippets_knowledge_draftsubmission:list"
-
 
 class DraftSubmissionViewSet(SnippetViewSet):
     model = DraftSubmission
@@ -45,18 +43,18 @@ class DraftSubmissionViewSet(SnippetViewSet):
         sub = get_object_or_404(DraftSubmission, pk=pk)
         if sub.status != DraftSubmission.Status.PENDING:
             messages.error(request, f"Cannot approve: submission is already '{sub.get_status_display()}'.")
-            return redirect(reverse(_LIST_URL_NAME))
+            return redirect(reverse(self.get_url_name("list")))
         if request.method == "POST":
             try:
                 sub.approve(reviewer=request.user)
                 messages.success(request, f"Submission '{sub.title}' approved and published.")
             except ValueError as exc:
                 messages.error(request, str(exc))
-            return redirect(reverse(_LIST_URL_NAME))
+            return redirect(reverse(self.get_url_name("list")))
         return render(
             request,
             "knowledge/admin/approve_confirm.html",
-            {"submission": sub, "cancel_url": reverse(_LIST_URL_NAME)},
+            {"submission": sub, "cancel_url": reverse(self.get_url_name("list"))},
         )
 
     def reject_view(self, request, pk):
@@ -65,7 +63,7 @@ class DraftSubmissionViewSet(SnippetViewSet):
         sub = get_object_or_404(DraftSubmission, pk=pk)
         if sub.status != DraftSubmission.Status.PENDING:
             messages.error(request, f"Cannot reject: submission is already '{sub.get_status_display()}'.")
-            return redirect(reverse(_LIST_URL_NAME))
+            return redirect(reverse(self.get_url_name("list")))
         if request.method == "POST":
             note = request.POST.get("reviewer_note", "")
             try:
@@ -73,11 +71,11 @@ class DraftSubmissionViewSet(SnippetViewSet):
                 messages.success(request, f"Submission '{sub.title}' rejected.")
             except ValueError as exc:  # reviewed by someone else since the page was opened
                 messages.error(request, str(exc))
-            return redirect(reverse(_LIST_URL_NAME))
+            return redirect(reverse(self.get_url_name("list")))
         return render(
             request,
             "knowledge/admin/reject_form.html",
-            {"submission": sub, "cancel_url": reverse(_LIST_URL_NAME)},
+            {"submission": sub, "cancel_url": reverse(self.get_url_name("list"))},
         )
 
 
@@ -90,7 +88,8 @@ def draft_submission_listing_buttons(snippet, user, next_url=None):
         return
     if snippet.status != DraftSubmission.Status.PENDING:
         return
-    approve_url = reverse("wagtailsnippets_knowledge_draftsubmission:approve", args=[snippet.pk])
-    reject_url = reverse("wagtailsnippets_knowledge_draftsubmission:reject", args=[snippet.pk])
+    viewset = snippet.snippet_viewset
+    approve_url = reverse(viewset.get_url_name("approve"), args=[snippet.pk])
+    reject_url = reverse(viewset.get_url_name("reject"), args=[snippet.pk])
     yield ListingButton("Approve", approve_url, priority=10)
     yield ListingButton("Reject", reject_url, priority=20)

@@ -28,8 +28,12 @@ from urllib.parse import urlencode
 from django.conf import settings
 from django.urls import reverse
 
+PREFERENCES = "preferences"
+REGISTRATION_DATA = "registration_data"
+SIGNIN_METHODS = "signin_methods"
+STRAVA = "strava"
 #: Hints a member may turn off, in the order they are offered.
-DISMISSIBLE = ("preferences", "registration_data", "signin_methods", "strava")
+DISMISSIBLE = (PREFERENCES, REGISTRATION_DATA, SIGNIN_METHODS, STRAVA)
 
 # Where calendar preferences change what is shown.
 _CALENDAR_PAGES = {"calendar", "calendar_list", "calendar_map"}
@@ -109,13 +113,13 @@ def current_hint(request) -> dict | None:
     dismissed = set(user.dismissed_hints or [])
     checks = (
         (
-            "preferences",
+            PREFERENCES,
             lambda: _url_name(request) not in _CALENDAR_PAGES or _has_preferences(user),
             f"{reverse('account_profile_edit')}#calendar-defaults",
         ),
-        ("registration_data", lambda: _has_registration_data(user), reverse("account_profile_edit")),
-        ("signin_methods", lambda: _has_a_second_way_in(user), f"{reverse('account_profile')}#signin-methods"),
-        ("strava", lambda: bool(user.strava_link), f"{reverse('account_profile_edit')}#strava-link"),
+        (REGISTRATION_DATA, lambda: _has_registration_data(user), reverse("account_profile_edit")),
+        (SIGNIN_METHODS, lambda: _has_a_second_way_in(user), f"{reverse('account_profile')}#signin-methods"),
+        (STRAVA, lambda: bool(user.strava_link), f"{reverse('account_profile_edit')}#strava-link"),
     )
     for key, is_done, url in checks:
         # Checked in order and lazily: the sign-in check reads the database, and most members never

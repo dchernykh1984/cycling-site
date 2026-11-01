@@ -13,7 +13,7 @@ from accounts import roles
 from accounts.access import ParticipantRequiredMixin
 from assistant.conversations import link as link_conversation
 from cycling_site.summaries import article_markup, summarize
-from knowledge.models import DraftSubmission
+from knowledge.models import ARTICLES_PER_PAGE, DraftSubmission
 from news.forms import AddCommentForm, AddNewsArticleCommentForm, NewsArticleForm, SubmitNewsForm
 from news.models import Comment, NewsArticle, NewsArticleComment, NewsPage, NewsSettings
 
@@ -24,7 +24,7 @@ class NewsListView(View):
         qs = NewsArticle.objects.filter(is_deleted=False)
         if not can_manage:
             qs = qs.filter(is_hidden=False)
-        paginator = Paginator(qs, 12)
+        paginator = Paginator(qs, ARTICLES_PER_PAGE)
         news_items = paginator.get_page(request.GET.get("page", 1))
 
         context = {"news_items": news_items, "can_add": can_manage}
