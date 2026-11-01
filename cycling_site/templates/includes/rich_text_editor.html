@@ -27,19 +27,24 @@ Must be a {% templatetag openblock %} comment {% templatetag closeblock %} block
 .quill-editor .ql-editor{min-height:200px;font-size:1rem}
 /* Quill Snow hardcodes English heading-picker labels; localize them by the UI language on
    <html lang>. en keeps the upstream English labels. Only the toolbar values are shipped
-   ([2, 3, false] -> Normal / Heading 2 / Heading 3). */
+   ([2, 3, 4, false] -> Heading 2 / Heading 3 / Heading 4 / Normal); each needs its own rule here,
+   or the bare "Normal" rule, the more specific one, names it too. */
 html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label::before,
 html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item::before{content:"Обычный"}
 html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
 html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before{content:"Заголовок 2"}
 html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
 html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before{content:"Заголовок 3"}
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="4"]::before,
+html[lang="ru"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="4"]::before{content:"Заголовок 4"}
 html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label::before,
 html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item::before{content:"Қалыпты"}
 html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
 html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before{content:"Тақырып 2"}
 html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
 html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before{content:"Тақырып 3"}
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="4"]::before,
+html[lang="kk"] .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="4"]::before{content:"Тақырып 4"}
 </style>
 {% trans "The text is too large. Use fewer or smaller inline images." as quill_too_large_msg %}
 {{ quill_too_large_msg|json_script:"quill-too-large-msg" }}

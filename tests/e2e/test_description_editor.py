@@ -155,6 +155,20 @@ def test_heading_picker_labels_are_localized(page: Page, live_server, organizer)
 
 
 @pytest.mark.django_db(transaction=True)
+def test_every_heading_picker_item_has_a_label_of_its_own(page: Page, live_server, organizer):
+    inject_session(page, live_server, organizer)
+    for locale in ("ru", "kk", "en"):
+        page.goto(f"{live_server.url}/{locale}/calendar/submit/")
+        labels = (
+            page.locator(".ql-picker.ql-header")
+            .first.locator(".ql-picker-item")
+            .evaluate_all("items => items.map(el => getComputedStyle(el, '::before').content)")
+        )
+        assert len(labels) == 4, (locale, labels)
+        assert len(set(labels)) == 4, (locale, labels)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_edit_editor_prefills_existing_description(page: Page, live_server, organizer):
     comp = Competition.objects.create(
         title_ru="Editor Prefill Race",
