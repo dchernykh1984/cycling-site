@@ -550,11 +550,12 @@ def lock_competition_location(location, user, *, is_admin=False):
     return locked
 
 
-def nearest_visible_ancestor_with_coords(loc, by_path, step):
+def nearest_visible_ancestor_with_coords(loc, by_path):
     """The nearest ancestor of ``loc`` (city -> region -> country) that is NOT hidden and
     has coordinates, looked up in ``by_path`` (path -> Location). Hidden ancestors are
     skipped so a hidden node never becomes a marker; None if none qualifies. ``by_path``
     is expected to exclude deleted nodes, so deleted ancestors are skipped too."""
+    step = Location.steplen
     path = loc.path[:-step]
     while path:
         anc = by_path.get(path)
@@ -590,7 +591,7 @@ def timezone_of(loc) -> ZoneInfo:
         return ZoneInfo("UTC")
 
 
-def map_display_node(loc, by_path, step):
+def map_display_node(loc, by_path):
     """The node ``loc`` should be drawn as on a map: itself when it is a visible node with
     coordinates, otherwise the nearest non-hidden ancestor (city -> region -> country) that
     has coordinates. A hidden node (the "other location" placeholder) is never drawn and
@@ -598,7 +599,7 @@ def map_display_node(loc, by_path, step):
     qualifies."""
     if not loc.is_hidden and loc.lat is not None and loc.lng is not None:
         return loc
-    return nearest_visible_ancestor_with_coords(loc, by_path, step)
+    return nearest_visible_ancestor_with_coords(loc, by_path)
 
 
 def _subtree_descendants(location, *, include_deleted):
@@ -781,11 +782,10 @@ def _build_map_locations(all_locs, candidates=None) -> list:
     uses the full ``all_locs`` lookup, so filtering the drawn set to a subtree never hides a
     coordinate-less node's resolved ancestor (issue: filtering blanked such markers)."""
     by_path = {loc.path: loc for loc in all_locs}
-    step = Location.steplen
     data: list = []
     seen: set = set()
     for loc in all_locs if candidates is None else candidates:
-        display = map_display_node(loc, by_path, step)
+        display = map_display_node(loc, by_path)
         if display is None:
             continue
         key = (str(display.lat), str(display.lng), display.name)

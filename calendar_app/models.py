@@ -11,6 +11,7 @@ from wagtail.search import index
 
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from cycling_site.sanitize import sanitize_rich_text_columns
+from locations.models import Level, Location
 
 # Rich-text description fields sanitized on every write whatever the entry point (organizer
 # form, API, Django admin, Wagtail snippet). Includes the canonical ``description``: the API
@@ -360,8 +361,6 @@ class Competition(index.Indexed, models.Model):
         from django.utils.formats import date_format
         from django.utils.translation import gettext as _
 
-        from locations.models import Level  # local import to avoid circular
-
         from .listing_seo import CATCH_ALL_DISCIPLINE_PREFIX
 
         when = date_format(self.date_start, "j E Y")
@@ -537,7 +536,6 @@ class Competition(index.Indexed, models.Model):
             return ""
         if not loc.is_hidden:
             return loc.name
-        from locations.models import Level, Location  # local import to avoid circular
 
         # A hidden fallback venue -> show its city
         if loc.depth == Level.VENUE:
@@ -559,10 +557,6 @@ class Competition(index.Indexed, models.Model):
             if part and part not in parts:
                 parts.append(part)
         return parts
-
-    @property
-    def place_label(self) -> str:
-        return ", ".join(self.place_parts)
 
     @property
     def location_full_label(self) -> str:
@@ -613,21 +607,18 @@ class Competition(index.Indexed, models.Model):
 
     @property
     def country_label(self) -> str:
-        from locations.models import Level  # local import to avoid circular
 
         node = self._location_nodes_by_depth.get(Level.COUNTRY)
         return node.name if node else ""
 
     @property
     def region_label(self) -> str:
-        from locations.models import Level  # local import to avoid circular
 
         node = self._location_nodes_by_depth.get(Level.REGION)
         return node.name if node else ""
 
     @property
     def city_label(self) -> str:
-        from locations.models import Level  # local import to avoid circular
 
         node = self._location_nodes_by_depth.get(Level.CITY)
         return node.name if node else ""

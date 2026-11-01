@@ -35,6 +35,7 @@ from locations.maps import map_links, start_point
 from locations.models import (
     Location,
     LocationConflictError,
+    LocationPendingError,
     LocationProposal,
     chain_is_approved,
     deepest_chosen,
@@ -493,7 +494,6 @@ def calendar_date_words() -> dict:
     English keeps its capitals.
     """
     from django.utils.formats import date_format
-    from django.utils.translation import get_language
 
     monday = datetime.date(2001, 1, 1)
     months = [date_format(datetime.date(2001, month, 1), "E") for month in range(1, 13)]
@@ -587,8 +587,6 @@ class CalendarView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateView):
         context["landing_regions"] = regions
         context["landing_places"] = places
         context["landing_kinds"] = kinds
-        context["event_types"] = EventType.objects.all()
-        context["discipline_categories"] = DisciplineCategory.objects.all()
         context["event_types_json"] = _event_types_for_locale()
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
@@ -629,8 +627,6 @@ class LocationsDataView(View):
 
 class CalendarEventsAPIView(View):
     def get(self, request):
-        from django.db.models import Q
-
         qs = (
             Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False)
             .prefetch_related("event_types")
@@ -758,12 +754,10 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
             comp.pk for comp in page if comp.registration_enabled and comp.is_registration_open()
         }
         context["only_favorite"] = _only_favorite_requested(self.request)
-        context["filter_form"] = form
         context["date_from"] = date_from
         context["date_to"] = date_to
         context["upcoming"] = upcoming
         context["is_manager"] = is_manager
-        context["discipline_categories"] = DisciplineCategory.objects.all()
         context["event_types_json"] = _event_types_for_locale()
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()
@@ -835,12 +829,11 @@ class CalendarMapAPIView(View):
         qs = _apply_favorite_filter(qs, request)
 
         by_path = {loc.path: loc for loc in Location.objects.filter(is_deleted=False)}
-        step = Location.steplen
         groups: dict = {}
         # Top events first at each place, as everywhere else events are listed.
         for comp in qs.order_by(*LISTING_ORDER):
             base = by_path.get(comp.location.path, comp.location)
-            display = map_display_node(base, by_path, step)
+            display = map_display_node(base, by_path)
             if display is None:
                 continue  # nothing in the ancestry has coordinates - cannot place it
             group = groups.get(display.pk)
@@ -942,15 +935,13 @@ def _moderation_history(competition) -> list[dict]:
 
 class CompetitionDetailView(View):
     def get(self, request, pk):
-        from registrations.views import can_manage
-
         competition = get_object_or_404(
             Competition.objects.select_related("submitted_by").prefetch_related("disciplines__category"),
             pk=pk,
         )
         if not can_open(request.user, competition):
             raise Http404
-        is_manager = can_manage(request.user, competition)
+        is_manager = manages(request.user, competition)
         is_author = request.user.is_authenticated and request.user == competition.submitted_by
         # Any organizer moderates -- except an invite-only event, which is for the people who may
         # edit it, so only admins and up review it (see visibility.can_review).
@@ -1037,7 +1028,7 @@ class CompetitionDetailView(View):
         display = None
         if loc is not None:
             by_path = {node.path: node for node in [*loc.get_ancestors(), loc]}
-            display = map_display_node(loc, by_path, Location.steplen)
+            display = map_display_node(loc, by_path)
         # Links to the outside map services are a different question from the pin: they are meant to
         # be forwarded and driven to, so they are offered only for a venue's own point, never for a
         # city resolved from a venue that has none (locations.maps.start_point).
@@ -1069,7 +1060,7 @@ class CompetitionDetailView(View):
         return response
 
 
-def _validate_deadline(form, reg_form, date_start, date_end):
+def _validate_deadline(reg_form, date_start, date_end):
     """Add error to reg_form if registration_deadline exceeds the competition end date."""
     deadline = reg_form.cleaned_data.get("registration_deadline")
     if not deadline:
@@ -1123,8 +1114,6 @@ def _apply_registration_settings(comp, reg_form, is_organizer_plus):
 def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
     if not is_organizer_plus:  # categories are part of registration config -> organizer-only (#200)
         return
-    import datetime as dt
-
     from registrations.models import RegistrationCategory
 
     cats = reg_form.get_categories()
@@ -1137,17 +1126,17 @@ def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
         if cat_data.get("birth_from"):
             try:
                 if birth_date_mode == Competition.BirthDateMode.YEAR:
-                    birth_from = dt.date(int(cat_data["birth_from"]), 1, 1)
+                    birth_from = datetime.date(int(cat_data["birth_from"]), 1, 1)
                 else:
-                    birth_from = dt.date.fromisoformat(cat_data["birth_from"])
+                    birth_from = datetime.date.fromisoformat(cat_data["birth_from"])
             except (ValueError, TypeError):
                 pass
         if cat_data.get("birth_to"):
             try:
                 if birth_date_mode == Competition.BirthDateMode.YEAR:
-                    birth_to = dt.date(int(cat_data["birth_to"]), 12, 31)
+                    birth_to = datetime.date(int(cat_data["birth_to"]), 12, 31)
                 else:
-                    birth_to = dt.date.fromisoformat(cat_data["birth_to"])
+                    birth_to = datetime.date.fromisoformat(cat_data["birth_to"])
             except (ValueError, TypeError):
                 pass
 
@@ -1370,8 +1359,6 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
         }
 
     def get(self, request):
-        import json
-
         source = self._clone_source(request)
         if source is None:
             form = SubmitCompetitionForm(user=request.user)
@@ -1405,7 +1392,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
         is_organizer = roles.at_least(request.user, roles.PUBLISH_EVENTS)
         if form.is_valid() and (not is_organizer or reg_form.is_valid()):
             cd = form.cleaned_data
-            if is_organizer and not _validate_deadline(form, reg_form, cd["date_start"], cd.get("date_end")):
+            if is_organizer and not _validate_deadline(reg_form, cd["date_start"], cd.get("date_end")):
                 return render(request, self.template_name, self._error_context(request, form, reg_form, is_organizer))
             try:
                 # Resolve, lock and re-validate the location, then save the competition in one
@@ -1488,8 +1475,6 @@ class EditCompetitionView(View):
         # The top mark is the edition's, set by an admin: editing shows it, a clone starts without it.
         form = SubmitCompetitionForm(initial={**_competition_initial(comp), "is_top": comp.is_top}, user=request.user)
         reg_form = RegistrationSettingsForm(initial=_registration_initial(comp))
-        import json
-
         categories = _category_rows(comp)
         disc_ctx = {
             **_discipline_picker_context(form),
@@ -1520,9 +1505,7 @@ class EditCompetitionView(View):
         material_formset = _material_formset(request, comp)
         if form.is_valid() and reg_form.is_valid() and _materials_are_valid(material_formset):
             cd = form.cleaned_data
-            if not _validate_deadline(form, reg_form, cd["date_start"], cd.get("date_end")):
-                import json as _json
-
+            if not _validate_deadline(reg_form, cd["date_start"], cd.get("date_end")):
                 _cats = _category_rows(comp, reg_form.cleaned_data.get("birth_date_mode"))
                 return render(
                     request,
@@ -1532,7 +1515,7 @@ class EditCompetitionView(View):
                         "form": form,
                         "reg_form": reg_form,
                         "material_formset": material_formset,
-                        "categories_json": _json.dumps(_cats),
+                        "categories_json": json.dumps(_cats),
                         "mode_locked": comp.registration_mode_locked,
                         "is_organizer_plus": roles.at_least(request.user, roles.PUBLISH_EVENTS),
                         **_discipline_picker_context(form),
@@ -1589,8 +1572,6 @@ class EditCompetitionView(View):
                 form.add_error("location", _("This location is not available."))
             else:
                 return redirect("competition_detail", pk=comp.pk)
-        import json
-
         # In the shape the editor reads, for the birth date mode just submitted: a YEAR event's
         # bounds as raw dates fit no number field, and the next save would drop them.
         categories = _category_rows(comp, reg_form["birth_date_mode"].value())
@@ -1683,8 +1664,6 @@ def _safe_next(request, default_view: str) -> str:
 
 class ApproveCompetitionView(ModeratorRequiredMixin, View):
     def post(self, request, pk):
-        from locations.models import LocationPendingError
-
         comp = get_object_or_404(Competition, pk=pk, status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
         if not can_review(request.user, comp):
             raise Http404
@@ -1807,9 +1786,7 @@ class ToggleFavoriteView(LoginRequiredMixin, View):
 class DeleteCompetitionCommentView(LoginRequiredMixin, View):
     def post(self, request, pk):
         comment = get_object_or_404(CompetitionComment.objects.select_related("competition__submitted_by"), pk=pk)
-        from registrations.views import can_manage
-
-        if not can_manage(request.user, comment.competition):
+        if not manages(request.user, comment.competition):
             raise PermissionDenied
         competition_pk = comment.competition_id
         comment.delete()
@@ -1844,10 +1821,8 @@ class ResubmitCompetitionView(LoginRequiredMixin, View):
 
 class CompetitionHideView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        from registrations.views import can_manage
-
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage(request.user, competition):
+        if not manages(request.user, competition):
             raise PermissionDenied
         competition.is_hidden = not competition.is_hidden
         competition.save(update_fields=["is_hidden"])
