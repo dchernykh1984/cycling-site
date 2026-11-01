@@ -668,6 +668,16 @@ main .event-photo-preview img { object-fit: contain; }
     font-weight: 600;
     box-shadow: var(--bs-box-shadow-sm);
 }
+/* An event's route track (calendar_app/static/calendar_app/route_track.js) in its skin's colours: the
+   line and the arrows along it in --skin-route, over an edge of --skin-route-halo that keeps them
+   readable on the satellite layer. The modes' stylesheets set both; a skin may set its own. */
+.leaflet-overlay-pane .route-track,
+.leaflet-overlay-pane .route-track-arrow {
+    stroke: var(--skin-route);
+}
+.leaflet-overlay-pane .route-track-halo {
+    stroke: var(--skin-route-halo);
+}
 /* An invitation's "Log in" (issue #351) is tapped on phones: 44 px whatever height the skin gives it. */
 .invite-preview .btn {
     min-height: 2.75rem;

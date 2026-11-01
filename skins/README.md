@@ -65,6 +65,17 @@ with what each paints, at the top of `skins/dark/skin.css`:
 }
 ```
 
+Both modes name the colours of an event's route track on its map at the top of their stylesheets:
+`--skin-route` for the line and the arrows along it, `--skin-route-halo` for the edge that keeps
+them readable on the satellite layer. The map's own tiles stay light in every skin, so the line is
+drawn against them, not against the page. A skin on either mode sets its own the same way:
+
+```css
+:root[data-skin="<key>"] {
+    --skin-route: #0b7285;
+}
+```
+
 ### Protocols drawn from their data
 
 A protocol uploaded as a structured document (issue #310) is drawn by the site itself, in

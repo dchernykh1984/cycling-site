@@ -3,6 +3,12 @@
    Selected by Bootstrap's colour mode rather than by this skin's key, so a skin built on the light
    mode (manifest "mode": "light") starts from all of this and only changes what it means to. */
 
+/* The palette. A skin on the light mode overrides any of these under :root[data-skin="<key>"]. */
+[data-bs-theme="light"] {
+    --skin-route: #6f42c1; /* an event's route track on its map, and the arrows along it */
+    --skin-route-halo: rgba(255, 255, 255, .85); /* the edge around them, readable on the satellite layer */
+}
+
 [data-bs-theme="light"] .navbar .nav-link.active {
     color: var(--bs-primary) !important;
 }
