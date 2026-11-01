@@ -106,6 +106,19 @@ def moderates(user, competition) -> bool:
     return roles.at_least(user, roles.MODERATE_EVENTS)
 
 
+def awaiting_review(user, events) -> list:
+    """The events of ``events`` waiting for review that ``user`` can act on: the moderation queue and
+    the count above every page. An organizer meets neither an invite-only event, which an admin
+    reviews, nor one on geography still under review, which only someone who may approve that
+    geography can approve -- an organizer would only meet LocationPendingError."""
+    from locations.models import geography_above_is_approved, pending_place_paths
+
+    if roles.at_least(user, roles.APPROVE_PLACES):
+        return list(events)
+    pending = pending_place_paths()
+    return [comp for comp in events if not comp.invite_only and geography_above_is_approved(comp.location, pending)]
+
+
 def can_review(user, competition) -> bool:
     """Whether ``user`` may see an event awaiting review: its author, or a moderator."""
     if user.is_authenticated and user.pk == competition.submitted_by_id:
