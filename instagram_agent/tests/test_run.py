@@ -102,7 +102,7 @@ def test_reading_an_account_keeps_only_the_newest_posts():
     config = _config(max_posts=2)
     original = fetch_module.fetch_posts
     try:
-        fetch_module.fetch_posts = lambda account, user_id, token, version, limit: posts
+        fetch_module.fetch_posts = lambda account, user_id, token, version, limit, zone=None: posts
         text = read_account(Account("ubtalmaty"), config, TODAY)
     finally:
         fetch_module.fetch_posts = original

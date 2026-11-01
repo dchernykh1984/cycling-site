@@ -90,6 +90,7 @@ def read_account(account: Account, config: insta_config.Config, today: datetime.
         config.graph_token,
         config.graph_version,
         config.max_posts,
+        config.time_zone,
     )
     return fetch.account_text(account, posts[: config.max_posts], config.recent_days, today)
 

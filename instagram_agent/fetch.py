@@ -36,7 +36,9 @@ import urllib.parse
 from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
+from agent.config import UTC_ZONE
 from instagram_agent.accounts import Account
 
 _GRAPH_HOST = "https://graph.facebook.com"
@@ -75,7 +77,7 @@ class Post:
         return f"https://www.instagram.com/p/{self.shortcode}/"
 
 
-def posts_from_business_discovery(payload: dict) -> list[Post]:
+def posts_from_business_discovery(payload: dict, zone: ZoneInfo = UTC_ZONE) -> list[Post]:
     """The posts in a business_discovery reply, newest first. Anything malformed is skipped.
 
     Sorted here rather than trusted: the old web endpoint hoisted pinned posts above everything
@@ -90,7 +92,7 @@ def posts_from_business_discovery(payload: dict) -> list[Post]:
         if not isinstance(node, dict):
             continue
         found = _SHORTCODE.search(str(node.get("permalink") or ""))
-        published = _published_on(node.get("timestamp"))
+        published = _published_on(node.get("timestamp"), zone)
         if not found or published is None:
             continue
         caption = str(node.get("caption") or "").strip()[:_MAX_CAPTION_CHARS]
@@ -105,12 +107,12 @@ def posts_from_business_discovery(payload: dict) -> list[Post]:
     return sorted(posts, key=lambda post: post.published, reverse=True)
 
 
-def _published_on(stamp: object) -> datetime.date | None:
-    """The date out of Graph's timestamp ("2026-09-24T17:05:00+0000"), or None if it is not one."""
+def _published_on(stamp: object, zone: ZoneInfo) -> datetime.date | None:
+    """The date out of Graph's timestamp ("2026-09-24T17:05:00+0000"), in ``zone``, or None if it is not one."""
     if not isinstance(stamp, str):
         return None
     try:
-        return datetime.datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%S%z").date()
+        return datetime.datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%S%z").astimezone(zone).date()
     except ValueError:
         return None
 
@@ -237,7 +239,9 @@ def business_discovery_url(user_id: str, username: str, version: str, limit: int
     return f"{_GRAPH_HOST}/{version}/{urllib.parse.quote(user_id)}?{urllib.parse.urlencode({'fields': fields})}"
 
 
-def fetch_posts(account: Account, user_id: str, token: str, version: str, limit: int) -> list[Post]:
+def fetch_posts(
+    account: Account, user_id: str, token: str, version: str, limit: int, zone: ZoneInfo = UTC_ZONE
+) -> list[Post]:
     """The account's recent posts. Raises AccountUnavailableError with why, rather than returning [].
 
     An empty list is a real answer (an account that has posted nothing lately) and must not be
@@ -255,4 +259,4 @@ def fetch_posts(account: Account, user_id: str, token: str, version: str, limit:
             "no business_discovery in the reply, which is what Graph returns for an account that "
             "is not professional, has been renamed, or is age-gated"
         )
-    return posts_from_business_discovery(payload)
+    return posts_from_business_discovery(payload, zone)
