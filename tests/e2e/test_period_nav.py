@@ -393,6 +393,15 @@ def test_calendar_period_changes_work_when_storage_is_blocked(page: Page, live_s
 
 
 @pytest.mark.django_db(transaction=True)
+def test_list_filters_work_when_storage_is_blocked(page: Page, live_server, race_event_type):
+    page.add_init_script("Object.defineProperty(window, 'sessionStorage', {get() {throw new Error('blocked');}})")
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{live_server.url}/en/calendar/list/?event_type={race_event_type.pk}")
+    page.locator("#filter-chips .filter-chip").click()
+    page.wait_for_url(lambda url: "event_type" not in url)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_filtered_month_keeps_its_period_on_the_list(page: Page, live_server, organizer, race_event_type):
     today = timezone.localdate()
     near = _race(organizer, "This month only", today)

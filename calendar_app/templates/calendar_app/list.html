@@ -113,11 +113,13 @@
         var dtEl = form.querySelector('input[name="date_to"]');
         // A range with no last day travels as all upcoming, which the other tabs show without one.
         if (dfEl && dtEl && (dfEl.value || dtEl.value)) window.periodNav.appendTo(params, dfEl.value, dtEl.value);
-        if (dfEl && dfEl.value) {
-          sessionStorage.setItem('cal_date_from', dfEl.value);
-          // No last day is kept as none, or a range picked earlier would lend this one its end.
-          sessionStorage.setItem('cal_date_to', dtEl ? dtEl.value : '');
-        }
+        try {
+          if (dfEl && dfEl.value) {
+            sessionStorage.setItem('cal_date_from', dfEl.value);
+            // No last day is kept as none, or a range picked earlier would lend this one its end.
+            sessionStorage.setItem('cal_date_to', dtEl ? dtEl.value : '');
+          }
+        } catch (e) { /* storage blocked */ }
         var favEl = form.querySelector('#favorite-filter');
         if (favEl && favEl.checked) params.set('favorite', '1');
         var qs = params.toString();
