@@ -170,10 +170,11 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
   uploaded documents follow the same order and a URL takes precedence over a file -- but for the
   route, whose link and file are both offered (Story 9).
 - A route file is read once, on the first visit after it arrives, and its line kept beside the event
-  (`CompetitionTrack`, keyed by the file's name), so the next visit reads no file. The line is
-  thinned to within 5 m, and further until at most 4,000 points remain; a file over 10 MB, one that
-  declares XML entities, or one that breaks its reader draws nothing, and a file missing from the
-  disk is tried again on the next visit.
+  (`CompetitionTrack`, keyed by the file's name and the reader's version), so the next visit reads
+  no file and a better reader reads it again. The line is thinned to within 5 m, and further until
+  at most 4,000 points remain; past about a second's work every n-th point is kept instead. A file
+  over 10 MB, one that declares XML entities, or one that breaks its reader draws nothing, and a
+  file missing from the disk is tried again on the next visit.
 - Map links on the event page -- the services the deployment offers, in its order (see
   [locations](locations.md), Configuration) -- appear only for a venue with its own point, in one
   menu behind a "Link to the start point" button, however many there are (#335); each answers a tap
