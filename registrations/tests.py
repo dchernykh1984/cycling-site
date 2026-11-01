@@ -560,6 +560,17 @@ class BirthYearBoundTests(TestCase):
         self.assertIn(f'min="1900" max="{datetime.date.today().year}"', html)
 
 
+class RelayBirthYearBoundTests(TestCase):
+    def test_a_relay_members_birth_year_goes_up_to_this_year(self):
+        """As the single person's field does: a year written into the page would refuse later births."""
+        comp = make_relay_competition()
+        self.client.force_login(make_user("relay_bound", gender="M", birth_date=datetime.date(1990, 1, 1)))
+        html = self.client.get(reverse("registrations:register", args=[comp.pk])).content.decode()
+        bound = f'min="1900" max="{datetime.date.today().year}"'
+        self.assertEqual(html.count(bound), 2)  # the first member's row, and the row the script adds
+        self.assertNotIn('max="2030"', html)
+
+
 class RefusalLanguageTests(TestCase):
     def test_a_refusal_is_said_in_the_pages_language(self):
         user = make_user("lang_refused", gender="M", birth_date=datetime.date(1990, 1, 1))

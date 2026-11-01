@@ -17,7 +17,7 @@ manual entry show the same fields.{% endcomment %}{% if relay_enabled %}
         </div>
         <div class="col-md-2">
           <input type="number" name="participant_birth_year" value="{{ m.birth_year }}"
-                 class="form-control" placeholder="{% trans 'Year' %}" min="1900" max="2030">
+                 class="form-control" placeholder="{% trans 'Year' %}" min="1900" max="{% now "Y" %}">
         </div>
         <div class="col-md-4">
           <input type="text" name="participant_city" value="{{ m.city }}"
@@ -37,7 +37,7 @@ manual entry show the same fields.{% endcomment %}{% if relay_enabled %}
         </div>
         <div class="col-md-2">
           <input type="number" name="participant_birth_year"
-                 class="form-control" placeholder="{% trans 'Year' %}" min="1900" max="2030">
+                 class="form-control" placeholder="{% trans 'Year' %}" min="1900" max="{% now "Y" %}">
         </div>
         <div class="col-md-4">
           <input type="text" name="participant_city"
