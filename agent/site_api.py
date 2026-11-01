@@ -152,7 +152,7 @@ class SiteApiClient:
         same place arriving later from a source in another language matches instead of being
         proposed a second time.
         """
-        payload = {"parent_id": parent_id, "name": _loc(name, name_kk or name, name_en or name)}
+        payload = {"parent_id": parent_id, "name": _loc(name, name_kk, name_en)}
         result = self._request("POST", "/api/v1/locations/", payload)
         if not isinstance(result, dict) or not result.get("id"):
             # Falling back to id 0 would poison the run: the caller caches the node, and every later

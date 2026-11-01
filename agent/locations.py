@@ -96,7 +96,7 @@ def _hint_matches(hint: str, names: set[str]) -> bool:
     for name in names:
         if not name:
             continue
-        if target == name or target in name or name in target:
+        if target in name or name in target:
             return True
         if len(target) >= _SHARED_OPENING_CHARS and name.startswith(target[:_SHARED_OPENING_CHARS]):
             return True
