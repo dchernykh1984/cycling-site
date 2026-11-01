@@ -132,9 +132,6 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
             form.add_error(None, said)
             return None
 
-        team_name = cleaned.get("team_name", "").strip()
-        team = Team.get_or_restore(team_name) if team_name else None
-
         category = cleaned.get("category")
         # For relay only check gender; birth years span multiple age groups
         cat_ok = not category or (
@@ -148,6 +145,10 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
         if not competition.is_registration_open():
             form.add_error(None, gettext("Registration is no longer available."))
             return None
+
+        # Only now, past every refusal: a refused entry must not create a team or bring one back.
+        team_name = cleaned.get("team_name", "").strip()
+        team = Team.get_or_restore(team_name) if team_name else None
 
         registration = CompetitionRegistration.objects.create(
             competition=competition,
