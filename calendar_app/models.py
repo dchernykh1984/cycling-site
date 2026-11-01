@@ -653,8 +653,9 @@ class CompetitionTrack(models.Model):
     """The line an event's route file draws on its map, kept so that a visit need not read the file.
 
     Not a fact of its own (constitution, principle VIII): it is what the file holds, read by
-    calendar_app.tracks, and ``source`` names the file it was read from. A visit that finds another
-    file on the event reads that one and keeps it here instead. An empty geometry stands for a file
+    calendar_app.tracks, and ``source`` and ``reader`` name the file it was read from and the reader
+    that read it. A visit that finds another file on the event, or a newer reader, reads the file
+    and keeps it here instead. An empty geometry stands for a file
     that holds no track -- a PDF of the route, say -- so that it is not read again on every visit.
     """
 
@@ -662,6 +663,8 @@ class CompetitionTrack(models.Model):
 
     competition = models.OneToOneField(Competition, on_delete=models.CASCADE, related_name="+")
     source = models.CharField(max_length=255)
+    # calendar_app.tracks.READER when it was read: a better reader reads the file again.
+    reader = models.PositiveSmallIntegerField(default=0)
     geometry = models.JSONField(null=True, blank=True)  # a GeoJSON MultiLineString
 
     def __str__(self) -> str:

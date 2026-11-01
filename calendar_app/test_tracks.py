@@ -290,6 +290,14 @@ class RouteTrackTests(TestCase):
         self.assertEqual(tracks.route_track(self.competition)["coordinates"], [GEOJSON_RIDE[:2]])
         self.assertEqual(CompetitionTrack.objects.get().source, self.competition.file_route.name)
 
+    def test_a_line_an_older_reader_kept_is_read_again(self):
+        self._attach("ride.gpx", _gpx(f"<trk><trkseg>{_points('trkpt', RIDE)}</trkseg></trk>"))
+        CompetitionTrack.objects.create(
+            competition=self.competition, source=self.competition.file_route.name, reader=tracks.READER - 1
+        )
+        self.assertEqual(tracks.route_track(self.competition)["coordinates"], [GEOJSON_RIDE])
+        self.assertEqual(CompetitionTrack.objects.get().reader, tracks.READER)
+
     def test_a_file_that_holds_no_track_is_not_read_again(self):
         self._attach("route.pdf", b"%PDF-1.7 a route map")
         with mock.patch.object(tracks, "read", wraps=tracks.read) as reader:
