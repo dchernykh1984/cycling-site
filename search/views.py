@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.template.response import TemplateResponse
 from django.utils.translation import get_language
@@ -32,7 +33,7 @@ def search(request):
         knowledge_results = list(
             backend.search(
                 search_query,
-                public(KnowledgeArticle.objects.filter(locale=get_language() or "ru")),
+                public(KnowledgeArticle.objects.filter(locale=get_language() or settings.LANGUAGE_CODE)),
             )
         )
         news_results = list(backend.search(search_query, public(NewsArticle.objects)))

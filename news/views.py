@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
@@ -142,7 +143,7 @@ class SubmitNewsView(ParticipantRequiredMixin, CreateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        initial["locale"] = get_language() or "ru"
+        initial["locale"] = get_language() or settings.LANGUAGE_CODE
         return initial
 
     def form_valid(self, form):
