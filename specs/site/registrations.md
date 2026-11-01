@@ -63,7 +63,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 
 1. **Given** a manager of the event, **Then** they may approve, reject (with a note), mark paid,
    delete, add entries by hand (free mode only), edit any entry, and export a CSV, where an entry
-   starting with =, +, - or @ is kept as text (a leading apostrophe), not run as a formula.
+   starting with =, +, - or @ is kept as text (a leading apostrophe), not run as a formula, and the
+   registration times are at the event's place, as its other times.
 2. **Given** the participant list, **Then** riders are grouped by category, each group numbered from
    its category's bib range (from 1 by default); uncategorised riders come last; the total and the
    limit stand by the title; a manager gets approve/reject and paid columns only when the event
@@ -105,7 +106,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 ## Functional Requirements
 
 - **FR-REG-001**: Registration modes: self only (linked to the account) and free (any person); the
-  mode locks once registration is first enabled.
+  mode locks once registration is first enabled, and at the first entry, a manager's manual one
+  included.
 - **FR-REG-002**: Birth is asked as a year or a full date, as the organizer chooses; categories
   match by gender and an inclusive birth-date range (an open bound matches everything). A date of
   birth lies from 1900 to today and a year from 1900 to this year, counted when the form is sent;

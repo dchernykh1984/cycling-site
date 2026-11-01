@@ -46,8 +46,10 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    image and a line of text per language (up to 200 characters; a chat shows about the first 80 and
    cuts the rest, the form says so).
 3. **Given** an invalid field -- a missing title or date, a link longer than its column, an end
-   before the start, an over-long category name -- **Then** the form comes back with a translated
-   field error, never a server error, and keeps what was entered.
+   before the start, an over-long category name, a category's birth bound the birth mode cannot
+   read, a registration deadline after the event -- **Then** the form comes back with a translated
+   error beside the field or above the registration settings, never a server error, and keeps what
+   was entered.
 4. **Given** an organizer, **Then** they may also enable registration on the site, choose its mode
    and options (see [registrations](registrations.md)), and make the event invite-only;
    participants are not offered these.
@@ -70,7 +72,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    moderators -- an organizer author included -- get approve and reject on it; it has no star,
    comments or registration.
 5. **Given** there is something to moderate, **Then** a banner under the menu tells each moderator
-   how many items wait for them and where, counting only what they may act on.
+   how many items wait for them and where, counting only what they may act on: the events are the
+   ones their moderation queue lists.
 6. **Given** an admin opens an event, **Then** the foot of its page lists its way through review,
    oldest first -- added, rejected with the reason, resubmitted, approved, returned for review --
    each with its time and who did it (#741). An old event lists what was recorded then: its
