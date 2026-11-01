@@ -1446,6 +1446,21 @@ class SubmitCompetitionRegistrationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(RegistrationCategory.objects.filter(name="Juniors").exists())
 
+    def test_a_category_being_deleted_is_not_refused_for_its_bounds(self):
+        from registrations.models import RegistrationCategory
+
+        comp = _make_competition("Deleting", status=Competition.Status.APPROVED, submitted_by=self.organizer)
+        category = RegistrationCategory.objects.create(competition=comp, name="Old")
+        self.client.login(username="o_reg@example.com", password="password123")
+        rows = json.dumps([{"id": category.pk, "name": "Old", "birth_from": "2005", "is_deleted": True}])
+        response = self.client.post(
+            reverse("competition_edit", args=[comp.pk]),
+            {**self._reg_payload(), "title_ru": "Deleting", "birth_date_mode": "date", "categories_json": rows},
+        )
+        self.assertEqual(response.status_code, 302)
+        category.refresh_from_db()
+        self.assertTrue(category.is_deleted)
+
     def test_readable_birth_bounds_are_kept(self):
         from registrations.models import RegistrationCategory
 

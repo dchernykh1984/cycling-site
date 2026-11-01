@@ -1115,10 +1115,14 @@ def _save_categories(comp, reg_form, is_organizer_plus):
     for cat_data in cats:
         cat_id = cat_data.get("id")
         is_del = cat_data.get("is_deleted", False)
-        # The form refused any bound its mode cannot read (RegistrationSettingsForm.clean).
+        # The form refused any bound its mode cannot read, on every row but those being deleted
+        # (RegistrationSettingsForm.clean); a deleted row's bounds are not read at all.
         by_date = comp.birth_date_mode == Competition.BirthDateMode.DATE
-        birth_from = birth_bound(cat_data["birth_from"], by_date, last=False) if cat_data.get("birth_from") else None
-        birth_to = birth_bound(cat_data["birth_to"], by_date, last=True) if cat_data.get("birth_to") else None
+        keep = not is_del
+        birth_from = (
+            birth_bound(cat_data["birth_from"], by_date, last=False) if keep and cat_data.get("birth_from") else None
+        )
+        birth_to = birth_bound(cat_data["birth_to"], by_date, last=True) if keep and cat_data.get("birth_to") else None
 
         if cat_id and str(cat_id).isdecimal():
             try:
