@@ -231,12 +231,14 @@ def test_the_list_steps_to_the_whole_next_month(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_a_filtered_list_says_it_runs_on_and_today_brings_the_month(page: Page, live_server, race_event_type):
-    today = timezone.localdate()
+def test_a_filtered_list_runs_on_as_all_upcoming_which_today_keeps(page: Page, live_server, race_event_type):
     page.goto(f"{live_server.url}/en/calendar/list/?event_type={race_event_type.pk}")
     expect(_label(page)).to_contain_text("from")
+    expect(page.locator('[data-period-kind="open"]')).to_have_attribute("aria-pressed", "true")
+    # Today returns to the current period of the kind on screen (specs/330), and this kind has no last day.
     page.locator("[data-period-today]").click()
-    expect(page).to_have_url(re.compile(f"date_to={_end_of_month(today):%Y-%m-%d}"))
+    expect(page).to_have_url(re.compile(r"period=upcoming"))
+    expect(page.locator('[data-period-kind="open"]')).to_have_attribute("aria-pressed", "true")
 
 
 @pytest.mark.django_db(transaction=True)
@@ -406,3 +408,64 @@ def test_a_filtered_month_keeps_its_period_on_the_list(page: Page, live_server, 
     page.locator("#view-link-list").click()
     expect(page.get_by_role("link", name="This month only").first).to_be_visible()
     expect(page.get_by_role("link", name="Another month")).to_have_count(0)
+
+
+# --- All upcoming ---
+
+
+@pytest.mark.django_db(transaction=True)
+def test_all_upcoming_on_the_list_has_no_last_day_and_its_arrows_step_nowhere(page: Page, live_server, organizer):
+    today = timezone.localdate()
+    _race(organizer, "Next season", today + datetime.timedelta(days=200))
+    page.set_viewport_size(WIDE)
+    page.goto(f"{live_server.url}/en/calendar/list/")
+    expect(page.get_by_role("link", name="Next season")).to_have_count(0)
+    _kind(page, "open")
+    page.wait_for_url(re.compile(r"period=upcoming"))
+    expect(page.get_by_role("link", name="Next season").first).to_be_visible()
+    expect(_label(page)).to_have_text(re.compile(rf"^from {today.day} \w+ {today.year}$"))
+    expect(page.locator('[data-period-kind="open"]')).to_have_attribute("aria-pressed", "true")
+    for n in (-1, 1):
+        expect(page.locator(f'[data-period-step="{n}"]')).to_be_disabled()
+    # Another tab opens on every day ahead too, from the day it is opened on.
+    expect(page.locator("#view-link-map")).to_have_attribute("href", re.compile(r"period=upcoming"))
+    expect(page.locator("#view-link-map")).not_to_have_attribute("href", re.compile(r"date_from"))
+    assert "date_from" not in page.evaluate("window.shareUrl()")
+    # A month picked next is a month again.
+    _kind(page, "month")
+    page.wait_for_url(lambda url: "period=upcoming" not in url)
+    expect(page.get_by_role("link", name="Next season")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_all_upcoming_on_the_calendar_lists_every_day_ahead(page: Page, live_server, organizer):
+    _race(organizer, "Next season", WEDNESDAY.date() + datetime.timedelta(days=200))
+    _calendar(page, live_server)
+    _kind(page, "open")
+    expect(page.locator(".fc-listRange-view")).to_be_visible()
+    expect(page.locator(".fc-list-event-title", has_text="Next season")).to_be_visible()
+    expect(_label(page)).to_have_text("from 21 October 2026")
+    share = page.evaluate("window.shareUrl()")
+    assert "period=upcoming" in share and "date_from" not in share, share
+    expect(page.locator("#view-link-list")).to_have_attribute("href", re.compile(r"period=upcoming"))
+    _kind(page, "month")
+    expect(page.locator(".fc-dayGridMonth-view")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_link_to_all_upcoming_opens_the_calendar_on_it(page: Page, live_server, organizer):
+    _race(organizer, "Next season", WEDNESDAY.date() + datetime.timedelta(days=200))
+    _calendar(page, live_server, query="?period=upcoming")
+    expect(_label(page)).to_have_text("from 21 October 2026")
+    expect(page.locator('[data-period-kind="open"]')).to_have_attribute("aria-pressed", "true")
+    expect(page.locator(".fc-list-event-title", has_text="Next season")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_all_upcoming_on_the_map_leaves_the_last_day_empty(page: Page, live_server):
+    page.set_viewport_size(WIDE)
+    page.goto(f"{live_server.url}/en/calendar/map/")
+    _kind(page, "open")
+    expect(page.locator("#map-date-to")).to_have_value("")
+    expect(_label(page)).to_have_text(re.compile(r"^from "))
+    expect(page.locator("#view-link-list")).to_have_attribute("href", re.compile(r"period=upcoming"))

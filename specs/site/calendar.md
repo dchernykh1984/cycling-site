@@ -5,7 +5,7 @@
 **Code**: `calendar_app/` (views, filters, feeds, `visibility.py`), `calendar_app/templates/calendar_app/`
 **Tests**: `calendar_app/tests.py` (calendar, list, map, events API, filters, favorites, default
 filters), `calendar_app/test_date_words.py`, `tests/test_calendar_toolbar.py`, `tests/test_ics_feed.py`, `tests/test_event_ics.py`, `tests/test_period_overlap.py`,
-`tests/test_feeds.py`,
+`tests/test_feeds.py`, `tests/test_calendar_period_defaults.py`,
 `tests/test_calendar_crawlable.py`, `tests/test_list_site_registration.py`,
 `tests/test_pagination_links.py`, `tests/test_locations_payload.py`, `tests/test_location.py`,
 `tests/e2e/test_calendar_view.py`, `test_calendar_map.py`, `test_map_clusters.py`, `test_competition_list.py`,
@@ -54,6 +54,13 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    "Top events" heading, each with its dates, before the days); first in its day in the grid and
    the calendar's list of days, ahead of "+N"; first at its place on the map; first among the
    nearest events. The filters still decide whether it is shown at all; feeds keep their order.
+7. **Given** "All upcoming", the fifth period beside today and tomorrow, the weekend, the week and
+   the month, **Then** each of the three shows every event from today on with no last day, whatever
+   the other filters say -- the calendar as its list of days -- under "from <today>", with arrows
+   that step nowhere and Today keeping it. A link carries it as `period=upcoming` and no dates, so
+   it opens from the day it is opened on; a filtered list with no last day is this period too. On
+   a phone a segment is as wide as its longest word needs, so the five fit a 360 px screen
+   (maintainer, 2026-11-01).
 
 ### Story 2 -- Filter (P1)
 
@@ -144,8 +151,8 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 - **FR-CAL-006**: Calendar labels, including grid weekdays, come from the translated catalogues; Kazakh period labels put
   the year before the month or days. The list's table, the map's popups and the event's own page
   name an event's days in the same words ("24-25 October 2026", the month in its Russian case, an en dash between), never
-  as 24.10.2026 (#388). Shared period controls offer days, weekend, week, month and
-  a year picker, step by the selected kind and return keyboard focus when a picker closes.
+  as 24.10.2026 (#388). Shared period controls offer days, weekend, week, month, all upcoming
+  and a year picker, step by the selected kind and return keyboard focus when a picker closes.
 - **FR-CAL-007**: Phone List rows show city and sport, and preserve the remaining FR-CAL-004
   facts and Info link in expandable row details. Desktop retains the table.
 - **FR-CAL-008**: The approved PR #343 styling uses filled active tabs and contrasting period

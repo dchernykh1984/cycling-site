@@ -3,6 +3,7 @@ import functools
 import json
 import uuid
 from calendar import monthrange
+from enum import StrEnum
 
 from django.conf import settings
 from django.contrib import messages
@@ -438,6 +439,13 @@ def end_of_month(day: datetime.date) -> datetime.date:
     return day.replace(day=monthrange(day.year, day.month)[1])
 
 
+class Period(StrEnum):
+    """What ``?period=`` names in place of dates (calendar_app/_period_nav.html)."""
+
+    MONTH = "month"  # the current month, every page's default, asked for on purpose
+    UPCOMING = "upcoming"  # every day from today on, with no last one
+
+
 def map_home_area(location_ids) -> list | None:
     """The corners of the area in settings.MAP_HOME_AREAS that holds every chosen place, if one does.
 
@@ -694,7 +702,10 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         # discipline is a page about that city -- and two rows of it is not a page about anything,
         # so the whole season ahead stands. An explicit date_to from the reader still wins over both.
         faceted = any(chosen.values())
-        date_to = None if faceted and self.request.GET.get("period") != "month" else end_of_month(today)
+        period = self.request.GET.get("period")
+        # "All upcoming" has no last day, filtered or not.
+        upcoming = period == Period.UPCOMING
+        date_to = None if upcoming or (faceted and period != Period.MONTH) else end_of_month(today)
 
         is_manager = roles.at_least(self.request.user, roles.MANAGE_ALL_EVENTS)
         qs = (
@@ -744,6 +755,7 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         context["filter_form"] = form
         context["date_from"] = date_from
         context["date_to"] = date_to
+        context["upcoming"] = upcoming
         context["is_manager"] = is_manager
         context["discipline_categories"] = DisciplineCategory.objects.all()
         context["event_types_json"] = _event_types_for_locale()
@@ -775,7 +787,8 @@ class CalendarMapView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateVie
         context.update(month_picker_choices())
         today = timezone.localdate()
         context["date_from"] = _parse_date(self.request.GET.get("date_from"), today)
-        context["date_to"] = _parse_date(self.request.GET.get("date_to"), end_of_month(today))
+        upcoming = self.request.GET.get("period") == Period.UPCOMING
+        context["date_to"] = _parse_date(self.request.GET.get("date_to"), None if upcoming else end_of_month(today))
         context["event_types_json"] = _event_types_for_locale()
         context["categories_json"] = _categories_for_locale()
         context["disciplines_json"] = _disciplines_for_locale()

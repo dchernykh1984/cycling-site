@@ -155,14 +155,18 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   // Resolve before render(): its first datesSet writes the displayed period back to storage.
   var incoming = new URLSearchParams(window.location.search);
-  var explicitPeriod = incoming.has('date_from') || incoming.has('date_to') || incoming.get('period') === 'month';
+  var explicitPeriod = incoming.has('date_from') || incoming.has('date_to') || incoming.has('period');
   var selectedFrom = validDay(explicitPeriod ? incoming.get('date_from') : stored('cal_date_from'));
   var selectedTo = validDay(explicitPeriod ? incoming.get('date_to') : stored('cal_date_to'));
+  // All upcoming: from the day it is opened on, unless the link names a later first day.
+  if (incoming.get('period') === 'upcoming') {
+    selectedFrom = selectedFrom || window.periodNav.today();
+    selectedTo = null;
+  }
   if (selectedTo && selectedFrom && selectedTo < selectedFrom) selectedTo = selectedFrom;
   function appendPeriod(params) {
-    if (selectedFrom) params.set('date_from', selectedFrom);
-    if (selectedTo) params.set('date_to', selectedTo);
-    if (!selectedFrom) params.set('period', 'month');
+    if (selectedFrom) window.periodNav.appendTo(params, selectedFrom, selectedTo || '');
+    else params.set('period', 'month');
   }
 
   // The share button hands out this calendar as it is filtered now, dates included -- "the running
@@ -215,11 +219,18 @@ document.addEventListener('DOMContentLoaded', function () {
   var initialKind = window.periodNav.kindOf(selectedFrom, selectedTo);
   var savedLayout = stored('cal_layout');
   var phoneList = savedLayout ? savedLayout === 'list' : window.matchMedia('(max-width: 991.98px)').matches;
-  var initialList = (selectedFrom && selectedTo && initialKind !== 'month') || (initialKind === 'month' && phoneList);
+  // All upcoming is a list with no last day: it runs to the end of the last year the site has events in.
+  var openList = initialKind === 'open';
+  var years = JSON.parse(document.getElementById('period-years').textContent);
+  var lastDay = Math.max.apply(null, years.concat([new Date().getFullYear()])) + '-12-31';
+  var initialList = (selectedFrom && selectedTo && initialKind !== 'month') || (initialKind === 'month' && phoneList) || openList;
   var initialRange = window.periodNav.rangeOf('month', new Date());
-  var listRange = initialList ? {start: selectedFrom || initialRange[0], end: dayAfter(selectedTo || initialRange[1])} : null;
+  var listRange = initialList ? {
+    start: selectedFrom || initialRange[0], end: dayAfter(openList ? lastDay : selectedTo || initialRange[1]),
+  } : null;
   function showRange(from, to) {
-    listRange = {start: from, end: dayAfter(to)};
+    openList = !to;
+    listRange = {start: from, end: dayAfter(to || lastDay)};
     calendar.changeView('listRange', from);
   }
   window.onPeriodChange = function (period) {
@@ -319,9 +330,12 @@ document.addEventListener('DOMContentLoaded', function () {
       var to = isoDate(new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1));
       if (info.view.type === 'dayGridMonth') {
         // The month, named as the row names it: the current one from today.
+        openList = false;
         var month = window.periodNav.rangeOf('month', start);
         from = month[0];
         to = month[1];
+      } else if (openList) {
+        to = '';
       }
       window.periodNav.show(from, to);
       var current = window.periodNav.rangeOf('month', new Date());

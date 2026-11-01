@@ -2,9 +2,11 @@
 {% comment %}The period on screen, said in words, and the way about it -- one row, the same above the
 calendar, the list and the map (issue #330), so switching tabs moves nothing and keeps the period.
 
-Four kinds: today and tomorrow, the weekend, the week (from the day settings.CALENDAR_FIRST_WEEKDAY
-names, the weekend's days from CALENDAR_WEEKEND) and the calendar month;
-a year is reached by tapping the year in the label. The label always says what is shown ("October
+Five kinds: today and tomorrow, the weekend, the week (from the day settings.CALENDAR_FIRST_WEEKDAY
+names, the weekend's days from CALENDAR_WEEKEND), the calendar month, and every day from today on --
+"all upcoming", which a link carries as period=upcoming and no dates, so that it opens from the day
+it is opened on; its arrows have nothing to step through. A year is reached by tapping the year in
+the label. The label always says what is shown ("October
 2026", "24-25 October 2026", "2026, whole year"), the arrows step by the kind on screen, and Today
 goes to the same kind around today. Tapping the month opens the twelve months with their own year
 arrows: paging the years there changes nothing until a month is picked, so a reader looking for
@@ -25,8 +27,10 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   .period-nav { --period-line: var(--bs-secondary-color); margin-bottom: .75rem; max-width: 30rem; letter-spacing: normal; }
   .period-nav button { font: inherit; letter-spacing: normal; text-transform: none; color: inherit; }
   .period-nav button:focus-visible { outline: 2px solid var(--bs-emphasis-color); outline-offset: 2px; }
+  /* As wide as each other where the row has room; on a phone a segment takes what its longest word
+     needs, so five fit a 360px screen with no word broken (the interface skill). */
   .period-kinds {
-    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: grid; grid-template-columns: repeat(5, minmax(min-content, 1fr));
     border: 1px solid var(--period-line); border-radius: .5rem; overflow: hidden;
   }
   /* Up to two lines (the interface skill): the button grows to hold them, the row shares the height, and
@@ -46,7 +50,9 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   /* The chosen one inverted from the skin's own text and page colours, so every skin draws it. */
   .period-nav .period-kind.active { background: var(--bs-emphasis-color); color: var(--bs-body-bg); }
   .period-b { border: 1px solid var(--period-line); border-radius: .5rem; background: transparent; }
-  .period-b:hover { background: var(--bs-tertiary-bg); }
+  .period-b:hover:not(:disabled) { background: var(--bs-tertiary-bg); }
+  /* The arrows of all upcoming step nowhere, and look it (WCAG 1.4.3 asks no contrast of what is off). */
+  .period-nav .period-b:disabled { opacity: .35; cursor: default; }
   .period-nav .period-b.active { background: var(--bs-emphasis-color); border-color: var(--bs-emphasis-color); color: var(--bs-body-bg); }
   .period-row { display: flex; align-items: center; gap: .5rem; margin-top: .5rem; }
   .period-arrow { width: 2.75rem; height: 2.75rem; flex: none; padding: 0; font-size: 1.375rem; line-height: 1; }
@@ -71,6 +77,7 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     <button type="button" class="period-kind" data-period-kind="weekend">{% trans "Weekend" %}</button>
     <button type="button" class="period-kind" data-period-kind="week">{% trans "Week" %}</button>
     <button type="button" class="period-kind" data-period-kind="month">{% trans "Month" %}</button>
+    <button type="button" class="period-kind" data-period-kind="open">{% trans "All upcoming" %}</button>
   </div>
   <div class="period-row">
     <button type="button" class="period-b period-arrow" data-period-step="-1" aria-label="{% trans 'Previous' %}">&larr;</button>
@@ -111,6 +118,7 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     week: '{% filter escapejs %}{% trans "Arrows: by week" %}{% endfilter %}',
     month: '{% filter escapejs %}{% trans "Arrows: by month" %}{% endfilter %}',
     year: '{% filter escapejs %}{% trans "Arrows: by year" %}{% endfilter %}',
+    open: '{% filter escapejs %}{% trans "No end date" %}{% endfilter %}',
   };
   var TAP_HINT = '{% filter escapejs %}{% trans "tap the month or year" %}{% endfilter %}';
   var FROM = '{{ from_selector|escapejs }}';
@@ -132,8 +140,9 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   function same(a, b) { return Boolean(a && b) && a.getTime() === b.getTime(); }
   function lastOfMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
 
-  // The days a kind covers around a given day, both included.
+  // The days a kind covers around a given day, both included; "open" has no last day.
   function rangeOf(kind, day) {
+    if (kind === 'open') return [day, null];
     if (kind === 'days') return [day, add(day, 1)];
     if (kind === 'weekend') {
       // This weekend while it lasts -- on its last day that day alone -- else the next one whole.
@@ -233,6 +242,10 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
       button.classList.toggle('active', on);
       button.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    // All upcoming has no next or previous: its arrows step nowhere.
+    document.querySelectorAll('#period-nav [data-period-step]').forEach(function (arrow) {
+      arrow.disabled = state.kind === 'open';
+    });
     document.getElementById('period-label').innerHTML = label();
     document.getElementById('period-hint').textContent = (HINTS[state.kind] || HINTS.month) + ' \u00b7 ' + TAP_HINT;
     var box = document.getElementById('period-pop');
@@ -247,7 +260,9 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     state = {kind: kind, from: range[0], to: range[1]};
     pop = null;
     render();
-    if (window.onPeriodChange) window.onPeriodChange({kind: kind, from: iso(range[0]), to: iso(range[1]), showGrid: Boolean(showGrid)});
+    if (window.onPeriodChange) {
+      window.onPeriodChange({kind: kind, from: iso(range[0]), to: range[1] ? iso(range[1]) : '', showGrid: Boolean(showGrid)});
+    }
   }
   function step(n) {
     var from = state.from;
@@ -260,7 +275,19 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
   }
 
   window.periodNav = {
-    rangeOf: function (kind, day) { return rangeOf(kind, day).map(iso); },
+    rangeOf: function (kind, day) { return rangeOf(kind, day).map(function (d) { return d ? iso(d) : ''; }); },
+    today: function () { return iso(today()); },
+    // The days a link carries for a period the page shows: every day from today on as "upcoming",
+    // which opens from the day the link is opened; an open one from a later day keeps that day.
+    appendTo: function (params, from, to) {
+      if (to) {
+        if (from) params.set('date_from', from);
+        params.set('date_to', to);
+        return;
+      }
+      params.set('period', 'upcoming');
+      if (from && from !== iso(today())) params.set('date_from', from);
+    },
     kindOf: function (from, to) { return kindOf(parse(from), parse(to)); },
     // What the page shows now, as two ISO days (the second may be empty: open-ended).
     show: function (from, to) {
@@ -303,7 +330,7 @@ from the browser's, as FullCalendar itself does.{% endcomment %}
     if (b.dataset.periodKind) go(b.dataset.periodKind, today(), b.dataset.periodKind === 'month');
     else if (b.dataset.periodStep) step(Number(b.dataset.periodStep));
     else if (b.hasAttribute('data-period-today')) {
-      go(['days', 'weekend', 'week', 'month'].indexOf(state.kind) >= 0 ? state.kind : 'month', today());
+      go(['days', 'weekend', 'week', 'month', 'open'].indexOf(state.kind) >= 0 ? state.kind : 'month', today());
     } else if (b.dataset.periodPick) {
       var what = b.dataset.periodPick;
       pop = pop === what ? null : what;
