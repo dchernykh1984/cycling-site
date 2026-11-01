@@ -9,6 +9,7 @@ once to whatever calendar the reader uses (issue #398).
 
 import datetime
 
+from django.conf import settings
 from django.contrib.syndication.views import Feed
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404
@@ -141,8 +142,6 @@ def build_calendar(competitions: list[Competition], base_url: str) -> str:
 
 def site_base_url(request: HttpRequest) -> str:
     """The site's address that the calendar's links start with, without a trailing slash."""
-    from django.conf import settings
-
     return settings.SITE_BASE_URL.rstrip("/") or request.build_absolute_uri("/").rstrip("/")
 
 

@@ -162,8 +162,8 @@ class CalendarViewTests(TestCase):
 
     def test_calendar_has_context(self):
         response = self.client.get(reverse("calendar"))
-        self.assertIn("event_types", response.context)
-        self.assertIn("discipline_categories", response.context)
+        self.assertIn("event_types_json", response.context)
+        self.assertIn("categories_json", response.context)
         self.assertIn("disciplines_json", response.context)
         # The location tree is no longer part of the page -- the cascade fetches it (see
         # tests/test_locations_payload.py).
@@ -917,9 +917,9 @@ class ListViewDisciplineContextTests(TestCase):
 
     def test_list_view_has_discipline_context(self):
         response = self.client.get(reverse("calendar_list"))
-        self.assertIn("discipline_categories", response.context)
+        self.assertIn("categories_json", response.context)
         self.assertIn("disciplines_json", response.context)
-        cat_pks = [c.pk for c in response.context["discipline_categories"]]
+        cat_pks = [c["pk"] for c in response.context["categories_json"]]
         self.assertIn(self.category.pk, cat_pks)
         disc_pks = [d["pk"] for d in response.context["disciplines_json"]]
         self.assertIn(self.discipline.pk, disc_pks)
