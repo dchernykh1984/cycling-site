@@ -1098,6 +1098,28 @@ class CatchAllVenueLifecycleTests(TestCase):
         self.assertFalse(Location.objects.get(pk=venue.pk).is_deleted)
 
 
+class GeographyAboveIsApprovedTests(TestCase):
+    def test_the_batch_answer_is_the_walked_one(self):
+        from locations.models import geography_above_is_approved, pending_place_paths
+
+        owner = _make_user("geo-batch@x.com", User.Role.PARTICIPANT)
+        country, region, city = _make_tree()
+        pending_city = _propose_place(region, "Pending City", owner)
+        nodes = [
+            None,
+            country,
+            region,
+            city,
+            Location.propose_venue(city, "Venue A", submitted_by=owner),
+            pending_city.add_child(name_ru="Venue B", name_en="Venue B"),
+        ]
+        pending = pending_place_paths()
+        for node in nodes:
+            with self.subTest(node=str(node)):
+                self.assertEqual(geography_above_is_approved(node, pending), geography_above_is_approved(node))
+        self.assertFalse(geography_above_is_approved(nodes[-1], pending))
+
+
 class EditVenueUnderApprovedCityTests(TestCase):
     """Editing an event to add a fresh venue under an approved city must not un-publish it."""
 

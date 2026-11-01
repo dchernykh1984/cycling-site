@@ -66,6 +66,26 @@ class ModerationTasksContextProcessorTests(TestCase):
         self.assertNotIn("articles", kinds)
         self.assertNotIn("locations", kinds)
 
+    def test_the_event_count_is_what_the_queue_shows_the_reader(self):
+        from django.test import Client
+
+        author = _user("prop@t.local", User.Role.PARTICIPANT)
+        country = Location.add_root(name_ru="KZ", name_en="KZ")
+        region = country.add_child(name_ru="Region", name_en="Region")
+        LocationProposal.objects.create(location=region, submitted_by=author)  # the region awaits review
+        venue = region.add_child(name_ru="City", name_en="City").add_child(name_ru="Start", name_en="Start")
+        _comp("On pending geography", status=Competition.Status.PENDING_APPROVAL, location=venue)
+        _comp("Elsewhere", status=Competition.Status.PENDING_APPROVAL)
+        for role, expected in ((User.Role.ORGANIZER, 1), (User.Role.ADMIN, 2)):
+            with self.subTest(role=str(role)):
+                user = _user(f"{role}@q.local", role)
+                result, _kinds_seen = _kinds(user, self.rf)
+                counts = {t["kind"]: t["count"] for t in result["moderation_tasks"]}
+                client = Client()
+                client.force_login(user)
+                queue = client.get(reverse("calendar_moderate")).context["competitions"]
+                self.assertEqual((counts["events"], len(queue)), (expected, expected))
+
     def test_admin_sees_events_locations_articles_news(self):
         admin = _user("a@t.local", User.Role.ADMIN)
         author = _user("auth@t.local", User.Role.PARTICIPANT)

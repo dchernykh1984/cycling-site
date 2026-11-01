@@ -73,6 +73,7 @@ from .models import (
 from .seo import sports_event
 from .tracks import route_track
 from .visibility import (
+    awaiting_review,
     can_manage_or_own,
     can_open,
     can_review,
@@ -1529,21 +1530,14 @@ class ModerationView(ModeratorRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        competitions = list(
+        context["competitions"] = awaiting_review(
+            self.request.user,
             Competition.objects.filter(status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
             .select_related("submitted_by", "location")
             .prefetch_related("event_types")
             .prefetch_related("disciplines__category")
-            .order_by("date_start")
+            .order_by("date_start"),
         )
-        # An event on geography still under review can only be approved by someone who may also bless
-        # that geography (ADMIN+); an organizer would just hit LocationPendingError. Don't show them
-        # what they cannot act on -- leave those to the admins, who also see the pending locations.
-        if not roles.at_least(self.request.user, roles.APPROVE_PLACES):
-            competitions = [
-                comp for comp in competitions if geography_above_is_approved(comp.location) and not comp.invite_only
-            ]
-        context["competitions"] = competitions
         context["reject_form"] = RejectCompetitionForm()
         if roles.at_least(self.request.user, roles.APPROVE_PLACES):
             context["pending_locations"] = (

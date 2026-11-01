@@ -28,16 +28,17 @@ def moderation_tasks(request):
 
     from accounts import roles
     from calendar_app.models import Competition
+    from calendar_app.visibility import awaiting_review
 
     tasks: list[dict] = []
 
     # Events: a moderator approves or rejects pending competitions on the moderation page.
     if roles.at_least(user, roles.MODERATE_EVENTS):
         # An invite-only event waits for admins, not for every organizer (issue #313).
-        only_public = {} if roles.at_least(user, roles.MANAGE_ALL_EVENTS) else {"invite_only": False}
-        events = Competition.objects.filter(
-            status=Competition.Status.PENDING_APPROVAL, is_deleted=False, **only_public
-        ).count()
+        # The events the queue shows this reader, so the count above the page matches the page it opens.
+        # Two columns are read: a description can carry a megabyte of pictures.
+        pending = Competition.objects.filter(status=Competition.Status.PENDING_APPROVAL, is_deleted=False)
+        events = len(awaiting_review(user, pending.select_related("location").only("invite_only", "location__path")))
         if events:
             tasks.append({"kind": "events", "count": events, "url": reverse("calendar_moderate")})
 

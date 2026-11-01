@@ -196,13 +196,25 @@ def chain_is_approved(parent) -> bool:
     return not any(node.is_pending for node in [parent, *parent.get_ancestors()])
 
 
-def geography_above_is_approved(location) -> bool:
+def geography_above_is_approved(location, pending_paths: set[str] | None = None) -> bool:
     """Whether everything above ``location`` is public: its city, region and country.
 
     Only the geography above the venue counts. A start point proposed under an approved city is
-    the designed flow and leaves the event published.
+    the designed flow and leaves the event published. ``pending_paths`` (pending_place_paths())
+    answers it for many events at once, without walking each tree.
     """
-    return chain_is_approved(location.get_parent() if location is not None else None)
+    if pending_paths is None:
+        return chain_is_approved(location.get_parent() if location is not None else None)
+    if location is None:
+        return True
+    step = Location.steplen
+    return not any(location.path[:end] in pending_paths for end in range(step, len(location.path), step))
+
+
+def pending_place_paths() -> set[str]:
+    """The tree paths of every place still awaiting review, read in one query."""
+    pending = Location.objects.filter(proposal__status=LocationProposal.Status.PENDING_APPROVAL)
+    return set(pending.values_list("path", flat=True))
 
 
 # How far a latitude and a longitude reach either side of zero, in degrees.
