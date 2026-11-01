@@ -14,32 +14,28 @@ from django.utils.translation import gettext as _
 
 from assistant.conversations import may_see, offered, subject_field
 from assistant.models import Conversation
+from assistant.prompt import LANGUAGES, URL_FIELDS
 
 register = template.Library()
 
-_LANGUAGES = ("ru", "kk", "en")
 # What the chat reads off each kind's form and fills in: plain fields by name, and the editors of its
 # rich texts by the id of the box each one's Quill lives in.
 _FORMS: dict[str, dict[str, object]] = {
     Conversation.Kind.EVENT: {
         "fields": [
-            *(f"{name}_{lang}" for name in ("title", "preview_text") for lang in _LANGUAGES),
+            *(f"{name}_{lang}" for name in ("title", "preview_text") for lang in LANGUAGES),
             "date_start",
             "date_end",
-            "url_announcement",
-            "url_registration",
-            "url_route",
-            "url_regulations",
-            "url_results",
+            *URL_FIELDS,
             "location",
             "new_venue_city",
         ],
-        "editors": {f"description_{lang}": f"quill-desc-{lang}" for lang in _LANGUAGES},
+        "editors": {f"description_{lang}": f"quill-desc-{lang}" for lang in LANGUAGES},
         "attach": True,
     },
     Conversation.Kind.NEWS: {
-        "fields": [f"{name}_{lang}" for name in ("title", "intro") for lang in _LANGUAGES],
-        "editors": {f"body_{lang}": f"quill-{lang}" for lang in _LANGUAGES},
+        "fields": [f"{name}_{lang}" for name in ("title", "intro") for lang in LANGUAGES],
+        "editors": {f"body_{lang}": f"quill-{lang}" for lang in LANGUAGES},
         "attach": False,
     },
 }

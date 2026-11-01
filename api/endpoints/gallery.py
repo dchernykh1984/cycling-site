@@ -252,8 +252,8 @@ def update_album(request, album_id: int, payload: AlbumPatchIn):
     title = payload.title or LocalizedStr(**stored)
     form = _album_form(
         title,
-        data["date"] if "date" in data else album.date,
-        data["competition_id"] if "competition_id" in data else album.competition_id,
+        data.get("date", album.date),
+        data.get("competition_id", album.competition_id),
         data["is_hidden"] if data.get("is_hidden") is not None else album.is_hidden,
         album,
     )

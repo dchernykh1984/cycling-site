@@ -192,8 +192,7 @@ def _city_path(location) -> str | None:
     """The treebeard path of the city ``location`` belongs to, or None above city level."""
     if location is None or location.depth < Level.CITY:
         return None
-    step = len(location.path) // location.depth
-    return location.path[: step * Level.CITY]
+    return location.path[: Location.steplen * Level.CITY]
 
 
 def city_id_of(location) -> int | None:
