@@ -35,7 +35,6 @@ from agent.venues import (  # noqa: F401  (re-exported for this agent's runner a
     existing_venue,
     same_name,
     same_place,
-    venue_words,
     venues_of,
 )
 
