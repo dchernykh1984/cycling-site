@@ -513,6 +513,24 @@ class RefusedEntryPageTests(TestCase):
             ["</script><script>window.x=1</script>"],
         )
 
+    def test_a_refused_entry_leaves_the_teams_as_they_were(self):
+        comp = make_open_competition()
+        women_only = make_category(comp, male=False)
+        gone = Team.objects.create(name="Gone", is_deleted=True)
+        url = reverse("registrations:register", args=[comp.pk])
+        data = {
+            "first_name": "Denis",
+            "last_name": "Test",
+            "gender": "M",
+            "birth_year": 1990,
+            "category": women_only.pk,
+        }
+        for team in ("Brand New", "Gone"):
+            self.assertEqual(self.client.post(url, {**data, "team_name": team}).status_code, 200)
+        self.assertFalse(Team.objects.filter(name="Brand New").exists())
+        gone.refresh_from_db()
+        self.assertTrue(gone.is_deleted)
+
     def test_a_refused_relay_entry_keeps_the_team_typed_in(self):
         comp = make_relay_competition()
         women_only = make_category(comp, male=False)
