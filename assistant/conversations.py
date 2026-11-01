@@ -49,7 +49,7 @@ def may_see(user, conversation: Conversation) -> bool:
     subject = conversation.competition or conversation.news
     if subject is not None:
         return may_write(user, subject)
-    return roles.at_least(user, roles.Role.ADMIN) or conversation.started_by_id == user.pk
+    return roles.at_least(user, roles.SEE_ANY_CONVERSATION) or conversation.started_by_id == user.pk
 
 
 def start(user, subject=None, kind: str = Conversation.Kind.EVENT) -> tuple[Conversation, bool]:
@@ -165,6 +165,6 @@ def link(conversation_id, subject, user) -> bool:
     if Conversation.objects.filter(**{field: subject}).exists():
         return False
     free = Conversation.objects.filter(pk=int(conversation_id), kind=kind, competition__isnull=True, news__isnull=True)
-    if not roles.at_least(user, roles.Role.ADMIN):
+    if not roles.at_least(user, roles.SEE_ANY_CONVERSATION):
         free = free.filter(started_by=user)
     return free.update(**{field: subject}) == 1

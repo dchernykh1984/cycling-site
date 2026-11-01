@@ -25,6 +25,7 @@ MODERATE_EVENTS = Role.ORGANIZER  # approve or reject anybody's event
 MANAGE_ALL_EVENTS = Role.ADMIN  # every event: hidden, invite-only, reported, deleted
 MARK_TOP_EVENTS = Role.ADMIN
 EVENT_ASSISTANT = Role.ORGANIZER  # it spends the site's key (specs/353-event-assistant, decision 27)
+SEE_ANY_CONVERSATION = Role.ADMIN  # an assistant conversation somebody else started
 
 # What the site writes for everybody (specs/site/news-and-knowledge.md).
 MANAGE_NEWS = Role.ADMIN  # write, edit, hide and delete news, take submitted news, delete comments
@@ -71,6 +72,15 @@ def can_assign_role(editor, role: str) -> bool:
     if not role_at_least(editor, Role.ORGANIZER):
         return False
     return role_at_least(editor, Role.ADMIN if role == Role.PARTICIPANT else role)
+
+
+def role_change_refusal(editor, target, role: str) -> str:
+    """Why ``editor`` may not give ``target`` (None for a new account) ``role``; empty when they may."""
+    if target is not None and not can_manage_user(editor, target):
+        return "You don't have permission to edit this user's role."
+    if not can_assign_role(editor, role):
+        return "You don't have permission to assign this role."
+    return ""
 
 
 def can_manage_user(editor, target) -> bool:

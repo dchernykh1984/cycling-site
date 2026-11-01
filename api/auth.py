@@ -11,14 +11,14 @@ class ApiTokenAuth(HttpBearer):
         from django.core.exceptions import ValidationError
 
         from accounts.models import User
-        from audit.middleware import _thread_locals
+        from audit.middleware import set_current_user
 
         try:
             user = User.objects.get(api_token=token, is_active=True)
         except (User.DoesNotExist, ValueError, ValidationError):
             return None
         request.user = user
-        _thread_locals.user = user  # keep audit middleware in sync with Bearer auth
+        set_current_user(user)  # keep audit middleware in sync with Bearer auth
         return user
 
 
@@ -37,7 +37,7 @@ class ConfirmedSessionAuth(SessionAuth):
 member_auth = [ApiTokenAuth(), ConfirmedSessionAuth()]
 
 
-class OptionalApiTokenAuth(HttpBearer):
+class OptionalApiTokenAuth(ApiTokenAuth):
     """Like ApiTokenAuth but allows requests with no Authorization header.
 
     When no token is provided the request proceeds with an AnonymousUser so that
@@ -52,20 +52,6 @@ class OptionalApiTokenAuth(HttpBearer):
             request.auth = AnonymousUser()
             return AnonymousUser()
         return super().__call__(request)
-
-    def authenticate(self, request, token):
-        from django.core.exceptions import ValidationError
-
-        from accounts.models import User
-        from audit.middleware import _thread_locals
-
-        try:
-            user = User.objects.get(api_token=token, is_active=True)
-        except (User.DoesNotExist, ValueError, ValidationError):
-            return None
-        request.user = user
-        _thread_locals.user = user
-        return user
 
 
 def competition_by_token(token: str):
