@@ -19,6 +19,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.cache import patch_cache_control
+from django.utils.dates import MONTHS
 from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 from django.utils.translation import get_language
 from django.utils.translation import gettext as _
@@ -361,22 +362,6 @@ def upcoming_competitions(user, limit: int = 20) -> list[Competition]:
 
 #: The month names the picker offers. They are the same twelve strings the grid's own title is
 #: built from, so a reader never sees two spellings of the same month on one page.
-MONTH_NAMES = (
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-)
-
-
 def calendar_year_choices() -> list[int]:
     """Every year the month picker can jump to, on the calendar, the list and the map alike.
 
@@ -463,7 +448,7 @@ def map_home_area(location_ids) -> list | None:
 def month_picker_choices() -> dict:
     """The words and years the period row above the calendar, the list and the map is built from."""
     return {
-        "calendar_months": list(enumerate((_(name) for name in MONTH_NAMES), start=1)),
+        "calendar_months": [(number, str(name)) for number, name in MONTHS.items()],
         "calendar_years": calendar_year_choices(),
         "calendar_date_words": calendar_date_words(),
         "calendar_week": {"first_day": settings.CALENDAR_FIRST_WEEKDAY, "weekend": list(settings.CALENDAR_WEEKEND)},
@@ -737,11 +722,9 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         # instead of re-running the paginated query as an IN subquery.
         context["favorited_ids"] = _favorited_ids(self.request, list(page))
         # Registration run on this site has no URL field for the row to show, so the row asks the
-        # event. Only rows that take entries here are asked: with a participant limit the check
-        # counts registrations, and the other rows would pay that query for nothing.
-        context["registration_open_ids"] = {
-            comp.pk for comp in page if comp.registration_enabled and comp.is_registration_open()
-        }
+        # event. A row that takes no entries here answers without a query; with a participant limit
+        # the check counts registrations.
+        context["registration_open_ids"] = {comp.pk for comp in page if comp.is_registration_open()}
         context["date_from"] = date_from
         context["date_to"] = date_to
         context["upcoming"] = upcoming
@@ -1434,7 +1417,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                     comp.save()
                     comp.disciplines.set(cd.get("disciplines") or [])
                     comp.event_types.set(cd.get("event_types") or [])
-                    if is_organizer and reg_form.is_valid():
+                    if is_organizer:
                         _save_categories(comp, reg_form, True)
                     # The event assistant's conversation that filled the form goes on from the
                     # event's edit page (issue #353).

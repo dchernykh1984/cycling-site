@@ -503,7 +503,7 @@ class Competition(index.Indexed, models.Model):
         # at the event's place, not the reader's.
         elif timezone.localdate(timezone=self.timezone) > self.last_day:
             return False
-        return True if ignore_limit else not self.is_limit_reached()
+        return ignore_limit or not self.is_limit_reached()
 
     def qualified_count(self, category=None) -> int:
         from registrations.models import counted

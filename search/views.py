@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.core.paginator import Paginator
 from django.template.response import TemplateResponse
 from django.utils.translation import get_language
 from wagtail.models import Locale, Page
@@ -55,13 +55,7 @@ def search(request):
         news_results = []
         location_results = []
 
-    paginator = Paginator(search_results, RESULTS_PER_PAGE)
-    try:
-        search_results = paginator.page(page)
-    except PageNotAnInteger:
-        search_results = paginator.page(1)
-    except EmptyPage:
-        search_results = paginator.page(paginator.num_pages)
+    search_results = Paginator(search_results, RESULTS_PER_PAGE).get_page(page)
 
     return TemplateResponse(
         request,
