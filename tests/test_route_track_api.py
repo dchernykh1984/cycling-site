@@ -18,6 +18,9 @@ GPX = (
 )
 
 
+NO_TRACK = "This event has no route file, or its route file holds no track"
+
+
 class RouteTrackApiTests(TestCase):
     def setUp(self):
         media = tempfile.mkdtemp()
@@ -61,8 +64,12 @@ class RouteTrackApiTests(TestCase):
         )
 
     def test_an_event_whose_route_draws_nothing_has_no_track(self):
-        self.assertEqual(self._get(self._event(route=None)).status_code, 404)
-        self.assertEqual(self._get(self._event(route=b"%PDF-1.7 a route map")).status_code, 404)
+        for route in (None, b"%PDF-1.7 a route map"):
+            response = self._get(self._event(route=route))
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(
+                response.json()["detail"], "This event has no route file, or its route file holds no track"
+            )
 
     def test_what_the_api_does_not_show_it_gives_no_track_of(self):
         pending = self._event(status=Competition.Status.PENDING_APPROVAL)
