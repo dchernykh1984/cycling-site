@@ -73,7 +73,11 @@ an event that lets anyone be registered, and the city and the team are suggested
         .then(r => r.json()).then(data => {
           let list = document.getElementById(listId);
           if (!list) { list = document.createElement('datalist'); list.id = listId; document.body.appendChild(list); input.setAttribute('list', listId); }
-          list.innerHTML = data.results.map(item => `<option value="${item.name}">`).join('');
+          list.replaceChildren(...data.results.map(item => {
+            const option = document.createElement('option');
+            option.value = item.name;
+            return option;
+          }));
         });
     });
   }
