@@ -44,10 +44,9 @@ class LocaleFallbackMiddleware:
         # The stored preference still decides which prefix an unprefixed URL redirects to.
         if hasattr(request, "user") and request.user.is_authenticated and not get_language_from_path(request.path_info):
             pref = request.user.preferred_language
-            if pref:
-                if check_for_language(pref):
-                    translation.activate(pref)
-                    request.LANGUAGE_CODE = pref
+            if pref and check_for_language(pref):
+                translation.activate(pref)
+                request.LANGUAGE_CODE = pref
 
         return self.get_response(request)
 

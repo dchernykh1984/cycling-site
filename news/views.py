@@ -98,7 +98,7 @@ class NewsArticleCreateView(LoginRequiredMixin, View):
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request):
-        now = timezone.localtime(timezone.now())
+        now = timezone.localtime()
         form = NewsArticleForm(initial={"published_at": now.strftime("%Y-%m-%dT%H:%M")})
         return render(request, "news/article_form.html", {"form": form, "action": "create"})
 
