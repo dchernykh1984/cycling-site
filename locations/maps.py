@@ -30,7 +30,6 @@ from locations.models import Level, Location
 
 # Zoom close enough to show the actual corner of a car park, on the services that take one.
 _ZOOM = 17
-# The tree is country / region / city / venue; only the deepest level can be a start line.
 
 
 @dataclass(frozen=True)

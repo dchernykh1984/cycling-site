@@ -85,6 +85,10 @@ def signin_methods(user) -> dict:
     }
 
 
+# A message to the owners: generous for a detailed hand-typed one, but it blocks huge payloads.
+_MESSAGE_MAX_LENGTH = 5000
+
+
 class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = User
@@ -107,7 +111,7 @@ class ProfileEditForm(forms.ModelForm):
         ]
         widgets: ClassVar[dict] = {
             "birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-            "gender": forms.RadioSelect(choices=[("M", "M"), ("F", "F")]),
+            "gender": forms.RadioSelect,
             "preferred_directions": forms.MultipleHiddenInput,
             "preferred_disciplines": forms.MultipleHiddenInput,
             "preferred_locations": forms.MultipleHiddenInput,
@@ -122,8 +126,9 @@ def role_ladder(user) -> list[dict]:
     A person cannot see what they are missing -- or what they could give up -- from a single line
     saying "Role: Participant", so the profile shows the whole ladder and where they stand on it.
     """
-    labels = dict(User.Role.choices)
-    return [{"value": role, "label": labels[role], "is_current": role == user.role} for role in User.ROLE_HIERARCHY]
+    return [
+        {"value": role, "label": User.Role(role).label, "is_current": role == user.role} for role in User.ROLE_HIERARCHY
+    ]
 
 
 def _managing_context(request, user):
@@ -267,14 +272,10 @@ class ProfileEditView(LoginRequiredMixin, View):
         }
 
     def get(self, request):
-        from django.shortcuts import render
-
         form = ProfileEditForm(instance=request.user)
         return render(request, self.template_name, {"form": form, **self._picker_context(form)})
 
     def post(self, request):
-        from django.shortcuts import render
-
         form = ProfileEditForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
@@ -384,21 +385,20 @@ class RequestRoleForm(forms.Form):
         widget=forms.RadioSelect,
     )
     reason = forms.CharField(
-        max_length=5000,
+        max_length=_MESSAGE_MAX_LENGTH,
         label=gettext_lazy("Why you need it"),
         help_text=gettext_lazy(
             "Tell us what you plan to do with this role, and how to reach you if we have questions."
         ),
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 6, "maxlength": 5000}),
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 6}),
     )
 
     def __init__(self, *args, current_role: str = "", **kwargs):
         super().__init__(*args, **kwargs)
-        labels = dict(User.Role.choices)
         # `self.fields` is typed as the base Field, which knows nothing of choices; the local
         # binding is what tells mypy which field this is.
         role_field: forms.ChoiceField = self.fields["role"]  # type: ignore[assignment]
-        role_field.choices = [(role, labels[role]) for role in User.ROLE_HIERARCHY if role != current_role]
+        role_field.choices = [(role, User.Role(role).label) for role in User.ROLE_HIERARCHY if role != current_role]
 
 
 class RequestRoleView(ParticipantRequiredMixin, View):
@@ -423,7 +423,7 @@ class RequestRoleView(ParticipantRequiredMixin, View):
         # Internal notification, always English -- the owners read it, not the sender, and the role
         # names follow the active language now that the profile shows them.
         with translation.override("en"):
-            wanted = dict(User.Role.choices)[cd["role"]]
+            wanted = User.Role(cd["role"]).label
             body = (
                 f"A registered site user asks for a different role.\n\n"
                 f"User: {user.get_username()}\n"
@@ -447,12 +447,12 @@ class ContactOwnersForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     message = forms.CharField(
-        max_length=5000,  # generous for a detailed hand-typed message, but blocks huge payloads
+        max_length=_MESSAGE_MAX_LENGTH,
         label=gettext_lazy("Message"),
         help_text=gettext_lazy(
             "Please tell us how to reach you (e.g. email or messenger) and describe your question or problem in detail."
         ),
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 6, "maxlength": 5000}),
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 6}),
     )
 
 
@@ -648,8 +648,9 @@ class ManagingActionView(ParticipantRequiredMixin, View):
     def post(self, request, person_id=None):
         user = request.user
         section = "my-managers" if self.action == "leave" else "managed-members"
-        if self.action == "issue" and managing.why_no_link(user):
-            messages.error(request, managing.why_no_link(user))
+        refusal = managing.why_no_link(user) if self.action == "issue" else ""
+        if refusal:
+            messages.error(request, refusal)
             return redirect(f"{reverse('account_profile')}#{section}")
         {
             "issue": lambda: managing.issue_invite(user),

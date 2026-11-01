@@ -164,7 +164,7 @@ def _registration_card(request, registration) -> dict:
     }
 
 
-def _photos(request, qs, competition, page_number, decisions=None) -> dict:
+def _photos(request, qs, page_number, decisions=None) -> dict:
     page = Paginator(qs, PER_PAGE).get_page(page_number)
     out = []
     for photo in page:
@@ -200,7 +200,7 @@ def search_by_bib(request, competition_id: int, bib: str, page: int = 1):
     competition = _competition(request.auth, competition_id)
     albums = visible_albums(request.auth, competition)
     qs = actions.bib_photos(competition, bib[:32]).filter(album__in=albums).select_related("album")
-    return _photos(request, qs, competition, page)
+    return _photos(request, qs, page)
 
 
 @router.get("/albums/{album_id}/photos", response=PhotoPageOut, auth=optional_auth)
@@ -212,7 +212,7 @@ def album_photos(request, album_id: int, page: int = 1):
     qs = actions.album_photos(album, include_hidden=can_manage_albums(request.auth, competition)).select_related(
         "album"
     )
-    return _photos(request, qs, competition, page)
+    return _photos(request, qs, page)
 
 
 @router.get("/me/registrations", response=list[RegistrationAlbumOut], auth=auth)
@@ -242,7 +242,7 @@ def registration_photos(request, registration_id: int, page: int = 1):
     registration = _registration(request.auth, registration_id)
     qs = actions.registration_photos(registration).select_related("album")
     decisions = dict(PhotoDecision.objects.filter(registration=registration).values_list("photo_id", "state"))
-    return _photos(request, qs, registration.competition, page, decisions)
+    return _photos(request, qs, page, decisions)
 
 
 def _archive(photos, name: str):
