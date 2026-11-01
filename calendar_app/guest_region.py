@@ -12,7 +12,6 @@ from __future__ import annotations
 import math
 
 from django.conf import settings
-from django.db.models import Q
 from django.utils import timezone
 
 from agent.venues import distance_metres
@@ -73,17 +72,11 @@ def nearest_region(point: tuple[float, float]):
 
 def has_upcoming_events(region, user) -> bool:
     """Whether ``user`` would find any event still to come in ``region``."""
-    from calendar_app.models import Competition
-    from calendar_app.visibility import listed_for
+    from calendar_app.views import overlapping
+    from calendar_app.visibility import listed_events
 
-    today = timezone.localdate()
-    events = Competition.objects.filter(
-        Q(date_end__gte=today) | Q(date_end__isnull=True, date_start__gte=today),
-        status=Competition.Status.APPROVED,
-        is_deleted=False,
-        location__path__startswith=region.path,
-    )
-    return listed_for(events, user).exists()
+    events = listed_events(user).filter(location__path__startswith=region.path)
+    return overlapping(events, timezone.localdate(), None).exists()
 
 
 def guest_region(request):

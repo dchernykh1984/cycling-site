@@ -70,7 +70,16 @@ from .models import (
 )
 from .seo import sports_event
 from .tracks import route_track
-from .visibility import can_manage_or_own, can_open, can_review, can_see, listed_for, manages, public_events
+from .visibility import (
+    can_manage_or_own,
+    can_open,
+    can_review,
+    can_see,
+    listed_events,
+    manages,
+    moderates,
+    public_events,
+)
 
 # Top events first, then by day; the pk keeps the order the same from one page to the next.
 LISTING_ORDER = ("-is_top", "date_start", "pk")
@@ -340,9 +349,8 @@ def upcoming_competitions(user, limit: int = 20) -> list[Competition]:
     return list(
         # Hidden stays out for everybody, admins too: these rows carry no "hidden" badge, and they
         # are what a crawler reads. Invite-only rows are the reader's own business.
-        listed_for(
-            Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False, is_hidden=False), user
-        )
+        listed_events(user)
+        .filter(is_hidden=False)
         # A stage race that started yesterday and ends on Sunday is still ahead of the reader,
         # and dropping it the morning after day one is how a multi-day event disappears mid-race.
         .filter(Q(date_start__gte=today) | Q(date_end__gte=today))
@@ -607,12 +615,7 @@ class LocationsDataView(View):
 
 class CalendarEventsAPIView(View):
     def get(self, request):
-        qs = (
-            Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False)
-            .prefetch_related("event_types")
-            .prefetch_related("disciplines__category")
-        )
-        qs = listed_for(qs, request.user)
+        qs = listed_events(request.user).prefetch_related("event_types").prefetch_related("disciplines__category")
         # The grid sends ISO datetimes; a value that is not a date is dropped, as the list's filters drop it.
         start = _parse_date((request.GET.get("start") or "")[:10], None)
         end = _parse_date((request.GET.get("end") or "")[:10], None)
@@ -691,12 +694,11 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
 
         is_manager = roles.at_least(self.request.user, roles.MANAGE_ALL_EVENTS)
         qs = (
-            Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False)
+            listed_events(self.request.user)
             .select_related("location")
             .prefetch_related("event_types")
             .prefetch_related("disciplines__category")
         )
-        qs = listed_for(qs, self.request.user)
 
         if form.is_valid():
             if form.cleaned_data.get("date_from"):
@@ -790,13 +792,8 @@ class CalendarMapAPIView(View):
     """
 
     def get(self, request):
-        qs = Competition.objects.filter(
-            status=Competition.Status.APPROVED,
-            is_deleted=False,
-            location__isnull=False,
-            location__is_deleted=False,
-        ).select_related("location")
-        qs = listed_for(qs, request.user)
+        qs = listed_events(request.user).filter(location__isnull=False, location__is_deleted=False)
+        qs = qs.select_related("location")
         qs = overlapping(
             qs, _parse_date(request.GET.get("date_from"), None), _parse_date(request.GET.get("date_to"), None)
         )
@@ -922,18 +919,13 @@ class CompetitionDetailView(View):
         if not can_open(request.user, competition):
             raise Http404
         is_manager = manages(request.user, competition)
-        is_author = request.user.is_authenticated and request.user == competition.submitted_by
-        # Any organizer moderates -- except an invite-only event, which is for the people who may
-        # edit it, so only admins and up review it (see visibility.can_review).
-        can_moderate = roles.at_least(request.user, roles.MODERATE_EVENTS) and (
-            not competition.invite_only or roles.at_least(request.user, roles.MANAGE_ALL_EVENTS)
-        )
+        can_moderate = moderates(request.user, competition)
         protocols = competition.protocols.all()
         # upload_token is a secret credential: only show it to the submitter or to users
         # who can manage this specific competition (superuser, admin+, or the organizer
         # who submitted it). Removed the broad rank >= ORGANIZER check that exposed
         # tokens of other organizers' competitions.
-        show_upload_token = can_manage_or_own(request.user, competition)
+        can_edit = can_manage_or_own(request.user, competition)
         already_registered = False
         registers_others = False
         if request.user.is_authenticated:
@@ -973,11 +965,11 @@ class CompetitionDetailView(View):
             # Photo and video coverage, in the order its author arranged it. Shown to everyone who
             # can see the event at all -- the links are public pages, not a manager's business.
             "materials": competition.materials.all(),
-            "show_upload_token": show_upload_token,
+            "show_upload_token": can_edit,
             "is_manager": is_manager,
             # The author (any role) may edit/delete/resubmit their own submission (#200); Hide and
             # the upload token stay manager-only via is_manager.
-            "can_edit": is_manager or is_author,
+            "can_edit": can_edit,
             "already_registered": already_registered,
             "registers_others": registers_others,
             "site_base_url": request.build_absolute_uri("/").rstrip("/"),
@@ -1038,6 +1030,14 @@ class CompetitionDetailView(View):
             # Only people let in ever reach this page, but say it plainly in case a crawler does.
             response["X-Robots-Tag"] = "noindex"
         return response
+
+
+def _competition_or_403(request, pk, may=can_manage_or_own) -> Competition:
+    """The event ``pk`` unless deleted, when ``may`` lets the requester act on it; a 404 or a 403 else."""
+    competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+    if not may(request.user, competition):
+        raise PermissionDenied
+    return competition
 
 
 def _validate_deadline(reg_form, date_start, date_end):
@@ -1317,10 +1317,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
         pk = request.GET.get("clone")
         if not pk or not pk.isdecimal():
             return None
-        comp = get_object_or_404(Competition, pk=int(pk), is_deleted=False)
-        if not can_manage_or_own(request.user, comp):
-            raise PermissionDenied
-        return comp
+        return _competition_or_403(request, int(pk))
 
     def _error_context(self, request, form, reg_form, is_organizer: bool) -> dict:
         """The page as the organizer left it, when their submission did not go through.
@@ -1442,14 +1439,8 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
 class EditCompetitionView(View):
     template_name = "calendar_app/edit.html"
 
-    def _get_competition_or_403(self, request, pk):
-        comp = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage_or_own(request.user, comp):
-            raise PermissionDenied
-        return comp
-
     def get(self, request, pk):
-        comp = self._get_competition_or_403(request, pk)
+        comp = _competition_or_403(request, pk)
         # The top mark is the edition's, set by an admin: editing shows it, a clone starts without it.
         form = SubmitCompetitionForm(initial={**_competition_initial(comp), "is_top": comp.is_top}, user=request.user)
         reg_form = RegistrationSettingsForm(initial=_registration_initial(comp))
@@ -1475,11 +1466,11 @@ class EditCompetitionView(View):
         )
 
     def post(self, request, pk):
-        comp = self._get_competition_or_403(request, pk)
+        comp = _competition_or_403(request, pk)
         form = SubmitCompetitionForm(request.POST, request.FILES, user=request.user)
         reg_form = RegistrationSettingsForm(request.POST)
         # The coverage links are editable by whoever may edit the event at all -- the same permission
-        # that got past _get_competition_or_403 above, with no separate organizer check.
+        # that got past _competition_or_403 above, with no separate organizer check.
         material_formset = _material_formset(request, comp)
         if form.is_valid() and reg_form.is_valid() and _materials_are_valid(material_formset):
             cd = form.cleaned_data
@@ -1771,9 +1762,7 @@ class DeleteCompetitionCommentView(LoginRequiredMixin, View):
 
 class CompetitionDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage_or_own(request.user, competition):
-            raise PermissionDenied
+        competition = _competition_or_403(request, pk)
         competition.is_deleted = True
         competition.save(update_fields=["is_deleted"])
         return redirect("calendar_list")
@@ -1783,9 +1772,7 @@ class ResubmitCompetitionView(LoginRequiredMixin, View):
     """The author sends a rejected competition back for a fresh review (#200)."""
 
     def post(self, request, pk):
-        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage_or_own(request.user, competition):
-            raise PermissionDenied
+        competition = _competition_or_403(request, pk)
         try:
             competition.resubmit()
         except ValueError:
@@ -1797,9 +1784,7 @@ class ResubmitCompetitionView(LoginRequiredMixin, View):
 
 class CompetitionHideView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not manages(request.user, competition):
-            raise PermissionDenied
+        competition = _competition_or_403(request, pk, may=manages)
         competition.is_hidden = not competition.is_hidden
         competition.save(update_fields=["is_hidden"])
         return redirect("competition_detail", pk=pk)
@@ -1856,9 +1841,7 @@ class RegenerateInviteKeyView(LoginRequiredMixin, View):
 
 class RegenerateUploadTokenView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage_or_own(request.user, competition):
-            raise PermissionDenied
+        competition = _competition_or_403(request, pk)
         competition.upload_token = uuid.uuid4()
         competition.save(update_fields=["upload_token"])
         messages.success(request, _("Timing token regenerated. The previous token no longer works."))
@@ -1867,9 +1850,7 @@ class RegenerateUploadTokenView(LoginRequiredMixin, View):
 
 class DeleteUploadTokenView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage_or_own(request.user, competition):
-            raise PermissionDenied
+        competition = _competition_or_403(request, pk)
         competition.upload_token = None
         competition.save(update_fields=["upload_token"])
         messages.success(request, _("Timing token deleted. Timing tools can no longer access this event."))
