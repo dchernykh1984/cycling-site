@@ -1,5 +1,6 @@
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from allauth.socialaccount.providers.strava.provider import StravaProvider
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -87,7 +88,7 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         # so a member signing up through Strava lands with their profile link already filled in.
         # Only ever set on a blank field, never overwriting a link the member typed themselves.
         user = super().populate_user(request, sociallogin, data)
-        if sociallogin.account.provider == "strava" and not user.strava_link:
+        if sociallogin.account.provider == StravaProvider.id and not user.strava_link:
             user.strava_link = strava_profile_url(sociallogin.account)
         return user
 

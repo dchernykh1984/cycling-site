@@ -26,6 +26,8 @@ def _setup_group_permissions(sender, **kwargs):
     from django.contrib.auth.models import Group, Permission
     from django.contrib.contenttypes.models import ContentType
 
+    from accounts.signals import ROLE_GROUP_MAP
+
     try:
         access_admin = Permission.objects.filter(
             codename="access_admin",
@@ -38,13 +40,13 @@ def _setup_group_permissions(sender, **kwargs):
         user_ct = ContentType.objects.get_for_model(user_model)
         user_perms = {p.codename: p for p in Permission.objects.filter(content_type=user_ct)}
 
-        admins, _ = Group.objects.get_or_create(name="Admins")
+        admins, _ = Group.objects.get_or_create(name=ROLE_GROUP_MAP[user_model.Role.ADMIN])
         admins.permissions.add(
             access_admin,
             *[user_perms[c] for c in ("view_user", "change_user", "add_user") if c in user_perms],
         )
 
-        owners, _ = Group.objects.get_or_create(name="Owners")
+        owners, _ = Group.objects.get_or_create(name=ROLE_GROUP_MAP[user_model.Role.OWNER])
         owners.permissions.add(
             access_admin,
             *[user_perms[c] for c in ("view_user", "change_user", "add_user", "delete_user") if c in user_perms],

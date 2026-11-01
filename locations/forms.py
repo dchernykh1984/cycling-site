@@ -11,14 +11,16 @@ from .models import (
     selectable_parent_locations,
 )
 
+_NAME_MAX_LENGTH = Location._meta.get_field("name").max_length
+
 # A place's point is the two numbers together: one alone pins nothing.
 BOTH_OR_NEITHER = _("Give both the latitude and the longitude, or neither.")
 
 
 class LocationForm(forms.Form):
-    name_ru = forms.CharField(max_length=255, label=_("Name (RU)"))
-    name_kk = forms.CharField(max_length=255, label=_("Name (KK)"), required=False)
-    name_en = forms.CharField(max_length=255, label=_("Name (EN)"), required=False)
+    name_ru = forms.CharField(max_length=_NAME_MAX_LENGTH, label=_("Name (RU)"))
+    name_kk = forms.CharField(max_length=_NAME_MAX_LENGTH, label=_("Name (KK)"), required=False)
+    name_en = forms.CharField(max_length=_NAME_MAX_LENGTH, label=_("Name (EN)"), required=False)
     # The deepest selected node in the country/region/city cascade. Empty means the new
     # location is itself a country (a depth-1 root); the level is always parent.depth + 1.
     parent = forms.ModelChoiceField(

@@ -138,6 +138,12 @@ def _content_hash(html: bytes | None, document: bytes | None) -> str:
     return hashlib.sha256(b"html\0" + (html or b"") + b"\0document\0" + document).hexdigest()
 
 
+def _check_protocol_type(protocol_type: str) -> None:
+    if protocol_type not in Protocol.ProtocolType.values:
+        allowed = " or ".join(f"'{value}'" for value in Protocol.ProtocolType.values)
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"protocol_type must be {allowed}")
+
+
 @router.post(
     "/upload/",
     response=ProtocolUploadOut,
@@ -147,7 +153,7 @@ def _content_hash(html: bytes | None, document: bytes | None) -> str:
 def upload_protocol(
     request,
     competition_token: str = Form(...),
-    protocol_type: str = Form("absolute"),
+    protocol_type: str = Form(Protocol.ProtocolType.ABSOLUTE),
     is_live: bool = Form(True),
     stage_label: str = Form(""),
     html_file: UploadedFile | None = File(None),  # noqa: B008
@@ -165,8 +171,7 @@ def upload_protocol(
     """
     competition = competition_by_token(competition_token)
 
-    if protocol_type not in Protocol.ProtocolType.values:
-        raise HttpError(HTTPStatus.BAD_REQUEST, "protocol_type must be 'absolute' or 'group'")
+    _check_protocol_type(protocol_type)
     if html_file is None and document is None:
         raise HttpError(HTTPStatus.BAD_REQUEST, "Send html_file, document or both")
 
@@ -205,7 +210,7 @@ def upload_protocol(
 def delete_protocol(
     request,
     competition_token: str = Form(...),
-    protocol_type: str = Form("absolute"),
+    protocol_type: str = Form(Protocol.ProtocolType.ABSOLUTE),
 ):
     """Delete a competition's protocol of the given type, if present.
 
@@ -214,8 +219,7 @@ def delete_protocol(
     link disappears from the competition detail page.
     """
     competition = competition_by_token(competition_token)
-    if protocol_type not in Protocol.ProtocolType.values:
-        raise HttpError(HTTPStatus.BAD_REQUEST, "protocol_type must be 'absolute' or 'group'")
+    _check_protocol_type(protocol_type)
 
     with transaction.atomic():
         Competition.objects.select_for_update().get(pk=competition.pk)

@@ -26,9 +26,14 @@ from assistant.prompt import LANGUAGES, NEWS_FIELDS, RICH_FIELDS, TEXT_FIELDS, U
 from calendar_app.models import Competition, Discipline, EventType
 from cycling_site.sanitize import sanitize_rich_html
 from locations.models import on_earth
+from news.models import NewsArticle
 
 # A description or a body is not cut: the form's own check bounds it, and a cut would break its HTML.
-_MAX = {"title": 255, "preview_text": Competition._meta.get_field("preview_text").max_length, "intro": 500}
+_MAX = {
+    "title": Competition._meta.get_field("title").max_length,
+    "preview_text": Competition._meta.get_field("preview_text").max_length,
+    "intro": NewsArticle._meta.get_field("intro").max_length,
+}
 _URL_MAX = Competition._meta.get_field("url_route").max_length or 200
 _SCHEME = re.compile(r"^(?:https?://|mailto:|tel:)?(?:www\.)?", re.IGNORECASE)
 _LANGUAGES = "|".join(re.escape(code) for code, _name in settings.LANGUAGES)
@@ -98,7 +103,7 @@ def written_by_them(url: str, texts: list[str]) -> bool:
 
 
 def _line(value) -> str:
-    return value.strip()[:255] if isinstance(value, str) else ""
+    return value.strip()[: _MAX["title"]] if isinstance(value, str) else ""
 
 
 def _url(value: str) -> str | None:
@@ -255,7 +260,7 @@ class _Checker:
 def check(
     answer: dict,
     *,
-    kind: str = "event",
+    kind: str = Conversation.Kind.EVENT,
     current: dict,
     texts: list[str],
     rows: list[dict],

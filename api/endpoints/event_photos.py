@@ -102,7 +102,7 @@ class RegistrationAlbumOut(Schema):
 
 
 class DecisionIn(Schema):
-    state: str = Field(pattern="^(me|not_me)$")
+    state: str = Field(pattern="^(" + "|".join(PhotoDecision.State.values) + ")$")
 
 
 class DecisionOut(Schema):
