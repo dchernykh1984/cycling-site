@@ -159,6 +159,43 @@ def test_unpicking_a_venue_leaves_its_city_s_catch_all(page: Page, live_server, 
 
 
 @pytest.mark.django_db(transaction=True)
+def test_unpicking_the_country_clears_every_level(page: Page, live_server, organizer, location_tree):
+    _goto_submit(page, live_server, organizer)
+    choose_place(page, "venue", "Velodrome")
+    page.locator("#loc-country").click()
+    page.locator("#loc-country-menu .loc-pick-clear").click()
+    for level in ("country", "region", "city", "venue"):
+        expect(page.locator(f"#loc-{level}")).to_have_attribute("data-value", "")
+    assert page.locator("#id_location").input_value() == ""
+
+
+# The site's own catch-alls under every region and country, as the migrations name them: a region
+# or a country picked alone stands for the catch-all of its "other city".
+OTHER_CITY = "\u0414\u0440\u0443\u0433\u043e\u0439 \u0433\u043e\u0440\u043e\u0434"
+OTHER_REGION = "\u0414\u0440\u0443\u0433\u043e\u0439 \u0440\u0435\u0433\u0438\u043e\u043d"
+
+
+def _catch_all(parent, city_name):
+    city = parent.add_child(name=city_name, name_ru=city_name, is_hidden=True)
+    return city.add_child(name="Other Venue", name_ru="Other Venue", is_hidden=True)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_region_or_a_country_picked_alone_stands_for_its_other_city(
+    page: Page, live_server, organizer, location_tree
+):
+    region_catch_all = _catch_all(location_tree["region"], OTHER_CITY)
+    other_region = location_tree["kz"].add_child(name=OTHER_REGION, name_ru=OTHER_REGION, is_hidden=True)
+    country_catch_all = _catch_all(other_region, OTHER_CITY)
+    _goto_submit(page, live_server, organizer)
+    choose_place(page, "region", "KZ Region")
+    assert page.locator("#id_location").input_value() == str(region_catch_all.pk)
+    choose_place(page, "country", "RU")
+    choose_place(page, "country", "KZ")
+    assert page.locator("#id_location").input_value() == str(country_catch_all.pk)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_enter_picks_the_first_place_found(page: Page, live_server, organizer, location_tree):
     _goto_submit(page, live_server, organizer)
     page.locator("#loc-city").click()
