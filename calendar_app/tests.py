@@ -1701,6 +1701,7 @@ class EditCompetitionViewTests(TestCase):
             expected = gettext("Registration deadline cannot be later than the competition date start.")
         self.assertNotIn("Registration deadline", expected)  # a Russian sentence, not the English source
         self.assertEqual(response.context["reg_form"].errors["registration_deadline"], [expected])
+        self.assertContains(response, expected)  # on the page, beside the registration settings
 
     def test_categories_not_written_by_the_page_are_skipped_rather_than_failing(self):
         from registrations.models import RegistrationCategory

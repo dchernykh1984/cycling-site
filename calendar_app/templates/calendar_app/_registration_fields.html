@@ -1,4 +1,11 @@
 {% load i18n calendar_tags %}
+{% comment %}Why the settings below were refused -- a deadline after the event, a category's name or
+bounds: none of them sits in a field of its own that could carry the message.{% endcomment %}
+{% if reg_form.errors %}
+<div class="alert alert-danger small" role="alert">
+  {% for errors in reg_form.errors.values %}{% for error in errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
+</div>
+{% endif %}
 <div class="mb-3">
   <label class="form-label fw-semibold">{% trans "Registration mode" %}</label>
   {% if mode_locked %}
