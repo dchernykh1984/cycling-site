@@ -462,6 +462,12 @@ def test_a_link_to_all_upcoming_opens_the_calendar_on_it(page: Page, live_server
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_last_day_named_beside_all_upcoming_still_wins_on_the_calendar(page: Page, live_server):
+    _calendar(page, live_server, query="?period=upcoming&date_to=2026-11-15")
+    expect(_label(page)).to_have_text("21 October \u2013 15 November 2026")
+
+
+@pytest.mark.django_db(transaction=True)
 def test_all_upcoming_on_the_map_leaves_the_last_day_empty(page: Page, live_server):
     page.set_viewport_size(WIDE)
     page.goto(f"{live_server.url}/en/calendar/map/")
