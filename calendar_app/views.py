@@ -29,7 +29,7 @@ from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from assistant.conversations import link as link_conversation
 from cycling_site.setup_hints import sign_in_url
-from locations.maps import map_links
+from locations.maps import map_links, start_point
 from locations.models import (
     Location,
     LocationConflictError,
@@ -64,6 +64,7 @@ from .models import (
     EventType,
 )
 from .seo import sports_event
+from .tracks import route_track
 from .visibility import can_manage_or_own, can_open, can_review, can_see, listed_for, manages, public_events
 
 
@@ -1024,6 +1025,10 @@ class CompetitionDetailView(View):
         # The name only becomes a caption on the pin, so it is the place's own name -- the full
         # country-region-city path would read as a wall of text over a single point.
         ctx["map_links"] = map_links(loc, (loc.name if loc is not None else "") or competition.title)
+        # The route file's track, drawn on the map with the start; a city's point is no start, so the
+        # map then opens on the track alone.
+        ctx["route_track"] = route_track(competition)
+        ctx["route_start_is_exact"] = start_point(loc) is not None
         if display is not None:
             lat = float(display.lat)
             lng = float(display.lng)

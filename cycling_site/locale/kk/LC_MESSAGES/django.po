@@ -4670,3 +4670,7 @@ msgstr "Төмен"
 #: home/templates/home/home_edit.html:137
 msgid "No cards yet."
 msgstr "Карточкалар әлі жоқ."
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "Arrows show the direction of the track."
+msgstr "Көрсеткілер тректің бағытын көрсетеді."

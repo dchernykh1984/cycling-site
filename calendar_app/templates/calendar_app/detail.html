@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% load i18n calendar_tags seo_tags event_photos_tags %}
+{% load i18n static calendar_tags seo_tags event_photos_tags %}
 
 {% block extra_css %}
-{% if location_lat %}
+{% if location_lat or route_track %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 {% endif %}
 {% endblock %}
@@ -116,8 +116,9 @@
     </div>
     {% endif %}
 
-    {% if location_lat %}
-    <div id="competition-map" class="mb-4" style="height: 300px; border-radius: 0.375rem;"></div>
+    {% if location_lat or route_track %}
+    <div id="competition-map" class="{% if route_track %}mb-1{% else %}mb-4{% endif %}" style="height: 300px; border-radius: 0.375rem;"></div>
+    {% if route_track %}<p class="small text-muted mb-4" id="competition-map-caption">{% trans "Arrows show the direction of the track." %}</p>{% endif %}
     {% endif %}
 
     {# Only a venue's own point earns these, so a forwarded link never lands on a city centre (locations.maps.start_point). #}
@@ -471,16 +472,29 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if location_lat %}
+{% if location_lat or route_track %}
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 {% include "_map_layers.html" %}
+{% if route_track %}
+{{ route_track|json_script:"competition-route-track" }}
+<script src="{% static 'calendar_app/route_track.js' %}"></script>
+{% endif %}
 <script>
 (function () {
-  var lat = {{ location_lat }};
-  var lng = {{ location_lng }};
-  var map = L.map('competition-map').setView([lat, lng], 13);
+  var map = L.map('competition-map');
   _addMapLayers(map);
-  L.marker([lat, lng]).addTo(map);
+  var start = null;
+  {% if location_lat %}
+  start = L.latLng({{ location_lat }}, {{ location_lng }});
+  L.marker(start).addTo(map);
+  {% endif %}
+  var track = document.getElementById('competition-route-track');
+  if (track) {
+    // The whole track in view, and the start with it when the venue has a point of its own.
+    drawRouteTrack(map, JSON.parse(track.textContent), {% if route_start_is_exact %}start{% else %}null{% endif %});
+  } else {
+    map.setView(start, 13);
+  }
 })();
 </script>
 {% endif %}
