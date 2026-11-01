@@ -15,6 +15,7 @@ class Migration(migrations.Migration):
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("source", models.CharField(max_length=255)),
+                ("reader", models.PositiveSmallIntegerField(default=0)),
                 ("geometry", models.JSONField(blank=True, null=True)),
                 (
                     "competition",

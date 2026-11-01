@@ -34,6 +34,9 @@ from calendar_app.models import CompetitionTrack
 EXTENSIONS = frozenset({"gpx", "kml", "kmz", "tcx", "fit", "geojson"})
 
 MAX_BYTES = 10 * 1024 * 1024  # what the event form takes; a larger file is not read
+# The reader's own version, kept with what it read: raised when reading a file changes what it gives,
+# so every line kept before is read again on its event's next visit.
+READER = 1
 _MAX_POINTS_READ = 500_000  # from one file; the rest of a larger one is left unread
 _MAX_LINES = 200
 _MAX_POINTS_KEPT = 4_000  # sent to the page, over all its lines
@@ -421,7 +424,7 @@ def route_track(competition) -> dict | None:
     if not name:
         return None
     kept = CompetitionTrack.objects.filter(competition=competition).first()
-    if kept is not None and kept.source == name:
+    if kept is not None and kept.source == name and kept.reader == READER:
         return kept.geometry
     try:
         with competition.file_route.open("rb") as file:
@@ -432,7 +435,7 @@ def route_track(competition) -> dict | None:
     try:
         with transaction.atomic():
             CompetitionTrack.objects.update_or_create(
-                competition=competition, defaults={"source": name, "geometry": geometry}
+                competition=competition, defaults={"source": name, "reader": READER, "geometry": geometry}
             )
     except IntegrityError:
         pass  # a visit at the same moment kept it first
