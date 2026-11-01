@@ -159,6 +159,25 @@ def inject_session(page, live_server, user):
     )
 
 
+def choose_place(page, level: str, name: str) -> None:
+    """Pick a place on the event form as a person does: open the level's menu, type, click the row.
+
+    ``level`` is "country", "region", "city" or "venue".
+    """
+    page.locator(f"#loc-{level}").click()
+    page.locator(f"#loc-{level}-menu .loc-pick-search").fill(name)
+    row = page.locator(f"#loc-{level}-menu .loc-pick-row .dropdown-item", has_text=re.compile(f"^{re.escape(name)}$"))
+    row.click()
+
+
+def place_rows(page, level: str) -> list[str]:
+    """The names a level's menu on the event form lists, the menu opened for it and closed again."""
+    page.locator(f"#loc-{level}").click()
+    rows = page.locator(f"#loc-{level}-menu .loc-pick-row .dropdown-item").all_inner_texts()
+    page.keyboard.press("Escape")
+    return rows
+
+
 def open_filter_panel(page) -> None:
     """Expand the filter panel if it is collapsed (a phone folds it away on the calendar, list and map).
 

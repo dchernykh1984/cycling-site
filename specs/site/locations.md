@@ -21,9 +21,16 @@ places, and lets managers maintain the tree.
 
 ### Story 1 -- Place an event (P1)
 
-1. **Given** the event form, **Then** a cascade of country, region and city selects (each filled
-   after the one above) offers the city's real venues and a mini-map of existing venues; picking a
-   marker selects that venue.
+1. **Given** the event form, **Then** country, region, city and venue are four menus with a search
+   box, one place in each, and a mini-map of existing venues; picking a marker selects that venue.
+   - Any level can be searched before the ones above it, in any of its names and either script, as
+     the calendar's place filter searches; picking a place fills in every level above it (a city
+     found first gives its region and country) and keeps a place below only if it lies under it.
+   - A level lists only what lies under the nearest level picked above it, or its whole depth when
+     none is: a menu draws its first 200 places and counts the rest, which its search reaches.
+   - "--" unpicks a level and those below; Enter in a search box picks the first place found.
+   - A city with no venue picked stands for its catch-all, which the venue menu shows as picked; a
+     region or a country alone gives the catch-all of its "other" city.
 2. **Given** a city without the right venue, **Then** the member may propose a new one with a point
    on the mini-map and its name in each language -- Russian required, a language left empty stays
    empty and reads as the Russian one; a participant's proposal waits for approval, an organizer's

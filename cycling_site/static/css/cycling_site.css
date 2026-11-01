@@ -668,6 +668,20 @@ main .event-photo-preview img { object-fit: contain; }
     font-weight: 600;
     box-shadow: var(--bs-box-shadow-sm);
 }
+/* The event form's place menus (calendar_app/_location_cascade.html): a long list scrolls inside its
+   menu, and a long venue name wraps rather than widening the menu past the page. */
+.loc-pick .dropdown-menu {
+    max-height: 240px;
+    overflow-y: auto;
+}
+.loc-pick .dropdown-item {
+    white-space: normal;
+}
+/* The venue map right below them keeps its panes and controls -- Leaflet's reach z-index 1000, a
+   menu's own -- to itself, so an open menu is drawn over the map rather than under its buttons. */
+#venue-map {
+    isolation: isolate;
+}
 /* An event's route track (calendar_app/static/calendar_app/route_track.js) in its skin's colours: the
    line and the arrows along it in --skin-route, over an edge of --skin-route-halo that keeps them
    readable on the satellite layer. The modes' stylesheets set both; a skin may set its own. */
