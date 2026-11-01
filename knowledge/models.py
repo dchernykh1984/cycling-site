@@ -150,10 +150,7 @@ class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin,
         if can_manage:
             context["add_article_url"] = reverse("knowledge_add")
             context["pending_submissions"] = (
-                DraftSubmission.objects.filter(
-                    status=DraftSubmission.Status.PENDING,
-                    submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-                )
+                DraftSubmission.pending(DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
                 .select_related("author")
                 .order_by("submitted_at")
             )
@@ -182,6 +179,7 @@ class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin,
         if article is None or (article.is_hidden and not can_manage):
             raise Http404
         can_comment = roles.at_least(request.user, roles.COMMENT)
+        description = summarize(article.body)
         context = {
             "page": self,
             "article": article,
@@ -193,13 +191,13 @@ class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin,
             # The article's own name and first prose, instead of the one site-wide sentence every
             # knowledge page used to carry. "page" here is the index page, so it cannot supply them.
             "meta_title": article.title,
-            "meta_description": summarize(article.body),
+            "meta_description": description,
             "og_type": "article",
             "structured_data": article_markup(
                 kind="Article",
                 headline=article.title,
-                url=f"{request.scheme}://{request.get_host()}{article.get_absolute_url()}",
-                description=summarize(article.body),
+                url=request.build_absolute_uri(article.get_absolute_url()),
+                description=description,
                 published=article.published_at,
                 modified=article.updated_at,
                 author=str(article.published_by) if article.published_by else "",
@@ -261,6 +259,11 @@ class DraftSubmission(models.Model):
 
     def __str__(self) -> str:
         return f"{self.get_submission_type_display()} - {self.title}"
+
+    @classmethod
+    def pending(cls, submission_type):
+        """The submissions of ``submission_type`` waiting for a reviewer."""
+        return cls.objects.filter(status=cls.Status.PENDING, submission_type=submission_type)
 
     def approve(self, reviewer) -> None:
         with transaction.atomic():

@@ -31,38 +31,42 @@ class SubmitNewsForm(LocalizedMaxLengthMixin, forms.ModelForm):
 
 _TITLE_ATTRS = {"class": "form-control"}
 _INTRO_ATTRS = {"rows": 3, "class": "form-control"}
+_TITLE_MAX_LENGTH = NewsArticle._meta.get_field("title").max_length
+_INTRO_MAX_LENGTH = NewsArticle._meta.get_field("intro").max_length
 
 
 class NewsArticleForm(LocalizedMaxLengthMixin, forms.ModelForm):
     title_ru = forms.CharField(
-        max_length=255, label=format_lazy("{} (RU)", _("Title")), widget=forms.TextInput(attrs=_TITLE_ATTRS)
+        max_length=_TITLE_MAX_LENGTH,
+        label=format_lazy("{} (RU)", _("Title")),
+        widget=forms.TextInput(attrs=_TITLE_ATTRS),
     )
     title_kk = forms.CharField(
-        max_length=255,
+        max_length=_TITLE_MAX_LENGTH,
         required=False,
         label=format_lazy("{} (KK)", _("Title")),
         widget=forms.TextInput(attrs=_TITLE_ATTRS),
     )
     title_en = forms.CharField(
-        max_length=255,
+        max_length=_TITLE_MAX_LENGTH,
         required=False,
         label=format_lazy("{} (EN)", _("Title")),
         widget=forms.TextInput(attrs=_TITLE_ATTRS),
     )
     intro_ru = forms.CharField(
-        max_length=500,
+        max_length=_INTRO_MAX_LENGTH,
         required=False,
         label=format_lazy("{} (RU)", _("Short description")),
         widget=forms.Textarea(attrs=_INTRO_ATTRS),
     )
     intro_kk = forms.CharField(
-        max_length=500,
+        max_length=_INTRO_MAX_LENGTH,
         required=False,
         label=format_lazy("{} (KK)", _("Short description")),
         widget=forms.Textarea(attrs=_INTRO_ATTRS),
     )
     intro_en = forms.CharField(
-        max_length=500,
+        max_length=_INTRO_MAX_LENGTH,
         required=False,
         label=format_lazy("{} (EN)", _("Short description")),
         widget=forms.Textarea(attrs=_INTRO_ATTRS),

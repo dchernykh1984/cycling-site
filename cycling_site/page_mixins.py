@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from wagtail.models import Locale
 
 _ASCII_SLUG_RE = re.compile(r"^[a-zA-Z0-9_-]+\Z")
-_LANGUAGE_PREFIX = re.compile(r"^/[a-z]{2}(?:-[a-z]+)?/")
+LANGUAGE_PREFIX = re.compile(r"^/[a-z]{2}(?:-[a-z]+)?/")
 
 
 class OwnLanguageUrlMixin:
@@ -20,7 +20,7 @@ class OwnLanguageUrlMixin:
         if not parts or parts[2] is None:
             return parts
         site_id, root_url, path = parts
-        return site_id, root_url, _LANGUAGE_PREFIX.sub(f"/{self.locale.language_code}/", path, count=1)  # type: ignore[attr-defined]
+        return site_id, root_url, LANGUAGE_PREFIX.sub(f"/{self.locale.language_code}/", path, count=1)  # type: ignore[attr-defined]
 
 
 class AsciiSlugMixin:
