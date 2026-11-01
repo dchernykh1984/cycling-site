@@ -76,7 +76,7 @@ FORM_TARGETS = {
     "news.forms.SubmitNewsForm": NewsArticle,
     "registrations.forms.EditRegistrationForm": (CompetitionRegistration, Team),
     "registrations.forms.RegistrationForm": (CompetitionRegistration, Team),
-    "registrations.forms.RejectRegistrationForm": None,
+    "registrations.forms.RejectRegistrationForm": CompetitionRegistration,
     "gallery.forms.AlbumForm": Album,
     "gallery.forms.PhotoUploadForm": None,
     "event_photos.forms.ExternalAlbumForm": ExternalAlbum,
