@@ -169,8 +169,8 @@ class ManagerInvite(models.Model):
     def expires_at(self) -> datetime.datetime:
         return self.created_at + self.LIFETIME
 
-    def is_valid(self, now: datetime.datetime | None = None) -> bool:
-        return (now or timezone.now()) < self.expires_at
+    def is_valid(self) -> bool:
+        return timezone.now() < self.expires_at
 
 
 class ManagedMember(models.Model):

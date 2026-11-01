@@ -3,11 +3,10 @@ from http import HTTPStatus
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
-from api.auth import ApiTokenAuth, OptionalApiTokenAuth
+from api.auth import OptionalApiTokenAuth
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Discipline, DisciplineCategory, EventType
 
-auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
 router = Router(tags=["disciplines"])
 event_types_router = Router(tags=["event-types"])
