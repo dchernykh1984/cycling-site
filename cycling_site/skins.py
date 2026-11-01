@@ -133,7 +133,7 @@ OFFER_COOKIE = "skin_offer"
 
 
 def _offer_key() -> str:
-    key = getattr(settings, "SKIN_OFFER", "")
+    key = settings.SKIN_OFFER
     return key if key in registry() else ""
 
 

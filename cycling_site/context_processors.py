@@ -163,6 +163,6 @@ def search_verification(request):
     from django.conf import settings
 
     return {
-        "GOOGLE_SITE_VERIFICATION": getattr(settings, "GOOGLE_SITE_VERIFICATION", ""),
-        "YANDEX_VERIFICATION": getattr(settings, "YANDEX_VERIFICATION", ""),
+        "GOOGLE_SITE_VERIFICATION": settings.GOOGLE_SITE_VERIFICATION,
+        "YANDEX_VERIFICATION": settings.YANDEX_VERIFICATION,
     }

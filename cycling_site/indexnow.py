@@ -30,11 +30,11 @@ MAX_URLS = 10000
 
 
 def _key() -> str:
-    return (getattr(settings, "INDEXNOW_KEY", "") or "").strip()
+    return (settings.INDEXNOW_KEY or "").strip()
 
 
 def _base_url() -> str:
-    return (getattr(settings, "SITE_BASE_URL", "") or "").rstrip("/")
+    return (settings.SITE_BASE_URL or "").rstrip("/")
 
 
 def key_file_body() -> str:

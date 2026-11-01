@@ -99,7 +99,7 @@ def image_sources(request) -> list[str]:
     named in full.
     """
     sources = [f"{request.scheme}://{request.get_host()}"]
-    media = getattr(settings, "MEDIA_URL", "") or ""
+    media = settings.MEDIA_URL or ""
     if "://" in media:
         # Media on a bucket or a CDN is a different origin from the site's own.
         parts = urlsplit(media)

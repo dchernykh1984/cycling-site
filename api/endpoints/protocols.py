@@ -53,7 +53,7 @@ def _read_html(html_file: UploadedFile) -> tuple[bytes, str]:
     if not raw_name.lower().endswith((".html", ".htm")):
         raise HttpError(HTTPStatus.BAD_REQUEST, "File must have .html or .htm extension")
 
-    max_mb = getattr(settings, "MAX_PROTOCOL_SIZE_MB", 5)
+    max_mb = settings.MAX_PROTOCOL_SIZE_MB
     if html_file.size is None or html_file.size > max_mb * 1024 * 1024:
         raise HttpError(HTTPStatus.BAD_REQUEST, f"File too large (max {max_mb} MB)")
 
@@ -124,7 +124,7 @@ def _read_document(document: UploadedFile) -> tuple[dict, bytes]:
         raise DocumentError("The document must be application/json")
     if not (document.name or "").lower().endswith(".json"):
         raise DocumentError("The document must have a .json extension")
-    max_mb = getattr(settings, "MAX_PROTOCOL_SIZE_MB", 5)
+    max_mb = settings.MAX_PROTOCOL_SIZE_MB
     if document.size is None or document.size > max_mb * 1024 * 1024:
         raise DocumentError(f"The document is too large (max {max_mb} MB)")
     raw = document.read()

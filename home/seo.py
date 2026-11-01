@@ -18,7 +18,7 @@ def organization(request, site_content, site_name: str = "") -> str:
     base = f"{request.scheme}://{request.get_host()}"
     home = f"{base}{request.path}"
     name = (
-        getattr(settings, "ORGANIZATION_NAME", "")
+        settings.ORGANIZATION_NAME
         or site_name
         or getattr(site_content, "navbar_title", "")
         or getattr(site_content, "page_title", "")
@@ -33,10 +33,10 @@ def organization(request, site_content, site_name: str = "") -> str:
     }
     if name:
         club["name"] = name
-    area = getattr(settings, "ORGANIZATION_AREA", "")
+    area = settings.ORGANIZATION_AREA
     if area:
         club["areaServed"] = {"@type": "City", "name": area}
-    same_as = [link for link in getattr(settings, "ORGANIZATION_SAME_AS", []) if link.startswith("https://")]
+    same_as = [link for link in settings.ORGANIZATION_SAME_AS if link.startswith("https://")]
     if same_as:
         club["sameAs"] = same_as
 
