@@ -11,15 +11,13 @@ from wagtail.models import Locale
 
 from accounts import roles
 from accounts.access import ParticipantRequiredMixin
+from cycling_site.page_mixins import live_page_in
 from knowledge.forms import AddKnowledgeArticleCommentForm, DraftSubmissionForm, KnowledgeArticleForm
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment, KnowledgeIndexPage
 
 
 def _knowledge_index_url(locale_code: str) -> str:
-    loc = Locale.objects.filter(language_code=locale_code).first()
-    index = KnowledgeIndexPage.objects.live().filter(locale=loc).first() if loc else None
-    if index is None:
-        index = KnowledgeIndexPage.objects.live().first()
+    index = live_page_in(KnowledgeIndexPage, Locale.objects.filter(language_code=locale_code).first())
     return index.url if index else "/"
 
 

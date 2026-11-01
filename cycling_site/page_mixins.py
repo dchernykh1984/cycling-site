@@ -1,6 +1,7 @@
 import re
 
 from django.core.exceptions import ValidationError
+from wagtail.models import Locale
 
 _ASCII_SLUG_RE = re.compile(r"^[a-zA-Z0-9_-]+\Z")
 _LANGUAGE_PREFIX = re.compile(r"^/[a-z]{2}(?:-[a-z]+)?/")
@@ -33,3 +34,24 @@ class AsciiSlugMixin:
         super().clean()  # type: ignore[misc]
         if self.slug and not _ASCII_SLUG_RE.match(self.slug):  # type: ignore[attr-defined]
             raise ValidationError({"slug": "Slug must contain only Latin letters, numbers, hyphens, and underscores."})
+
+
+def live_page_in(model, locale):
+    """``model``'s live page in ``locale``, else any live one: a language with no page of its own
+    still links somewhere. None when there is no live page at all."""
+    page = model.objects.live().filter(locale=locale).first() if locale is not None else None
+    return page if page is not None else model.objects.live().first()
+
+
+def active_locale_page_url(model) -> str | None:
+    """The address of ``model``'s page in the active language, as the header links it.
+
+    With no locale row for the active or the default language the link falls back to any live page,
+    rather than failing every page that carries it (#385).
+    """
+    try:
+        locale = Locale.get_active()
+    except Locale.DoesNotExist:
+        locale = None
+    page = live_page_in(model, locale)
+    return page.url if page else None
