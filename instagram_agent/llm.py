@@ -13,11 +13,8 @@ published, so every post is given with its publication date.
 
 from __future__ import annotations
 
-import datetime
-
 from agent import llm
 from agent.models import KnownEvents, Taxonomy
-from instagram_agent.accounts import Account
 
 _SYSTEM = (
     "You read the recent posts of a cycling club's Instagram account and extract the rides and "
@@ -70,16 +67,8 @@ _MAX_EXISTING = 120
 _MAX_REJECTED = 30
 
 
-def build_prompt(
-    text: str,
-    account: Account,
-    guidance: str,
-    known: KnownEvents,
-    taxonomy: Taxonomy,
-    today: str = "",
-) -> str:
+def build_prompt(text: str, guidance: str, known: KnownEvents, taxonomy: Taxonomy, today: str) -> str:
     """The user half of the call: the taxonomy, what the site already knows, and the account's posts."""
-    today = today or datetime.date.today().isoformat()
     existing, rejected = llm.known_lists(known, _MAX_EXISTING, _MAX_REJECTED, today)
     return (
         llm.opening(guidance, taxonomy)
@@ -93,12 +82,6 @@ def build_prompt(
 
 
 def extract_raw(
-    text: str,
-    account: Account,
-    guidance: str,
-    known: KnownEvents,
-    taxonomy: Taxonomy,
-    config: llm.LlmSettings,
-    today: str = "",
+    text: str, guidance: str, known: KnownEvents, taxonomy: Taxonomy, config: llm.LlmSettings, today: str
 ) -> str:
-    return llm.chat(_SYSTEM, build_prompt(text, account, guidance, known, taxonomy, today), config)
+    return llm.chat(_SYSTEM, build_prompt(text, guidance, known, taxonomy, today), config)

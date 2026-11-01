@@ -154,7 +154,7 @@ def _run(
         for number, batch in enumerate(batches.get(source.ref, []), start=1):
             text = fetch.channel_text(channel, batch, config.recent_hours, today)
             try:
-                raw = llm.extract_raw(text, channel, guidance, known, taxonomy, config, today.isoformat())
+                raw = llm.extract_raw(text, guidance, known, taxonomy, config, today.isoformat())
             except Exception as exc:
                 # One batch failing must not throw away what the others already found: the shared
                 # pipeline catches an exception at the SOURCE level, so letting this out would

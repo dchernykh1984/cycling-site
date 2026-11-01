@@ -143,7 +143,7 @@ def _run(
 
     def extract(text: str, source: Source) -> list[Candidate]:
         account = by_ref[source.ref]
-        raw = llm.extract_raw(text, account, guidance, known, taxonomy, config, today.isoformat())
+        raw = llm.extract_raw(text, guidance, known, taxonomy, config, today.isoformat())
         parsed = pipeline.parse_candidates(raw, "", taxonomy)
         # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
         # declining -- surface it so the two are told apart without another run.

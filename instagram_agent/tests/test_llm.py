@@ -1,7 +1,6 @@
 """What the model is told. These rules are the difference between a calendar and a photo album."""
 
 from agent.models import KnownEvents, Taxonomy
-from instagram_agent.accounts import Account
 from instagram_agent.llm import _SYSTEM, build_prompt
 
 
@@ -54,7 +53,7 @@ def test_no_link_and_no_platform_may_reach_a_published_event():
 
 def test_the_prompt_carries_the_taxonomy_and_what_the_site_already_knows():
     taxonomy = Taxonomy(event_types=[{"id": 3, "name": "Ride"}], disciplines=[{"id": 7, "name": "Road"}])
-    prompt = build_prompt("posts here", Account("ubtalmaty"), "guidance text", _known(), taxonomy, "2026-08-01")
+    prompt = build_prompt("posts here", "guidance text", _known(), taxonomy, "2026-08-01")
     assert "3=Ride" in prompt and "7=Road" in prompt
     assert "Early Bird Ride 26 July" in prompt
     assert "A photo report" in prompt and "not an event" in prompt
@@ -64,11 +63,11 @@ def test_the_prompt_carries_the_taxonomy_and_what_the_site_already_knows():
 
 def test_the_prompt_says_a_weekly_ride_repeats_rather_than_duplicates():
     """Without this the known list reads as "never propose an Early Bird Ride again"."""
-    prompt = build_prompt("", Account("ubtalmaty"), "", _known(), Taxonomy(), "2026-08-01")
+    prompt = build_prompt("", "", _known(), Taxonomy(), "2026-08-01")
     assert "NEW event" in prompt
     assert "SAME DAY" in prompt
 
 
 def test_the_prompt_works_with_nothing_known_yet():
-    prompt = build_prompt("posts", Account("ubtalmaty"), "", KnownEvents(), Taxonomy(), "2026-08-01")
+    prompt = build_prompt("posts", "", KnownEvents(), Taxonomy(), "2026-08-01")
     assert "(none)" in prompt

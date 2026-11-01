@@ -1,7 +1,6 @@
 """What the model is told. A chat is a conversation; these rules pull the announcements out of it."""
 
 from agent.models import KnownEvents, Taxonomy
-from telegram_agent.channels import Channel
 from telegram_agent.llm import _SYSTEM, build_prompt
 
 
@@ -53,7 +52,6 @@ def test_the_prompt_carries_the_guidance_the_known_events_and_the_taxonomy():
     taxonomy = Taxonomy(event_types=[{"id": 1, "name": "ride"}], disciplines=[{"id": 2, "name": "road"}])
     prompt = build_prompt(
         "Telegram channel: +abc",
-        Channel(ref="+abc"),
         "propose kids' starts",
         _known(),
         taxonomy,
@@ -68,7 +66,7 @@ def test_the_prompt_carries_the_guidance_the_known_events_and_the_taxonomy():
 
 
 def test_a_weekly_ride_is_a_new_event_each_week():
-    prompt = build_prompt("text", Channel(ref="+abc"), "", _known(), Taxonomy(), today="2026-08-02")
+    prompt = build_prompt("text", "", _known(), Taxonomy(), today="2026-08-02")
     assert "NEW event each week" in prompt
     assert "SAME DAY" in prompt
 
