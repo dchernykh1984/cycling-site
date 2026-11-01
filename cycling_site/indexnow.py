@@ -18,6 +18,8 @@ import requests
 from django.conf import settings
 from django.db import transaction
 
+from cycling_site import articles
+
 logger = logging.getLogger(__name__)
 
 ENDPOINT = "https://api.indexnow.org/indexnow"
@@ -107,16 +109,12 @@ def _competition_is_public(competition) -> bool:
     return is_public(competition)
 
 
-def _article_is_public(article) -> bool:
-    return not article.is_hidden and not article.is_deleted
-
-
 #: Which models are worth announcing, and what makes one of them publicly visible.
 #: (app_label, model_name, predicate)
 WATCHED = [
     ("calendar_app", "Competition", _competition_is_public),
-    ("news", "NewsArticle", _article_is_public),
-    ("knowledge", "KnowledgeArticle", _article_is_public),
+    ("news", "NewsArticle", articles.is_public),
+    ("knowledge", "KnowledgeArticle", articles.is_public),
 ]
 
 

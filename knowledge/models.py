@@ -15,6 +15,7 @@ from wagtail.models import Page
 from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
+from cycling_site.articles import visible
 from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
 from cycling_site.sanitize import sanitize_rich_text_columns
 from cycling_site.slugs import unique_slug
@@ -137,9 +138,7 @@ class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin,
 
         context = super().get_context(request)
         can_manage = roles.at_least(request.user, roles.MANAGE_KNOWLEDGE)
-        articles = KnowledgeArticle.objects.filter(locale=self.locale.language_code, is_deleted=False)
-        if not can_manage:
-            articles = articles.filter(is_hidden=False)
+        articles = visible(KnowledgeArticle.objects.filter(locale=self.locale.language_code), can_manage=can_manage)
         articles = articles.order_by("-published_at")
         paginator = Paginator(articles, ARTICLES_PER_PAGE)
         context["articles"] = paginator.get_page(request.GET.get("page", 1))

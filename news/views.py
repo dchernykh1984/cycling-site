@@ -12,6 +12,7 @@ from django.views.generic import CreateView, View
 from accounts import roles
 from accounts.access import ParticipantRequiredMixin
 from assistant.conversations import link as link_conversation
+from cycling_site.articles import visible
 from cycling_site.summaries import article_markup, summarize
 from knowledge.models import ARTICLES_PER_PAGE, DraftSubmission
 from news.forms import AddCommentForm, AddNewsArticleCommentForm, NewsArticleForm, SubmitNewsForm
@@ -21,9 +22,7 @@ from news.models import Comment, NewsArticle, NewsArticleComment, NewsPage, News
 class NewsListView(View):
     def get(self, request):
         can_manage = roles.at_least(request.user, roles.MANAGE_NEWS)
-        qs = NewsArticle.objects.filter(is_deleted=False)
-        if not can_manage:
-            qs = qs.filter(is_hidden=False)
+        qs = visible(NewsArticle.objects, can_manage=can_manage)
         paginator = Paginator(qs, ARTICLES_PER_PAGE)
         news_items = paginator.get_page(request.GET.get("page", 1))
 

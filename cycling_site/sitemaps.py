@@ -5,6 +5,7 @@ from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
 from calendar_app.visibility import public_events
+from cycling_site.articles import public
 from knowledge.models import KnowledgeArticle
 from news.models import NewsArticle
 
@@ -95,7 +96,7 @@ class KnowledgeArticleSitemap(LanguageSitemap):
     changefreq = "monthly"
 
     def items(self):
-        return KnowledgeArticle.objects.filter(is_deleted=False, is_hidden=False)
+        return public(KnowledgeArticle.objects)
 
     def get_languages_for_item(self, item):
         # An article is written in one language and lives under that prefix: listed once per
@@ -115,7 +116,7 @@ class NewsArticleSitemap(LanguageSitemap):
     changefreq = "monthly"
 
     def items(self):
-        return NewsArticle.objects.filter(is_deleted=False, is_hidden=False)
+        return public(NewsArticle.objects)
 
     def location(self, obj):
         return obj.get_absolute_url()

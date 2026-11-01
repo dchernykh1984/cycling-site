@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils.feedgenerator import Atom1Feed
 from django.utils.translation import gettext_lazy as _
 
+from cycling_site.articles import public
 from cycling_site.sanitize import without_control_characters
 from cycling_site.summaries import summarize
 
@@ -25,9 +26,7 @@ class NewsFeed(Feed):
         return reverse("news_index")
 
     def items(self):
-        return NewsArticle.objects.filter(is_hidden=False, is_deleted=False).order_by("-published_at")[
-            : self.item_count
-        ]
+        return public(NewsArticle.objects).order_by("-published_at")[: self.item_count]
 
     def item_title(self, item):
         return without_control_characters(item.title)
