@@ -159,17 +159,10 @@ def venues_of(tree: list, city_id: int) -> list[dict]:
     if city is None:
         return []
     return [
-        {"id": venue["id"], "names": _names_of(venue), "point": _point_of(venue)}
+        {"id": venue["id"], "names": locations._localized_values(venue), "point": _point_of(venue)}
         for venue in city.get("children") or []
         if venue.get("id") is not None
     ]
-
-
-def _names_of(node: dict) -> list[str]:
-    name = node.get("name")
-    if isinstance(name, dict):
-        return [str(value) for value in name.values() if value]
-    return [str(name)] if name else []
 
 
 def _point_of(node: dict) -> Point | None:

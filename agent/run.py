@@ -138,9 +138,9 @@ def _add_start_coordinate(candidate: Candidate, page_text: str) -> Candidate:
         return candidate
     # Prefer the route link the model already picked out (url_route) -- it is the event's own track;
     # fall back to scanning the page's links only if it named none.
-    page_links = page_text.partition("Links on the page:")[2].split()
-    links = ([candidate.url_route] if candidate.url_route else []) + page_links
-    coord = geo.start_coordinate(links, fetch.fetch_track)
+    page_links = page_text.partition(links.LINKS_MARKER)[2].split()
+    track_links = ([candidate.url_route] if candidate.url_route else []) + page_links
+    coord = geo.start_coordinate(track_links, fetch.fetch_track)
     if coord is None:
         return candidate
     print(f"  * start coordinate {coord} for {candidate.title!r} (venue {candidate.venue!r})", flush=True)
