@@ -2,7 +2,8 @@
 
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21
-**Code**: `calendar_app/` (models, forms, views, `visibility.py`, `preview_image.py`),
+**Code**: `calendar_app/` (models, forms, views, `visibility.py`, `preview_image.py`, `tracks.py`),
+`calendar_app/static/calendar_app/route_track.js`,
 `registrations/views.py` (`can_manage`), `cycling_site/context_processors.py`
 (moderation banner)
 **Tests**: `calendar_app/tests.py` (model, submit, moderation, detail, edit, comments, reports,
@@ -12,11 +13,12 @@ materials, upload token, rich description, several event types), `calendar_app/t
 `tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
 `tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/test_event_ics.py`,
 `tests/test_top_events.py`, `tests/test_moderation_history.py`, `tests/test_concurrent_review.py`,
+`calendar_app/test_tracks.py`, `tests/test_route_track_page.py`,
 `assistant/tests/test_chat.py`,
 `tests/e2e/test_competition_form.py`, `test_add_to_calendar.py`,
 `test_competition_materials.py`, `test_description_editor.py`, `test_resubmit.py`,
 `test_pending_moderation.py`, `test_invite_only_events.py`, `test_competition_link_order.py`,
-`test_map_links_menu.py`
+`test_map_links_menu.py`, `test_route_track.py`
 **Related**: [calendar](calendar.md), [registrations](registrations.md), [protocols](protocols.md),
 [locations](locations.md), [events agents](events-agents.md), [gallery](gallery.md)
 
@@ -40,8 +42,9 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    disciplines (both optional), a location from the tree or a new venue
    proposed in a city (see [locations](locations.md)), a registration link, links and files for
    announcement, regulations, route and results (files: PDF, Office documents, GPX, KML, ZIP or
-   images, up to 10 MB), and for link previews an image and a line of text per language (up to
-   200 characters; a chat shows about the first 80 and cuts the rest, the form says so).
+   images, up to 10 MB; the route takes KMZ, TCX, FIT and GeoJSON too), and for link previews an
+   image and a line of text per language (up to 200 characters; a chat shows about the first 80 and
+   cuts the rest, the form says so).
 3. **Given** an invalid field -- a missing title or date, a link longer than its column, an end
    before the start, an over-long category name -- **Then** the form comes back with a translated
    field error, never a server error, and keeps what was entered.
@@ -138,6 +141,21 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    they manage, **Then** the event assistant's chat fills the form from what they tell it, and the
    form's own button saves it (see [event assistant](assistant.md)).
 
+### Story 9 -- The route on the event's map (P2)
+
+1. **Given** an event whose route file holds a track -- GPX, KML, KMZ, TCX, FIT, GeoJSON, or a ZIP
+   of them, told by its bytes rather than its name --, **Then** the event's map draws every track in
+   it (a GPX file without tracks: its routes) as a line in the skin's route colour, with the start
+   marker above it and arrows along it, about 90 px apart on screen, for the way it runs. A line
+   under the map says what the arrows show. The map opens on the whole track and the start; a city's
+   point standing in for a venue without one is no start, so the map then opens on the track
+   alone. Without a track the map opens on the start as before.
+2. **Given** a route link and a route file, **Then** the page offers both, each when it is there:
+   "Link to the track" opens the link in a new tab, "Download the track" saves the file. A route
+   file that holds no track -- a PDF of the route, say -- keeps its "Route" button, which opens it.
+3. **Given** a reader of the event, **Then** `GET /api/v1/competitions/{id}/track` gives the same
+   line as a GeoJSON feature with the file's address (see [API](api.md)).
+
 ### Edge Cases
 
 - An event is soft-deleted; a deleted comment is erased.
@@ -149,7 +167,13 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 - A preview image is normalised: an enormous one is scaled down keeping its shape, a tiny one or a
   non-image refused, camera metadata stripped, transparency kept as PNG, photos stored as JPEG.
 - The event page lists registration, documents, protocols and materials before the description;
-  uploaded documents follow the same order and a URL takes precedence over a file.
+  uploaded documents follow the same order and a URL takes precedence over a file -- but for the
+  route, whose link and file are both offered (Story 9).
+- A route file is read once, on the first visit after it arrives, and its line kept beside the event
+  (`CompetitionTrack`, keyed by the file's name), so the next visit reads no file. The line is
+  thinned to within 5 m, and further until at most 4,000 points remain; a file over 10 MB, one that
+  declares XML entities, or one that breaks its reader draws nothing, and a file missing from the
+  disk is tried again on the next visit.
 - Map links on the event page -- the services the deployment offers, in its order (see
   [locations](locations.md), Configuration) -- appear only for a venue with its own point, in one
   menu behind a "Link to the start point" button, however many there are (#335); each answers a tap
@@ -195,6 +219,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 - **CompetitionInvite**: a member let in by the invitation link.
 - **CompetitionComment**, **CompetitionReport** (open or dismissed), **CompetitionMaterial**
   (ordered named link).
+- **CompetitionTrack**: the line the route file draws, kept with the name of the file it was read
+  from; empty for a file that holds no track.
 
 ## Local assumptions
 

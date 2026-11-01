@@ -7,6 +7,7 @@ token --, `schemas.py`), `api/endpoints/`; django-ninja, served at `/api/v1/`
 **Tests**: `api/tests.py`, `registrations/tests.py` (participants), `protocols/tests.py`,
 `tests/test_gallery_api.py`, `tests/test_input_length_limits.py`, `tests/test_virtual_ride_api.py`,
 `tests/test_managing_api.py`, `assistant/tests/test_api.py`, `tests/test_home_cards.py`,
+`tests/test_route_track_api.py`,
 `tests/e2e/test_api_to_front.py`
 **Related**: [events](events.md), [locations](locations.md), [news and knowledge](news-and-knowledge.md),
 [protocols](protocols.md), [registrations](registrations.md), [events agents](events-agents.md),
@@ -35,6 +36,9 @@ and protocols with the event's upload token. The API has no language prefix.
    date-and-place fallback in those languages (issue #318). `GET /competitions/{id}/ics` reads the
    event's calendar file, the one its page offers, in the language asked for (`lang`, the site's
    default otherwise; another answers 422), to whoever may read the event (issue #398).
+   `GET /competitions/{id}/track` reads the track the event's route file draws on its map, as a
+   GeoJSON feature (a MultiLineString, longitude first) with the file's address, to whoever may
+   read the event; an event whose route file draws nothing, or that has none, answers 404.
 3. **Given** locations, **Then** the tree can be read; an organizer may get or create a city's
    catch-all venue; a venue is created approved by an organizer and proposed by a participant;
    regions and cities are always proposed (organizer and up), countries created by admins only;
