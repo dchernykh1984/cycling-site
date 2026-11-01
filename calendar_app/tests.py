@@ -1685,6 +1685,23 @@ class EditCompetitionViewTests(TestCase):
             (category.birth_from, category.birth_to), (datetime.date(2005, 1, 1), datetime.date(2008, 12, 31))
         )
 
+    def test_a_deadline_after_the_event_is_refused_in_the_pages_language(self):
+        self.client.login(username="edit_org@example.com", password="password123")
+        data = {
+            "title_ru": "Editable Race",
+            "date_start": "2026-09-01",
+            "registration_enabled": "on",
+            "registration_mode": "free",
+            "birth_date_mode": "year",
+            "registration_deadline": "2026-09-02T10:00",
+            "categories_json": "[]",
+        }
+        response = self.client.post(in_language(self.url, "ru"), data)
+        with translation_override("ru"):
+            expected = gettext("Registration deadline cannot be later than the competition date start.")
+        self.assertNotIn("Registration deadline", expected)  # a Russian sentence, not the English source
+        self.assertEqual(response.context["reg_form"].errors["registration_deadline"], [expected])
+
     def test_edit_saves_registration_deadline_with_time(self):
         self.client.login(username="edit_org@example.com", password="password123")
         self.client.post(
