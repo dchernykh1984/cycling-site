@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agent.config import DEFAULT_LLM_MODEL, ConfigError, _flag
+from agent.config import DEFAULT_LLM_MODEL, ConfigError, _flag, _whole_number
 from instagram_agent.fetch import DEFAULT_GRAPH_VERSION
 
 # A club feed carries a couple of announcements a week, so a run that proposes more than this is
@@ -67,30 +67,4 @@ def from_env(env: dict[str, str]) -> Config:
         graph_token=(env.get("IG_GRAPH_TOKEN") or "").strip(),
         graph_version=(env.get("IG_GRAPH_VERSION") or "").strip() or DEFAULT_GRAPH_VERSION,
         only_account=(env.get("INSTAGRAM_ACCOUNT") or "").strip().lstrip("@"),
-    )
-
-
-def _whole_number(value: str | None, default: int, name: str) -> int:
-    if not value:
-        return default
-    try:
-        number = int(value)
-    except ValueError as exc:
-        raise ConfigError(f"{name} must be an integer") from exc
-    return max(number, 0)
-
-
-def as_agent_config(config: Config):
-    """The same settings in the shape agent.llm.chat expects, so both agents share one API adapter."""
-    from agent.config import Config as AgentConfig
-
-    return AgentConfig(
-        site_base_url=config.site_base_url,
-        api_token=config.api_token,
-        llm_api_key=config.llm_api_key,
-        llm_base_url=config.llm_base_url,
-        llm_model=config.llm_model,
-        max_events=config.max_events,
-        max_per_source=0,
-        dry_run=config.dry_run,
     )

@@ -15,7 +15,6 @@ from __future__ import annotations
 import datetime
 
 from agent import llm
-from agent.config import Config
 from agent.models import KnownEvents, Taxonomy
 from telegram_agent.channels import Channel
 
@@ -134,7 +133,7 @@ def extract_raw(
     guidance: str,
     known: KnownEvents,
     taxonomy: Taxonomy,
-    config: Config,
+    config: llm.LlmSettings,
     today: str = "",
 ) -> str:
     return llm.chat(_SYSTEM, build_prompt(text, channel, guidance, known, taxonomy, today), config)
