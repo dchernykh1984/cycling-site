@@ -85,6 +85,7 @@ import importlib
 import os
 import sys
 os.environ.update(SECRET_KEY='test', DATABASE_URL='postgres://localhost/test', LOG_DIR=sys.argv[1])
+os.environ['PRIMARY_HOST'] = 'example.com'
 os.environ.pop('EMAIL_TIMEOUT', None)
 from cycling_site.settings import prod
 assert prod.EMAIL_TIMEOUT == 5
@@ -96,6 +97,22 @@ assert importlib.reload(prod).EMAIL_TIMEOUT == 2.5
                 [sys.executable, "-c", script, directory], capture_output=True, text=True, timeout=15
             )
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_production_will_not_start_without_its_own_host(self):
+        script = """
+import os
+import sys
+os.environ.update(SECRET_KEY='test', DATABASE_URL='postgres://localhost/test', LOG_DIR=sys.argv[1])
+for name in ('PRIMARY_HOST', 'VIRTUAL_HOST'):
+    os.environ.pop(name, None)
+from cycling_site.settings import prod
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(  # noqa: S603 -- fixed script and current interpreter
+                [sys.executable, "-c", script, directory], capture_output=True, text=True, timeout=15
+            )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Set PRIMARY_HOST (or VIRTUAL_HOST)", result.stderr)
 
     def test_worker_timeouts_email_admins_without_an_http_request(self):
         # Configure logging in a child so the test cannot replace pytest's own handlers.

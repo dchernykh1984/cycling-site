@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 from ..logconfig import build_logging_config
 from .base import *
@@ -10,16 +11,18 @@ DEBUG = False
 
 SECRET_KEY = os.environ.get("SECRET_KEY") or os.environ["RANDOM_SECRET_KEY"]
 
-# CodeRed sets VIRTUAL_HOST to the site's domain(s); with several domains attached it can hold more
-# than one host (comma/space separated). Parse them all, and always include the team domain so the
-# site answers on both cycling.codered.cloud and universalbicycle.team.
+# VIRTUAL_HOST names the site's domain(s); with several domains attached it can hold more than one
+# host (comma/space separated). Parse them all, and always include the team domain.
 _VIRTUAL_HOSTS = os.environ.get("VIRTUAL_HOST", "").replace(",", " ").split()
 _EXTRA_HOSTS = ["universalbicycle.team", "www.universalbicycle.team"]
 ALLOWED_HOSTS = list(dict.fromkeys(_VIRTUAL_HOSTS + _EXTRA_HOSTS))
 
-# Canonical host for absolute URLs (emails, sitemap, Wagtail admin links). Override with PRIMARY_HOST
-# to promote the team domain later; defaults to the first VIRTUAL_HOST, then the CodeRed subdomain.
-PRIMARY_HOST = os.environ.get("PRIMARY_HOST") or (_VIRTUAL_HOSTS[0] if _VIRTUAL_HOSTS else "cycling.codered.cloud")
+# Canonical host for absolute URLs (emails, sitemap, Wagtail admin links): PRIMARY_HOST, else the first
+# VIRTUAL_HOST. With neither the site would write its links to a host of a past deployment, so it says
+# so and does not start.
+PRIMARY_HOST = os.environ.get("PRIMARY_HOST") or (_VIRTUAL_HOSTS[0] if _VIRTUAL_HOSTS else "")
+if not PRIMARY_HOST:
+    raise ImproperlyConfigured("Set PRIMARY_HOST (or VIRTUAL_HOST) to the site's domain.")
 
 # This deployment's readers are mostly in Kazakhstan, where 2GIS and Yandex know the streets best, so
 # they come first; the environment can name another list (see MAP_SERVICES in base.py).
