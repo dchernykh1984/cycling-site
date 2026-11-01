@@ -535,6 +535,12 @@ class SubmitCompetitionViewTests(TestCase):
         data.update(kwargs)
         return data
 
+    def test_a_clone_number_in_other_digits_opens_an_empty_form(self):
+        # "\u00b2" (superscript two) passes str.isdigit() but not int(): it was a 500.
+        self.client.login(username="organizer@example.com", password="password123")
+        response = self.client.get(self._submit_url() + "?clone=%C2%B2")
+        self.assertEqual(response.status_code, 200)
+
     def test_participant_submit_creates_pending(self):
         self.client.login(username="participant@example.com", password="password123")
         self.client.post(self._submit_url(), self._payload())

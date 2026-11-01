@@ -57,6 +57,14 @@ def test_parse_candidates_extracts_type_and_disciplines():
     assert candidate.discipline_ids == [9, 24]
 
 
+def test_parse_candidates_drops_an_id_written_in_other_digits():
+    # "\u00b2" (superscript two) passes str.isdigit() but not int(), which ended the whole reply.
+    raw = '[{"title": "R", "date_start": "2026-08-01", "event_type_id": "\\u00b2", "discipline_ids": ["9"]}]'
+    candidate = parse_candidates(raw)[0]
+    assert candidate.event_type_id is None
+    assert candidate.discipline_ids == [9]
+
+
 def test_parse_candidates_extracts_location_fields():
     raw = (
         '[{"title": "R", "date_start": "2026-08-01", "country": "Kazakhstan", "region": "Almaty region",'

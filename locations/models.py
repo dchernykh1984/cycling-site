@@ -870,7 +870,7 @@ def filter_descendant_pks(location_ids) -> set:
     for value in location_ids or []:
         for part in str(value).split(","):
             part = part.strip()
-            if part.isdigit():
+            if part.isdecimal():
                 ids.add(int(part))
     if not ids:
         return set()
