@@ -13,6 +13,7 @@ from cycling_site.forms import LocalizedMaxLengthMixin
 from locations.models import Level, Location, competition_location_block_reason
 from registrations.models import RegistrationCategory
 
+from . import tracks
 from .models import (
     MAX_DESCRIPTION_LENGTH,
     Competition,
@@ -171,14 +172,14 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         {"pdf", "doc", "docx", "xls", "xlsx", "gpx", "kml", "zip", "jpg", "jpeg", "png", "gif", "webp"}
     )
 
-    def _validate_file(self, f):
+    def _validate_file(self, f, also: frozenset[str] = frozenset()):
         if not f:
             return f
         if f.size > self._MAX_FILE_BYTES:
             raise forms.ValidationError(_("File size must not exceed 10 MB."))
         ext = f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
-        if ext not in self._ALLOWED_EXTENSIONS:
-            allowed = ", ".join(sorted(self._ALLOWED_EXTENSIONS))
+        if ext not in self._ALLOWED_EXTENSIONS | also:
+            allowed = ", ".join(sorted(self._ALLOWED_EXTENSIONS | also))
             raise forms.ValidationError(_("Unsupported file type. Allowed: %(allowed)s.") % {"allowed": allowed})
         return f
 
@@ -205,7 +206,8 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         return self._validate_file(self.cleaned_data.get("file_announcement"))
 
     def clean_file_route(self):
-        return self._validate_file(self.cleaned_data.get("file_route"))
+        # Whatever a track comes in: the event's map draws every one of these (calendar_app.tracks).
+        return self._validate_file(self.cleaned_data.get("file_route"), also=tracks.EXTENSIONS)
 
     def clean_file_regulations(self):
         return self._validate_file(self.cleaned_data.get("file_regulations"))
