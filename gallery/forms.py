@@ -107,19 +107,19 @@ class MultipleImageField(forms.FileField):
 
 
 def max_files() -> int:
-    return getattr(settings, "GALLERY_MAX_FILES_PER_UPLOAD", 30)
+    return settings.GALLERY_MAX_FILES_PER_UPLOAD
 
 
 def max_file_mb() -> int:
-    return getattr(settings, "GALLERY_MAX_UPLOAD_MB", 25)
+    return settings.GALLERY_MAX_UPLOAD_MB
 
 
 def max_batch_mb() -> int:
-    return getattr(settings, "GALLERY_MAX_BATCH_MB", 90)
+    return settings.GALLERY_MAX_BATCH_MB
 
 
 def disk_reserve_mb() -> int:
-    return getattr(settings, "GALLERY_DISK_RESERVE_MB", 200)
+    return settings.GALLERY_DISK_RESERVE_MB
 
 
 def free_media_bytes() -> int:

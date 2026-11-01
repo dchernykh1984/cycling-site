@@ -48,7 +48,7 @@ def _bare(url: str) -> str:
 
 
 def _site_host() -> str:
-    base = getattr(settings, "SITE_BASE_URL", "") or settings.WAGTAILADMIN_BASE_URL
+    base = settings.SITE_BASE_URL or settings.WAGTAILADMIN_BASE_URL
     return urlsplit(base).netloc.lower().removeprefix("www.")
 
 

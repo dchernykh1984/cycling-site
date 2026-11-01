@@ -143,7 +143,7 @@ def site_base_url(request: HttpRequest) -> str:
     """The site's address that the calendar's links start with, without a trailing slash."""
     from django.conf import settings
 
-    return getattr(settings, "SITE_BASE_URL", "").rstrip("/") or request.build_absolute_uri("/").rstrip("/")
+    return settings.SITE_BASE_URL.rstrip("/") or request.build_absolute_uri("/").rstrip("/")
 
 
 def calendar_response(body: str, filename: str) -> HttpResponse:
