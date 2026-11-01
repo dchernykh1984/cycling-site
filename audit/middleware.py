@@ -8,6 +8,11 @@ def get_current_user():
     return getattr(_thread_locals, "user", None)
 
 
+def set_current_user(user) -> None:
+    """Who the audit log names for what this thread does next: the API's bearer, say."""
+    _thread_locals.user = user
+
+
 class CurrentUserMiddleware:
     """Store request.user in a thread-local so signals can access it."""
 

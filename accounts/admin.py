@@ -36,11 +36,9 @@ class UserAdmin(BaseUserAdmin):
         class RoleRestrictedForm(base_form):  # type: ignore[valid-type]
             def clean_role(self):
                 role = self.cleaned_data.get("role")
-                if role:
-                    if obj is not None and not roles.can_manage_user(editor, obj):
-                        raise ValidationError("You don't have permission to edit this user's role.")
-                    if not roles.can_assign_role(editor, role):
-                        raise ValidationError("You don't have permission to assign this role.")
+                refusal = roles.role_change_refusal(editor, obj, role) if role else ""
+                if refusal:
+                    raise ValidationError(refusal)
                 return role
 
         return RoleRestrictedForm
