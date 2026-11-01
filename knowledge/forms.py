@@ -3,7 +3,7 @@ from typing import ClassVar
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from cycling_site.forms import LocalizedMaxLengthMixin
+from cycling_site.forms import LocalizedMaxLengthMixin, comment_widget
 from cycling_site.richtext import validate_rich_text_length as _validate_body_length
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment
 
@@ -39,11 +39,7 @@ class AddKnowledgeArticleCommentForm(forms.ModelForm):
     class Meta:
         model = KnowledgeArticleComment
         fields: ClassVar[list] = ["body"]
-        widgets: ClassVar[dict] = {
-            "body": forms.Textarea(
-                attrs={"rows": 4, "placeholder": _("Write a comment..."), "class": "form-control w-100"}
-            ),
-        }
+        widgets: ClassVar[dict] = {"body": comment_widget()}
 
 
 class KnowledgeArticleForm(LocalizedMaxLengthMixin, forms.ModelForm):

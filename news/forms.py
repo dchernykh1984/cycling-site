@@ -4,7 +4,7 @@ from django import forms
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
-from cycling_site.forms import LocalizedMaxLengthMixin
+from cycling_site.forms import LocalizedMaxLengthMixin, comment_widget
 from cycling_site.richtext import validate_rich_text_length
 from knowledge.models import DraftSubmission
 from news.models import Comment, NewsArticle, NewsArticleComment
@@ -111,11 +111,7 @@ class AddCommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields: ClassVar[list] = ["body"]
-        widgets: ClassVar[dict] = {
-            "body": forms.Textarea(
-                attrs={"rows": 4, "placeholder": _("Write a comment..."), "class": "form-control w-100"}
-            ),
-        }
+        widgets: ClassVar[dict] = {"body": comment_widget()}
 
 
 class AddNewsArticleCommentForm(forms.ModelForm):
@@ -124,8 +120,4 @@ class AddNewsArticleCommentForm(forms.ModelForm):
     class Meta:
         model = NewsArticleComment
         fields: ClassVar[list] = ["body"]
-        widgets: ClassVar[dict] = {
-            "body": forms.Textarea(
-                attrs={"rows": 4, "placeholder": _("Write a comment..."), "class": "form-control w-100"}
-            ),
-        }
+        widgets: ClassVar[dict] = {"body": comment_widget()}

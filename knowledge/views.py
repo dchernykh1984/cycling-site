@@ -12,6 +12,7 @@ from wagtail.models import Locale
 
 from accounts import roles
 from accounts.access import ParticipantRequiredMixin
+from cycling_site.forms import save_comment
 from cycling_site.page_mixins import live_page_in
 from knowledge.forms import AddKnowledgeArticleCommentForm, DraftSubmissionForm, KnowledgeArticleForm
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment, KnowledgeIndexPage
@@ -146,15 +147,7 @@ class AddKnowledgeArticleCommentView(ParticipantRequiredMixin, View):
         article = get_object_or_404(KnowledgeArticle, pk=pk, is_deleted=False)
         if article.is_hidden and not can_manage:
             raise Http404
-        form = AddKnowledgeArticleCommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.article = article
-            comment.author = request.user
-            comment.save()
-        else:
-            first_errors = next(iter(form.errors.values()), [])
-            messages.error(request, first_errors[0] if first_errors else _("Invalid submission."))
+        save_comment(request, AddKnowledgeArticleCommentForm(request.POST), article=article)
         return redirect(article.get_absolute_url())
 
 

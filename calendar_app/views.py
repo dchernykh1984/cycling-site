@@ -29,6 +29,7 @@ from accounts import managing, roles
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from assistant.conversations import link as link_conversation
+from cycling_site.forms import flash_first_error, save_comment
 from cycling_site.setup_hints import sign_in_url
 from locations.maps import map_links, start_point
 from locations.models import (
@@ -1719,16 +1720,7 @@ class AddCompetitionCommentView(ParticipantRequiredMixin, View):
         )
         if not can_see(request.user, competition):
             raise Http404
-        form = AddCompetitionCommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.competition = competition
-            comment.author = request.user
-            comment.save()
-        else:
-            first_errors = next(iter(form.errors.values()), [])
-            error = first_errors[0] if first_errors else _("Invalid submission.")
-            messages.error(request, error)
+        save_comment(request, AddCompetitionCommentForm(request.POST), competition=competition)
         return redirect("competition_detail", pk=competition_pk)
 
 
@@ -1744,8 +1736,7 @@ class ReportCompetitionView(ParticipantRequiredMixin, View):
         competition = get_object_or_404(public_events(), pk=pk)
         form = ReportCompetitionForm(request.POST)
         if not form.is_valid():
-            first_errors = next(iter(form.errors.values()), [])
-            messages.error(request, first_errors[0] if first_errors else _("Invalid submission."))
+            flash_first_error(request, form)
             return redirect("competition_detail", pk=pk)
         already = CompetitionReport.objects.filter(
             competition=competition, reported_by=request.user, resolved=False
