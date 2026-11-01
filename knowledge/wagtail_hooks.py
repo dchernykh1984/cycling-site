@@ -68,8 +68,11 @@ class DraftSubmissionViewSet(SnippetViewSet):
             return redirect(reverse(_LIST_URL_NAME))
         if request.method == "POST":
             note = request.POST.get("reviewer_note", "")
-            sub.reject(reviewer=request.user, note=note)
-            messages.success(request, f"Submission '{sub.title}' rejected.")
+            try:
+                sub.reject(reviewer=request.user, note=note)
+                messages.success(request, f"Submission '{sub.title}' rejected.")
+            except ValueError as exc:  # reviewed by someone else since the page was opened
+                messages.error(request, str(exc))
             return redirect(reverse(_LIST_URL_NAME))
         return render(
             request,
