@@ -3,7 +3,8 @@
 import pytest
 
 from agent.config import ConfigError
-from instagram_agent.config import DEFAULT_GRAPH_VERSION, as_agent_config, from_env
+from agent.llm import LlmSettings
+from instagram_agent.config import DEFAULT_GRAPH_VERSION, from_env
 
 _BASE = {
     "SITE_BASE_URL": "https://s/",
@@ -51,10 +52,9 @@ def test_without_a_model_named_it_takes_the_one_the_agents_share():
 
 
 def test_the_shared_api_adapter_gets_the_same_model_and_key():
-    config = from_env({**_BASE, "LLM_MODEL": "deepseek-v4-flash"})
-    shared = as_agent_config(config)
-    assert shared.llm_model == "deepseek-v4-flash"
-    assert shared.llm_api_key == "k"
+    config: LlmSettings = from_env({**_BASE, "LLM_MODEL": "deepseek-v4-flash"})
+    assert config.llm_model == "deepseek-v4-flash"
+    assert config.llm_api_key == "k"
 
 
 def test_a_run_can_be_pointed_at_one_account():

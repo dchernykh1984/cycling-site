@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agent.config import DEFAULT_LLM_MODEL, ConfigError, _flag
+from agent.config import DEFAULT_LLM_MODEL, ConfigError, _flag, _whole_number
 
 # A private club channel carries a couple of announcements a week; a run proposing more than this
 # is reading something wrong, and the cap keeps that out of the moderation queue in bulk.
@@ -83,30 +83,4 @@ def from_env(env: dict[str, str]) -> Config:
         recent_hours=_whole_number(env.get("TELEGRAM_RECENT_HOURS"), _DEFAULT_RECENT_HOURS, "TELEGRAM_RECENT_HOURS"),
         max_posts=_whole_number(env.get("TELEGRAM_MAX_POSTS"), _DEFAULT_MAX_POSTS, "TELEGRAM_MAX_POSTS"),
         dry_run=_flag(env.get("TELEGRAM_DRY_RUN")),
-    )
-
-
-def _whole_number(value: str | None, default: int, name: str) -> int:
-    if not value:
-        return default
-    try:
-        number = int(value)
-    except ValueError as exc:
-        raise ConfigError(f"{name} must be an integer") from exc
-    return max(number, 0)
-
-
-def as_agent_config(config: Config):
-    """The same settings in the shape agent.llm.chat expects, so all agents share one API adapter."""
-    from agent.config import Config as AgentConfig
-
-    return AgentConfig(
-        site_base_url=config.site_base_url,
-        api_token=config.api_token,
-        llm_api_key=config.llm_api_key,
-        llm_base_url=config.llm_base_url,
-        llm_model=config.llm_model,
-        max_events=config.max_events,
-        max_per_source=config.max_per_channel,
-        dry_run=config.dry_run,
     )

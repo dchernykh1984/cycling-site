@@ -9,9 +9,18 @@ from __future__ import annotations
 import datetime
 import json
 import urllib.request
+from typing import Protocol
 
-from agent.config import Config
 from agent.models import Candidate, KnownEvents, Source, SourceKind, Taxonomy
+
+
+class LlmSettings(Protocol):
+    """What a call to the model needs; every agent's own Config carries it."""
+
+    llm_model: str
+    llm_base_url: str
+    llm_api_key: str
+
 
 _LOC = '{"ru": str, "kk": str, "en": str}'
 _SYSTEM = (
@@ -131,7 +140,7 @@ def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxono
     )
 
 
-def chat(system: str, user: str, config: Config) -> str:
+def chat(system: str, user: str, config: LlmSettings) -> str:
     """One call to the chat API. Shared by every agent -- they all talk to the same endpoint."""
     payload = {
         "model": config.llm_model,
@@ -154,7 +163,7 @@ def chat(system: str, user: str, config: Config) -> str:
 
 
 def extract_raw(
-    text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, config: Config
+    text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, config: LlmSettings
 ) -> str:
     return chat(_SYSTEM, _prompt(text, source, guidance, known, taxonomy), config)
 
@@ -207,7 +216,7 @@ def _event_json(candidate: Candidate) -> str:
     )
 
 
-def enrich_raw(candidate: Candidate, page_text: str, guidance: str, taxonomy: Taxonomy, config: Config) -> str:
+def enrich_raw(candidate: Candidate, page_text: str, guidance: str, taxonomy: Taxonomy, config: LlmSettings) -> str:
     """Ask the model to refine one event using the full text of its own event page."""
     event_types = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.event_types)
     disciplines = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.disciplines)

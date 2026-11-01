@@ -3,7 +3,8 @@
 import pytest
 
 from agent.config import ConfigError
-from telegram_agent.config import as_agent_config, from_env, telegram_credentials_missing
+from agent.llm import LlmSettings
+from telegram_agent.config import from_env, telegram_credentials_missing
 
 _BASE = {
     "SITE_BASE_URL": "https://example.kz/",
@@ -57,10 +58,9 @@ def test_the_limits_read_from_the_environment():
     assert (config.max_posts, config.recent_hours) == (500, 250)
 
 
-def test_the_per_channel_budget_reaches_the_shared_pipeline():
+def test_the_per_channel_budget_is_a_setting():
     """It caps what one talkative channel may contribute -- as a setting, not a constant."""
-    agent_config = as_agent_config(from_env({**_BASE, **_TELEGRAM, "TELEGRAM_MAX_PER_CHANNEL": "2"}))
-    assert agent_config.max_per_source == 2
+    assert from_env({**_BASE, **_TELEGRAM, "TELEGRAM_MAX_PER_CHANNEL": "2"}).max_per_channel == 2
 
 
 def test_a_limit_that_is_not_a_number_names_itself_in_the_error():
@@ -73,7 +73,7 @@ def test_dry_run_reads_the_usual_spellings():
     assert from_env({**_BASE, **_TELEGRAM, "TELEGRAM_DRY_RUN": "0"}).dry_run is False
 
 
-def test_the_agent_config_carries_the_llm_settings_for_the_shared_adapter():
-    agent_config = as_agent_config(from_env({**_BASE, **_TELEGRAM}))
-    assert agent_config.llm_base_url == "https://llm.example"
-    assert agent_config.llm_model == "deepseek-flash"
+def test_the_config_carries_the_llm_settings_for_the_shared_adapter():
+    config: LlmSettings = from_env({**_BASE, **_TELEGRAM})
+    assert config.llm_base_url == "https://llm.example"
+    assert config.llm_model == "deepseek-flash"

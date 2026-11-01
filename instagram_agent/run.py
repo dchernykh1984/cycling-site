@@ -147,7 +147,6 @@ def _run(
     guidance = _read(_GUIDANCE_FILE)
     cities = locations.flatten_cities(tree)
     today = datetime.date.today()
-    agent_config = insta_config.as_agent_config(config)
     by_ref = {as_source(account).ref: account for account in accounts}
 
     def fetch_source(source: Source) -> str:
@@ -155,7 +154,7 @@ def _run(
 
     def extract(text: str, source: Source) -> list[Candidate]:
         account = by_ref[source.ref]
-        raw = llm.extract_raw(text, account, guidance, known, taxonomy, agent_config, today.isoformat())
+        raw = llm.extract_raw(text, account, guidance, known, taxonomy, config, today.isoformat())
         parsed = pipeline.parse_candidates(raw, "", taxonomy)
         # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
         # declining -- surface it so the two are told apart without another run.
