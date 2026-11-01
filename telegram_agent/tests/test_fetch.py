@@ -213,3 +213,20 @@ def test_the_floor_keeps_the_shortest_real_announcements_this_project_has_seen()
         assert not worth_reading(chatter), chatter
     for real in ("Velosreda 5.08, 18:20", "Zavtra pohod na BAO, sbor v 6", "Start 8:00 ot Medeo"):
         assert worth_reading(real), real
+
+
+def test_a_message_is_dated_where_the_run_counts_its_days():
+    """20:30 in UTC is half past one the next morning in Almaty: the day an author wrote "tomorrow" on."""
+    from types import SimpleNamespace
+    from zoneinfo import ZoneInfo
+
+    from telegram_agent.fetch import _collect
+
+    now = datetime.datetime.now(datetime.UTC)
+    when = now.replace(hour=20, minute=30, second=0, microsecond=0)
+    if when > now:
+        when -= datetime.timedelta(days=1)
+    item = SimpleNamespace(date=when, message="Start 8:00 ot Medeo, zavtra", id=7, reply_to=None)
+    client = SimpleNamespace(iter_messages=lambda entity: iter([item]))
+    messages, _capped = _collect(client, SimpleNamespace(id=1), Channel(ref="@club"), 48, 10, ZoneInfo("Asia/Almaty"))
+    assert messages[0].published == when.date() + datetime.timedelta(days=1)

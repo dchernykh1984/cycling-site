@@ -206,3 +206,13 @@ def test_the_token_never_reaches_an_error_message():
     from instagram_agent.fetch import _without_secrets
 
     assert TOKEN not in _without_secrets(f"curl: (6) could not resolve {TOKEN}", TOKEN)
+
+
+def test_a_post_is_dated_where_the_run_counts_its_days():
+    """20:30 in UTC is half past one the next morning in Almaty: the day an author wrote "tomorrow" on."""
+    from zoneinfo import ZoneInfo
+
+    node = {**_media("Late1", "Ride tomorrow", datetime.date(2026, 9, 24)), "timestamp": "2026-09-24T20:30:00+0000"}
+    assert posts_from_business_discovery(_payload(node))[0].published == datetime.date(2026, 9, 24)
+    almaty = posts_from_business_discovery(_payload(node), ZoneInfo("Asia/Almaty"))
+    assert almaty[0].published == datetime.date(2026, 9, 25)

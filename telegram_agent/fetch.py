@@ -18,7 +18,9 @@ import datetime
 import time
 from dataclasses import dataclass
 from typing import Any
+from zoneinfo import ZoneInfo
 
+from agent.config import UTC_ZONE
 from telegram_agent.channels import Channel, post_link
 
 _MAX_MESSAGE_CHARS = 2000
@@ -157,7 +159,9 @@ def _sit_out(seconds: int) -> None:
     time.sleep(seconds + 1)
 
 
-def read_messages(client: Any, channel: Channel, recent_hours: int, max_posts: int) -> tuple[str, list[Message], bool]:
+def read_messages(
+    client: Any, channel: Channel, recent_hours: int, max_posts: int, zone: ZoneInfo = UTC_ZONE
+) -> tuple[str, list[Message], bool]:
     """The channel's title, its messages from the last ``recent_hours``, and whether the cap bit.
 
     Coverage-omitted I/O; the decisions it makes are in :func:`worth_reading` and :func:`within`.
@@ -183,13 +187,13 @@ def read_messages(client: Any, channel: Channel, recent_hours: int, max_posts: i
         _sit_out(exc.seconds)
         entity = entity_of(client, channel)
     try:
-        messages, capped = _collect(client, entity, channel, recent_hours, max_posts)
+        messages, capped = _collect(client, entity, channel, recent_hours, max_posts, zone)
     except FloodWaitError as exc:
         # Served once: a second FloodWait straight after the first means Telegram is not asking for
         # patience but for absence, and the channel is reported rather than hammered.
         _sit_out(exc.seconds)
         try:
-            messages, capped = _collect(client, entity, channel, recent_hours, max_posts)
+            messages, capped = _collect(client, entity, channel, recent_hours, max_posts, zone)
         except FloodWaitError as again:
             raise ChannelUnavailableError(f"Telegram asked to wait {again.seconds}s twice (flood limit)") from again
     return (getattr(entity, "title", "") or "").strip(), messages, capped
@@ -210,7 +214,7 @@ def topic_id(item: Any) -> int | None:
 
 
 def _collect(
-    client: Any, entity: Any, channel: Channel, recent_hours: int, max_posts: int
+    client: Any, entity: Any, channel: Channel, recent_hours: int, max_posts: int, zone: ZoneInfo
 ) -> tuple[list[Message], bool]:
     """Messages newer than the window, newest first, and whether the safety net stopped the read."""
     oldest_wanted = datetime.datetime.now(datetime.UTC) - datetime.timedelta(hours=recent_hours)
@@ -228,7 +232,8 @@ def _collect(
             messages.append(
                 Message(
                     text=text[:_MAX_MESSAGE_CHARS],
-                    published=when.date(),
+                    # The day it was posted where the run counts its days (agent.config), not in UTC.
+                    published=when.astimezone(zone).date(),
                     id=number,
                     link=post_link(channel.ref, number, topic_id(item), chat_id),
                 )

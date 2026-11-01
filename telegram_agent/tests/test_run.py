@@ -289,7 +289,7 @@ def test_a_run_reports_how_deep_it_read_each_channel(capsys):
 
     original_read, original_extract = module.fetch.read_messages, module.llm.extract_raw
     try:
-        module.fetch.read_messages = lambda client, channel, hours, cap: ("A club", messages, False)
+        module.fetch.read_messages = lambda client, channel, hours, cap, zone=None: ("A club", messages, False)
         module.llm.extract_raw = _record
         module._run(
             _config(),
@@ -324,7 +324,7 @@ def test_a_channel_with_more_than_a_promptful_is_read_in_several_prompts():
 
     original_read, original_extract = module.fetch.read_messages, module.llm.extract_raw
     try:
-        module.fetch.read_messages = lambda client, channel, hours, cap: ("A club", messages, True)
+        module.fetch.read_messages = lambda client, channel, hours, cap, zone=None: ("A club", messages, True)
         module.llm.extract_raw = _record
         module._run(
             _config(recent_hours=250),
@@ -360,7 +360,7 @@ def test_every_batch_of_a_channel_contributes_its_events():
     )
     original_read, original_extract = module.fetch.read_messages, module.llm.extract_raw
     try:
-        module.fetch.read_messages = lambda client, channel, hours, cap: ("A club", messages, False)
+        module.fetch.read_messages = lambda client, channel, hours, cap, zone=None: ("A club", messages, False)
         module.llm.extract_raw = lambda *args, **kwargs: next(replies)
         out = module._run(
             _config(),
@@ -396,7 +396,7 @@ def test_one_failing_batch_does_not_discard_what_the_others_found(capsys):
 
     original_read, original_extract = module.fetch.read_messages, module.llm.extract_raw
     try:
-        module.fetch.read_messages = lambda client, channel, hours, cap: ("A club", messages, False)
+        module.fetch.read_messages = lambda client, channel, hours, cap, zone=None: ("A club", messages, False)
         module.llm.extract_raw = _second_batch_explodes
         out = module._run(
             _config(),

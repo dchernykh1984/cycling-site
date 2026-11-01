@@ -138,7 +138,7 @@ def _run(
     def fetch_source(source: Source) -> str:
         channel = by_ref[source.ref]
         names[source.ref], messages, capped = fetch.read_messages(
-            telegram, channel, config.recent_hours, config.max_posts
+            telegram, channel, config.recent_hours, config.max_posts, config.time_zone
         )
         print(fetch.reading_note(source.ref, messages, config.recent_hours, capped), flush=True)
         batches[source.ref] = fetch.in_batches(messages)
