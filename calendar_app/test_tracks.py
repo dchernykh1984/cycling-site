@@ -215,8 +215,31 @@ class ReadTests(SimpleTestCase):
         self.assertEqual(lines[0][-1], [round(76.0 + 5999 * 0.001, 5), 43.26])
 
     def test_reading_stops_once_enough_points_are_read(self):
+        kml = f"<Placemark><LineString><coordinates>{_kml_coordinates(RIDE)}</coordinates></LineString></Placemark>"
+        files = {
+            "gpx": _gpx(f"<trk><trkseg>{_points('trkpt', RIDE)}</trkseg></trk>"),
+            "kml": _kml(kml),
+            "tcx": _tcx(RIDE),
+            "fit": _fit(RIDE),
+            "geojson": json.dumps({"type": "LineString", "coordinates": GEOJSON_RIDE}).encode(),
+        }
         with mock.patch.object(tracks, "_MAX_POINTS_READ", 3):
-            self.assertEqual(_lines(_gpx(f"<trk><trkseg>{_points('trkpt', RIDE)}</trkseg></trk>")), [GEOJSON_RIDE[:3]])
+            for kind, data in files.items():
+                with self.subTest(kind=kind):
+                    self.assertEqual(_lines(data), [GEOJSON_RIDE[:3]])
+
+    def test_a_geojson_nested_past_reason_is_read_no_deeper(self):
+        node: dict = {"type": "LineString", "coordinates": GEOJSON_RIDE}
+        for _ in range(40):
+            node = {"type": "GeometryCollection", "geometries": [node]}
+        self.assertIsNone(tracks.read(json.dumps(node).encode()))
+
+    def test_the_tolerance_doubles_until_the_points_fit(self):
+        # Off the straight by 7 m and back: kept at 5 m, gone at 10 m.
+        wiggle = [(43.25 + (i % 2) * 7 / 111_320, 76.0 + i * 0.001) for i in range(30)]
+        with mock.patch.object(tracks, "_MAX_POINTS_KEPT", 10):
+            self.assertEqual(len(tracks._thinned([wiggle])[0]), 2)
+        self.assertGreater(len(tracks._thinned([wiggle])[0]), 10)  # what 5 m keeps, over the cap
 
     def test_a_line_shaped_to_tire_the_thinning_keeps_every_nth_point_instead(self):
         zigzag = [(43.25 + (i % 2) * 0.01, 76.0 + i * 0.001) for i in range(50)]
