@@ -4672,5 +4672,13 @@ msgid "No cards yet."
 msgstr "Карточкалар әлі жоқ."
 
 #: calendar_app/templates/calendar_app/detail.html
+msgid "Link to the track"
+msgstr "Трекке сілтеме"
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "Download the track"
+msgstr "Тректі жүктеп алу"
+
+#: calendar_app/templates/calendar_app/detail.html
 msgid "Arrows show the direction of the track."
 msgstr "Көрсеткілер тректің бағытын көрсетеді."

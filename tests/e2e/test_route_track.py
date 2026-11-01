@@ -85,6 +85,23 @@ def test_the_whole_track_and_the_start_are_in_view_with_arrows_the_way_it_runs(
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_track_link_and_the_track_file_are_both_offered(
+    page: Page, live_server, kz_competition, location_tree, settings, tmp_path
+):
+    settings.MEDIA_ROOT = tmp_path
+    event = _event(kz_competition, location_tree["real"], route=GPX, name="ride.gpx")
+    page.goto(f"{live_server.url}/en/calendar/{event.pk}/")
+
+    expect(page.locator("#route-link")).to_have_text("Link to the track")
+    expect(page.locator("#route-link")).to_have_attribute("href", "https://example.com/route")
+    expect(page.locator("#route-download")).to_have_text("Download the track")
+    expect(page.locator("#route-download")).to_have_attribute("download", "")
+    with page.expect_download() as download:
+        page.locator("#route-download").click()
+    assert download.value.suggested_filename.endswith(".gpx")
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_route_file_that_is_no_track_leaves_the_map_as_it_was(
     page: Page, live_server, kz_competition, location_tree, settings, tmp_path
 ):
@@ -96,3 +113,5 @@ def test_a_route_file_that_is_no_track_leaves_the_map_as_it_was(
     expect(page.locator("img.leaflet-tile[src*='/13/']").first).to_be_attached()
     expect(page.locator("path.route-track")).to_have_count(0)
     expect(page.locator("#competition-map-caption")).to_have_count(0)
+    expect(page.locator("#route-file")).to_have_text("Route")
+    expect(page.locator("#route-download")).to_have_count(0)

@@ -55,12 +55,15 @@ class CompetitionLinkOrderTests(TestCase):
                     self.assertEqual(html.count(marker), 1)
 
     def test_uploaded_documents_keep_the_same_order_and_urls_take_precedence(self):
+        """A link stands in for its document's file -- but for the route, whose link and file both show."""
         for name in DOCUMENTS:
             setattr(self.competition, f"file_{name}", f"competitions/{name}.pdf")
         self.competition.save()
         html = self._html()
+        self.assertIn(f'href="{self.competition.file_route.url}"', html)
         for name in DOCUMENTS:
-            self.assertNotIn(f'href="{getattr(self.competition, f"file_{name}").url}"', html)
+            if name != "route":
+                self.assertNotIn(f'href="{getattr(self.competition, f"file_{name}").url}"', html)
             setattr(self.competition, f"url_{name}", "")
         self.competition.save()
         self._assert_order(
