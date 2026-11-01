@@ -13,6 +13,7 @@ from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedPreviewText, LocalizedStr, LocalizedTitle, Url, localize_field
 from calendar_app.feeds import build_calendar, calendar_response, site_base_url
 from calendar_app.models import MAX_DESCRIPTION_LENGTH, Competition, Discipline, EventType
+from calendar_app.tracks import route_track
 from calendar_app.visibility import can_manage_or_own, is_public, public_events_q
 from locations.models import (
     Level,
@@ -467,6 +468,34 @@ def competition_ics(
     # An owner's hidden or pending event is theirs alone: no shared cache keeps a copy.
     patch_cache_control(response, private=True)
     return response
+
+
+class RouteTrackOut(Schema):
+    """The track an event's route file draws on its page: a GeoJSON Feature, longitude first."""
+
+    type: str = "Feature"
+    geometry: dict
+    properties: dict
+
+
+@router.get(
+    "/{competition_id}/track",
+    response=RouteTrackOut,
+    auth=optional_auth,
+    summary="The track the route file draws on the event's map (GeoJSON)",
+)
+def competition_track(request, competition_id: int):
+    """The line the event's page draws from its route file, with the file's address; 404 when it draws none."""
+    competition = _get_or_404(competition_id)
+    _require_visible_or_404(request.auth, competition)
+    geometry = route_track(competition)
+    if geometry is None:
+        raise HttpError(404, "This event's route file has no track")
+    return {
+        "type": "Feature",
+        "geometry": geometry,
+        "properties": {"file": request.build_absolute_uri(competition.file_route.url)},
+    }
 
 
 @router.post("/", response={201: CompetitionDetailOut}, auth=auth, summary="Create competition")
