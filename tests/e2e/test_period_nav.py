@@ -484,3 +484,35 @@ def test_all_upcoming_on_the_map_leaves_the_last_day_empty(page: Page, live_serv
     expect(page.locator("#map-date-to")).to_have_value("")
     expect(_label(page)).to_have_text(re.compile(r"^from "))
     expect(page.locator("#view-link-list")).to_have_attribute("href", re.compile(r"period=upcoming"))
+
+
+# --- The Calendar tab opens the calendar ---
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("kind", ["open", "week"])
+def test_the_calendar_tab_of_the_list_opens_the_grid(page: Page, live_server, kind):
+    page.clock.set_fixed_time(WEDNESDAY)
+    page.set_viewport_size(WIDE)
+    page.goto(f"{live_server.url}/en/calendar/")
+    expect(page.locator(".fc")).to_be_visible()
+    page.locator("#view-link-list").click()
+    page.wait_for_url(re.compile(r"/en/calendar/list/"))
+    _kind(page, kind)
+    page.wait_for_url(re.compile(r"date_from="))
+    page.locator("#view-link-calendar").click()
+    page.wait_for_url(re.compile(r"/en/calendar/(\?|$)"))
+    expect(page.locator(".fc-daygrid")).to_be_visible()
+    expect(page.locator("#view-link-calendar")).to_have_attribute("aria-current", "page")
+    assert "#grid" not in page.url
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_calendar_tab_of_the_map_opens_the_grid(page: Page, live_server):
+    page.clock.set_fixed_time(WEDNESDAY)
+    page.set_viewport_size(WIDE)
+    page.goto(f"{live_server.url}/en/calendar/map/?period=upcoming")
+    page.locator("#view-link-calendar").click()
+    page.wait_for_url(re.compile(r"/en/calendar/(\?|$)"))
+    expect(page.locator(".fc-daygrid")).to_be_visible()
+    expect(page.locator("#view-link-calendar")).to_have_attribute("aria-current", "page")

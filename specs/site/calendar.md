@@ -30,8 +30,9 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 1. **Given** a fresh visitor opens the calendar, **Then** a phone lists the remaining days of the
    month and a wide screen opens the month grid; Month explicitly opens the grid. The tabs name
    what is on screen: days as a list light up "List", the grid "Calendar", and "Calendar" over a
-   list turns it into the grid in place. A chosen layout survives the visit without switching on
-   resize. A multi-day event appears once in a list and
+   list turns it into the grid in place. "Calendar" on the list or the map page opens the grid too,
+   at the month its period begins in, whatever the period -- a week or all upcoming included. A
+   chosen layout survives the visit without switching on resize. A multi-day event appears once in a list and
    on every day in the grid; three events and +N keep a busy grid day compact.
 2. **Given** the list view, **Then** it shows upcoming events (not past ones) until the current month's end,
    a page at a time with numbered pages, a jump-to-page field, and filters kept across pages;
