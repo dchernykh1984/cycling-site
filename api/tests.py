@@ -1800,6 +1800,17 @@ class LocationUpdateTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["name"]["ru"], "New RU")
 
+    def test_a_rename_in_another_language_keeps_each_languages_name(self):
+        name = {"ru": "A", "kk": "", "en": "B"}
+        for language in ("kk", "en"):
+            with self.subTest(language=language):
+                resp = self.patch(
+                    f"/api/v1/locations/{self.loc.pk}", {"name": name}, user=self.admin, HTTP_ACCEPT_LANGUAGE=language
+                )
+                self.assertEqual(resp.status_code, 200)
+                self.loc.refresh_from_db()
+                self.assertEqual((self.loc.name_ru, self.loc.name_kk, self.loc.name_en), ("A", "", "B"))
+
     def test_a_patch_keeps_the_point_on_the_globe_and_whole(self):
         self.loc.lat, self.loc.lng = 43.2, 76.9
         self.loc.save()

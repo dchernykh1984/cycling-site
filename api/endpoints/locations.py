@@ -111,8 +111,10 @@ def _apply_name(location: Location, name: LocalizedStr) -> None:
     location.name_ru = name.ru
     location.name_kk = name.kk
     location.name_en = name.en
-    # modeltranslation uses the first non-empty language as the canonical name
-    location.name = name.ru or name.kk or name.en
+    # The canonical column is the first non-empty language, set via __dict__: location.name = ...
+    # goes through modeltranslation's descriptor and, under a non-default active language, writes
+    # into that language's column instead. Matches api/endpoints/competitions.py::_apply_localized.
+    location.__dict__["name"] = name.ru or name.kk or name.en
 
 
 # -- Endpoints -------------------------------------------------------------
