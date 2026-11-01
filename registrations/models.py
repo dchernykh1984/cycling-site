@@ -165,10 +165,6 @@ class CompetitionRegistration(models.Model):
         if check_duplicate(self.competition, self.user, self.first_name, self.last_name, self.birth_date):
             raise ValidationError("A duplicate registration already exists.")
 
-    @property
-    def birth_year(self) -> int:
-        return self.birth_date.year
-
 
 def counts(entry, competition) -> bool:
     """Whether an entry counts -- toward the limit, for a start number, in the lists the timing tools

@@ -37,10 +37,9 @@ class RegistrationForm(forms.Form):
         label=_("Additional info"),
     )
 
-    def __init__(self, *args, competition=None, user=None, readonly_fields=None, **kwargs):
+    def __init__(self, *args, competition=None, readonly_fields=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.competition = competition
-        self._user = user
         self._readonly_fields = readonly_fields or []
 
         if competition:

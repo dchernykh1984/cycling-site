@@ -57,7 +57,7 @@ def available_categories(competition, gender, birth_date) -> list[RegistrationCa
 
 def _form(competition, person, data=None, **kwargs) -> RegistrationForm:
     readonly = [] if is_free(competition) else list(PROFILE_FIELDS)
-    return RegistrationForm(data, competition=competition, user=person, readonly_fields=readonly, **kwargs)
+    return RegistrationForm(data, competition=competition, readonly_fields=readonly, **kwargs)
 
 
 def _offer(form, categories) -> None:

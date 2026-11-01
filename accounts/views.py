@@ -217,8 +217,9 @@ class ProfileView(TemplateView):
         questions the edit and delete views ask before they act -- rather than a second rule that
         can drift away from them and offer a button the server then refuses.
         """
+        from calendar_app.visibility import manages
         from registrations.models import CompetitionRegistration
-        from registrations.views import can_manage, can_self_edit
+        from registrations.views import can_self_edit
 
         member_ids = managing.member_ids(user)
         rows = list(
@@ -232,7 +233,7 @@ class ProfileView(TemplateView):
             .order_by("-competition__date_start", "-registered_at")
         )
         for reg in rows:
-            reg.can_edit = can_manage(user, reg.competition) or can_self_edit(user, reg.competition, reg, member_ids)
+            reg.can_edit = manages(user, reg.competition) or can_self_edit(user, reg.competition, reg, member_ids)
         return rows
 
 

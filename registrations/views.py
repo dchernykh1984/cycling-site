@@ -34,10 +34,6 @@ from .models import (
 )
 
 
-def can_manage(user, competition) -> bool:
-    return manages(user, competition)
-
-
 def can_self_edit(user, competition, reg, member_ids=None) -> bool:
     """Whether ``user`` may edit/cancel ``reg`` as its owner, or for its owner (not as a manager).
 
@@ -134,7 +130,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
         competition = self._get_competition(pk)
         if not can_see(request.user, competition):
             raise Http404
-        if competition.status != Competition.Status.APPROVED and not can_manage(request.user, competition):
+        if competition.status != Competition.Status.APPROVED and not manages(request.user, competition):
             raise Http404
         if not competition.is_registration_open():
             return render(
@@ -155,7 +151,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
         competition = self._get_competition(pk)
         if not can_see(request.user, competition):
             raise Http404
-        if competition.status != Competition.Status.APPROVED and not can_manage(request.user, competition):
+        if competition.status != Competition.Status.APPROVED and not manages(request.user, competition):
             raise Http404
         if not competition.is_registration_open():
             raise PermissionDenied
@@ -277,7 +273,7 @@ class ParticipantListView(TemplateView):
         context = super().get_context_data(**kwargs)
         competition = get_object_or_404(Competition, pk=self.kwargs["pk"], is_deleted=False)
         user = self.request.user
-        is_manager = can_manage(user, competition)
+        is_manager = manages(user, competition)
 
         if not can_see(user, competition):
             raise Http404
@@ -347,7 +343,7 @@ class ParticipantListView(TemplateView):
 class ApproveRegistrationView(LoginRequiredMixin, View):
     def post(self, request, pk, reg_pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage(request.user, competition):
+        if not manages(request.user, competition):
             raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
         reg.is_approved = True
@@ -359,7 +355,7 @@ class ApproveRegistrationView(LoginRequiredMixin, View):
 class RejectRegistrationView(LoginRequiredMixin, View):
     def post(self, request, pk, reg_pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage(request.user, competition):
+        if not manages(request.user, competition):
             raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
         form = RejectRegistrationForm(request.POST)
@@ -376,7 +372,7 @@ class RejectRegistrationView(LoginRequiredMixin, View):
 class MarkPaidView(LoginRequiredMixin, View):
     def post(self, request, pk, reg_pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage(request.user, competition):
+        if not manages(request.user, competition):
             raise PermissionDenied
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
         reg.is_paid = True
@@ -392,7 +388,7 @@ class EditRegistrationView(LoginRequiredMixin, View):
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
         # Manager rights take precedence: a manager (incl. the event owner) editing their own
         # registration still gets the admin controls, not the restricted participant form.
-        if can_manage(user, competition):
+        if manages(user, competition):
             as_participant = False
         elif can_self_edit(user, competition, reg):
             as_participant = True
@@ -437,7 +433,7 @@ class DeleteRegistrationView(LoginRequiredMixin, View):
         reg = get_object_or_404(CompetitionRegistration, pk=reg_pk, competition=competition)
         # Managers may delete any entry; a participant may cancel only their own, and only
         # while registration is still open (:func:`can_self_edit`).
-        if not (can_manage(request.user, competition) or can_self_edit(request.user, competition, reg)):
+        if not (manages(request.user, competition) or can_self_edit(request.user, competition, reg)):
             raise PermissionDenied
         reg.delete()
         return redirect("registrations:participant_list", pk=pk)
@@ -448,7 +444,7 @@ class ManualAddRegistrationView(LoginRequiredMixin, View):
 
     def _get_competition(self, pk, user):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage(user, competition):
+        if not manages(user, competition):
             raise PermissionDenied
         if competition.registration_mode != competition.RegistrationMode.FREE:
             raise PermissionDenied
@@ -579,7 +575,7 @@ def _csv_row(row: list) -> list:
 class ExportParticipantsCSVView(LoginRequiredMixin, View):
     def get(self, request, pk):
         competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
-        if not can_manage(request.user, competition):
+        if not manages(request.user, competition):
             raise PermissionDenied
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = f'attachment; filename="participants_{pk}.csv"'
