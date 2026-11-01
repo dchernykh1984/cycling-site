@@ -202,7 +202,9 @@ _LABEL = """
   for (const q of rects) { const k = Math.round(q.top); rows.set(k, Math.min(rows.get(k) ?? Infinity, q.top)); }
   const tops = [...rows.keys()].sort((a, b) => a - b).map(k => rows.get(k));
   const lines = tops.length;
-  const bw = parseFloat(s.borderLeftWidth) || 0, bt = parseFloat(s.borderTopWidth) || 0;
+  // Each side's own border: a segment of a group draws only the line on its left.
+  const bw = parseFloat(s.borderLeftWidth) || 0, br = parseFloat(s.borderRightWidth) || 0;
+  const bt = parseFloat(s.borderTopWidth) || 0, bb = parseFloat(s.borderBottomWidth) || 0;
   const left = Math.min(...rects.map(q => q.left)), right = Math.max(...rects.map(q => q.right));
   const top = Math.min(...rects.map(q => q.top)), bottom = Math.max(...rects.map(q => q.bottom));
   const clear = (c) => c === 'transparent' || /,\\s*0\\)$/.test(c);
@@ -210,8 +212,8 @@ _LABEL = """
   const group = el.closest('[role="group"]');
   const framed = (bw > 0 && s.borderLeftStyle !== 'none') || !clear(s.backgroundColor)
     || (!!group && parseFloat(getComputedStyle(group).borderTopWidth) > 0);
-  return {lines, framed, side: Math.min(left - r.left - bw, r.right - bw - right),
-          end: Math.min(top - r.top - bt, r.bottom - bt - bottom),
+  return {lines, framed, side: Math.min(left - r.left - bw, r.right - br - right),
+          end: Math.min(top - r.top - bt, r.bottom - bb - bottom),
           spacing: lines > 1 ? (tops[1] - tops[0]) / parseFloat(s.fontSize) : 0};
 }
 """
