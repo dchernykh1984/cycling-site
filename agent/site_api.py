@@ -10,6 +10,7 @@ from agent.models import Candidate, KnownEvents, Taxonomy
 from agent.pipeline import normalize_key
 
 USER_AGENT = "UniversalBicycleTeam-EventsAgent/1.0"
+_LINK_PREVIEW_CHARS = 70  # of a link left out, in the run log
 
 
 def _tagged(live: list[dict], deleted: list[dict]) -> list[tuple[dict, bool]]:
@@ -189,7 +190,8 @@ class SiteApiClient:
                 # -- so the link is left out and said out loud, for someone to add by hand.
                 self.dropped_links.append((field, link))
                 print(
-                    f"  ! {field} left out: {len(link)} characters, the site stores {MAX_URL_LENGTH} -- {link[:70]}...",
+                    f"  ! {field} left out: {len(link)} characters, the site stores {MAX_URL_LENGTH} -- "
+                    f"{link[:_LINK_PREVIEW_CHARS]}...",
                     flush=True,
                 )
                 continue

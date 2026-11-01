@@ -13,6 +13,8 @@ from agent import dedup
 
 _WS = re.compile(r"\s+")
 _PUNCT = re.compile(r"[^\w\s]", re.UNICODE)
+# A region or country hint and a name sharing this many opening letters are one place (see _hint_matches).
+_SHARED_OPENING_CHARS = 5
 
 
 def normalize_name(value: str) -> str:
@@ -96,7 +98,7 @@ def _hint_matches(hint: str, names: set[str]) -> bool:
             continue
         if target == name or target in name or name in target:
             return True
-        if len(target) >= 5 and len(name) >= 5 and target[:5] == name[:5]:
+        if len(target) >= _SHARED_OPENING_CHARS and name.startswith(target[:_SHARED_OPENING_CHARS]):
             return True
     return False
 

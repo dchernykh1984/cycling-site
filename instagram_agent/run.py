@@ -160,7 +160,7 @@ def _run(
         # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
         # declining -- surface it so the two are told apart without another run.
         if not parsed and raw.strip() not in ("", "[]"):
-            print(f"  . {source.ref}: {len(raw)}-char reply parsed to 0: {' '.join(raw.split())[:400]}", flush=True)
+            print(f"  . {source.ref}: {len(raw)}-char reply parsed to 0: {pipeline.reply_preview(raw)}", flush=True)
         placed = (_located(_with_account_city(candidate, account), tree, cities) for candidate in parsed)
         return [credit_account(candidate, account) for candidate in placed]
 

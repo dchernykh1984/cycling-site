@@ -34,6 +34,7 @@ import subprocess
 import tempfile
 import urllib.parse
 from dataclasses import dataclass
+from http import HTTPStatus
 from pathlib import Path
 
 from instagram_agent.accounts import Account
@@ -196,13 +197,13 @@ def _get_once(url: str, token: str) -> dict:
         try:
             payload = json.loads(body)
         except ValueError as exc:
-            if status == 200:
+            if status == HTTPStatus.OK:
                 raise AccountUnavailableError(f"the reply was not JSON: {exc}") from exc
             payload = {}
     # Graph answers a refusal as JSON with its own message, which says far more than the status --
     # "Unsupported get request" is what an account that is not professional looks like.
     said = (payload.get("error") or {}).get("message") if isinstance(payload, dict) else None
-    if status == 200 and not said:
+    if status == HTTPStatus.OK and not said:
         return payload
     if _THEIR_BUG in body:
         raise AccountUnavailableError(
@@ -214,9 +215,9 @@ def _get_once(url: str, token: str) -> dict:
 
 
 def _hint_for(status: int) -> str:
-    if status in (401, 429):
+    if status in (HTTPStatus.UNAUTHORIZED, HTTPStatus.TOO_MANY_REQUESTS):
         return " (refused this time; the next run asks again)"
-    if status == 404:
+    if status == HTTPStatus.NOT_FOUND:
         return " (no such account)"
     return ""
 

@@ -179,7 +179,7 @@ def _run(
             if not parsed and raw.strip() not in ("", "[]"):
                 print(
                     f"  . {source.ref} batch {number}: {len(raw)}-char reply parsed to 0: "
-                    f"{' '.join(raw.split())[:400]}",
+                    f"{pipeline.reply_preview(raw)}",
                     flush=True,
                 )
             by_id = {message.id: message for message in batch}

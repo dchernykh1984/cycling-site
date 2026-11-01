@@ -45,6 +45,8 @@ _CLOSE_METRES = 250
 _NAME_OVERLAP = 0.7
 _MIN_SHARED_WORDS = 2
 _MIN_PREFIX = 4  # "Banka" and "Bank" are one word; "im." and "imeni" are not
+_MIN_DISTINCTIVE_CHARS = 4  # a word this long, shared nearby, names the place
+_EARTH_RADIUS_METRES = 6_371_000
 
 Point = tuple[float, float]
 
@@ -116,12 +118,12 @@ def distance_metres(a: Point | None, b: Point | None) -> float | None:
         return None
     lat1, lng1, lat2, lng2 = (math.radians(value) for value in (*a, *b))
     haversine = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lng2 - lng1) / 2) ** 2
-    return 2 * 6371000 * math.asin(math.sqrt(haversine))
+    return 2 * _EARTH_RADIUS_METRES * math.asin(math.sqrt(haversine))
 
 
 def _shares_a_distinctive_word(name: str, other: str) -> bool:
     words, other_words = venue_words(name), venue_words(other)
-    return bool({word for word in words & other_words if len(word) >= 4})
+    return bool({word for word in words & other_words if len(word) >= _MIN_DISTINCTIVE_CHARS})
 
 
 def same_place(name: str, point: Point | None, other_name: str, other_point: Point | None) -> bool:

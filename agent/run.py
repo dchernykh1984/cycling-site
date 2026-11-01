@@ -120,7 +120,7 @@ def _extract_candidates(
         # A non-empty reply that parses to nothing is a silent drop (a bad field), not the model
         # declining -- surface the raw reply so the two are told apart without another run.
         if not parsed and raw.strip() not in ("", "[]"):
-            print(f"  . {source.ref}: {len(raw)}-char reply parsed to 0: {' '.join(raw.split())[:400]}", flush=True)
+            print(f"  . {source.ref}: {len(raw)}-char reply parsed to 0: {pipeline.reply_preview(raw)}", flush=True)
         candidates.extend(parsed)
     return candidates
 
