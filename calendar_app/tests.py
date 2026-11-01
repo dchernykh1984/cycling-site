@@ -1648,6 +1648,37 @@ class EditCompetitionViewTests(TestCase):
         self.comp.refresh_from_db()
         self.assertEqual(self.comp.registration_mode, "self_only")
 
+    def test_an_edit_shown_again_keeps_a_categorys_birth_years(self):
+        from registrations.models import RegistrationCategory
+
+        self.comp.registration_enabled = True
+        self.comp.registration_mode = "free"
+        self.comp.birth_date_mode = "year"
+        self.comp.save()
+        category = RegistrationCategory.objects.create(
+            competition=self.comp,
+            name="Juniors",
+            birth_from=datetime.date(2005, 1, 1),
+            birth_to=datetime.date(2008, 12, 31),
+        )
+        self.client.login(username="edit_org@example.com", password="password123")
+        data = {
+            "title_ru": "",  # refused: an event needs a title
+            "date_start": "2026-09-01",
+            "registration_enabled": "on",
+            "registration_mode": "free",
+            "birth_date_mode": "year",
+            "categories_json": "[]",
+        }
+        shown = self.client.post(self.url, data).context["categories_json"]
+        self.assertEqual([(c["birth_from"], c["birth_to"]) for c in json.loads(shown)], [("2005", "2008")])
+
+        self.client.post(self.url, {**data, "title_ru": "Editable Race", "categories_json": shown})
+        category.refresh_from_db()
+        self.assertEqual(
+            (category.birth_from, category.birth_to), (datetime.date(2005, 1, 1), datetime.date(2008, 12, 31))
+        )
+
     def test_edit_saves_registration_deadline_with_time(self):
         self.client.login(username="edit_org@example.com", password="password123")
         self.client.post(
