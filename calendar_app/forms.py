@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
 from accounts import roles
-from cycling_site.forms import LocalizedMaxLengthMixin
+from cycling_site.forms import LocalizedMaxLengthMixin, comment_widget
 from locations.models import Level, Location, competition_location_block_reason
 from registrations.models import RegistrationCategory
 
@@ -435,14 +435,10 @@ CompetitionMaterialFormSet = forms.inlineformset_factory(
 
 
 class AddCompetitionCommentForm(forms.ModelForm):
-    body = forms.CharField(
-        max_length=2000,
-        widget=forms.Textarea(attrs={"rows": 4, "placeholder": _("Write a comment..."), "class": "form-control w-100"}),
-    )
-
     class Meta:
         model = CompetitionComment
         fields: ClassVar[list] = ["body"]
+        widgets: ClassVar[dict] = {"body": comment_widget()}
 
 
 class RejectCompetitionForm(forms.Form):

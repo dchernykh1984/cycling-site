@@ -14,6 +14,7 @@ from accounts import roles
 from accounts.access import ParticipantRequiredMixin
 from assistant.conversations import link as link_conversation
 from cycling_site.articles import visible
+from cycling_site.forms import save_comment
 from cycling_site.summaries import article_markup, summarize
 from knowledge.models import ARTICLES_PER_PAGE, DraftSubmission
 from news.forms import AddCommentForm, AddNewsArticleCommentForm, NewsArticleForm, SubmitNewsForm
@@ -221,15 +222,7 @@ class AddNewsArticleCommentView(ParticipantRequiredMixin, View):
         article = get_object_or_404(NewsArticle, pk=pk, is_deleted=False)
         if article.is_hidden and not can_manage:
             raise Http404
-        form = AddNewsArticleCommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.article = article
-            comment.author = request.user
-            comment.save()
-        else:
-            first_errors = next(iter(form.errors.values()), [])
-            messages.error(request, first_errors[0] if first_errors else gettext("Invalid submission."))
+        save_comment(request, AddNewsArticleCommentForm(request.POST), article=article)
         return redirect("news_article_detail", pk=pk)
 
 
