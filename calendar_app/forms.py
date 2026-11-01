@@ -292,6 +292,15 @@ class WallClockDateTimeField(forms.DateTimeField):
         return result.replace(tzinfo=None) if result else result
 
 
+def birth_bound(value, by_date: bool, *, last: bool) -> datetime.date:
+    """A category's birth bound as stored: a date as it is, a year as its first or (``last``) its last
+    day. ValueError or TypeError when the value is neither."""
+    if by_date:
+        return datetime.date.fromisoformat(value)
+    year = int(value)
+    return datetime.date(year, 12, 31) if last else datetime.date(year, 1, 1)
+
+
 class RegistrationSettingsForm(forms.Form):
     registration_enabled = forms.BooleanField(required=False)
     registration_mode = forms.ChoiceField(
@@ -368,6 +377,30 @@ class RegistrationSettingsForm(forms.Form):
                     code="max_length",
                 )
         return raw
+
+    def clean(self):
+        """Refuse a category's birth bound the event's birth mode cannot read, rather than saving the
+        category without it: a year typed and then the mode switched to dates is the usual way in."""
+        cleaned = super().clean()
+        if "categories_json" not in cleaned:
+            return cleaned
+        by_date = (cleaned.get("birth_date_mode") or Competition.BirthDateMode.YEAR) == Competition.BirthDateMode.DATE
+        for row in self.get_categories():
+            for key in ("birth_from", "birth_to"):
+                value = row.get(key)
+                if not value:
+                    continue
+                try:
+                    birth_bound(value, by_date, last=key == "birth_to")
+                except (ValueError, TypeError):
+                    message = (
+                        _('Category "%(name)s": "%(value)s" is not a date.')
+                        if by_date
+                        else _('Category "%(name)s": "%(value)s" is not a year.')
+                    )
+                    self.add_error("categories_json", message % {"name": row.get("name", ""), "value": value})
+                    return cleaned
+        return cleaned
 
     def get_categories(self) -> list[dict]:
         raw = self.cleaned_data.get("categories_json", "")

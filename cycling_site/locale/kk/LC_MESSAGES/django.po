@@ -4702,3 +4702,13 @@ msgstr "Тіркелу мерзімі іс-шараның аяқталу күн�
 #: calendar_app/views.py
 msgid "Registration deadline cannot be later than the competition date start."
 msgstr "Тіркелу мерзімі іс-шараның басталу күнінен кеш болмауы керек."
+
+#, python-format
+#: calendar_app/forms.py
+msgid "Category \"%(name)s\": \"%(value)s\" is not a date."
+msgstr "«%(name)s» санаты: «%(value)s» — күн емес."
+
+#, python-format
+#: calendar_app/forms.py
+msgid "Category \"%(name)s\": \"%(value)s\" is not a year."
+msgstr "«%(name)s» санаты: «%(value)s» — жыл емес."
