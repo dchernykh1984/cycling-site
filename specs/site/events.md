@@ -153,6 +153,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 2. **Given** a route link and a route file, **Then** the page offers both, each when it is there:
    "Link to the track" opens the link in a new tab, "Download the track" saves the file. A route
    file that holds no track -- a PDF of the route, say -- keeps its "Route" button, which opens it.
+   The form asks for the route's file under its link as well, not instead -- the file is what the
+   map draws -- while the other documents keep "or upload file" (maintainer, 2026-11-01).
 3. **Given** a reader of the event, **Then** `GET /api/v1/competitions/{id}/track` gives the same
    line as a GeoJSON feature with the file's address (see [API](api.md)).
 

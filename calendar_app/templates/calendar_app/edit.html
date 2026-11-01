@@ -136,7 +136,8 @@
         <label class="form-label fw-semibold">{% trans "Route" %}</label>
         {{ form.url_route }}
         {% if form.url_route.errors %}<div class="text-danger small mt-1">{% for e in form.url_route.errors %}{{ e }}{% endfor %}</div>{% endif %}
-        <div class="form-text">{% trans "or upload file" %}</div>
+        {# Not "or": the route's link and file are both offered, and only the file draws the track. #}
+        <div class="form-text" id="route-file-hint">{% trans "and the track file, from which the map draws the track" %}</div>
         {% if competition.file_route %}
         <div class="mb-1 small">{% trans "Current file" %}: <a href="{{ competition.file_route.url }}" target="_blank">{% trans "Download" %}</a></div>
         {% endif %}
