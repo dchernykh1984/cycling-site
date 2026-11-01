@@ -6,6 +6,7 @@ from wagtail.search.backends import get_search_backend
 
 from calendar_app.models import Competition
 from calendar_app.visibility import can_see
+from cycling_site.articles import public
 from knowledge.models import KnowledgeArticle
 from locations.models import Location, location_visible_to
 from news.models import NewsArticle
@@ -31,10 +32,10 @@ def search(request):
         knowledge_results = list(
             backend.search(
                 search_query,
-                KnowledgeArticle.objects.filter(locale=get_language() or "ru", is_deleted=False, is_hidden=False),
+                public(KnowledgeArticle.objects.filter(locale=get_language() or "ru")),
             )
         )
-        news_results = list(backend.search(search_query, NewsArticle.objects.filter(is_deleted=False, is_hidden=False)))
+        news_results = list(backend.search(search_query, public(NewsArticle.objects)))
         location_results = [
             place
             for place in backend.search(

@@ -17,6 +17,7 @@ from ninja.errors import HttpError
 from accounts import roles
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedStr, localize_field
+from cycling_site.articles import visible
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from knowledge.models import DraftSubmission, KnowledgeArticle
 from news.models import NewsArticle
@@ -336,10 +337,7 @@ def _apply_news_localized(article: NewsArticle, field: str, value: LocalizedStr)
 @news_router.get("/", response=list[NewsArticleOut], auth=optional_auth, summary="List news articles")
 def list_news(request):
     user = request.auth
-    qs = NewsArticle.objects.filter(is_deleted=False)
-    if not roles.at_least(user, roles.MANAGE_NEWS):
-        qs = qs.filter(is_hidden=False)
-    return list(qs)
+    return list(visible(NewsArticle.objects, can_manage=roles.at_least(user, roles.MANAGE_NEWS)))
 
 
 @news_router.get("/{pk}", response=NewsArticleOut, auth=optional_auth, summary="Get news article")
@@ -415,10 +413,7 @@ def delete_news_article(request, pk: int):
 @knowledge_router.get("/", response=list[KnowledgeArticleOut], auth=optional_auth, summary="List knowledge articles")
 def list_knowledge_articles(request):
     user = request.auth
-    qs = KnowledgeArticle.objects.filter(is_deleted=False)
-    if not roles.at_least(user, roles.MANAGE_KNOWLEDGE):
-        qs = qs.filter(is_hidden=False)
-    return list(qs)
+    return list(visible(KnowledgeArticle.objects, can_manage=roles.at_least(user, roles.MANAGE_KNOWLEDGE)))
 
 
 # Draft submissions: authoring for participants/organizers. Registered before the
