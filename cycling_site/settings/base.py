@@ -219,10 +219,13 @@ WSGI_APPLICATION = "cycling_site.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Seconds a database connection is kept for the next request; prod.py reads it too.
+DATABASE_CONN_MAX_AGE = 600
+
 DATABASES = {
     "default": dj_database_url.config(
         default="postgres://localhost/cycling_site_dev",
-        conn_max_age=600,
+        conn_max_age=DATABASE_CONN_MAX_AGE,
     ),
 }
 

@@ -60,7 +60,7 @@ def lang_own_name(language_code: str | None) -> str:
 
 @register.simple_tag
 def get_about_url():
-    from home.models import AboutPage
+    from home.models import CACHE_SECONDS, AboutPage
 
     try:
         locale = Locale.get_active()
@@ -71,7 +71,7 @@ def get_about_url():
     if url is None:
         page = AboutPage.objects.live().filter(locale=locale).first()
         url = page.url if page else ""
-        cache.set(cache_key, url, timeout=300)
+        cache.set(cache_key, url, timeout=CACHE_SECONDS)
     return url or None
 
 

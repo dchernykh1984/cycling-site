@@ -16,6 +16,8 @@ from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
 from cycling_site.sanitize import sanitize_rich_text_columns
 
 _SITE_CONTENT_CACHE_KEY = "site_content_obj"
+# How long the site's texts and the About link are kept in the cache before being read again.
+CACHE_SECONDS = 300
 _LANGUAGES = ("ru", "kk", "en")
 
 
@@ -44,7 +46,7 @@ class SiteContent(models.Model):  # type: ignore[django-manager-missing]
         obj = cache.get(_SITE_CONTENT_CACHE_KEY)
         if obj is None:
             obj, _ = cls.objects.get_or_create(pk=1)
-            cache.set(_SITE_CONTENT_CACHE_KEY, obj, timeout=300)
+            cache.set(_SITE_CONTENT_CACHE_KEY, obj, timeout=CACHE_SECONDS)
         return obj
 
 

@@ -769,6 +769,15 @@ class WagtailModerationTextTests(TestCase):
         self.assertTrue(any("approved and published" in m for m in msgs), msgs)
         self.assertFalse(any("page published" in m for m in msgs), msgs)
 
+    def test_a_pending_submission_is_listed_with_its_approve_and_reject_buttons(self):
+        # Wagtail's own listing asks for its admin permission, which an owner's superuser account has.
+        self.client.force_login(_make_user("wm_owner@example.com", User.Role.OWNER, is_staff=True, is_superuser=True))
+        resp = self.client.get(reverse("wagtailsnippets_knowledge_draftsubmission:list"))
+        self.assertContains(resp, self.url)
+        self.assertContains(
+            resp, reverse("wagtailsnippets_knowledge_draftsubmission:reject", args=[self.submission.pk])
+        )
+
     def test_rejecting_a_submission_approved_meanwhile_says_so_instead_of_failing(self):
         from unittest import mock
 

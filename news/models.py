@@ -20,6 +20,7 @@ from wagtail_localize.fields import SynchronizedField
 from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
 from cycling_site.sanitize import sanitize_rich_text_columns
 from cycling_site.slugs import unique_slug
+from knowledge.models import ARTICLES_PER_PAGE
 
 # Single source of truth for the slug column width, reused by save() to bound generated slugs.
 _SLUG_MAX_LENGTH = 255
@@ -50,7 +51,7 @@ class NewsIndexPage(OwnLanguageUrlMixin, AsciiSlugMixin, Page):
 
         context = super().get_context(request)
         news_items = NewsPage.objects.live().child_of(self).order_by("-published_at", "-first_published_at")
-        paginator = Paginator(news_items, 12)
+        paginator = Paginator(news_items, ARTICLES_PER_PAGE)
         context["news_items"] = paginator.get_page(request.GET.get("page", 1))
         return context
 

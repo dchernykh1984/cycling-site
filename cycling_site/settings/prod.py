@@ -51,7 +51,7 @@ SECURE_HSTS_PRELOAD = True
 # same prod settings deploy unchanged on both hosts. Both connections require SSL.
 if os.environ.get("DATABASE_URL"):
     DATABASES = {
-        "default": dj_database_url.config(conn_max_age=600, ssl_require=True),
+        "default": dj_database_url.config(conn_max_age=DATABASE_CONN_MAX_AGE, ssl_require=True),
     }
 else:
     # CodeRed Cloud: https://www.codered.cloud/docs/django/environment/
@@ -62,7 +62,7 @@ else:
             "USER": os.environ["DB_USER"],
             "PASSWORD": os.environ["DB_PASSWORD"],
             "HOST": os.environ["DB_HOST"],
-            "CONN_MAX_AGE": 600,
+            "CONN_MAX_AGE": DATABASE_CONN_MAX_AGE,
             "OPTIONS": {
                 "client_encoding": "UTF8",
                 "sslmode": "require",

@@ -31,6 +31,9 @@ _RESERVED_SLUGS = frozenset({"add", "submit", "submissions", "articles"})
 # Single source of truth for the slug column width, reused by save() to bound generated slugs.
 _SLUG_MAX_LENGTH = 255
 
+# How many articles a listing page shows, here and in the news.
+ARTICLES_PER_PAGE = 12
+
 
 class KnowledgeArticle(index.Indexed, models.Model):
     """Frontend-managed knowledge article: a plain Django model with an HTML body edited
@@ -140,7 +143,7 @@ class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin,
         if not can_manage:
             articles = articles.filter(is_hidden=False)
         articles = articles.order_by("-published_at")
-        paginator = Paginator(articles, 12)
+        paginator = Paginator(articles, ARTICLES_PER_PAGE)
         context["articles"] = paginator.get_page(request.GET.get("page", 1))
 
         can_add = roles.role_at_least(request.user, roles.SUBMIT_KNOWLEDGE)
