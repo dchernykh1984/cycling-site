@@ -352,7 +352,7 @@ class RegistrationSettingsForm(forms.Form):
             return raw
         try:
             categories = json.loads(raw)
-        except (json.JSONDecodeError, ValueError):
+        except ValueError:  # json.JSONDecodeError is one
             # Unparseable input keeps its long-standing meaning of "no categories" (get_categories).
             return raw
         if not isinstance(categories, list):
@@ -375,7 +375,7 @@ class RegistrationSettingsForm(forms.Form):
             return []
         try:
             categories = json.loads(raw)
-        except (json.JSONDecodeError, ValueError):
+        except ValueError:  # json.JSONDecodeError is one
             return []
         # The page writes a list of objects; anything else in the field was not written by it.
         return [row for row in categories if isinstance(row, dict)] if isinstance(categories, list) else []
