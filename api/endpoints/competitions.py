@@ -20,8 +20,8 @@ from locations.models import (
     Level,
     Location,
     LocationConflictError,
-    chain_is_approved,
     competition_location_block_reason,
+    geography_above_is_approved,
     lock_competition_location,
 )
 
@@ -330,26 +330,6 @@ def _set_event_types(competition: Competition, event_type_ids: list[int] | None)
     competition.event_types.set(event_types)
 
 
-def _demote_for_pending_geography(competition: Competition, user) -> bool:
-    """Send a published competition back for review when its location is still a proposal.
-
-    Returns whether it changed anything. An admin (who may approve the geography) is exempt; the
-    venue itself is fine -- only pending *ancestors* matter, since an organizer may add a venue.
-    """
-    location = competition.location
-    if (
-        competition.status == Competition.Status.APPROVED
-        and not roles.at_least(user, roles.APPROVE_PLACES)
-        and location is not None
-        and not chain_is_approved(location.get_parent())
-    ):
-        competition.status = Competition.Status.PENDING_APPROVAL
-        competition.approved_by = None
-        competition.approved_at = None
-        return True
-    return False
-
-
 def _apply_patch_fields(competition: Competition, data: dict, user) -> list[str]:
     """Apply scalar/localized/location fields from a PATCH payload; return the changed columns.
 
@@ -369,7 +349,7 @@ def _apply_patch_fields(competition: Competition, data: dict, user) -> list[str]
             # Re-pointing a published event at geography still under review publishes that branch,
             # and then it can never be rejected. Mirror the web edit: send such an event back for
             # review unless the caller may bless geography anyway.
-            if _demote_for_pending_geography(competition, user):
+            if competition.unpublish_if_geography_is_pending(user):
                 update_fields += ["status", "approved_by", "approved_at"]
         else:
             setattr(competition, field, value)
@@ -543,8 +523,8 @@ def create_competition(request, payload: CompetitionIn):
             # review: that would publish the branch and, if it is another user's proposal, hold it
             # hostage (its rejection is blocked while approved work sits inside). Publish only where
             # the geography above the venue is already public; otherwise leave it pending.
-            if competition.status == Competition.Status.APPROVED and not chain_is_approved(
-                competition.location.get_parent() if competition.location else None
+            if competition.status == Competition.Status.APPROVED and not geography_above_is_approved(
+                competition.location
             ):
                 competition.status = Competition.Status.PENDING_APPROVAL
             competition.save()

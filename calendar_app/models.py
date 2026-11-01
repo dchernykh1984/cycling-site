@@ -11,7 +11,7 @@ from wagtail.search import index
 
 from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from cycling_site.sanitize import sanitize_rich_text_columns
-from locations.models import Level, Location
+from locations.models import Level, Location, geography_above_is_approved
 
 # Rich-text description fields sanitized on every write whatever the entry point (organizer
 # form, API, Django admin, Wagtail snippet). Includes the canonical ``description``: the API
@@ -403,9 +403,30 @@ class Competition(index.Indexed, models.Model):
         if self.status not in (self.Status.PENDING_APPROVAL, self.Status.DRAFT):
             raise ValueError(f"Cannot {action}: competition is already '{self.get_status_display()}'.")
 
+    def unpublish_if_geography_is_pending(self, user) -> bool:
+        """Send a published event back for review when it now sits on unreviewed geography.
+
+        Publishing a branch by moving an event into it is the same leak as approving the event
+        there, and it leaves the branch holding approved work, which is what blocks its rejection.
+        Someone who may approve places is exempt. Returns whether anything changed.
+        """
+        from accounts import roles
+
+        if (
+            self.status == self.Status.APPROVED
+            and not roles.at_least(user, roles.APPROVE_PLACES)
+            and self.location is not None
+            and not geography_above_is_approved(self.location)
+        ):
+            self.status = self.Status.PENDING_APPROVAL
+            self.approved_by = None
+            self.approved_at = None
+            return True
+        return False
+
     def approve(self, reviewer) -> None:
         from accounts import roles
-        from locations.models import LocationPendingError, chain_is_approved
+        from locations.models import LocationPendingError
 
         with transaction.atomic():
             self._lock_for_review("approve")
@@ -419,7 +440,7 @@ class Competition(index.Indexed, models.Model):
             if (
                 location is not None
                 and not roles.at_least(reviewer, roles.APPROVE_PLACES)
-                and not chain_is_approved(location.get_parent())
+                and not geography_above_is_approved(location)
             ):
                 raise LocationPendingError(
                     "This event's location is still awaiting review; an administrator must approve it first."

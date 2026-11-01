@@ -39,6 +39,7 @@ from locations.models import (
     LocationProposal,
     chain_is_approved,
     deepest_chosen,
+    geography_above_is_approved,
     lock_competition_location,
     map_display_node,
     places_seen_by,
@@ -98,27 +99,6 @@ def _get_locations_data(user=None) -> list:
     # Hidden / coordinate-less nodes sink to the end of each cascade dropdown level: the
     # filters build options by filtering this list in order (see sort_locations_for_filter).
     return sort_locations_for_filter(rows)
-
-
-def _unpublish_if_geography_is_pending(comp, user) -> None:
-    """Send a published event back for review when it is re-pointed at unreviewed geography.
-
-    Publishing a branch by editing an event into it is the same leak as approving the event there,
-    and it leaves the branch holding approved work, which is what blocks its rejection.
-    """
-    # Only the geography *above* the venue matters, as in Competition.approve and the API PATCH: a
-    # freshly proposed start-point venue under an approved city is the intended flow and stays
-    # published. Checking the venue too would needlessly un-publish that.
-    parent = comp.location.get_parent() if comp.location is not None else None
-    if (
-        comp.status == Competition.Status.APPROVED
-        and not roles.at_least(user, roles.APPROVE_PLACES)
-        and comp.location is not None
-        and not chain_is_approved(parent)
-    ):
-        comp.status = Competition.Status.PENDING_APPROVAL
-        comp.approved_by = None
-        comp.approved_at = None
 
 
 def _resolve_competition_location(cd, user, *, approved):
@@ -1436,9 +1416,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                     # makes it impossible to reject afterwards.
                     # Only ancestors matter, as everywhere else: an organizer's own start-point
                     # venue under an approved city is fine and stays published.
-                    if is_organizer and chain_is_approved(
-                        comp.location.get_parent() if comp.location is not None else None
-                    ):
+                    if is_organizer and geography_above_is_approved(comp.location):
                         comp.status = Competition.Status.APPROVED
                         comp.approved_by = request.user
                         comp.approved_at = timezone.now()
@@ -1562,7 +1540,7 @@ class EditCompetitionView(View):
                     )
                     # After the location: the deadline is read in the zone of the event's place.
                     _apply_registration_settings(comp, reg_form, is_org)
-                    _unpublish_if_geography_is_pending(comp, request.user)
+                    comp.unpublish_if_geography_is_pending(request.user)
                     comp.save()
                     comp.disciplines.set(cd.get("disciplines") or [])
                     comp.event_types.set(cd.get("event_types") or [])
@@ -1613,9 +1591,7 @@ class ModerationView(ModeratorRequiredMixin, TemplateView):
         # what they cannot act on -- leave those to the admins, who also see the pending locations.
         if not roles.at_least(self.request.user, roles.APPROVE_PLACES):
             competitions = [
-                comp
-                for comp in competitions
-                if (comp.location_id is None or chain_is_approved(comp.location.get_parent())) and not comp.invite_only
+                comp for comp in competitions if geography_above_is_approved(comp.location) and not comp.invite_only
             ]
         context["competitions"] = competitions
         context["reject_form"] = RejectCompetitionForm()

@@ -196,6 +196,15 @@ def chain_is_approved(parent) -> bool:
     return not any(node.is_pending for node in [parent, *parent.get_ancestors()])
 
 
+def geography_above_is_approved(location) -> bool:
+    """Whether everything above ``location`` is public: its city, region and country.
+
+    Only the geography above the venue counts. A start point proposed under an approved city is
+    the designed flow and leaves the event published.
+    """
+    return chain_is_approved(location.get_parent() if location is not None else None)
+
+
 def point_is_whole(lat, lng) -> bool:
     """A point is both coordinates or neither: a latitude without its longitude pins nothing."""
     return (lat is None) == (lng is None)

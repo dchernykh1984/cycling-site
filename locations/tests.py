@@ -1098,7 +1098,6 @@ class EditVenueUnderApprovedCityTests(TestCase):
 
     def test_participant_owner_keeps_publication_when_adding_a_venue_under_an_approved_city(self):
         from calendar_app.models import Competition
-        from calendar_app.views import _unpublish_if_geography_is_pending
 
         owner = _make_user("edit-owner@x.com", User.Role.PARTICIPANT)
         _, _, city = _make_tree()  # an approved city
@@ -1106,7 +1105,7 @@ class EditVenueUnderApprovedCityTests(TestCase):
         comp = Competition.objects.create(
             title_ru="C", date_start=datetime.date(2026, 7, 1), location=venue, status=Competition.Status.APPROVED
         )
-        _unpublish_if_geography_is_pending(comp, owner)
+        comp.unpublish_if_geography_is_pending(owner)
         # Only the (approved) city above the venue matters, so the event stays published.
         self.assertEqual(comp.status, Competition.Status.APPROVED)
 
