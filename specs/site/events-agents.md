@@ -84,6 +84,11 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
 - The source order is tuned in code for Kazakh sources first (`agent/sources.py`); the geography
   ladder itself lives in the guidance file, which is data.
 - The package describes itself as discovering "cycling events" (`agent/__init__.py`).
+- Country names are matched through two tables in code (`agent/locations.py`): Russian spellings
+  the tree does not carry (`_COUNTRY_ALIASES`) and two-letter codes for the countries the site sees
+  today (`_COUNTRY_CODES`).
+- The Instagram agent's prompt frames every account as "a cycling club's Instagram account" and a
+  club ride as a ride rather than a race (`instagram_agent/llm.py`).
 
 ## Open Questions
 

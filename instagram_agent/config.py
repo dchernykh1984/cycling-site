@@ -19,7 +19,7 @@ _DEFAULT_MAX_EVENTS = 10
 # How far back a run looks. Anything older has either happened or been proposed on an earlier night.
 _DEFAULT_RECENT_DAYS = 21
 # How many of an account's newest posts a run reads. A club posts a couple of announcements a week
-# and the agent runs nightly, so ten is already generous; it exists to keep a chatty account from
+# and the agent runs daily, so ten is already generous; it exists to keep a chatty account from
 # filling the prompt with a fortnight of memes. Raising it has a ceiling: Instagram's profile reply
 # carries only about a dozen posts, and this reader does not page further back on purpose.
 _DEFAULT_MAX_POSTS = 10

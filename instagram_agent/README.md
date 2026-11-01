@@ -134,9 +134,9 @@ The same ones the events agent uses -- `AGENT_API_TOKEN`, `LLM_API_KEY`, `LLM_BA
 `SITE_BASE_URL` -- and the same model, named in `agent/config.py`. It posts as the same organizer
 account.
 
-Runs daily at **23:17 UTC (04:17 Almaty)**, an hour after the events agent so the two never overlap
-and this one sees what that one just proposed, and outside the hours where the model bills double.
-On demand via the **Run workflow** button (owner only).
+Runs on the schedule in `.github/workflows/instagram-agent.yml`, outside the hours where the model
+bills double (its comment says why that slot). On demand via the **Run workflow** button (owner
+only).
 
 ## Reading Instagram
 

@@ -26,7 +26,7 @@ _URL = re.compile(r"https?://[^\s()]+", re.IGNORECASE)
 # its own, because the organizers section holds Kazakh, Kyrgyz *and* Russian sites in one list.
 # The public Telegram channels go first: all four are Kazakh, they are small, and they carry the
 # local starts nothing else announces. The aggregators go last -- Russian and worldwide calendars
-# with dozens of rows each, which would otherwise spend every nightly slot before a single local
+# with dozens of rows each, which would otherwise spend every slot of a run before a single local
 # source was read. The account/private Telegram sections are unreadable and merely reported.
 _SECTION_KIND = {
     "telegram_public": SourceKind.TG_PUBLIC,

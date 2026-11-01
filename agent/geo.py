@@ -37,7 +37,7 @@ def _drop_spans(text: str, opener: str, closer: str) -> str:
     """Replace every ``opener``..``closer`` span (and an unterminated trailing opener) with a space.
 
     A linear str.find scan on purpose: the regex `<!--.*?-->` is O(n^2) when a body carries many
-    openers with no closer, which a hostile 20 MB track file could use to hang the nightly run.
+    openers with no closer, which a hostile 20 MB track file could use to hang the run.
     """
     if opener not in text:
         return text

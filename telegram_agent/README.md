@@ -52,8 +52,8 @@ unread, exactly as before this agent existed.
    city. Ids and handles are domain-free on purpose: the agent reads over MTProto and does not
    care whether t.me resolves today.
 2. Connects once with the stored session and reads **by time**: everything published in the last
-   `TELEGRAM_RECENT_HOURS` (default **25** -- a nightly day plus an hour of overlap for a cron
-   that fires late). Reading by time rather than by count is deliberate: measured on these
+   `TELEGRAM_RECENT_HOURS` (default **25** -- the day between daily runs plus an hour of overlap
+   for a cron that fires late). Reading by time rather than by count is deliberate: measured on these
    channels, the newest 50 messages of a busy group do not reach back a single day while 50 of a
    quiet channel reach back two years. `TELEGRAM_MAX_POSTS` (default **1000**) is only a safety
    net against one runaway chat, and when it bites the run says so. Messages too short to be an
@@ -95,7 +95,7 @@ Two deliberate rules, because the sources are private:
 
 ## Running it
 
-Nightly by `.github/workflows/telegram-agent.yml` (a single job -- one session, one address), or
-manually from the Actions tab (owner only), where dry run, the limits and the look-back window can
-be set per run. Locally: export the env vars above plus `SITE_BASE_URL`, `AGENT_API_TOKEN`,
+Daily, on the schedule in `.github/workflows/telegram-agent.yml` (a single job -- one session, one
+address), or manually from the Actions tab (owner only), where dry run, the limits and the look-back
+window can be set per run. Locally: export the env vars above plus `SITE_BASE_URL`, `AGENT_API_TOKEN`,
 `LLM_API_KEY`, `LLM_BASE_URL` and run `python -m telegram_agent.run`.

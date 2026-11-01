@@ -33,7 +33,7 @@ _MIN_MESSAGE_CHARS = 15
 # context loses. Reading ten days of a busy chat therefore becomes several prompts, not one huge one.
 MESSAGES_PER_PROMPT = 100
 # The longest FloodWait worth sitting out. Telegram hands out waits of a few seconds routinely when
-# several channels are read in a row; a nightly, unhurried run just serves those. Anything longer
+# several channels are read in a row; an unhurried daily run just serves those. Anything longer
 # means tonight is over for this channel, and the wait is reported instead.
 _FLOOD_PATIENCE_SECONDS = 60
 
