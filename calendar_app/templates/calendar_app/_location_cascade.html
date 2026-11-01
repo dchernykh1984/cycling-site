@@ -1,4 +1,13 @@
 {% load i18n %}
+{% comment %}
+The event's place: country -> region -> city -> venue, one of each, in searchable menus like the
+calendar's place filter. Any level can be searched before the ones above it; picking a place fills in
+every level above it, and a level lists only what lies under the nearest level chosen above it. The
+event's location is always a venue: a city with no venue picked gives its hidden catch-all ("other
+location"), and a region or a country gives its own "other" city's. Built on window.placeCascade and
+window.cascadeSearchWords (_filter_multiselect_js.html), which the page brings with the disciplines
+field, so the script waits for the page to load.
+{% endcomment %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 {% include "_map_layers.html" %}
@@ -6,28 +15,44 @@
   <label class="form-label fw-semibold">{% trans "Location" %}</label>
   <div class="row g-2">
     <div class="col-sm-6 col-md-3">
-      <label class="form-label form-label-sm mb-1">{% trans "Country" %}</label>
-      <select id="loc-country" class="form-select">
-        <option value="">--</option>
-      </select>
+      <label class="form-label form-label-sm mb-1" id="loc-country-label">{% trans "Country" %}</label>
+      <div class="dropdown loc-pick">
+        <button class="form-select text-start" type="button" id="loc-country" data-depth="1" data-value=""
+                data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="loc-country-label loc-country">
+          <span class="loc-pick-text text-muted">--</span>
+        </button>
+        <ul class="dropdown-menu w-100 px-1" id="loc-country-menu"></ul>
+      </div>
     </div>
     <div class="col-sm-6 col-md-3">
-      <label class="form-label form-label-sm mb-1">{% trans "Region" %}</label>
-      <select id="loc-region" class="form-select" disabled>
-        <option value="">--</option>
-      </select>
+      <label class="form-label form-label-sm mb-1" id="loc-region-label">{% trans "Region" %}</label>
+      <div class="dropdown loc-pick">
+        <button class="form-select text-start" type="button" id="loc-region" data-depth="2" data-value=""
+                data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="loc-region-label loc-region">
+          <span class="loc-pick-text text-muted">--</span>
+        </button>
+        <ul class="dropdown-menu w-100 px-1" id="loc-region-menu"></ul>
+      </div>
     </div>
     <div class="col-sm-6 col-md-3">
-      <label class="form-label form-label-sm mb-1">{% trans "City" %}</label>
-      <select id="loc-city" class="form-select" disabled>
-        <option value="">--</option>
-      </select>
+      <label class="form-label form-label-sm mb-1" id="loc-city-label">{% trans "City" %}</label>
+      <div class="dropdown loc-pick">
+        <button class="form-select text-start" type="button" id="loc-city" data-depth="3" data-value=""
+                data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="loc-city-label loc-city">
+          <span class="loc-pick-text text-muted">--</span>
+        </button>
+        <ul class="dropdown-menu w-100 px-1" id="loc-city-menu"></ul>
+      </div>
     </div>
-    <div class="col-sm-6 col-md-3" id="loc-venue-wrap" style="display:none">
-      <label class="form-label form-label-sm mb-1">{% trans "Venue" %}</label>
-      <select id="loc-venue" class="form-select">
-        <option value="">--</option>
-      </select>
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label form-label-sm mb-1" id="loc-venue-label">{% trans "Venue" %}</label>
+      <div class="dropdown loc-pick">
+        <button class="form-select text-start" type="button" id="loc-venue" data-depth="4" data-value=""
+                data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="loc-venue-label loc-venue">
+          <span class="loc-pick-text text-muted">--</span>
+        </button>
+        <ul class="dropdown-menu w-100 px-1" id="loc-venue-menu"></ul>
+      </div>
     </div>
   </div>
   {{ form.location }}{% comment %}renders as <input type="hidden" name="location" id="id_location">{% endcomment %}
@@ -72,20 +97,25 @@
 </div>
 
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
   var allLocs = JSON.parse(document.getElementById('locations-data').textContent);
+  var places = window.placeCascade(allLocs);
+  var MORE_LABEL = JSON.parse(document.getElementById('cascade-context').textContent).more;
+  var SEARCH_LABEL = '{% filter escapejs %}{% trans "Search..." %}{% endfilter %}';
+  // A menu draws at most this many rows, as the filter's do; its search box reaches the rest.
+  var MAX_ROWS = 200;
   var lang = (document.documentElement.lang || 'ru').split('-')[0];
   var nameField = (['ru','kk','en'].indexOf(lang) >= 0) ? ('name_' + lang) : 'name_ru';
   function locName(l) { return l[nameField] || l.name_ru || ''; }
   function escHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  var byPk = {}, byPath = {};
+  allLocs.forEach(function (l) { byPk[l.pk] = l; byPath[l.path] = l; });
 
-  var cntEl  = document.getElementById('loc-country');
-  var regEl  = document.getElementById('loc-region');
-  var cityEl = document.getElementById('loc-city');
-  var venEl  = document.getElementById('loc-venue');
-  var venWrap = document.getElementById('loc-venue-wrap');
+  // The four levels by depth, and the place picked at each: a pk, or null.
+  var LEVELS = [null, 'loc-country', 'loc-region', 'loc-city', 'loc-venue'];
+  var chosen = [null, null, null, null, null];
   var locInp = document.getElementById('id_location');
   // Propose-a-new-venue controls (issue #111)
   var addVenueBtn = document.getElementById('add-venue-btn');
@@ -108,11 +138,6 @@
 
   var proposing = false;  // true while the user is placing a new venue point on the map
 
-  function syncNewVenueCity() { if (newVenueCity) newVenueCity.value = cityEl.value || ''; }
-  function showAddVenue(show) {
-    if (addVenueToggle) addVenueToggle.style.display = show ? '' : 'none';
-    if (!show) closeProposeBox();
-  }
   function closeProposeBox() {
     proposing = false;
     if (newVenueBox) newVenueBox.style.display = 'none';
@@ -170,29 +195,17 @@
 
   if (addVenueBtn) {
     addVenueBtn.addEventListener('click', function () {
+      // Proposing a new venue sets aside the venue picked, in the city picked.
       proposing = true;
+      chosen[4] = null;
       if (newVenueBox) newVenueBox.style.display = '';
-      if (addVenueToggle) addVenueToggle.style.display = 'none';
-      // Proposing a new venue clears any existing-venue selection.
-      venEl.value = ''; locInp.value = '';
-      syncNewVenueCity();
+      update();
       var la = parseFloat(nvLatInp && nvLatInp.value), ln = parseFloat(nvLngInp && nvLngInp.value);
       if (!isNaN(la) && !isNaN(ln)) { placeMarker([la, ln]); venueMap.setView([la, ln], 13); }
     });
   }
 
-  function buildOpts(sel, nodes, placeholder) {
-    // hidden country/region/city are still selectable (issue #113): the hidden flag is
-    // meaningful only for the virtual "other location" venue, which is handled separately.
-    sel.innerHTML = '<option value="">' + placeholder + '</option>';
-    nodes.forEach(function (l) {
-      var o = document.createElement('option');
-      o.value = l.pk; o.textContent = locName(l);
-      sel.appendChild(o);
-    });
-  }
-
-  function disable(sel) { sel.innerHTML = '<option value=""></option>'; sel.disabled = true; }
+  function ancestorAt(l, depth) { return byPath[l.path.slice(0, l.path.length / l.depth * depth)]; }
 
   function hiddenVenueOf(cityPath) {
     return allLocs.find(function (l) {
@@ -200,137 +213,187 @@
     });
   }
 
-  function autoVenue(cityPath) {
-    var hv = hiddenVenueOf(cityPath);
-    if (hv) locInp.value = hv.pk;
+  function otherPlace(parentPath, depth, nameRu) {
+    return allLocs.find(function (l) { return l.depth === depth && l.path.indexOf(parentPath) === 0 && l.name_ru === nameRu; });
   }
 
-  function pathOf(pk) {
-    var n = allLocs.find(function (l) { return String(l.pk) === String(pk); });
-    return n ? n.path : '';
-  }
-
-  function venuesUnder(cityPath) {
-    return allLocs.filter(function (l) { return l.depth === 4 && !l.is_hidden && l.path.indexOf(cityPath) === 0; });
-  }
-
-  // Populate countries (depth=1)
-  buildOpts(cntEl, allLocs.filter(function (l) { return l.depth === 1; }), '--');
-
-  cntEl.addEventListener('change', function () {
-    disable(cityEl); disable(regEl);
-    venEl.innerHTML = '<option value=""></option>'; venWrap.style.display = 'none';
-    locInp.value = ''; showAddVenue(false); syncNewVenueCity();
-    var cp = pathOf(cntEl.value);
-    if (!cp) return;
-    buildOpts(regEl, allLocs.filter(function (l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
-    regEl.disabled = false;
-    // default: other-region → other-city → hidden venue
-    var or = allLocs.find(function (l) { return l.depth === 2 && l.path.indexOf(cp) === 0 && l.name_ru === 'Другой регион'; });
-    if (or) {
-      var oc = allLocs.find(function (l) { return l.depth === 3 && l.path.indexOf(or.path) === 0 && l.name_ru === 'Другой город'; });
-      if (oc) autoVenue(oc.path);
+  // The event's location for what is picked: the venue; else the catch-all of the city -- or of the
+  // region's "other city", or of the country's "other region" and its "other city"; and nothing
+  // while a new venue is being proposed, which the server makes from its own fields.
+  function locationValue() {
+    if (proposing) return '';
+    if (chosen[4] !== null) return String(chosen[4]);
+    var city = chosen[3] !== null ? byPk[chosen[3]] : null;
+    if (!city && chosen[2] !== null) city = otherPlace(byPk[chosen[2]].path, 3, 'Другой город');
+    if (!city && chosen[1] !== null) {
+      var region = otherPlace(byPk[chosen[1]].path, 2, 'Другой регион');
+      city = region ? otherPlace(region.path, 3, 'Другой город') : null;
     }
-  });
+    var hidden = city ? hiddenVenueOf(city.path) : null;
+    return hidden ? String(hidden.pk) : '';
+  }
 
-  regEl.addEventListener('change', function () {
-    disable(cityEl);
-    venEl.innerHTML = '<option value=""></option>'; venWrap.style.display = 'none';
-    showAddVenue(false); syncNewVenueCity();
-    var rp = pathOf(regEl.value);
-    if (!rp) return;
-    buildOpts(cityEl, allLocs.filter(function (l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
-    cityEl.disabled = false;
-    var oc = allLocs.find(function (l) { return l.depth === 3 && l.path.indexOf(rp) === 0 && l.name_ru === 'Другой город'; });
-    if (oc) autoVenue(oc.path);
-  });
+  // A city with no venue picked stands for its catch-all, which the venue menu shows as picked.
+  function catchAllVenue() {
+    if (proposing || chosen[4] !== null || chosen[3] === null) return;
+    var hidden = hiddenVenueOf(byPk[chosen[3]].path);
+    if (hidden) chosen[4] = hidden.pk;
+  }
 
-  cityEl.addEventListener('change', function () {
-    venEl.innerHTML = '<option value=""></option>'; venWrap.style.display = 'none';
-    locInp.value = '';
-    var cp = pathOf(cityEl.value);
-    if (!cp) { showAddVenue(false); return; }
-    buildOpts(venEl, venuesUnder(cp), '--');
-    var hv = hiddenVenueOf(cp);
-    if (hv) {
-      var hvOpt = document.createElement('option');
-      hvOpt.value = hv.pk; hvOpt.textContent = locName(hv);
-      venEl.appendChild(hvOpt);
-      venEl.value = hv.pk;
-      locInp.value = hv.pk;
+  // Pick a place at its own level: every level above it takes its ancestors, and a level below it
+  // keeps its place only when that lies under the new one.
+  function pick(depth, pk) {
+    var node = byPk[pk];
+    if (!node || node.depth !== depth) return;
+    for (var d = 1; d < depth; d++) {
+      var ancestor = ancestorAt(node, d);
+      chosen[d] = ancestor ? ancestor.pk : null;
     }
-    venWrap.style.display = '';
-    showAddVenue(true); syncNewVenueCity();
-  });
-
-  venEl.addEventListener('change', function () {
-    if (venEl.value) {
-      locInp.value = venEl.value;
-      // Picking an existing venue cancels any in-progress proposal and restores the button.
+    chosen[depth] = node.pk;
+    for (d = depth + 1; d <= 4; d++) {
+      var below = chosen[d] !== null ? byPk[chosen[d]] : null;
+      if (!below || below.path.indexOf(node.path) !== 0) chosen[d] = null;
+    }
+    if (depth === 4) {
+      // Picking an existing venue cancels any proposal in progress.
       closeProposeBox();
       clearNewVenueNames();
-      showAddVenue(true);
-    } else {
-      autoVenue(pathOf(cityEl.value));
     }
-  });
-
-  // Populate the cascade down to a city: its country, region and the city chosen, and its venues
-  // offered. Returns the city's hidden catch-all venue, if it has one.
-  function showCity(cityPath) {
-    var stepLen = cityPath.length / 3;
-    var cp = cityPath.slice(0, stepLen);
-    var rp = cityPath.slice(0, stepLen * 2);
-
-    buildOpts(cntEl, allLocs.filter(function (l) { return l.depth === 1; }), '--');
-    var cntLoc = allLocs.find(function (l) { return l.path === cp && l.depth === 1; });
-    if (cntLoc) cntEl.value = cntLoc.pk;
-
-    buildOpts(regEl, allLocs.filter(function (l) { return l.depth === 2 && l.path.indexOf(cp) === 0; }), '--');
-    regEl.disabled = false;
-    var regLoc = allLocs.find(function (l) { return l.path === rp && l.depth === 2; });
-    if (regLoc) regEl.value = regLoc.pk;
-
-    buildOpts(cityEl, allLocs.filter(function (l) { return l.depth === 3 && l.path.indexOf(rp) === 0; }), '--');
-    cityEl.disabled = false;
-    var cityLoc = allLocs.find(function (l) { return l.path === cityPath && l.depth === 3; });
-    if (cityLoc) cityEl.value = cityLoc.pk;
-
-    buildOpts(venEl, venuesUnder(cityPath), '--');
-    var hv = hiddenVenueOf(cityPath);
-    if (hv) {
-      var hvOpt = document.createElement('option');
-      hvOpt.value = hv.pk; hvOpt.textContent = locName(hv);
-      venEl.appendChild(hvOpt);
-    }
-    venWrap.style.display = '';
-    return hv;
+    catchAllVenue();
+    update();
   }
 
-  // Select an existing venue by pk: populate the whole cascade, set it, and close the
-  // propose box. Shared by the initial value and by clicking a marker on the map (#118).
+  // Unpick a level and every level below it.
+  function unpick(depth) {
+    for (var d = depth; d <= 4; d++) chosen[d] = null;
+    catchAllVenue();
+    update();
+  }
+
+  function update() {
+    for (var d = 1; d <= 4; d++) {
+      var button = document.getElementById(LEVELS[d]);
+      var node = chosen[d] !== null ? byPk[chosen[d]] : null;
+      var text = button.querySelector('.loc-pick-text');
+      button.dataset.value = node ? String(node.pk) : '';
+      text.textContent = node ? locName(node) : '--';
+      text.classList.toggle('text-muted', !node);
+    }
+    locInp.value = locationValue();
+    // A new venue is proposed in the city picked: without one there is nowhere to propose it.
+    if (chosen[3] === null) closeProposeBox();
+    if (addVenueToggle) addVenueToggle.style.display = chosen[3] !== null && !proposing ? '' : 'none';
+    if (newVenueCity) newVenueCity.value = chosen[3] !== null ? chosen[3] : '';
+  }
+
+  // What a level lists: its places under the nearest level picked above it, or all of them.
+  function rowsFor(depth) {
+    var above = depth - 1;
+    while (above >= 1 && chosen[above] === null) above--;
+    return places.nodesUnder(depth, above >= 1 ? [chosen[above]] : []);
+  }
+
+  var searchKeys = {};
+  function matches(row, words) {
+    var id = row.pk + '|' + row.name;
+    if (searchKeys[id] === undefined) searchKeys[id] = window.cascadeSearchWords(row.name + ' ' + row.search).join(' ');
+    return words.every(function (word) { return searchKeys[id].indexOf(word) >= 0; });
+  }
+
+  // The rows holding every typed word in one of their names, whatever script either is written in,
+  // at most MAX_ROWS of them besides the one picked, and a line counting the rest.
+  function drawRows(depth, rows, query) {
+    var menu = document.getElementById(LEVELS[depth] + '-menu');
+    menu.querySelectorAll('li.loc-pick-row, li.mf-more').forEach(function (li) { li.remove(); });
+    var words = window.cascadeSearchWords(query);
+    var drawn = 0, more = 0;
+    rows.forEach(function (row) {
+      if (words.length && !matches(row, words)) return;
+      var picked = row.pk === chosen[depth];
+      if (drawn >= MAX_ROWS && !picked) { more++; return; }
+      drawn++;
+      var li = document.createElement('li');
+      li.className = 'loc-pick-row';
+      var item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'dropdown-item' + (picked ? ' active' : '');
+      if (picked) item.setAttribute('aria-current', 'true');
+      item.textContent = row.name;
+      item.addEventListener('click', function () { pick(depth, row.pk); });
+      li.appendChild(item);
+      menu.appendChild(li);
+    });
+    if (more) {
+      var line = document.createElement('li');
+      line.className = 'mf-more px-2 py-1 small text-muted';
+      line.textContent = MORE_LABEL.replace('%(count)s', more);
+      menu.appendChild(line);
+    }
+  }
+
+  // A menu is drawn as it opens, from what is picked then: a search box, "--" to unpick the level
+  // when it has a place, and the rows.
+  function drawMenu(depth) {
+    var menu = document.getElementById(LEVELS[depth] + '-menu');
+    var rows = rowsFor(depth);
+    menu.innerHTML = '';
+    var searchRow = document.createElement('li');
+    searchRow.className = 'px-2 pb-1';
+    var search = document.createElement('input');
+    search.type = 'search';
+    search.className = 'form-control form-control-sm loc-pick-search';
+    search.placeholder = SEARCH_LABEL;
+    search.setAttribute('aria-label', SEARCH_LABEL);
+    search.autocomplete = 'off';
+    search.addEventListener('input', function () { drawRows(depth, rows, search.value); });
+    search.addEventListener('keydown', function (e) {
+      var first = menu.querySelector('li.loc-pick-row .dropdown-item');
+      // Enter picks the first row found rather than sending the form; the down arrow walks the rows.
+      if (e.key === 'Enter') { e.preventDefault(); if (first) first.click(); }
+      if (e.key === 'ArrowDown' && first) { e.preventDefault(); first.focus(); }
+    });
+    searchRow.appendChild(search);
+    menu.appendChild(searchRow);
+    if (chosen[depth] !== null) {
+      var clearRow = document.createElement('li');
+      var clear = document.createElement('button');
+      clear.type = 'button';
+      clear.className = 'dropdown-item text-muted loc-pick-clear';
+      clear.textContent = '--';
+      clear.addEventListener('click', function () { unpick(depth); });
+      clearRow.appendChild(clear);
+      menu.appendChild(clearRow);
+    }
+    drawRows(depth, rows, '');
+  }
+
+  LEVELS.forEach(function (id, depth) {
+    if (!id) return;
+    var button = document.getElementById(id);
+    button.addEventListener('show.bs.dropdown', function () { drawMenu(depth); });
+    button.addEventListener('shown.bs.dropdown', function () {
+      var search = document.querySelector('#' + id + '-menu .loc-pick-search');
+      if (search) search.focus();
+    });
+  });
+
+  // Select an existing venue by pk, with everything above it. Shared by the initial value and by
+  // clicking a marker on the map (#118).
   function selectExistingVenue(pk) {
-    var loc = allLocs.find(function (l) { return String(l.pk) === String(pk); });
-    if (!loc || loc.depth !== 4) return;
-    var hv = showCity(loc.path.slice(0, (loc.path.length / loc.depth) * 3));
-    venEl.value = loc.is_hidden ? (hv ? hv.pk : '') : loc.pk;
-    locInp.value = venEl.value;
-    closeProposeBox();
-    clearNewVenueNames();
-    showAddVenue(true); syncNewVenueCity();
+    var loc = byPk[pk];
+    if (loc && loc.depth === 4) pick(4, loc.pk);
   }
 
   // Propose a new venue in a city, its names and, when known, its point filled in: what a person
   // does with the propose button and the map, done for the event assistant (issue #353).
   function proposeVenue(cityPk, names, lat, lng) {
-    var city = allLocs.find(function (l) { return String(l.pk) === String(cityPk) && l.depth === 3; });
-    if (!city) return false;
-    showCity(city.path);
-    venEl.value = ''; locInp.value = '';
-    showAddVenue(true); syncNewVenueCity();
+    var city = byPk[cityPk];
+    if (!city || city.depth !== 3) return false;
+    pick(3, city.pk);
     proposing = true;
+    chosen[4] = null;
     if (newVenueBox) newVenueBox.style.display = '';
-    if (addVenueToggle) addVenueToggle.style.display = 'none';
+    update();
     if (nvNameInps.length === 3) {
       nvNameInps[0].value = names.ru || ''; nvNameInps[1].value = names.kk || ''; nvNameInps[2].value = names.en || '';
       requireRussianName();
@@ -348,9 +411,7 @@
 
   // Pre-populate from initial value
   var initId = '{{ initial_location_id|default:"" }}';
-  if (initId) {
-    var initLoc = allLocs.find(function (l) { return String(l.pk) === String(initId); });
-    if (initLoc && initLoc.depth === 4) selectExistingVenue(initId);
-  }
-}());
+  if (initId) selectExistingVenue(initId);
+  update();
+});
 </script>

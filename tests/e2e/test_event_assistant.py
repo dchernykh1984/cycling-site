@@ -30,7 +30,7 @@ def test_the_place_cascade_takes_a_venue_or_a_new_one_from_a_script(page: Page, 
     inject_session(page, live_server, admin_user)
     page.goto(f"{live_server.url}/en/calendar/submit/")
     page.evaluate(f"window.eventLocation.select({shop.pk})")
-    expect(page.locator("#loc-city")).to_have_value(str(city.pk))
+    expect(page.locator("#loc-city")).to_have_attribute("data-value", str(city.pk))
     expect(page.locator("#id_location")).to_have_value(str(shop.pk))
     page.evaluate(f"window.eventLocation.propose({city.pk}, {{ru: 'Most', kk: '', en: 'Bridge'}}, 43.25, 76.95)")
     expect(page.locator("#new-venue-box")).to_be_visible()
