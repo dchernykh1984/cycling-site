@@ -19,15 +19,13 @@ from agent import llm
 from agent.models import KnownEvents, Taxonomy
 from instagram_agent.accounts import Account
 
-_LOC = '{"ru": str, "kk": str, "en": str}'
-
 _SYSTEM = (
     "You read the recent posts of a cycling club's Instagram account and extract the rides and "
     "races it ANNOUNCES. "
-    'Return ONLY a JSON array; each item: {"title": ' + _LOC + ', "date_start": "YYYY-MM-DD", '
-    '"date_end": "YYYY-MM-DD"|null, "description": ' + _LOC + ', "event_type_id": int|null, '
-    '"discipline_ids": [int], "country": str, "region": ' + _LOC + ', "city": ' + _LOC + ", "
-    '"venue": ' + _LOC + "}. "
+    'Return ONLY a JSON array; each item: {"title": ' + llm.LOCALIZED + ', "date_start": "YYYY-MM-DD", '
+    '"date_end": "YYYY-MM-DD"|null, "description": ' + llm.LOCALIZED + ', "event_type_id": int|null, '
+    '"discipline_ids": [int], "country": str, "region": ' + llm.LOCALIZED + ', "city": ' + llm.LOCALIZED + ", "
+    '"venue": ' + llm.LOCALIZED + "}. "
     "\n\n"
     "ONLY ANNOUNCEMENTS. Most posts in a club's feed are not events. A photo report of a ride that "
     'already happened ("we rode", "thank you all who came", "great company today"), a training '
@@ -82,24 +80,14 @@ def build_prompt(
 ) -> str:
     """The user half of the call: the taxonomy, what the site already knows, and the account's posts."""
     today = today or datetime.date.today().isoformat()
-    existing = "\n".join(
-        f"- {e['title']} ({e['date_start']})" for e in llm.upcoming_first(known.existing, _MAX_EXISTING, today)
-    )
-    rejected = "\n".join(
-        f"- {r['title']} ({r['date_start']}): {r['reason']}"
-        for r in llm.upcoming_first(known.rejected, _MAX_REJECTED, today)
-    )
-    event_types = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.event_types)
-    disciplines = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.disciplines)
+    existing, rejected = llm.known_lists(known, _MAX_EXISTING, _MAX_REJECTED, today)
     return (
-        f"Guidance from the maintainers:\n{guidance.strip() or '(none)'}\n\n"
-        f"Event types (id=name): {event_types or '(none)'}\n"
-        f"Disciplines (id=name): {disciplines or '(none)'}\n\n"
-        f"Events already on the site or already proposed in this run -- do NOT propose any of these "
-        f"again, even if the wording, language or year differs. A club's weekly ride is a NEW event "
-        f"each week, so only the one on the SAME DAY as a listed event is a repeat:\n"
-        f"{existing or '(none)'}\n\n"
-        f"Do NOT propose events similar to these previously rejected ones:\n{rejected or '(none)'}\n\n"
+        llm.opening(guidance, taxonomy)
+        + "Events already on the site or already proposed in this run -- do NOT propose any of these "
+        "again, even if the wording, language or year differs. A club's weekly ride is a NEW event "
+        "each week, so only the one on the SAME DAY as a listed event is a repeat:\n"
+        f"{existing}\n\n"
+        f"Do NOT propose events similar to these previously rejected ones:\n{rejected}\n\n"
         f"{text}"
     )
 

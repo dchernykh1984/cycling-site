@@ -18,18 +18,16 @@ from agent import llm
 from agent.models import KnownEvents, Taxonomy
 from telegram_agent.channels import Channel
 
-_LOC = '{"ru": str, "kk": str, "en": str}'
-
 _SYSTEM = (
     "You read the recent messages of a local sports community's Telegram channel or group chat -- "
     "cycling, running, hiking, skiing, any outdoor sport -- and extract the events it ANNOUNCES: "
     "rides, runs, hikes, walks, ascents, races, group outings. "
-    'Return ONLY a JSON array; each item: {"title": ' + _LOC + ', "date_start": "YYYY-MM-DD", '
-    '"date_end": "YYYY-MM-DD"|null, "description": ' + _LOC + ', "url_registration": str, '
+    'Return ONLY a JSON array; each item: {"title": ' + llm.LOCALIZED + ', "date_start": "YYYY-MM-DD", '
+    '"date_end": "YYYY-MM-DD"|null, "description": ' + llm.LOCALIZED + ', "url_registration": str, '
     '"source_message_id": int, '
     '"event_type_id": int|null, '
-    '"discipline_ids": [int], "country": str, "region": ' + _LOC + ', "city": ' + _LOC + ", "
-    '"venue": ' + _LOC + "}. "
+    '"discipline_ids": [int], "country": str, "region": ' + llm.LOCALIZED + ', "city": ' + llm.LOCALIZED + ", "
+    '"venue": ' + llm.LOCALIZED + "}. "
     "\n\n"
     "WHAT COUNTS AS AN EVENT. The activity itself must be the sport -- riding, running, hiking, "
     "walking, skiing, swimming -- done under the participants' own power. Getting somewhere by "
@@ -105,24 +103,14 @@ def build_prompt(
 ) -> str:
     """The user half of the call: the taxonomy, what the site already knows, and the channel's messages."""
     today = today or datetime.date.today().isoformat()
-    existing = "\n".join(
-        f"- {e['title']} ({e['date_start']})" for e in llm.upcoming_first(known.existing, _MAX_EXISTING, today)
-    )
-    rejected = "\n".join(
-        f"- {r['title']} ({r['date_start']}): {r['reason']}"
-        for r in llm.upcoming_first(known.rejected, _MAX_REJECTED, today)
-    )
-    event_types = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.event_types)
-    disciplines = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.disciplines)
+    existing, rejected = llm.known_lists(known, _MAX_EXISTING, _MAX_REJECTED, today)
     return (
-        f"Guidance from the maintainers:\n{guidance.strip() or '(none)'}\n\n"
-        f"Event types (id=name): {event_types or '(none)'}\n"
-        f"Disciplines (id=name): {disciplines or '(none)'}\n\n"
-        f"Events already on the site or already proposed in this run -- do NOT propose any of these "
-        f"again, even if the wording, language or year differs. A community's weekly outing is a "
-        f"NEW event each week, so only the one on the SAME DAY as a listed event is a repeat:\n"
-        f"{existing or '(none)'}\n\n"
-        f"Do NOT propose events similar to these previously rejected ones:\n{rejected or '(none)'}\n\n"
+        llm.opening(guidance, taxonomy)
+        + "Events already on the site or already proposed in this run -- do NOT propose any of these "
+        "again, even if the wording, language or year differs. A community's weekly outing is a "
+        "NEW event each week, so only the one on the SAME DAY as a listed event is a repeat:\n"
+        f"{existing}\n\n"
+        f"Do NOT propose events similar to these previously rejected ones:\n{rejected}\n\n"
         f"{text}"
     )
 
