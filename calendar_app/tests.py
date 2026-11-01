@@ -2856,7 +2856,7 @@ class CompetitionRichDescriptionTests(TestCase):
         self.assertNotContains(resp, "&lt;p&gt;")  # rendered as HTML, not escaped
 
     def test_submit_rejects_oversized_description(self):
-        from calendar_app.models import MAX_DESCRIPTION_LENGTH
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 
         self.client.force_login(self.organizer)
         resp = self.client.post(
@@ -2864,7 +2864,7 @@ class CompetitionRichDescriptionTests(TestCase):
             {
                 "title_ru": "Too Big",
                 "date_start": "2026-09-01",
-                "description_ru": "a" * (MAX_DESCRIPTION_LENGTH + 1),
+                "description_ru": "a" * (MAX_RICH_TEXT_LENGTH + 1),
             },
         )
         self.assertEqual(resp.status_code, 200)  # re-rendered with errors, not redirected

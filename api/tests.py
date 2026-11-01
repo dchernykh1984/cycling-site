@@ -1011,13 +1011,13 @@ class CompetitionDescriptionSanitizeTest(TestCase, ApiTestMixin):
         self.assertFalse(comp.description_en)
 
     def test_create_rejects_oversized_description(self):
-        from calendar_app.models import MAX_DESCRIPTION_LENGTH
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 
         resp = self.post(
             "/api/v1/competitions/",
             {
                 "title": {"ru": "Big", "kk": "", "en": ""},
-                "description": {"ru": "a" * (MAX_DESCRIPTION_LENGTH + 1), "kk": "", "en": ""},
+                "description": {"ru": "a" * (MAX_RICH_TEXT_LENGTH + 1), "kk": "", "en": ""},
                 "date_start": "2026-07-01",
             },
             user=self.admin,
@@ -1025,12 +1025,12 @@ class CompetitionDescriptionSanitizeTest(TestCase, ApiTestMixin):
         self.assertEqual(resp.status_code, 422)
 
     def test_patch_rejects_oversized_description(self):
-        from calendar_app.models import MAX_DESCRIPTION_LENGTH
+        from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 
         comp = _competition(submitted_by=self.organizer)
         resp = self.patch(
             f"/api/v1/competitions/{comp.pk}",
-            {"description": {"ru": "a" * (MAX_DESCRIPTION_LENGTH + 1), "kk": "", "en": ""}},
+            {"description": {"ru": "a" * (MAX_RICH_TEXT_LENGTH + 1), "kk": "", "en": ""}},
             user=self.organizer,
         )
         self.assertEqual(resp.status_code, 422)

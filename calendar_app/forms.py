@@ -10,12 +10,12 @@ from django.utils.translation import pgettext_lazy
 
 from accounts import roles
 from cycling_site.forms import LocalizedMaxLengthMixin, comment_widget
+from cycling_site.richtext import is_too_large
 from locations.models import Level, Location, competition_location_block_reason
 from registrations.models import RegistrationCategory
 
 from . import tracks
 from .models import (
-    MAX_DESCRIPTION_LENGTH,
     Competition,
     CompetitionComment,
     CompetitionMaterial,
@@ -196,7 +196,7 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
 
     def _clean_description_length(self, field):
         value = self.cleaned_data.get(field) or ""
-        if len(value) > MAX_DESCRIPTION_LENGTH:
+        if is_too_large(value):
             raise forms.ValidationError(_("Description is too large. Use fewer or smaller inline images."))
         return value
 

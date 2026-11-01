@@ -9,7 +9,6 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from wagtail.search import index
 
-from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from cycling_site.sanitize import sanitize_rich_text_columns
 from locations.models import Level, Location, geography_above_is_approved
 
@@ -21,9 +20,6 @@ from locations.models import Level, Location, geography_above_is_approved
 # canonical descriptor (whose getter returns another language's fallback for an empty
 # translation, which would otherwise copy e.g. the RU body into an empty KK column).
 _DESCRIPTION_FIELDS = ("description", "description_ru", "description_kk", "description_en")
-
-# Backwards-compatible alias for the shared, site-wide rich-text size cap (organizer form + API).
-MAX_DESCRIPTION_LENGTH = MAX_RICH_TEXT_LENGTH
 
 
 class EventType(models.Model):
@@ -295,6 +291,11 @@ class Competition(index.Indexed, models.Model):
         competition in hand and wants to link to it without knowing the URL layout."""
         return reverse("competition_detail", kwargs={"pk": self.pk})
 
+    @property
+    def last_day(self) -> datetime.date:
+        """The day the event ends: its end date, or its start when it lasts one day."""
+        return self.date_end or self.date_start
+
     def _record_reviewer(self, stored) -> set[str]:
         """Note who approved or rejected the event and when, on its way into that status, whatever door it took.
 
@@ -500,7 +501,7 @@ class Competition(index.Indexed, models.Model):
         # ridden. It closes when the race is over instead -- and not a moment earlier, because a
         # start can be in the evening, so the window stands all through the final day -- the day
         # at the event's place, not the reader's.
-        elif timezone.localdate(timezone=self.timezone) > (self.date_end or self.date_start):
+        elif timezone.localdate(timezone=self.timezone) > self.last_day:
             return False
         return True if ignore_limit else not self.is_limit_reached()
 
