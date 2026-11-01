@@ -356,12 +356,14 @@ class Competition(index.Indexed, models.Model):
         from django.utils.formats import date_format
         from django.utils.translation import gettext as _
 
+        from locations.models import Level  # local import to avoid circular
+
         from .listing_seo import CATCH_ALL_DISCIPLINE_PREFIX
 
         when = date_format(self.date_start, "j E Y")
         if self.date_end and self.date_end != self.date_start:
             when = f"{when} - {date_format(self.date_end, 'j E Y')}"
-        where = ", ".join(part for part in (self.city_label, self.country_label) if part)
+        where = ", ".join(part for part in (self.place_name(Level.CITY), self.place_name(Level.COUNTRY)) if part)
         usual = usual_type_id if usual_type_id is not None else usual_event_type_id()
         types = ", ".join(t.name for t in self.event_types.all() if t.pk != usual)
         names: list[str] = []
@@ -595,6 +597,15 @@ class Competition(index.Indexed, models.Model):
         if not loc:
             return {}
         return {node.depth: node for node in [*loc.get_ancestors(), loc]}
+
+    def place_name(self, level) -> str:
+        """The name of this event's place at ``level``, or "" for a hidden stand-in.
+
+        "Other location", "other city" and "other region" stand for a place nobody named: a search
+        engine reading one as a place name would index a town called "Other city".
+        """
+        node = self._location_nodes_by_depth.get(level)
+        return node.name if node is not None and not node.is_hidden else ""
 
     @property
     def country_label(self) -> str:
