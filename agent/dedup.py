@@ -100,13 +100,6 @@ def _with_merged_neighbours(title: str) -> set[str]:
     return set(words) | {first + second for first, second in itertools.pairwise(words)}
 
 
-def _overlap(a: set[str], b: set[str]) -> float:
-    """Overlap coefficient |a n b| / min(|a|,|b|) -- high when one title's words contain the other's."""
-    if not a or not b:
-        return 0.0
-    return len(a & b) / min(len(a), len(b))
-
-
 def _dates_close(a: str, b: str, window_days: int) -> bool:
     try:
         da = datetime.date.fromisoformat((a or "")[:10])

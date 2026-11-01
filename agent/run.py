@@ -132,8 +132,6 @@ def _add_start_coordinate(candidate: Candidate, page_text: str) -> Candidate:
     track, a RideWithGPS route); its first point is the start line. Only fills a coordinate the model
     did not already provide, and only when a venue is being proposed.
     """
-    from dataclasses import replace
-
     if not candidate.venue or candidate.lat is not None or candidate.lng is not None:
         return candidate
     # Prefer the route link the model already picked out (url_route) -- it is the event's own track;
