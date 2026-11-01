@@ -1,0 +1,49 @@
+{% load i18n %}{% comment %}Adds and removes the rows of _relay_members.html, up to the team's maximum.{% endcomment %}{% if relay_enabled %}
+<script>
+(function () {
+  var container = document.getElementById('relay-names-container');
+  var addBtn = document.getElementById('add-relay-member-btn');
+  var maxMembers = {{ relay_max_members }};
+  var phName = "{% trans 'Full name' %}";
+  var phYear = "{% trans 'Year' %}";
+  var phCity = "{% trans 'City' %}";
+
+  function updateRemoveButtons() {
+    var rows = container.querySelectorAll('.relay-member');
+    rows.forEach(function (row) {
+      row.querySelector('.remove-relay-member').style.display = rows.length > 1 ? '' : 'none';
+    });
+    addBtn.disabled = rows.length >= maxMembers;
+  }
+
+  addBtn.addEventListener('click', function () {
+    var rows = container.querySelectorAll('.relay-member');
+    if (rows.length >= maxMembers) return;
+    var div = document.createElement('div');
+    div.className = 'relay-member mb-2';
+    div.innerHTML =
+      '<div class="row g-2 align-items-center">' +
+        '<div class="col-md-5"><input type="text" name="participant_name" class="form-control" placeholder="' + phName + '" required></div>' +
+        '<div class="col-md-2"><input type="number" name="participant_birth_year" class="form-control" placeholder="' + phYear + '" min="1900" max="2030"></div>' +
+        '<div class="col-md-4"><input type="text" name="participant_city" class="form-control" placeholder="' + phCity + '"></div>' +
+        '<div class="col-auto"><button type="button" class="btn btn-outline-danger remove-relay-member">−</button></div>' +
+      '</div>';
+    container.appendChild(div);
+    div.querySelector('.remove-relay-member').addEventListener('click', removeHandler);
+    updateRemoveButtons();
+    div.querySelector('input[name="participant_name"]').focus();
+  });
+
+  function removeHandler() {
+    this.closest('.relay-member').remove();
+    updateRemoveButtons();
+  }
+
+  container.querySelectorAll('.remove-relay-member').forEach(function (btn) {
+    btn.addEventListener('click', removeHandler);
+  });
+
+  updateRemoveButtons();
+})();
+</script>
+{% endif %}
