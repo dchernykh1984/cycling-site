@@ -10,6 +10,7 @@ personal token. What the chat does, a program can do the same way (issue #353).
 from __future__ import annotations
 
 import datetime
+from http import HTTPStatus
 from typing import Literal
 
 from django.utils import timezone, translation
@@ -102,7 +103,9 @@ def _member(request, kind: str = Conversation.Kind.EVENT):
     """The caller, when they may talk to the assistant about a ``kind``."""
     if not conversations.offered(request.auth, kind):
         news = kind == Conversation.Kind.NEWS
-        raise HttpError(403, "Admin role is required" if news else "Organizer role or higher is required")
+        raise HttpError(
+            HTTPStatus.FORBIDDEN, "Admin role is required" if news else "Organizer role or higher is required"
+        )
     return request.auth
 
 
@@ -111,23 +114,23 @@ def _member(request, kind: str = Conversation.Kind.EVENT):
 def _conversation(user, conversation_id: int) -> Conversation:
     conversation = Conversation.objects.select_related("competition", "news").filter(pk=conversation_id).first()
     if conversation is None or not conversations.may_see(user, conversation):
-        raise HttpError(404, "No such conversation")
+        raise HttpError(HTTPStatus.NOT_FOUND, "No such conversation")
     return conversation
 
 
 def _subject(user, competition_id: int | None, news_id: int | None) -> Competition | NewsArticle | None:
     """The event or the news item a request names, when ``user`` may write it; None when it names neither."""
     if competition_id is not None and news_id is not None:
-        raise HttpError(422, "An event or a news item, not both")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "An event or a news item, not both")
     if competition_id is not None:
         competition = Competition.objects.filter(pk=competition_id, is_deleted=False).first()
         if competition is None or not conversations.may_write(user, competition):
-            raise HttpError(404, "No such event")
+            raise HttpError(HTTPStatus.NOT_FOUND, "No such event")
         return competition
     if news_id is not None:
         article = NewsArticle.objects.filter(pk=news_id, is_deleted=False).first()
         if article is None or not conversations.may_write(user, article):
-            raise HttpError(404, "No such news item")
+            raise HttpError(HTTPStatus.NOT_FOUND, "No such news item")
         return article
     return None
 
@@ -144,7 +147,7 @@ def _out(conversation: Conversation) -> dict:
 
 @router.post(
     "/conversations",
-    response={200: ConversationOut, 201: ConversationOut},
+    response={HTTPStatus.OK: ConversationOut, HTTPStatus.CREATED: ConversationOut},
     auth=member_auth,
     summary="Start a conversation, or get an event's or a news item's own (organizer; news: admin)",
 )
@@ -152,7 +155,7 @@ def start_conversation(request, payload: ConversationIn):
     user = _member(request, Conversation.Kind.NEWS if payload.news_id is not None else payload.kind)
     subject = _subject(user, payload.competition_id, payload.news_id)
     conversation, created = conversations.start(user, subject, payload.kind)
-    return Status(201 if created else 200, _out(conversation))
+    return Status(HTTPStatus.CREATED if created else HTTPStatus.OK, _out(conversation))
 
 
 @router.get(
@@ -176,7 +179,7 @@ def send_message(request, conversation_id: int, payload: TurnIn):
     conversation = _conversation(user, conversation_id)
     text = payload.text.strip()
     if not text:
-        raise HttpError(422, "The message is empty")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "The message is empty")
     with translation.override(payload.language):
         try:
             turn = conversations.take_turn(
@@ -189,7 +192,7 @@ def send_message(request, conversation_id: int, payload: TurnIn):
                 language=payload.language,
             )
         except llm.UnavailableError as exc:
-            raise HttpError(503, str(_UNAVAILABLE[exc.reason])) from None
+            raise HttpError(HTTPStatus.SERVICE_UNAVAILABLE, str(_UNAVAILABLE[exc.reason])) from None
     return {"reply": turn.reply, "fields": turn.form, "notes": turn.notes, "messages": [turn.asked, turn.replied]}
 
 
@@ -204,11 +207,13 @@ def link_conversation(request, conversation_id: int, payload: LinkIn):
     conversation = _conversation(user, conversation_id)
     subject = _subject(user, payload.competition_id, payload.news_id)
     if subject is None:
-        raise HttpError(422, "Name the event or the news item")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "Name the event or the news item")
     field, _kind = conversations.subject_field(subject)
     already = getattr(conversation, f"{field}_id") == subject.pk
     if not already and not conversations.link(conversation.pk, subject, user):
-        raise HttpError(409, "The conversation or its subject is linked already, or they are of different kinds")
+        raise HttpError(
+            HTTPStatus.CONFLICT, "The conversation or its subject is linked already, or they are of different kinds"
+        )
     conversation.refresh_from_db()
     return _out(conversation)
 
@@ -222,8 +227,8 @@ def link_conversation(request, conversation_id: int, payload: LinkIn):
 def track_start(request, file: UploadedFile = File(...)):  # noqa: B008
     _member(request)
     if file.size is None or file.size > _MAX_TRACK_BYTES:
-        raise HttpError(422, "The file is too large for a track")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "The file is too large for a track")
     point = parse_start(file.read().decode("utf-8", errors="replace"))
     if point is None:
-        raise HttpError(422, "No track point was found in this file")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "No track point was found in this file")
     return {"lat": point[0], "lng": point[1]}

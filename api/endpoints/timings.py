@@ -12,6 +12,7 @@ and the same size guards. Three separate streams = three routers/models:
 """
 
 from datetime import datetime
+from http import HTTPStatus
 
 from django.db import transaction
 from ninja import Router, Schema
@@ -89,15 +90,15 @@ class RemotePointsOut(Schema):
 
 def _validate_payload(request, device_id: str, items: list[str]) -> None:
     if not device_id:
-        raise HttpError(400, "device_id is required")
+        raise HttpError(HTTPStatus.BAD_REQUEST, "device_id is required")
     if len(device_id) > _MAX_DEVICE_ID_LEN:
-        raise HttpError(400, f"device_id too long (max {_MAX_DEVICE_ID_LEN})")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"device_id too long (max {_MAX_DEVICE_ID_LEN})")
     if len(request.body) > _MAX_BODY_BYTES:
-        raise HttpError(400, f"Payload is too large (max {_MAX_BODY_BYTES} bytes)")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"Payload is too large (max {_MAX_BODY_BYTES} bytes)")
     if len(items) > _MAX_ITEMS:
-        raise HttpError(400, f"Too many items (max {_MAX_ITEMS})")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"Too many items (max {_MAX_ITEMS})")
     if any(len(item) > _MAX_ITEM_LEN for item in items):
-        raise HttpError(400, f"An item is too long (max {_MAX_ITEM_LEN} characters)")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"An item is too long (max {_MAX_ITEM_LEN} characters)")
 
 
 def _upsert(model, competition: Competition, device_id: str, revision: int, items: list[str], **key_extra) -> dict:
@@ -115,11 +116,14 @@ def _upsert(model, competition: Competition, device_id: str, revision: int, item
         )
         if existing is not None:
             if revision < existing.client_revision:
-                raise HttpError(409, f"A newer snapshot (revision {existing.client_revision}) is already stored")
+                raise HttpError(
+                    HTTPStatus.CONFLICT, f"A newer snapshot (revision {existing.client_revision}) is already stored"
+                )
             if revision == existing.client_revision:
                 if items != existing.items:
                     raise HttpError(
-                        409, f"A different snapshot is already stored at revision {existing.client_revision}"
+                        HTTPStatus.CONFLICT,
+                        f"A different snapshot is already stored at revision {existing.client_revision}",
                     )
                 return {
                     "device_id": device_id,

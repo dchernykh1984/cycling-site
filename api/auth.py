@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.contrib.auth.models import AnonymousUser
 from ninja.security import HttpBearer, SessionAuth
 
@@ -77,4 +79,4 @@ def competition_by_token(token: str):
     try:
         return Competition.objects.get(upload_token=token, status=Competition.Status.APPROVED, is_deleted=False)
     except (Competition.DoesNotExist, ValidationError):
-        raise HttpError(401, "Invalid competition_token") from None
+        raise HttpError(HTTPStatus.UNAUTHORIZED, "Invalid competition_token") from None

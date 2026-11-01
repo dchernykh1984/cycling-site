@@ -1,4 +1,5 @@
 from datetime import date
+from http import HTTPStatus
 from typing import Any
 
 from django.core.exceptions import ValidationError
@@ -73,10 +74,10 @@ def get_participants(request, competition_token: str, include_unpaid: bool = Fal
     try:
         competition = Competition.objects.get(upload_token=competition_token)
     except (Competition.DoesNotExist, ValidationError):
-        raise HttpError(401, "invalid competition_token") from None
+        raise HttpError(HTTPStatus.UNAUTHORIZED, "invalid competition_token") from None
 
     if competition.status != Competition.Status.APPROVED or competition.is_deleted:
-        raise HttpError(401, "competition not found or not approved")
+        raise HttpError(HTTPStatus.UNAUTHORIZED, "competition not found or not approved")
 
     # Unpaid entries used to be dropped here outright, which left a referee at the start line
     # unable to see that part of the entry list was outstanding. Widening it is opt-in rather

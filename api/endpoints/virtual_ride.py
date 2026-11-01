@@ -5,6 +5,7 @@ their session; API clients use the personal Bearer token like everywhere else in
 """
 
 from datetime import datetime, timedelta
+from http import HTTPStatus
 
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -260,7 +261,7 @@ def _group_out(group: GroupRide, user) -> GroupOut:
 def _open_group(group_id: int) -> GroupRide:
     group = get_object_or_404(GroupRide.objects.select_related("host"), pk=group_id)
     if group.cancelled:
-        raise HttpError(409, "This group ride was cancelled")
+        raise HttpError(HTTPStatus.CONFLICT, "This group ride was cancelled")
     return group
 
 
@@ -300,7 +301,7 @@ def me(request):
 # -- Rides and records -----------------------------------------------------
 
 
-@router.post("/rides", response={201: SavedRideOut}, auth=member_auth, summary="Save a finished ride")
+@router.post("/rides", response={HTTPStatus.CREATED: SavedRideOut}, auth=member_auth, summary="Save a finished ride")
 def save_ride(request, payload: RideIn):
     data = payload.dict()
     group_id = data.pop("group_id")
@@ -309,7 +310,7 @@ def save_ride(request, payload: RideIn):
     if group_id is not None:
         group = get_object_or_404(GroupRide, pk=group_id)
         if not group.memberships.filter(user=request.auth).exists():
-            raise HttpError(403, "You did not ride in this group race")
+            raise HttpError(HTTPStatus.FORBIDDEN, "You did not ride in this group race")
     with transaction.atomic():
         if group is not None:
             # Members finishing together take turns, so each ranking sees the rides saved before it.
@@ -325,7 +326,7 @@ def save_ride(request, payload: RideIn):
     # a member who connected Strava gets every real ride there; demo power is not a ride to show anyone
     if track and ride.power_source != VirtualRide.PowerSource.DEMO and _strava_on(request.auth):
         sent = _strava_out(strava.upload(ride))
-    return Status(201, SavedRideOut(ride=RideOut.from_orm(ride), records=found, strava=sent))
+    return Status(HTTPStatus.CREATED, SavedRideOut(ride=RideOut.from_orm(ride), records=found, strava=sent))
 
 
 def _strava_on(user) -> bool:
@@ -345,10 +346,11 @@ def send_to_strava(request, ride_id: int):
         # on Strava already, or on its way: sending it again would only come back a duplicate
         return _strava_out(strava.refresh(sent))
     if not _strava_on(request.auth):
-        raise HttpError(409, _("Connect Strava in your profile first"))
+        raise HttpError(HTTPStatus.CONFLICT, _("Connect Strava in your profile first"))
     if ride.power_source == VirtualRide.PowerSource.DEMO or not RideTrack.objects.filter(ride=ride).exists():
         raise HttpError(
-            409, _("This ride has no track to send: rides in demo mode and rides saved without one stay here")
+            HTTPStatus.CONFLICT,
+            _("This ride has no track to send: rides in demo mode and rides saved without one stay here"),
         )
     return _strava_out(strava.upload(ride))
 
@@ -359,12 +361,14 @@ def strava_status(request, ride_id: int):
     return _strava_out(strava.refresh(upload))
 
 
-@router.delete("/strava", response={204: None}, auth=member_auth, summary="Stop sending my rides to Strava")
+@router.delete(
+    "/strava", response={HTTPStatus.NO_CONTENT: None}, auth=member_auth, summary="Stop sending my rides to Strava"
+)
 def disconnect_strava(request):
     connection = StravaConnection.objects.filter(user=request.auth).first()
     if connection is not None:
         strava.disconnect(connection)
-    return Status(204, None)
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
 @router.get("/rides", response=list[RideOut], auth=member_auth, summary="My rides, newest first")
@@ -372,7 +376,9 @@ def list_rides(request, limit: int = 30):
     return list(VirtualRide.objects.filter(user=request.auth)[: max(1, min(limit, _MAX_HISTORY))])
 
 
-@router.delete("/rides/{ride_id}", response={204: None}, auth=member_auth, summary="Delete one of my rides")
+@router.delete(
+    "/rides/{ride_id}", response={HTTPStatus.NO_CONTENT: None}, auth=member_auth, summary="Delete one of my rides"
+)
 def delete_ride(request, ride_id: int):
     ride = get_object_or_404(VirtualRide, pk=ride_id, user=request.auth)
     with transaction.atomic():
@@ -381,7 +387,7 @@ def delete_ride(request, ride_id: int):
         ride.delete()
         if group is not None:
             records.rank_group(group)
-    return Status(204, None)
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
 @router.get("/records", response=RecordsOut, auth=member_auth, summary="My personal records")
@@ -397,11 +403,11 @@ def list_groups(request):
     return [_group_out(g, request.auth) for g in live.open_groups()]
 
 
-@router.post("/groups", response={201: GroupOut}, auth=member_auth, summary="Gather a group race")
+@router.post("/groups", response={HTTPStatus.CREATED: GroupOut}, auth=member_auth, summary="Gather a group race")
 def create_group(request, payload: GroupIn):
     now = timezone.now()
     if GroupRide.objects.filter(host=request.auth, cancelled=False, start_at__gt=now).exists():
-        raise HttpError(409, _("You already have a group race waiting to start"))
+        raise HttpError(HTTPStatus.CONFLICT, _("You already have a group race waiting to start"))
     with transaction.atomic():
         group = GroupRide.objects.create(
             route=payload.route,
@@ -410,7 +416,7 @@ def create_group(request, payload: GroupIn):
             start_at=now + timedelta(seconds=payload.start_in_s),
         )
         GroupRideMember.objects.create(group=group, user=request.auth)
-    return Status(201, _group_out(group, request.auth))
+    return Status(HTTPStatus.CREATED, _group_out(group, request.auth))
 
 
 @router.get("/groups/{group_id}", response=GroupOut, auth=member_auth, summary="One group race, as a link names it")
@@ -424,7 +430,7 @@ def get_group(request, group_id: int):
 def join_group(request, group_id: int):
     group = _open_group(group_id)
     if group.start_at <= timezone.now():
-        raise HttpError(409, _("This group race has already started"))
+        raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
     GroupRideMember.objects.get_or_create(group=group, user=request.auth)
     return _group_out(group, request.auth)
 
@@ -450,7 +456,7 @@ def leave_group(request, group_id: int):
 def cancel_group(request, group_id: int):
     group = _open_group(group_id)
     if group.host_id != request.auth.pk and not roles.at_least(request.auth, roles.Role.ADMIN):
-        raise HttpError(403, _("Only the host can cancel this group race"))
+        raise HttpError(HTTPStatus.FORBIDDEN, _("Only the host can cancel this group race"))
     group.cancelled = True
     group.save(update_fields=["cancelled"])
     return _group_out(group, request.auth)

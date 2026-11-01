@@ -1,6 +1,8 @@
 """Event photos over the API (issue #349): what the pages do, by the same rules (event_photos.permissions)
 and the same actions. Anything the caller may not see answers 404."""
 
+from http import HTTPStatus
+
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -136,7 +138,7 @@ class StatsOut(Schema):
 def _competition(user, pk) -> Competition:
     competition = get_object_or_404(Competition, pk=pk)
     if not can_see_event(user, competition):
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     return competition
 
 
@@ -206,7 +208,7 @@ def album_photos(request, album_id: int, page: int = 1):
     album = get_object_or_404(ExternalAlbum, pk=album_id)
     competition = _competition(request.auth, album.competition_id)
     if not visible_albums(request.auth, competition).filter(pk=album.pk).exists():
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     qs = actions.album_photos(album, include_hidden=can_manage_albums(request.auth, competition)).select_related(
         "album"
     )
@@ -231,7 +233,7 @@ def my_albums(request):
 def _registration(user, registration_id) -> CompetitionRegistration:
     registration = get_object_or_404(CompetitionRegistration.objects.select_related("competition"), pk=registration_id)
     if not can_see_event(user, registration.competition) or not can_see_registration(user, registration):
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     return registration
 
 
@@ -245,13 +247,13 @@ def registration_photos(request, registration_id: int, page: int = 1):
 
 def _archive(photos, name: str):
     if not photos.exists():
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     try:
         return archive_response(photos, name)
     except ArchiveTooBigError:
-        raise HttpError(413, "Too many photos for one archive") from None
+        raise HttpError(HTTPStatus.CONTENT_TOO_LARGE, "Too many photos for one archive") from None
     except ArchiveBusyError:
-        busy = HttpResponse(status=503)
+        busy = HttpResponse(status=HTTPStatus.SERVICE_UNAVAILABLE)
         busy["Retry-After"] = "60"
         return busy
 
@@ -270,7 +272,7 @@ def bib_archive(request, competition_id: int, bib: str):
     competition = _competition(request.auth, competition_id)
     bib = bib.strip()[:32]
     if not bib:
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     photos = actions.bib_photos(competition, bib).filter(album__in=visible_albums(request.auth, competition))
     return _archive(photos, bib_archive_name(competition, bib))
 
@@ -279,49 +281,52 @@ def bib_archive(request, competition_id: int, bib: str):
 def decide(request, registration_id: int, photo_id: int, payload: DecisionIn):
     registration = _registration(request.auth, registration_id)
     if not can_mark(request.auth, registration):
-        raise HttpError(403, "Only the athlete or their representative marks photos")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Only the athlete or their representative marks photos")
     photo = actions.decision_photo(registration, photo_id, payload.state)
     if photo is None:
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     try:
         event = actions.decide(registration, photo, payload.state, request.auth)
     except actions.DecisionRefusedError as exc:
-        raise HttpError(409, str(exc)) from None
+        raise HttpError(HTTPStatus.CONFLICT, str(exc)) from None
     if event is None and payload.state == PhotoDecision.State.NOT_ME:
         event = actions.recent_rejection(registration, photo)  # a retry keeps the original undo
     return {"state": payload.state, "event_id": event.pk if event else None}
 
 
-@router.post("/registrations/{registration_id}/undo", response={204: None}, auth=auth)
+@router.post("/registrations/{registration_id}/undo", response={HTTPStatus.NO_CONTENT: None}, auth=auth)
 def undo(request, registration_id: int, payload: UndoIn):
     registration = _registration(request.auth, registration_id)
     if not can_mark(request.auth, registration):
-        raise HttpError(403, "Only the athlete or their representative marks photos")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Only the athlete or their representative marks photos")
     try:
         actions.undo(registration, payload.event_id, request.auth)
     except actions.DecisionRefusedError as exc:
-        raise HttpError(409, str(exc)) from None
-    return Status(204, None)
+        raise HttpError(HTTPStatus.CONFLICT, str(exc)) from None
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
 def _managed_album(user, album_id) -> ExternalAlbum:
     album = get_object_or_404(ExternalAlbum.objects.select_related("competition"), pk=album_id)
     if not can_manage_albums(user, album.competition):
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     return album
 
 
-@router.post("/competitions/{competition_id}/albums", response={201: AlbumOut}, auth=auth)
+@router.post("/competitions/{competition_id}/albums", response={HTTPStatus.CREATED: AlbumOut}, auth=auth)
 def add_album(request, competition_id: int, payload: AlbumIn):
     competition = get_object_or_404(Competition, pk=competition_id, is_deleted=False)
     if not can_manage_albums(request.auth, competition):
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     data = payload.dict()
     for lang in ("ru", "kk", "en"):
         data[f"title_{lang}"] = data[f"title_{lang}"] or getattr(competition, f"title_{lang}") or ""
     form = ExternalAlbumForm(data)
     if not form.is_valid():
-        raise HttpError(422, "; ".join(f"{k}: {' '.join(str(e) for e in v)}" for k, v in form.errors.items()))
+        raise HttpError(
+            HTTPStatus.UNPROCESSABLE_CONTENT,
+            "; ".join(f"{k}: {' '.join(str(e) for e in v)}" for k, v in form.errors.items()),
+        )
     album = form.save(commit=False)
     album.competition = competition
     album.created_by = request.auth
@@ -332,7 +337,7 @@ def add_album(request, competition_id: int, payload: AlbumIn):
     except actions.ImportFailedError:
         pass  # the album is kept with last_error, as on the page; refresh once the index is there
     album.refresh_from_db()
-    return Status(201, album)
+    return Status(HTTPStatus.CREATED, album)
 
 
 @router.post("/albums/{album_id}/refresh", response=AlbumOut, auth=auth)
@@ -341,7 +346,7 @@ def refresh(request, album_id: int):
     try:
         actions.import_album(album, request.auth)
     except actions.ImportFailedError as exc:
-        raise HttpError(422, str(exc)) from None
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, str(exc)) from None
     album.refresh_from_db()
     return album
 
@@ -354,10 +359,10 @@ def change_album(request, album_id: int, payload: AlbumPatchIn):
     return album
 
 
-@router.delete("/albums/{album_id}", response={204: None}, auth=auth)
+@router.delete("/albums/{album_id}", response={HTTPStatus.NO_CONTENT: None}, auth=auth)
 def disconnect_album(request, album_id: int):
     _managed_album(request.auth, album_id).delete()  # the folder in Dropbox stays as it is
-    return Status(204, None)
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
 @router.get("/competitions/{competition_id}/start-list-diagnostics", response=list[str], auth=auth)
@@ -365,17 +370,17 @@ def start_list_diagnostics(request, competition_id: int):
     """What the last start-list upload could not bind (foreign ids, conflicts, stage limits)."""
     competition = get_object_or_404(Competition, pk=competition_id, is_deleted=False)
     if not can_manage_albums(request.auth, competition):
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     diagnostics = StartListDiagnostics.objects.filter(competition=competition).first()
     return diagnostics.warnings if diagnostics else []
 
 
-@router.post("/photos/{photo_id}/hide", response={204: None}, auth=auth)
+@router.post("/photos/{photo_id}/hide", response={HTTPStatus.NO_CONTENT: None}, auth=auth)
 def hide_photo(request, photo_id: int):
     return _set_hidden(request, photo_id, True)
 
 
-@router.post("/photos/{photo_id}/show", response={204: None}, auth=auth)
+@router.post("/photos/{photo_id}/show", response={HTTPStatus.NO_CONTENT: None}, auth=auth)
 def show_photo(request, photo_id: int):
     return _set_hidden(request, photo_id, False)
 
@@ -383,9 +388,9 @@ def show_photo(request, photo_id: int):
 def _set_hidden(request, photo_id: int, hidden: bool):
     photo = get_object_or_404(IndexedPhoto.objects.select_related("album__competition"), pk=photo_id)
     if not can_manage_albums(request.auth, photo.album.competition):
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     actions.set_photo_hidden(photo, hidden)
-    return Status(204, None)
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
 @router.get("/albums/{album_id}/stats", response=StatsOut, auth=auth)

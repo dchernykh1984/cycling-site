@@ -7,6 +7,7 @@ admin authors auto-approved) -- article editing/hiding still happens through the
 """
 
 from datetime import datetime
+from http import HTTPStatus
 
 from django.db.models import Field
 from django.utils.translation import gettext as _
@@ -130,12 +131,15 @@ class DraftOut(Schema):
 def _require_manager(user, rule: str) -> None:
     """403 unless ``user`` may do what ``rule`` gates: managing news, or knowledge articles."""
     if not roles.at_least(user, rule):
-        raise HttpError(403, "Admin role is required")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Admin role is required")
 
 
 def _validate_body_length(body: str | None) -> None:
     if body and len(body) > MAX_RICH_TEXT_LENGTH:
-        raise HttpError(422, _("Body is too large (max %(limit)d characters).") % {"limit": MAX_RICH_TEXT_LENGTH})
+        raise HttpError(
+            HTTPStatus.UNPROCESSABLE_CONTENT,
+            _("Body is too large (max %(limit)d characters).") % {"limit": MAX_RICH_TEXT_LENGTH},
+        )
 
 
 def _validate_localized_length(value: LocalizedStr, field: str, message: str) -> None:
@@ -148,22 +152,22 @@ def _validate_localized_length(value: LocalizedStr, field: str, message: str) ->
         return
     for raw in (value.ru, value.kk, value.en):
         if raw and len(raw) > limit:
-            raise HttpError(422, message % {"limit": limit})
+            raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, message % {"limit": limit})
 
 
 def _validate_news_title(title: LocalizedStr) -> None:
     # Require a non-whitespace title: a value like "   " is truthy but visually empty, and would
     # otherwise save a blank article that slugifies to the technical "article" fallback.
     if not any((value or "").strip() for value in (title.ru, title.kk, title.en)):
-        raise HttpError(422, _("At least one title translation is required."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("At least one title translation is required."))
     _validate_localized_length(title, "title", _("Title is too long (max %(limit)d characters)."))
 
 
 def _validate_knowledge_payload(payload: KnowledgeArticleIn) -> None:
     if payload.locale not in {code for code, _label in KnowledgeArticle.LOCALE_CHOICES}:
-        raise HttpError(422, _("Unknown locale."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("Unknown locale."))
     if not (payload.title or "").strip():
-        raise HttpError(422, _("A title is required."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("A title is required."))
     # Bound title/category to their column widths so an over-long value fails with a 422
     # rather than a database DataError (500) inside KnowledgeArticle.save().
     for field, value, message in (
@@ -173,15 +177,15 @@ def _validate_knowledge_payload(payload: KnowledgeArticleIn) -> None:
         field_obj = KnowledgeArticle._meta.get_field(field)
         limit = field_obj.max_length if isinstance(field_obj, Field) else None
         if limit is not None and value and len(value) > limit:
-            raise HttpError(422, message % {"limit": limit})
+            raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, message % {"limit": limit})
     _validate_body_length(payload.body)
 
 
 def _validate_knowledge_patch(data: dict) -> None:
     if "locale" in data and data["locale"] not in {code for code, _label in KnowledgeArticle.LOCALE_CHOICES}:
-        raise HttpError(422, _("Unknown locale."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("Unknown locale."))
     if "title" in data and not (data["title"] or "").strip():
-        raise HttpError(422, _("A title is required."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("A title is required."))
     for field, message in (
         ("title", _("Title is too long (max %(limit)d characters).")),
         ("category", _("Category is too long (max %(limit)d characters).")),
@@ -190,7 +194,7 @@ def _validate_knowledge_patch(data: dict) -> None:
             field_obj = KnowledgeArticle._meta.get_field(field)
             limit = field_obj.max_length if isinstance(field_obj, Field) else None
             if limit is not None and len(data[field]) > limit:
-                raise HttpError(422, message % {"limit": limit})
+                raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, message % {"limit": limit})
     if "body" in data:
         _validate_body_length(data["body"])
 
@@ -199,7 +203,7 @@ def _get_knowledge_article_or_404(article_id: int) -> KnowledgeArticle:
     try:
         return KnowledgeArticle.objects.get(pk=article_id, is_deleted=False)
     except KnowledgeArticle.DoesNotExist:
-        raise HttpError(404, "Not found") from None
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found") from None
 
 
 # -- Knowledge draft-submission helpers (participant/organizer authoring) ------
@@ -207,24 +211,24 @@ def _get_knowledge_article_or_404(article_id: int) -> KnowledgeArticle:
 
 def _require_submitter(user) -> None:
     if not roles.role_at_least(user, roles.SUBMIT_KNOWLEDGE):
-        raise HttpError(403, "Verified participant role or higher is required")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Verified participant role or higher is required")
 
 
 def _get_draft_or_404(pk: int, submission_type: str) -> DraftSubmission:
     try:
         return DraftSubmission.objects.get(pk=pk, submission_type=submission_type)
     except DraftSubmission.DoesNotExist:
-        raise HttpError(404, "Draft not found") from None
+        raise HttpError(HTTPStatus.NOT_FOUND, "Draft not found") from None
 
 
 def _require_owner_or_admin(user, draft: DraftSubmission) -> None:
     if draft.author_id != user.pk and not roles.at_least(user, roles.MANAGE_KNOWLEDGE):
-        raise HttpError(403, "Forbidden")
+        raise HttpError(HTTPStatus.FORBIDDEN, "Forbidden")
 
 
 def _validate_locale(locale: str) -> None:
     if locale not in _LOCALE_VALUES:
-        raise HttpError(422, f"locale must be one of: {', '.join(_LOCALE_VALUES)}")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, f"locale must be one of: {', '.join(_LOCALE_VALUES)}")
 
 
 def _validate_draft_lengths(title: str | None, category: str | None) -> None:
@@ -243,7 +247,7 @@ def _validate_draft_lengths(title: str | None, category: str | None) -> None:
         field_obj = DraftSubmission._meta.get_field(field)
         limit = field_obj.max_length if isinstance(field_obj, Field) else None
         if limit is not None and len(value) > limit:
-            raise HttpError(422, message % {"limit": limit})
+            raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, message % {"limit": limit})
 
 
 def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmission:
@@ -268,7 +272,7 @@ def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmi
         try:
             draft.approve(reviewer=user)
         except ValueError as exc:
-            raise HttpError(422, str(exc)) from exc
+            raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, str(exc)) from exc
 
     return draft
 
@@ -279,7 +283,7 @@ def _update_draft(request, pk: int, payload: DraftPatchIn, submission_type: str)
     _require_owner_or_admin(user, draft)
 
     if draft.status != DraftSubmission.Status.PENDING:
-        raise HttpError(409, "Only PENDING drafts can be edited")
+        raise HttpError(HTTPStatus.CONFLICT, "Only PENDING drafts can be edited")
 
     data = payload.dict(exclude_unset=True)
     if "locale" in data:
@@ -304,7 +308,7 @@ def _delete_draft(request, pk: int, submission_type: str) -> None:
     _require_owner_or_admin(user, draft)
 
     if draft.status != DraftSubmission.Status.PENDING:
-        raise HttpError(409, "Only PENDING drafts can be deleted")
+        raise HttpError(HTTPStatus.CONFLICT, "Only PENDING drafts can be deleted")
 
     draft.delete()
 
@@ -313,7 +317,7 @@ def _get_news_article_or_404(pk: int) -> NewsArticle:
     try:
         return NewsArticle.objects.get(pk=pk, is_deleted=False)
     except NewsArticle.DoesNotExist:
-        raise HttpError(404, "Not found") from None
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found") from None
 
 
 def _apply_news_localized(article: NewsArticle, field: str, value: LocalizedStr) -> None:
@@ -343,11 +347,13 @@ def get_news(request, pk: int):
     user = request.auth
     article = _get_news_article_or_404(pk)
     if article.is_hidden and not roles.at_least(user, roles.MANAGE_NEWS):
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     return article
 
 
-@news_router.post("/", response={201: NewsArticleOut}, auth=auth, summary="Create a news article (admin)")
+@news_router.post(
+    "/", response={HTTPStatus.CREATED: NewsArticleOut}, auth=auth, summary="Create a news article (admin)"
+)
 def create_news_article(request, payload: NewsArticleIn):
     """Create a NewsArticle (the model rendered on /news/) from one multi-locale request.
 
@@ -365,7 +371,7 @@ def create_news_article(request, payload: NewsArticleIn):
     for field, value in (("title", payload.title), ("intro", payload.intro), ("body", payload.body)):
         _apply_news_localized(article, field, value)
     article.save()
-    return Status(201, article)
+    return Status(HTTPStatus.CREATED, article)
 
 
 @news_router.patch("/{pk}", response=NewsArticleOut, auth=auth, summary="Update a news article (admin)")
@@ -391,14 +397,16 @@ def update_news_article(request, pk: int, payload: NewsArticlePatchIn):
     return article
 
 
-@news_router.delete("/{pk}", response={204: None}, auth=auth, summary="Delete a news article (admin, soft)")
+@news_router.delete(
+    "/{pk}", response={HTTPStatus.NO_CONTENT: None}, auth=auth, summary="Delete a news article (admin, soft)"
+)
 def delete_news_article(request, pk: int):
     user = request.auth
     _require_manager(user, roles.MANAGE_NEWS)
     article = _get_news_article_or_404(pk)
     article.is_deleted = True
     article.save(update_fields=["is_deleted"])
-    return Status(204, None)
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
 # -- Knowledge: public read serves the published KnowledgeArticle -------------
@@ -438,7 +446,9 @@ def get_knowledge_draft(request, draft_id: int):
     return draft
 
 
-@knowledge_router.post("/drafts/", response={201: DraftOut}, auth=auth, summary="Create knowledge article draft")
+@knowledge_router.post(
+    "/drafts/", response={HTTPStatus.CREATED: DraftOut}, auth=auth, summary="Create knowledge article draft"
+)
 def create_knowledge_draft(request, payload: DraftIn):
     """Submit a knowledge article for moderation.
 
@@ -446,7 +456,7 @@ def create_knowledge_draft(request, payload: DraftIn):
     article is published immediately, matching the on-site authoring flow.
     """
     draft = _create_draft(request, payload, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    return Status(201, draft)
+    return Status(HTTPStatus.CREATED, draft)
 
 
 @knowledge_router.patch("/drafts/{draft_id}", response=DraftOut, auth=auth, summary="Update knowledge article draft")
@@ -455,11 +465,11 @@ def update_knowledge_draft(request, draft_id: int, payload: DraftPatchIn):
 
 
 @knowledge_router.delete(
-    "/drafts/{draft_id}", response={204: None}, auth=auth, summary="Delete knowledge article draft"
+    "/drafts/{draft_id}", response={HTTPStatus.NO_CONTENT: None}, auth=auth, summary="Delete knowledge article draft"
 )
 def delete_knowledge_draft(request, draft_id: int):
     _delete_draft(request, draft_id, DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE)
-    return Status(204, None)
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
 @knowledge_router.get(
@@ -469,12 +479,12 @@ def get_knowledge_article(request, article_id: int):
     user = request.auth
     article = _get_knowledge_article_or_404(article_id)
     if article.is_hidden and not roles.at_least(user, roles.MANAGE_KNOWLEDGE):
-        raise HttpError(404, "Not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     return article
 
 
 @knowledge_router.post(
-    "/", response={201: KnowledgeArticleOut}, auth=auth, summary="Create a knowledge article (admin)"
+    "/", response={HTTPStatus.CREATED: KnowledgeArticleOut}, auth=auth, summary="Create a knowledge article (admin)"
 )
 def create_knowledge_article(request, payload: KnowledgeArticleIn):
     """Create a KnowledgeArticle (rendered under /knowledge/) for one locale.
@@ -495,7 +505,7 @@ def create_knowledge_article(request, payload: KnowledgeArticleIn):
         published_by=user,
     )
     article.save()
-    return Status(201, article)
+    return Status(HTTPStatus.CREATED, article)
 
 
 @knowledge_router.patch(

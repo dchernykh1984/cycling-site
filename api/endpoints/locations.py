@@ -1,4 +1,5 @@
 from decimal import Decimal
+from http import HTTPStatus
 from typing import Annotated
 
 from django.db import transaction
@@ -97,14 +98,14 @@ LocationNodeOut.model_rebuild()
 
 def _require_place_manager(user) -> None:
     if not roles.at_least(user, roles.APPROVE_PLACES):
-        raise HttpError(403, "ADMIN role or higher is required")
+        raise HttpError(HTTPStatus.FORBIDDEN, "ADMIN role or higher is required")
 
 
 def _get_or_404(pk: int) -> Location:
     try:
         return Location.objects.get(pk=pk, is_deleted=False)
     except Location.DoesNotExist:
-        raise HttpError(404, "Location not found") from None
+        raise HttpError(HTTPStatus.NOT_FOUND, "Location not found") from None
 
 
 def _apply_name(location: Location, name: LocalizedStr) -> None:
@@ -163,10 +164,10 @@ def list_locations(request, include_hidden: bool = False):
 def get_location(request, location_id: int):
     location = _get_or_404(location_id)
     if location.is_hidden and not roles.at_least(request.auth, roles.APPROVE_PLACES):
-        raise HttpError(404, "Location not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Location not found")
     # A pending proposed location is visible only to its proposer (or an admin).
     if not location_visible_to(location, request.auth):
-        raise HttpError(404, "Location not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Location not found")
     return location
 
 
@@ -184,17 +185,17 @@ def city_fallback_venue(request, city_id: int):
     venue is idempotent -- one per city -- and named in all three locales by the site.
     """
     if not roles.at_least(request.auth, roles.ADD_PLACES):
-        raise HttpError(403, "ORGANIZER role or higher is required")
+        raise HttpError(HTTPStatus.FORBIDDEN, "ORGANIZER role or higher is required")
     try:
         city = Location.objects.get(pk=city_id, is_deleted=False, depth=Level.CITY)
     except Location.DoesNotExist:
-        raise HttpError(404, "City (depth-3 location) not found") from None
+        raise HttpError(HTTPStatus.NOT_FOUND, "City (depth-3 location) not found") from None
     if not location_visible_to(city, request.auth):
-        raise HttpError(404, "City (depth-3 location) not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "City (depth-3 location) not found")
     try:
         venue = Location.get_or_create_other_location(city)
     except LocationConflictError as exc:
-        raise HttpError(409, str(exc)) from None
+        raise HttpError(HTTPStatus.CONFLICT, str(exc)) from None
     # The catch-all is created without a proposal, which would make it public inside a city that is
     # not. That is the agent's normal path -- propose a city, then ask for its catch-all venue -- so
     # the venue inherits the city's pending state and rises with it when the city is approved.
@@ -205,7 +206,7 @@ def city_fallback_venue(request, city_id: int):
 
 @router.post(
     "/",
-    response={201: LocationOut},
+    response={HTTPStatus.CREATED: LocationOut},
     auth=auth,
     summary="Create location (venues: organizer+ approved, participant proposes; regions and cities "
     "are always proposed by organizer+; countries are admin-only)",
@@ -213,7 +214,7 @@ def city_fallback_venue(request, city_id: int):
 def create_location(request, payload: LocationIn):
     user = request.auth
     if not roles.at_least(user, roles.PROPOSE_PLACES):
-        raise HttpError(403, "PARTICIPANT role or higher is required")
+        raise HttpError(HTTPStatus.FORBIDDEN, "PARTICIPANT role or higher is required")
     may_approve = roles.at_least(user, roles.APPROVE_PLACES)
     may_add = roles.at_least(user, roles.ADD_PLACES)
 
@@ -233,12 +234,12 @@ def create_location(request, payload: LocationIn):
         try:
             parent = Location.objects.get(pk=payload.parent_id, is_deleted=False)
         except Location.DoesNotExist:
-            raise HttpError(404, "Parent location not found") from None
+            raise HttpError(HTTPStatus.NOT_FOUND, "Parent location not found") from None
         # Another user's pending proposal is invisible here, so it must not be buildable under
         # either -- otherwise a public node appears inside a node nobody else can see, and the
         # endpoint doubles as an oracle for whether that proposal exists. 404, not 403, for both.
         if not location_visible_to(parent, user):
-            raise HttpError(404, "Parent location not found")
+            raise HttpError(HTTPStatus.NOT_FOUND, "Parent location not found")
 
     # Countries stay admin-only: they are a small closed set, and a duplicate root (say "Kirgiziya"
     # beside "Kyrgyzstan") drags a whole subtree with it. Regions and cities may be *proposed* by an
@@ -247,9 +248,9 @@ def create_location(request, payload: LocationIn):
     new_depth = Level.COUNTRY if parent is None else parent.depth + 1
     if not may_approve:
         if new_depth == Level.COUNTRY:
-            raise HttpError(403, "Creating a country is admin-only")
+            raise HttpError(HTTPStatus.FORBIDDEN, "Creating a country is admin-only")
         if new_depth in (Level.REGION, Level.CITY) and not may_add:
-            raise HttpError(403, "ORGANIZER role or higher is required to propose a region or city")
+            raise HttpError(HTTPStatus.FORBIDDEN, "ORGANIZER role or higher is required to propose a region or city")
     # Even an admin does not get a public node inside a branch still under review -- that is
     # what makes the branch impossible to reject afterwards.
     approved = chain_is_approved(parent) and (may_approve or (may_add and new_depth == Level.VENUE))
@@ -263,9 +264,9 @@ def create_location(request, payload: LocationIn):
             if not approved:
                 LocationProposal.objects.create(location=location, submitted_by=user)
     except LocationConflictError:
-        raise HttpError(409, "Parent location is no longer available") from None
+        raise HttpError(HTTPStatus.CONFLICT, "Parent location is no longer available") from None
 
-    return Status(201, location)
+    return Status(HTTPStatus.CREATED, location)
 
 
 @router.patch("/{location_id}", response=LocationOut, auth=auth, summary="Update location (ADMIN+)")
@@ -276,7 +277,7 @@ def update_location(request, location_id: int, payload: LocationPatchIn):
 
     data = payload.dict(exclude_unset=True)
     if location.is_system_fallback and data.get("is_hidden") is False:
-        raise HttpError(409, "System fallback locations must remain hidden")
+        raise HttpError(HTTPStatus.CONFLICT, "System fallback locations must remain hidden")
     update_fields: list[str] = []
 
     for field, value in data.items():
@@ -289,14 +290,16 @@ def update_location(request, location_id: int, payload: LocationPatchIn):
             update_fields.append(field)
 
     if not point_is_whole(location.lat, location.lng):
-        raise HttpError(422, "lat and lng go together: give both or neither")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "lat and lng go together: give both or neither")
     if update_fields:
         location.save(update_fields=update_fields)
 
     return location
 
 
-@router.delete("/{location_id}", response={204: None}, auth=auth, summary="Delete location (ADMIN+, soft)")
+@router.delete(
+    "/{location_id}", response={HTTPStatus.NO_CONTENT: None}, auth=auth, summary="Delete location (ADMIN+, soft)"
+)
 def delete_location(request, location_id: int):
     user = request.auth
     _require_place_manager(user)
@@ -306,5 +309,5 @@ def delete_location(request, location_id: int):
     try:
         soft_delete_location(location)
     except LocationConflictError:
-        raise HttpError(409, "Location still has nested locations or competitions") from None
-    return Status(204, None)
+        raise HttpError(HTTPStatus.CONFLICT, "Location still has nested locations or competitions") from None
+    return Status(HTTPStatus.NO_CONTENT, None)

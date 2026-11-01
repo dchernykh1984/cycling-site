@@ -1,5 +1,6 @@
 import hashlib
 import logging
+from http import HTTPStatus
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -46,15 +47,15 @@ def _read_html(html_file: UploadedFile) -> tuple[bytes, str]:
     content_type = getattr(html_file, "content_type", "") or ""
     media_type = content_type.split(";")[0].strip()
     if media_type != "text/html":
-        raise HttpError(400, "File must be text/html")
+        raise HttpError(HTTPStatus.BAD_REQUEST, "File must be text/html")
 
     raw_name = html_file.name or ""
     if not raw_name.lower().endswith((".html", ".htm")):
-        raise HttpError(400, "File must have .html or .htm extension")
+        raise HttpError(HTTPStatus.BAD_REQUEST, "File must have .html or .htm extension")
 
     max_mb = getattr(settings, "MAX_PROTOCOL_SIZE_MB", 5)
     if html_file.size is None or html_file.size > max_mb * 1024 * 1024:
-        raise HttpError(400, f"File too large (max {max_mb} MB)")
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"File too large (max {max_mb} MB)")
 
     content = html_file.read()
 
@@ -62,7 +63,7 @@ def _read_html(html_file: UploadedFile) -> tuple[bytes, str]:
     if _c.startswith(b"\xef\xbb\xbf"):
         _c = _c[3:]
     if not _c.lstrip()[:15].lower().startswith(b"<"):
-        raise HttpError(400, "File does not appear to be valid HTML")
+        raise HttpError(HTTPStatus.BAD_REQUEST, "File does not appear to be valid HTML")
 
     filename = get_valid_filename(html_file.name or "protocol.html")
     if not filename.lower().endswith(".html"):
@@ -165,9 +166,9 @@ def upload_protocol(
     competition = competition_by_token(competition_token)
 
     if protocol_type not in Protocol.ProtocolType.values:
-        raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
+        raise HttpError(HTTPStatus.BAD_REQUEST, "protocol_type must be 'absolute' or 'group'")
     if html_file is None and document is None:
-        raise HttpError(400, "Send html_file, document or both")
+        raise HttpError(HTTPStatus.BAD_REQUEST, "Send html_file, document or both")
 
     html = _read_html(html_file) if html_file is not None else None
     parsed = raw_document = None
@@ -177,7 +178,7 @@ def upload_protocol(
             parsed, raw_document = _read_document(document)
         except DocumentError as exc:
             if html is None:
-                raise HttpError(400, str(exc)) from None
+                raise HttpError(HTTPStatus.BAD_REQUEST, str(exc)) from None
             document_error = str(exc)
 
     file_hash = _content_hash(html[0] if html else None, raw_document)
@@ -214,7 +215,7 @@ def delete_protocol(
     """
     competition = competition_by_token(competition_token)
     if protocol_type not in Protocol.ProtocolType.values:
-        raise HttpError(400, "protocol_type must be 'absolute' or 'group'")
+        raise HttpError(HTTPStatus.BAD_REQUEST, "protocol_type must be 'absolute' or 'group'")
 
     with transaction.atomic():
         Competition.objects.select_for_update().get(pk=competition.pk)
