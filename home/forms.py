@@ -5,9 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from cycling_site.forms import LocalizedMaxLengthMixin
 from cycling_site.richtext import validate_rich_text_length
-from home.models import HomeCard, SiteContent, blank_rich_text
-
-LANGUAGES = ("ru", "kk", "en")
+from home.models import LANGUAGES, HomeCard, SiteContent, blank_rich_text
 
 
 class SiteContentForm(LocalizedMaxLengthMixin, forms.ModelForm):

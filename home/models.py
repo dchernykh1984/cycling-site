@@ -18,7 +18,7 @@ from cycling_site.sanitize import sanitize_rich_text_columns
 _SITE_CONTENT_CACHE_KEY = "site_content_obj"
 # How long the site's texts and the About link are kept in the cache before being read again.
 CACHE_SECONDS = 300
-_LANGUAGES = ("ru", "kk", "en")
+LANGUAGES = ("ru", "kk", "en")
 
 
 class SiteContent(models.Model):  # type: ignore[django-manager-missing]
@@ -80,7 +80,7 @@ class HomeCard(models.Model):  # type: ignore[django-manager-missing]
 
     def save(self, *args, **kwargs) -> None:
         values = self.__dict__
-        for lang in _LANGUAGES:
+        for lang in LANGUAGES:
             # An empty editor still sends "<p><br></p>", which would keep the reader from the
             # language the site falls back to; stored as nothing instead.
             if blank_rich_text(values.get(f"body_{lang}") or ""):
@@ -88,7 +88,7 @@ class HomeCard(models.Model):  # type: ignore[django-manager-missing]
         # The plain column holds the first language written, whoever wrote the card, as the API's
         # writes keep it for news and events; the API's localized fields fall back to it.
         for field in ("title", "body"):
-            written = [values.get(f"{field}_{lang}") for lang in _LANGUAGES]
+            written = [values.get(f"{field}_{lang}") for lang in LANGUAGES]
             values[field] = next((value for value in written if value), "")
         # Rendered with |safe on the home page, like the text it replaced: sanitized on every write.
         sanitize_rich_text_columns(self, self._BODY_FIELDS, update_fields=kwargs.get("update_fields"))

@@ -265,16 +265,12 @@ LANGUAGES = [
     ("en", "English"),
 ]
 
-MODELTRANSLATION_LANGUAGES = ("ru", "kk", "en")
-MODELTRANSLATION_DEFAULT_LANGUAGE = "ru"
+MODELTRANSLATION_LANGUAGES = tuple(code for code, _name in LANGUAGES)
+MODELTRANSLATION_DEFAULT_LANGUAGE = LANGUAGE_CODE
 MODELTRANSLATION_FALLBACK_LANGUAGES = {"default": ("ru", "en", "kk")}
 
 WAGTAIL_I18N_ENABLED = True
-WAGTAIL_CONTENT_LANGUAGES = [
-    ("ru", "Russian"),
-    ("kk", "Kazakh"),
-    ("en", "English"),
-]
+WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
 
 # The zone for a reader whose browser has not reported one yet (the first page, a crawler); everyone
 # else gets their own, and an event's deadline is read in the zone of its place (issue #344). The DB

@@ -27,6 +27,9 @@ from cycling_site.slugs import unique_slug
 # (e.g. the add/submit form) before Wagtail's catch-all route.
 _RESERVED_SLUGS = frozenset({"add", "submit", "submissions", "articles"})
 
+# The languages an article or a submission is written in; one article belongs to one of them.
+_LOCALE_CHOICES = [("ru", _("Russian")), ("kk", _("Kazakh")), ("en", _("English"))]
+
 # Single source of truth for the slug column width, reused by save() to bound generated slugs.
 _SLUG_MAX_LENGTH = 255
 
@@ -43,11 +46,11 @@ class KnowledgeArticle(index.Indexed, models.Model):
     separate row. Sanitized centrally in save(); searchable via index.Indexed.
     """
 
-    LOCALE_CHOICES: ClassVar[list] = [("ru", _("Russian")), ("kk", _("Kazakh")), ("en", _("English"))]
+    LOCALE_CHOICES: ClassVar[list] = _LOCALE_CHOICES
 
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=_SLUG_MAX_LENGTH, unique=True, blank=True)
-    locale = models.CharField(max_length=10, choices=LOCALE_CHOICES, default="ru", db_index=True)
+    locale = models.CharField(max_length=10, choices=LOCALE_CHOICES, default=settings.LANGUAGE_CODE, db_index=True)
     body = models.TextField(blank=True)
     category = models.CharField(max_length=100, blank=True)
     tags = TaggableManager(blank=True)
@@ -234,7 +237,7 @@ class DraftSubmission(models.Model):
         on_delete=models.CASCADE,
         related_name="draft_submissions",
     )
-    LOCALE_CHOICES: ClassVar[list] = [("ru", _("Russian")), ("kk", _("Kazakh")), ("en", _("English"))]
+    LOCALE_CHOICES: ClassVar[list] = _LOCALE_CHOICES
 
     submission_type = models.CharField(max_length=30, choices=SubmissionType.choices)
     locale = models.CharField(max_length=10, choices=LOCALE_CHOICES, verbose_name=_("Locale"))

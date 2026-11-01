@@ -88,7 +88,7 @@ def assistant_chat(context, kind: str = Conversation.Kind.EVENT):
             "subjectId": subject.pk if subject else None,
             "start": reverse("api_v1:start_conversation"),
             "trackStart": reverse("api_v1:track_start"),
-            "language": (get_language() or "ru").split("-")[0],
+            "language": (get_language() or settings.LANGUAGE_CODE).split("-")[0],
             "words": {
                 "first": first,
                 "thinking": _("The assistant is writing..."),
