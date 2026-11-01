@@ -22,6 +22,7 @@ from event_photos.archive import Archive, ArchiveBusyError, ArchiveTooBigError
 from event_photos.dropbox import DropboxError, open_url
 from event_photos.forms import ExternalAlbumForm
 from event_photos.models import (
+    BIB_MAX_LENGTH,
     THUMBNAIL_LIMIT_BYTES,
     ExternalAlbum,
     IndexedPhoto,
@@ -107,7 +108,7 @@ def bib_archive_name(competition, bib: str) -> str:
 
 
 def _bib_query(request) -> str:
-    return request.GET.get("bib", "").strip()[:32]
+    return request.GET.get("bib", "").strip()[:BIB_MAX_LENGTH]
 
 
 def event_photos(request, pk):
@@ -263,7 +264,7 @@ def decide(request, pk, reg_pk, photo_pk):
     if not can_mark(request.user, registration):
         raise Http404
     state = request.POST.get("state")
-    if state not in (PhotoDecision.State.ME, PhotoDecision.State.NOT_ME):
+    if state not in PhotoDecision.State.values:
         raise Http404
     photo = actions.decision_photo(registration, photo_pk, state)
     if photo is None:

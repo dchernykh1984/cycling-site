@@ -8,7 +8,12 @@ from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
 
-from accounts.models import User, validate_birth_date
+from accounts.models import FIRST_BIRTH_YEAR, User, validate_birth_date
+
+# How a relay team's names, birth years and cities are joined in one column; the timing tools read it so.
+RELAY_SEPARATOR = "<BR>"
+# The birth date stored when the form gave none: the earliest year the site takes.
+UNKNOWN_BIRTH_DATE = datetime.date(FIRST_BIRTH_YEAR, 1, 1)
 
 
 class Team(models.Model):
@@ -135,7 +140,7 @@ class CompetitionRegistration(models.Model):
 
     def __str__(self) -> str:
         if self.participant_names:
-            return f"{self.participant_names.replace('<BR>', ', ')} - {self.competition}"
+            return f"{self.participant_names.replace(RELAY_SEPARATOR, ', ')} - {self.competition}"
         return f"{self.last_name} {self.first_name} - {self.competition}"
 
     @property
@@ -146,8 +151,8 @@ class CompetitionRegistration(models.Model):
     def display_name(self) -> str:
         """Who the entry is for, as plain text: a relay team's members, or one person's name."""
         if self.participant_names:
-            # Stored escaped and joined with <BR>, for the participant list's |safe.
-            return html.unescape(self.participant_names.replace("<BR>", ", "))
+            # Stored escaped and joined with RELAY_SEPARATOR, for the participant list's |safe.
+            return html.unescape(self.participant_names.replace(RELAY_SEPARATOR, ", "))
         return f"{self.last_name} {self.first_name}"
 
     def clean(self) -> None:

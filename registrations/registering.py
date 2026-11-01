@@ -16,7 +16,14 @@ from accounts import managing
 from calendar_app.models import Competition
 
 from .forms import RegistrationForm
-from .models import CompetitionRegistration, RegistrationCategory, Team, check_duplicate
+from .models import (
+    RELAY_SEPARATOR,
+    UNKNOWN_BIRTH_DATE,
+    CompetitionRegistration,
+    RegistrationCategory,
+    Team,
+    check_duplicate,
+)
 
 # Taken from the person's own profile, never from the form, unless the event lets anyone be entered
 PROFILE_FIELDS = ("first_name", "last_name", "birth_date", "birth_year", "gender")
@@ -113,10 +120,10 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
             try:
                 birth_date = datetime.date(int(birth_years[0]), 1, 1)
             except (ValueError, TypeError):
-                birth_date = datetime.date(1900, 1, 1)
+                birth_date = UNKNOWN_BIRTH_DATE
         else:
             birth_date = cleaned.get("birth_date") or (
-                datetime.date(cleaned["birth_year"], 1, 1) if cleaned.get("birth_year") else datetime.date(1900, 1, 1)
+                datetime.date(cleaned["birth_year"], 1, 1) if cleaned.get("birth_year") else UNKNOWN_BIRTH_DATE
             )
 
     with transaction.atomic():
@@ -156,9 +163,9 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
             registered_by=registered_by,
             first_name=first_name,
             last_name=last_name,
-            participant_names="<BR>".join(names),
-            participant_birth_years="<BR>".join(birth_years),
-            participant_cities="<BR>".join(cities),
+            participant_names=RELAY_SEPARATOR.join(names),
+            participant_birth_years=RELAY_SEPARATOR.join(birth_years),
+            participant_cities=RELAY_SEPARATOR.join(cities),
             birth_date=birth_date,
             gender=gender,
             category=category,

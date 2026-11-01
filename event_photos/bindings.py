@@ -13,9 +13,10 @@ from dataclasses import dataclass
 from django.conf import settings
 from django.db import transaction
 
+from event_photos.models import BIB_MAX_LENGTH
+
 _TOKEN = re.compile(r"^r([0-9]{1,18})\Z")
 _NOT_PAID = "NOT_PAID"
-_MAX_BIB = 32
 # The start list endpoint takes at most this many lines; stage bibs may not multiply past it.
 _MAX_ASSIGNMENTS = 20000
 
@@ -38,7 +39,7 @@ def parse_line(line: str, *, max_stages: int) -> tuple[Line, str]:
             if m:  # an unknown kind of token is skipped, so a later kind cannot break this reader
                 refs.append(int(m.group(1)))
     number = fields[0].strip()
-    if not number or number == _NOT_PAID or len(number) > _MAX_BIB:
+    if not number or number == _NOT_PAID or len(number) > BIB_MAX_LENGTH:
         return Line((), tuple(dict.fromkeys(refs)), refs_present), ""
     bibs = [number]
     warning = ""
@@ -51,7 +52,7 @@ def parse_line(line: str, *, max_stages: int) -> tuple[Line, str]:
             warning = f"bib {number}: stages need a numeric bib"
         elif n > max_stages:
             warning = f"bib {number}: {n} stages is over the limit of {max_stages}"
-        elif len(str(int(number) + n - 1)) > _MAX_BIB:
+        elif len(str(int(number) + n - 1)) > BIB_MAX_LENGTH:
             warning = f"bib {number}: stage bibs too long"
         else:
             bibs = [str(int(number) + i) if i else number for i in range(n)]
@@ -112,7 +113,7 @@ def compute(uploads, valid_ids: set[int], previous) -> Result:
     ``uploads``: (device_id, client_revision, items). ``previous``: the current
     (registration, bib) pairs. Raises AssignmentOverflowError rather than return a prefix.
     """
-    from event_photos.models import IssuedBib  # this module reads no model at load
+    from event_photos.models import IssuedBib
 
     warnings: list[str] = []
     pairs, unreferenced = _collect(uploads, valid_ids, warnings)

@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 
 from accounts.models import FIRST_BIRTH_YEAR, User, validate_birth_date, validate_birth_year
 
-from .models import CompetitionRegistration, RegistrationCategory
+from .models import RELAY_SEPARATOR, CompetitionRegistration, RegistrationCategory
 
 # The organizer's add and edit pages print the fields' labels and choices as they are, so each is
 # translated here; the gender choices are the member's own.
@@ -130,8 +130,8 @@ class EditRegistrationForm(forms.ModelForm):
 
     def _sanitize_relay_field(self, field_name):
         value = self.cleaned_data.get(field_name, "") or ""
-        parts = re.split(r"<BR>", value, flags=re.IGNORECASE)
-        return "<BR>".join(escape(p.strip()) for p in parts if p.strip())
+        parts = re.split(re.escape(RELAY_SEPARATOR), value, flags=re.IGNORECASE)
+        return RELAY_SEPARATOR.join(escape(p.strip()) for p in parts if p.strip())
 
     def clean_participant_names(self):
         return self._sanitize_relay_field("participant_names")

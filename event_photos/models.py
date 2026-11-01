@@ -16,6 +16,10 @@ from django.utils.translation import gettext_lazy as _
 THUMBNAIL_LIMIT_BYTES = 20 * 1024 * 1024
 
 
+# How long a bib number may be, wherever one is stored, read or asked for.
+BIB_MAX_LENGTH = 32
+
+
 class ExternalAlbum(models.Model):
     competition = models.ForeignKey(
         "calendar_app.Competition", on_delete=models.CASCADE, related_name="external_albums", verbose_name=_("Event")
@@ -95,7 +99,7 @@ class BibObservation(models.Model):
         REJECTED = "rejected"
 
     photo = models.ForeignKey(IndexedPhoto, on_delete=models.CASCADE, related_name="bibs")
-    value = models.CharField(max_length=32, db_index=True)
+    value = models.CharField(max_length=BIB_MAX_LENGTH, db_index=True)
     state = models.CharField(max_length=10, choices=State.choices)
     method = models.CharField(max_length=12)
     confidence = models.FloatField(null=True, blank=True)
@@ -116,7 +120,7 @@ class IssuedBib(models.Model):
     registration = models.ForeignKey(
         "registrations.CompetitionRegistration", on_delete=models.CASCADE, related_name="issued_bibs"
     )
-    bib = models.CharField(max_length=32)
+    bib = models.CharField(max_length=BIB_MAX_LENGTH)
     state = models.CharField(max_length=10, choices=State.choices, default=State.ACTIVE)
     device_id = models.CharField(max_length=64, blank=True)
     client_revision = models.PositiveBigIntegerField(default=0)
@@ -142,7 +146,7 @@ class IssuedBibEvent(models.Model):
 
     competition = models.ForeignKey("calendar_app.Competition", on_delete=models.CASCADE, related_name="+")
     registration_id = models.BigIntegerField()
-    bib = models.CharField(max_length=32)
+    bib = models.CharField(max_length=BIB_MAX_LENGTH)
     change = models.CharField(max_length=10)  # a Change
     device_id = models.CharField(max_length=64, blank=True)
     client_revision = models.PositiveBigIntegerField(default=0)

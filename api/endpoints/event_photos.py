@@ -17,7 +17,7 @@ from event_photos import actions
 from event_photos.archive import ArchiveBusyError, ArchiveTooBigError
 from event_photos.dropbox import open_url
 from event_photos.forms import ExternalAlbumForm
-from event_photos.models import ExternalAlbum, IndexedPhoto, PhotoDecision, StartListDiagnostics
+from event_photos.models import BIB_MAX_LENGTH, ExternalAlbum, IndexedPhoto, PhotoDecision, StartListDiagnostics
 from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration, looked_after
 from event_photos.views import (
     archive_response,
@@ -199,7 +199,7 @@ def list_albums(request, competition_id: int):
 def search_by_bib(request, competition_id: int, bib: str, page: int = 1):
     competition = _competition(request.auth, competition_id)
     albums = visible_albums(request.auth, competition)
-    qs = actions.bib_photos(competition, bib[:32]).filter(album__in=albums).select_related("album")
+    qs = actions.bib_photos(competition, bib[:BIB_MAX_LENGTH]).filter(album__in=albums).select_related("album")
     return _photos(request, qs, page)
 
 
@@ -270,7 +270,7 @@ def registration_archive(request, registration_id: int):
 @router.get("/competitions/{competition_id}/photos/archive", auth=auth, summary="A bib's photos as one ZIP")
 def bib_archive(request, competition_id: int, bib: str):
     competition = _competition(request.auth, competition_id)
-    bib = bib.strip()[:32]
+    bib = bib.strip()[:BIB_MAX_LENGTH]
     if not bib:
         raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     photos = actions.bib_photos(competition, bib).filter(album__in=visible_albums(request.auth, competition))
