@@ -4704,3 +4704,13 @@ msgstr "Срок регистрации не может быть позже да
 #: calendar_app/views.py
 msgid "Registration deadline cannot be later than the competition date start."
 msgstr "Срок регистрации не может быть позже даты начала мероприятия."
+
+#, python-format
+#: calendar_app/forms.py
+msgid "Category \"%(name)s\": \"%(value)s\" is not a date."
+msgstr "Категория «%(name)s»: «%(value)s» — это не дата."
+
+#, python-format
+#: calendar_app/forms.py
+msgid "Category \"%(name)s\": \"%(value)s\" is not a year."
+msgstr "Категория «%(name)s»: «%(value)s» — это не год."

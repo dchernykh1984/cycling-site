@@ -55,6 +55,7 @@ from .forms import (
     RejectCompetitionForm,
     ReportCompetitionForm,
     SubmitCompetitionForm,
+    birth_bound,
 )
 from .guest_region import OFFERED_COOKIE, guest_region
 from .listing_seo import describe_filters, index_policy, landing_filters
@@ -1104,7 +1105,7 @@ def _apply_registration_settings(comp, reg_form, is_organizer_plus):
         comp.registration_mode_locked = True
 
 
-def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
+def _save_categories(comp, reg_form, is_organizer_plus):
     if not is_organizer_plus:  # categories are part of registration config -> organizer-only (#200)
         return
     from registrations.models import RegistrationCategory
@@ -1113,25 +1114,10 @@ def _save_categories(comp, reg_form, is_organizer_plus):  # noqa: C901
     for cat_data in cats:
         cat_id = cat_data.get("id")
         is_del = cat_data.get("is_deleted", False)
-        birth_date_mode = comp.birth_date_mode
-        birth_from = None
-        birth_to = None
-        if cat_data.get("birth_from"):
-            try:
-                if birth_date_mode == Competition.BirthDateMode.YEAR:
-                    birth_from = datetime.date(int(cat_data["birth_from"]), 1, 1)
-                else:
-                    birth_from = datetime.date.fromisoformat(cat_data["birth_from"])
-            except (ValueError, TypeError):
-                pass
-        if cat_data.get("birth_to"):
-            try:
-                if birth_date_mode == Competition.BirthDateMode.YEAR:
-                    birth_to = datetime.date(int(cat_data["birth_to"]), 12, 31)
-                else:
-                    birth_to = datetime.date.fromisoformat(cat_data["birth_to"])
-            except (ValueError, TypeError):
-                pass
+        # The form refused any bound its mode cannot read (RegistrationSettingsForm.clean).
+        by_date = comp.birth_date_mode == Competition.BirthDateMode.DATE
+        birth_from = birth_bound(cat_data["birth_from"], by_date, last=False) if cat_data.get("birth_from") else None
+        birth_to = birth_bound(cat_data["birth_to"], by_date, last=True) if cat_data.get("birth_to") else None
 
         if cat_id and str(cat_id).isdecimal():
             try:

@@ -1411,6 +1411,44 @@ class SubmitCompetitionRegistrationTests(TestCase):
 
         return json.dumps([{"name": name, "male": True, "female": True}])
 
+    def test_a_birth_bound_the_mode_cannot_read_is_refused_by_name(self):
+        from calendar_app.forms import RegistrationSettingsForm
+        from registrations.models import RegistrationCategory
+
+        cases = (
+            ("year", "abc", 'Category "%(name)s": "%(value)s" is not a year.'),
+            # A year typed, then the mode switched to dates: the page cannot show it, and it was lost.
+            ("date", "2005", 'Category "%(name)s": "%(value)s" is not a date.'),
+        )
+        for mode, value, msgid in cases:
+            with self.subTest(mode=mode):
+                rows = json.dumps([{"name": "Juniors", "male": True, "female": True, "birth_from": value}])
+                form = RegistrationSettingsForm(
+                    data={**self._reg_payload(), "birth_date_mode": mode, "categories_json": rows}
+                )
+                self.assertFalse(form.is_valid())
+                with translation_override("ru"):
+                    expected = gettext(msgid) % {"name": "Juniors", "value": value}
+                    self.assertEqual(form.errors["categories_json"], [expected])
+        self.client.login(username="o_reg@example.com", password="password123")
+        rows = json.dumps([{"name": "Juniors", "male": True, "female": True, "birth_from": "2005"}])
+        response = self.client.post(
+            self.url, {**self._reg_payload(), "birth_date_mode": "date", "categories_json": rows}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(RegistrationCategory.objects.filter(name="Juniors").exists())
+
+    def test_readable_birth_bounds_are_kept(self):
+        from registrations.models import RegistrationCategory
+
+        self.client.login(username="o_reg@example.com", password="password123")
+        rows = json.dumps([{"name": "Juniors", "male": True, "female": True, "birth_from": "2005", "birth_to": "2008"}])
+        self.client.post(self.url, {**self._reg_payload(), "categories_json": rows})
+        category = RegistrationCategory.objects.get(name="Juniors")
+        self.assertEqual(
+            (category.birth_from, category.birth_to), (datetime.date(2005, 1, 1), datetime.date(2008, 12, 31))
+        )
+
     def test_an_over_long_category_name_is_a_form_error_not_a_500(self):
         """The names arrive as a hidden JSON blob, so nothing measured them before the INSERT did."""
         from calendar_app.forms import RegistrationSettingsForm
