@@ -81,6 +81,12 @@ class ICSFeedTests(TestCase):
         self.assertTrue(response["Content-Type"].startswith("text/calendar"))
         return response.content.decode()
 
+    def test_a_location_that_is_no_id_filters_nothing_as_on_the_list(self):
+        def summaries(body):
+            return sorted(line for line in body.split("\r\n") if line.startswith("SUMMARY"))
+
+        self.assertEqual(summaries(self._body(location="abc")), summaries(self._body()))
+
     def test_it_is_a_calendar_a_client_will_accept(self):
         body = self._body()
         self.assertTrue(body.startswith("BEGIN:VCALENDAR\r\n"))

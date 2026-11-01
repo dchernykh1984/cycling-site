@@ -193,6 +193,14 @@ class CalendarEventsAPIViewTests(TestCase):
             date_start=datetime.date(2026, 7, 15),
         )
 
+    def test_a_location_that_is_no_id_filters_nothing_as_on_the_list(self):
+        url = reverse("calendar_events_api")
+        params = {"start": "2026-07-01", "end": "2026-09-01"}
+        everything = sorted(e["title"] for e in json.loads(self.client.get(url, params).content))
+        junk = sorted(e["title"] for e in json.loads(self.client.get(url, {**params, "location": "abc"}).content))
+        self.assertEqual(junk, everything)
+        self.assertIn("Race A", junk)
+
     def test_returns_only_approved(self):
         response = self.client.get(reverse("calendar_events_api"))
         data = json.loads(response.content)
