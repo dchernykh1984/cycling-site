@@ -20,6 +20,7 @@ import math
 import re
 
 from agent import dedup, locations
+from agent.models import Candidate
 
 # Two venues further apart than this are different places whatever they are called. "Industrialka"
 # is a district some 5 km across and clubs name the exact corner they start from, so the site
@@ -172,9 +173,9 @@ def _point_of(node: dict) -> Point | None:
         return None
 
 
-def candidate_point(candidate) -> Point | None:
+def candidate_point(candidate: Candidate) -> Point | None:
     """A candidate's own coordinates, or None -- most events read off a chat message have none."""
-    lat, lng = getattr(candidate, "lat", None), getattr(candidate, "lng", None)
+    lat, lng = candidate.lat, candidate.lng
     if lat is None or lng is None:
         return None
     try:

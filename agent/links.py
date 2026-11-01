@@ -121,9 +121,7 @@ def announces_one_event(url: str) -> bool:
         return not _TELEGRAM_FEED.match(path)
     # A bare host announces nothing in particular -- it is whatever the site puts on its front page
     # today, and by the time anyone follows the link the announcement has scrolled off it.
-    if path.strip("/") == "":
-        return False
-    return True
+    return bool(path.strip("/"))
 
 
 #: How the fetched text introduces the page's own links. One definition, shared by the module that

@@ -9,6 +9,7 @@ matters as much as the URL: a calendar's links are indistinguishable without it.
 
 from __future__ import annotations
 
+import codecs
 import http.client
 import ipaddress
 import re
@@ -54,7 +55,7 @@ _META_CHARSET = re.compile(rb'charset=["\']?\s*([A-Za-z0-9_-]+)', re.IGNORECASE)
 
 def _sniff_charset(raw: bytes) -> str | None:
     """The charset from the page's BOM or <meta>, used only when the HTTP header omits one."""
-    if raw.startswith(b"\xef\xbb\xbf"):
+    if raw.startswith(codecs.BOM_UTF8):
         return "utf-8"
     match = _META_CHARSET.search(raw[:2048])
     return match.group(1).decode("ascii", "ignore") if match else None
@@ -96,9 +97,8 @@ def _get_with_fallback(url: str, timeout: int = _TIMEOUT_SECONDS) -> str:
     the runner). An HTTP error (e.g. 404) means the server answered, so it is raised without retrying.
     """
     urls = _fetch_urls(url)
-    passes = _FETCH_RETRIES
     last_exc: Exception | None = None
-    for attempt in range(passes):
+    for attempt in range(_FETCH_RETRIES):
         for candidate in urls:
             try:
                 return _get(candidate, timeout)
@@ -108,7 +108,7 @@ def _get_with_fallback(url: str, timeout: int = _TIMEOUT_SECONDS) -> str:
                 last_exc = exc  # transient gateway / unavailable -- retry like a timeout
             except (URLError, TimeoutError) as exc:
                 last_exc = exc  # DNS / connection failure -- try the next alias host
-        if attempt + 1 < passes:
+        if attempt + 1 < _FETCH_RETRIES:
             time.sleep(_RETRY_BACKOFF)
     if last_exc is not None:
         raise last_exc
@@ -319,7 +319,8 @@ def telegram_posts(soup) -> list[str]:
         if body is None:
             continue
         text = body.get_text(" ", strip=True)
-        posts.append(f"--- post {_post_url(message)}\n{text}" if _post_url(message) else text)
+        url = _post_url(message)
+        posts.append(f"--- post {url}\n{text}" if url else text)
     return posts
 
 
