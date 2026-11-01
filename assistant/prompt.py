@@ -88,7 +88,7 @@ The site's instructions follow, in Russian.
 """
 
 
-def skills(kind: str = "event") -> str:
+def skills(kind: str = Conversation.Kind.EVENT) -> str:
     """Every skill file of a kind: the shared ones in ``skills/<kind>/`` first, then each kind of
     event's own folder, so that a change to one kind's file leaves the others' as they were."""
     base = SKILLS_DIR / kind
@@ -114,10 +114,10 @@ def taxonomy() -> str:
     return "\n".join(lines)
 
 
-def system_prompt(kind: str = "event") -> str:
+def system_prompt(kind: str = Conversation.Kind.EVENT) -> str:
     if kind == Conversation.Kind.NEWS:
-        return f"{NEWS_CONTRACT}\n{skills('news')}\n"
-    return f"{CONTRACT}\n{skills('event')}\n\n{taxonomy()}\n"
+        return f"{NEWS_CONTRACT}\n{skills(Conversation.Kind.NEWS)}\n"
+    return f"{CONTRACT}\n{skills(Conversation.Kind.EVENT)}\n\n{taxonomy()}\n"
 
 
 def _text(value, limit: int = _MAX_LINE) -> str:
@@ -222,7 +222,7 @@ def turn(
     language: str,
     *,
     editing: bool,
-    kind: str = "event",
+    kind: str = Conversation.Kind.EVENT,
 ) -> str:
     """The user's message as the model reads it: the day, the page, the form, the files."""
     if kind == Conversation.Kind.NEWS:

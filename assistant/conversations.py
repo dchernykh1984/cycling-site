@@ -16,6 +16,10 @@ from locations.models import on_earth
 MAX_TEXT = 10_000
 _KINDS = ("route", "regulations")
 
+# What a message may carry: a few files, each named in a line.
+MAX_ATTACHMENTS = 5
+MAX_ATTACHMENT_NAME = 200
+
 
 def subject_field(subject) -> tuple[str, str]:
     """The conversation's field for an event or a news item, and the kind of conversation it takes."""
@@ -68,8 +72,8 @@ def _point(start) -> list[float] | None:
 def _attachments(items: list[dict]) -> list[dict]:
     """The files of a message, kept to the shape ``Message.attachments`` describes."""
     return [
-        {"kind": item["kind"], "name": item["name"].strip()[:200], "start": _point(item.get("start"))}
-        for item in items[:5]
+        {"kind": item["kind"], "name": item["name"].strip()[:MAX_ATTACHMENT_NAME], "start": _point(item.get("start"))}
+        for item in items[:MAX_ATTACHMENTS]
         if item.get("kind") in _KINDS and isinstance(item.get("name"), str)
     ]
 

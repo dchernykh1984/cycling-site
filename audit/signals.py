@@ -14,6 +14,13 @@ _WATCHED_MODELS = [
 ]
 
 
+def _repr(instance) -> str:
+    """The instance as the log's ``object_repr`` column can hold it."""
+    from .models import AuditLog
+
+    return str(instance)[: AuditLog._meta.get_field("object_repr").max_length]
+
+
 def _make_save_handler(object_type):
     def handler(sender, instance, created, **kwargs):
         from .models import AuditLog
@@ -25,7 +32,7 @@ def _make_save_handler(object_type):
             action=AuditLog.ACTION_CREATED if created else AuditLog.ACTION_UPDATED,
             object_type=object_type,
             object_id=str(instance.pk),
-            object_repr=str(instance)[:255],
+            object_repr=_repr(instance),
             changes=changes,
         )
 
@@ -42,7 +49,7 @@ def _make_delete_handler(object_type):
             action=AuditLog.ACTION_DELETED,
             object_type=object_type,
             object_id=str(instance.pk),
-            object_repr=str(instance)[:255],
+            object_repr=_repr(instance),
         )
 
     handler.__name__ = f"audit_delete_{object_type}"

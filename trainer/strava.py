@@ -15,6 +15,7 @@ from urllib.parse import urlencode
 from xml.etree import ElementTree as ET
 
 import requests
+from allauth.socialaccount.providers.strava.provider import StravaProvider
 from django.conf import settings
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
@@ -49,7 +50,7 @@ class StravaError(Exception):
 
 
 def _app() -> dict:
-    return cast(dict, settings.SOCIALACCOUNT_PROVIDERS["strava"]["APP"])
+    return cast(dict, settings.SOCIALACCOUNT_PROVIDERS[StravaProvider.id]["APP"])
 
 
 def available() -> bool:

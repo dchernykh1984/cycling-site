@@ -75,7 +75,7 @@ class LinkIn(Schema):
 
 class AttachmentIn(Schema):
     kind: Literal["route", "regulations"]
-    name: str = Field(max_length=200)
+    name: str = Field(max_length=conversations.MAX_ATTACHMENT_NAME)
     start: tuple[float, float] | None = None
 
 
@@ -84,7 +84,7 @@ class TurnIn(Schema):
     form: dict = Field(default_factory=dict)
     today: datetime.date | None = None
     language: Literal["ru", "kk", "en"] = "ru"
-    attachments: list[AttachmentIn] = Field(default_factory=list, max_length=5)
+    attachments: list[AttachmentIn] = Field(default_factory=list, max_length=conversations.MAX_ATTACHMENTS)
 
 
 class TurnOut(Schema):

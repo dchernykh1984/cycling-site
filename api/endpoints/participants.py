@@ -12,6 +12,9 @@ from registrations.models import counted
 
 router = Router(tags=["participants"])
 
+# The bib numbers a category without a range of its own covers in the timing tools.
+_ALL_BIBS = (1, 20000)
+
 
 # -- Schemas ---------------------------------------------------------------
 
@@ -133,8 +136,8 @@ def get_participants(request, competition_token: str, include_unpaid: bool = Fal
                 "birth_from": c.birth_from,
                 "birth_to": c.birth_to,
                 "laps": c.laps,
-                "bib_from": c.bib_from if c.bib_from is not None else 1,
-                "bib_to": c.bib_to if c.bib_to is not None else 20000,
+                "bib_from": c.bib_from if c.bib_from is not None else _ALL_BIBS[0],
+                "bib_to": c.bib_to if c.bib_to is not None else _ALL_BIBS[1],
             }
             for c in categories
         ],
