@@ -251,7 +251,7 @@ def _archive(photos, name: str):
     try:
         return archive_response(photos, name)
     except ArchiveTooBigError:
-        raise HttpError(HTTPStatus.CONTENT_TOO_LARGE, "Too many photos for one archive") from None
+        raise HttpError(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "Too many photos for one archive") from None
     except ArchiveBusyError:
         busy = HttpResponse(status=HTTPStatus.SERVICE_UNAVAILABLE)
         busy["Retry-After"] = "60"
@@ -324,7 +324,7 @@ def add_album(request, competition_id: int, payload: AlbumIn):
     form = ExternalAlbumForm(data)
     if not form.is_valid():
         raise HttpError(
-            HTTPStatus.UNPROCESSABLE_CONTENT,
+            HTTPStatus.UNPROCESSABLE_ENTITY,
             "; ".join(f"{k}: {' '.join(str(e) for e in v)}" for k, v in form.errors.items()),
         )
     album = form.save(commit=False)
@@ -346,7 +346,7 @@ def refresh(request, album_id: int):
     try:
         actions.import_album(album, request.auth)
     except actions.ImportFailedError as exc:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, str(exc)) from None
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, str(exc)) from None
     album.refresh_from_db()
     return album
 

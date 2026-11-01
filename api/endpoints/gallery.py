@@ -212,7 +212,7 @@ def _photo_to_change(user, photo_id: int) -> Photo:
 def _valid_or_422(form) -> None:
     if not form.is_valid():
         raise HttpError(
-            HTTPStatus.UNPROCESSABLE_CONTENT,
+            HTTPStatus.UNPROCESSABLE_ENTITY,
             "; ".join(f"{_PAYLOAD_NAMES.get(name, name)}: {' '.join(errors)}" for name, errors in form.errors.items()),
         )
 
@@ -262,7 +262,7 @@ def update_album(request, album_id: int, payload: AlbumPatchIn):
     if "cover_photo_id" in data:
         cover_id = data["cover_photo_id"]
         if cover_id is not None and not album.photos.filter(pk=cover_id).exists():
-            raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "cover_photo_id: not a photo of this album")
+            raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "cover_photo_id: not a photo of this album")
         album.cover_id = cover_id
     album.save()
     return _name_events([album], request.auth)[0]
@@ -296,7 +296,7 @@ def upload_photos(request, album_id: int, photos: list[UploadedFile] = File(...)
     _valid_or_422(form)
     saved, failed = actions.save_uploads(album, form.cleaned_data["photos"], request.auth)
     if not saved:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "; ".join(failed))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "; ".join(failed))
     actions.keep_a_cover(album)
     return Status(HTTPStatus.CREATED, {"photos": saved, "failed": failed})
 

@@ -121,7 +121,7 @@ def _conversation(user, conversation_id: int) -> Conversation:
 def _subject(user, competition_id: int | None, news_id: int | None) -> Competition | NewsArticle | None:
     """The event or the news item a request names, when ``user`` may write it; None when it names neither."""
     if competition_id is not None and news_id is not None:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "An event or a news item, not both")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "An event or a news item, not both")
     if competition_id is not None:
         competition = Competition.objects.filter(pk=competition_id, is_deleted=False).first()
         if competition is None or not conversations.may_write(user, competition):
@@ -179,7 +179,7 @@ def send_message(request, conversation_id: int, payload: TurnIn):
     conversation = _conversation(user, conversation_id)
     text = payload.text.strip()
     if not text:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "The message is empty")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "The message is empty")
     with translation.override(payload.language):
         try:
             turn = conversations.take_turn(
@@ -207,7 +207,7 @@ def link_conversation(request, conversation_id: int, payload: LinkIn):
     conversation = _conversation(user, conversation_id)
     subject = _subject(user, payload.competition_id, payload.news_id)
     if subject is None:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "Name the event or the news item")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "Name the event or the news item")
     field, _kind = conversations.subject_field(subject)
     already = getattr(conversation, f"{field}_id") == subject.pk
     if not already and not conversations.link(conversation.pk, subject, user):
@@ -227,8 +227,8 @@ def link_conversation(request, conversation_id: int, payload: LinkIn):
 def track_start(request, file: UploadedFile = File(...)):  # noqa: B008
     _member(request)
     if file.size is None or file.size > _MAX_TRACK_BYTES:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "The file is too large for a track")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "The file is too large for a track")
     point = parse_start(file.read().decode("utf-8", errors="replace"))
     if point is None:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "No track point was found in this file")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "No track point was found in this file")
     return {"lat": point[0], "lng": point[1]}

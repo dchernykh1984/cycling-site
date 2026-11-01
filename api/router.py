@@ -104,7 +104,7 @@ _register_routers()
 
 @api.exception_handler(_NulInTextError)
 def _nul_in_text(request, exc):
-    return api.create_response(request, {"detail": str(exc)}, status=HTTPStatus.UNPROCESSABLE_CONTENT)
+    return api.create_response(request, {"detail": str(exc)}, status=HTTPStatus.UNPROCESSABLE_ENTITY)
 
 
 @api.exception_handler(HttpError)

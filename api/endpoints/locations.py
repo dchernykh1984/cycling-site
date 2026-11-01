@@ -292,7 +292,7 @@ def update_location(request, location_id: int, payload: LocationPatchIn):
             update_fields.append(field)
 
     if not point_is_whole(location.lat, location.lng):
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "lat and lng go together: give both or neither")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "lat and lng go together: give both or neither")
     if update_fields:
         location.save(update_fields=update_fields)
 
