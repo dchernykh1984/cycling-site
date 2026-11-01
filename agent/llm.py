@@ -22,20 +22,21 @@ class LlmSettings(Protocol):
     llm_api_key: str
 
 
-_LOC = '{"ru": str, "kk": str, "en": str}'
+# How the reply spells a text given in every locale; the three agents ask for the same shape.
+LOCALIZED = '{"ru": str, "kk": str, "en": str}'
 _SYSTEM = (
     "You extract real, upcoming sporting competitions from the given source text -- cycling "
     "first, and also running, triathlon and cross-country skiing. The instructions below say "
     "which ones matter and in what order; follow them rather than assuming a single sport. "
-    'Return ONLY a JSON array; each item: {"title": ' + _LOC + ', "date_start": "YYYY-MM-DD", '
-    '"date_end": "YYYY-MM-DD"|null, "description": ' + _LOC + ', "source_url": str, '
+    'Return ONLY a JSON array; each item: {"title": ' + LOCALIZED + ', "date_start": "YYYY-MM-DD", '
+    '"date_end": "YYYY-MM-DD"|null, "description": ' + LOCALIZED + ', "source_url": str, '
     '"url_route": str, "url_registration": str, "event_type_id": int|null, "discipline_ids": [int], '
     '"country": str, "region": '
-    + _LOC
+    + LOCALIZED
     + ', "city": '
-    + _LOC
+    + LOCALIZED
     + ', "venue": '
-    + _LOC
+    + LOCALIZED
     + ', "lat": float|null, "lng": float|null}. '
     "title, description, region, city and venue MUST be given in all three locales -- ru (Russian), "
     "kk (Kazakh) "
@@ -113,26 +114,39 @@ def _date_start(item: dict) -> str:
     return item.get("date_start", "")
 
 
-def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, today: str = "") -> str:
-    today = today or datetime.date.today().isoformat()
-    existing = "\n".join(
-        f"- {e['title']} ({e['date_start']})" for e in upcoming_first(known.existing, _MAX_EXISTING, today)
-    )
-    rejected = "\n".join(
-        f"- {r['title']} ({r['date_start']}): {r['reason']}"
-        for r in upcoming_first(known.rejected, _MAX_REJECTED, today)
-    )
+def opening(guidance: str, taxonomy: Taxonomy) -> str:
+    """How every agent's prompt starts: the maintainers' guidance and the ids to classify with."""
     event_types = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.event_types)
     disciplines = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.disciplines)
-    kind_note = _KIND_GUIDANCE.get(source.kind, "(generic web page)")
-    source_hint = f"Source-specific hint: {source.hint.strip()}\n" if source.hint.strip() else ""
     return (
         f"Guidance from the maintainers:\n{guidance.strip() or '(none)'}\n\n"
         f"Event types (id=name): {event_types or '(none)'}\n"
         f"Disciplines (id=name): {disciplines or '(none)'}\n\n"
-        f"Events already on the site or already proposed in this run -- do NOT propose any of these "
-        f"again, even if the wording, language or year differs:\n{existing or '(none)'}\n\n"
-        f"Do NOT propose events similar to these previously rejected ones:\n{rejected or '(none)'}\n\n"
+    )
+
+
+def known_lists(known: KnownEvents, max_existing: int, max_rejected: int, today: str) -> tuple[str, str]:
+    """The events the site has and the ones it turned down, one per line, as every prompt lists them."""
+    existing = "\n".join(
+        f"- {e['title']} ({e['date_start']})" for e in upcoming_first(known.existing, max_existing, today)
+    )
+    rejected = "\n".join(
+        f"- {r['title']} ({r['date_start']}): {r['reason']}"
+        for r in upcoming_first(known.rejected, max_rejected, today)
+    )
+    return existing or "(none)", rejected or "(none)"
+
+
+def _prompt(text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, today: str = "") -> str:
+    today = today or datetime.date.today().isoformat()
+    existing, rejected = known_lists(known, _MAX_EXISTING, _MAX_REJECTED, today)
+    kind_note = _KIND_GUIDANCE.get(source.kind, "(generic web page)")
+    source_hint = f"Source-specific hint: {source.hint.strip()}\n" if source.hint.strip() else ""
+    return (
+        opening(guidance, taxonomy)
+        + "Events already on the site or already proposed in this run -- do NOT propose any of these "
+        f"again, even if the wording, language or year differs:\n{existing}\n\n"
+        f"Do NOT propose events similar to these previously rejected ones:\n{rejected}\n\n"
         f"Source type ({source.kind}): {kind_note}\n"
         f"{source_hint}"
         f"Source: {source.fetch_url}\n"
@@ -218,13 +232,8 @@ def _event_json(candidate: Candidate) -> str:
 
 def enrich_raw(candidate: Candidate, page_text: str, guidance: str, taxonomy: Taxonomy, config: LlmSettings) -> str:
     """Ask the model to refine one event using the full text of its own event page."""
-    event_types = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.event_types)
-    disciplines = ", ".join(f"{item['id']}={item['name']}" for item in taxonomy.disciplines)
     user = (
-        f"Guidance from the maintainers:\n{guidance.strip() or '(none)'}\n\n"
-        f"Event types (id=name): {event_types or '(none)'}\n"
-        f"Disciplines (id=name): {disciplines or '(none)'}\n\n"
-        f"Current event (JSON):\n{_event_json(candidate)}\n\n"
+        opening(guidance, taxonomy) + f"Current event (JSON):\n{_event_json(candidate)}\n\n"
         f"Event page text:\n{page_text}"
     )
     return chat(_ENRICH_SYSTEM, user, config)
