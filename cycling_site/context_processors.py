@@ -84,18 +84,12 @@ def _waiting_submissions(user) -> list[dict]:
             tasks.append({"kind": "locations", "count": locations, "url": reverse("calendar_moderate")})
 
     if roles.at_least(user, roles.MANAGE_KNOWLEDGE):
-        articles = DraftSubmission.objects.filter(
-            status=DraftSubmission.Status.PENDING,
-            submission_type=DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE,
-        ).count()
+        articles = DraftSubmission.pending(DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE).count()
         if articles:
             tasks.append({"kind": "articles", "count": articles, "url": _knowledge_index_url()})
 
     if roles.at_least(user, roles.MANAGE_NEWS):
-        news = DraftSubmission.objects.filter(
-            status=DraftSubmission.Status.PENDING,
-            submission_type=DraftSubmission.SubmissionType.NEWS,
-        ).count()
+        news = DraftSubmission.pending(DraftSubmission.SubmissionType.NEWS).count()
         if news:
             tasks.append({"kind": "news", "count": news, "url": reverse("news_index")})
 

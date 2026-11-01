@@ -1,16 +1,14 @@
-import re
-
 from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
 from calendar_app.visibility import public_events
 from cycling_site.articles import public
+from cycling_site.page_mixins import LANGUAGE_PREFIX
 from knowledge.models import KnowledgeArticle
 from news.models import NewsArticle
 
 # /ru/, /kk/ or /en/ at the start of a path.
-_LANGUAGE_PREFIX = re.compile(r"^/[a-z]{2}(?:-[a-z]+)?/")
 
 
 class LanguageSitemap(Sitemap):
@@ -65,7 +63,7 @@ class WagtailPagesSitemap(LanguageSitemap):
 
         # page.get_url() carries the page's own locale prefix (/ru/map/); the sitemap asks for the
         # address in the language it is listing, so swap the prefix for that one.
-        path = _LANGUAGE_PREFIX.sub("/", page.get_url())
+        path = LANGUAGE_PREFIX.sub("/", page.get_url())
         return f"/{get_language()}{path}"
 
     def lastmod(self, page):

@@ -30,10 +30,7 @@ class NewsListView(View):
         context = {"news_items": news_items, "can_add": can_manage}
         if can_manage:
             context["pending_submissions"] = (
-                DraftSubmission.objects.filter(
-                    status=DraftSubmission.Status.PENDING,
-                    submission_type=DraftSubmission.SubmissionType.NEWS,
-                )
+                DraftSubmission.pending(DraftSubmission.SubmissionType.NEWS)
                 .select_related("author")
                 .order_by("submitted_at")
             )
@@ -47,6 +44,7 @@ class NewsArticleDetailView(View):
         if article.is_hidden and not can_manage:
             raise Http404
         can_comment = roles.at_least(request.user, roles.COMMENT)
+        description = summarize(article.intro, article.body)
         return render(
             request,
             "news/article_detail.html",
@@ -58,13 +56,13 @@ class NewsArticleDetailView(View):
                 "comment_form": AddNewsArticleCommentForm() if can_comment else None,
                 "user_can_delete_comment": can_manage,
                 "meta_title": article.title,
-                "meta_description": summarize(article.intro, article.body),
+                "meta_description": description,
                 "og_type": "article",
                 "structured_data": article_markup(
                     kind="NewsArticle",
                     headline=article.title,
-                    url=f"{request.scheme}://{request.get_host()}{article.get_absolute_url()}",
-                    description=summarize(article.intro, article.body),
+                    url=request.build_absolute_uri(article.get_absolute_url()),
+                    description=description,
                     published=article.published_at,
                     author=str(article.published_by) if article.published_by else "",
                 ),
