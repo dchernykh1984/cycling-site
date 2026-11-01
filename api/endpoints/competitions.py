@@ -175,6 +175,14 @@ class CompetitionDetailOut(CompetitionOut):
         return list(obj.status_changes.all()) if getattr(obj, "_approval_visible", False) else None
 
 
+class RouteTrackOut(Schema):
+    """The track an event's route file draws on its page: a GeoJSON Feature, longitude first."""
+
+    type: str = "Feature"
+    geometry: dict
+    properties: dict
+
+
 # -- Helpers ---------------------------------------------------------------
 
 
@@ -468,14 +476,6 @@ def competition_ics(
     # An owner's hidden or pending event is theirs alone: no shared cache keeps a copy.
     patch_cache_control(response, private=True)
     return response
-
-
-class RouteTrackOut(Schema):
-    """The track an event's route file draws on its page: a GeoJSON Feature, longitude first."""
-
-    type: str = "Feature"
-    geometry: dict
-    properties: dict
 
 
 @router.get(
