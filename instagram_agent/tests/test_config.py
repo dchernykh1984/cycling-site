@@ -88,3 +88,12 @@ def test_missing_graph_credentials_are_empty_rather_than_fatal():
     config = from_env(dict(_BASE))
     assert config.graph_user_id == ""
     assert config.graph_token == ""
+
+
+def test_the_day_is_read_in_the_sites_zone():
+    from zoneinfo import ZoneInfo
+
+    assert from_env(dict(_BASE)).time_zone == ZoneInfo("UTC")
+    assert from_env({**_BASE, "SITE_TIME_ZONE": "Asia/Almaty"}).time_zone == ZoneInfo("Asia/Almaty")
+    with pytest.raises(ConfigError):
+        from_env({**_BASE, "SITE_TIME_ZONE": "Mars/Olympus"})

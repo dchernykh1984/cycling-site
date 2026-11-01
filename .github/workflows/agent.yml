@@ -59,6 +59,8 @@ jobs:
       - name: Run events agent
         env:
           SITE_BASE_URL: ${{ secrets.SITE_BASE_URL || 'https://universalbicycle.team' }}
+          # The day a run counts from, in the site's own zone (its TIME_ZONE), not the runner's UTC.
+          SITE_TIME_ZONE: ${{ vars.SITE_TIME_ZONE || 'Asia/Almaty' }}
           AGENT_API_TOKEN: ${{ secrets.AGENT_API_TOKEN }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}

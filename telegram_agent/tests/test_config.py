@@ -77,3 +77,12 @@ def test_the_config_carries_the_llm_settings_for_the_shared_adapter():
     config: LlmSettings = from_env({**_BASE, **_TELEGRAM})
     assert config.llm_base_url == "https://llm.example"
     assert config.llm_model == "deepseek-flash"
+
+
+def test_the_day_is_read_in_the_sites_zone():
+    from zoneinfo import ZoneInfo
+
+    assert from_env(dict(_BASE)).time_zone == ZoneInfo("UTC")
+    assert from_env({**_BASE, "SITE_TIME_ZONE": "Asia/Almaty"}).time_zone == ZoneInfo("Asia/Almaty")
+    with pytest.raises(ConfigError):
+        from_env({**_BASE, "SITE_TIME_ZONE": "Mars/Olympus"})

@@ -13,8 +13,9 @@ night before the account is set up.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo
 
-from agent.config import DEFAULT_LLM_MODEL, ConfigError, _flag, _whole_number
+from agent.config import DEFAULT_LLM_MODEL, UTC_ZONE, ConfigError, _flag, _time_zone, _whole_number
 
 # A private club channel carries a couple of announcements a week; a run proposing more than this
 # is reading something wrong, and the cap keeps that out of the moderation queue in bulk.
@@ -48,6 +49,8 @@ class Config:
     recent_hours: int
     max_posts: int
     dry_run: bool
+    # The site's zone, which the run's "today" is read in (agent.config).
+    time_zone: ZoneInfo = UTC_ZONE
 
 
 def telegram_credentials_missing(env: dict[str, str]) -> list[str]:
@@ -83,4 +86,5 @@ def from_env(env: dict[str, str]) -> Config:
         recent_hours=_whole_number(env.get("TELEGRAM_RECENT_HOURS"), _DEFAULT_RECENT_HOURS, "TELEGRAM_RECENT_HOURS"),
         max_posts=_whole_number(env.get("TELEGRAM_MAX_POSTS"), _DEFAULT_MAX_POSTS, "TELEGRAM_MAX_POSTS"),
         dry_run=_flag(env.get("TELEGRAM_DRY_RUN")),
+        time_zone=_time_zone(env.get("SITE_TIME_ZONE")),
     )

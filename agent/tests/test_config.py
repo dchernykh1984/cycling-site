@@ -45,3 +45,17 @@ def test_per_source_budget_defaults_and_is_configurable():
 def test_non_integer_per_source_budget_raises():
     with pytest.raises(ConfigError):
         from_env({**_BASE, "MAX_EVENTS_PER_SOURCE": "five"})
+
+
+def test_the_day_is_read_in_the_sites_zone():
+    from zoneinfo import ZoneInfo
+
+    from agent.config import today_in
+
+    assert from_env(dict(_BASE)).time_zone == ZoneInfo("UTC")  # unset: the runner's clock, as before
+    config = from_env({**_BASE, "SITE_TIME_ZONE": "Asia/Almaty"})
+    assert config.time_zone == ZoneInfo("Asia/Almaty")
+    # Twenty-six hours apart, so the zone ahead is always on a later day: the zone decides the date.
+    assert today_in(ZoneInfo("Etc/GMT-14")) > today_in(ZoneInfo("Etc/GMT+12"))
+    with pytest.raises(ConfigError):
+        from_env({**_BASE, "SITE_TIME_ZONE": "Mars/Olympus"})

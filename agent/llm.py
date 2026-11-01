@@ -177,9 +177,15 @@ def chat(system: str, user: str, config: LlmSettings) -> str:
 
 
 def extract_raw(
-    text: str, source: Source, guidance: str, known: KnownEvents, taxonomy: Taxonomy, config: LlmSettings
+    text: str,
+    source: Source,
+    guidance: str,
+    known: KnownEvents,
+    taxonomy: Taxonomy,
+    config: LlmSettings,
+    today: str,
 ) -> str:
-    return chat(_SYSTEM, _prompt(text, source, guidance, known, taxonomy), config)
+    return chat(_SYSTEM, _prompt(text, source, guidance, known, taxonomy, today), config)
 
 
 _ENRICH_SYSTEM = (
