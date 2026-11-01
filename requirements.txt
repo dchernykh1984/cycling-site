@@ -17,7 +17,7 @@ django-environ==0.14.0
 django-filter==25.2
 django-modelcluster==6.5
 django-modeltranslation==0.20.6
-django-ninja==1.7.1
+django-ninja==1.7.2
 django-permissionedforms==0.1
 django-stubs-ext==6.1.2
 django-taggit==6.1.0
