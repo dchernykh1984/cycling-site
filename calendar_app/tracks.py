@@ -29,6 +29,7 @@ from defusedxml.ElementTree import iterparse
 from django.db import IntegrityError, transaction
 
 from calendar_app.models import CompetitionTrack
+from locations.models import on_earth
 
 # What a route file may be named on the event form, beside the documents every file field takes.
 EXTENSIONS = frozenset({"gpx", "kml", "kmz", "tcx", "fit", "geojson"})
@@ -89,7 +90,7 @@ def _point(lat, lng) -> tuple[float, float] | None:
     except (TypeError, ValueError):
         return None
     # A NaN fails both ranges.
-    if -90 <= point[0] <= 90 and -180 <= point[1] <= 180 and point != (0.0, 0.0):
+    if on_earth(*point) and point != (0.0, 0.0):
         return point
     return None
 

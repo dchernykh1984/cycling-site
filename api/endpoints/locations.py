@@ -12,6 +12,8 @@ from accounts import roles
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedStr, LocalizedTitle, localize_field
 from locations.models import (
+    MAX_LATITUDE,
+    MAX_LONGITUDE,
     Level,
     Location,
     LocationConflictError,
@@ -33,8 +35,8 @@ router = Router(tags=["locations"])
 
 
 # On the globe: a latitude of 999 was stored and sent every map that drew it off the edge.
-Latitude = Annotated[Decimal, Field(ge=-90, le=90)]
-Longitude = Annotated[Decimal, Field(ge=-180, le=180)]
+Latitude = Annotated[Decimal, Field(ge=-MAX_LATITUDE, le=MAX_LATITUDE)]
+Longitude = Annotated[Decimal, Field(ge=-MAX_LONGITUDE, le=MAX_LONGITUDE)]
 
 
 class LocationIn(Schema):

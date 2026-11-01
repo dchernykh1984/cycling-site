@@ -15,6 +15,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from agent.venues import distance_metres
+from locations.models import on_earth
 
 #: Set once a guest's region has been put in their filter: a guest who then clears it is not handed
 #: it again on the next page of the visit.
@@ -36,7 +37,7 @@ def visitor_point(request) -> tuple[float, float] | None:
         lng = float(request.META["HTTP_CF_IPLONGITUDE"])
     except (KeyError, TypeError, ValueError):
         return None
-    if not (math.isfinite(lat) and math.isfinite(lng) and -90 <= lat <= 90 and -180 <= lng <= 180):
+    if not on_earth(lat, lng):
         return None
     return lat, lng
 

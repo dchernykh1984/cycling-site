@@ -1,7 +1,15 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Level, Location, location_subtree_is_nonempty, point_is_whole, selectable_parent_locations
+from .models import (
+    MAX_LATITUDE,
+    MAX_LONGITUDE,
+    Level,
+    Location,
+    location_subtree_is_nonempty,
+    point_is_whole,
+    selectable_parent_locations,
+)
 
 # A place's point is the two numbers together: one alone pins nothing.
 BOTH_OR_NEITHER = _("Give both the latitude and the longitude, or neither.")
@@ -20,10 +28,20 @@ class LocationForm(forms.Form):
         widget=forms.HiddenInput(),
     )
     lat = forms.DecimalField(
-        max_digits=9, decimal_places=6, min_value=-90, max_value=90, required=False, label=_("Latitude")
+        max_digits=9,
+        decimal_places=6,
+        min_value=-MAX_LATITUDE,
+        max_value=MAX_LATITUDE,
+        required=False,
+        label=_("Latitude"),
     )
     lng = forms.DecimalField(
-        max_digits=9, decimal_places=6, min_value=-180, max_value=180, required=False, label=_("Longitude")
+        max_digits=9,
+        decimal_places=6,
+        min_value=-MAX_LONGITUDE,
+        max_value=MAX_LONGITUDE,
+        required=False,
+        label=_("Longitude"),
     )
     is_hidden = forms.BooleanField(required=False, label=_("Hidden"))
 

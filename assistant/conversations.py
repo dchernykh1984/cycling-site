@@ -11,6 +11,7 @@ from accounts import roles
 from assistant import fields, llm, prompt
 from assistant.models import Conversation, Message
 from calendar_app.visibility import manages
+from locations.models import on_earth
 
 MAX_TEXT = 10_000
 _KINDS = ("route", "regulations")
@@ -61,7 +62,7 @@ def _point(start) -> list[float] | None:
         lat, lng = float(start[0]), float(start[1])
     except (TypeError, ValueError, IndexError, KeyError):
         return None
-    return [lat, lng] if -90 <= lat <= 90 and -180 <= lng <= 180 else None
+    return [lat, lng] if on_earth(lat, lng) else None
 
 
 def _attachments(items: list[dict]) -> list[dict]:

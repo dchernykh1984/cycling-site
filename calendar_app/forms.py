@@ -11,7 +11,7 @@ from django.utils.translation import pgettext_lazy
 from accounts import roles
 from cycling_site.forms import LocalizedMaxLengthMixin, comment_widget
 from cycling_site.richtext import is_too_large
-from locations.models import Level, Location, competition_location_block_reason
+from locations.models import MAX_LATITUDE, MAX_LONGITUDE, Level, Location, competition_location_block_reason
 from registrations.models import RegistrationCategory
 
 from . import tracks
@@ -134,16 +134,16 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     new_venue_lat = forms.DecimalField(
         max_digits=9,
         decimal_places=6,
-        min_value=-90,
-        max_value=90,
+        min_value=-MAX_LATITUDE,
+        max_value=MAX_LATITUDE,
         required=False,
         widget=forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "any", "id": "new-venue-lat"}),
     )
     new_venue_lng = forms.DecimalField(
         max_digits=9,
         decimal_places=6,
-        min_value=-180,
-        max_value=180,
+        min_value=-MAX_LONGITUDE,
+        max_value=MAX_LONGITUDE,
         required=False,
         widget=forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "any", "id": "new-venue-lng"}),
     )
