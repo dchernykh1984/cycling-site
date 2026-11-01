@@ -12,8 +12,6 @@ from __future__ import annotations
 
 import re
 
-from django.utils.html import urlize
-
 # What XML 1.0 and iCalendar refuse in text: the C0 controls but tab, line feed and carriage return.
 _CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
@@ -266,17 +264,3 @@ def sanitize_rich_text_columns(instance, fields, *, update_fields=None) -> None:
         value = instance.__dict__.get(field)
         if value:
             instance.__dict__[field] = sanitize_rich_html(value, allow_img=True)
-
-
-def plaintext_to_html(text: str) -> str:
-    """Convert a plain-text string to safe HTML.
-
-    Escapes the text, turns bare URLs into links that open in a new tab, and preserves
-    paragraphs / line breaks. Used to migrate existing plain-text descriptions to the
-    HTML rendering and as the canonical "plain text -> safe html" conversion.
-    """
-    normalized = (text or "").replace("\r\n", "\n").replace("\r", "\n")
-    html = urlize(normalized, nofollow=False, autoescape=True)  # escapes text + linkifies URLs
-    html = html.replace("<a ", '<a target="_blank" rel="noopener noreferrer nofollow" ')
-    paragraphs = [p for p in re.split(r"\n{2,}", html) if p.strip()]
-    return "".join("<p>" + p.replace("\n", "<br>") + "</p>" for p in paragraphs)

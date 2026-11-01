@@ -12,7 +12,7 @@ from django.utils import translation
 
 from cycling_site.logconfig import build_logging_config
 from cycling_site.middleware import LocaleFallbackMiddleware
-from cycling_site.sanitize import plaintext_to_html, sanitize_rich_html
+from cycling_site.sanitize import sanitize_rich_html
 
 
 class LocaleFallbackMiddlewareTests(TestCase):
@@ -372,16 +372,6 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         out = sanitize_rich_html("<p>x<sub>2</sub> y<sup>n</sup></p>")
         self.assertIn("<sub>2</sub>", out)
         self.assertIn("<sup>n</sup>", out)
-
-    def test_plaintext_to_html_escapes_and_linkifies(self):
-        out = plaintext_to_html("See https://almaty-marathon.kz/ru/events\n\n<b>x</b> & y")
-        self.assertIn(
-            '<a target="_blank" rel="noopener noreferrer nofollow" href="https://almaty-marathon.kz/ru/events"',
-            out,
-        )
-        self.assertIn("&lt;b&gt;", out)  # HTML escaped, not interpreted
-        self.assertIn("&amp;", out)
-        self.assertIn("<p>", out)
 
 
 class VendoredStaticAssetsTests(SimpleTestCase):

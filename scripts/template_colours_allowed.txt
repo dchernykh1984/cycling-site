@@ -10,8 +10,5 @@ cycling_site/templates/allauth/elements/provider.html #fbbc05
 cycling_site/templates/allauth/layouts/entrance.html #86b7fe
 cycling_site/templates/allauth/layouts/manage.html #86b7fe
 cycling_site/templates/includes/rich_text_editor.html #fff
-home/templates/home/welcome_page.html #231f20
-home/templates/home/welcome_page.html #ddd
-home/templates/home/welcome_page.html #fff
 locations/templates/locations/location_form.html #6c757d
 locations/templates/locations/location_form.html #adb5bd

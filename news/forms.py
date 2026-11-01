@@ -29,7 +29,6 @@ class SubmitNewsForm(LocalizedMaxLengthMixin, forms.ModelForm):
         return validate_rich_text_length(self.cleaned_data.get("body") or "")
 
 
-_BODY_ATTRS = {"rows": 10, "class": "form-control quill-source"}
 _TITLE_ATTRS = {"class": "form-control"}
 _INTRO_ATTRS = {"rows": 3, "class": "form-control"}
 

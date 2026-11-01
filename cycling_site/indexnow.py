@@ -90,16 +90,12 @@ def submit_object(obj) -> None:
     Each language is a separate indexable address, so submitting one of them leaves the other two
     for the crawler to find on its own.
     """
-    from django.conf import settings
     from django.utils import translation
 
-    get_url = getattr(obj, "get_absolute_url", None)
-    if get_url is None:
-        return
     paths = []
     for code, _name in settings.LANGUAGES:
         with translation.override(code):
-            path = get_url()
+            path = obj.get_absolute_url()
         if path not in paths:
             paths.append(path)
     submit(paths)

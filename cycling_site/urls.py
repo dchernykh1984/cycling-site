@@ -12,6 +12,8 @@ from wagtail.documents import urls as wagtaildocs_urls
 
 from accounts.views import set_language as accounts_set_language
 from api.router import api as ninja_api
+from calendar_app.feeds import site_base_url
+from cycling_site import indexnow
 from cycling_site.sitemaps import (
     CalendarFilterSitemap,
     CompetitionSitemap,
@@ -49,15 +51,14 @@ def indexnow_key_file(request, key):
     this host controls it. Any other name is a 404, so the file exists only for the real key."""
     from django.http import Http404
 
-    configured = (getattr(settings, "INDEXNOW_KEY", "") or "").strip()
+    configured = indexnow.key_file_body()
     if not configured or key != configured:
         raise Http404
     return HttpResponse(configured, content_type="text/plain")
 
 
 def robots_txt(request):
-    base_url = getattr(settings, "SITE_BASE_URL", "").rstrip("/")
-    sitemap_url = f"{base_url}/sitemap.xml" if base_url else request.build_absolute_uri("/sitemap.xml")
+    sitemap_url = f"{site_base_url(request)}/sitemap.xml"
     lines = [
         "User-agent: *",
         "Allow: /",

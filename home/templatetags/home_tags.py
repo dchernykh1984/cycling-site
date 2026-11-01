@@ -6,35 +6,6 @@ register = template.Library()
 
 
 @register.filter
-def dict_get(d, key):
-    return d.get(key) if isinstance(d, dict) else None
-
-
-@register.simple_tag
-def get_page_translation_urls(page):
-    """Return {lang_code: url} for all live translations of a Wagtail page, including the page itself."""
-    from django.conf import settings
-    from django.urls import translate_url
-    from django.utils import translation
-
-    # translate_url() first resolves the URL in the *current* language context.
-    # Wagtail page.url uses the site-root locale (default lang) as the base, so
-    # page.url is always a default-language path (e.g. '/about/', not '/kk/about/').
-    # Under a non-default locale, i18n_patterns won't match that path -> translate_url
-    # falls back to returning the URL unchanged. Force resolution under the default
-    # language so the path is always resolved correctly before retranslating.
-    default_lang = settings.LANGUAGE_CODE.split("-")[0]
-    result = {}
-    all_pages = [page, *list(page.get_translations().live().select_related("locale"))]
-    for p in all_pages:
-        lang = p.locale.language_code
-        page_url = p.url or "/"
-        with translation.override(default_lang):
-            result[lang] = translate_url(page_url, lang)
-    return result
-
-
-@register.filter
 def lang_display_code(language_code: str | None) -> str:
     """The language's own code, as its address names it (/kk/): KK, not the country's KZ (#388)."""
     if not language_code:
