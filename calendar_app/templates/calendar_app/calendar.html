@@ -158,11 +158,9 @@ document.addEventListener('DOMContentLoaded', function () {
   var explicitPeriod = incoming.has('date_from') || incoming.has('date_to') || incoming.has('period');
   var selectedFrom = validDay(explicitPeriod ? incoming.get('date_from') : stored('cal_date_from'));
   var selectedTo = validDay(explicitPeriod ? incoming.get('date_to') : stored('cal_date_to'));
-  // All upcoming: from the day it is opened on, unless the link names a later first day.
-  if (incoming.get('period') === 'upcoming') {
-    selectedFrom = selectedFrom || window.periodNav.today();
-    selectedTo = null;
-  }
+  // All upcoming: from the day it is opened on, unless the link names a later first day; a last day
+  // the link names still wins, as it does on the list and the map.
+  if (incoming.get('period') === 'upcoming') selectedFrom = selectedFrom || window.periodNav.today();
   if (selectedTo && selectedFrom && selectedTo < selectedFrom) selectedTo = selectedFrom;
   function appendPeriod(params) {
     if (selectedFrom) window.periodNav.appendTo(params, selectedFrom, selectedTo || '');
