@@ -81,6 +81,9 @@ change to one kind leaves the others as they were. One key, `ASSISTANT_LLM_API_K
 1. **Given** a GPX or KML file attached in the chat, **Then** it goes into the form's route file,
    and its first point becomes the point of a new venue.
 2. **Given** a PDF, **Then** it goes into the regulations file, and is neither read nor checked.
+3. **Given** an event with no route file, **Then** the chat says plainly, even when the event has a
+   link to its track, that the track is drawn on the event's map only from a GPX file and asks for
+   one; a link alone draws nothing (maintainer, 2026-11-01).
 
 ### Edge Cases
 
