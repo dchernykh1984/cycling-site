@@ -18,7 +18,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from agent import locations, pipeline
-from agent.config import ConfigError
+from agent.config import ConfigError, today_in
 from agent.models import Candidate, KnownEvents, RunReport, Source, SourceKind, Taxonomy
 from agent.placing import create_placed, resolve_location, with_default_city
 from agent.site_api import SiteApiClient, what_the_site_knows
@@ -135,7 +135,7 @@ def _run(
     """One pass over the accounts, through the same pipeline the web agent runs on."""
     guidance = _read(_GUIDANCE_FILE)
     cities = locations.flatten_cities(tree)
-    today = datetime.date.today()
+    today = today_in(config.time_zone)
     by_ref = {as_source(account).ref: account for account in accounts}
 
     def fetch_source(source: Source) -> str:
@@ -167,6 +167,7 @@ def _run(
         max_events=config.max_events,
         dry_run=config.dry_run,
         city_of=city_of,
+        today=today,
     )
     return summary(report)
 

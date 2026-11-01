@@ -12,14 +12,13 @@ session revoked. One process, one connection, channels in sequence.
 
 from __future__ import annotations
 
-import datetime
 import os
 import sys
 from dataclasses import replace
 from pathlib import Path
 
 from agent import locations, pipeline
-from agent.config import ConfigError
+from agent.config import ConfigError, today_in
 from agent.models import Candidate, KnownEvents, RunReport, Source, SourceKind, Taxonomy
 from agent.placing import create_placed, with_default_city
 from agent.site_api import SiteApiClient, what_the_site_knows
@@ -128,7 +127,7 @@ def _run(
     """One pass over the channels, through the same pipeline the other agents run on."""
     guidance = _read(_GUIDANCE_FILE)
     cities = locations.flatten_cities(tree)
-    today = datetime.date.today()
+    today = today_in(config.time_zone)
     by_ref = {channel.ref: channel for channel in channels}
     # Display names, learned as each channel is opened; the file itself carries only ids.
     names: dict[str, str] = {}
@@ -192,6 +191,7 @@ def _run(
         max_per_source=config.max_per_channel,
         dry_run=config.dry_run,
         city_of=city_of,
+        today=today,
     )
     return summary(report)
 

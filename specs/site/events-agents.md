@@ -89,6 +89,9 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
   today (`_COUNTRY_CODES`).
 - The Instagram agent's prompt frames every account as "a cycling club's Instagram account" and a
   club ride as a ride rather than a race (`instagram_agent/llm.py`).
+- A run's "today" is the site's day: the three workflows pass `SITE_TIME_ZONE`, a repository
+  variable that falls back to `Asia/Almaty`, the site's own `TIME_ZONE`; unset outside the
+  workflows, it is UTC (`agent/config.py`).
 
 ## Open Questions
 

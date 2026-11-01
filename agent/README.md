@@ -52,6 +52,8 @@ privacy notes). Entries of those kinds left in this agent's file are still skipp
 - Every page and track is fetched over http(s) from public addresses only: a link a page carries may
   point anywhere, a cloud-metadata endpoint or an internal service among them (`agent/fetch.py`).
 - `AGENT_DRY_RUN=true` (or the workflow's `dry_run` input) logs candidates without posting.
+- `SITE_TIME_ZONE` (an IANA name; the workflows give the site's own) is where a run's "today" is read;
+  unset, it is the runner's UTC day, which for a night run east of Greenwich is still yesterday.
 - A human moderator approves everything - nothing goes public automatically.
 
 ## Running locally

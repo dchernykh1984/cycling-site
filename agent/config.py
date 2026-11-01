@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 # DeepSeek's cheapest model, when LLM_MODEL is unset; the three agents share it so a rename lands once.
 DEFAULT_LLM_MODEL = "deepseek-flash"
 _DEFAULT_MAX_EVENTS = 25
 _DEFAULT_MAX_PER_SOURCE = 5
+# Where an unset SITE_TIME_ZONE leaves a run: the runner's own clock, as before the setting existed.
+UTC_ZONE = ZoneInfo("UTC")
 
 
 class ConfigError(RuntimeError):
@@ -28,6 +32,9 @@ class Config:
     max_per_source: int
     dry_run: bool
     enrich_details: bool = True  # fetch each accepted event's own page and refine it (2nd pass)
+    # The site's zone: "today" is the site's day there, not the runner's UTC one, which at the night
+    # runs is still yesterday where the events are.
+    time_zone: ZoneInfo = UTC_ZONE
 
 
 def _flag(value: str | None) -> bool:
@@ -43,6 +50,21 @@ def _whole_number(value: str | None, default: int, name: str) -> int:
     except ValueError as exc:
         raise ConfigError(f"{name} must be an integer") from exc
     return max(number, 0)
+
+
+def _time_zone(value: str | None) -> ZoneInfo:
+    """The zone named by SITE_TIME_ZONE (an IANA name); UTC when unset."""
+    if not value:
+        return UTC_ZONE
+    try:
+        return ZoneInfo(value.strip())
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise ConfigError(f"SITE_TIME_ZONE is not a time zone: {value}") from exc
+
+
+def today_in(zone: ZoneInfo) -> datetime.date:
+    """Today's date in ``zone``."""
+    return datetime.datetime.now(zone).date()
 
 
 def from_env(env: dict[str, str]) -> Config:
@@ -63,4 +85,5 @@ def from_env(env: dict[str, str]) -> Config:
         ),
         dry_run=_flag(env.get("AGENT_DRY_RUN")),
         enrich_details=_flag(env.get("AGENT_ENRICH_DETAILS") or "true"),
+        time_zone=_time_zone(env.get("SITE_TIME_ZONE")),
     )

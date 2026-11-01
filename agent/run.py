@@ -8,7 +8,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from agent import chunk, enrich, fetch, geo, links, llm, locations, pipeline, sources
-from agent.config import Config, ConfigError, from_env
+from agent.config import Config, ConfigError, from_env, today_in
 from agent.models import Candidate, KnownEvents, RunReport, SourceKind, Taxonomy
 from agent.placing import create_placed
 from agent.site_api import SiteApiClient, what_the_site_knows
@@ -101,9 +101,10 @@ def _extract_candidates(
 ) -> list:
     """Extract candidates from a source; aggregators are read in line-aligned chunks (agent.chunk)."""
     pieces = chunk.split_source_text(text, _AGGREGATOR_CHUNK_CHARS) if source.kind == SourceKind.AGGREGATOR else [text]
+    today = today_in(config.time_zone).isoformat()
     candidates: list = []
     for piece in pieces:
-        raw = llm.extract_raw(piece, source, guidance, known, taxonomy, config)
+        raw = llm.extract_raw(piece, source, guidance, known, taxonomy, config, today)
         # A listing announces no single race, so it must not stand in when the model found no link:
         # a reader following it lands among dozens of announcements and cannot tell which entry was
         # meant. A calendar is a listing by what it is, whatever its address looks like; a forum
@@ -197,6 +198,7 @@ def main() -> int:
         city_of=city_of,
         dry_run=config.dry_run,
         enrich=enrich_candidate,
+        today=today_in(config.time_zone),
     )
     print(_summary(report))
     return 0

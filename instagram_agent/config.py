@@ -9,8 +9,9 @@ model.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo
 
-from agent.config import DEFAULT_LLM_MODEL, ConfigError, _flag, _whole_number
+from agent.config import DEFAULT_LLM_MODEL, UTC_ZONE, ConfigError, _flag, _time_zone, _whole_number
 from instagram_agent.fetch import DEFAULT_GRAPH_VERSION
 
 # A club feed carries a couple of announcements a week, so a run that proposes more than this is
@@ -45,6 +46,8 @@ class Config:
     # The one account this run reads. Each account gets a job of its own, so a refused address
     # costs that account and no other; empty means read every enabled account (a local run).
     only_account: str = ""
+    # The site's zone, which the run's "today" is read in (agent.config).
+    time_zone: ZoneInfo = UTC_ZONE
 
 
 def from_env(env: dict[str, str]) -> Config:
@@ -67,4 +70,5 @@ def from_env(env: dict[str, str]) -> Config:
         graph_token=(env.get("IG_GRAPH_TOKEN") or "").strip(),
         graph_version=(env.get("IG_GRAPH_VERSION") or "").strip() or DEFAULT_GRAPH_VERSION,
         only_account=(env.get("INSTAGRAM_ACCOUNT") or "").strip().lstrip("@"),
+        time_zone=_time_zone(env.get("SITE_TIME_ZONE")),
     )
