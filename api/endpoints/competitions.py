@@ -490,7 +490,7 @@ def competition_track(request, competition_id: int):
     _require_visible_or_404(request.auth, competition)
     geometry = route_track(competition)
     if geometry is None:
-        raise HttpError(404, "This event's route file has no track")
+        raise HttpError(404, "This event has no route file, or its route file holds no track")
     return {
         "type": "Feature",
         "geometry": geometry,
