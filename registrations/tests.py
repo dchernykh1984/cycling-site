@@ -960,6 +960,15 @@ class ManagementActionTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(CompetitionRegistration.objects.filter(competition=self.comp, first_name="Manual").exists())
 
+    def test_a_manual_entry_fixes_the_registration_mode_as_a_readers_entry_does(self):
+        self.comp.registration_mode_locked = False
+        self.comp.save(update_fields=["registration_mode_locked"])
+        url = reverse("registrations:manual_add", args=[self.comp.pk])
+        data = {"first_name": "Manual", "last_name": "Lock", "gender": "M", "birth_year": 1990}
+        self.assertEqual(self.client.post(url, data).status_code, 302)
+        self.comp.refresh_from_db()
+        self.assertTrue(self.comp.registration_mode_locked)
+
     def test_manual_add_blocked_in_self_only_mode(self):
         self.comp.registration_mode = "self_only"
         self.comp.save()

@@ -176,10 +176,13 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
             is_paid=not competition.require_payment,
         )
 
-        Competition.objects.filter(pk=competition.pk, registration_mode_locked=False).update(
-            registration_mode_locked=True
-        )
+        lock_registration_mode(competition)
     return registration
+
+
+def lock_registration_mode(competition) -> None:
+    """Fix who may be entered once somebody is in: the mode does not change under an entry."""
+    Competition.objects.filter(pk=competition.pk, registration_mode_locked=False).update(registration_mode_locked=True)
 
 
 def already_entered(competition, person) -> bool:
