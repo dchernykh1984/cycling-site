@@ -1071,11 +1071,12 @@ def _validate_deadline(form, reg_form, date_start, date_end):
     max_date = date_end if date_end else date_start
     # The wall-clock typed, so its day is the day at the event's place.
     if deadline.date() > max_date:
-        label = "date end" if date_end else "date start"
-        reg_form.add_error(
-            "registration_deadline",
-            f"Registration deadline cannot be later than the competition {label}.",
+        message = (
+            _("Registration deadline cannot be later than the competition date end.")
+            if date_end
+            else _("Registration deadline cannot be later than the competition date start.")
         )
+        reg_form.add_error("registration_deadline", message)
         return False
     return True
 

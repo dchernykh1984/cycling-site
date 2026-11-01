@@ -4694,3 +4694,11 @@ msgstr "Аяқталу күні жоқ"
 #: calendar_app/templates/calendar_app/submit.html
 msgid "and the track file, from which the map draws the track"
 msgstr "сондай-ақ трек файлы — трек картада осы файл бойынша сызылады"
+
+#: calendar_app/views.py
+msgid "Registration deadline cannot be later than the competition date end."
+msgstr "Тіркелу мерзімі іс-шараның аяқталу күнінен кеш болмауы керек."
+
+#: calendar_app/views.py
+msgid "Registration deadline cannot be later than the competition date start."
+msgstr "Тіркелу мерзімі іс-шараның басталу күнінен кеш болмауы керек."

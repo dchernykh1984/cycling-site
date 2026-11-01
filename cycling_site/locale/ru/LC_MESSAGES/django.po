@@ -4696,3 +4696,11 @@ msgstr "Без даты окончания"
 #: calendar_app/templates/calendar_app/submit.html
 msgid "and the track file, from which the map draws the track"
 msgstr "а также файл трека — по нему трек нарисуется на карте"
+
+#: calendar_app/views.py
+msgid "Registration deadline cannot be later than the competition date end."
+msgstr "Срок регистрации не может быть позже даты окончания мероприятия."
+
+#: calendar_app/views.py
+msgid "Registration deadline cannot be later than the competition date start."
+msgstr "Срок регистрации не может быть позже даты начала мероприятия."
