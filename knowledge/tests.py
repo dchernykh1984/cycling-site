@@ -769,6 +769,21 @@ class WagtailModerationTextTests(TestCase):
         self.assertTrue(any("approved and published" in m for m in msgs), msgs)
         self.assertFalse(any("page published" in m for m in msgs), msgs)
 
+    def test_rejecting_a_submission_approved_meanwhile_says_so_instead_of_failing(self):
+        from unittest import mock
+
+        from django.contrib.messages import get_messages
+
+        opened = DraftSubmission.objects.get(pk=self.submission.pk)  # still pending when the page opened
+        self.submission.approve(reviewer=self.admin)
+        url = reverse("wagtailsnippets_knowledge_draftsubmission:reject", args=[self.submission.pk])
+        with mock.patch("knowledge.wagtail_hooks.get_object_or_404", return_value=opened):
+            resp = self.client.post(url, {"reviewer_note": "late"})
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(any("already" in str(m) for m in get_messages(resp.wsgi_request)))
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, DraftSubmission.Status.APPROVED)
+
 
 # ---------------------------------------------------------------------------
 # Localization of the on-site forms
