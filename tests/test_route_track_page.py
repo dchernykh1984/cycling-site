@@ -8,6 +8,8 @@ import tempfile
 
 from django.core.files.base import ContentFile
 from django.test import TestCase, override_settings
+from django.utils import translation
+from django.utils.translation import gettext
 
 from calendar_app.models import Competition
 from locations.models import Location
@@ -21,7 +23,9 @@ GPX = (
 TRACK = re.compile(r'<script id="competition-route-track" type="application/json">(.*?)</script>', re.S)
 
 
-class RouteTrackPageTests(TestCase):
+class _EventPage(TestCase):
+    """An approved event at a venue with its own point, and its page."""
+
     def setUp(self):
         media = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, media, ignore_errors=True)
@@ -47,6 +51,8 @@ class RouteTrackPageTests(TestCase):
     def _with_track(self) -> None:
         self.competition.file_route.save("ride.gpx", ContentFile(GPX))
 
+
+class RouteTrackPageTests(_EventPage):
     def test_the_page_carries_the_track_it_draws_and_says_what_the_arrows_mean(self):
         self._with_track()
         html = self._page()
@@ -86,3 +92,49 @@ class RouteTrackPageTests(TestCase):
         self.assertNotIn("route_track.js", html)
         self.assertNotIn("Arrows show the direction of the track.", html)
         self.assertIn("L.marker(start)", html)
+
+
+class RouteButtonsTests(_EventPage):
+    """A route's link and its file are offered side by side, each when it is there."""
+
+    def test_the_link_opens_the_track_and_the_file_downloads_it(self):
+        self.competition.url_route = "https://example.com/route"
+        self.competition.save()
+        self._with_track()
+        html = self._page()
+        link = html.index('id="route-link"')
+        download = html.index('id="route-download"')
+        self.assertLess(link, download)
+        self.assertIn('href="https://example.com/route" target="_blank"', html)
+        self.assertIn(f'href="{self.competition.file_route.url}" download', html)
+        self.assertIn("Link to the track</a>", html)
+        self.assertIn("Download the track</a>", html)
+
+    def test_each_button_comes_only_with_its_own_half(self):
+        self.competition.url_route = "https://example.com/route"
+        self.competition.save()
+        self.assertIn('id="route-link"', self._page())
+        self.assertNotIn('id="route-download"', self._page())
+        self.competition.url_route = ""
+        self.competition.save()
+        self._with_track()
+        self.assertNotIn('id="route-link"', self._page())
+        self.assertIn('id="route-download"', self._page())
+
+    def test_a_route_file_that_is_no_track_keeps_its_route_button(self):
+        self.competition.file_route.save("route.pdf", ContentFile(b"%PDF-1.7 a route map"))
+        html = self._page()
+        self.assertIn(f'href="{self.competition.file_route.url}" target="_blank"', html)
+        self.assertIn('id="route-file">Route</a>', html)
+        self.assertNotIn('id="route-download"', html)
+
+    def test_the_buttons_speak_the_page_s_language(self):
+        self.competition.url_route = "https://example.com/route"
+        self.competition.save()
+        self._with_track()
+        response = self.client.get(in_language(self.competition.get_absolute_url(), "kk"))
+        with translation.override("kk"):
+            words = [gettext("Link to the track"), gettext("Download the track")]
+        self.assertNotIn("Link to the track", words)
+        for word in words:
+            self.assertContains(response, word)
