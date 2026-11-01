@@ -95,17 +95,22 @@ def can_see(user, competition) -> bool:
     return True
 
 
-def can_review(user, competition) -> bool:
-    """Whether ``user`` may see an event awaiting review: its author, or a moderator.
+def moderates(user, competition) -> bool:
+    """Whether ``user`` reviews this event as a moderator.
 
     Any organizer moderates, but an invite-only event is for the people who may edit it -- so while
     it waits, only admins and up review it.
     """
-    if user.is_authenticated and user.pk == competition.submitted_by_id:
-        return True
     if competition.invite_only:
         return roles.at_least(user, roles.MANAGE_ALL_EVENTS)
     return roles.at_least(user, roles.MODERATE_EVENTS)
+
+
+def can_review(user, competition) -> bool:
+    """Whether ``user`` may see an event awaiting review: its author, or a moderator."""
+    if user.is_authenticated and user.pk == competition.submitted_by_id:
+        return True
+    return moderates(user, competition)
 
 
 def can_open(user, competition) -> bool:
@@ -121,6 +126,13 @@ def can_open(user, competition) -> bool:
     if competition.status != Competition.Status.APPROVED:
         return can_review(user, competition)
     return can_see(user, competition)
+
+
+def listed_events(user) -> QuerySet:
+    """The published events ``user`` may see in a listing."""
+    from calendar_app.models import Competition
+
+    return listed_for(Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False), user)
 
 
 def listed_for(qs: QuerySet, user) -> QuerySet:
