@@ -470,6 +470,17 @@ def month_picker_choices() -> dict:
     }
 
 
+def _filter_panel_context(request) -> dict:
+    """What the filter panel of the calendar, the list and the map shows: its choices and the period picker."""
+    return {
+        "event_types_json": _event_types_for_locale(),
+        "categories_json": _categories_for_locale(),
+        "disciplines_json": _disciplines_for_locale(),
+        "only_favorite": _only_favorite_requested(request),
+        **month_picker_choices(),
+    }
+
+
 def calendar_date_words() -> dict:
     """Month and weekday names the calendar script writes dates with, in the reader's language.
 
@@ -575,11 +586,7 @@ class CalendarView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateView):
         context["landing_regions"] = regions
         context["landing_places"] = places
         context["landing_kinds"] = kinds
-        context["event_types_json"] = _event_types_for_locale()
-        context["categories_json"] = _categories_for_locale()
-        context["disciplines_json"] = _disciplines_for_locale()
-        context["only_favorite"] = _only_favorite_requested(self.request)
-        context.update(month_picker_choices())
+        context.update(_filter_panel_context(self.request))
         return context
 
 
@@ -671,7 +678,7 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(month_picker_choices())
+        context.update(_filter_panel_context(self.request))
         form = CompetitionFilterForm(self.request.GET or None)
         today = timezone.localdate()
         date_from = today
@@ -735,14 +742,10 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         context["registration_open_ids"] = {
             comp.pk for comp in page if comp.registration_enabled and comp.is_registration_open()
         }
-        context["only_favorite"] = _only_favorite_requested(self.request)
         context["date_from"] = date_from
         context["date_to"] = date_to
         context["upcoming"] = upcoming
         context["is_manager"] = is_manager
-        context["event_types_json"] = _event_types_for_locale()
-        context["categories_json"] = _categories_for_locale()
-        context["disciplines_json"] = _disciplines_for_locale()
         # A filtered list is a page about a city or a discipline; say so, instead of leaving every
         # combination sharing one title and one site-wide description.
         meta_title, meta_description = describe_filters(
@@ -766,15 +769,11 @@ class CalendarMapView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateVie
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.index_context(context)
-        context.update(month_picker_choices())
+        context.update(_filter_panel_context(self.request))
         today = timezone.localdate()
         context["date_from"] = _parse_date(self.request.GET.get("date_from"), today)
         upcoming = self.request.GET.get("period") == Period.UPCOMING
         context["date_to"] = _parse_date(self.request.GET.get("date_to"), None if upcoming else end_of_month(today))
-        context["event_types_json"] = _event_types_for_locale()
-        context["categories_json"] = _categories_for_locale()
-        context["disciplines_json"] = _disciplines_for_locale()
-        context["only_favorite"] = _only_favorite_requested(self.request)
         context["map_home_area"] = map_home_area(_parse_int_ids(self.request.GET.getlist("location")))
         context["map_default_view"] = settings.MAP_DEFAULT_VIEW
         return context
@@ -1030,6 +1029,37 @@ class CompetitionDetailView(View):
             # Only people let in ever reach this page, but say it plainly in case a crawler does.
             response["X-Robots-Tag"] = "noindex"
         return response
+
+
+# What the event form writes into an event as it stands, beside its place, people and review state.
+_TEXT_FIELDS = (
+    "title_kk",
+    "title_en",
+    "description_ru",
+    "description_kk",
+    "description_en",
+    "preview_text_ru",
+    "preview_text_kk",
+    "preview_text_en",
+    "url_announcement",
+    "url_registration",
+    "url_route",
+    "url_regulations",
+    "url_results",
+)
+_UPLOADS = ("file_announcement", "file_route", "file_regulations", "file_results", "preview_image")
+
+
+def _fill_from_form(comp, cd) -> None:
+    """Copy the event form's ``cleaned_data`` into ``comp``; an upload left empty keeps its file."""
+    comp.title_ru = cd["title_ru"]
+    for name in _TEXT_FIELDS:
+        setattr(comp, name, cd.get(name, ""))
+    comp.date_start = cd["date_start"]
+    comp.date_end = cd.get("date_end")
+    for name in _UPLOADS:
+        if cd.get(name):
+            setattr(comp, name, cd[name])
 
 
 def _competition_or_403(request, pk, may=can_manage_or_own) -> Competition:
@@ -1381,32 +1411,12 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         location, request.user, is_admin=roles.at_least(request.user, roles.APPROVE_PLACES)
                     )
                     comp = Competition(
-                        title_ru=cd["title_ru"],
-                        title_kk=cd.get("title_kk", ""),
-                        title_en=cd.get("title_en", ""),
-                        description_ru=cd.get("description_ru", ""),
-                        description_kk=cd.get("description_kk", ""),
-                        description_en=cd.get("description_en", ""),
-                        preview_text_ru=cd.get("preview_text_ru", ""),
-                        preview_text_kk=cd.get("preview_text_kk", ""),
-                        preview_text_en=cd.get("preview_text_en", ""),
                         location=location,
-                        date_start=cd["date_start"],
-                        date_end=cd.get("date_end"),
-                        url_announcement=cd.get("url_announcement", ""),
-                        url_registration=cd.get("url_registration", ""),
-                        url_route=cd.get("url_route", ""),
-                        url_regulations=cd.get("url_regulations", ""),
-                        url_results=cd.get("url_results", ""),
                         submitted_by=request.user,
                         invite_only=is_organizer and cd.get("invite_only", False),
                         is_top=cd.get("is_top", False),
                     )
-                    uploads = ("file_announcement", "file_route", "file_regulations", "file_results", "preview_image")
-                    for fname in uploads:
-                        f = cd.get(fname)
-                        if f:
-                            setattr(comp, fname, f)
+                    _fill_from_form(comp, cd)
                     # An organizer's own submission is published straight away -- but not onto
                     # geography still awaiting review: that would put the pending city's name on a
                     # public page and leave the branch holding an approved event, which is what
@@ -1492,27 +1502,7 @@ class EditCompetitionView(View):
                         "initial_location_id": form["location"].value() or "",
                     },
                 )
-            comp.title_ru = cd["title_ru"]
-            comp.title_kk = cd.get("title_kk", "")
-            comp.title_en = cd.get("title_en", "")
-            comp.description_ru = cd.get("description_ru", "")
-            comp.description_kk = cd.get("description_kk", "")
-            comp.description_en = cd.get("description_en", "")
-            comp.preview_text_ru = cd.get("preview_text_ru", "")
-            comp.preview_text_kk = cd.get("preview_text_kk", "")
-            comp.preview_text_en = cd.get("preview_text_en", "")
-            comp.date_start = cd["date_start"]
-            comp.date_end = cd.get("date_end")
-            comp.url_announcement = cd.get("url_announcement", "")
-            comp.url_registration = cd.get("url_registration", "")
-            comp.url_route = cd.get("url_route", "")
-            comp.url_regulations = cd.get("url_regulations", "")
-            comp.url_results = cd.get("url_results", "")
-            uploads = ("file_announcement", "file_route", "file_regulations", "file_results", "preview_image")
-            for fname in uploads:
-                f = cd.get(fname)
-                if f:
-                    setattr(comp, fname, f)
+            _fill_from_form(comp, cd)
             # Registration config (enable, categories, ...) stays organizer-only even when the author
             # editing their own submission is a participant (#200) -- mirror the submit view.
             is_org = roles.at_least(request.user, roles.PUBLISH_EVENTS)
