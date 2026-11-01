@@ -66,6 +66,11 @@ class Candidate:
     city_kk: str = ""
     city_en: str = ""
 
+    @property
+    def titles(self) -> list[str]:
+        """The title in every locale that has one, as the site's known events list them."""
+        return [title for title in (self.title, self.title_kk, self.title_en) if title]
+
 
 @dataclass
 class Taxonomy:

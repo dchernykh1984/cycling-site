@@ -8,8 +8,10 @@ this lives apart from either runner.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from agent import locations, venues
-from agent.models import Candidate
+from agent.models import Candidate, KnownEvents
 
 
 def propose_city(client, tree: list, cities: list, candidate: Candidate, created: list | None = None) -> int | None:
@@ -122,3 +124,30 @@ def _remember_venue(tree: list, city_id: int, venue_id: int, candidate: Candidat
     if candidate.lat is not None and candidate.lng is not None:
         node["lat"], node["lng"] = candidate.lat, candidate.lng
     city.setdefault("children", []).append(node)
+
+
+def create_placed(
+    client, tree: list, cities: list, known: KnownEvents, candidate: Candidate, locate=resolve_location
+) -> None:
+    """Place the event and post it, then add it to ``known`` so a later source in the run skips it.
+
+    The geography is posted before the competition, so a failing competition POST leaves it behind.
+    What was created is named in the error the pipeline records, otherwise those pending nodes sit
+    in the moderation queue with nothing explaining where they came from.
+    """
+    created: list[str] = []
+    try:
+        location_id = locate(client, tree, cities, candidate, created)
+        client.create(candidate, location_id)
+    except Exception as exc:
+        if created:
+            raise RuntimeError(f"{exc} (left behind: {', '.join(created)})") from exc
+        raise
+    known.existing.append({"title": candidate.title, "titles": candidate.titles, "date_start": candidate.date_start})
+
+
+def with_default_city(candidate: Candidate, city: str) -> Candidate:
+    """The candidate in ``city`` when it names no city of its own; the maintainers write it in English."""
+    if candidate.city or not city:
+        return candidate
+    return replace(candidate, city=city, city_en=city)

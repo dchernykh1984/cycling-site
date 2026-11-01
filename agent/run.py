@@ -10,8 +10,8 @@ from pathlib import Path
 from agent import chunk, enrich, fetch, geo, links, llm, locations, pipeline, sources
 from agent.config import Config, ConfigError, from_env
 from agent.models import Candidate, KnownEvents, RunReport, SourceKind, Taxonomy
-from agent.placing import resolve_location
-from agent.site_api import SiteApiClient
+from agent.placing import create_placed
+from agent.site_api import SiteApiClient, what_the_site_knows
 
 _ROOT = Path(__file__).resolve().parent.parent
 _SOURCES_FILE = _ROOT / "events_sources.yaml"
@@ -157,14 +157,7 @@ def main() -> int:
     client = SiteApiClient(config.site_base_url, config.api_token)
     guidance = _read(_GUIDANCE_FILE)
     parsed_sources = sources.parse_sources(_read(_SOURCES_FILE))
-    known = client.known()
-    print(
-        f"known: {len(known.existing)} events, {len(known.rejected)} rejected; "
-        f"{known.deleted_count} of these are deleted and blocked from coming back",
-        flush=True,
-    )
-    taxonomy = client.taxonomy()
-    tree = client.location_tree()
+    known, taxonomy, tree = what_the_site_knows(client)
     cities = locations.flatten_cities(tree)
 
     # Every link each source's page carried, learned while it was read; the prompt only ever sees
@@ -193,20 +186,7 @@ def main() -> int:
         return locations.match_city(cities, candidate.city, candidate.region, candidate.country)
 
     def create(candidate: Candidate) -> None:
-        # The geography is posted before the competition, so a failing competition POST leaves it
-        # behind. Name what was created in the error the pipeline records, otherwise those pending
-        # nodes sit in the moderation queue with nothing explaining where they came from.
-        created: list[str] = []
-        try:
-            location_id = resolve_location(client, tree, cities, candidate, created=created)
-            client.create(candidate, location_id)
-        except Exception as exc:
-            if created:
-                raise RuntimeError(f"{exc} (left behind: {', '.join(created)})") from exc
-            raise
-        # Feed it back so later sources in this same run do not re-propose the same event.
-        titles = [t for t in (candidate.title, candidate.title_kk, candidate.title_en) if t]
-        known.existing.append({"title": candidate.title, "titles": titles, "date_start": candidate.date_start})
+        create_placed(client, tree, cities, known, candidate)
 
     report = pipeline.run_pipeline(
         parsed_sources,

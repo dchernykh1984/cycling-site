@@ -219,7 +219,7 @@ def test_a_revoked_session_fails_with_its_own_message_not_a_traceback(monkeypatc
     def _refused(api_id, api_hash, session):
         raise fetch_module.ChannelUnavailableError("the Telegram session is not authorized")
 
-    monkeypatch.setattr(module, "_what_the_site_knows", lambda client: (KnownEvents(), None, []))
+    monkeypatch.setattr(module, "what_the_site_knows", lambda client: (KnownEvents(), None, []))
     monkeypatch.setattr(module.fetch, "open_client", _refused)
     assert module.main() == 1
     assert "not authorized" in capsys.readouterr().err

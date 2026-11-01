@@ -17,6 +17,7 @@ from __future__ import annotations
 import re
 from dataclasses import replace
 
+from agent.credit import with_credit
 from agent.models import Candidate
 from instagram_agent.accounts import Account
 
@@ -37,18 +38,6 @@ _MEDIA_TAG = re.compile(r"</?(img|source|embed|track|svg|canvas|video|iframe|pic
 _EMPTY_TAGS = re.compile(r"<(p|li)>\s*</\1>", re.IGNORECASE)
 _SPACES = re.compile(r"[ \t]{2,}")
 
-# The credit line, per locale. Russian is the wording the maintainer asked for; the other two say
-# the same thing. None of them names a platform.
-_CREDIT = {
-    "ru": "".join(chr(c) for c in (0x418, 0x441, 0x442, 0x43E, 0x447, 0x43D, 0x438, 0x43A))  # Istochnik
-    + " "
-    + "".join(chr(c) for c in (0x43E, 0x431, 0x44A, 0x44F, 0x432, 0x43B, 0x435, 0x43D, 0x438, 0x44F)),  # obyavleniya
-    "kk": "".join(chr(c) for c in (0x425, 0x430, 0x431, 0x430, 0x440, 0x43B, 0x430, 0x43D, 0x434, 0x44B, 0x440, 0x443))
-    + " "
-    + "".join(chr(c) for c in (0x43A, 0x4E9, 0x437, 0x456)),  # "Khabarlandyru kozi"
-    "en": "Announcement source",
-}
-
 
 def _strip_platform(text: str) -> str:
     """Remove links, embedded media and any naming of the platform; keep the text readable."""
@@ -61,21 +50,14 @@ def _strip_platform(text: str) -> str:
     return _SPACES.sub(" ", scrubbed).strip()
 
 
-def _with_credit(text: str, handle: str, locale: str) -> str:
-    """The description with the credit line appended, as its own paragraph."""
-    body = _strip_platform(text)
-    credit = f"<p>{_CREDIT[locale]}: {handle}</p>"
-    return f"{body}\n{credit}" if body else credit
-
-
 def credit_account(candidate: Candidate, account: Account) -> Candidate:
     """The candidate as it may be published: credited to the account, with nothing else attached."""
     handle = f"@{account.username}"
     return replace(
         candidate,
-        description=_with_credit(candidate.description, handle, "ru"),
-        description_kk=_with_credit(candidate.description_kk, handle, "kk"),
-        description_en=_with_credit(candidate.description_en, handle, "en"),
+        description=with_credit(_strip_platform(candidate.description), handle, "ru"),
+        description_kk=with_credit(_strip_platform(candidate.description_kk), handle, "kk"),
+        description_en=with_credit(_strip_platform(candidate.description_en), handle, "en"),
         # The announcement, route and registration fields are shown on the event page and would each
         # carry a link to the post. There is no other link to put there, so they stay empty.
         source_url="",
