@@ -22,6 +22,8 @@
     --skin-menu-hover-bg: #343a40; /* a navbar menu item under the pointer */
     --skin-map-bg: #374151; /* the map before its tiles arrive */
     --skin-popup-shadow: rgba(0, 0, 0, .6); /* the shadow under the date picker */
+    --skin-route: #6f42c1; /* an event's route track on its map, and the arrows along it */
+    --skin-route-halo: rgba(255, 255, 255, .85); /* the edge around them, readable on the satellite layer */
 }
 
 /* Dark theme: make navbar-brand and nav-links readable (Lux sets dark colors that don't adapt) */
