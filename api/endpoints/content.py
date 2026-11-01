@@ -138,7 +138,7 @@ def _require_manager(user, rule: str) -> None:
 def _validate_body_length(body: str | None) -> None:
     if body and len(body) > MAX_RICH_TEXT_LENGTH:
         raise HttpError(
-            HTTPStatus.UNPROCESSABLE_CONTENT,
+            HTTPStatus.UNPROCESSABLE_ENTITY,
             _("Body is too large (max %(limit)d characters).") % {"limit": MAX_RICH_TEXT_LENGTH},
         )
 
@@ -153,22 +153,22 @@ def _validate_localized_length(value: LocalizedStr, field: str, message: str) ->
         return
     for raw in (value.ru, value.kk, value.en):
         if raw and len(raw) > limit:
-            raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, message % {"limit": limit})
+            raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, message % {"limit": limit})
 
 
 def _validate_news_title(title: LocalizedStr) -> None:
     # Require a non-whitespace title: a value like "   " is truthy but visually empty, and would
     # otherwise save a blank article that slugifies to the technical "article" fallback.
     if not any((value or "").strip() for value in (title.ru, title.kk, title.en)):
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("At least one title translation is required."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, _("At least one title translation is required."))
     _validate_localized_length(title, "title", _("Title is too long (max %(limit)d characters)."))
 
 
 def _validate_knowledge_payload(payload: KnowledgeArticleIn) -> None:
     if payload.locale not in {code for code, _label in KnowledgeArticle.LOCALE_CHOICES}:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("Unknown locale."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, _("Unknown locale."))
     if not (payload.title or "").strip():
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("A title is required."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, _("A title is required."))
     # Bound title/category to their column widths so an over-long value fails with a 422
     # rather than a database DataError (500) inside KnowledgeArticle.save().
     for field, value, message in (
@@ -178,15 +178,15 @@ def _validate_knowledge_payload(payload: KnowledgeArticleIn) -> None:
         field_obj = KnowledgeArticle._meta.get_field(field)
         limit = field_obj.max_length if isinstance(field_obj, Field) else None
         if limit is not None and value and len(value) > limit:
-            raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, message % {"limit": limit})
+            raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, message % {"limit": limit})
     _validate_body_length(payload.body)
 
 
 def _validate_knowledge_patch(data: dict) -> None:
     if "locale" in data and data["locale"] not in {code for code, _label in KnowledgeArticle.LOCALE_CHOICES}:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("Unknown locale."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, _("Unknown locale."))
     if "title" in data and not (data["title"] or "").strip():
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("A title is required."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, _("A title is required."))
     for field, message in (
         ("title", _("Title is too long (max %(limit)d characters).")),
         ("category", _("Category is too long (max %(limit)d characters).")),
@@ -195,7 +195,7 @@ def _validate_knowledge_patch(data: dict) -> None:
             field_obj = KnowledgeArticle._meta.get_field(field)
             limit = field_obj.max_length if isinstance(field_obj, Field) else None
             if limit is not None and len(data[field]) > limit:
-                raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, message % {"limit": limit})
+                raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, message % {"limit": limit})
     if "body" in data:
         _validate_body_length(data["body"])
 
@@ -229,7 +229,7 @@ def _require_owner_or_admin(user, draft: DraftSubmission) -> None:
 
 def _validate_locale(locale: str) -> None:
     if locale not in _LOCALE_VALUES:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, f"locale must be one of: {', '.join(_LOCALE_VALUES)}")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, f"locale must be one of: {', '.join(_LOCALE_VALUES)}")
 
 
 def _validate_draft_lengths(title: str | None, category: str | None) -> None:
@@ -248,7 +248,7 @@ def _validate_draft_lengths(title: str | None, category: str | None) -> None:
         field_obj = DraftSubmission._meta.get_field(field)
         limit = field_obj.max_length if isinstance(field_obj, Field) else None
         if limit is not None and len(value) > limit:
-            raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, message % {"limit": limit})
+            raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, message % {"limit": limit})
 
 
 def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmission:
@@ -273,7 +273,7 @@ def _create_draft(request, payload: DraftIn, submission_type: str) -> DraftSubmi
         try:
             draft.approve(reviewer=user)
         except ValueError as exc:
-            raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, str(exc)) from exc
+            raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, str(exc)) from exc
 
     return draft
 

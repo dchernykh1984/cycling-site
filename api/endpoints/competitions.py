@@ -270,20 +270,20 @@ def _validate_description_length(value: LocalizedStr) -> None:
     for loc in (value.ru, value.kk, value.en):
         if is_too_large(loc):
             raise HttpError(
-                HTTPStatus.UNPROCESSABLE_CONTENT, f"Description is too large (max {MAX_RICH_TEXT_LENGTH} characters)"
+                HTTPStatus.UNPROCESSABLE_ENTITY, f"Description is too large (max {MAX_RICH_TEXT_LENGTH} characters)"
             )
 
 
 def _validate_dates(date_start, date_end) -> None:
     """An end before the start, which the site's form refuses: the API stored one."""
     if date_start is not None and date_end is not None and date_end < date_start:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "date_end cannot be before date_start")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "date_end cannot be before date_start")
 
 
 def _validate_title(competition: Competition) -> None:
     """A title in at least one language: without one every list showed the event as an empty link."""
     if not any((getattr(competition, f"title_{code}") or "").strip() for code, _name in settings.LANGUAGES):
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "A title is required in at least one language")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "A title is required in at least one language")
 
 
 def _validate_location_id(location_id, user) -> None:
@@ -555,9 +555,9 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
         _validate_location_id(data["location_id"], user)
     # Unambiguous discipline semantics: omit = leave unchanged, [] = clear, null = error.
     if "discipline_ids" in data and data["discipline_ids"] is None:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "discipline_ids cannot be null; pass [] to clear")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "discipline_ids cannot be null; pass [] to clear")
     if "event_type_ids" in data and data["event_type_ids"] is None:
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, "event_type_ids cannot be null; pass [] to clear")
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "event_type_ids cannot be null; pass [] to clear")
 
     # disciplines is a many-to-many: set it after the row is saved, not via update_fields.
     set_disciplines = "discipline_ids" in data

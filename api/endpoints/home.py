@@ -68,14 +68,14 @@ def _apply(card: HomeCard, payload: HomeCardIn | HomeCardPatchIn) -> None:
             body = getattr(payload.body, lang)
             if len(body) > MAX_RICH_TEXT_LENGTH:
                 raise HttpError(
-                    HTTPStatus.UNPROCESSABLE_CONTENT,
+                    HTTPStatus.UNPROCESSABLE_ENTITY,
                     _("Body is too large (max %(limit)d characters).") % {"limit": MAX_RICH_TEXT_LENGTH},
                 )
             setattr(card, f"body_{lang}", body)
     titles = [getattr(card, f"title_{lang}") for lang in _LANGUAGES]
     bodies = [getattr(card, f"body_{lang}") or "" for lang in _LANGUAGES]
     if not any(titles) and all(blank_rich_text(body) for body in bodies):
-        raise HttpError(HTTPStatus.UNPROCESSABLE_CONTENT, _("A card needs a heading or some text."))
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, _("A card needs a heading or some text."))
 
 
 @router.get("/cards/", response=list[HomeCardOut], summary="List the home page's cards, in order")
