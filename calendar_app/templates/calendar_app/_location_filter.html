@@ -99,7 +99,6 @@ document.addEventListener('DOMContentLoaded', function () {
     labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}', search: '{% trans "Search..." %}' },
     onChange: function () { if (window.onCalendarFilterChange) window.onCalendarFilterChange(); }
   });
-  window.locationFilter = inst;
   // Every ticked level travels, so a second country stays ticked after a region of the first is
   // picked; the server shows the deepest of them.
   window.getLocationFilterIds = function () { return inst.chosenPks(); };

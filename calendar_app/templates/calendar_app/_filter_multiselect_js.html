@@ -19,7 +19,7 @@ config:
   collapseWholeLevels: bool  // filters only: a fully ticked level yields its parent's ids instead
   labels:        {all: "...", selected: "...", search: "..."}
   onChange():    called after every user-driven selection change
-returns {effective(), effectivePks(), effectiveDepth(), chosenPks(), refresh(), select(chains)}:
+returns {effective(), effectivePks(), chosenPks(), levelPks(depth), select(chains)}:
 select() replaces the whole selection with the given chains, as a page script sets it (issue #353).
 window.placeCascade(allLocations) gives a place cascade its nodesUnder() and chains(ids).
 {% endcomment %}
@@ -387,10 +387,8 @@ window.MultiSelectCascade = window.MultiSelectCascade || function (config) {
   return {
     effective: effective,
     effectivePks: function () { return effective().pks; },
-    effectiveDepth: function () { return effective().depth; },
     chosenPks: chosenPks,
     levelPks: function (d) { return selectedPks(d); },
-    refresh: function () { rebuildFrom(1); },
     select: select
   };
 };
