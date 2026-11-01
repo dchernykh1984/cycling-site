@@ -649,6 +649,25 @@ class CompetitionMaterial(models.Model):
         return f"{self.title} ({self.url})"
 
 
+class CompetitionTrack(models.Model):
+    """The line an event's route file draws on its map, kept so that a visit need not read the file.
+
+    Not a fact of its own (constitution, principle VIII): it is what the file holds, read by
+    calendar_app.tracks, and ``source`` names the file it was read from. A visit that finds another
+    file on the event reads that one and keeps it here instead. An empty geometry stands for a file
+    that holds no track -- a PDF of the route, say -- so that it is not read again on every visit.
+    """
+
+    objects: ClassVar[models.Manager["CompetitionTrack"]]
+
+    competition = models.OneToOneField(Competition, on_delete=models.CASCADE, related_name="+")
+    source = models.CharField(max_length=255)
+    geometry = models.JSONField(null=True, blank=True)  # a GeoJSON MultiLineString
+
+    def __str__(self) -> str:
+        return f"Route track of competition {self.competition_id}"
+
+
 class CompetitionRejection(models.Model):
     """One moderation rejection of a competition, kept as history across resubmissions (#200)."""
 
