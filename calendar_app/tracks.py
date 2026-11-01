@@ -38,7 +38,9 @@ _MAX_POINTS_READ = 500_000  # from one file; the rest of a larger one is left un
 _MAX_LINES = 200
 _MAX_POINTS_KEPT = 4_000  # sent to the page, over all its lines
 _TOLERANCE = 5.0  # metres a thinned line may stray from the file's; doubled until the points fit
-_WORK = 20_000_000  # distance sums the thinning may spend before it falls back to every n-th point
+# Distances from a point to a segment the thinning may measure for one file, about a second's work; a
+# file that needs more -- a huge one, or one shaped to make it -- keeps every n-th point instead.
+_WORK = 4_000_000
 _DIGITS = 5  # decimal places of a degree kept: about a metre
 _METRES_PER_DEGREE = 111_320.0
 
@@ -47,6 +49,10 @@ Line = list[tuple[float, float]]  # (lat, lng) points
 
 class _EnoughPointsError(Exception):
     """Enough points have been read from the file."""
+
+
+class _OutOfWorkError(Exception):
+    """The thinning has spent the work one file may take."""
 
 
 class _Lines:
@@ -350,21 +356,30 @@ def read(data: bytes) -> dict | None:
 
 
 def _thinned(lines: list[Line]) -> list[Line]:
-    """The lines with as few points as keep them within the tolerance, at most _MAX_POINTS_KEPT in all."""
+    """The lines with as few points as keep them within the tolerance, at most _MAX_POINTS_KEPT in all.
+
+    The tolerance doubles until the points fit. All of it shares one budget of _WORK: past it, every
+    n-th point of what the last pass left is kept instead, which costs one pass.
+    """
+    budget = [_WORK]
     tolerance = _TOLERANCE
-    while True:
-        lines = [_douglas_peucker(line, tolerance) for line in lines]
-        if sum(map(len, lines)) <= _MAX_POINTS_KEPT:
-            return lines
-        tolerance *= 2
+    try:
+        while True:
+            lines = [_douglas_peucker(line, tolerance, budget) for line in lines]
+            if sum(map(len, lines)) <= _MAX_POINTS_KEPT:
+                return lines
+            tolerance *= 2
+    except _OutOfWorkError:
+        # Room is left for each line's last point, which is kept whatever the step.
+        step = -(-sum(map(len, lines)) // max(1, _MAX_POINTS_KEPT - len(lines)))
+        return [line[::step] if (len(line) - 1) % step == 0 else [*line[::step], line[-1]] for line in lines]
 
 
-def _douglas_peucker(line: Line, tolerance: float) -> Line:
+def _douglas_peucker(line: Line, tolerance: float, budget: list[int]) -> Line:
     """The line's points that matter, by Douglas and Peucker: none of the rest strays past tolerance.
 
     Distances are measured on a plane laid over the line's middle latitude, near enough for a line's
-    own extent. When the work runs past _WORK -- a file shaped to make it -- every n-th point is kept
-    instead, which costs one pass.
+    own extent; each one measured is taken from the budget.
     """
     if len(line) < 3:
         return line
@@ -373,13 +388,11 @@ def _douglas_peucker(line: Line, tolerance: float) -> Line:
     keep = [False] * len(line)
     keep[0] = keep[-1] = True
     spans = [(0, len(line) - 1)]
-    work = 0
     while spans:
         first, last = spans.pop()
-        work += last - first
-        if work > _WORK:
-            step = max(1, len(line) // _MAX_POINTS_KEPT)
-            return line[::step] if (len(line) - 1) % step == 0 else [*line[::step], line[-1]]
+        budget[0] -= last - first
+        if budget[0] < 0:
+            raise _OutOfWorkError
         index, distance = _farthest(xy, first, last)
         if distance > tolerance:
             keep[index] = True

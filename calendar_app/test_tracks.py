@@ -222,8 +222,29 @@ class ReadTests(SimpleTestCase):
         zigzag = [(43.25 + (i % 2) * 0.01, 76.0 + i * 0.001) for i in range(50)]
         with mock.patch.object(tracks, "_WORK", 10), mock.patch.object(tracks, "_MAX_POINTS_KEPT", 10):
             lines = _lines(_gpx(f"<trk><trkseg>{_points('trkpt', zigzag)}</trkseg></trk>")) or [[]]
-        self.assertLessEqual(len(lines[0]), 11)
+        self.assertLessEqual(len(lines[0]), 10)
         self.assertEqual((lines[0][0], lines[0][-1]), ([76.0, 43.25], [76.049, 43.26]))
+
+    def test_every_pass_of_the_thinning_draws_on_one_budget(self):
+        """A file that needs pass after pass stops at the budget rather than spending it on each one."""
+        # Off a straight line by every distance up to a kilometre: each doubling of the tolerance
+        # drops only some of the points, so the thinning goes pass after pass.
+        zigzag = [(43.25 + (i * 7919 % 1000) / 111_320, 76.0 + i * 0.0001) for i in range(3000)]
+        measured = []
+        real = tracks._farthest
+
+        def farthest(xy, first, last):
+            measured.append(last - first)
+            return real(xy, first, last)
+
+        with (
+            mock.patch.object(tracks, "_farthest", farthest),
+            mock.patch.object(tracks, "_WORK", 50_000),
+            mock.patch.object(tracks, "_MAX_POINTS_KEPT", 100),
+        ):
+            lines = tracks._thinned([zigzag])
+        self.assertLessEqual(sum(measured), 50_000)
+        self.assertLessEqual(sum(map(len, lines)), 100)
 
     def test_a_file_over_the_size_limit_is_not_read(self):
         gpx = _gpx(f"<trk><trkseg>{_points('trkpt', RIDE)}</trkseg></trk>")
