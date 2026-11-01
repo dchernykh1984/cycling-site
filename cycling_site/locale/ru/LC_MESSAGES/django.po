@@ -4692,3 +4692,7 @@ msgstr "Все будущие"
 #: calendar_app/templates/calendar_app/_period_nav.html
 msgid "No end date"
 msgstr "Без даты окончания"
+
+#: calendar_app/templates/calendar_app/submit.html
+msgid "and the track file, from which the map draws the track"
+msgstr "а также файл трека — по нему трек нарисуется на карте"

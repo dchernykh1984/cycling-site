@@ -9,12 +9,16 @@ import datetime
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import translation
+from django.utils.translation import gettext
 
 from accounts.models import User
 from calendar_app.models import Competition
 
 
-class FormFieldsDrawnOnceTests(TestCase):
+class _EventFormPages(TestCase):
+    """The submit page and an event's edit page, as an organizer sees them."""
+
     @classmethod
     def setUpTestData(cls):
         cls.organizer = User.objects.create_user(
@@ -35,6 +39,8 @@ class FormFieldsDrawnOnceTests(TestCase):
         ):
             yield name, self.client.get(url).content.decode()
 
+
+class FormFieldsDrawnOnceTests(_EventFormPages):
     def test_the_preview_upload_appears_once(self):
         for name, html in self._pages():
             with self.subTest(page=name):
@@ -44,3 +50,16 @@ class FormFieldsDrawnOnceTests(TestCase):
         for name, html in self._pages():
             with self.subTest(page=name):
                 self.assertEqual(html.count('name="invite_only"'), 1)
+
+
+class RouteHintTests(_EventFormPages):
+    """Under the route's link the form asks for its file as well, not instead (maintainer, 2026-11-01)."""
+
+    def test_the_route_asks_for_its_file_too_and_the_other_documents_for_one_or_the_other(self):
+        for name, html in self._pages():
+            with self.subTest(page=name):
+                self.assertIn('id="route-file-hint"', html)
+                self.assertEqual(html.count("and the track file, from which the map draws the track"), 0)
+                with translation.override("ru"):
+                    self.assertEqual(html.count(gettext("and the track file, from which the map draws the track")), 1)
+                    self.assertEqual(html.count(gettext("or upload file")), 3)
