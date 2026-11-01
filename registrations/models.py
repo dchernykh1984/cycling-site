@@ -1,4 +1,5 @@
 import datetime
+import html
 from typing import ClassVar
 
 from django.conf import settings
@@ -140,6 +141,14 @@ class CompetitionRegistration(models.Model):
     @property
     def is_relay(self) -> bool:
         return bool(self.participant_names)
+
+    @property
+    def display_name(self) -> str:
+        """Who the entry is for, as plain text: a relay team's members, or one person's name."""
+        if self.participant_names:
+            # Stored escaped and joined with <BR>, for the participant list's |safe.
+            return html.unescape(self.participant_names.replace("<BR>", ", "))
+        return f"{self.last_name} {self.first_name}"
 
     def clean(self) -> None:
         if self.pk:

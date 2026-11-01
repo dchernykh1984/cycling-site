@@ -20,7 +20,6 @@ from event_photos.permissions import can_manage_albums, can_mark, can_see_event,
 from event_photos.views import (
     archive_response,
     bib_archive_name,
-    participant_name,
     thumbnail_response,
     visible_albums,
 )
@@ -158,9 +157,7 @@ def _registration_card(request, registration) -> dict:
         "confirmed": summary["confirmed"],
         "state": summary["state"],
         "cover_thumbnail_url": _thumbnail_url(request, summary["cover"]),
-        "participant": str(registration)
-        if registration.participant_names
-        else f"{registration.last_name} {registration.first_name}".strip(),
+        "participant": registration.display_name.strip(),
         "category": localize_field(registration.category, "name") if registration.category else None,
     }
 
@@ -264,7 +261,7 @@ def registration_archive(request, registration_id: int):
     registration = _registration(request.auth, registration_id)
     return _archive(
         actions.registration_photos(registration),
-        f"{registration.competition.title} - {participant_name(registration)}",
+        f"{registration.competition.title} - {registration.display_name}",
     )
 
 
