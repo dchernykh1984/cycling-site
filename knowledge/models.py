@@ -16,12 +16,10 @@ from wagtail.search import index
 from wagtail_localize.fields import SynchronizedField
 
 from cycling_site.page_mixins import AsciiSlugMixin, OwnLanguageUrlMixin
-from cycling_site.richtext import MAX_RICH_TEXT_LENGTH
 from cycling_site.sanitize import sanitize_rich_text_columns
 from cycling_site.slugs import unique_slug
 
 # Backwards-compatible alias for the shared, site-wide rich-text size cap.
-MAX_BODY_LENGTH = MAX_RICH_TEXT_LENGTH
 
 # Top-level path segments served by knowledge/urls.py under /knowledge/. An article slug must
 # never equal one of these, or its /knowledge/<slug>/ detail would resolve to the service view
@@ -269,9 +267,9 @@ class DraftSubmission(models.Model):
                 raise ValueError(f"Cannot approve: submission is already '{locked.get_status_display()}'.")
 
             if self.submission_type == DraftSubmission.SubmissionType.KNOWLEDGE_ARTICLE:
-                self._create_knowledge_article(reviewer)
+                self._create_knowledge_article()
             elif self.submission_type == DraftSubmission.SubmissionType.NEWS:
-                self._create_news_article(reviewer)
+                self._create_news_article()
             else:
                 raise ValueError(f"Unknown submission type: '{self.submission_type}'.")
 
@@ -279,9 +277,7 @@ class DraftSubmission(models.Model):
             self.reviewed_by = reviewer
             self.save(update_fields=["status", "reviewed_by"])
 
-    def _create_knowledge_article(self, reviewer) -> None:
-        # reviewer is unused for the plain model (kept for signature parity with the news path).
-        del reviewer
+    def _create_knowledge_article(self) -> None:
         # KnowledgeArticle.save() sanitizes the body and assigns a unique ASCII slug.
         KnowledgeArticle.objects.create(
             title=self.title,
@@ -292,9 +288,7 @@ class DraftSubmission(models.Model):
             published_at=timezone.now(),
         )
 
-    def _create_news_article(self, reviewer) -> None:
-        # reviewer is unused for the plain model (kept for signature parity with knowledge).
-        del reviewer
+    def _create_news_article(self) -> None:
         from news.models import NewsArticle
 
         # The submission is single-locale; populate that locale's columns plus the canonical ones

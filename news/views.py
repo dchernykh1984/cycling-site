@@ -44,7 +44,7 @@ class NewsArticleDetailView(View):
     def get(self, request, pk):
         can_manage = roles.at_least(request.user, roles.MANAGE_NEWS)
         article = get_object_or_404(NewsArticle, pk=pk, is_deleted=False)
-        if article.is_deleted or (article.is_hidden and not can_manage):
+        if article.is_hidden and not can_manage:
             raise Http404
         can_comment = roles.at_least(request.user, roles.COMMENT)
         return render(

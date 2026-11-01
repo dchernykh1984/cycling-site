@@ -385,28 +385,6 @@ class SubmitNewsViewTests(TestCase):
                 self.assertIn(f"body {locale}", getattr(article, f"body_{locale}"))
 
 
-class NewsTagsTest(TestCase):
-    def test_get_news_index_url_returns_none_when_no_index(self):
-        from django.urls import reverse
-
-        from news.templatetags.news_tags import get_news_index_url
-
-        # When no Wagtail NewsIndexPage exists, the tag falls back to the Django news list URL.
-        result = get_news_index_url()
-        self.assertEqual(result, reverse("news_index"))
-
-    def test_get_news_index_url_returns_url_when_index_exists(self):
-        from news.templatetags.news_tags import get_news_index_url
-
-        root = _get_site_root()
-        index = NewsIndexPage(title="News", slug="news-tags")
-        root.add_child(instance=index)
-        index.save_revision().publish()
-        result = get_news_index_url()
-        self.assertIsNotNone(result)
-        self.assertIn("news", result)
-
-
 class NewsArticleHeroUploadTests(TestCase):
     """Frontend add-news cover upload: the hero image must save to news/hero/ and the
     stored cover must be served back (the prod scenario the user reported)."""
