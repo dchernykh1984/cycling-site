@@ -94,17 +94,6 @@ function addLandmark(grp, lm, q, T) {
   }
   grp.add(G);
 }
-function nearLandmarks(T) {
-  const out = [];
-  LANDMARKS.forEach(lm => {
-    const q = proj(lm.lat, lm.lon); let best = 1e18, bi = 0;
-    for (let i = 0; i < T.N; i += 2) { const dx = T.X[i] - q.x, dz = T.Z[i] - q.z, d = dx * dx + dz * dz; if (d < best) { best = d; bi = i; } }
-    const dist = Math.sqrt(best); if (dist > (lm.far ? 14000 : 1300)) return;
-    const o = sampleAt(T, T.D[bi], {}), side = ((q.x - o.x) * o.rx + (q.z - o.z) * o.rz) > 0 ? 'right' : 'left';
-    out.push(Object.assign({}, lm, { x: q.x, z: q.z, s: T.D[bi], side, dist }));
-  });
-  return out;
-}
 function addArch(grp, T, s, text, W) {
   const o = sampleAt(T, s, {}), g = new THREE.Group(), red = new THREE.MeshLambertMaterial({ color: 0xC3323B });
   [-1, 1].forEach(k => { const p = new THREE.Mesh(new THREE.BoxGeometry(.8, 6.5, .8), red); p.position.set(k * (W / 2 + 1), 3.25, 0); g.add(p); });

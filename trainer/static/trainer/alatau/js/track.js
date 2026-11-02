@@ -1,5 +1,5 @@
 'use strict';
-/* ---------------- Трасса: карта и сцена, профиль, уклон и высоты ---------------- */
+/* ---------------- Трасса: карта, профиль, уклон, старт, финиш и ориентиры ---------------- */
 const ORIGIN = { lat: 43.238, lon: 76.945 };
 // back from metres on the scene to the map: where the rider is, for the track a Strava upload carries
 function unproj(x, z) { const R = 6371000; return { lat: ORIGIN.lat - z / R * 180 / Math.PI, lon: ORIGIN.lon + x / (R * Math.cos(ORIGIN.lat * Math.PI / 180)) * 180 / Math.PI }; }
@@ -52,10 +52,21 @@ function nearest(T, x, z) {
   for (let i = 0; i < C.x.length; i++) { const dx = C.x[i] - x, dz = C.z[i] - z, d = dx * dx + dz * dz; if (d < best) { best = d; bi = i; } }
   return { d: Math.sqrt(best), y: C.y[bi], s: C.d[bi] };
 }
-function terrainH(T, x, z) {
-  const n = nearest(T, x, z); let h = n.y - 1.2;
-  if (T.route.scenery === 'gorge') {
-    if (n.d > 45) { const k = n.d - 45, f = clamp((n.s - 1200) / 3000, .12, 1); h += f * (k * .46 + fbm(x * .004, z * .004) * Math.min(1, k / 120) * 70); }
-  } else if (n.d > 70) { h += (fbm(x * .003, z * .003) - .5) * 5 * Math.min(1, (n.d - 70) / 250); }
-  return h;
+// where a rider is on the map: the route's point at their distance, moved sideways to their lane
+function riderPos(R, out) { const o = sampleAt(world.T, R.s, out); o.px = o.x + o.rx * R.lane; o.pz = o.z + o.rz * R.lane; return o; }
+function nearLandmarks(T) {
+  const out = [];
+  LANDMARKS.forEach(lm => {
+    const q = proj(lm.lat, lm.lon); let best = 1e18, bi = 0;
+    for (let i = 0; i < T.N; i += 2) { const dx = T.X[i] - q.x, dz = T.Z[i] - q.z, d = dx * dx + dz * dz; if (d < best) { best = d; bi = i; } }
+    const dist = Math.sqrt(best); if (dist > (lm.far ? 14000 : 1300)) return;
+    const o = sampleAt(T, T.D[bi], {}), side = ((q.x - o.x) * o.rx + (q.z - o.z) * o.rz) > 0 ? 'right' : 'left';
+    out.push(Object.assign({}, lm, { x: q.x, z: q.z, s: T.D[bi], side, dist }));
+  });
+  return out;
+}
+// the course of a ride: its track, where it starts and finishes, and the sights along it
+function buildCourse(route) {
+  const T = buildTrack(route), S0 = 20;
+  return { T, S0, FIN: T.loop ? S0 + T.L : T.L - 8, route, lms: nearLandmarks(T) };
 }

@@ -3,7 +3,7 @@
 let hudAcc = 0, toastT = 0;
 function toast(t, dur) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); toastT = dur || 2.5; }
 function gradeColor(g) { const p = g * 100; if (p < -1.5) return 'rgba(61,123,182,.85)'; if (p < 2) return 'rgba(76,124,85,.85)'; if (p < 5) return 'rgba(214,160,40,.88)'; if (p < 8) return 'rgba(214,110,40,.9)'; return 'rgba(195,50,59,.92)'; }
-let profBase = null;
+let profBase = null, profScale = null;
 function drawProfileBase() {
   const cv = $('#profile'); if (!cv || !world) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv.clientWidth || 300, h = cv.clientHeight || 60;
@@ -11,7 +11,7 @@ function drawProfileBase() {
   const g = profBase.getContext('2d'), T = world.T, a = world.S0, b = world.FIN, o = {};
   let mn = 1e9, mx = -1e9; const ys = [];
   for (let i = 0; i <= 200; i++) { const y = sampleAt(T, a + (b - a) * i / 200, o).y; ys.push(y); mn = Math.min(mn, y); mx = Math.max(mx, y); }
-  const rng2 = Math.max(30, mx - mn); world.prof = { mn, rng: rng2 };
+  const rng2 = Math.max(30, mx - mn); profScale = { mn, rng: rng2 };
   g.beginPath(); g.moveTo(0, cv.height);
   ys.forEach((y, i) => g.lineTo(i / 200 * cv.width, cv.height - 6 * dpr - (y - mn) / rng2 * (cv.height - 14 * dpr)));
   g.lineTo(cv.width, cv.height); g.closePath(); g.fillStyle = 'rgba(243,246,249,.22)'; g.fill();
@@ -21,7 +21,7 @@ function drawProfileBase() {
 function drawProfile() {
   const cv = $('#profile'); if (!profBase) return; const g = cv.getContext('2d'), dpr = cv.width / (cv.clientWidth || 1);
   g.clearRect(0, 0, cv.width, cv.height); g.drawImage(profBase, 0, 0);
-  const span = world.FIN - world.S0, pr = world.prof, o = {};
+  const span = world.FIN - world.S0, pr = profScale, o = {};
   const mark = (R, c, r) => { const rel = R.s - world.S0, f = rideMode !== 'race' && world.T.loop ? (((rel % span) + span) % span) / span : clamp(rel / span, 0, 1), y = sampleAt(world.T, R.s, o).y; const X = f * cv.width, Y = cv.height - 6 * dpr - (y - pr.mn) / pr.rng * (cv.height - 14 * dpr); g.fillStyle = c; g.beginPath(); g.arc(X, Y, r * dpr, 0, 7); g.fill(); };
   bots.forEach(b => mark(b, '#' + b.color.toString(16).padStart(6, '0'), 3));
   mark(me, '#ffffff', 6); mark(me, '#C3323B', 4);
