@@ -218,7 +218,7 @@ class InvitationLinkTests(_Cast):
     def test_a_visitor_not_signed_in_is_shown_the_event_and_asked_to_sign_in(self):
         """What a chat's preview of the pasted link shows (issue #351): the event, not the login form."""
         Competition.objects.filter(pk=self.private.pk).update(preview_text_ru="Meet at 6:15 by the bike shop")
-        for skin in ("light", "orange"):
+        for skin in ("light", "orange", "ubt-dark"):
             with self.subTest(skin=skin), override_settings(DEFAULT_SKIN=skin):
                 response = self.client.get(self._link())
                 self.assertEqual(response.status_code, 200)

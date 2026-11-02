@@ -1,0 +1,243 @@
+{% load static i18n wagtailcore_tags wagtailuserbar home_tags knowledge_tags locations_tags news_tags seo_tags %}
+{% get_current_language as CURRENT_LANGUAGE %}
+<!DOCTYPE html>
+<html lang="{{ CURRENT_LANGUAGE }}" data-bs-theme="{{ skin.mode }}" data-skin="{{ skin.key }}">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% wagtail_site as current_site %}
+    {% comment %}
+    The title is built on one line on purpose: written across several, Django keeps the newlines
+    and indentation, and search results and browser tabs showed a title starting with blank lines.
+    meta_title is what a view passes when the page can name itself.
+    {% endcomment %}
+    <title>{% block title %}{% if meta_title %}{{ meta_title }}{% elif page.seo_title %}{{ page.seo_title }}{% else %}{{ page.title }}{% endif %}{% endblock %}{% block title_suffix %}{% if current_site and current_site.site_name %} - {{ current_site.site_name }}{% endif %}{% endblock %}</title>
+    {# A page that can describe itself does; the fallback is for the ones that cannot. #}
+    {% firstof meta_description page.search_description as description %}
+    <meta name="description" content="{% if description %}{{ description }}{% else %}{% trans 'Calendar of endurance sport events -- cycling, running, cross-country skiing -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base.' %}{% endif %}" />
+    {% comment %}Site ownership for Google Search Console and Yandex Webmaster ("HTML tag" method), from
+    GOOGLE_SITE_VERIFICATION / YANDEX_VERIFICATION in the environment; absent when they are unset.{% endcomment %}
+    {% if GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ GOOGLE_SITE_VERIFICATION }}" />{% endif %}
+    {% if YANDEX_VERIFICATION %}<meta name="yandex-verification" content="{{ YANDEX_VERIFICATION }}" />{% endif %}
+    <link rel="canonical" href="{% firstof canonical_url request.build_absolute_uri %}" />
+    {% comment %}
+    Each language is its own address, so each has to point at the other two -- otherwise the three
+    look like three copies of the same page and an engine picks one and drops the rest. x-default
+    goes to Russian, which is what the unprefixed URL resolves to for most of our readers.
+    {% endcomment %}
+    {% language_alternates as alternates %}
+    {% for code, alternate_url in alternates %}
+    <link rel="alternate" hreflang="{{ code }}" href="{{ alternate_url }}" />
+    {% if code == 'ru' %}<link rel="alternate" hreflang="x-default" href="{{ alternate_url }}" />{% endif %}
+    {% endfor %}
+    <meta property="og:type" content="{% firstof og_type 'website' %}" />
+    <meta property="og:site_name" content="{% if current_site and current_site.site_name %}{{ current_site.site_name }}{% endif %}" />
+    {# What a view or an editor named the page for sharing, else what its tab shows (issue #334). #}
+    {% firstof meta_title page.seo_title as og_title %}
+    <meta property="og:title" content="{% if og_title %}{{ og_title }}{% else %}{% rendered_title %}{% endif %}" />
+    {# og_description is the line a page wants a chat to show; search engines keep reading the description above. #}
+    <meta property="og:description" content="{% if og_description %}{{ og_description }}{% elif description %}{{ description }}{% else %}{% trans 'Calendar of endurance sport events -- cycling, running, cross-country skiing -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base.' %}{% endif %}" />
+    <meta property="og:url" content="{% firstof canonical_url request.build_absolute_uri %}" />
+    {% comment %}
+    The picture a chat shows when somebody pastes a link. A page may carry its own -- an event with
+    a poster uploaded to it -- and everything else falls back to the site mark, which is what every
+    page used to show. Width and height are declared so a messenger can lay the card out without
+    downloading the file first.
+    {% endcomment %}
+    {% if og_image %}
+    <meta property="og:image" content="{{ og_image }}" />
+    {% if og_image_width %}<meta property="og:image:width" content="{{ og_image_width }}" />{% endif %}
+    {% if og_image_height %}<meta property="og:image:height" content="{{ og_image_height }}" />{% endif %}
+    {% else %}
+    {# 1200x630: the size messengers and social networks draw as a wide card rather than a thumbnail. #}
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'og-default.png' %}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    {% endif %}
+    <meta name="twitter:card" content="summary_large_image" />
+    {% comment %}
+    Declared site-wide so a reader that follows a link into any page still finds the feeds, and so
+    a crawler has one more address that changes on its own. The calendar pages add their own.
+    {% endcomment %}
+    <link rel="alternate" type="application/rss+xml" title="{% trans 'News' %}" href="{% url 'news_rss' %}" />
+    <link rel="alternate" type="application/atom+xml" title="{% trans 'News' %}" href="{% url 'news_atom' %}" />
+    {% block extra_head %}{% endblock %}
+    {% if request.in_preview_panel %}
+    <base target="_blank">
+    {% endif %}
+    {% comment %}A guest's choice used to live in the browser's storage, out of the server's sight. Carry
+    it over into the cookie once, before the stylesheets load, so the page never flashes the default.
+    Only light or dark can be there: they are the keys equal to their own mode. A page drawn in a skin
+    of its own is drawn again instead, once the cookie holds: recoloured in place, it kept that skin's
+    templates and stylesheet under the other's colours.{% endcomment %}
+    {% if not request.user.is_authenticated and not request.COOKIES.skin %}
+    {{ skin_modes|json_script:"skin-modes" }}
+    <script>(function(){var t=localStorage.getItem('theme'),modes=JSON.parse(document.getElementById('skin-modes').textContent),root=document.documentElement,drawn=root.getAttribute('data-skin');if(modes[t]!==t)return;document.cookie='skin='+t+';path=/;max-age=31536000;samesite=lax';if(modes[drawn]!==drawn){if(/(^|;\s*)skin=/.test(document.cookie))location.reload();return;}root.setAttribute('data-skin',t);root.setAttribute('data-bs-theme',modes[t]);}());</script>
+    {% endif %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/lux/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/cycling_site.css' %}">
+    {% for stylesheet in skin_stylesheets %}<link rel="stylesheet" href="{% static stylesheet %}">{% endfor %}
+    <link rel="icon" href="{% static 'favicon.ico' %}" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'favicon-32.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'apple-touch-icon.png' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body data-authenticated="{{ request.user.is_authenticated|yesno:'true,false' }}" data-theme-url="{% url 'account_theme' %}">
+    {% wagtailuserbar %}
+
+    {% comment %}Dark UBT skin: UBT Almaty's frame of every page (skins/orange/templates/base.html), with this
+    skin's own images. Same links, buttons and forms as the site's own base.html, in the same order; what
+    changes is the look -- the team mark beside the brand, an icon in front of each section, the languages
+    as one segmented control and a footer that repeats the sections.{% endcomment %}
+    <nav class="navbar navbar-expand-lg sticky-top bg-body ubt-navbar">
+        <div class="container">
+            {% get_site_content as sc %}
+            {# The home page in the reader's language: a bare "/" costs every visitor a redirect. #}
+            <a class="navbar-brand ubt-brand" href="{% url 'wagtail_serve' '' %}">
+                <img class="ubt-brand-mark" src="{% static 'skins/ubt-dark/img/mark.png' %}" width="44" height="44" alt="">
+                <span class="ubt-brand-text">{% if sc.navbar_title %}{{ sc.navbar_title }}{% else %}{% trans "Cycling" %}{% endif %}</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false"
+                aria-label="{% trans 'Toggle navigation' %}">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ubt-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'news_index' %}">{% include "_ubt_icon.html" with name="news" %}<span>{% trans "News" %}</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'calendar' %}">{% include "_ubt_icon.html" with name="calendar" %}<span>{% trans "Calendar" %}</span></a>
+                    </li>
+                    {% get_locations_map_url as locations_map_url %}
+                    {% if locations_map_url %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ locations_map_url }}">{% include "_ubt_icon.html" with name="map" %}<span>{% trans "Map" %}</span></a>
+                    </li>
+                    {% endif %}
+                    {% get_knowledge_index_url as knowledge_url %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% if knowledge_url %}{{ knowledge_url }}{% else %}#{% endif %}">{% include "_ubt_icon.html" with name="book" %}<span>{% trans "Knowledge Base" %}</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'gallery_index' %}">{% include "_ubt_icon.html" with name="image" %}<span>{% trans "Gallery" %}</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'virtual_ride' %}">{% include "_ubt_icon.html" with name="bike" %}<span>{% trans "Virtual ride" %}</span></a>
+                    </li>
+                    {% get_about_url as about_url %}
+                    {% if about_url %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ about_url }}">{% include "_ubt_icon.html" with name="info" %}<span>{% trans "About" %}</span></a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'search' %}">{% include "_ubt_icon.html" with name="search" %}<span>{% trans "Search" %}</span></a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center flex-wrap gap-2 ubt-nav-tools">
+                    {% include "_skin_select.html" %}
+                    {% get_available_languages as available_languages %}
+                    <div class="ubt-lang" role="group" aria-label="{% trans 'Language' %}">
+                    {% for lang_code, lang_name in available_languages %}
+                    {% if lang_code == CURRENT_LANGUAGE %}
+                    <span class="btn btn-sm btn-secondary pe-none" lang="{{ lang_code }}" aria-current="true">{{ lang_code|lang_display_code }}<span class="visually-hidden"> {{ lang_code|lang_own_name }}</span></span>
+                    {% else %}
+                    <form action="{% url 'set_language' %}" method="post" style="display:inline">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                        <input name="language" type="hidden" value="{{ lang_code }}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" lang="{{ lang_code }}" title="{{ lang_code|lang_own_name }}">{{ lang_code|lang_display_code }}<span class="visually-hidden"> {{ lang_code|lang_own_name }}</span></button>
+                    </form>
+                    {% endif %}
+                    {% endfor %}
+                    </div>
+                    {% if request.user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle ubt-account" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            {% include "_ubt_icon.html" with name="user" %}<span class="ubt-account-email">{{ request.user.email }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'account_profile' %}">{% trans "Profile" %}</a>
+                            </li>
+                            {% if request.user.is_staff %}
+                            <li>
+                                <a class="dropdown-item" href="{% url 'wagtailadmin_home' %}">{% trans "Admin" %}</a>
+                            </li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'account_logout' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button class="dropdown-item" type="submit">{% trans "Log out" %}</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <a href="{% if sign_in_url %}{{ sign_in_url }}{% else %}{% url 'account_login' %}{% endif %}" class="btn btn-sm btn-outline-primary">{% trans "Log in" %}</a>
+                    <a href="{% url 'account_signup' %}" class="btn btn-sm btn-primary">{% trans "Register" %}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-4">
+        {% include "_moderation_banner.html" %}
+        {% block setup_hint %}{% include "_setup_hint.html" %}{% endblock %}
+        {% include "_skin_offer.html" %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% if 'success' in message.tags %}success{% elif 'warning' in message.tags %}warning{% elif 'error' in message.tags %}danger{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% trans 'Close' %}"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mt-auto ubt-footer">
+        <div class="container">
+            <div class="ubt-footer-grid">
+                <div class="ubt-footer-brand">
+                    <img src="{% static 'skins/ubt-dark/img/mark-white.png' %}" width="56" height="56" alt="">
+                    <div>
+                        <div class="ubt-footer-title">{% if sc.navbar_title %}{{ sc.navbar_title }}{% else %}{% trans "Cycling" %}{% endif %}</div>
+                        <div class="ubt-footer-copy">&copy; {% now "Y" %} {% trans "Cycling events" %}</div>
+                    </div>
+                </div>
+                <ul class="ubt-footer-links list-unstyled">
+                    <li><a href="{% url 'news_index' %}">{% trans "News" %}</a></li>
+                    <li><a href="{% url 'calendar' %}">{% trans "Calendar" %}</a></li>
+                    {% if locations_map_url %}<li><a href="{{ locations_map_url }}">{% trans "Map" %}</a></li>{% endif %}
+                    {% if knowledge_url %}<li><a href="{{ knowledge_url }}">{% trans "Knowledge Base" %}</a></li>{% endif %}
+                    <li><a href="{% url 'gallery_index' %}">{% trans "Gallery" %}</a></li>
+                    <li><a href="{% url 'virtual_ride' %}">{% trans "Virtual ride" %}</a></li>
+                    {% if about_url %}<li><a href="{{ about_url }}">{% trans "About" %}</a></li>{% endif %}
+                    <li><a href="{% url 'search' %}">{% trans "Search" %}</a></li>
+                </ul>
+                <div class="ubt-footer-meta">
+                    <div>
+                        {% blocktrans with url="https://github.com/dchernykh1984/cycling-site/issues" %}Found a bug or have a suggestion? <a href="{{ url }}" target="_blank" rel="noopener">Open an issue on GitHub</a>.{% endblocktrans %}
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 mt-2">
+                        <a href="{% url 'privacy_policy' %}">{% trans "Privacy Policy" %}</a>
+                        <a href="{% url 'terms_of_use' %}">{% trans "Terms of Use" %}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="{% static 'js/cycling_site.js' %}"></script>
+    {% if skin.has_script %}<script src="{% static skin.script %}"></script>{% endif %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

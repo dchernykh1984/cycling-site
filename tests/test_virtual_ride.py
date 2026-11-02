@@ -78,7 +78,7 @@ class VirtualRideTests(TestCase):
 
 class VirtualRideNavigationTests(TestCase):
     def test_every_skin_links_the_tab_in_its_navbar(self):
-        for skin in ("light", "dark", "orange"):
+        for skin in ("light", "dark", "orange", "ubt-dark"):
             with override_settings(DEFAULT_SKIN=skin):
                 html = self.client.get(reverse("calendar")).content.decode()
             self.assertIn(f'href="{reverse("virtual_ride")}"', html, skin)

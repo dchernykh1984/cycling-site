@@ -30,7 +30,7 @@ class SigningOutStaysOnThePageTests(TestCase):
         return self.client.post(f"/{language}/accounts/logout/", {"next": page})
 
     def test_the_header_s_sign_out_form_names_the_page_in_every_skin(self):
-        for theme in ("light", "orange"):
+        for theme in ("light", "orange", "ubt-dark"):
             with self.subTest(theme=theme):
                 self.member.theme = theme
                 self.member.save(update_fields=["theme"])
