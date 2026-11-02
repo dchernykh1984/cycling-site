@@ -163,3 +163,7 @@ function poseRider(R, phase) {
     placeSeg(lg.crank, _bb.set(lg.s * .08, .3, .03), _fc.set(lg.s * .08, _f.y, _f.z));
   });
 }
+// the riders' 3D models, kept apart from the riders the ride steps
+const riderModels = new WeakMap();
+function addRiderModel(b, ch) { const m = makeRider(ch); riderModels.set(b, m); scene.add(m.g); }
+function removeRiderModel(b) { const m = riderModels.get(b); if (m) { scene.remove(m.g); riderModels.delete(b); } }

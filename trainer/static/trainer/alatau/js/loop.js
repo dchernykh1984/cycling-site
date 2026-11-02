@@ -46,7 +46,7 @@ function frame(now) {
     if (!T.loop && me.s > T.L - 1) me.s = T.L - 1;
   }
   // боты: позиция и анимация
-  bots.forEach(b => { const o = riderPos(b, _p0); b.mesh.g.position.set(o.px, o.y, o.pz); b.mesh.g.rotation.y = Math.atan2(o.tx, o.tz); b.mesh.g.rotation.x = -Math.atan(gradeAt(T, b.s)); poseRider(b.mesh, b.phase); });
+  bots.forEach(b => { const o = riderPos(b, _p0), m = riderModels.get(b); m.g.position.set(o.px, o.y, o.pz); m.g.rotation.y = Math.atan2(o.tx, o.tz); m.g.rotation.x = -Math.atan(gradeAt(T, b.s)); poseRider(m, b.phase); });
   updateCamera(frozen ? 0 : dt, frozen ? 0 : inp.cad || 0, me.v);
   Trainer.update(clockT, phase === 'race' && !frozen ? grade * 100 : 0);
   MP.lastInp = inp;
