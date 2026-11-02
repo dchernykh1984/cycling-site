@@ -38,8 +38,9 @@ neither read the page nor draw, and nothing else steps the physics. Each frame t
 step, the trainer is told the grade, and the scene and the HUD are drawn from the ride's state; what
 happened in the step reaches the page through `rideHooks`. A frame's time is ridden in steps of at
 most 50 ms, so the ride keeps real time on a device that draws two frames a second or more; a longer
-pause, such as a hidden page, counts as half a second. Production names each file after a hash of its content, as it names the page, and the page links
-those names (`cycling_site/storage.py`), so the page and its files are cached together. The ride
+pause, such as a hidden page, counts as half a second. Production names each file after a hash of
+its content, as it names the page, and the page links those names (`cycling_site/storage.py`), so the
+page and its files are cached together. The ride
 runs in the browser: the page talks to the site only through `Site.req` (`js/site.js`), to
 `/api/v1/virtual-ride/` -- who rides, a member's records and rides, the lobby and group races, a
 finished ride and its Strava upload. The page is updated from delivered revisions. It speaks the language its address names (`?lang=ru|kk|en`, which the
