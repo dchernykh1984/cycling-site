@@ -19,7 +19,9 @@ the `skins` skill for agents (issue #324)
 The look of the site is a skin, one folder each under `skins/`. Light and dark are the site's own
 and the two base modes; designers add skins of their own -- any CSS, a script, fonts, their own
 copies of any template -- without touching the site's code. A reader picks a skin from the list
-behind the moon/sun button.
+behind the moon/sun button. Two skins carry the team's look: UBT Almaty (`orange`, on the light
+mode) and Dark UBT (`ubt-dark`), the same pages, fonts and orange on the dark mode, with copies of
+UBT Almaty's templates of its own.
 
 ## User Scenarios
 
