@@ -75,7 +75,7 @@ class BLEDev {
   onCtrl(dv) { if (dv.getUint8(0) === 0x80 && dv.byteLength >= 3 && dv.getUint8(1) === 0x00 && dv.getUint8(2) !== 1) { this.ctrl = false; Sensors.changed(); toast(t('dev.noControl')); } }
   async setGrade(g) {
     if (!this.ctrl || this.busy) return false; this.busy = true;
-    try { const v = Math.round(clamp(g, -10, 20) * 100); await this.write([0x11, 0, 0, v & 255, (v >> 8) & 255, 40, 51]); return true; } // ветер 0, уклон 0,01 %, Crr 0,004, CdA·ρ/2 ≈ 0,51
+    try { const v = Math.round(clamp(g, -10, 20) * 100); await this.write([0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(TRAINER_SIM.crr * 1e4), Math.round(TRAINER_SIM.wind * 100)]); return true; } // FTMS: wind 0, grade in 0.01 %, Crr in 0.0001, CdA·ρ/2 in 0.01
     catch (e) { return false; } finally { this.busy = false; }
   }
   onIBD(dv) {
@@ -164,7 +164,7 @@ const Trainer = {
   last: -10, sent: null,
   update(t, grade) {
     const d = Sensors.trainer(); if (!d || !d.ctrl) return;
-    const target = Math.round(grade * settings.difficulty / 100 * 10) / 10; // проценты уклона с учётом сложности
+    const target = trainerGrade(grade, settings.difficulty);
     if (t - this.last < 1) return;
     if (this.sent !== null && Math.abs(target - this.sent) < .2 && t - this.last < 5) return;
     this.last = t; d.setGrade(target).then(ok => { if (ok) this.sent = target; });

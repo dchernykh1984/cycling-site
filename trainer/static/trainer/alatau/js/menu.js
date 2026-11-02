@@ -31,5 +31,4 @@ function readSettings() {
   store.set('settings', settings);
 }
 function fillSettings() { $('#circ').value = settings.circ; $('#trainer').value = settings.trainer; $('#mass').value = settings.mass; $('#height').value = settings.height || 178; $('#bikeType').innerHTML = Object.keys(BIKE_TYPES).map(k => '<option value="' + k + '">' + BIKE_TYPES[k].name + ', ≈' + fmt1(BIKE_TYPES[k].kg) + ' ' + t('u.kg') + '</option>').join(''); $('#bikeType').value = BIKE_TYPES[settings.bikeType] ? settings.bikeType : 'road'; $('#bikeKg').value = settings.bikeKg || bikeType().kg; renderBodyHint(); $('#bots').value = settings.bots; $('#level').value = settings.level; $('#difficulty').value = settings.difficulty; $('#hrmax').value = settings.hrmax; $('#view').value = settings.view; $('#cadSpeed').value = settings.cadSpeed || 'direct'; }
-function directStep(r, kmh, dt) { const t = (kmh || 0) / 3.6; r.v += (t - r.v) * (1 - Math.exp(-dt * 3)); if (t === 0 && r.v < .05) r.v = 0; return r.v * dt; }
 function showLoading(on) { $('#loading').classList.toggle('hidden', !on); }

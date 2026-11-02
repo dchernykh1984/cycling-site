@@ -39,10 +39,9 @@ function frame(now) {
     bots.forEach(b => {
       if (b.remote) { mpStepRemote(b, dt); return; }
       if (phase === 'countdown') return;
-      const gb = gradeAt(T, b.s), surge = 1 + .08 * Math.sin(clockT * .21 + b.seed) + .05 * Math.sin(clockT * .9 + b.seed * 2) + (gb > .03 ? .08 : 0);
-      const P = b.finishT != null ? 70 : b.wkg * b.mass * surge * styleMult(b, gb);
+      const gb = gradeAt(T, b.s), P = botPower(b, gb, world.FIN - b.s, clockT);
       b.P = P;
-      b.cad = b.v > .5 ? clamp((b.finishT != null ? 62 : (b.ch.style === 'sprinter' ? 94 : b.ch.style === 'climber' ? 86 : 90)) + Math.sin(clockT * .37 + b.seed) * 4 - Math.max(0, gb) * 120, 58, 115) : 0;
+      b.cad = botCadence(b, gb, clockT);
       b.s += stepRider(b, P, gb, dt); b.phase += b.cad / 60 * Math.PI * 2 * dt;
       if (b.finishT == null && phase !== 'menu' && b.s >= world.FIN) b.finishT = raceT;
       if (!T.loop && b.s > T.L - 2) b.s = T.L - 2;
