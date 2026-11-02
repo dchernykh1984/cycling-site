@@ -10,10 +10,7 @@ function frame(now) {
   const T = world.T;
   let inp = { P: 0, cad: 0, mode: 'demo' }, grade = gradeAt(T, me.s);
   const frozen = paused || photo;
-  if (phase === 'menu') {
-    inp = { P: 0, cad: 80, mode: 'demo' }; me.s += me.v * dt; if (!T.loop && me.s > T.L - 200) { me.s = world.S0 + 10; cam.init = false; }
-    bots.forEach(b => { b.s += b.v * dt; b.phase += 1.45 * Math.PI * 2 * dt; if (!T.loop && b.s > T.L - 150) b.s = world.S0 + 20; });
-  } else if (!frozen) {
+  if (!frozen) {
     inp = readInput();
     if (phase === 'countdown') {
       cdT -= dt; const n = Math.ceil(cdT); $('#count').textContent = n > 0 ? n : t('count.go');
@@ -43,7 +40,7 @@ function frame(now) {
       b.P = P;
       b.cad = botCadence(b, gb, clockT);
       b.s += stepRider(b, P, gb, dt); b.phase += b.cad / 60 * Math.PI * 2 * dt;
-      if (b.finishT == null && phase !== 'menu' && b.s >= world.FIN) b.finishT = raceT;
+      if (b.finishT == null && b.s >= world.FIN) b.finishT = raceT;
       if (!T.loop && b.s > T.L - 2) b.s = T.L - 2;
     });
     if (!T.loop && me.s > T.L - 1) me.s = T.L - 1;
@@ -60,8 +57,7 @@ function frame(now) {
   renderer.setRenderTarget(rt); renderer.render(scene, camera);
   u.tD.value = rt.texture; renderer.setRenderTarget(null); renderer.render(postScene, postCam);
   // интерфейс
-  if (phase === 'menu') renderPreview(dt);
-  if (phase !== 'menu') { hudAcc += dt; if (hudAcc > .1) { hudAcc = 0; updateHUD(inp, grade); } }
+  hudAcc += dt; if (hudAcc > .1) { hudAcc = 0; updateHUD(inp, grade); }
   placeTags();
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('#toast').classList.remove('show'); }
   if (photo && $('#pStamp').checked) updateStamp();
