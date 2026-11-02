@@ -74,7 +74,8 @@ class VirtualRideTests(TestCase):
 
     def test_the_ride_is_stepped_apart_from_its_drawing(self):
         files = {path.name: path.read_text(encoding="utf-8") for path in trainer_page.local_files()}
-        # the physics and the ride's step touch neither the page, the scene nor the devices: the drawing only reads them
+        # the physics and the ride's step touch neither the page, the scene nor the devices: what happened in a step
+        # reaches the page through rideHooks
         page_or_scene = re.compile(
             r"\$\(|\b(?:document|window|navigator|THREE|scene|camera|renderer|riderModels|Sensors|Trainer)\."
             r"|\.(?:innerHTML|textContent|classList)\b|\b(?:t|tr|toast|updateModeUI)\("
