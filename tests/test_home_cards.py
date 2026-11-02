@@ -1,5 +1,6 @@
 """The home page's cards: the owner adds, changes, orders and removes them on the site and through
-the API, and every skin draws them as tiles -- the site's own skins as cards, UBT Almaty its own way."""
+the API, and every skin draws them as tiles -- the site's own skins as cards, UBT Almaty and Dark
+UBT their own way."""
 
 import re
 import uuid
@@ -20,6 +21,7 @@ TILES = {
     "light": ("card", "home-tile-intro"),
     "dark": ("card", "home-tile-intro"),
     "orange": ("ubt-section", "ubt-section-intro"),
+    "ubt-dark": ("ubt-section", "ubt-section-intro"),
 }
 TILE = r'<section class="([^"]*)">\s*(?:<div class="card-body">\s*)?(?:<h2[^>]*>([^<]*)</h2>)?'
 

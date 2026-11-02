@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static i18n knowledge_tags locations_tags roles seo_tags %}
+
+{% block title %}{% if site_content.page_title %}{{ site_content.page_title }}{% else %}{{ page.title }}{% endif %}{% endblock %}
+
+{% block extra_head %}
+{# Who runs the site and how to search it (home/seo.py), for search engines. #}
+{% if structured_data %}<script type="application/ld+json">{{ structured_data|safe }}</script>{% endif %}
+{% endblock %}
+
+{% block content %}
+{% comment %}Dark UBT skin: UBT Almaty's home page (skins/orange/templates/home/home_page.html) on a dark
+panel instead of the orange banner, so its actions are the orange button and an outline one. It opens
+with the team's mark and the ways into the site -- the calendar first, then its list and map, news and
+the knowledge base -- before the owner's cards, laid out as a grid in .home-body. Every link here is
+one the navbar already carries; nothing new is fetched for this page.{% endcomment %}
+{% with page_heading=site_content.page_title|default:page.title %}
+<section class="ubt-hero">
+  <div class="ubt-hero-text">
+    <p class="ubt-hero-kicker">UBT &middot; Almaty</p>
+    <h1 class="ubt-hero-title">{{ page_heading }}</h1>
+    <p class="ubt-hero-lead">{% trans 'Calendar of endurance sport events -- cycling, running, cross-country skiing -- in Kazakhstan, Kyrgyzstan, Russia and beyond. Announcements, results and a knowledge base.' %}</p>
+    <div class="ubt-hero-actions">
+      <a href="{% url 'calendar' %}" class="btn btn-lg btn-primary">{% include "_ubt_icon.html" with name="calendar" %}{% trans "Nearest events" %}</a>
+      {% if request.user.is_authenticated %}
+      <a href="{% url 'calendar_submit' %}" class="btn btn-lg btn-outline-primary">{% include "_ubt_icon.html" with name="plus" %}{% trans "Submit event" %}</a>
+      {% endif %}
+    </div>
+  </div>
+  <img class="ubt-hero-logo" src="{% static 'skins/ubt-dark/img/logo.png' %}" width="240" height="240" alt="Universal Bicycle Team">
+</section>
+
+<nav class="ubt-tiles" aria-label="{% trans 'Events' %}">
+  <a class="ubt-tile" href="{% url 'calendar' %}">{% include "_ubt_icon.html" with name="calendar" %}<span>{% trans "Calendar" %}</span></a>
+  <a class="ubt-tile" href="{% url 'calendar_list' %}">{% include "_ubt_icon.html" with name="list" %}<span>{% trans "List" %}</span></a>
+  <a class="ubt-tile" href="{% url 'calendar_map' %}">{% include "_ubt_icon.html" with name="map" %}<span>{% trans "Map" %}</span></a>
+  <a class="ubt-tile" href="{% url 'news_index' %}">{% include "_ubt_icon.html" with name="news" %}<span>{% trans "News" %}</span></a>
+  {% get_knowledge_index_url as knowledge_url %}
+  {% if knowledge_url %}<a class="ubt-tile" href="{{ knowledge_url }}">{% include "_ubt_icon.html" with name="book" %}<span>{% trans "Knowledge Base" %}</span></a>{% endif %}
+  <a class="ubt-tile" href="{% url 'gallery_index' %}">{% include "_ubt_icon.html" with name="image" %}<span>{% trans "Gallery" %}</span></a>
+  <a class="ubt-tile" href="{% url 'virtual_ride' %}">{% include "_ubt_icon.html" with name="bike" %}<span>{% trans "Virtual ride" %}</span></a>
+  <a class="ubt-tile" href="{% url 'search' %}">{% include "_ubt_icon.html" with name="search" %}<span>{% trans "Search" %}</span></a>
+</nav>
+
+{% comment %}The home page has no heading of its own -- the owner writes it -- so its share button sits
+in the top row, beside the owner's edit button.{% endcomment %}
+<div class="d-flex justify-content-end gap-2 mb-3">
+  {% include "_share_button.html" %}
+  {% if request.user|role_at_least:ROLES.EDIT_HOME_PAGE %}
+  <a href="{% url 'home_edit' %}" class="btn btn-sm btn-outline-secondary">{% trans "Edit page" %}</a>
+  {% endif %}
+</div>
+{% comment %}The first card spans the row when it has no heading or its heading repeats the page's own
+title: it introduces the rest.{% endcomment %}
+{% if cards %}
+<div class="home-body ubt-sectioned">
+  {% for card in cards %}
+  <section class="ubt-section{% if forloop.first %}{% if not card.title or card.title|lower == page_heading|lower %} ubt-section-intro{% endif %}{% endif %}">
+    {% if card.title %}<h2>{{ card.title }}</h2>{% endif %}
+    {{ card.body|safe|localized_links }}
+  </section>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+{% endblock %}
