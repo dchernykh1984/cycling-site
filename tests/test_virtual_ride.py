@@ -85,6 +85,16 @@ class VirtualRideTests(TestCase):
         stepping = {name for name, code in files.items() if re.search(r"\b(?:stepRider|directStep)\(", code)}
         self.assertEqual(stepping, {"physics.js", "ride.js"})
 
+    def test_the_page_hears_every_event_of_the_ride(self):
+        files = {path.name: path.read_text(encoding="utf-8") for path in trainer_page.local_files()}
+        sent = set(re.findall(r"\brideEvent\('(\w+)'", files["ride.js"]))
+        hooks = re.search(r"^Object\.assign\(rideHooks, \{\n(.*?)^\}\);", files["loop.js"], re.DOTALL | re.MULTILINE)
+        self.assertIsNotNone(hooks)
+        heard = set(re.findall(r"^  (\w+):", hooks.group(1), re.MULTILINE))
+        # the ride does not know the page is there: an event nothing hears would pass unseen
+        self.assertTrue(sent)
+        self.assertEqual(sent, heard)
+
     def test_the_page_is_in_the_sections_sitemap(self):
         self.assertIn(reverse("virtual_ride"), self.client.get("/sitemap-sections.xml").content.decode())
 
