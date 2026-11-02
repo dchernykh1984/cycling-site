@@ -940,6 +940,10 @@ main form .helptext { display: inline-block; margin-top: 0.35rem; font-size: 0.8
 .fc .fc-button-group { gap: 4px; }
 .fc .fc-col-header-cell-cushion { color: var(--ubt-muted); font-weight: 700; font-size: 0.8rem; text-decoration: none; text-transform: uppercase; }
 .fc .fc-daygrid-day-number { color: var(--ubt-ink); text-decoration: none; font-weight: 600; }
+/* Another month's days: FullCalendar fades them to 0.3, 2.5:1 here; quieter in a colour of their own
+   instead, 5.3:1. Its stylesheet comes after this one, hence the root in front. */
+:root[data-skin="ubt-dark"] .fc .fc-day-other .fc-daygrid-day-top { opacity: 1; }
+.fc .fc-day-other .fc-daygrid-day-number { color: var(--ubt-faint); }
 .fc .fc-day-today .fc-daygrid-day-number {
     background: var(--ubt-orange);
     color: var(--ubt-on-orange);

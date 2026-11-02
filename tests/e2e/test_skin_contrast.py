@@ -94,3 +94,15 @@ def test_text_is_readable_in_this_skin(page: Page, live_server, pages_with_conte
             if value < floor:
                 shortfalls.append(f"{what} ({state}): {value:.2f} < {floor}")
     assert not shortfalls, f"in the {skin} skin: " + "; ".join(shortfalls)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_dark_ubt_reads_the_days_of_the_months_around(page: Page, live_server):
+    """FullCalendar fades another month's days to 0.3, 2:1 or less in every skin; Dark UBT draws them in
+    a colour of their own instead, quieter than the month's days and still 4.5:1."""
+    host = live_server.url.split("//")[1].split(":")[0]
+    page.context.add_cookies([{"name": "skin", "value": "ubt-dark", "domain": host, "path": "/"}])
+    page.goto(f"{live_server.url}/ru/calendar/#grid")
+    day = page.locator(".fc-day-other .fc-daygrid-day-number").first
+    expect(day).to_be_visible()
+    assert legibility(day) >= 4.5
