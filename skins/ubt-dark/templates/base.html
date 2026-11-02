@@ -5,6 +5,10 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% comment %}Dark before the stylesheets arrive -- a first visit flashed white until Lux came from its
+    CDN -- and a phone's browser bar in the navbar's own colour (--ubt-surface in skin.css).{% endcomment %}
+    <meta name="color-scheme" content="{{ skin.mode }}" />
+    <meta name="theme-color" content="#1d1a17" />
     {% wagtail_site as current_site %}
     {% comment %}
     The title is built on one line on purpose: written across several, Django keeps the newlines

@@ -388,3 +388,15 @@ class LinkPreviewOnThePageTests(TestCase):
     def test_a_reader_does_not_see_the_block(self):
         comp = _competition("Saturday ride", preview_text_ru="Meet 6:15 at the bike shop", submitted_by=self.author)
         self.assertNotIn('id="link-preview"', self._page(comp))
+
+
+@override_settings(DEFAULT_SKIN="ubt-dark")
+class DarkBeforeTheStylesheetsTests(TestCase):
+    """Dark UBT says in its head that the page is dark: until Lux arrived from its CDN, a first visit was
+    a white page, and a phone's browser bar stayed light above the dark navbar."""
+
+    def test_the_head_names_the_dark_scheme_and_the_bar_s_colour_before_any_stylesheet(self):
+        html = self.client.get("/ru/privacy/").content.decode()
+        head = html[: html.index('rel="stylesheet"')]
+        self.assertEqual(_meta(head, "color-scheme"), "dark")
+        self.assertRegex(_meta(head, "theme-color") or "", r"^#[0-9a-f]{6}$")
