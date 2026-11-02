@@ -1,7 +1,8 @@
 'use strict';
 /* ---------------- Главный цикл ---------------- */
 // Each frame the ride takes its step (js/ride.js) and the trainer is told the grade; then the scene and
-// the HUD are drawn from the ride's state, which the drawing only reads.
+// the HUD are drawn from the ride's state. The drawing writes nothing the ride reads: only the turn of
+// the pedals (a rider's phase), which nothing but the drawing uses.
 let last = performance.now(), clockT = 0;
 Object.assign(rideHooks, {
   go: () => updateModeUI(),
